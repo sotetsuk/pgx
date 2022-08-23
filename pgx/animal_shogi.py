@@ -1,10 +1,31 @@
 import numpy as np
 
 DEFAULT = np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+INIT_BOARD = np.array([
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],  # 11(右上) 後手のゾウ
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 12 空白
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 13 空白
+    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],  # 14(右下) 先手のキリン
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],  # 21 後手ライオン
+    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],  # 22 後手ヒヨコ
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 23 先手ヒヨコ
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],  # 24 先手ライオン
+    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],  # 31 後手キリン
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 32 空白
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 33 空白
+    [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],  # 34 先手ゾウ
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 先手ヒヨコ
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 先手キリン
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 先手ゾウ
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 後手ヒヨコ
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 後手キリン
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 後手ゾウ
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 手番の情報
+])
 
 
 class Board:
-    def __init__(self, board, turn):
+    def __init__(self, board=INIT_BOARD, turn=0):
         # boardは19×11の構造
         # 1~12行目は各座標に存在する駒種、13~18行目はお互いの持ち駒（3種×2）を表現。19行目は手番の情報
         # turn 先手番なら0 後手番なら1
@@ -37,18 +58,18 @@ class Board:
         return
 
     def owner_piece(self, point):
-        ind = np.where(self.board[point] == 1)[0]
+        ind = np.where(self.board[point] == 1)[0][0]
         # 駒がない位置
         if ind == 0:
             return 2, 0
         # 駒がある位置
         else:
-            return (ind-1)/5, (ind-1) % 5 + 1
+            return (ind-1)//5, (ind-1) % 5 + 1
 
     # 上下左右の編に接しているかどうか
     def is_side(self, point):
         is_up = point % 4 == 0
-        is_down = point % 4 == 2
+        is_down = point % 4 == 3
         is_left = point >= 8
         is_right = point <= 3
         return is_up, is_down, is_left, is_right
@@ -90,7 +111,8 @@ class Board:
     def lion_move(self, point):
         m1 = self.kirin_move(point)
         m2 = self.zou_move(point)
-        return m1.extend(m2)
+        m1.extend(m2)
+        return m1
 
     def niwatori_move(self, point):
         moves = self.kirin_move(point)
@@ -137,3 +159,39 @@ class Board:
                         moves.append([i, p, piece, piece2, 1])
                     else:
                         moves.append([i, p, piece, piece2, 0])
+        return moves
+
+    def legal_drop(self):
+        moves = []
+        for i in range(3):
+            piece = i + 1
+            # 対応する駒を持ってない場合は打てない
+            # 空白位置のベクトルと持ち駒を持っていないときのベクトルが同一であることを利用
+            if self.owner_piece(11+piece+self.turn*3)[0] == 2:
+                continue
+            for j in range(12):
+                # ひよこは最奥には打てない
+                if piece == 1 and self.turn == 0 and j % 4 == 0:
+                    continue
+                if piece == 1 and self.turn == 1 and j % 4 == 3:
+                    continue
+                owner = self.owner_piece(j)[0]
+                # お互いの駒がない地点(==ownerが2の地点)であれば打てる
+                if owner == 2:
+                    moves.append([j, piece])
+        return moves
+
+    def legal_drop_moves(self):
+        moves = self.legal_moves()
+        drop = self.legal_drop()
+        all_moves = []
+        # 移動には0, 駒打ちには1でラベル付けをする
+        for m in moves:
+            all_moves.append((0, m))
+        for d in drop:
+            all_moves.append((1, d))
+        return all_moves
+
+
+board = Board()
+print(board.legal_drop_moves())
