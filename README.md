@@ -2,25 +2,18 @@
 
 Parallel game simulator for reinforcement learning.
 
-## Supported games
+## Roadmap
 
 * [ ] Tic-tac-toe
-* [ ] AnimlShogi
-* [ ] Shogi
-* [ ] Go
-  * [ ] 5x5
-  * [ ] 19x19
-* [ ] Chess
+* [ ] AnimalShogi
+* [ ] Go (5x5)
 * [ ] MinAtar
   * [ ] Breakout
   * [ ] Asterix
   * [ ] SpaceInvaders
   * [ ] Seaquest
   * [ ] Freeway
-* [ ] Atari2600
-  * [ ] Breakout
-  * [ ] Asterix
-  * [ ] SpaceInvaders
-  * [ ] Seaquest
-  * [ ] Freeway
-  * ...
+* [ ] Shogi
+* [ ] Go 19x19
+* [ ] Chess
+
