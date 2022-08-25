@@ -10,7 +10,10 @@ setup(
     author_email='sotetsu.koyamada@gmail.com',
     keywords='',
     packages=["pgx"],
+    install_requires=[
+        "jax",
+        ],
     classifiers=[
-        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
     ],
 )
