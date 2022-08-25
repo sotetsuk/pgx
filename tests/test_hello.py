@@ -2,4 +2,4 @@ from pgx import hello
 
 
 def test_helo():
-    assert hello() == "hello test"
+    assert hello() == "hello world"
