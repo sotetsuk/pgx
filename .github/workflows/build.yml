@@ -9,7 +9,7 @@ jobs:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
       with:
-        python-version: '3.7'
+        python-version: '3.8'
         architecture: 'x64'
     - name: install
       run: |
@@ -17,6 +17,7 @@ jobs:
         make install
     - name: test
       run: |
+        make install-dev
         make test
     - name: check
       run: |
