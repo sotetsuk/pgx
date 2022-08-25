@@ -1,0 +1,8 @@
+pytest
+black
+blackdoc
+isort
+flake8
+mypy
+matplotlib
+ipython

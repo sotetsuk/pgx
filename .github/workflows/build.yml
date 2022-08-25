@@ -1,0 +1,23 @@
+name: build
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.7'
+        architecture: 'x64'
+    - name: install
+      run: |
+        pip3 install --upgrade pip
+        make install
+    - name: test
+      run: |
+        make test
+    - name: check
+      run: |
+        make check
