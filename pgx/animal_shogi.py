@@ -120,6 +120,14 @@ def drop(board, turn, point, piece):
 
 
 def owner_piece(board, point):
+    """
+    >>> owner_piece(INIT_BOARD, 3)
+    (0, 2)
+    >>> owner_piece(INIT_BOARD, 5)
+    (1, 1)
+    >>> owner_piece(INIT_BOARD, 9)
+    (2, 0)
+    """
     ind = np.where(board[point] == 1)[0][0]
     # 駒がない位置
     if ind == 0:
@@ -139,39 +147,42 @@ def is_side(point):
 
 
 def hiyoko_move(turn, point):
+    #  最奥にいてはいけない
     if turn == 0:
+        assert point % 4 != 0
         return [point-1]
     else:
+        assert point % 4 != 3
         return [point+1]
 
 
 def kirin_move(point):
     u, d, l, r = is_side(point)
     moves = []
+    if not r:
+        moves.append(point-4)
     if not u:
         moves.append(point-1)
     if not d:
         moves.append(point+1)
     if not l:
         moves.append(point+4)
-    if not r:
-        moves.append(point-4)
     return moves
 
 
 def zou_move(point):
     u, d, l, r = is_side(point)
     moves = []
-    if not u:
-        if not l:
-            moves.append(point+3)
-        if not r:
+    if not r:
+        if not u:
             moves.append(point-5)
-    if not d:
-        if not l:
-            moves.append(point+5)
-        if not r:
+        if not d:
             moves.append(point-3)
+    if not l:
+        if not u:
+            moves.append(point+3)
+        if not d:
+            moves.append(point+5)
     return moves
 
 
@@ -187,16 +198,16 @@ def niwatori_move(turn, point):
     u, d, l, r = is_side(point)
     if turn == 0:
         if not u:
-            if not l:
-                moves.append(point+3)
             if not r:
                 moves.append(point-5)
+            if not l:
+                moves.append(point+3)
     else:
         if not d:
-            if not l:
-                moves.append(point+5)
             if not r:
                 moves.append(point-3)
+            if not l:
+                moves.append(point+5)
     return moves
 
 
@@ -216,7 +227,9 @@ def point_moves(turn, point, piece):
 def legal_moves(board, turn):
     """
     >>> legal_moves(INIT_BOARD, 0)
-    [[3, 2, 2, 0, 0], [6, 5, 1, 1, 0], [7, 10, 4, 0, 0], [7, 2, 4, 0, 0]]
+    [[3, 2, 2, 0, 0], [6, 5, 1, 1, 0], [7, 2, 4, 0, 0], [7, 10, 4, 0, 0]]
+    >>> legal_moves(INIT_BOARD, 1)
+    [[4, 1, 4, 0, 0], [4, 9, 4, 0, 0], [5, 6, 1, 1, 0], [8, 9, 2, 0, 0]]
     """
     moves = []
     for i in range(12):
