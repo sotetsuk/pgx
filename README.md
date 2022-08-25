@@ -1,3 +1,5 @@
+[![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
+
 # Pgx
 
 Parallel game simulator for reinforcement learning.
