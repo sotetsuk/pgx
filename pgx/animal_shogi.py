@@ -27,6 +27,7 @@ INIT_BOARD = np.array([
 ])
 
 
+# 手番を変更する
 def turn_change(board, turn):
     """
     >>> turn_change(INIT_BOARD, 0)
@@ -58,6 +59,14 @@ def turn_change(board, turn):
     return b
 
 
+#  駒打ちでない移動の処理
+#  board: 現在の盤面
+#  turn: 現在の手番
+#  fir_lo: 移動前の座標
+#  fir_lo: 移動後の座標
+#  piece: 動かした駒の種類（ヒヨコ1, キリン2, ゾウ3, ライオン4, ニワトリ5）
+#  captured: 取られた駒の種類。駒が取られていない場合は0でそれ以外はpieceと同じ
+#  is_promote: 駒を成るかどうかの判定
 def move(board, turn, fir_lo, fin_lo, piece, captured, is_promote):
     """
     >>> move(INIT_BOARD, 0, 6, 5, 1, 1, 0)
@@ -90,6 +99,9 @@ def move(board, turn, fir_lo, fin_lo, piece, captured, is_promote):
     return b
 
 
+#  駒打ちの処理
+#  point: 駒を打つ座標
+#  piece: 打つ駒の種類。ライオン、ニワトリは打てないのでそれ以外の三種から選ぶ
 def drop(board, turn, point, piece):
     """
     >>> drop(np.array([[0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0], [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]), 0, 2, 2)
@@ -119,6 +131,9 @@ def drop(board, turn, point, piece):
     return b
 
 
+#  ある座標に存在する駒の持ち主と種類を返す
+#  持ち主はturnに対応させるため先手0後手1、駒が存在しない場合は2を返す
+#  駒の種類は上のpieceと対応
 def owner_piece(board, point):
     """
     >>> owner_piece(INIT_BOARD, 3)
@@ -137,7 +152,8 @@ def owner_piece(board, point):
         return (ind-1)//5, (ind-1) % 5 + 1
 
 
-# 上下左右の辺に接しているかどうか
+#  上下左右の辺に接しているかどうか
+#  接している場合は後の関数で行ける場所を制限する
 def is_side(point):
     is_up = point % 4 == 0
     is_down = point % 4 == 3
@@ -146,6 +162,7 @@ def is_side(point):
     return is_up, is_down, is_left, is_right
 
 
+#  各種駒の動き
 def hiyoko_move(turn, point):
     #  最奥にいてはいけない
     if turn == 0:
@@ -211,6 +228,7 @@ def niwatori_move(turn, point):
     return moves
 
 
+#  座標と駒の種類から到達できる座標を列挙する関数
 def point_moves(turn, point, piece):
     if piece == 1:
         return hiyoko_move(turn, point)
@@ -224,6 +242,7 @@ def point_moves(turn, point, piece):
         return niwatori_move(turn, point)
 
 
+#  駒打ち以外の合法手を列挙する
 def legal_moves(board, turn):
     """
     >>> legal_moves(INIT_BOARD, 0)
@@ -242,13 +261,16 @@ def legal_moves(board, turn):
                 if owner2 == turn:
                     continue
                 # ひよこが最奥までいった場合、強制的に成る
-                if piece == 1 and p % 4 == 0:
+                if piece == 1 and turn == 0 and p % 4 == 0:
+                    moves.append([i, p, piece, piece2, 1])
+                elif piece == 1 and turn == 1 and p % 3 == 0:
                     moves.append([i, p, piece, piece2, 1])
                 else:
                     moves.append([i, p, piece, piece2, 0])
     return moves
 
 
+# 駒打ちの合法手の生成
 def legal_drop(board, turn):
     moves = []
     #  打てるのはヒヨコ、キリン、ゾウの三種
@@ -271,6 +293,7 @@ def legal_drop(board, turn):
     return moves
 
 
+#  全ての合法手の生成
 def legal_drop_moves(board, turn):
     moves = legal_moves(board, turn)
     drops = legal_drop(board, turn)
