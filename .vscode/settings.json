@@ -1,0 +1,31 @@
+{
+    "files.encoding": "utf8",
+    "files.eol": "\n",
+    "python.languageServer": "Pylance",
+    "python.analysis.typeCheckingMode": "basic",
+    "[python]": {
+        "editor.tabSize": 4,
+        "editor.formatOnSave": true,
+        "editor.formatOnPaste": false,
+        "editor.formatOnType": false,
+        "editor.insertSpaces": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports": true
+        }
+    },
+    "python.testing.pytestArgs": [
+        "mypkg",
+        "--doctest-modules"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.pytestEnabled": true,
+    "python.formatting.provider": "black",
+    "python.linting.flake8Args": [
+        "--config", "pyproject.toml",
+        "--ignore", "E203,E501,W503"
+    ],
+    "python.linting.flake8Enabled": true,
+    "python.defaultInterpreterPath": "${workspace}/venv/bin/python3",
+    "python.terminal.activateEnvInCurrentTerminal": true
+}
