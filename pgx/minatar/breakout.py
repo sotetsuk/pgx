@@ -62,16 +62,16 @@ def step(
     last_action = state.last_action
 
     # Resolve player action
-    d_pos = 0
-    d_pos = jax.lax.cond(pos == 1, lambda x: x - 1, lambda x: x, d_pos)
-    d_pos = jax.lax.cond(pos == 3, lambda x: x + 1, lambda x: x, d_pos)
-    pos += d_pos
-    pos = jax.lax.max(pos, 0)
-    pos = jax.lax.min(pos, 9)
-    # if action == 1:  # "l"
-    #     pos = max(0, pos - 1)
-    # elif action == 3:  # "r"
-    #     pos = min(9, pos + 1)
+    # d_pos = 0
+    # d_pos = jax.lax.cond(pos == 1, lambda x: x - 1, lambda x: x, d_pos)
+    # d_pos = jax.lax.cond(pos == 3, lambda x: x + 1, lambda x: x, d_pos)
+    # pos += d_pos
+    # pos = jax.lax.max(pos, 0)
+    # pos = jax.lax.min(pos, 9)
+    if action == 1:  # "l"
+        pos = max(0, pos - 1)
+    elif action == 3:  # "r"
+        pos = min(9, pos + 1)
 
     # Update ball position
     last_x = ball_x
@@ -119,12 +119,12 @@ def step(
         if not strike:
             r += 1
             strike = True
-            brick_map[new_y, new_x] = 0
+            brick_map = brick_map.at[new_y, new_x].set(0)
             new_y = last_y
             ball_dir = [3, 2, 1, 0][ball_dir]
     elif new_y == 9:
         if np.count_nonzero(brick_map) == 0:
-            brick_map[1:4, :] = 1
+            brick_map = brick_map.at[1:4, :] = 1
         if ball_x == pos:
             ball_dir = [3, 2, 1, 0][ball_dir]
             new_y = last_y
