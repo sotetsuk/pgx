@@ -59,16 +59,16 @@ def step(
     last_action = state.last_action
 
     # Resolve player action
-    # d_pos = 0
-    # d_pos = jax.lax.cond(pos == 1, lambda x: x - 1, lambda x: x, d_pos)
-    # d_pos = jax.lax.cond(pos == 3, lambda x: x + 1, lambda x: x, d_pos)
-    # pos += d_pos
-    # pos = jax.lax.max(pos, 0)
-    # pos = jax.lax.min(pos, 9)
-    if action == 1:  # "l"
-        pos = max(0, pos - 1)
-    elif action == 3:  # "r"
-        pos = min(9, pos + 1)
+    d_pos = 0
+    d_pos = jax.lax.cond(action == 1, lambda x: x - 1, lambda x: x, d_pos)
+    d_pos = jax.lax.cond(action == 3, lambda x: x + 1, lambda x: x, d_pos)
+    pos += d_pos
+    pos = jax.lax.max(pos, 0)
+    pos = jax.lax.min(pos, 9)
+    # if action == 1:  # "l"
+    #     pos = max(0, pos - 1)
+    # elif action == 3:  # "r"
+    #     pos = min(9, pos + 1)
 
     # Update ball position
     last_x = ball_x
