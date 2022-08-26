@@ -6,3 +6,4 @@ flake8
 mypy
 matplotlib
 ipython
+git+https://github.com/kenjyoung/MinAtar.git
