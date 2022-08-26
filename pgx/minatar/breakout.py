@@ -47,8 +47,8 @@ def step(
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
 
     r = 0
-    if state.terminal:
-        return state, r, state.terminal
+    # if state.terminal:
+    #     return state, r, state.terminal
 
     ball_y = state.ball_y
     ball_x = state.ball_x
@@ -63,8 +63,8 @@ def step(
 
     # Resolve player action
     d_pos = 0
-    jax.lax.cond(d_pos == 1, lambda x: x - 1, lambda x: x, d_pos)
-    jax.lax.cond(d_pos == 3, lambda x: x + 1, lambda x: x, d_pos)
+    d_pos = jax.lax.cond(pos == 1, lambda x: x - 1, lambda x: x, d_pos)
+    d_pos = jax.lax.cond(pos == 3, lambda x: x + 1, lambda x: x, d_pos)
     pos += d_pos
     pos = jax.lax.max(pos, 0)
     pos = jax.lax.min(pos, 9)
@@ -76,19 +76,33 @@ def step(
     # Update ball position
     last_x = ball_x
     last_y = ball_y
-    # assert ball_dir in [0, 1, 2, 3]
-    if ball_dir == 0:
-        new_x = ball_x - 1
-        new_y = ball_y - 1
-    elif ball_dir == 1:
-        new_x = ball_x + 1
-        new_y = ball_y - 1
-    elif ball_dir == 2:
-        new_x = ball_x + 1
-        new_y = ball_y + 1
-    elif ball_dir == 3:
-        new_x = ball_x - 1
-        new_y = ball_y + 1
+    dx, dy = 0, 0
+    dx, dy = jax.lax.cond(
+        ball_dir == 0, lambda x, y: (x - 1, y - 1), lambda x, y: (x, y), dx, dy
+    )
+    dx, dy = jax.lax.cond(
+        ball_dir == 1, lambda x, y: (x + 1, y - 1), lambda x, y: (x, y), dx, dy
+    )
+    dx, dy = jax.lax.cond(
+        ball_dir == 2, lambda x, y: (x + 1, y + 1), lambda x, y: (x, y), dx, dy
+    )
+    dx, dy = jax.lax.cond(
+        ball_dir == 3, lambda x, y: (x - 1, y + 1), lambda x, y: (x, y), dx, dy
+    )
+    new_x = ball_x + dx
+    new_y = ball_y + dy
+    # if ball_dir == 0:
+    #     new_x = ball_x - 1
+    #     new_y = ball_y - 1
+    # elif ball_dir == 1:
+    #     new_x = ball_x + 1
+    #     new_y = ball_y - 1
+    # elif ball_dir == 2:
+    #     new_x = ball_x + 1
+    #     new_y = ball_y + 1
+    # elif ball_dir == 3:
+    #     new_x = ball_x - 1
+    #     new_y = ball_y + 1
 
     strike_toggle = False
     if new_x < 0 or new_x > 9:
