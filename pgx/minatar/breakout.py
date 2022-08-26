@@ -6,12 +6,9 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-import copy
-from dataclasses import dataclass
 from typing import Tuple
 
 import jax
-import numpy as np
 from flax import struct
 from jax import numpy as jnp
 
@@ -120,10 +117,12 @@ def step(
             r += 1
             strike = True
             brick_map = brick_map.at[new_y, new_x].set(0)
+            # brick_map[new_y, new_x] = 0
             new_y = last_y
             ball_dir = [3, 2, 1, 0][ball_dir]
     elif new_y == 9:
-        if np.count_nonzero(brick_map) == 0:
+        if jnp.count_nonzero(brick_map) == 0:
+            # brick_map[1:4, :] = 1
             brick_map = brick_map.at[1:4, :] = 1
         if ball_x == pos:
             ball_dir = [3, 2, 1, 0][ball_dir]
