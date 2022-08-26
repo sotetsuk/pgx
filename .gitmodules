@@ -1,3 +1,0 @@
-[submodule "tests/MinAtar"]
-	path = tests/MinAtar
-	url = https://github.com/kenjyoung/MinAtar.git
