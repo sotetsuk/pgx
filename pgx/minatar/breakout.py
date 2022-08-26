@@ -10,7 +10,9 @@ import copy
 from dataclasses import dataclass
 from typing import Tuple
 
+import jax
 import numpy as np
+from flax import struct
 from jax import numpy as jnp
 
 
@@ -24,7 +26,7 @@ from jax import numpy as jnp
 # the ball hits the bottom of the screen. The balls direction is indicated by a trail channel.
 #
 #####################################################################################################################
-@dataclass
+@struct.dataclass
 class MinAtarBreakoutState:
     ball_y: int = 3
     ball_x: int = 0
@@ -47,30 +49,39 @@ def step(
     if state.terminal:
         return state, r, state.terminal
 
-    next_state = copy.deepcopy(state)
+    ball_y = state.ball_y
+    ball_x = state.ball_x
+    ball_dir = state.ball_dir
+    pos = state.pos
+    brick_map = state.brick_map
+    strike = state.strike
+    last_x = state.last_x
+    last_y = state.last_y
+    terminal = state.terminal
+    last_action = state.last_action
 
     # Resolve player action
     if action == 1:  # "l"
-        next_state.pos = max(0, next_state.pos - 1)
+        pos = max(0, pos - 1)
     elif action == 3:  # "r"
-        next_state.pos = min(9, next_state.pos + 1)
+        pos = min(9, pos + 1)
 
     # Update ball position
-    next_state.last_x = next_state.ball_x
-    next_state.last_y = next_state.ball_y
-    assert next_state.ball_dir in [0, 1, 2, 3]
-    if next_state.ball_dir == 0:
-        new_x = next_state.ball_x - 1
-        new_y = next_state.ball_y - 1
-    elif next_state.ball_dir == 1:
-        new_x = next_state.ball_x + 1
-        new_y = next_state.ball_y - 1
-    elif next_state.ball_dir == 2:
-        new_x = next_state.ball_x + 1
-        new_y = next_state.ball_y + 1
-    elif next_state.ball_dir == 3:
-        new_x = next_state.ball_x - 1
-        new_y = next_state.ball_y + 1
+    last_x = ball_x
+    last_y = ball_y
+    assert ball_dir in [0, 1, 2, 3]
+    if ball_dir == 0:
+        new_x = ball_x - 1
+        new_y = ball_y - 1
+    elif ball_dir == 1:
+        new_x = ball_x + 1
+        new_y = ball_y - 1
+    elif ball_dir == 2:
+        new_x = ball_x + 1
+        new_y = ball_y + 1
+    elif ball_dir == 3:
+        new_x = ball_x - 1
+        new_y = ball_y + 1
 
     strike_toggle = False
     if new_x < 0 or new_x > 9:
@@ -78,35 +89,48 @@ def step(
             new_x = 0
         if new_x > 9:
             new_x = 9
-        next_state.ball_dir = [1, 0, 3, 2][next_state.ball_dir]
+        ball_dir = [1, 0, 3, 2][ball_dir]
     if new_y < 0:
         new_y = 0
-        next_state.ball_dir = [3, 2, 1, 0][next_state.ball_dir]
-    elif next_state.brick_map[new_y, new_x] == 1:
+        ball_dir = [3, 2, 1, 0][ball_dir]
+    elif brick_map[new_y, new_x] == 1:
         strike_toggle = True
-        if not next_state.strike:
+        if not strike:
             r += 1
-            next_state.strike = True
-            next_state.brick_map[new_y, new_x] = 0
-            new_y = next_state.last_y
-            next_state.ball_dir = [3, 2, 1, 0][next_state.ball_dir]
+            strike = True
+            brick_map[new_y, new_x] = 0
+            new_y = last_y
+            ball_dir = [3, 2, 1, 0][ball_dir]
     elif new_y == 9:
-        if np.count_nonzero(next_state.brick_map) == 0:
-            next_state.brick_map[1:4, :] = 1
-        if next_state.ball_x == next_state.pos:
-            next_state.ball_dir = [3, 2, 1, 0][next_state.ball_dir]
-            new_y = next_state.last_y
-        elif new_x == next_state.pos:
-            next_state.ball_dir = [2, 3, 0, 1][next_state.ball_dir]
-            new_y = next_state.last_y
+        if np.count_nonzero(brick_map) == 0:
+            brick_map[1:4, :] = 1
+        if ball_x == pos:
+            ball_dir = [3, 2, 1, 0][ball_dir]
+            new_y = last_y
+        elif new_x == pos:
+            ball_dir = [2, 3, 0, 1][ball_dir]
+            new_y = last_y
         else:
-            next_state.terminal = True
+            terminal = True
 
     if not strike_toggle:
-        next_state.strike = False
+        strike = False
 
-    next_state.ball_x = new_x
-    next_state.ball_y = new_y
-    next_state.last_action = action
+    ball_x = new_x
+    ball_y = new_y
+    last_action = action
 
-    return next_state, r, next_state.terminal
+    next_state = MinAtarBreakoutState(
+        ball_y,
+        ball_x,
+        ball_dir,
+        pos,
+        brick_map,
+        strike,
+        last_x,
+        last_y,
+        terminal,
+        last_action,
+    )
+
+    return next_state, r, terminal

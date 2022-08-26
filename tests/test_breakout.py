@@ -3,6 +3,7 @@ import random
 from typing import Any, Dict
 
 import numpy as np
+from flax import struct
 from jax import numpy as jnp
 from minatar import Environment
 
@@ -52,13 +53,14 @@ def pgx2minatar(state: breakout.MinAtarBreakoutState) -> Dict[str, Any]:
 
 
 def minatar2pgx(state_dict: Dict[str, Any]) -> breakout.MinAtarBreakoutState:
-    state = breakout.MinAtarBreakoutState()
+    d = {}
     for key in breakout_state_keys:
         val = copy.deepcopy(state_dict[key])
         if isinstance(val, np.ndarray):
             val = jnp.array(val)
-        setattr(state, key, val)
-    return state
+        d[key] = val
+    s = breakout.MinAtarBreakoutState(**d)
+    return s
 
 
 def test_step():
