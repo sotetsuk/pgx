@@ -41,6 +41,7 @@ class MinAtarBreakoutState:
 
 
 # TODO: sticky action prob
+# @jax.jit
 def step(
     state: MinAtarBreakoutState, action: int
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
@@ -61,15 +62,21 @@ def step(
     last_action = state.last_action
 
     # Resolve player action
-    if action == 1:  # "l"
-        pos = max(0, pos - 1)
-    elif action == 3:  # "r"
-        pos = min(9, pos + 1)
+    d_pos = 0
+    jax.lax.cond(d_pos == 1, lambda x: x - 1, lambda x: x, d_pos)
+    jax.lax.cond(d_pos == 3, lambda x: x + 1, lambda x: x, d_pos)
+    pos += d_pos
+    pos = jax.lax.max(pos, 0)
+    pos = jax.lax.min(pos, 9)
+    # if action == 1:  # "l"
+    #     pos = max(0, pos - 1)
+    # elif action == 3:  # "r"
+    #     pos = min(9, pos + 1)
 
     # Update ball position
     last_x = ball_x
     last_y = ball_y
-    assert ball_dir in [0, 1, 2, 3]
+    # assert ball_dir in [0, 1, 2, 3]
     if ball_dir == 0:
         new_x = ball_x - 1
         new_y = ball_y - 1
