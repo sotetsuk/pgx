@@ -19,3 +19,9 @@ Parallel game simulator for reinforcement learning.
 * [ ] Go 19x19
 * [ ] Chess
 
+
+# LICENSE
+
+TDOO
+
+* MinAtar is GPL-3.0 License
