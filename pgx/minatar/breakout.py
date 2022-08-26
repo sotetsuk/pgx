@@ -1,8 +1,12 @@
-################################################################################################################
-# Authors:                                                                                                     #
-# Kenny Young (kjyoung@ualberta.ca)                                                                            #
-# Tian Tian (ttian@ualberta.ca)                                                                                #
-################################################################################################################
+"""A fork of MinAtar environment distributed at https://github.com/kenjyoung/MinAtar
+
+The authors of original MinAtar implementation are:
+    * Kenny Young (kjyoung@ualberta.ca)
+    * Tian Tian (ttian@ualberta.ca)
+The original MinAtar implementation is distributed under GNU General Public License v3.0
+    * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
+"""
+
 import numpy as np
 
 
