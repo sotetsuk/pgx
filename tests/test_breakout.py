@@ -67,12 +67,14 @@ def test_step():
     env = Environment("breakout", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    env.reset()
-    s = extract_state(env, breakout_state_keys)
-    a = random.randrange(num_actions)
-    r, done = env.act(a)
-    s_next = extract_state(env, breakout_state_keys)
-
-    s_next_pgx, r, done = breakout.step(minatar2pgx(s), a)
-
-    assert_states(s_next, pgx2minatar(s_next_pgx))
+    N = 10
+    for _ in range(N):
+        env.reset()
+        done = False
+        while not done:
+            s = extract_state(env, breakout_state_keys)
+            a = random.randrange(num_actions)
+            r, done = env.act(a)
+            s_next = extract_state(env, breakout_state_keys)
+            s_next_pgx, _, _ = breakout.step(minatar2pgx(s), a)
+            assert_states(s_next, pgx2minatar(s_next_pgx))
