@@ -102,12 +102,50 @@ def step(
     #     new_y = ball_y + 1
 
     strike_toggle = False
-    if new_x < 0 or new_x > 9:
-        if new_x < 0:
-            new_x = 0
-        if new_x > 9:
-            new_x = 9
-        ball_dir = [1, 0, 3, 2][ball_dir]
+    new_x, ball_dir = jax.lax.cond(
+        new_x < 0,
+        lambda _new_x, _ball_dir: (
+            0,
+            jax.lax.switch(
+                ball_dir,
+                [
+                    lambda _: 1,
+                    lambda _: 0,
+                    lambda _: 3,
+                    lambda _: 2,
+                ],
+                _ball_dir,
+            ),
+        ),
+        lambda _new_x, _ball_dir: (_new_x, _ball_dir),
+        new_x,
+        ball_dir,
+    )
+    new_x, ball_dir = jax.lax.cond(
+        new_x > 9,
+        lambda _new_x, _ball_dir: (
+            9,
+            jax.lax.switch(
+                ball_dir,
+                [
+                    lambda _: 1,
+                    lambda _: 0,
+                    lambda _: 3,
+                    lambda _: 2,
+                ],
+                _ball_dir,
+            ),
+        ),
+        lambda _new_x, _ball_dir: (_new_x, _ball_dir),
+        new_x,
+        ball_dir,
+    )
+    # if new_x < 0 or new_x > 9:
+    #     if new_x < 0:
+    #         new_x = 0
+    #     if new_x > 9:
+    #         new_x = 9
+    #     ball_dir = [1, 0, 3, 2][ball_dir]
     if new_y < 0:
         new_y = 0
         ball_dir = [3, 2, 1, 0][ball_dir]
