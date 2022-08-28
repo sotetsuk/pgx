@@ -126,7 +126,7 @@ def step(
         lambda _new_x, _ball_dir: (
             9,
             jax.lax.switch(
-                ball_dir,
+                _ball_dir,
                 [
                     lambda _: 1,
                     lambda _: 0,
