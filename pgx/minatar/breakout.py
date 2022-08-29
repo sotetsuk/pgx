@@ -429,8 +429,14 @@ def step(
     #     else:
     #         terminal = True
 
-    if not strike_toggle:
-        strike = False
+    strike = jax.lax.cond(
+        strike_toggle,
+        lambda _strike: _strike,
+        lambda _strike: False,
+        strike_toggle,
+    )
+    # if not strike_toggle:
+    #     strike = False
 
     ball_x = new_x
     ball_y = new_y
