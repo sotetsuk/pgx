@@ -1,11 +1,17 @@
-"""MinAtar/Breakout
+"""MinAtar/Breakout: A form of github.com/kenjyoung/MinAtar
 
+[About Pgx ver of MinAtar/Breakout]
+The behavior is intended to be exactly same as that of MinAtar/Breakout.
+However, thanks to jax, this implementation can run in parallel on GPU/TPU.
+
+[Breakout description]
 The player controls a paddle on the bottom of the screen and must bounce a ball to break 3 rows of bricks along the
 top of the screen. A reward of +1 is given for each brick broken by the ball.  When all bricks are cleared another 3
 rows are added. The ball travels only along diagonals, when it hits the paddle it is bounced either to the left or
 right depending on the side of the paddle hit, when it hits a wall or brick it is reflected. Termination occurs when
 the ball hits the bottom of the screen. The balls direction is indicated by a trail channel.
 
+[About MinAtar]
 This implementation is a fork of MinAtar environment distributed at https://github.com/kenjyoung/MinAtar
 
 The authors of original MinAtar implementation are:
@@ -27,7 +33,7 @@ class MinAtarBreakoutState:
     ball_x: int = 0
     ball_dir: int = 2
     pos: int = 4
-    brick_map: jnp.ndarray = jnp.zeros((10, 10))
+    brick_map: jnp.ndarray = jnp.zeros((10, 10), dtype=bool)
     strike: bool = False
     last_x: int = 0
     last_y: int = 3
@@ -189,7 +195,7 @@ def _step_det(
                 _strike_toggle,
                 True,
                 _r + 1,
-                _brick_map.at[_new_y, new_x].set(0),
+                _brick_map.at[_new_y, new_x].set(False),
                 _terminal,
             ),
             _new_y,
@@ -244,7 +250,7 @@ def _step_det(
         _brick_map, _ball_dir, _new_y, _terminal = jax.lax.cond(
             jnp.count_nonzero(_brick_map) == 0,
             lambda _brick_map, _ball_dir, _new_y, _terminal: (
-                _brick_map.at[1:4, :].set(1),
+                _brick_map.at[1:4, :].set(True),
                 _ball_dir,
                 _new_y,
                 _terminal,
@@ -312,7 +318,7 @@ def _step_det(
             _brick_map,
             _terminal,
         ) = jax.lax.cond(
-            _brick_map[_new_y, new_x] == 1,
+            _brick_map[_new_y, new_x],
             f_strike,
             lambda _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal: (
                 jax.lax.cond(
@@ -489,8 +495,8 @@ def _reset_det(ball_start: int) -> MinAtarBreakoutState:
     )
     # ball_x, ball_dir = [(0, 2), (9, 3)][ball_start]
     pos = 4
-    brick_map = jnp.zeros((10, 10))
-    brick_map = brick_map.at[1:4, :].set(1)
+    brick_map = jnp.zeros((10, 10), dtype=bool)
+    brick_map = brick_map.at[1:4, :].set(True)
     strike = False
     last_x = ball_x
     last_y = ball_y
@@ -507,3 +513,23 @@ def _reset_det(ball_start: int) -> MinAtarBreakoutState:
         terminal,
         0,
     )
+
+
+@jax.jit
+def _to_obs(state: MinAtarBreakoutState) -> jnp.array:
+    # channels = {
+    #     "paddle": 0,
+    #     "ball": 1,
+    #     "trail": 2,
+    #     "brick": 3,
+    # }
+    obs = jnp.zeros((10, 10, 4), dtype=bool)
+    obs = obs.at[state.ball_y, state.ball_x, 1].set(True)
+    # state[self.ball_y, self.ball_x, self.channels["ball"]] = 1
+    obs = obs.at[9, state.pos, 0].set(True)
+    # state[9, self.pos, self.channels["paddle"]] = 1
+    obs = obs.at[state.last_y, state.last_x, 2].set(True)
+    # state[self.last_y, self.last_x, self.channels["trail"]] = 1
+    obs = obs.at[:, :, 3].set(state.brick_map)
+    # state[:, :, self.channels["brick"]] = self.brick_map
+    return obs

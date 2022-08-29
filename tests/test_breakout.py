@@ -54,10 +54,18 @@ def pgx2minatar(state: breakout.MinAtarBreakoutState) -> Dict[str, Any]:
 
 def minatar2pgx(state_dict: Dict[str, Any]) -> breakout.MinAtarBreakoutState:
     d = {}
-    for key in breakout_state_keys:
+    for key in state_dict.keys():
         val = copy.deepcopy(state_dict[key])
         if isinstance(val, np.ndarray):
-            val = jnp.array(val)
+            if key in (
+                "brick_map",
+                "alien_map",
+                "f_bullet_map",
+                "e_bullet_map",
+            ):
+                val = jnp.array(val, dtype=bool)
+            else:
+                val = jnp.array(val, dtype=int)
         d[key] = val
     s = breakout.MinAtarBreakoutState(**d)
     return s
@@ -97,3 +105,23 @@ def test_reset_det():
         s = extract_state(env, breakout_state_keys)
         s_pgx = breakout._reset_det(ball_start)
         assert_states(s, pgx2minatar(s_pgx))
+
+
+def test_to_obs():
+    env = Environment("breakout", sticky_action_prob=0.0)
+    num_actions = env.num_actions()
+
+    N = 1
+    for _ in range(N):
+        env.reset()
+        done = False
+        while not done:
+            s = extract_state(env, breakout_state_keys)
+            assert jnp.allclose(env.state(), breakout._to_obs(minatar2pgx(s)))
+            a = random.randrange(num_actions)
+            r, done = env.act(a)
+            break
+
+        # check terminal state
+        s = extract_state(env, breakout_state_keys)
+        assert jnp.allclose(env.state(), breakout._to_obs(minatar2pgx(s)))
