@@ -86,3 +86,14 @@ def test_step_det():
         s_next = extract_state(env, breakout_state_keys)
         s_next_pgx, _, _ = breakout._step_det(minatar2pgx(s), a)
         assert_states(s_next, pgx2minatar(s_next_pgx))
+
+
+def test_reset_det():
+    env = Environment("breakout", sticky_action_prob=0.0)
+    N = 100
+    for _ in range(N):
+        env.reset()
+        ball_start = 0 if env.env.ball_x == 0 else 1
+        s = extract_state(env, breakout_state_keys)
+        s_pgx = breakout._reset_det(ball_start)
+        assert_states(s, pgx2minatar(s_pgx))
