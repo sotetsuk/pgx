@@ -146,18 +146,52 @@ def step(
     #     if new_x > 9:
     #         new_x = 9
     #     ball_dir = [1, 0, 3, 2][ball_dir]
+
+    def f_strike(_strike_toggle, _strike, _r, _brick_map, _new_y, _ball_dir):
+        _strike_toggle = True
+        _strike, _r, _brick_map, _new_y, _ball_dir = jax.lax.cond(
+            _strike,
+            lambda _strike, _r, _brick_map, _new_y, _ball_dir: (
+                _strike,
+                _r,
+                _brick_map,
+                _new_y,
+                _ball_dir,
+            ),
+            lambda _strike, _r, _brick_map, _new_y, _ball_dir: (
+                True,
+                _r + 1,
+                _brick_map.at[_new_y, new_x].set(0),
+                last_y,
+                jax.lax.switch(
+                    _ball_dir,
+                    [lambda _: 3, lambda _: 2, lambda _: 1, lambda _: 0],
+                    _ball_dir,
+                ),
+            ),
+            _strike,
+            _r,
+            _brick_map,
+            _new_y,
+            _ball_dir,
+        )
+        return _strike_toggle, _strike, _r, _brick_map, _new_y, _ball_dir
+
     if new_y < 0:
         new_y = 0
         ball_dir = [3, 2, 1, 0][ball_dir]
     elif brick_map[new_y, new_x] == 1:
-        strike_toggle = True
-        if not strike:
-            r += 1
-            strike = True
-            brick_map = brick_map.at[new_y, new_x].set(0)
-            # brick_map[new_y, new_x] = 0
-            new_y = last_y
-            ball_dir = [3, 2, 1, 0][ball_dir]
+        strike_toggle, strike, r, brick_map, new_y, ball_dir = f_strike(
+            strike_toggle, strike, r, brick_map, new_y, ball_dir
+        )
+        # strike_toggle = True
+        # if not strike:
+        #     r += 1
+        #     strike = True
+        #     brick_map = brick_map.at[new_y, new_x].set(0)
+        #     # brick_map[new_y, new_x] = 0
+        #     new_y = last_y
+        #     ball_dir = [3, 2, 1, 0][ball_dir]
     elif new_y == 9:
         if jnp.count_nonzero(brick_map) == 0:
             # brick_map[1:4, :] = 1
