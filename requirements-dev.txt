@@ -8,3 +8,4 @@ matplotlib
 ipython
 git+https://github.com/kenjyoung/MinAtar.git
 jax[cpu]
+flax
