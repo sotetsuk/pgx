@@ -39,7 +39,7 @@ class MinAtarBreakoutState:
 
 # TODO: sticky action prob
 @jax.jit
-def step(
+def _step_det(
     state: MinAtarBreakoutState, action: int
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
 
