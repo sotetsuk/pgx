@@ -38,14 +38,12 @@ class MinAtarBreakoutState:
 
 
 # TODO: sticky action prob
-# @jax.jit
+@jax.jit
 def step(
     state: MinAtarBreakoutState, action: int
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
 
     r = 0
-    # if state.terminal:
-    #     return state, r, state.terminal
 
     ball_y = state.ball_y
     ball_x = state.ball_x
@@ -56,7 +54,20 @@ def step(
     last_x = state.last_x
     last_y = state.last_y
     terminal = state.terminal
-    last_action = state.last_action
+    last_action = action
+
+    terminal_state = MinAtarBreakoutState(
+        ball_y,
+        ball_x,
+        ball_dir,
+        pos,
+        brick_map,
+        strike,
+        last_x,
+        last_y,
+        terminal,
+        last_action,
+    )
 
     # Resolve player action
     d_pos = 0
@@ -453,6 +464,15 @@ def step(
         last_y,
         terminal,
         last_action,
+    )
+
+    next_state, r, terminal = jax.lax.cond(
+        state.terminal,
+        lambda _next_state, _r, _terminal: (terminal_state, 0, True),
+        lambda _next_state, _r, _terminal: (next_state, r, terminal),
+        next_state,
+        r,
+        terminal,
     )
 
     return next_state, r, terminal
