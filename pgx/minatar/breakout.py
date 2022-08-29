@@ -177,18 +177,83 @@ def step(
         )
         return _strike_toggle, _strike, _r, _brick_map, _new_y, _ball_dir
 
+    def _g(_ball_dir, _new_y, _terminal):
+        _ball_dir, _new_y, _terminal = jax.lax.cond(
+            new_x == pos,
+            lambda _ball_dir, _new_y, _terminal: (
+                jax.lax.switch(
+                    _ball_dir,
+                    [lambda _: 2, lambda _: 3, lambda _: 0, lambda _: 1],
+                    _ball_dir,
+                ),
+                last_y,
+                _terminal,
+            ),
+            lambda _ball_dir, _new_y, _terminal: (
+                _ball_dir,
+                _new_y,
+                True,
+            ),
+            _ball_dir,
+            _new_y,
+            _terminal,
+        )
+        # if new_x == pos:
+        #     _ball_dir = [2, 3, 0, 1][ball_dir]
+        #     _new_y = last_y
+        # else:
+        #     _terminal = True
+        return _ball_dir, _new_y, _terminal
+
     def f_new_y_eq_9(_new_y, _brick_map, _ball_dir, _terminal):
-        if jnp.count_nonzero(_brick_map) == 0:
-            # brick_map[1:4, :] = 1
-            _brick_map = _brick_map.at[1:4, :] = 1
-        if ball_x == pos:
-            _ball_dir = [3, 2, 1, 0][ball_dir]
-            _new_y = last_y
-        elif new_x == pos:
-            _ball_dir = [2, 3, 0, 1][ball_dir]
-            _new_y = last_y
-        else:
-            _terminal = True
+        _brick_map, _ball_dir, _new_y, _terminal = jax.lax.cond(
+            jnp.count_nonzero(_brick_map) == 0,
+            lambda _brick_map, _ball_dir, _new_y, _terminal: (
+                _brick_map.at[1:4, :].set(1),
+                _ball_dir,
+                _new_y,
+                _terminal,
+            ),
+            lambda _brick_map, _ball_dir, _new_y, _terminal: (
+                _brick_map,
+                _ball_dir,
+                _new_y,
+                _terminal,
+            ),
+            _brick_map,
+            _ball_dir,
+            _new_y,
+            _terminal,
+        )
+        _ball_dir, _new_y, _terminal = jax.lax.cond(
+            ball_x == pos,
+            lambda _ball_dir, _new_y, _terminal: (
+                jax.lax.switch(
+                    _ball_dir,
+                    [lambda _: 3, lambda _: 2, lambda _: 1, lambda _: 0],
+                    _ball_dir,
+                ),
+                last_y,
+                _terminal,
+            ),
+            lambda _ball_dir, _new_y, _terminal: _g(
+                _ball_dir, _new_y, _terminal
+            ),
+            _ball_dir,
+            _new_y,
+            _terminal,
+        )
+        # if jnp.count_nonzero(_brick_map) == 0:
+        #     # brick_map[1:4, :] = 1
+        #     _brick_map = _brick_map.at[1:4, :] = 1
+        # if ball_x == pos:
+        #     _ball_dir = [3, 2, 1, 0][ball_dir]
+        #     _new_y = last_y
+        # elif new_x == pos:
+        #     _ball_dir = [2, 3, 0, 1][ball_dir]
+        #     _new_y = last_y
+        # else:
+        #     _terminal = True
         return _new_y, _brick_map, _ball_dir, _terminal
 
     if new_y < 0:
