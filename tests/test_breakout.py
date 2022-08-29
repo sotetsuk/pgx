@@ -64,7 +64,7 @@ def test_to_obs():
     env = Environment("breakout", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 1
+    N = 100
     for _ in range(N):
         env.reset()
         done = False
