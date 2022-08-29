@@ -1,4 +1,12 @@
-"""A fork of MinAtar environment distributed at https://github.com/kenjyoung/MinAtar
+"""MinAtar/Breakout
+
+The player controls a paddle on the bottom of the screen and must bounce a ball to break 3 rows of bricks along the
+top of the screen. A reward of +1 is given for each brick broken by the ball.  When all bricks are cleared another 3
+rows are added. The ball travels only along diagonals, when it hits the paddle it is bounced either to the left or
+right depending on the side of the paddle hit, when it hits a wall or brick it is reflected. Termination occurs when
+the ball hits the bottom of the screen. The balls direction is indicated by a trail channel.
+
+This implementation is a fork of MinAtar environment distributed at https://github.com/kenjyoung/MinAtar
 
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)
@@ -13,16 +21,6 @@ from flax import struct
 from jax import numpy as jnp
 
 
-#####################################################################################################################
-# Env
-#
-# The player controls a paddle on the bottom of the screen and must bounce a ball tobreak 3 rows of bricks along the
-# top of the screen. A reward of +1 is given for each brick broken by the ball.  When all bricks are cleared another 3
-# rows are added. The ball travels only along diagonals, when it hits the paddle it is bounced either to the left or
-# right depending on the side of the paddle hit, when it hits a wall or brick it is reflected. Termination occurs when
-# the ball hits the bottom of the screen. The balls direction is indicated by a trail channel.
-#
-#####################################################################################################################
 @struct.dataclass
 class MinAtarBreakoutState:
     ball_y: int = 3
