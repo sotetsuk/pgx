@@ -1,14 +1,10 @@
-import copy
 import random
-from typing import Any, Dict
 
-import numpy as np
-from jax import numpy as jnp
 from minatar import Environment
 
 from pgx.minatar import breakout
 
-from .utils import *
+from .minatar_utils import *
 
 state_keys = {
     "ball_y",
