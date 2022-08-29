@@ -147,35 +147,59 @@ def step(
     #         new_x = 9
     #     ball_dir = [1, 0, 3, 2][ball_dir]
 
-    def f_strike(_strike_toggle, _strike, _r, _brick_map, _new_y, _ball_dir):
+    def f_strike(
+        _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal
+    ):
         _strike_toggle = True
-        _strike, _r, _brick_map, _new_y, _ball_dir = jax.lax.cond(
+        (
+            _new_y,
+            _ball_dir,
+            _strike_toggle,
             _strike,
-            lambda _strike, _r, _brick_map, _new_y, _ball_dir: (
+            _r,
+            _brick_map,
+            _terminal,
+        ) = jax.lax.cond(
+            _strike,
+            lambda _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal: (
+                _new_y,
+                _ball_dir,
+                _strike_toggle,
                 _strike,
                 _r,
                 _brick_map,
-                _new_y,
-                _ball_dir,
+                _terminal,
             ),
-            lambda _strike, _r, _brick_map, _new_y, _ball_dir: (
-                True,
-                _r + 1,
-                _brick_map.at[_new_y, new_x].set(0),
+            lambda _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal: (
                 last_y,
                 jax.lax.switch(
                     _ball_dir,
                     [lambda _: 3, lambda _: 2, lambda _: 1, lambda _: 0],
                     _ball_dir,
                 ),
+                _strike_toggle,
+                True,
+                _r + 1,
+                _brick_map.at[_new_y, new_x].set(0),
+                _terminal,
             ),
+            _new_y,
+            _ball_dir,
+            _strike_toggle,
             _strike,
             _r,
             _brick_map,
+            _terminal,
+        )
+        return (
             _new_y,
             _ball_dir,
+            _strike_toggle,
+            _strike,
+            _r,
+            _brick_map,
+            _terminal,
         )
-        return _strike_toggle, _strike, _r, _brick_map, _new_y, _ball_dir
 
     def _g(_ball_dir, _new_y, _terminal):
         _ball_dir, _new_y, _terminal = jax.lax.cond(
@@ -205,7 +229,9 @@ def step(
         #     _terminal = True
         return _ball_dir, _new_y, _terminal
 
-    def f_new_y_eq_9(_new_y, _brick_map, _ball_dir, _terminal):
+    def f_new_y_eq(
+        _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal
+    ):
         _brick_map, _ball_dir, _new_y, _terminal = jax.lax.cond(
             jnp.count_nonzero(_brick_map) == 0,
             lambda _brick_map, _ball_dir, _new_y, _terminal: (
@@ -254,38 +280,154 @@ def step(
         #     _new_y = last_y
         # else:
         #     _terminal = True
-        return _new_y, _brick_map, _ball_dir, _terminal
+        return (
+            _new_y,
+            _ball_dir,
+            _strike_toggle,
+            _strike,
+            _r,
+            _brick_map,
+            _terminal,
+        )
+        # return _new_y, _brick_map, _ball_dir, _terminal
 
-    if new_y < 0:
-        new_y = 0
-        ball_dir = [3, 2, 1, 0][ball_dir]
-    elif brick_map[new_y, new_x] == 1:
-        strike_toggle, strike, r, brick_map, new_y, ball_dir = f_strike(
-            strike_toggle, strike, r, brick_map, new_y, ball_dir
+    def _h(
+        _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal
+    ):
+        (
+            _new_y,
+            _ball_dir,
+            _strike_toggle,
+            _strike,
+            _r,
+            _brick_map,
+            _terminal,
+        ) = jax.lax.cond(
+            _brick_map[_new_y, new_x] == 1,
+            f_strike,
+            lambda _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal: (
+                jax.lax.cond(
+                    _new_y == 9,
+                    f_new_y_eq,
+                    lambda _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal: (
+                        _new_y,
+                        _ball_dir,
+                        _strike_toggle,
+                        _strike,
+                        _r,
+                        _brick_map,
+                        _terminal,
+                    ),
+                    _new_y,
+                    _ball_dir,
+                    _strike_toggle,
+                    _strike,
+                    _r,
+                    _brick_map,
+                    _terminal,
+                )
+            ),
+            _new_y,
+            _ball_dir,
+            _strike_toggle,
+            _strike,
+            _r,
+            _brick_map,
+            _terminal,
         )
-        # strike_toggle = True
-        # if not strike:
-        #     r += 1
-        #     strike = True
-        #     brick_map = brick_map.at[new_y, new_x].set(0)
-        #     # brick_map[new_y, new_x] = 0
-        #     new_y = last_y
-        #     ball_dir = [3, 2, 1, 0][ball_dir]
-    elif new_y == 9:
-        new_y, brick_map, ball_dir, terminal = f_new_y_eq_9(
-            new_y, brick_map, ball_dir, terminal
+        # if _brick_map[_new_y, new_x] == 1:
+        #     (
+        #         _strike_toggle,
+        #         _strike,
+        #         _r,
+        #         _brick_map,
+        #         _new_y,
+        #         _ball_dir,
+        #     ) = f_strike(
+        #         _new_y,
+        #         _ball_dir,
+        #         _strike_toggle,
+        #         _strike,
+        #         _r,
+        #         _brick_map,
+        #         _terminal,
+        #     )
+        # elif _new_y == 9:
+        #     _new_y, _brick_map, _ball_dir, _terminal = f_new_y_eq_9(
+        #         _new_y, _brick_map, _ball_dir, _terminal
+        #     )
+        return (
+            _new_y,
+            _ball_dir,
+            _strike_toggle,
+            _strike,
+            _r,
+            _brick_map,
+            _terminal,
         )
-        # if jnp.count_nonzero(brick_map) == 0:
-        #     # brick_map[1:4, :] = 1
-        #     brick_map = brick_map.at[1:4, :] = 1
-        # if ball_x == pos:
-        #     ball_dir = [3, 2, 1, 0][ball_dir]
-        #     new_y = last_y
-        # elif new_x == pos:
-        #     ball_dir = [2, 3, 0, 1][ball_dir]
-        #     new_y = last_y
-        # else:
-        #     terminal = True
+
+    (
+        new_y,
+        ball_dir,
+        strike_toggle,
+        strike,
+        r,
+        brick_map,
+        terminal,
+    ) = jax.lax.cond(
+        new_y < 0,
+        lambda _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal: (
+            0,
+            jax.lax.switch(
+                _ball_dir,
+                [lambda _: 3, lambda _: 2, lambda _: 1, lambda _: 0],
+                _ball_dir,
+            ),
+            _strike_toggle,
+            _strike,
+            _r,
+            _brick_map,
+            _terminal,
+        ),
+        lambda _new_y, _ball_dir, _strike_toggle, _strike, _r, _brick_map, _terminal: _h(
+            _new_y,
+            _ball_dir,
+            _strike_toggle,
+            _strike,
+            _r,
+            _brick_map,
+            _terminal,
+        ),
+        new_y,
+        ball_dir,
+        strike_toggle,
+        strike,
+        r,
+        brick_map,
+        terminal,
+    )
+    # if new_y < 0:
+    #     new_y = 0
+    #     ball_dir = [3, 2, 1, 0][ball_dir]
+    # elif brick_map[new_y, new_x] == 1:
+    #     strike_toggle = True
+    #     if not strike:
+    #         r += 1
+    #         strike = True
+    #         brick_map[new_y, new_x] = 0
+    #         new_y = last_y
+    #         ball_dir = [3, 2, 1, 0][ball_dir]
+    # elif new_y == 9:
+    #     if jnp.count_nonzero(brick_map) == 0:
+    #         brick_map[1:4, :] = 1
+    #     if ball_x == pos:
+    #         ball_dir = [3, 2, 1, 0][ball_dir]
+    #         new_y = last_y
+    #     elif new_x == pos:
+    #         ball_dir = [2, 3, 0, 1][ball_dir]
+    #         new_y = last_y
+    #     else:
+    #         terminal = True
 
     if not strike_toggle:
         strike = False
