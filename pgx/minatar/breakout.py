@@ -478,10 +478,18 @@ def _step_det(
     return next_state, r, terminal
 
 
+@jax.jit
 def _reset_det(ball_start: int) -> MinAtarBreakoutState:
     ball_y = 3
     # ball_start = self.random.choice(2)
-    ball_x, ball_dir = [(0, 2), (9, 3)][ball_start]
+    ball_x, ball_dir = 0, 2
+    ball_x, ball_dir = jax.lax.switch(
+        ball_start,
+        [lambda x, y: (0, 2), lambda x, y: (9, 3)],
+        ball_x,
+        ball_dir,
+    )
+    # ball_x, ball_dir = [(0, 2), (9, 3)][ball_start]
     pos = 4
     brick_map = jnp.zeros((10, 10))
     brick_map = brick_map.at[1:4, :].set(1)
