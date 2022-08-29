@@ -177,6 +177,20 @@ def step(
         )
         return _strike_toggle, _strike, _r, _brick_map, _new_y, _ball_dir
 
+    def f_new_y_eq_9(_new_y, _brick_map, _ball_dir, _terminal):
+        if jnp.count_nonzero(_brick_map) == 0:
+            # brick_map[1:4, :] = 1
+            _brick_map = _brick_map.at[1:4, :] = 1
+        if ball_x == pos:
+            _ball_dir = [3, 2, 1, 0][ball_dir]
+            _new_y = last_y
+        elif new_x == pos:
+            _ball_dir = [2, 3, 0, 1][ball_dir]
+            _new_y = last_y
+        else:
+            _terminal = True
+        return _new_y, _brick_map, _ball_dir, _terminal
+
     if new_y < 0:
         new_y = 0
         ball_dir = [3, 2, 1, 0][ball_dir]
@@ -193,17 +207,20 @@ def step(
         #     new_y = last_y
         #     ball_dir = [3, 2, 1, 0][ball_dir]
     elif new_y == 9:
-        if jnp.count_nonzero(brick_map) == 0:
-            # brick_map[1:4, :] = 1
-            brick_map = brick_map.at[1:4, :] = 1
-        if ball_x == pos:
-            ball_dir = [3, 2, 1, 0][ball_dir]
-            new_y = last_y
-        elif new_x == pos:
-            ball_dir = [2, 3, 0, 1][ball_dir]
-            new_y = last_y
-        else:
-            terminal = True
+        new_y, brick_map, ball_dir, terminal = f_new_y_eq_9(
+            new_y, brick_map, ball_dir, terminal
+        )
+        # if jnp.count_nonzero(brick_map) == 0:
+        #     # brick_map[1:4, :] = 1
+        #     brick_map = brick_map.at[1:4, :] = 1
+        # if ball_x == pos:
+        #     ball_dir = [3, 2, 1, 0][ball_dir]
+        #     new_y = last_y
+        # elif new_x == pos:
+        #     ball_dir = [2, 3, 0, 1][ball_dir]
+        #     new_y = last_y
+        # else:
+        #     terminal = True
 
     if not strike_toggle:
         strike = False
