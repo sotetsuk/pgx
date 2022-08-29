@@ -63,7 +63,7 @@ def _step_det(
         last_y,
         terminal,
         last_action,
-    )
+    )  # type: ignore
 
     # Resolve player action
     d_pos = 0
@@ -460,7 +460,7 @@ def _step_det(
         last_y,
         terminal,
         last_action,
-    )
+    )  # type: ignore
 
     next_state, r, terminal = jax.lax.cond(
         state.terminal,
@@ -504,11 +504,11 @@ def _reset_det(ball_start: int) -> MinAtarBreakoutState:
         last_y,
         terminal,
         0,
-    )
+    )  # type: ignore
 
 
 @jax.jit
-def _to_obs(state: MinAtarBreakoutState) -> jnp.array:
+def _to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
     # channels = {
     #     "paddle": 0,
     #     "ball": 1,
