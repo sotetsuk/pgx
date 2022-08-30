@@ -57,12 +57,14 @@ def _step_det(
     last_action = action
 
     r = 0
-    # if terminal:
-    #     return state, r, terminal
+    if terminal:
+        return state, r, terminal
 
     # Spawn enemy if timer is up
     if spawn_timer == 0:
-        entities.at[:, :].set(_spawn_entity(entities, lr, is_gold, slot))
+        entities = entities.at[:, :].set(
+            _spawn_entity(entities, lr, is_gold, slot)
+        )
         spawn_timer = spawn_speed
 
     # Resolve player action
@@ -80,7 +82,7 @@ def _step_det(
         x = entities[i]
         if x[0] != INF:
             if x[0] == player_x and x[1] == player_y:
-                if entities[i][3]:
+                if entities[i, 3] == 1:
                     entities = entities.at[i, :].set(INF)
                     r += 1
                 else:
@@ -88,23 +90,22 @@ def _step_det(
     if move_timer == 0:
         move_timer = move_speed
         for i in range(len(entities)):
-            x = entities[i]
             if entities[i, 0] != INF:
                 entities = jax.lax.cond(
                     entities[i, 2] == 1,
-                    lambda _entities: _entities.at[i:0].set(
+                    lambda _entities: _entities.at[i, 0].set(
                         _entities[i, 0] + 1
                     ),
-                    lambda _entities: _entities.at[i:0].set(
+                    lambda _entities: _entities.at[i, 0].set(
                         _entities[i, 0] - 1
                     ),
                     entities,
                 )
                 # x[0]+=1 if x[2] else -1
-                if x[0] < 0 or x[0] > 9:
+                if entities[i, 0] < 0 or entities[i, 0] > 9:
                     entities = entities.at[i, :].set(INF)
-                if x[0] == player_x and x[1] == player_y:
-                    if entities[i][3]:
+                if entities[i, 0] == player_x and entities[i, 1] == player_y:
+                    if entities[i, 3] == 1:
                         entities = entities.at[i, :].set(INF)
                         r += 1
                     else:
@@ -151,7 +152,7 @@ def _spawn_entity(entities, lr, is_gold, slot):
     x = 0 if lr else 9
     slot_options = [i for i in range(len(entities)) if entities[i][0] == INF]
     if not slot_options:
-        return
+        return entities
     # slot = random.choice(slot_options)
     entities = entities.at[slot, 0].set(x)
     entities = entities.at[slot, 1].set(slot + 1)

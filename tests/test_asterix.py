@@ -22,11 +22,22 @@ state_keys = {
 }
 
 
+def test_spawn_entity():
+    entities = jnp.ones((8, 4), dtype=int) * 1e5
+    entities = entities.at[:, :].set(
+        asterix._spawn_entity(entities, True, True, 1)
+    )
+    assert entities[1][0] == 0, entities
+    assert entities[1][1] == 2, entities
+    assert entities[1][2] == 1, entities
+    assert entities[1][3] == 1, entities
+
+
 def test_step_det():
     env = Environment("asterix", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 1
+    N = 10
     for _ in range(N):
         env.reset()
         done = False

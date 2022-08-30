@@ -18,13 +18,13 @@ def assert_states(state1, state2):
     assert keys == state2.keys()
     for key in keys:
         if key == "entities":
-            assert len(state1) == len(state2)
-            for s1, s2 in zip(state1, state2):
-                assert s1 == s2
+            assert len(state1[key]) == len(state2[key])
+            for s1, s2 in zip(state1[key], state2[key]):
+                assert s1 == s2, f"{s1}, {s2}\n{state1}\n{state2}"
         else:
             assert np.allclose(
                 state1[key], state2[key]
-            ), f"{key}, {state1[key]}, {state2[key]}"
+            ), f"{key}, {state1[key]}, {state2[key]}\n{state1}\n{state2}"
 
 
 def pgx2minatar(state, keys) -> Dict[str, Any]:
