@@ -119,15 +119,34 @@ def _step_det(
     #     player_y = min(8, player_y + 1)
 
     # Update entities
-    for i in range(len(entities)):
-        x = entities[i]
-        if x[0] != 1e5:
-            if x[0] == player_x and x[1] == player_y:
-                if entities[i, 3] == 1:
-                    entities = entities.at[i, :].set(1e5)
-                    r += 1
-                else:
-                    terminal = True
+    for i in range(8):
+        entities, player_x, player_y, r, terminal = jax.lax.cond(
+            entities[i, 0] == 1e5,
+            lambda _entities, _player_x, _player_y, _r, _terminal: (
+                _entities,
+                _player_x,
+                _player_y,
+                _r,
+                _terminal,
+            ),
+            lambda _entities, _player_x, _player_y, _r, _terminal: _update_entities(
+                _entities, _player_x, _player_y, _r, _terminal, i
+            ),
+            entities,
+            player_x,
+            player_y,
+            r,
+            terminal,
+        )
+    # for i in range(len(entities)):
+    #     x = entities[i]
+    #     if x[0] != 1e5:
+    #         if x[0] == player_x and x[1] == player_y:
+    #             if entities[i, 3] == 1:
+    #                 entities = entities.at[i, :].set(1e5)
+    #                 r += 1
+    #             else:
+    #                 terminal = True
     if move_timer == 0:
         move_timer = move_speed
         for i in range(len(entities)):
@@ -229,3 +248,44 @@ def _spawn_entity(entities, lr, is_gold, slot):
     )
 
     return new_entities
+
+
+@jax.jit
+def _update_entities(entities, player_x, player_y, r, terminal, i):
+    entities, r, terminal = jax.lax.cond(
+        entities[i, 0] == player_x,
+        lambda _entities, _r, _terminal: jax.lax.cond(
+            entities[i, 1] == player_y,
+            lambda __entities, __r, __terminal: jax.lax.cond(
+                entities[i, 3] == 1,
+                lambda ___entities, ___r, ___terminal: (
+                    ___entities.at[i, :].set(1e5),
+                    ___r + 1,
+                    ___terminal,
+                ),
+                lambda ___entities, ___r, ___terminal: (
+                    ___entities,
+                    ___r,
+                    True,
+                ),
+                __entities,
+                __r,
+                __terminal,
+            ),
+            lambda __entities, __r, __terminal: (__entities, __r, __terminal),
+            _entities,
+            _r,
+            _terminal,
+        ),
+        lambda _entities, _r, _terminal: (_entities, _r, _terminal),
+        entities,
+        r,
+        terminal,
+    )
+    # if entities[i, 0] == player_x and entities[i, 1] == player_y:
+    #     if entities[i, 3] == 1:
+    #         entities = entities.at[i, :].set(1e5)
+    #         r += 1
+    #     else:
+    #         terminal = True
+    return entities, player_x, player_y, r, terminal
