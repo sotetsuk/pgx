@@ -2,26 +2,39 @@ import random
 
 from minatar import Environment
 
-from pgx.minatar import breakout
+from pgx.minatar import asterix
 
 from .minatar_utils import *
 
 state_keys = {
-    "ball_y",
-    "ball_x",
-    "ball_dir",
-    "pos",
-    "brick_map",
-    "strike",
-    "last_x",
-    "last_y",
+    "player_x",
+    "player_y",
+    "entities",
+    "shot_timer",
+    "spawn_speed",
+    "spawn_timer",
+    "move_speed",
+    "move_timer",
+    "ramp_timer",
+    "ramp_index",
     "terminal",
     "last_action",
 }
 
 
+def test_spawn_entity():
+    entities = jnp.ones((8, 4), dtype=int) * 1e5
+    entities = entities.at[:, :].set(
+        asterix._spawn_entity(entities, True, True, 1)
+    )
+    assert entities[1][0] == 0, entities
+    assert entities[1][1] == 2, entities
+    assert entities[1][2] == 1, entities
+    assert entities[1][3] == 1, entities
+
+
 def test_step_det():
-    env = Environment("breakout", sticky_action_prob=0.0)
+    env = Environment("asterix", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
     N = 100
@@ -32,9 +45,14 @@ def test_step_det():
             s = extract_state(env, state_keys)
             a = random.randrange(num_actions)
             r, done = env.act(a)
+            lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
             s_next = extract_state(env, state_keys)
-            s_next_pgx, _, _ = breakout._step_det(
-                minatar2pgx(s, breakout.MinAtarBreakoutState), a
+            s_next_pgx, _, _ = asterix._step_det(
+                minatar2pgx(s, asterix.MinAtarAsterixState),
+                a,
+                lr,
+                is_gold,
+                slot,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
@@ -42,36 +60,36 @@ def test_step_det():
         s = extract_state(env, state_keys)
         a = random.randrange(num_actions)
         r, done = env.act(a)
+        lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = breakout._step_det(
-            minatar2pgx(s, breakout.MinAtarBreakoutState), a
+        s_next_pgx, _, _ = asterix._step_det(
+            minatar2pgx(s, asterix.MinAtarAsterixState), a, lr, is_gold, slot
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
 
 def test_reset_det():
-    env = Environment("breakout", sticky_action_prob=0.0)
+    env = Environment("asterix", sticky_action_prob=0.0)
     N = 100
     for _ in range(N):
         env.reset()
-        ball_start = 0 if env.env.ball_x == 0 else 1
         s = extract_state(env, state_keys)
-        s_pgx = breakout._reset_det(ball_start)
+        s_pgx = asterix._reset_det()
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
 def test_to_obs():
-    env = Environment("breakout", sticky_action_prob=0.0)
+    env = Environment("asterix", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 100
+    N = 10
     for _ in range(N):
         env.reset()
         done = False
         while not done:
             s = extract_state(env, state_keys)
-            s_pgx = minatar2pgx(s, breakout.MinAtarBreakoutState)
-            obs_pgx = breakout._to_obs(s_pgx)
+            s_pgx = minatar2pgx(s, asterix.MinAtarAsterixState)
+            obs_pgx = asterix._to_obs(s_pgx)
             assert jnp.allclose(
                 env.state(),
                 obs_pgx,
@@ -81,8 +99,8 @@ def test_to_obs():
 
         # check terminal state
         s = extract_state(env, state_keys)
-        s_pgx = minatar2pgx(s, breakout.MinAtarBreakoutState)
-        obs_pgx = breakout._to_obs(s_pgx)
+        s_pgx = minatar2pgx(s, asterix.MinAtarAsterixState)
+        obs_pgx = asterix._to_obs(s_pgx)
         assert jnp.allclose(
             env.state(),
             obs_pgx,
