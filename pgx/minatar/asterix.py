@@ -6,6 +6,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
+from functools import partial
 from typing import Tuple
 
 import jax
@@ -16,14 +17,13 @@ ramp_interval = 100
 init_spawn_speed = 10
 init_move_interval = 5
 shot_cool_down = 5
-INF = 100_000
 
 
 @struct.dataclass
 class MinAtarAsterixState:
     player_x: int = 5
     player_y: int = 5
-    entities: jnp.ndarray = jnp.ones((8, 4), dtype=int) * INF
+    entities: jnp.ndarray = jnp.ones((8, 4), dtype=int) * 1e5
     shot_timer: int = 0
     spawn_speed: int = init_spawn_speed
     spawn_timer: int = init_spawn_speed
@@ -80,17 +80,17 @@ def _step_det(
     # Update entities
     for i in range(len(entities)):
         x = entities[i]
-        if x[0] != INF:
+        if x[0] != 1e5:
             if x[0] == player_x and x[1] == player_y:
                 if entities[i, 3] == 1:
-                    entities = entities.at[i, :].set(INF)
+                    entities = entities.at[i, :].set(1e5)
                     r += 1
                 else:
                     terminal = True
     if move_timer == 0:
         move_timer = move_speed
         for i in range(len(entities)):
-            if entities[i, 0] != INF:
+            if entities[i, 0] != 1e5:
                 entities = jax.lax.cond(
                     entities[i, 2] == 1,
                     lambda _entities: _entities.at[i, 0].set(
@@ -103,10 +103,10 @@ def _step_det(
                 )
                 # x[0]+=1 if x[2] else -1
                 if entities[i, 0] < 0 or entities[i, 0] > 9:
-                    entities = entities.at[i, :].set(INF)
+                    entities = entities.at[i, :].set(1e5)
                 if entities[i, 0] == player_x and entities[i, 1] == player_y:
                     if entities[i, 3] == 1:
-                        entities = entities.at[i, :].set(INF)
+                        entities = entities.at[i, :].set(1e5)
                         r += 1
                     else:
                         terminal = True
@@ -146,16 +146,36 @@ def _step_det(
 
 
 # Spawn a new enemy or treasure at a random location with random direction (if all rows are filled do nothing)
+@jax.jit
 def _spawn_entity(entities, lr, is_gold, slot):
     # lr = random.choice([True, False])
     # is_gold = random.choice([True, False], p=[1 / 3, 2 / 3])
-    x = 0 if lr else 9
-    slot_options = [i for i in range(len(entities)) if entities[i][0] == INF]
-    if not slot_options:
-        return entities
+    x = 0
+    x = jax.lax.cond(lr == 1, lambda _: 0, lambda _: 9, x)
+    # x = 0 if lr else 9
+    # slot_options = [i for i in range(len(entities)) if entities[i][0] == 1e5]
+    # if not slot_options:
+    #     return entities
     # slot = random.choice(slot_options)
-    entities = entities.at[slot, 0].set(x)
-    entities = entities.at[slot, 1].set(slot + 1)
-    entities = entities.at[slot, 2].set(lr)
-    entities = entities.at[slot, 3].set(is_gold)
-    return entities
+    new_entities = entities
+    new_entities = new_entities.at[slot, 0].set(x)
+    new_entities = new_entities.at[slot, 1].set(slot + 1)
+    new_entities = new_entities.at[slot, 2].set(lr)
+    new_entities = new_entities.at[slot, 3].set(is_gold)
+
+    has_empty_slot = False
+    for i in range(8):
+        has_empty_slot = jax.lax.cond(
+            entities[i][0] == 1e5,
+            lambda z: True,
+            lambda z: z,
+            has_empty_slot,
+        )
+    new_entities = jax.lax.cond(
+        has_empty_slot,
+        lambda _: new_entities,
+        lambda _: entities,
+        new_entities,
+    )
+
+    return new_entities
