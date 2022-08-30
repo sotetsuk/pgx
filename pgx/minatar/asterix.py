@@ -283,6 +283,7 @@ def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
     return entities, r, terminal
 
 
+# @jax.jit
 def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     entities = jax.lax.cond(
         entities[i, 2] == 1,
@@ -291,8 +292,20 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
         entities,
     )
     # x[0]+=1 if x[2] else -1
-    if entities[i, 0] < 0 or entities[i, 0] > 9:
-        entities = entities.at[i, :].set(1e5)
+    entities = jax.lax.cond(
+        entities[i, 0] < 0,
+        lambda _entities: entities.at[i, :].set(1e5),
+        lambda _entities: _entities,
+        entities,
+    )
+    entities = jax.lax.cond(
+        entities[i, 0] > 9,
+        lambda _entities: entities.at[i, :].set(1e5),
+        lambda _entities: _entities,
+        entities,
+    )
+    # if entities[i, 0] < 0 or entities[i, 0] > 9:
+    #     entities = entities.at[i, :].set(1e5)
     if entities[i, 0] == player_x and entities[i, 1] == player_y:
         if entities[i, 3] == 1:
             entities = entities.at[i, :].set(1e5)
