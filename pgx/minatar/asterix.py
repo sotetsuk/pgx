@@ -175,16 +175,10 @@ def _step_det(
     move_timer -= 1
 
     # Ramp difficulty if interval has elapsed
-    if ramping and (spawn_speed > 1 or move_speed > 1):
-        if ramp_timer >= 0:
-            ramp_timer -= 1
-        else:
-            if move_speed > 1 and ramp_index % 2:
-                move_speed -= 1
-            if spawn_speed > 1:
-                spawn_speed -= 1
-            ramp_index += 1
-            ramp_timer = ramp_interval
+    if ramping:
+        spawn_speed, move_speed, ramp_timer, ramp_index = _update_ramp(
+            spawn_speed, move_speed, ramp_timer, ramp_index
+        )
 
     next_state = MinAtarAsterixState(
         player_x,
@@ -368,3 +362,18 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     #     else:
     #         terminal = True
     return entities, r, terminal
+
+
+def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
+    if spawn_speed > 1 or move_speed > 1:
+        if ramp_timer >= 0:
+            ramp_timer -= 1
+        else:
+            if move_speed > 1 and ramp_index % 2:
+                move_speed -= 1
+            if spawn_speed > 1:
+                spawn_speed -= 1
+            ramp_index += 1
+            ramp_timer = ramp_interval
+
+    return spawn_speed, move_speed, ramp_timer, ramp_index
