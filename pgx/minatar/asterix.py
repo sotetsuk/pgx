@@ -76,11 +76,19 @@ def _step_det(
     #     return state, r, terminal
 
     # Spawn enemy if timer is up
-    if spawn_timer == 0:
-        entities = entities.at[:, :].set(
-            _spawn_entity(entities, lr, is_gold, slot)
-        )
-        spawn_timer = spawn_speed
+    entities, spawn_timer = jax.lax.cond(
+        spawn_timer == 0,
+        lambda _entities, _spawn_timer: (
+            entities.at[:, :].set(_spawn_entity(entities, lr, is_gold, slot)),
+            spawn_speed,
+        ),
+        lambda _entities, _spawn_timer: (_entities, _spawn_timer),
+        entities,
+        spawn_timer,
+    )
+    # if spawn_timer == 0:
+    #     entities = _spawn_entity()
+    #     spawn_timer = spawn_speed
 
     # Resolve player action
     if action == 1:
