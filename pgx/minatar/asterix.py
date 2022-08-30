@@ -16,13 +16,14 @@ ramp_interval = 100
 init_spawn_speed = 10
 init_move_interval = 5
 shot_cool_down = 5
+INF = int(1e5)
 
 
 @struct.dataclass
 class MinAtarAsterixState:
     player_x: int = 5
     player_y: int = 5
-    entities: jnp.ndarray = jnp.ones((8, 4), dtype=int) * 1e5
+    entities: jnp.ndarray = jnp.ones((8, 4), dtype=int) * INF
     shot_timer: int = 0
     spawn_speed: int = init_spawn_speed
     spawn_timer: int = init_spawn_speed
@@ -120,7 +121,7 @@ def _step_det(
     # Update entities
     for i in range(8):
         entities, player_x, player_y, r, terminal = jax.lax.cond(
-            entities[i, 0] == 1e5,
+            entities[i, 0] == INF,
             lambda _entities, _player_x, _player_y, _r, _terminal: (
                 _entities,
                 _player_x,
@@ -139,10 +140,10 @@ def _step_det(
         )
     # for i in range(len(entities)):
     #     x = entities[i]
-    #     if x[0] != 1e5:
+    #     if x[0] != INF:
     #         if x[0] == player_x and x[1] == player_y:
     #             if entities[i, 3] == 1:
-    #                 entities = entities.at[i, :].set(1e5)
+    #                 entities = entities.at[i, :].set(INF)
     #                 r += 1
     #             else:
     #                 terminal = True
@@ -223,7 +224,7 @@ def _spawn_entity(entities, lr, is_gold, slot):
     x = 0
     x = jax.lax.cond(lr == 1, lambda _: 0, lambda _: 9, x)
     # x = 0 if lr else 9
-    # slot_options = [i for i in range(len(entities)) if entities[i][0] == 1e5]
+    # slot_options = [i for i in range(len(entities)) if entities[i][0] == INF]
     # if not slot_options:
     #     return entities
     # slot = random.choice(slot_options)
@@ -236,7 +237,7 @@ def _spawn_entity(entities, lr, is_gold, slot):
     has_empty_slot = False
     for i in range(8):
         has_empty_slot = jax.lax.cond(
-            entities[i][0] == 1e5,
+            entities[i][0] == INF,
             lambda z: True,
             lambda z: z,
             has_empty_slot,
@@ -260,7 +261,7 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
             lambda __entities, __r, __terminal: jax.lax.cond(
                 entities[i, 3] == 1,
                 lambda ___entities, ___r, ___terminal: (
-                    ___entities.at[i, :].set(1e5),
+                    ___entities.at[i, :].set(INF),
                     ___r + 1,
                     ___terminal,
                 ),
@@ -285,7 +286,7 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
     )
     # if entities[i, 0] == player_x and entities[i, 1] == player_y:
     #     if entities[i, 3] == 1:
-    #         entities = entities.at[i, :].set(1e5)
+    #         entities = entities.at[i, :].set(INF)
     #         r += 1
     #     else:
     #         terminal = True
@@ -296,14 +297,14 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
 def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
     for i in range(8):
         entities, r, terminal = jax.lax.cond(
-            entities[i, 0] != 1e5,
+            entities[i, 0] != INF,
             __update_entities_by_timer,
             lambda _entities, _r, _terminal: (_entities, _r, _terminal),
             entities,
             r,
             terminal,
         )
-        # if entities[i, 0] != 1e5:
+        # if entities[i, 0] != INF:
         #     entities, r, terminal = __update_entities_by_timer(
         #         entities, r, terminal, player_x, player_y, i
         #     )
@@ -321,18 +322,18 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     # x[0]+=1 if x[2] else -1
     entities = jax.lax.cond(
         entities[i, 0] < 0,
-        lambda _entities: entities.at[i, :].set(1e5),
+        lambda _entities: entities.at[i, :].set(INF),
         lambda _entities: _entities,
         entities,
     )
     entities = jax.lax.cond(
         entities[i, 0] > 9,
-        lambda _entities: entities.at[i, :].set(1e5),
+        lambda _entities: entities.at[i, :].set(INF),
         lambda _entities: _entities,
         entities,
     )
     # if entities[i, 0] < 0 or entities[i, 0] > 9:
-    #     entities = entities.at[i, :].set(1e5)
+    #     entities = entities.at[i, :].set(INF)
     entities, r, terminal = jax.lax.cond(
         entities[i, 0] == player_x,
         lambda _entities, _r, _terminal: jax.lax.cond(
@@ -340,7 +341,7 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
             lambda __entities, __r, __terminal: jax.lax.cond(
                 entities[i, 3] == 1,
                 lambda ___entities, ___r, ___terminal: (
-                    entities.at[i, :].set(1e5),
+                    entities.at[i, :].set(INF),
                     ___r + 1,
                     ___terminal,
                 ),
@@ -365,7 +366,7 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     )
     # if entities[i, 0] == player_x and entities[i, 1] == player_y:
     #     if entities[i, 3] == 1:
-    #         entities = entities.at[i, :].set(1e5)
+    #         entities = entities.at[i, :].set(INF)
     #         r += 1
     #     else:
     #         terminal = True
@@ -474,7 +475,7 @@ def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
     obs = obs.at[state.player_y, state.player_x, 0].set(True)
     # state[self.player_y, self.player_x, self.channels["player"]] = 1
     for i in range(8):
-        if state.entities[i, 0] != 1e5:
+        if state.entities[i, 0] != INF:
             if state.entities[i, 3]:
                 c = 3
             else:

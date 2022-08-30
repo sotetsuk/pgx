@@ -58,7 +58,7 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
             else:
                 val = jnp.array(val, dtype=int)
         if key == "entities":
-            _val = jnp.ones((8, 4), dtype=int) * 1e5
+            _val = jnp.ones((8, 4), dtype=int) * int(1e5)
             for i, x in enumerate(val):
                 if x is None:
                     continue

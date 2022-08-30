@@ -94,7 +94,6 @@ def test_to_obs():
             )
             a = random.randrange(num_actions)
             r, done = env.act(a)
-            break
 
         # check terminal state
         s = extract_state(env, state_keys)
