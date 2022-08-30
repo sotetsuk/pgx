@@ -364,18 +364,68 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     return entities, r, terminal
 
 
+@jax.jit
 def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
-    if spawn_speed > 1 or move_speed > 1:
-        if ramp_timer >= 0:
-            ramp_timer -= 1
-        else:
-            spawn_speed, move_speed, ramp_timer, ramp_index = __update_ramp(
-                spawn_speed, move_speed, ramp_timer, ramp_index
-            )
+    spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
+        spawn_speed > 1,
+        lambda _spawn_speed, _move_speed, _ramp_timer, _ramp_index: jax.lax.cond(
+            _ramp_timer >= 0,
+            lambda __spawn_speed, __move_speed, __ramp_timer, __ramp_index: (
+                __spawn_speed,
+                __move_speed,
+                __ramp_timer - 1,
+                __ramp_index,
+            ),
+            __update_ramp,
+            _spawn_speed,
+            _move_speed,
+            _ramp_timer,
+            _ramp_index,
+        ),
+        lambda _spawn_speed, _move_speed, _ramp_timer, _ramp_index: jax.lax.cond(
+            move_speed > 1,
+            lambda __spawn_speed, __move_speed, __ramp_timer, __ramp_index: jax.lax.cond(
+                __ramp_timer >= 0,
+                lambda ___spawn_speed, ___move_speed, ___ramp_timer, ___ramp_index: (
+                    ___spawn_speed,
+                    ___move_speed,
+                    ___ramp_timer - 1,
+                    ___ramp_index,
+                ),
+                __update_ramp,
+                __spawn_speed,
+                __move_speed,
+                __ramp_timer,
+                __ramp_index,
+            ),
+            lambda __spawn_speed, __move_speed, __ramp_timer, __ramp_index: (
+                __spawn_speed,
+                __move_speed,
+                __ramp_timer,
+                __ramp_index,
+            ),
+            _spawn_speed,
+            _move_speed,
+            _ramp_timer,
+            _ramp_index,
+        ),
+        spawn_speed,
+        move_speed,
+        ramp_timer,
+        ramp_index,
+    )
+    # if spawn_speed > 1 or move_speed > 1:
+    #     if ramp_timer >= 0:
+    #         ramp_timer -= 1
+    #     else:
+    #         spawn_speed, move_speed, ramp_timer, ramp_index = __update_ramp(
+    #             spawn_speed, move_speed, ramp_timer, ramp_index
+    #         )
 
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
+@jax.jit
 def __update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
     move_speed = jax.lax.cond(
         move_speed > 1,
