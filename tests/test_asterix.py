@@ -76,3 +76,29 @@ def test_reset_det():
         s = extract_state(env, state_keys)
         s_pgx = asterix._reset_det()
         assert_states(s, pgx2minatar(s_pgx, state_keys))
+
+
+def test_to_obs():
+    env = Environment("asterix", sticky_action_prob=0.0)
+    num_actions = env.num_actions()
+
+    N = 100
+    for _ in range(N):
+        env.reset()
+        done = False
+        while not done:
+            s = extract_state(env, state_keys)
+            assert jnp.allclose(
+                env.state(),
+                asterix._to_obs(minatar2pgx(s, asterix.MinAtarAsterixState)),
+            )
+            a = random.randrange(num_actions)
+            r, done = env.act(a)
+            break
+
+        # check terminal state
+        s = extract_state(env, state_keys)
+        assert jnp.allclose(
+            env.state(),
+            asterix._to_obs(minatar2pgx(s, asterix.MinAtarAsterixState)),
+        )

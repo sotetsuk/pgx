@@ -464,5 +464,37 @@ def __update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
-def _reset_det():
+@jax.jit
+def _reset_det() -> MinAtarAsterixState:
     return MinAtarAsterixState()
+
+
+def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
+    obs = jnp.zeros((10, 10, 4), dtype=bool)
+    obs = obs.at[state.player_y, state.player_x, 0].set(True)
+    # state[self.player_y, self.player_x, self.channels["player"]] = 1
+    for i in range(8):
+        if state.entities[i, 0] != 1e5:
+            if state.entities[i, 3]:
+                c = 3
+            else:
+                c = 1
+            obs = obs.at[state.entities[i, 1], state.entities[i, 0], c].set(
+                True
+            )
+            if state.entities[i, 2]:
+                back_x = state.entities[i, 0] - 1
+            else:
+                back_x = state.entities[i, 0] + 1
+
+            if back_x >= 0 and back_x <= 9:
+                obs = obs.at[state.entities[i, 1], back_x, 2].set(True)
+
+    # for x in self.entities:
+    #     if x is not None:
+    #         c = self.channels["gold"] if x[3] else self.channels["enemy"]
+    #         state[x[1], x[0], c] = 1
+    #         back_x = x[0] - 1 if x[2] else x[0] + 1
+    #         if back_x >= 0 and back_x <= 9:
+    #             state[x[1], back_x, self.channels["trail"]] = 1
+    return obs
