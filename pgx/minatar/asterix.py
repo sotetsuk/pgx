@@ -35,7 +35,7 @@ class MinAtarAsterixState:
     last_action: int = 0
 
 
-# @jax.jit
+@jax.jit
 def _step_det(
     state: MinAtarAsterixState,
     action: int,
