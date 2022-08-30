@@ -56,9 +56,24 @@ def _step_det(
     terminal = state.terminal
     last_action = action
 
+    terminal_state = MinAtarAsterixState(
+        player_x,
+        player_y,
+        entities,
+        shot_timer,
+        spawn_speed,
+        spawn_timer,
+        move_speed,
+        move_timer,
+        ramp_timer,
+        ramp_index,
+        terminal,
+        last_action,
+    )
+
     r = 0
-    if terminal:
-        return state, r, terminal
+    # if terminal:
+    #     return state, r, terminal
 
     # Spawn enemy if timer is up
     if spawn_timer == 0:
@@ -140,6 +155,15 @@ def _step_det(
         ramp_index,
         terminal,
         last_action,
+    )
+
+    next_state, r, terminal = jax.lax.cond(
+        state.terminal,
+        lambda _next_state, _r, _terminal: (terminal_state, 0, True),
+        lambda _next_state, _r, _terminal: (next_state, r, terminal),
+        next_state,
+        r,
+        terminal,
     )
 
     return next_state, r, terminal
