@@ -147,11 +147,28 @@ def _step_det(
     #                 r += 1
     #             else:
     #                 terminal = True
-    if move_timer == 0:
-        move_timer = move_speed
-        entities, r, terminal = _update_entities_by_timer(
-            entities, r, terminal, player_x, player_y
-        )
+    move_timer, entities, r, terminal = jax.lax.cond(
+        move_timer == 0,
+        lambda _move_timer, _entities, _r, _terminal: (
+            move_speed,
+            *_update_entities_by_timer(_entities, _r, _terminal),
+        ),
+        lambda _move_timer, _entities, _r, _terminal: (
+            _move_timer,
+            _entities,
+            _r,
+            _terminal,
+        ),
+        move_timer,
+        entities,
+        r,
+        terminal,
+    )
+    # if move_timer == 0:
+    #     move_timer = move_speed
+    #     entities, r, terminal = _update_entities_by_timer(
+    #         entities, r, terminal, player_x, player_y
+    #     )
 
     # Update various timers
     spawn_timer -= 1
