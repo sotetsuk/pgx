@@ -175,10 +175,19 @@ def _step_det(
     move_timer -= 1
 
     # Ramp difficulty if interval has elapsed
-    if ramping:
-        spawn_speed, move_speed, ramp_timer, ramp_index = _update_ramp(
-            spawn_speed, move_speed, ramp_timer, ramp_index
-        )
+    spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
+        ramping,
+        _update_ramp,
+        lambda _x: _x,
+        spawn_speed,
+        move_speed,
+        ramp_timer,
+        ramp_index,
+    )
+    # if ramping:
+    #     spawn_speed, move_speed, ramp_timer, ramp_index = _update_ramp(
+    #         spawn_speed, move_speed, ramp_timer, ramp_index
+    #     )
 
     next_state = MinAtarAsterixState(
         player_x,
