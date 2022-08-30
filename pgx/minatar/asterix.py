@@ -273,13 +273,21 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
     return entities, player_x, player_y, r, terminal
 
 
+@jax.jit
 def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
-    for i in range(len(entities)):
-        if entities[i, 0] != 1e5:
-            entities, r, terminal = __update_entities_by_timer(
-                entities, r, terminal, player_x, player_y, i
-            )
-
+    for i in range(8):
+        entities, r, terminal = jax.lax.cond(
+            entities[i, 0] != 1e5,
+            __update_entities_by_timer,
+            lambda _entities, _r, _terminal: (_entities, _r, _terminal),
+            entities,
+            r,
+            terminal,
+        )
+        # if entities[i, 0] != 1e5:
+        #     entities, r, terminal = __update_entities_by_timer(
+        #         entities, r, terminal, player_x, player_y, i
+        #     )
     return entities, r, terminal
 
 
