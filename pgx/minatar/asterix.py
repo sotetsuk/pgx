@@ -369,11 +369,19 @@ def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
         if ramp_timer >= 0:
             ramp_timer -= 1
         else:
-            if move_speed > 1 and ramp_index % 2:
-                move_speed -= 1
-            if spawn_speed > 1:
-                spawn_speed -= 1
-            ramp_index += 1
-            ramp_timer = ramp_interval
+            spawn_speed, move_speed, ramp_timer, ramp_index = __update_ramp(
+                spawn_speed, move_speed, ramp_timer, ramp_index
+            )
+
+    return spawn_speed, move_speed, ramp_timer, ramp_index
+
+
+def __update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
+    if move_speed > 1 and ramp_index % 2:
+        move_speed -= 1
+    if spawn_speed > 1:
+        spawn_speed -= 1
+    ramp_index += 1
+    ramp_timer = ramp_interval
 
     return spawn_speed, move_speed, ramp_timer, ramp_index
