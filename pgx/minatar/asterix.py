@@ -16,7 +16,7 @@ ramp_interval = 100
 init_spawn_speed = 10
 init_move_interval = 5
 shot_cool_down = 5
-INF = 1e5
+INF = 100_000
 
 
 @struct.dataclass
@@ -55,13 +55,14 @@ def _step_det(
     ramp_index = state.ramp_index
     terminal = state.terminal
     last_action = action
+
     r = 0
-    if terminal:
-        return state, r, terminal
+    # if terminal:
+    #     return state, r, terminal
 
     # Spawn enemy if timer is up
     if spawn_timer == 0:
-        entities = _spawn_entity(entities, lr, is_gold, slot)
+        entities.at[:, :].set(_spawn_entity(entities, lr, is_gold, slot))
         spawn_timer = spawn_speed
 
     # Resolve player action
@@ -78,9 +79,9 @@ def _step_det(
     for i in range(len(entities)):
         x = entities[i]
         if x[0] != INF:
-            if x[0:2] == [player_x, player_y]:
+            if x[0] == player_x and x[1] == player_y:
                 if entities[i][3]:
-                    entities[i, :].set(INF)
+                    entities = entities.at[i, :].set(INF)
                     r += 1
                 else:
                     terminal = True
@@ -88,13 +89,23 @@ def _step_det(
         move_timer = move_speed
         for i in range(len(entities)):
             x = entities[i]
-            if x[0] != INF:
-                x[0] += 1 if x[2] else -1
+            if entities[i, 0] != INF:
+                entities = jax.lax.cond(
+                    entities[i, 2] == 1,
+                    lambda _entities: _entities.at[i:0].set(
+                        _entities[i, 0] + 1
+                    ),
+                    lambda _entities: _entities.at[i:0].set(
+                        _entities[i, 0] - 1
+                    ),
+                    entities,
+                )
+                # x[0]+=1 if x[2] else -1
                 if x[0] < 0 or x[0] > 9:
-                    entities[i, :].set(INF)
-                if x[0:2] == [player_x, player_y]:
+                    entities = entities.at[i, :].set(INF)
+                if x[0] == player_x and x[1] == player_y:
                     if entities[i][3]:
-                        entities[i, :].set(INF)
+                        entities = entities.at[i, :].set(INF)
                         r += 1
                     else:
                         terminal = True
@@ -142,8 +153,8 @@ def _spawn_entity(entities, lr, is_gold, slot):
     if not slot_options:
         return
     # slot = random.choice(slot_options)
-    entities[slot][0] = x
-    entities[slot][1] = slot + 1
-    entities[slot][2] = lr
-    entities[slot][3] = is_gold
+    entities = entities.at[slot, 0].set(x)
+    entities = entities.at[slot, 1].set(slot + 1)
+    entities = entities.at[slot, 2].set(lr)
+    entities = entities.at[slot, 3].set(is_gold)
     return entities
