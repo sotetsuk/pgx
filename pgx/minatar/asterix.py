@@ -6,7 +6,6 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from functools import partial
 from typing import Tuple
 
 import jax
@@ -39,8 +38,8 @@ class MinAtarAsterixState:
 def _step_det(
     state: MinAtarAsterixState,
     action: int,
-    lr: False,
-    is_gold: False,
+    lr: bool,
+    is_gold: bool,
     slot: int,
     ramping: bool = True,
 ) -> Tuple[MinAtarAsterixState, int, bool]:
@@ -70,7 +69,7 @@ def _step_det(
         ramp_index,
         terminal,
         last_action,
-    )
+    )  # type: ignore
 
     r = 0
     # if terminal:
@@ -202,7 +201,7 @@ def _step_det(
         ramp_index,
         terminal,
         last_action,
-    )
+    )  # type: ignore
 
     next_state, r, terminal = jax.lax.cond(
         state.terminal,
