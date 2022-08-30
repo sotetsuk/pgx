@@ -391,8 +391,14 @@ def __update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
     # if move_speed > 1 and ramp_index % 2:
     #     move_speed -= 1
 
-    if spawn_speed > 1:
-        spawn_speed -= 1
+    jax.lax.cond(
+        spawn_speed > 1,
+        lambda _spawn_speed: spawn_speed - 1,
+        lambda _spawn_speed: spawn_speed,
+        spawn_speed,
+    )
+    # if spawn_speed > 1:
+    #     spawn_speed -= 1
 
     ramp_index += 1
     ramp_timer = ramp_interval
