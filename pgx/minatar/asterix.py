@@ -151,7 +151,9 @@ def _step_det(
         move_timer == 0,
         lambda _move_timer, _entities, _r, _terminal: (
             move_speed,
-            *_update_entities_by_timer(_entities, _r, _terminal),
+            *_update_entities_by_timer(
+                _entities, _r, _terminal, player_x, player_y
+            ),
         ),
         lambda _move_timer, _entities, _r, _terminal: (
             _move_timer,
@@ -178,7 +180,12 @@ def _step_det(
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
         ramping,
         _update_ramp,
-        lambda _x: _x,
+        lambda _spawn_speed, _move_speed, _ramp_timer, _ramp_index: (
+            _spawn_speed,
+            _move_speed,
+            _ramp_timer,
+            _ramp_index,
+        ),
         spawn_speed,
         move_speed,
         ramp_timer,
@@ -299,10 +306,17 @@ def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
         entities, r, terminal = jax.lax.cond(
             entities[i, 0] != INF,
             __update_entities_by_timer,
-            lambda _entities, _r, _terminal: (_entities, _r, _terminal),
+            lambda _entities, _r, _terminal, _player_x, _player_y, _i: (
+                _entities,
+                _r,
+                _terminal,
+            ),
             entities,
             r,
             terminal,
+            player_x,
+            player_y,
+            i,
         )
         # if entities[i, 0] != INF:
         #     entities, r, terminal = __update_entities_by_timer(
@@ -450,7 +464,7 @@ def __update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
     # if move_speed > 1 and ramp_index % 2:
     #     move_speed -= 1
 
-    jax.lax.cond(
+    spawn_speed = jax.lax.cond(
         spawn_speed > 1,
         lambda _spawn_speed: spawn_speed - 1,
         lambda _spawn_speed: spawn_speed,
