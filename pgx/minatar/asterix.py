@@ -306,10 +306,40 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     )
     # if entities[i, 0] < 0 or entities[i, 0] > 9:
     #     entities = entities.at[i, :].set(1e5)
-    if entities[i, 0] == player_x and entities[i, 1] == player_y:
-        if entities[i, 3] == 1:
-            entities = entities.at[i, :].set(1e5)
-            r += 1
-        else:
-            terminal = True
+    entities, r, terminal = jax.lax.cond(
+        entities[i, 0] == player_x,
+        lambda _entities, _r, _terminal: jax.lax.cond(
+            entities[i, 1] == player_y,
+            lambda __entities, __r, __terminal: jax.lax.cond(
+                entities[i, 3] == 1,
+                lambda ___entities, ___r, ___terminal: (
+                    entities.at[i, :].set(1e5),
+                    ___r + 1,
+                    ___terminal,
+                ),
+                lambda ___entities, ___r, ___terminal: (
+                    ___entities,
+                    ___r,
+                    True,
+                ),
+                __entities,
+                __r,
+                __terminal,
+            ),
+            lambda __entities, __r, __terminal: (__entities, __r, __terminal),
+            _entities,
+            _r,
+            _terminal,
+        ),
+        lambda _entities, _r, _terminal: (_entities, _r, _terminal),
+        entities,
+        r,
+        terminal,
+    )
+    # if entities[i, 0] == player_x and entities[i, 1] == player_y:
+    #     if entities[i, 3] == 1:
+    #         entities = entities.at[i, :].set(1e5)
+    #         r += 1
+    #     else:
+    #         terminal = True
     return entities, r, terminal
