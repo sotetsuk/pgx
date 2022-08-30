@@ -149,27 +149,9 @@ def _step_det(
     #                 terminal = True
     if move_timer == 0:
         move_timer = move_speed
-        for i in range(len(entities)):
-            if entities[i, 0] != 1e5:
-                entities = jax.lax.cond(
-                    entities[i, 2] == 1,
-                    lambda _entities: _entities.at[i, 0].set(
-                        _entities[i, 0] + 1
-                    ),
-                    lambda _entities: _entities.at[i, 0].set(
-                        _entities[i, 0] - 1
-                    ),
-                    entities,
-                )
-                # x[0]+=1 if x[2] else -1
-                if entities[i, 0] < 0 or entities[i, 0] > 9:
-                    entities = entities.at[i, :].set(1e5)
-                if entities[i, 0] == player_x and entities[i, 1] == player_y:
-                    if entities[i, 3] == 1:
-                        entities = entities.at[i, :].set(1e5)
-                        r += 1
-                    else:
-                        terminal = True
+        entities, r, terminal = _update_entities_by_timer(
+            entities, r, terminal, player_x, player_y
+        )
 
     # Update various timers
     spawn_timer -= 1
@@ -289,3 +271,25 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
     #     else:
     #         terminal = True
     return entities, player_x, player_y, r, terminal
+
+
+def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
+    for i in range(len(entities)):
+        if entities[i, 0] != 1e5:
+            entities = jax.lax.cond(
+                entities[i, 2] == 1,
+                lambda _entities: _entities.at[i, 0].set(_entities[i, 0] + 1),
+                lambda _entities: _entities.at[i, 0].set(_entities[i, 0] - 1),
+                entities,
+            )
+            # x[0]+=1 if x[2] else -1
+            if entities[i, 0] < 0 or entities[i, 0] > 9:
+                entities = entities.at[i, :].set(1e5)
+            if entities[i, 0] == player_x and entities[i, 1] == player_y:
+                if entities[i, 3] == 1:
+                    entities = entities.at[i, :].set(1e5)
+                    r += 1
+                else:
+                    terminal = True
+
+    return entities, r, terminal
