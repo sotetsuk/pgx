@@ -66,3 +66,13 @@ def test_step_det():
             minatar2pgx(s, asterix.MinAtarAsterixState), a, lr, is_gold, slot
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+
+
+def test_reset_det():
+    env = Environment("asterix", sticky_action_prob=0.0)
+    N = 100
+    for _ in range(N):
+        env.reset()
+        s = extract_state(env, state_keys)
+        s_pgx = asterix._reset_det()
+        assert_states(s, pgx2minatar(s_pgx, state_keys))

@@ -462,3 +462,7 @@ def __update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
     ramp_timer = ramp_interval
 
     return spawn_speed, move_speed, ramp_timer, ramp_index
+
+
+def _reset_det():
+    return MinAtarAsterixState()
