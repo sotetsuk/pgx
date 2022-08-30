@@ -82,22 +82,26 @@ def test_to_obs():
     env = Environment("asterix", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 100
+    N = 10
     for _ in range(N):
         env.reset()
         done = False
         while not done:
             s = extract_state(env, state_keys)
+            obs_pgx = asterix._to_obs(
+                minatar2pgx(s, asterix.MinAtarAsterixState)
+            )
             assert jnp.allclose(
                 env.state(),
-                asterix._to_obs(minatar2pgx(s, asterix.MinAtarAsterixState)),
+                obs_pgx,
             )
             a = random.randrange(num_actions)
             r, done = env.act(a)
 
         # check terminal state
         s = extract_state(env, state_keys)
+        obs_pgx = asterix._to_obs(minatar2pgx(s, asterix.MinAtarAsterixState))
         assert jnp.allclose(
             env.state(),
-            asterix._to_obs(minatar2pgx(s, asterix.MinAtarAsterixState)),
+            obs_pgx,
         )
