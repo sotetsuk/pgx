@@ -283,7 +283,7 @@ def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
     return entities, r, terminal
 
 
-# @jax.jit
+@jax.jit
 def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     entities = jax.lax.cond(
         entities[i, 2] == 1,
