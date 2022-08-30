@@ -35,6 +35,7 @@ class MinAtarAsterixState:
     last_action: int = 0
 
 
+# @jax.jit
 def _step_det(
     state: MinAtarAsterixState,
     action: int,
@@ -91,14 +92,31 @@ def _step_det(
     #     spawn_timer = spawn_speed
 
     # Resolve player action
-    if action == 1:
-        player_x = max(0, player_x - 1)
-    elif action == 3:
-        player_x = min(9, player_x + 1)
-    elif action == 2:
-        player_y = max(1, player_y - 1)
-    elif action == 4:
-        player_y = min(8, player_y + 1)
+    player_x, player_y = jax.lax.switch(
+        action,
+        [
+            lambda x, y: (x, y),  # 0
+            lambda x, y: (x - 1, y),  # 1
+            lambda x, y: (x, y - 1),  # 2
+            lambda x, y: (x + 1, y),  # 3
+            lambda x, y: (x, y + 1),  # 4
+            lambda x, y: (x, y),  # 5
+        ],
+        player_x,
+        player_y,
+    )
+    player_x = jax.lax.max(0, player_x)
+    player_x = jax.lax.min(9, player_x)
+    player_y = jax.lax.max(1, player_y)
+    player_y = jax.lax.min(8, player_y)
+    # if action == 1:
+    #     player_x = max(0, player_x - 1)
+    # elif action == 3:
+    #     player_x = min(9, player_x + 1)
+    # elif action == 2:
+    #     player_y = max(1, player_y - 1)
+    # elif action == 4:
+    #     player_y = min(8, player_y + 1)
 
     # Update entities
     for i in range(len(entities)):
