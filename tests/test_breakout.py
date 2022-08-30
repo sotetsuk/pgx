@@ -70,18 +70,20 @@ def test_to_obs():
         done = False
         while not done:
             s = extract_state(env, state_keys)
+            s_pgx = minatar2pgx(s, breakout.MinAtarBreakoutState)
+            obs_pgx = breakout._to_obs(s_pgx)
             assert jnp.allclose(
                 env.state(),
-                breakout._to_obs(
-                    minatar2pgx(s, breakout.MinAtarBreakoutState)
-                ),
+                obs_pgx,
             )
             a = random.randrange(num_actions)
             r, done = env.act(a)
 
         # check terminal state
         s = extract_state(env, state_keys)
+        s_pgx = minatar2pgx(s, breakout.MinAtarBreakoutState)
+        obs_pgx = breakout._to_obs(s_pgx)
         assert jnp.allclose(
             env.state(),
-            breakout._to_obs(minatar2pgx(s, breakout.MinAtarBreakoutState)),
+            obs_pgx,
         )
