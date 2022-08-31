@@ -38,7 +38,7 @@ class MinAtarAsterixState:
 @jax.jit
 def _step_det(
     state: MinAtarAsterixState,
-    action: int,
+    action: jnp.ndarray,
     lr: bool,
     is_gold: bool,
     slot: int,
