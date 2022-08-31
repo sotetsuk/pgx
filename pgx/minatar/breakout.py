@@ -33,10 +33,51 @@ class MinAtarBreakoutState:
     last_action: int = 0
 
 
-# TODO: sticky action prob
+@jax.jit
+def step(
+    state: MinAtarBreakoutState,
+    action: jnp.ndarray,
+    rng: jnp.ndarray,
+    sticky_action_prob: jnp.ndarray,
+) -> Tuple[MinAtarBreakoutState, int, bool]:
+    action = jax.lax.cond(
+        jax.random.uniform(rng) < sticky_action_prob,
+        lambda _: state.last_action,
+        lambda _: action,
+        0,
+    )
+    return _step_det(state, action)
+
+
+@jax.jit
+def reset(rng: jnp.ndarray) -> MinAtarBreakoutState:
+    ball_start = jax.random.choice(rng, 2)
+    return _reset_det(ball_start=ball_start)
+
+
+@jax.jit
+def to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
+    # channels = {
+    #     "paddle": 0,
+    #     "ball": 1,
+    #     "trail": 2,
+    #     "brick": 3,
+    # }
+    obs = jnp.zeros((10, 10, 4), dtype=bool)
+    obs = obs.at[state.ball_y, state.ball_x, 1].set(True)
+    # state[self.ball_y, self.ball_x, self.channels["ball"]] = 1
+    obs = obs.at[9, state.pos, 0].set(True)
+    # state[9, self.pos, self.channels["paddle"]] = 1
+    obs = obs.at[state.last_y, state.last_x, 2].set(True)
+    # state[self.last_y, self.last_x, self.channels["trail"]] = 1
+    obs = obs.at[:, :, 3].set(state.brick_map)
+    # state[:, :, self.channels["brick"]] = self.brick_map
+    return obs
+
+
 @jax.jit
 def _step_det(
-    state: MinAtarBreakoutState, action: int
+    state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
 
     r = 0
@@ -475,7 +516,7 @@ def _step_det(
 
 
 @jax.jit
-def _reset_det(ball_start: int) -> MinAtarBreakoutState:
+def _reset_det(ball_start: jnp.ndarray) -> MinAtarBreakoutState:
     ball_y = 3
     # ball_start = self.random.choice(2)
     ball_x, ball_dir = 0, 2
@@ -505,23 +546,3 @@ def _reset_det(ball_start: int) -> MinAtarBreakoutState:
         terminal,
         0,
     )  # type: ignore
-
-
-@jax.jit
-def _to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
-    # channels = {
-    #     "paddle": 0,
-    #     "ball": 1,
-    #     "trail": 2,
-    #     "brick": 3,
-    # }
-    obs = jnp.zeros((10, 10, 4), dtype=bool)
-    obs = obs.at[state.ball_y, state.ball_x, 1].set(True)
-    # state[self.ball_y, self.ball_x, self.channels["ball"]] = 1
-    obs = obs.at[9, state.pos, 0].set(True)
-    # state[9, self.pos, self.channels["paddle"]] = 1
-    obs = obs.at[state.last_y, state.last_x, 2].set(True)
-    # state[self.last_y, self.last_x, self.channels["trail"]] = 1
-    obs = obs.at[:, :, 3].set(state.brick_map)
-    # state[:, :, self.channels["brick"]] = self.brick_map
-    return obs
