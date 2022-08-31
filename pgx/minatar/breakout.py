@@ -33,10 +33,36 @@ class MinAtarBreakoutState:
     last_action: int = 0
 
 
-# TODO: sticky action prob
+@jax.jit
+def step(
+    state: MinAtarBreakoutState,
+    action: jnp.ndarray,
+    rng: jnp.ndarray,
+    sticky_action_prob: jnp.ndarray,
+) -> Tuple[MinAtarBreakoutState, int, bool]:
+    action = jax.lax.cond(
+        jax.random.uniform(rng) < sticky_action_prob,
+        lambda _: state.last_action,
+        lambda _: action,
+        0,
+    )
+    return _step_det(state, action)
+
+
+@jax.jit
+def reset(rng: jnp.ndarray) -> MinAtarBreakoutState:
+    ball_start = jax.random.choice(rng, 2)
+    return _reset_det(ball_start=ball_start)
+
+
+@jax.jit
+def to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
+    return _to_obs(state)
+
+
 @jax.jit
 def _step_det(
-    state: MinAtarBreakoutState, action: int
+    state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
 
     r = 0
@@ -475,7 +501,7 @@ def _step_det(
 
 
 @jax.jit
-def _reset_det(ball_start: int) -> MinAtarBreakoutState:
+def _reset_det(ball_start: jnp.ndarray) -> MinAtarBreakoutState:
     ball_y = 3
     # ball_start = self.random.choice(2)
     ball_x, ball_dir = 0, 2

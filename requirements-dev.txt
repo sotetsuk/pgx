@@ -8,3 +8,5 @@ matplotlib
 ipython
 git+https://github.com/sotetsuk/MinAtar.git
 jax[cpu]
+brax
+argdcls
