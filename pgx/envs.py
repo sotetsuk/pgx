@@ -48,12 +48,13 @@ class MinAtar(gym.Env):
         seed: Optional[int] = None,
         return_info: bool = False,
         options: Optional[dict] = None,
-    ) -> Tuple[jnp.ndarray, dict]:
+    ) -> jnp.ndarray:
         assert seed is not None
         self.rng = jax.random.PRNGKey(seed)
         self.rng, _rngs = self._split_keys(self.rng)
         self.state = self._reset(_rngs)
-        return self._to_obs(self.state), {}
+        assert not return_info  # TODO: fix
+        return self._to_obs(self.state)
 
     def step(
         self, action: jnp.ndarray

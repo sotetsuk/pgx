@@ -5,7 +5,7 @@ from pgx.envs import MinAtar
 batch_size = 128
 episode_length = 100
 env = MinAtar(game="asterix", batch_size=batch_size, auto_reset=True)
-obs, info = env.reset(seed=0)
+obs = env.reset(seed=0)
 # print(obs.shape)
 for i in range(episode_length):
     key = jax.random.PRNGKey(0)
