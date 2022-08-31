@@ -4,6 +4,8 @@ import gym
 import jax.numpy as jnp
 import jax.random
 
+from pgx.minatar import asterix, breakout
+
 
 class MinAtar(gym.Env):
     def __init__(
@@ -20,21 +22,13 @@ class MinAtar(gym.Env):
             jnp.ones(self.batch_size) * sticky_action_prob
         )
         if self.game == "breakout":
-            from pgx.minatar.breakout import (  # type: ignore
-                reset,
-                step,
-                to_obs,
-            )
-
-            self._reset = jax.vmap(reset)
-            self._step = jax.vmap(step)
-            self._to_obs = jax.vmap(to_obs)
+            self._reset = jax.vmap(breakout.reset)
+            self._step = jax.vmap(breakout.step)
+            self._to_obs = jax.vmap(breakout.to_obs)
         elif self.game == "asterix":
-            from pgx.minatar.asterix import reset, step, to_obs  # type: ignore
-
-            self._reset = jax.vmap(reset)
-            self._step = jax.vmap(step)
-            self._to_obs = jax.vmap(to_obs)
+            self._reset = jax.vmap(asterix.reset)
+            self._step = jax.vmap(asterix.step)
+            self._to_obs = jax.vmap(asterix.to_obs)
         else:
             raise NotImplementedError("This game is not implemented.")
 
