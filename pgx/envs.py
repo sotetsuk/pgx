@@ -25,6 +25,12 @@ class MinAtar(gym.Env):
             self._reset = jax.vmap(reset)
             self._step = jax.vmap(step)
             self._to_obs = jax.vmap(to_obs)
+        elif self.game == "asterix":
+            from pgx.minatar.asterix import reset, step, to_obs
+
+            self._reset = jax.vmap(reset)
+            self._step = jax.vmap(step)
+            self._to_obs = jax.vmap(to_obs)
         else:
             raise NotImplementedError("This game is not implemented.")
 

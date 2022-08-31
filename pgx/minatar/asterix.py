@@ -36,13 +36,65 @@ class MinAtarAsterixState:
 
 
 @jax.jit
+def step(
+    state: MinAtarAsterixState,
+    action: jnp.ndarray,
+    rng: jnp.ndarray,
+    sticky_action_prob: jnp.ndarray,
+) -> Tuple[MinAtarAsterixState, int, bool]:
+    rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
+    # sticky action
+    action = jax.lax.cond(
+        jax.random.uniform(rng0) < sticky_action_prob,
+        lambda _: state.last_action,
+        lambda _: action,
+        0,
+    )
+
+    lr = jax.random.choice(rng1, jnp.array([True, False]))
+    is_gold = jax.random.choice(
+        rng2, jnp.array([True, False]), p=jnp.array([1 / 3, 2 / 3])
+    )
+    slots = jnp.zeros((8))
+    for i in range(8):
+        slots = jax.lax.cond(
+            state.entities[i, 0] == INF,
+            lambda _: slots.at[i].set(1),
+            lambda _: slots,
+            0,
+        )
+    # avoid zero division
+    slots = jax.lax.cond(
+        slots.sum() == 0, lambda _: slots.at[0].set(1), lambda _: slots, 0
+    )
+    p = slots / slots.sum()
+    slot = jax.random.choice(rng3, jnp.arange(8), p=p)
+    return _step_det(
+        state,
+        action,
+        lr=lr,
+        is_gold=is_gold,
+        slot=slot,
+    )
+
+
+@jax.jit
+def reset(rng: jnp.ndarray) -> MinAtarAsterixState:
+    return _reset_det()
+
+
+@jax.jit
+def to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
+    return _to_obs(state)
+
+
+@jax.jit
 def _step_det(
     state: MinAtarAsterixState,
     action: jnp.ndarray,
     lr: bool,
     is_gold: bool,
     slot: int,
-    ramping: bool = True,
 ) -> Tuple[MinAtarAsterixState, int, bool]:
     player_x = state.player_x
     player_y = state.player_y
@@ -56,6 +108,8 @@ def _step_det(
     ramp_index = state.ramp_index
     terminal = state.terminal
     last_action = action
+
+    ramping: bool = True
 
     terminal_state = MinAtarAsterixState(
         player_x,
