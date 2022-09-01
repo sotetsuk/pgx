@@ -1,0 +1,78 @@
+from typing import Optional, Tuple
+
+import gym
+import jax.numpy as jnp
+import jax.random
+
+from pgx.minatar import asterix, breakout
+
+
+class MinAtar(gym.Env):
+    def __init__(
+        self,
+        game: str,
+        batch_size: int = 8,
+        auto_reset=True,
+        sticky_action_prob: float = 0.1,
+    ):
+        self.game = game
+        self.auto_reset = auto_reset
+        self.batch_size = batch_size
+        self.sticky_action_prob: jnp.ndarray = (
+            jnp.ones(self.batch_size) * sticky_action_prob
+        )
+        if self.game == "breakout":
+            self._reset = jax.vmap(breakout.reset)
+            self._step = jax.vmap(breakout.step)
+            self._to_obs = jax.vmap(breakout.to_obs)
+        elif self.game == "asterix":
+            self._reset = jax.vmap(asterix.reset)
+            self._step = jax.vmap(asterix.step)
+            self._to_obs = jax.vmap(asterix.to_obs)
+        else:
+            raise NotImplementedError("This game is not implemented.")
+
+        self.rng = jax.random.PRNGKey(0)
+        self.rng, _rngs = self._split_keys(self.rng)
+        self.state = self._reset(_rngs)
+
+    def reset(
+        self,
+        *,
+        seed: Optional[int] = None,
+        return_info: bool = False,
+        options: Optional[dict] = None,
+    ) -> jnp.ndarray:
+        assert seed is not None
+        self.rng = jax.random.PRNGKey(seed)
+        self.rng, _rngs = self._split_keys(self.rng)
+        self.state = self._reset(_rngs)
+        assert not return_info  # TODO: fix
+        return self._to_obs(self.state)
+
+    def step(
+        self, action: jnp.ndarray
+    ) -> Tuple[jnp.ndarray, float, bool, dict]:
+        self.rng, _rngs = self._split_keys(self.rng)
+        self.state, r, done = self._step(
+            state=self.state,
+            action=action,
+            rng=_rngs,
+            sticky_action_prob=self.sticky_action_prob,
+        )
+        if self.auto_reset:
+
+            @jax.vmap
+            def where(c, x, y):
+                return jax.lax.cond(c, lambda _: x, lambda _: y, 0)
+
+            self.rng, _rngs = self._split_keys(self.rng)
+            init_state = self._reset(_rngs)
+            self.state = where(done, init_state, self.state)
+        return self._to_obs(self.state), r, done, {}
+
+    def _split_keys(self, rng):
+        rngs = jax.random.split(rng, self.batch_size + 1)
+        rng = rngs[0]
+        subrngs = rngs[1:]
+        return rng, subrngs

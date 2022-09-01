@@ -1,3 +1,5 @@
+[![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
+
 # Pgx
 
 Parallel game simulator for reinforcement learning.
@@ -17,3 +19,9 @@ Parallel game simulator for reinforcement learning.
 * [ ] Go 19x19
 * [ ] Chess
 
+
+# LICENSE
+
+TDOO
+
+* MinAtar is GPL-3.0 License

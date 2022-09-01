@@ -1,0 +1,13 @@
+pytest
+black
+blackdoc
+isort
+flake8
+mypy
+matplotlib
+ipython
+git+https://github.com/sotetsuk/MinAtar.git
+jax[cpu]
+brax
+argdcls
+tqdm
