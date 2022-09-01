@@ -28,10 +28,10 @@ def turn_change(board, turn):
 def move(board, turn, fir_lo, fin_lo, piece, captured, is_promote):
     b = turn_change(board, turn)
     b[fir_lo] = DEFAULT
-    b[fin_lo] = np.roll(DEFAULT, piece+5*turn+4*is_promote)
+    b[fin_lo] = np.roll(DEFAULT, piece + 5 * turn + 4 * is_promote)
     if captured == 0:
         return b
-    b[11+captured % 4+3*turn] = np.roll(b[11+captured % 4+3*turn], 1)
+    b[11 + captured % 4 + 3 * turn] = np.roll(b[11 + captured % 4 + 3 * turn], 1)
     return b
 
 
@@ -40,8 +40,8 @@ def move(board, turn, fir_lo, fin_lo, piece, captured, is_promote):
 #  piece: 打つ駒の種類。ライオン、ニワトリは打てないのでそれ以外の三種から選ぶ
 def drop(board, turn, point, piece):
     b = turn_change(board, turn)
-    b[11+piece+3*turn] = np.roll(b[11+piece+3*turn], -1)
-    b[point] = np.roll(b[point], piece + 5*turn)
+    b[11 + piece + 3 * turn] = np.roll(b[11 + piece + 3 * turn], -1)
+    b[point] = np.roll(b[point], piece + 5 * turn)
     return b
 
 
@@ -55,7 +55,7 @@ def owner_piece(board, point):
         return 2, 0
     # 駒がある位置
     else:
-        return (ind-1)//5, (ind-1) % 5 + 1
+        return (ind - 1) // 5, (ind - 1) % 5 + 1
 
 
 #  上下左右の辺に接しているかどうか
@@ -73,23 +73,23 @@ def hiyoko_move(turn, point):
     #  最奥にいてはいけない
     if turn == 0:
         assert point % 4 != 0
-        return [point-1]
+        return [point - 1]
     else:
         assert point % 4 != 3
-        return [point+1]
+        return [point + 1]
 
 
 def kirin_move(point):
     u, d, l, r = is_side(point)
     moves = []
     if not r:
-        moves.append(point-4)
+        moves.append(point - 4)
     if not u:
-        moves.append(point-1)
+        moves.append(point - 1)
     if not d:
-        moves.append(point+1)
+        moves.append(point + 1)
     if not l:
-        moves.append(point+4)
+        moves.append(point + 4)
     return moves
 
 
@@ -98,14 +98,14 @@ def zou_move(point):
     moves = []
     if not r:
         if not u:
-            moves.append(point-5)
+            moves.append(point - 5)
         if not d:
-            moves.append(point-3)
+            moves.append(point - 3)
     if not l:
         if not u:
-            moves.append(point+3)
+            moves.append(point + 3)
         if not d:
-            moves.append(point+5)
+            moves.append(point + 5)
     return moves
 
 
@@ -115,20 +115,20 @@ def lion_move(point):
     moves = []
     if not r:
         if not u:
-            moves.append(point-5)
-        moves.append(point-4)
+            moves.append(point - 5)
+        moves.append(point - 4)
         if not d:
-            moves.append(point-3)
+            moves.append(point - 3)
     if not u:
-        moves.append(point-1)
+        moves.append(point - 1)
     if not d:
-        moves.append(point+1)
+        moves.append(point + 1)
     if not l:
         if not u:
-            moves.append(point+3)
-        moves.append(point+4)
+            moves.append(point + 3)
+        moves.append(point + 4)
         if not d:
-            moves.append(point+5)
+            moves.append(point + 5)
     return moves
 
 
@@ -138,20 +138,20 @@ def niwatori_move(turn, point):
     moves = []
     if not r:
         if not u and turn == 0:
-            moves.append(point-5)
-        moves.append(point-4)
+            moves.append(point - 5)
+        moves.append(point - 4)
         if not d and turn == 1:
-            moves.append(point-3)
+            moves.append(point - 3)
     if not u:
-        moves.append(point-1)
+        moves.append(point - 1)
     if not d:
-        moves.append(point+1)
+        moves.append(point + 1)
     if not l:
         if not u and turn == 0:
-            moves.append(point+3)
-        moves.append(point+4)
+            moves.append(point + 3)
+        moves.append(point + 4)
         if not d and turn == 1:
-            moves.append(point+5)
+            moves.append(point + 5)
     return moves
 
 
@@ -199,7 +199,7 @@ def legal_drop(board, turn):
         piece = i + 1
         # 対応する駒を持ってない場合は打てない
         # 空白位置のベクトルと持ち駒を持っていないときのベクトルが同一であることを利用(DEFAULTとの比較演算ができなかった)
-        if owner_piece(board, 11+piece+turn*3)[0] == 2:
+        if owner_piece(board, 11 + piece + turn * 3)[0] == 2:
             continue
         for j in range(12):
             # ひよこは最奥には打てない
@@ -225,4 +225,3 @@ def legal_drop_moves(board, turn):
     for d in drops:
         all_moves.append((1, d))
     return all_moves
-
