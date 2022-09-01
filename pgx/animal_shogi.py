@@ -68,7 +68,7 @@ def is_side(point):
     return is_up, is_down, is_left, is_right
 
 
-#  各種駒の動き
+#  各駒の動き
 def hiyoko_move(turn, point):
     #  最奥にいてはいけない
     if turn == 0:
