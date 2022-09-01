@@ -31,7 +31,9 @@ def move(board, turn, fir_lo, fin_lo, piece, captured, is_promote):
     b[fin_lo] = np.roll(DEFAULT, piece + 5 * turn + 4 * is_promote)
     if captured == 0:
         return b
-    b[11 + captured % 4 + 3 * turn] = np.roll(b[11 + captured % 4 + 3 * turn], 1)
+    b[11 + captured % 4 + 3 * turn] = np.roll(
+        b[11 + captured % 4 + 3 * turn], 1
+    )
     return b
 
 
