@@ -1,6 +1,4 @@
-import sys
-sys.path.append('../')
-from pgx.pgx.animal_shogi import *
+from pgx.animal_shogi import *
 import numpy as np
 
 
