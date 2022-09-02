@@ -1,5 +1,6 @@
 from pgx.animal_shogi import *
 import numpy as np
+import copy
 
 
 INIT_BOARD = AnimalShogiState(
@@ -19,45 +20,76 @@ INIT_BOARD = AnimalShogiState(
     ]),
     hand=np.array([0, 0, 0, 0, 0, 0])
 )
-#  doctest用の盤面
-TEST_BOARD = np.array([
-    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],  # 11 後手ゾウ
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 12 先手ヒヨコ
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 13 空白
-    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],  # 14 先手のニワトリ
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],  # 21 後手ライオン
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 22 空白
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],  # 23 先手キリン
-    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],  # 24 後手キリン
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 31 空白
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 32 空白
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 33 空白
-    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],  # 34 先手ライオン
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 先手ヒヨコ
-    [0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 先手キリン
-    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 先手ゾウ
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 後手ヒヨコ
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 後手キリン
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 持ち駒 後手ゾウ
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # 手番の情報)
-])
+TEST_BOARD = AnimalShogiState(
+    turn=0,
+    board=np.array([
+        [0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    ]),
+    hand=np.array([1, 2, 1, 0, 0, 0])
+)
 
 
 def test_new_turn_change():
-    turn = new_turn_change(INIT_BOARD)
-    assert turn == 1
+    b = copy.deepcopy(INIT_BOARD)
+    s = new_turn_change(b)
+    assert s.turn == 1
 
 
 def test_new_move():
-    s = new_move(INIT_BOARD, 6, 5, 1, 6, 0)
+    b = copy.deepcopy(INIT_BOARD)
+    s = new_move(b, 6, 5, 1, 6, 0)
     assert s.board[0][6] == 1
     assert s.board[1][6] == 0
     assert s.board[1][5] == 1
     assert s.board[6][5] == 0
     assert s.hand[0] == 1
     assert s.turn == 1
+    b2 = copy.deepcopy(TEST_BOARD)
+    s2 = new_move(b2, 1, 0, 1, 8, 1)
+    assert s2.board[0][1] == 1
+    assert s2.board[1][1] == 0
+    assert s2.board[5][0] == 1
+    assert s2.board[8][0] == 0
+    assert s2.hand[2] == 2
+    assert s2.turn == 1
+
+
+def test_new_drop():
+    b = copy.deepcopy(TEST_BOARD)
+    s = new_drop(b, 2, 3)
+    assert s.hand[2] == 0
+    assert s.board[3][2] == 1
+
+
+def test_new_owner_piece():
+    assert new_owner_piece(INIT_BOARD, 3) == 2
+    assert new_owner_piece(INIT_BOARD, 5) == 6
+    assert new_owner_piece(INIT_BOARD, 9) == 0
+
+
+def test_legal_move():
+    assert new_legal_moves(INIT_BOARD) == [[3, 2, 2, 0, 0], [6, 5, 1, 6, 0], [7, 2, 4, 0, 0], [7, 10, 4, 0, 0]]
+    assert new_legal_moves(TEST_BOARD) == [[1, 0, 1, 8, 1], [3, 2, 5, 0, 0], [3, 7, 5, 7, 0], [6, 2, 2, 0, 0], [6, 5, 2, 0, 0], [6, 7, 2, 7, 0], [6, 10, 2, 0, 0], [11, 7, 4, 7, 0], [11, 10, 4, 0, 0]]
+
+
+def test_legal_drop():
+    assert new_legal_drop(TEST_BOARD) == [[2, 1], [5, 1], [9, 1], [10, 1], [2, 2], [5, 2], [8, 2], [9, 2], [10, 2], [2, 3], [5, 3], [8, 3], [9, 3], [10, 3]]
 
 
 if __name__ == '__main__':
     test_new_turn_change()
     test_new_move()
+    test_new_drop()
+    test_new_owner_piece()
+    test_legal_move()
+    test_legal_drop()

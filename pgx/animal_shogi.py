@@ -17,7 +17,8 @@ DEFAULT = np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 # 手番を変更する
 def new_turn_change(state: AnimalShogiState):
-    return (state.turn + 1) % 2
+    state.turn = (state.turn + 1) % 2
+    return state
 
 
 def turn_change(board, turn):
@@ -47,7 +48,7 @@ def new_move(state: AnimalShogiState, first: int, final: int, piece: int, captur
             state.hand[(captured - 6) % 4] += 1
         else:
             state.hand[captured % 4 + 2] += 1
-    state.turn = new_turn_change(state)
+    state = new_turn_change(state)
     return state
 
 
@@ -70,7 +71,8 @@ def new_drop(state: AnimalShogiState, point: int, piece: int):
     state.hand[piece - 1 - 2 * state.turn] -= 1
     state.board[piece][point] = 1
     state.board[0][point] = 0
-    state.turn = new_turn_change(state)
+    state = new_turn_change(state)
+    return state
 
 
 def drop(board, turn, point, piece):
@@ -197,6 +199,20 @@ def niwatori_move(turn, point):
 
 
 #  座標と駒の種類から到達できる座標を列挙する関数
+def new_point_moves(piece, point):
+    turn = (piece - 1) // 5
+    if piece % 5 == 1:
+        return hiyoko_move(turn, point)
+    if piece % 5 == 2:
+        return kirin_move(point)
+    if piece % 5 == 3:
+        return zou_move(point)
+    if piece % 5 == 4:
+        return lion_move(point)
+    if piece % 5 == 0:
+        return niwatori_move(turn, point)
+
+
 def point_moves(turn, point, piece):
     if piece == 1:
         return hiyoko_move(turn, point)
@@ -211,6 +227,27 @@ def point_moves(turn, point, piece):
 
 
 #  駒打ち以外の合法手を列挙する
+def new_legal_moves(state: AnimalShogiState):
+    moves = []
+    for i in range(12):
+        piece = new_owner_piece(state, i)
+        if (piece - 1) // 5 == state.turn:
+            points = new_point_moves(piece, i)
+            for p in points:
+                piece2 = new_owner_piece(state, p)
+                # 自分の駒がある場所には動けない
+                if (piece2 - 1) // 5 == state.turn:
+                    continue
+                # ひよこが最奥までいった場合、強制的に成る
+                if piece == 1 and p % 4 == 0:
+                    moves.append([i, p, piece, piece2, 1])
+                elif piece == 6 and p % 4 == 3:
+                    moves.append([i, p, piece, piece2, 1])
+                else:
+                    moves.append([i, p, piece, piece2, 0])
+    return moves
+
+
 def legal_moves(board, turn):
     moves = []
     for i in range(12):
@@ -233,6 +270,27 @@ def legal_moves(board, turn):
 
 
 # 駒打ちの合法手の生成
+def new_legal_drop(state: AnimalShogiState):
+    moves = []
+    #  打てるのはヒヨコ、キリン、ゾウの三種
+    for i in range(3):
+        piece = i + 1 + 5 * state.turn
+        # 対応する駒を持ってない場合は打てない
+        if state.hand[i + 3 * state.turn] == 0:
+            continue
+        for j in range(12):
+            # ひよこは最奥には打てない
+            if piece == 1 and j % 4 == 0:
+                continue
+            if piece == 6 and j % 4 == 3:
+                continue
+            piece2 = new_owner_piece(state, j)
+            # お互いの駒がない地点(==piece2が0の地点)であれば打てる
+            if piece2 == 0:
+                moves.append([j, piece])
+    return moves
+
+
 def legal_drop(board, turn):
     moves = []
     #  打てるのはヒヨコ、キリン、ゾウの三種
