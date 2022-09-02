@@ -46,8 +46,11 @@ def pgx2minatar(state, keys) -> Dict[str, Any]:
 def minatar2pgx(state_dict: Dict[str, Any], state_cls):
     d = {}
     for key in state_dict.keys():
+        # TDOO: change all vals to jnparray
         val = copy.deepcopy(state_dict[key])
-        if isinstance(val, np.ndarray):
+        if isinstance(val, list):
+            val = jnp.array(val, dtype=int)
+        elif isinstance(val, np.ndarray):
             if key in (
                 "brick_map",
                 "alien_map",
