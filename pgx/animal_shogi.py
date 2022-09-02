@@ -1,4 +1,13 @@
 import numpy as np
+from dataclasses import dataclass
+
+
+@dataclass
+class AnimalShogiState:
+    turn: int = 0
+    board: np.ndarray = np.zeros((11, ), dtype=np.int32)  # ヒヨコ、キリン、ゾウ、ライオン、ニワトリの5種×2＋空白
+    hand: np.ndarray = np.zeros((6,), dtype=np.int32)
+
 
 DEFAULT = np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 # boardは19×11の構造
