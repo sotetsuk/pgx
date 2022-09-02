@@ -5,8 +5,8 @@ from dataclasses import dataclass
 @dataclass
 class AnimalShogiState:
     turn: int = 0
-    board: np.ndarray = np.zeros((11, ), dtype=np.int32)  # ヒヨコ、キリン、ゾウ、ライオン、ニワトリの5種×2＋空白
-    hand: np.ndarray = np.zeros((6,), dtype=np.int32)
+    board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
+    hand: np.ndarray = np.zeros(6, dtype=np.int32)
 
 
 DEFAULT = np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
@@ -16,6 +16,10 @@ DEFAULT = np.array([1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 
 
 # 手番を変更する
+def new_turn_change(state: AnimalShogiState):
+    return (state.turn + 1) % 2
+
+
 def turn_change(board, turn):
     b = np.copy(board)
     if turn == 0:
@@ -33,6 +37,20 @@ def turn_change(board, turn):
 #  piece: 動かした駒の種類（ヒヨコ1, キリン2, ゾウ3, ライオン4, ニワトリ5）
 #  captured: 取られた駒の種類。駒が取られていない場合は0でそれ以外はpieceと同じ
 #  is_promote: 駒を成るかどうかの判定
+def new_move(state: AnimalShogiState, first: int, final: int, piece: int, captured: int, is_promote: int):
+    state.board[piece][first] = 0
+    state.board[0][first] = 1
+    state.board[captured][final] = 0
+    state.board[piece + 4 * is_promote][final] = 1
+    if captured != 0:
+        if state.turn == 0:
+            state.hand[(captured - 6) % 4] += 1
+        else:
+            state.hand[captured % 4 + 2] += 1
+    state.turn = new_turn_change(state)
+    return state
+
+
 def move(board, turn, fir_lo, fin_lo, piece, captured, is_promote):
     b = turn_change(board, turn)
     b[fir_lo] = DEFAULT
@@ -48,6 +66,13 @@ def move(board, turn, fir_lo, fin_lo, piece, captured, is_promote):
 #  駒打ちの処理
 #  point: 駒を打つ座標
 #  piece: 打つ駒の種類。ライオン、ニワトリは打てないのでそれ以外の三種から選ぶ
+def new_drop(state: AnimalShogiState, point: int, piece: int):
+    state.hand[piece - 1 - 2 * state.turn] -= 1
+    state.board[piece][point] = 1
+    state.board[0][point] = 0
+    state.turn = new_turn_change(state)
+
+
 def drop(board, turn, point, piece):
     b = turn_change(board, turn)
     b[11 + piece + 3 * turn] = np.roll(b[11 + piece + 3 * turn], -1)
