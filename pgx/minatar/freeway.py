@@ -8,7 +8,6 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-import random
 from typing import Tuple
 
 import jax
@@ -37,7 +36,7 @@ def step(
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[MinAtarFreewayState, int, bool]:
     if jax.random.uniform(rng) < sticky_action_prob:
-        action = state.last_action
+        action = state.last_action  # type: ignore
     speeds, directions = _random_speed_directions(rng)
     return _step_det(state, action, speeds=speeds, directions=directions)
 
@@ -49,7 +48,7 @@ def reset(rng: jnp.ndarray) -> MinAtarFreewayState:
 
 
 # TODO: make me  @jax.jit
-def _to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
+def to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
     return _to_obs(state)
 
 
@@ -77,7 +76,7 @@ def _step_det(
             terminate_timer,
             terminal,
             last_action,
-        )
+        )  # type: ignore
 
         return next_state, r, terminal
 
@@ -96,9 +95,8 @@ def _step_det(
         pos = 9
 
     # Update cars
-    cars = [
-        [cars[i, j] for j in range(4)] for i in range(8)
-    ]  # TDOO: remove me
+    # TDOO: remove me
+    cars = [[cars[i, j] for j in range(4)] for i in range(8)]  # type: ignore
     for car in cars:
         if car[0:2] == [4, pos]:
             pos = 9
@@ -128,7 +126,7 @@ def _step_det(
         terminate_timer,
         terminal,
         last_action,
-    )
+    )  # type: ignore
 
     return next_state, r, terminal
 
@@ -139,7 +137,7 @@ def _reset_det(
     cars = _randomize_cars(
         speeds, directions, cars=jnp.zeros((8, 4)), initialize=True
     )  # TODO: cars can be removed
-    return MinAtarFreewayState(cars=cars)
+    return MinAtarFreewayState(cars=cars)  # type: ignore
 
 
 # TODO: make me  @jax.jit
@@ -154,7 +152,7 @@ def _randomize_cars(
     # directions = np.random.choice(rng, [-1, 1], 8)
     speeds *= directions
     if initialize:
-        cars = []
+        cars = []  # type: ignore
         for i in range(8):
             cars += [[0, i + 1, abs(speeds[i]), speeds[i]]]
         cars = jnp.array(cars)
