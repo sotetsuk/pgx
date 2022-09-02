@@ -6,9 +6,12 @@ from dataclasses import dataclass
 class AnimalShogiState:
     # turn 先手番なら0 後手番なら1
     turn: int = 0
-    # board 盤面の駒。空白、先手ヒヨコ、…、後手ライオン、後手ニワトリ、の順で駒がどの位置にあるかを記録
+    # board 盤面の駒。
+    # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    # の順で駒がどの位置にあるかをone_hotで記録
+    # ヒヨコ: Pawn, キリン: Rook, ゾウ: Bishop, ライオン: King, ニワトリ: Gold　と対応
     board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
-    # hand 持ち駒。先手ヒヨコ～後手ゾウまでの6種類を枚数に応じて増減させる
+    # hand 持ち駒。先手ヒヨコ、先手キリン先手ゾウ後手ヒヨコ後手キリン後手ゾウまでの6種類を枚数に応じて増減させる
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
 
 
@@ -49,10 +52,8 @@ def drop(state: AnimalShogiState, point: int, piece: int):
     return state
 
 
-#  ある座標に存在する駒の持ち主と種類を返す
-#  持ち主はturnに対応させるため先手0後手1、駒が存在しない場合は2を返す
-#  駒の種類は上のpieceと対応
-def owner_piece(state: AnimalShogiState, point: int):
+#  ある座標に存在する駒種を返す
+def piece_type(state: AnimalShogiState, point: int):
     for i in range(11):
         if state.board[i][point] == 1:
             return i
@@ -69,7 +70,7 @@ def is_side(point):
 
 
 #  各駒の動き
-def hiyoko_move(turn, point):
+def pawn_move(turn, point):
     #  最奥にいてはいけない
     if turn == 0:
         assert point % 4 != 0
@@ -79,7 +80,7 @@ def hiyoko_move(turn, point):
         return [point + 1]
 
 
-def kirin_move(point):
+def rook_move(point):
     u, d, l, r = is_side(point)
     moves = []
     if not r:
@@ -93,7 +94,7 @@ def kirin_move(point):
     return moves
 
 
-def zou_move(point):
+def bishop_move(point):
     u, d, l, r = is_side(point)
     moves = []
     if not r:
@@ -109,7 +110,7 @@ def zou_move(point):
     return moves
 
 
-def lion_move(point):
+def king_move(point):
     #  座標が小さい順に並ぶようにする
     u, d, l, r = is_side(point)
     moves = []
@@ -132,7 +133,7 @@ def lion_move(point):
     return moves
 
 
-def niwatori_move(turn, point):
+def gold_move(turn, point):
     #  座標が小さい順に並ぶようにする
     u, d, l, r = is_side(point)
     moves = []
@@ -159,26 +160,26 @@ def niwatori_move(turn, point):
 def point_moves(piece, point):
     turn = (piece - 1) // 5
     if piece % 5 == 1:
-        return hiyoko_move(turn, point)
+        return pawn_move(turn, point)
     if piece % 5 == 2:
-        return kirin_move(point)
+        return rook_move(point)
     if piece % 5 == 3:
-        return zou_move(point)
+        return bishop_move(point)
     if piece % 5 == 4:
-        return lion_move(point)
+        return king_move(point)
     if piece % 5 == 0:
-        return niwatori_move(turn, point)
+        return gold_move(turn, point)
 
 
 #  駒打ち以外の合法手を列挙する
 def legal_moves(state: AnimalShogiState):
     moves = []
     for i in range(12):
-        piece = owner_piece(state, i)
+        piece = piece_type(state, i)
         if (piece - 1) // 5 == state.turn:
             points = point_moves(piece, i)
             for p in points:
-                piece2 = owner_piece(state, p)
+                piece2 = piece_type(state, p)
                 # 自分の駒がある場所には動けない
                 if (piece2 - 1) // 5 == state.turn:
                     continue
@@ -207,9 +208,13 @@ def legal_drop(state: AnimalShogiState):
                 continue
             if piece == 6 and j % 4 == 3:
                 continue
-            piece2 = owner_piece(state, j)
+            piece2 = piece_type(state, j)
             # お互いの駒がない地点(==piece2が0の地点)であれば打てる
             if piece2 == 0:
                 moves.append([j, piece])
     return moves
 
+
+# 特徴量変換
+def make_input_features(state: AnimalShogiState):
+    return

@@ -71,10 +71,10 @@ def test_drop():
     assert s.board[3][2] == 1
 
 
-def test_owner_piece():
-    assert owner_piece(INIT_BOARD, 3) == 2
-    assert owner_piece(INIT_BOARD, 5) == 6
-    assert owner_piece(INIT_BOARD, 9) == 0
+def test_piece_type():
+    assert piece_type(INIT_BOARD, 3) == 2
+    assert piece_type(INIT_BOARD, 5) == 6
+    assert piece_type(INIT_BOARD, 9) == 0
 
 
 def test_legal_move():
@@ -90,6 +90,6 @@ if __name__ == '__main__':
     test_turn_change()
     test_move()
     test_drop()
-    test_owner_piece()
+    test_piece_type()
     test_legal_move()
     test_legal_drop()
