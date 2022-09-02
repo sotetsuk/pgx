@@ -11,7 +11,7 @@ class AnimalShogiState:
     # の順で駒がどの位置にあるかをone_hotで記録
     # ヒヨコ: Pawn, キリン: Rook, ゾウ: Bishop, ライオン: King, ニワトリ: Gold　と対応
     board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
-    # hand 持ち駒。先手ヒヨコ、先手キリン先手ゾウ後手ヒヨコ後手キリン後手ゾウまでの6種類を枚数に応じて増減させる
+    # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
 
 
