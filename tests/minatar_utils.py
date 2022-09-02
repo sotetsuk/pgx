@@ -46,11 +46,20 @@ def pgx2minatar(state, keys) -> Dict[str, Any]:
 def minatar2pgx(state_dict: Dict[str, Any], state_cls):
     d = {}
     for key in state_dict.keys():
-        # TDOO: change all vals to jnparray
         val = copy.deepcopy(state_dict[key])
-        if isinstance(val, list):
-            val = jnp.array(val, dtype=int)
-        elif isinstance(val, np.ndarray):
+
+        # Exception in Asterix
+        if key == "entities":
+            _val = jnp.ones((8, 4), dtype=int) * int(1e5)
+            for i, x in enumerate(val):
+                if x is None:
+                    continue
+                for j in range(4):
+                    _val = _val.at[i, j].set(x[j])
+            val = _val
+
+        # Cast to bool
+        if isinstance(val, np.ndarray):
             if key in (
                 "brick_map",
                 "alien_map",
@@ -60,14 +69,11 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
                 val = jnp.array(val, dtype=bool)
             else:
                 val = jnp.array(val, dtype=int)
-        if key == "entities":
-            _val = jnp.ones((8, 4), dtype=int) * int(1e5)
-            for i, x in enumerate(val):
-                if x is None:
-                    continue
-                for j in range(4):
-                    _val = _val.at[i, j].set(x[j])
-            val = _val
+
+        # TODO: change all vals to jnparray
+        if isinstance(val, list):
+            val = jnp.array(val, dtype=int)
+
         d[key] = val
     s = state_cls(**d)
     return s
