@@ -83,6 +83,12 @@ def drop(board, turn, point, piece):
 #  ある座標に存在する駒の持ち主と種類を返す
 #  持ち主はturnに対応させるため先手0後手1、駒が存在しない場合は2を返す
 #  駒の種類は上のpieceと対応
+def new_owner_piece(state: AnimalShogiState, point: int):
+    for i in range(11):
+        if state.board[i][point] == 1:
+            return i
+
+
 def owner_piece(board, point):
     ind = np.where(board[point] == 1)[0][0]
     # 駒がない位置
