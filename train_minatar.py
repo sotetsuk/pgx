@@ -33,6 +33,27 @@ from pgx.minatar import asterix, breakout
 Device = Union[str, torch.device]
 
 
+def load(game, sticky_action_prob: float = 0.1):
+    from functools import partial
+
+    if game == "breakout":
+        init = jax.vmap(breakout.reset)
+        step = jax.vmap(
+            partial(breakout.step, sticky_action_prob=sticky_action_prob)
+        )
+        observe = jax.vmap(breakout.to_obs)
+    elif game == "asterix":
+        init = jax.vmap(asterix.reset)
+        step = jax.vmap(
+            partial(asterix.step, sticky_action_prob=sticky_action_prob)
+        )
+        observe = jax.vmap(asterix.to_obs)
+    else:
+        raise NotImplementedError("This game is not implemented.")
+
+    return init, step, observe
+
+
 class MinAtar(gym.Env):
     def __init__(
         self,
@@ -201,27 +222,66 @@ class MinAtarNetwork(nn.Module):
 
 
 def eval_rollout(
-    eval_env,
+    env,
     model: nn.Module,
 ) -> float:
     model.eval()
     import random
 
-    obs = eval_env.reset(seed=random.randint(0, int(2e5)))  # TODO: fix
+    obs = env.reset(seed=random.randint(0, int(2e5)))  # TODO: fix
     num_envs = obs.size(0)
     R = 0
     while True:
         actions = act(model, obs, deterministic=True)
-        obs, r, done, info = eval_env.step(actions)
+        obs, r, done, info = env.step(actions)
         R += r.sum()
         if done.all():
             break
     return float(R / num_envs)
 
 
+def split_rng(rng, num_envs):
+    rng, *_rngs = jax.random.split(rng, num_envs + 1)
+    return rng, jnp.array(_rngs)
+
+
+def train_rollout(
+    model: nn.Module,
+    init_state,
+    init,
+    step,
+    observe,
+    seed: int,
+    num_envs: int,
+):
+    model.train()
+
+    train_data = {}
+
+    rng = jax.random.PRNGKey(seed)
+    state = init_state
+    R = 0
+    while True:
+        obs = jax_to_torch(observe(state))
+        actions = torch_to_jax(act(model, obs, deterministic=False))
+
+        rng, _rngs = split_rng(rng, num_envs)
+        state, r, done = step(
+            state,
+            actions,
+            _rngs,
+        )
+        R += r.sum()
+
+        if done.all():
+            break
+
+    return float(R / num_envs)
+
+
 def act(
     model: nn.Module, obs: jnp.ndarray, deterministic: bool = False
-) -> jnp.ndarray:
+) -> torch.Tensor:
     logits = model(obs)
     dist = Categorical(logits=logits)
     a = dist.probs.argmax(dim=-1) if deterministic else dist.sample()
@@ -231,8 +291,10 @@ def act(
 @dataclass
 class Config:
     game: str = "breakout"
-    num_envs = 128
-    device = "cpu"
+    num_envs: int = 128
+    device: str = "cpu"
+    seed: int = 0
+    sticky_action_prob: float = 0.1
 
 
 args = argdcls.load(Config)
@@ -255,4 +317,22 @@ env = JaxToTorchWrapper(
 model = MinAtarNetwork(
     in_channels=in_channels, num_actions=num_actions, device=args.device
 )
-print(eval_rollout(env, model))
+
+# print(eval_rollout(env, model))
+
+
+init, step, observe = load(
+    args.game, sticky_action_prob=args.sticky_action_prob
+)
+rng = jax.random.PRNGKey(args.seed)
+rng, *_rngs = jax.random.split(rng, args.num_envs + 1)
+init_state = init(rng=jnp.array(_rngs))
+train_rollout(
+    model,
+    init_state=init_state,
+    init=init,
+    step=step,
+    observe=observe,
+    seed=args.seed,
+    num_envs=args.num_envs,
+)
