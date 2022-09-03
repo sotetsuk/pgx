@@ -280,7 +280,6 @@ def train_rollout(
         probs, value = model(obs)
         dist = Categorical(probs=probs)
         action = dist.sample()
-        push(train_data, action=action, value=value)
 
         # environment step
         rng, _rngs = split_rng(rng, num_envs)
@@ -297,6 +296,9 @@ def train_rollout(
         push(
             train_data,
             obs=obs,
+            probs=probs,
+            action=action,
+            value=value,
             reward=jax_to_torch(r),
             terminated=jax_to_torch(terminated),
             truncated=jax_to_torch(truncated),
@@ -367,6 +369,4 @@ td = train_rollout(
 )
 
 for k, v in td.items():
-    print(k, v.size())
-
-print(td["terminated"])
+    print(k, v.size(), v.type())
