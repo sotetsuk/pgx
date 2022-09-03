@@ -221,7 +221,7 @@ class MinAtarNetwork(nn.Module):
         x = x.reshape(x.size(0), -1)
         # print(x)
         x = self.dSiLU(self.fc_hidden(x))
-        return torch.softmax(self.policy(x), dim=1), self.value(x)
+        return torch.softmax(self.policy(x), dim=1), self.value(x).squeeze()
 
 
 def eval_rollout(
@@ -264,6 +264,7 @@ def train_rollout(
     observe,
     seed: int,
     num_envs: int,
+    unroll_length: int,
 ):
     model.train()
 
@@ -271,29 +272,44 @@ def train_rollout(
 
     rng = jax.random.PRNGKey(seed)
     state = init_state
+    obs = jax_to_torch(observe(state))
+    push(train_data, obs=obs)
     R = 0
-    while True:
-        obs = jax_to_torch(observe(state))
+    for length in range(unroll_length):
+        # agent step
         probs, value = model(obs)
         dist = Categorical(probs=probs)
-        actions = dist.sample()
-        push(train_data, obs=obs, actions=actions)
+        action = dist.sample()
+        push(train_data, action=action, value=value)
 
+        # environment step
         rng, _rngs = split_rng(rng, num_envs)
         state, r, terminated = step(
             state,
-            torch_to_jax(actions),
+            torch_to_jax(action),
             _rngs,
         )
+        obs = jax_to_torch(observe(state))
         R += r.sum()
+        truncated = jnp.zeros_like(terminated)
+        if length == unroll_length - 1:
+            truncated = 1 - terminated
         push(
             train_data,
+            obs=obs,
             reward=jax_to_torch(r),
             terminated=jax_to_torch(terminated),
+            truncated=jax_to_torch(truncated),
         )
 
-        if terminated.all():
-            break
+        # auto reset
+        @jax.vmap
+        def where(c, x, y):
+            return jax.lax.cond(c, lambda: x, lambda: y)
+
+        rng, _rngs = split_rng(rng, num_envs)
+        init_state = init(_rngs)
+        state = where(terminated, init_state, state)
 
     train_data = {k: torch.stack(v) for k, v in train_data.items()}
     return train_data
@@ -306,6 +322,7 @@ class Config:
     device: str = "cpu"
     seed: int = 0
     sticky_action_prob: float = 0.1
+    unroll_length: int = 19
 
 
 args = argdcls.load(Config)
@@ -346,7 +363,10 @@ td = train_rollout(
     observe=observe,
     seed=args.seed,
     num_envs=args.num_envs,
+    unroll_length=args.unroll_length,
 )
 
 for k, v in td.items():
     print(k, v.size())
+
+print(td["terminated"])
