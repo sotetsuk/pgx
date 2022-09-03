@@ -320,11 +320,12 @@ def train_rollout(
 @dataclass
 class Config:
     game: str = "breakout"
-    num_envs: int = 7
+    num_envs: int = 128
     device: str = "cpu"
     seed: int = 0
     sticky_action_prob: float = 0.1
     unroll_length: int = 19
+    lr: float = 0.1
 
 
 args = argdcls.load(Config)
@@ -350,6 +351,8 @@ model = MinAtarNetwork(
 
 print(eval_rollout(env, model))
 
+optim = optim.Adam(model.parameters(), lr=args.lr)
+
 
 init, step, observe = load(
     args.game, sticky_action_prob=args.sticky_action_prob
@@ -357,6 +360,7 @@ init, step, observe = load(
 rng = jax.random.PRNGKey(args.seed)
 rng, *_rngs = jax.random.split(rng, args.num_envs + 1)
 init_state = init(rng=jnp.array(_rngs))
+
 td = train_rollout(
     model,
     init_state=init_state,
@@ -369,4 +373,4 @@ td = train_rollout(
 )
 
 for k, v in td.items():
-    print(k, v.size(), v.type())
+    print(k, v.size(), v.type(), v.grad)
