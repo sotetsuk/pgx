@@ -11,3 +11,4 @@ jax[cpu]
 brax
 argdcls
 tqdm
+torch
