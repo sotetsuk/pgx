@@ -205,6 +205,9 @@ class MinAtarNetwork(nn.Module):
         self.policy = nn.Linear(
             in_features=128, out_features=num_actions, device=self.device
         )
+        self.value = nn.Linear(
+            in_features=128, out_features=1, device=self.device
+        )
         self.dSiLU = lambda x: torch.sigmoid(x) * (
             1 + x * (1 - torch.sigmoid(x))
         )
@@ -218,7 +221,7 @@ class MinAtarNetwork(nn.Module):
         x = x.reshape(x.size(0), -1)
         # print(x)
         x = self.dSiLU(self.fc_hidden(x))
-        return self.policy(x)
+        return torch.softmax(self.policy(x), dim=1), self.value(x)
 
 
 def eval_rollout(
@@ -232,7 +235,8 @@ def eval_rollout(
     num_envs = obs.size(0)
     R = 0
     while True:
-        actions = act(model, obs, deterministic=True)
+        probs, val = model(obs)
+        actions = probs.argmax(dim=1)
         obs, r, done, info = env.step(actions)
         R += r.sum()
         if done.all():
@@ -243,6 +247,13 @@ def eval_rollout(
 def split_rng(rng, num_envs):
     rng, *_rngs = jax.random.split(rng, num_envs + 1)
     return rng, jnp.array(_rngs)
+
+
+def push(data: Dict[str, List], **kwargs) -> None:
+    for k, v in kwargs.items():
+        if k not in data:
+            data[k] = []
+        data[k].append(v)
 
 
 def train_rollout(
@@ -263,35 +274,35 @@ def train_rollout(
     R = 0
     while True:
         obs = jax_to_torch(observe(state))
-        actions = torch_to_jax(act(model, obs, deterministic=False))
+        probs, value = model(obs)
+        dist = Categorical(probs=probs)
+        actions = dist.sample()
+        push(train_data, obs=obs, actions=actions)
 
         rng, _rngs = split_rng(rng, num_envs)
-        state, r, done = step(
+        state, r, terminated = step(
             state,
-            actions,
+            torch_to_jax(actions),
             _rngs,
         )
         R += r.sum()
+        push(
+            train_data,
+            reward=jax_to_torch(r),
+            terminated=jax_to_torch(terminated),
+        )
 
-        if done.all():
+        if terminated.all():
             break
 
-    return float(R / num_envs)
-
-
-def act(
-    model: nn.Module, obs: jnp.ndarray, deterministic: bool = False
-) -> torch.Tensor:
-    logits = model(obs)
-    dist = Categorical(logits=logits)
-    a = dist.probs.argmax(dim=-1) if deterministic else dist.sample()
-    return a
+    train_data = {k: torch.stack(v) for k, v in train_data.items()}
+    return train_data
 
 
 @dataclass
 class Config:
     game: str = "breakout"
-    num_envs: int = 128
+    num_envs: int = 7
     device: str = "cpu"
     seed: int = 0
     sticky_action_prob: float = 0.1
@@ -318,7 +329,7 @@ model = MinAtarNetwork(
     in_channels=in_channels, num_actions=num_actions, device=args.device
 )
 
-# print(eval_rollout(env, model))
+print(eval_rollout(env, model))
 
 
 init, step, observe = load(
@@ -327,7 +338,7 @@ init, step, observe = load(
 rng = jax.random.PRNGKey(args.seed)
 rng, *_rngs = jax.random.split(rng, args.num_envs + 1)
 init_state = init(rng=jnp.array(_rngs))
-train_rollout(
+td = train_rollout(
     model,
     init_state=init_state,
     init=init,
@@ -336,3 +347,6 @@ train_rollout(
     seed=args.seed,
     num_envs=args.num_envs,
 )
+
+for k, v in td.items():
+    print(k, v.size())
