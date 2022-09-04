@@ -266,7 +266,7 @@ def train_rollout(
     num_envs: int,
     unroll_length: int,
 ):
-    model.train()
+    model.eval()
 
     train_data = {}
 
@@ -296,7 +296,6 @@ def train_rollout(
         push(
             train_data,
             obs=obs,
-            probs=probs,
             action=action,
             value=value,
             reward=jax_to_torch(r),
@@ -315,6 +314,10 @@ def train_rollout(
 
     train_data = {k: torch.stack(v) for k, v in train_data.items()}
     return train_data
+
+
+def loss(td, batch_size):
+    pass
 
 
 @dataclass
@@ -373,9 +376,8 @@ for i in tqdm(range(1000)):
         unroll_length=args.unroll_length,
     )
 
-
-for k, v in td.items():
-    print(k, v.size(), v.type(), v.grad)
+    for k, v in td.items():
+        print(k, v.size(), v.type(), v.grad)
 
 # # Brax PPO メモ
 # # num_envs: int = 2048,  # rolloutしたデータ（unroll_length * num_envs * batch_size）がメモリに載る限り大きくする
