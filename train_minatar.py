@@ -38,6 +38,7 @@ from torch.distributions import Categorical
 from torch.utils import dlpack as torch_dlpack
 from tqdm import tqdm
 
+from pgx.envs import MinAtar
 from pgx.minatar import asterix, breakout
 
 Device = Union[str, torch.device]
@@ -62,77 +63,6 @@ def load(game, sticky_action_prob: float = 0.1):
         raise NotImplementedError("This game is not implemented.")
 
     return init, step, observe
-
-
-class MinAtar(gym.Env):
-    def __init__(
-        self,
-        game: str,
-        num_envs: int = 8,
-        auto_reset=True,
-        sticky_action_prob: float = 0.1,
-    ):
-        self.game = game
-        self.auto_reset = auto_reset
-        self.num_envs = num_envs
-        self.sticky_action_prob: jnp.ndarray = (
-            jnp.ones(self.num_envs) * sticky_action_prob
-        )
-        if self.game == "breakout":
-            self._reset = jax.vmap(breakout.reset)
-            self._step = jax.vmap(breakout.step)
-            self._to_obs = jax.vmap(breakout.to_obs)
-        elif self.game == "asterix":
-            self._reset = jax.vmap(asterix.reset)
-            self._step = jax.vmap(asterix.step)
-            self._to_obs = jax.vmap(asterix.to_obs)
-        else:
-            raise NotImplementedError("This game is not implemented.")
-
-        self.rng = jax.random.PRNGKey(0)
-        self.rng, _rngs = self._split_keys(self.rng)
-        self.state = self._reset(_rngs)
-
-    def reset(
-        self,
-        *,
-        seed: Optional[int] = None,
-        return_info: bool = False,
-        options: Optional[dict] = None,
-    ) -> jnp.ndarray:
-        assert seed is not None
-        self.rng = jax.random.PRNGKey(seed)
-        self.rng, _rngs = self._split_keys(self.rng)
-        self.state = self._reset(_rngs)
-        assert not return_info  # TODO: fix
-        return self._to_obs(self.state)
-
-    def step(
-        self, action: jnp.ndarray
-    ) -> Tuple[jnp.ndarray, float, bool, dict]:
-        self.rng, _rngs = self._split_keys(self.rng)
-        self.state, r, done = self._step(
-            state=self.state,
-            action=action,
-            rng=_rngs,
-            sticky_action_prob=self.sticky_action_prob,
-        )
-        if self.auto_reset:
-
-            @jax.vmap
-            def where(c, x, y):
-                return jax.lax.cond(c, lambda _: x, lambda _: y, 0)
-
-            self.rng, _rngs = self._split_keys(self.rng)
-            init_state = self._reset(_rngs)
-            self.state = where(done, init_state, self.state)
-        return self._to_obs(self.state), r, done, {}
-
-    def _split_keys(self, rng):
-        rngs = jax.random.split(rng, self.num_envs + 1)
-        rng = rngs[0]
-        subrngs = rngs[1:]
-        return rng, subrngs
 
 
 def torch_to_jax(value: torch.Tensor) -> DeviceArray:
@@ -370,7 +300,7 @@ num_actions = 6  # TODO: fix
 
 
 env = JaxToTorchWrapper(
-    MinAtar(game=args.game, num_envs=args.num_envs, auto_reset=False)
+    MinAtar(game=args.game, batch_size=args.num_envs, auto_reset=False)
 )
 model = MinAtarNetwork(
     in_channels=in_channels, num_actions=num_actions, device=args.device
