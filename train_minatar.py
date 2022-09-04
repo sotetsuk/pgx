@@ -221,7 +221,7 @@ class MinAtarNetwork(nn.Module):
         x = x.reshape(x.size(0), -1)
         # print(x)
         x = self.dSiLU(self.fc_hidden(x))
-        return torch.softmax(self.policy(x), dim=1), self.value(x).squeeze()
+        return self.policy(x), self.value(x).squeeze()
 
 
 def eval_rollout(
@@ -235,8 +235,8 @@ def eval_rollout(
     num_envs = obs.size(0)
     R = 0
     while True:
-        probs, val = model(obs)
-        actions = probs.argmax(dim=1)
+        logits, val = model(obs)
+        actions = torch.softmax(logits, dim=1).argmax(dim=1)
         obs, r, done, info = env.step(actions)
         R += r.sum()
         if done.all():
@@ -274,11 +274,10 @@ def train_rollout(
     state = init_state
     obs = jax_to_torch(observe(state))
     push(train_data, obs=obs)
-    R = 0
     for length in range(unroll_length):
         # agent step
-        probs, value = model(obs)
-        dist = Categorical(probs=probs)
+        logits, value = model(obs)
+        dist = Categorical(logits=logits)
         action = dist.sample()
 
         # environment step
@@ -289,18 +288,17 @@ def train_rollout(
             _rngs,
         )
         obs = jax_to_torch(observe(state))
-        R += r.sum()
         truncated = jnp.zeros_like(terminated)
         if length == unroll_length - 1:
             truncated = 1 - terminated
         push(
             train_data,
-            obs=obs,
-            action=action,
-            value=value,
-            reward=jax_to_torch(r),
-            terminated=jax_to_torch(terminated),
-            truncated=jax_to_torch(truncated),
+            obs=obs,  # (unroll_length+1, num_envs, 10, 10, 4)
+            action=action,  # (unroll_length+1, num_envs)
+            next_value=value,  # (unroll_length+1, num_envs)
+            reward=jax_to_torch(r),  # (unroll_length+1, num_envs)
+            terminated=jax_to_torch(terminated),  # (unroll_length+1, num_envs)
+            truncated=jax_to_torch(truncated),  # (unroll_length+1, num_envs)
         )
 
         # auto reset
@@ -316,8 +314,25 @@ def train_rollout(
     return train_data
 
 
-def loss(td, batch_size):
-    pass
+def loss_fn(model, td, batch_size):
+    model.train()
+    obs_shape = td["obs"].size()
+    unroll_length = obs_shape[0]
+    num_envs = obs_shape[1]
+    # (unroll_length, num_envs, 10, 10, channels) => (-1, 10, 10, channels)
+    logits, value = model(td["obs"][:-1].reshape(-1, 10, 10, obs_shape[-1]))
+    dist = Categorical(logits=logits)
+    log_probs = dist.log_prob(td["action"].reshape((-1,)))
+    with torch.no_grad():
+        next_value = td["next_value"].reshape((-1,))
+        reward = td["reward"].reshape((-1,))
+        A = next_value.detach() + reward - value.detach()
+    policy_loss = (-A * log_probs).mean()
+    value_loss = ((next_value.detach() + reward - value) ** 2).sqrt().mean()
+    # value_loss = ((reward - value) ** 2).sqrt().mean()
+    # return policy_loss + value_loss
+    return value_loss
+    # return policy_loss.mean()
 
 
 @dataclass
@@ -327,8 +342,9 @@ class Config:
     device: str = "cpu"
     seed: int = 0
     sticky_action_prob: float = 0.1
-    unroll_length: int = 19
-    lr: float = 0.1
+    unroll_length: int = 20
+    lr: float = 0.00001
+    batch_size: int = 32
 
 
 args = argdcls.load(Config)
@@ -352,7 +368,6 @@ model = MinAtarNetwork(
     in_channels=in_channels, num_actions=num_actions, device=args.device
 )
 
-print(eval_rollout(env, model))
 
 optim = optim.Adam(model.parameters(), lr=args.lr)
 
@@ -365,6 +380,8 @@ rng, *_rngs = jax.random.split(rng, args.num_envs + 1)
 init_state = init(rng=jnp.array(_rngs))
 
 for i in tqdm(range(1000)):
+    if i % 100 == 0:
+        print(eval_rollout(env, model), flush=True)
     td = train_rollout(
         model,
         init_state=init_state,
@@ -376,8 +393,13 @@ for i in tqdm(range(1000)):
         unroll_length=args.unroll_length,
     )
 
-    for k, v in td.items():
-        print(k, v.size(), v.type(), v.grad)
+    loss = loss_fn(model, td, args.batch_size)
+    optim.zero_grad()
+    loss.backward()
+    optim.step()
+    # for k, v in td.items():
+    #     print(k, v.size(), v.type(), v.grad)
+print(eval_rollout(env, model), flush=True)
 
 # # Brax PPO メモ
 # # num_envs: int = 2048,  # rolloutしたデータ（unroll_length * num_envs * batch_size）がメモリに載る限り大きくする
