@@ -361,25 +361,7 @@ rng = jax.random.PRNGKey(args.seed)
 rng, *_rngs = jax.random.split(rng, args.num_envs + 1)
 init_state = init(rng=jnp.array(_rngs))
 
-# num_envs: int = 2048,  # rolloutしたデータ（unroll_length * num_envs * batch_size）がメモリに載る限り大きくする
-# episode_length: int = 1000,
-# num_timesteps: int = 30_000_000,
-# eval_frequency: int = 10,
-# unroll_length: int = 5, 性能に依存するので最初に決める
-# batch_size: int = 1024, 勾配更新に使うunroll_length * batch_sizeのデータについて、メモリの載る範囲で大きくきめる
-# num_minibatches: int = 32,  # これもおそらくbatch_size決めたあとにメモリに載る範囲で大きめに決める。batch_size,num_minibatchesでnum_rolloutsが決まる。
-# num_update_epochs: int = 4  # PPOのハイパーパラメータ
-# for eval_i in range(eval_frequency+1):  # eval_frequency=10
 for i in tqdm(range(1000)):
-    # for _ in range(num_unrolls):  # num_unrolls(16) = batch_size(1024) * num_minibatches(32) // env.num_env(2048)
-    #     for _ in range(unroll_length)
-    #         one_unroll.observation += ...
-    #     one_unroll = ...
-    #     # one_unroll.observation: (unroll_length+1=6, num_envs=2048, feature_size=87)
-    #     # one_unroll.reward: (unroll_length=5, num_envs=2048)
-    # td =
-    # # td.observation (num_unrolls=16, 6, 2048, 87)
-    # # td.reward (num_unrolls=16, 5, 2048)
     td = train_rollout(
         model,
         init_state=init_state,
@@ -391,28 +373,49 @@ for i in tqdm(range(1000)):
         unroll_length=args.unroll_length,
     )
 
-    # # num_steps(163840) = batch_size(1024) * num_minibatches(32) * unroll_length(5)
-    # for _ in range(num_epochs):  # num_epochs = num_timesteps(=30_000_000) // (num_steps(=163840) * eval_frequency(=10))
-    #     observation, td = train_unroll(agent, env, observation, num_unrolls, unroll_length)
-    #     td = sd_map(unroll_first, td)
-    #     # td.observation (6, 32768=2048*16=1024*32, 87)
-    #     # td.reward (5, 32768=2048*16=1024*32)
-    #
-    #     for _ in range(num_update_epochs):  # num_update_epochs=4
-    #     # shuffle and batch the data
-    #       with torch.no_grad():
-    #           epoch_td = sd_map(shuffle_batch, td)
-    #           # epoch_td.observation (num_minibatches=32, 6, batch_size=1024, 87)
-    #           # epoch_td.reward (num_minibatches=32, 5, batch_zie=1024)
-    #       for minibatch_i in range(num_minibatches):
-    #           td_minibatch = sd_map(lambda d: d[minibatch_i], epoch_td)
-    #           # td_minibatch.observation (6, 1024, 87)
-    #           # td_minibatch.reward (5, 1024)
-    #           loss = agent.loss(td_minibatch._asdict())
-    #           optimizer.zero_grad()
-    #           loss.backward()
-    #           optimizer.step()
-    #           total_loss += loss.detach()
 
 for k, v in td.items():
     print(k, v.size(), v.type(), v.grad)
+
+# # Brax PPO メモ
+# # num_envs: int = 2048,  # rolloutしたデータ（unroll_length * num_envs * batch_size）がメモリに載る限り大きくする
+# # episode_length: int = 1000,
+# # num_timesteps: int = 30_000_000,
+# # eval_frequency: int = 10,
+# # unroll_length: int = 5, 性能に依存するので最初に決める
+# # batch_size: int = 1024, 勾配更新に使うunroll_length * batch_sizeのデータについて、メモリの載る範囲で大きくきめる
+# # num_minibatches: int = 32,  # これもおそらくbatch_size決めたあとにメモリに載る範囲で大きめに決める。batch_size,num_minibatchesでnum_rolloutsが決まる。
+# # num_update_epochs: int = 4  # PPOのハイパーパラメータ
+# for eval_i in range(eval_frequency+1):  # eval_frequency=10
+#     for _ in range(num_unrolls):  # num_unrolls(16) = batch_size(1024) * num_minibatches(32) // env.num_env(2048)
+#         for _ in range(unroll_length):
+#             one_unroll.observation += ...
+#         one_unroll = ...
+#         # one_unroll.observation: (unroll_length+1=6, num_envs=2048, feature_size=87)
+#         # one_unroll.reward: (unroll_length=5, num_envs=2048)
+#     td = ...
+#     # td.observation (num_unrolls=16, 6, 2048, 87)
+#     # td.reward (num_unrolls=16, 5, 2048)
+#
+#     # num_steps(163840) = batch_size(1024) * num_minibatches(32) * unroll_length(5)
+#     for _ in range(num_epochs):  # num_epochs = num_timesteps(=30_000_000) // (num_steps(=163840) * eval_frequency(=10))
+#         observation, td = train_unroll(agent, env, observation, num_unrolls, unroll_length)
+#         td = sd_map(unroll_first, td)
+#         # td.observation (6, 32768=2048*16=1024*32, 87)
+#         # td.reward (5, 32768=2048*16=1024*32)
+#
+#         for _ in range(num_update_epochs):  # num_update_epochs=4
+#         # shuffle and batch the data
+#           with torch.no_grad():
+#               epoch_td = sd_map(shuffle_batch, td)
+#               # epoch_td.observation (num_minibatches=32, 6, batch_size=1024, 87)
+#               # epoch_td.reward (num_minibatches=32, 5, batch_zie=1024)
+#           for minibatch_i in range(num_minibatches):
+#               td_minibatch = sd_map(lambda d: d[minibatch_i], epoch_td)
+#               # td_minibatch.observation (6, 1024, 87)
+#               # td_minibatch.reward (5, 1024)
+#               loss = agent.loss(td_minibatch._asdict())
+#               optimizer.zero_grad()
+#               loss.backward()
+#               optimizer.step()
+#               total_loss += loss.detach()
