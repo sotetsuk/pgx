@@ -1,6 +1,16 @@
 """
 TDOO:
 
+* [ ] remove env
+* [ ] batching
+* [ ] logging
+    * [ ] ent_coef
+    * [ ] probs
+    * [ ] loss
+      * [ ] policy_loss
+      * [ ] value_loss
+* [ ] wandb
+* [ ] search hyper parameters
 * [ ] MinAtar v1 => v2
 
 """
@@ -325,10 +335,12 @@ def loss_fn(model, td, batch_size):
     dist = Categorical(logits=logits)
     log_probs = dist.log_prob(td["action"].reshape((-1,)))
     reward = td["reward"].reshape((-1,))
-    A = next_value.detach() + reward - value.detach()
+    next_value[td["terminated"].bool().reshape((-1,))] = 0.0
+    V_tgt = next_value.detach() + reward
+    A = V_tgt - value.detach()
     policy_loss = -A * log_probs
-    value_loss = ((next_value.detach() + reward - value) ** 2).sqrt()
-    return (policy_loss + value_loss).mean()
+    value_loss = ((V_tgt - value) ** 2).sqrt()
+    return (policy_loss + value_loss * 0.1).mean()
 
 
 @dataclass
@@ -339,7 +351,7 @@ class Config:
     seed: int = 0
     sticky_action_prob: float = 0.1
     unroll_length: int = 20
-    lr: float = 0.00001
+    lr: float = 0.001
     batch_size: int = 32
 
 
