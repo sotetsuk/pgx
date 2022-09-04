@@ -276,7 +276,7 @@ def train_rollout(
     push(train_data, obs=obs)
     for length in range(unroll_length):
         # agent step
-        logits, value = model(obs)
+        logits, _ = model(obs)
         dist = Categorical(logits=logits)
         action = dist.sample()
 
@@ -295,7 +295,6 @@ def train_rollout(
             train_data,
             obs=obs,  # (unroll_length+1, num_envs, 10, 10, 4)
             action=action,  # (unroll_length+1, num_envs)
-            next_value=value,  # (unroll_length+1, num_envs)
             reward=jax_to_torch(r),  # (unroll_length+1, num_envs)
             terminated=jax_to_torch(terminated),  # (unroll_length+1, num_envs)
             truncated=jax_to_torch(truncated),  # (unroll_length+1, num_envs)
@@ -321,18 +320,15 @@ def loss_fn(model, td, batch_size):
     num_envs = obs_shape[1]
     # (unroll_length, num_envs, 10, 10, channels) => (-1, 10, 10, channels)
     logits, value = model(td["obs"][:-1].reshape(-1, 10, 10, obs_shape[-1]))
+    with torch.no_grad():
+        _, next_value = model(td["obs"][1:].reshape(-1, 10, 10, obs_shape[-1]))
     dist = Categorical(logits=logits)
     log_probs = dist.log_prob(td["action"].reshape((-1,)))
-    with torch.no_grad():
-        next_value = td["next_value"].reshape((-1,))
-        reward = td["reward"].reshape((-1,))
-        A = next_value.detach() + reward - value.detach()
-    policy_loss = (-A * log_probs).mean()
-    value_loss = ((next_value.detach() + reward - value) ** 2).sqrt().mean()
-    # value_loss = ((reward - value) ** 2).sqrt().mean()
-    # return policy_loss + value_loss
-    return value_loss
-    # return policy_loss.mean()
+    reward = td["reward"].reshape((-1,))
+    A = next_value.detach() + reward - value.detach()
+    policy_loss = -A * log_probs
+    value_loss = ((next_value.detach() + reward - value) ** 2).sqrt()
+    return (policy_loss + value_loss).mean()
 
 
 @dataclass
