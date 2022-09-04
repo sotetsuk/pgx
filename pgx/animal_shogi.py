@@ -1,5 +1,6 @@
-import numpy as np
 from dataclasses import dataclass
+
+import numpy as np
 
 
 @dataclass
@@ -27,7 +28,14 @@ def turn_change(state: AnimalShogiState):
 #  piece: 動かした駒の種類
 #  captured: 取られた駒の種類。駒が取られていない場合は0
 #  is_promote: 駒を成るかどうかの判定
-def move(state: AnimalShogiState, first: int, final: int, piece: int, captured: int, is_promote: int):
+def move(
+    state: AnimalShogiState,
+    first: int,
+    final: int,
+    piece: int,
+    captured: int,
+    is_promote: int,
+):
     state.board[piece][first] = 0
     state.board[0][first] = 1
     state.board[captured][final] = 0
