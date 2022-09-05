@@ -31,18 +31,19 @@ def observe(state: State) -> jnp.ndarray:
 ## Roadmap
 
 * [ ] Tic-tac-toe
-* [ ] AnimalShogi
-* [ ] Go (5x5)
+* [ ] AnimalShogi (in progress)
+* [ ] Go (5x5) (in progress)
 * [ ] MinAtar
-  * [ ] Breakout
-  * [ ] Asterix
+  * [x] Breakout
+  * [x] Asterix
   * [ ] SpaceInvaders
   * [ ] Seaquest
   * [ ] Freeway
 * [ ] Shogi
 * [ ] Go 19x19
 * [ ] Chess
-
+* [ ] Mahjong
+* [ ] Contract bridge bidding
 
 # LICENSE
 
