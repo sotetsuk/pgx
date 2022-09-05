@@ -1,8 +1,9 @@
 """
 TDOO:
 
-* [ ] remove env
 * [ ] batching
+* [ ] search num_envs & batch_size (unroll_length=20)
+* [ ] remove env
 * [ ] logging
     * [ ] ent_coef
     * [ ] probs
@@ -233,11 +234,11 @@ def train_rollout(
             truncated = 1 - terminated
         push(
             train_data,
-            obs=obs,  # (unroll_length+1, num_envs, 10, 10, 4)
-            action=action,  # (unroll_length+1, num_envs)
-            reward=jax_to_torch(r),  # (unroll_length+1, num_envs)
-            terminated=jax_to_torch(terminated),  # (unroll_length+1, num_envs)
-            truncated=jax_to_torch(truncated),  # (unroll_length+1, num_envs)
+            obs=obs,
+            action=action,
+            reward=jax_to_torch(r),
+            terminated=jax_to_torch(terminated),
+            truncated=jax_to_torch(truncated),
         )
 
         # auto reset
@@ -250,22 +251,27 @@ def train_rollout(
         state = where(terminated, init_state, state)
 
     train_data = {k: torch.stack(v) for k, v in train_data.items()}
+    # obs: (unroll_length+1, num_envs,  10, 10, 4)
+    # others: (unroll_length, num_envs)
     return train_data
 
 
-def loss_fn(model, td, batch_size):
+def loss_fn(model, batch):
+    # assumes td has
+    # obs: (unroll_length+1, batch_size, 10, 10, 4)
+    # others: (unroll_length, batch_size)
     model.train()
-    obs_shape = td["obs"].size()
-    unroll_length = obs_shape[0]
-    num_envs = obs_shape[1]
-    # (unroll_length, num_envs, 10, 10, channels) => (-1, 10, 10, channels)
-    logits, value = model(td["obs"][:-1].reshape(-1, 10, 10, obs_shape[-1]))
+    obs_shape = batch["obs"].size()
+    # (batch_size, num_envs, 10, 10, channels) => (-1, 10, 10, channels)
+    logits, value = model(batch["obs"][:-1].reshape(-1, 10, 10, obs_shape[-1]))
     with torch.no_grad():
-        _, next_value = model(td["obs"][1:].reshape(-1, 10, 10, obs_shape[-1]))
+        _, next_value = model(
+            batch["obs"][1:].reshape(-1, 10, 10, obs_shape[-1])
+        )
     dist = Categorical(logits=logits)
-    log_probs = dist.log_prob(td["action"].reshape((-1,)))
-    reward = td["reward"].reshape((-1,))
-    next_value[td["terminated"].bool().reshape((-1,))] = 0.0
+    log_probs = dist.log_prob(batch["action"].reshape((-1,)))
+    reward = batch["reward"].reshape((-1,))
+    next_value[batch["terminated"].bool().reshape((-1,))] = 0.0
     V_tgt = next_value.detach() + reward
     A = V_tgt - value.detach()
     policy_loss = -A * log_probs
@@ -276,7 +282,7 @@ def loss_fn(model, td, batch_size):
 @dataclass
 class Config:
     game: str = "breakout"
-    num_envs: int = 128
+    num_envs: int = 256
     device: str = "cpu"
     seed: int = 0
     sticky_action_prob: float = 0.1
@@ -317,6 +323,8 @@ rng = jax.random.PRNGKey(args.seed)
 rng, *_rngs = jax.random.split(rng, args.num_envs + 1)
 init_state = init(rng=jnp.array(_rngs))
 
+assert args.num_envs % args.batch_size == 0
+num_minibatches = args.num_envs // args.batch_size
 for i in tqdm(range(1000)):
     if i % 100 == 0:
         print(eval_rollout(env, model), flush=True)
@@ -330,10 +338,27 @@ for i in tqdm(range(1000)):
         num_envs=args.num_envs,
         unroll_length=args.unroll_length,
     )
+    # td
+    # obs: (unroll_length+1, num_envs,  10, 10, 4)
+    # others: (unroll_length, num_envs)
+    td_batch = {
+        k: torch.reshape(
+            v,
+            [v.shape[0], num_minibatches, args.batch_size] + list(v.shape[2:]),
+        ).transpose(0, 1)
+        for k, v in td.items()
+    }
+    # td batch
+    # obs: (num_minibatches, unroll_length+1, batch_size, 10, 10, 4)
+    # others: (num_minibatches, unroll_length, batch_size)
 
-    loss = loss_fn(model, td, args.batch_size)
     optim.zero_grad()
-    loss.backward()
+    for i_batch in range(num_minibatches):
+        loss = loss_fn(
+            model,
+            {k: v[i_batch] for k, v in td_batch.items()},
+        )
+        loss.backward()
     optim.step()
     # for k, v in td.items():
     #     print(k, v.size(), v.type(), v.grad)
