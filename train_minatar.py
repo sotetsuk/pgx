@@ -258,7 +258,7 @@ def train_rollout(
     return train_data
 
 
-def loss_fn(model, batch):
+def loss_fn(model, batch, gamma):
     # assumes td has
     # obs: (unroll_length+1, batch_size, 10, 10, 4)
     # others: (unroll_length, batch_size)
@@ -274,7 +274,7 @@ def loss_fn(model, batch):
     log_probs = dist.log_prob(batch["action"].reshape((-1,)))
     reward = batch["reward"].reshape((-1,))
     next_value[batch["terminated"].bool().reshape((-1,))] = 0.0
-    V_tgt = next_value.detach() + reward
+    V_tgt = next_value.detach() * gamma + reward
     A = V_tgt - value.detach()
     policy_loss = -A * log_probs
     value_loss = ((V_tgt - value) ** 2).sqrt()
@@ -291,6 +291,7 @@ class Config:
     unroll_length: int = 30
     lr: float = 0.003
     batch_size: int = 32
+    gamma: float = 0.99
 
 
 args = argdcls.load(Config)
@@ -359,6 +360,7 @@ for i in tqdm(range(1000)):
         loss = loss_fn(
             model,
             {k: v[i_batch] for k, v in td_batch.items()},
+            gamma=args.gamma,
         )
         loss.backward()
     optim.step()
