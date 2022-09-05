@@ -3,13 +3,18 @@ TDOO:
 
 * [x] batching
 * [x] gamma
-* [ ] entropy
+* [x] entropy
 * [ ] logging
-    * [ ] ent_coef
-    * [ ] probs
+    * [x] eval/R
+    * [x] train/env_steps
+    * [x] train/grad_steps
+    * [x] train/num_unrolls
+    * [ ] train/reward_per_step
+    * [ ] train/prob
     * [ ] loss
       * [ ] policy_loss
       * [ ] value_loss
+      * [ ] ent_loss
 * [ ] search num_envs & batch_size (unroll_length=20)
 * [ ] wandb
 * [ ] search hyper parameters
@@ -335,11 +340,25 @@ rng = jax.random.PRNGKey(args.seed)
 rng, *_rngs = jax.random.split(rng, args.num_envs + 1)
 init_state = init(rng=jnp.array(_rngs))
 
+
+train_env_steps = 0
+train_num_unrolls = 0
+train_opt_steps = 0
+train_r_per_step = 0.0
 assert args.num_envs % args.batch_size == 0
 num_minibatches = args.num_envs // args.batch_size
-for i in tqdm(range(1000)):
-    if i % 10 == 0:
-        print(eval_rollout(env, model), flush=True)
+# for i in tqdm(range(1000)):
+for i in range(1000):
+    if i % 5 == 0:
+        eval_R = eval_rollout(env, model)
+        log = {
+            "train/env_steps": train_env_steps,
+            "train/opt_steps": train_opt_steps,
+            "train/r_per_step": train_r_per_step,
+            "eval/R": eval_R,
+        }
+        print(log, flush=True)
+
     td = train_rollout(
         model,
         init_state=init_state,
@@ -376,9 +395,15 @@ for i in tqdm(range(1000)):
         )
         loss.backward()
     optim.step()
-    # for k, v in td.items():
-    #     print(k, v.size(), v.type(), v.grad)
-print(eval_rollout(env, model), flush=True)
+
+    # update stats
+    train_env_steps += args.unroll_length * args.num_envs
+    train_num_unrolls += args.num_envs
+    train_opt_steps += 1
+    train_r_per_step = 0.99 * train_r_per_step + 0.01 * float(
+        td["reward"].mean()
+    )
+
 
 # # Brax PPO メモ
 # # num_envs: int = 2048,  # rolloutしたデータ（unroll_length * num_envs * batch_size）がメモリに載る限り大きくする
