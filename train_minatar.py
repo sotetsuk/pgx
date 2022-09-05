@@ -1,9 +1,10 @@
 """
 TDOO:
 
-* [ ] batching
+* [x] batching
+* [ ] entropy
+* [ ] gamma
 * [ ] search num_envs & batch_size (unroll_length=20)
-* [ ] remove env
 * [ ] logging
     * [ ] ent_coef
     * [ ] probs
@@ -12,6 +13,7 @@ TDOO:
       * [ ] value_loss
 * [ ] wandb
 * [ ] search hyper parameters
+* [ ] remove env
 * [ ] MinAtar v1 => v2
 
 """
@@ -276,7 +278,7 @@ def loss_fn(model, batch):
     A = V_tgt - value.detach()
     policy_loss = -A * log_probs
     value_loss = ((V_tgt - value) ** 2).sqrt()
-    return (policy_loss + value_loss * 0.1).mean()
+    return (policy_loss + value_loss).mean()
 
 
 @dataclass
@@ -286,8 +288,8 @@ class Config:
     device: str = "cpu"
     seed: int = 0
     sticky_action_prob: float = 0.1
-    unroll_length: int = 20
-    lr: float = 0.001
+    unroll_length: int = 30
+    lr: float = 0.003
     batch_size: int = 32
 
 
@@ -326,7 +328,7 @@ init_state = init(rng=jnp.array(_rngs))
 assert args.num_envs % args.batch_size == 0
 num_minibatches = args.num_envs // args.batch_size
 for i in tqdm(range(1000)):
-    if i % 100 == 0:
+    if i % 10 == 0:
         print(eval_rollout(env, model), flush=True)
     td = train_rollout(
         model,
