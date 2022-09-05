@@ -2,15 +2,15 @@
 TDOO:
 
 * [x] batching
+* [x] gamma
 * [ ] entropy
-* [ ] gamma
-* [ ] search num_envs & batch_size (unroll_length=20)
 * [ ] logging
     * [ ] ent_coef
     * [ ] probs
     * [ ] loss
       * [ ] policy_loss
       * [ ] value_loss
+* [ ] search num_envs & batch_size (unroll_length=20)
 * [ ] wandb
 * [ ] search hyper parameters
 * [ ] remove env
@@ -258,7 +258,7 @@ def train_rollout(
     return train_data
 
 
-def loss_fn(model, batch, gamma):
+def loss_fn(model, batch, gamma, policy_coef, value_coef, ent_coef):
     # assumes td has
     # obs: (unroll_length+1, batch_size, 10, 10, 4)
     # others: (unroll_length, batch_size)
@@ -276,9 +276,15 @@ def loss_fn(model, batch, gamma):
     next_value[batch["terminated"].bool().reshape((-1,))] = 0.0
     V_tgt = next_value.detach() * gamma + reward
     A = V_tgt - value.detach()
+    # all losses are 1d (unroll_length * batch_size) array
     policy_loss = -A * log_probs
     value_loss = ((V_tgt - value) ** 2).sqrt()
-    return (policy_loss + value_loss).mean()
+    ent_loss = -dist.entropy()
+    return (
+        policy_coef * policy_loss
+        + value_coef * value_loss
+        + ent_coef * ent_loss
+    ).mean()
 
 
 @dataclass
@@ -292,6 +298,9 @@ class Config:
     lr: float = 0.003
     batch_size: int = 32
     gamma: float = 0.99
+    policy_coef: float = 1.0
+    value_coef: float = 1.0
+    ent_coef: float = 0.1
 
 
 args = argdcls.load(Config)
@@ -361,6 +370,9 @@ for i in tqdm(range(1000)):
             model,
             {k: v[i_batch] for k, v in td_batch.items()},
             gamma=args.gamma,
+            policy_coef=args.policy_coef,
+            value_coef=args.value_coef,
+            ent_coef=args.ent_coef,
         )
         loss.backward()
     optim.step()
