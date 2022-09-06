@@ -54,9 +54,7 @@ def drop(state: AnimalShogiState, point: int, piece: int):
 
 #  ある座標に存在する駒種を返す
 def piece_type(state: AnimalShogiState, point: int):
-    for i in range(11):
-        if state.board[i][point] == 1:
-            return i
+    return state.board[:, point].argmax()
 
 
 #  上下左右の辺に接しているかどうか
@@ -214,7 +212,3 @@ def legal_drop(state: AnimalShogiState):
                 moves.append([j, piece])
     return moves
 
-
-# 特徴量変換
-def make_input_features(state: AnimalShogiState):
-    return
