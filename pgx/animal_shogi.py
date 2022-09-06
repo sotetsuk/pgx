@@ -74,6 +74,15 @@ def piece_type(state: AnimalShogiState, point: int):
     return state.board[:, point].argmax()
 
 
+# 盤面のどこに何の駒があるかをnp.arrayに移したもの
+# 同じ座標に複数回poece_typeを使用する場合はこちらを使った方が良い
+def board_status(state: AnimalShogiState):
+    board = np.zeros(12)
+    for i in range(12):
+        board[i] = piece_type(state, i)
+    return board
+
+
 #  上下左右の辺に接しているかどうか
 #  接している場合は後の関数で行ける場所を制限する
 def is_side(point):
@@ -188,16 +197,17 @@ def point_moves(piece, point):
 
 #  駒打ち以外の合法手を列挙する
 def legal_moves(state: AnimalShogiState):
+    board = board_status(state)
     moves = []
     for i in range(12):
-        piece = piece_type(state, i)
+        piece = board[i]
         # 自分の駒の時のみ動かせる
         if (piece - 1) // 5 != state.turn:
             continue
         points = point_moves(piece, i)
         # 可変長なので後に修正
         for p in points:
-            piece2 = piece_type(state, p)
+            piece2 = board[p]
             # 自分の駒がある場所には動けない
             if (piece2 - 1) // 5 == state.turn:
                 continue
