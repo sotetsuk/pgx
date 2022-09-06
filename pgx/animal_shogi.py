@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
+import copy
 
 
 # 盤面のdataclass
@@ -34,6 +35,17 @@ class AnimalShogiAction:
     captured: int = 0
     # is_promote: 駒を成るかどうかの判定
     is_promote: int = 0
+
+
+# BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
+# 端にいる場合は対応するところに0をかけていけないようにする
+BLACK_PAWN_MOVE = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
+WHITE_PAWN_MOVE = np.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
+BLACK_GOLD_MOVE = np.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
+WHITE_GOLD_MOVE = np.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
+ROOK_MOVE = np.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
+BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
+KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
 # 手番を変更する
@@ -75,11 +87,21 @@ def piece_type(state: AnimalShogiState, point: int):
 
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
-# 同じ座標に複数回poece_typeを使用する場合はこちらを使った方が良い
+# 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
 def board_status(state: AnimalShogiState):
     board = np.zeros(12)
     for i in range(12):
         board[i] = piece_type(state, i)
+    return board
+
+
+# 手番側の駒かどうか
+def my_pieces(state: AnimalShogiState):
+    board = np.zeros(12)
+    for i in range(12):
+        piece = piece_type(state, i)
+        if (piece - 1) // 5 == state.turn:
+            board[i] = 1
     return board
 
 
@@ -93,124 +115,97 @@ def is_side(point):
     return is_up, is_down, is_left, is_right
 
 
-#  各駒の動き
-def pawn_move(turn, point):
-    #  最奥にいてはいけない
-    if turn == 0:
-        assert point % 4 != 0
-        return [point - 1]
-    else:
-        assert point % 4 != 3
-        return [point + 1]
+# point(0~11)を座標(00~23)に変換
+def convert_point(point):
+    return point // 4, point % 4
+
+
+# はみ出す部分をカットする
+def cut_outside(array, point):
+    u, d, l, r = is_side(point)
+    if u:
+        array[:, 0] *= 0
+    if d:
+        array[:, 2] *= 0
+    if r:
+        array[0, :] *= 0
+    if l:
+        array[2, :] *= 0
+
+
+def return_board(array, point):
+    y, t = convert_point(point)
+    cut_outside(array, point)
+    return np.roll(array, (y - 1, t - 1), axis=(0, 1))
+
+
+# 各駒の動き
+def black_pawn_move(point):
+    return return_board(np.copy(BLACK_PAWN_MOVE), point)
+
+
+def white_pawn_move(point):
+    return return_board(np.copy(WHITE_PAWN_MOVE), point)
+
+
+def black_gold_move(point):
+    return return_board(np.copy(BLACK_GOLD_MOVE), point)
+
+
+def white_gold_move(point):
+    return return_board(np.copy(WHITE_GOLD_MOVE), point)
 
 
 def rook_move(point):
-    u, d, l, r = is_side(point)
-    moves = []
-    if not r:
-        moves.append(point - 4)
-    if not u:
-        moves.append(point - 1)
-    if not d:
-        moves.append(point + 1)
-    if not l:
-        moves.append(point + 4)
-    return moves
+    return return_board(np.copy(ROOK_MOVE), point)
 
 
 def bishop_move(point):
-    u, d, l, r = is_side(point)
-    moves = []
-    if not r:
-        if not u:
-            moves.append(point - 5)
-        if not d:
-            moves.append(point - 3)
-    if not l:
-        if not u:
-            moves.append(point + 3)
-        if not d:
-            moves.append(point + 5)
-    return moves
+    return return_board(np.copy(BISHOP_MOVE), point)
 
 
 def king_move(point):
-    #  座標が小さい順に並ぶようにする
-    u, d, l, r = is_side(point)
-    moves = []
-    if not r:
-        if not u:
-            moves.append(point - 5)
-        moves.append(point - 4)
-        if not d:
-            moves.append(point - 3)
-    if not u:
-        moves.append(point - 1)
-    if not d:
-        moves.append(point + 1)
-    if not l:
-        if not u:
-            moves.append(point + 3)
-        moves.append(point + 4)
-        if not d:
-            moves.append(point + 5)
-    return moves
+    return return_board(np.copy(KING_MOVE), point)
 
 
-def gold_move(turn, point):
-    #  座標が小さい順に並ぶようにする
-    u, d, l, r = is_side(point)
-    moves = []
-    if not r:
-        if not u and turn == 0:
-            moves.append(point - 5)
-        moves.append(point - 4)
-        if not d and turn == 1:
-            moves.append(point - 3)
-    if not u:
-        moves.append(point - 1)
-    if not d:
-        moves.append(point + 1)
-    if not l:
-        if not u and turn == 0:
-            moves.append(point + 3)
-        moves.append(point + 4)
-        if not d and turn == 1:
-            moves.append(point + 5)
-    return moves
+if __name__ == '__main__':
+    print()
 
 
 #  座標と駒の種類から到達できる座標を列挙する関数
 def point_moves(piece, point):
-    turn = (piece - 1) // 5
-    if piece % 5 == 1:
-        return pawn_move(turn, point)
+    if piece == 1:
+        return black_pawn_move(point)
+    if piece == 6:
+        return white_pawn_move(point)
     if piece % 5 == 2:
         return rook_move(point)
     if piece % 5 == 3:
         return bishop_move(point)
     if piece % 5 == 4:
         return king_move(point)
-    if piece % 5 == 0:
-        return gold_move(turn, point)
+    if piece == 5:
+        return black_gold_move(point)
+    if piece == 10:
+        return white_gold_move(point)
 
 
 #  駒打ち以外の合法手を列挙する
 def legal_moves(state: AnimalShogiState):
     board = board_status(state)
+    my_piece = my_pieces(state)
     moves = []
     for i in range(12):
-        piece = board[i]
-        # 自分の駒の時のみ動かせる
-        if (piece - 1) // 5 != state.turn:
+        if my_piece[i] == 0:
             continue
-        points = point_moves(piece, i)
-        # 可変長なので後に修正
-        for p in points:
-            piece2 = board[p]
-            # 自分の駒がある場所には動けない
-            if (piece2 - 1) // 5 == state.turn:
+        piece = board[i]
+        points = point_moves(piece, i).reshape(12)
+        for p in range(12):
+            if points[p] == 0:
                 continue
+            if my_piece[p] == 1:
+                continue
+            piece2 = board[p]
             # ひよこが最奥までいった場合、強制的に成る
             if piece == 1 and p % 4 == 0:
                 moves.append(AnimalShogiAction(False, piece, p, i, piece2, 1))
