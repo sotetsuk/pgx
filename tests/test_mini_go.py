@@ -3,7 +3,7 @@ import numpy as np
 from pgx.mini_go import BLACK, WHITE, _is_surrounded, init, step
 
 
-def test_sorrounded():
+def test_surrounded():
     state = init()
     state, _, _ = step(state=state, action=np.array([0, 1, BLACK]))
     state, _, _ = step(state=state, action=np.array([1, 0, BLACK]))
