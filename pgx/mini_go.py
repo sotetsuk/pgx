@@ -13,7 +13,11 @@ BOARD_SIZE = 5
 BLACK = 0
 WHITE = 1
 POINT = 2
-TO_CHAR = np.array(["@", "O", "+"], dtype=str)
+BLACK_CHAR = "@"
+WHITE_CHAR = "O"
+POINT_CHAR = "+"
+
+TO_CHAR = np.array([BLACK_CHAR, WHITE_CHAR, POINT_CHAR], dtype=str)
 
 
 @struct.dataclass
@@ -23,16 +27,34 @@ class MiniGoState:
     agehama: np.ndarray = np.zeros(
         2, dtype=int
     )  # agehama[0]: agehama earned by player(black), agehama[1]: agehama earned by player(white)
-    passed = np.zeros(1, dtype=bool)
+    passed: np.ndarray = np.zeros(1, dtype=bool)
 
 
-def init() -> MiniGoState:
-    state = MiniGoState()
+def init(init_board: Optional[np.ndarray]) -> MiniGoState:
+    if init_board is not None:
+        assert init_board.shape == (BOARD_SIZE, BOARD_SIZE)
+        state = MiniGoState(board=init_board.copy())
+    else:
+        state = MiniGoState()
+
     return state
 
 
+def to_init_board(str: str) -> np.ndarray:
+    assert len(str) == BOARD_SIZE * BOARD_SIZE
+    init_board = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=int)
+    for i in range(BOARD_SIZE * BOARD_SIZE):
+        if str[i] == BLACK_CHAR:
+            init_board[i] = BLACK
+        elif str[i] == WHITE_CHAR:
+            init_board[i] = WHITE
+        elif str[i] == POINT_CHAR:
+            init_board[i] = POINT
+    return init_board.reshape((BOARD_SIZE, BOARD_SIZE))
+
+
 def reset() -> MiniGoState:
-    return init()
+    return init(None)
 
 
 def show(state: MiniGoState) -> None:
@@ -60,9 +82,10 @@ def step(
     done = False
     if action is None:
         if new_state.passed[0]:
+            print("end by pass.")
             done = True
             # r = get_score()
-            return new_state, r, done
+            return new_state, r, True
         else:
             new_state.passed[0] = True
             return new_state, r, done
@@ -79,6 +102,7 @@ def step(
     else:
         r = -100
         done = True
+        print("cannot set stone.")
         return new_state, r, done
 
     # 囲んでいたら取る
@@ -142,3 +166,16 @@ def _is_surrounded(
         return False, examined_stones
 
     return True, examined_stones
+
+
+state = init(None)
+show(state=state)
+state, _, done = step(state=state, action=None)
+print(done)
+state, _, done = step(state=state, action=np.array([0, 1, BLACK]))
+print(done)
+state, _, done = step(state=state, action=None)
+print(done)
+state, _, done = step(state=state, action=None)
+print(done)
+show(state=state)
