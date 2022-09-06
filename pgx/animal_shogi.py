@@ -1,7 +1,7 @@
+import copy
 from dataclasses import dataclass
 
 import numpy as np
-import copy
 
 
 # 盤面のdataclass
@@ -168,7 +168,7 @@ def king_move(point):
     return return_board(np.copy(KING_MOVE), point)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print()
 
 
