@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 
+# 盤面のdataclass
 @dataclass
 class AnimalShogiState:
     # turn 先手番なら0 後手番なら1
@@ -16,6 +17,30 @@ class AnimalShogiState:
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
 
 
+# 移動のdataclass
+@dataclass
+class AnimalShogiMove:
+    # first: 移動前の座標
+    first: int
+    # final: 移動後の座標
+    final: int
+    # piece: 動かした駒の種類
+    piece: int
+    # captured: 取られた駒の種類。駒が取られていない場合は0
+    captured: int
+    # is_promote: 駒を成るかどうかの判定
+    is_promote: int
+
+
+# 駒打ちのdataclass
+@dataclass
+class AnimalShogiDrop:
+    # piece: 打った駒の種類
+    piece: int
+    # point: 駒を打った座標
+    point: int
+
+
 # 手番を変更する
 def turn_change(state: AnimalShogiState):
     state.turn = (state.turn + 1) % 2
@@ -23,39 +48,28 @@ def turn_change(state: AnimalShogiState):
 
 
 #  駒打ちでない移動の処理
-#  first: 移動前の座標
-#  final: 移動後の座標
-#  piece: 動かした駒の種類
-#  captured: 取られた駒の種類。駒が取られていない場合は0
-#  is_promote: 駒を成るかどうかの判定
 def move(
     state: AnimalShogiState,
-    first: int,
-    final: int,
-    piece: int,
-    captured: int,
-    is_promote: int,
+    mov: AnimalShogiMove,
 ):
-    state.board[piece][first] = 0
-    state.board[0][first] = 1
-    state.board[captured][final] = 0
-    state.board[piece + 4 * is_promote][final] = 1
-    if captured != 0:
+    state.board[mov.piece][mov.first] = 0
+    state.board[0][mov.first] = 1
+    state.board[mov.captured][mov.final] = 0
+    state.board[mov.piece + 4 * mov.is_promote][mov.final] = 1
+    if mov.captured != 0:
         if state.turn == 0:
-            state.hand[(captured - 6) % 4] += 1
+            state.hand[(mov.captured - 6) % 4] += 1
         else:
-            state.hand[captured % 4 + 2] += 1
+            state.hand[mov.captured % 4 + 2] += 1
     state = turn_change(state)
     return state
 
 
 #  駒打ちの処理
-#  point: 駒を打つ座標
-#  piece: 打つ駒の種類。ライオン、ニワトリは打てないのでそれ以外の三種から選ぶ
-def drop(state: AnimalShogiState, point: int, piece: int):
-    state.hand[piece - 1 - 2 * state.turn] -= 1
-    state.board[piece][point] = 1
-    state.board[0][point] = 0
+def drop(state: AnimalShogiState, dro: AnimalShogiDrop):
+    state.hand[dro.piece - 1 - 2 * state.turn] -= 1
+    state.board[dro.piece][dro.point] = 1
+    state.board[0][dro.point] = 0
     state = turn_change(state)
     return state
 

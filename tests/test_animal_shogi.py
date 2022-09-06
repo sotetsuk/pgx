@@ -47,7 +47,8 @@ def test_turn_change():
 
 def test_move():
     b = copy.deepcopy(INIT_BOARD)
-    s = move(b, 6, 5, 1, 6, 0)
+    m = AnimalShogiMove(first=6, final=5, piece=1, captured=6, is_promote=0)
+    s = move(b, m)
     assert s.board[0][6] == 1
     assert s.board[1][6] == 0
     assert s.board[1][5] == 1
@@ -55,7 +56,8 @@ def test_move():
     assert s.hand[0] == 1
     assert s.turn == 1
     b2 = copy.deepcopy(TEST_BOARD)
-    s2 = move(b2, 1, 0, 1, 8, 1)
+    m2 = AnimalShogiMove(first=1, final=0, piece=1, captured=8, is_promote=1)
+    s2 = move(b2, m2)
     assert s2.board[0][1] == 1
     assert s2.board[1][1] == 0
     assert s2.board[5][0] == 1
@@ -66,9 +68,15 @@ def test_move():
 
 def test_drop():
     b = copy.deepcopy(TEST_BOARD)
-    s = drop(b, 2, 3)
+    d = AnimalShogiDrop(piece=3, point=2)
+    s = drop(b, d)
     assert s.hand[2] == 0
     assert s.board[3][2] == 1
+    b2 = copy.deepcopy(TEST_BOARD)
+    d2 = AnimalShogiDrop(piece=1, point=5)
+    s2 = drop(b2, d2)
+    assert s2.hand[0] == 0
+    assert s2.board[1][5] == 1
 
 
 def test_piece_type():
