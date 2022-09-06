@@ -1,4 +1,3 @@
-import copy
 from dataclasses import dataclass
 
 import numpy as np
@@ -166,10 +165,6 @@ def bishop_move(point):
 
 def king_move(point):
     return return_board(np.copy(KING_MOVE), point)
-
-
-if __name__ == "__main__":
-    print()
 
 
 #  座標と駒の種類から到達できる座標を列挙する関数

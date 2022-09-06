@@ -81,6 +81,15 @@ def test_move():
     assert s2.board[8][0] == 0
     assert s2.hand[2] == 2
     assert s2.turn == 1
+    b3 = copy.deepcopy(TEST_BOARD2)
+    m3 = AnimalShogiAction(False, 6, 7, 6, 2, 1)
+    s3 = move(b3, m3)
+    assert s3.board[0][6] == 1
+    assert s3.board[6][6] == 0
+    assert s3.board[10][7] == 1
+    assert s3.board[2][7] == 0
+    assert s3.hand[4] == 2
+    assert s3.turn == 0
 
 
 def test_drop():
@@ -94,6 +103,12 @@ def test_drop():
     s2 = drop(b2, d2)
     assert s2.hand[0] == 0
     assert s2.board[1][5] == 1
+    b3 = copy.deepcopy(TEST_BOARD2)
+    d3 = AnimalShogiAction(True, 7, 2)
+    s3 = drop(b3, d3)
+    assert s3.hand[4] == 0
+    assert s3.board[7][2] == 1
+    assert s3.board[0][2] == 0
 
 
 def test_piece_type():
@@ -144,7 +159,6 @@ def test_legal_drop():
             AnimalShogiAction(is_drop=True, piece=7, final=9), AnimalShogiAction(is_drop=True, piece=7, final=10),
             AnimalShogiAction(is_drop=True, piece=8, final=2), AnimalShogiAction(is_drop=True, piece=8, final=8),
             AnimalShogiAction(is_drop=True, piece=8, final=9), AnimalShogiAction(is_drop=True, piece=8, final=10)]
-
 
 
 if __name__ == '__main__':
