@@ -205,11 +205,11 @@ def legal_moves(state: AnimalShogiState):
                     continue
                 # ひよこが最奥までいった場合、強制的に成る
                 if piece == 1 and p % 4 == 0:
-                    moves.append([i, p, piece, piece2, 1])
+                    moves.append(AnimalShogiMove(i, p, piece, piece2, 1))
                 elif piece == 6 and p % 4 == 3:
-                    moves.append([i, p, piece, piece2, 1])
+                    moves.append(AnimalShogiMove(i, p, piece, piece2, 1))
                 else:
-                    moves.append([i, p, piece, piece2, 0])
+                    moves.append(AnimalShogiMove(i, p, piece, piece2, 0))
     return moves
 
 
@@ -231,5 +231,5 @@ def legal_drop(state: AnimalShogiState):
             piece2 = piece_type(state, j)
             # お互いの駒がない地点(==piece2が0の地点)であれば打てる
             if piece2 == 0:
-                moves.append([j, piece])
+                moves.append(AnimalShogiDrop(j, piece))
     return moves

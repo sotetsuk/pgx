@@ -86,12 +86,21 @@ def test_piece_type():
 
 
 def test_legal_move():
-    assert legal_moves(INIT_BOARD) == [[3, 2, 2, 0, 0], [6, 5, 1, 6, 0], [7, 2, 4, 0, 0], [7, 10, 4, 0, 0]]
-    assert legal_moves(TEST_BOARD) == [[1, 0, 1, 8, 1], [3, 2, 5, 0, 0], [3, 7, 5, 7, 0], [6, 2, 2, 0, 0], [6, 5, 2, 0, 0], [6, 7, 2, 7, 0], [6, 10, 2, 0, 0], [11, 7, 4, 7, 0], [11, 10, 4, 0, 0]]
+    assert legal_moves(INIT_BOARD) == [AnimalShogiMove(3, 2, 2, 0, 0), AnimalShogiMove(6, 5, 1, 6, 0),
+                                       AnimalShogiMove(7, 2, 4, 0, 0), AnimalShogiMove(7, 10, 4, 0, 0)]
+    assert legal_moves(TEST_BOARD) == [AnimalShogiMove(1, 0, 1, 8, 1), AnimalShogiMove(3, 2, 5, 0, 0),
+                                       AnimalShogiMove(3, 7, 5, 7, 0), AnimalShogiMove(6, 2, 2, 0, 0),
+                                       AnimalShogiMove(6, 5, 2, 0, 0), AnimalShogiMove(6, 7, 2, 7, 0),
+                                       AnimalShogiMove(6, 10, 2, 0, 0), AnimalShogiMove(11, 7, 4, 7, 0),
+                                       AnimalShogiMove(11, 10, 4, 0, 0)]
 
 
 def test_legal_drop():
-    assert legal_drop(TEST_BOARD) == [[2, 1], [5, 1], [9, 1], [10, 1], [2, 2], [5, 2], [8, 2], [9, 2], [10, 2], [2, 3], [5, 3], [8, 3], [9, 3], [10, 3]]
+    assert legal_drop(TEST_BOARD) == [AnimalShogiDrop(2, 1), AnimalShogiDrop(5, 1), AnimalShogiDrop(9, 1),
+                                      AnimalShogiDrop(10, 1), AnimalShogiDrop(2, 2), AnimalShogiDrop(5, 2),
+                                      AnimalShogiDrop(8, 2), AnimalShogiDrop(9, 2), AnimalShogiDrop(10, 2),
+                                      AnimalShogiDrop(2, 3), AnimalShogiDrop(5, 3), AnimalShogiDrop(8, 3),
+                                      AnimalShogiDrop(9, 3), AnimalShogiDrop(10, 3)]
 
 
 if __name__ == '__main__':
