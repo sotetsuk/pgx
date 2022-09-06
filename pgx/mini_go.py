@@ -31,9 +31,16 @@ class MiniGoState:
 
 
 def init(init_board: Optional[np.ndarray]) -> MiniGoState:
+    """
+    ndarrayを渡して初期配置を指定できる
+    ndarrayは(5, 5), dtype=int
+    """
     if init_board is not None:
         assert init_board.shape == (BOARD_SIZE, BOARD_SIZE)
-        state = MiniGoState(board=init_board.copy())
+        # dataclassに初期値を与えるとmypyがよく分からんエラーを吐く
+        # pgx/mini_go.py:36: error: Unexpected keyword argument "board" for "MiniGoState"
+        # cf. https://github.com/python/mypy/issues/6239
+        state = MiniGoState(board=init_board.copy())  # type: ignore
     else:
         state = MiniGoState()
 
@@ -41,6 +48,9 @@ def init(init_board: Optional[np.ndarray]) -> MiniGoState:
 
 
 def to_init_board(str: str) -> np.ndarray:
+    """
+    文字列から初期配置用のndarrayを生成する関数
+    """
     assert len(str) == BOARD_SIZE * BOARD_SIZE
     init_board = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=int)
     for i in range(BOARD_SIZE * BOARD_SIZE):
@@ -50,6 +60,8 @@ def to_init_board(str: str) -> np.ndarray:
             init_board[i] = WHITE
         elif str[i] == POINT_CHAR:
             init_board[i] = POINT
+        else:
+            assert False
     return init_board.reshape((BOARD_SIZE, BOARD_SIZE))
 
 
@@ -76,6 +88,9 @@ def step(
 ) -> Tuple[MiniGoState, int, bool]:
     """
     action: [x, y, color] | None
+
+    返り値
+    (state, reward, done)
     """
     new_state = copy.deepcopy(state)
     r = 0
@@ -85,7 +100,7 @@ def step(
             print("end by pass.")
             done = True
             # r = get_score()
-            return new_state, r, True
+            return new_state, r, done
         else:
             new_state.passed[0] = True
             return new_state, r, done
@@ -105,7 +120,7 @@ def step(
         print("cannot set stone.")
         return new_state, r, done
 
-    # 囲んでいたら取る
+    # TODO: 囲んでいたら取る
 
     return new_state, r, done
 
@@ -116,66 +131,72 @@ def _can_set_stone(_board: np.ndarray, x: int, y: int, color: int) -> bool:
     if board[x][y] != 2:
         return False
     board[x][y] = color
-    surrounded, _ = _is_surrounded(
-        board, x, y, color, np.zeros_like(board, dtype=bool)
-    )
+    surrounded = _is_surrounded(board, x, y, color)
+    # TODO: 例外
+    # 取れる場合は置ける
     return not surrounded
 
 
-def _is_surrounded(
-    board: np.ndarray, x: int, y: int, color: int, _examined_stones: np.ndarray
-) -> Tuple[bool, np.ndarray]:
-    examined_stones = _examined_stones.copy()
+# TODO: C901 '_is_surrounded' is too complex (19) 後で改善したい
+def _is_surrounded(  # noqa: C901
+    _board: np.ndarray, _x: int, _y: int, color
+) -> bool:
+    board = _board.copy()
+    LARGE_NUMBER = 361  # 361以上なら大丈夫なはず
+    num_of_candidate = 0
+    candidate_x: np.ndarray = np.zeros(LARGE_NUMBER, dtype=int)
+    candidate_y: np.ndarray = np.zeros(LARGE_NUMBER, dtype=int)
+    examined_stones: np.ndarray = np.zeros_like(board, dtype=bool)
+    candidate_x[num_of_candidate] = _x
+    candidate_y[num_of_candidate] = _y
+    num_of_candidate += 1
 
-    if x < 0 or BOARD_SIZE <= x or y < 0 or BOARD_SIZE <= y:
-        return True, examined_stones
+    # 隣り合う石の座標を次々にcandidateへ放り込み、全て調べる作戦
+    # 重複して調べるのを避けるため、既に調べた座標のリスト examined_stones も用意
+    for _ in range(LARGE_NUMBER):
+        if num_of_candidate == 0:
+            break
+        else:
+            x = candidate_x[num_of_candidate - 1]
+            y = candidate_y[num_of_candidate - 1]
+            num_of_candidate -= 1
 
-    if examined_stones[x][y]:
-        return True, examined_stones
-    else:
+        # この座標は「既に調べたリスト」へ
         examined_stones[x][y] = True
 
-    if board[x][y] == color:
-        _surrounded, examined_stones = _is_surrounded(
-            board, x + 1, y, color, examined_stones
-        )
-        if not _surrounded:
-            return False, examined_stones
+        if y < BOARD_SIZE - 1:
+            if not examined_stones[x][y + 1]:
+                if board[x][y + 1] == POINT:
+                    return False
+                elif board[x][y + 1] == color:
+                    candidate_x[num_of_candidate] = x
+                    candidate_y[num_of_candidate] = y + 1
+                    num_of_candidate += 1
 
-        _surrounded, examined_stones = _is_surrounded(
-            board, x, y - 1, color, examined_stones
-        )
-        if not _surrounded:
-            return False, examined_stones
+        if x < BOARD_SIZE - 1:
+            if not examined_stones[x + 1][y]:
+                if board[x + 1][y] == POINT:
+                    return False
+                elif board[x + 1][y] == color:
+                    candidate_x[num_of_candidate] = x + 1
+                    candidate_y[num_of_candidate] = y
+                    num_of_candidate += 1
 
-        _surrounded, examined_stones = _is_surrounded(
-            board, x - 1, y, color, examined_stones
-        )
-        if not _surrounded:
-            return False, examined_stones
+        if 1 < y:
+            if not examined_stones[x][y - 1]:
+                if board[x][y - 1] == POINT:
+                    return False
+                elif board[x][y - 1] == color:
+                    candidate_x[num_of_candidate] = x
+                    candidate_y[num_of_candidate] = y - 1
+                    num_of_candidate += 1
 
-        _surrounded, examined_stones = _is_surrounded(
-            board, x, y + 1, color, examined_stones
-        )
-        if not _surrounded:
-            return False, examined_stones
-        else:
-            return True, examined_stones
-
-    elif board[x][y] == POINT:
-        return False, examined_stones
-
-    return True, examined_stones
-
-
-state = init(None)
-show(state=state)
-state, _, done = step(state=state, action=None)
-print(done)
-state, _, done = step(state=state, action=np.array([0, 1, BLACK]))
-print(done)
-state, _, done = step(state=state, action=None)
-print(done)
-state, _, done = step(state=state, action=None)
-print(done)
-show(state=state)
+        if 1 < x:
+            if not examined_stones[x - 1][y]:
+                if board[x - 1][y] == POINT:
+                    return False
+                elif board[x - 1][y] == color:
+                    candidate_x[num_of_candidate] = x - 1
+                    candidate_y[num_of_candidate] = y
+                    num_of_candidate += 1
+    return True

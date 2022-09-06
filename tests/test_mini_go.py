@@ -15,13 +15,19 @@ def test_is_surrounded():
     [4] @ + + + +
     """
 
-    b, _ = _is_surrounded(
-        state.board, 1, 1, WHITE, np.zeros_like(state.board, dtype=bool)
+    b = _is_surrounded(
+        state.board,
+        1,
+        1,
+        WHITE,
     )
     assert b
 
-    b, _ = _is_surrounded(
-        state.board, 4, 0, BLACK, np.zeros_like(state.board, dtype=bool)
+    b = _is_surrounded(
+        state.board,
+        4,
+        0,
+        BLACK,
     )
     assert not b
 
