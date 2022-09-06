@@ -7,8 +7,7 @@ from flax import struct
 
 # from jax import numpy as jnp
 
-PLAY_AREA_SIZE = 5
-BOARD_SIZE = PLAY_AREA_SIZE  # 一番外枠は番兵
+BOARD_SIZE = 5
 
 # TODO: enum的にまとめたい
 BLACK = 0
@@ -44,15 +43,18 @@ def show(state: MiniGoState) -> None:
         print(f"{i%10} ", end="")
     print("]")
     for i in range(BOARD_SIZE):
-        print(f"[{i%10}]", end=" ")
+        print(f"[{i%10}]", end="")
         for j in range(BOARD_SIZE):
-            print(TO_CHAR[board[i][j]], end=" ")
+            print(" " + TO_CHAR[board[i][j]], end="")
         print()
 
 
 def step(
     state: MiniGoState, action: Optional[np.ndarray]
 ) -> Tuple[MiniGoState, int, bool]:
+    """
+    action: [x, y, color] | None
+    """
     new_state = copy.deepcopy(state)
     r = 0
     done = False
@@ -65,7 +67,8 @@ def step(
             new_state.passed[0] = True
             return new_state, r, done
 
-    new_state.turn[:] = 1
+    new_state.passed[0] = False
+    new_state.turn[0] = new_state.turn[0] + 1
 
     x = action[0]
     y = action[1]
@@ -76,13 +79,23 @@ def step(
     else:
         r = -100
         done = True
+        return new_state, r, done
+
+    # 囲んでいたら取る
+
     return new_state, r, done
 
 
-def _can_set_stone(board: np.ndarray, x: int, y: int, color: int) -> bool:
-    if board[x][y] == 2:
-        return True
-    return False
+def _can_set_stone(_board: np.ndarray, x: int, y: int, color: int) -> bool:
+    board = _board.copy()
+
+    if board[x][y] != 2:
+        return False
+    board[x][y] = color
+    surrounded, _ = _is_surrounded(
+        board, x, y, color, np.zeros_like(board, dtype=bool)
+    )
+    return not surrounded
 
 
 def _is_surrounded(
