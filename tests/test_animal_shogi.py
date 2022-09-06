@@ -47,7 +47,8 @@ def test_turn_change():
 
 def test_move():
     b = copy.deepcopy(INIT_BOARD)
-    s = move(b, 6, 5, 1, 6, 0)
+    m = AnimalShogiAction(False, 1, 5, 6, 6, 0)
+    s = move(b, m)
     assert s.board[0][6] == 1
     assert s.board[1][6] == 0
     assert s.board[1][5] == 1
@@ -55,7 +56,8 @@ def test_move():
     assert s.hand[0] == 1
     assert s.turn == 1
     b2 = copy.deepcopy(TEST_BOARD)
-    s2 = move(b2, 1, 0, 1, 8, 1)
+    m2 = AnimalShogiAction(False, 1, 0, 1, 8, 1)
+    s2 = move(b2, m2)
     assert s2.board[0][1] == 1
     assert s2.board[1][1] == 0
     assert s2.board[5][0] == 1
@@ -66,9 +68,15 @@ def test_move():
 
 def test_drop():
     b = copy.deepcopy(TEST_BOARD)
-    s = drop(b, 2, 3)
+    d = AnimalShogiAction(True, 3, 2)
+    s = drop(b, d)
     assert s.hand[2] == 0
     assert s.board[3][2] == 1
+    b2 = copy.deepcopy(TEST_BOARD)
+    d2 = AnimalShogiAction(True, 1, 5)
+    s2 = drop(b2, d2)
+    assert s2.hand[0] == 0
+    assert s2.board[1][5] == 1
 
 
 def test_piece_type():
@@ -78,12 +86,32 @@ def test_piece_type():
 
 
 def test_legal_move():
-    assert legal_moves(INIT_BOARD) == [[3, 2, 2, 0, 0], [6, 5, 1, 6, 0], [7, 2, 4, 0, 0], [7, 10, 4, 0, 0]]
-    assert legal_moves(TEST_BOARD) == [[1, 0, 1, 8, 1], [3, 2, 5, 0, 0], [3, 7, 5, 7, 0], [6, 2, 2, 0, 0], [6, 5, 2, 0, 0], [6, 7, 2, 7, 0], [6, 10, 2, 0, 0], [11, 7, 4, 7, 0], [11, 10, 4, 0, 0]]
+    assert legal_moves(INIT_BOARD) == \
+           [AnimalShogiAction(is_drop=False, piece=2, final=2, first=3, captured=0, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=1, final=5, first=6, captured=6, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=4, final=2, first=7, captured=0, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=4, final=10, first=7, captured=0, is_promote=0)]
+    assert legal_moves(TEST_BOARD) == \
+           [AnimalShogiAction(is_drop=False, piece=1, final=0, first=1, captured=8, is_promote=1),
+            AnimalShogiAction(is_drop=False, piece=5, final=2, first=3, captured=0, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=5, final=7, first=3, captured=7, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=2, final=2, first=6, captured=0, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=2, final=5, first=6, captured=0, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=2, final=7, first=6, captured=7, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=2, final=10, first=6, captured=0, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=4, final=7, first=11, captured=7, is_promote=0),
+            AnimalShogiAction(is_drop=False, piece=4, final=10, first=11, captured=0, is_promote=0)]
 
 
 def test_legal_drop():
-    assert legal_drop(TEST_BOARD) == [[2, 1], [5, 1], [9, 1], [10, 1], [2, 2], [5, 2], [8, 2], [9, 2], [10, 2], [2, 3], [5, 3], [8, 3], [9, 3], [10, 3]]
+    assert legal_drop(TEST_BOARD) == \
+           [AnimalShogiAction(is_drop=True, piece=1, final=2), AnimalShogiAction(is_drop=True, piece=1, final=5),
+            AnimalShogiAction(is_drop=True, piece=1, final=9), AnimalShogiAction(is_drop=True, piece=1, final=10),
+            AnimalShogiAction(is_drop=True, piece=2, final=2), AnimalShogiAction(is_drop=True, piece=2, final=5),
+            AnimalShogiAction(is_drop=True, piece=2, final=8), AnimalShogiAction(is_drop=True, piece=2, final=9),
+            AnimalShogiAction(is_drop=True, piece=2, final=10), AnimalShogiAction(is_drop=True, piece=3, final=2),
+            AnimalShogiAction(is_drop=True, piece=3, final=5), AnimalShogiAction(is_drop=True, piece=3, final=8),
+            AnimalShogiAction(is_drop=True, piece=3, final=9), AnimalShogiAction(is_drop=True, piece=3, final=10)]
 
 
 if __name__ == '__main__':

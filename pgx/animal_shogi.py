@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import numpy as np
 
 
+# 盤面のdataclass
 @dataclass
 class AnimalShogiState:
     # turn 先手番なら0 後手番なら1
@@ -16,6 +17,25 @@ class AnimalShogiState:
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
 
 
+# 指し手のdataclass
+@dataclass
+class AnimalShogiAction:
+    # 上の3つは移動と駒打ちで共用
+    # 下の3つは移動でのみ使用
+    # 駒打ちかどうか
+    is_drop: bool
+    # piece: 動かした(打った)駒の種類
+    piece: int
+    # final: 移動後の座標
+    final: int
+    # 移動前の座標
+    first: int = 0
+    # captured: 取られた駒の種類。駒が取られていない場合は0
+    captured: int = 0
+    # is_promote: 駒を成るかどうかの判定
+    is_promote: int = 0
+
+
 # 手番を変更する
 def turn_change(state: AnimalShogiState):
     state.turn = (state.turn + 1) % 2
@@ -23,39 +43,28 @@ def turn_change(state: AnimalShogiState):
 
 
 #  駒打ちでない移動の処理
-#  first: 移動前の座標
-#  final: 移動後の座標
-#  piece: 動かした駒の種類
-#  captured: 取られた駒の種類。駒が取られていない場合は0
-#  is_promote: 駒を成るかどうかの判定
 def move(
     state: AnimalShogiState,
-    first: int,
-    final: int,
-    piece: int,
-    captured: int,
-    is_promote: int,
+    act: AnimalShogiAction,
 ):
-    state.board[piece][first] = 0
-    state.board[0][first] = 1
-    state.board[captured][final] = 0
-    state.board[piece + 4 * is_promote][final] = 1
-    if captured != 0:
+    state.board[act.piece][act.first] = 0
+    state.board[0][act.first] = 1
+    state.board[act.captured][act.final] = 0
+    state.board[act.piece + 4 * act.is_promote][act.final] = 1
+    if act.captured != 0:
         if state.turn == 0:
-            state.hand[(captured - 6) % 4] += 1
+            state.hand[(act.captured - 6) % 4] += 1
         else:
-            state.hand[captured % 4 + 2] += 1
+            state.hand[act.captured % 4 + 2] += 1
     state = turn_change(state)
     return state
 
 
 #  駒打ちの処理
-#  point: 駒を打つ座標
-#  piece: 打つ駒の種類。ライオン、ニワトリは打てないのでそれ以外の三種から選ぶ
-def drop(state: AnimalShogiState, point: int, piece: int):
-    state.hand[piece - 1 - 2 * state.turn] -= 1
-    state.board[piece][point] = 1
-    state.board[0][point] = 0
+def drop(state: AnimalShogiState, act: AnimalShogiAction):
+    state.hand[act.piece - 1 - 2 * state.turn] -= 1
+    state.board[act.piece][act.final] = 1
+    state.board[0][act.final] = 0
     state = turn_change(state)
     return state
 
@@ -63,6 +72,15 @@ def drop(state: AnimalShogiState, point: int, piece: int):
 #  ある座標に存在する駒種を返す
 def piece_type(state: AnimalShogiState, point: int):
     return state.board[:, point].argmax()
+
+
+# 盤面のどこに何の駒があるかをnp.arrayに移したもの
+# 同じ座標に複数回poece_typeを使用する場合はこちらを使った方が良い
+def board_status(state: AnimalShogiState):
+    board = np.zeros(12)
+    for i in range(12):
+        board[i] = piece_type(state, i)
+    return board
 
 
 #  上下左右の辺に接しているかどうか
@@ -179,23 +197,27 @@ def point_moves(piece, point):
 
 #  駒打ち以外の合法手を列挙する
 def legal_moves(state: AnimalShogiState):
+    board = board_status(state)
     moves = []
     for i in range(12):
-        piece = piece_type(state, i)
-        if (piece - 1) // 5 == state.turn:
-            points = point_moves(piece, i)
-            for p in points:
-                piece2 = piece_type(state, p)
-                # 自分の駒がある場所には動けない
-                if (piece2 - 1) // 5 == state.turn:
-                    continue
-                # ひよこが最奥までいった場合、強制的に成る
-                if piece == 1 and p % 4 == 0:
-                    moves.append([i, p, piece, piece2, 1])
-                elif piece == 6 and p % 4 == 3:
-                    moves.append([i, p, piece, piece2, 1])
-                else:
-                    moves.append([i, p, piece, piece2, 0])
+        piece = board[i]
+        # 自分の駒の時のみ動かせる
+        if (piece - 1) // 5 != state.turn:
+            continue
+        points = point_moves(piece, i)
+        # 可変長なので後に修正
+        for p in points:
+            piece2 = board[p]
+            # 自分の駒がある場所には動けない
+            if (piece2 - 1) // 5 == state.turn:
+                continue
+            # ひよこが最奥までいった場合、強制的に成る
+            if piece == 1 and p % 4 == 0:
+                moves.append(AnimalShogiAction(False, piece, p, i, piece2, 1))
+            elif piece == 6 and p % 4 == 3:
+                moves.append(AnimalShogiAction(False, piece, p, i, piece2, 1))
+            else:
+                moves.append(AnimalShogiAction(False, piece, p, i, piece2, 0))
     return moves
 
 
@@ -209,13 +231,13 @@ def legal_drop(state: AnimalShogiState):
         if state.hand[i + 3 * state.turn] == 0:
             continue
         for j in range(12):
+            # 駒がある場合は打てない
+            if state.board[0][j] == 0:
+                continue
             # ひよこは最奥には打てない
             if piece == 1 and j % 4 == 0:
                 continue
             if piece == 6 and j % 4 == 3:
                 continue
-            piece2 = piece_type(state, j)
-            # お互いの駒がない地点(==piece2が0の地点)であれば打てる
-            if piece2 == 0:
-                moves.append([j, piece])
+            moves.append(AnimalShogiAction(True, piece, j))
     return moves
