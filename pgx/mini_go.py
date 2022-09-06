@@ -155,7 +155,7 @@ def _is_surrounded(  # noqa: C901
     # 重複して調べるのを避けるため、既に調べた座標のリスト examined_stones も用意
     for _ in range(LARGE_NUMBER):
         if num_of_candidate == 0:
-            break
+            return True
         else:
             x = candidate_x[num_of_candidate - 1]
             y = candidate_y[num_of_candidate - 1]
