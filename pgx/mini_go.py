@@ -50,6 +50,17 @@ def init(init_board: Optional[np.ndarray]) -> MiniGoState:
 def to_init_board(str: str) -> np.ndarray:
     """
     文字列から初期配置用のndarrayを生成する関数
+
+    ex.
+    init_board = to_init_board("+@+++@O@++@O@+++@+++@++++")
+    state = init(init_board)
+    =>
+      [ 0 1 2 3 4 ]
+    [0] + @ + + +
+    [1] @ O @ + +
+    [2] @ O @ + +
+    [3] + @ + + +
+    [4] @ + + + +
     """
     assert len(str) == BOARD_SIZE * BOARD_SIZE
     init_board = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=int)
@@ -71,6 +82,10 @@ def reset() -> MiniGoState:
 
 def show(state: MiniGoState) -> None:
     board = state.board
+    _show_board(board)
+
+
+def _show_board(board: np.ndarray) -> None:
     print()
     print("  [ ", end="")
     for i in range(BOARD_SIZE):
@@ -131,7 +146,7 @@ def _can_set_stone(_board: np.ndarray, x: int, y: int, color: int) -> bool:
     if board[x][y] != 2:
         return False
     board[x][y] = color
-    surrounded = _is_surrounded(board, x, y, color)
+    surrounded = _is_surrounded_v2(board, x, y, color)
     # TODO: 例外
     # 取れる場合は置ける
     return not surrounded
@@ -200,3 +215,107 @@ def _is_surrounded(  # noqa: C901
                     candidate_y[num_of_candidate] = y
                     num_of_candidate += 1
     return True
+
+
+def _is_surrounded_v2(_board: np.ndarray, _x: int, _y: int, color) -> bool:
+
+    surrounded_stones = _get_surrounded_stones(_board, color)
+    return surrounded_stones[_x][_y] != 0
+
+
+def _get_surrounded_stones(_board: np.ndarray, color: int):
+    """
+    _is_surrounded()と違うのは、
+    1. 空点から調べ始める
+    2. 囲まれた石を全て返す
+    """
+    # 1. boardの一番外側に1週分追加
+    board = np.hstack(
+        (
+            np.full(BOARD_SIZE + 2, -1).reshape((BOARD_SIZE + 2, 1)),
+            np.vstack(
+                (
+                    np.full(BOARD_SIZE, -1),
+                    _board.copy(),
+                    np.full(BOARD_SIZE, -1),
+                )
+            ),
+            np.full(BOARD_SIZE + 2, -1).reshape((BOARD_SIZE + 2, 1)),
+        )
+    )
+    # こうなる
+    # [[-1 -1 -1 -1 -1 -1 -1]
+    #  [-1  2  2  2  2  2 -1]
+    #  [-1  2  2  2  2  2 -1]
+    #  [-1  2  2  2  2  2 -1]
+    #  [-1  2  2  2  2  2 -1]
+    #  [-1  2  2  2  2  2 -1]
+    #  [-1 -1 -1 -1 -1 -1 -1]]
+
+    # 2. 空点に隣り合うcolorの石を取り除く
+    LARGE_NUMBER = 361  # 361以上なら大丈夫なはず
+    num_of_candidate = 0
+    candidate_x: np.ndarray = np.zeros(LARGE_NUMBER, dtype=int)
+    candidate_y: np.ndarray = np.zeros(LARGE_NUMBER, dtype=int)
+
+    examined_stones: np.ndarray = np.zeros_like(board, dtype=bool)
+    for _x in range(board.shape[0]):
+        for _y in range(board.shape[1]):
+            if board[_x][_y] == POINT:
+                candidate_x[num_of_candidate] = _x
+                candidate_y[num_of_candidate] = _y
+                num_of_candidate += 1
+
+    for _ in range(LARGE_NUMBER):
+        if num_of_candidate == 0:
+            break
+        else:
+            x = candidate_x[num_of_candidate - 1]
+            y = candidate_y[num_of_candidate - 1]
+            num_of_candidate -= 1
+
+        # この座標は「既に調べたリスト」へ
+        if examined_stones[x][y]:
+            continue
+        examined_stones[x][y] = True
+
+        if board[x][y - 1] == color:
+            board[x][y - 1] = POINT
+        if board[x][y - 1] == POINT:
+            candidate_x[num_of_candidate] = x
+            candidate_y[num_of_candidate] = y - 1
+            num_of_candidate += 1
+
+        if board[x + 1][y] == color:
+            board[x + 1][y] = POINT
+        if board[x + 1][y] == POINT:
+            candidate_x[num_of_candidate] = x + 1
+            candidate_y[num_of_candidate] = y
+            num_of_candidate += 1
+
+        if board[x][y + 1] == color:
+            board[x][y + 1] = POINT
+        if board[x][y + 1] == POINT:
+            candidate_x[num_of_candidate] = x
+            candidate_y[num_of_candidate] = y + 1
+            num_of_candidate += 1
+
+        if board[x - 1][y] == color:
+            board[x - 1][y] = POINT
+        if board[x - 1][y] == POINT:
+            candidate_x[num_of_candidate] = x - 1
+            candidate_y[num_of_candidate] = y
+            num_of_candidate += 1
+
+    # 3. 増やした外側をカット
+    board = np.delete(
+        np.delete(arr=board, obj=[0, board.shape[0] - 1], axis=0),
+        [0, board.shape[1] - 1],
+        axis=1,
+    )
+
+    # 4. 囲まれた石だけのarrayにして返す
+
+    board = np.where(board == color, color, 0)
+
+    return board

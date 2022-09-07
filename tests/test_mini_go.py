@@ -1,6 +1,14 @@
 import numpy as np
 
-from pgx.mini_go import BLACK, WHITE, _is_surrounded, init, step, to_init_board
+from pgx.mini_go import (
+    BLACK,
+    WHITE,
+    _is_surrounded,
+    _is_surrounded_v2,
+    init,
+    step,
+    to_init_board,
+)
 
 
 def test_is_surrounded():
@@ -31,6 +39,22 @@ def test_is_surrounded():
     )
     assert not b
 
+    b = _is_surrounded_v2(
+        state.board,
+        1,
+        1,
+        WHITE,
+    )
+    assert b
+
+    b = _is_surrounded_v2(
+        state.board,
+        4,
+        0,
+        BLACK,
+    )
+    assert not b
+
     init_board = to_init_board("++@OO@@@O@@OOOO@O@OO@OOOO")
     state = init(init_board)
     """
@@ -51,6 +75,22 @@ def test_is_surrounded():
     assert b
 
     b = _is_surrounded(
+        state.board,
+        4,
+        1,
+        WHITE,
+    )
+    assert b
+
+    b = _is_surrounded_v2(
+        state.board,
+        0,
+        4,
+        WHITE,
+    )
+    assert b
+
+    b = _is_surrounded_v2(
         state.board,
         4,
         1,
