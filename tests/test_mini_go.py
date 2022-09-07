@@ -3,17 +3,18 @@ import numpy as np
 from pgx.mini_go import (
     BLACK,
     WHITE,
+    MiniGoState,
     _is_surrounded,
     _is_surrounded_v2,
+    _to_init_board,
     init,
     step,
-    to_init_board,
 )
 
 
 def test_is_surrounded():
-    init_board = to_init_board("+@+++@O@++@O@+++@+++@++++")
-    state = init(init_board)
+    init_board = _to_init_board("+@+++@O@++@O@+++@+++@++++")
+    state = MiniGoState(board=init_board)
     """
       [ 0 1 2 3 4 ]
     [0] + @ + + +
@@ -55,8 +56,8 @@ def test_is_surrounded():
     )
     assert not b
 
-    init_board = to_init_board("++@OO@@@O@@OOOO@O@OO@OOOO")
-    state = init(init_board)
+    init_board = _to_init_board("++@OO@@@O@@OOOO@O@OO@OOOO")
+    state = MiniGoState(board=init_board)
     """
       [ 0 1 2 3 4 ]
     [0] + + @ O O
@@ -100,7 +101,7 @@ def test_is_surrounded():
 
 
 def test_end_by_pass():
-    state = init(None)
+    state = init()
 
     state, _, done = step(state=state, action=None)
     assert state.passed[0]

@@ -30,24 +30,11 @@ class MiniGoState:
     passed: np.ndarray = np.zeros(1, dtype=bool)
 
 
-def init(init_board: Optional[np.ndarray]) -> MiniGoState:
-    """
-    ndarrayを渡して初期配置を指定できる
-    ndarrayは(5, 5), dtype=int
-    """
-    if init_board is not None:
-        assert init_board.shape == (BOARD_SIZE, BOARD_SIZE)
-        # dataclassに初期値を与えるとmypyがよく分からんエラーを吐く
-        # pgx/mini_go.py:36: error: Unexpected keyword argument "board" for "MiniGoState"
-        # cf. https://github.com/python/mypy/issues/6239
-        state = MiniGoState(board=init_board.copy())  # type: ignore
-    else:
-        state = MiniGoState()
-
-    return state
+def init() -> MiniGoState:
+    return MiniGoState()
 
 
-def to_init_board(str: str) -> np.ndarray:
+def _to_init_board(str: str) -> np.ndarray:
     """
     文字列から初期配置用のndarrayを生成する関数
 
@@ -77,7 +64,7 @@ def to_init_board(str: str) -> np.ndarray:
 
 
 def reset() -> MiniGoState:
-    return init(None)
+    return init()
 
 
 def show(state: MiniGoState) -> None:
