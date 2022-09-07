@@ -1,6 +1,5 @@
 # import jax
 import copy
-from os import stat
 from typing import Optional, Tuple
 
 import numpy as np
@@ -128,11 +127,15 @@ def step(
         print("cannot set stone.")
         return new_state, r, done
 
-    #  囲んでいたら取る
+    # 囲んでいたら取る
     surrounded_stones = _get_surrounded_stones(
         new_state.board, _opponent_color(color)
     )
     new_state.board[surrounded_stones] = POINT
+
+    # 取った分だけアゲハマ増加
+    agehama = np.count_nonzero(surrounded_stones)
+    new_state.agehama[color] += agehama
 
     return new_state, r, done
 
@@ -141,12 +144,19 @@ def _can_set_stone(_board: np.ndarray, x: int, y: int, color: int) -> bool:
     board = _board.copy()
 
     if board[x][y] != 2:
+        # 既に石があるならFalse
         return False
+
+    # 試しに置いてみる
     board[x][y] = color
     surrounded = _is_surrounded(board, x, y, color)
-    # TODO: 例外
-    # 取れる場合は置ける
-    return not surrounded
+    opponent_surrounded = np.any(
+        _get_surrounded_stones(board, _opponent_color(color))
+    )
+    # 着手禁止点はFalse
+    # 着手禁止点でも相手の石を取れるならTrue
+    can_set_stone = not surrounded or bool(surrounded and opponent_surrounded)
+    return can_set_stone
 
 
 def _is_surrounded(_board: np.ndarray, _x: int, _y: int, color: int) -> bool:
@@ -307,7 +317,6 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
         [0, board.shape[1] - 1],
         axis=1,
     )
-    print(board)
 
     # 4. 囲まれた指定色の石をTrue、それ以外をFalseにして返す
     surrounded_stones = board == color
@@ -317,10 +326,3 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
 
 def _opponent_color(color: int) -> int:
     return (color + 1) % 2
-
-
-init_board = _to_init_board("+++OO@@@O@@OOOO@O@OO@OOOO")
-state = MiniGoState(board=init_board)
-state, _, _ = step(state=state, action=np.array([0, 2, BLACK]))
-show(state)
-print(state.board)
