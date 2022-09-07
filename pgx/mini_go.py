@@ -146,16 +146,13 @@ def _can_set_stone(_board: np.ndarray, x: int, y: int, color: int) -> bool:
     if board[x][y] != 2:
         return False
     board[x][y] = color
-    surrounded = _is_surrounded_v2(board, x, y, color)
+    surrounded = _is_surrounded(board, x, y, color)
     # TODO: 例外
     # 取れる場合は置ける
     return not surrounded
 
 
-# TODO: C901 '_is_surrounded' is too complex (19) 後で改善したい
-def _is_surrounded(  # noqa: C901
-    _board: np.ndarray, _x: int, _y: int, color
-) -> bool:
+def _is_surrounded(_board: np.ndarray, _x: int, _y: int, color: int) -> bool:
     board = _board.copy()
     LARGE_NUMBER = 361  # 361以上なら大丈夫なはず
     num_of_candidate = 0
@@ -177,47 +174,47 @@ def _is_surrounded(  # noqa: C901
             num_of_candidate -= 1
 
         # この座標は「既に調べたリスト」へ
+        if examined_stones[x][y]:
+            continue
         examined_stones[x][y] = True
 
         if y < BOARD_SIZE - 1:
-            if not examined_stones[x][y + 1]:
-                if board[x][y + 1] == POINT:
-                    return False
-                elif board[x][y + 1] == color:
-                    candidate_x[num_of_candidate] = x
-                    candidate_y[num_of_candidate] = y + 1
-                    num_of_candidate += 1
+            if board[x][y + 1] == POINT:
+                return False
+            elif board[x][y + 1] == color:
+                candidate_x[num_of_candidate] = x
+                candidate_y[num_of_candidate] = y + 1
+                num_of_candidate += 1
 
         if x < BOARD_SIZE - 1:
-            if not examined_stones[x + 1][y]:
-                if board[x + 1][y] == POINT:
-                    return False
-                elif board[x + 1][y] == color:
-                    candidate_x[num_of_candidate] = x + 1
-                    candidate_y[num_of_candidate] = y
-                    num_of_candidate += 1
+            if board[x + 1][y] == POINT:
+                return False
+            elif board[x + 1][y] == color:
+                candidate_x[num_of_candidate] = x + 1
+                candidate_y[num_of_candidate] = y
+                num_of_candidate += 1
 
         if 1 < y:
-            if not examined_stones[x][y - 1]:
-                if board[x][y - 1] == POINT:
-                    return False
-                elif board[x][y - 1] == color:
-                    candidate_x[num_of_candidate] = x
-                    candidate_y[num_of_candidate] = y - 1
-                    num_of_candidate += 1
+            if board[x][y - 1] == POINT:
+                return False
+            elif board[x][y - 1] == color:
+                candidate_x[num_of_candidate] = x
+                candidate_y[num_of_candidate] = y - 1
+                num_of_candidate += 1
 
         if 1 < x:
-            if not examined_stones[x - 1][y]:
-                if board[x - 1][y] == POINT:
-                    return False
-                elif board[x - 1][y] == color:
-                    candidate_x[num_of_candidate] = x - 1
-                    candidate_y[num_of_candidate] = y
-                    num_of_candidate += 1
+            if board[x - 1][y] == POINT:
+                return False
+            elif board[x - 1][y] == color:
+                candidate_x[num_of_candidate] = x - 1
+                candidate_y[num_of_candidate] = y
+                num_of_candidate += 1
     return True
 
 
-def _is_surrounded_v2(_board: np.ndarray, _x: int, _y: int, color) -> bool:
+def _is_surrounded_v2(
+    _board: np.ndarray, _x: int, _y: int, color: int
+) -> bool:
 
     surrounded_stones = _get_surrounded_stones(_board, color)
     return surrounded_stones[_x][_y] != 0
