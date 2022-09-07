@@ -89,7 +89,7 @@ def step(
     state: MiniGoState, action: Optional[np.ndarray]
 ) -> Tuple[MiniGoState, int, bool]:
     """
-    action: [x, y, color] | None
+    action: [x, y] | None
 
     返り値
     (state, reward, done)
@@ -104,17 +104,18 @@ def step(
             print("end by pass.")
             done = True
             # r = get_score()
+            new_state.turn[0] = new_state.turn[0] + 1
             return new_state, r, done
         else:
             new_state.passed[0] = True
+            new_state.turn[0] = new_state.turn[0] + 1
             return new_state, r, done
 
     new_state.passed[0] = False
-    new_state.turn[0] = new_state.turn[0] + 1
 
     x = action[0]
     y = action[1]
-    color = action[2]
+    color = new_state.turn[0] % 2
     board = new_state.board
 
     # 合法手か確認
@@ -125,6 +126,7 @@ def step(
         r = -100
         done = True
         print("cannot set stone.")
+        new_state.turn[0] = new_state.turn[0] + 1
         return new_state, r, done
 
     # 囲んでいたら取る
@@ -137,6 +139,7 @@ def step(
     agehama = np.count_nonzero(surrounded_stones)
     new_state.agehama[color] += agehama
 
+    new_state.turn[0] = new_state.turn[0] + 1
     return new_state, r, done
 
 
