@@ -270,3 +270,19 @@ def test_kou():
 
     _, _, done = step(state=state, action=np.array([2, 2]))
     assert done  # ルール違反により終局
+
+
+def test_random_play():
+    state = init()
+    done = False
+    while not done:
+        actions = np.where(legal_actions(state))
+        if actions[0].size == 0:
+            a = None
+        else:
+            i = np.random.randint(0, actions[0].size)
+            a = np.array([actions[0][i], actions[1][i]])
+        state, _, done = step(state=state, action=a)
+
+        if state.turn[0] > 1000:
+            break
