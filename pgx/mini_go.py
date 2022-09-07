@@ -22,13 +22,13 @@ TO_CHAR = np.array([BLACK_CHAR, WHITE_CHAR, POINT_CHAR], dtype=str)
 
 @struct.dataclass
 class MiniGoState:
-    board: np.ndarray = np.full((BOARD_SIZE, BOARD_SIZE), POINT)
+    board: np.ndarray = np.full((BOARD_SIZE, BOARD_SIZE), POINT, dtype=int)
     turn: np.ndarray = np.zeros(1, dtype=int)
     agehama: np.ndarray = np.zeros(
         2, dtype=int
     )  # agehama[0]: agehama earned by player(black), agehama[1]: agehama earned by player(white)
     passed: np.ndarray = np.zeros(1, dtype=bool)
-    kou: np.ndarray = np.zeros(1, dtype=bool)
+    kou: np.ndarray = np.full(2, -1, dtype=int)  # コウによる着手禁止点, 無ければ(-1, -1)
 
 
 def init() -> MiniGoState:
@@ -113,14 +113,12 @@ def step(
             return new_state, r, done
 
     new_state.passed[0] = False
-
     x = action[0]
     y = action[1]
     color = new_state.turn[0] % 2
-    board = new_state.board
 
     # 合法手か確認
-    if _can_set_stone(board, x, y, color):
+    if _can_set_stone(new_state, x, y, color):
         new_state.board[x, y] = color
     # 合法手でない場合負けとする
     else:
@@ -130,25 +128,22 @@ def step(
         new_state.turn[0] = new_state.turn[0] + 1
         return new_state, r, done
 
-    # 囲んでいたら取る
-    surrounded_stones = _get_surrounded_stones(
-        new_state.board, _opponent_color(color)
-    )
-    new_state.board[surrounded_stones] = POINT
-
-    # 取った分だけアゲハマ増加
-    agehama = np.count_nonzero(surrounded_stones)
-    new_state.agehama[color] += agehama
+    new_state = _remove_stones_from_state(new_state, x, y)
 
     new_state.turn[0] = new_state.turn[0] + 1
     return new_state, r, done
 
 
-def _can_set_stone(_board: np.ndarray, x: int, y: int, color: int) -> bool:
-    board = _board.copy()
+def _can_set_stone(state: MiniGoState, x: int, y: int, color: int) -> bool:
+    board = state.board.copy()
 
     if board[x][y] != 2:
         # 既に石があるならFalse
+        return False
+    kou = copy.deepcopy(state.kou)
+
+    if x == kou[0] and y == kou[1]:
+        # コウならFalse
         return False
 
     # 試しに置いてみる
@@ -333,17 +328,53 @@ def _opponent_color(color: int) -> int:
     return (color + 1) % 2
 
 
+def _remove_stones_from_state(
+    state: MiniGoState, x: int, y: int
+) -> MiniGoState:
+    new_state = copy.deepcopy(state)
+    color = new_state.turn[0] % 2
+    op_color = _opponent_color(color)
+
+    # 囲んでいたら取る
+    surrounded_stones = _get_surrounded_stones(new_state.board, op_color)
+    new_state.board[surrounded_stones] = POINT
+
+    # 取った分だけアゲハマ増加
+    agehama = np.count_nonzero(surrounded_stones)
+    new_state.agehama[color] += agehama
+
+    # コウの確認
+    if _check_kou(state, x, y, op_color) and agehama == 1:
+        _removed_stone = np.where(surrounded_stones)
+        new_state.kou[0] = _removed_stone[0][0]
+        new_state.kou[1] = _removed_stone[1][0]
+    else:
+        new_state.kou[0] = -1
+        new_state.kou[1] = -1
+
+    return new_state
+
+
+def _check_kou(state: MiniGoState, x, y, op_color):
+    board = state.board
+    return (
+        (x < 0 or board[x - 1][y] == op_color)
+        and (x >= BOARD_SIZE - 1 or board[x + 1][y] == op_color)
+        and (y < 0 or board[x][y - 1] == op_color)
+        and (y >= BOARD_SIZE - 1 or board[x][y + 1] == op_color)
+    )
+
+
 def legal_actions(state: MiniGoState) -> np.ndarray:
     """
     全ての点に仮に置いた時を調べるのでかなり非効率的
     """
-    board = copy.deepcopy(state.board)
-    legal_actions: np.ndarray = np.zeros_like(board, dtype=bool)
+    legal_actions: np.ndarray = np.zeros_like(state.board, dtype=bool)
     color = (state.turn[0]) % 2
 
     for x in range(BOARD_SIZE):
         for y in range(BOARD_SIZE):
-            if _can_set_stone(board, x, y, color):
+            if _can_set_stone(state, x, y, color):
                 legal_actions[x][y] = True
 
     return legal_actions

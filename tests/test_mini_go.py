@@ -231,3 +231,42 @@ def test_legal_actions():
     state = MiniGoState(board=init_board)
 
     assert True not in legal_actions(state)
+
+
+def test_kou():
+    init_board = to_init_board("++O+++O+O++@O@+++@+++++++")
+    state = MiniGoState(board=init_board)
+    """
+      [ 0 1 2 3 4 ]
+    [0] + + O + +
+    [1] + O + O +
+    [2] + @ O @ +
+    [3] + + @ + +
+    [4] + + + + +
+    """
+
+    state, _, _ = step(state=state, action=np.array([1, 2]))
+
+    """
+      [ 0 1 2 3 4 ]
+    [0] + + O + +
+    [1] + O @ O +
+    [2] + @ + @ +
+    [3] + + @ + +
+    [4] + + + + +
+
+    """
+    expected = np.array(
+        [
+            [True, True, False, True, True],
+            [True, False, False, False, True],
+            [True, False, False, False, True],
+            [True, True, False, True, True],
+            [True, True, True, True, True],
+        ]
+    )
+    assert (state.kou == np.array([2, 2])).all()
+    assert (expected == legal_actions(state)).all()
+
+    _, _, done = step(state=state, action=np.array([2, 2]))
+    assert done  # ルール違反により終局
