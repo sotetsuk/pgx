@@ -1,5 +1,6 @@
 # import jax
 import copy
+from os import stat
 from typing import Optional, Tuple
 
 import numpy as np
@@ -97,6 +98,8 @@ def step(
     new_state = copy.deepcopy(state)
     r = 0
     done = False
+
+    # 2回連続でパスすると終局
     if action is None:
         if new_state.passed[0]:
             print("end by pass.")
@@ -114,15 +117,22 @@ def step(
     y = action[1]
     color = action[2]
     board = new_state.board
+
+    # 合法手か確認
     if _can_set_stone(board, x, y, color):
         new_state.board[x, y] = color
+    # 合法手でない場合負けとする
     else:
         r = -100
         done = True
         print("cannot set stone.")
         return new_state, r, done
 
-    # TODO: 囲んでいたら取る
+    #  囲んでいたら取る
+    surrounded_stones = _get_surrounded_stones(
+        new_state.board, _opponent_color(color)
+    )
+    new_state.board[surrounded_stones] = POINT
 
     return new_state, r, done
 
@@ -204,7 +214,7 @@ def _is_surrounded_v2(
 ) -> bool:
 
     surrounded_stones = _get_surrounded_stones(_board, color)
-    return surrounded_stones[_x][_y] != 0
+    return surrounded_stones[_x][_y]
 
 
 def _get_surrounded_stones(_board: np.ndarray, color: int):
@@ -297,9 +307,20 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
         [0, board.shape[1] - 1],
         axis=1,
     )
+    print(board)
 
-    # 4. 囲まれた石だけのarrayにして返す
+    # 4. 囲まれた指定色の石をTrue、それ以外をFalseにして返す
+    surrounded_stones = board == color
 
-    board = np.where(board == color, color, 0)
+    return surrounded_stones
 
-    return board
+
+def _opponent_color(color: int) -> int:
+    return (color + 1) % 2
+
+
+init_board = _to_init_board("+++OO@@@O@@OOOO@O@OO@OOOO")
+state = MiniGoState(board=init_board)
+state, _, _ = step(state=state, action=np.array([0, 2, BLACK]))
+show(state)
+print(state.board)

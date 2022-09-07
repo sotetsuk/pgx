@@ -115,3 +115,37 @@ def test_end_by_pass():
     state, _, done = step(state=state, action=None)
     assert state.passed[0]
     assert done
+
+
+def test_remove():
+    init_board = _to_init_board("+++OO@@@O@@OOOO@O@OO@OOOO")
+    state = MiniGoState(board=init_board)
+    """
+      [ 0 1 2 3 4 ]
+    [0] + + + O O
+    [1] @ @ @ O @
+    [2] @ O O O O
+    [3] @ O @ O O
+    [4] @ O O O O
+    """
+
+    state, _, _ = step(state=state, action=np.array([0, 2, BLACK]))
+    expected_board = np.array(
+        [
+            [2, 2, 0, 2, 2],
+            [0, 0, 0, 2, 0],
+            [0, 2, 2, 2, 2],
+            [0, 2, 0, 2, 2],
+            [0, 2, 2, 2, 2],
+        ]
+    )
+    """
+      [ 0 1 2 3 4 ]
+    [0] + + @ + +
+    [1] @ @ @ + @
+    [2] @ + + + +
+    [3] @ + @ + +
+    [4] @ + + + +
+    """
+
+    assert (state.board == expected_board).all()
