@@ -149,3 +149,52 @@ def test_remove():
     """
 
     assert (state.board == expected_board).all()
+
+
+def test_step():
+    """
+    https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
+    """
+    state = init()
+    state, _, _ = step(state=state, action=np.array([2, 2, BLACK]))
+    state, _, _ = step(state=state, action=np.array([2, 1, WHITE]))
+    state, _, _ = step(state=state, action=np.array([3, 2, BLACK]))
+    state, _, _ = step(state=state, action=np.array([1, 2, WHITE]))
+    state, _, _ = step(state=state, action=np.array([1, 3, BLACK]))
+    state, _, _ = step(state=state, action=np.array([0, 1, WHITE]))
+    state, _, _ = step(state=state, action=np.array([0, 3, BLACK]))
+    state, _, _ = step(state=state, action=np.array([3, 1, WHITE]))
+    state, _, _ = step(state=state, action=np.array([4, 1, BLACK]))
+    state, _, _ = step(state=state, action=np.array([0, 2, WHITE]))
+    state, _, _ = step(state=state, action=np.array([2, 0, BLACK]))
+    state, _, _ = step(state=state, action=np.array([1, 0, WHITE]))
+    state, _, _ = step(state=state, action=np.array([2, 4, BLACK]))
+    state, _, _ = step(state=state, action=np.array([3, 0, WHITE]))
+    state, _, _ = step(state=state, action=np.array([4, 3, BLACK]))
+    state, _, _ = step(state=state, action=np.array([4, 0, WHITE]))
+    state, _, _ = step(state=state, action=None)
+    state, _, _ = step(state=state, action=np.array([4, 2, WHITE]))
+    state, _, _ = step(state=state, action=np.array([3, 4, BLACK]))
+    state, _, _ = step(state=state, action=np.array([4, 1, WHITE]))
+    state, _, _ = step(state=state, action=None)
+    state, _, done = step(state=state, action=None)
+
+    expected_board = np.array(
+        [
+            [2, 1, 1, 0, 2],
+            [1, 2, 1, 0, 2],
+            [2, 1, 0, 2, 0],
+            [1, 1, 0, 2, 0],
+            [1, 1, 1, 0, 2],
+        ]
+    )
+    """
+      [ 0 1 2 3 4 ]
+    [0] + O O @ +
+    [1] O + O @ +
+    [2] + O @ + @
+    [3] O O @ + @
+    [4] O O O @ +
+    """
+    assert (state.board == expected_board).all()
+    assert done
