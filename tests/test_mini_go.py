@@ -6,14 +6,15 @@ from pgx.mini_go import (
     MiniGoState,
     _is_surrounded,
     _is_surrounded_v2,
-    _to_init_board,
     init,
+    legal_actions,
     step,
+    to_init_board,
 )
 
 
 def test_is_surrounded():
-    init_board = _to_init_board("+@+++@O@++@O@+++@+++@++++")
+    init_board = to_init_board("+@+++@O@++@O@+++@+++@++++")
     state = MiniGoState(board=init_board)
     """
       [ 0 1 2 3 4 ]
@@ -56,7 +57,7 @@ def test_is_surrounded():
     )
     assert not b
 
-    init_board = _to_init_board("++@OO@@@O@@OOOO@O@OO@OOOO")
+    init_board = to_init_board("++@OO@@@O@@OOOO@O@OO@OOOO")
     state = MiniGoState(board=init_board)
     """
       [ 0 1 2 3 4 ]
@@ -118,7 +119,7 @@ def test_end_by_pass():
 
 
 def test_remove():
-    init_board = _to_init_board("++@OO@@@OO@OOOO@O+OO@OOOO")
+    init_board = to_init_board("++@OO@@@OO@OOOO@O+OO@OOOO")
     state = MiniGoState(board=init_board)
     """
       [ 0 1 2 3 4 ]
@@ -198,3 +199,35 @@ def test_step():
     """
     assert (state.board == expected_board).all()
     assert done
+
+
+def test_legal_actions():
+    init_board = to_init_board("++@OO@@@O+@OOOO@O@++@++++")
+    state = MiniGoState(board=init_board)
+    """
+    turn=0なので黒番
+
+        [ 0 1 2 3 4 ]
+    [0] + + @ O O
+    [1] @ @ @ O +
+    [2] @ O O O O
+    [3] @ O @ + +
+    [4] @ + + + +
+    """
+
+    expected = np.array(
+        [
+            [True, True, False, False, False],
+            [False, False, False, False, False],
+            [False, False, False, False, False],
+            [False, False, False, True, True],
+            [False, True, True, True, True],
+        ],
+        dtype=bool,
+    )
+    assert (legal_actions(state) == expected).all()
+
+    init_board = to_init_board("OOOOOOOOOOOOOOOOOOOOOOOOO")
+    state = MiniGoState(board=init_board)
+
+    assert True not in legal_actions(state)

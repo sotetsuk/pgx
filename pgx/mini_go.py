@@ -28,13 +28,14 @@ class MiniGoState:
         2, dtype=int
     )  # agehama[0]: agehama earned by player(black), agehama[1]: agehama earned by player(white)
     passed: np.ndarray = np.zeros(1, dtype=bool)
+    kou: np.ndarray = np.zeros(1, dtype=bool)
 
 
 def init() -> MiniGoState:
     return MiniGoState()
 
 
-def _to_init_board(str: str) -> np.ndarray:
+def to_init_board(str: str) -> np.ndarray:
     """
     文字列から初期配置用のndarrayを生成する関数
 
@@ -152,13 +153,14 @@ def _can_set_stone(_board: np.ndarray, x: int, y: int, color: int) -> bool:
 
     # 試しに置いてみる
     board[x][y] = color
-    surrounded = _is_surrounded(board, x, y, color)
+    surrounded = _is_surrounded_v2(board, x, y, color)
     opponent_surrounded = np.any(
         _get_surrounded_stones(board, _opponent_color(color))
     )
     # 着手禁止点はFalse
     # 着手禁止点でも相手の石を取れるならTrue
     can_set_stone = not surrounded or bool(surrounded and opponent_surrounded)
+
     return can_set_stone
 
 
@@ -329,3 +331,19 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
 
 def _opponent_color(color: int) -> int:
     return (color + 1) % 2
+
+
+def legal_actions(state: MiniGoState) -> np.ndarray:
+    """
+    全ての点に仮に置いた時を調べるのでかなり非効率的
+    """
+    board = copy.deepcopy(state.board)
+    legal_actions: np.ndarray = np.zeros_like(board, dtype=bool)
+    color = (state.turn[0]) % 2
+
+    for x in range(BOARD_SIZE):
+        for y in range(BOARD_SIZE):
+            if _can_set_stone(board, x, y, color):
+                legal_actions[x][y] = True
+
+    return legal_actions
