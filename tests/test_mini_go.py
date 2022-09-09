@@ -207,7 +207,7 @@ def test_legal_actions():
     """
     turn=0なので黒番
 
-        [ 0 1 2 3 4 ]
+      [ 0 1 2 3 4 ]
     [0] + + @ O O
     [1] @ @ @ O +
     [2] @ O O O O

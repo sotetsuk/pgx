@@ -41,7 +41,7 @@ def to_init_board(str: str) -> np.ndarray:
 
     ex.
     init_board = to_init_board("+@+++@O@++@O@+++@+++@++++")
-    state = init(init_board)
+    state = MiniGoState(board=init_board)
     =>
       [ 0 1 2 3 4 ]
     [0] + @ + + +
@@ -122,7 +122,7 @@ def step(
         new_state.board[x, y] = color
     # 合法手でない場合負けとする
     else:
-        r = -100
+        r = -1
         done = True
         print("cannot set stone.")
         new_state.turn[0] = new_state.turn[0] + 1
@@ -374,7 +374,14 @@ def legal_actions(state: MiniGoState) -> np.ndarray:
 
     for x in range(BOARD_SIZE):
         for y in range(BOARD_SIZE):
-            if _can_set_stone(state, x, y, color):
-                legal_actions[x][y] = True
+            legal_actions[x][y] = _can_set_stone(state, x, y, color)
 
     return legal_actions
+
+
+def _get_score(_state: MiniGoState):
+    pass
+
+
+def _count_ji(_board: np.ndarray, _color: int):
+    pass
