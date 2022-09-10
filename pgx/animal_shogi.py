@@ -47,10 +47,9 @@ BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
 KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
-# 手番を変更する
-def turn_change(state: AnimalShogiState):
-    state.turn = (state.turn + 1) % 2
-    return state
+# 手番側でない色を返す
+def another_color(state: AnimalShogiState):
+    return (state.turn + 1) % 2
 
 
 #  駒打ちでない移動の処理
@@ -67,7 +66,7 @@ def move(
             state.hand[(act.captured - 6) % 4] += 1
         else:
             state.hand[act.captured % 4 + 2] += 1
-    state = turn_change(state)
+    state.turn = another_color(state)
     return state
 
 
@@ -76,7 +75,7 @@ def drop(state: AnimalShogiState, act: AnimalShogiAction):
     state.hand[act.piece - 1 - 2 * state.turn] -= 1
     state.board[act.piece][act.final] = 1
     state.board[0][act.final] = 0
-    state = turn_change(state)
+    state.turn = another_color(state)
     return state
 
 
@@ -94,13 +93,15 @@ def board_status(state: AnimalShogiState):
     return board
 
 
-# 手番側の駒かどうか
-def my_pieces(state: AnimalShogiState):
+# 駒の持ち主の判定
+def pieces_owner(state: AnimalShogiState):
     board = np.zeros(12)
     for i in range(12):
         piece = piece_type(state, i)
-        if (piece - 1) // 5 == state.turn:
-            board[i] = 1
+        if piece == 0:
+            board[i] = 2
+        else:
+            board[i] = (piece - 1) // 5
     return board
 
 
@@ -185,20 +186,42 @@ def point_moves(piece, point):
         return white_gold_move(point)
 
 
+# 利きの判定
+def effected(state: AnimalShogiState, turn: int):
+    all_effect = np.zeros(12)
+    board = board_status(state)
+    piece_owner = pieces_owner(state)
+    for i in range(12):
+        own = piece_owner[i]
+        if own != turn:
+            continue
+        piece = board[i]
+        effect = point_moves(piece, i)
+        all_effect += effect
+    return all_effect
+
+
+# 王手の判定(turn側の王に王手がかかっているかを判定)
+def is_check(state: AnimalShogiState):
+    effects = effected(state, another_color(state))
+    king_location = state.board[4 + 5 * state.turn, :].argmax()
+    return effects[king_location] != 0
+
+
 #  駒打ち以外の合法手を列挙する
 def legal_moves(state: AnimalShogiState):
     board = board_status(state)
-    my_piece = my_pieces(state)
+    piece_owner = pieces_owner(state)
     moves = []
     for i in range(12):
-        if my_piece[i] == 0:
+        if piece_owner[i] != state.turn:
             continue
         piece = board[i]
         points = point_moves(piece, i).reshape(12)
         for p in range(12):
             if points[p] == 0:
                 continue
-            if my_piece[p] == 1:
+            if piece_owner[p] == state.turn:
                 continue
             piece2 = board[p]
             # ひよこが最奥までいった場合、強制的に成る

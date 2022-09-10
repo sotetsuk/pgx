@@ -56,10 +56,11 @@ TEST_BOARD2 = AnimalShogiState(
 )
 
 
-def test_turn_change():
+def test_another_color():
     b = copy.deepcopy(INIT_BOARD)
-    s = turn_change(b)
-    assert s.turn == 1
+    assert another_color(b) == 1
+    b2 = copy.deepcopy(TEST_BOARD2)
+    assert another_color(b2) == 0
 
 
 def test_move():
@@ -162,7 +163,7 @@ def test_legal_drop():
 
 
 if __name__ == '__main__':
-    test_turn_change()
+    test_another_color()
     test_move()
     test_drop()
     test_piece_type()
