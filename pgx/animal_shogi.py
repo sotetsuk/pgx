@@ -196,7 +196,7 @@ def effected(state: AnimalShogiState, turn: int):
         if own != turn:
             continue
         piece = board[i]
-        effect = point_moves(piece, i)
+        effect = point_moves(piece, i).reshape(12)
         all_effect += effect
     return all_effect
 

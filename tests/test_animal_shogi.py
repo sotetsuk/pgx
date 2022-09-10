@@ -118,6 +118,18 @@ def test_piece_type():
     assert piece_type(INIT_BOARD, 9) == 0
 
 
+def test_effected():
+    assert np.all(effected(INIT_BOARD, 1) == np.array([1, 1, 0, 0, 1, 2, 1, 0, 1, 2, 0, 0]))
+    assert np.all(effected(TEST_BOARD, 0) == np.array([1, 0, 2, 0, 0, 1, 2, 3, 0, 0, 2, 0]))
+    assert np.all(effected(TEST_BOARD2, 1) == np.array([3, 1, 2, 0, 0, 3, 1, 1, 2, 1, 1, 0]))
+
+
+def test_is_check():
+    assert not is_check(INIT_BOARD)
+    assert is_check(TEST_BOARD)
+    assert not is_check(TEST_BOARD2)
+
+
 def test_legal_move():
     assert legal_moves(INIT_BOARD) == \
            [AnimalShogiAction(is_drop=False, piece=2, final=2, first=3, captured=0, is_promote=0),
@@ -167,5 +179,7 @@ if __name__ == '__main__':
     test_move()
     test_drop()
     test_piece_type()
+    test_effected()
+    test_is_check()
     test_legal_move()
     test_legal_drop()
