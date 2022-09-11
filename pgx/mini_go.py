@@ -88,7 +88,7 @@ def _show_board(board: np.ndarray) -> None:
 
 def step(
     state: MiniGoState, action: Optional[np.ndarray]
-) -> Tuple[MiniGoState, int, bool]:
+) -> Tuple[MiniGoState, np.ndarray, bool]:
     """
     action: [x, y] | None
 
@@ -96,7 +96,7 @@ def step(
     (state, reward, done)
     """
     new_state = copy.deepcopy(state)
-    r = 0
+    r = np.array([0, 0])
     done = False
 
     # 2回連続でパスすると終局
@@ -104,7 +104,7 @@ def step(
         if new_state.passed[0]:
             print("end by pass.")
             done = True
-            # r = get_score()
+            r = _get_reward(new_state)
             new_state.turn[0] = new_state.turn[0] + 1
             return new_state, r, done
         else:
@@ -122,7 +122,8 @@ def step(
         new_state.board[x, y] = color
     # 合法手でない場合負けとする
     else:
-        r = -1
+        r = np.array([1, 1])
+        r[new_state.turn[0] % 2] = -1
         done = True
         print("cannot set stone.")
         new_state.turn[0] = new_state.turn[0] + 1
@@ -389,9 +390,21 @@ def legal_actions(state: MiniGoState) -> np.ndarray:
     return legal_actions
 
 
-def _get_score(_state: MiniGoState):
-    pass
+def _get_reward(_state: MiniGoState) -> np.ndarray:
+    state = copy.deepcopy(_state)
+
+    b_score = _count_ji(state.board, BLACK) - state.agehama[WHITE]
+    w_score = _count_ji(state.board, WHITE) - state.agehama[BLACK]
+    if w_score < b_score:
+        return np.array([1, -1], dtype=int)
+    elif w_score > b_score:
+        return np.array([-1, 1], dtype=int)
+    return np.array([0, 0], dtype=int)
 
 
-def _count_ji(_board: np.ndarray, _color: int):
-    pass
+def _count_ji(_board: np.ndarray, _color: int) -> int:
+    board = _board.copy()
+    ji = _get_surrounded_stones(
+        _board=board, target_color=POINT, surrounding_color=_color
+    )
+    return np.count_nonzero(ji)
