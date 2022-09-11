@@ -41,7 +41,7 @@ def to_init_board(str: str) -> np.ndarray:
 
     ex.
     init_board = to_init_board("+@+++@O@++@O@+++@+++@++++")
-    state = init(init_board)
+    state = MiniGoState(board=init_board)
     =>
       [ 0 1 2 3 4 ]
     [0] + @ + + +
@@ -88,7 +88,7 @@ def _show_board(board: np.ndarray) -> None:
 
 def step(
     state: MiniGoState, action: Optional[np.ndarray]
-) -> Tuple[MiniGoState, int, bool]:
+) -> Tuple[MiniGoState, np.ndarray, bool]:
     """
     action: [x, y] | None
 
@@ -96,7 +96,7 @@ def step(
     (state, reward, done)
     """
     new_state = copy.deepcopy(state)
-    r = 0
+    r = np.array([0, 0])
     done = False
 
     # 2回連続でパスすると終局
@@ -104,7 +104,7 @@ def step(
         if new_state.passed[0]:
             print("end by pass.")
             done = True
-            # r = get_score()
+            r = _get_reward(new_state)
             new_state.turn[0] = new_state.turn[0] + 1
             return new_state, r, done
         else:
@@ -122,7 +122,8 @@ def step(
         new_state.board[x, y] = color
     # 合法手でない場合負けとする
     else:
-        r = -100
+        r = np.array([1, 1])
+        r[new_state.turn[0] % 2] = -1
         done = True
         print("cannot set stone.")
         new_state.turn[0] = new_state.turn[0] + 1
@@ -150,7 +151,9 @@ def _can_set_stone(state: MiniGoState, x: int, y: int, color: int) -> bool:
     board[x][y] = color
     surrounded = _is_surrounded_v2(board, x, y, color)
     opponent_surrounded = np.any(
-        _get_surrounded_stones(board, _opponent_color(color))
+        _get_surrounded_stones(
+            board, target_color=_opponent_color(color), surrounding_color=color
+        )
     )
     # 着手禁止点はFalse
     # 着手禁止点でも相手の石を取れるならTrue
@@ -223,17 +226,23 @@ def _is_surrounded_v2(
     _board: np.ndarray, _x: int, _y: int, color: int
 ) -> bool:
 
-    surrounded_stones = _get_surrounded_stones(_board, color)
+    surrounded_stones = _get_surrounded_stones(
+        _board, target_color=color, surrounding_color=_opponent_color(color)
+    )
     return surrounded_stones[_x][_y]
 
 
-def _get_surrounded_stones(_board: np.ndarray, color: int):
+def _get_surrounded_stones(
+    _board: np.ndarray, target_color: int, surrounding_color: int
+):
     """
     _is_surrounded()と違うのは、
     1. 空点から調べ始める
     2. 囲まれた石を全て返す
     """
-    # 1. boardの一番外側に1週分追加
+    fill_color = 3 - target_color - surrounding_color
+
+    # 1. boardの一番外側に1周分追加
     board = np.hstack(
         (
             np.full(BOARD_SIZE + 2, -1).reshape((BOARD_SIZE + 2, 1)),
@@ -257,7 +266,7 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
     #  [-1 -1 -1 -1 -1 -1 -1]]
 
     # 2. 空点に隣り合うcolorの石を取り除く
-    LARGE_NUMBER = 361  # 361以上なら大丈夫なはず
+    LARGE_NUMBER = 361 * 10
     num_of_candidate = 0
     candidate_x: np.ndarray = np.zeros(LARGE_NUMBER, dtype=int)
     candidate_y: np.ndarray = np.zeros(LARGE_NUMBER, dtype=int)
@@ -265,7 +274,7 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
     examined_stones: np.ndarray = np.zeros_like(board, dtype=bool)
     for _x in range(board.shape[0]):
         for _y in range(board.shape[1]):
-            if board[_x][_y] == POINT:
+            if board[_x][_y] == fill_color:
                 candidate_x[num_of_candidate] = _x
                 candidate_y[num_of_candidate] = _y
                 num_of_candidate += 1
@@ -283,30 +292,30 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
             continue
         examined_stones[x][y] = True
 
-        if board[x][y - 1] == color:
-            board[x][y - 1] = POINT
-        if board[x][y - 1] == POINT:
+        if board[x][y - 1] == target_color:
+            board[x][y - 1] = fill_color
+        if board[x][y - 1] == fill_color and not examined_stones[x][y - 1]:
             candidate_x[num_of_candidate] = x
             candidate_y[num_of_candidate] = y - 1
             num_of_candidate += 1
 
-        if board[x + 1][y] == color:
-            board[x + 1][y] = POINT
-        if board[x + 1][y] == POINT:
+        if board[x + 1][y] == target_color:
+            board[x + 1][y] = fill_color
+        if board[x + 1][y] == fill_color and not examined_stones[x + 1][y]:
             candidate_x[num_of_candidate] = x + 1
             candidate_y[num_of_candidate] = y
             num_of_candidate += 1
 
-        if board[x][y + 1] == color:
-            board[x][y + 1] = POINT
-        if board[x][y + 1] == POINT:
+        if board[x][y + 1] == target_color:
+            board[x][y + 1] = fill_color
+        if board[x][y + 1] == fill_color and not examined_stones[x][y + 1]:
             candidate_x[num_of_candidate] = x
             candidate_y[num_of_candidate] = y + 1
             num_of_candidate += 1
 
-        if board[x - 1][y] == color:
-            board[x - 1][y] = POINT
-        if board[x - 1][y] == POINT:
+        if board[x - 1][y] == target_color:
+            board[x - 1][y] = fill_color
+        if board[x - 1][y] == fill_color and not examined_stones[x - 1][y]:
             candidate_x[num_of_candidate] = x - 1
             candidate_y[num_of_candidate] = y
             num_of_candidate += 1
@@ -319,7 +328,7 @@ def _get_surrounded_stones(_board: np.ndarray, color: int):
     )
 
     # 4. 囲まれた指定色の石をTrue、それ以外をFalseにして返す
-    surrounded_stones = board == color
+    surrounded_stones = board == target_color
 
     return surrounded_stones
 
@@ -336,7 +345,9 @@ def _remove_stones_from_state(
     op_color = _opponent_color(color)
 
     # 囲んでいたら取る
-    surrounded_stones = _get_surrounded_stones(new_state.board, op_color)
+    surrounded_stones = _get_surrounded_stones(
+        new_state.board, target_color=op_color, surrounding_color=color
+    )
     new_state.board[surrounded_stones] = POINT
 
     # 取った分だけアゲハマ増加
@@ -374,7 +385,26 @@ def legal_actions(state: MiniGoState) -> np.ndarray:
 
     for x in range(BOARD_SIZE):
         for y in range(BOARD_SIZE):
-            if _can_set_stone(state, x, y, color):
-                legal_actions[x][y] = True
+            legal_actions[x][y] = _can_set_stone(state, x, y, color)
 
     return legal_actions
+
+
+def _get_reward(_state: MiniGoState) -> np.ndarray:
+    state = copy.deepcopy(_state)
+
+    b_score = _count_ji(state.board, BLACK) - state.agehama[WHITE]
+    w_score = _count_ji(state.board, WHITE) - state.agehama[BLACK]
+    if w_score < b_score:
+        return np.array([1, -1], dtype=int)
+    elif w_score > b_score:
+        return np.array([-1, 1], dtype=int)
+    return np.array([0, 0], dtype=int)
+
+
+def _count_ji(_board: np.ndarray, _color: int) -> int:
+    board = _board.copy()
+    ji = _get_surrounded_stones(
+        _board=board, target_color=POINT, surrounding_color=_color
+    )
+    return np.count_nonzero(ji)
