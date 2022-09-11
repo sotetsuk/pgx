@@ -289,4 +289,48 @@ def test_random_play():
 
 
 def test_reward():
-    pass
+    init_board = to_init_board("++@OO@@@OO@OOOO@O+OO@OOOO")
+    state = MiniGoState(board=init_board)
+    """
+      [ 0 1 2 3 4 ]
+    [0] + + @ O O
+    [1] @ @ @ O O
+    [2] @ O O O O
+    [3] @ O + O O
+    [4] @ O O O O
+    """
+
+    state, r, _ = step(state=state, action=np.array([3, 2]))
+    assert (r == np.array([0, 0])).all()
+    state, _, _ = step(state=state, action=None)
+    state, r, _ = step(state=state, action=None)
+    assert (r == np.array([1, -1])).all()
+
+    """
+    https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
+    """
+    state = init()
+    state, _, _ = step(state=state, action=np.array([2, 2]))  # BLACK
+    state, _, _ = step(state=state, action=np.array([2, 1]))  # WHITE
+    state, _, _ = step(state=state, action=np.array([3, 2]))
+    state, _, _ = step(state=state, action=np.array([1, 2]))
+    state, _, _ = step(state=state, action=np.array([1, 3]))
+    state, _, _ = step(state=state, action=np.array([0, 1]))
+    state, _, _ = step(state=state, action=np.array([0, 3]))
+    state, _, _ = step(state=state, action=np.array([3, 1]))
+    state, _, _ = step(state=state, action=np.array([4, 1]))
+    state, _, _ = step(state=state, action=np.array([0, 2]))
+    state, _, _ = step(state=state, action=np.array([2, 0]))
+    state, _, _ = step(state=state, action=np.array([1, 0]))
+    state, _, _ = step(state=state, action=np.array([2, 4]))
+    state, _, _ = step(state=state, action=np.array([3, 0]))
+    state, _, _ = step(state=state, action=np.array([4, 3]))
+    state, _, _ = step(state=state, action=np.array([4, 0]))
+    state, _, _ = step(state=state, action=None)
+    state, _, _ = step(state=state, action=np.array([4, 2]))
+    state, _, _ = step(state=state, action=np.array([3, 4]))
+    state, _, _ = step(state=state, action=np.array([4, 1]))
+    state, _, _ = step(state=state, action=None)
+    state, r, _ = step(state=state, action=None)
+
+    assert (r == np.array([0, 0])).all()

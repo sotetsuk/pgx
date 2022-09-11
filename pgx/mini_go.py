@@ -274,7 +274,7 @@ def _get_surrounded_stones(
     examined_stones: np.ndarray = np.zeros_like(board, dtype=bool)
     for _x in range(board.shape[0]):
         for _y in range(board.shape[1]):
-            if board[_x][_y] == POINT:
+            if board[_x][_y] == fill_color:
                 candidate_x[num_of_candidate] = _x
                 candidate_y[num_of_candidate] = _y
                 num_of_candidate += 1
