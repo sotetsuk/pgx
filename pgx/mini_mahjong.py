@@ -1,7 +1,7 @@
-import numpy as np
 from typing import Dict, List
 
-from shanten_tools import shanten
+import numpy as np
+from shanten_tools import shanten  # type: ignore
 
 np.random.seed(0)
 
@@ -16,7 +16,7 @@ np.random.seed(0)
 class Deck:
     def __init__(self):
         # TODO: 赤牌
-        self.deck = np.array([i//4 for i in range(136)])
+        self.deck = np.array([i // 4 for i in range(136)])
         np.random.shuffle(self.deck)
         self.idx = 0
         self.end = 136 - 14
@@ -68,11 +68,24 @@ class Hand:
             return []
 
         chis = []
-        if tile % 9 > 1 and self.hand[tile-2] > 0 and self.hand[tile-1] > 0:
+        if (
+            tile % 9 > 1
+            and self.hand[tile - 2] > 0
+            and self.hand[tile - 1] > 0
+        ):
             chis.append(CHI_R)
-        if tile % 9 > 0 and tile % 9 < 8 and self.hand[tile-1] > 0 and self.hand[tile+1] > 0:
+        if (
+            tile % 9 > 0
+            and tile % 9 < 8
+            and self.hand[tile - 1] > 0
+            and self.hand[tile + 1] > 0
+        ):
             chis.append(CHI_M)
-        if tile % 9 < 7 and self.hand[tile+1] > 0 and self.hand[tile+2] > 0:
+        if (
+            tile % 9 < 7
+            and self.hand[tile + 1] > 0
+            and self.hand[tile + 2] > 0
+        ):
             chis.append(CHI_L)
 
         return chis
@@ -85,23 +98,22 @@ class Hand:
         assert tile < 27
         if chi == CHI_R:
             assert tile % 9 > 1
-            assert self.hand[tile-2] > 0
-            assert self.hand[tile-1] > 0
-            self.hand[tile-2] -= 1
-            self.hand[tile-1] -= 1
+            assert self.hand[tile - 2] > 0
+            assert self.hand[tile - 1] > 0
+            self.hand[tile - 2] -= 1
+            self.hand[tile - 1] -= 1
         if chi == CHI_M:
             assert tile % 9 > 0 and tile % 9 < 8
-            assert self.hand[tile-1] > 0
-            assert self.hand[tile+1] > 0
-            self.hand[tile-1] -= 1
-            self.hand[tile+1] -= 1
+            assert self.hand[tile - 1] > 0
+            assert self.hand[tile + 1] > 0
+            self.hand[tile - 1] -= 1
+            self.hand[tile + 1] -= 1
         if chi == CHI_L:
             assert tile % 9 < 7
-            assert self.hand[tile+1] > 0
-            assert self.hand[tile+2] > 0
-            self.hand[tile+1] -= 1
-            self.hand[tile+2] -= 1
-
+            assert self.hand[tile + 1] > 0
+            assert self.hand[tile + 2] > 0
+            self.hand[tile + 1] -= 1
+            self.hand[tile + 2] -= 1
 
 
 # Event/Action
@@ -133,11 +145,11 @@ class MiniMahjong:
         if self.is_terminal():
             return
 
-        print('{}{}局{}本場'.format(
-            '東' if self.ba == 0 else '南',
-            self.kyoku + 1,
-            self.honba
-            ))
+        print(
+            "{}{}局{}本場".format(
+                "東" if self.ba == 0 else "南", self.kyoku + 1, self.honba
+            )
+        )
 
         self.deck = Deck()
         self.hand = [Hand() for _ in range(4)]
@@ -158,14 +170,13 @@ class MiniMahjong:
     def is_terminal(self):
         return self.ba == 2
 
-
-    def legal_actions(self) -> Dict[int,int]:
+    def legal_actions(self) -> Dict[int, List[int]]:
         if self.hand[self.turn].size() % 3 == 2:
             # 手牌が3n+2
             return {
-                    self.turn: self.hand[self.turn].to_indices() + \
-                    self._legal_tsumo()
-                    }
+                self.turn: self.hand[self.turn].to_indices()
+                + self._legal_tsumo()
+            }
             # TODO: 暗/加槓の追加
             # TODO: 喰い変えNGによる捨て牌制限
 
@@ -176,9 +187,11 @@ class MiniMahjong:
         for player in range(4):
             if player == self.turn:
                 continue
-            actions = self._legal_ron(player) + \
-                      self._legal_pon(player) + \
-                      self._legal_chis(player)
+            actions = (
+                self._legal_ron(player)
+                + self._legal_pon(player)
+                + self._legal_chis(player)
+            )
             # TODO: 明槓の追加
 
             if len(actions) > 0:
@@ -187,8 +200,7 @@ class MiniMahjong:
 
         return ret
 
-
-    def step(self, actions: Dict[int,int]):
+    def step(self, actions: Dict[int, int]):
         assert len(actions) > 0
 
         legal_actions = self.legal_actions()
@@ -199,8 +211,9 @@ class MiniMahjong:
 
         # action(int) の小さいものが優先される.
         player, action = min(
-                filter(lambda x:x[1] is not None, actions.items()),
-                key=lambda x:x[1])
+            filter(lambda x: x[1] is not None, actions.items()),
+            key=lambda x: x[1],
+        )
         self._step(player, action)
 
     def _step(self, player: int, action: int):
@@ -218,7 +231,7 @@ class MiniMahjong:
                 else:
                     self._draw()
 
-        elif action == 34: 
+        elif action == 34:
             # ron
             self._ron(player)
 
@@ -247,10 +260,14 @@ class MiniMahjong:
             self._tsumo()
 
     def _ryukyoku(self):
-        print('流局')
-        print('-' * 20)
-        is_tenpai = np.array([shanten(self.hand[i].hand) == 0 for i in range(4)])
-        is_not_tenpai = np.array([shanten(self.hand[i].hand) > 0 for i in range(4)])
+        print("流局")
+        print("-" * 20)
+        is_tenpai = np.array(
+            [shanten(self.hand[i].hand) == 0 for i in range(4)]
+        )
+        is_not_tenpai = np.array(
+            [shanten(self.hand[i].hand) > 0 for i in range(4)]
+        )
 
         # 点棒移動
         if sum(is_tenpai) == 1:
@@ -277,7 +294,7 @@ class MiniMahjong:
             self.ba += 1
 
         if self.ba == 2:
-            print('終局')
+            print("終局")
             return
 
         self._reset_round()
@@ -290,9 +307,9 @@ class MiniMahjong:
         self.target = tile
 
     def _tsumo(self):
-        print('自摸')
-        print('self.hand[self.turn].hand:', self.hand[self.turn].hand)
-        print('-' * 20)
+        print("自摸")
+        print("self.hand[self.turn].hand:", self.hand[self.turn].hand)
+        print("-" * 20)
 
         # 一律30符1翻
         if player == self.kyoku:
@@ -300,8 +317,8 @@ class MiniMahjong:
             self.tens[self.turn] += 1500 + self.honba * 300
         else:
             self.tens[
-                    (np.arange(4) != self.turn) * (np.arange(4) != self.kyoku)
-                    ] -= 300 + self.honba * 100
+                (np.arange(4) != self.turn) * (np.arange(4) != self.kyoku)
+            ] -= (300 + self.honba * 100)
             self.tens[self.kyoku] -= 500 + self.honba * 100
             self.tens[self.turn] += 1100 + self.honba * 300
 
@@ -317,16 +334,16 @@ class MiniMahjong:
             self.ba += 1
 
         if self.ba == 2:
-            print('終局')
+            print("終局")
             return
 
         self._reset_round()
 
     def _ron(self, player: int):
-        print('ロン')
-        print('self.hand[player].hand:', self.hand[player].hand)
-        print('self.target:', self.target)
-        print('-' * 20)
+        print("ロン")
+        print("self.hand[player].hand:", self.hand[player].hand)
+        print("self.target:", self.target)
+        print("-" * 20)
 
         # 一律30符1翻
         ten = 1500 if player == self.kyoku else 1000
@@ -347,7 +364,7 @@ class MiniMahjong:
             self.ba += 1
 
         if self.ba == 2:
-            print('終局')
+            print("終局")
             return
 
         self._reset_round()
@@ -388,10 +405,7 @@ class MiniMahjong:
 
     def observation(self, player: int):
         # TODO: 自分のhand以外の情報
-        return {
-                'hand': self.hand[player].hand,
-                'target': self.target
-                }
+        return {"hand": self.hand[player].hand, "target": self.target}
 
 
 class BasicAgent:
@@ -401,61 +415,60 @@ class BasicAgent:
         if RON in actions:
             return RON
 
-        if np.sum(obs['hand']) % 3 == 2:
+        if np.sum(obs["hand"]) % 3 == 2:
             # discard
             # shanten数が小さくなるように選択
             min_shanten = 9999
-            discard = None
+            discard = -1
             for tile in actions:
-                obs['hand'][tile] -= 1
-                s = shanten(obs['hand'])
+                obs["hand"][tile] -= 1
+                s = shanten(obs["hand"])
                 if s < min_shanten:
                     s = min_shanten
                     discard = tile
-                obs['hand'][tile] += 1
+                obs["hand"][tile] += 1
             return discard
 
-        target = obs['target']
-        
+        target = obs["target"]
+
         if PON in actions:
-            obs['hand'][target] -= 2
-            s = shanten(obs['hand'])
-            obs['hand'][target] += 2
-            if s < shanten(obs['hand']):
+            obs["hand"][target] -= 2
+            s = shanten(obs["hand"])
+            obs["hand"][target] += 2
+            if s < shanten(obs["hand"]):
                 return PON
 
         if CHI_R in actions:
-            obs['hand'][target-2] -= 1
-            obs['hand'][target-1] -= 1
-            s = shanten(obs['hand'])
-            obs['hand'][target-2] += 1
-            obs['hand'][target-1] += 1
-            if s < shanten(obs['hand']):
+            obs["hand"][target - 2] -= 1
+            obs["hand"][target - 1] -= 1
+            s = shanten(obs["hand"])
+            obs["hand"][target - 2] += 1
+            obs["hand"][target - 1] += 1
+            if s < shanten(obs["hand"]):
                 return CHI_R
 
         if CHI_M in actions:
-            obs['hand'][target-1] -= 1
-            obs['hand'][target+1] -= 1
-            s = shanten(obs['hand'])
-            obs['hand'][target-1] += 1
-            obs['hand'][target+1] += 1
-            if s < shanten(obs['hand']):
+            obs["hand"][target - 1] -= 1
+            obs["hand"][target + 1] -= 1
+            s = shanten(obs["hand"])
+            obs["hand"][target - 1] += 1
+            obs["hand"][target + 1] += 1
+            if s < shanten(obs["hand"]):
                 return CHI_M
 
         if CHI_L in actions:
-            obs['hand'][target+1] -= 1
-            obs['hand'][target+2] -= 1
-            s = shanten(obs['hand'])
-            obs['hand'][target+1] += 1
-            obs['hand'][target+2] += 1
-            if s < shanten(obs['hand']):
+            obs["hand"][target + 1] -= 1
+            obs["hand"][target + 2] -= 1
+            s = shanten(obs["hand"])
+            obs["hand"][target + 1] += 1
+            obs["hand"][target + 2] += 1
+            if s < shanten(obs["hand"]):
                 return CHI_L
 
         return PASS
-        
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     env = MiniMahjong()
     agent = BasicAgent()
 
@@ -467,42 +480,3 @@ if __name__ == '__main__':
         env.step(selected)
 
     print(env.tens)
-
-    # print(env.legal_actions())
-    # print(env.observation(0))
-    # print(agent.act(
-    #     env.legal_actions()[0],
-    #     env.observation(0)
-    #     ))
-
-    # env.step({0:28})
-
-    # print(env.legal_actions())
-    # print(env.observation(2))
-    # print(agent.act(
-    #     env.legal_actions()[2],
-    #     env.observation(2)
-    #     ))
-    # env.step({2:35})
-
-    # print(env.legal_actions())
-    # print(env.observation(2))
-    # print(agent.act(
-    #     env.legal_actions()[2],
-    #     env.observation(2)
-    #     ))
-    # env.step({})
-
-    #env.step({0:2})
-    #print(env.legal_actions())
-    #print(env.hand[2].hand)
-    #env.step({2:36})
-    #print(env.hand[2].hand)
-    #print(env.legal_actions())
-    #env.step({2:28})
-    #print(env.legal_actions())
-    #print(env.hand[3].hand)
-    #env.step({3:0})
-    #print(env.hand[3].hand)
-    #print(env.legal_actions())
-    #print(env.observation(0))
