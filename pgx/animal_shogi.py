@@ -3,20 +3,6 @@ from dataclasses import dataclass
 import numpy as np
 
 
-# 盤面のdataclass
-@dataclass
-class AnimalShogiState:
-    # turn 先手番なら0 後手番なら1
-    turn: int = 0
-    # board 盤面の駒。
-    # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
-    # の順で駒がどの位置にあるかをone_hotで記録
-    # ヒヨコ: Pawn, キリン: Rook, ゾウ: Bishop, ライオン: King, ニワトリ: Gold　と対応
-    board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
-    # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
-    hand: np.ndarray = np.zeros(6, dtype=np.int32)
-
-
 # 指し手のdataclass
 @dataclass
 class AnimalShogiAction:
@@ -34,6 +20,22 @@ class AnimalShogiAction:
     captured: int = 0
     # is_promote: 駒を成るかどうかの判定
     is_promote: int = 0
+
+
+# 盤面のdataclass
+@dataclass
+class AnimalShogiState:
+    # turn 先手番なら0 後手番なら1
+    turn: int = 0
+    # board 盤面の駒。
+    # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    # の順で駒がどの位置にあるかをone_hotで記録
+    # ヒヨコ: Pawn, キリン: Rook, ゾウ: Bishop, ライオン: King, ニワトリ: Gold　と対応
+    board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
+    # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
+    hand: np.ndarray = np.zeros(6, dtype=np.int32)
+    # prev_move: 直前の手をAnimalShogiActionで保存
+    prev_move: AnimalShogiAction = AnimalShogiAction(False, 0, 0)
 
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
@@ -67,6 +69,7 @@ def move(
         else:
             state.hand[act.captured % 4 + 2] += 1
     state.turn = another_color(state)
+    state.prev_move = act
     return state
 
 
@@ -76,6 +79,7 @@ def drop(state: AnimalShogiState, act: AnimalShogiAction):
     state.board[act.piece][act.final] = 1
     state.board[0][act.final] = 0
     state.turn = another_color(state)
+    state.prev_move = act
     return state
 
 

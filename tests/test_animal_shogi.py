@@ -73,6 +73,7 @@ def test_move():
     assert s.board[6][5] == 0
     assert s.hand[0] == 1
     assert s.turn == 1
+    assert s.prev_move == m
     b2 = copy.deepcopy(TEST_BOARD)
     m2 = AnimalShogiAction(False, 1, 0, 1, 8, 1)
     s2 = move(b2, m2)
@@ -82,6 +83,7 @@ def test_move():
     assert s2.board[8][0] == 0
     assert s2.hand[2] == 2
     assert s2.turn == 1
+    assert s2.prev_move == m2
     b3 = copy.deepcopy(TEST_BOARD2)
     m3 = AnimalShogiAction(False, 6, 7, 6, 2, 1)
     s3 = move(b3, m3)
@@ -91,6 +93,7 @@ def test_move():
     assert s3.board[2][7] == 0
     assert s3.hand[4] == 2
     assert s3.turn == 0
+    assert s3.prev_move == m3
 
 
 def test_drop():
@@ -99,17 +102,22 @@ def test_drop():
     s = drop(b, d)
     assert s.hand[2] == 0
     assert s.board[3][2] == 1
+    assert s.board[0][2] == 0
+    assert s.prev_move == d
     b2 = copy.deepcopy(TEST_BOARD)
     d2 = AnimalShogiAction(True, 1, 5)
     s2 = drop(b2, d2)
     assert s2.hand[0] == 0
     assert s2.board[1][5] == 1
+    assert s2.board[0][5] == 0
+    assert s2.prev_move == d2
     b3 = copy.deepcopy(TEST_BOARD2)
     d3 = AnimalShogiAction(True, 7, 2)
     s3 = drop(b3, d3)
     assert s3.hand[4] == 0
     assert s3.board[7][2] == 1
     assert s3.board[0][2] == 0
+    assert s3.prev_move == d3
 
 
 def test_piece_type():
