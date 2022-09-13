@@ -34,8 +34,8 @@ class AnimalShogiState:
     board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
     # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
-    # prev_move: 直前の手をAnimalShogiActionで保存
-    prev_move: AnimalShogiAction = AnimalShogiAction(False, 0, 0)
+    # checked: ターンプレイヤーの王に王手がかかっているかどうか
+    checked: bool = False
 
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
@@ -54,7 +54,7 @@ def another_color(state: AnimalShogiState):
     return (state.turn + 1) % 2
 
 
-#  駒打ちでない移動の処理
+#  駒打ちでない移動の処理 手番は変更しない
 def move(
     state: AnimalShogiState,
     act: AnimalShogiAction,
@@ -68,18 +68,26 @@ def move(
             state.hand[(act.captured - 6) % 4] += 1
         else:
             state.hand[act.captured % 4 + 2] += 1
-    state.turn = another_color(state)
-    state.prev_move = act
     return state
 
 
-#  駒打ちの処理
+#  駒打ちの処理 手番は変更しない
 def drop(state: AnimalShogiState, act: AnimalShogiAction):
     state.hand[act.piece - 1 - 2 * state.turn] -= 1
     state.board[act.piece][act.final] = 1
     state.board[0][act.final] = 0
+    return state
+
+
+# stateとactを受け取りis_dropによって操作を分ける
+# 手番、王手判定も更新
+def action(state: AnimalShogiState, act: AnimalShogiAction):
+    if act.is_drop:
+        state = drop(state, act)
+    else:
+        state = move(state, act)
     state.turn = another_color(state)
-    state.prev_move = act
+    state.checked = is_check(state)
     return state
 
 
