@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 
 import numpy as np
@@ -54,33 +55,35 @@ def another_color(state: AnimalShogiState):
     return (state.turn + 1) % 2
 
 
-#  駒打ちでない移動の処理 手番は変更しない
+#  駒打ちでない移動の処理 手番変更、盤面書き換えなし
 def move(
     state: AnimalShogiState,
     act: AnimalShogiAction,
 ):
-    state.board[act.piece][act.first] = 0
-    state.board[0][act.first] = 1
-    state.board[act.captured][act.final] = 0
-    state.board[act.piece + 4 * act.is_promote][act.final] = 1
+    s = copy.deepcopy(state)
+    s.board[act.piece][act.first] = 0
+    s.board[0][act.first] = 1
+    s.board[act.captured][act.final] = 0
+    s.board[act.piece + 4 * act.is_promote][act.final] = 1
     if act.captured != 0:
-        if state.turn == 0:
-            state.hand[(act.captured - 6) % 4] += 1
+        if s.turn == 0:
+            s.hand[(act.captured - 6) % 4] += 1
         else:
-            state.hand[act.captured % 4 + 2] += 1
-    return state
+            s.hand[act.captured % 4 + 2] += 1
+    return s
 
 
-#  駒打ちの処理 手番は変更しない
+#  駒打ちの処理 手番変更、盤面書き換えなし
 def drop(state: AnimalShogiState, act: AnimalShogiAction):
-    state.hand[act.piece - 1 - 2 * state.turn] -= 1
-    state.board[act.piece][act.final] = 1
-    state.board[0][act.final] = 0
-    return state
+    s = copy.deepcopy(state)
+    s.hand[act.piece - 1 - 2 * state.turn] -= 1
+    s.board[act.piece][act.final] = 1
+    s.board[0][act.final] = 0
+    return s
 
 
 # stateとactを受け取りis_dropによって操作を分ける
-# 手番、王手判定も更新
+# 手番、王手判定も更新。引数の盤面も書き換える
 def action(state: AnimalShogiState, act: AnimalShogiAction):
     if act.is_drop:
         state = drop(state, act)
@@ -237,12 +240,19 @@ def legal_moves(state: AnimalShogiState):
                 continue
             piece2 = board[p]
             # ひよこが最奥までいった場合、強制的に成る
+            # なぜかpieceが小数に変換されてしまうのでとりあえずintに変換しておく
             if piece == 1 and p % 4 == 0:
-                moves.append(AnimalShogiAction(False, piece, p, i, piece2, 1))
+                m = AnimalShogiAction(False, int(piece), p, i, int(piece2), 1)
             elif piece == 6 and p % 4 == 3:
-                moves.append(AnimalShogiAction(False, piece, p, i, piece2, 1))
+                m = AnimalShogiAction(False, int(piece), p, i, int(piece2), 1)
             else:
-                moves.append(AnimalShogiAction(False, piece, p, i, piece2, 0))
+                m = AnimalShogiAction(False, int(piece), p, i, int(piece2), 0)
+            # mを行った後の盤面（手番はそのまま）
+            after = move(state, m)
+            # mを行った後も自分の玉に王手がかかっていてはいけない
+            if is_check(after):
+                continue
+            moves.append(m)
     return moves
 
 
@@ -264,5 +274,10 @@ def legal_drop(state: AnimalShogiState):
                 continue
             if piece == 6 and j % 4 == 3:
                 continue
-            moves.append(AnimalShogiAction(True, piece, j))
+            d = AnimalShogiAction(True, piece, j)
+            s = drop(state, d)
+            # 自玉が取られるような手は打てない
+            if is_check(s):
+                continue
+            moves.append(d)
     return moves

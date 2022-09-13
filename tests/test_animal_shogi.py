@@ -135,14 +135,11 @@ def test_legal_move():
             AnimalShogiAction(is_drop=False, piece=1, final=5, first=6, captured=6, is_promote=0),
             AnimalShogiAction(is_drop=False, piece=4, final=2, first=7, captured=0, is_promote=0),
             AnimalShogiAction(is_drop=False, piece=4, final=10, first=7, captured=0, is_promote=0)]
+    # 王手を受けている状態の挙動
+    print(legal_moves(TEST_BOARD))
     assert legal_moves(TEST_BOARD) == \
-           [AnimalShogiAction(is_drop=False, piece=1, final=0, first=1, captured=8, is_promote=1),
-            AnimalShogiAction(is_drop=False, piece=5, final=2, first=3, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=False, piece=5, final=7, first=3, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=False, piece=2, final=2, first=6, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=False, piece=2, final=5, first=6, captured=0, is_promote=0),
+           [AnimalShogiAction(is_drop=False, piece=5, final=7, first=3, captured=7, is_promote=0),
             AnimalShogiAction(is_drop=False, piece=2, final=7, first=6, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=False, piece=2, final=10, first=6, captured=0, is_promote=0),
             AnimalShogiAction(is_drop=False, piece=4, final=7, first=11, captured=7, is_promote=0),
             AnimalShogiAction(is_drop=False, piece=4, final=10, first=11, captured=0, is_promote=0)]
     assert legal_moves(TEST_BOARD2) == \
@@ -156,14 +153,7 @@ def test_legal_move():
 
 
 def test_legal_drop():
-    assert legal_drop(TEST_BOARD) == \
-           [AnimalShogiAction(is_drop=True, piece=1, final=2), AnimalShogiAction(is_drop=True, piece=1, final=5),
-            AnimalShogiAction(is_drop=True, piece=1, final=9), AnimalShogiAction(is_drop=True, piece=1, final=10),
-            AnimalShogiAction(is_drop=True, piece=2, final=2), AnimalShogiAction(is_drop=True, piece=2, final=5),
-            AnimalShogiAction(is_drop=True, piece=2, final=8), AnimalShogiAction(is_drop=True, piece=2, final=9),
-            AnimalShogiAction(is_drop=True, piece=2, final=10), AnimalShogiAction(is_drop=True, piece=3, final=2),
-            AnimalShogiAction(is_drop=True, piece=3, final=5), AnimalShogiAction(is_drop=True, piece=3, final=8),
-            AnimalShogiAction(is_drop=True, piece=3, final=9), AnimalShogiAction(is_drop=True, piece=3, final=10)]
+    assert legal_drop(TEST_BOARD) == []
     assert legal_drop(TEST_BOARD2) == \
            [AnimalShogiAction(is_drop=True, piece=6, final=2), AnimalShogiAction(is_drop=True, piece=6, final=8),
             AnimalShogiAction(is_drop=True, piece=6, final=9), AnimalShogiAction(is_drop=True, piece=6, final=10),
