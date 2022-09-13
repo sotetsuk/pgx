@@ -6,7 +6,7 @@ import jax.random
 from pgx.minatar import asterix, breakout
 
 
-class MinAtar():
+class MinAtar:
     def __init__(
         self,
         game: str,
