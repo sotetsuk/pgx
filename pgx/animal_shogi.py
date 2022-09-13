@@ -23,6 +23,21 @@ class AnimalShogiAction:
     is_promote: int = 0
 
 
+@dataclass
+class AnimalShogiActionInt:
+    action: int
+    # 10桁の数字でactionを表現
+    # is_drop(1) piece(2) final(2) first(2) captured(2) is_promote(1) の順で並べる感じ
+    # is_drop: 1なら駒打ち、2なら移動の処理
+    # piece: 1~10 動かした駒の種類 先手ヒヨコ～後手ニワトリまで表現
+    # final: 0~11 動かした駒の最終的な座標
+    # first: 0~11 動かした駒の元の座標　駒打ちの場合は0
+    # captured: 0~10 取った駒の種類　pieceと同様　駒を取らなかった場合や駒打ちの場合は0
+    # is_promote: 0なら不成 1なら成
+    # 例：1020600000 → 座標6（中央列の上から3列目）に先手のキリンを駒打ち
+    # 例：2060302031 → 座標2の後手のヒヨコを座標3に移動、先手のゾウを取って成った
+
+
 # 盤面のdataclass
 @dataclass
 class AnimalShogiState:
@@ -52,6 +67,26 @@ BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
 KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
+# intからactionの変換
+def convert_action(act):
+    is_drop = act // 1000000000
+    act -= is_drop * 1000000000
+    piece = act // 10000000
+    act -= piece * 10000000
+    final = act // 100000
+    act -= final * 100000
+    first = act // 1000
+    act -= first * 1000
+    captured = act // 10
+    is_promote = act - captured * 10
+    return np.array([is_drop, piece, final, first, captured, is_promote], dtype=np.int32)
+
+
+# actionからintの変換
+def convert_int(act):
+    return act[0] * 1000000000 + act[1] * 10000000 + act[2] * 100000 + act[3] * 1000 + act[4] * 10 + act[5]
+
+
 # 手番側でない色を返す
 def another_color(state: AnimalShogiState):
     return (state.turn + 1) % 2
@@ -61,17 +96,19 @@ def another_color(state: AnimalShogiState):
 def move(
     state: AnimalShogiState,
     act: AnimalShogiAction,
+    a: AnimalShogiActionInt
 ):
     s = copy.deepcopy(state)
-    s.board[act.piece][act.first] = 0
-    s.board[0][act.first] = 1
-    s.board[act.captured][act.final] = 0
-    s.board[act.piece + 4 * act.is_promote][act.final] = 1
-    if act.captured != 0:
+    m = convert_action(a.action)
+    s.board[m[1]][m[3]] = 0
+    s.board[0][m[3]] = 1
+    s.board[m[4]][m[2]] = 0
+    s.board[m[1] + 4 * m[5]][m[2]] = 1
+    if m[4] != 0:
         if s.turn == 0:
-            s.hand[(act.captured - 6) % 4] += 1
+            s.hand[(m[4] - 6) % 4] += 1
         else:
-            s.hand[act.captured % 4 + 2] += 1
+            s.hand[m[4] % 4 + 2] += 1
     return s
 
 
