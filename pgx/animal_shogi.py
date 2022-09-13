@@ -10,7 +10,7 @@ class AnimalShogiAction:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用
     # 駒打ちかどうか
-    is_drop: bool
+    is_drop: int
     # piece: 動かした(打った)駒の種類
     piece: int
     # final: 移動後の座標
@@ -36,7 +36,9 @@ class AnimalShogiState:
     # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
-    checked: bool = False
+    checked: int = 0
+    # checking_piece: ターンプレイヤーに王手をかけている駒の座標
+    checking_piece: np.ndarray = np.zeros(12, dtype=np.int32)
 
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
@@ -85,12 +87,17 @@ def drop(state: AnimalShogiState, act: AnimalShogiAction):
 # stateとactを受け取りis_dropによって操作を分ける
 # 手番、王手判定も更新。引数の盤面も書き換える
 def action(state: AnimalShogiState, act: AnimalShogiAction):
-    if act.is_drop:
+    if act.is_drop == 1:
         state = drop(state, act)
     else:
         state = move(state, act)
     state.turn = another_color(state)
     state.checked = is_check(state)
+    # 王手をかけている駒は直前に動かした駒
+    if state.checked:
+        state.checking_piece[act.final] = 1
+    else:
+        state.checking_piece = np.zeros(12, dtype=np.int32)
     return state
 
 
@@ -102,7 +109,7 @@ def piece_type(state: AnimalShogiState, point: int):
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
 def board_status(state: AnimalShogiState):
-    board = np.zeros(12)
+    board = np.zeros(12, dtype=np.int32)
     for i in range(12):
         board[i] = piece_type(state, i)
     return board
@@ -110,7 +117,7 @@ def board_status(state: AnimalShogiState):
 
 # 駒の持ち主の判定
 def pieces_owner(state: AnimalShogiState):
-    board = np.zeros(12)
+    board = np.zeros(12, dtype=np.int32)
     for i in range(12):
         piece = piece_type(state, i)
         if piece == 0:
@@ -216,6 +223,27 @@ def effected(state: AnimalShogiState, turn: int):
     return all_effect
 
 
+# 自殺手判定
+def is_suicide(piece, position, effects):
+    # ライオン以外は関係ない
+    if piece % 5 != 4:
+        return False
+    # 行先に相手の駒の利きがあるかどうか
+    return effects[position] != 0
+
+
+# 王手放置判定
+def leave_check(piece, position, check, cp):
+    if not check:
+        return False
+    # 玉が動いていればとりあえず放置ではない（自殺手の可能性はある）
+    if piece % 5 == 4:
+        return False
+    # 両王手などについてはどうぶつ将棋では考えない
+    # cp[position] が1のところに動いていれば、王手を回避できている
+    return cp[position] == 0
+
+
 # 王手の判定(turn側の王に王手がかかっているかを判定)
 def is_check(state: AnimalShogiState):
     effects = effected(state, another_color(state))
@@ -227,6 +255,8 @@ def is_check(state: AnimalShogiState):
 def legal_moves(state: AnimalShogiState):
     board = board_status(state)
     piece_owner = pieces_owner(state)
+    # 相手の駒の利き
+    effects = effected(state, another_color(state))
     moves = []
     for i in range(12):
         if piece_owner[i] != state.turn:
@@ -242,11 +272,11 @@ def legal_moves(state: AnimalShogiState):
             # ひよこが最奥までいった場合、強制的に成る
             # なぜかpieceが小数に変換されてしまうのでとりあえずintに変換しておく
             if piece == 1 and p % 4 == 0:
-                m = AnimalShogiAction(False, int(piece), p, i, int(piece2), 1)
+                m = AnimalShogiAction(0, piece, p, i, piece2, 1)
             elif piece == 6 and p % 4 == 3:
-                m = AnimalShogiAction(False, int(piece), p, i, int(piece2), 1)
+                m = AnimalShogiAction(0, piece, p, i, piece2, 1)
             else:
-                m = AnimalShogiAction(False, int(piece), p, i, int(piece2), 0)
+                m = AnimalShogiAction(0, piece, p, i, piece2, 0)
             # mを行った後の盤面（手番はそのまま）
             after = move(state, m)
             # mを行った後も自分の玉に王手がかかっていてはいけない
@@ -274,7 +304,7 @@ def legal_drop(state: AnimalShogiState):
                 continue
             if piece == 6 and j % 4 == 3:
                 continue
-            d = AnimalShogiAction(True, piece, j)
+            d = AnimalShogiAction(1, piece, j)
             s = drop(state, d)
             # 自玉が取られるような手は打てない
             if is_check(s):
