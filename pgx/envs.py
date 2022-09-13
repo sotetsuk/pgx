@@ -1,13 +1,12 @@
 from typing import Optional, Tuple
 
-import gym
 import jax.numpy as jnp
 import jax.random
 
 from pgx.minatar import asterix, breakout
 
 
-class MinAtar(gym.Env):
+class MinAtar():
     def __init__(
         self,
         game: str,
