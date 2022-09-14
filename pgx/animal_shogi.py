@@ -256,7 +256,6 @@ def legal_moves(state: AnimalShogiState):
     board = board_status(state)
     piece_owner = pieces_owner(state)
     # 相手の駒の利き
-    effects = effected(state, another_color(state))
     moves = []
     for i in range(12):
         if piece_owner[i] != state.turn:
