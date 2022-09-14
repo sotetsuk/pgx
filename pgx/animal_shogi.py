@@ -52,6 +52,40 @@ BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
 KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
+# dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
+def dlshogi_action(direction, to):
+    return direction * 12 + to
+
+
+# fromの座標とtoの座標からdirを生成
+def point_to_direction(fro, to, promote, turn):
+    dis = to - fro
+    # 後手番の動きは反転させる
+    if turn == 1:
+        dis = -dis
+    # UP, UP_LEFT, UP_RIGHT, LEFT, RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT, UP_PROMOTE... の順でdirを割り振る
+    # PROMOTEの場合は+8する処理を入れるが、どうぶつ将棋ではUP_PROMOTEしか存在しない(はず)
+    if dis == -1:
+        direction = 0
+    if dis == 3:
+        direction = 1
+    if dis == -5:
+        direction = 2
+    if dis == 4:
+        direction = 3
+    if dis == -4:
+        direction = 4
+    if dis == 1:
+        direction = 5
+    if dis == 5:
+        direction = 6
+    if dis == -3:
+        direction = 7
+    if promote:
+        direction += 8
+    return direction
+
+
 # 手番側でない色を返す
 def another_color(state: AnimalShogiState):
     return (state.turn + 1) % 2
