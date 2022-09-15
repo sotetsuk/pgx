@@ -193,6 +193,30 @@ def test_convert_action_to_int():
     assert i6 == 158
 
 
+def test_convert_int_to_action():
+    b = copy.deepcopy(INIT_BOARD)
+    m = AnimalShogiAction(0, 1, 5, 6, 6, 0)
+    i = 5
+    assert int_to_action(i, b) == m
+    b2 = copy.deepcopy(TEST_BOARD)
+    m2 = AnimalShogiAction(0, 1, 0, 1, 8, 1)
+    i2 = 96
+    assert int_to_action(i2, b2) == m2
+    b3 = copy.deepcopy(TEST_BOARD2)
+    m3 = AnimalShogiAction(0, 6, 7, 6, 2, 1)
+    i3 = 103
+    assert int_to_action(i3, b3) == m3
+    d = AnimalShogiAction(1, 3, 2)
+    i4 = 134
+    assert int_to_action(i4, b2) == d
+    d2 = AnimalShogiAction(1, 1, 5)
+    i5 = 113
+    assert int_to_action(i5, b2) == d2
+    d3 = AnimalShogiAction(1, 7, 2)
+    i6 = 158
+    assert int_to_action(i6, b3) == d3
+
+
 if __name__ == '__main__':
     test_another_color()
     test_move()
@@ -203,3 +227,4 @@ if __name__ == '__main__':
     test_legal_move()
     test_legal_drop()
     test_convert_action_to_int()
+    test_convert_int_to_action()
