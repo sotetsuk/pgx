@@ -404,7 +404,6 @@ def legal_moves(state: AnimalShogiState, action_array):
 
 # 駒打ちの合法手の生成
 def legal_drop(state: AnimalShogiState, action_array):
-    moves = []
     #  打てるのはヒヨコ、キリン、ゾウの三種
     for i in range(3):
         piece = i + 1 + 5 * state.turn
@@ -432,5 +431,8 @@ def legal_drop(state: AnimalShogiState, action_array):
 
 def legal_actions(state: AnimalShogiState):
     action_array = np.zeros(180, dtype=np.int32)
+    legal_moves(state, action_array)
+    legal_drop(state, action_array)
+    return action_array
 
 
