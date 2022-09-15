@@ -109,23 +109,21 @@ def step(
         if ren_id_board[xy_around_mypos] != -1:  # 既に連が作られていた場合
 
             old_id = ren_id_board[xy_around_mypos]
+            if old_id == new_id:
+                continue
 
-            small_ren_id = min(old_id, new_id)
-            large_ren_id = max(old_id, new_id)
-            # 大きいidの方の連を消し、小さいidの連と繋げる
+            small_id = min(old_id, new_id)
+            large_id = max(old_id, new_id)
+            # 大きいidの連を消し、小さいidの連と繋げる
 
-            available_ren_id[large_ren_id] = True
-            ren_id_board[ren_id_board == large_ren_id] = small_ren_id
+            available_ren_id[large_id] = True
+            ren_id_board[ren_id_board == large_id] = small_id
 
-            liberty[large_ren_id][xy] = False
-            liberty[small_ren_id] = (
-                liberty[small_ren_id] | liberty[large_ren_id]
-            )
-            liberty[large_ren_id] = np.zeros(
-                BOARD_SIZE * BOARD_SIZE, dtype=bool
-            )
+            liberty[large_id][xy] = liberty[small_id][xy] = False
+            liberty[small_id] = liberty[small_id] | liberty[large_id]
+            liberty[large_id] = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
 
-            new_id = small_ren_id
+            new_id = small_id
 
         elif oppo_ren_id_board[xy_around_mypos] != -1:  # 敵の連が作られていた場合
             oppo_ren_id = oppo_ren_id_board[xy_around_mypos]
@@ -133,7 +131,9 @@ def step(
             oppo_liberty[oppo_ren_id][xy] = False
             if np.count_nonzero(oppo_liberty[oppo_ren_id]) == 0:
                 # 石を取る
-                surrounded_stones = oppo_ren_id_board == oppo_ren_id  # 呼吸点0の連
+                surrounded_stones = (
+                    oppo_ren_id_board == oppo_ren_id
+                )  # 呼吸点0の連の位置情報
                 agehama += np.count_nonzero(surrounded_stones)  # その石の数
                 oppo_ren_id_board[surrounded_stones] = -1  # ren_id_boardから削除
                 state.available_ren_id[oppo_color][
@@ -141,15 +141,22 @@ def step(
                 ] = True  # available_ren_idに追加
                 a_removed_stone_xy = xy_around_mypos  # コウのために取った位置を記憶
 
-                # 空いたところを呼吸点に追加
-                for _nsew in NSEW:
-                    _around_mypos = around_mypos + _nsew
-                    if _is_off_board(_around_mypos):
-                        continue
-                    _xy_around_mypos = _pos_to_xy(_around_mypos)
-                    if ren_id_board[_xy_around_mypos] != -1:
-                        ren_id = ren_id_board[_xy_around_mypos]
-                        liberty[ren_id][xy_around_mypos] = True
+                # 空けたところを自軍の呼吸点に追加
+                # ここの処理もっと簡単にしたい
+                for _xy in range(BOARD_SIZE * BOARD_SIZE):
+                    for _nsew in NSEW:
+                        _around_rmstone_pos = _xy_to_pos(_xy) + _nsew
+                        if _is_off_board(_around_rmstone_pos):
+                            continue
+                        _around_rmstone_xy = _to_xy(
+                            _around_rmstone_pos[0], _around_rmstone_pos[1]
+                        )
+                        if (
+                            ren_id_board[_around_rmstone_xy] != -1
+                            and surrounded_stones[_xy]
+                        ):
+                            adj_ren_id = ren_id_board[_around_rmstone_xy]
+                            liberty[adj_ren_id][_xy] = True
 
         else:
             liberty[new_id][xy_around_mypos] = True
@@ -206,6 +213,12 @@ def show(state: MiniGoState) -> None:
         print("")
 
 
+def _show(state: MiniGoState) -> None:
+    show(state)
+    print(state.ren_id_board[BLACK].reshape((5, 5)))
+    print(state.ren_id_board[WHITE].reshape((5, 5)))
+
+
 def _is_off_board(pos: np.ndarray) -> bool:
     return (
         pos[0] < 0
@@ -221,6 +234,10 @@ def _pos_to_xy(pos: np.ndarray) -> int:
 
 def _to_xy(x, y) -> int:
     return x * BOARD_SIZE + y
+
+
+def _xy_to_pos(xy):
+    return np.array([xy // BOARD_SIZE, xy % BOARD_SIZE])
 
 
 def _opponent_color(color: int) -> int:
