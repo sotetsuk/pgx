@@ -52,6 +52,122 @@ BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
 KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
+# dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
+def dlshogi_action(direction, to):
+    return direction * 12 + to
+
+
+# fromの座標とtoの座標からdirを生成
+def point_to_direction(fro, to, promote, turn):
+    dis = to - fro
+    # 後手番の動きは反転させる
+    if turn == 1:
+        dis = -dis
+    # UP, UP_LEFT, UP_RIGHT, LEFT, RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT, UP_PROMOTE... の順でdirを割り振る
+    # PROMOTEの場合は+8する処理を入れるが、どうぶつ将棋ではUP_PROMOTEしか存在しない(はず)
+    if dis == -1:
+        direction = 0
+    if dis == 3:
+        direction = 1
+    if dis == -5:
+        direction = 2
+    if dis == 4:
+        direction = 3
+    if dis == -4:
+        direction = 4
+    if dis == 1:
+        direction = 5
+    if dis == 5:
+        direction = 6
+    if dis == -3:
+        direction = 7
+    if promote:
+        direction += 8
+    return direction
+
+
+# 打った駒の種類をdirに変換
+def hand_piece_to_dir(piece):
+    # 移動のdirはPROMOTE_UPの8が最大なので9以降に配置
+    # 9: 先手ヒヨコ 10: 先手キリン... 14: 後手ゾウ　に対応させる
+    if piece <= 5:
+        return 8 + piece
+    else:
+        return 6 + piece
+
+
+# AnimalShogiActionをdlshogiのint型actionに変換
+def action_to_int(act: AnimalShogiAction, turn):
+    if act.is_drop == 0:
+        return dlshogi_action(
+            point_to_direction(act.first, act.final, act.is_promote, turn),
+            act.final,
+        )
+    else:
+        return dlshogi_action(hand_piece_to_dir(act.piece), act.final)
+
+
+# dlshogiのint型actionをdirectionとtoに分解
+def separate_int(act):
+    # direction, to の順番
+    return act // 12, act % 12
+
+
+# directionからfromがtoからどれだけ離れてるかと成りを含む移動かを得る
+# 手番の情報が必要
+def direction_to_from(direction, to, turn):
+    dif = 0
+    if direction == 0 or direction == 8:
+        dif = -1
+    if direction == 1:
+        dif = 3
+    if direction == 2:
+        dif = -5
+    if direction == 3:
+        dif = 4
+    if direction == 4:
+        dif = -4
+    if direction == 5:
+        dif = 1
+    if direction == 6:
+        dif = 5
+    if direction == 7:
+        dif = -3
+    if turn == 0:
+        if direction >= 8:
+            return to - dif, True
+        else:
+            return to - dif, False
+    else:
+        if direction >= 8:
+            return to + dif, True
+        else:
+            return to + dif, False
+
+
+def direction_to_hand_piece(direction):
+    if direction <= 11:
+        return direction - 8
+    else:
+        return direction - 6
+
+
+def int_to_action(act, state: AnimalShogiState):
+    direction, to = separate_int(act)
+    if direction <= 8:
+        # 駒の移動
+        is_drop = 0
+        fro, is_promote = direction_to_from(direction, to, state.turn)
+        piece = piece_type(state, fro)
+        captured = piece_type(state, to)
+        return AnimalShogiAction(is_drop, piece, to, fro, captured, is_promote)
+    else:
+        # 駒打ち
+        is_drop = 1
+        piece = direction_to_hand_piece(direction)
+        return AnimalShogiAction(is_drop, piece, to)
+
+
 # 手番側でない色を返す
 def another_color(state: AnimalShogiState):
     return (state.turn + 1) % 2
@@ -252,11 +368,11 @@ def is_check(state: AnimalShogiState):
 
 
 #  駒打ち以外の合法手を列挙する
-def legal_moves(state: AnimalShogiState):
+def legal_moves(state: AnimalShogiState, action_array):
     board = board_status(state)
     piece_owner = pieces_owner(state)
     # 相手の駒の利き
-    moves = []
+    # effects = effected(state, another_color(state))
     for i in range(12):
         if piece_owner[i] != state.turn:
             continue
@@ -281,13 +397,13 @@ def legal_moves(state: AnimalShogiState):
             # mを行った後も自分の玉に王手がかかっていてはいけない
             if is_check(after):
                 continue
-            moves.append(m)
-    return moves
+            act = action_to_int(m, state.turn)
+            action_array[act] = 1
+    return action_array
 
 
 # 駒打ちの合法手の生成
-def legal_drop(state: AnimalShogiState):
-    moves = []
+def legal_drop(state: AnimalShogiState, action_array):
     #  打てるのはヒヨコ、キリン、ゾウの三種
     for i in range(3):
         piece = i + 1 + 5 * state.turn
@@ -308,5 +424,13 @@ def legal_drop(state: AnimalShogiState):
             # 自玉が取られるような手は打てない
             if is_check(s):
                 continue
-            moves.append(d)
-    return moves
+            act = action_to_int(d, state.turn)
+            action_array[act] = 1
+    return action_array
+
+
+def legal_actions(state: AnimalShogiState):
+    action_array = np.zeros(180, dtype=np.int32)
+    legal_moves(state, action_array)
+    legal_drop(state, action_array)
+    return action_array

@@ -23,13 +23,13 @@ INIT_BOARD = AnimalShogiState(
 TEST_BOARD = AnimalShogiState(
     turn=0,
     board=np.array([
-        [0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0],
+        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0],
         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
@@ -130,36 +130,99 @@ def test_is_check():
 
 
 def test_legal_move():
-    assert legal_moves(INIT_BOARD) == \
-           [AnimalShogiAction(is_drop=0, piece=2, final=2, first=3, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=1, final=5, first=6, captured=6, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=2, first=7, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=10, first=7, captured=0, is_promote=0)]
+    array1 = legal_moves(INIT_BOARD, np.zeros(180, dtype=np.int32))
+    assert array1[2] == 1
+    assert array1[5] == 1
+    assert array1[26] == 1
+    assert array1[22] == 1
     # 王手を受けている状態の挙動
-    assert legal_moves(TEST_BOARD) == \
-           [AnimalShogiAction(is_drop=0, piece=5, final=7, first=3, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=2, final=7, first=6, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=7, first=11, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=10, first=11, captured=0, is_promote=0)]
-    assert legal_moves(TEST_BOARD2) == \
-           [AnimalShogiAction(is_drop=0, piece=10, final=2, first=1, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=9, final=8, first=4, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=9, final=9, first=4, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=8, final=2, first=5, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=8, final=8, first=5, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=8, final=10, first=5, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=6, final=7, first=6, captured=2, is_promote=1)]
+    array2 = legal_moves(TEST_BOARD, np.zeros(180, dtype=np.int32))
+    assert array2[43] == 1
+    assert array2[67] == 1
+    assert array2[55] == 1
+    # 自殺手
+    assert array2[10] == 0
+    # この手は王手を放置する手なので指せない
+    assert array2[96] == 0
+    array3 = legal_moves(TEST_BOARD2, np.zeros(180, dtype=np.int32))
+    assert array3[2] == 1
+    assert array3[56] == 1
+    assert array3[33] == 1
+    assert array3[14] == 1
+    assert array3[92] == 1
+    assert array3[34] == 1
+    assert array3[103] == 1
 
 
 def test_legal_drop():
-    assert legal_drop(TEST_BOARD) == []
-    assert legal_drop(TEST_BOARD2) == \
-           [AnimalShogiAction(is_drop=1, piece=6, final=2), AnimalShogiAction(is_drop=True, piece=6, final=8),
-            AnimalShogiAction(is_drop=1, piece=6, final=9), AnimalShogiAction(is_drop=True, piece=6, final=10),
-            AnimalShogiAction(is_drop=1, piece=7, final=2), AnimalShogiAction(is_drop=True, piece=7, final=8),
-            AnimalShogiAction(is_drop=1, piece=7, final=9), AnimalShogiAction(is_drop=True, piece=7, final=10),
-            AnimalShogiAction(is_drop=1, piece=8, final=2), AnimalShogiAction(is_drop=True, piece=8, final=8),
-            AnimalShogiAction(is_drop=1, piece=8, final=9), AnimalShogiAction(is_drop=True, piece=8, final=10)]
+    array = legal_drop(TEST_BOARD2, np.zeros(180, dtype=np.int32))
+    assert array[146] == 1
+    assert array[152] == 1
+    assert array[153] == 1
+    assert array[154] == 1
+    assert array[158] == 1
+    assert array[164] == 1
+    assert array[165] == 1
+    assert array[166] == 1
+    assert array[170] == 1
+    assert array[176] == 1
+    assert array[177] == 1
+    assert array[178] == 1
+
+
+def test_convert_action_to_int():
+    b = copy.deepcopy(INIT_BOARD)
+    m = AnimalShogiAction(0, 1, 5, 6, 6, 0)
+    i = action_to_int(m, b.turn)
+    # 6の位置のヒヨコを5に移動させる
+    assert i == 5
+    b2 = copy.deepcopy(TEST_BOARD)
+    m2 = AnimalShogiAction(0, 1, 0, 1, 8, 1)
+    i2 = action_to_int(m2, b2.turn)
+    # 1の位置のヒヨコを0に移動させる（成る）
+    assert i2 == 96
+    b3 = copy.deepcopy(TEST_BOARD2)
+    m3 = AnimalShogiAction(0, 6, 7, 6, 2, 1)
+    i3 = action_to_int(m3, b3.turn)
+    # 6の位置のヒヨコを7に移動させる（成る）
+    # 後手番なので反転してdirectionは0(成っているので8)
+    assert i3 == 103
+    d = AnimalShogiAction(1, 3, 2)
+    i4 = action_to_int(d, b2.turn)
+    # 先手のゾウを2の位置に打つ
+    # 先手のゾウを打つdirectionは11
+    assert i4 == 134
+    d2 = AnimalShogiAction(1, 1, 5)
+    i5 = action_to_int(d2, b2.turn)
+    assert i5 == 113
+    d3 = AnimalShogiAction(1, 7, 2)
+    i6 = action_to_int(d3, b3.turn)
+    # 後手のキリンを2の位置に打つ(後手キリンを打つdirectionは13)
+    assert i6 == 158
+
+
+def test_convert_int_to_action():
+    b = copy.deepcopy(INIT_BOARD)
+    m = AnimalShogiAction(0, 1, 5, 6, 6, 0)
+    i = 5
+    assert int_to_action(i, b) == m
+    b2 = copy.deepcopy(TEST_BOARD)
+    m2 = AnimalShogiAction(0, 1, 0, 1, 8, 1)
+    i2 = 96
+    assert int_to_action(i2, b2) == m2
+    b3 = copy.deepcopy(TEST_BOARD2)
+    m3 = AnimalShogiAction(0, 6, 7, 6, 2, 1)
+    i3 = 103
+    assert int_to_action(i3, b3) == m3
+    d = AnimalShogiAction(1, 3, 2)
+    i4 = 134
+    assert int_to_action(i4, b2) == d
+    d2 = AnimalShogiAction(1, 1, 5)
+    i5 = 113
+    assert int_to_action(i5, b2) == d2
+    d3 = AnimalShogiAction(1, 7, 2)
+    i6 = 158
+    assert int_to_action(i6, b3) == d3
 
 
 if __name__ == '__main__':
@@ -171,3 +234,5 @@ if __name__ == '__main__':
     test_is_check()
     test_legal_move()
     test_legal_drop()
+    test_convert_action_to_int()
+    test_convert_int_to_action()
