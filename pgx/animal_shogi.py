@@ -178,6 +178,15 @@ def another_color(state: AnimalShogiState):
     return (state.turn + 1) % 2
 
 
+# 相手の駒を同じ種類の自分の駒に変換する
+def convert_piece(piece):
+    p = (piece + 5) % 10
+    if p == 0:
+        return 10
+    else:
+        return p
+
+
 #  駒打ちでない移動の処理 手番変更、盤面書き換えなし
 def move(
     state: AnimalShogiState,
@@ -422,8 +431,24 @@ def break_actions(fro, piece, array):
     return array
 
 
+# 駒打ちのactionを追加する
+def add_drop(piece, array):
+    direction = hand_piece_to_dir(piece)
+    for i in range(12):
+        array[direction * 12 + i] = 1
+    return array
+
+
+# 駒打ちのactionを消去する
+def break_drop(piece, array):
+    direction = hand_piece_to_dir(piece)
+    for i in range(12):
+        array[direction * 12 + i] = 0
+    return array
+
+
 # 駒の移動によるlegal_actionsの更新
-def update_legal_actions_move(act: AnimalShogiAction, player_actions, enemy_actions):
+def update_legal_actions_move(act: AnimalShogiAction, player_actions, enemy_actions, hand):
     # 元の位置にいたときのフラグを折る
     break_actions(act.first, act.piece, player_actions)
     # 移動後の位置からの移動のフラグを立てる
@@ -431,15 +456,19 @@ def update_legal_actions_move(act: AnimalShogiAction, player_actions, enemy_acti
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
     if act.captured != 0:
         break_actions(act.final, act.captured, enemy_actions)
-        # 持ち駒の種類が増えた場合の処理を追加する
+        # 持ち駒の種類が増えた場合、駒打ちのactionを追加する
+        if hand == 0:
+            add_drop(convert_piece(act.captured), player_actions)
     return player_actions, enemy_actions
 
 
 # 駒打ちによるlegal_actionsの更新
-def update_legal_actions_drop(act: AnimalShogiAction, player_actions, enemy_actions):
+def update_legal_actions_drop(act: AnimalShogiAction, player_actions, enemy_actions, hand):
     # 移動後の位置からの移動のフラグを立てる
     add_actions(act.final, act.piece, player_actions)
-    # 持ち駒が最後の一枚だった場合駒打ちのactionを減らす
+    # 持ち駒が最後の一枚だった場合、駒打ちのactionを減らす
+    if hand == 1:
+        break_drop(act.piece, player_actions)
     return player_actions, enemy_actions
 
 
