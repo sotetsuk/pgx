@@ -63,6 +63,7 @@ def dlshogi_action(direction, to):
 
 # fromの座標とtoの座標からdirを生成
 def point_to_direction(fro, to, promote, turn):
+    direction = -1
     dis = to - fro
     # 後手番の動きは反転させる
     if turn == 1:
@@ -226,6 +227,13 @@ def piece_type(state: AnimalShogiState, point: int):
     return state.board[:, point].argmax()
 
 
+# ある駒の持ち主を返す
+def owner(piece):
+    if piece == 0:
+        return 2
+    return (piece - 1) // 5
+
+
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
 def board_status(state: AnimalShogiState):
@@ -369,6 +377,70 @@ def is_check(state: AnimalShogiState):
     effects = effected(state, another_color(state))
     king_location = state.board[4 + 5 * state.turn, :].argmax()
     return effects[king_location] != 0
+
+
+# 成る動きが合法かどうかの判定
+def can_promote(to, piece):
+    if piece == 1 and to & 4 == 0:
+        return True
+    if piece == 6 and to % 4 == 3:
+        return True
+    return False
+
+
+# 駒の種類と位置から生成できるactionのフラグを立てる
+def create_actions(fro, piece):
+    turn = owner(piece)
+    actions = np.zeros(180, dtype=np.int32)
+    motion = point_moves(piece, fro)
+    for i in range(12):
+        if motion[i] == 0:
+            continue
+        if can_promote(i, piece):
+            pro_act = point_to_direction(fro, i, True, turn)
+            actions[pro_act] = 1
+        act = point_to_direction(fro, i, False, turn)
+        actions[act] = 1
+    return actions
+
+
+# 駒の種類と位置から生成できるactionのフラグを立てる
+def add_actions(fro, piece, array):
+    actions = create_actions(fro, piece)
+    for i in range(180):
+        if actions[i] == 1:
+            array[i] = 1
+    return array
+
+
+# 駒の種類と位置から生成できるactionのフラグを折る
+def break_actions(fro, piece, array):
+    actions = create_actions(fro, piece)
+    for i in range(180):
+        if actions[i] == 1:
+            array[i] = 0
+    return array
+
+
+# 駒の移動によるlegal_actionsの更新
+def update_legal_actions_move(act: AnimalShogiAction, player_actions, enemy_actions):
+    # 元の位置にいたときのフラグを折る
+    break_actions(act.first, act.piece, player_actions)
+    # 移動後の位置からの移動のフラグを立てる
+    add_actions(act.final, act.piece, player_actions)
+    # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
+    if act.captured != 0:
+        break_actions(act.final, act.captured, enemy_actions)
+        # 持ち駒の種類が増えた場合の処理を追加する
+    return player_actions, enemy_actions
+
+
+# 駒打ちによるlegal_actionsの更新
+def update_legal_actions_drop(act: AnimalShogiAction, player_actions, enemy_actions):
+    # 移動後の位置からの移動のフラグを立てる
+    add_actions(act.final, act.piece, player_actions)
+    # 持ち駒が最後の一枚だった場合駒打ちのactionを減らす
+    return player_actions, enemy_actions
 
 
 #  駒打ち以外の合法手を列挙する
