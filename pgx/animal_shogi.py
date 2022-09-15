@@ -434,5 +434,3 @@ def legal_actions(state: AnimalShogiState):
     legal_moves(state, action_array)
     legal_drop(state, action_array)
     return action_array
-
-
