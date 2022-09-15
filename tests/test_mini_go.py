@@ -69,6 +69,30 @@ def test_step():
     assert done
 
 
+def test_kou():
+    state = init()
+    state, _, _ = step(_state=state, action=2)  # BLACK
+    state, _, _ = step(_state=state, action=17)  # WHITE
+    state, _, _ = step(_state=state, action=6)  # BLACK
+    state, _, _ = step(_state=state, action=13)  # WHITE
+    state, _, _ = step(_state=state, action=8)  # BLACK
+    state, _, _ = step(_state=state, action=11)  # WHITE
+    state, _, _ = step(_state=state, action=12)  # BLACK
+    state, _, _ = step(_state=state, action=7)  # WHITE
+
+    assert (state.kou == np.array([2, 2])).all()
+
+    _, r, done = step(_state=state, action=12)  # BLACK
+    # ルール違反により黒の負け
+    assert done
+    assert (r == np.array([-1, 1])).all()
+
+    state, _, done = step(_state=state, action=0)  # BLACK
+    # 回避した場合
+    assert not done
+    assert (state.kou == np.array([-1, -1])).all()
+
+
 def test_random_play():
     state = init()
     done = False
