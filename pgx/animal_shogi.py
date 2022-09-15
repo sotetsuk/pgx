@@ -99,7 +99,10 @@ def hand_piece_to_dir(piece):
 # AnimalShogiActionをdlshogiのint型actionに変換
 def action_to_int(act: AnimalShogiAction, turn):
     if act.is_drop == 0:
-        return dlshogi_action(point_to_direction(act.first, act.final, act.is_promote, turn), act.final)
+        return dlshogi_action(
+            point_to_direction(act.first, act.final, act.is_promote, turn),
+            act.final,
+        )
     else:
         return dlshogi_action(hand_piece_to_dir(act.piece), act.final)
 
@@ -132,14 +135,14 @@ def direction_to_from(direction, to, turn):
         dif = -3
     if turn == 0:
         if direction >= 8:
-            return to + dif, True
-        else:
-            return to + dif, False
-    else:
-        if direction >= 8:
             return to - dif, True
         else:
             return to - dif, False
+    else:
+        if direction >= 8:
+            return to + dif, True
+        else:
+            return to + dif, False
 
 
 def direction_to_hand_piece(direction):
@@ -163,7 +166,6 @@ def int_to_action(act, state: AnimalShogiState):
         is_drop = 1
         piece = direction_to_hand_piece(direction)
         return AnimalShogiAction(is_drop, piece, to)
-
 
 
 # 手番側でない色を返す
