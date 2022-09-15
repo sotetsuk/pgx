@@ -368,12 +368,11 @@ def is_check(state: AnimalShogiState):
 
 
 #  駒打ち以外の合法手を列挙する
-def legal_moves(state: AnimalShogiState):
+def legal_moves(state: AnimalShogiState, action_array):
     board = board_status(state)
     piece_owner = pieces_owner(state)
     # 相手の駒の利き
     effects = effected(state, another_color(state))
-    moves = []
     for i in range(12):
         if piece_owner[i] != state.turn:
             continue
@@ -398,12 +397,13 @@ def legal_moves(state: AnimalShogiState):
             # mを行った後も自分の玉に王手がかかっていてはいけない
             if is_check(after):
                 continue
-            moves.append(m)
-    return moves
+            act = action_to_int(m, state.turn)
+            action_array[act] = 1
+    return action_array
 
 
 # 駒打ちの合法手の生成
-def legal_drop(state: AnimalShogiState):
+def legal_drop(state: AnimalShogiState, action_array):
     moves = []
     #  打てるのはヒヨコ、キリン、ゾウの三種
     for i in range(3):
@@ -425,5 +425,12 @@ def legal_drop(state: AnimalShogiState):
             # 自玉が取られるような手は打てない
             if is_check(s):
                 continue
-            moves.append(d)
-    return moves
+            act = action_to_int(d, state.turn)
+            action_array[act] = 1
+    return action_array
+
+
+def legal_actions(state: AnimalShogiState):
+    action_array = np.zeros(180, dtype=np.int32)
+
+

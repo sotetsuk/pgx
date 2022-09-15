@@ -23,13 +23,13 @@ INIT_BOARD = AnimalShogiState(
 TEST_BOARD = AnimalShogiState(
     turn=0,
     board=np.array([
-        [0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 0],
+        [0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 1, 0],
         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
         [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
@@ -130,36 +130,44 @@ def test_is_check():
 
 
 def test_legal_move():
-    assert legal_moves(INIT_BOARD) == \
-           [AnimalShogiAction(is_drop=0, piece=2, final=2, first=3, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=1, final=5, first=6, captured=6, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=2, first=7, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=10, first=7, captured=0, is_promote=0)]
+    array1 = legal_moves(INIT_BOARD, np.zeros(180, dtype=np.int32))
+    assert array1[2] == 1
+    assert array1[5] == 1
+    assert array1[26] == 1
+    assert array1[22] == 1
     # 王手を受けている状態の挙動
-    assert legal_moves(TEST_BOARD) == \
-           [AnimalShogiAction(is_drop=0, piece=5, final=7, first=3, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=2, final=7, first=6, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=7, first=11, captured=7, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=4, final=10, first=11, captured=0, is_promote=0)]
-    assert legal_moves(TEST_BOARD2) == \
-           [AnimalShogiAction(is_drop=0, piece=10, final=2, first=1, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=9, final=8, first=4, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=9, final=9, first=4, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=8, final=2, first=5, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=8, final=8, first=5, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=8, final=10, first=5, captured=0, is_promote=0),
-            AnimalShogiAction(is_drop=0, piece=6, final=7, first=6, captured=2, is_promote=1)]
+    array2 = legal_moves(TEST_BOARD, np.zeros(180, dtype=np.int32))
+    assert array2[43] == 1
+    assert array2[67] == 1
+    assert array2[55] == 1
+    # 自殺手
+    assert array2[10] == 0
+    # この手は王手を放置する手なので指せない
+    assert array2[96] == 0
+    array3 = legal_moves(TEST_BOARD2, np.zeros(180, dtype=np.int32))
+    assert array3[2] == 1
+    assert array3[56] == 1
+    assert array3[33] == 1
+    assert array3[14] == 1
+    assert array3[92] == 1
+    assert array3[34] == 1
+    assert array3[103] == 1
 
 
 def test_legal_drop():
-    assert legal_drop(TEST_BOARD) == []
-    assert legal_drop(TEST_BOARD2) == \
-           [AnimalShogiAction(is_drop=1, piece=6, final=2), AnimalShogiAction(is_drop=True, piece=6, final=8),
-            AnimalShogiAction(is_drop=1, piece=6, final=9), AnimalShogiAction(is_drop=True, piece=6, final=10),
-            AnimalShogiAction(is_drop=1, piece=7, final=2), AnimalShogiAction(is_drop=True, piece=7, final=8),
-            AnimalShogiAction(is_drop=1, piece=7, final=9), AnimalShogiAction(is_drop=True, piece=7, final=10),
-            AnimalShogiAction(is_drop=1, piece=8, final=2), AnimalShogiAction(is_drop=True, piece=8, final=8),
-            AnimalShogiAction(is_drop=1, piece=8, final=9), AnimalShogiAction(is_drop=True, piece=8, final=10)]
+    array = legal_drop(TEST_BOARD2, np.zeros(180, dtype=np.int32))
+    assert array[146] == 1
+    assert array[152] == 1
+    assert array[153] == 1
+    assert array[154] == 1
+    assert array[158] == 1
+    assert array[164] == 1
+    assert array[165] == 1
+    assert array[166] == 1
+    assert array[170] == 1
+    assert array[176] == 1
+    assert array[177] == 1
+    assert array[178] == 1
 
 
 def test_convert_action_to_int():
