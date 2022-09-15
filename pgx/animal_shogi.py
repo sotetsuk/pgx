@@ -86,6 +86,86 @@ def point_to_direction(fro, to, promote, turn):
     return direction
 
 
+# 打った駒の種類をdirに変換
+def hand_piece_to_dir(piece):
+    # 移動のdirはPROMOTE_UPの8が最大なので9以降に配置
+    # 9: 先手ヒヨコ 10: 先手キリン... 14: 後手ゾウ　に対応させる
+    if piece <= 5:
+        return 8 + piece
+    else:
+        return 6 + piece
+
+
+# AnimalShogiActionをdlshogiのint型actionに変換
+def action_to_int(act: AnimalShogiAction, turn):
+    if act.is_drop == 0:
+        return dlshogi_action(point_to_direction(act.first, act.final, act.is_promote, turn), act.final)
+    else:
+        return dlshogi_action(hand_piece_to_dir(act.piece), act.final)
+
+
+# dlshogiのint型actionをdirectionとtoに分解
+def separate_int(act):
+    # direction, to の順番
+    return act // 12, act % 12
+
+
+# directionからfromがtoからどれだけ離れてるかと成りを含む移動かを得る
+# 手番の情報が必要
+def direction_to_from(direction, to, turn):
+    dif = 0
+    if direction == 0 or direction == 8:
+        dif = -1
+    if direction == 1:
+        dif = 3
+    if direction == 2:
+        dif = -5
+    if direction == 3:
+        dif = 4
+    if direction == 4:
+        dif = -4
+    if direction == 5:
+        dif = 1
+    if direction == 6:
+        dif = 5
+    if direction == 7:
+        dif = -3
+    if turn == 0:
+        if direction >= 8:
+            return to + dif, True
+        else:
+            return to + dif, False
+    else:
+        if direction >= 8:
+            return to - dif, True
+        else:
+            return to - dif, False
+
+
+def direction_to_hand_piece(direction):
+    if direction <= 11:
+        return direction - 8
+    else:
+        return direction - 6
+
+
+def int_to_action(act, state: AnimalShogiState):
+    direction, to = separate_int(act)
+    if direction <= 8:
+        # 駒の移動
+        is_drop = 0
+        fro, is_promote = direction_to_from(direction, to, state.turn)
+        piece = piece_type(state, fro)
+        captured = piece_type(state, to)
+        return AnimalShogiAction(is_drop, piece, to, fro, captured, is_promote)
+    else:
+        # 駒打ち
+        is_drop = 1
+        piece = direction_to_hand_piece(direction)
+        return AnimalShogiAction(is_drop, piece, to)
+
+
+
 # 手番側でない色を返す
 def another_color(state: AnimalShogiState):
     return (state.turn + 1) % 2
