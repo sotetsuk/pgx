@@ -35,6 +35,10 @@ class AnimalShogiState:
     board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
     # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
+    # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
+    # move/dropによって変化させる
+    legal_actions_black: np.zeros(180, dtype=np.int32)
+    legal_actions_white: np.zeros(180, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
     checked: int = 0
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
