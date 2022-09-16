@@ -448,7 +448,9 @@ def break_drop(piece, array):
 
 
 # 駒の移動によるlegal_actionsの更新
-def update_legal_actions_move(act: AnimalShogiAction, player_actions, enemy_actions, hand):
+def update_legal_actions_move(
+    act: AnimalShogiAction, player_actions, enemy_actions, hand
+):
     # 元の位置にいたときのフラグを折る
     break_actions(act.first, act.piece, player_actions)
     # 移動後の位置からの移動のフラグを立てる
@@ -463,7 +465,9 @@ def update_legal_actions_move(act: AnimalShogiAction, player_actions, enemy_acti
 
 
 # 駒打ちによるlegal_actionsの更新
-def update_legal_actions_drop(act: AnimalShogiAction, player_actions, enemy_actions, hand):
+def update_legal_actions_drop(
+    act: AnimalShogiAction, player_actions, enemy_actions, hand
+):
     # 移動後の位置からの移動のフラグを立てる
     add_actions(act.final, act.piece, player_actions)
     # 持ち駒が最後の一枚だった場合、駒打ちのactionを減らす
@@ -490,7 +494,6 @@ def legal_moves(state: AnimalShogiState, action_array):
                 continue
             piece2 = board[p]
             # ひよこが最奥までいった場合、強制的に成る
-            # なぜかpieceが小数に変換されてしまうのでとりあえずintに変換しておく
             if piece == 1 and p % 4 == 0:
                 m = AnimalShogiAction(0, piece, p, i, piece2, 1)
             elif piece == 6 and p % 4 == 3:
@@ -539,3 +542,20 @@ def legal_actions(state: AnimalShogiState):
     legal_moves(state, action_array)
     legal_drop(state, action_array)
     return action_array
+
+
+# boardのlegal_actionsを利用して合法手を生成する
+def legal_actions2(state: AnimalShogiState):
+    if state.turn == 0:
+        action_array = copy.deepcopy(state.legal_actions_black)
+    else:
+        action_array = copy.deepcopy(state.legal_actions_white)
+    # toが自分の駒の場合はそのactionは不可
+    own = pieces_owner(state)
+    for i in range(12):
+        if own[i] == state.turn:
+            for j in range(15):
+                action_array[j * 12 + i] = 0
+    # 自殺手を除く
+    # 王手放置を除く
+    # その他の反則手を除く
