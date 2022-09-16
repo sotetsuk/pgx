@@ -37,8 +37,8 @@ class AnimalShogiState:
     hand: np.ndarray = np.zeros(6, dtype=np.int32)
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
     # move/dropによって変化させる
-    legal_actions_black: np.zeros(180, dtype=np.int32)
-    legal_actions_white: np.zeros(180, dtype=np.int32)
+    legal_actions_black: np.ndarray = np.zeros(180, dtype=np.int32)
+    legal_actions_white: np.ndarray = np.zeros(180, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
     checked: int = 0
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
@@ -401,7 +401,7 @@ def can_promote(to, piece):
 def create_actions(fro, piece):
     turn = owner(piece)
     actions = np.zeros(180, dtype=np.int32)
-    motion = point_moves(piece, fro)
+    motion = point_moves(piece, fro).reshape(12)
     for i in range(12):
         if motion[i] == 0:
             continue
@@ -447,6 +447,28 @@ def break_drop(piece, array):
     return array
 
 
+# stateからblack,white両方のlegal_actionsを生成する
+# 普段は必要ないが途中の盤面から実行するときなどに必要
+def create_legal_actions(state: AnimalShogiState):
+    bs = board_status(state)
+    # 移動の追加
+    for i in range(12):
+        piece = bs[i]
+        if piece == 0:
+            continue
+        if piece <= 5:
+            state.legal_actions_black = add_actions(i, piece, state.legal_actions_black)
+        else:
+            state.legal_actions_white = add_actions(i, piece, state.legal_actions_white)
+    # 駒打ちの追加
+    for i in range(3):
+        if state.hand[i] != 0:
+            state.legal_actions_black = add_drop(1 + i, state.legal_actions_black)
+        if state.hand[i + 3] != 0:
+            state.legal_actions_white = add_drop(1 + i, state.legal_actions_white)
+    return state
+
+
 # 駒の移動によるlegal_actionsの更新
 def update_legal_actions_move(
     act: AnimalShogiAction, player_actions, enemy_actions, hand
@@ -476,6 +498,37 @@ def update_legal_actions_drop(
     return player_actions, enemy_actions
 
 
+# 自殺手を除く
+def break_suicide(turn, king_sq, effects, array):
+    moves = king_move(king_sq).reshape(12)
+    for i in range(12):
+        if moves[i] == 0:
+            continue
+        if effects[i] == 0:
+            continue
+        direction = point_to_direction(king_sq, i, 0, turn)
+        act = dlshogi_action(direction, i)
+        array[act] = 0
+    return array
+
+
+# 王手放置を除く
+def break_leave_check(turn, king_sq, check_piece, array):
+    moves = king_move(king_sq).reshape(12)
+    for i in range(12):
+        # 王手をかけている駒の位置以外への移動は王手放置
+        if check_piece[i] == 0:
+            for j in range(15):
+                array[12 * j + i] = 0
+        # 玉の移動はそれ以外でも可
+        if moves[i] == 0:
+            continue
+        direction = point_to_direction(king_sq, i, 0, turn)
+        act = dlshogi_action(direction, i)
+        array[act] = 1
+    return array
+
+
 #  駒打ち以外の合法手を列挙する
 def legal_moves(state: AnimalShogiState, action_array):
     board = board_status(state)
@@ -493,13 +546,22 @@ def legal_moves(state: AnimalShogiState, action_array):
             if piece_owner[p] == state.turn:
                 continue
             piece2 = board[p]
-            # ひよこが最奥までいった場合、強制的に成る
+            # ひよこが最奥までいった場合、成るactionも追加する
             if piece == 1 and p % 4 == 0:
                 m = AnimalShogiAction(0, piece, p, i, piece2, 1)
+                after = move(state, m)
+                if is_check(after):
+                    continue
+                act = action_to_int(m, state.turn)
+                action_array[act] = 1
             elif piece == 6 and p % 4 == 3:
                 m = AnimalShogiAction(0, piece, p, i, piece2, 1)
-            else:
-                m = AnimalShogiAction(0, piece, p, i, piece2, 0)
+                after = move(state, m)
+                if is_check(after):
+                    continue
+                act = action_to_int(m, state.turn)
+                action_array[act] = 1
+            m = AnimalShogiAction(0, piece, p, i, piece2, 0)
             # mを行った後の盤面（手番はそのまま）
             after = move(state, m)
             # mを行った後も自分の玉に王手がかかっていてはいけない
@@ -521,11 +583,6 @@ def legal_drop(state: AnimalShogiState, action_array):
         for j in range(12):
             # 駒がある場合は打てない
             if state.board[0][j] == 0:
-                continue
-            # ひよこは最奥には打てない
-            if piece == 1 and j % 4 == 0:
-                continue
-            if piece == 6 and j % 4 == 3:
                 continue
             d = AnimalShogiAction(1, piece, j)
             s = drop(state, d)
@@ -550,6 +607,9 @@ def legal_actions2(state: AnimalShogiState):
         action_array = copy.deepcopy(state.legal_actions_black)
     else:
         action_array = copy.deepcopy(state.legal_actions_white)
+    king_sq = state.board[4 + 5 * state.turn].argmax()
+    # 王手放置を除く
+    action_array = break_leave_check(state.turn, king_sq, state.checking_piece, action_array)
     # toが自分の駒の場合はそのactionは不可
     own = pieces_owner(state)
     for i in range(12):
@@ -557,5 +617,8 @@ def legal_actions2(state: AnimalShogiState):
             for j in range(15):
                 action_array[j * 12 + i] = 0
     # 自殺手を除く
-    # 王手放置を除く
+    effects = effected(state, another_color(state))
+    action_array = break_suicide(state.turn, king_sq, effects, action_array)
     # その他の反則手を除く
+    # どうぶつ将棋の場合はなし
+    return action_array

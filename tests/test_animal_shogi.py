@@ -18,8 +18,9 @@ INIT_BOARD = AnimalShogiState(
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]),
-    hand=np.array([0, 0, 0, 0, 0, 0])
+    hand=np.array([0, 0, 0, 0, 0, 0]),
 )
+
 TEST_BOARD = AnimalShogiState(
     turn=0,
     board=np.array([
@@ -130,44 +131,97 @@ def test_is_check():
 
 
 def test_legal_move():
-    array1 = legal_moves(INIT_BOARD, np.zeros(180, dtype=np.int32))
-    assert array1[2] == 1
-    assert array1[5] == 1
-    assert array1[26] == 1
-    assert array1[22] == 1
+    c_array1 = legal_moves(INIT_BOARD, np.zeros(180, dtype=np.int32))
+    array1 = np.zeros(180, dtype=np.int32)
+    array1[2] = 1
+    array1[5] = 1
+    array1[26] = 1
+    array1[22] = 1
     # 王手を受けている状態の挙動
-    array2 = legal_moves(TEST_BOARD, np.zeros(180, dtype=np.int32))
-    assert array2[43] == 1
-    assert array2[67] == 1
-    assert array2[55] == 1
-    # 自殺手
-    assert array2[10] == 0
-    # この手は王手を放置する手なので指せない
-    assert array2[96] == 0
-    array3 = legal_moves(TEST_BOARD2, np.zeros(180, dtype=np.int32))
-    assert array3[2] == 1
-    assert array3[56] == 1
-    assert array3[33] == 1
-    assert array3[14] == 1
-    assert array3[92] == 1
-    assert array3[34] == 1
-    assert array3[103] == 1
+    c_array2 = legal_moves(TEST_BOARD, np.zeros(180, dtype=np.int32))
+    array2 = np.zeros(180, dtype=np.int32)
+    array2[43] = 1
+    array2[67] = 1
+    array2[55] = 1
+    c_array3 = legal_moves(TEST_BOARD2, np.zeros(180, dtype=np.int32))
+    array3 = np.zeros(180, dtype=np.int32)
+    array3[2] = 1
+    # 行き所のない駒だが動物将棋的にはOKらしい
+    array3[7] = 1
+    array3[56] = 1
+    array3[33] = 1
+    array3[14] = 1
+    array3[92] = 1
+    array3[34] = 1
+    array3[103] = 1
+    for i in range(180):
+        assert array1[i] == c_array1[i]
+        assert array2[i] == c_array2[i]
+        assert array3[i] == c_array3[i]
 
 
 def test_legal_drop():
-    array = legal_drop(TEST_BOARD2, np.zeros(180, dtype=np.int32))
-    assert array[146] == 1
-    assert array[152] == 1
-    assert array[153] == 1
-    assert array[154] == 1
-    assert array[158] == 1
-    assert array[164] == 1
-    assert array[165] == 1
-    assert array[166] == 1
-    assert array[170] == 1
-    assert array[176] == 1
-    assert array[177] == 1
-    assert array[178] == 1
+    c_array = legal_drop(TEST_BOARD2, np.zeros(180, dtype=np.int32))
+    array = np.zeros(180, dtype=np.int32)
+    array[146] = 1
+    array[152] = 1
+    array[153] = 1
+    array[154] = 1
+    array[158] = 1
+    array[164] = 1
+    array[165] = 1
+    array[166] = 1
+    array[170] = 1
+    array[176] = 1
+    array[177] = 1
+    array[178] = 1
+    for i in range(180):
+        assert c_array[i] == array[i]
+
+
+def test_create_legal_actions():
+    c_board = create_legal_actions(copy.deepcopy(INIT_BOARD))
+    array1 = np.zeros(180, dtype=np.int32)
+    array2 = np.zeros(180, dtype=np.int32)
+    array1[2] = 1
+    array1[5] = 1
+    array1[6] = 1
+    array1[22] = 1
+    array1[26] = 1
+    array1[30] = 1
+    array1[43] = 1
+    array1[47] = 1
+    array1[51] = 1
+    array2[9] = 1
+    array2[5] = 1
+    array2[6] = 1
+    array2[13] = 1
+    array2[29] = 1
+    array2[33] = 1
+    array2[36] = 1
+    array2[40] = 1
+    array2[56] = 1
+    print(array1)
+    print(c_board.legal_actions_black)
+    for i in range(180):
+        print(i)
+        print(array1[i])
+        print(c_board.legal_actions_black[i])
+        assert array1[i] == c_board.legal_actions_black[i]
+        assert array2[i] == c_board.legal_actions_white[i]
+
+
+def test_new_legal_action():
+    old1 = legal_actions(INIT_BOARD)
+    old2 = legal_actions(TEST_BOARD)
+    old3 = legal_actions(TEST_BOARD2)
+    new1 = legal_actions2(INIT_BOARD)
+    new2 = legal_actions2(TEST_BOARD)
+    new3 = legal_actions2(TEST_BOARD2)
+    for i in range(180):
+        assert old1[i] == new1[i]
+        assert old2[i] == new2[i]
+        assert old3[i] == new3[i]
 
 
 def test_convert_action_to_int():
@@ -236,3 +290,4 @@ if __name__ == '__main__':
     test_legal_drop()
     test_convert_action_to_int()
     test_convert_int_to_action()
+    test_create_legal_actions()
