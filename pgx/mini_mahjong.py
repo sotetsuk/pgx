@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 import numpy as np
 from shanten_tools import shanten  # type: ignore
@@ -135,29 +135,13 @@ TSUMO = 40
 
 class MiniMahjong:
     def __init__(self):
-        self.ba = 0
-        self.kyoku = 0
-        self.honba = 0
-        self.tens = np.full(4, 25000, dtype=np.int32)
-        self._reset_round()
-
-    def _reset_round(self):
-        if self.is_terminal():
-            return
-
-        print(
-            "{}{}局{}本場".format(
-                "東" if self.ba == 0 else "南", self.kyoku + 1, self.honba
-            )
-        )
-
         self.deck = Deck()
         self.hand = [Hand() for _ in range(4)]
         for i in range(4):
             for j in range(13):
                 self.hand[i].add(self.deck.draw())
 
-        self.turn = self.kyoku
+        self.turn = 0
         # 手牌が3n+2枚のplayer.
         # 存在しなければ直前にdiscardしたplayer.
 
@@ -166,9 +150,6 @@ class MiniMahjong:
         # TODO: 加槓も対象にする.
 
         self._draw()
-
-    def is_terminal(self):
-        return self.ba == 2
 
     def legal_actions(self) -> Dict[int, List[int]]:
         if self.hand[self.turn].size() % 3 == 2:
@@ -200,7 +181,7 @@ class MiniMahjong:
 
         return ret
 
-    def step(self, actions: Dict[int, int]):
+    def step(self, actions: Dict[int, int]) -> Tuple[np.ndarray, bool]:
         assert len(actions) > 0
 
         legal_actions = self.legal_actions()
@@ -211,57 +192,47 @@ class MiniMahjong:
 
         # action(int) の小さいものが優先される.
         player, action = min(
-            filter(lambda x: x[1] is not None, actions.items()),
+            actions.items(),
             key=lambda x: x[1],
         )
-        self._step(player, action)
+        return self._step(player, action)
 
-    def _step(self, player: int, action: int):
+    def _step(self, player: int, action: int) -> Tuple[np.ndarray, bool]:
         if action < 34:
             # discard
             assert player == self.turn
             self._discard(action)
             # 割り込みがなければ次の人のdrawまで進む
             if len(self.legal_actions()) == 0:
-                self.turn += 1
-                self.turn %= 4
-                self.target = None
-                if self.deck.is_empty():
-                    self._ryukyoku()
-                else:
-                    self._draw()
+                return self._draw()
+            return np.zeros(4), False
 
         elif action == 34:
             # ron
-            self._ron(player)
+            return self._ron(player), True
 
         elif action == 35:
             # pon
             self._pon(player)
+            return np.zeros(4), False
 
         elif action < 39:
             # chi
             self._chi(player, action)
+            return np.zeros(4), False
 
         elif action == 39:
             # pass
             # 次の人のdrawまで進む
-            self.turn += 1
-            self.turn %= 4
-            self.target = None
-            if self.deck.is_empty():
-                self._ryukyoku()
-            else:
-                self._draw()
+            return self._draw()
 
         elif action == 40:
             # tsumo
             assert player == self.turn
-            self._tsumo()
+            return self._tsumo(), True
 
-    def _ryukyoku(self):
+    def _ryukyoku(self) -> np.ndarray:
         print("流局")
-        print("-" * 20)
         is_tenpai = np.array(
             [shanten(self.hand[i].hand) == 0 for i in range(4)]
         )
@@ -269,105 +240,64 @@ class MiniMahjong:
             [shanten(self.hand[i].hand) > 0 for i in range(4)]
         )
 
+        tens = np.zeros(4)
+
         # 点棒移動
         if sum(is_tenpai) == 1:
-            self.tens[is_tenpai] += 3000
-            self.tens[is_not_tenpai] -= 1000
+            tens[is_tenpai] += 3000
+            tens[is_not_tenpai] -= 1000
 
         if sum(is_tenpai) == 2:
-            self.tens[is_tenpai] += 1500
-            self.tens[is_not_tenpai] -= 1500
+            tens[is_tenpai] += 1500
+            tens[is_not_tenpai] -= 1500
 
         if sum(is_tenpai) == 3:
-            self.tens[is_tenpai] += 1000
-            self.tens[is_not_tenpai] -= 3000
+            tens[is_tenpai] += 1000
+            tens[is_not_tenpai] -= 3000
 
-        if is_tenpai[self.kyoku]:
-            # 連チャン
-            self.honba += 1
+        return tens
+
+    def _draw(self) -> Tuple[np.ndarray, bool]:
+        self.target = None
+        if self.deck.is_empty():
+            return [self._ryukyoku(), True]
         else:
-            self.kyoku += 1
-            self.honba += 1
-
-        if self.kyoku == 4:
-            self.kyoku = 0
-            self.ba += 1
-
-        if self.ba == 2:
-            print("終局")
-            return
-
-        self._reset_round()
-
-    def _draw(self):
-        self.hand[self.turn].add(self.deck.draw())
+            self.hand[self.turn].add(self.deck.draw())
+            return [np.zeros(4), False]
 
     def _discard(self, tile: int):
         self.hand[self.turn].sub(tile)
         self.target = tile
 
-    def _tsumo(self):
+    def _tsumo(self) -> np.ndarray:
         print("自摸")
         print("self.hand[self.turn].hand:", self.hand[self.turn].hand)
-        print("-" * 20)
 
+        tens = np.zeros(4)
         # 一律30符1翻
-        if player == self.kyoku:
-            self.tens[np.arange(4) != self.turn] -= 500 + self.honba * 100
-            self.tens[self.turn] += 1500 + self.honba * 300
+        if player == 0:
+            tens = np.full(4, -500)
+            tens[self.turn] = 1500
         else:
-            self.tens[
-                (np.arange(4) != self.turn) * (np.arange(4) != self.kyoku)
-            ] -= (300 + self.honba * 100)
-            self.tens[self.kyoku] -= 500 + self.honba * 100
-            self.tens[self.turn] += 1100 + self.honba * 300
+            tens = np.full(4, -300)
+            tens[0] = -500
+            tens[self.turn] = 1100
 
-        if player == self.kyoku:
-            # 連チャン
-            self.honba += 1
-        else:
-            self.kyoku += 1
-            self.honba = 0
+        return tens
 
-        if self.kyoku == 4:
-            self.kyoku = 0
-            self.ba += 1
-
-        if self.ba == 2:
-            print("終局")
-            return
-
-        self._reset_round()
-
-    def _ron(self, player: int):
+    def _ron(self, player: int) -> np.ndarray:
         print("ロン")
         print("self.hand[player].hand:", self.hand[player].hand)
         print("self.target:", self.target)
-        print("-" * 20)
 
         # 一律30符1翻
-        ten = 1500 if player == self.kyoku else 1000
-        ten += self.honba * 300
+        ten = 1500 if player == 0 else 1000
 
-        self.tens[self.turn] -= ten
-        self.tens[player] += ten
+        tens = np.zeros(4)
+        tens[self.turn] = -ten
+        tens[player] = ten
 
-        if player == self.kyoku:
-            # 連チャン
-            self.honba += 1
-        else:
-            self.kyoku += 1
-            self.honba = 0
-
-        if self.kyoku == 4:
-            self.kyoku = 0
-            self.ba += 1
-
-        if self.ba == 2:
-            print("終局")
-            return
-
-        self._reset_round()
+        return tens
 
     def _pon(self, player: int):
         self.hand[player].pon(self.target)
@@ -472,11 +402,13 @@ if __name__ == "__main__":
     env = MiniMahjong()
     agent = BasicAgent()
 
-    while not env.is_terminal():
+    while True:
         selected = {}
         for player, actions in env.legal_actions().items():
             selected[player] = agent.act(actions, env.observation(player))
 
-        env.step(selected)
+        rewards, done = env.step(selected)
+        if done:
+            print('rewards:', rewards)
+            break
 
-    print(env.tens)
