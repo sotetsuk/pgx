@@ -21,7 +21,6 @@ NSEW = np.array([[-1, 0], [1, 0], [0, 1], [0, -1]])
 
 @struct.dataclass
 class MiniGoState:
-    # boardの機能はren_id_boardへ結合
     ren_id_board: np.ndarray = np.full(
         (2, BOARD_SIZE * BOARD_SIZE), -1, dtype=int
     )
@@ -33,9 +32,7 @@ class MiniGoState:
     )
 
     turn: np.ndarray = np.zeros(1, dtype=int)
-    agehama: np.ndarray = np.zeros(
-        2, dtype=int
-    )  # agehama[0]: agehama earned by player(black), agehama[1]: agehama earned by player(white)
+    agehama: np.ndarray = np.zeros(2, dtype=int)  # [0]: 黒の得たアゲハマ, [1]: 白の方
     passed: np.ndarray = np.zeros(1, dtype=bool)  # 直前のactionがパスだとTrue
     kou: np.ndarray = np.full(2, -1, dtype=int)  # コウによる着手禁止点, 無ければ(-1, -1)
 
@@ -48,22 +45,41 @@ def step(
     _state: MiniGoState, action: Optional[int]
 ) -> Tuple[MiniGoState, np.ndarray, bool]:
     state = copy.deepcopy(_state)
-    r = np.array([0, 0])
-    done = False
 
-    # 2回連続でパスすると終局
     if action is None:
-        if state.passed[0]:
-            print("end by pass.")
-            done = True
-            r = _get_reward(state)
-            state.turn[0] = state.turn[0] + 1
-            return state, r, done
-        else:
-            state.passed[0] = True
-            state.turn[0] = state.turn[0] + 1
-            return state, r, done
+        result = _pass_move(state)
+    else:
+        result = _not_pass_move(state, action)
 
+    return result
+
+
+def _pass_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
+    state = copy.deepcopy(_state)
+
+    if state.passed[0]:  # 2回連続でパスすると終局
+        result = (_add_turn(state), _get_reward(state), True)
+    else:
+        result = (_add_turn(_add_pass(state)), np.array([0, 0]), False)
+    return result
+
+
+def _add_turn(_state: MiniGoState) -> MiniGoState:
+    state = copy.deepcopy(_state)
+    state.turn[0] = state.turn[0] + 1
+    return state
+
+
+def _add_pass(_state: MiniGoState) -> MiniGoState:
+    state = copy.deepcopy(_state)
+    state.passed[0] = True
+    return state
+
+
+def _not_pass_move(
+    _state: MiniGoState, action: int
+) -> Tuple[MiniGoState, np.ndarray, bool]:
+    state = copy.deepcopy(_state)
     state.passed[0] = False
     xy = copy.deepcopy(action)
     x = xy // BOARD_SIZE
@@ -75,8 +91,8 @@ def step(
     ren_id_board = state.ren_id_board[my_color]
     oppo_ren_id_board = state.ren_id_board[oppo_color]
     available_ren_id = state.available_ren_id[my_color]
-    new_id = np.argmax(available_ren_id)  # 最初にTrueになったindex
-    liberty = state.liberty[my_color]
+    new_id = int(np.argmax(available_ren_id))  # 最初にTrueになったindex
+    # liberty = state.liberty[my_color]
 
     pos = np.array([x, y])
     agehama = 0
@@ -87,13 +103,9 @@ def step(
         ren_id_board[xy] != -1
         or oppo_ren_id_board[xy] != -1
         or (x == state.kou[0] and y == state.kou[1])
-    ):
-        # 既に他の石が置かれている or コウ
-        r = np.array([1, 1])
-        r[state.turn[0] % 2] = -1
-        done = True
-        state.turn[0] = state.turn[0] + 1
-        return state, r, done
+    ):  # 既に他の石が置かれている or コウ
+        # print("ilegal")
+        return _ilegal_move(state)
 
     ren_id_board[xy] = new_id
     available_ren_id[new_id] = False
@@ -105,82 +117,150 @@ def step(
         if _is_off_board(around_mypos):
             continue
 
-        xy_around_mypos = _pos_to_xy(around_mypos)
-        if ren_id_board[xy_around_mypos] != -1:  # 既に連が作られていた場合
+        around_xy = _pos_to_xy(around_mypos)
+        if ren_id_board[around_xy] != -1:  # 既に連が作られていた場合
+            (state, new_id) = _merge_ren(
+                state,
+                my_color,
+                new_id,
+                xy,
+                around_xy,
+            )
 
-            old_id = ren_id_board[xy_around_mypos]
-            if old_id == new_id:
-                continue
-
-            small_id = min(old_id, new_id)
-            large_id = max(old_id, new_id)
-            # 大きいidの連を消し、小さいidの連と繋げる
-
-            available_ren_id[large_id] = True
-            ren_id_board[ren_id_board == large_id] = small_id
-
-            liberty[large_id][xy] = liberty[small_id][xy] = False
-            liberty[small_id] = liberty[small_id] | liberty[large_id]
-            liberty[large_id] = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
-
-            new_id = small_id
-
-        elif oppo_ren_id_board[xy_around_mypos] != -1:  # 敵の連が作られていた場合
-            oppo_ren_id = oppo_ren_id_board[xy_around_mypos]
+        elif oppo_ren_id_board[around_xy] != -1:  # 敵の連が作られていた場合
+            oppo_ren_id = oppo_ren_id_board[around_xy]
             oppo_liberty = state.liberty[oppo_color]
             oppo_liberty[oppo_ren_id][xy] = False
             if np.count_nonzero(oppo_liberty[oppo_ren_id]) == 0:
                 # 石を取る
-                surrounded_stones = (
-                    oppo_ren_id_board == oppo_ren_id
-                )  # 呼吸点0の連の位置情報
-                agehama += np.count_nonzero(surrounded_stones)  # その石の数
-                oppo_ren_id_board[surrounded_stones] = -1  # ren_id_boardから削除
-                state.available_ren_id[oppo_color][
-                    oppo_ren_id
-                ] = True  # available_ren_idに追加
-                a_removed_stone_xy = xy_around_mypos  # コウのために取った位置を記憶
-
-                # 空けたところを自軍の呼吸点に追加
-                # ここの処理もっと簡単にしたい
-                for _xy in range(BOARD_SIZE * BOARD_SIZE):
-                    for _nsew in NSEW:
-                        _around_rmstone_pos = _xy_to_pos(_xy) + _nsew
-                        if _is_off_board(_around_rmstone_pos):
-                            continue
-                        _around_rmstone_xy = _to_xy(
-                            _around_rmstone_pos[0], _around_rmstone_pos[1]
-                        )
-                        if (
-                            ren_id_board[_around_rmstone_xy] != -1
-                            and surrounded_stones[_xy]
-                        ):
-                            adj_ren_id = ren_id_board[_around_rmstone_xy]
-                            liberty[adj_ren_id][_xy] = True
+                (state, a_removed_stone_xy, agehama) = _remove_stones(
+                    state,
+                    my_color,
+                    oppo_ren_id,
+                    agehama,
+                    around_xy,
+                )
 
         else:
-            liberty[new_id][xy_around_mypos] = True
+            state.liberty[my_color][new_id][around_xy] = True
 
-    if np.count_nonzero(liberty[new_id]) == 0:
+    if np.count_nonzero(state.liberty[my_color][new_id]) == 0:
         # 自殺手
-        r = np.array([1, 1])
-        r[state.turn[0] % 2] = -1
-        done = True
-        state.turn[0] = state.turn[0] + 1
-        return state, r, done
+        return _ilegal_move(state)
 
     # コウの確認
     if agehama == 1 and is_kou:
-        state.kou[0] = a_removed_stone_xy // BOARD_SIZE
-        state.kou[1] = a_removed_stone_xy % BOARD_SIZE
+        state.kou[0], state.kou[1] = (
+            a_removed_stone_xy // BOARD_SIZE,
+            a_removed_stone_xy % BOARD_SIZE,
+        )
     else:
-        state.kou[0] = -1
-        state.kou[1] = -1
+        state.kou[0], state.kou[1] = (-1, -1)
 
     state.agehama[my_color] += agehama
-    state.turn[0] += 1
+    state = _add_turn(state)
 
     return state, np.array([0, 0]), False
+
+
+def _ilegal_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
+    state = copy.deepcopy(_state)
+    r = np.array([1, 1])
+    r[state.turn[0] % 2] = -1
+    state = _add_turn(state)
+    return state, r, True
+
+
+def _merge_ren(
+    _state: MiniGoState,
+    _my_color: int,
+    _new_id: int,
+    xy: int,
+    xy_around_mypos: int,
+):
+    state = copy.deepcopy(_state)
+    ren_id_board = state.ren_id_board[_my_color]
+    available_ren_id = state.available_ren_id[_my_color]
+    liberty = state.liberty[_my_color]
+    new_id = _new_id
+
+    old_id = ren_id_board[xy_around_mypos]
+    if old_id == new_id:
+        return state, new_id
+
+    small_id = min(old_id, new_id)
+    large_id = max(old_id, new_id)
+    # 大きいidの連を消し、小さいidの連と繋げる
+
+    available_ren_id[large_id] = True
+    ren_id_board[ren_id_board == large_id] = small_id
+
+    liberty[large_id][xy] = liberty[small_id][xy] = False
+    liberty[small_id] = liberty[small_id] | liberty[large_id]
+    liberty[large_id] = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
+
+    new_id = small_id
+
+    return state, new_id
+
+
+def _remove_stones(
+    _state: MiniGoState,
+    _my_color: int,
+    _oppo_ren_id: int,
+    _agehama: int,
+    _around_xy,
+):
+    state = copy.deepcopy(_state)
+    ren_id_board = state.ren_id_board[_my_color]
+    oppo_color = _opponent_color(_my_color)
+    oppo_ren_id_board = state.ren_id_board[oppo_color]
+    oppo_available_ren_id = state.available_ren_id[oppo_color]
+    liberty = state.liberty[_my_color]
+    agehama = _agehama
+
+    surrounded_stones = oppo_ren_id_board == _oppo_ren_id  # 呼吸点0の連の位置情報
+    agehama += np.count_nonzero(surrounded_stones)  # その石の数
+    oppo_ren_id_board[surrounded_stones] = -1  # ren_id_boardから削除
+    oppo_available_ren_id[_oppo_ren_id] = True  # available_ren_idに追加
+    a_removed_stone_xy = _around_xy  # コウのために取った位置を記憶
+
+    # 空けたところを自軍の呼吸点に追加
+    liberty[:] = _add_removed_pos_to_liberty(
+        ren_id_board, liberty, surrounded_stones
+    )
+
+    return (
+        state,
+        a_removed_stone_xy,
+        agehama,
+    )
+
+
+def _add_removed_pos_to_liberty(
+    _ren_id_board: np.ndarray,
+    _liberty: np.ndarray,
+    _surrounded_stones: np.ndarray,
+):
+    ren_id_board = _ren_id_board.copy()
+    liberty = _liberty.copy()
+    for _xy in range(BOARD_SIZE * BOARD_SIZE):
+        for _nsew in NSEW:
+            _around_rmstone_pos = _xy_to_pos(_xy) + _nsew
+            if _is_off_board(_around_rmstone_pos):
+                continue
+            _around_rmstone_xy = _to_xy(
+                _around_rmstone_pos[0], _around_rmstone_pos[1]
+            )
+            if (
+                ren_id_board[_around_rmstone_xy] != -1
+                and _surrounded_stones[_xy]
+            ):
+                # adj_ren_id = ren_id_board[_around_rmstone_xy]
+                # liberty[adj_ren_id][_xy] = True
+                liberty[ren_id_board[_around_rmstone_xy]][_xy] = True
+
+    return liberty
 
 
 def legal_actions(state: MiniGoState) -> np.ndarray:
@@ -262,11 +342,12 @@ def _check_kou(state: MiniGoState, x, y, oppo_color) -> bool:
 def _get_reward(state: MiniGoState) -> np.ndarray:
     b = _count_ji(state)[BLACK] - state.agehama[WHITE]
     w = _count_ji(state)[WHITE] - state.agehama[BLACK]
+    r = np.array([-1, 1])
     if b == w:
-        return np.array([0, 0])
+        r = np.array([0, 0])
     if b > w:
-        return np.array([1, -1])
-    return np.array([-1, 1])
+        r = np.array([1, -1])
+    return r
 
 
 def _count_ji(state: MiniGoState) -> np.ndarray:
@@ -306,7 +387,7 @@ def _get_ji_id_board(state: MiniGoState):
     for xy in range(BOARD_SIZE * BOARD_SIZE):
         if board[xy] != POINT:
             continue
-        new_id = np.argmax(available_ji_id)  # 最初にTrueになったindex
+        new_id = int(np.argmax(available_ji_id))  # 最初にTrueになったindex
         ji_id_board[xy] = new_id
         available_ji_id[new_id] = False
 
@@ -317,15 +398,40 @@ def _get_ji_id_board(state: MiniGoState):
 
             xy_around_mypos = _pos_to_xy(around_mypos)
             if ji_id_board[xy_around_mypos] != -1:
-                old_id = ji_id_board[xy_around_mypos]
-                if old_id == new_id:
-                    continue
+                (ji_id_board[:], available_ji_id[:], new_id,) = _merge_points(
+                    ji_id_board,
+                    available_ji_id,
+                    new_id,
+                    xy,
+                    xy_around_mypos,
+                )
 
-                small_id = min(old_id, new_id)
-                large_id = max(old_id, new_id)
-
-                available_ji_id[large_id] = True
-                ji_id_board[ji_id_board == large_id] = small_id
-
-                new_id = small_id
     return ji_id_board
+
+
+def _merge_points(
+    _ji_id_board: np.ndarray,
+    _available_ji_id: np.ndarray,
+    new_id: int,
+    xy: int,
+    xy_around_mypos: int,
+):
+    ji_id_board = _ji_id_board.copy()
+    available_ji_id = _available_ji_id.copy()
+    new_id = int(np.argmax(available_ji_id))  # 最初にTrueになったindex
+
+    old_id = ji_id_board[xy_around_mypos]
+    if old_id == new_id:
+        return ji_id_board, available_ji_id, new_id
+
+    small_id = min(old_id, new_id)
+    large_id = max(old_id, new_id)
+    # 大きいidの連を消し、小さいidの連と繋げる
+
+    available_ji_id[large_id] = True
+    ji_id_board[ji_id_board == large_id] = small_id
+    np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
+
+    new_id = small_id
+
+    return ji_id_board, available_ji_id, new_id
