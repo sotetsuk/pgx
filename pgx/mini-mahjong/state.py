@@ -70,7 +70,9 @@ class State:
             )
             legal_actions = legal_actions.at[player].set(
                 jax.lax.cond(
-                    (player != (self.turn + 1) % 4) | (self.target == -1),
+                    #(player != (self.turn + 1) % 4) | (self.target == -1),
+                    # NOTE: どこからでもチーできるようにしている
+                    (player == self.turn) | (self.target == -1),
                     lambda: legal_actions[player],
                     lambda: legal_actions[player]
                     .at[CHI_R]
@@ -117,13 +119,13 @@ def init(key: jax.random.PRNGKey) -> State:
 
 
 @jit
-def step(state: State, actions: jnp.ndarray) -> Tuple[State, bool]:
+def step(state: State, actions: jnp.ndarray) -> Tuple[State, jnp.ndarray, bool]:
     player = jnp.argmin(actions)
     return _step(state, player, actions[player])
 
 
 @jit
-def _step(state: State, player: int, action: int) -> Tuple[State, bool]:
+def _step(state: State, player: int, action: int) -> Tuple[State, jnp.ndarray, bool]:
     return jax.lax.cond(
         action < 34,
         lambda: _discard(state, action),
@@ -143,18 +145,18 @@ def _step(state: State, player: int, action: int) -> Tuple[State, bool]:
 
 
 @jit
-def _discard(state: State, tile: int) -> Tuple[State, bool]:
+def _discard(state: State, tile: int) -> Tuple[State, jnp.ndarray, bool]:
     state.hand = hand.sub(state.hand, state.turn, tile)
     state.target = tile
     return jax.lax.cond(
         jnp.any(state.legal_actions()),
-        lambda: (state, False),
+        lambda: (state, jnp.full(4, 0), False),
         lambda: _try_draw(state),
     )
 
 
 @jit
-def _try_draw(state: State) -> Tuple[State, bool]:
+def _try_draw(state: State) -> Tuple[State, jnp.ndarray, bool]:
     state.target = -1
     return jax.lax.cond(
         state.deck.is_empty(), lambda: _ryukyoku(state), lambda: _draw(state)
@@ -162,46 +164,43 @@ def _try_draw(state: State) -> Tuple[State, bool]:
 
 
 @jit
-def _draw(state: State) -> Tuple[State, bool]:
+def _draw(state: State) -> Tuple[State, jnp.ndarray, bool]:
     state.turn += 1
     state.turn %= 4
     state.deck, tile = deck.draw(state.deck)
     state.hand = hand.add(state.hand, state.turn, tile)
-    return state, False
+    return state, jnp.full(4, 0), False
 
 
 @jit
-def _ryukyoku(state: State) -> Tuple[State, bool]:
-    # TODO
-    return state, True
+def _ryukyoku(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    return state, jnp.full(4, 0), True
 
 
 @jit
-def _ron(state: State, player: int) -> Tuple[State, bool]:
-    # TODO
-    return state, True
+def _ron(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
+    return state, jnp.full(4, 0).at[state.turn].set(-1).at[player].set(1), True
 
 
 @jit
-def _pon(state: State, player: int) -> Tuple[State, bool]:
+def _pon(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
     state.hand = hand.pon(state.hand, player, state.target)
     state.target = -1
     state.turn = player
-    return state, False
+    return state, jnp.full(4, 0), False
 
 
 @jit
-def _chi(state: State, player: int, pos: int) -> Tuple[State, bool]:
+def _chi(state: State, player: int, pos: int) -> Tuple[State, jnp.ndarray, bool]:
     state.hand = hand.chi(state.hand, player, state.target, pos)
     state.target = -1
     state.turn = player
-    return state, False
+    return state, jnp.full(4, 0), False
 
 
 @jit
-def _tsumo(state: State) -> Tuple[State, bool]:
-    # TODO
-    return state, True
+def _tsumo(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    return state, jnp.full(4, -1).at[state.turn].set(1), True
 
 
 def test():
@@ -298,7 +297,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
 
     if legal_actions[PON]:
         s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
-        if s < shanten(obs.hand):
+        if s <= shanten(obs.hand):
             return PON
 
     if legal_actions[CHI_R]:
@@ -308,7 +307,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .at[obs.target - 1]
             .set(obs.hand[obs.target - 1] - 1)
         )
-        if s < shanten(obs.hand):
+        if s <= shanten(obs.hand):
             return CHI_R
 
     if legal_actions[CHI_M]:
@@ -318,7 +317,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .at[obs.target + 1]
             .set(obs.hand[obs.target + 1] - 1)
         )
-        if s < shanten(obs.hand):
+        if s <= shanten(obs.hand):
             return CHI_M
 
     if legal_actions[CHI_L]:
@@ -328,7 +327,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .at[obs.target + 2]
             .set(obs.hand[obs.target + 2] - 1)
         )
-        if s < shanten(obs.hand):
+        if s <= shanten(obs.hand):
             return CHI_L
 
     return PASS
@@ -343,10 +342,8 @@ if __name__ == "__main__":
             selected = jnp.array(
                 [act(legal_actions[i], state.observe(i)) for i in range(4)]
             )
-            state, done = step(state, selected)
+            state, reward, done = step(state, selected)
 
-        print(state.hand.arr)
-        print(state.turn)
-        print(state.target)
-        print(state.deck.idx)
+        print('hand:', state.hand.arr)
+        print('reward:', reward)
         print("-" * 30)
