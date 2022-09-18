@@ -70,7 +70,7 @@ class State:
             )
             legal_actions = legal_actions.at[player].set(
                 jax.lax.cond(
-                    #(player != (self.turn + 1) % 4) | (self.target == -1),
+                    # (player != (self.turn + 1) % 4) | (self.target == -1),
                     # NOTE: どこからでもチーできるようにしている
                     (player == self.turn) | (self.target == -1),
                     lambda: legal_actions[player],
@@ -119,13 +119,17 @@ def init(key: jax.random.PRNGKey) -> State:
 
 
 @jit
-def step(state: State, actions: jnp.ndarray) -> Tuple[State, jnp.ndarray, bool]:
+def step(
+    state: State, actions: jnp.ndarray
+) -> Tuple[State, jnp.ndarray, bool]:
     player = jnp.argmin(actions)
     return _step(state, player, actions[player])
 
 
 @jit
-def _step(state: State, player: int, action: int) -> Tuple[State, jnp.ndarray, bool]:
+def _step(
+    state: State, player: int, action: int
+) -> Tuple[State, jnp.ndarray, bool]:
     return jax.lax.cond(
         action < 34,
         lambda: _discard(state, action),
@@ -191,7 +195,9 @@ def _pon(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
 
 
 @jit
-def _chi(state: State, player: int, pos: int) -> Tuple[State, jnp.ndarray, bool]:
+def _chi(
+    state: State, player: int, pos: int
+) -> Tuple[State, jnp.ndarray, bool]:
     state.hand = hand.chi(state.hand, player, state.target, pos)
     state.target = -1
     state.turn = player
@@ -344,6 +350,6 @@ if __name__ == "__main__":
             )
             state, reward, done = step(state, selected)
 
-        print('hand:', state.hand.arr)
-        print('reward:', reward)
+        print("hand:", state.hand.arr)
+        print("reward:", reward)
         print("-" * 30)
