@@ -20,7 +20,7 @@ class Hand:
         # TODO
         return (
             jnp.sum(
-                self.arr.at[(player, tile)].set(self.arr[player][tile] + 1) > 0
+                self.arr[player].at[tile].set(self.arr[player][tile] + 1) > 0
             )
             == 1
         )
@@ -28,9 +28,7 @@ class Hand:
     # def can_ron(self, player: int, tile: int) -> bool:
     #    return (
     #        shanten(
-    #            self.arr.at[(player, tile)].set(self.arr[player][tile] + 1)[
-    #                player
-    #            ]
+    #            self.arr[player].at[tile].set(self.arr[player][tile] + 1)
     #        )
     #        == -1
     #    )
