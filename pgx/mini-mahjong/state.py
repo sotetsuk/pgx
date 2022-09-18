@@ -9,40 +9,6 @@ from deck import Deck
 from hand import Hand
 from jax import jit, tree_util
 
-MANZU_1 = 0
-MANZU_2 = 1
-MANZU_3 = 2
-MANZU_4 = 3
-MANZU_5 = 4
-MANZU_6 = 5
-MANZU_7 = 6
-MANZU_8 = 7
-MANZU_9 = 8
-PINZU_1 = 9
-PINZU_2 = 10
-PINZU_3 = 11
-PINZU_4 = 12
-PINZU_5 = 13
-PINZU_6 = 14
-PINZU_7 = 15
-PINZU_8 = 16
-PINZU_9 = 17
-SOUZU_1 = 18
-SOUZU_2 = 19
-SOUZU_3 = 20
-SOUZU_4 = 21
-SOUZU_5 = 22
-SOUZU_6 = 23
-SOUZU_7 = 24
-SOUZU_8 = 25
-SOUZU_9 = 26
-WIND_E = 27
-WIND_S = 28
-WIND_W = 29
-WIND_N = 30
-DRAGON_W = 31
-DRAGON_G = 32
-DRAGON_R = 33
 RON = 34
 PON = 35
 CHI_R = 36  # 45[6]
@@ -51,6 +17,12 @@ CHI_L = 38  # [4]56
 PASS = 39
 TSUMO = 40
 NONE = 41
+
+
+@dataclass
+class Observation:
+    hand: jnp.ndarray
+    target: int
 
 
 @dataclass
@@ -114,6 +86,9 @@ class State:
             )
 
         return legal_actions
+
+    def observe(self, player: int) -> Observation:
+        return Observation(self.hand.arr[player], self.target)
 
     def _tree_flatten(self):
         children = (self.deck, self.hand, self.turn, self.target)
@@ -188,10 +163,10 @@ def _try_draw(state: State) -> Tuple[State, bool]:
 
 @jit
 def _draw(state: State) -> Tuple[State, bool]:
-    state.deck, tile = deck.draw(state.deck)
-    state.hand = hand.add(state.hand, state.turn, tile)
     state.turn += 1
     state.turn %= 4
+    state.deck, tile = deck.draw(state.deck)
+    state.hand = hand.add(state.hand, state.turn, tile)
     return state, False
 
 
@@ -229,7 +204,7 @@ def _tsumo(state: State) -> Tuple[State, bool]:
     return state, True
 
 
-if __name__ == "__main__":
+def test():
     state = init(jax.random.PRNGKey(seed=0))
     print(state.hand.arr)
     print(state.turn)
@@ -237,6 +212,7 @@ if __name__ == "__main__":
     print(state.legal_actions())
     print("-" * 30)
 
+    MANZU_6 = 5
     state, done = step(state, jnp.array([MANZU_6, NONE, NONE, NONE]))
 
     print(state.hand.arr)
@@ -253,6 +229,7 @@ if __name__ == "__main__":
     print(state.legal_actions())
     print("-" * 30)
 
+    SOUZU_7 = 24
     state, done = step(state, jnp.array([NONE, SOUZU_7, NONE, NONE]))
 
     print(state.hand.arr)
@@ -277,6 +254,7 @@ if __name__ == "__main__":
     print(state.legal_actions())
     print("-" * 30)
 
+    MANZU_1 = 0
     state, done = step(state, jnp.array([MANZU_1, NONE, NONE, NONE]))
 
     print(state.hand.arr)
@@ -292,3 +270,83 @@ if __name__ == "__main__":
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
+
+
+from shanten_tools import shanten
+
+
+def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
+    if not jnp.any(legal_actions):
+        return NONE
+
+    if legal_actions[TSUMO]:
+        return TSUMO
+    if legal_actions[RON]:
+        return RON
+
+    if jnp.sum(obs.hand) % 3 == 2:
+        min_shanten = 999
+        discard = -1
+        for tile in range(34):
+            if not legal_actions[tile]:
+                continue
+            s = shanten(obs.hand.at[tile].set(obs.hand[tile] - 1))
+            if s < min_shanten:
+                s = min_shanten
+                discard = tile
+        return discard
+
+    if legal_actions[PON]:
+        s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
+        if s < shanten(obs.hand):
+            return PON
+
+    if legal_actions[CHI_R]:
+        s = shanten(
+            obs.hand.at[obs.target - 2]
+            .set(obs.hand[obs.target - 2] - 1)
+            .at[obs.target - 1]
+            .set(obs.hand[obs.target - 1] - 1)
+        )
+        if s < shanten(obs.hand):
+            return CHI_R
+
+    if legal_actions[CHI_M]:
+        s = shanten(
+            obs.hand.at[obs.target - 1]
+            .set(obs.hand[obs.target - 1] - 1)
+            .at[obs.target + 1]
+            .set(obs.hand[obs.target + 1] - 1)
+        )
+        if s < shanten(obs.hand):
+            return CHI_M
+
+    if legal_actions[CHI_L]:
+        s = shanten(
+            obs.hand.at[obs.target + 1]
+            .set(obs.hand[obs.target + 1] - 1)
+            .at[obs.target + 2]
+            .set(obs.hand[obs.target + 2] - 1)
+        )
+        if s < shanten(obs.hand):
+            return CHI_L
+
+    return PASS
+
+
+if __name__ == "__main__":
+    for i in range(5):
+        state = init(jax.random.PRNGKey(seed=i))
+        done = False
+        while not done:
+            legal_actions = state.legal_actions()
+            selected = jnp.array(
+                [act(legal_actions[i], state.observe(i)) for i in range(4)]
+            )
+            state, done = step(state, selected)
+
+        print(state.hand.arr)
+        print(state.turn)
+        print(state.target)
+        print(state.deck.idx)
+        print("-" * 30)

@@ -25,11 +25,23 @@ class Hand:
             == 1
         )
 
+    # def can_ron(self, player: int, tile: int) -> bool:
+    #    return (
+    #        shanten(
+    #            self.arr.at[(player, tile)].set(self.arr[player][tile] + 1)[
+    #                player
+    #            ]
+    #        )
+    #        == -1
+    #    )
+
     @jit
     def can_tsumo(self, player: int) -> bool:
         # TODO
         return jnp.sum(self.arr[player] > 0) == 1
-        # return shanten(self.arr[player]) == -1
+
+    # def can_tsumo(self, player: int) -> bool:
+    #    return shanten(self.arr[player]) == -1
 
     @jit
     def can_pon(self, player: int, tile: int) -> bool:
