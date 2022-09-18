@@ -110,7 +110,7 @@ class State:
                 )
             )
             legal_actions = legal_actions.at[(player, PASS)].set(
-                jnp.sum(legal_actions[player]) > 0
+                (player != self.turn) & (jnp.sum(legal_actions[player]) > 0)
             )
 
         return legal_actions
