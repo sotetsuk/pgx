@@ -184,6 +184,45 @@ def _ilegal_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
     return state, r, True
 
 
+def _check_around_stones(
+    _state: MiniGoState,
+    xy: int,
+    around_mypos: np.ndarray,
+    my_color: int,
+    new_id: int,
+    agehama: int,
+):
+    state = copy.deepcopy(_state)
+    around_xy = _pos_to_xy(around_mypos)
+    oppo_color = _opponent_color(my_color)
+
+    if state.ren_id_board[my_color][around_xy] != -1:  # 既に連が作られていた場合
+        (state, new_id) = _merge_ren(
+            state,
+            my_color,
+            new_id,
+            xy,
+            around_xy,
+        )
+
+    elif state.ren_id_board[oppo_color][around_xy] != -1:  # 敵の連が作られていた場合
+        oppo_ren_id = state.ren_id_board[oppo_color][around_xy]
+        oppo_liberty = state.liberty[oppo_color]
+        oppo_liberty[oppo_ren_id][xy] = False
+        if np.count_nonzero(oppo_liberty[oppo_ren_id]) == 0:
+            # 石を取る
+            (state, a_removed_stone_xy, agehama) = _remove_stones(
+                state,
+                my_color,
+                oppo_ren_id,
+                agehama,
+                around_xy,
+            )
+
+    else:
+        state.liberty[my_color][new_id][around_xy] = True
+
+
 def _merge_ren(
     _state: MiniGoState,
     _my_color: int,
@@ -270,19 +309,23 @@ def _add_removed_pos_to_liberty(
     for _xy in range(BOARD_SIZE * BOARD_SIZE):
         for _nsew in NSEW:
             _around_rmstone_pos = _xy_to_pos(_xy) + _nsew
-            if _is_off_board(_around_rmstone_pos):
-                continue
-            _around_rmstone_xy = _to_xy(
-                _around_rmstone_pos[0], _around_rmstone_pos[1]
-            )
             if (
-                ren_id_board[_around_rmstone_xy] != -1
+                not _is_off_board(_around_rmstone_pos)
+                and ren_id_board[_pos_to_xy(_around_rmstone_pos)] != -1
                 and _surrounded_stones[_xy]
             ):
                 # adj_ren_id = ren_id_board[_around_rmstone_xy]
                 # liberty[adj_ren_id][_xy] = True
-                liberty[ren_id_board[_around_rmstone_xy]][_xy] = True
+                liberty[:] = _update_liberty(
+                    liberty, ren_id_board[_pos_to_xy(_around_rmstone_pos)], _xy
+                )
 
+    return liberty
+
+
+def _update_liberty(_liberty: np.ndarray, _id: int, _xy: int):
+    liberty = _liberty.copy()
+    liberty[_id][_xy] = True
     return liberty
 
 
