@@ -82,30 +82,43 @@ def _not_pass_move(
     state = copy.deepcopy(_state)
     state.passed[0] = False
     xy = copy.deepcopy(action)
-    x = xy // BOARD_SIZE
-    y = xy % BOARD_SIZE
 
     my_color = state.turn[0] % 2
     oppo_color = _opponent_color(my_color)
 
     ren_id_board = state.ren_id_board[my_color]
     oppo_ren_id_board = state.ren_id_board[oppo_color]
-    available_ren_id = state.available_ren_id[my_color]
-    new_id = int(np.argmax(available_ren_id))  # 最初にTrueになったindex
-    # liberty = state.liberty[my_color]
-
-    pos = np.array([x, y])
-    agehama = 0
-    a_removed_stone_xy = -1
 
     # 石を置く
     if (
         ren_id_board[xy] != -1
         or oppo_ren_id_board[xy] != -1
-        or (x == state.kou[0] and y == state.kou[1])
+        or (xy == _pos_to_xy(state.kou))
     ):  # 既に他の石が置かれている or コウ
-        # print("ilegal")
-        return _ilegal_move(state)
+        result = _ilegal_move(state)
+    else:
+        result = _not_duplicate_nor_kou(state, xy, my_color)
+
+    return result
+
+
+def _not_duplicate_nor_kou(
+    _state: MiniGoState, _xy: int, _my_color
+) -> Tuple[MiniGoState, np.ndarray, bool]:
+    state = copy.deepcopy(_state)
+    xy = _xy
+    x = xy // BOARD_SIZE
+    y = xy % BOARD_SIZE
+    my_color = _my_color
+    ren_id_board = state.ren_id_board[my_color]
+    oppo_color = _opponent_color(my_color)
+    oppo_ren_id_board = state.ren_id_board[oppo_color]
+    available_ren_id = state.available_ren_id[my_color]
+    new_id = int(np.argmax(available_ren_id))  # 最初にTrueになったindex
+
+    pos = np.array([x, y])
+    agehama = 0
+    a_removed_stone_xy = -1
 
     ren_id_board[xy] = new_id
     available_ren_id[new_id] = False
@@ -177,31 +190,41 @@ def _merge_ren(
     _new_id: int,
     xy: int,
     xy_around_mypos: int,
-):
+) -> Tuple[MiniGoState, int]:
+    state = copy.deepcopy(_state)
+    ren_id_board = state.ren_id_board[_my_color]
+    new_id = _new_id
+
+    old_id = ren_id_board[xy_around_mypos]
+
+    if old_id == new_id:
+        result = state, new_id
+    else:
+        result = __merge_ren(state, _my_color, old_id, new_id, xy)
+
+    return result
+
+
+def __merge_ren(
+    _state: MiniGoState, _my_color, _old_id, _new_id, _xy
+) -> Tuple[MiniGoState, int]:
     state = copy.deepcopy(_state)
     ren_id_board = state.ren_id_board[_my_color]
     available_ren_id = state.available_ren_id[_my_color]
     liberty = state.liberty[_my_color]
-    new_id = _new_id
 
-    old_id = ren_id_board[xy_around_mypos]
-    if old_id == new_id:
-        return state, new_id
-
-    small_id = min(old_id, new_id)
-    large_id = max(old_id, new_id)
+    small_id = min(_old_id, _new_id)
+    large_id = max(_old_id, _new_id)
     # 大きいidの連を消し、小さいidの連と繋げる
 
     available_ren_id[large_id] = True
     ren_id_board[ren_id_board == large_id] = small_id
 
-    liberty[large_id][xy] = liberty[small_id][xy] = False
+    liberty[large_id][_xy] = liberty[small_id][_xy] = False
     liberty[small_id] = liberty[small_id] | liberty[large_id]
     liberty[large_id] = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
 
-    new_id = small_id
-
-    return state, new_id
+    return state, small_id
 
 
 def _remove_stones(
