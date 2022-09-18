@@ -112,7 +112,6 @@ def _not_duplicate_nor_kou(
     my_color = _my_color
     ren_id_board = state.ren_id_board[my_color]
     oppo_color = _opponent_color(my_color)
-    oppo_ren_id_board = state.ren_id_board[oppo_color]
     available_ren_id = state.available_ren_id[my_color]
     new_id = int(np.argmax(available_ren_id))  # 最初にTrueになったindex
 
@@ -127,53 +126,26 @@ def _not_duplicate_nor_kou(
     # 周囲の連を数える
     for nsew in NSEW:
         around_mypos = pos + nsew
-        if _is_off_board(around_mypos):
-            continue
-
-        around_xy = _pos_to_xy(around_mypos)
-        if ren_id_board[around_xy] != -1:  # 既に連が作られていた場合
-            (state, new_id) = _merge_ren(
+        if not _is_off_board(around_mypos):
+            state, new_id, agehama, a_removed_stone_xy = _check_around_stones(
                 state,
+                xy,
+                around_mypos,
                 my_color,
                 new_id,
-                xy,
-                around_xy,
+                agehama,
+                a_removed_stone_xy,
             )
-
-        elif oppo_ren_id_board[around_xy] != -1:  # 敵の連が作られていた場合
-            oppo_ren_id = oppo_ren_id_board[around_xy]
-            oppo_liberty = state.liberty[oppo_color]
-            oppo_liberty[oppo_ren_id][xy] = False
-            if np.count_nonzero(oppo_liberty[oppo_ren_id]) == 0:
-                # 石を取る
-                (state, a_removed_stone_xy, agehama) = _remove_stones(
-                    state,
-                    my_color,
-                    oppo_ren_id,
-                    agehama,
-                    around_xy,
-                )
-
-        else:
-            state.liberty[my_color][new_id][around_xy] = True
 
     if np.count_nonzero(state.liberty[my_color][new_id]) == 0:
         # 自殺手
-        return _ilegal_move(state)
-
-    # コウの確認
-    if agehama == 1 and is_kou:
-        state.kou[0], state.kou[1] = (
-            a_removed_stone_xy // BOARD_SIZE,
-            a_removed_stone_xy % BOARD_SIZE,
-        )
+        result = _ilegal_move(state)
     else:
-        state.kou[0], state.kou[1] = (-1, -1)
+        result = _not_suicide(
+            state, my_color, agehama, is_kou, a_removed_stone_xy
+        )
 
-    state.agehama[my_color] += agehama
-    state = _add_turn(state)
-
-    return state, np.array([0, 0]), False
+    return result
 
 
 def _ilegal_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
@@ -191,12 +163,14 @@ def _check_around_stones(
     my_color: int,
     new_id: int,
     agehama: int,
+    a_removed_stone_xy: int,
 ):
     state = copy.deepcopy(_state)
     around_xy = _pos_to_xy(around_mypos)
     oppo_color = _opponent_color(my_color)
 
-    if state.ren_id_board[my_color][around_xy] != -1:  # 既に連が作られていた場合
+    # 既に自分の連が作られていた場合
+    if state.ren_id_board[my_color][around_xy] != -1:
         (state, new_id) = _merge_ren(
             state,
             my_color,
@@ -205,22 +179,48 @@ def _check_around_stones(
             around_xy,
         )
 
-    elif state.ren_id_board[oppo_color][around_xy] != -1:  # 敵の連が作られていた場合
-        oppo_ren_id = state.ren_id_board[oppo_color][around_xy]
-        oppo_liberty = state.liberty[oppo_color]
-        oppo_liberty[oppo_ren_id][xy] = False
-        if np.count_nonzero(oppo_liberty[oppo_ren_id]) == 0:
-            # 石を取る
-            (state, a_removed_stone_xy, agehama) = _remove_stones(
-                state,
-                my_color,
-                oppo_ren_id,
-                agehama,
-                around_xy,
-            )
+    # 敵の連が作られていた場合
+    if state.ren_id_board[oppo_color][around_xy] != -1:
+        # oppo_ren_id = state.ren_id_board[oppo_color][around_xy]
+        # oppo_liberty = state.liberty[oppo_color]
+        # oppo_liberty[oppo_ren_id][xy] = False
 
-    else:
-        state.liberty[my_color][new_id][around_xy] = True
+        state.liberty[oppo_color][:] = _update_liberty(
+            state.liberty[oppo_color],
+            state.ren_id_board[oppo_color][around_xy],
+            xy,
+            False,
+        )
+
+    # 敵の連を取れる場合
+    if (
+        state.ren_id_board[oppo_color][around_xy] != -1
+        and np.count_nonzero(
+            state.liberty[oppo_color][
+                state.ren_id_board[oppo_color][around_xy]
+            ]
+        )
+        == 0
+    ):
+        # 石を取る
+        (state, a_removed_stone_xy, agehama) = _remove_stones(
+            state,
+            my_color,
+            state.ren_id_board[oppo_color][around_xy],
+            agehama,
+            around_xy,
+        )
+
+    # どちらでもない場合
+    if (
+        not state.ren_id_board[my_color][around_xy] != -1
+        and not state.ren_id_board[oppo_color][around_xy] != -1
+    ):
+        state.liberty[my_color] = _update_liberty(
+            state.liberty[my_color], new_id, around_xy
+        )
+
+    return state, new_id, agehama, a_removed_stone_xy
 
 
 def _merge_ren(
@@ -236,7 +236,7 @@ def _merge_ren(
 
     old_id = ren_id_board[xy_around_mypos]
 
-    if old_id == new_id:
+    if old_id == new_id:  # 既に結合済みの場合
         result = state, new_id
     else:
         result = __merge_ren(state, _my_color, old_id, new_id, xy)
@@ -323,10 +323,34 @@ def _add_removed_pos_to_liberty(
     return liberty
 
 
-def _update_liberty(_liberty: np.ndarray, _id: int, _xy: int):
+def _update_liberty(
+    _liberty: np.ndarray, _id: int, _xy: int, _bool: bool = True
+):
     liberty = _liberty.copy()
-    liberty[_id][_xy] = True
+    liberty[_id][_xy] = _bool
     return liberty
+
+
+def _not_suicide(
+    state: MiniGoState,
+    my_color: int,
+    agehama: int,
+    is_kou: bool,
+    a_removed_stone_xy: int,
+):
+    # コウの確認
+    if agehama == 1 and is_kou:
+        state.kou[0], state.kou[1] = (
+            a_removed_stone_xy // BOARD_SIZE,
+            a_removed_stone_xy % BOARD_SIZE,
+        )
+    else:
+        state.kou[0], state.kou[1] = (-1, -1)
+
+    state.agehama[my_color] += agehama
+    state = _add_turn(state)
+
+    return state, np.array([0, 0]), False
 
 
 def legal_actions(state: MiniGoState) -> np.ndarray:
@@ -359,7 +383,7 @@ def show(state: MiniGoState) -> None:
         print("")
 
 
-def _show(state: MiniGoState) -> None:
+def _show_details(state: MiniGoState) -> None:
     show(state)
     print(state.ren_id_board[BLACK].reshape((5, 5)))
     print(state.ren_id_board[WHITE].reshape((5, 5)))
