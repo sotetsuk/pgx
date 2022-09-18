@@ -46,7 +46,7 @@ def test_step():
     state, _, _ = step(_state=state, action=19)
     state, _, _ = step(_state=state, action=21)
     state, _, _ = step(_state=state, action=None)
-    state, _, done = step(_state=state, action=None)
+    state, r, done = step(_state=state, action=None)
 
     expected_board = np.array(
         [
@@ -65,8 +65,9 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (get_board(state) == expected_board).all()
+    assert (get_board(state) == expected_board.ravel()).all()
     assert done
+    assert (r == np.array([0, 0])).all()
 
 
 def test_kou():
@@ -104,5 +105,5 @@ def test_random_play():
             a = np.random.choice(actions[0], 1)[0]
         state, _, done = step(_state=state, action=a)
 
-        if state.turn[0] > 100000:
+        if state.turn[0] > 1000:
             break

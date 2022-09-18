@@ -56,7 +56,7 @@ def step(
         if state.passed[0]:
             print("end by pass.")
             done = True
-            # r = _get_reward(state)
+            r = _get_reward(state)
             state.turn[0] = state.turn[0] + 1
             return state, r, done
         else:
@@ -196,7 +196,7 @@ def get_board(state: MiniGoState) -> np.ndarray:
     board = np.full(BOARD_SIZE * BOARD_SIZE, 2)
     board[state.ren_id_board[BLACK] != -1] = 0
     board[state.ren_id_board[WHITE] != -1] = 1
-    return board.reshape((BOARD_SIZE, BOARD_SIZE))
+    return board
 
 
 def show(state: MiniGoState) -> None:
@@ -257,3 +257,75 @@ def _check_kou(state: MiniGoState, x, y, oppo_color) -> bool:
             or state.ren_id_board[oppo_color][_to_xy(x, y + 1)] != -1
         )
     )
+
+
+def _get_reward(state: MiniGoState) -> np.ndarray:
+    b = _count_ji(state)[BLACK] - state.agehama[WHITE]
+    w = _count_ji(state)[WHITE] - state.agehama[BLACK]
+    if b == w:
+        return np.array([0, 0])
+    if b > w:
+        return np.array([1, -1])
+    return np.array([-1, 1])
+
+
+def _count_ji(state: MiniGoState) -> np.ndarray:
+    board = get_board(state)
+    ji_id_board = _get_ji_id_board(state)
+
+    # -1:未確定 0:黒 1:白 2:どちらでもないことが確定
+    color_of_ji = np.full((BOARD_SIZE * BOARD_SIZE), -1, dtype=int)
+
+    for xy in range(BOARD_SIZE * BOARD_SIZE):
+        ji_id = ji_id_board[xy]
+        if ji_id_board[xy] == -1 or color_of_ji[ji_id] == 2:
+            continue
+
+        for nsew in NSEW:
+            around_pos = _xy_to_pos(xy) + nsew
+            around_xy = _pos_to_xy(around_pos)
+            if _is_off_board(around_pos) or board[around_xy] == POINT:
+                continue
+            if color_of_ji[xy] == -1:
+                color_of_ji[xy] = board[around_xy]
+            elif color_of_ji[xy] == _opponent_color(board[around_xy]):
+                color_of_ji[ji_id_board == ji_id] = 2
+
+    b = np.count_nonzero(color_of_ji == BLACK)
+    w = np.count_nonzero(color_of_ji == WHITE)
+
+    return np.array([b, w])
+
+
+def _get_ji_id_board(state: MiniGoState):
+    board = get_board(state)
+    ji_id_board: np.ndarray = np.full((BOARD_SIZE * BOARD_SIZE), -1, dtype=int)
+    available_ji_id: np.ndarray = np.ones(
+        (BOARD_SIZE * BOARD_SIZE), dtype=bool
+    )
+    for xy in range(BOARD_SIZE * BOARD_SIZE):
+        if board[xy] != POINT:
+            continue
+        new_id = np.argmax(available_ji_id)  # 最初にTrueになったindex
+        ji_id_board[xy] = new_id
+        available_ji_id[new_id] = False
+
+        for nsew in NSEW:
+            around_mypos = _xy_to_pos(xy) + nsew
+            if _is_off_board(around_mypos):
+                continue
+
+            xy_around_mypos = _pos_to_xy(around_mypos)
+            if ji_id_board[xy_around_mypos] != -1:
+                old_id = ji_id_board[xy_around_mypos]
+                if old_id == new_id:
+                    continue
+
+                small_id = min(old_id, new_id)
+                large_id = max(old_id, new_id)
+
+                available_ji_id[large_id] = True
+                ji_id_board[ji_id_board == large_id] = small_id
+
+                new_id = small_id
+    return ji_id_board
