@@ -4,7 +4,6 @@ from typing import List, Tuple
 import jax
 import jax.numpy as jnp
 from jax import jit, tree_util
-
 from shanten_tools import shanten
 
 
@@ -30,7 +29,7 @@ class Hand:
     def can_tsumo(self, player: int) -> bool:
         # TODO
         return jnp.sum(self.arr[player] > 0) == 1
-        #return shanten(self.arr[player]) == -1
+        # return shanten(self.arr[player]) == -1
 
     @jit
     def can_pon(self, player: int, tile: int) -> bool:

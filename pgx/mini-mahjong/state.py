@@ -9,48 +9,48 @@ from deck import Deck
 from hand import Hand
 from jax import jit, tree_util
 
-MANZU_1  = 0
-MANZU_2  = 1
-MANZU_3  = 2
-MANZU_4  = 3
-MANZU_5  = 4
-MANZU_6  = 5
-MANZU_7  = 6
-MANZU_8  = 7
-MANZU_9  = 8
-PINZU_1  = 9
-PINZU_2  = 10
-PINZU_3  = 11
-PINZU_4  = 12
-PINZU_5  = 13
-PINZU_6  = 14
-PINZU_7  = 15
-PINZU_8  = 16
-PINZU_9  = 17
-SOUZU_1  = 18
-SOUZU_2  = 19
-SOUZU_3  = 20
-SOUZU_4  = 21
-SOUZU_5  = 22
-SOUZU_6  = 23
-SOUZU_7  = 24
-SOUZU_8  = 25
-SOUZU_9  = 26
-WIND_E   = 27
-WIND_S   = 28
-WIND_W   = 29
-WIND_N   = 30
+MANZU_1 = 0
+MANZU_2 = 1
+MANZU_3 = 2
+MANZU_4 = 3
+MANZU_5 = 4
+MANZU_6 = 5
+MANZU_7 = 6
+MANZU_8 = 7
+MANZU_9 = 8
+PINZU_1 = 9
+PINZU_2 = 10
+PINZU_3 = 11
+PINZU_4 = 12
+PINZU_5 = 13
+PINZU_6 = 14
+PINZU_7 = 15
+PINZU_8 = 16
+PINZU_9 = 17
+SOUZU_1 = 18
+SOUZU_2 = 19
+SOUZU_3 = 20
+SOUZU_4 = 21
+SOUZU_5 = 22
+SOUZU_6 = 23
+SOUZU_7 = 24
+SOUZU_8 = 25
+SOUZU_9 = 26
+WIND_E = 27
+WIND_S = 28
+WIND_W = 29
+WIND_N = 30
 DRAGON_W = 31
 DRAGON_G = 32
 DRAGON_R = 33
-RON      = 34
-PON      = 35
-CHI_R    = 36  # 45[6]
-CHI_M    = 37  # 4[5]6
-CHI_L    = 38  # [4]56
-PASS     = 39
-TSUMO    = 40
-NONE     = 41
+RON = 34
+PON = 35
+CHI_R = 36  # 45[6]
+CHI_M = 37  # 4[5]6
+CHI_L = 38  # [4]56
+PASS = 39
+TSUMO = 40
+NONE = 41
 
 
 @dataclass
@@ -93,7 +93,7 @@ class State:
                     .at[RON]
                     .set(self.hand.can_ron(player, self.target))
                     .at[PON]
-                    .set(self.hand.can_pon(player, self.target))
+                    .set(self.hand.can_pon(player, self.target)),
                 )
             )
             legal_actions = legal_actions.at[player].set(
@@ -106,7 +106,7 @@ class State:
                     .at[CHI_M]
                     .set(self.hand.can_chi(player, self.target, 1))
                     .at[CHI_L]
-                    .set(self.hand.can_chi(player, self.target, 2))
+                    .set(self.hand.can_chi(player, self.target, 2)),
                 )
             )
             legal_actions = legal_actions.at[(player, PASS)].set(
@@ -182,9 +182,7 @@ def _discard(state: State, tile: int) -> Tuple[State, bool]:
 def _try_draw(state: State) -> Tuple[State, bool]:
     state.target = -1
     return jax.lax.cond(
-        state.deck.is_empty(),
-        lambda: _ryukyoku(state),
-        lambda: _draw(state)
+        state.deck.is_empty(), lambda: _ryukyoku(state), lambda: _draw(state)
     )
 
 
@@ -224,6 +222,7 @@ def _chi(state: State, player: int, pos: int) -> Tuple[State, bool]:
     state.turn = player
     return state, False
 
+
 @jit
 def _tsumo(state: State) -> Tuple[State, bool]:
     # TODO
@@ -236,7 +235,7 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
+    print("-" * 30)
 
     state, done = step(state, jnp.array([MANZU_6, NONE, NONE, NONE]))
 
@@ -244,7 +243,7 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
+    print("-" * 30)
 
     state, done = step(state, jnp.array([NONE, CHI_R, NONE, NONE]))
 
@@ -252,7 +251,7 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
+    print("-" * 30)
 
     state, done = step(state, jnp.array([NONE, SOUZU_7, NONE, NONE]))
 
@@ -260,7 +259,7 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
+    print("-" * 30)
 
     state, done = step(state, jnp.array([NONE, NONE, NONE, PON]))
 
@@ -268,7 +267,7 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
+    print("-" * 30)
 
     state, done = step(state, jnp.array([NONE, NONE, NONE, DRAGON_R]))
 
@@ -276,7 +275,7 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
+    print("-" * 30)
 
     state, done = step(state, jnp.array([MANZU_1, NONE, NONE, NONE]))
 
@@ -284,7 +283,7 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
+    print("-" * 30)
 
     state, done = step(state, jnp.array([NONE, PASS, NONE, NONE]))
 
@@ -292,5 +291,4 @@ if __name__ == "__main__":
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
-    print('-' * 30)
-
+    print("-" * 30)
