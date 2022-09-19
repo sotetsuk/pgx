@@ -319,6 +319,82 @@ def test_convert_int_to_action():
     assert int_to_action(i6, b3) == d3
 
 
+def test_update_legal_actions_move():
+    m = AnimalShogiAction(False, 1, 5, 6, 6, 0)
+    updated1 = create_legal_actions(copy.deepcopy(INIT_BOARD))
+    updated1 = update_legal_actions_move(m, updated1)
+    black1 = updated1.legal_actions_black
+    white1 = updated1.legal_actions_white
+    b1 = np.zeros(180, dtype=np.int32)
+    w1 = np.zeros(180, dtype=np.int32)
+    b1[2] = 1
+    b1[4] = 1
+    b1[6] = 1
+    b1[22] = 1
+    b1[26] = 1
+    b1[30] = 1
+    b1[43] = 1
+    b1[47] = 1
+    b1[51] = 1
+    for i in range(12):
+        b1[108 + i] = 1
+    w1[9] = 1
+    w1[5] = 1
+    w1[13] = 1
+    w1[29] = 1
+    w1[33] = 1
+    w1[36] = 1
+    w1[40] = 1
+    w1[56] = 1
+    for i in range(180):
+        assert black1[i] == b1[i]
+        assert white1[i] == w1[i]
+
+
+def test_update_legal_actions_drop():
+    d = AnimalShogiAction(True, 7, 2)
+    updated1 = create_legal_actions(copy.deepcopy(TEST_BOARD2))
+    updated1 = update_legal_actions_drop(d, updated1)
+    black1 = updated1.legal_actions_black
+    white1 = updated1.legal_actions_white
+    b1 = np.zeros(180, dtype=np.int32)
+    w1 = np.zeros(180, dtype=np.int32)
+    b1[2] = 1
+    b1[6] = 1
+    b1[10] = 1
+    b1[18] = 1
+    b1[30] = 1
+    b1[43] = 1
+    b1[47] = 1
+    b1[51] = 1
+    b1[55] = 1
+    w1[2] = 1
+    w1[3] = 1
+    w1[5] = 1
+    w1[7] = 1
+    w1[13] = 1
+    w1[14] = 1
+    w1[29] = 1
+    w1[30] = 1
+    w1[33] = 1
+    w1[34] = 1
+    w1[36] = 1
+    w1[53] = 1
+    w1[54] = 1
+    w1[56] = 1
+    w1[60] = 1
+    w1[61] = 1
+    w1[72] = 1
+    w1[92] = 1
+    w1[103] = 1
+    for i in range(12):
+        w1[144 + i] = 1
+        w1[168 + i] = 1
+    for i in range(180):
+        assert black1[i] == b1[i]
+        assert white1[i] == w1[i]
+
+
 if __name__ == '__main__':
     test_another_color()
     test_move()
@@ -334,3 +410,5 @@ if __name__ == '__main__':
     test_add_actions()
     test_create_legal_actions()
     test_new_legal_action()
+    test_update_legal_actions_move()
+    test_update_legal_actions_drop()
