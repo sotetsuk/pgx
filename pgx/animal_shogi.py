@@ -406,10 +406,12 @@ def create_actions(fro, piece):
         if motion[i] == 0:
             continue
         if can_promote(i, piece):
-            pro_act = point_to_direction(fro, i, True, turn)
+            pro_dir = point_to_direction(fro, i, True, turn)
+            pro_act = dlshogi_action(pro_dir, i)
             actions[pro_act] = 1
-        act = point_to_direction(fro, i, False, turn)
-        actions[act] = 1
+        normal_dir = point_to_direction(fro, i, False, turn)
+        normal_act = dlshogi_action(normal_dir, i)
+        actions[normal_act] = 1
     return actions
 
 
@@ -435,7 +437,8 @@ def break_actions(fro, piece, array):
 def add_drop(piece, array):
     direction = hand_piece_to_dir(piece)
     for i in range(12):
-        array[direction * 12 + i] = 1
+        act = dlshogi_action(direction, i)
+        array[act] = 1
     return array
 
 
@@ -443,7 +446,8 @@ def add_drop(piece, array):
 def break_drop(piece, array):
     direction = hand_piece_to_dir(piece)
     for i in range(12):
-        array[direction * 12 + i] = 0
+        act = dlshogi_action(direction, i)
+        array[act] = 0
     return array
 
 
@@ -457,15 +461,23 @@ def create_legal_actions(state: AnimalShogiState):
         if piece == 0:
             continue
         if piece <= 5:
-            state.legal_actions_black = add_actions(i, piece, state.legal_actions_black)
+            state.legal_actions_black = add_actions(
+                i, piece, state.legal_actions_black
+            )
         else:
-            state.legal_actions_white = add_actions(i, piece, state.legal_actions_white)
+            state.legal_actions_white = add_actions(
+                i, piece, state.legal_actions_white
+            )
     # 駒打ちの追加
     for i in range(3):
         if state.hand[i] != 0:
-            state.legal_actions_black = add_drop(1 + i, state.legal_actions_black)
+            state.legal_actions_black = add_drop(
+                1 + i, state.legal_actions_black
+            )
         if state.hand[i + 3] != 0:
-            state.legal_actions_white = add_drop(1 + i, state.legal_actions_white)
+            state.legal_actions_white = add_drop(
+                6 + i, state.legal_actions_white
+            )
     return state
 
 
@@ -517,10 +529,14 @@ def break_leave_check(turn, king_sq, check_piece, array):
     moves = king_move(king_sq).reshape(12)
     for i in range(12):
         # 王手をかけている駒の位置以外への移動は王手放置
-        if check_piece[i] == 0:
-            for j in range(15):
+        for j in range(15):
+            # 駒打ちのフラグは全て折る
+            if j > 8:
                 array[12 * j + i] = 0
-        # 玉の移動はそれ以外でも可
+            # 王手をかけている駒の場所以外への移動ははじく
+            if check_piece[i] == 0:
+                array[12 * j + i] = 0
+        # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
         if moves[i] == 0:
             continue
         direction = point_to_direction(king_sq, i, 0, turn)
@@ -533,8 +549,6 @@ def break_leave_check(turn, king_sq, check_piece, array):
 def legal_moves(state: AnimalShogiState, action_array):
     board = board_status(state)
     piece_owner = pieces_owner(state)
-    # 相手の駒の利き
-    # effects = effected(state, another_color(state))
     for i in range(12):
         if piece_owner[i] != state.turn:
             continue
@@ -609,12 +623,20 @@ def legal_actions2(state: AnimalShogiState):
         action_array = copy.deepcopy(state.legal_actions_white)
     king_sq = state.board[4 + 5 * state.turn].argmax()
     # 王手放置を除く
-    action_array = break_leave_check(state.turn, king_sq, state.checking_piece, action_array)
+    if state.checked:
+        action_array = break_leave_check(
+            state.turn, king_sq, state.checking_piece, action_array
+        )
     # toが自分の駒の場合はそのactionは不可
+    # 駒打ちの場合は相手の駒でもダメ
     own = pieces_owner(state)
     for i in range(12):
-        if own[i] == state.turn:
-            for j in range(15):
+        for j in range(15):
+            # 移動かつ自分の駒
+            if j <= 8 and own[i] == state.turn:
+                action_array[j * 12 + i] = 0
+            # 駒打ちかつ空白でない
+            if j > 8 and own[i] != 2:
                 action_array[j * 12 + i] = 0
     # 自殺手を除く
     effects = effected(state, another_color(state))

@@ -36,7 +36,11 @@ TEST_BOARD = AnimalShogiState(
         [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]),
-    hand=np.array([1, 2, 1, 0, 0, 0])
+    hand=np.array([1, 2, 1, 0, 0, 0]),
+    checked=True,
+    checking_piece=np.array([
+        0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0
+    ])
 )
 TEST_BOARD2 = AnimalShogiState(
     turn=1,
@@ -179,6 +183,44 @@ def test_legal_drop():
         assert c_array[i] == array[i]
 
 
+def test_create_actions():
+    array1 = create_actions(5, 4)
+    array2 = np.zeros(180, dtype=np.int32)
+    array2[4] = 1
+    array2[20] = 1
+    array2[24] = 1
+    array2[45] = 1
+    array2[49] = 1
+    array2[66] = 1
+    array2[82] = 1
+    array2[86] = 1
+    for i in range(180):
+        assert array1[i] == array2[i]
+
+
+def test_add_actions():
+    array1 = np.zeros(180, dtype=np.int32)
+    array2 = np.zeros(180, dtype=np.int32)
+    array1 = add_actions(5, 4, array1)
+    array1 = add_actions(6, 5, array1)
+    array2[4] = 1
+    array2[20] = 1
+    array2[24] = 1
+    array2[45] = 1
+    array2[49] = 1
+    array2[66] = 1
+    array2[82] = 1
+    array2[86] = 1
+    array2[5] = 1
+    array2[21] = 1
+    array2[25] = 1
+    array2[46] = 1
+    array2[50] = 1
+    array2[67] = 1
+    for i in range(180):
+        assert array1[i] == array2[i]
+
+
 def test_create_legal_actions():
     c_board = create_legal_actions(copy.deepcopy(INIT_BOARD))
     array1 = np.zeros(180, dtype=np.int32)
@@ -201,12 +243,7 @@ def test_create_legal_actions():
     array2[36] = 1
     array2[40] = 1
     array2[56] = 1
-    print(array1)
-    print(c_board.legal_actions_black)
     for i in range(180):
-        print(i)
-        print(array1[i])
-        print(c_board.legal_actions_black[i])
         assert array1[i] == c_board.legal_actions_black[i]
         assert array2[i] == c_board.legal_actions_white[i]
 
@@ -215,9 +252,12 @@ def test_new_legal_action():
     old1 = legal_actions(INIT_BOARD)
     old2 = legal_actions(TEST_BOARD)
     old3 = legal_actions(TEST_BOARD2)
-    new1 = legal_actions2(INIT_BOARD)
-    new2 = legal_actions2(TEST_BOARD)
-    new3 = legal_actions2(TEST_BOARD2)
+    b1 = create_legal_actions(copy.deepcopy(INIT_BOARD))
+    b2 = create_legal_actions(copy.deepcopy(TEST_BOARD))
+    b3 = create_legal_actions(copy.deepcopy(TEST_BOARD2))
+    new1 = legal_actions2(b1)
+    new2 = legal_actions2(b2)
+    new3 = legal_actions2(b3)
     for i in range(180):
         assert old1[i] == new1[i]
         assert old2[i] == new2[i]
@@ -290,4 +330,7 @@ if __name__ == '__main__':
     test_legal_drop()
     test_convert_action_to_int()
     test_convert_int_to_action()
+    test_create_actions()
+    test_add_actions()
     test_create_legal_actions()
+    test_new_legal_action()
