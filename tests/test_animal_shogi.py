@@ -266,30 +266,30 @@ def test_new_legal_action():
 
 def test_convert_action_to_int():
     b = copy.deepcopy(INIT_BOARD)
-    m = AnimalShogiAction(0, 1, 5, 6, 6, 0)
+    m = AnimalShogiAction(False, 1, 5, 6, 6, False)
     i = action_to_int(m, b.turn)
     # 6の位置のヒヨコを5に移動させる
     assert i == 5
     b2 = copy.deepcopy(TEST_BOARD)
-    m2 = AnimalShogiAction(0, 1, 0, 1, 8, 1)
+    m2 = AnimalShogiAction(False, 1, 0, 1, 8, True)
     i2 = action_to_int(m2, b2.turn)
     # 1の位置のヒヨコを0に移動させる（成る）
     assert i2 == 96
     b3 = copy.deepcopy(TEST_BOARD2)
-    m3 = AnimalShogiAction(0, 6, 7, 6, 2, 1)
+    m3 = AnimalShogiAction(False, 6, 7, 6, 2, True)
     i3 = action_to_int(m3, b3.turn)
     # 6の位置のヒヨコを7に移動させる（成る）
     # 後手番なので反転してdirectionは0(成っているので8)
     assert i3 == 103
-    d = AnimalShogiAction(1, 3, 2)
+    d = AnimalShogiAction(True, 3, 2)
     i4 = action_to_int(d, b2.turn)
     # 先手のゾウを2の位置に打つ
     # 先手のゾウを打つdirectionは11
     assert i4 == 134
-    d2 = AnimalShogiAction(1, 1, 5)
+    d2 = AnimalShogiAction(True, 1, 5)
     i5 = action_to_int(d2, b2.turn)
     assert i5 == 113
-    d3 = AnimalShogiAction(1, 7, 2)
+    d3 = AnimalShogiAction(True, 7, 2)
     i6 = action_to_int(d3, b3.turn)
     # 後手のキリンを2の位置に打つ(後手キリンを打つdirectionは13)
     assert i6 == 158
@@ -297,32 +297,32 @@ def test_convert_action_to_int():
 
 def test_convert_int_to_action():
     b = copy.deepcopy(INIT_BOARD)
-    m = AnimalShogiAction(0, 1, 5, 6, 6, 0)
+    m = AnimalShogiAction(False, 1, 5, 6, 6, False)
     i = 5
     assert int_to_action(i, b) == m
     b2 = copy.deepcopy(TEST_BOARD)
-    m2 = AnimalShogiAction(0, 1, 0, 1, 8, 1)
+    m2 = AnimalShogiAction(False, 1, 0, 1, 8, True)
     i2 = 96
     assert int_to_action(i2, b2) == m2
     b3 = copy.deepcopy(TEST_BOARD2)
-    m3 = AnimalShogiAction(0, 6, 7, 6, 2, 1)
+    m3 = AnimalShogiAction(False, 6, 7, 6, 2, True)
     i3 = 103
     assert int_to_action(i3, b3) == m3
-    d = AnimalShogiAction(1, 3, 2)
+    d = AnimalShogiAction(True, 3, 2)
     i4 = 134
     assert int_to_action(i4, b2) == d
-    d2 = AnimalShogiAction(1, 1, 5)
+    d2 = AnimalShogiAction(True, 1, 5)
     i5 = 113
     assert int_to_action(i5, b2) == d2
-    d3 = AnimalShogiAction(1, 7, 2)
+    d3 = AnimalShogiAction(True, 7, 2)
     i6 = 158
     assert int_to_action(i6, b3) == d3
 
 
 def test_update_legal_actions_move():
-    m = AnimalShogiAction(False, 1, 5, 6, 6, 0)
+    m = AnimalShogiAction(False, 1, 5, 6, 6, False)
     updated1 = create_legal_actions(copy.deepcopy(INIT_BOARD))
-    updated1 = update_legal_actions_move(m, updated1)
+    updated1 = update_legal_actions_move(updated1, m)
     black1 = updated1.legal_actions_black
     white1 = updated1.legal_actions_white
     b1 = np.zeros(180, dtype=np.int32)
@@ -354,7 +354,7 @@ def test_update_legal_actions_move():
 def test_update_legal_actions_drop():
     d = AnimalShogiAction(True, 7, 2)
     updated1 = create_legal_actions(copy.deepcopy(TEST_BOARD2))
-    updated1 = update_legal_actions_drop(d, updated1)
+    updated1 = update_legal_actions_drop(updated1, d)
     black1 = updated1.legal_actions_black
     white1 = updated1.legal_actions_white
     b1 = np.zeros(180, dtype=np.int32)
