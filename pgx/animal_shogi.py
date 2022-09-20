@@ -83,7 +83,7 @@ def init() -> AnimalShogiState:
 
 
 def step(
-    state: AnimalShogiState, action: AnimalShogiAction
+    state: AnimalShogiState, action: int
 ) -> Tuple[AnimalShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
     # 勝敗判定は勝者側のturnを返す（決着がついていない・引き分けの場合は2を返す）
@@ -94,30 +94,26 @@ def step(
         print("no legal actions.")
         return s, another_color(s), True
     # actionが合法手でない場合、手番側の負けで終了
-    if _legal_actions[action_to_int(action, s.turn)] == 0:
+    _action = int_to_action(action, s)
+    if _legal_actions[action_to_int(_action, s.turn)] == 0:
         print("an illegal action")
         return s, another_color(s), True
     # actionが合法手の場合
     # 駒打ちの場合の操作
-    if action.is_drop:
-        s = update_legal_actions_drop(s, action)
-        s = drop(s, action)
+    if _action.is_drop:
+        s = update_legal_actions_drop(s, _action)
+        s = drop(s, _action)
     # 駒の移動の場合の操作
     else:
-        s = update_legal_actions_move(s, action)
-        s = move(s, action)
+        s = update_legal_actions_move(s, _action)
+        s = move(s, _action)
     s.turn = another_color(s)
     s.checked = is_check(s)
     # 王手をかけている駒は直前に動かした駒
     if s.checked:
         # 王手返しの王手の場合があるので一度リセットする
         s.checking_piece = np.zeros(12, dtype=np.int32)
-        s.checking_piece[action.to] = 1
-        # 相手に合法手がなければ詰み
-        enemy_legal_actions = legal_actions2(s)
-        if np.all(enemy_legal_actions == 0):
-            print("mate")
-            return s, another_color(s), True
+        s.checking_piece[_action.to] = 1
     else:
         s.checking_piece = np.zeros(12, dtype=np.int32)
     return s, 2, False
