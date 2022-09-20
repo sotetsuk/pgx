@@ -1,12 +1,13 @@
 import jax
 import jax.numpy as jnp
+from agari import AGARI
 from jax import jit
 
-from agari import AGARI
 
 @jit
 def can_ron(hand: jnp.ndarray, tile: int) -> bool:
     return can_tsumo(hand.at[tile].set(hand[tile] + 1))
+
 
 @jit
 def can_tsumo(hand: jnp.ndarray) -> bool:
@@ -29,12 +30,13 @@ def can_tsumo(hand: jnp.ndarray) -> bool:
                 lambda: 2,
                 lambda: 1,
                 lambda: 0,
-            ]
+            ],
         )
         heads += code >> 1
         valid &= code != 0
 
     return valid & (heads == 1)
+
 
 @jit
 def can_pon(hand: jnp.ndarray, tile: int) -> bool:
