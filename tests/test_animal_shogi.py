@@ -116,55 +116,6 @@ def test_is_check():
     assert not is_check(TEST_BOARD2)
 
 
-def test_legal_move():
-    c_array1 = legal_moves(INIT_BOARD, np.zeros(180, dtype=np.int32))
-    array1 = np.zeros(180, dtype=np.int32)
-    array1[2] = 1
-    array1[5] = 1
-    array1[26] = 1
-    array1[22] = 1
-    # 王手を受けている状態の挙動
-    c_array2 = legal_moves(TEST_BOARD, np.zeros(180, dtype=np.int32))
-    array2 = np.zeros(180, dtype=np.int32)
-    array2[43] = 1
-    array2[67] = 1
-    array2[55] = 1
-    c_array3 = legal_moves(TEST_BOARD2, np.zeros(180, dtype=np.int32))
-    array3 = np.zeros(180, dtype=np.int32)
-    array3[2] = 1
-    # 行き所のない駒だが動物将棋的にはOKらしい
-    array3[7] = 1
-    array3[56] = 1
-    array3[33] = 1
-    array3[14] = 1
-    array3[92] = 1
-    array3[34] = 1
-    array3[103] = 1
-    for i in range(180):
-        assert array1[i] == c_array1[i]
-        assert array2[i] == c_array2[i]
-        assert array3[i] == c_array3[i]
-
-
-def test_legal_drop():
-    c_array = legal_drop(TEST_BOARD2, np.zeros(180, dtype=np.int32))
-    array = np.zeros(180, dtype=np.int32)
-    array[146] = 1
-    array[152] = 1
-    array[153] = 1
-    array[154] = 1
-    array[158] = 1
-    array[164] = 1
-    array[165] = 1
-    array[166] = 1
-    array[170] = 1
-    array[176] = 1
-    array[177] = 1
-    array[178] = 1
-    for i in range(180):
-        assert c_array[i] == array[i]
-
-
 def test_create_actions():
     array1 = create_actions(5, 4)
     array2 = np.zeros(180, dtype=np.int32)
@@ -230,20 +181,48 @@ def test_create_legal_actions():
         assert array2[i] == c_board.legal_actions_white[i]
 
 
-def test_new_legal_action():
-    old1 = legal_actions(INIT_BOARD)
-    old2 = legal_actions(TEST_BOARD)
-    old3 = legal_actions(TEST_BOARD2)
+def test_legal_actions():
     b1 = create_legal_actions(copy.deepcopy(INIT_BOARD))
     b2 = create_legal_actions(copy.deepcopy(TEST_BOARD))
     b3 = create_legal_actions(copy.deepcopy(TEST_BOARD2))
-    new1 = legal_actions2(b1)
-    new2 = legal_actions2(b2)
-    new3 = legal_actions2(b3)
+    n1 = legal_actions(b1)
+    n2 = legal_actions(b2)
+    n3 = legal_actions(b3)
+    array1 = np.zeros(180, dtype=np.int32)
+    array2 = np.zeros(180, dtype=np.int32)
+    array3 = np.zeros(180, dtype=np.int32)
+    array1[2] = 1
+    array1[5] = 1
+    array1[26] = 1
+    array1[22] = 1
+    # 王手を受けている状態の挙動
+    array2[43] = 1
+    array2[67] = 1
+    array2[55] = 1
+    array3[2] = 1
+    array3[7] = 1
+    array3[56] = 1
+    array3[33] = 1
+    array3[14] = 1
+    array3[92] = 1
+    array3[34] = 1
+    array3[103] = 1
+    array3[146] = 1
+    array3[152] = 1
+    array3[153] = 1
+    array3[154] = 1
+    array3[158] = 1
+    array3[164] = 1
+    array3[165] = 1
+    array3[166] = 1
+    array3[170] = 1
+    array3[176] = 1
+    array3[177] = 1
+    array3[178] = 1
     for i in range(180):
-        assert old1[i] == new1[i]
-        assert old2[i] == new2[i]
-        assert old3[i] == new3[i]
+        assert n1[i] == array1[i]
+        assert n2[i] == array2[i]
+        assert n3[i] == array3[i]
 
 
 def test_convert_action_to_int():
@@ -384,13 +363,11 @@ if __name__ == '__main__':
     test_piece_type()
     test_effected()
     test_is_check()
-    test_legal_move()
-    test_legal_drop()
     test_convert_action_to_int()
     test_convert_int_to_action()
     test_create_actions()
     test_add_actions()
     test_create_legal_actions()
-    test_new_legal_action()
+    test_legal_actions()
     test_update_legal_actions_move()
     test_update_legal_actions_drop()
