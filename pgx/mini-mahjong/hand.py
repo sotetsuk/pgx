@@ -2,16 +2,35 @@ import jax
 import jax.numpy as jnp
 from jax import jit
 
+from agari import AGARI
+
 
 @jit
 def can_ron(hand: jnp.ndarray, tile: int) -> bool:
-    return jnp.sum(hand.at[tile].set(hand[tile] + 1) > 0) == 1
-
+    return can_tsumo(hand.at[tile].set(hand[tile] + 1))
 
 @jit
 def can_tsumo(hand: jnp.ndarray) -> bool:
-    return jnp.sum(hand > 0) == 1
+    s = 0
+    for i in range(3):
+        code = 0
+        for j in range(9):
+            code = code * 5 + hand[9 * i + j]
+        s += AGARI[code]
 
+    for i in range(27, 34):
+        s += jax.lax.switch(
+            hand[i],
+            [
+                lambda: 0,
+                lambda: 0,
+                lambda: 5,
+                lambda: 1,
+                lambda: 0,
+            ]
+        )
+
+    return s == 9
 
 @jit
 def can_pon(hand: jnp.ndarray, tile: int) -> bool:
