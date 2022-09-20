@@ -218,26 +218,10 @@ def drop(state: AnimalShogiState, act: AnimalShogiAction):
 # 手番、王手判定も更新。引数の盤面も書き換える
 def action(state: AnimalShogiState, act: AnimalShogiAction):
     if act.is_drop == 1:
-        (
-            state.legal_actions_black,
-            state.legal_actions_white,
-        ) = update_legal_actions_drop(
-            act,
-            state.legal_actions_black,
-            state.legal_actions_white,
-            state.hand,
-        )
+        state = update_legal_actions_drop(act, state)
         state = drop(state, act)
     else:
-        (
-            state.legal_actions_black,
-            state.legal_actions_white,
-        ) = update_legal_actions_move(
-            act,
-            state.legal_actions_black,
-            state.legal_actions_white,
-            state.hand,
-        )
+        state = update_legal_actions_move(act, state)
         state = move(state, act)
     state.turn = another_color(state)
     state.checked = is_check(state)
