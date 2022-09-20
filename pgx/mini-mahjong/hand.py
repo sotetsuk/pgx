@@ -1,147 +1,104 @@
-from dataclasses import dataclass
-from typing import List, Tuple
-
 import jax
 import jax.numpy as jnp
-from jax import jit, tree_util
-from shanten_tools import shanten
-
-
-@dataclass
-class Hand:
-    arr: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.uint8)
-
-    @jit
-    def size(self, player: int) -> int:
-        return jnp.sum(self.arr[player])
-
-    @jit
-    def can_ron(self, player: int, tile: int) -> bool:
-        # TODO
-        return (
-            jnp.sum(
-                self.arr[player].at[tile].set(self.arr[player][tile] + 1) > 0
-            )
-            == 1
-        )
-
-    # def can_ron(self, player: int, tile: int) -> bool:
-    #    return (
-    #        shanten(
-    #            self.arr[player].at[tile].set(self.arr[player][tile] + 1)
-    #        )
-    #        == -1
-    #    )
-
-    @jit
-    def can_tsumo(self, player: int) -> bool:
-        # TODO
-        return jnp.sum(self.arr[player] > 0) == 1
-
-    # def can_tsumo(self, player: int) -> bool:
-    #    return shanten(self.arr[player]) == -1
-
-    @jit
-    def can_pon(self, player: int, tile: int) -> bool:
-        return self.arr[player][tile] >= 2
-
-    @jit
-    def can_chi(self, player: int, tile: int, pos: int) -> bool:
-        # pos:
-        #    0: 45[6]
-        #    1: 4[5]6
-        #    2: [4]56
-        return jax.lax.switch(
-            pos,
-            [
-                lambda: (
-                    (tile < 27)
-                    & (tile % 9 > 1)
-                    & (self.arr[player][tile - 2] > 0)
-                    & (self.arr[player][tile - 1] > 0)
-                ),
-                lambda: (
-                    (tile < 27)
-                    & (tile % 9 > 0)
-                    & (tile % 9 < 9)
-                    & (self.arr[player][tile - 1] > 0)
-                    & (self.arr[player][tile + 1] > 0)
-                ),
-                lambda: (
-                    (tile < 27)
-                    & (tile % 9 < 8)
-                    & (self.arr[player][tile + 1] > 0)
-                    & (self.arr[player][tile + 2] > 0)
-                ),
-            ],
-        )
-
-    def _tree_flatten(self):
-        children = (self.arr,)
-        aux_data = {}
-        return (children, aux_data)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):
-        return cls(*children, **aux_data)
-
-
-tree_util.register_pytree_node(Hand, Hand._tree_flatten, Hand._tree_unflatten)
+from jax import jit
 
 
 @jit
-def add(hand: Hand, player: int, tile: int, x: int = 1) -> Hand:
-    hand.arr = hand.arr.at[(player, tile)].set(hand.arr[player][tile] + x)
-    return hand
+def can_ron(hand: jnp.ndarray, tile: int) -> bool:
+    return jnp.sum(hand.at[tile].set(hand[tile] + 1) > 0) == 1
 
 
 @jit
-def sub(hand: Hand, player: int, tile: int, x: int = 1) -> Hand:
-    return add(hand, player, tile, -x)
+def can_tsumo(hand: jnp.ndarray) -> bool:
+    return jnp.sum(hand > 0) == 1
 
 
 @jit
-def pon(hand: Hand, player: int, tile: int) -> Hand:
-    return sub(hand, player, tile, 2)
+def can_pon(hand: jnp.ndarray, tile: int) -> bool:
+    return hand[tile] >= 2
 
 
 @jit
-def chi(hand: Hand, player: int, tile: int, pos: int) -> Hand:
+def can_chi(hand: jnp.ndarray, tile: int, pos: int) -> bool:
+    # pos:
+    #    0: 45[6]
+    #    1: 4[5]6
+    #    2: [4]56
     return jax.lax.switch(
         pos,
         [
-            lambda: sub(sub(hand, player, tile - 2), player, tile - 1),
-            lambda: sub(sub(hand, player, tile - 1), player, tile + 1),
-            lambda: sub(sub(hand, player, tile + 1), player, tile + 2),
+            lambda: (
+                (tile < 27)
+                & (tile % 9 > 1)
+                & (hand[tile - 2] > 0)
+                & (hand[tile - 1] > 0)
+            ),
+            lambda: (
+                (tile < 27)
+                & (tile % 9 > 0)
+                & (tile % 9 < 9)
+                & (hand[tile - 1] > 0)
+                & (hand[tile + 1] > 0)
+            ),
+            lambda: (
+                (tile < 27)
+                & (tile % 9 < 8)
+                & (hand[tile + 1] > 0)
+                & (hand[tile + 2] > 0)
+            ),
+        ],
+    )
+
+
+@jit
+def add(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
+    return hand.at[tile].set(hand[tile] + x)
+
+
+@jit
+def sub(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
+    return add(hand, tile, -x)
+
+
+@jit
+def pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+    return sub(hand, tile, 2)
+
+
+@jit
+def chi(hand: jnp.ndarray, tile: int, pos: int) -> jnp.ndarray:
+    return jax.lax.switch(
+        pos,
+        [
+            lambda: sub(sub(hand, tile - 2), tile - 1),
+            lambda: sub(sub(hand, tile - 1), tile + 1),
+            lambda: sub(sub(hand, tile + 1), tile + 2),
         ],
     )
 
 
 if __name__ == "__main__":
-    hand = Hand()
-    player = 0
-    assert hand.size(player) == 0
-    hand = add(hand, player, 0)
-    assert hand.size(player) == 1
-    assert hand.can_ron(player, 0)
-    assert not hand.can_ron(player, 1)
-    hand = add(hand, player, 0)
-    assert hand.can_tsumo(player)
-    assert hand.can_pon(player, 0)
+    hand = jnp.zeros(34, dtype=jnp.uint8)
+    hand = add(hand, 0)
+    assert can_ron(hand, 0)
+    assert not can_ron(hand, 1)
+    hand = add(hand, 0)
+    assert can_tsumo(hand)
+    assert can_pon(hand, 0)
 
     R, M, L = 0, 1, 2
-    assert not hand.can_chi(player, 2, R)
-    hand = add(hand, player, 1)
-    assert hand.can_chi(player, 2, R)
-    assert not hand.can_chi(player, 1, M)
-    hand = add(hand, player, 2)
-    assert hand.can_chi(player, 1, M)
-    assert hand.can_chi(player, 0, L)
-    assert not hand.can_chi(player, 1, L)
+    assert not can_chi(hand, 2, R)
+    hand = add(hand, 1)
+    assert can_chi(hand, 2, R)
+    assert not can_chi(hand, 1, M)
+    hand = add(hand, 2)
+    assert can_chi(hand, 1, M)
+    assert can_chi(hand, 0, L)
+    assert not can_chi(hand, 1, L)
 
-    hand = chi(hand, player, 0, L)
-    assert hand.arr[player][0] == 2
-    assert hand.arr[player][1] == 0
-    assert hand.arr[player][2] == 0
-    hand = pon(hand, player, 0)
-    assert hand.arr[player][0] == 0
+    hand = chi(hand, 0, L)
+    assert hand[0] == 2
+    assert hand[1] == 0
+    assert hand[2] == 0
+    hand = pon(hand, 0)
+    assert hand[0] == 0

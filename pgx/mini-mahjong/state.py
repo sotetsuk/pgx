@@ -6,7 +6,6 @@ import hand
 import jax
 import jax.numpy as jnp
 from deck import Deck
-from hand import Hand
 from jax import jit, tree_util
 
 RON = 34
@@ -28,7 +27,7 @@ class Observation:
 @dataclass
 class State:
     deck: Deck
-    hand: Hand
+    hand: jnp.ndarray
     turn: int
     target: int
 
@@ -44,13 +43,11 @@ class State:
                 lambda arr: jax.lax.fori_loop(
                     0,
                     34,
-                    lambda i, arr: arr.at[i].set(
-                        self.hand.arr[self.turn][i] > 0
-                    ),
+                    lambda i, arr: arr.at[i].set(self.hand[self.turn][i] > 0),
                     arr,
                 )
                 .at[TSUMO]
-                .set(self.hand.can_tsumo(self.turn)),
+                .set(hand.can_tsumo(self.hand[self.turn])),
                 legal_actions[self.turn],
             )
         )
@@ -63,9 +60,9 @@ class State:
                     lambda: legal_actions[player],
                     lambda: legal_actions[player]
                     .at[RON]
-                    .set(self.hand.can_ron(player, self.target))
+                    .set(hand.can_ron(self.hand[player], self.target))
                     .at[PON]
-                    .set(self.hand.can_pon(player, self.target)),
+                    .set(hand.can_pon(self.hand[player], self.target)),
                 )
             )
             legal_actions = legal_actions.at[player].set(
@@ -76,11 +73,11 @@ class State:
                     lambda: legal_actions[player],
                     lambda: legal_actions[player]
                     .at[CHI_R]
-                    .set(self.hand.can_chi(player, self.target, 0))
+                    .set(hand.can_chi(self.hand[player], self.target, 0))
                     .at[CHI_M]
-                    .set(self.hand.can_chi(player, self.target, 1))
+                    .set(hand.can_chi(self.hand[player], self.target, 1))
                     .at[CHI_L]
-                    .set(self.hand.can_chi(player, self.target, 2)),
+                    .set(hand.can_chi(self.hand[player], self.target, 2)),
                 )
             )
             legal_actions = legal_actions.at[(player, PASS)].set(
@@ -90,7 +87,7 @@ class State:
         return legal_actions
 
     def observe(self, player: int) -> Observation:
-        return Observation(self.hand.arr[player], self.target)
+        return Observation(self.hand[player], self.target)
 
     def _tree_flatten(self):
         children = (self.deck, self.hand, self.turn, self.target)
@@ -110,11 +107,11 @@ tree_util.register_pytree_node(
 @jit
 def init(key: jax.random.PRNGKey) -> State:
     _deck = deck.init(key)
-    _hand = Hand()
+    _hand = jnp.zeros((4, 34), dtype=jnp.uint8)
     for i in range(4):
         for _ in range(14 if i == 0 else 13):
             _deck, tile = deck.draw(_deck)
-            _hand = hand.add(_hand, i, tile)
+            _hand = _hand.at[i].set(hand.add(_hand[i], tile))
     return State(_deck, _hand, 0, -1)
 
 
@@ -150,7 +147,9 @@ def _step(
 
 @jit
 def _discard(state: State, tile: int) -> Tuple[State, jnp.ndarray, bool]:
-    state.hand = hand.sub(state.hand, state.turn, tile)
+    state.hand = state.hand.at[state.turn].set(
+        hand.sub(state.hand[state.turn], tile)
+    )
     state.target = tile
     return jax.lax.cond(
         jnp.any(state.legal_actions()),
@@ -172,7 +171,9 @@ def _draw(state: State) -> Tuple[State, jnp.ndarray, bool]:
     state.turn += 1
     state.turn %= 4
     state.deck, tile = deck.draw(state.deck)
-    state.hand = hand.add(state.hand, state.turn, tile)
+    state.hand = state.hand.at[state.turn].set(
+        hand.add(state.hand[state.turn], tile)
+    )
     return state, jnp.full(4, 0), False
 
 
@@ -188,7 +189,9 @@ def _ron(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
 
 @jit
 def _pon(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
-    state.hand = hand.pon(state.hand, player, state.target)
+    state.hand = state.hand.at[player].set(
+        hand.pon(state.hand[player], state.target)
+    )
     state.target = -1
     state.turn = player
     return state, jnp.full(4, 0), False
@@ -198,7 +201,9 @@ def _pon(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
 def _chi(
     state: State, player: int, pos: int
 ) -> Tuple[State, jnp.ndarray, bool]:
-    state.hand = hand.chi(state.hand, player, state.target, pos)
+    state.hand = state.hand.at[player].set(
+        hand.chi(state.hand[player], state.target, pos)
+    )
     state.target = -1
     state.turn = player
     return state, jnp.full(4, 0), False
@@ -211,66 +216,67 @@ def _tsumo(state: State) -> Tuple[State, jnp.ndarray, bool]:
 
 def test():
     state = init(jax.random.PRNGKey(seed=0))
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
 
     MANZU_6 = 5
-    state, done = step(state, jnp.array([MANZU_6, NONE, NONE, NONE]))
+    state, _, _ = step(state, jnp.array([MANZU_6, NONE, NONE, NONE]))
 
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
 
-    state, done = step(state, jnp.array([NONE, CHI_R, NONE, NONE]))
+    state, _, _ = step(state, jnp.array([NONE, CHI_R, NONE, NONE]))
 
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
 
     SOUZU_7 = 24
-    state, done = step(state, jnp.array([NONE, SOUZU_7, NONE, NONE]))
+    state, _, _ = step(state, jnp.array([NONE, SOUZU_7, NONE, NONE]))
 
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
 
-    state, done = step(state, jnp.array([NONE, NONE, NONE, PON]))
+    state, _, _ = step(state, jnp.array([NONE, NONE, NONE, PON]))
 
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
 
-    state, done = step(state, jnp.array([NONE, NONE, NONE, DRAGON_R]))
+    DRAGON_R = 33
+    state, _, _ = step(state, jnp.array([NONE, NONE, NONE, DRAGON_R]))
 
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
 
     MANZU_1 = 0
-    state, done = step(state, jnp.array([MANZU_1, NONE, NONE, NONE]))
+    state, _, _ = step(state, jnp.array([MANZU_1, NONE, NONE, NONE]))
 
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
 
-    state, done = step(state, jnp.array([NONE, PASS, NONE, NONE]))
+    state, _, _ = step(state, jnp.array([NONE, PASS, NONE, NONE]))
 
-    print(state.hand.arr)
+    print(state.hand)
     print(state.turn)
     print(state.target)
     print(state.legal_actions())
@@ -340,6 +346,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
 
 
 if __name__ == "__main__":
+    # test()
     for i in range(5):
         state = init(jax.random.PRNGKey(seed=i))
         done = False
@@ -350,6 +357,6 @@ if __name__ == "__main__":
             )
             state, reward, done = step(state, selected)
 
-        print("hand:", state.hand.arr)
+        print("hand:", state.hand)
         print("reward:", reward)
         print("-" * 30)
