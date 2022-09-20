@@ -8,6 +8,9 @@ import jax.numpy as jnp
 from deck import Deck
 from jax import jit, tree_util
 
+from shanten_tools import shanten
+
+
 RON = 34
 PON = 35
 CHI_R = 36  # 45[6]
@@ -281,9 +284,6 @@ def test():
     print(state.target)
     print(state.legal_actions())
     print("-" * 30)
-
-
-from shanten_tools import shanten
 
 
 def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
