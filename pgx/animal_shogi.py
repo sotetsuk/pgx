@@ -92,12 +92,12 @@ def step(
     # 合法手が存在しない場合、手番側の負けで終了
     if np.all(_legal_actions == 0):
         print("no legal actions.")
-        return s, another_color(s), True
+        return s, turn_to_reward(another_color(s)), True
     # actionが合法手でない場合、手番側の負けで終了
     _action = int_to_action(action, s)
     if _legal_actions[action_to_int(_action, s.turn)] == 0:
         print("an illegal action")
-        return s, another_color(s), True
+        return s, turn_to_reward(another_color(s)), True
     # actionが合法手の場合
     # 駒打ちの場合の操作
     if _action.is_drop:
@@ -116,7 +116,14 @@ def step(
         s.checking_piece[_action.to] = 1
     else:
         s.checking_piece = np.zeros(12, dtype=np.int32)
-    return s, 2, False
+    return s, 0, False
+
+
+def turn_to_reward(turn: int):
+    if turn == 0:
+        return 1
+    else:
+        return -1
 
 
 # dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
