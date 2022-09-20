@@ -11,15 +11,18 @@ def can_ron(hand: jnp.ndarray, tile: int) -> bool:
 
 @jit
 def can_tsumo(hand: jnp.ndarray) -> bool:
-    s = 0
+    heads = 0
+    valid = True
     for i in range(3):
-        code = 0
+        h = 0
         for j in range(9):
-            code = code * 5 + hand[9 * i + j]
-        s += AGARI[code]
+            h = h * 5 + hand[9 * i + j]
+        code = AGARI[h]
+        heads += code >> 1
+        valid &= code
 
     for i in range(27, 34):
-        s += jax.lax.switch(
+        code = jax.lax.switch(
             hand[i],
             [
                 lambda: 0,
@@ -29,8 +32,10 @@ def can_tsumo(hand: jnp.ndarray) -> bool:
                 lambda: 0,
             ]
         )
+        heads += code >> 1
+        valid &= code
 
-    return s == 9
+    return valid & (heads == 1)
 
 @jit
 def can_pon(hand: jnp.ndarray, tile: int) -> bool:
