@@ -81,6 +81,8 @@ def init() -> AnimalShogiState:
 
 
 def step(state: AnimalShogiState, action: AnimalShogiAction) -> Tuple[AnimalShogiState, int, bool]:
+    # state, 勝敗判定,終了判定を返す
+    # 勝敗判定は勝者側のturnを返す（決着がついていない・引き分けの場合は2を返す）
     s = copy.deepcopy(state)
     _legal_actions = legal_actions2(s)
     # 合法手が存在しない場合、手番側の負けで終了
@@ -248,7 +250,7 @@ def convert_piece(piece: int):
         return p
 
 
-#  駒打ちでない移動の処理 手番変更、盤面書き換えなし
+#  移動の処理
 def move(
     state: AnimalShogiState,
     action: AnimalShogiAction,
@@ -269,32 +271,12 @@ def move(
     return s
 
 
-#  駒打ちの処理 手番変更、盤面書き換えなし
+#  駒打ちの処理
 def drop(state: AnimalShogiState, action: AnimalShogiAction):
     s = copy.deepcopy(state)
     s.hand[action.piece - 1 - 2 * state.turn] -= 1
     s.board[action.piece][action.to] = 1
     s.board[0][action.to] = 0
-    return s
-
-
-# stateとactを受け取りis_dropによって操作を分ける
-# 手番、王手判定も更新。引数の盤面も書き換える
-def act(state: AnimalShogiState, action: AnimalShogiAction):
-    s = copy.deepcopy(state)
-    if action.is_drop:
-        s = update_legal_actions_drop(s, action)
-        s = drop(s, action)
-    else:
-        s = update_legal_actions_move(s, action)
-        s = move(s, action)
-    s.turn = another_color(s)
-    s.checked = is_check(s)
-    # 王手をかけている駒は直前に動かした駒
-    if s.checked:
-        s.checking_piece[action.to] = 1
-    else:
-        s.checking_piece = np.zeros(12, dtype=np.int32)
     return s
 
 
