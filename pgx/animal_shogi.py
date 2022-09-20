@@ -611,27 +611,27 @@ def legal_moves(state: AnimalShogiState, action_array: np.ndarray):
             piece2 = board[p]
             # ひよこが最奥までいった場合、成るactionも追加する
             if piece == 1 and p % 4 == 0:
-                m = AnimalShogiAction(0, piece, p, i, piece2, 1)
+                m = AnimalShogiAction(False, piece, p, i, piece2, True)
                 after = move(state, m)
                 if is_check(after):
                     continue
-                act = action_to_int(m, state.turn)
-                action_array[act] = 1
+                action = action_to_int(m, state.turn)
+                action_array[action] = 1
             elif piece == 6 and p % 4 == 3:
-                m = AnimalShogiAction(0, piece, p, i, piece2, 1)
+                m = AnimalShogiAction(False, piece, p, i, piece2, True)
                 after = move(state, m)
                 if is_check(after):
                     continue
-                act = action_to_int(m, state.turn)
-                action_array[act] = 1
-            m = AnimalShogiAction(0, piece, p, i, piece2, 0)
+                action = action_to_int(m, state.turn)
+                action_array[action] = 1
+            m = AnimalShogiAction(False, piece, p, i, piece2, False)
             # mを行った後の盤面（手番はそのまま）
             after = move(state, m)
             # mを行った後も自分の玉に王手がかかっていてはいけない
             if is_check(after):
                 continue
-            act = action_to_int(m, state.turn)
-            action_array[act] = 1
+            action = action_to_int(m, state.turn)
+            action_array[action] = 1
     return action_array
 
 
@@ -647,13 +647,13 @@ def legal_drop(state: AnimalShogiState, action_array: np.ndarray):
             # 駒がある場合は打てない
             if state.board[0][j] == 0:
                 continue
-            d = AnimalShogiAction(1, piece, j)
+            d = AnimalShogiAction(True, piece, j)
             s = drop(state, d)
             # 自玉が取られるような手は打てない
             if is_check(s):
                 continue
-            act = action_to_int(d, state.turn)
-            action_array[act] = 1
+            action = action_to_int(d, state.turn)
+            action_array[action] = 1
     return action_array
 
 
