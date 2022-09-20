@@ -12,7 +12,7 @@ def can_ron(hand: jnp.ndarray, tile: int) -> bool:
 @jit
 def can_tsumo(hand: jnp.ndarray) -> bool:
     heads = 0
-    valid = True
+    valid = 1
     for i in range(3):
         h = 0
         for j in range(9):
@@ -27,7 +27,7 @@ def can_tsumo(hand: jnp.ndarray) -> bool:
             [
                 lambda: 0,
                 lambda: 0,
-                lambda: 5,
+                lambda: 2,
                 lambda: 1,
                 lambda: 0,
             ]
