@@ -88,7 +88,7 @@ def step(
     # state, 勝敗判定,終了判定を返す
     # 勝敗判定は勝者側のturnを返す（決着がついていない・引き分けの場合は2を返す）
     s = copy.deepcopy(state)
-    _legal_actions = legal_actions2(s)
+    _legal_actions = legal_actions(s)
     # 合法手が存在しない場合、手番側の負けで終了
     if np.all(_legal_actions == 0):
         print("no legal actions.")
@@ -119,7 +119,7 @@ def step(
     return s, 0, False
 
 
-def turn_to_reward(turn: int):
+def turn_to_reward(turn: int) -> int:
     if turn == 0:
         return 1
     else:
@@ -127,12 +127,12 @@ def turn_to_reward(turn: int):
 
 
 # dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
-def dlshogi_action(direction: int, to: int):
+def dlshogi_action(direction: int, to: int) -> int:
     return direction * 12 + to
 
 
 # fromの座標とtoの座標からdirを生成
-def point_to_direction(_from: int, to: int, promote: bool, turn: int):
+def point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
     direction = -1
     dis = to - _from
     # 後手番の動きは反転させる
@@ -162,7 +162,7 @@ def point_to_direction(_from: int, to: int, promote: bool, turn: int):
 
 
 # 打った駒の種類をdirに変換
-def hand_piece_to_dir(piece: int):
+def hand_piece_to_dir(piece: int) -> int:
     # 移動のdirはPROMOTE_UPの8が最大なので9以降に配置
     # 9: 先手ヒヨコ 10: 先手キリン... 14: 後手ゾウ　に対応させる
     if piece <= 5:
@@ -172,7 +172,7 @@ def hand_piece_to_dir(piece: int):
 
 
 # AnimalShogiActionをdlshogiのint型actionに変換
-def action_to_int(action: AnimalShogiAction, turn: int):
+def action_to_int(action: AnimalShogiAction, turn: int) -> int:
     if action.is_drop:
         return dlshogi_action(hand_piece_to_dir(action.piece), action.to)
     else:
@@ -185,14 +185,14 @@ def action_to_int(action: AnimalShogiAction, turn: int):
 
 
 # dlshogiのint型actionをdirectionとtoに分解
-def separate_int(action: int):
+def separate_int(action: int) -> Tuple[int, int]:
     # direction, to の順番
     return action // 12, action % 12
 
 
 # directionからfromがtoからどれだけ離れてるかと成りを含む移動かを得る
 # 手番の情報が必要
-def direction_to_from(direction: int, to: int, turn: int):
+def direction_to_from(direction: int, to: int, turn: int) -> Tuple[int, bool]:
     dif = 0
     if direction == 0 or direction == 8:
         dif = -1
@@ -222,14 +222,14 @@ def direction_to_from(direction: int, to: int, turn: int):
             return to + dif, False
 
 
-def direction_to_hand_piece(direction: int):
+def direction_to_hand_piece(direction: int) -> int:
     if direction <= 11:
         return direction - 8
     else:
         return direction - 6
 
 
-def int_to_action(action: int, state: AnimalShogiState):
+def int_to_action(action: int, state: AnimalShogiState) -> AnimalShogiAction:
     direction, to = separate_int(action)
     if direction <= 8:
         # 駒の移動
@@ -244,12 +244,12 @@ def int_to_action(action: int, state: AnimalShogiState):
 
 
 # 手番側でない色を返す
-def another_color(state: AnimalShogiState):
+def another_color(state: AnimalShogiState) -> int:
     return (state.turn + 1) % 2
 
 
 # 相手の駒を同じ種類の自分の駒に変換する
-def convert_piece(piece: int):
+def convert_piece(piece: int) -> int:
     p = (piece + 5) % 10
     if p == 0:
         return 10
@@ -259,7 +259,7 @@ def convert_piece(piece: int):
 
 # 駒から持ち駒への変換
 # 先手ひよこが0、後手ぞうが5
-def piece_to_hand(piece: int):
+def piece_to_hand(piece: int) -> int:
     if piece % 5 == 0:
         p = piece - 4
     else:
@@ -274,7 +274,7 @@ def piece_to_hand(piece: int):
 def move(
     state: AnimalShogiState,
     action: AnimalShogiAction,
-):
+) -> AnimalShogiState:
     s = copy.deepcopy(state)
     s.board[action.piece][action.from_] = 0
     s.board[0][action.from_] = 1
@@ -289,7 +289,7 @@ def move(
 
 
 #  駒打ちの処理
-def drop(state: AnimalShogiState, action: AnimalShogiAction):
+def drop(state: AnimalShogiState, action: AnimalShogiAction) -> AnimalShogiState:
     s = copy.deepcopy(state)
     s.hand[piece_to_hand(action.piece)] -= 1
     s.board[action.piece][action.to] = 1
@@ -298,12 +298,12 @@ def drop(state: AnimalShogiState, action: AnimalShogiAction):
 
 
 #  ある座標に存在する駒種を返す
-def piece_type(state: AnimalShogiState, point: int):
+def piece_type(state: AnimalShogiState, point: int) -> int:
     return state.board[:, point].argmax()
 
 
 # ある駒の持ち主を返す
-def owner(piece: int):
+def owner(piece: int) -> int:
     if piece == 0:
         return 2
     return (piece - 1) // 5
@@ -311,7 +311,7 @@ def owner(piece: int):
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
-def board_status(state: AnimalShogiState):
+def board_status(state: AnimalShogiState) -> np.ndarray:
     board = np.zeros(12, dtype=np.int32)
     for i in range(12):
         board[i] = piece_type(state, i)
@@ -319,7 +319,7 @@ def board_status(state: AnimalShogiState):
 
 
 # 駒の持ち主の判定
-def pieces_owner(state: AnimalShogiState):
+def pieces_owner(state: AnimalShogiState) -> np.ndarray:
     board = np.zeros(12, dtype=np.int32)
     for i in range(12):
         piece = piece_type(state, i)
@@ -332,7 +332,7 @@ def pieces_owner(state: AnimalShogiState):
 
 #  上下左右の辺に接しているかどうか
 #  接している場合は後の関数で行ける場所を制限する
-def is_side(point: int):
+def is_side(point: int) -> Tuple[bool, bool, bool, bool]:
     is_up = point % 4 == 0
     is_down = point % 4 == 3
     is_left = point >= 8
@@ -340,13 +340,13 @@ def is_side(point: int):
     return is_up, is_down, is_left, is_right
 
 
-# point(0~11)を座標(00~23)に変換
-def convert_point(point: int):
+# point(0~11)を座標((0, 0)~(2, 3))に変換
+def convert_point(point: int) -> Tuple[int, int]:
     return point // 4, point % 4
 
 
 # はみ出す部分をカットする
-def cut_outside(array: np.ndarray, point: int):
+def cut_outside(array: np.ndarray, point: int) -> np.ndarray:
     new_array = copy.deepcopy(array)
     u, d, l, r = is_side(point)
     if u:
@@ -360,7 +360,7 @@ def cut_outside(array: np.ndarray, point: int):
     return new_array
 
 
-def return_board(array: np.ndarray, point: int):
+def return_board(array: np.ndarray, point: int) -> np.ndarray:
     new_array = copy.deepcopy(array)
     y, t = convert_point(point)
     new_array = cut_outside(new_array, point)
@@ -368,36 +368,36 @@ def return_board(array: np.ndarray, point: int):
 
 
 # 各駒の動き
-def black_pawn_move(point: int):
+def black_pawn_move(point: int) -> np.ndarray:
     return return_board(np.copy(BLACK_PAWN_MOVE), point)
 
 
-def white_pawn_move(point: int):
+def white_pawn_move(point: int) -> np.ndarray:
     return return_board(np.copy(WHITE_PAWN_MOVE), point)
 
 
-def black_gold_move(point: int):
+def black_gold_move(point: int) -> np.ndarray:
     return return_board(np.copy(BLACK_GOLD_MOVE), point)
 
 
-def white_gold_move(point: int):
+def white_gold_move(point: int) -> np.ndarray:
     return return_board(np.copy(WHITE_GOLD_MOVE), point)
 
 
-def rook_move(point: int):
+def rook_move(point: int) -> np.ndarray:
     return return_board(np.copy(ROOK_MOVE), point)
 
 
-def bishop_move(point: int):
+def bishop_move(point: int) -> np.ndarray:
     return return_board(np.copy(BISHOP_MOVE), point)
 
 
-def king_move(point: int):
+def king_move(point: int) -> np.ndarray:
     return return_board(np.copy(KING_MOVE), point)
 
 
 #  座標と駒の種類から到達できる座標を列挙する関数
-def point_moves(piece: int, point: int):
+def point_moves(piece: int, point: int) -> np.ndarray:
     if piece == 1:
         return black_pawn_move(point)
     if piece == 6:
@@ -415,7 +415,7 @@ def point_moves(piece: int, point: int):
 
 
 # 利きの判定
-def effected(state: AnimalShogiState, turn: int):
+def effected(state: AnimalShogiState, turn: int) -> np.ndarray:
     all_effect = np.zeros(12)
     board = board_status(state)
     piece_owner = pieces_owner(state)
@@ -430,14 +430,14 @@ def effected(state: AnimalShogiState, turn: int):
 
 
 # 王手の判定(turn側の王に王手がかかっているかを判定)
-def is_check(state: AnimalShogiState):
+def is_check(state: AnimalShogiState) -> bool:
     effects = effected(state, another_color(state))
     king_location = state.board[4 + 5 * state.turn, :].argmax()
     return effects[king_location] != 0
 
 
 # 成る動きが合法かどうかの判定
-def can_promote(to: int, piece: int):
+def can_promote(to: int, piece: int) -> bool:
     if piece == 1 and to % 4 == 0:
         return True
     if piece == 6 and to % 4 == 3:
@@ -446,7 +446,7 @@ def can_promote(to: int, piece: int):
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
-def create_actions(_from: int, piece: int):
+def create_actions(_from: int, piece: int) -> np.ndarray:
     turn = owner(piece)
     actions = np.zeros(180, dtype=np.int32)
     motion = point_moves(piece, _from).reshape(12)
@@ -464,7 +464,7 @@ def create_actions(_from: int, piece: int):
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
-def add_actions(_from: int, piece: int, array: np.ndarray):
+def add_actions(_from: int, piece: int, array: np.ndarray) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = create_actions(_from, piece)
     for i in range(180):
@@ -474,7 +474,7 @@ def add_actions(_from: int, piece: int, array: np.ndarray):
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
-def break_actions(_from: int, piece: int, array: np.ndarray):
+def break_actions(_from: int, piece: int, array: np.ndarray) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = create_actions(_from, piece)
     for i in range(180):
@@ -484,7 +484,7 @@ def break_actions(_from: int, piece: int, array: np.ndarray):
 
 
 # 駒打ちのactionを追加する
-def add_drop(piece: int, array: np.ndarray):
+def add_drop(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = copy.deepcopy(array)
     direction = hand_piece_to_dir(piece)
     for i in range(12):
@@ -494,7 +494,7 @@ def add_drop(piece: int, array: np.ndarray):
 
 
 # 駒打ちのactionを消去する
-def break_drop(piece: int, array: np.ndarray):
+def break_drop(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = copy.deepcopy(array)
     direction = hand_piece_to_dir(piece)
     for i in range(12):
@@ -505,7 +505,7 @@ def break_drop(piece: int, array: np.ndarray):
 
 # stateからblack,white両方のlegal_actionsを生成する
 # 普段は必要ないが途中の盤面から実行するときなどに必要
-def create_legal_actions(state: AnimalShogiState):
+def create_legal_actions(state: AnimalShogiState) -> AnimalShogiState:
     s = copy.deepcopy(state)
     bs = board_status(s)
     # 移動の追加
@@ -533,7 +533,7 @@ def create_legal_actions(state: AnimalShogiState):
 # 駒の移動によるlegal_actionsの更新
 def update_legal_actions_move(
     state: AnimalShogiState, action: AnimalShogiAction
-):
+) -> AnimalShogiState:
     s = copy.deepcopy(state)
     if s.turn == 0:
         player_actions = s.legal_actions_black
@@ -572,7 +572,7 @@ def update_legal_actions_move(
 # 駒打ちによるlegal_actionsの更新
 def update_legal_actions_drop(
     state: AnimalShogiState, action: AnimalShogiAction
-):
+) -> AnimalShogiState:
     s = copy.deepcopy(state)
     if s.turn == 0:
         player_actions = s.legal_actions_black
@@ -593,7 +593,7 @@ def update_legal_actions_drop(
 # 自殺手を除く
 def break_suicide(
     turn: int, king_sq: int, effects: np.ndarray, array: np.ndarray
-):
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     moves = king_move(king_sq).reshape(12)
     for i in range(12):
@@ -610,7 +610,7 @@ def break_suicide(
 # 王手放置を除く
 def break_leave_check(
     turn: int, king_sq: int, check_piece: np.ndarray, array: np.ndarray
-):
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     moves = king_move(king_sq).reshape(12)
     for i in range(12):
@@ -632,7 +632,7 @@ def break_leave_check(
 
 
 # boardのlegal_actionsを利用して合法手を生成する
-def legal_actions(state: AnimalShogiState):
+def legal_actions(state: AnimalShogiState) -> np.ndarray:
     if state.turn == 0:
         action_array = copy.deepcopy(state.legal_actions_black)
     else:
