@@ -19,7 +19,7 @@ TEST_BOARD = AnimalShogiState(
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     ]),
     hand=np.array([1, 2, 1, 0, 0, 0]),
-    checked=True,
+    is_check=True,
     checking_piece=np.array([
         0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0
     ])

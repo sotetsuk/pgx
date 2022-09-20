@@ -229,7 +229,9 @@ def _direction_to_hand(direction: int) -> int:
         return direction - 6
 
 
-def _dlaction_to_action(action: int, state: AnimalShogiState) -> AnimalShogiAction:
+def _dlaction_to_action(
+    action: int, state: AnimalShogiState
+) -> AnimalShogiAction:
     direction, to = _separate_dlaction(action)
     if direction <= 8:
         # 駒の移動
@@ -289,7 +291,9 @@ def _move(
 
 
 #  駒打ちの処理
-def _drop(state: AnimalShogiState, action: AnimalShogiAction) -> AnimalShogiState:
+def _drop(
+    state: AnimalShogiState, action: AnimalShogiAction
+) -> AnimalShogiState:
     s = copy.deepcopy(state)
     s.hand[_piece_to_hand(action.piece)] -= 1
     s.board[action.piece][action.to] = 1
@@ -474,7 +478,9 @@ def _add_move_actions(_from: int, piece: int, array: np.ndarray) -> np.ndarray:
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
-def _filter_move_actions(_from: int, piece: int, array: np.ndarray) -> np.ndarray:
+def _filter_move_actions(
+    _from: int, piece: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
@@ -524,9 +530,13 @@ def _init_legal_actions(state: AnimalShogiState) -> AnimalShogiState:
     # 駒打ちの追加
     for i in range(3):
         if s.hand[i] != 0:
-            s.legal_actions_black = _add_drop_actions(1 + i, s.legal_actions_black)
+            s.legal_actions_black = _add_drop_actions(
+                1 + i, s.legal_actions_black
+            )
         if s.hand[i + 3] != 0:
-            s.legal_actions_white = _add_drop_actions(6 + i, s.legal_actions_white)
+            s.legal_actions_white = _add_drop_actions(
+                6 + i, s.legal_actions_white
+            )
     return s
 
 
@@ -579,10 +589,14 @@ def _update_legal_drop_actions(
     else:
         player_actions = s.legal_actions_white
     # 移動後の位置からの移動のフラグを立てる
-    new_player_actions = _add_move_actions(action.to, action.piece, player_actions)
+    new_player_actions = _add_move_actions(
+        action.to, action.piece, player_actions
+    )
     # 持ち駒がもうない場合、その駒を打つフラグを折る
     if s.hand[_piece_to_hand(action.piece)] == 1:
-        new_player_actions = _filter_drop_actions(action.piece, new_player_actions)
+        new_player_actions = _filter_drop_actions(
+            action.piece, new_player_actions
+        )
     if s.turn == 0:
         s.legal_actions_black = new_player_actions
     else:
@@ -656,7 +670,9 @@ def _legal_actions(state: AnimalShogiState) -> np.ndarray:
                 action_array[j * 12 + i] = 0
     # 自殺手を除く
     effects = _effected_positions(state, _another_color(state))
-    action_array = _filter_suicide_actions(state.turn, king_sq, effects, action_array)
+    action_array = _filter_suicide_actions(
+        state.turn, king_sq, effects, action_array
+    )
     # その他の反則手を除く
     # どうぶつ将棋の場合はなし
     return action_array
