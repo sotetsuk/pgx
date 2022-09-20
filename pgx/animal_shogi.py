@@ -419,7 +419,7 @@ def _point_moves(piece: int, point: int) -> np.ndarray:
 
 
 # 利きの判定
-def effected_positions(state: AnimalShogiState, turn: int) -> np.ndarray:
+def _effected_positions(state: AnimalShogiState, turn: int) -> np.ndarray:
     all_effect = np.zeros(12)
     board = _board_status(state)
     piece_owner = _pieces_owner(state)
@@ -435,7 +435,7 @@ def effected_positions(state: AnimalShogiState, turn: int) -> np.ndarray:
 
 # 王手の判定(turn側の王に王手がかかっているかを判定)
 def _is_check(state: AnimalShogiState) -> bool:
-    effects = effected_positions(state, _another_color(state))
+    effects = _effected_positions(state, _another_color(state))
     king_location = state.board[4 + 5 * state.turn, :].argmax()
     return effects[king_location] != 0
 
@@ -653,7 +653,7 @@ def _legal_actions(state: AnimalShogiState) -> np.ndarray:
         action_array = copy.deepcopy(state.legal_actions_white)
     king_sq = state.board[4 + 5 * state.turn].argmax()
     # 王手放置を除く
-    if state.checked:
+    if state.is_check:
         action_array = _filter_leave_check_actions(
             state.turn, king_sq, state.checking_piece, action_array
         )
