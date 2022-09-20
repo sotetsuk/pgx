@@ -309,7 +309,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
 
     if legal_actions[PON]:
         s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
-        if s <= shanten(obs.hand):
+        if s < shanten(obs.hand):
             return PON
 
     if legal_actions[CHI_R]:
@@ -319,7 +319,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .at[obs.target - 1]
             .set(obs.hand[obs.target - 1] - 1)
         )
-        if s <= shanten(obs.hand):
+        if s < shanten(obs.hand):
             return CHI_R
 
     if legal_actions[CHI_M]:
@@ -329,7 +329,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .at[obs.target + 1]
             .set(obs.hand[obs.target + 1] - 1)
         )
-        if s <= shanten(obs.hand):
+        if s < shanten(obs.hand):
             return CHI_M
 
     if legal_actions[CHI_L]:
@@ -339,7 +339,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .at[obs.target + 2]
             .set(obs.hand[obs.target + 2] - 1)
         )
-        if s <= shanten(obs.hand):
+        if s < shanten(obs.hand):
             return CHI_L
 
     return PASS

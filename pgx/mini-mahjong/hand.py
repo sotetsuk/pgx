@@ -4,7 +4,6 @@ from jax import jit
 
 from agari import AGARI
 
-
 @jit
 def can_ron(hand: jnp.ndarray, tile: int) -> bool:
     return can_tsumo(hand.at[tile].set(hand[tile] + 1))
@@ -12,20 +11,20 @@ def can_ron(hand: jnp.ndarray, tile: int) -> bool:
 @jit
 def can_tsumo(hand: jnp.ndarray) -> bool:
     heads = 0
-    valid = 1
+    valid = True
     for i in range(3):
         h = 0
         for j in range(9):
-            h = h * 5 + hand[9 * i + j]
+            h = h * 5 + hand[9 * i + j].astype(int)
         code = AGARI[h]
         heads += code >> 1
-        valid &= code
+        valid &= code != 0
 
     for i in range(27, 34):
         code = jax.lax.switch(
             hand[i],
             [
-                lambda: 0,
+                lambda: 1,
                 lambda: 0,
                 lambda: 2,
                 lambda: 1,
@@ -33,7 +32,7 @@ def can_tsumo(hand: jnp.ndarray) -> bool:
             ]
         )
         heads += code >> 1
-        valid &= code
+        valid &= code != 0
 
     return valid & (heads == 1)
 
