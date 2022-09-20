@@ -257,6 +257,19 @@ def convert_piece(piece: int):
         return p
 
 
+# 駒から持ち駒への変換
+# 先手ひよこが0、後手ぞうが5
+def piece_to_hand(piece: int):
+    if piece % 5 == 0:
+        p = piece - 4
+    else:
+        p = piece
+    if p < 6:
+        return p - 1
+    else:
+        return p - 3
+
+
 #  移動の処理
 def move(
     state: AnimalShogiState,
@@ -271,17 +284,14 @@ def move(
     else:
         s.board[action.piece][action.to] = 1
     if action.captured != 0:
-        if s.turn == 0:
-            s.hand[(action.captured - 6) % 4] += 1
-        else:
-            s.hand[action.captured % 4 + 2] += 1
+        s.hand[piece_to_hand(convert_piece(action.captured))] += 1
     return s
 
 
 #  駒打ちの処理
 def drop(state: AnimalShogiState, action: AnimalShogiAction):
     s = copy.deepcopy(state)
-    s.hand[action.piece - 1 - 2 * state.turn] -= 1
+    s.hand[piece_to_hand(action.piece)] -= 1
     s.board[action.piece][action.to] = 1
     s.board[0][action.to] = 0
     return s
@@ -428,7 +438,7 @@ def is_check(state: AnimalShogiState):
 
 # 成る動きが合法かどうかの判定
 def can_promote(to: int, piece: int):
-    if piece == 1 and to & 4 == 0:
+    if piece == 1 and to % 4 == 0:
         return True
     if piece == 6 and to % 4 == 3:
         return True
@@ -549,9 +559,7 @@ def update_legal_actions_move(
         # にわとりの場合ひよこに変換
         if captured % 5 == 0:
             captured -= 4
-        # 持ち駒の種類が増えた場合、駒打ちのactionを追加する
-        if s.hand[captured - 1 - 2 * s.turn] == 0:
-            new_player_actions = add_drop(captured, new_player_actions)
+        new_player_actions = add_drop(captured, new_player_actions)
     if s.turn == 0:
         s.legal_actions_black = new_player_actions
         s.legal_actions_white = new_enemy_actions
@@ -573,7 +581,7 @@ def update_legal_actions_drop(
     # 移動後の位置からの移動のフラグを立てる
     new_player_actions = add_actions(action.to, action.piece, player_actions)
     # 持ち駒がもうない場合、その駒を打つフラグを折る
-    if s.hand[action.piece - 1 - 2 * s.turn] == 1:
+    if s.hand[piece_to_hand(action.piece)] == 1:
         new_player_actions = break_drop(action.piece, new_player_actions)
     if s.turn == 0:
         s.legal_actions_black = new_player_actions

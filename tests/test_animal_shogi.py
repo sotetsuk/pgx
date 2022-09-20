@@ -297,6 +297,7 @@ def test_update_legal_actions_move():
     b1[43] = 1
     b1[47] = 1
     b1[51] = 1
+    b1[100] = 1
     for i in range(12):
         b1[108 + i] = 1
     w1[9] = 1
