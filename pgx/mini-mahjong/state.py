@@ -1,24 +1,14 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-import deck
-import hand
 import jax
 import jax.numpy as jnp
-from deck import Deck
 from jax import jit, tree_util
 
-from shanten_tools import shanten
-
-
-RON = 34
-PON = 35
-CHI_R = 36  # 45[6]
-CHI_M = 37  # 4[5]6
-CHI_L = 38  # [4]56
-PASS = 39
-TSUMO = 40
-NONE = 41
+import agent
+import deck
+import hand
+from actions import RON, PON, CHI_R, CHI_M, CHI_L, PASS, TSUMO, NONE
 
 
 @dataclass
@@ -29,7 +19,7 @@ class Observation:
 
 @dataclass
 class State:
-    deck: Deck
+    deck: deck.Deck
     hand: jnp.ndarray
     turn: int
     target: int
@@ -286,65 +276,6 @@ def test():
     print("-" * 30)
 
 
-def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
-    if not jnp.any(legal_actions):
-        return NONE
-
-    if legal_actions[TSUMO]:
-        return TSUMO
-    if legal_actions[RON]:
-        return RON
-
-    if jnp.sum(obs.hand) % 3 == 2:
-        min_shanten = 999
-        discard = -1
-        for tile in range(34):
-            if not legal_actions[tile]:
-                continue
-            s = shanten(obs.hand.at[tile].set(obs.hand[tile] - 1))
-            if s < min_shanten:
-                s = min_shanten
-                discard = tile
-        return discard
-
-    if legal_actions[PON]:
-        s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
-        if s < shanten(obs.hand):
-            return PON
-
-    if legal_actions[CHI_R]:
-        s = shanten(
-            obs.hand.at[obs.target - 2]
-            .set(obs.hand[obs.target - 2] - 1)
-            .at[obs.target - 1]
-            .set(obs.hand[obs.target - 1] - 1)
-        )
-        if s < shanten(obs.hand):
-            return CHI_R
-
-    if legal_actions[CHI_M]:
-        s = shanten(
-            obs.hand.at[obs.target - 1]
-            .set(obs.hand[obs.target - 1] - 1)
-            .at[obs.target + 1]
-            .set(obs.hand[obs.target + 1] - 1)
-        )
-        if s < shanten(obs.hand):
-            return CHI_M
-
-    if legal_actions[CHI_L]:
-        s = shanten(
-            obs.hand.at[obs.target + 1]
-            .set(obs.hand[obs.target + 1] - 1)
-            .at[obs.target + 2]
-            .set(obs.hand[obs.target + 2] - 1)
-        )
-        if s < shanten(obs.hand):
-            return CHI_L
-
-    return PASS
-
-
 if __name__ == "__main__":
     # test()
     for i in range(5):
@@ -353,7 +284,7 @@ if __name__ == "__main__":
         while not done:
             legal_actions = state.legal_actions()
             selected = jnp.array(
-                [act(legal_actions[i], state.observe(i)) for i in range(4)]
+                [agent.act(legal_actions[i], state.observe(i)) for i in range(4)]
             )
             state, reward, done = step(state, selected)
 
