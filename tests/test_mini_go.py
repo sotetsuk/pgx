@@ -1,104 +1,6 @@
 import numpy as np
 
-from pgx.mini_go import (
-    BLACK,
-    WHITE,
-    MiniGoState,
-    _is_surrounded,
-    _is_surrounded_v2,
-    init,
-    legal_actions,
-    step,
-    to_init_board,
-)
-
-
-def test_is_surrounded():
-    init_board = to_init_board("+@+++@O@++@O@+++@+++@++++")
-    state = MiniGoState(board=init_board)
-    """
-      [ 0 1 2 3 4 ]
-    [0] + @ + + +
-    [1] @ O @ + +
-    [2] @ O @ + +
-    [3] + @ + + +
-    [4] @ + + + +
-    """
-
-    b = _is_surrounded(
-        state.board,
-        1,
-        1,
-        WHITE,
-    )
-    assert b
-
-    b = _is_surrounded(
-        state.board,
-        4,
-        0,
-        BLACK,
-    )
-    assert not b
-
-    b = _is_surrounded_v2(
-        state.board,
-        1,
-        1,
-        WHITE,
-    )
-    assert b
-
-    b = _is_surrounded_v2(
-        state.board,
-        4,
-        0,
-        BLACK,
-    )
-    assert not b
-
-    init_board = to_init_board("++@OO@@@O@@OOOO@O@OO@OOOO")
-    state = MiniGoState(board=init_board)
-    """
-      [ 0 1 2 3 4 ]
-    [0] + + @ O O
-    [1] @ @ @ O @
-    [2] @ O O O O
-    [3] @ O @ O O
-    [4] @ O O O O
-    """
-
-    b = _is_surrounded(
-        state.board,
-        0,
-        4,
-        WHITE,
-    )
-    assert b
-
-    b = _is_surrounded(
-        state.board,
-        4,
-        1,
-        WHITE,
-    )
-    assert b
-
-    b = _is_surrounded_v2(
-        state.board,
-        0,
-        4,
-        WHITE,
-    )
-    assert b
-
-    b = _is_surrounded_v2(
-        state.board,
-        4,
-        1,
-        WHITE,
-    )
-    assert b
+from pgx.mini_go import get_board, init, legal_actions, step
 
 
 def test_end_by_pass():
@@ -107,7 +9,7 @@ def test_end_by_pass():
     state, _, done = step(state=state, action=None)
     assert state.passed[0]
     assert not done
-    state, _, done = step(state=state, action=np.array([0, 1]))
+    state, _, done = step(state=state, action=0)
     assert not state.passed[0]
     assert not done
     state, _, done = step(state=state, action=None)
@@ -118,67 +20,33 @@ def test_end_by_pass():
     assert done
 
 
-def test_remove():
-    init_board = to_init_board("++@OO@@@OO@OOOO@O+OO@OOOO")
-    state = MiniGoState(board=init_board)
-    """
-      [ 0 1 2 3 4 ]
-    [0] + + @ O O
-    [1] @ @ @ O O
-    [2] @ O O O O
-    [3] @ O + O O
-    [4] @ O O O O
-    """
-
-    state, _, _ = step(state=state, action=np.array([3, 2]))
-    expected_board = np.array(
-        [
-            [2, 2, 0, 2, 2],
-            [0, 0, 0, 2, 2],
-            [0, 2, 2, 2, 2],
-            [0, 2, 0, 2, 2],
-            [0, 2, 2, 2, 2],
-        ]
-    )
-    """
-      [ 0 1 2 3 4 ]
-    [0] + + @ + +
-    [1] @ @ @ + +
-    [2] @ + + + +
-    [3] @ + @ + +
-    [4] @ + + + +
-    """
-
-    assert (state.board == expected_board).all()
-
-
 def test_step():
     """
     https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
     """
     state = init()
-    state, _, _ = step(state=state, action=np.array([2, 2]))  # BLACK
-    state, _, _ = step(state=state, action=np.array([2, 1]))  # WHITE
-    state, _, _ = step(state=state, action=np.array([3, 2]))
-    state, _, _ = step(state=state, action=np.array([1, 2]))
-    state, _, _ = step(state=state, action=np.array([1, 3]))
-    state, _, _ = step(state=state, action=np.array([0, 1]))
-    state, _, _ = step(state=state, action=np.array([0, 3]))
-    state, _, _ = step(state=state, action=np.array([3, 1]))
-    state, _, _ = step(state=state, action=np.array([4, 1]))
-    state, _, _ = step(state=state, action=np.array([0, 2]))
-    state, _, _ = step(state=state, action=np.array([2, 0]))
-    state, _, _ = step(state=state, action=np.array([1, 0]))
-    state, _, _ = step(state=state, action=np.array([2, 4]))
-    state, _, _ = step(state=state, action=np.array([3, 0]))
-    state, _, _ = step(state=state, action=np.array([4, 3]))
-    state, _, _ = step(state=state, action=np.array([4, 0]))
+    state, _, _ = step(state=state, action=12)  # BLACK
+    state, _, _ = step(state=state, action=11)  # WHITE
+    state, _, _ = step(state=state, action=17)
+    state, _, _ = step(state=state, action=7)
+    state, _, _ = step(state=state, action=8)
+    state, _, _ = step(state=state, action=1)
+    state, _, _ = step(state=state, action=3)
+    state, _, _ = step(state=state, action=16)
+    state, _, _ = step(state=state, action=21)
+    state, _, _ = step(state=state, action=2)
+    state, _, _ = step(state=state, action=10)
+    state, _, _ = step(state=state, action=5)
+    state, _, _ = step(state=state, action=14)
+    state, _, _ = step(state=state, action=15)
+    state, _, _ = step(state=state, action=23)
+    state, _, _ = step(state=state, action=20)
     state, _, _ = step(state=state, action=None)
-    state, _, _ = step(state=state, action=np.array([4, 2]))
-    state, _, _ = step(state=state, action=np.array([3, 4]))
-    state, _, _ = step(state=state, action=np.array([4, 1]))
+    state, _, _ = step(state=state, action=22)
+    state, _, _ = step(state=state, action=19)
+    state, _, _ = step(state=state, action=21)
     state, _, _ = step(state=state, action=None)
-    state, _, done = step(state=state, action=None)
+    state, r, done = step(state=state, action=None)
 
     expected_board = np.array(
         [
@@ -197,79 +65,33 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (state.board == expected_board).all()
+    assert (get_board(state) == expected_board.ravel()).all()
     assert done
-
-
-def test_legal_actions():
-    init_board = to_init_board("++@OO@@@O+@OOOO@O@++@++++")
-    state = MiniGoState(board=init_board)
-    """
-    turn=0なので黒番
-
-      [ 0 1 2 3 4 ]
-    [0] + + @ O O
-    [1] @ @ @ O +
-    [2] @ O O O O
-    [3] @ O @ + +
-    [4] @ + + + +
-    """
-
-    expected = np.array(
-        [
-            [True, True, False, False, False],
-            [False, False, False, False, False],
-            [False, False, False, False, False],
-            [False, False, False, True, True],
-            [False, True, True, True, True],
-        ],
-        dtype=bool,
-    )
-    assert (legal_actions(state) == expected).all()
-
-    init_board = to_init_board("OOOOOOOOOOOOOOOOOOOOOOOOO")
-    state = MiniGoState(board=init_board)
-
-    assert True not in legal_actions(state)
+    assert (r == np.array([0, 0])).all()
 
 
 def test_kou():
-    init_board = to_init_board("++O+++O+O++@O@+++@+++++++")
-    state = MiniGoState(board=init_board)
-    """
-      [ 0 1 2 3 4 ]
-    [0] + + O + +
-    [1] + O + O +
-    [2] + @ O @ +
-    [3] + + @ + +
-    [4] + + + + +
-    """
+    state = init()
+    state, _, _ = step(state=state, action=2)  # BLACK
+    state, _, _ = step(state=state, action=17)  # WHITE
+    state, _, _ = step(state=state, action=6)  # BLACK
+    state, _, _ = step(state=state, action=13)  # WHITE
+    state, _, _ = step(state=state, action=8)  # BLACK
+    state, _, _ = step(state=state, action=11)  # WHITE
+    state, _, _ = step(state=state, action=12)  # BLACK
+    state, _, _ = step(state=state, action=7)  # WHITE
 
-    state, _, _ = step(state=state, action=np.array([1, 2]))
-
-    """
-      [ 0 1 2 3 4 ]
-    [0] + + O + +
-    [1] + O @ O +
-    [2] + @ + @ +
-    [3] + + @ + +
-    [4] + + + + +
-
-    """
-    expected = np.array(
-        [
-            [True, True, False, True, True],
-            [True, False, False, False, True],
-            [True, False, False, False, True],
-            [True, True, False, True, True],
-            [True, True, True, True, True],
-        ]
-    )
     assert (state.kou == np.array([2, 2])).all()
-    assert (expected == legal_actions(state)).all()
 
-    _, _, done = step(state=state, action=np.array([2, 2]))
-    assert done  # ルール違反により終局
+    _, r, done = step(state=state, action=12)  # BLACK
+    # ルール違反により黒の負け
+    assert done
+    assert (r == np.array([-1, 1])).all()
+
+    state, _, done = step(state=state, action=0)  # BLACK
+    # 回避した場合
+    assert not done
+    assert (state.kou == np.array([-1, -1])).all()
 
 
 def test_random_play():
@@ -277,60 +99,12 @@ def test_random_play():
     done = False
     while not done:
         actions = np.where(legal_actions(state))
-        if actions[0].size == 0:
+        if len(actions[0]) == 0:
             a = None
         else:
-            i = np.random.randint(0, actions[0].size)
-            a = np.array([actions[0][i], actions[1][i]])
+            a = np.random.choice(actions[0], 1)[0]
         state, _, done = step(state=state, action=a)
 
         if state.turn[0] > 1000:
             break
-
-
-def test_reward():
-    init_board = to_init_board("++@OO@@@OO@OOOO@O+OO@OOOO")
-    state = MiniGoState(board=init_board)
-    """
-      [ 0 1 2 3 4 ]
-    [0] + + @ O O
-    [1] @ @ @ O O
-    [2] @ O O O O
-    [3] @ O + O O
-    [4] @ O O O O
-    """
-
-    state, r, _ = step(state=state, action=np.array([3, 2]))
-    assert (r == np.array([0, 0])).all()
-    state, _, _ = step(state=state, action=None)
-    state, r, _ = step(state=state, action=None)
-    assert (r == np.array([1, -1])).all()
-
-    """
-    https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
-    """
-    state = init()
-    state, _, _ = step(state=state, action=np.array([2, 2]))  # BLACK
-    state, _, _ = step(state=state, action=np.array([2, 1]))  # WHITE
-    state, _, _ = step(state=state, action=np.array([3, 2]))
-    state, _, _ = step(state=state, action=np.array([1, 2]))
-    state, _, _ = step(state=state, action=np.array([1, 3]))
-    state, _, _ = step(state=state, action=np.array([0, 1]))
-    state, _, _ = step(state=state, action=np.array([0, 3]))
-    state, _, _ = step(state=state, action=np.array([3, 1]))
-    state, _, _ = step(state=state, action=np.array([4, 1]))
-    state, _, _ = step(state=state, action=np.array([0, 2]))
-    state, _, _ = step(state=state, action=np.array([2, 0]))
-    state, _, _ = step(state=state, action=np.array([1, 0]))
-    state, _, _ = step(state=state, action=np.array([2, 4]))
-    state, _, _ = step(state=state, action=np.array([3, 0]))
-    state, _, _ = step(state=state, action=np.array([4, 3]))
-    state, _, _ = step(state=state, action=np.array([4, 0]))
-    state, _, _ = step(state=state, action=None)
-    state, _, _ = step(state=state, action=np.array([4, 2]))
-    state, _, _ = step(state=state, action=np.array([3, 4]))
-    state, _, _ = step(state=state, action=np.array([4, 1]))
-    state, _, _ = step(state=state, action=None)
-    state, r, _ = step(state=state, action=None)
-
-    assert (r == np.array([0, 0])).all()
+    assert state.turn[0] > 1000
