@@ -42,9 +42,9 @@ def init() -> MiniGoState:
 
 
 def step(
-    _state: MiniGoState, action: Optional[int]
+    state: MiniGoState, action: Optional[int]
 ) -> Tuple[MiniGoState, np.ndarray, bool]:
-    state = copy.deepcopy(_state)
+    state = copy.deepcopy(state)
 
     if action is None:
         step_result = _pass_move(state)
@@ -77,11 +77,11 @@ def _add_pass(_state: MiniGoState) -> MiniGoState:
 
 
 def _not_pass_move(
-    _state: MiniGoState, action: int
+    _state: MiniGoState, _action: int
 ) -> Tuple[MiniGoState, np.ndarray, bool]:
     state = copy.deepcopy(_state)
     state.passed[0] = False
-    xy = copy.deepcopy(action)
+    xy = copy.deepcopy(_action)
 
     my_color = state.turn[0] % 2
 
@@ -153,35 +153,35 @@ def _illegal_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
 
 def _check_around_stones(
     _state: MiniGoState,
-    xy: int,
-    around_mypos: np.ndarray,
-    my_color: int,
-    new_id: int,
-    agehama: int,
-    a_removed_stone_xy: int,
-):
+    _xy: int,
+    _around_mypos: np.ndarray,
+    _my_color: int,
+    _new_id: int,
+    _agehama: int,
+    _a_removed_stone_xy: int,
+) -> Tuple[MiniGoState, int, int, int]:
     state = copy.deepcopy(_state)
-    around_xy = _pos_to_xy(around_mypos)
-    oppo_color = _opponent_color(my_color)
+    around_xy = _pos_to_xy(_around_mypos)
+    oppo_color = _opponent_color(_my_color)
 
     # 既に自分の連が作られていた場合
-    if state.ren_id_board[my_color][around_xy] != -1:
+    if state.ren_id_board[_my_color][around_xy] != -1:
         (state, new_id) = _merge_ren(
             state,
-            my_color,
-            new_id,
-            xy,
+            _my_color,
+            _new_id,
+            _xy,
             around_xy,
         )
     else:
-        state, new_id = state, new_id
+        state, new_id = state, _new_id
 
     # 敵の連が作られていた場合
     if state.ren_id_board[oppo_color][around_xy] != -1:
         state.liberty[oppo_color] = _update_liberty(
             state.liberty[oppo_color],
             state.ren_id_board[oppo_color][around_xy],
-            xy,
+            _xy,
             False,
         )
     else:
@@ -200,29 +200,29 @@ def _check_around_stones(
         # 石を取る
         (state, a_removed_stone_xy, agehama) = _remove_stones(
             state,
-            my_color,
+            _my_color,
             state.ren_id_board[oppo_color][around_xy],
-            agehama,
+            _agehama,
             around_xy,
         )
     else:
         state, a_removed_stone_xy, agehama = (
             state,
-            a_removed_stone_xy,
-            agehama,
+            _a_removed_stone_xy,
+            _agehama,
         )
 
     # どちらでもない場合
     if (
-        not state.ren_id_board[my_color][around_xy] != -1
+        not state.ren_id_board[_my_color][around_xy] != -1
         and not state.ren_id_board[oppo_color][around_xy] != -1
     ):
         # 呼吸点に追加
-        state.liberty[my_color] = _update_liberty(
-            state.liberty[my_color], new_id, around_xy
+        state.liberty[_my_color] = _update_liberty(
+            state.liberty[_my_color], new_id, around_xy
         )
     else:
-        state.liberty[my_color] = state.liberty[my_color]
+        state.liberty[_my_color] = state.liberty[_my_color]
 
     return state, new_id, agehama, a_removed_stone_xy
 
@@ -231,19 +231,19 @@ def _merge_ren(
     _state: MiniGoState,
     _my_color: int,
     _new_id: int,
-    xy: int,
-    xy_around_mypos: int,
+    _xy: int,
+    _xy_around_mypos: int,
 ) -> Tuple[MiniGoState, int]:
     state = copy.deepcopy(_state)
     ren_id_board = state.ren_id_board[_my_color]
     new_id = _new_id
 
-    old_id = ren_id_board[xy_around_mypos]
+    old_id = ren_id_board[_xy_around_mypos]
 
     if old_id == new_id:  # 既に結合済みの場合
         state_and_new_id = state, new_id
     else:
-        state_and_new_id = __merge_ren(state, _my_color, old_id, new_id, xy)
+        state_and_new_id = __merge_ren(state, _my_color, old_id, new_id, _xy)
 
     return state_and_new_id
 
@@ -276,7 +276,7 @@ def _remove_stones(
     _oppo_ren_id: int,
     _agehama: int,
     _around_xy,
-):
+) -> Tuple[MiniGoState, int, int]:
     state = copy.deepcopy(_state)
     ren_id_board = state.ren_id_board[_my_color]
     oppo_color = _opponent_color(_my_color)
@@ -307,7 +307,7 @@ def _add_removed_pos_to_liberty(
     _ren_id_board: np.ndarray,
     _liberty: np.ndarray,
     _surrounded_stones: np.ndarray,
-):
+) -> np.ndarray:
     ren_id_board = _ren_id_board.copy()
     liberty = _liberty.copy()
     for _xy in range(BOARD_SIZE * BOARD_SIZE):
@@ -330,29 +330,31 @@ def _add_removed_pos_to_liberty(
 
 def _update_liberty(
     _liberty: np.ndarray, _id: int, _xy: int, _bool: bool = True
-):
+) -> np.ndarray:
     liberty = _liberty.copy()
     liberty[_id][_xy] = _bool
     return liberty
 
 
 def _not_suicide(
-    state: MiniGoState,
-    my_color: int,
-    agehama: int,
-    is_kou: bool,
-    a_removed_stone_xy: int,
-):
+    _state: MiniGoState,
+    _my_color: int,
+    _agehama: int,
+    _is_kou: bool,
+    _a_removed_stone_xy: int,
+) -> Tuple[MiniGoState, np.ndarray, bool]:
+    state = copy.deepcopy(_state)
+
     # コウの確認
-    if agehama == 1 and is_kou:
+    if _agehama == 1 and _is_kou:
         state.kou[0], state.kou[1] = (
-            a_removed_stone_xy // BOARD_SIZE,
-            a_removed_stone_xy % BOARD_SIZE,
+            _a_removed_stone_xy // BOARD_SIZE,
+            _a_removed_stone_xy % BOARD_SIZE,
         )
     else:
         state.kou[0], state.kou[1] = (-1, -1)
 
-    state.agehama[my_color] += agehama
+    state.agehama[_my_color] += _agehama
     state = _add_turn(state)
 
     return state, np.array([0, 0]), False
@@ -360,10 +362,9 @@ def _not_suicide(
 
 def legal_actions(state: MiniGoState) -> np.ndarray:
     legal_action = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
-    for i in range(BOARD_SIZE):
-        for j in range(BOARD_SIZE):
-            _, _, is_illegal = step(state, _to_xy(i, j))
-            legal_action[_to_xy(i, j)] = not is_illegal
+    for xy in range(BOARD_SIZE * BOARD_SIZE):
+        _, _, is_illegal = step(state, xy)
+        legal_action[xy] = not is_illegal
     return legal_action
 
 
@@ -394,49 +395,52 @@ def _show_details(state: MiniGoState) -> None:
     print(state.ren_id_board[WHITE].reshape((5, 5)))
 
 
-def _is_off_board(pos: np.ndarray) -> bool:
+def _is_off_board(_pos: np.ndarray) -> bool:
     return (
-        pos[0] < 0
-        or BOARD_SIZE <= pos[0]
-        or pos[1] < 0
-        or BOARD_SIZE <= pos[1]
+        _pos[0] < 0
+        or BOARD_SIZE <= _pos[0]
+        or _pos[1] < 0
+        or BOARD_SIZE <= _pos[1]
     )
 
 
-def _pos_to_xy(pos: np.ndarray) -> int:
-    return pos[0] * BOARD_SIZE + pos[1]
+def _pos_to_xy(_pos: np.ndarray) -> int:
+    return _pos[0] * BOARD_SIZE + _pos[1]
 
 
-def _to_xy(x, y) -> int:
-    return x * BOARD_SIZE + y
+def _to_xy(_x, _y) -> int:
+    return _x * BOARD_SIZE + _y
 
 
-def _xy_to_pos(xy):
-    return np.array([xy // BOARD_SIZE, xy % BOARD_SIZE])
+def _xy_to_pos(_xy) -> np.ndarray:
+    return np.array([_xy // BOARD_SIZE, _xy % BOARD_SIZE])
 
 
-def _opponent_color(color: int) -> int:
-    return (color + 1) % 2
+def _opponent_color(_color: int) -> int:
+    return (_color + 1) % 2
 
 
-def _check_kou(state: MiniGoState, x, y, oppo_color) -> bool:
+def _check_kou(_state: MiniGoState, _x, _y, _oppo_color) -> bool:
     return (
-        (x < 0 or state.ren_id_board[oppo_color][_to_xy(x - 1, y)] != -1)
+        (_x < 0 or _state.ren_id_board[_oppo_color][_to_xy(_x - 1, _y)] != -1)
         and (
-            x >= BOARD_SIZE - 1
-            or state.ren_id_board[oppo_color][_to_xy(x + 1, y)] != -1
+            _x >= BOARD_SIZE - 1
+            or _state.ren_id_board[_oppo_color][_to_xy(_x + 1, _y)] != -1
         )
-        and (y < 0 or state.ren_id_board[oppo_color][_to_xy(x, y - 1)] != -1)
         and (
-            y >= BOARD_SIZE - 1
-            or state.ren_id_board[oppo_color][_to_xy(x, y + 1)] != -1
+            _y < 0
+            or _state.ren_id_board[_oppo_color][_to_xy(_x, _y - 1)] != -1
+        )
+        and (
+            _y >= BOARD_SIZE - 1
+            or _state.ren_id_board[_oppo_color][_to_xy(_x, _y + 1)] != -1
         )
     )
 
 
-def _get_reward(state: MiniGoState) -> np.ndarray:
-    b = _count_ji(state)[BLACK] - state.agehama[WHITE]
-    w = _count_ji(state)[WHITE] - state.agehama[BLACK]
+def _get_reward(_state: MiniGoState) -> np.ndarray:
+    b = _count_ji(_state)[BLACK] - _state.agehama[WHITE]
+    w = _count_ji(_state)[WHITE] - _state.agehama[BLACK]
     if b == w:
         r = np.array([0, 0])
     else:
@@ -450,9 +454,9 @@ def _get_reward(state: MiniGoState) -> np.ndarray:
     return r
 
 
-def _count_ji(state: MiniGoState) -> np.ndarray:
-    board = get_board(state)
-    ji_id_board = _get_ji_id_board(state)
+def _count_ji(_state: MiniGoState) -> np.ndarray:
+    board = get_board(_state)
+    ji_id_board = _get_ji_id_board(_state)
 
     # -1:未確定 0:黒 1:白 2:どちらでもないことが確定
     color_of_ji = np.full((BOARD_SIZE * BOARD_SIZE), -1, dtype=int)
@@ -475,7 +479,7 @@ def _check_around_ji(
     _board: np.ndarray,
     _ji_id_board: np.ndarray,
     _xy: int,
-):
+) -> np.ndarray:
     color_of_ji = _color_of_ji.copy()
     board = _board.copy()
     ji_id_board = _ji_id_board.copy()
@@ -500,7 +504,9 @@ def _check_around_ji(
     return color_of_ji
 
 
-def _update_color_of_ji(_color_of_ji: np.ndarray, _xy: int, _num: int):
+def _update_color_of_ji(
+    _color_of_ji: np.ndarray, _xy: int, _num: int
+) -> np.ndarray:
     color_of_ji = _color_of_ji.copy()
     color_of_ji[_xy] = _num
     return color_of_ji
@@ -508,7 +514,7 @@ def _update_color_of_ji(_color_of_ji: np.ndarray, _xy: int, _num: int):
 
 def _update_color_of_ji_by_neutral(
     _color_of_ji: np.ndarray, _cond: np.ndarray
-):
+) -> np.ndarray:
     color_of_ji = _color_of_ji.copy()
     color_of_ji[_cond] = 2
     return color_of_ji
@@ -516,8 +522,8 @@ def _update_color_of_ji_by_neutral(
 
 # 以下の関数はstep()の_merge_ren()とほぼ同じことをしている
 # 連ではなく地に対して同じようにidを振る
-def _get_ji_id_board(state: MiniGoState):
-    board = get_board(state)
+def _get_ji_id_board(_state: MiniGoState) -> np.ndarray:
+    board = get_board(_state)
     ji_id_board: np.ndarray = np.full(BOARD_SIZE * BOARD_SIZE, -1, dtype=int)
     available_ji_id: np.ndarray = np.ones(BOARD_SIZE * BOARD_SIZE, dtype=bool)
     for xy in range(BOARD_SIZE * BOARD_SIZE):
@@ -533,7 +539,7 @@ def _get_ji_id_board(state: MiniGoState):
 
 def _check_around_points(
     _ji_id_board: np.ndarray, _available_ji_id: np.ndarray, _xy: int
-):
+) -> Tuple[np.ndarray, np.ndarray]:
     ji_id_board = _ji_id_board.copy()
     available_ji_id = _available_ji_id.copy()
     new_id = int(np.argmax(available_ji_id))  # 最初にTrueになったindex
@@ -573,10 +579,12 @@ def _merge_points(
 
     old_id = ji_id_board[_xy_around_mypos]
     if old_id == _new_id:  # 既に結合済みの場合
-        result = ji_id_board, available_ji_id, _new_id
+        board_and_available_and_id = ji_id_board, available_ji_id, _new_id
     else:
-        result = __merge_points(ji_id_board, available_ji_id, old_id, _new_id)
-    return result
+        board_and_available_and_id = __merge_points(
+            ji_id_board, available_ji_id, old_id, _new_id
+        )
+    return board_and_available_and_id
 
 
 def __merge_points(
