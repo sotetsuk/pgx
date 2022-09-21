@@ -107,3 +107,4 @@ def test_random_play():
 
         if state.turn[0] > 1000:
             break
+    assert state.turn[0] > 1000
