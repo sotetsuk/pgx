@@ -604,6 +604,32 @@ def _update_legal_drop_actions(
     return s
 
 
+# 自分の駒がある位置への移動を除く
+def _filter_my_piece_move_actions(
+    turn: int, owner: np.ndarray, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    for i in range(12):
+        if owner[i] != turn:
+            continue
+        for j in range(9):
+            new_array[12 * j + i] = 0
+    return new_array
+
+
+# 駒がある地点への駒打ちを除く
+def _filter_occupied_drop_actions(
+    turn: int, owner: np.ndarray, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    for i in range(12):
+        if owner[i] == 2:
+            continue
+        for j in range(3):
+            new_array[12 * (j + 9 + 3 * turn) + i] = 0
+    return new_array
+
+
 # 自殺手を除く
 def _filter_suicide_actions(
     turn: int, king_sq: int, effects: np.ndarray, array: np.ndarray
@@ -657,17 +683,11 @@ def _legal_actions(state: AnimalShogiState) -> np.ndarray:
         action_array = _filter_leave_check_actions(
             state.turn, king_sq, state.checking_piece, action_array
         )
-    # toが自分の駒の場合はそのactionは不可
-    # 駒打ちの場合は相手の駒でもダメ
     own = _pieces_owner(state)
-    for i in range(12):
-        for j in range(15):
-            # 移動かつ自分の駒
-            if j <= 8 and own[i] == state.turn:
-                action_array[j * 12 + i] = 0
-            # 駒打ちかつ空白でない
-            if j > 8 and own[i] != 2:
-                action_array[j * 12 + i] = 0
+    # 自分の駒がある位置への移動actionを除く
+    action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
+    # 駒がある地点への駒打ちactionを除く
+    action_array = _filter_occupied_drop_actions(state.turn, own, action_array)
     # 自殺手を除く
     effects = _effected_positions(state, _another_color(state))
     action_array = _filter_suicide_actions(
