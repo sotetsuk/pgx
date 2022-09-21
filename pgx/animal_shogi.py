@@ -102,11 +102,11 @@ def step(
     # 駒打ちの場合の操作
     if _action.is_drop:
         s = _update_legal_drop_actions(s, _action)
-        s = drop(s, _action)
+        s = _drop(s, _action)
     # 駒の移動の場合の操作
     else:
         s = _update_legal_move_actions(s, _action)
-        s = move(s, _action)
+        s = _move(s, _action)
     s.turn = _another_color(s)
     s.is_check = _is_check(s)
     # 王手をかけている駒は直前に動かした駒
@@ -563,7 +563,7 @@ def _update_legal_move_actions(
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
     if action.captured != 0:
         new_enemy_actions = _filter_move_actions(
-            action.to, action.captured, enemy_actions
+            action.to, action.captured, new_enemy_actions
         )
         captured = _convert_piece(action.captured)
         # にわとりの場合ひよこに変換
