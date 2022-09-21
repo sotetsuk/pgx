@@ -1,64 +1,66 @@
 import copy
-from dataclasses import dataclass
 from typing import Tuple
 
+# import jax
+import jax.numpy as jnp
 import numpy as np
+from flax import struct
 
 
 # 指し手のdataclass
-@dataclass
+@struct.dataclass
 class AnimalShogiAction:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用
     # 駒打ちかどうか
-    is_drop: bool
+    is_drop: np.ndarray = jnp.zeros(1)
     # piece: 動かした(打った)駒の種類
-    piece: int
+    piece: np.ndarray = jnp.zeros(1)
     # final: 移動後の座標
-    to: int
+    to: np.ndarray = jnp.zeros(1)
     # 移動前の座標
-    from_: int = 0
+    from_: np.ndarray = jnp.zeros(1)
     # captured: 取られた駒の種類。駒が取られていない場合は0
-    captured: int = 0
+    captured: np.ndarray = jnp.zeros(1)
     # is_promote: 駒を成るかどうかの判定
-    is_promote: bool = False
+    is_promote: np.ndarray = jnp.zeros(1)
 
 
 # 盤面のdataclass
-@dataclass
+@struct.dataclass
 class AnimalShogiState:
     # turn 先手番なら0 後手番なら1
-    turn: int = 0
+    turn: np.ndarray = jnp.zeros(1)
     # board 盤面の駒。
     # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
     # の順で駒がどの位置にあるかをone_hotで記録
     # ヒヨコ: Pawn, キリン: Rook, ゾウ: Bishop, ライオン: King, ニワトリ: Gold　と対応
-    board: np.ndarray = np.zeros((11, 12), dtype=np.int32)
+    board: np.ndarray = jnp.zeros((11, 12), dtype=np.int32)
     # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
-    hand: np.ndarray = np.zeros(6, dtype=np.int32)
+    hand: np.ndarray = jnp.zeros(6, dtype=np.int32)
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
     # move/dropによって変化させる
-    legal_actions_black: np.ndarray = np.zeros(180, dtype=np.int32)
-    legal_actions_white: np.ndarray = np.zeros(180, dtype=np.int32)
+    legal_actions_black: np.ndarray = jnp.zeros(180, dtype=np.int32)
+    legal_actions_white: np.ndarray = jnp.zeros(180, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
-    is_check: int = 0
+    is_check: np.ndarray = jnp.zeros(1)
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
-    checking_piece: np.ndarray = np.zeros(12, dtype=np.int32)
+    checking_piece: np.ndarray = jnp.zeros(12, dtype=np.int32)
 
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
 # 端にいる場合は対応するところに0をかけていけないようにする
-BLACK_PAWN_MOVE = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
-WHITE_PAWN_MOVE = np.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
-BLACK_GOLD_MOVE = np.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
-WHITE_GOLD_MOVE = np.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
-ROOK_MOVE = np.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
-BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
-KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
+BLACK_PAWN_MOVE = jnp.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
+WHITE_PAWN_MOVE = jnp.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
+BLACK_GOLD_MOVE = jnp.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
+WHITE_GOLD_MOVE = jnp.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
+ROOK_MOVE = jnp.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
+BISHOP_MOVE = jnp.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
+KING_MOVE = jnp.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
 INIT_BOARD = AnimalShogiState(
-    turn=0,
+    turn=np.array([0]),
     board=np.array(
         [
             [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0],
@@ -86,7 +88,6 @@ def step(
     state: AnimalShogiState, action: int
 ) -> Tuple[AnimalShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
-    # 勝敗判定は勝者側のturnを返す（決着がついていない・引き分けの場合は2を返す）
     s = copy.deepcopy(state)
     legal_actions = _legal_actions(s)
     # 合法手が存在しない場合、手番側の負けで終了
@@ -703,4 +704,3 @@ def _legal_actions(state: AnimalShogiState) -> np.ndarray:
     # その他の反則手を除く
     # どうぶつ将棋の場合はなし
     return action_array
-

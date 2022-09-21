@@ -19,6 +19,7 @@ from pgx._animal_shogi import (
     _update_legal_move_actions,
     _update_legal_drop_actions
 )
+from pgx.animal_shogi import *
 import numpy as np
 import copy
 import random
