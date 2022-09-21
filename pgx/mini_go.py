@@ -47,21 +47,21 @@ def step(
     state = copy.deepcopy(_state)
 
     if action is None:
-        result = _pass_move(state)
+        step_result = _pass_move(state)
     else:
-        result = _not_pass_move(state, action)
+        step_result = _not_pass_move(state, action)
 
-    return result
+    return step_result
 
 
 def _pass_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
     state = copy.deepcopy(_state)
 
     if state.passed[0]:  # 2回連続でパスすると終局
-        result = (_add_turn(state), _get_reward(state), True)
+        step_result = (_add_turn(state), _get_reward(state), True)
     else:
-        result = (_add_turn(_add_pass(state)), np.array([0, 0]), False)
-    return result
+        step_result = (_add_turn(_add_pass(state)), np.array([0, 0]), False)
+    return step_result
 
 
 def _add_turn(_state: MiniGoState) -> MiniGoState:
@@ -91,11 +91,11 @@ def _not_pass_move(
         or state.ren_id_board[_opponent_color(my_color)][xy] != -1
         or (xy == _pos_to_xy(state.kou))
     ):  # 既に他の石が置かれている or コウ
-        result = _ilegal_move(state)
+        step_result = _illegal_move(state)
     else:
-        result = _not_duplicate_nor_kou(state, xy, my_color)
+        step_result = _not_duplicate_nor_kou(state, xy, my_color)
 
-    return result
+    return step_result
 
 
 def _not_duplicate_nor_kou(
@@ -105,11 +105,11 @@ def _not_duplicate_nor_kou(
     x = _xy // BOARD_SIZE
     y = _xy % BOARD_SIZE
 
-    # 最初にTrueになったindex
+    # 最初にTrueになったindexをidとする
     new_id = int(np.argmax(state.available_ren_id[_my_color]))
 
     agehama = 0
-    a_removed_stone_xy = -1
+    a_removed_stone_xy = -1  # コウのために取った位置を記憶する
     state.ren_id_board[_my_color][_xy] = new_id
     state.available_ren_id[_my_color][new_id] = False
     is_kou = _check_kou(state, x, y, _opponent_color(_my_color))
@@ -134,23 +134,21 @@ def _not_duplicate_nor_kou(
                 agehama,
                 a_removed_stone_xy,
             )
-    if np.count_nonzero(state.liberty[_my_color][new_id]) == 0:
-        # 自殺手
-        result = _ilegal_move(state)
+    if np.count_nonzero(state.liberty[_my_color][new_id]) == 0:  # 自殺手
+        step_result = _illegal_move(state)
     else:
-        result = _not_suicide(
+        step_result = _not_suicide(
             state, _my_color, agehama, is_kou, a_removed_stone_xy
         )
 
-    return result
+    return step_result
 
 
-def _ilegal_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
+def _illegal_move(_state: MiniGoState) -> Tuple[MiniGoState, np.ndarray, bool]:
     state = copy.deepcopy(_state)
     r = np.array([1, 1])
     r[state.turn[0] % 2] = -1
-    state = _add_turn(state)
-    return state, r, True
+    return _add_turn(state), r, True
 
 
 def _check_around_stones(
@@ -219,6 +217,7 @@ def _check_around_stones(
         not state.ren_id_board[my_color][around_xy] != -1
         and not state.ren_id_board[oppo_color][around_xy] != -1
     ):
+        # 呼吸点に追加
         state.liberty[my_color] = _update_liberty(
             state.liberty[my_color], new_id, around_xy
         )
@@ -242,11 +241,11 @@ def _merge_ren(
     old_id = ren_id_board[xy_around_mypos]
 
     if old_id == new_id:  # 既に結合済みの場合
-        result = state, new_id
+        state_and_new_id = state, new_id
     else:
-        result = __merge_ren(state, _my_color, old_id, new_id, xy)
+        state_and_new_id = __merge_ren(state, _my_color, old_id, new_id, xy)
 
-    return result
+    return state_and_new_id
 
 
 def __merge_ren(
@@ -259,8 +258,8 @@ def __merge_ren(
 
     small_id = min(_old_id, _new_id)
     large_id = max(_old_id, _new_id)
-    # 大きいidの連を消し、小さいidの連と繋げる
 
+    # 大きいidの連を消し、小さいidの連と繋げる
     available_ren_id[large_id] = True
     ren_id_board[ren_id_board == large_id] = small_id
 
@@ -290,7 +289,7 @@ def _remove_stones(
     agehama += np.count_nonzero(surrounded_stones)  # その石の数
     oppo_ren_id_board[surrounded_stones] = -1  # ren_id_boardから削除
     oppo_available_ren_id[_oppo_ren_id] = True  # available_ren_idに追加
-    a_removed_stone_xy = _around_xy  # コウのために取った位置を記憶
+    a_removed_stone_xy = _around_xy
 
     # 空けたところを自軍の呼吸点に追加
     liberty = _add_removed_pos_to_liberty(
@@ -314,11 +313,12 @@ def _add_removed_pos_to_liberty(
     for _xy in range(BOARD_SIZE * BOARD_SIZE):
         for _nsew in NSEW:
             _around_rmstone_pos = _xy_to_pos(_xy) + _nsew
-            if (
+            if (  # 取り除かれた石に隣接する連の場合
                 not _is_off_board(_around_rmstone_pos)
                 and ren_id_board[_pos_to_xy(_around_rmstone_pos)] != -1
                 and _surrounded_stones[_xy]
             ):
+                # 呼吸点を追加
                 liberty = _update_liberty(
                     liberty, ren_id_board[_pos_to_xy(_around_rmstone_pos)], _xy
                 )
@@ -362,8 +362,8 @@ def legal_actions(state: MiniGoState) -> np.ndarray:
     legal_action = np.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
     for i in range(BOARD_SIZE):
         for j in range(BOARD_SIZE):
-            _, _, is_ilegal = step(state, _to_xy(i, j))
-            legal_action[_to_xy(i, j)] = not is_ilegal
+            _, _, is_illegal = step(state, _to_xy(i, j))
+            legal_action[_to_xy(i, j)] = not is_illegal
     return legal_action
 
 
@@ -459,6 +459,7 @@ def _count_ji(state: MiniGoState) -> np.ndarray:
 
     for xy in range(BOARD_SIZE * BOARD_SIZE):
         if ji_id_board[xy] == -1 or color_of_ji[ji_id_board[xy]] == 2:
+            # その点(xy)が空点でなかったり、どちらの地でもないことが確定なら何もしない
             color_of_ji = color_of_ji
         else:
             color_of_ji = _check_around_ji(color_of_ji, board, ji_id_board, xy)
@@ -478,16 +479,20 @@ def _check_around_ji(
     color_of_ji = _color_of_ji.copy()
     board = _board.copy()
     ji_id_board = _ji_id_board.copy()
+
+    # 周囲の石が白か黒か判断
     for nsew in NSEW:
         around_pos = _xy_to_pos(_xy) + nsew
         around_xy = _pos_to_xy(around_pos)
-        if _is_off_board(around_pos) or board[around_xy] == POINT:
+        if _is_off_board(around_pos) or board[around_xy] == POINT:  # 周囲に石なし
             color_of_ji = color_of_ji
-        elif color_of_ji[_xy] == -1:
+        elif color_of_ji[_xy] == -1:  # 色が未知の場合、その色を登録
             color_of_ji = _update_color_of_ji(
                 color_of_ji, _xy, board[around_xy]
             )
         elif color_of_ji[_xy] == _opponent_color(board[around_xy]):
+            # 既に登録された色と異なる場合、どちらでもないことが確定
+            # そのidの地を全て2に
             color_of_ji = _update_color_of_ji_by_neutral(
                 color_of_ji, ji_id_board == ji_id_board[_xy]
             )
@@ -509,6 +514,8 @@ def _update_color_of_ji_by_neutral(
     return color_of_ji
 
 
+# 以下の関数はstep()の_merge_ren()とほぼ同じことをしている
+# 連ではなく地に対して同じようにidを振る
 def _get_ji_id_board(state: MiniGoState):
     board = get_board(state)
     ji_id_board: np.ndarray = np.full(BOARD_SIZE * BOARD_SIZE, -1, dtype=int)
