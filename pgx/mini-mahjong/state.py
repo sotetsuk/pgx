@@ -1,14 +1,13 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-import jax
-import jax.numpy as jnp
-from jax import jit, tree_util
-
 import agent
 import deck
 import hand
-from actions import RON, PON, CHI_R, CHI_M, CHI_L, PASS, TSUMO, NONE
+import jax
+import jax.numpy as jnp
+from actions import CHI_L, CHI_M, CHI_R, NONE, PASS, PON, RON, TSUMO
+from jax import jit, tree_util
 
 
 @dataclass
@@ -284,7 +283,10 @@ if __name__ == "__main__":
         while not done:
             legal_actions = state.legal_actions()
             selected = jnp.array(
-                [agent.act(legal_actions[i], state.observe(i)) for i in range(4)]
+                [
+                    agent.act(legal_actions[i], state.observe(i))
+                    for i in range(4)
+                ]
             )
             state, reward, done = step(state, selected)
 

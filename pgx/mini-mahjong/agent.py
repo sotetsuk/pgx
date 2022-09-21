@@ -1,6 +1,5 @@
 import jax.numpy as jnp
-
-from actions import RON, PON, CHI_R, CHI_M, CHI_L, PASS, TSUMO, NONE
+from actions import CHI_L, CHI_M, CHI_R, NONE, PASS, PON, RON, TSUMO
 
 
 def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
@@ -60,4 +59,3 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             return CHI_L
 
     return PASS
-

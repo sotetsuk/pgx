@@ -6,4 +6,3 @@ CHI_L = 38  # [4]56
 PASS = 39
 TSUMO = 40
 NONE = 41
-
