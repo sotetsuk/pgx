@@ -303,7 +303,7 @@ def _drop(
 
 #  ある座標に存在する駒種を返す
 def _piece_type(state: AnimalShogiState, point: int) -> int:
-    return state.board[:, point].argmax()
+    return int(state.board[:, point].argmax())
 
 
 # ある駒の持ち主を返す
@@ -410,12 +410,12 @@ def _point_moves(piece: int, point: int) -> np.ndarray:
         return _rook_move(point)
     if piece % 5 == 3:
         return _bishop_move(point)
-    if piece % 5 == 4:
-        return _king_move(point)
     if piece == 5:
         return _black_gold_move(point)
     if piece == 10:
         return _white_gold_move(point)
+    else:
+        return _king_move(point)
 
 
 # 利きの判定
