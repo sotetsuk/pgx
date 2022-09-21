@@ -703,4 +703,3 @@ def _legal_actions(state: AnimalShogiState) -> np.ndarray:
     # その他の反則手を除く
     # どうぶつ将棋の場合はなし
     return action_array
-

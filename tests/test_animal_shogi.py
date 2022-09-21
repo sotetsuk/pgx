@@ -1,7 +1,9 @@
-from pgx.animal_shogi import (
+from pgx._animal_shogi import (
     AnimalShogiState,
     AnimalShogiAction,
     INIT_BOARD,
+    init,
+    step,
     _another_color,
     _move,
     _drop,
@@ -19,6 +21,7 @@ from pgx.animal_shogi import (
 )
 import numpy as np
 import copy
+import random
 
 
 TEST_BOARD = AnimalShogiState(
@@ -375,6 +378,23 @@ def test_update_legal_actions_drop():
         assert white1[i] == w1[i]
 
 
+def convert_jax_state(state: AnimalShogiState):
+    return state
+
+
+def test_jax_step():
+    np_init = init()
+    jax_init = convert_jax_state(np_init)
+    for i in range(180):
+        np_stepped = step(np_init, i)
+        jax_stepped = step(jax_init, i)
+        assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
+        assert (jax_stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
+        assert (jax_stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
+        assert jax_stepped[1] == np_stepped[1]
+        assert jax_stepped[2] == np_stepped[2]
+
+
 if __name__ == '__main__':
     test_another_color()
     test_move()
@@ -390,3 +410,4 @@ if __name__ == '__main__':
     test_legal_actions()
     test_update_legal_actions_move()
     test_update_legal_actions_drop()
+    test_jax_step()
