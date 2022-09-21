@@ -14,12 +14,15 @@ def can_tsumo(hand: jnp.ndarray) -> bool:
     heads = 0
     valid = True
     for i in range(3):
-        h = 0
+        code = 0
         for j in range(9):
-            h = h * 5 + hand[9 * i + j].astype(int)
-        code = AGARI[h]
-        heads += code >> 1
-        valid &= code != 0
+            heads, valid, code = jax.lax.cond(
+                hand[9 * i + j] == 0,
+                lambda: (heads + AGARI[code] >> 1, valid & (AGARI[code] != 0), 0),
+                lambda: (heads, valid, ((code << 1) + 1) << (hand[9 * i + j] - 1))
+            )
+        heads += AGARI[code] >> 1
+        valid &= AGARI[code] != 0
 
     for i in range(27, 34):
         code = jax.lax.switch(
