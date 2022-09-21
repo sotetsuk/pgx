@@ -6,19 +6,15 @@ import deck
 import hand
 import jax
 import jax.numpy as jnp
-from actions import CHI_L, CHI_M, CHI_R, NONE, PASS, PON, RON, TSUMO
+from action import CHI_L, CHI_M, CHI_R, NONE, PASS, PON, RON, TSUMO
+from deck import Deck
 from jax import jit, tree_util
-
-
-@dataclass
-class Observation:
-    hand: jnp.ndarray
-    target: int
+from observation import Observation
 
 
 @dataclass
 class State:
-    deck: deck.Deck
+    deck: Deck
     hand: jnp.ndarray
     turn: int
     target: int
@@ -97,7 +93,7 @@ tree_util.register_pytree_node(
 
 
 @jit
-def init(key: jax.random.PRNGKey) -> State:
+def init(key) -> State:
     _deck = deck.init(key)
     _hand = jnp.zeros((4, 34), dtype=jnp.uint8)
     for i in range(4):

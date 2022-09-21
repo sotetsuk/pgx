@@ -29,14 +29,13 @@ tree_util.register_pytree_node(Deck, Deck._tree_flatten, Deck._tree_unflatten)
 
 
 @jit
-def init(key: jax.random.PRNGKey) -> Deck:
+def init(key) -> Deck:
     arr = jax.random.permutation(key, jnp.array([i // 4 for i in range(136)]))
     return Deck(0, arr)
 
 
 @jit
 def draw(deck: Deck) -> Tuple[Deck, int]:
-    # assert not deck.is_empty()
     tile = deck.arr[deck.idx]
     deck.idx += 1
     return deck, tile

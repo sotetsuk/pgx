@@ -1,5 +1,7 @@
 import jax.numpy as jnp
-from actions import CHI_L, CHI_M, CHI_R, NONE, PASS, PON, RON, TSUMO
+from action import CHI_L, CHI_M, CHI_R, NONE, PASS, PON, RON, TSUMO
+from observation import Observation
+from shanten_tools import shanten  # type: ignore
 
 
 def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
