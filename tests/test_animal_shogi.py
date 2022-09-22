@@ -395,13 +395,13 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
         is_check[0] = 1
     checking_piece = state.checking_piece
     j_state = JaxAnimalShogiState(
-        turn=turn,
-        board=board,
-        hand=hand,
-        legal_actions_black=legal_actions_black,
-        legal_actions_white=legal_actions_white,
-        is_check=is_check,
-        checking_piece=checking_piece
+        turn=turn[0],
+        board=board[0],
+        hand=hand[0],
+        legal_actions_black=legal_actions_black[0],
+        legal_actions_white=legal_actions_white[0],
+        is_check=is_check[0],
+        checking_piece=checking_piece[0]
     )
     return j_state
 

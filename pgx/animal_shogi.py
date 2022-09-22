@@ -12,24 +12,24 @@ class JaxAnimalShogiAction:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用
     # 駒打ちかどうか
-    is_drop: np.ndarray = jnp.zeros(1)
+    is_drop: np.ndarray = jnp.zeros(1, dtype=np.int32)
     # piece: 動かした(打った)駒の種類
-    piece: np.ndarray = jnp.zeros(1)
+    piece: np.ndarray = jnp.zeros(1, dtype=np.int32)
     # final: 移動後の座標
-    to: np.ndarray = jnp.zeros(1)
+    to: np.ndarray = jnp.zeros(1, dtype=np.int32)
     # 移動前の座標
-    from_: np.ndarray = jnp.zeros(1)
+    from_: np.ndarray = jnp.zeros(1, dtype=np.int32)
     # captured: 取られた駒の種類。駒が取られていない場合は0
-    captured: np.ndarray = jnp.zeros(1)
+    captured: np.ndarray = jnp.zeros(1, dtype=np.int32)
     # is_promote: 駒を成るかどうかの判定
-    is_promote: np.ndarray = jnp.zeros(1)
+    is_promote: np.ndarray = jnp.zeros(1, dtype=np.int32)
 
 
 # 盤面のdataclass
 @struct.dataclass
 class JaxAnimalShogiState:
     # turn 先手番なら0 後手番なら1
-    turn: np.ndarray = jnp.zeros(1)
+    turn: np.ndarray = jnp.zeros(1, dtype=np.int32)
     # board 盤面の駒。
     # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
     # の順で駒がどの位置にあるかをone_hotで記録
@@ -42,20 +42,20 @@ class JaxAnimalShogiState:
     legal_actions_black: np.ndarray = jnp.zeros(180, dtype=np.int32)
     legal_actions_white: np.ndarray = jnp.zeros(180, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
-    is_check: np.ndarray = jnp.zeros(1)
+    is_check: np.ndarray = jnp.zeros(1, dtype=np.int32)
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
     checking_piece: np.ndarray = jnp.zeros(12, dtype=np.int32)
 
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
 # 端にいる場合は対応するところに0をかけていけないようにする
-BLACK_PAWN_MOVE = jnp.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
-WHITE_PAWN_MOVE = jnp.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
-BLACK_GOLD_MOVE = jnp.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
-WHITE_GOLD_MOVE = jnp.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
-ROOK_MOVE = jnp.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
-BISHOP_MOVE = jnp.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
-KING_MOVE = jnp.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
+BLACK_PAWN_MOVE = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
+WHITE_PAWN_MOVE = np.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
+BLACK_GOLD_MOVE = np.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
+WHITE_GOLD_MOVE = np.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
+ROOK_MOVE = np.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
+BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
+KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
 INIT_BOARD = JaxAnimalShogiState(
@@ -111,15 +111,35 @@ def jax_step(
     else:
         s = _update_legal_move_actions(s, _action)
         s = _move(s, _action)
-    s.turn = _another_color(s)
-    s.is_check = _is_check(s)
-    # 王手をかけている駒は直前に動かした駒
-    if s.is_check:
+    s = JaxAnimalShogiState(
+        turn=_another_color(s),
+        board=s.board,
+        hand=s.hand,
+        legal_actions_black=s.legal_actions_black,
+        legal_actions_white=s.legal_actions_white,
+    )
+    if _is_check(s):
+        # 王手をかけている駒は直前に動かした駒
         # 王手返しの王手の場合があるので一度リセットする
-        s.checking_piece = np.zeros(12, dtype=np.int32)
-        s.checking_piece[_action.to] = 1
+        checking_piece = np.zeros(12, dtype=np.int32)
+        checking_piece[_action.to] = 1
+        s = JaxAnimalShogiState(
+            turn=s.turn,
+            board=s.board,
+            hand=s.hand,
+            legal_actions_black=s.legal_actions_black,
+            legal_actions_white=s.legal_actions_white,
+            is_check=np.array([1]),
+            checking_piece=checking_piece
+        )
     else:
-        s.checking_piece = np.zeros(12, dtype=np.int32)
+        s = JaxAnimalShogiState(
+            turn=s.turn,
+            board=s.board,
+            hand=s.hand,
+            legal_actions_black=s.legal_actions_black,
+            legal_actions_white=s.legal_actions_white
+        )
     return s, 0, False
 
 
@@ -178,13 +198,13 @@ def _hand_to_direction(piece: int) -> int:
 # AnimalShogiActionをdlshogiのint型actionに変換
 def _action_to_dlaction(action: JaxAnimalShogiAction, turn: int) -> int:
     if action.is_drop:
-        return _dlshogi_action(_hand_to_direction(action.piece), action.to)
+        return _dlshogi_action(_hand_to_direction(action.piece[0]), action.to[0])
     else:
         return _dlshogi_action(
             _point_to_direction(
-                action.from_, action.to, action.is_promote, turn
+                action.from_[0], action.to[0], action.is_promote[0], turn
             ),
-            action.to,
+            action.to[0],
         )
 
 
@@ -196,7 +216,7 @@ def _separate_dlaction(action: int) -> Tuple[int, int]:
 
 # directionからfromがtoからどれだけ離れてるかと成りを含む移動かを得る
 # 手番の情報が必要
-def _direction_to_from(direction: int, to: int, turn: int) -> Tuple[int, bool]:
+def _direction_to_from(direction: int, to: int, turn: int) -> Tuple[int, int]:
     dif = 0
     if direction == 0 or direction == 8:
         dif = -1
@@ -216,14 +236,14 @@ def _direction_to_from(direction: int, to: int, turn: int) -> Tuple[int, bool]:
         dif = -3
     if turn == 0:
         if direction >= 8:
-            return to - dif, True
+            return to - dif, 1
         else:
-            return to - dif, False
+            return to - dif, 0
     else:
         if direction >= 8:
-            return to + dif, True
+            return to + dif, 1
         else:
-            return to + dif, False
+            return to + dif, 0
 
 
 def _direction_to_hand(direction: int) -> int:
@@ -239,14 +259,14 @@ def _dlaction_to_action(
     direction, to = _separate_dlaction(action)
     if direction <= 8:
         # 駒の移動
-        _from, is_promote = _direction_to_from(direction, to, state.turn)
+        _from, is_promote = _direction_to_from(direction, to, state.turn[0])
         piece = _piece_type(state, _from)
         captured = _piece_type(state, to)
-        return JaxAnimalShogiAction(False, piece, to, _from, captured, is_promote)
+        return JaxAnimalShogiAction(np.array([0]), np.array([piece]), np.array([to]), np.array([_from]), np.array([captured]), np.array([is_promote]))
     else:
         # 駒打ち
         piece = _direction_to_hand(direction)
-        return JaxAnimalShogiAction(True, piece, to)
+        return JaxAnimalShogiAction(np.array([1]), np.array([piece]), np.array([to]))
 
 
 # 手番側でない色を返す
@@ -282,15 +302,15 @@ def _move(
     action: JaxAnimalShogiAction,
 ) -> JaxAnimalShogiState:
     s = copy.deepcopy(state)
-    s.board[action.piece][action.from_] = 0
-    s.board[0][action.from_] = 1
-    s.board[action.captured][action.to] = 0
+    s.board[action.piece[0]][action.from_[0]] = 0
+    s.board[0][action.from_[0]] = 1
+    s.board[action.captured[0]][action.to[0]] = 0
     if action.is_promote:
-        s.board[action.piece + 4][action.to] = 1
+        s.board[action.piece[0] + 4][action.to[0]] = 1
     else:
-        s.board[action.piece][action.to] = 1
+        s.board[action.piece[0]][action.to[0]] = 1
     if action.captured != 0:
-        s.hand[_piece_to_hand(_convert_piece(action.captured))] += 1
+        s.hand[_piece_to_hand(_convert_piece(action.captured[0]))] += 1
     return s
 
 
@@ -299,9 +319,9 @@ def _drop(
     state: JaxAnimalShogiState, action: JaxAnimalShogiAction
 ) -> JaxAnimalShogiState:
     s = copy.deepcopy(state)
-    s.hand[_piece_to_hand(action.piece)] -= 1
-    s.board[action.piece][action.to] = 1
-    s.board[0][action.to] = 0
+    s.hand[_piece_to_hand(action.piece[0])] -= 1
+    s.board[action.piece[0]][action.to[0]] = 1
+    s.board[0][action.to[0]] = 0
     return s
 
 
@@ -480,7 +500,8 @@ def _add_move_actions(_from: int, piece: int, array: np.ndarray) -> np.ndarray:
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
         if actions[i] == 1:
-            new_array[i] = 1
+            new_array = new_array.at[i].set(1)
+            #new_array[i] = 1
     return new_array
 
 
@@ -521,29 +542,40 @@ def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
 def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
     s = copy.deepcopy(state)
     bs = _board_status(s)
+    legal_black = s.legal_actions_black
+    legal_white = s.legal_actions_white
     # 移動の追加
     for i in range(12):
         piece = bs[i]
         if piece == 0:
             continue
         if piece <= 5:
-            s.legal_actions_black = _add_move_actions(
-                i, piece, s.legal_actions_black
+            legal_black = _add_move_actions(
+                i, piece, legal_black
             )
         else:
-            s.legal_actions_white = _add_move_actions(
-                i, piece, s.legal_actions_white
+            legal_white = _add_move_actions(
+                i, piece, legal_white
             )
     # 駒打ちの追加
     for i in range(3):
         if s.hand[i] != 0:
-            s.legal_actions_black = _add_drop_actions(
-                1 + i, s.legal_actions_black
+            legal_black = _add_drop_actions(
+                1 + i, legal_black
             )
         if s.hand[i + 3] != 0:
-            s.legal_actions_white = _add_drop_actions(
-                6 + i, s.legal_actions_white
+            legal_white = _add_drop_actions(
+                6 + i, legal_white
             )
+    s = JaxAnimalShogiState(
+        turn=s.turn,
+        board=s.board,
+        hand=s.hand,
+        legal_actions_black=legal_black,
+        legal_actions_white=legal_white,
+        is_check=s.is_check,
+        checking_piece=s.checking_piece
+    )
     return s
 
 
@@ -560,30 +592,47 @@ def _update_legal_move_actions(
         enemy_actions = s.legal_actions_black
     # 元の位置にいたときのフラグを折る
     new_player_actions = _filter_move_actions(
-        action.from_, action.piece, player_actions
+        action.from_[0], action.piece[0], player_actions
     )
     new_enemy_actions = enemy_actions
     # 移動後の位置からの移動のフラグを立てる
     new_player_actions = _add_move_actions(
-        action.to, action.piece, new_player_actions
+        action.to[0], action.piece[0], new_player_actions
     )
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
     if action.captured != 0:
         new_enemy_actions = _filter_move_actions(
-            action.to, action.captured, new_enemy_actions
+            action.to[0], action.captured[0], new_enemy_actions
         )
-        captured = _convert_piece(action.captured)
+        captured = _convert_piece(action.captured[0])
         # にわとりの場合ひよこに変換
         if captured % 5 == 0:
             captured -= 4
         new_player_actions = _add_drop_actions(captured, new_player_actions)
     if s.turn == 0:
-        s.legal_actions_black = new_player_actions
-        s.legal_actions_white = new_enemy_actions
+        return JaxAnimalShogiState(
+            turn=s.turn,
+            board=s.board,
+            hand=s.hand,
+            legal_actions_black=new_player_actions,
+            legal_actions_white=new_enemy_actions,
+            is_check=s.is_check,
+            checking_piece=s.checking_piece
+        )
+        #s.legal_actions_black = new_player_actions
+        #s.legal_actions_white = new_enemy_actions
     else:
-        s.legal_actions_black = new_enemy_actions
-        s.legal_actions_white = new_player_actions
-    return s
+        return JaxAnimalShogiState(
+            turn=s.turn,
+            borad=s.board,
+            hand=s.hand,
+            legal_actions_black=new_enemy_actions,
+            legal_actions_white=new_player_actions,
+            is_check=s.is_check,
+            checking_piece=s.checking_piece
+        )
+        #s.legal_actions_black = new_enemy_actions
+        #s.legal_actions_white = new_player_actions
 
 
 # 駒打ちによるlegal_actionsの更新
@@ -597,12 +646,12 @@ def _update_legal_drop_actions(
         player_actions = s.legal_actions_white
     # 移動後の位置からの移動のフラグを立てる
     new_player_actions = _add_move_actions(
-        action.to, action.piece, player_actions
+        action.to[0], action.piece[0], player_actions
     )
     # 持ち駒がもうない場合、その駒を打つフラグを折る
-    if s.hand[_piece_to_hand(action.piece)] == 1:
+    if s.hand[_piece_to_hand(action.piece[0])] == 1:
         new_player_actions = _filter_drop_actions(
-            action.piece, new_player_actions
+            action.piece[0], new_player_actions
         )
     if s.turn == 0:
         s.legal_actions_black = new_player_actions
@@ -680,25 +729,26 @@ def _filter_leave_check_actions(
 
 # boardのlegal_actionsを利用して合法手を生成する
 def _legal_actions(state: JaxAnimalShogiState) -> np.ndarray:
-    if state.turn == 0:
+    turn = state.turn[0]
+    if turn == 0:
         action_array = copy.deepcopy(state.legal_actions_black)
     else:
         action_array = copy.deepcopy(state.legal_actions_white)
-    king_sq = state.board[4 + 5 * state.turn].argmax()
+    king_sq = state.board[4 + 5 * turn].argmax()
     # 王手放置を除く
     if state.is_check:
         action_array = _filter_leave_check_actions(
-            state.turn, king_sq, state.checking_piece, action_array
+            turn, king_sq, state.checking_piece, action_array
         )
     own = _pieces_owner(state)
     # 自分の駒がある位置への移動actionを除く
-    action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
+    action_array = _filter_my_piece_move_actions(turn, own, action_array)
     # 駒がある地点への駒打ちactionを除く
-    action_array = _filter_occupied_drop_actions(state.turn, own, action_array)
+    action_array = _filter_occupied_drop_actions(turn, own, action_array)
     # 自殺手を除く
     effects = _effected_positions(state, _another_color(state))
     action_array = _filter_suicide_actions(
-        state.turn, king_sq, effects, action_array
+        turn, king_sq, effects, action_array
     )
     # その他の反則手を除く
     # どうぶつ将棋の場合はなし
