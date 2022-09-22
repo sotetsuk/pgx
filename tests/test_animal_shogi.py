@@ -1,7 +1,9 @@
-from pgx.animal_shogi import (
+from pgx._animal_shogi import (
     AnimalShogiState,
     AnimalShogiAction,
     INIT_BOARD,
+    init,
+    step,
     _another_color,
     _move,
     _drop,
@@ -17,8 +19,16 @@ from pgx.animal_shogi import (
     _update_legal_move_actions,
     _update_legal_drop_actions
 )
+from pgx.animal_shogi import (
+    JaxAnimalShogiAction,
+    JaxAnimalShogiState,
+    jax_init,
+    jax_step
+)
 import numpy as np
+import jax.numpy as jnp
 import copy
+import random
 
 
 TEST_BOARD = AnimalShogiState(
@@ -375,6 +385,64 @@ def test_update_legal_actions_drop():
         assert white1[i] == w1[i]
 
 
+def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
+    turn = jnp.array([state.turn]),
+    board = jnp.array(state.board),
+    hand = jnp.array(state.hand),
+    legal_actions_black = jnp.array(state.legal_actions_black),
+    legal_actions_white = jnp.array(state.legal_actions_white),
+    is_check = jnp.array([0])
+    if state.is_check:
+        is_check = is_check.at[0].set(1)
+    checking_piece = jnp.array(state.checking_piece)
+    j_state = JaxAnimalShogiState(
+        turn=turn[0],
+        board=board[0],
+        hand=hand[0],
+        legal_actions_black=legal_actions_black[0],
+        legal_actions_white=legal_actions_white[0],
+        is_check=is_check,
+        checking_piece=checking_piece
+    )
+    return j_state
+
+
+def test_jax_step():
+    np_init = init()
+    j_init = convert_jax_state(np_init)
+    j_init2 = jax_init()
+    assert (j_init.board == j_init2.board).all()
+    assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
+    assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
+    np_test = _init_legal_actions(copy.deepcopy(TEST_BOARD))
+    j_test = convert_jax_state(np_test)
+    np_test2 = _init_legal_actions(copy.deepcopy(TEST_BOARD2))
+    j_test2 = convert_jax_state(np_test2)
+    for i in range(180):
+        np_stepped = step(np_init, i)
+        jax_stepped = jax_step(j_init, i)
+        assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
+        assert (jax_stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
+        assert (jax_stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
+        assert jax_stepped[1] == np_stepped[1]
+        assert jax_stepped[2] == np_stepped[2]
+        np_stepped_test = step(np_test, i)
+        jax_stepped_test = jax_step(j_test, i)
+        assert (jax_stepped_test[0].board == convert_jax_state(np_stepped_test[0]).board).all()
+        assert (jax_stepped_test[0].legal_actions_black == convert_jax_state(np_stepped_test[0]).legal_actions_black).all()
+        assert (jax_stepped_test[0].legal_actions_white == convert_jax_state(np_stepped_test[0]).legal_actions_white).all()
+        assert jax_stepped_test[1] == np_stepped_test[1]
+        assert jax_stepped_test[2] == np_stepped_test[2]
+        np_stepped_test2 = step(np_test2, i)
+        jax_stepped_test2 = jax_step(j_test2, i)
+        assert (jax_stepped_test2[0].board == convert_jax_state(np_stepped_test2[0]).board).all()
+        assert (jax_stepped_test2[0].legal_actions_black == convert_jax_state(np_stepped_test2[0]).legal_actions_black).all()
+        assert (jax_stepped_test2[0].legal_actions_white == convert_jax_state(np_stepped_test2[0]).legal_actions_white).all()
+        assert jax_stepped_test2[1] == np_stepped_test2[1]
+        assert jax_stepped_test2[2] == np_stepped_test2[2]
+
+
+
 if __name__ == '__main__':
     test_another_color()
     test_move()
@@ -390,3 +458,4 @@ if __name__ == '__main__':
     test_legal_actions()
     test_update_legal_actions_move()
     test_update_legal_actions_drop()
+    test_jax_step()
