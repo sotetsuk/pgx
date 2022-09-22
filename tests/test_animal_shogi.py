@@ -26,6 +26,7 @@ from pgx.animal_shogi import (
     jax_step
 )
 import numpy as np
+import jax.numpy as jnp
 import copy
 import random
 
@@ -385,15 +386,15 @@ def test_update_legal_actions_drop():
 
 
 def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
-    turn = np.array([state.turn]),
-    board = state.board,
-    hand = state.hand,
-    legal_actions_black = state.legal_actions_black,
-    legal_actions_white = state.legal_actions_white,
-    is_check = np.array([0])
+    turn = jnp.array([state.turn]),
+    board = jnp.array(state.board),
+    hand = jnp.array(state.hand),
+    legal_actions_black = jnp.array(state.legal_actions_black),
+    legal_actions_white = jnp.array(state.legal_actions_white),
+    is_check = jnp.array([0])
     if state.is_check:
-        is_check[0] = 1
-    checking_piece = state.checking_piece
+        is_check = is_check.at[0].set(1)
+    checking_piece = jnp.array(state.checking_piece)
     j_state = JaxAnimalShogiState(
         turn=turn[0],
         board=board[0],

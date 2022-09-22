@@ -107,10 +107,12 @@ def step(
     if _action.is_drop:
         s = _update_legal_drop_actions(s, _action)
         s = _drop(s, _action)
+        print("drop: piece =", _action.piece, ", to =", _action.to)
     # 駒の移動の場合の操作
     else:
         s = _update_legal_move_actions(s, _action)
         s = _move(s, _action)
+        print("move: piece =", _action.piece, ", to =", _action.to)
     s.turn = _another_color(s)
     s.is_check = _is_check(s)
     # 王手をかけている駒は直前に動かした駒
@@ -118,6 +120,7 @@ def step(
         # 王手返しの王手の場合があるので一度リセットする
         s.checking_piece = np.zeros(12, dtype=np.int32)
         s.checking_piece[_action.to] = 1
+        print("checked!")
     else:
         s.checking_piece = np.zeros(12, dtype=np.int32)
     return s, 0, False
