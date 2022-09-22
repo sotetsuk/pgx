@@ -678,7 +678,7 @@ def _update_legal_move_actions(
     else:
         return JaxAnimalShogiState(
             turn=s.turn,
-            borad=s.board,
+            board=s.board,
             hand=s.hand,
             legal_actions_black=new_enemy_actions,
             legal_actions_white=new_player_actions,
@@ -710,7 +710,7 @@ def _update_legal_drop_actions(
     if s.turn == 0:
         return JaxAnimalShogiState(
             turn=s.turn,
-            borad=s.board,
+            board=s.board,
             hand=s.hand,
             legal_actions_black=new_player_actions,
             legal_actions_white=s.legal_actions_white,
@@ -721,7 +721,7 @@ def _update_legal_drop_actions(
     else:
         return JaxAnimalShogiState(
             turn=s.turn,
-            borad=s.board,
+            board=s.board,
             hand=s.hand,
             legal_actions_black=s.legal_actions_black,
             legal_actions_white=new_player_actions,
