@@ -19,7 +19,12 @@ from pgx._animal_shogi import (
     _update_legal_move_actions,
     _update_legal_drop_actions
 )
-from pgx.animal_shogi import *
+from pgx.animal_shogi import (
+    JaxAnimalShogiAction,
+    JaxAnimalShogiState,
+    jax_init,
+    jax_step
+)
 import numpy as np
 import copy
 import random
@@ -379,16 +384,38 @@ def test_update_legal_actions_drop():
         assert white1[i] == w1[i]
 
 
-def convert_jax_state(state: AnimalShogiState):
-    return state
+def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
+    turn = np.array([state.turn]),
+    board = state.board,
+    hand = state.hand,
+    legal_actions_black = state.legal_actions_black,
+    legal_actions_white = state.legal_actions_white,
+    is_check = np.array([0])
+    if state.is_check:
+        is_check[0] = 1
+    checking_piece = state.checking_piece
+    j_state = JaxAnimalShogiState(
+        turn=turn,
+        board=board,
+        hand=hand,
+        legal_actions_black=legal_actions_black,
+        legal_actions_white=legal_actions_white,
+        is_check=is_check,
+        checking_piece=checking_piece
+    )
+    return j_state
 
 
 def test_jax_step():
     np_init = init()
-    jax_init = convert_jax_state(np_init)
+    j_init = convert_jax_state(np_init)
+    j_init2 = jax_init()
+    assert (j_init.board == j_init2.board).all()
+    assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
+    assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
     for i in range(180):
         np_stepped = step(np_init, i)
-        jax_stepped = step(jax_init, i)
+        jax_stepped = jax_step(j_init, i)
         assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
         assert (jax_stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
         assert (jax_stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
