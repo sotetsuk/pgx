@@ -26,7 +26,7 @@ def can_tsumo(hand: jnp.ndarray) -> bool:
                 lambda: (
                     heads,
                     valid,
-                    ((code << 1) + 1) << (hand[9 * i + j] - 1),
+                    ((code << 1) + 1) << (hand[9 * i + j].astype(int) - 1),
                 ),
             )
         heads += AGARI[code] >> 1
