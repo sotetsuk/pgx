@@ -386,25 +386,38 @@ def test_update_legal_actions_drop():
 
 
 def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
-    turn = jnp.array([state.turn]),
-    board = jnp.array(state.board),
-    hand = jnp.array(state.hand),
-    legal_actions_black = jnp.array(state.legal_actions_black),
-    legal_actions_white = jnp.array(state.legal_actions_white),
-    is_check = jnp.array([0])
+    turn = jnp.array([state.turn])
+    board = jnp.zeros((11, 12), dtype=jnp.int32)
+    for i in range(11):
+        for j in range(12):
+            if state.board[i][j] == 1:
+                board = board.at[i, j].set(1)
+    hand = jnp.zeros(6, dtype=jnp.int32)
+    for i in range(6):
+        hand = hand.at[i].set(state.hand[i])
+    legal_actions_black = jnp.zeros(180, dtype=jnp.int32)
+    legal_actions_white = jnp.zeros(180, dtype=jnp.int32)
+    for i in range(180):
+        if state.legal_actions_black[i] == 1:
+            legal_actions_black = legal_actions_black.at[i].set(1)
+        if state.legal_actions_white[i] == 1:
+            legal_actions_white = legal_actions_white.at[i].set(1)
+    is_check = jnp.zeros(1, dtype=jnp.int32)
     if state.is_check:
         is_check = is_check.at[0].set(1)
-    checking_piece = jnp.array(state.checking_piece)
-    j_state = JaxAnimalShogiState(
-        turn=turn[0],
-        board=board[0],
-        hand=hand[0],
-        legal_actions_black=legal_actions_black[0],
-        legal_actions_white=legal_actions_white[0],
+    checking_piece = jnp.zeros(12, dtype=jnp.int32)
+    for i in range(12):
+        if state.checking_piece[i] == 1:
+            checking_piece = checking_piece.at[i].set(1)
+    return JaxAnimalShogiState(
+        turn=turn,
+        board=board,
+        hand=hand,
+        legal_actions_black=legal_actions_black,
+        legal_actions_white=legal_actions_white,
         is_check=is_check,
         checking_piece=checking_piece
     )
-    return j_state
 
 
 def test_jax_init():
@@ -447,21 +460,20 @@ def test_jax_step():
         assert jax_stepped_test2[2] == np_stepped_test2[2]
 
 
-
 if __name__ == '__main__':
-    test_another_color()
-    test_move()
-    test_drop()
-    test_piece_type()
-    test_effected()
-    test_is_check()
-    test_convert_action_to_int()
-    test_convert_int_to_action()
-    test_create_actions()
-    test_add_actions()
-    test_create_legal_actions()
-    test_legal_actions()
-    test_update_legal_actions_move()
-    test_update_legal_actions_drop()
+    #test_another_color()
+    #test_move()
+    #test_drop()
+    #test_piece_type()
+    #test_effected()
+    #test_is_check()
+    #test_convert_action_to_int()
+    #test_convert_int_to_action()
+    #test_create_actions()
+    #test_add_actions()
+    #test_create_legal_actions()
+    #test_legal_actions()
+    #test_update_legal_actions_move()
+    #test_update_legal_actions_drop()
     test_jax_init()
-    #test_jax_step()
+    test_jax_step()
