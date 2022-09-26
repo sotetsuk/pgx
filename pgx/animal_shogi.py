@@ -79,12 +79,12 @@ INIT_BOARD = JaxAnimalShogiState(
 
 
 @jax.jit
-def jax_init() -> JaxAnimalShogiState:
+def init() -> JaxAnimalShogiState:
     return _init_legal_actions(copy.deepcopy(INIT_BOARD))
 
 
 @jax.jit
-def jax_step(
+def step(
     state: JaxAnimalShogiState, action: int
 ) -> Tuple[JaxAnimalShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
