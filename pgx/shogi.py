@@ -40,8 +40,8 @@ class ShogiState:
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
     # move/dropによって変化させる
     # もしかしたら香車や大駒の動きは別で追加した方が良いかも？
-    #legal_actions_black: np.ndarray = np.zeros(180, dtype=np.int32)
-    #legal_actions_white: np.ndarray = np.zeros(180, dtype=np.int32)
+    # legal_actions_black: np.ndarray = np.zeros(180, dtype=np.int32)
+    # legal_actions_white: np.ndarray = np.zeros(180, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
     is_check: int = 0
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
@@ -50,13 +50,18 @@ class ShogiState:
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
 # 端にいる場合は対応するところに0をかけていけないようにする
-#BLACK_PAWN_MOVE = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
-#WHITE_PAWN_MOVE = np.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
-#BLACK_GOLD_MOVE = np.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
-#WHITE_GOLD_MOVE = np.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
-#ROOK_MOVE = np.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
-#BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
-#KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
+# BLACK_PAWN_MOVE = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
+# WHITE_PAWN_MOVE = np.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
+# BLACK_GOLD_MOVE = np.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
+# WHITE_GOLD_MOVE = np.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
+# ROOK_MOVE = np.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
+# BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
+# KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
+
+
+def init():
+    board = _make_init_board()
+    return ShogiState(board=board)
 
 
 def _make_init_board():
@@ -86,7 +91,7 @@ def _make_init_board():
         elif i == 44:
             # 先手玉
             p = 8
-        if i % 9 == 2:
+        elif i % 9 == 2:
             # 後手歩
             p = 15
         elif i == 72 or i == 0:
@@ -98,16 +103,16 @@ def _make_init_board():
         elif i == 54 or i == 18:
             # 後手銀
             p = 18
-        elif i == 70:
+        elif i == 10:
             # 後手角
             p = 19
-        elif i == 16:
+        elif i == 64:
             # 後手飛車
             p = 20
-        elif i == 35 or i == 53:
+        elif i == 45 or i == 27:
             # 後手金
             p = 21
-        elif i == 44:
+        elif i == 36:
             # 後手玉
             p = 22
         else:
@@ -234,7 +239,7 @@ def _piece_type(state: ShogiState, point: int) -> int:
 
 
 def _dlaction_to_action(
-    action: int, state: ShogiState
+        action: int, state: ShogiState
 ) -> ShogiAction:
     direction, to = _separate_dlaction(action)
     if direction <= 10:
@@ -247,4 +252,3 @@ def _dlaction_to_action(
         # 駒打ち
         piece = _direction_to_hand(direction)
         return ShogiAction(True, piece, to)
-
