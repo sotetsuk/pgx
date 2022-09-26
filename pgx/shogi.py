@@ -221,7 +221,7 @@ def _direction_to_from(direction: int, to: int, turn: int) -> Tuple[int, bool]:
         else:
             return to - dif, False
     else:
-        if direction >= 8:
+        if direction >= 10:
             return to + dif, True
         else:
             return to + dif, False
@@ -238,11 +238,9 @@ def _piece_type(state: ShogiState, point: int) -> int:
     return state.board[:, point].argmax()
 
 
-def _dlaction_to_action(
-        action: int, state: ShogiState
-) -> ShogiAction:
+def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
     direction, to = _separate_dlaction(action)
-    if direction <= 10:
+    if direction <= 19:
         # 駒の移動
         _from, is_promote = _direction_to_from(direction, to, state.turn)
         piece = _piece_type(state, _from)

@@ -43,7 +43,7 @@ def test_dlaction_to_action():
     #assert m3 == _dlaction_to_action(i3, s)
     s.turn = 1
     # 28桂馬成
-    i4 = 664
+    i4 = 1474
     m4 = ShogiAction(False, 17, 16, 23, 7, True)
     assert m4 == _dlaction_to_action(i4, s)
     # 95馬
@@ -69,9 +69,8 @@ def test_action_to_dlaction():
     m3 = ShogiAction(False, 2, 0, 8, 0, False)
     #assert _action_to_dlaction(m3, 0) == i3
     # 28桂馬成
-    i4 = 664
+    i4 = 1474
     m4 = ShogiAction(False, 17, 16, 23, 7, True)
-    print(_action_to_dlaction(m4, 1))
     assert _action_to_dlaction(m4, 1) == i4
     # 95馬
     # 今は落ちてしまう
