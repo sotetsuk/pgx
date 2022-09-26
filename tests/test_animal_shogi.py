@@ -19,12 +19,9 @@ from pgx._animal_shogi import (
     _update_legal_move_actions,
     _update_legal_drop_actions
 )
-from pgx.animal_shogi import (
-    JaxAnimalShogiAction,
-    JaxAnimalShogiState,
-    jax_init,
-    jax_step
-)
+from pgx.animal_shogi import JaxAnimalShogiState
+from pgx.animal_shogi import init as jax_init
+from pgx.animal_shogi import step as jax_step
 import numpy as np
 import jax.numpy as jnp
 import copy
