@@ -127,6 +127,26 @@ def _dlshogi_action(direction: int, to: int) -> int:
     return direction * 81 + to
 
 
+# from, toが同じ列にあるかどうか
+def _is_same_column(_from: int, to: int) -> bool:
+    return _from // 9 == to // 9
+
+
+# from, toが同じ行にあるかどうか
+def _is_same_row(_from: int, to: int) -> bool:
+    return _from % 9 == to % 9
+
+
+# from, toが右肩上がりの斜め方向で同じ筋にあるか
+def _is_same_rising(_from: int, to: int) -> bool:
+    return _from // 9 - _from % 9 == to // 9 - to % 9
+
+
+# from, toが右肩下がりの斜め方向で同じ筋にあるか
+def _is_same_declining(_from: int, to: int) -> bool:
+    return _from // 9 + _from % 9 == to // 9 + to % 9
+
+
 # fromの座標とtoの座標からdirを生成
 def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
     direction = -1
@@ -137,21 +157,21 @@ def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
     # UP, UP_LEFT, UP_RIGHT, LEFT, RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT, UP2_LEFT, UP2_RIGHT, UP_PROMOTE...
     # の順でdirを割り振る
     # PROMOTEの場合は+10する処理を入れる
-    if dis == -1:
+    if _is_same_column(_from, to) and dis < 0:
         direction = 0
-    if dis == 8:
+    if _is_same_declining(_from, to) and dis > 0:
         direction = 1
-    if dis == -10:
+    if _is_same_rising(_from, to) and dis < 0:
         direction = 2
-    if dis == 9:
+    if _is_same_row(_from, to) and dis > 0:
         direction = 3
-    if dis == -9:
+    if _is_same_row(_from, to) and dis < 0:
         direction = 4
-    if dis == 1:
+    if _is_same_column(_from, to) and dis > 0:
         direction = 5
-    if dis == 10:
+    if _is_same_rising(_from, to) and dis > 0:
         direction = 6
-    if dis == -8:
+    if _is_same_declining(_from, to) and dis < 0:
         direction = 7
     if dis == 7:
         direction = 8
