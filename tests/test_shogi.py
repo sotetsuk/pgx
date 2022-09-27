@@ -1,4 +1,4 @@
-from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState
+from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop
 import numpy as np
 
 
@@ -70,6 +70,42 @@ def test_action_to_dlaction():
     assert _action_to_dlaction(m5, 1) == i5
 
 
+def test_move():
+    i = init()
+    #26歩
+    action = 14
+    b = _move(i, _dlaction_to_action(action, i))
+    assert b.board[0][14] == 0
+    assert b.board[1][15] == 0
+    assert b.board[1][14] == 1
+    assert b.board[0][15] == 1
+    #76歩
+    action = 59
+    b = _move(b, _dlaction_to_action(action, b))
+    assert b.board[0][59] == 0
+    assert b.board[1][60] == 0
+    assert b.board[1][59] == 1
+    assert b.board[0][60] == 1
+    # 33角成
+    action = 992
+    b = _move(b, _dlaction_to_action(action, b))
+    assert b.board[15][20] == 0
+    assert b.board[5][70] == 0
+    assert b.board[13][20] == 1
+    assert b.board[0][70] == 1
+    assert b.hand[0] == 1
+    b.turn = 1
+    # 33桂馬（同桂）
+    action = 749
+    b = _move(b, _dlaction_to_action(action, b))
+    assert b.board[13][20] == 0
+    assert b.board[17][9] == 0
+    assert b.board[17][20] == 1
+    assert b.board[0][9] == 1
+    assert b.hand[11] == 1
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
+    test_move()

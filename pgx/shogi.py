@@ -279,3 +279,60 @@ def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
         # 駒打ち
         piece = _direction_to_hand(direction)
         return ShogiAction(True, piece, to)
+
+
+# 手番側でない色を返す
+def _another_color(state: ShogiState) -> int:
+    return (state.turn + 1) % 2
+
+
+# 相手の駒を同じ種類の自分の駒に変換する
+def _convert_piece(piece: int) -> int:
+    if piece == 0:
+        return -1
+    p = (piece + 14) % 28
+    if p == 0:
+        return 28
+    else:
+        return p
+
+
+# 駒から持ち駒への変換
+# 先手歩が0、後手金が13
+def _piece_to_hand(piece: int) -> int:
+    if piece % 14 == 0 or piece % 14 >= 9:
+        p = piece - 8
+    else:
+        p = piece
+    if p < 15:
+        return p - 1
+    else:
+        return p - 8
+
+
+# 駒の移動の盤面変換
+def _move(
+    state: ShogiState,
+    action: ShogiAction,
+) -> ShogiState:
+    s = copy.deepcopy(state)
+    s.board[action.piece][action.from_] = 0
+    s.board[0][action.from_] = 1
+    s.board[action.captured][action.to] = 0
+    if action.is_promote:
+        s.board[action.piece + 8][action.to] = 1
+    else:
+        s.board[action.piece][action.to] = 1
+    if action.captured != 0:
+        s.hand[_piece_to_hand(_convert_piece(action.captured))] += 1
+    return s
+
+
+def _drop(
+    state: ShogiState, action: ShogiAction
+) -> ShogiState:
+    s = copy.deepcopy(state)
+    s.hand[_piece_to_hand(action.piece)] -= 1
+    s.board[action.piece][action.to] = 1
+    s.board[0][action.to] = 0
+    return s
