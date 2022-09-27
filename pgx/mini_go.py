@@ -34,9 +34,9 @@ class MiniGoState:
     turn: jnp.ndarray = jnp.zeros(1, dtype=int)
     agehama: jnp.ndarray = jnp.zeros(2, dtype=int)  # [0]: 黒の得たアゲハマ, [1]: 白の方
     passed: jnp.ndarray = jnp.zeros(1, dtype=bool)  # 直前のactionがパスだとTrue
-    kou: jnp.ndarray = jnp.full(
+    kou: jnp.ndarray = jnp.full(  # コウによる着手禁止点, 無ければ(-1, -1)
         2, -1, dtype=int
-    )  # type:ignore コウによる着手禁止点, 無ければ(-1, -1)
+    )  # type:ignore
 
 
 @jax.jit
@@ -81,7 +81,7 @@ def _pass_move(_state: MiniGoState) -> Tuple[MiniGoState, jnp.ndarray, bool]:
 
 @jax.jit
 def _add_turn(_state: MiniGoState) -> MiniGoState:
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
         liberty=_state.liberty,
@@ -95,7 +95,7 @@ def _add_turn(_state: MiniGoState) -> MiniGoState:
 
 @jax.jit
 def _add_pass(_state: MiniGoState) -> MiniGoState:
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
         liberty=_state.liberty,
@@ -111,7 +111,7 @@ def _add_pass(_state: MiniGoState) -> MiniGoState:
 def _not_pass_move(
     _state: MiniGoState, _action: int
 ) -> Tuple[MiniGoState, jnp.ndarray, bool]:
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
         liberty=_state.liberty,
@@ -168,7 +168,7 @@ def _not_duplicate_nor_kou(
     agehama = 0
     a_removed_stone_xy = -1  # コウのために取った位置を記憶する
     # 石を置く
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_my_color, _xy].set(new_id),
         available_ren_id=_state.available_ren_id.at[_my_color, new_id].set(
             False
@@ -333,7 +333,7 @@ def _check_around_stones(
         around_xy,
         _xy,
     )
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=state.ren_id_board,
         available_ren_id=state.available_ren_id,
         liberty=state.liberty.at[oppo_color].set(_liberty),
@@ -425,7 +425,7 @@ def _check_around_stones(
         new_id,
         around_xy,
     )
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=state.ren_id_board,
         available_ren_id=state.available_ren_id,
         liberty=state.liberty.at[_my_color].set(_liberty),
@@ -505,7 +505,7 @@ def __merge_ren(
         jnp.zeros(BOARD_SIZE * BOARD_SIZE, dtype=bool)
     )
 
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_my_color].set(ren_id_board),
         available_ren_id=_state.available_ren_id.at[_my_color].set(
             available_ren_id
@@ -551,7 +551,7 @@ def _remove_stones(
         ren_id_board, liberty, surrounded_stones
     )
 
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=_state.ren_id_board.at[oppo_color].set(oppo_ren_id_board),
         available_ren_id=_state.available_ren_id.at[oppo_color].set(
             oppo_available_ren_id
@@ -649,7 +649,7 @@ def _not_suicide(
     agehama = state.agehama.at[_my_color].set(
         state.agehama[_my_color] + _agehama
     )
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         ren_id_board=state.ren_id_board,
         available_ren_id=state.available_ren_id,
         liberty=state.liberty,
