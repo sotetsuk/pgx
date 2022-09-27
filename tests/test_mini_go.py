@@ -1,4 +1,5 @@
-import numpy as np
+import jax
+import jax.numpy as jnp
 
 from pgx.mini_go import get_board, init, legal_actions, step
 
@@ -6,16 +7,16 @@ from pgx.mini_go import get_board, init, legal_actions, step
 def test_end_by_pass():
     state = init()
 
-    state, _, done = step(state=state, action=None)
+    state, _, done = step(state=state, action=-1)
     assert state.passed[0]
     assert not done
     state, _, done = step(state=state, action=0)
     assert not state.passed[0]
     assert not done
-    state, _, done = step(state=state, action=None)
+    state, _, done = step(state=state, action=-1)
     assert state.passed[0]
     assert not done
-    state, _, done = step(state=state, action=None)
+    state, _, done = step(state=state, action=-1)
     assert state.passed[0]
     assert done
 
@@ -41,14 +42,14 @@ def test_step():
     state, _, _ = step(state=state, action=15)
     state, _, _ = step(state=state, action=23)
     state, _, _ = step(state=state, action=20)
-    state, _, _ = step(state=state, action=None)
+    state, _, _ = step(state=state, action=-1)  # pass
     state, _, _ = step(state=state, action=22)
     state, _, _ = step(state=state, action=19)
     state, _, _ = step(state=state, action=21)
-    state, _, _ = step(state=state, action=None)
-    state, r, done = step(state=state, action=None)
+    state, _, _ = step(state=state, action=-1)  # pass
+    state, r, done = step(state=state, action=-1)  # pass
 
-    expected_board = np.array(
+    expected_board: jnp.ndarray = jnp.array(
         [
             [2, 1, 1, 0, 2],
             [1, 2, 1, 0, 2],
@@ -56,7 +57,7 @@ def test_step():
             [1, 1, 0, 2, 0],
             [1, 1, 1, 0, 2],
         ]
-    )
+    )  # type:ignore
     """
       [ 0 1 2 3 4 ]
     [0] + O O @ +
@@ -67,7 +68,7 @@ def test_step():
     """
     assert (get_board(state) == expected_board.ravel()).all()
     assert done
-    assert (r == np.array([0, 0])).all()
+    assert (r == jnp.array([0, 0])).all()
 
 
 def test_kou():
@@ -81,30 +82,69 @@ def test_kou():
     state, _, _ = step(state=state, action=12)  # BLACK
     state, _, _ = step(state=state, action=7)  # WHITE
 
-    assert (state.kou == np.array([2, 2])).all()
+    assert (state.kou == jnp.array([2, 2])).all()
 
     _, r, done = step(state=state, action=12)  # BLACK
     # ルール違反により黒の負け
     assert done
-    assert (r == np.array([-1, 1])).all()
+    assert (r == jnp.array([-1, 1])).all()
 
     state, _, done = step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not done
-    assert (state.kou == np.array([-1, -1])).all()
+    assert (state.kou == jnp.array([-1, -1])).all()
 
 
-def test_random_play():
+def test_numpy_and_jax():
+    import numpy as np
+
+    from pgx._mini_go import get_board as _get_board
+    from pgx._mini_go import init as _init
+    from pgx._mini_go import legal_actions as _legal_actions
+    from pgx._mini_go import step as _step
+
+    kifu = []
+    state_boards = []
+    state = _init()
+    done = False
+
+    # numpy
+    while not done:
+        actions = np.where(_legal_actions(state))
+        if len(actions[0]) == 0:
+            a = -1
+        else:
+            a = np.random.choice(actions[0], 1)[0]
+        state, _, done = _step(state=state, action=a)
+        kifu.append(a)
+        state_boards.append(_get_board(state))
+        if state.turn[0] > 50:
+            break
+
+    # jax
+    state = init()
+    for i, a in enumerate(kifu):
+        state, _, done = step(state=state, action=a)
+        expected_board: jnp.ndarray = jnp.array(state_boards[i])  # type:ignore
+        assert (expected_board == get_board(state)).all()
+
+        if done:
+            assert i == len(state_boards) - 1
+            break
+
+
+# ものすごくコンパイルに時間がかかる
+def _test_random_play():
     state = init()
     done = False
     while not done:
-        actions = np.where(legal_actions(state))
+        actions = jnp.where(legal_actions(state))
         if len(actions[0]) == 0:
-            a = None
+            a = -1
         else:
-            a = np.random.choice(actions[0], 1)[0]
+            a = jax.random.choice(actions[0], 1)[0]
         state, _, done = step(state=state, action=a)
 
-        if state.turn[0] > 1000:
+        if state.turn[0] > 100:
             break
-    assert state.turn[0] > 1000
+    assert state.turn[0] > 100
