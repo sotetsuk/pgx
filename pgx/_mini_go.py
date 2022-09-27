@@ -226,7 +226,7 @@ def _remove_stones(
     a_removed_stone_xy = _around_xy  # コウのために取った位置を記憶
 
     # 空けたところを自軍の呼吸点に追加
-    liberty = _add_removed_pos_to_liberty(
+    liberty[:] = _add_removed_pos_to_liberty(
         ren_id_board, liberty, surrounded_stones
     )
 
