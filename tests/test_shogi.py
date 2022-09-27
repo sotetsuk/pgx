@@ -17,9 +17,9 @@ def make_test_board():
     # 36に後手桂馬配置
     board[0][23] = 0
     board[17][23] = 1
-    # 57に相手の馬配置
-    board[0][42] = 0
-    board[27][42] = 1
+    # 59に後手馬配置
+    board[0][44] = 0
+    board[27][44] = 1
     return ShogiState(board=board)
 
 
@@ -49,7 +49,7 @@ def test_dlaction_to_action():
     # 95馬
     # 今は落ちてしまう
     i5 = 643
-    m5 = ShogiAction(False, 27, 76, 42, 0, False)
+    m5 = ShogiAction(False, 27, 76, 44, 0, False)
     print(_dlaction_to_action(i5, s))
     #assert m5 == _dlaction_to_action(i5, s)
 
@@ -59,23 +59,20 @@ def test_action_to_dlaction():
     m = ShogiAction(False, 1, 39, 40, 0, False)
     assert _action_to_dlaction(m, 0) == i
     # 68飛車
-    # 今は落ちてしまう
     i2 = 295
     m2 = ShogiAction(False, 7, 52, 16, 0, False)
     assert _action_to_dlaction(m2, 0) == i2
     # 12香車不成
-    # 今は落ちてしまう
     i3 = 1
-    m3 = ShogiAction(False, 2, 0, 8, 0, False)
+    m3 = ShogiAction(False, 2, 1, 8, 0, False)
     assert _action_to_dlaction(m3, 0) == i3
     # 28桂馬成
     i4 = 1474
     m4 = ShogiAction(False, 17, 16, 23, 7, True)
     assert _action_to_dlaction(m4, 1) == i4
     # 95馬
-    # 今は落ちてしまう
     i5 = 643
-    m5 = ShogiAction(False, 27, 76, 42, 0, False)
+    m5 = ShogiAction(False, 27, 76, 44, 0, False)
     assert _action_to_dlaction(m5, 1) == i5
 
 
