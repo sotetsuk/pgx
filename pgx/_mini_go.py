@@ -1,6 +1,6 @@
 # import jax
 import copy
-from typing import Optional, Tuple
+from typing import Tuple
 
 import numpy as np
 from flax import struct
@@ -42,11 +42,11 @@ def init() -> MiniGoState:
 
 
 def step(
-    state: MiniGoState, action: Optional[int]
+    state: MiniGoState, action: int
 ) -> Tuple[MiniGoState, np.ndarray, bool]:
     state = copy.deepcopy(state)
 
-    if action is None:
+    if action < 0:
         result = _pass_move(state)
     else:
         result = _not_pass_move(state, action)
@@ -226,7 +226,7 @@ def _remove_stones(
     a_removed_stone_xy = _around_xy  # コウのために取った位置を記憶
 
     # 空けたところを自軍の呼吸点に追加
-    liberty[:] = _add_removed_pos_to_liberty(
+    liberty = _add_removed_pos_to_liberty(
         ren_id_board, liberty, surrounded_stones
     )
 
