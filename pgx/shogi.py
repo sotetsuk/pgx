@@ -211,9 +211,8 @@ def _separate_dlaction(action: int) -> Tuple[int, int]:
     return action // 81, action % 81
 
 
-# directionからfromがtoからどれだけ離れてるかと成りを含む移動かを得る
-# 手番の情報が必要
-def _direction_to_from(direction: int, to: int, turn: int) -> Tuple[int, bool]:
+# directionからfromがtoからどれだけ離れてるかを返す
+def _direction_to_dif(direction: int, turn: int) -> int:
     dif = 0
     if direction % 10 == 0:
         dif = -1
@@ -236,15 +235,25 @@ def _direction_to_from(direction: int, to: int, turn: int) -> Tuple[int, bool]:
     if direction % 10 == 9:
         dif = -11
     if turn == 0:
-        if direction >= 10:
-            return to - dif, True
-        else:
-            return to - dif, False
+        return dif
     else:
-        if direction >= 10:
-            return to + dif, True
-        else:
-            return to + dif, False
+        return -dif
+
+
+# directionとto,stateから大駒含めた移動のfromの位置を割り出す
+# 成りの移動かどうかも返す
+def _direction_to_from(direction: int, to: int, state: ShogiState) -> Tuple[int, bool]:
+    dif = _direction_to_dif(direction, state.turn)
+    f = to
+    _from = -1
+    for i in range(9):
+        f -= dif
+        if 80 >= f >= 0 and _from == -1 and _piece_type(state, f) != 0:
+            _from = f
+    if direction >= 10:
+        return _from, True
+    else:
+        return _from, False
 
 
 def _direction_to_hand(direction: int) -> int:
@@ -262,7 +271,7 @@ def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
     direction, to = _separate_dlaction(action)
     if direction <= 19:
         # 駒の移動
-        _from, is_promote = _direction_to_from(direction, to, state.turn)
+        _from, is_promote = _direction_to_from(direction, to, state)
         piece = _piece_type(state, _from)
         captured = _piece_type(state, to)
         return ShogiAction(False, piece, to, _from, captured, is_promote)

@@ -30,28 +30,22 @@ def test_dlaction_to_action():
     m = ShogiAction(False, 1, 39, 40, 0, False)
     assert m == _dlaction_to_action(i, s)
     # 68飛車
-    # 今は落ちてしまう
     i2 = 295
     m2 = ShogiAction(False, 7, 52, 16, 0, False)
-    print(_dlaction_to_action(i2, s))
-    #assert m2 == _dlaction_to_action(i2, s)
+    assert m2 == _dlaction_to_action(i2, s)
     # 12香車不成
-    # 今は落ちてしまう
     i3 = 1
-    m3 = ShogiAction(False, 2, 0, 8, 0, False)
-    print(_dlaction_to_action(i3, s))
-    #assert m3 == _dlaction_to_action(i3, s)
+    m3 = ShogiAction(False, 2, 1, 8, 0, False)
+    assert m3 == _dlaction_to_action(i3, s)
     s.turn = 1
     # 28桂馬成
     i4 = 1474
     m4 = ShogiAction(False, 17, 16, 23, 7, True)
     assert m4 == _dlaction_to_action(i4, s)
     # 95馬
-    # 今は落ちてしまう
     i5 = 643
     m5 = ShogiAction(False, 27, 76, 44, 0, False)
-    print(_dlaction_to_action(i5, s))
-    #assert m5 == _dlaction_to_action(i5, s)
+    assert m5 == _dlaction_to_action(i5, s)
 
 
 def test_action_to_dlaction():
