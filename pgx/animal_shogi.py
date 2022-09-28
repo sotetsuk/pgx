@@ -75,7 +75,7 @@ INIT_BOARD = JaxAnimalShogiState(
         ]
     ),
     hand=jnp.array([0, 0, 0, 0, 0, 0]),
-)
+)  # type: ignore
 
 
 @jax.jit
@@ -128,7 +128,7 @@ def step(
         hand=s.hand,
         legal_actions_black=s.legal_actions_black,
         legal_actions_white=s.legal_actions_white,
-    )
+    )  # type: ignore
     no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
     # 王手をかけている駒は直前に動かした駒であるはず
     checking_piece = no_checking_piece.at[_action.to[0]].set(1)
@@ -142,7 +142,7 @@ def step(
             legal_actions_white=s.legal_actions_white,
             is_check=jnp.array([1]),
             checking_piece=checking_piece,
-        ),
+        ),  # type: ignore
         lambda: JaxAnimalShogiState(
             turn=s.turn,
             board=s.board,
@@ -151,7 +151,7 @@ def step(
             legal_actions_white=s.legal_actions_white,
             is_check=jnp.array([0]),
             checking_piece=no_checking_piece,
-        ),
+        ),  # type: ignore
     )
     return s, reward, terminated
 
@@ -263,13 +263,13 @@ def _dlmoveaction_to_action(
     piece = _piece_type(state, _from)
     captured = _piece_type(state, to)
     return JaxAnimalShogiAction(
-        jnp.array([0]),
-        jnp.array([piece]),
-        jnp.array([to]),
-        jnp.array([_from]),
-        jnp.array([captured]),
-        jnp.array([is_promote]),
-    )
+        is_drop=jnp.array([0]),
+        piece=jnp.array([piece]),
+        to=jnp.array([to]),
+        from_=jnp.array([_from]),
+        captured=jnp.array([captured]),
+        is_promote=jnp.array([is_promote]),
+    )  # type: ignore
 
 
 @jax.jit
@@ -277,8 +277,8 @@ def _dldropaction_to_action(action: int) -> JaxAnimalShogiAction:
     direction, to = _separate_dlaction(action)
     piece = _direction_to_hand(direction)
     return JaxAnimalShogiAction(
-        jnp.array([1]), jnp.array([piece]), jnp.array([to])
-    )
+        is_drop=jnp.array([1]), piece=jnp.array([piece]), to=jnp.array([to])
+    )  # type: ignore
 
 
 @jax.jit
@@ -346,7 +346,7 @@ def _move(
         legal_actions_white=state.legal_actions_white,
         is_check=state.is_check,
         checking_piece=state.checking_piece,
-    )
+    )  # type: ignore
 
 
 #  駒打ちの処理
@@ -368,7 +368,7 @@ def _drop(
         legal_actions_white=state.legal_actions_white,
         is_check=state.is_check,
         checking_piece=state.checking_piece,
-    )
+    )  # type: ignore
 
 
 #  ある座標に存在する駒種を返す
@@ -695,7 +695,7 @@ def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
         legal_actions_white=legal_white,
         is_check=s.is_check,
         checking_piece=s.checking_piece,
-    )
+    )  # type: ignore
 
 
 # 駒の移動によるlegal_actionsの更新
@@ -751,7 +751,7 @@ def _update_legal_move_actions(
             legal_actions_white=new_enemy_actions,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
-        ),
+        ),  # type: ignore
         lambda: JaxAnimalShogiState(
             turn=s.turn,
             board=s.board,
@@ -760,7 +760,7 @@ def _update_legal_move_actions(
             legal_actions_white=new_player_actions,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
-        ),
+        ),  # type: ignore
     )
 
 
@@ -795,7 +795,7 @@ def _update_legal_drop_actions(
             legal_actions_white=s.legal_actions_white,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
-        ),
+        ),  # type: ignore
         lambda: JaxAnimalShogiState(
             turn=s.turn,
             board=s.board,
@@ -804,7 +804,7 @@ def _update_legal_drop_actions(
             legal_actions_white=new_player_actions,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
-        ),
+        ),  # type: ignore
     )
 
 
