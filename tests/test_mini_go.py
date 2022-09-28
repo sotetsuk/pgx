@@ -1,7 +1,6 @@
-import jax
 import jax.numpy as jnp
 
-from pgx.go._mini_go import get_board, init, legal_actions, step
+from pgx.mini_go import get_board, init, legal_actions, step
 
 
 def test_end_by_pass():
