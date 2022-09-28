@@ -242,7 +242,9 @@ def _direction_to_dif(direction: int, turn: int) -> int:
 
 # directionとto,stateから大駒含めた移動のfromの位置を割り出す
 # 成りの移動かどうかも返す
-def _direction_to_from(direction: int, to: int, state: ShogiState) -> Tuple[int, bool]:
+def _direction_to_from(
+    direction: int, to: int, state: ShogiState
+) -> Tuple[int, bool]:
     dif = _direction_to_dif(direction, state.turn)
     f = to
     _from = -1
@@ -330,11 +332,56 @@ def _move(
     return s
 
 
-def _drop(
-    state: ShogiState, action: ShogiAction
-) -> ShogiState:
+def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
     s = copy.deepcopy(state)
     s.hand[_piece_to_hand(action.piece)] -= 1
     s.board[action.piece][action.to] = 1
     s.board[0][action.to] = 0
     return s
+
+
+def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
+    is_up = point % 9 == 0
+    is_down = point % 9 == 8
+    is_left = point >= 72
+    is_right = point <= 8
+    return is_up, is_down, is_left, is_right
+
+
+# 桂馬用
+def _is_second_line(point: int) -> Tuple[bool, bool]:
+    u = point % 9 <= 1
+    d = point % 9 >= 7
+    return u, d
+
+
+# point(0~80)を座標((0, 0)~(8, 8))に変換
+def _point_to_location(point: int) -> Tuple[int, int]:
+    return point // 9, point % 9
+
+
+def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    u, d, l, r = _is_side(point)
+    u2, d2 = _is_second_line(point)
+    # (4, 4)での動きを基準にはみ出すところをカットする
+    if u:
+        new_array[:, 3] *= 0
+    if d:
+        new_array[:, 5] *= 0
+    if r:
+        new_array[3, :] *= 0
+    if l:
+        new_array[5, :] *= 0
+    if u2:
+        new_array[:, 2] *= 0
+    if d2:
+        new_array[:, 6] *= 0
+    return new_array
+
+
+def _action_board(array: np.ndarray, point: int) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    y, t = _point_to_location(point)
+    new_array = _cut_outside(new_array, point)
+    return np.roll(new_array, (y - 4, t - 4), axis=(0, 1))
