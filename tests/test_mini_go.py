@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 
 from pgx.mini_go import get_board, init, legal_actions, step
@@ -106,3 +107,24 @@ def test_kou():
     # 回避した場合
     assert not done
     assert state.kou[0] == -1
+
+
+def test_random_play():
+    import numpy as np
+
+    state = init()
+    done = False
+    while not done:
+        actions = np.where(legal_actions(state))
+        if len(actions[0]) == 0:
+            a = -1
+        else:
+            key = jax.random.PRNGKey(0)
+            key, subkey = jax.random.split(key)
+            a = jax.random.choice(subkey, actions[0])
+
+        state, _, done = step(state=state, action=a)
+
+        if state.turn[0] > 100:
+            break
+    assert state.turn[0] > 100
