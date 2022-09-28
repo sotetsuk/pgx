@@ -191,7 +191,9 @@ def _not_pass_move(
         passed=state.passed,
         kou=state.kou.at[0].set(
             jax.lax.cond(
-                kou_occurred & state.agehama[0] - agehama_before == 1,
+                kou_occurred
+                & state.agehama[_my_color(_state)] - agehama_before
+                == 1,
                 lambda _: state.kou[0],
                 lambda _: -1,
                 0,
