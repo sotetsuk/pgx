@@ -240,7 +240,7 @@ def _set_stone(_state: MiniGoState, _xy: int):
     available_ren_id = _state.available_ren_id.at[_my_color(_state)].get()
     next_ren_id = jnp.argmax(available_ren_id)
     available_ren_id = available_ren_id.at[next_ren_id].set(False)
-    return MiniGoState(
+    return MiniGoState(  # type:ignore
         _state.ren_id_board.at[_my_color(_state), _xy].set(next_ren_id),
         _state.available_ren_id.at[_my_color(_state)].set(available_ren_id),
         _state.liberty,
@@ -288,7 +288,7 @@ def _merge_ren(_state: MiniGoState, _xy: int, _adj_xy: int):
     return jax.lax.cond(
         new_id == adj_ren_id,
         lambda _state, liberty: _state,
-        lambda _state, liberty: MiniGoState(
+        lambda _state, liberty: MiniGoState(  # type:ignore
             _state.ren_id_board.at[_my_color(_state)].set(ren_id_board),
             _state.available_ren_id.at[_my_color(_state), large_id].set(True),
             _state.liberty.at[_my_color(_state)].set(liberty),
@@ -327,7 +327,7 @@ def _set_stone_next_to_oppo_ren(_state: MiniGoState, _xy, _adj_xy):
         .set(True)
     )
 
-    state = MiniGoState(
+    state = MiniGoState(  # type:ignore
         _state.ren_id_board,
         _state.available_ren_id,
         liberty,
@@ -369,7 +369,7 @@ def _remove_stones(_state: MiniGoState, _rm_ren_id, _rm_stone_xy):
         _opponent_color(_state), _rm_ren_id
     ].set(True)
 
-    return MiniGoState(
+    return MiniGoState(  # type:ignore
         _state.ren_id_board.at[_opponent_color(_state)].set(oppo_ren_id_board),
         available_ren_id,
         _state.liberty.at[_my_color(_state)].set(liberty),
