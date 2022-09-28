@@ -293,7 +293,7 @@ def show(state: MiniGoState) -> None:
         print("")
 
 
-def _show(state: MiniGoState) -> None:
+def _show_details(state: MiniGoState) -> None:
     show(state)
     print(state.ren_id_board[BLACK].reshape((5, 5)))
     print(state.ren_id_board[WHITE].reshape((5, 5)))

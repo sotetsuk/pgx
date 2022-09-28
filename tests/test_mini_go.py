@@ -82,7 +82,21 @@ def test_kou():
     state, _, _ = step(state=state, action=12)  # BLACK
     state, _, _ = step(state=state, action=7)  # WHITE
 
-    assert (state.kou == jnp.array([2, 2])).all()
+    """
+    ===========
+    + + @ + +
+    + @ + @ +
+    + O @ O +
+    + + O + +
+    + + + + +
+    ===========
+    + + @ + +
+    + @ O @ +
+    + O + O +
+    + + O + +
+    + + + + +
+    """
+    assert state.kou[0] == 12
 
     _, r, done = step(state=state, action=12)  # BLACK
     # ルール違反により黒の負け
@@ -92,57 +106,23 @@ def test_kou():
     state, _, done = step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not done
-    assert (state.kou == jnp.array([-1, -1])).all()
+    assert state.kou[0] == -1
 
 
-def test_numpy_and_jax():
+def test_random_play():
     import numpy as np
 
-    from pgx._mini_go import get_board as _get_board
-    from pgx._mini_go import init as _init
-    from pgx._mini_go import legal_actions as _legal_actions
-    from pgx._mini_go import step as _step
-
-    kifu = []
-    state_boards = []
-    state = _init()
-    done = False
-
-    # numpy
-    while not done:
-        actions = np.where(_legal_actions(state))
-        if len(actions[0]) == 0:
-            a = -1
-        else:
-            a = np.random.choice(actions[0], 1)[0]
-        state, _, done = _step(state=state, action=a)
-        kifu.append(a)
-        state_boards.append(_get_board(state))
-        if state.turn[0] > 50:
-            break
-
-    # jax
-    state = init()
-    for i, a in enumerate(kifu):
-        state, _, done = step(state=state, action=a)
-        expected_board: jnp.ndarray = jnp.array(state_boards[i])  # type:ignore
-        assert (expected_board == get_board(state)).all()
-
-        if done:
-            assert i == len(state_boards) - 1
-            break
-
-
-# ものすごくコンパイルに時間がかかる
-def _test_random_play():
     state = init()
     done = False
     while not done:
-        actions = jnp.where(legal_actions(state))
+        actions = np.where(legal_actions(state))
         if len(actions[0]) == 0:
             a = -1
         else:
-            a = jax.random.choice(actions[0], 1)[0]
+            key = jax.random.PRNGKey(0)
+            key, subkey = jax.random.split(key)
+            a = jax.random.choice(subkey, actions[0])
+
         state, _, done = step(state=state, action=a)
 
         if state.turn[0] > 100:
