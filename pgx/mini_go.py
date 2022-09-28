@@ -226,11 +226,6 @@ def _is_illegal_move(_state: MiniGoState, _xy):
 
 
 @jit
-def _my_color(_state: MiniGoState):
-    return _state.turn[0] % 2
-
-
-@jit
 def _illegal_move(
     _state: MiniGoState,
 ) -> Tuple[MiniGoState, jnp.ndarray, bool]:
@@ -445,6 +440,16 @@ def _show_details(state: MiniGoState) -> None:
 
 
 @jit
+def _my_color(_state: MiniGoState):
+    return _state.turn[0] % 2
+
+
+@jit
+def _opponent_color(_state: MiniGoState) -> int:
+    return (_state.turn[0] + 1) % 2
+
+
+@jit
 def _is_off_board(_pos: jnp.ndarray) -> bool:
     return jnp.logical_not(_is_on_board(_pos))
 
@@ -465,18 +470,8 @@ def _pos_to_xy(pos: jnp.ndarray) -> int:
 
 
 @jit
-def _to_xy(x, y) -> int:
-    return x * BOARD_WIDTH + y
-
-
-@jit
 def _xy_to_pos(xy):
     return jnp.array([xy // BOARD_WIDTH, xy % BOARD_WIDTH])
-
-
-@jit
-def _opponent_color(_state: MiniGoState) -> int:
-    return (_state.turn[0] + 1) % 2
 
 
 @jit
@@ -510,6 +505,11 @@ def _kou_occurred(_state: MiniGoState, xy: int) -> bool:
 
 
 @jit
+def _to_xy(x, y) -> int:
+    return x * BOARD_WIDTH + y
+
+
+@jit
 def _get_reward(state: MiniGoState) -> jnp.ndarray:
     b = _count_ji(state, BLACK) - state.agehama[WHITE]
     w = _count_ji(state, WHITE) - state.agehama[BLACK]
@@ -524,7 +524,7 @@ def _get_reward(state: MiniGoState) -> jnp.ndarray:
 @jit
 def _count_ji(_state: MiniGoState, _color):
     board = get_board(_state)
-    return jnp.count_nonzero(_get_surrounded_stones(board, _color))
+    return jnp.count_nonzero(_get_ji(board, _color))
 
 
 @struct.dataclass
@@ -536,7 +536,7 @@ class JI:
 
 
 @jit
-def _get_surrounded_stones(_board: jnp.ndarray, color: int):
+def _get_ji(_board: jnp.ndarray, color: int):
     # 1. boardの一番外側に1周分追加
     board = jnp.pad(
         _board.reshape((BOARD_WIDTH, BOARD_WIDTH)),
@@ -566,7 +566,7 @@ def _get_surrounded_stones(_board: jnp.ndarray, color: int):
     )
 
     ji = jax.lax.while_loop(
-        lambda ji: jnp.count_nonzero(ji.candidate_xy) != 0, _count_ji_roop, ji
+        lambda ji: jnp.count_nonzero(ji.candidate_xy) != 0, _count_ji_loop, ji
     )
     board = ji.board.reshape((BOARD_WIDTH + 2, BOARD_WIDTH + 2))
 
@@ -575,7 +575,7 @@ def _get_surrounded_stones(_board: jnp.ndarray, color: int):
 
 
 @jit
-def _count_ji_roop(_ji: JI) -> JI:
+def _count_ji_loop(_ji: JI) -> JI:
     board = _ji.board
     xy = jnp.nonzero(_ji.candidate_xy, size=1)[0][0]
     candidate_xy = _ji.candidate_xy.at[xy].set(False)
