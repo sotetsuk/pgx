@@ -10,7 +10,7 @@ def make_test_board():
     board[1][40] = 1
     # 28に先手飛車配置
     board[0][16] = 0
-    board[7][16] = 1
+    board[6][16] = 1
     # 19に先手香車配置
     board[0][8] = 0
     board[2][8] = 1
@@ -31,21 +31,29 @@ def test_dlaction_to_action():
     assert m == _dlaction_to_action(i, s)
     # 68飛車
     i2 = 295
-    m2 = ShogiAction(False, 7, 52, 16, 0, False)
+    m2 = ShogiAction(False, 6, 52, 16, 0, False)
     assert m2 == _dlaction_to_action(i2, s)
     # 12香車不成
     i3 = 1
     m3 = ShogiAction(False, 2, 1, 8, 0, False)
     assert m3 == _dlaction_to_action(i3, s)
+    # 43金（駒打ち）
+    i4 = 81 * 26 + 29
+    m4 = ShogiAction(True, 7, 29)
+    assert m4 == _dlaction_to_action(i4, s)
     s.turn = 1
     # 28桂馬成
     i4 = 1474
-    m4 = ShogiAction(False, 17, 16, 23, 7, True)
+    m4 = ShogiAction(False, 17, 16, 23, 6, True)
     assert m4 == _dlaction_to_action(i4, s)
     # 95馬
     i5 = 643
     m5 = ShogiAction(False, 27, 76, 44, 0, False)
     assert m5 == _dlaction_to_action(i5, s)
+    # 98香車（駒打ち）
+    i6 = 28 * 81 + 79
+    m6 = ShogiAction(True, 16, 79)
+    assert m6 == _dlaction_to_action(i6, s)
 
 
 def test_action_to_dlaction():
@@ -54,7 +62,7 @@ def test_action_to_dlaction():
     assert _action_to_dlaction(m, 0) == i
     # 68飛車
     i2 = 295
-    m2 = ShogiAction(False, 7, 52, 16, 0, False)
+    m2 = ShogiAction(False, 6, 52, 16, 0, False)
     assert _action_to_dlaction(m2, 0) == i2
     # 12香車不成
     i3 = 1
@@ -62,12 +70,16 @@ def test_action_to_dlaction():
     assert _action_to_dlaction(m3, 0) == i3
     # 28桂馬成
     i4 = 1474
-    m4 = ShogiAction(False, 17, 16, 23, 7, True)
+    m4 = ShogiAction(False, 17, 16, 23, 6, True)
     assert _action_to_dlaction(m4, 1) == i4
     # 95馬
     i5 = 643
     m5 = ShogiAction(False, 27, 76, 44, 0, False)
     assert _action_to_dlaction(m5, 1) == i5
+    # 98香車（駒打ち）
+    i6 = 28 * 81 + 79
+    m6 = ShogiAction(True, 16, 79)
+    assert _action_to_dlaction(m6, 1) == i6
 
 
 def test_move():
@@ -105,7 +117,26 @@ def test_move():
     assert b.hand[11] == 1
 
 
+def test_drop():
+    i = init()
+    i.hand = np.ones(14, dtype=np.int32)
+    # 52飛車打ち
+    action = 25 * 81 + 37
+    b = _drop(i, _dlaction_to_action(action, i))
+    assert b.board[0][37] == 0
+    assert b.board[6][37] == 1
+    assert b.hand[5] == 0
+    b.turn = 1
+    # 98香車打ち
+    action = 28 * 81 + 79
+    b = _drop(b, _dlaction_to_action(action, b))
+    assert b.board[0][79] == 0
+    assert b.board[16][79] == 1
+    assert b.hand[8] == 0
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
     test_move()
+    test_drop()

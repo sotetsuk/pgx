@@ -189,7 +189,7 @@ def _hand_to_direction(piece: int) -> int:
     if piece <= 14:
         return 19 + piece
     else:
-        return 5 + piece
+        return 12 + piece
 
 
 # AnimalShogiActionをdlshogiのint型actionに変換
@@ -258,9 +258,11 @@ def _direction_to_from(direction: int, to: int, state: ShogiState) -> Tuple[int,
 
 def _direction_to_hand(direction: int) -> int:
     if direction <= 26:
+        # direction:20が先手の歩（pieceの1）に対応
         return direction - 19
     else:
-        return direction - 5
+        # direction:27が後手の歩（pieceの15）に対応
+        return direction - 12
 
 
 def _piece_type(state: ShogiState, point: int) -> int:
