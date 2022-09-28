@@ -652,4 +652,4 @@ def _count_ji_roop(_ji: JI) -> JI:
             examined_stones[xy + 1] is False,
         )
     )
-    return JI(board, candidate_xy, examined_stones, _ji.color)
+    return JI(board, candidate_xy, examined_stones, _ji.color)  # type:ignore
