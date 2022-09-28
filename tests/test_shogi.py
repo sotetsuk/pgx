@@ -1,4 +1,4 @@
-from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop
+from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, _piece_moves
 import numpy as np
 
 
@@ -135,8 +135,54 @@ def test_drop():
     assert b.hand[8] == 0
 
 
+def test_piece_moves():
+    b1 = init()
+    array1 = _piece_moves(b1, 6, 16)
+    array2 = np.zeros(81, dtype=np.int32)
+    for i in range(8):
+        array2[9 * i + 7] = 1
+    array2[15] = 1
+    array2[16] = 0
+    array2[17] = 1
+    assert np.all(array1 == array2)
+    array3 = _piece_moves(b1, 5, 70)
+    array4 = np.zeros(81, dtype=np.int32)
+    array4[60] = 1
+    array4[62] = 1
+    array4[78] = 1
+    array4[80] = 1
+    assert np.all(array3 == array4)
+    # 76歩を指して角道を開けたときの挙動確認
+    action = 59
+    b1 = _move(b1, _dlaction_to_action(action, b1))
+    new_array3 = _piece_moves(b1, 5, 70)
+    for i in range(4):
+        array4[20 + i * 10] = 1
+    assert np.all(new_array3 == array4)
+    b2 = make_test_board()
+    array5 = _piece_moves(b2, 1, 40)
+    array6 = np.zeros(81, dtype=np.int32)
+    array6[39] = 1
+    assert np.all(array5 == array6)
+    array7 = _piece_moves(b2, 2, 8)
+    array8 = np.zeros(81, dtype=np.int32)
+    for i in range(8):
+        array8[i] = 1
+    assert np.all(array7 == array8)
+    array9 = _piece_moves(b2, 27, 44)
+    array10 = np.zeros(81, dtype=np.int32)
+    for i in range(4):
+        array10[34 - 10 * i] = 1
+        array10[52 + 8 * i] = 1
+    array10[43] = 1
+    array10[35] = 1
+    array10[53] = 1
+    assert np.all(array9 == array10)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
     test_move()
     test_drop()
+    test_piece_moves()
