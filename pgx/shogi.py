@@ -619,6 +619,28 @@ def _piece_moves(state: ShogiState, piece: int, point: int):
     return np.zeros(81, dtype=np.int32)
 
 
+# 小駒のactionのみを返すpiece_moves
+def _small_piece_moves(piece: int, point: int):
+    turn = _owner(piece)
+    piece_type = piece % 14
+    # 歩の動き
+    if piece_type == 1:
+        return _action_board(_pawn_move(turn), point)
+    # 桂馬の動き
+    if piece_type == 3:
+        return _action_board(_knight_move(turn), point)
+    # 銀の動き
+    if piece_type == 4:
+        return _action_board(_silver_move(turn), point)
+    # 金および成金の動き
+    if piece_type == 7 or 9 <= piece_type <= 12:
+        return _action_board(_gold_move(turn), point)
+    # 玉の動き
+    if piece_type == 8:
+        return _action_board(_king_move(), point)
+    return np.zeros(81, dtype=np.int32)
+
+
 # 敵陣かどうか
 def _is_enemy_zone(turn: int, point: int):
     if turn == 0:
@@ -637,7 +659,7 @@ def _can_promote(piece: int, _from: int, to: int):
 
 def _create_piece_actions(state: ShogiState, piece: int, _from: int):
     actions = np.zeros(2673, dtype=np.int32)
-    moves = _piece_moves(state, piece, _from)
+    moves = _small_piece_moves(piece, _from)
     for i in range(81):
         if moves[i] == 0:
             continue

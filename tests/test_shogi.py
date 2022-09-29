@@ -189,11 +189,11 @@ def test_init_legal_actions():
         array_b[5 + 9 * i] = 1
         array_w[3 + 9 * i] = 1
     # 香車のaction
-    for i in range(2):
-        array_b[7 - i] = 1
-        array_b[79 - i] = 1
-        array_w[1 + i] = 1
-        array_w[73 + i] = 1
+    #for i in range(2):
+    #    array_b[7 - i] = 1
+    #    array_b[79 - i] = 1
+    #    array_w[1 + i] = 1
+    #    array_w[73 + i] = 1
     # 桂馬のaction
     for i in range(2):
         array_b[81 * 8 + 24 + 54 * i] = 1
@@ -232,24 +232,24 @@ def test_init_legal_actions():
     array_b[324 + 35] = 1
     array_w[324 + 45] = 1
     # 角のaction
-    array_b[81 + 78] = 1
-    array_b[162 + 60] = 1
-    array_b[81 * 6 + 80] = 1
-    array_b[81 * 7 + 62] = 1
-    array_w[81 + 2] = 1
-    array_w[162 + 20] = 1
-    array_w[81 * 6 + 0] = 1
-    array_w[81 * 7 + 18] = 1
+    #array_b[81 + 78] = 1
+    #array_b[162 + 60] = 1
+    #array_b[81 * 6 + 80] = 1
+    #array_b[81 * 7 + 62] = 1
+    #array_w[81 + 2] = 1
+    #array_w[162 + 20] = 1
+    #array_w[81 * 6 + 0] = 1
+    #array_w[81 * 7 + 18] = 1
     # 飛のaction
-    array_b[15] = 1
-    array_b[81 * 5 + 17] = 1
-    array_b[81 * 4 + 7] = 1
-    array_w[65] = 1
-    array_w[81 * 5 + 63] = 1
-    array_w[81 * 4 + 73] = 1
-    for i in range(6):
-        array_b[81 * 3 + 25 + 9 * i] = 1
-        array_w[81 * 3 + 55 - 9 * i] = 1
+    #array_b[15] = 1
+    #array_b[81 * 5 + 17] = 1
+    #array_b[81 * 4 + 7] = 1
+    #array_w[65] = 1
+    #array_w[81 * 5 + 63] = 1
+    #array_w[81 * 4 + 73] = 1
+    #for i in range(6):
+    #    array_b[81 * 3 + 25 + 9 * i] = 1
+    #    array_w[81 * 3 + 55 - 9 * i] = 1
     assert np.all(array_b == s.legal_actions_black)
     assert np.all(array_w == s.legal_actions_white)
 
