@@ -40,8 +40,8 @@ class ShogiState:
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
     # move/dropによって変化させる
     # もしかしたら香車や大駒の動きは別で追加した方が良いかも？
-    # legal_actions_black: np.ndarray = np.zeros(180, dtype=np.int32)
-    # legal_actions_white: np.ndarray = np.zeros(180, dtype=np.int32)
+    legal_actions_black: np.ndarray = np.zeros(2673, dtype=np.int32)
+    legal_actions_white: np.ndarray = np.zeros(2673, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
     is_check: int = 0
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
@@ -61,7 +61,8 @@ class ShogiState:
 
 def init():
     board = _make_init_board()
-    return ShogiState(board=board)
+    state = ShogiState(board=board)
+    return _init_legal_actions(state)
 
 
 def _make_init_board():
@@ -648,3 +649,74 @@ def _create_piece_actions(state: ShogiState, piece: int, _from: int):
         normal_act = _dlshogi_action(normal_dir, i)
         actions[normal_act] = 1
     return actions
+
+
+# 駒の種類と位置から生成できるactionのフラグを立てる
+def _add_move_actions(state: ShogiState, piece: int, _from: int, array: np.ndarray) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    actions = _create_piece_actions(state, piece, _from)
+    for i in range(2673):
+        if actions[i] == 1:
+            new_array[i] = 1
+    return new_array
+
+
+# 駒の種類と位置から生成できるactionのフラグを折る
+def _filter_move_actions(state: ShogiState, piece: int, _from: int, array: np.ndarray) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    actions = _create_piece_actions(state, piece, _from)
+    for i in range(2673):
+        if actions[i] == 1:
+            new_array[i] = 0
+    return new_array
+
+
+# 駒打ちのactionを追加する
+def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    direction = _hand_to_direction(piece)
+    for i in range(81):
+        action = _dlshogi_action(direction, i)
+        new_array[action] = 1
+    return new_array
+
+
+# 駒打ちのactionのフラグを折る
+def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    direction = _hand_to_direction(piece)
+    for i in range(81):
+        action = _dlshogi_action(direction, i)
+        new_array[action] = 0
+    return new_array
+
+
+# stateからblack,white両方のlegal_actionsを生成する
+# 普段は使わないがlegal_actionsが設定されていない場合に使用
+def _init_legal_actions(state: ShogiState) -> ShogiState:
+    s = copy.deepcopy(state)
+    bs = _board_status(s)
+    # 移動の追加
+    for i in range(81):
+        piece = bs[i]
+        if piece == 0:
+            continue
+        if piece <= 14:
+            s.legal_actions_black = _add_move_actions(
+                s, piece, i, s.legal_actions_black
+            )
+        else:
+            s.legal_actions_white = _add_move_actions(
+                s, piece, i, s.legal_actions_white
+            )
+    # 駒打ちの追加
+    for i in range(7):
+        if s.hand[i] != 0:
+            s.legal_actions_black = _add_drop_actions(
+                1 + i, s.legal_actions_black
+            )
+        if s.hand[i + 7] != 0:
+            s.legal_actions_white = _add_drop_actions(
+                15 + i, s.legal_actions_white
+            )
+    return s

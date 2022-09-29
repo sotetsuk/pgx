@@ -180,9 +180,84 @@ def test_piece_moves():
     assert np.all(array9 == array10)
 
 
+def test_init_legal_actions():
+    s = init()
+    array_b = np.zeros(2673, dtype=np.int32)
+    array_w = np.zeros(2673, dtype=np.int32)
+    # 歩のaction
+    for i in range(9):
+        array_b[5 + 9 * i] = 1
+        array_w[3 + 9 * i] = 1
+    # 香車のaction
+    for i in range(2):
+        array_b[7 - i] = 1
+        array_b[79 - i] = 1
+        array_w[1 + i] = 1
+        array_w[73 + i] = 1
+    # 桂馬のaction
+    for i in range(2):
+        array_b[81 * 8 + 24 + 54 * i] = 1
+        array_b[81 * 9 + 6 + 54 * i] = 1
+        array_w[81 * 8 + 2 + 54 * i] = 1
+        array_w[81 * 9 + 20 + 54 * i] = 1
+    # 銀のaction
+    for i in range(2):
+        array_b[25 + 36 * i] = 1
+        array_w[19 + 36 * i] = 1
+        array_b[81 + 34 + 36 * i] = 1
+        array_w[162 + 28 + 36 * i] = 1
+        array_b[162 + 16 + 36 * i] = 1
+        array_w[81 + 10 + 36 * i] = 1
+    # 金のaction
+    for i in range(2):
+        array_b[34 + 18 * i] = 1
+        array_w[28 + 18 * i] = 1
+        array_b[81 + 43 + 18 * i] = 1
+        array_w[162 + 37 + 18 * i] = 1
+        array_b[162 + 25 + 18 * i] = 1
+        array_w[81 + 19 + 18 * i] = 1
+        array_b[243 + 44 + 18 * i] = 1
+        array_w[243 + 18 + 18 * i] = 1
+        array_b[324 + 26 + 18 * i] = 1
+        array_w[324 + 36 + 18 * i] = 1
+    # 玉のaction
+    array_b[43] = 1
+    array_w[37] = 1
+    array_b[81 + 52] = 1
+    array_w[81 + 28] = 1
+    array_b[162 + 34] = 1
+    array_w[162 + 46] = 1
+    array_b[243 + 53] = 1
+    array_w[243 + 27] = 1
+    array_b[324 + 35] = 1
+    array_w[324 + 45] = 1
+    # 角のaction
+    array_b[81 + 78] = 1
+    array_b[162 + 60] = 1
+    array_b[81 * 6 + 80] = 1
+    array_b[81 * 7 + 62] = 1
+    array_w[81 + 2] = 1
+    array_w[162 + 20] = 1
+    array_w[81 * 6 + 0] = 1
+    array_w[81 * 7 + 18] = 1
+    # 飛のaction
+    array_b[15] = 1
+    array_b[81 * 5 + 17] = 1
+    array_b[81 * 4 + 7] = 1
+    array_w[65] = 1
+    array_w[81 * 5 + 63] = 1
+    array_w[81 * 4 + 73] = 1
+    for i in range(6):
+        array_b[81 * 3 + 25 + 9 * i] = 1
+        array_w[81 * 3 + 55 - 9 * i] = 1
+    assert np.all(array_b == s.legal_actions_black)
+    assert np.all(array_w == s.legal_actions_white)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
     test_move()
     test_drop()
     test_piece_moves()
+    test_init_legal_actions()
