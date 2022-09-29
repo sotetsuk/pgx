@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.mini_go import get_board, init, legal_actions, step
+from pgx.go import get_board, init, legal_actions, step
 
 BOARD_SIZE = 5
 
