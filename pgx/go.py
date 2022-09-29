@@ -6,9 +6,6 @@ from flax import struct
 from jax import jit
 from jax import numpy as jnp
 
-# BOARD_WIDTH = 5
-# BOARD_SIZE = BOARD_WIDTH * BOARD_WIDTH
-
 BLACK = 0
 WHITE = 1
 POINT = 2
