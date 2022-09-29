@@ -72,11 +72,10 @@ def step(
 ) -> Tuple[MiniGoState, jnp.ndarray, bool]:
     return jax.lax.cond(
         action < 0,
-        lambda state, action, size: _pass_move(state, size),
-        lambda state, action, size: _not_pass_move(state, action),
+        lambda state, action: _pass_move(state, size),
+        lambda state, action: _not_pass_move(state, action),
         state,
         action,
-        size,
     )
 
 
@@ -86,14 +85,13 @@ def _pass_move(
 ) -> Tuple[MiniGoState, jnp.ndarray, bool]:
     return jax.lax.cond(
         _state.passed[0],
-        lambda _state, _size: (
+        lambda _state: (
             _add_turn(_state),
             _get_reward(_state, _size),
             True,
         ),  # game end
-        lambda _state, _size: (_add_pass(_state), jnp.array([0, 0]), False),
+        lambda _state: (_add_pass(_state), jnp.array([0, 0]), False),
         _state,
-        _size,
     )
 
 
@@ -430,12 +428,13 @@ def _remove_stones(_state: MiniGoState, _rm_ren_id, _rm_stone_xy):
     )
 
 
-@jit
-def legal_actions(state: MiniGoState) -> jnp.ndarray:
+@partial(jit, static_argnums=(1,))
+def legal_actions(state: MiniGoState, size: int) -> jnp.ndarray:
     return jnp.logical_not(
         jax.lax.map(
-            lambda xy: step(state, xy),
-            jnp.arange(state.size[0] * state.size[0]),
+            lambda xy: step(state, xy, size),
+            # jnp.arange(0, state.size[0] * state.size[0]),
+            jnp.arange(0, size * size),
         )[2]
     )
 
