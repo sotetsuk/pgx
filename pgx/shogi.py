@@ -616,3 +616,35 @@ def _piece_moves(state: ShogiState, piece: int, point: int):
     if piece == 14 or piece == 28:
         return _dragon_move(state, point)
     return np.zeros(81, dtype=np.int32)
+
+
+# 敵陣かどうか
+def _is_enemy_zone(turn: int, point: int):
+    if turn == 0:
+        return point % 9 <= 2
+    else:
+        return point % 9 >= 6
+
+
+def _can_promote(piece: int, _from: int, to: int):
+    # pieceが飛車以下でないと成れない
+    if piece > 6:
+        return False
+    # _fromとtoのどちらかが敵陣であれば成れる
+    return _is_enemy_zone(_owner(piece), _from) or _is_enemy_zone(_owner(piece), to)
+
+
+def _create_piece_actions(state: ShogiState, piece: int, _from: int):
+    actions = np.zeros(2673, dtype=np.int32)
+    moves = _piece_moves(state, piece, _from)
+    for i in range(81):
+        if moves[i] == 0:
+            continue
+        if _can_promote(piece, _from, i):
+            pro_dir = _point_to_direction(_from, i, True, _owner(piece))
+            pro_act = _dlshogi_action(pro_dir, i)
+            actions[pro_act] = 1
+        normal_dir = _point_to_direction(_from, i, False, _owner(piece))
+        normal_act = _dlshogi_action(normal_dir, i)
+        actions[normal_act] = 1
+    return actions
