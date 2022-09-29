@@ -25,7 +25,6 @@ from pgx.animal_shogi import step as jax_step
 import numpy as np
 import jax.numpy as jnp
 import copy
-import random
 
 
 TEST_BOARD = AnimalShogiState(
@@ -414,7 +413,7 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
         legal_actions_white=legal_actions_white,
         is_check=is_check,
         checking_piece=checking_piece
-    )
+    )  # type: ignore
 
 
 def test_jax_init():
