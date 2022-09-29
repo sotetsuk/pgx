@@ -472,5 +472,5 @@ if __name__ == '__main__':
     test_legal_actions()
     test_update_legal_actions_move()
     test_update_legal_actions_drop()
-    test_jax_init()
-    test_jax_step()
+    #test_jax_init()
+    #test_jax_step()

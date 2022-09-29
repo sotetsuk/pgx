@@ -654,10 +654,12 @@ def _can_promote(piece: int, _from: int, to: int):
     if piece > 6:
         return False
     # _fromとtoのどちらかが敵陣であれば成れる
-    return _is_enemy_zone(_owner(piece), _from) or _is_enemy_zone(_owner(piece), to)
+    return _is_enemy_zone(_owner(piece), _from) or _is_enemy_zone(
+        _owner(piece), to
+    )
 
 
-def _create_piece_actions(state: ShogiState, piece: int, _from: int):
+def _create_piece_actions(piece: int, _from: int):
     actions = np.zeros(2673, dtype=np.int32)
     moves = _small_piece_moves(piece, _from)
     for i in range(81):
@@ -674,9 +676,11 @@ def _create_piece_actions(state: ShogiState, piece: int, _from: int):
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
-def _add_move_actions(state: ShogiState, piece: int, _from: int, array: np.ndarray) -> np.ndarray:
+def _add_move_actions(
+    state: ShogiState, piece: int, _from: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
-    actions = _create_piece_actions(state, piece, _from)
+    actions = _create_piece_actions(piece, _from)
     for i in range(2673):
         if actions[i] == 1:
             new_array[i] = 1
@@ -684,9 +688,11 @@ def _add_move_actions(state: ShogiState, piece: int, _from: int, array: np.ndarr
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
-def _filter_move_actions(state: ShogiState, piece: int, _from: int, array: np.ndarray) -> np.ndarray:
+def _filter_move_actions(
+    state: ShogiState, piece: int, _from: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
-    actions = _create_piece_actions(state, piece, _from)
+    actions = _create_piece_actions(piece, _from)
     for i in range(2673):
         if actions[i] == 1:
             new_array[i] = 0
