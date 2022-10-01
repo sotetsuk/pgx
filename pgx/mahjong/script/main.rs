@@ -59,7 +59,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
                     }
                 }
                 if valid {
-                    arr[code] = 1;
+                    arr[code >> 5] |= 1 << (code & 0b11111);
                 }
             }
         } else {
@@ -85,7 +85,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
                         }
                     }
                     if valid {
-                        arr[code] = 2;
+                        arr[code >> 5] |= 1 << (code & 0b11111);
                     }
                 }
             }
@@ -102,14 +102,13 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
 }
 
 fn main() {
-    let mut arr = vec![0; 16329];
+    let mut arr = vec![0; (16329 >> 5) + 1];
     for x in 0..5 {
         for y in 0..2 {
             search(x, y, &mut arr);
         }
     }
 
-    let mut f = std::fs::File::create("src/agari.json").unwrap();
+    let mut f = std::fs::File::create("cache_suited.json").unwrap();
     f.write_all(format!("{:?}", &arr).as_bytes()).unwrap();
 }
-

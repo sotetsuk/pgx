@@ -1,8 +1,0 @@
-RON = 34
-PON = 35
-CHI_R = 36  # 45[6]
-CHI_M = 37  # 4[5]6
-CHI_L = 38  # [4]56
-PASS = 39
-TSUMO = 40
-NONE = 41

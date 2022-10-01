@@ -1,17 +1,17 @@
+import jax
 import jax.numpy as jnp
-from action import CHI_L, CHI_M, CHI_R, NONE, PASS, PON, RON, TSUMO
-from observation import Observation
+from mini_mahjong import Action, Observation, init, step
 from shanten_tools import shanten  # type: ignore
 
 
 def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
     if not jnp.any(legal_actions):
-        return NONE
+        return Action.NONE
 
-    if legal_actions[TSUMO]:
-        return TSUMO
-    if legal_actions[RON]:
-        return RON
+    if legal_actions[Action.TSUMO]:
+        return Action.TSUMO
+    if legal_actions[Action.RON]:
+        return Action.RON
 
     if jnp.sum(obs.hand) % 3 == 2:
         min_shanten = 999
@@ -25,12 +25,12 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
                 discard = tile
         return discard
 
-    if legal_actions[PON]:
+    if legal_actions[Action.PON]:
         s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
         if s < shanten(obs.hand):
-            return PON
+            return Action.PON
 
-    if legal_actions[CHI_R]:
+    if legal_actions[Action.CHI_R]:
         s = shanten(
             obs.hand.at[obs.target - 2]
             .set(obs.hand[obs.target - 2] - 1)
@@ -38,9 +38,9 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .set(obs.hand[obs.target - 1] - 1)
         )
         if s < shanten(obs.hand):
-            return CHI_R
+            return Action.CHI_R
 
-    if legal_actions[CHI_M]:
+    if legal_actions[Action.CHI_M]:
         s = shanten(
             obs.hand.at[obs.target - 1]
             .set(obs.hand[obs.target - 1] - 1)
@@ -48,9 +48,9 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .set(obs.hand[obs.target + 1] - 1)
         )
         if s < shanten(obs.hand):
-            return CHI_M
+            return Action.CHI_M
 
-    if legal_actions[CHI_L]:
+    if legal_actions[Action.CHI_L]:
         s = shanten(
             obs.hand.at[obs.target + 1]
             .set(obs.hand[obs.target + 1] - 1)
@@ -58,6 +58,23 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
             .set(obs.hand[obs.target + 2] - 1)
         )
         if s < shanten(obs.hand):
-            return CHI_L
+            return Action.CHI_L
 
-    return PASS
+    return Action.PASS
+
+
+if __name__ == "__main__":
+    for i in range(5):
+        state = init(jax.random.PRNGKey(seed=i))
+        reward = jnp.full(4, 0)
+        done = False
+        while not done:
+            legal_actions = state.legal_actions()
+            selected = jnp.array(
+                [act(legal_actions[i], state.observe(i)) for i in range(4)]
+            )
+            state, reward, done = step(state, selected)
+
+        print("hand:", state.hand)
+        print("reward:", reward)
+        print("-" * 30)
