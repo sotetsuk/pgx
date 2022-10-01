@@ -387,4 +387,3 @@ def step(
     state: State, actions: jnp.ndarray
 ) -> Tuple[State, jnp.ndarray, bool]:
     return State.step(state, actions)
-
