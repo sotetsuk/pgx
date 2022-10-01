@@ -41,6 +41,14 @@ def test_hand():
     hand = Hand.pon(hand, 0)
     assert hand[0] == 0
 
+    hand = jnp.array([
+        3,1,1,1,1,1,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0
+        ])
+    assert Hand.can_tsumo(hand)
+
 
 def test_state():
     state = init(jax.random.PRNGKey(seed=0))
