@@ -57,7 +57,7 @@ class Hand:
     @staticmethod
     @jit
     def cache_suited(code: int) -> int:
-        return (Hand.CACHE_SUITED[code >> 5] >> (code & 0b1111)) & 1
+        return (Hand.CACHE_SUITED[code >> 5] >> (code & 0b11111)) & 1
 
     @staticmethod
     @jit
