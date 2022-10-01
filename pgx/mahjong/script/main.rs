@@ -59,7 +59,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
                     }
                 }
                 if valid {
-                    arr[code >> 4] |= 0b01 << (2 * (code & 0b1111));
+                    arr[code >> 5] |= 1 << (code & 0b11111);
                 }
             }
         } else {
@@ -85,7 +85,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
                         }
                     }
                     if valid {
-                        arr[code >> 4] |= 0b10 << (2 * (code & 0b1111));
+                        arr[code >> 5] |= 1 << (code & 0b11111);
                     }
                 }
             }
@@ -102,7 +102,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
 }
 
 fn main() {
-    let mut arr = vec![0; (16329 >> 4) + 1];
+    let mut arr = vec![0; (16329 >> 5) + 1];
     for x in 0..5 {
         for y in 0..2 {
             search(x, y, &mut arr);
