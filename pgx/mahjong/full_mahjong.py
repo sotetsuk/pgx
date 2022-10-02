@@ -262,20 +262,24 @@ class State:
 
         # リーチ宣言直後の打牌
         legal_actions = jax.lax.cond(
-            self.riichi_declared,
+            (self.last_draw != -1) & self.riichi_declared,
             lambda arr: jax.lax.fori_loop(
                 0,
                 34,
                 lambda i, arr: arr.at[(self.turn, i)].set(
                     jax.lax.cond(
-                        self.hand[self.turn][i] == 0,
-                        lambda: False,
+                        self.hand[self.turn][i] > (i == self.last_draw),
                         lambda: Hand.is_tenpai(
                             Hand.sub(self.hand[self.turn], i)
                         ),
+                        lambda: False,
                     )
                 ),
                 arr,
+            )
+            .at[(self.turn, Action.TSUMOGIRI)]
+            .set(
+                Hand.is_tenpai(Hand.sub(self.hand[self.turn], self.last_draw))
             ),
             lambda arr: arr,
             legal_actions,
@@ -356,12 +360,14 @@ class State:
     def init(key) -> State:
         deck = Deck.init(key)
         hand = jnp.zeros((4, 34), dtype=jnp.uint8)
-        tile = -1
 
         for i in range(4):
-            for _ in range(14 if i == 0 else 13):
+            for _ in range(13):
                 deck, tile = Deck.draw(deck)
                 hand = hand.at[i].set(Hand.add(hand[i], tile))
+
+        deck, tile = Deck.draw(deck)
+        hand = hand.at[0].set(Hand.add(hand[0], tile))
 
         turn = 0
         target = -1
@@ -436,7 +442,9 @@ class State:
     @staticmethod
     @jit
     def _accept_riichi(state: State) -> State:
-        state.riichi = state.riichi.at[state.turn].set(state.riichi_declared)
+        state.riichi = state.riichi.at[state.turn].set(
+            state.riichi[state.turn] | state.riichi_declared
+        )
         state.riichi_declared = False
         return state
 

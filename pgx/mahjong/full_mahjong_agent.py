@@ -12,19 +12,20 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
         return Action.TSUMO
     if legal_actions[Action.RON]:
         return Action.RON
-    # if legal_actions[Action.RIICHI]:
-    #     return Action.RIICHI
+    if legal_actions[Action.RIICHI]:
+        return Action.RIICHI
 
     if jnp.sum(obs.hand) % 3 == 2:
         min_shanten = 999
         discard = -1
         for tile in range(34):
-            if obs.hand[tile] == 0:
-                continue
-            s = shanten(obs.hand.at[tile].set(obs.hand[tile] - 1))
-            if s < min_shanten:
-                s = min_shanten
-                discard = tile
+            if legal_actions[tile] or (
+                tile == obs.last_draw and legal_actions[Action.TSUMOGIRI]
+            ):
+                s = shanten(obs.hand.at[tile].set(obs.hand[tile] - 1))
+                if s < min_shanten:
+                    s = min_shanten
+                    discard = tile
         return discard if obs.last_draw != discard else Action.TSUMOGIRI
 
     if legal_actions[Action.PON]:
@@ -78,5 +79,6 @@ if __name__ == "__main__":
             state, reward, done = step(state, selected)
 
         print("hand:", state.hand)
+        print("riichi:", state.riichi)
         print("reward:", reward)
         print("-" * 30)
