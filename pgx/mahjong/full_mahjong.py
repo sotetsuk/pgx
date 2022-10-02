@@ -15,7 +15,11 @@ class Deck:
 
     @jit
     def is_empty(self) -> bool:
-        return self.idx == 122
+        return self.size() == 0
+
+    @jit
+    def size(self) -> int:
+        return 122 - self.idx
 
     def _tree_flatten(self):
         children = (self.idx, self.arr)
@@ -251,12 +255,11 @@ class State:
             (self.last_draw == -1)
             | self.riichi_declared
             | self.riichi[self.turn]
-            | self.deck.is_empty(),
-            # TODO: ツモ番なしリーチはNG
+            | (self.deck.size() < 4)
+            | (jnp.sum(self.hand[self.turn]) < 14),
             lambda: legal_actions,
             lambda: legal_actions.at[(self.turn, Action.RIICHI)].set(
                 Hand.can_riichi(self.hand[self.turn])
-                # TODO: 面前でないときはリーチできない
             ),
         )
 
