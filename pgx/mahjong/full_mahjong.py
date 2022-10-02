@@ -33,6 +33,7 @@ class Deck:
     @staticmethod
     @jit
     def draw(deck: Deck) -> Tuple[Deck, int]:
+        # assert not deck.is_empty()
         tile = deck.arr[deck.idx]
         deck.idx += 1
         return deck, tile
@@ -62,11 +63,42 @@ class Hand:
     @staticmethod
     @jit
     def can_ron(hand: jnp.ndarray, tile: int) -> bool:
-        return Hand.can_tsumo(hand.at[tile].set(hand[tile] + 1))
+        # assert jnp.sum(hand) % 3 == 1
+        # assert hand[tile] < 4
+        return Hand.can_tsumo(Hand.add(hand, tile))
+
+    @staticmethod
+    @jit
+    def can_riichi(hand: jnp.ndarray) -> bool:
+        # assert: hand is menzen
+        return jax.lax.fori_loop(
+                0, 34,
+                lambda i, sum: jax.lax.cond(
+                    hand[i] == 0,
+                    lambda: sum,
+                    lambda: sum | Hand.is_tenpai(Hand.sub(hand, i))
+                    ),
+                False
+                )
+
+    @staticmethod
+    @jit
+    def is_tenpai(hand: jnp.ndarray) -> bool:
+        # assert jnp.sum(hand) % 3 == 1
+        return jax.lax.fori_loop(
+                0, 34,
+                lambda tile, sum: jax.lax.cond(
+                    hand[tile] == 4,
+                    lambda: False,
+                    lambda: sum | Hand.can_ron(hand, tile)
+                    ),
+                False
+                )
 
     @staticmethod
     @jit
     def can_tsumo(hand: jnp.ndarray) -> bool:
+        # assert jnp.sum(hand) % 3 == 2
         heads = 0
         valid = True
         for i in range(3):
@@ -105,6 +137,8 @@ class Hand:
     @staticmethod
     @jit
     def can_chi(hand: jnp.ndarray, tile: int, pos: int) -> bool:
+        # assert jnp.sum(hand) % 3 == 1
+        # assert tile < 27
         # pos:
         #    0: 45[6]
         #    1: 4[5]6
@@ -137,21 +171,25 @@ class Hand:
     @staticmethod
     @jit
     def add(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
+        # assert 0 <= hand[tile] + x <= 4
         return hand.at[tile].set(hand[tile] + x)
 
     @staticmethod
     @jit
     def sub(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
+        # assert 0 <= hand[tile] - x <= 4
         return Hand.add(hand, tile, -x)
 
     @staticmethod
     @jit
     def pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # assert Hand.can_pon(hand, tile)
         return Hand.sub(hand, tile, 2)
 
     @staticmethod
     @jit
     def chi(hand: jnp.ndarray, tile: int, pos: int) -> jnp.ndarray:
+        # assert Hand.can_chi(hand, tile, pos)
         return jax.lax.switch(
             pos,
             [
@@ -332,14 +370,17 @@ class State:
     @staticmethod
     @jit
     def _ryukyoku(state: State) -> Tuple[State, jnp.ndarray, bool]:
-        return state, jnp.full(4, 0), True
+        reward = jnp.array([
+            2 * Hand.is_tenpai(state.hand[i]) - 1 for i in range(4)
+            ])
+        return state, reward, True
 
     @staticmethod
     @jit
     def _ron(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
         return (
             state,
-            jnp.full(4, 0).at[state.turn].set(-1).at[player].set(1),
+            jnp.full(4, 0).at[state.turn].set(-2).at[player].set(2),
             True,
         )
 
@@ -368,7 +409,7 @@ class State:
     @staticmethod
     @jit
     def _tsumo(state: State) -> Tuple[State, jnp.ndarray, bool]:
-        return state, jnp.full(4, -1).at[state.turn].set(1), True
+        return state, jnp.full(4, -2).at[state.turn].set(2), True
 
     def _tree_flatten(self):
         children = (self.deck, self.hand, self.turn, self.target)
