@@ -1,4 +1,6 @@
-from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, _piece_moves, _is_check
+from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
+    _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions
+
 import numpy as np
 
 
@@ -182,8 +184,8 @@ def test_piece_moves():
 
 def test_init_legal_actions():
     s = init()
-    array_b = np.zeros(2673, dtype=np.int32)
-    array_w = np.zeros(2673, dtype=np.int32)
+    array_b = np.zeros(2754, dtype=np.int32)
+    array_w = np.zeros(2754, dtype=np.int32)
     # 歩のaction
     for i in range(9):
         array_b[5 + 9 * i] = 1
@@ -275,6 +277,111 @@ def test_is_check():
     assert _is_check(s)
 
 
+def test_legal_actions():
+    state = init()
+    actions1 = _legal_actions(state)
+    actions2 = np.zeros(2754, dtype=np.int32)
+    # 歩のaction
+    for i in range(9):
+        actions2[5 + 9 * i] = 1
+    # 香車のaction
+    actions2[7] = 1
+    actions2[79] = 1
+    # 桂馬のaction
+    # 銀のaction
+    actions2[25] = 1
+    actions2[61] = 1
+    actions2[81 + 34] = 1
+    actions2[162 + 52] = 1
+    # 金のaction
+    for i in range(2):
+        actions2[34 + 18 * i] = 1
+        actions2[81 + 43 + 18 * i] = 1
+        actions2[162 + 25 + 18 * i] = 1
+    # 玉のaction
+    actions2[43] = 1
+    actions2[81 + 52] = 1
+    actions2[162 + 34] = 1
+    # 角のaction
+    # 飛のaction
+    actions2[81 * 4 + 7] = 1
+    for i in range(5):
+        actions2[81 * 3 + 25 + 9 * i] = 1
+    assert np.all(actions2 == actions1)
+    state.turn = 1
+    actions1 = _legal_actions(state)
+    actions2 = np.zeros(2754, dtype=np.int32)
+    # 歩のaction
+    for i in range(9):
+        actions2[3 + 9 * i] = 1
+    # 香車のaction
+    actions2[1] = 1
+    actions2[73] = 1
+    # 桂馬のaction
+    # 銀のaction
+    actions2[19] = 1
+    actions2[55] = 1
+    actions2[81 + 46] = 1
+    actions2[162 + 28] = 1
+    # 金のaction
+    for i in range(2):
+        actions2[28 + 18 * i] = 1
+        actions2[81 + 37 - 18 * i] = 1
+        actions2[162 + 55 - 18 * i] = 1
+    # 玉のaction
+    actions2[37] = 1
+    actions2[81 + 28] = 1
+    actions2[162 + 46] = 1
+    # 角のaction
+    # 飛のaction
+    actions2[81 * 4 + 73] = 1
+    for i in range(5):
+        actions2[81 * 3 + 55 - 9 * i] = 1
+    assert np.all(actions1 == actions2)
+    state.board[16][39] = 1
+    state.board[0][39] = 0
+    state.board[19][43] = 1
+    state.board[0][43] = 0
+    actions1 = _legal_actions(state)
+    actions2[40] = 1
+    actions2[41] = 1
+    actions2[42] = 1
+    actions2[42 + 810] = 1
+    actions2[81 + 35] = 1
+    actions2[162 + 53] = 1
+    actions2[81 * 6 + 33] = 1
+    actions2[81 * 7 + 51] = 1
+    actions2[81 + 35 + 810] = 1
+    actions2[162 + 53 + 810] = 1
+    actions2[81 * 6 + 33 + 810] = 1
+    actions2[81 * 7 + 51 + 810] = 1
+    actions2[39] = 0
+    assert np.all(actions1 == actions2)
+    # 後手の持ち駒に金と桂馬を追加
+    state.legal_actions_white = _add_drop_actions(17, state.legal_actions_white)
+    state.legal_actions_white = _add_drop_actions(21, state.legal_actions_white)
+    actions1 = _legal_actions(state)
+    for i in range(9):
+        if i == 0 or i == 2 or i == 6 or i == 8:
+            continue
+        for j in range(9):
+            if i == 1 and j == 1:
+                continue
+            if i == 1 and j == 7:
+                continue
+            if i == 7 and j == 1:
+                continue
+            if i == 7 and j == 7:
+                continue
+            if i == 3 and j == 4:
+                continue
+            if i == 7 and j == 4:
+                continue
+            actions2[81 * 29 + 9 * j + i] = 1
+            actions2[81 * 33 + 9 * j + i] = 1
+    assert np.all(actions1 == actions2)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -283,3 +390,4 @@ if __name__ == '__main__':
     test_piece_moves()
     test_init_legal_actions()
     test_is_check()
+    test_legal_actions()
