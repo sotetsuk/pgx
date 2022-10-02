@@ -103,31 +103,42 @@ class Hand:
         # assert jnp.sum(hand) % 3 == 2
         heads = 0
         valid = True
+
         for i in range(3):
-            code = 0
-            size = 0
-            for j in range(9):
-                heads, valid, code, size = jax.lax.cond(
+            heads, valid, code, size = jax.lax.fori_loop(
+                0,
+                9,
+                lambda j, tpl: jax.lax.cond(
                     hand[9 * i + j] == 0,
                     lambda: (
-                        heads + (size % 3 == 2),
-                        valid & (Hand.cache_suited(code) != 0),
+                        tpl[0] + (tpl[3] % 3 == 2),
+                        tpl[1] & (Hand.cache_suited(tpl[2]) != 0),
                         0,
                         0,
                     ),
                     lambda: (
-                        heads,
-                        valid,
-                        ((code << 1) + 1) << (hand[9 * i + j].astype(int) - 1),
-                        size + hand[9 * i + j].astype(int),
+                        tpl[0],
+                        tpl[1],
+                        ((tpl[2] << 1) + 1)
+                        << (hand[9 * i + j].astype(int) - 1),
+                        tpl[3] + hand[9 * i + j].astype(int),
                     ),
-                )
+                ),
+                (heads, valid, 0, 0),
+            )
+
             heads += size % 3 == 2
             valid &= Hand.cache_suited(code) != 0
 
-        for i in range(27, 34):
-            heads += hand[i] % 3 == 2
-            valid &= Hand.CACHE_HONOR[hand[i]] != 0
+        heads, valid = jax.lax.fori_loop(
+            27,
+            34,
+            lambda i, tpl: (
+                tpl[0] + (hand[i] % 3 == 2),
+                tpl[1] & (Hand.CACHE_HONOR[hand[i]] != 0),
+            ),
+            (heads, valid),
+        )
 
         return valid & (heads == 1)
 
@@ -284,7 +295,7 @@ class State:
 
         # 手出し, 鳴いた後の手出し
         legal_actions = jax.lax.cond(
-            (self.target != -1) 
+            (self.target != -1)
             | self.riichi_declared
             | self.riichi[self.turn],
             lambda arr: arr,
@@ -358,7 +369,9 @@ class State:
         last_draw = tile
         riichi_declared = False
         riichi = jnp.full(4, False)
-        return State(deck, hand, turn, target, last_draw, riichi_declared, riichi)
+        return State(
+            deck, hand, turn, target, last_draw, riichi_declared, riichi
+        )
 
     @staticmethod
     @jit
