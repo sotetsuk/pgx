@@ -337,123 +337,123 @@ def test_update_legal_actions_move():
         assert white1[i] == w1[i]
 
 
-def test_update_legal_actions_drop():
-    d = AnimalShogiAction(True, 7, 2)
-    updated1 = _init_legal_actions(copy.deepcopy(TEST_BOARD2))
-    updated1 = _update_legal_drop_actions(updated1, d)
-    black1 = updated1.legal_actions_black
-    white1 = updated1.legal_actions_white
-    b1 = np.zeros(180, dtype=np.int32)
-    w1 = np.zeros(180, dtype=np.int32)
-    b1[2] = 1
-    b1[6] = 1
-    b1[10] = 1
-    b1[18] = 1
-    b1[30] = 1
-    b1[43] = 1
-    b1[47] = 1
-    b1[51] = 1
-    b1[55] = 1
-    w1[2] = 1
-    w1[3] = 1
-    w1[5] = 1
-    w1[7] = 1
-    w1[13] = 1
-    w1[14] = 1
-    w1[29] = 1
-    w1[30] = 1
-    w1[33] = 1
-    w1[34] = 1
-    w1[36] = 1
-    w1[53] = 1
-    w1[54] = 1
-    w1[56] = 1
-    w1[60] = 1
-    w1[61] = 1
-    w1[72] = 1
-    w1[92] = 1
-    w1[103] = 1
-    for i in range(12):
-        w1[144 + i] = 1
-        w1[168 + i] = 1
-    for i in range(180):
-        assert black1[i] == b1[i]
-        assert white1[i] == w1[i]
+#def test_update_legal_actions_drop():
+#    d = AnimalShogiAction(True, 7, 2)
+#    updated1 = _init_legal_actions(copy.deepcopy(TEST_BOARD2))
+#    updated1 = _update_legal_drop_actions(updated1, d)
+#    black1 = updated1.legal_actions_black
+#    white1 = updated1.legal_actions_white
+#    b1 = np.zeros(180, dtype=np.int32)
+#    w1 = np.zeros(180, dtype=np.int32)
+#    b1[2] = 1
+#    b1[6] = 1
+#   b1[10] = 1
+#    b1[18] = 1
+#    b1[30] = 1
+#    b1[43] = 1
+#    b1[47] = 1
+#    b1[51] = 1
+#    b1[55] = 1
+#    w1[2] = 1
+#    w1[3] = 1
+#    w1[5] = 1
+#    w1[7] = 1
+#    w1[13] = 1
+#    w1[14] = 1
+#    w1[29] = 1
+#    w1[30] = 1
+#    w1[33] = 1
+#    w1[34] = 1
+#    w1[36] = 1
+#    w1[53] = 1
+#    w1[54] = 1
+#    w1[56] = 1
+#    w1[60] = 1
+#    w1[61] = 1
+#    w1[72] = 1
+#    w1[92] = 1
+#    w1[103] = 1
+#    for i in range(12):
+#        w1[144 + i] = 1
+#        w1[168 + i] = 1
+#    for i in range(180):
+#        assert black1[i] == b1[i]
+#        assert white1[i] == w1[i]
 
 
-def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
-    turn = jnp.array([state.turn])
-    board = jnp.zeros((11, 12), dtype=jnp.int32)
-    for i in range(11):
-        for j in range(12):
-            if state.board[i][j] == 1:
-                board = board.at[i, j].set(1)
-    hand = jnp.zeros(6, dtype=jnp.int32)
-    for i in range(6):
-        hand = hand.at[i].set(state.hand[i])
-    legal_actions_black = jnp.zeros(180, dtype=jnp.int32)
-    legal_actions_white = jnp.zeros(180, dtype=jnp.int32)
-    for i in range(180):
-        if state.legal_actions_black[i] == 1:
-            legal_actions_black = legal_actions_black.at[i].set(1)
-        if state.legal_actions_white[i] == 1:
-            legal_actions_white = legal_actions_white.at[i].set(1)
-    is_check = jnp.zeros(1, dtype=jnp.int32)
-    if state.is_check:
-        is_check = is_check.at[0].set(1)
-    checking_piece = jnp.zeros(12, dtype=jnp.int32)
-    for i in range(12):
-        if state.checking_piece[i] == 1:
-            checking_piece = checking_piece.at[i].set(1)
-    return JaxAnimalShogiState(
-        turn=turn,
-        board=board,
-        hand=hand,
-        legal_actions_black=legal_actions_black,
-        legal_actions_white=legal_actions_white,
-        is_check=is_check,
-        checking_piece=checking_piece
-    )  # type: ignore
+#def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
+#    turn = jnp.array([state.turn])
+#    board = jnp.zeros((11, 12), dtype=jnp.int32)
+#    for i in range(11):
+#        for j in range(12):
+#            if state.board[i][j] == 1:
+#                board = board.at[i, j].set(1)
+#    hand = jnp.zeros(6, dtype=jnp.int32)
+#    for i in range(6):
+#        hand = hand.at[i].set(state.hand[i])
+#    legal_actions_black = jnp.zeros(180, dtype=jnp.int32)
+#    legal_actions_white = jnp.zeros(180, dtype=jnp.int32)
+#    for i in range(180):
+#        if state.legal_actions_black[i] == 1:
+#            legal_actions_black = legal_actions_black.at[i].set(1)
+#        if state.legal_actions_white[i] == 1:
+#            legal_actions_white = legal_actions_white.at[i].set(1)
+#    is_check = jnp.zeros(1, dtype=jnp.int32)
+#    if state.is_check:
+#        is_check = is_check.at[0].set(1)
+#    checking_piece = jnp.zeros(12, dtype=jnp.int32)
+#    for i in range(12):
+#        if state.checking_piece[i] == 1:
+#            checking_piece = checking_piece.at[i].set(1)
+#    return JaxAnimalShogiState(
+#        turn=turn,
+#        board=board,
+#        hand=hand,
+#        legal_actions_black=legal_actions_black,
+#        legal_actions_white=legal_actions_white,
+#        is_check=is_check,
+#        checking_piece=checking_piece
+#    )  # type: ignore
 
 
-def test_jax_init():
-    np_init = init()
-    j_init = convert_jax_state(np_init)
-    j_init2 = jax_init()
-    assert (j_init.board == j_init2.board).all()
-    assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
-    assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
+#def test_jax_init():
+#    np_init = init()
+#    j_init = convert_jax_state(np_init)
+#    j_init2 = jax_init()
+#    assert (j_init.board == j_init2.board).all()
+#    assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
+#    assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
 
 
-def test_jax_step():
-    np_init = init()
-    j_init = convert_jax_state(np_init)
-    np_test = _init_legal_actions(copy.deepcopy(TEST_BOARD))
-    j_test = convert_jax_state(np_test)
-    np_test2 = _init_legal_actions(copy.deepcopy(TEST_BOARD2))
-    j_test2 = convert_jax_state(np_test2)
-    for i in range(180):
-        np_stepped = step(np_init, i)
-        jax_stepped = jax_step(j_init, i)
-        assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
-        assert (jax_stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
-        assert (jax_stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
-        assert jax_stepped[1] == np_stepped[1]
-        assert jax_stepped[2] == np_stepped[2]
-        np_stepped_test = step(np_test, i)
-        jax_stepped_test = jax_step(j_test, i)
-        assert (jax_stepped_test[0].board == convert_jax_state(np_stepped_test[0]).board).all()
-        assert (jax_stepped_test[0].legal_actions_black == convert_jax_state(np_stepped_test[0]).legal_actions_black).all()
-        assert (jax_stepped_test[0].legal_actions_white == convert_jax_state(np_stepped_test[0]).legal_actions_white).all()
-        assert jax_stepped_test[1] == np_stepped_test[1]
-        assert jax_stepped_test[2] == np_stepped_test[2]
-        np_stepped_test2 = step(np_test2, i)
-        jax_stepped_test2 = jax_step(j_test2, i)
-        assert (jax_stepped_test2[0].board == convert_jax_state(np_stepped_test2[0]).board).all()
-        assert (jax_stepped_test2[0].legal_actions_black == convert_jax_state(np_stepped_test2[0]).legal_actions_black).all()
-        assert (jax_stepped_test2[0].legal_actions_white == convert_jax_state(np_stepped_test2[0]).legal_actions_white).all()
-        assert jax_stepped_test2[1] == np_stepped_test2[1]
-        assert jax_stepped_test2[2] == np_stepped_test2[2]
+#def test_jax_step():
+#    np_init = init()
+#    j_init = convert_jax_state(np_init)
+#    np_test = _init_legal_actions(copy.deepcopy(TEST_BOARD))
+#    j_test = convert_jax_state(np_test)
+#    np_test2 = _init_legal_actions(copy.deepcopy(TEST_BOARD2))
+#    j_test2 = convert_jax_state(np_test2)
+#    for i in range(180):
+#        np_stepped = step(np_init, i)
+#        jax_stepped = jax_step(j_init, i)
+#        assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
+#        assert (jax_stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
+#        assert (jax_stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
+#        assert jax_stepped[1] == np_stepped[1]
+#        assert jax_stepped[2] == np_stepped[2]
+#        np_stepped_test = step(np_test, i)
+#        jax_stepped_test = jax_step(j_test, i)
+#        assert (jax_stepped_test[0].board == convert_jax_state(np_stepped_test[0]).board).all()
+#        assert (jax_stepped_test[0].legal_actions_black == convert_jax_state(np_stepped_test[0]).legal_actions_black).all()
+#        assert (jax_stepped_test[0].legal_actions_white == convert_jax_state(np_stepped_test[0]).legal_actions_white).all()
+#        assert jax_stepped_test[1] == np_stepped_test[1]
+#        assert jax_stepped_test[2] == np_stepped_test[2]
+#        np_stepped_test2 = step(np_test2, i)
+#        jax_stepped_test2 = jax_step(j_test2, i)
+#        assert (jax_stepped_test2[0].board == convert_jax_state(np_stepped_test2[0]).board).all()
+#        assert (jax_stepped_test2[0].legal_actions_black == convert_jax_state(np_stepped_test2[0]).legal_actions_black).all()
+#        assert (jax_stepped_test2[0].legal_actions_white == convert_jax_state(np_stepped_test2[0]).legal_actions_white).all()
+#        assert jax_stepped_test2[1] == np_stepped_test2[1]
+#        assert jax_stepped_test2[2] == np_stepped_test2[2]
 
 
 if __name__ == '__main__':
