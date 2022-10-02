@@ -260,9 +260,11 @@ class State:
         deck = Deck.init(key)
         hand = jnp.zeros((4, 34), dtype=jnp.uint8)
         for i in range(4):
-            for _ in range(14 if i == 0 else 13):
+            for _ in range(13):
                 deck, tile = Deck.draw(deck)
                 hand = hand.at[i].set(Hand.add(hand[i], tile))
+        deck, tile = Deck.draw(deck)
+        hand = hand.at[0].set(Hand.add(hand[0], tile))
         return State(deck, hand, 0, -1)
 
     @staticmethod
