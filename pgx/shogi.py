@@ -751,19 +751,28 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
 
 
 # 王手判定 ついでに王手している駒の位置も返す
-def _is_check(state: ShogiState) -> Tuple[bool, np.array]:
-    is_check = False
+# 近接による王手と遠隔による王手の二種に分けて返す
+def _is_check(state: ShogiState) -> Tuple[bool, np.array, bool, np.array]:
+    is_check_near = False
+    is_check_far = False
     king_point = state.board[8 + 14 * state.turn, :].argmax()
-    checking_piece = np.zeros(81, dtype=np.int32)
+    # 玉の隣で王手をかけている駒(桂馬含む)
+    near_king = _piece_moves(state, 8, king_point) + _piece_moves(
+        state, 3 + 14 * state.turn, king_point
+    )
+    checking_piece_near = np.zeros(81, dtype=np.int32)
+    # 玉から離れて王手をかけている駒
+    checking_piece_far = np.zeros(81, dtype=np.int32)
     bs = _board_status(state)
     for i in range(81):
         piece = bs[i]
         if _owner(piece) != _another_color(state):
             continue
         if _piece_moves(state, piece, i)[king_point] == 1:
-            is_check = True
-            checking_piece[i] = 1
-    return is_check, checking_piece
-
-
-
+            if near_king[i] == 1:
+                is_check_near = True
+                checking_piece_near[i] = 1
+            else:
+                is_check_far = True
+                checking_piece_far[i] = 1
+    return is_check_near, checking_piece_near, is_check_far, checking_piece_far

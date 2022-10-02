@@ -272,13 +272,17 @@ def test_is_check():
     board[28][8] = 1
     board[0][8] = 0
     s = ShogiState(board=board)
-    ic, cp = _is_check(s)
-    assert ic
+    icn, cpn, icf, cpf = _is_check(s)
+    assert icn and icf
     for i in range(81):
-        if i == 4 or i == 8 or i == 33 or i == 36 or i == 52 or i == 53:
-            assert cp[i] == 1
+        if i == 33 or i == 52 or i == 53:
+            assert cpn[i] == 1
         else:
-            assert cp[i] == 0
+            assert cpn[i] == 0
+        if i == 36 or i == 4 or i == 8:
+            assert cpf[i] == 1
+        else:
+            assert cpf[i] == 0
 
 
 if __name__ == '__main__':
