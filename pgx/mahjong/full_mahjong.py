@@ -25,9 +25,7 @@ class Deck:
     @staticmethod
     @jit
     def init(key) -> Deck:
-        arr = jax.random.permutation(
-            key, jnp.array([i // 4 for i in range(136)])
-        )
+        arr = jax.random.permutation(key, jnp.arange(136) // 4)
         return Deck(0, arr)
 
     @staticmethod
@@ -359,6 +357,7 @@ class State:
         deck = Deck.init(key)
         hand = jnp.zeros((4, 34), dtype=jnp.uint8)
         tile = -1
+
         for i in range(4):
             for _ in range(14 if i == 0 else 13):
                 deck, tile = Deck.draw(deck)
