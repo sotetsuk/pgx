@@ -651,7 +651,7 @@ def _is_enemy_zone(turn: int, point: int):
 
 def _can_promote(piece: int, _from: int, to: int):
     # pieceが飛車以下でないと成れない
-    if piece > 6:
+    if piece % 14 > 6 or piece % 14 == 0:
         return False
     # _fromとtoのどちらかが敵陣であれば成れる
     return _is_enemy_zone(_owner(piece), _from) or _is_enemy_zone(

@@ -1,4 +1,6 @@
-from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, _piece_moves, _is_check, _legal_actions
+from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
+    _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions
+
 import numpy as np
 
 
@@ -335,7 +337,49 @@ def test_legal_actions():
     actions2[81 * 4 + 73] = 1
     for i in range(5):
         actions2[81 * 3 + 55 - 9 * i] = 1
-    assert np.all(actions2 == actions1)
+    assert np.all(actions1 == actions2)
+    state.board[16][39] = 1
+    state.board[0][39] = 0
+    state.board[19][43] = 1
+    state.board[0][43] = 0
+    actions1 = _legal_actions(state)
+    actions2[40] = 1
+    actions2[41] = 1
+    actions2[42] = 1
+    actions2[42 + 810] = 1
+    actions2[81 + 35] = 1
+    actions2[162 + 53] = 1
+    actions2[81 * 6 + 33] = 1
+    actions2[81 * 7 + 51] = 1
+    actions2[81 + 35 + 810] = 1
+    actions2[162 + 53 + 810] = 1
+    actions2[81 * 6 + 33 + 810] = 1
+    actions2[81 * 7 + 51 + 810] = 1
+    actions2[39] = 0
+    assert np.all(actions1 == actions2)
+    # 後手の持ち駒に金と桂馬を追加
+    state.legal_actions_white = _add_drop_actions(17, state.legal_actions_white)
+    state.legal_actions_white = _add_drop_actions(21, state.legal_actions_white)
+    actions1 = _legal_actions(state)
+    for i in range(9):
+        if i == 0 or i == 2 or i == 6 or i == 8:
+            continue
+        for j in range(9):
+            if i == 1 and j == 1:
+                continue
+            if i == 1 and j == 7:
+                continue
+            if i == 7 and j == 1:
+                continue
+            if i == 7 and j == 7:
+                continue
+            if i == 3 and j == 4:
+                continue
+            if i == 7 and j == 4:
+                continue
+            actions2[81 * 29 + 9 * j + i] = 1
+            actions2[81 * 33 + 9 * j + i] = 1
+    assert np.all(actions1 == actions2)
 
 
 if __name__ == '__main__':
