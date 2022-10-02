@@ -659,11 +659,10 @@ def _can_promote(piece: int, _from: int, to: int):
     )
 
 
-def _create_piece_actions(piece: int, _from: int):
+def _create_actions(piece: int, _from: int, to: np.ndarray):
     actions = np.zeros(2673, dtype=np.int32)
-    moves = _small_piece_moves(piece, _from)
     for i in range(81):
-        if moves[i] == 0:
+        if to[i] == 0:
             continue
         if _can_promote(piece, _from, i):
             pro_dir = _point_to_direction(_from, i, True, _owner(piece))
@@ -675,9 +674,23 @@ def _create_piece_actions(piece: int, _from: int):
     return actions
 
 
+def _create_piece_actions(piece: int, _from: int):
+    moves = _small_piece_moves(piece, _from)
+    return _create_actions(piece, _from, moves)
+
+
+# actionを追加する
+def _add_action(add_array: np.ndarray, origin_array: np.ndarray):
+    new_array = copy.deepcopy(origin_array)
+    for i in range(2673):
+        if add_array[i] == 1:
+            new_array[i] = 1
+    return new_array
+
+
 # 駒の種類と位置から生成できるactionのフラグを立てる
 def _add_move_actions(
-    state: ShogiState, piece: int, _from: int, array: np.ndarray
+    piece: int, _from: int, array: np.ndarray
 ) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = _create_piece_actions(piece, _from)
@@ -689,7 +702,7 @@ def _add_move_actions(
 
 # 駒の種類と位置から生成できるactionのフラグを折る
 def _filter_move_actions(
-    state: ShogiState, piece: int, _from: int, array: np.ndarray
+    piece: int, _from: int, array: np.ndarray
 ) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = _create_piece_actions(piece, _from)
@@ -763,3 +776,61 @@ def _is_check(state: ShogiState) -> bool:
         if _piece_moves(state, piece, i)[king_point] == 1:
             is_check = True
     return is_check
+
+
+# 自分の駒がある位置への移動を除く
+def _filter_my_piece_move_actions(
+    turn: int, owner: np.ndarray, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    for i in range(81):
+        if owner[i] != turn:
+            continue
+        for j in range(20):
+            new_array[81 * j + i] = 0
+    return new_array
+
+
+# 駒がある地点への駒打ちを除く
+def _filter_occupied_drop_actions(
+    turn: int, owner: np.ndarray, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    for i in range(81):
+        if owner[i] == 2:
+            continue
+        for j in range(7):
+            new_array[81 * (j + 20 + 7 * turn) + i] = 0
+    return new_array
+
+
+# boardのlegal_actionsを利用して合法手を生成する
+# 大駒や香車の利きはboardのlegal_actionsに追加していないので、ここで追加する
+# 自殺手や反則手はここでは除かない
+def _legal_actions(state: ShogiState) -> np.ndarray:
+    if state.turn == 0:
+        action_array = copy.deepcopy(state.legal_actions_black)
+    else:
+        action_array = copy.deepcopy(state.legal_actions_white)
+    own = _pieces_owner(state)
+    for i in range(81):
+        piece = _piece_type(state, i)
+        # 香車の動きを追加
+        if piece == 2 + 14 * state.turn:
+            action_array = _add_action(_create_actions(piece, i, _lance_move(state, i, state.turn)), action_array)
+        # 角の動きを追加
+        if piece == 5 + 14 * state.turn:
+            action_array = _add_action(_create_actions(piece, i, _bishop_move(state, i)), action_array)
+        # 飛車の動きを追加
+        if piece == 6 + 14 * state.turn:
+            action_array = _add_action(_create_actions(piece, i, _rook_move(state, i)), action_array)
+        # 馬の動きを追加
+        if piece == 13 + 14 * state.turn:
+            action_array = _create_actions(piece, i, _horse_move(state, i))
+        if piece == 14 + 14 * state.turn:
+            action_array = _create_actions(piece, i, _dragon_move(state, i))
+    # 自分の駒がある位置への移動actionを除く
+    action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
+    # 駒がある地点への駒打ちactionを除く
+    action_array = _filter_occupied_drop_actions(state.turn, own, action_array)
+    return action_array
