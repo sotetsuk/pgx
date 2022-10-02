@@ -40,8 +40,8 @@ class ShogiState:
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
     # move/dropによって変化させる
     # もしかしたら香車や大駒の動きは別で追加した方が良いかも？
-    legal_actions_black: np.ndarray = np.zeros(2673, dtype=np.int32)
-    legal_actions_white: np.ndarray = np.zeros(2673, dtype=np.int32)
+    legal_actions_black: np.ndarray = np.zeros(2754, dtype=np.int32)
+    legal_actions_white: np.ndarray = np.zeros(2754, dtype=np.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
     is_check: int = 0
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
@@ -660,7 +660,7 @@ def _can_promote(piece: int, _from: int, to: int):
 
 
 def _create_actions(piece: int, _from: int, to: np.ndarray):
-    actions = np.zeros(2673, dtype=np.int32)
+    actions = np.zeros(2754, dtype=np.int32)
     for i in range(81):
         if to[i] == 0:
             continue
@@ -682,7 +682,7 @@ def _create_piece_actions(piece: int, _from: int):
 # actionを追加する
 def _add_action(add_array: np.ndarray, origin_array: np.ndarray):
     new_array = copy.deepcopy(origin_array)
-    for i in range(2673):
+    for i in range(2754):
         if add_array[i] == 1:
             new_array[i] = 1
     return new_array
@@ -694,7 +694,7 @@ def _add_move_actions(
 ) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = _create_piece_actions(piece, _from)
-    for i in range(2673):
+    for i in range(2754):
         if actions[i] == 1:
             new_array[i] = 1
     return new_array
@@ -706,7 +706,7 @@ def _filter_move_actions(
 ) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = _create_piece_actions(piece, _from)
-    for i in range(2673):
+    for i in range(2754):
         if actions[i] == 1:
             new_array[i] = 0
     return new_array

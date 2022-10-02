@@ -182,8 +182,8 @@ def test_piece_moves():
 
 def test_init_legal_actions():
     s = init()
-    array_b = np.zeros(2673, dtype=np.int32)
-    array_w = np.zeros(2673, dtype=np.int32)
+    array_b = np.zeros(2754, dtype=np.int32)
+    array_w = np.zeros(2754, dtype=np.int32)
     # 歩のaction
     for i in range(9):
         array_b[5 + 9 * i] = 1
@@ -278,7 +278,7 @@ def test_is_check():
 def test_legal_actions():
     state = init()
     actions1 = _legal_actions(state)
-    actions2 = np.zeros(2673, dtype=np.int32)
+    actions2 = np.zeros(2754, dtype=np.int32)
     # 歩のaction
     for i in range(9):
         actions2[5 + 9 * i] = 1
@@ -305,9 +305,36 @@ def test_legal_actions():
     actions2[81 * 4 + 7] = 1
     for i in range(5):
         actions2[81 * 3 + 25 + 9 * i] = 1
-    for i in range(2000):
-        if actions1[i] != actions2[i]:
-            print(i)
+    assert np.all(actions2 == actions1)
+    state.turn = 1
+    actions1 = _legal_actions(state)
+    actions2 = np.zeros(2754, dtype=np.int32)
+    # 歩のaction
+    for i in range(9):
+        actions2[3 + 9 * i] = 1
+    # 香車のaction
+    actions2[1] = 1
+    actions2[73] = 1
+    # 桂馬のaction
+    # 銀のaction
+    actions2[19] = 1
+    actions2[55] = 1
+    actions2[81 + 46] = 1
+    actions2[162 + 28] = 1
+    # 金のaction
+    for i in range(2):
+        actions2[28 + 18 * i] = 1
+        actions2[81 + 37 - 18 * i] = 1
+        actions2[162 + 55 - 18 * i] = 1
+    # 玉のaction
+    actions2[37] = 1
+    actions2[81 + 28] = 1
+    actions2[162 + 46] = 1
+    # 角のaction
+    # 飛のaction
+    actions2[81 * 4 + 73] = 1
+    for i in range(5):
+        actions2[81 * 3 + 55 - 9 * i] = 1
     assert np.all(actions2 == actions1)
 
 
