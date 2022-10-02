@@ -1,4 +1,4 @@
-from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, _piece_moves
+from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, _piece_moves, _is_check
 import numpy as np
 
 
@@ -254,6 +254,27 @@ def test_init_legal_actions():
     assert np.all(array_w == s.legal_actions_white)
 
 
+def test_is_check():
+    board = np.zeros((29, 81), dtype=np.int32)
+    board[0] = np.ones(81, dtype=np.int32)
+    board[8][44] = 1
+    board[0][44] = 0
+    board[16][36] = 1
+    board[0][36] = 0
+    board[17][33] = 1
+    board[0][33] = 0
+    board[18][52] = 1
+    board[0][52] = 0
+    board[21][53] = 1
+    board[0][53] = 0
+    board[27][4] = 1
+    board[0][4] = 0
+    board[28][8] = 1
+    board[0][8] = 0
+    s = ShogiState(board=board)
+    assert _is_check(s)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -261,3 +282,4 @@ if __name__ == '__main__':
     test_drop()
     test_piece_moves()
     test_init_legal_actions()
+    test_is_check()

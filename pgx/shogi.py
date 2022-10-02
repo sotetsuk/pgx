@@ -748,3 +748,18 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
                 15 + i, s.legal_actions_white
             )
     return s
+
+
+# 王手判定 ついでに王手している駒の位置も返す
+# 近接による王手と遠隔による王手の二種に分けて返す
+def _is_check(state: ShogiState) -> bool:
+    is_check = False
+    king_point = state.board[8 + 14 * state.turn, :].argmax()
+    bs = _board_status(state)
+    for i in range(81):
+        piece = bs[i]
+        if _owner(piece) != _another_color(state):
+            continue
+        if _piece_moves(state, piece, i)[king_point] == 1:
+            is_check = True
+    return is_check
