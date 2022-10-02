@@ -381,39 +381,39 @@ def test_update_legal_actions_drop():
         assert white1[i] == w1[i]
 
 
-#def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
-#    turn = jnp.array([state.turn])
-#    board = jnp.zeros((11, 12), dtype=jnp.int32)
-#    for i in range(11):
-#        for j in range(12):
-#            if state.board[i][j] == 1:
-#                board = board.at[i, j].set(1)
-#    hand = jnp.zeros(6, dtype=jnp.int32)
-#    for i in range(6):
-#        hand = hand.at[i].set(state.hand[i])
-#    legal_actions_black = jnp.zeros(180, dtype=jnp.int32)
-#    legal_actions_white = jnp.zeros(180, dtype=jnp.int32)
-#    for i in range(180):
-#        if state.legal_actions_black[i] == 1:
-#            legal_actions_black = legal_actions_black.at[i].set(1)
-#        if state.legal_actions_white[i] == 1:
-#            legal_actions_white = legal_actions_white.at[i].set(1)
-#    is_check = jnp.zeros(1, dtype=jnp.int32)
-#    if state.is_check:
-#        is_check = is_check.at[0].set(1)
-#    checking_piece = jnp.zeros(12, dtype=jnp.int32)
-#    for i in range(12):
-#        if state.checking_piece[i] == 1:
-#            checking_piece = checking_piece.at[i].set(1)
-#    return JaxAnimalShogiState(
-#        turn=turn,
-#        board=board,
-#        hand=hand,
-#        legal_actions_black=legal_actions_black,
-#        legal_actions_white=legal_actions_white,
-#        is_check=is_check,
-#        checking_piece=checking_piece
-#    )  # type: ignore
+def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
+    turn = jnp.array([state.turn])
+    board = jnp.zeros((11, 12), dtype=jnp.int32)
+    for i in range(11):
+        for j in range(12):
+            if state.board[i][j] == 1:
+                board = board.at[i, j].set(1)
+    hand = jnp.zeros(6, dtype=jnp.int32)
+    for i in range(6):
+        hand = hand.at[i].set(state.hand[i])
+    legal_actions_black = jnp.zeros(180, dtype=jnp.int32)
+    legal_actions_white = jnp.zeros(180, dtype=jnp.int32)
+    for i in range(180):
+        if state.legal_actions_black[i] == 1:
+            legal_actions_black = legal_actions_black.at[i].set(1)
+        if state.legal_actions_white[i] == 1:
+            legal_actions_white = legal_actions_white.at[i].set(1)
+    is_check = jnp.zeros(1, dtype=jnp.int32)
+    if state.is_check:
+        is_check = is_check.at[0].set(1)
+    checking_piece = jnp.zeros(12, dtype=jnp.int32)
+    for i in range(12):
+        if state.checking_piece[i] == 1:
+            checking_piece = checking_piece.at[i].set(1)
+    return JaxAnimalShogiState(
+        turn=turn,
+        board=board,
+        hand=hand,
+        legal_actions_black=legal_actions_black,
+        legal_actions_white=legal_actions_white,
+        is_check=is_check,
+        checking_piece=checking_piece
+    )  # type: ignore
 
 
 #def test_jax_init():
