@@ -744,11 +744,11 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
             continue
         if piece <= 14:
             s.legal_actions_black = _add_move_actions(
-                s, piece, i, s.legal_actions_black
+                piece, i, s.legal_actions_black
             )
         else:
             s.legal_actions_white = _add_move_actions(
-                s, piece, i, s.legal_actions_white
+                piece, i, s.legal_actions_white
             )
     # 駒打ちの追加
     for i in range(7):

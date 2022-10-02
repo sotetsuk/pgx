@@ -1,4 +1,4 @@
-from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, _piece_moves, _is_check
+from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, _piece_moves, _is_check, _legal_actions
 import numpy as np
 
 
@@ -275,6 +275,42 @@ def test_is_check():
     assert _is_check(s)
 
 
+def test_legal_actions():
+    state = init()
+    actions1 = _legal_actions(state)
+    actions2 = np.zeros(2673, dtype=np.int32)
+    # 歩のaction
+    for i in range(9):
+        actions2[5 + 9 * i] = 1
+    # 香車のaction
+    actions2[7] = 1
+    actions2[79] = 1
+    # 桂馬のaction
+    # 銀のaction
+    actions2[25] = 1
+    actions2[61] = 1
+    actions2[81 + 34] = 1
+    actions2[162 + 52] = 1
+    # 金のaction
+    for i in range(2):
+        actions2[34 + 18 * i] = 1
+        actions2[81 + 43 + 18 * i] = 1
+        actions2[162 + 25 + 18 * i] = 1
+    # 玉のaction
+    actions2[43] = 1
+    actions2[81 + 52] = 1
+    actions2[162 + 34] = 1
+    # 角のaction
+    # 飛のaction
+    actions2[81 * 4 + 7] = 1
+    for i in range(5):
+        actions2[81 * 3 + 25 + 9 * i] = 1
+    for i in range(2000):
+        if actions1[i] != actions2[i]:
+            print(i)
+    assert np.all(actions2 == actions1)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -283,3 +319,4 @@ if __name__ == '__main__':
     test_piece_moves()
     test_init_legal_actions()
     test_is_check()
+    test_legal_actions()
