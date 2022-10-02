@@ -216,16 +216,25 @@ class State:
                     lambda: legal_actions[player],
                     lambda: legal_actions[player]
                     .at[Action.RON]
-                    .set(Hand.can_ron(self.hand[player], self.target))
+                    .set(Hand.can_ron(self.hand[player], self.target)),
+                )
+            )
+            legal_actions = legal_actions.at[player].set(
+                jax.lax.cond(
+                    (player == self.turn)
+                    | (self.target == -1)
+                    | self.deck.is_empty(),
+                    lambda: legal_actions[player],
+                    lambda: legal_actions[player]
                     .at[Action.PON]
                     .set(Hand.can_pon(self.hand[player], self.target)),
                 )
             )
             legal_actions = legal_actions.at[player].set(
                 jax.lax.cond(
-                    # (player != (self.turn + 1) % 4) | (self.target == -1),
-                    # NOTE: どこからでもチーできるようにしている
-                    (player == self.turn) | (self.target == -1),
+                    (player != (self.turn + 1) % 4)
+                    | (self.target == -1)
+                    | self.deck.is_empty(),
                     lambda: legal_actions[player],
                     lambda: legal_actions[player]
                     .at[Action.CHI_R]
