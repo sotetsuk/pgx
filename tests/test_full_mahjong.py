@@ -24,17 +24,16 @@ def test_hand():
     assert Hand.can_tsumo(hand)
     assert Hand.can_pon(hand, 0)
 
-    R, M, L = 0, 1, 2
-    assert not Hand.can_chi(hand, 2, R)
+    assert not Hand.can_chi(hand, 2, Action.CHI_R)
     hand = Hand.add(hand, 1)
-    assert Hand.can_chi(hand, 2, R)
-    assert not Hand.can_chi(hand, 1, M)
+    assert Hand.can_chi(hand, 2, Action.CHI_R)
+    assert not Hand.can_chi(hand, 1, Action.CHI_M)
     hand = Hand.add(hand, 2)
-    assert Hand.can_chi(hand, 1, M)
-    assert Hand.can_chi(hand, 0, L)
-    assert not Hand.can_chi(hand, 1, L)
+    assert Hand.can_chi(hand, 1, Action.CHI_M)
+    assert Hand.can_chi(hand, 0, Action.CHI_L)
+    assert not Hand.can_chi(hand, 1, Action.CHI_L)
 
-    hand = Hand.chi(hand, 0, L)
+    hand = Hand.chi(hand, 0, Action.CHI_L)
     assert hand[0] == 2
     assert hand[1] == 0
     assert hand[2] == 0
@@ -80,6 +79,22 @@ def test_hand():
         0,1,0,0,0,0,0
         ])
     assert not Hand.can_riichi(hand)
+
+    hand = jnp.array([
+        2,0,0,0,0,0,0,1,0,
+        1,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0
+        ])
+    assert not Hand.can_chi(hand, 8, Action.CHI_M)
+
+    hand = jnp.array([
+        2,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0
+        ])
+    assert not Hand.can_chi(hand, 7, Action.CHI_L)
 
 
 def test_state():
