@@ -16,15 +16,17 @@ class Tile:
 
 class Action:
     # 手出し: 0~33
-    RON = 34
-    PON = 35
-    CHI_R = 36  # 45[6]
-    CHI_M = 37  # 4[5]6
-    CHI_L = 38  # [4]56
-    PASS = 39
-    TSUMO = 40
-    TSUMOGIRI = 41
-    RIICHI = 42
+    TSUMOGIRI = 34
+    RIICHI = 35
+    TSUMO = 36
+
+    RON = 37
+    PON = 38
+    CHI_R = 39  # 45[6]
+    CHI_M = 40  # 4[5]6
+    CHI_L = 41  # [4]56
+    PASS = 42
+
     NONE = 43
 
 
@@ -558,15 +560,15 @@ class State:
             lambda: jax.lax.switch(
                 action - 34,
                 [
+                    lambda: State._tsumogiri(state),
+                    lambda: State._riichi(state),
+                    lambda: State._tsumo(state),
                     lambda: State._ron(state, player),
                     lambda: State._pon(state, player),
                     lambda: State._chi(state, player, Action.CHI_R),
                     lambda: State._chi(state, player, Action.CHI_M),
                     lambda: State._chi(state, player, Action.CHI_L),
                     lambda: State._try_draw(state),
-                    lambda: State._tsumo(state),
-                    lambda: State._tsumogiri(state),
-                    lambda: State._riichi(state),
                 ],
             ),
         )
