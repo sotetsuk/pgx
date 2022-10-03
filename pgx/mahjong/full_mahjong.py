@@ -296,10 +296,10 @@ class State:
     turn: int  # 手牌が3n+2枚, もしくは直前に牌を捨てたplayer
     target: int  # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
     last_draw: int  # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
-    riichi_declared: bool  # state.turn がリーチ宣言直後かどうか
+    riichi_declared: bool  # state.turn がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi: jnp.ndarray  # 各playerのリーチが成立しているかどうか
-    melds: jnp.ndarra
-    # melds[i][0]: player i の副露回数
+    meld_num: jnp.ndarray  # 各playerの副露回数
+    melds: jnp.ndarray
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
 
     # reward:
@@ -320,7 +320,7 @@ class State:
             | self.riichi[self.turn]
             | (self.deck.size() < 4)
             # | (jnp.sum(self.hand[self.turn]) < 14),
-            | (self.melds[self.turn][0]),
+            | (self.meld_num[self.turn]),
             lambda: legal_actions,
             lambda: legal_actions.at[(self.turn, Action.RIICHI)].set(
                 Hand.can_riichi(self.hand[self.turn])
@@ -447,9 +447,18 @@ class State:
         last_draw = tile
         riichi_declared = False
         riichi = jnp.full(4, False)
-        melds = jnp.zeros((4, 5), dtype=jnp.uint32)
+        meld_num = jnp.zeros(4, dtype=jnp.uint8)
+        melds = jnp.zeros((4, 4), dtype=jnp.uint32)
         return State(
-            deck, hand, turn, target, last_draw, riichi_declared, riichi, melds
+            deck,
+            hand,
+            turn,
+            target,
+            last_draw,
+            riichi_declared,
+            riichi,
+            meld_num,
+            melds,
         )
 
     @staticmethod
@@ -555,11 +564,11 @@ class State:
     @staticmethod
     @jit
     def _append_meld(state: State, meld: int, player: int) -> State:
-        state.melds = (
-            state.melds.at[(player, state.melds[player][0] + 1)]
-            .set(meld)
-            .at[(player, 0)]
-            .set(state.melds[player][0] + 1)
+        state.melds = state.melds.at[(player, state.meld_num[player])].set(
+            meld
+        )
+        state.meld_num = state.meld_num.at[player].set(
+            state.meld_num[player] + 1
         )
         return state
 
@@ -611,6 +620,7 @@ class State:
             self.last_draw,
             self.riichi_declared,
             self.riichi,
+            self.meld_num,
             self.melds,
         )
         aux_data = {}

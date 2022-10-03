@@ -87,19 +87,17 @@ if __name__ == "__main__":
             print("     ", Hand.to_str(state.hand[i]))
         print(
             "melds:",
-            list(map(Meld.to_str, state.melds[0][1 : state.melds[0][0] + 1])),
+            list(map(Meld.to_str, state.melds[0][: state.meld_num[0]])),
         )
         for i in range(1, 4):
             print(
                 "      ",
-                list(
-                    map(Meld.to_str, state.melds[i][1 : state.melds[i][0] + 1])
-                ),
+                list(map(Meld.to_str, state.melds[i][: state.meld_num[i]])),
             )
         print("riichi:", state.riichi)
-        print(
-            "target:",
-            Tile.to_str(state.target) if state.target != -1 else None,
-        )
+        if state.target != -1:
+            print("target:", Tile.to_str(state.target))
+        if state.last_draw != -1:
+            print("last_draw:", Tile.to_str(state.last_draw))
         print("reward:", reward)
         print("-" * 30)
