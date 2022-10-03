@@ -239,9 +239,26 @@ class Hand:
             for j in range(9 if i < 3 else 7):
                 t += str(j + 1) * hand[9 * i + j]
             if t:
-                t += ["m", "p", "s", "t"][i]
+                t += ["m", "p", "s", "z"][i]
             s += t
         return s
+
+    @staticmethod
+    def from_str(s: str) -> jnp.ndarray:
+        base = 0
+        hand = jnp.zeros(34, dtype=jnp.uint8)
+        for c in reversed(s):
+            if c == "m":
+                base = 0
+            elif c == "p":
+                base = 9
+            elif c == "s":
+                base = 18
+            elif c == "z":
+                base = 27
+            else:
+                hand = Hand.add(hand, ord(c) - ord("1") + base)
+        return hand
 
 
 @dataclass

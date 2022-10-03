@@ -96,6 +96,16 @@ def test_hand():
         ])
     assert not Hand.can_chi(hand, 7, Action.CHI_L)
 
+    assert jnp.all(
+            jnp.array([
+                    2,0,0,0,0,0,0,0,1,
+                    1,0,0,0,1,2,1,0,0,
+                    0,0,0,0,0,0,0,0,0,
+                    0,0,0,0,0,3,0
+                ]) ==
+            Hand.from_str("119m15667p666z")
+            )
+
 
 def test_yaku():
     hand = jnp.zeros(34, dtype=jnp.uint8)
