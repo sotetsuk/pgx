@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -28,13 +27,13 @@ class Deck:
 
     @staticmethod
     @jit
-    def init(key) -> Deck:
+    def init(key: jnp.ndarray) -> Deck:
         arr = jax.random.permutation(key, jnp.arange(136) // 4)
         return Deck(0, arr)
 
     @staticmethod
     @jit
-    def draw(deck: Deck) -> Tuple[Deck, int]:
+    def draw(deck: Deck) -> tuple[Deck, int]:
         # assert not deck.is_empty()
         tile = deck.arr[deck.idx]
         deck.idx += 1
@@ -246,6 +245,13 @@ class State:
     riichi_declared: bool  # state.turn がリーチ宣言直後かどうか
     riichi: jnp.ndarray  # 各playerのリーチが成立しているかどうか
 
+    # reward:
+    # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
+    # - player0 がツモ             => [ 2,-2,-2,-2]
+    # - 流局時 全員聴牌            => [ 1, 1, 1, 1]
+    # - 流局時 全員ノー聴          => [-1,-1,-1,-1]
+    # - 流局時 player0 だけ聴牌    => [ 1,-1,-1,-1]
+
     @jit
     def legal_actions(self) -> jnp.ndarray:
         legal_actions = jnp.full((4, 43), False)
@@ -385,7 +391,7 @@ class State:
     @jit
     def step(
         state: State, actions: jnp.ndarray
-    ) -> Tuple[State, jnp.ndarray, bool]:
+    ) -> tuple[State, jnp.ndarray, bool]:
         player = jnp.argmin(actions)
         return State._step(state, player, actions[player])
 
@@ -393,7 +399,7 @@ class State:
     @jit
     def _step(
         state: State, player: int, action: int
-    ) -> Tuple[State, jnp.ndarray, bool]:
+    ) -> tuple[State, jnp.ndarray, bool]:
         return jax.lax.cond(
             action < 34,
             lambda: State._discard(state, action),
@@ -415,12 +421,12 @@ class State:
 
     @staticmethod
     @jit
-    def _tsumogiri(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _tsumogiri(state: State) -> tuple[State, jnp.ndarray, bool]:
         return State._discard(state, state.last_draw)
 
     @staticmethod
     @jit
-    def _discard(state: State, tile: int) -> Tuple[State, jnp.ndarray, bool]:
+    def _discard(state: State, tile: int) -> tuple[State, jnp.ndarray, bool]:
         state.hand = state.hand.at[state.turn].set(
             Hand.sub(state.hand[state.turn], tile)
         )
@@ -434,7 +440,7 @@ class State:
 
     @staticmethod
     @jit
-    def _try_draw(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _try_draw(state: State) -> tuple[State, jnp.ndarray, bool]:
         state.target = -1
         return jax.lax.cond(
             state.deck.is_empty(),
@@ -453,7 +459,7 @@ class State:
 
     @staticmethod
     @jit
-    def _draw(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _draw(state: State) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
         state.turn += 1
         state.turn %= 4
@@ -466,7 +472,7 @@ class State:
 
     @staticmethod
     @jit
-    def _ryukyoku(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _ryukyoku(state: State) -> tuple[State, jnp.ndarray, bool]:
         reward = jnp.array(
             [2 * Hand.is_tenpai(state.hand[i]) - 1 for i in range(4)]
         )
@@ -474,7 +480,7 @@ class State:
 
     @staticmethod
     @jit
-    def _ron(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
+    def _ron(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         return (
             state,
             jnp.full(4, 0).at[state.turn].set(-2).at[player].set(2),
@@ -483,7 +489,7 @@ class State:
 
     @staticmethod
     @jit
-    def _pon(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
+    def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
         state.hand = state.hand.at[player].set(
             Hand.pon(state.hand[player], state.target)
@@ -496,7 +502,7 @@ class State:
     @jit
     def _chi(
         state: State, player: int, pos: int
-    ) -> Tuple[State, jnp.ndarray, bool]:
+    ) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
         state.hand = state.hand.at[player].set(
             Hand.chi(state.hand[player], state.target, pos)
@@ -507,12 +513,12 @@ class State:
 
     @staticmethod
     @jit
-    def _tsumo(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _tsumo(state: State) -> tuple[State, jnp.ndarray, bool]:
         return state, jnp.full(4, -2).at[state.turn].set(2), True
 
     @staticmethod
     @jit
-    def _riichi(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _riichi(state: State) -> tuple[State, jnp.ndarray, bool]:
         state.riichi_declared = True
         return state, jnp.full(4, 0), False
 
@@ -547,5 +553,5 @@ def init(key) -> State:
 @jit
 def step(
     state: State, actions: jnp.ndarray
-) -> Tuple[State, jnp.ndarray, bool]:
+) -> tuple[State, jnp.ndarray, bool]:
     return State.step(state, actions)
