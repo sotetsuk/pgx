@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.mahjong.full_mahjong import Deck, Hand, Action, init, step
+from pgx.mahjong.full_mahjong import Deck, Hand, Action, Yaku, Meld, init, step
 
 
 def test_deck():
@@ -95,6 +95,25 @@ def test_hand():
         0,0,0,0,0,0,0
         ])
     assert not Hand.can_chi(hand, 7, Action.CHI_L)
+
+
+def test_yaku():
+    hand = jnp.zeros(34, dtype=jnp.uint8)
+    hand = Hand.add(hand, 1, 2)
+    melds = jnp.zeros(4, dtype=jnp.uint32)
+    assert Yaku.judge(hand, melds, 0)[Yaku.断么九]
+
+    melds = melds.at[0].set(Meld.init(Action.CHI_R, 3, 0))
+    assert Yaku.judge(hand, melds, 1)[Yaku.断么九]
+
+    melds = melds.at[0].set(Meld.init(Action.CHI_R, 2, 0))
+    assert not Yaku.judge(hand, melds, 1)[Yaku.断么九]
+
+    melds = melds.at[0].set(Meld.init(Action.PON, 6, 0))
+    assert Yaku.judge(hand, melds, 1)[Yaku.断么九]
+
+    melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))
+    assert not Yaku.judge(hand, melds, 1)[Yaku.断么九]
 
 
 def test_state():

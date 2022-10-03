@@ -289,6 +289,67 @@ class Meld:
         return meld & 0b111111
 
 
+class Yaku:
+    断么九 = 0
+
+    @staticmethod
+    @jit
+    def judge(
+        hand: jnp.ndarray, melds: jnp.ndarray, meld_num: int
+    ) -> jnp.ndarray:
+        # assert Hand.can_tsumo(hand)
+        flatten = Yaku.flatten(hand, melds, meld_num)
+        return jnp.full(1, False).at[Yaku.断么九].set(Yaku._is_tanyao(flatten))
+
+    @staticmethod
+    @jit
+    def flatten(
+        hand: jnp.ndarray, melds: jnp.ndarray, meld_num: int
+    ) -> jnp.ndarray:
+        return jax.lax.fori_loop(
+            0, meld_num, lambda i, arr: Yaku._flatten(arr, melds[i]), hand
+        )
+
+    @staticmethod
+    @jit
+    def _flatten(hand: jnp.ndarray, meld: int) -> jnp.ndarray:
+        target, action = Meld.target(meld), Meld.action(meld)
+        return jax.lax.switch(
+            action - Action.PON,
+            [
+                lambda: Hand.add(hand, target, 3),
+                lambda: Hand.add(
+                    Hand.add(Hand.add(hand, target - 2), target - 1), target
+                ),
+                lambda: Hand.add(
+                    Hand.add(Hand.add(hand, target - 1), target + 1), target
+                ),
+                lambda: Hand.add(
+                    Hand.add(Hand.add(hand, target + 1), target + 2), target
+                ),
+            ],
+        )
+
+    @staticmethod
+    @jit
+    def _is_tanyao(hand: jnp.ndarray) -> bool:
+        return (
+            (hand[0] == 0)
+            & (hand[8] == 0)
+            & (hand[9] == 0)
+            & (hand[17] == 0)
+            & (hand[18] == 0)
+            & (hand[26] == 0)
+            & (hand[27] == 0)
+            & (hand[28] == 0)
+            & (hand[29] == 0)
+            & (hand[39] == 0)
+            & (hand[31] == 0)
+            & (hand[32] == 0)
+            & (hand[33] == 0)
+        )
+
+
 @dataclass
 class State:
     deck: Deck
