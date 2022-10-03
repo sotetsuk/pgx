@@ -6,11 +6,12 @@ import jax
 import jax.numpy as jnp
 from jax import jit, tree_util
 
+
 class Tile:
     @staticmethod
     def to_str(tile: int) -> str:
         suit, num = tile // 9, tile % 9 + 1
-        return str(num) + ["m","p","s","z"][suit]
+        return str(num) + ["m", "p", "s", "z"][suit]
 
 
 class Action:
@@ -236,9 +237,9 @@ class Hand:
         for i in range(4):
             t = ""
             for j in range(9 if i < 3 else 7):
-                t += str(j+1) * hand[9*i + j]
+                t += str(j + 1) * hand[9 * i + j]
             if t:
-                t += ["m","p","s","t"][i]
+                t += ["m", "p", "s", "t"][i]
             s += t
         return s
 
@@ -262,13 +263,19 @@ class Meld:
         target = Meld.target(meld)
         suit, num = target // 9, target % 9 + 1
         if action == Action.PON:
-            return "{}{}{}{}".format(num, num, num, ["m","p","s","z"][suit])
+            return "{}{}{}{}".format(num, num, num, ["m", "p", "s", "z"][suit])
         if action == Action.CHI_R:
-            return "{}{}{}{}".format(num-2, num-1, num, ["m","p","s","z"][suit])
+            return "{}{}{}{}".format(
+                num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
+            )
         if action == Action.CHI_M:
-            return "{}{}{}{}".format(num-1, num, num+1, ["m","p","s","z"][suit])
+            return "{}{}{}{}".format(
+                num - 1, num, num + 1, ["m", "p", "s", "z"][suit]
+            )
         if action == Action.CHI_L:
-            return "{}{}{}{}".format(num, num+1, num+2, ["m","p","s","z"][suit])
+            return "{}{}{}{}".format(
+                num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
+            )
         return ""
 
     @staticmethod
@@ -400,11 +407,17 @@ class State:
                 | self.riichi[player],
                 lambda: legal_actions,
                 lambda: legal_actions.at[(player, Action.CHI_R)]
-                .set(Hand.can_chi(self.hand[player], self.target, Action.CHI_R))
+                .set(
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_R)
+                )
                 .at[(player, Action.CHI_M)]
-                .set(Hand.can_chi(self.hand[player], self.target, Action.CHI_M))
+                .set(
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_M)
+                )
                 .at[(player, Action.CHI_L)]
-                .set(Hand.can_chi(self.hand[player], self.target, Action.CHI_L)),
+                .set(
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_L)
+                ),
             )
             legal_actions = legal_actions.at[(player, Action.PASS)].set(
                 (player != self.turn) & jnp.any(legal_actions[player])
@@ -538,7 +551,6 @@ class State:
             jnp.full(4, 0).at[state.turn].set(-2).at[player].set(2),
             True,
         )
-
 
     @staticmethod
     @jit
