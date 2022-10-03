@@ -6,6 +6,26 @@ import jax
 import jax.numpy as jnp
 from jax import jit, tree_util
 
+class Tile:
+    @staticmethod
+    def to_str(tile: int) -> str:
+        suit, num = tile // 9, tile % 9 + 1
+        return str(num) + ["m","p","s","z"][suit]
+
+
+class Action:
+    # 手出し: 0~33
+    RON = 34
+    PON = 35
+    CHI_R = 36  # 45[6]
+    CHI_M = 37  # 4[5]6
+    CHI_L = 38  # [4]56
+    PASS = 39
+    TSUMO = 40
+    TSUMOGIRI = 41
+    RIICHI = 42
+    NONE = 43
+
 
 @dataclass
 class Deck:
@@ -150,15 +170,11 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_chi(hand: jnp.ndarray, tile: int, pos: int) -> bool:
+    def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
         # assert jnp.sum(hand) % 3 == 1
-        # assert tile < 27
-        # pos:
-        #    0: 45[6]
-        #    1: 4[5]6
-        #    2: [4]56
+        # assert action is Action.CHI_R, CHI_M or CHI_L
         return jax.lax.switch(
-            pos,
+            action - Action.CHI_R,
             [
                 lambda: (
                     (tile < 27)
@@ -169,13 +185,13 @@ class Hand:
                 lambda: (
                     (tile < 27)
                     & (tile % 9 > 0)
-                    & (tile % 9 < 9)
+                    & (tile % 9 < 8)
                     & (hand[tile - 1] > 0)
                     & (hand[tile + 1] > 0)
                 ),
                 lambda: (
                     (tile < 27)
-                    & (tile % 9 < 8)
+                    & (tile % 9 < 7)
                     & (hand[tile + 1] > 0)
                     & (hand[tile + 2] > 0)
                 ),
@@ -202,10 +218,11 @@ class Hand:
 
     @staticmethod
     @jit
-    def chi(hand: jnp.ndarray, tile: int, pos: int) -> jnp.ndarray:
-        # assert Hand.can_chi(hand, tile, pos)
+    def chi(hand: jnp.ndarray, tile: int, action: int) -> jnp.ndarray:
+        # assert Hand.can_chi(hand, tile, action)
+        # assert action is Action.CHI_R, CHI_M or CHI_L
         return jax.lax.switch(
-            pos,
+            action - Action.CHI_R,
             [
                 lambda: Hand.sub(Hand.sub(hand, tile - 2), tile - 1),
                 lambda: Hand.sub(Hand.sub(hand, tile - 1), tile + 1),
@@ -213,19 +230,17 @@ class Hand:
             ],
         )
 
-
-class Action:
-    # 手出し: 0~33
-    RON = 34
-    PON = 35
-    CHI_R = 36  # 45[6]
-    CHI_M = 37  # 4[5]6
-    CHI_L = 38  # [4]56
-    PASS = 39
-    TSUMO = 40
-    TSUMOGIRI = 41
-    RIICHI = 42
-    NONE = 43
+    @staticmethod
+    def to_str(hand: jnp.ndarray) -> str:
+        s = ""
+        for i in range(4):
+            t = ""
+            for j in range(9 if i < 3 else 7):
+                t += str(j+1) * hand[9*i + j]
+            if t:
+                t += ["m","p","s","t"][i]
+            s += t
+        return s
 
 
 @dataclass
@@ -233,6 +248,38 @@ class Observation:
     hand: jnp.ndarray
     target: int
     last_draw: int
+
+
+class Meld:
+    @staticmethod
+    @jit
+    def init(action: int, target: int, src: int) -> int:
+        return (src << 12) | (target << 6) | action
+
+    @staticmethod
+    def to_str(meld: int) -> str:
+        action = Meld.action(meld)
+        target = Meld.target(meld)
+        suit, num = target // 9, target % 9 + 1
+        if action == Action.PON:
+            return "{}{}{}{}".format(num, num, num, ["m","p","s","z"][suit])
+        if action == Action.CHI_R:
+            return "{}{}{}{}".format(num-2, num-1, num, ["m","p","s","z"][suit])
+        if action == Action.CHI_M:
+            return "{}{}{}{}".format(num-1, num, num+1, ["m","p","s","z"][suit])
+        if action == Action.CHI_L:
+            return "{}{}{}{}".format(num, num+1, num+2, ["m","p","s","z"][suit])
+        return ""
+
+    @staticmethod
+    @jit
+    def target(meld: int) -> int:
+        return (meld >> 6) & 0b111111
+
+    @staticmethod
+    @jit
+    def action(meld: int) -> int:
+        return meld & 0b111111
 
 
 @dataclass
@@ -244,6 +291,9 @@ class State:
     last_draw: int  # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
     riichi_declared: bool  # state.turn がリーチ宣言直後かどうか
     riichi: jnp.ndarray  # 各playerのリーチが成立しているかどうか
+    melds: jnp.ndarra
+    # melds[i][0]: player i の副露回数
+    # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
 
     # reward:
     # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
@@ -262,7 +312,8 @@ class State:
             | self.riichi_declared
             | self.riichi[self.turn]
             | (self.deck.size() < 4)
-            | (jnp.sum(self.hand[self.turn]) < 14),
+            # | (jnp.sum(self.hand[self.turn]) < 14),
+            | (self.melds[self.turn][0]),
             lambda: legal_actions,
             lambda: legal_actions.at[(self.turn, Action.RIICHI)].set(
                 Hand.can_riichi(self.hand[self.turn])
@@ -349,11 +400,11 @@ class State:
                 | self.riichi[player],
                 lambda: legal_actions,
                 lambda: legal_actions.at[(player, Action.CHI_R)]
-                .set(Hand.can_chi(self.hand[player], self.target, 0))
+                .set(Hand.can_chi(self.hand[player], self.target, Action.CHI_R))
                 .at[(player, Action.CHI_M)]
-                .set(Hand.can_chi(self.hand[player], self.target, 1))
+                .set(Hand.can_chi(self.hand[player], self.target, Action.CHI_M))
                 .at[(player, Action.CHI_L)]
-                .set(Hand.can_chi(self.hand[player], self.target, 2)),
+                .set(Hand.can_chi(self.hand[player], self.target, Action.CHI_L)),
             )
             legal_actions = legal_actions.at[(player, Action.PASS)].set(
                 (player != self.turn) & jnp.any(legal_actions[player])
@@ -383,8 +434,9 @@ class State:
         last_draw = tile
         riichi_declared = False
         riichi = jnp.full(4, False)
+        melds = jnp.zeros((4, 5), dtype=jnp.uint32)
         return State(
-            deck, hand, turn, target, last_draw, riichi_declared, riichi
+            deck, hand, turn, target, last_draw, riichi_declared, riichi, melds
         )
 
     @staticmethod
@@ -408,9 +460,9 @@ class State:
                 [
                     lambda: State._ron(state, player),
                     lambda: State._pon(state, player),
-                    lambda: State._chi(state, player, 0),
-                    lambda: State._chi(state, player, 1),
-                    lambda: State._chi(state, player, 2),
+                    lambda: State._chi(state, player, Action.CHI_R),
+                    lambda: State._chi(state, player, Action.CHI_M),
+                    lambda: State._chi(state, player, Action.CHI_L),
                     lambda: State._try_draw(state),
                     lambda: State._tsumo(state),
                     lambda: State._tsumogiri(state),
@@ -487,10 +539,24 @@ class State:
             True,
         )
 
+
+    @staticmethod
+    @jit
+    def _append_meld(state: State, meld: int, player: int) -> State:
+        state.melds = (
+            state.melds.at[(player, state.melds[player][0] + 1)]
+            .set(meld)
+            .at[(player, 0)]
+            .set(state.melds[player][0] + 1)
+        )
+        return state
+
     @staticmethod
     @jit
     def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
+        meld = Meld.init(Action.PON, state.target, state.turn)
+        state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
             Hand.pon(state.hand[player], state.target)
         )
@@ -501,11 +567,13 @@ class State:
     @staticmethod
     @jit
     def _chi(
-        state: State, player: int, pos: int
+        state: State, player: int, action: int
     ) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
+        meld = Meld.init(action, state.target, state.turn)
+        state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
-            Hand.chi(state.hand[player], state.target, pos)
+            Hand.chi(state.hand[player], state.target, action)
         )
         state.target = -1
         state.turn = player
@@ -531,6 +599,7 @@ class State:
             self.last_draw,
             self.riichi_declared,
             self.riichi,
+            self.melds,
         )
         aux_data = {}
         return (children, aux_data)

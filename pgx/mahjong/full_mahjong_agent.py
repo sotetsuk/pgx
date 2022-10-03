@@ -2,7 +2,7 @@ import random
 
 import jax
 import jax.numpy as jnp
-from full_mahjong import Action, Observation, init, step
+from full_mahjong import Action, Observation, Meld, Hand, Tile, init, step
 from shanten_tools import shanten  # type: ignore
 
 random.seed(0)
@@ -82,7 +82,13 @@ if __name__ == "__main__":
             )
             state, reward, done = step(state, selected)
 
-        print("hand:", state.hand)
+        print("hand:", Hand.to_str(state.hand[0]))
+        for i in range(1,4):
+            print("     ", Hand.to_str(state.hand[i]))
+        print("melds:", list(map(Meld.to_str,state.melds[0][1:state.melds[0][0]+1])))
+        for i in range(1,4):
+            print("      ", list(map(Meld.to_str,state.melds[i][1:state.melds[i][0]+1])))
         print("riichi:", state.riichi)
+        print("target:", Tile.to_str(state.target) if state.target != -1 else None)
         print("reward:", reward)
         print("-" * 30)
