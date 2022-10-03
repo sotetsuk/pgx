@@ -121,13 +121,13 @@ class Hand:
                 lambda: (
                     (tile < 27)
                     & (tile % 9 > 0)
-                    & (tile % 9 < 9)
+                    & (tile % 9 < 8)
                     & (hand[tile - 1] > 0)
                     & (hand[tile + 1] > 0)
                 ),
                 lambda: (
                     (tile < 27)
-                    & (tile % 9 < 8)
+                    & (tile % 9 < 7)
                     & (hand[tile + 1] > 0)
                     & (hand[tile + 2] > 0)
                 ),
