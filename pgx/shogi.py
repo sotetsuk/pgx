@@ -911,7 +911,7 @@ def _is_double_pawn(state: ShogiState) -> bool:
     for i in range(9):
         num_pawn = 0
         for j in range(9):
-            if bs[9 * i + j] == 1 + state.turn:
+            if bs[9 * i + j] == 1 + state.turn * 14:
                 num_pawn += 1
         if num_pawn >= 2:
             is_double_pawn = True
@@ -919,18 +919,18 @@ def _is_double_pawn(state: ShogiState) -> bool:
 
 
 # 行き所のない駒判定
-def _is_stuck_black(state: ShogiState) -> bool:
+def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
     for i in range(9):
         for j in range(9):
             piece = bs[9 * i + j]
-            if (piece == 1 or piece == 2 or piece == 3) and j == 0:
+            if state.turn == 0 and (piece == 1 or piece == 2 or piece == 3) and j == 0:
                 is_stuck = True
-            if piece == 3 and j == 1:
+            if state.turn == 0 and piece == 3 and j == 1:
                 is_stuck = True
-            if (piece == 15 or piece == 16 or piece == 17) and j == 8:
+            if state.turn == 1 and (piece == 15 or piece == 16 or piece == 17) and j == 8:
                 is_stuck = True
-            if piece == 17 and j == 7:
+            if state.turn == 1 and piece == 17 and j == 7:
                 is_stuck = True
     return is_stuck

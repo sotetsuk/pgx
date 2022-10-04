@@ -1,6 +1,6 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _create_piece_actions, _filter_move_actions
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status
 
 import numpy as np
 
@@ -456,6 +456,32 @@ def test_update_legal_actions():
         assert s6.legal_actions_white[81 * 28 + i] == 0
 
 
+def test_is_double_pawn():
+    s = init()
+    s.board[0][5] = 0
+    s.board[1][5] = 1
+    assert _is_double_pawn(s)
+    s.turn = 1
+    s.board[0][43] = 0
+    s.board[23][43] = 1
+    assert not _is_double_pawn(s)
+    s.board[0][41] = 0
+    s.board[15][41] = 1
+    assert _is_double_pawn(s)
+
+
+def test_is_stuck():
+    s = init()
+    s.board[0][1] = 0
+    s.board[3][1] = 1
+    assert _is_stuck(s)
+    s.turn = 1
+    assert not _is_stuck(s)
+    s.board[2][8] = 0
+    s.board[16][8] = 1
+    assert _is_stuck(s)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -466,3 +492,5 @@ if __name__ == '__main__':
     test_is_check()
     test_legal_actions()
     test_update_legal_actions()
+    test_is_double_pawn()
+    test_is_stuck()
