@@ -265,14 +265,35 @@ def _spawn_entity(entities, lr, is_gold, slot):
 
 @jax.jit
 def _update_entities(entities, player_x, player_y, r, terminal, i):
-    jax.lax.cond(
-        (entities[i, 0] == player_x) & (entities[i, 1] == player_y),
-        lambda: jax.lax.cond(
-            entities[i, 3] == 1,
-            lambda: (entities.at[i, :].set(INF), r + 1, True),
-            lambda: (entities, r, True),
+    entities, r, terminal = jax.lax.cond(
+        entities[i, 0] == player_x,
+        lambda _entities, _r, _terminal: jax.lax.cond(
+            entities[i, 1] == player_y,
+            lambda __entities, __r, __terminal: jax.lax.cond(
+                entities[i, 3] == 1,
+                lambda ___entities, ___r, ___terminal: (
+                    ___entities.at[i, :].set(INF),
+                    ___r + 1,
+                    ___terminal,
+                ),
+                lambda ___entities, ___r, ___terminal: (
+                    ___entities,
+                    ___r,
+                    True,
+                ),
+                __entities,
+                __r,
+                __terminal,
+            ),
+            lambda __entities, __r, __terminal: (__entities, __r, __terminal),
+            _entities,
+            _r,
+            _terminal,
         ),
-        lambda: (entities, r, terminal),
+        lambda _entities, _r, _terminal: (_entities, _r, _terminal),
+        entities,
+        r,
+        terminal,
     )
     # if entities[i, 0] == player_x and entities[i, 1] == player_y:
     #     if entities[i, 3] == 1:
