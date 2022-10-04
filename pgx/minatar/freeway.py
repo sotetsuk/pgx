@@ -59,6 +59,18 @@ def _step_det(
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
 ) -> Tuple[MinAtarFreewayState, int, bool]:
+    if state.terminal:
+        return state.replace(last_action=action), 0, True
+    else:
+        return _step_det_at_non_terminal(state, action, speeds, directions)
+
+
+def _step_det_at_non_terminal(
+            state: MinAtarFreewayState,
+            action: jnp.ndarray,
+            speeds: jnp.ndarray,
+            directions: jnp.ndarray,
+    ) -> Tuple[MinAtarFreewayState, int, bool]:
 
     cars = state.cars
     pos = state.pos
@@ -68,17 +80,6 @@ def _step_det(
     last_action = action
 
     r = 0
-    if terminal:
-        next_state = MinAtarFreewayState(
-            cars,
-            pos,
-            move_timer,
-            terminate_timer,
-            terminal,
-            last_action,
-        )  # type: ignore
-
-        return next_state, r, terminal
 
     # self.action_map = ['n','l','u','r','d','f']
     if action == 2 and move_timer == 0:
