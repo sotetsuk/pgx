@@ -321,7 +321,7 @@ def _direction_to_hand(direction: int) -> int:
         return direction - 12
 
 
-def _piece_type(state: ShogiState, point: int) -> jnp.ndarray:
+def _piece_type(state: ShogiState, point: int) -> np.ndarray:
     return state.board[:, point].argmax()
 
 
