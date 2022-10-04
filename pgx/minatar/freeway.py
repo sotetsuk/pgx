@@ -52,19 +52,21 @@ def to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
     return _to_obs(state)
 
 
-# TODO: make me  @jax.jit
+@jax.jit
 def _step_det(
     state: MinAtarFreewayState,
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
 ) -> Tuple[MinAtarFreewayState, int, bool]:
-    if state.terminal:
-        return state.replace(last_action=action), 0, True
-    else:
-        return _step_det_at_non_terminal(state, action, speeds, directions)
+    return jax.lax.cond(
+        state.terminal,
+        lambda: (state.replace(last_action=action), 0, True),
+        lambda: _step_det_at_non_terminal(state, action, speeds, directions)
+    )
 
 
+@jax.jit
 def _step_det_at_non_terminal(
             state: MinAtarFreewayState,
             action: jnp.ndarray,
@@ -81,7 +83,6 @@ def _step_det_at_non_terminal(
 
     r = 0
 
-    # self.action_map = ['n','l','u','r','d','f']
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),
         lambda: (player_speed, jax.lax.max(0, pos - 1)),
@@ -99,18 +100,15 @@ def _step_det_at_non_terminal(
         lambda: (_randomize_cars(speeds, directions, cars, initialize=False), r + 1, 9),
         lambda: (cars, r, pos)
     )
-    # if pos == 0:
-    #     r += 1
-    #     cars = _randomize_cars(speeds, directions, cars, initialize=False)
-    #     pos = 9
 
     pos, cars = _update_cars(pos, cars)
 
     # Update various timers
-    move_timer -= move_timer > 0
+    move_timer = jax.lax.cond(
+        move_timer > 0, lambda: move_timer - 1, lambda: move_timer
+    )
     terminate_timer -= 1
-    if terminate_timer < 0:
-        terminal = True
+    terminal = terminate_timer < 0
 
     next_state = MinAtarFreewayState(
         cars,
