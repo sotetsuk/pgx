@@ -1,5 +1,6 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
-    _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions
+    _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
+    _update_legal_drop_actions, _create_piece_actions, _filter_move_actions
 
 import numpy as np
 
@@ -382,6 +383,79 @@ def test_legal_actions():
     assert np.all(actions1 == actions2)
 
 
+def test_update_legal_actions():
+    s = init()
+    # 58玉
+    action = ShogiAction(False, 8, 43, 44, 0, False)
+    s1 = _update_legal_move_actions(s, action)
+    assert s1.legal_actions_black[43] == 0
+    assert s1.legal_actions_black[81 + 52] == 0
+    assert s1.legal_actions_black[162 + 34] == 0
+    assert s1.legal_actions_black[243 + 53] == 0
+    assert s1.legal_actions_black[324 + 35] == 0
+    assert s1.legal_actions_black[42] == 1
+    assert s1.legal_actions_black[81 + 51] == 1
+    assert s1.legal_actions_black[162 + 33] == 1
+    assert s1.legal_actions_black[243 + 52] == 1
+    assert s1.legal_actions_black[324 + 34] == 1
+    assert s1.legal_actions_black[405 + 44] == 1
+    assert s1.legal_actions_black[486 + 53] == 1
+    assert s1.legal_actions_black[567 + 35] == 1
+    # 飛車の動きはもともと入っていないので更新しないでよい
+    # 58飛車
+    action2 = ShogiAction(False, 6, 43, 16, 0, False)
+    s2 = _update_legal_move_actions(s, action2)
+    # legal_actionsは更新しない
+    assert np.all(s.legal_actions_black == s2.legal_actions_black)
+    s3 = init()
+    # 17の歩を消す
+    s3.board[1][6] = 0
+    s3.board[0][6] = 1
+    s3 = _init_legal_actions(s3)
+    # 13香車成
+    action3 = ShogiAction(False, 2, 2, 8, 15, True)
+    s4 = _update_legal_move_actions(s3, action3)
+    # 成香によるactionを追加する
+    assert s4.legal_actions_black[1] == 1
+    assert s4.legal_actions_black[81 + 10] == 1
+    assert s4.legal_actions_black[243 + 11] == 1
+    assert s4.legal_actions_black[405 + 3] == 1
+    assert s4.legal_actions_white[3] == 0
+    # 持ち駒に歩が増えたので歩を打つ手が追加される
+    for i in range(81):
+        assert s4.legal_actions_black[81 * 20 + i] == 1
+    s4 = _move(s4, action3)
+    s4.turn = 1
+    # 13桂馬
+    action4 = ShogiAction(False, 17, 2, 9, 10, False)
+    s4 = _update_legal_move_actions(s4, action4)
+    assert s4.legal_actions_black[1] == 0
+    assert s4.legal_actions_black[81 + 10] == 0
+    assert s4.legal_actions_black[243 + 11] == 0
+    assert s4.legal_actions_black[405 + 3] == 0
+    assert s4.legal_actions_white[81 * 8 + 2] == 0
+    assert s4.legal_actions_white[81 * 9 + 20] == 0
+    assert s4.legal_actions_white[81 * 9 + 13] == 1
+    for i in range(81):
+        assert s4.legal_actions_white[81 * 28 + i] == 1
+    s4 = _move(s4, action4)
+    s4.turn = 0
+    # 12歩（駒打ち）
+    action5 = ShogiAction(True, 1, 1)
+    s5 = _update_legal_drop_actions(s4, action5)
+    assert s5.legal_actions_black[0] == 1
+    # 持ち駒の歩がなくなったので歩を打つactionを折る
+    for i in range(81):
+        assert s5.legal_actions_black[81 * 20 + i] == 0
+    s5 = _drop(s5, action5)
+    s5.turn = 1
+    # 54香車（駒打ち）
+    action6 = ShogiAction(True, 16, 39)
+    s6 = _update_legal_drop_actions(s5, action6)
+    for i in range(81):
+        assert s6.legal_actions_white[81 * 28 + i] == 0
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -391,3 +465,4 @@ if __name__ == '__main__':
     test_init_legal_actions()
     test_is_check()
     test_legal_actions()
+    test_update_legal_actions()

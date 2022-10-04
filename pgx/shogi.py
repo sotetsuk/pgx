@@ -227,9 +227,9 @@ def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
         direction = 6
     if _is_same_declining(_from, to) and dis < 0:
         direction = 7
-    if dis == 7:
+    if dis == 7 and not _is_same_column(_from, to):
         direction = 8
-    if dis == -11:
+    if dis == -11 and not _is_same_column(_from, to):
         direction = 9
     if promote:
         direction += 10
@@ -791,17 +791,20 @@ def _update_legal_move_actions(
         enemy_actions = s.legal_actions_black
     # 元の位置にいたときのフラグを折る
     new_player_actions = _filter_move_actions(
-        action.from_, action.piece, player_actions
+        action.piece, action.from_, player_actions
     )
     new_enemy_actions = enemy_actions
     # 移動後の位置からの移動のフラグを立てる
+    new_piece = action.piece
+    if action.is_promote:
+        new_piece += 8
     new_player_actions = _add_move_actions(
-        action.to, action.piece, new_player_actions
+        new_piece, action.to, new_player_actions
     )
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
     if action.captured != 0:
         new_enemy_actions = _filter_move_actions(
-            action.to, action.captured, new_enemy_actions
+            action.captured, action.to, new_enemy_actions
         )
         captured = _convert_piece(action.captured)
         # 成駒の場合成る前の駒に変換
