@@ -536,14 +536,12 @@ def _effected_positions(state: JaxAnimalShogiState, turn: int) -> jnp.ndarray:
     board = _board_status(state)
     piece_owner = _pieces_owner(state)
     jax.lax.fori_loop(
-        0,
-        12,
-        lambda i, x: jax.lax.cond(
+        0, 12, lambda i, x: jax.lax.cond(
             piece_owner[i] == turn,
             lambda: x + _point_moves(i, board[i]).reshape(12),
-            lambda: x,
+            lambda: x
         ),
-        all_effect,
+        all_effect
     )
     return all_effect
 
