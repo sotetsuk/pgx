@@ -377,32 +377,6 @@ class Yaku:
         )
         # NOTE: 南,西,北: オタ風扱い
 
-        # for suit in range(3):
-        #    code = 0
-        #    begin = 9 * suit
-        #    for tile in range(9 * suit, 9 * (suit + 1)):
-        #        if hand[tile] == 0:
-        #            for i in range(4):
-        #                print(pinfu)
-        #                print(code, begin, tile, last)
-        #                pinfu = pinfu.at[i].set(
-        #                        pinfu[i] & Yaku.is_pinfu(code, begin, tile, last)
-        #                        )
-        #                code = Yaku.next(code)
-
-        #            code = 0
-        #            begin = tile + 1
-        #        else:
-        #            code <<= 1
-        #            code += 1
-        #            code <<= (hand[tile].astype(int) - 1)
-
-        #    for i in range(4):
-        #        pinfu = pinfu.at[i].set(
-        #                pinfu[i] & Yaku.is_pinfu(code, begin, 9*(suit+1), last)
-        #                )
-        #        code = Yaku.next(code)
-
         for suit in range(3):
             code = 0
             begin = 9 * suit
