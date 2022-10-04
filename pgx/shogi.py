@@ -48,6 +48,66 @@ def init():
     return _init_legal_actions(state)
 
 
+def step(
+    state: ShogiState, action: int
+) -> Tuple[ShogiState, int, bool]:
+    # state, 勝敗判定,終了判定を返す
+    s = copy.deepcopy(state)
+    legal_actions = _legal_actions(s)
+    _action = _dlaction_to_action(action, s)
+    # actionのfromが盤外の場合は非合法手なので負け
+    if not _is_in_board(_action.from_):
+        print("an illegal action")
+        return s, _turn_to_reward(_another_color(s)), True
+    # legal_actionsにactionがない場合、そのactionは非合法手
+    if legal_actions[action] == 0:
+        print("an illegal action")
+        return s, _turn_to_reward(_another_color(s)), True
+    # 合法手の場合
+    # 駒打ち
+    if _action.is_drop:
+        s = _update_legal_drop_actions(s, _action)
+        s = _drop(s, _action)
+        print("drop: piece =", _action.piece, ", to =", _action.to)
+    # 駒の移動
+    else:
+        s = _update_legal_move_actions(s, _action)
+        s = _move(s, _action)
+        print("move: piece =", _action.piece, ", to =", _action.to)
+    # 王手がかかったままの場合、王手放置またｈ自殺手で負け
+    if _is_check(s):
+        print("check is remained")
+        return s, _turn_to_reward(_another_color(s)), True
+    # その他の反則
+    if _is_double_pawn(s):
+        print("two pawns in the same file")
+        return s, _turn_to_reward(_another_color(s)), True
+    if _is_stuck(s):
+        print("some pieces are stuck")
+        return s, _turn_to_reward(_another_color(s)), True
+    s.turn = _another_color(s)
+    enemy_legal_actions = _legal_actions(s)
+    # 相手に合法手がない場合→詰み
+    if np.all(enemy_legal_actions == 0):
+        # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
+        if _action.is_drop and (_action.piece == 1 or _action.piece == 15):
+            print("mate by dropped pawn")
+            return s, _turn_to_reward(_another_color(s)), True
+        # そうでなければ普通の詰みで勝ち
+        else:
+            print("mate")
+            return s, _turn_to_reward(s.turn), True
+    else:
+        return s, 0, False
+
+
+def _turn_to_reward(turn: int) -> int:
+    if turn == 0:
+        return 1
+    else:
+        return -1
+
+
 def _make_init_board() -> np.ndarray:
     array = np.zeros((29, 81), dtype=np.int32)
     for i in range(81):
