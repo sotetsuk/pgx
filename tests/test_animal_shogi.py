@@ -417,13 +417,13 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
     )
 
 
-# def test_jax_init():
-#     np_init = init()
-#     j_init = convert_jax_state(np_init)
-#     j_init2 = jax_init()
-#     assert (j_init.board == j_init2.board).all()
-#     assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
-#     assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
+def test_jax_init():
+    np_init = init()
+    j_init = convert_jax_state(np_init)
+    j_init2 = jax_init()
+    assert (j_init.board == j_init2.board).all()
+    assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
+    assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
 
 
 # def test_jax_step():
