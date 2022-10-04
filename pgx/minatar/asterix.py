@@ -331,8 +331,9 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     )
     # if entities[i, 0] < 0 or entities[i, 0] > 9:
     #     entities = entities.at[i, :].set(INF)
-    entities, player_x, player_y, r, terminal = \
-        _update_entities(entities, player_x, player_y, r, terminal, i)
+    entities, player_x, player_y, r, terminal = _update_entities(
+        entities, player_x, player_y, r, terminal, i
+    )
     # if entities[i, 0] == player_x and entities[i, 1] == player_y:
     #     if entities[i, 3] == 1:
     #         entities = entities.at[i, :].set(INF)
