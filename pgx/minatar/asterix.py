@@ -171,25 +171,14 @@ def _step_det(
     #     player_y = min(8, player_y + 1)
 
     # Update entities
-    for i in range(8):
-        entities, player_x, player_y, r, terminal = jax.lax.cond(
+    entities, player_x, player_y, r, terminal = jax.lax.fori_loop(
+        0, 8, lambda i, x: jax.lax.cond(
             entities[i, 0] == INF,
-            lambda _entities, _player_x, _player_y, _r, _terminal: (
-                _entities,
-                _player_x,
-                _player_y,
-                _r,
-                _terminal,
-            ),
-            lambda _entities, _player_x, _player_y, _r, _terminal: _update_entities(
-                _entities, _player_x, _player_y, _r, _terminal, i
-            ),
-            entities,
-            player_x,
-            player_y,
-            r,
-            terminal,
-        )
+            lambda: x,
+            lambda: _update_entities(x[0], x[1], x[2], x[3], x[4], i)
+        ),
+        (entities, player_x, player_y, r, terminal)
+    )
     # for i in range(len(entities)):
     #     x = entities[i]
     #     if x[0] != INF:
