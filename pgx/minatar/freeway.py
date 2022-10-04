@@ -82,18 +82,27 @@ def _step_det_at_non_terminal(
     r = 0
 
     # self.action_map = ['n','l','u','r','d','f']
-    if action == 2 and move_timer == 0:
-        move_timer = player_speed
-        pos = max(0, pos - 1)
-    elif action == 4 and move_timer == 0:
-        move_timer = player_speed
-        pos = min(9, pos + 1)
+    move_timer, pos = jax.lax.cond(
+        (action == 2) & (move_timer == 0),
+        lambda: (player_speed, jax.lax.max(0, pos - 1)),
+        lambda: (move_timer, pos)
+    )
+    move_timer, pos = jax.lax.cond(
+        (action == 4) & (move_timer == 0),
+        lambda: (player_speed, jax.lax.min(9, pos + 1)),
+        lambda: (move_timer, pos)
+    )
 
     # Win condition
-    if pos == 0:
-        r += 1
-        cars = _randomize_cars(speeds, directions, cars, initialize=False)
-        pos = 9
+    cars, r, pos = jax.lax.cond(
+        pos == 0,
+        lambda: (_randomize_cars(speeds, directions, cars, initialize=False), r + 1, 9),
+        lambda: (cars, r, pos)
+    )
+    # if pos == 0:
+    #     r += 1
+    #     cars = _randomize_cars(speeds, directions, cars, initialize=False)
+    #     pos = 9
 
     pos, cars = _update_cars(pos, cars)
 
