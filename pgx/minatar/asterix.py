@@ -188,30 +188,15 @@ def _step_det(
     #                 r += 1
     #             else:
     #                 terminal = True
-    move_timer, entities, r, terminal = jax.lax.cond(
+
+    entities, r, terminal = jax.lax.cond(
         move_timer == 0,
-        lambda _move_timer, _entities, _r, _terminal: (
-            move_speed,
-            *_update_entities_by_timer(
-                _entities, _r, _terminal, player_x, player_y
-            ),
+        lambda: _update_entities_by_timer(
+            entities, r, terminal, player_x, player_y
         ),
-        lambda _move_timer, _entities, _r, _terminal: (
-            _move_timer,
-            _entities,
-            _r,
-            _terminal,
-        ),
-        move_timer,
-        entities,
-        r,
-        terminal,
+        lambda: (entities, r, terminal)
     )
-    # if move_timer == 0:
-    #     move_timer = move_speed
-    #     entities, r, terminal = _update_entities_by_timer(
-    #         entities, r, terminal, player_x, player_y
-    #     )
+    move_timer = jax.lax.cond(move_timer == 0, lambda: move_speed, lambda: move_timer)
 
     # Update various timers
     spawn_timer -= 1
@@ -220,22 +205,9 @@ def _step_det(
     # Ramp difficulty if interval has elapsed
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
         ramping,
-        _update_ramp,
-        lambda _spawn_speed, _move_speed, _ramp_timer, _ramp_index: (
-            _spawn_speed,
-            _move_speed,
-            _ramp_timer,
-            _ramp_index,
-        ),
-        spawn_speed,
-        move_speed,
-        ramp_timer,
-        ramp_index,
+        lambda: _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index),
+        lambda: (spawn_speed, move_speed, ramp_timer, ramp_index)
     )
-    # if ramping:
-    #     spawn_speed, move_speed, ramp_timer, ramp_index = _update_ramp(
-    #         spawn_speed, move_speed, ramp_timer, ramp_index
-    #     )
 
     next_state = MinAtarAsterixState(
         player_x,
