@@ -241,8 +241,7 @@ def _step_det(
 def _spawn_entity(entities, lr, is_gold, slot):
     # lr = random.choice([True, False])
     # is_gold = random.choice([True, False], p=[1 / 3, 2 / 3])
-    x = 0
-    x = jax.lax.cond(lr == 1, lambda _: 0, lambda _: 9, x)
+    x = jax.lax.cond(lr == 1, lambda: 0, lambda: 9)
     # x = 0 if lr else 9
     # slot_options = [i for i in range(len(entities)) if entities[i][0] == INF]
     # if not slot_options:
@@ -257,9 +256,8 @@ def _spawn_entity(entities, lr, is_gold, slot):
     has_empty_slot = jnp.any(entities[:, 0] == INF)
     new_entities = jax.lax.cond(
         has_empty_slot,
-        lambda _: new_entities,
-        lambda _: entities,
-        new_entities,
+        lambda: new_entities,
+        lambda: entities,
     )
 
     return new_entities
