@@ -131,6 +131,7 @@ def _step_det(
     return next_state, r, terminal
 
 
+@jax.jit
 def _reset_det(
     speeds: jnp.ndarray, directions: jnp.ndarray
 ) -> MinAtarFreewayState:
@@ -138,7 +139,7 @@ def _reset_det(
     return MinAtarFreewayState(cars=cars)  # type: ignore
 
 
-# TODO: make me  @jax.jit
+@jax.jit
 def _randomize_cars(
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
