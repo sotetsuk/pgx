@@ -321,9 +321,7 @@ class Yaku:
     一盃口 = 2
     二盃口 = 3
 
-    FAN = jnp.array([
-        1, 1, 1, 3
-    ])
+    FAN = jnp.array([1, 1, 1, 3])
 
     MAX_PATTERNS = 4
 
@@ -365,35 +363,34 @@ class Yaku:
         ) & (Yaku.pung(code) == 0)
 
     @staticmethod
-    #@jit
+    @jit
     def double_chows(code: int, sum: int) -> int:
         chow = Yaku.chow(code)
         pung = Yaku.pung(code)
 
         unique = (
-                (chow & 1) 
-                + (chow >> 1 & 1)
-                + (chow >> 2 & 1)
-                + (chow >> 3 & 1)
-                + (chow >> 4 & 1)
-                + (chow >> 5 & 1)
-                + (chow >> 6 & 1)
-                + (pung & 1)
-                + (pung >> 1 & 1)
-                + (pung >> 2 & 1)
-                + (pung >> 3 & 1)
-                + (pung >> 4 & 1)
-                + (pung >> 5 & 1)
-                + (pung >> 6 & 1)
-                + (pung >> 7 & 1)
-                + (pung >> 8 & 1)
-                )
+            (chow & 1)
+            + (chow >> 1 & 1)
+            + (chow >> 2 & 1)
+            + (chow >> 3 & 1)
+            + (chow >> 4 & 1)
+            + (chow >> 5 & 1)
+            + (chow >> 6 & 1)
+            + (pung & 1)
+            + (pung >> 1 & 1)
+            + (pung >> 2 & 1)
+            + (pung >> 3 & 1)
+            + (pung >> 4 & 1)
+            + (pung >> 5 & 1)
+            + (pung >> 6 & 1)
+            + (pung >> 7 & 1)
+            + (pung >> 8 & 1)
+        )
 
         return sum // 3 - unique
 
-
     @staticmethod
-    #@jit
+    @jit
     def judge(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
@@ -402,7 +399,7 @@ class Yaku:
     ) -> jnp.ndarray:
         # assert Hand.can_tsumo(hand)
 
-        menzen = (meld_num == 0)
+        menzen = meld_num == 0
 
         is_pinfu = jnp.full(
             Yaku.MAX_PATTERNS,
@@ -413,10 +410,7 @@ class Yaku:
         )
         # NOTE: 南,西,北: オタ風扱い
 
-        double_chows = jnp.full(
-            Yaku.MAX_PATTERNS,
-            0
-        )
+        double_chows = jnp.full(Yaku.MAX_PATTERNS, 0)
 
         for suit in range(3):
             code = 0
@@ -432,13 +426,16 @@ class Yaku:
                             Yaku.MAX_PATTERNS,
                             lambda i, tpl: (
                                 Yaku.next(tpl[0]),
-                                tpl[1].at[i].set(
+                                tpl[1]
+                                .at[i]
+                                .set(
                                     tpl[1][i]
                                     & Yaku.is_pinfu(tpl[0], begin, tile, last)
                                 ),
-                                tpl[2].at[i].set(
-                                    tpl[2][i]
-                                    + Yaku.double_chows(tpl[0], sum)
+                                tpl[2]
+                                .at[i]
+                                .set(
+                                    tpl[2][i] + Yaku.double_chows(tpl[0], sum)
                                 ),
                             ),
                             (code, is_pinfu, double_chows),
@@ -460,17 +457,18 @@ class Yaku:
                 Yaku.MAX_PATTERNS,
                 lambda i, tpl: (
                     Yaku.next(tpl[0]),
-                    tpl[1].at[i].set(
+                    tpl[1]
+                    .at[i]
+                    .set(
                         tpl[1][i]
                         & Yaku.is_pinfu(tpl[0], begin, 9 * (suit + 1), last)
                     ),
-                    tpl[2].at[i].set(
-                        tpl[2][i]
-                        + Yaku.double_chows(tpl[0], sum)
-                    ),
+                    tpl[2]
+                    .at[i]
+                    .set(tpl[2][i] + Yaku.double_chows(tpl[0], sum)),
                 ),
                 (code, is_pinfu, double_chows),
-                )[1:]
+            )[1:]
 
         yaku = jnp.full((Yaku.MAX_PATTERNS, 4), False)
         for i in range(Yaku.MAX_PATTERNS):
