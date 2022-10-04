@@ -20,7 +20,7 @@ def test_step_det():
     env = Environment("freeway", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 3  # TDOO: increase N
+    N = 3
     for _ in range(N):
         env.reset()
         done = False
