@@ -176,7 +176,7 @@ def test_yaku_double_chows():
     assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.二盃口]
 
     hand = Hand.from_str("11122223333444m")
-    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.二盃口]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.二盃口]
 
 
 def test_state():
