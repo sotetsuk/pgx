@@ -107,23 +107,64 @@ def test_hand():
             )
 
 
-def test_yaku():
+def test_yaku_tanyao():
     hand = jnp.zeros(34, dtype=jnp.uint8)
     hand = Hand.add(hand, 1, 2)
     melds = jnp.zeros(4, dtype=jnp.uint32)
-    assert Yaku.judge(hand, melds, 0)[Yaku.断么九]
+    assert Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.断么九]
 
     melds = melds.at[0].set(Meld.init(Action.CHI_R, 3, 0))
-    assert Yaku.judge(hand, melds, 1)[Yaku.断么九]
+    assert Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.断么九]
 
     melds = melds.at[0].set(Meld.init(Action.CHI_R, 2, 0))
-    assert not Yaku.judge(hand, melds, 1)[Yaku.断么九]
+    assert not Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.断么九]
 
     melds = melds.at[0].set(Meld.init(Action.PON, 6, 0))
-    assert Yaku.judge(hand, melds, 1)[Yaku.断么九]
+    assert Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.断么九]
 
     melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))
-    assert not Yaku.judge(hand, melds, 1)[Yaku.断么九]
+    assert not Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.断么九]
+
+def test_yaku_pinfu():
+    hand = Hand.from_str("12345666m789p123s")
+    melds = jnp.zeros(4, dtype=jnp.uint32)
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.平和]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=2)[Yaku.平和]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=15)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=26)[Yaku.平和]
+
+    hand = Hand.from_str("11122233344456m")
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.平和]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=2)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=3)[Yaku.平和]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=4)[Yaku.平和]
+
+    hand = Hand.from_str("11223344556677m")
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.平和]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=2)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=3)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=4)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=5)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=6)[Yaku.平和]
+
+    hand = Hand.from_str("22334455667788m")
+    assert Yaku.judge(hand, melds, meld_num=0, last=2)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=3)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=4)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=5)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=6)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=7)[Yaku.平和]
+
+    hand = Hand.from_str("11222333444456m")
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.平和]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=2)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=3)[Yaku.平和]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=4)[Yaku.平和]
+    assert Yaku.judge(hand, melds, meld_num=0, last=5)[Yaku.平和]
+
 
 
 def test_state():
