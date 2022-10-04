@@ -227,9 +227,9 @@ def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
         direction = 6
     if _is_same_declining(_from, to) and dis < 0:
         direction = 7
-    if dis == 7:
+    if dis == 7 and not _is_same_column(_from, to):
         direction = 8
-    if dis == -11:
+    if dis == -11 and not _is_same_column(_from, to):
         direction = 9
     if promote:
         direction += 10
@@ -774,6 +774,73 @@ def _is_check(state: ShogiState) -> bool:
         if _piece_moves(state, piece, i)[king_point] == 1:
             is_check = True
     return is_check
+
+
+# 駒の移動によるlegal_actionsの更新
+def _update_legal_move_actions(
+    state: ShogiState, action: ShogiAction
+) -> ShogiState:
+    s = copy.deepcopy(state)
+    if s.turn == 0:
+        player_actions = s.legal_actions_black
+        enemy_actions = s.legal_actions_white
+    else:
+        player_actions = s.legal_actions_white
+        enemy_actions = s.legal_actions_black
+    # 元の位置にいたときのフラグを折る
+    new_player_actions = _filter_move_actions(
+        action.piece, action.from_, player_actions
+    )
+    new_enemy_actions = enemy_actions
+    # 移動後の位置からの移動のフラグを立てる
+    new_piece = action.piece
+    if action.is_promote:
+        new_piece += 8
+    new_player_actions = _add_move_actions(
+        new_piece, action.to, new_player_actions
+    )
+    # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
+    if action.captured != 0:
+        new_enemy_actions = _filter_move_actions(
+            action.captured, action.to, new_enemy_actions
+        )
+        captured = _convert_piece(action.captured)
+        # 成駒の場合成る前の駒に変換
+        if captured % 14 == 0 or captured % 14 >= 9:
+            captured -= 8
+        new_player_actions = _add_drop_actions(captured, new_player_actions)
+    if s.turn == 0:
+        s.legal_actions_black = new_player_actions
+        s.legal_actions_white = new_enemy_actions
+    else:
+        s.legal_actions_black = new_enemy_actions
+        s.legal_actions_white = new_player_actions
+    return s
+
+
+# 駒打ちによるlegal_actionsの更新
+def _update_legal_drop_actions(
+    state: ShogiState, action: ShogiAction
+) -> ShogiState:
+    s = copy.deepcopy(state)
+    if s.turn == 0:
+        player_actions = s.legal_actions_black
+    else:
+        player_actions = s.legal_actions_white
+    # 移動後の位置からの移動のフラグを立てる
+    new_player_actions = _add_move_actions(
+        action.to, action.piece, player_actions
+    )
+    # 持ち駒がもうない場合、その駒を打つフラグを折る
+    if s.hand[_piece_to_hand(action.piece)] == 1:
+        new_player_actions = _filter_drop_actions(
+            action.piece, new_player_actions
+        )
+    if s.turn == 0:
+        s.legal_actions_black = new_player_actions
+    else:
+        s.legal_actions_white = new_player_actions
+    return s
 
 
 # 自分の駒がある位置への移動を除く
