@@ -12,27 +12,27 @@ import jax
 from flax import struct
 from jax import numpy as jnp
 
-ramp_interval = 100
-init_spawn_speed = 10
-init_move_interval = 5
-shot_cool_down = 5
-INF = int(1e5)
+ramp_interval: jnp.ndarray = jnp.array(100, dtype=int)
+init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=int)
+init_move_interval: jnp.ndarray = jnp.array(5, dtype=int)
+shot_cool_down: jnp.ndarray = jnp.array(5, dtype=int)
+INF: jnp.ndarray = jnp.array(int(1e5), dtype=int)
 
 
 @struct.dataclass
 class MinAtarAsterixState:
-    player_x: int = 5
-    player_y: int = 5
+    player_x: jnp.ndarray = jnp.array(5, dtype=int)
+    player_y: jnp.ndarray = jnp.array(5, dtype=int)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=int) * INF
-    shot_timer: int = 0
-    spawn_speed: int = init_spawn_speed
-    spawn_timer: int = init_spawn_speed
-    move_speed: int = init_move_interval
-    move_timer: int = init_move_interval
-    ramp_timer: int = ramp_interval
-    ramp_index: int = 0
+    shot_timer: int = jnp.ones(0, dtype=int)
+    spawn_speed: jnp.ndarray = init_spawn_speed
+    spawn_timer: jnp.ndarray = init_spawn_speed
+    move_speed: jnp.ndarray = init_move_interval
+    move_timer: jnp.ndarray = init_move_interval
+    ramp_timer: jnp.ndarray = ramp_interval
+    ramp_index: jnp.ndarray = jnp.array(0, dtype=int)
     terminal: bool = False
-    last_action: int = 0
+    last_action: jnp.ndarray = jnp.array(0, dtype=int)
 
 
 @jax.jit

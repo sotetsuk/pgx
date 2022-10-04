@@ -455,22 +455,3 @@ def test_jax_step():
         assert (jax_stepped_test2[0].legal_actions_white == convert_jax_state(np_stepped_test2[0]).legal_actions_white).all()
         assert jax_stepped_test2[1] == np_stepped_test2[1]
         assert jax_stepped_test2[2] == np_stepped_test2[2]
-
-
-if __name__ == '__main__':
-    test_another_color()
-    test_move()
-    test_drop()
-    test_piece_type()
-    test_effected()
-    test_is_check()
-    test_convert_action_to_int()
-    test_convert_int_to_action()
-    test_create_actions()
-    test_add_actions()
-    test_create_legal_actions()
-    test_legal_actions()
-    test_update_legal_actions_move()
-    test_update_legal_actions_drop()
-    test_jax_init()
-    test_jax_step()

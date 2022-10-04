@@ -32,7 +32,7 @@ class Deck:
 
     @staticmethod
     @jit
-    def draw(deck: Deck) -> Tuple[Deck, int]:
+    def draw(deck: Deck) -> Tuple[Deck, jnp.ndarray]:
         tile = deck.arr[deck.idx]
         deck.idx += 1
         return deck, tile
@@ -66,8 +66,8 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_tsumo(hand: jnp.ndarray) -> bool:
-        heads = 0
+    def can_tsumo(hand: jnp.ndarray) -> jnp.ndarray:
+        heads: jnp.ndarray = jnp.array(0, dtype=int)
         valid = True
         for i in range(3):
             code = 0
@@ -99,7 +99,7 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_pon(hand: jnp.ndarray, tile: int) -> bool:
+    def can_pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
         return hand[tile] >= 2
 
     @staticmethod
@@ -216,16 +216,25 @@ class State:
                     lambda: legal_actions[player],
                     lambda: legal_actions[player]
                     .at[Action.RON]
-                    .set(Hand.can_ron(self.hand[player], self.target))
+                    .set(Hand.can_ron(self.hand[player], self.target)),
+                )
+            )
+            legal_actions = legal_actions.at[player].set(
+                jax.lax.cond(
+                    (player == self.turn)
+                    | (self.target == -1)
+                    | self.deck.is_empty(),
+                    lambda: legal_actions[player],
+                    lambda: legal_actions[player]
                     .at[Action.PON]
                     .set(Hand.can_pon(self.hand[player], self.target)),
                 )
             )
             legal_actions = legal_actions.at[player].set(
                 jax.lax.cond(
-                    # (player != (self.turn + 1) % 4) | (self.target == -1),
-                    # NOTE: どこからでもチーできるようにしている
-                    (player == self.turn) | (self.target == -1),
+                    (player != (self.turn + 1) % 4)
+                    | (self.target == -1)
+                    | self.deck.is_empty(),
                     lambda: legal_actions[player],
                     lambda: legal_actions[player]
                     .at[Action.CHI_R]

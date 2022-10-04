@@ -321,7 +321,7 @@ def _direction_to_hand(direction: int) -> int:
         return direction - 12
 
 
-def _piece_type(state: ShogiState, point: int) -> int:
+def _piece_type(state: ShogiState, point: int):
     return state.board[:, point].argmax()
 
 
@@ -689,9 +689,7 @@ def _add_action(add_array: np.ndarray, origin_array: np.ndarray):
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
-def _add_move_actions(
-    piece: int, _from: int, array: np.ndarray
-) -> np.ndarray:
+def _add_move_actions(piece: int, _from: int, array: np.ndarray) -> np.ndarray:
     new_array = copy.deepcopy(array)
     actions = _create_piece_actions(piece, _from)
     for i in range(2754):
@@ -884,13 +882,20 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
         piece = _piece_type(state, i)
         # 香車の動きを追加
         if piece == 2 + 14 * state.turn:
-            action_array = _add_action(_create_actions(piece, i, _lance_move(state, i, state.turn)), action_array)
+            action_array = _add_action(
+                _create_actions(piece, i, _lance_move(state, i, state.turn)),
+                action_array,
+            )
         # 角の動きを追加
         if piece == 5 + 14 * state.turn:
-            action_array = _add_action(_create_actions(piece, i, _bishop_move(state, i)), action_array)
+            action_array = _add_action(
+                _create_actions(piece, i, _bishop_move(state, i)), action_array
+            )
         # 飛車の動きを追加
         if piece == 6 + 14 * state.turn:
-            action_array = _add_action(_create_actions(piece, i, _rook_move(state, i)), action_array)
+            action_array = _add_action(
+                _create_actions(piece, i, _rook_move(state, i)), action_array
+            )
         # 馬の動きを追加
         if piece == 13 + 14 * state.turn:
             action_array = _create_actions(piece, i, _horse_move(state, i))
