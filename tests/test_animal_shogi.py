@@ -433,7 +433,7 @@ def test_jax_step():
     j_test = convert_jax_state(np_test)
     np_test2 = _init_legal_actions(copy.deepcopy(TEST_BOARD2))
     j_test2 = convert_jax_state(np_test2)
-    for i in range(1):
+    for i in range(180):
         np_stepped = step(np_init, i)
         jax_stepped = jax_step(j_init, i)
         assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
