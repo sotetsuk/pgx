@@ -166,6 +166,18 @@ def test_yaku_pinfu():
     assert Yaku.judge(hand, melds, meld_num=0, last=5)[Yaku.平和]
 
 
+def test_yaku_double_chows():
+    hand = Hand.from_str("11223388m789p123s")
+    melds = jnp.zeros(4, dtype=jnp.uint32)
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.一盃口]
+
+    #hand = Hand.from_str("11223388m778899p")
+    #assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.一盃口]
+    #assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.二盃口]
+
+    #hand = Hand.from_str("11122223333444m")
+    #assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.二盃口]
+
 
 def test_state():
     state = init(jax.random.PRNGKey(seed=0))
