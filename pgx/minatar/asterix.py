@@ -56,14 +56,16 @@ def step(
         rng2, jnp.array([True, False]), p=jnp.array([1 / 3, 2 / 3])
     )
     slots = jnp.zeros((8))
-    for i in range(8):
-        slots = jax.lax.cond(
+    slots = jax.lax.fori_loop(
+        0,
+        8,
+        lambda i, x: jax.lax.cond(
             state.entities[i, 0] == INF,
-            lambda _: slots.at[i].set(1),
-            lambda _: slots,
-            0,
-        )
-    # avoid zero division
+            lambda: x.at[i].set(1),
+            lambda: x,
+        ),
+        slots,
+    )
     slots = jax.lax.cond(
         slots.sum() == 0, lambda _: slots.at[0].set(1), lambda _: slots, 0
     )
@@ -173,25 +175,16 @@ def _step_det(
     #     player_y = min(8, player_y + 1)
 
     # Update entities
-    for i in range(8):
-        entities, player_x, player_y, r, terminal = jax.lax.cond(
+    entities, player_x, player_y, r, terminal = jax.lax.fori_loop(
+        0,
+        8,
+        lambda i, x: jax.lax.cond(
             entities[i, 0] == INF,
-            lambda _entities, _player_x, _player_y, _r, _terminal: (
-                _entities,
-                _player_x,
-                _player_y,
-                _r,
-                _terminal,
-            ),
-            lambda _entities, _player_x, _player_y, _r, _terminal: _update_entities(
-                _entities, _player_x, _player_y, _r, _terminal, i
-            ),
-            entities,
-            player_x,
-            player_y,
-            r,
-            terminal,
-        )
+            lambda: x,
+            lambda: _update_entities(x[0], x[1], x[2], x[3], x[4], i),
+        ),
+        (entities, player_x, player_y, r, terminal),
+    )
     # for i in range(len(entities)):
     #     x = entities[i]
     #     if x[0] != INF:
@@ -201,30 +194,17 @@ def _step_det(
     #                 r += 1
     #             else:
     #                 terminal = True
-    move_timer, entities, r, terminal = jax.lax.cond(
+
+    entities, r, terminal = jax.lax.cond(
         move_timer == 0,
-        lambda _move_timer, _entities, _r, _terminal: (
-            move_speed,
-            *_update_entities_by_timer(
-                _entities, _r, _terminal, player_x, player_y
-            ),
+        lambda: _update_entities_by_timer(
+            entities, r, terminal, player_x, player_y
         ),
-        lambda _move_timer, _entities, _r, _terminal: (
-            _move_timer,
-            _entities,
-            _r,
-            _terminal,
-        ),
-        move_timer,
-        entities,
-        r,
-        terminal,
+        lambda: (entities, r, terminal),
     )
-    # if move_timer == 0:
-    #     move_timer = move_speed
-    #     entities, r, terminal = _update_entities_by_timer(
-    #         entities, r, terminal, player_x, player_y
-    #     )
+    move_timer = jax.lax.cond(
+        move_timer == 0, lambda: move_speed, lambda: move_timer
+    )
 
     # Update various timers
     spawn_timer -= 1
@@ -233,22 +213,9 @@ def _step_det(
     # Ramp difficulty if interval has elapsed
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
         ramping,
-        _update_ramp,
-        lambda _spawn_speed, _move_speed, _ramp_timer, _ramp_index: (
-            _spawn_speed,
-            _move_speed,
-            _ramp_timer,
-            _ramp_index,
-        ),
-        spawn_speed,
-        move_speed,
-        ramp_timer,
-        ramp_index,
+        lambda: _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index),
+        lambda: (spawn_speed, move_speed, ramp_timer, ramp_index),
     )
-    # if ramping:
-    #     spawn_speed, move_speed, ramp_timer, ramp_index = _update_ramp(
-    #         spawn_speed, move_speed, ramp_timer, ramp_index
-    #     )
 
     next_state = MinAtarAsterixState(
         player_x,
@@ -282,8 +249,7 @@ def _step_det(
 def _spawn_entity(entities, lr, is_gold, slot):
     # lr = random.choice([True, False])
     # is_gold = random.choice([True, False], p=[1 / 3, 2 / 3])
-    x = 0
-    x = jax.lax.cond(lr == 1, lambda _: 0, lambda _: 9, x)
+    x = jax.lax.cond(lr == 1, lambda: 0, lambda: 9)
     # x = 0 if lr else 9
     # slot_options = [i for i in range(len(entities)) if entities[i][0] == INF]
     # if not slot_options:
@@ -295,19 +261,11 @@ def _spawn_entity(entities, lr, is_gold, slot):
     new_entities = new_entities.at[slot, 2].set(lr)
     new_entities = new_entities.at[slot, 3].set(is_gold)
 
-    has_empty_slot = False
-    for i in range(8):
-        has_empty_slot = jax.lax.cond(
-            entities[i][0] == INF,
-            lambda z: True,
-            lambda z: z,
-            has_empty_slot,
-        )
+    has_empty_slot = jnp.any(entities[:, 0] == INF)
     new_entities = jax.lax.cond(
         has_empty_slot,
-        lambda _: new_entities,
-        lambda _: entities,
-        new_entities,
+        lambda: new_entities,
+        lambda: entities,
     )
 
     return new_entities
@@ -316,34 +274,13 @@ def _spawn_entity(entities, lr, is_gold, slot):
 @jax.jit
 def _update_entities(entities, player_x, player_y, r, terminal, i):
     entities, r, terminal = jax.lax.cond(
-        entities[i, 0] == player_x,
-        lambda _entities, _r, _terminal: jax.lax.cond(
-            entities[i, 1] == player_y,
-            lambda __entities, __r, __terminal: jax.lax.cond(
-                entities[i, 3] == 1,
-                lambda ___entities, ___r, ___terminal: (
-                    ___entities.at[i, :].set(INF),
-                    ___r + 1,
-                    ___terminal,
-                ),
-                lambda ___entities, ___r, ___terminal: (
-                    ___entities,
-                    ___r,
-                    True,
-                ),
-                __entities,
-                __r,
-                __terminal,
-            ),
-            lambda __entities, __r, __terminal: (__entities, __r, __terminal),
-            _entities,
-            _r,
-            _terminal,
+        (entities[i, 0] == player_x) & (entities[i, 1] == player_y),
+        lambda: jax.lax.cond(
+            entities[i, 3] == 1,
+            lambda: (entities.at[i, :].set(INF), r + 1, terminal),
+            lambda: (entities, r, True),
         ),
-        lambda _entities, _r, _terminal: (_entities, _r, _terminal),
-        entities,
-        r,
-        terminal,
+        lambda: (entities, r, terminal),
     )
     # if entities[i, 0] == player_x and entities[i, 1] == player_y:
     #     if entities[i, 3] == 1:
@@ -356,26 +293,18 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
 
 @jax.jit
 def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
-    for i in range(8):
-        entities, r, terminal = jax.lax.cond(
+    entities, r, terminal = jax.lax.fori_loop(
+        0,
+        8,
+        lambda i, x: jax.lax.cond(
             entities[i, 0] != INF,
-            __update_entities_by_timer,
-            lambda _entities, _r, _terminal, _player_x, _player_y, _i: (
-                _entities,
-                _r,
-                _terminal,
+            lambda: __update_entities_by_timer(
+                x[0], x[1], x[2], player_x, player_y, i
             ),
-            entities,
-            r,
-            terminal,
-            player_x,
-            player_y,
-            i,
-        )
-        # if entities[i, 0] != INF:
-        #     entities, r, terminal = __update_entities_by_timer(
-        #         entities, r, terminal, player_x, player_y, i
-        #     )
+            lambda: x,
+        ),
+        (entities, r, terminal),
+    )
     return entities, r, terminal
 
 
@@ -402,35 +331,8 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     )
     # if entities[i, 0] < 0 or entities[i, 0] > 9:
     #     entities = entities.at[i, :].set(INF)
-    entities, r, terminal = jax.lax.cond(
-        entities[i, 0] == player_x,
-        lambda _entities, _r, _terminal: jax.lax.cond(
-            entities[i, 1] == player_y,
-            lambda __entities, __r, __terminal: jax.lax.cond(
-                entities[i, 3] == 1,
-                lambda ___entities, ___r, ___terminal: (
-                    entities.at[i, :].set(INF),
-                    ___r + 1,
-                    ___terminal,
-                ),
-                lambda ___entities, ___r, ___terminal: (
-                    ___entities,
-                    ___r,
-                    True,
-                ),
-                __entities,
-                __r,
-                __terminal,
-            ),
-            lambda __entities, __r, __terminal: (__entities, __r, __terminal),
-            _entities,
-            _r,
-            _terminal,
-        ),
-        lambda _entities, _r, _terminal: (_entities, _r, _terminal),
-        entities,
-        r,
-        terminal,
+    entities, player_x, player_y, r, terminal = _update_entities(
+        entities, player_x, player_y, r, terminal, i
     )
     # if entities[i, 0] == player_x and entities[i, 1] == player_y:
     #     if entities[i, 3] == 1:
