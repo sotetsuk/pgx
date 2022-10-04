@@ -24,7 +24,7 @@ class MinAtarBreakoutState:
     ball_y: int = 3
     ball_x: int = 0
     ball_dir: int = 2
-    pos: int = 4
+    pos: jnp.ndarray  = jnp.array(4, dtype=int)
     brick_map: jnp.ndarray = jnp.zeros((10, 10), dtype=bool)
     strike: bool = False
     last_x: int = 0
