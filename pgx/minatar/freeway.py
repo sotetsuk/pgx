@@ -144,24 +144,24 @@ def _reset_det(
 def _randomize_cars(
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-    cars: jnp.ndarray,
-    initialize=False,
+    cars: jnp.ndarray = jnp.zeros((8, 4), dtype=int),
+    initialize: bool = False
 ) -> jnp.ndarray:
     assert isinstance(cars, jnp.ndarray), cars
-    # speeds = np.random.randint(rng, 1, 6, 8)
-    # directions = np.random.choice(rng, [-1, 1], 8)
     speeds *= directions
-    if initialize:
-        cars = []  # type: ignore
-        for i in range(8):
-            cars += [[0, i + 1, abs(speeds[i]), speeds[i]]]
-        cars = jnp.array(cars)
-    else:
-        for i in range(8):
-            cars = cars.at[i, 2].set(abs(speeds[i]))
-            cars = cars.at[i, 3].set(speeds[i])
-            # self.cars[i][2:4]=[abs(speeds[i]),speeds[i]]
-    return cars
+
+    def _init(_cars):
+        _cars = _cars.at[:, 1].set(jnp.arange(1, 9))
+        _cars = _cars.at[:, 2].set(jax.lax.abs(speeds))
+        _cars = _cars.at[:, 3].set(speeds)
+        return _cars
+
+    def _update(_cars):
+        _cars = _cars.at[:, 2].set(abs(speeds))
+        _cars = _cars.at[:, 3].set(speeds)
+        return _cars
+
+    return jax.lax.cond(initialize, _init, _update, cars)
 
 
 # TODO: make me  @jax.jit
