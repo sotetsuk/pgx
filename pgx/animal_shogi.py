@@ -663,20 +663,24 @@ def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
     legal_white = state.legal_actions_white
     # 移動の追加
     legal_black = jax.lax.fori_loop(
-        0, 12, lambda i, x: jax.lax.cond(
+        0,
+        12,
+        lambda i, x: jax.lax.cond(
             _owner(pieces[i]) == 0,
             lambda: _add_move_actions(i, pieces[i], x),
             lambda: x,
         ),
-        legal_black
+        legal_black,
     )
     legal_white = jax.lax.fori_loop(
-        0, 12, lambda i, x: jax.lax.cond(
+        0,
+        12,
+        lambda i, x: jax.lax.cond(
             _owner(pieces[i]) == 1,
             lambda: _add_move_actions(i, pieces[i], x),
             lambda: x,
         ),
-        legal_white
+        legal_white,
     )
     # 駒打ちの追加
     for i in range(3):
