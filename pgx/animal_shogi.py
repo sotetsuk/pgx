@@ -388,8 +388,9 @@ def _owner(piece: int) -> int:
 @jax.jit
 def _board_status(state: JaxAnimalShogiState) -> jnp.ndarray:
     board = jnp.zeros(12, dtype=jnp.int32)
-    for i in range(12):
-        board = board.at[i].set(_piece_type(state, i))
+    board = jax.lax.fori_loop(
+        0, 12, lambda i, x: x.at[i].set(_piece_type(state, i)), board
+    )
     return board
 
 
@@ -397,9 +398,9 @@ def _board_status(state: JaxAnimalShogiState) -> jnp.ndarray:
 @jax.jit
 def _pieces_owner(state: JaxAnimalShogiState) -> jnp.ndarray:
     board = jnp.zeros(12, dtype=jnp.int32)
-    for i in range(12):
-        piece = _piece_type(state, i)
-        board = board.at[i].set(_owner(piece))
+    board = jax.lax.fori_loop(
+        0, 12, lambda i, x: x.at[i].set(_owner(_piece_type(state, i))), board
+    )
     return board
 
 
@@ -534,13 +535,14 @@ def _effected_positions(state: JaxAnimalShogiState, turn: int) -> jnp.ndarray:
     all_effect = jnp.zeros(12, dtype=jnp.int32)
     board = _board_status(state)
     piece_owner = _pieces_owner(state)
-    for i in range(12):
-        own = piece_owner[i]
-        piece = board[i]
-        effect = _point_moves(i, piece).reshape(12)
-        all_effect = jax.lax.cond(
-            own == turn, lambda: all_effect + effect, lambda: all_effect
-        )
+    jax.lax.fori_loop(
+        0, 12, lambda i, x: jax.lax.cond(
+            piece_owner[i] == turn,
+            lambda: x + _point_moves(i, board[i]).reshape(12),
+            lambda: x
+        ),
+        all_effect
+    )
     return all_effect
 
 
