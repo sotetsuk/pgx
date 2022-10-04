@@ -1,9 +1,9 @@
-name: ci
+name: fmt
 
 on: [push]
 
 jobs:
-  ci:
+  fmt:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -15,7 +15,7 @@ jobs:
       run: |
         pip3 install --upgrade pip
         make install
-    - name: test
+    - name: check 
       run: |
         make install-dev
-        make test
+        make check
