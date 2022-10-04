@@ -62,17 +62,17 @@ def _step_det(
     return jax.lax.cond(
         state.terminal,
         lambda: (state.replace(last_action=action), 0, True),
-        lambda: _step_det_at_non_terminal(state, action, speeds, directions)
+        lambda: _step_det_at_non_terminal(state, action, speeds, directions),
     )
 
 
 @jax.jit
 def _step_det_at_non_terminal(
-            state: MinAtarFreewayState,
-            action: jnp.ndarray,
-            speeds: jnp.ndarray,
-            directions: jnp.ndarray,
-    ) -> Tuple[MinAtarFreewayState, int, bool]:
+    state: MinAtarFreewayState,
+    action: jnp.ndarray,
+    speeds: jnp.ndarray,
+    directions: jnp.ndarray,
+) -> Tuple[MinAtarFreewayState, int, bool]:
 
     cars = state.cars
     pos = state.pos
@@ -86,19 +86,23 @@ def _step_det_at_non_terminal(
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),
         lambda: (player_speed, jax.lax.max(0, pos - 1)),
-        lambda: (move_timer, pos)
+        lambda: (move_timer, pos),
     )
     move_timer, pos = jax.lax.cond(
         (action == 4) & (move_timer == 0),
         lambda: (player_speed, jax.lax.min(9, pos + 1)),
-        lambda: (move_timer, pos)
+        lambda: (move_timer, pos),
     )
 
     # Win condition
     cars, r, pos = jax.lax.cond(
         pos == 0,
-        lambda: (_randomize_cars(speeds, directions, cars, initialize=False), r + 1, 9),
-        lambda: (cars, r, pos)
+        lambda: (
+            _randomize_cars(speeds, directions, cars, initialize=False),
+            r + 1,
+            9,
+        ),
+        lambda: (cars, r, pos),
     )
 
     pos, cars = _update_cars(pos, cars)
@@ -127,45 +131,30 @@ def _update_cars(pos, cars):
     def _update_stopped_car(pos, car):
         car = car.at[2].set(jax.lax.abs(car[3]))
         car = jax.lax.cond(
-            car[3] > 0,
-            lambda: car.at[0].add(1),
-            lambda: car.at[0].add(-1)
+            car[3] > 0, lambda: car.at[0].add(1), lambda: car.at[0].add(-1)
         )
-        car = jax.lax.cond(
-            car[0] < 0,
-            lambda: car.at[0].set(9),
-            lambda: car
-        )
-        car = jax.lax.cond(
-                car[0] > 9,
-                lambda: car.at[0].set(0),
-                lambda: car
-        )
+        car = jax.lax.cond(car[0] < 0, lambda: car.at[0].set(9), lambda: car)
+        car = jax.lax.cond(car[0] > 9, lambda: car.at[0].set(0), lambda: car)
         pos = jax.lax.cond(
-            (car[0] == 4) & (car[1] == pos),
-            lambda: 9,
-            lambda: pos
+            (car[0] == 4) & (car[1] == pos), lambda: 9, lambda: pos
         )
         return pos, car
 
     def _update_car(pos, car):
         pos = jax.lax.cond(
-            (car[0] == 4) & (car[1] == pos),
-            lambda: 9,
-            lambda: pos
+            (car[0] == 4) & (car[1] == pos), lambda: 9, lambda: pos
         )
         pos, car = jax.lax.cond(
             car[2] == 0,
             lambda: _update_stopped_car(pos, car),
-            lambda: (pos, car.at[2].add(-1))
+            lambda: (pos, car.at[2].add(-1)),
         )
         return pos, car
 
-    pos, cars = jax.lax.scan(
-        _update_car, pos, cars
-    )
+    pos, cars = jax.lax.scan(_update_car, pos, cars)
 
     return pos, cars
+
 
 @jax.jit
 def _reset_det(
@@ -180,7 +169,7 @@ def _randomize_cars(
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
     cars: jnp.ndarray = jnp.zeros((8, 4), dtype=int),
-    initialize: bool = False
+    initialize: bool = False,
 ) -> jnp.ndarray:
     assert isinstance(cars, jnp.ndarray), cars
     speeds *= directions
