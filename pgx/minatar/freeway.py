@@ -119,20 +119,30 @@ def _update_cars(cars, pos):
     # Update cars
     # TDOO: remove me
     cars = [[cars[i, j] for j in range(4)] for i in range(8)]  # type: ignore
-    for car in cars:
+
+    def _update_car_stopped(car, pos):
+        car[2] = abs(car[3])
+        car[0] += 1 if car[3] > 0 else -1
+        if car[0] < 0:
+            car[0] = 9
+        elif car[0] > 9:
+            car[0] = 0
+        if car[0:2] == [4, pos]:
+            pos = 9
+        return car, pos
+
+    def _update_car(car, pos):
         if car[0:2] == [4, pos]:
             pos = 9
         if car[2] == 0:
-            car[2] = abs(car[3])
-            car[0] += 1 if car[3] > 0 else -1
-            if car[0] < 0:
-                car[0] = 9
-            elif car[0] > 9:
-                car[0] = 0
-            if car[0:2] == [4, pos]:
-                pos = 9
+            _update_car_stopped(car, pos)
         else:
             car[2] -= 1
+        return car, pos
+
+    for i, car in enumerate(cars):
+        cars[i], pos = _update_car(car, pos)
+
     cars = jnp.array(cars)  # TDOO: remove me
     return cars, pos
 
