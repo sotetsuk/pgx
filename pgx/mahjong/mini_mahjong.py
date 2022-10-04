@@ -32,7 +32,7 @@ class Deck:
 
     @staticmethod
     @jit
-    def draw(deck: Deck) -> Tuple[Deck, int]:
+    def draw(deck: Deck) -> Tuple[Deck, jnp.ndarray]:
         tile = deck.arr[deck.idx]
         deck.idx += 1
         return deck, tile
@@ -67,7 +67,7 @@ class Hand:
     @staticmethod
     @jit
     def can_tsumo(hand: jnp.ndarray) -> bool:
-        heads = 0
+        heads: jnp.ndarray = jnp.array(0, dtype=int)
         valid = True
         for i in range(3):
             code = 0
@@ -99,7 +99,7 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_pon(hand: jnp.ndarray, tile: int) -> bool:
+    def can_pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
         return hand[tile] >= 2
 
     @staticmethod
