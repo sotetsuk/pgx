@@ -66,7 +66,7 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_tsumo(hand: jnp.ndarray) -> bool:
+    def can_tsumo(hand: jnp.ndarray) -> jnp.ndarray:
         heads: jnp.ndarray = jnp.array(0, dtype=int)
         valid = True
         for i in range(3):
