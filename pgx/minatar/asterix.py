@@ -282,14 +282,7 @@ def _spawn_entity(entities, lr, is_gold, slot):
     new_entities = new_entities.at[slot, 2].set(lr)
     new_entities = new_entities.at[slot, 3].set(is_gold)
 
-    has_empty_slot = False
-    for i in range(8):
-        has_empty_slot = jax.lax.cond(
-            entities[i][0] == INF,
-            lambda z: True,
-            lambda z: z,
-            has_empty_slot,
-        )
+    has_empty_slot = jnp.any(entities[:, 0] == INF)
     new_entities = jax.lax.cond(
         has_empty_slot,
         lambda _: new_entities,
