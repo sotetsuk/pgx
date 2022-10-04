@@ -134,9 +134,7 @@ def _step_det(
 def _reset_det(
     speeds: jnp.ndarray, directions: jnp.ndarray
 ) -> MinAtarFreewayState:
-    cars = _randomize_cars(
-        speeds, directions, cars=jnp.zeros((8, 4)), initialize=True
-    )  # TODO: cars can be removed
+    cars = _randomize_cars(speeds, directions, initialize=True)
     return MinAtarFreewayState(cars=cars)  # type: ignore
 
 
