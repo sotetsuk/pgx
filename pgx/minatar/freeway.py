@@ -95,7 +95,7 @@ def _step_det_at_non_terminal(
         cars = _randomize_cars(speeds, directions, cars, initialize=False)
         pos = 9
 
-    cars, pos = _update_cars(cars, pos)
+    pos, cars = _update_cars(pos, cars)
 
     # Update various timers
     move_timer -= move_timer > 0
@@ -115,36 +115,50 @@ def _step_det_at_non_terminal(
     return next_state, r, terminal
 
 
-def _update_cars(cars, pos):
-    # Update cars
-    # TDOO: remove me
-    cars = [[cars[i, j] for j in range(4)] for i in range(8)]  # type: ignore
+@jax.jit
+def _update_cars(pos, cars):
+    def _update_stopped_car(pos, car):
+        car = car.at[2].set(jax.lax.abs(car[3]))
+        car = jax.lax.cond(
+            car[3] > 0,
+            lambda: car.at[0].add(1),
+            lambda: car.at[0].add(-1)
+        )
+        car = jax.lax.cond(
+            car[0] < 0,
+            lambda: car.at[0].set(9),
+            lambda: car
+        )
+        car = jax.lax.cond(
+                car[0] > 9,
+                lambda: car.at[0].set(0),
+                lambda: car
+        )
+        pos = jax.lax.cond(
+            (car[0] == 4) & (car[1] == pos),
+            lambda: 9,
+            lambda: pos
+        )
+        return pos, car
 
-    def _update_car_stopped(car, pos):
-        car[2] = abs(car[3])
-        car[0] += 1 if car[3] > 0 else -1
-        if car[0] < 0:
-            car[0] = 9
-        elif car[0] > 9:
-            car[0] = 0
-        if car[0:2] == [4, pos]:
-            pos = 9
-        return car, pos
+    def _update_car(pos, car):
+        pos = jax.lax.cond(
+            (car[0] == 4) & (car[1] == pos),
+            lambda: 9,
+            lambda: pos
+        )
+        pos, car = jax.lax.cond(
+            car[2] == 0,
+            lambda: _update_stopped_car(pos, car),
+            lambda: (pos, car.at[2].add(-1))
+        )
+        return pos, car
 
-    def _update_car(car, pos):
-        if car[0:2] == [4, pos]:
-            pos = 9
-        if car[2] == 0:
-            _update_car_stopped(car, pos)
-        else:
-            car[2] -= 1
-        return car, pos
+    pos, cars = jax.lax.scan(
+        _update_car, pos, cars
+    )
 
-    for i, car in enumerate(cars):
-        cars[i], pos = _update_car(car, pos)
-
-    cars = jnp.array(cars)  # TDOO: remove me
-    return cars, pos
+    return pos, cars
 
 @jax.jit
 def _reset_det(
