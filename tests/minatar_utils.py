@@ -50,13 +50,8 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
 
         # Exception in Asterix
         if key == "entities":
-            _val = jnp.ones((8, 4), dtype=int) * int(1e5)
-            for i, x in enumerate(val):
-                if x is None:
-                    continue
-                for j in range(4):
-                    _val = _val.at[i, j].set(x[j])
-            val = _val
+            _val = [[int(1e5) if x is None else x[j] for j in range(4)] for i, x in enumerate(val)]
+            val = jnp.array(_val, dtype=int)
 
         # Cast to bool
         if isinstance(val, np.ndarray):
