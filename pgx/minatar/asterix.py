@@ -278,9 +278,9 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
         lambda: jax.lax.cond(
             entities[i, 3] == 1,
             lambda: (entities.at[i, :].set(INF), r + 1, terminal),
-            lambda: (entities, r, True)
+            lambda: (entities, r, True),
         ),
-        lambda: (entities, r, terminal)
+        lambda: (entities, r, terminal),
     )
     # if entities[i, 0] == player_x and entities[i, 1] == player_y:
     #     if entities[i, 3] == 1:
