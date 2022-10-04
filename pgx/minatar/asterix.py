@@ -57,11 +57,15 @@ def step(
     )
     slots = jnp.zeros((8))
     slots = jax.lax.fori_loop(
-        0, 8, lambda i, x: jax.lax.cond(
+        0,
+        8,
+        lambda i, x: jax.lax.cond(
             state.entities[i, 0] == INF,
             lambda: x.at[i].set(1),
             lambda: x,
-        ), x)
+        ),
+        x,
+    )
     slots = jax.lax.cond(
         slots.sum() == 0, lambda _: slots.at[0].set(1), lambda _: slots, 0
     )
@@ -172,12 +176,14 @@ def _step_det(
 
     # Update entities
     entities, player_x, player_y, r, terminal = jax.lax.fori_loop(
-        0, 8, lambda i, x: jax.lax.cond(
+        0,
+        8,
+        lambda i, x: jax.lax.cond(
             entities[i, 0] == INF,
             lambda: x,
-            lambda: _update_entities(x[0], x[1], x[2], x[3], x[4], i)
+            lambda: _update_entities(x[0], x[1], x[2], x[3], x[4], i),
         ),
-        (entities, player_x, player_y, r, terminal)
+        (entities, player_x, player_y, r, terminal),
     )
     # for i in range(len(entities)):
     #     x = entities[i]
@@ -194,9 +200,11 @@ def _step_det(
         lambda: _update_entities_by_timer(
             entities, r, terminal, player_x, player_y
         ),
-        lambda: (entities, r, terminal)
+        lambda: (entities, r, terminal),
     )
-    move_timer = jax.lax.cond(move_timer == 0, lambda: move_speed, lambda: move_timer)
+    move_timer = jax.lax.cond(
+        move_timer == 0, lambda: move_speed, lambda: move_timer
+    )
 
     # Update various timers
     spawn_timer -= 1
@@ -206,7 +214,7 @@ def _step_det(
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
         ramping,
         lambda: _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index),
-        lambda: (spawn_speed, move_speed, ramp_timer, ramp_index)
+        lambda: (spawn_speed, move_speed, ramp_timer, ramp_index),
     )
 
     next_state = MinAtarAsterixState(
@@ -307,12 +315,16 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
 @jax.jit
 def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
     entities, r, terminal = jax.lax.fori_loop(
-        0, 8, lambda i, x: jax.lax.cond(
+        0,
+        8,
+        lambda i, x: jax.lax.cond(
             entities[i, 0] != INF,
-            lambda: __update_entities_by_timer(x[0], x[1], x[2], player_x, player_y, i),
-            lambda: x
+            lambda: __update_entities_by_timer(
+                x[0], x[1], x[2], player_x, player_y, i
+            ),
+            lambda: x,
         ),
-        (entities, r, terminal)
+        (entities, r, terminal),
     )
     return entities, r, terminal
 
