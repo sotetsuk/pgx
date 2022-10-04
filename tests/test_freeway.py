@@ -58,7 +58,7 @@ def test_step_det():
 
 def test_reset_det():
     env = Environment("freeway", sticky_action_prob=0.0)
-    N = 10  # TODO: increase N
+    N = 10
     for _ in range(N):
         env.reset()
         s = extract_state(env, state_keys)
