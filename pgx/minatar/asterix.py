@@ -56,14 +56,12 @@ def step(
         rng2, jnp.array([True, False]), p=jnp.array([1 / 3, 2 / 3])
     )
     slots = jnp.zeros((8))
-    for i in range(8):
-        slots = jax.lax.cond(
+    slots = jax.lax.fori_loop(
+        0, 8, lambda i, x: jax.lax.cond(
             state.entities[i, 0] == INF,
-            lambda _: slots.at[i].set(1),
-            lambda _: slots,
-            0,
-        )
-    # avoid zero division
+            lambda: x.at[i].set(1),
+            lambda: x,
+        ), x)
     slots = jax.lax.cond(
         slots.sum() == 0, lambda _: slots.at[0].set(1), lambda _: slots, 0
     )
