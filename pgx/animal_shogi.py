@@ -80,7 +80,7 @@ INIT_BOARD = JaxAnimalShogiState(
 
 @jax.jit
 def init() -> JaxAnimalShogiState:
-    return _init_legal_actions(copy.deepcopy(INIT_BOARD))
+    return _init_legal_actions(INIT_BOARD)
 
 
 @jax.jit
@@ -658,7 +658,7 @@ def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
 @jax.jit
 def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
-    s = copy.deepcopy(state)
+    s = state
     bs = _board_status(s)
     legal_black = s.legal_actions_black
     legal_white = s.legal_actions_white
