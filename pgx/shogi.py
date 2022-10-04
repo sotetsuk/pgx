@@ -42,10 +42,6 @@ class ShogiState:
     # もしかしたら香車や大駒の動きは別で追加した方が良いかも？
     legal_actions_black: np.ndarray = np.zeros(2754, dtype=np.int32)
     legal_actions_white: np.ndarray = np.zeros(2754, dtype=np.int32)
-    # checked: ターンプレイヤーの王に王手がかかっているかどうか
-    is_check: int = 0
-    # checking_piece: ターンプレイヤーに王手をかけている駒の座標
-    checking_piece: np.ndarray = np.zeros(81, dtype=np.int32)
 
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
@@ -761,21 +757,6 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
     return s
 
 
-# 王手判定 ついでに王手している駒の位置も返す
-# 近接による王手と遠隔による王手の二種に分けて返す
-def _is_check(state: ShogiState) -> bool:
-    is_check = False
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
-    bs = _board_status(state)
-    for i in range(81):
-        piece = bs[i]
-        if _owner(piece) != _another_color(state):
-            continue
-        if _piece_moves(state, piece, i)[king_point] == 1:
-            is_check = True
-    return is_check
-
-
 # 駒の移動によるlegal_actionsの更新
 def _update_legal_move_actions(
     state: ShogiState, action: ShogiAction
@@ -906,3 +887,50 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
     # 駒がある地点への駒打ちactionを除く
     action_array = _filter_occupied_drop_actions(state.turn, own, action_array)
     return action_array
+
+
+# 王手判定
+def _is_check(state: ShogiState) -> bool:
+    is_check = False
+    king_point = state.board[8 + 14 * state.turn, :].argmax()
+    bs = _board_status(state)
+    for i in range(81):
+        piece = bs[i]
+        if _owner(piece) != _another_color(state):
+            continue
+        if _piece_moves(state, piece, i)[king_point] == 1:
+            is_check = True
+    return is_check
+
+
+# 二歩判定
+# 手番側でチェックする
+def _is_double_pawn(state: ShogiState) -> bool:
+    is_double_pawn = False
+    bs = _board_status(state)
+    for i in range(9):
+        num_pawn = 0
+        for j in range(9):
+            if bs[9 * i + j] == 1 + state.turn:
+                num_pawn += 1
+        if num_pawn >= 2:
+            is_double_pawn = True
+    return is_double_pawn
+
+
+# 行き所のない駒判定
+def _is_stuck_black(state: ShogiState) -> bool:
+    is_stuck = False
+    bs = _board_status(state)
+    for i in range(9):
+        for j in range(9):
+            piece = bs[9 * i + j]
+            if (piece == 1 or piece == 2 or piece == 3) and j == 0:
+                is_stuck = True
+            if piece == 3 and j == 1:
+                is_stuck = True
+            if (piece == 15 or piece == 16 or piece == 17) and j == 8:
+                is_stuck = True
+            if piece == 17 and j == 7:
+                is_stuck = True
+    return is_stuck
