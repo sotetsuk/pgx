@@ -80,7 +80,7 @@ INIT_BOARD = JaxAnimalShogiState(
 
 @jax.jit
 def init() -> JaxAnimalShogiState:
-    return _init_legal_actions(copy.deepcopy(INIT_BOARD))
+    return _init_legal_actions(INIT_BOARD)
 
 
 @jax.jit
@@ -658,43 +658,50 @@ def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
 @jax.jit
 def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
-    s = copy.deepcopy(state)
-    bs = _board_status(s)
-    legal_black = s.legal_actions_black
-    legal_white = s.legal_actions_white
+    pieces = _board_status(state)
+    legal_black = state.legal_actions_black
+    legal_white = state.legal_actions_white
     # 移動の追加
-    for i in range(12):
-        piece = bs[i]
-        legal_black = jax.lax.cond(
-            _owner(piece) == 0,
-            lambda: _add_move_actions(i, piece, legal_black),
-            lambda: legal_black,
-        )
-        legal_white = jax.lax.cond(
-            _owner(piece) == 1,
-            lambda: _add_move_actions(i, piece, legal_white),
-            lambda: legal_white,
-        )
+    legal_black = jax.lax.fori_loop(
+        0,
+        12,
+        lambda i, x: jax.lax.cond(
+            _owner(pieces[i]) == 0,
+            lambda: _add_move_actions(i, pieces[i], x),
+            lambda: x,
+        ),
+        legal_black,
+    )
+    legal_white = jax.lax.fori_loop(
+        0,
+        12,
+        lambda i, x: jax.lax.cond(
+            _owner(pieces[i]) == 1,
+            lambda: _add_move_actions(i, pieces[i], x),
+            lambda: x,
+        ),
+        legal_white,
+    )
     # 駒打ちの追加
     for i in range(3):
         legal_black = jax.lax.cond(
-            s.hand[i] == 0,
+            state.hand[i] == 0,
             lambda: legal_black,
             lambda: _add_drop_actions(1 + i, legal_black),
         )
         legal_white = jax.lax.cond(
-            s.hand[i + 3] == 0,
+            state.hand[i + 3] == 0,
             lambda: legal_white,
             lambda: _add_drop_actions(6 + i, legal_white),
         )
     return JaxAnimalShogiState(
-        turn=s.turn,
-        board=s.board,
-        hand=s.hand,
+        turn=state.turn,
+        board=state.board,
+        hand=state.hand,
         legal_actions_black=legal_black,
         legal_actions_white=legal_white,
-        is_check=s.is_check,
-        checking_piece=s.checking_piece,
+        is_check=state.is_check,
+        checking_piece=state.checking_piece,
     )  # type: ignore
 
 

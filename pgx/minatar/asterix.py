@@ -23,7 +23,7 @@ INF: jnp.ndarray = jnp.array(int(1e5), dtype=int)
 class MinAtarAsterixState:
     player_x: jnp.ndarray = jnp.array(5, dtype=int)
     player_y: jnp.ndarray = jnp.array(5, dtype=int)
-    entities: jnp.ndarray = jnp.array((8, 4), dtype=int) * INF
+    entities: jnp.ndarray = jnp.ones((8, 4), dtype=int) * INF
     shot_timer: int = jnp.ones(0, dtype=int)
     spawn_speed: jnp.ndarray = init_spawn_speed
     spawn_timer: jnp.ndarray = init_spawn_speed
