@@ -503,7 +503,42 @@ def test_step():
     s2, r2, t = step(s, action2)
     assert r2 == 1
     assert t
-
+    action3 = _action_to_dlaction(ShogiAction(True, 2, 9), 0)
+    s3, r3, t = step(s, action3)
+    assert r3 == -1
+    assert t
+    action4 = _action_to_dlaction(ShogiAction(True, 1, 17), 0)
+    s4, r4, t = step(s, action4)
+    assert r4 == -1
+    assert t
+    action5 = _action_to_dlaction(ShogiAction(False, 1, 9, 10, 0, False), 0)
+    s5, r5, t = step(s, action5)
+    assert r5 == -1
+    assert t
+    action6 = _action_to_dlaction(ShogiAction(False, 1, 9, 10, 0, True), 0)
+    s6, r6, t = step(s, action6)
+    assert r6 == 0
+    assert not t
+    s = init()
+    moves = [
+        59, 66, 162 + 52, 21, 81 + 60, 57, 14, 55, 13, 81 + 19, 81 + 61, 48, 81 + 34, 648 + 56, 567 + 62, 162 + 28,
+        23, 81 + 47, 162 + 24, 39, 243 + 53, 67, 162 + 52, 81 + 20, 41, 567 + 18, 81 + 32, 49, 22, 22, 162 + 22,
+        162 + 48, 162 + 32, 81 + 32, 486 + 32, 46, 243 + 62, 81 + 28, 77, 405 + 63, 1944 + 7, 243 + 36, 648 + 24, 30,
+        81 + 70, 3, 243 + 43, 162 + 29, 40, 40, 40, 2187 + 39, 405 + 43, 2187 + 21, 81 + 15, 243 + 19, 5, 2511 + 48, 34,
+        12, 4, 4, 1620 + 2, 13, 1620 + 40, 81 + 12, 39, 162 + 39, 1620 + 22, 22, 81 + 39, 81 + 39, 2106 + 21, 2187 + 42,
+        42, 2187 + 41, 41, 2187 + 40, 405 + 44, 68, 68, 23, 324 + 12, 810 + 24, 324 + 26, 2187 + 25, 324 + 17, 50, 50,
+        162 + 34, 243 + 21, 2511 + 41, 243 + 30, 2349 + 75, 1620 + 20, 729 + 20, 1620 + 21, 324 + 63, 810 + 20,
+        567 + 27, 1620 + 38, 972 + 61, 324 + 61, 648 + 68, 81 + 69, 1539 + 79, 1620 + 68, 2673 + 61, 1863 + 29
+             ]
+    for i in range(109):
+        action = moves[i]
+        s, r, t = step(s, action)
+        if i == 109:
+            assert r == 1
+            assert t
+        else:
+            assert r == 0
+            assert not t
 
 
 if __name__ == '__main__':

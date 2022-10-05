@@ -48,9 +48,7 @@ def init():
     return _init_legal_actions(state)
 
 
-def step(
-    state: ShogiState, action: int
-) -> Tuple[ShogiState, int, bool]:
+def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
     s = copy.deepcopy(state)
     legal_actions = _legal_actions(s)
@@ -856,7 +854,7 @@ def _update_legal_drop_actions(
         player_actions = s.legal_actions_white
     # 移動後の位置からの移動のフラグを立てる
     new_player_actions = _add_move_actions(
-        action.to, action.piece, player_actions
+        action.piece, action.to, player_actions
     )
     # 持ち駒がもうない場合、その駒を打つフラグを折る
     if s.hand[_piece_to_hand(action.piece)] == 1:
@@ -995,10 +993,7 @@ def _is_mate(state: ShogiState) -> bool:
     if not _is_check(state):
         return False
     is_mate = True
-    if state.turn == 0:
-        player_actions = state.legal_actions_black
-    else:
-        player_actions = state.legal_actions_white
+    player_actions = _legal_actions(state)
     for i in range(2754):
         if player_actions[i] == 0:
             continue
