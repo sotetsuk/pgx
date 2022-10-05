@@ -35,7 +35,7 @@ def observe(state: State) -> jnp.ndarray:
 |TicTacToe||||||
 |AnimalShogi| :white_check_mark: | :white_check_mark: ||||
 |MiniMahjong| :white_check_mark: | :white_check_mark: ||||
-|MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br>Freeway<br>Seaquest<br>SpaceInvaders||||
+|MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> Breakdown<br>Freeway<br>Seaquest<br>SpaceInvaders||||
 |Chess||||||
 |Shogi| :construction: |||||
 |Go| :white_check_mark: | :white_check_mark: ||||
