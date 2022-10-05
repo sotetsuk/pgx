@@ -44,13 +44,13 @@ def step(
     return _step_det(state, action, speeds=speeds, directions=directions)
 
 
-# TODO: make me  @jax.jit
+@jax.jit
 def reset(rng: jnp.ndarray) -> MinAtarFreewayState:
     speeds, directions = _random_speed_directions(rng)
     return _reset_det(speeds=speeds, directions=directions)
 
 
-# TODO: make me  @jax.jit
+@jax.jit
 def to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
     return _to_obs(state)
 
