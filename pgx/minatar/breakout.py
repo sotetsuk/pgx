@@ -158,19 +158,18 @@ def update_ball_pos(ball_x, ball_y, ball_dir):
     )
 
 
+@jax.jit
 def update_ball_pos_x(new_x, ball_dir):
-    if new_x < 0:
-        new_x = 0
-    if new_x > 9:
-        new_x = 9
-    ball_dir = [1, 0, 3, 2][ball_dir]
+    new_x = jax.lax.max(ZERO, new_x)
+    new_x = jax.lax.min(NINE, new_x)
+    ball_dir = jnp.array([1, 0, 3, 2], dtype=jnp.int8)[ball_dir]
     return new_x, ball_dir
 
 
+@jax.jit
 def update_ball_pos_y(ball_dir):
-    new_y = 0
-    ball_dir = [3, 2, 1, 0][ball_dir]
-    return new_y, ball_dir
+    ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir]
+    return ZERO, ball_dir
 
 
 def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir):
