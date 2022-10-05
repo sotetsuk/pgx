@@ -102,25 +102,35 @@ def _step_det_at_non_terminal(
     last_y = ball_y
     new_x, new_y = update_ball_pos(ball_x, ball_y, ball_dir)
 
-    strike_toggle = False
     new_x, ball_dir = jax.lax.cond(
         (new_x < 0) | (new_x > 9),
         lambda: update_ball_pos_x(new_x, ball_dir),
         lambda: (new_x, ball_dir)
     )
 
-    if new_y < 0:
-        new_y, ball_dir = update_ball_pos_y(ball_dir)
-    elif brick_map[new_y, new_x] == 1:
-        strike_toggle = True
-        if not strike:
-            r, strike, brick_map, new_y, ball_dir = update_by_strike(
-                r, brick_map, new_x, new_y, last_y, ball_dir
-            )
-    elif new_y == 9:
-        brick_map, new_y, ball_dir, terminal = update_by_bottom(
+    is_new_y_negative = new_y < 0
+    is_strike = brick_map[new_y, new_x] == 1
+    is_bottom = new_y == 9
+    new_y, ball_dir = jax.lax.cond(
+        is_new_y_negative,
+        lambda: update_ball_pos_y(ball_dir),
+        lambda: (new_y, ball_dir)
+    )
+    strike_toggle = ~is_new_y_negative & is_strike
+    r, strike, brick_map, new_y, ball_dir = jax.lax.cond(
+        ~is_new_y_negative & is_strike & ~strike,
+        lambda: update_by_strike(
+                r, brick_map, new_x, new_y, last_y, ball_dir, strike
+        ),
+        lambda: (r, strike, brick_map, new_y, ball_dir)
+    )
+    brick_map, new_y, ball_dir, terminal = jax.lax.cond(
+        ~is_new_y_negative & ~is_strike & is_bottom,
+        lambda: update_by_bottom(
             brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
-        )
+        ),
+        lambda: (brick_map, new_y, ball_dir, terminal)
+    )
 
     if not strike_toggle:
         strike = jnp.array(False, dtype=jnp.bool_)
@@ -177,11 +187,11 @@ def update_ball_pos_y(ball_dir):
 
 
 @jax.jit
-def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir):
+def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir, strike):
     brick_map = brick_map.at[new_y, new_x].set(False)
     new_y = last_y
     ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir]
-    return r + 1, jnp.array(True, dtype=jnp.bool_), brick_map, new_y, ball_dir
+    return r + 1, jnp.ones_like(strike), brick_map, new_y, ball_dir
 
 
 @jax.jit
