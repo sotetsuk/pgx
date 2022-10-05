@@ -69,17 +69,15 @@ def to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
     return _to_obs(state)
 
 
+@jax.jit
 def _step_det(
     state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
-    if state.terminal:
-        return (
-            state.replace(last_action=action),
-            0,
-            jnp.array(True, dtype=jnp.bool_),
-        )
-    else:
-        return _step_det_at_non_terminal(state, action)
+    return jax.lax.cond(
+        state.terminal,
+        lambda :(state.replace(last_action=action), 0, jnp.array(True, dtype=jnp.bool_)),
+        lambda: _step_det_at_non_terminal(state, action)
+    )
 
 
 @jax.jit
@@ -135,11 +133,9 @@ def _step_det_at_non_terminal(
 
     strike = jax.lax.cond(~strike_toggle, lambda: jnp.zeros_like(strike), lambda: strike)
 
-    ball_x = new_x
-    ball_y = new_y
     state = MinAtarBreakoutState(
-        ball_y=ball_y,
-        ball_x=ball_x,
+        ball_y=new_y,
+        ball_x=new_x,
         ball_dir=ball_dir,
         pos=pos,
         brick_map=brick_map,
