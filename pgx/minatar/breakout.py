@@ -114,7 +114,7 @@ def _step_det_at_non_terminal(
                 r, brick_map, new_x, new_y, last_y, ball_dir
             )
     elif new_y == 9:
-        brick_map, new_y, ball_dir, terminal = update_by_botom(
+        brick_map, new_y, ball_dir, terminal = update_by_bottom(
             brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
         )
 
@@ -172,14 +172,15 @@ def update_ball_pos_y(ball_dir):
     return ZERO, ball_dir
 
 
+@jax.jit
 def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir):
     brick_map = brick_map.at[new_y, new_x].set(False)
     new_y = last_y
-    ball_dir = [3, 2, 1, 0][ball_dir]
-    return r + 1, True, brick_map, new_y, ball_dir
+    ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir]
+    return r + 1, jnp.array(True, dtype=jnp.bool_), brick_map, new_y, ball_dir
 
 
-def update_by_botom(
+def update_by_bottom(
     brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
 ):
     if brick_map.sum() == 0:
