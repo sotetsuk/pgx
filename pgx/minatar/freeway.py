@@ -20,12 +20,12 @@ time_limit = 2500
 
 @struct.dataclass
 class MinAtarFreewayState:
-    cars: jnp.ndarray = jnp.zeros((8, 4), dtype=int)
-    pos: int = 9
-    move_timer: int = player_speed
-    terminate_timer: int = time_limit
-    terminal: bool = False
-    last_action: int = 0
+    cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int8)
+    pos: jnp.ndarray = jnp.array(9, dtype=jnp.int8)
+    move_timer: jnp.ndarray = jnp.array(player_speed, dtype=jnp.int8)
+    terminate_timer: jnp.ndarray = jnp.array(time_limit, dtype=jnp.int16)
+    terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
+    last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
 @jax.jit
