@@ -72,52 +72,36 @@ def to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
 def _step_det(
     state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
+    if state.terminal:
+        return state.replace(last_action=action), 0, jnp.array(True, dtype=jnp.bool_)
+    else:
+        return _step_det_at_non_terminal(state, action)
+
+def _step_det_at_non_terminal(
+    state: MinAtarBreakoutState, action: jnp.ndarray
+) -> Tuple[MinAtarBreakoutState, int, bool]:
     ball_y = state.ball_y
     ball_x = state.ball_x
     ball_dir = state.ball_dir
     pos = state.pos
     brick_map = state.brick_map
     strike = state.strike
-    last_x = state.last_x
-    last_y = state.last_y
     terminal = state.terminal
 
     r = 0
-    if state.terminal:
-        return state.replace(last_action=action), r, terminal
 
-    # self.action_map = ['n','l','u','r','d','f']
-    if action == 1:
-        pos = max(0, pos - 1)
-    elif action == 3:
-        pos = min(9, pos + 1)
+    pos = apply_action(pos, action)
 
     # Update ball position
     last_x = ball_x
     last_y = ball_y
-    if ball_dir == 0:
-        new_x = ball_x - 1
-        new_y = ball_y - 1
-    elif ball_dir == 1:
-        new_x = ball_x + 1
-        new_y = ball_y - 1
-    elif ball_dir == 2:
-        new_x = ball_x + 1
-        new_y = ball_y + 1
-    elif ball_dir == 3:
-        new_x = ball_x - 1
-        new_y = ball_y + 1
+    new_x, new_y = update_ball_pos(ball_x, ball_y, ball_dir)
 
     strike_toggle = False
     if new_x < 0 or new_x > 9:
-        if new_x < 0:
-            new_x = 0
-        if new_x > 9:
-            new_x = 9
-        ball_dir = [1, 0, 3, 2][ball_dir]
+        new_x, ball_dir = update_ball_pos_x(new_x, ball_dir)
     if new_y < 0:
-        new_y = 0
-        ball_dir = [3, 2, 1, 0][ball_dir]
+        new_y, ball_dir = update_ball_pos_y(new_y, ball_dir)
     elif brick_map[new_y, new_x] == 1:
         strike_toggle = True
         if not strike:
@@ -156,6 +140,43 @@ def _step_det(
         last_action=action,
     )
     return state, r, terminal
+
+
+def apply_action(pos, action):
+    # self.action_map = ['n','l','u','r','d','f']
+    if action == 1:
+        pos = max(0, pos - 1)
+    elif action == 3:
+        pos = min(9, pos + 1)
+    return pos
+
+def update_ball_pos(ball_x, ball_y, ball_dir):
+    if ball_dir == 0:
+        new_x = ball_x - 1
+        new_y = ball_y - 1
+    elif ball_dir == 1:
+        new_x = ball_x + 1
+        new_y = ball_y - 1
+    elif ball_dir == 2:
+        new_x = ball_x + 1
+        new_y = ball_y + 1
+    elif ball_dir == 3:
+        new_x = ball_x - 1
+        new_y = ball_y + 1
+    return new_x, new_y
+
+def update_ball_pos_x(new_x, ball_dir):
+    if new_x < 0:
+        new_x = 0
+    if new_x > 9:
+        new_x = 9
+    ball_dir = [1, 0, 3, 2][ball_dir]
+    return new_x, ball_dir
+
+def update_ball_pos_y(new_y, ball_dir):
+    new_y = 0
+    ball_dir = [3, 2, 1, 0][ball_dir]
+    return new_y, ball_dir
 
 
 @jax.jit
