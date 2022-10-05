@@ -142,9 +142,6 @@ def _step_det_at_non_terminal(
         entities,
         spawn_timer,
     )
-    # if spawn_timer == 0:
-    #     entities = _spawn_entity()
-    #     spawn_timer = spawn_speed
 
     # Resolve player action
     player_x, player_y = jax.lax.switch(
@@ -158,14 +155,6 @@ def _step_det_at_non_terminal(
             lambda: (player_x, player_y),  # 5
         ]
     )
-    # if action == 1:
-    #     player_x = max(0, player_x - 1)
-    # elif action == 3:
-    #     player_x = min(9, player_x + 1)
-    # elif action == 2:
-    #     player_y = max(1, player_y - 1)
-    # elif action == 4:
-    #     player_y = min(8, player_y + 1)
 
     # Update entities
     entities, player_x, player_y, r, terminal = jax.lax.fori_loop(
@@ -178,15 +167,6 @@ def _step_det_at_non_terminal(
         ),
         (entities, player_x, player_y, r, terminal),
     )
-    # for i in range(len(entities)):
-    #     x = entities[i]
-    #     if x[0] != INF:
-    #         if x[0] == player_x and x[1] == player_y:
-    #             if entities[i, 3] == 1:
-    #                 entities = entities.at[i, :].set(INF)
-    #                 r += 1
-    #             else:
-    #                 terminal = True
 
     entities, r, terminal = jax.lax.cond(
         move_timer == 0,
@@ -230,14 +210,7 @@ def _step_det_at_non_terminal(
 # Spawn a new enemy or treasure at a random location with random direction (if all rows are filled do nothing)
 @jax.jit
 def _spawn_entity(entities, lr, is_gold, slot):
-    # lr = random.choice([True, False])
-    # is_gold = random.choice([True, False], p=[1 / 3, 2 / 3])
     x = jax.lax.cond(lr == 1, lambda: 0, lambda: 9)
-    # x = 0 if lr else 9
-    # slot_options = [i for i in range(len(entities)) if entities[i][0] == INF]
-    # if not slot_options:
-    #     return entities
-    # slot = random.choice(slot_options)
     new_entities = entities
     new_entities = new_entities.at[slot, 0].set(x)
     new_entities = new_entities.at[slot, 1].set(slot + 1)
@@ -250,7 +223,6 @@ def _spawn_entity(entities, lr, is_gold, slot):
         lambda: new_entities,
         lambda: entities,
     )
-
     return new_entities
 
 
@@ -265,12 +237,6 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
         ),
         lambda: (entities, r, terminal),
     )
-    # if entities[i, 0] == player_x and entities[i, 1] == player_y:
-    #     if entities[i, 3] == 1:
-    #         entities = entities.at[i, :].set(INF)
-    #         r += 1
-    #     else:
-    #         terminal = True
     return entities, player_x, player_y, r, terminal
 
 
@@ -296,23 +262,14 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     entities = entities.at[i, 0].add(
         jax.lax.cond(entities[i, 2] == 1, lambda: 1, lambda: -1)
     )
-    # x[0]+=1 if x[2] else -1
     entities = jax.lax.cond(
         (entities[i, 0] < 0) | (entities[i, 0] > 9),
         lambda : entities.at[i, :].set(INF),
         lambda : entities,
     )
-    # if entities[i, 0] < 0 or entities[i, 0] > 9:
-    #     entities = entities.at[i, :].set(INF)
     entities, player_x, player_y, r, terminal = _update_entities(
         entities, player_x, player_y, r, terminal, i
     )
-    # if entities[i, 0] == player_x and entities[i, 1] == player_y:
-    #     if entities[i, 3] == 1:
-    #         entities = entities.at[i, :].set(INF)
-    #         r += 1
-    #     else:
-    #         terminal = True
     return entities, r, terminal
 
 
@@ -327,14 +284,6 @@ def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
         ),
         lambda: (spawn_speed, move_speed, ramp_timer, ramp_index)
     )
-    # if spawn_speed > 1 or move_speed > 1:
-    #     if ramp_timer >= 0:
-    #         ramp_timer -= 1
-    #     else:
-    #         spawn_speed, move_speed, ramp_timer, ramp_index = __update_ramp(
-    #             spawn_speed, move_speed, ramp_timer, ramp_index
-    #         )
-
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
@@ -345,20 +294,13 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
         lambda :move_speed - 1,
         lambda :move_speed,
     )
-    # if move_speed > 1 and ramp_index % 2:
-    #     move_speed -= 1
-
     spawn_speed = jax.lax.cond(
         spawn_speed > 1,
         lambda: spawn_speed - 1,
         lambda: spawn_speed,
     )
-    # if spawn_speed > 1:
-    #     spawn_speed -= 1
-
     ramp_index += 1
     ramp_timer = ramp_interval
-
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
