@@ -65,7 +65,7 @@ def _step_det(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[MinAtarFreewayState, int, bool]:
+) -> Tuple[MinAtarFreewayState, int, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
         lambda: (state.replace(last_action=action), 0, True),  # type: ignore
@@ -79,7 +79,7 @@ def _step_det_at_non_terminal(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[MinAtarFreewayState, int, bool]:
+) -> Tuple[MinAtarFreewayState, int, jnp.ndarray]:
 
     cars = state.cars
     pos = state.pos
