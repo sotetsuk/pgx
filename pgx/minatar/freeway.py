@@ -38,7 +38,7 @@ def step(
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
-        lambda: action
+        lambda: action,
     )
     speeds, directions = _random_speed_directions(rng)
     return _step_det(state, action, speeds=speeds, directions=directions)
@@ -195,7 +195,9 @@ def _randomize_cars(
 def _random_speed_directions(rng):
     _, rng1, rng2 = jax.random.split(rng, 3)
     speeds = jax.random.randint(rng1, [8], 1, 6, dtype=jnp.int8)
-    directions = jax.random.choice(rng2, jnp.array([-1,1], dtype=jnp.int8), [8])
+    directions = jax.random.choice(
+        rng2, jnp.array([-1, 1], dtype=jnp.int8), [8]
+    )
     return speeds, directions
 
 
