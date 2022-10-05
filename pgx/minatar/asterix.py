@@ -29,14 +29,14 @@ class MinAtarAsterixState:
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int8) * INF
-    shot_timer: int = jnp.ones(0, dtype=jnp.int8)
+    shot_timer: jnp.ndarray = jnp.ones(0, dtype=jnp.int8)
     spawn_speed: jnp.ndarray = init_spawn_speed
     spawn_timer: jnp.ndarray = init_spawn_speed
     move_speed: jnp.ndarray = init_move_interval
     move_timer: jnp.ndarray = init_move_interval
     ramp_timer: jnp.ndarray = ramp_interval
     ramp_index: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
-    terminal: bool = False
+    terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
