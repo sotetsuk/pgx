@@ -450,11 +450,14 @@ def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.player_y, state.player_x, 0].set(True)
     obs = jax.lax.fori_loop(
-        0, 8, lambda i, _obs: jax.lax.cond(
+        0,
+        8,
+        lambda i, _obs: jax.lax.cond(
             state.entities[i, 0] != INF,
             lambda: _update_obs_by_entity(_obs, state, i),
             lambda: _obs,
-        ), obs
+        ),
+        obs,
     )
     return obs
 
