@@ -51,9 +51,8 @@ def step(
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
-        lambda _: state.last_action,
-        lambda _: action,
-        0,
+        lambda: state.last_action,
+        lambda: action,
     )
     return _step_det(state, action)
 
