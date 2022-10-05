@@ -14,8 +14,8 @@ import jax
 from flax import struct
 from jax import numpy as jnp
 
-player_speed = 3
-time_limit = 2500
+player_speed = jnp.array(3, dtype=jnp.int8)
+time_limit = jnp.array(2500, dtype=jnp.int16)
 
 
 @struct.dataclass
