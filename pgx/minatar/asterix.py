@@ -474,35 +474,16 @@ def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
 
 @jax.jit
 def __to_obs(obs, state, i):
-    c = jax.lax.cond(state.entities[i, 3], lambda _: 3, lambda _: 1, 0)
-    # if state.entities[i, 3]:
-    #     c = 3
-    # else:
-    #     c = 1
+    c = jax.lax.cond(state.entities[i, 3], lambda: 3, lambda: 1)
     obs = obs.at[state.entities[i, 1], state.entities[i, 0], c].set(True)
-
     back_x = jax.lax.cond(
         state.entities[i, 2],
-        lambda _: state.entities[i, 0] - 1,
-        lambda _: state.entities[i, 0] + 1,
-        0,
+        lambda: state.entities[i, 0] - 1,
+        lambda: state.entities[i, 0] + 1,
     )
-    # if state.entities[i, 2]:
-    #     back_x = state.entities[i, 0] - 1
-    # else:
-    #     back_x = state.entities[i, 0] + 1
-
     obs = jax.lax.cond(
-        back_x >= 0,
-        lambda _obs: jax.lax.cond(
-            back_x <= 9,
-            lambda __obs: __obs.at[state.entities[i, 1], back_x, 2].set(True),
-            lambda __obs: __obs,
-            _obs,
-        ),
-        lambda _x: _x,
-        obs,
+        (0 <= back_x) & (back_x <= 9),
+        lambda: obs.at[state.entities[i, 1], back_x, 2].set(True),
+        lambda: obs,
     )
-    # if back_x >= 0 and back_x <= 9:
-    #     obs = obs.at[state.entities[i, 1], back_x, 2].set(True)
     return obs
