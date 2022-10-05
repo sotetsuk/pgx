@@ -82,6 +82,7 @@ def _step_det(
         return _step_det_at_non_terminal(state, action)
 
 
+@jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
@@ -132,8 +133,7 @@ def _step_det_at_non_terminal(
         lambda: (brick_map, new_y, ball_dir, terminal)
     )
 
-    if not strike_toggle:
-        strike = jnp.array(False, dtype=jnp.bool_)
+    strike = jax.lax.cond(~strike_toggle, lambda: jnp.zeros_like(strike), lambda: strike)
 
     ball_x = new_x
     ball_y = new_y
