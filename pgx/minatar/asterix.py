@@ -447,62 +447,33 @@ def _reset_det() -> MinAtarAsterixState:
 
 @jax.jit
 def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
-    obs = jnp.zeros((10, 10, 4), dtype=bool)
+    obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.player_y, state.player_x, 0].set(True)
-    # state[self.player_y, self.player_x, self.channels["player"]] = 1
-    for i in range(8):
-        obs = jax.lax.cond(
+    obs = jax.lax.fori_loop(
+        0,
+        8,
+        lambda i, _obs: jax.lax.cond(
             state.entities[i, 0] != INF,
-            __to_obs,
-            lambda _obs, _state, _i: _obs,
-            obs,
-            state,
-            i,
-        )
-        # if state.entities[i, 0] != INF:
-        #     obs = __to_obs(obs, state, i)
-
-    # for x in self.entities:
-    #     if x is not None:
-    #         c = self.channels["gold"] if x[3] else self.channels["enemy"]
-    #         state[x[1], x[0], c] = 1
-    #         back_x = x[0] - 1 if x[2] else x[0] + 1
-    #         if back_x >= 0 and back_x <= 9:
-    #             state[x[1], back_x, self.channels["trail"]] = 1
+            lambda: _update_obs_by_entity(_obs, state, i),
+            lambda: _obs,
+        ),
+        obs,
+    )
     return obs
 
 
 @jax.jit
-def __to_obs(obs, state, i):
-    c = jax.lax.cond(state.entities[i, 3], lambda _: 3, lambda _: 1, 0)
-    # if state.entities[i, 3]:
-    #     c = 3
-    # else:
-    #     c = 1
+def _update_obs_by_entity(obs, state, i):
+    c = jax.lax.cond(state.entities[i, 3], lambda: 3, lambda: 1)
     obs = obs.at[state.entities[i, 1], state.entities[i, 0], c].set(True)
-
     back_x = jax.lax.cond(
         state.entities[i, 2],
-        lambda _: state.entities[i, 0] - 1,
-        lambda _: state.entities[i, 0] + 1,
-        0,
+        lambda: state.entities[i, 0] - 1,
+        lambda: state.entities[i, 0] + 1,
     )
-    # if state.entities[i, 2]:
-    #     back_x = state.entities[i, 0] - 1
-    # else:
-    #     back_x = state.entities[i, 0] + 1
-
     obs = jax.lax.cond(
-        back_x >= 0,
-        lambda _obs: jax.lax.cond(
-            back_x <= 9,
-            lambda __obs: __obs.at[state.entities[i, 1], back_x, 2].set(True),
-            lambda __obs: __obs,
-            _obs,
-        ),
-        lambda _x: _x,
-        obs,
+        (0 <= back_x) & (back_x <= 9),
+        lambda: obs.at[state.entities[i, 1], back_x, 2].set(True),
+        lambda: obs,
     )
-    # if back_x >= 0 and back_x <= 9:
-    #     obs = obs.at[state.entities[i, 1], back_x, 2].set(True)
     return obs
