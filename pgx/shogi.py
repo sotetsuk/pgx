@@ -86,17 +86,16 @@ def step(
         print("some pieces are stuck")
         return s, _turn_to_reward(_another_color(s)), True
     s.turn = _another_color(s)
-    enemy_legal_actions = _legal_actions(s)
     # 相手に合法手がない場合→詰み
-    if np.all(enemy_legal_actions == 0):
+    if _is_mate(s):
         # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
         if _action.is_drop and (_action.piece == 1 or _action.piece == 15):
             print("mate by dropped pawn")
-            return s, _turn_to_reward(_another_color(s)), True
+            return s, _turn_to_reward(s.turn), True
         # そうでなければ普通の詰みで勝ち
         else:
             print("mate")
-            return s, _turn_to_reward(s.turn), True
+            return s, _turn_to_reward(_another_color(s)), True
     else:
         return s, 0, False
 
@@ -989,3 +988,25 @@ def _is_stuck(state: ShogiState) -> bool:
             if state.turn == 1 and piece == 17 and j == 7:
                 is_stuck = True
     return is_stuck
+
+
+def _is_mate(state: ShogiState) -> bool:
+    # 王手がかかっていない場合は無視
+    if not _is_check(state):
+        return False
+    is_mate = True
+    if state.turn == 0:
+        player_actions = state.legal_actions_black
+    else:
+        player_actions = state.legal_actions_white
+    for i in range(2754):
+        if player_actions[i] == 0:
+            continue
+        action = _dlaction_to_action(i, state)
+        if action.is_drop:
+            s1 = _drop(state, action)
+        else:
+            s1 = _move(state, action)
+        if not _is_check(s1):
+            is_mate = False
+    return is_mate
