@@ -73,9 +73,14 @@ def _step_det(
     state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
     if state.terminal:
-        return state.replace(last_action=action), 0, jnp.array(True, dtype=jnp.bool_)
+        return (
+            state.replace(last_action=action),
+            0,
+            jnp.array(True, dtype=jnp.bool_),
+        )
     else:
         return _step_det_at_non_terminal(state, action)
+
 
 def _step_det_at_non_terminal(
     state: MinAtarBreakoutState, action: jnp.ndarray
@@ -101,26 +106,17 @@ def _step_det_at_non_terminal(
     if new_x < 0 or new_x > 9:
         new_x, ball_dir = update_ball_pos_x(new_x, ball_dir)
     if new_y < 0:
-        new_y, ball_dir = update_ball_pos_y(new_y, ball_dir)
+        new_y, ball_dir = update_ball_pos_y(ball_dir)
     elif brick_map[new_y, new_x] == 1:
         strike_toggle = True
         if not strike:
-            r += 1
-            strike = True
-            brick_map = brick_map.at[new_y, new_x].set(False)
-            new_y = last_y
-            ball_dir = [3, 2, 1, 0][ball_dir]
+            r, strike, brick_map, new_y, ball_dir = update_by_strike(
+                r, brick_map, new_x, new_y, last_y, ball_dir
+            )
     elif new_y == 9:
-        if brick_map.sum() == 0:
-            brick_map = brick_map.at[1:4, :].set(True)
-        if ball_x == pos:
-            ball_dir = [3, 2, 1, 0][ball_dir]
-            new_y = last_y
-        elif new_x == pos:
-            ball_dir = [2, 3, 0, 1][ball_dir]
-            new_y = last_y
-        else:
-            terminal = jnp.array(True, dtype=jnp.bool_)
+        brick_map, new_y, ball_dir, terminal = update_by_botom(
+            brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
+        )
 
     if not strike_toggle:
         strike = jnp.array(False, dtype=jnp.bool_)
@@ -150,6 +146,7 @@ def apply_action(pos, action):
         pos = min(9, pos + 1)
     return pos
 
+
 def update_ball_pos(ball_x, ball_y, ball_dir):
     if ball_dir == 0:
         new_x = ball_x - 1
@@ -165,6 +162,7 @@ def update_ball_pos(ball_x, ball_y, ball_dir):
         new_y = ball_y + 1
     return new_x, new_y
 
+
 def update_ball_pos_x(new_x, ball_dir):
     if new_x < 0:
         new_x = 0
@@ -173,10 +171,34 @@ def update_ball_pos_x(new_x, ball_dir):
     ball_dir = [1, 0, 3, 2][ball_dir]
     return new_x, ball_dir
 
-def update_ball_pos_y(new_y, ball_dir):
+
+def update_ball_pos_y(ball_dir):
     new_y = 0
     ball_dir = [3, 2, 1, 0][ball_dir]
     return new_y, ball_dir
+
+
+def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir):
+    brick_map = brick_map.at[new_y, new_x].set(False)
+    new_y = last_y
+    ball_dir = [3, 2, 1, 0][ball_dir]
+    return r + 1, True, brick_map, new_y, ball_dir
+
+
+def update_by_botom(
+    brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
+):
+    if brick_map.sum() == 0:
+        brick_map = brick_map.at[1:4, :].set(True)
+    if ball_x == pos:
+        ball_dir = [3, 2, 1, 0][ball_dir]
+        new_y = last_y
+    elif new_x == pos:
+        ball_dir = [2, 3, 0, 1][ball_dir]
+        new_y = last_y
+    else:
+        terminal = jnp.array(True, dtype=jnp.bool_)
+    return brick_map, new_y, ball_dir, terminal
 
 
 @jax.jit
