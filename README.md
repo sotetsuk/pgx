@@ -37,11 +37,11 @@ def observe(state: State) -> jnp.ndarray:
 |MiniMahjong| :white_check_mark: | :white_check_mark: |||
 |MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br>Freeway<br>Seaquest<br>SpaceInvaders|||
 |Chess|||||
-|Shogi| :chart_with_upwards_trend: ||||
+|Shogi| :construction: ||||
 |Go| :white_check_mark: | :white_check_mark: |||
 |ContractBridgeBidding|||||
 |Backgammon|||||
-|Mahjong| :chart_with_upwards_trend: ||||
+|Mahjong| :construction: ||||
 
 # LICENSE
 
