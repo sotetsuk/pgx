@@ -51,9 +51,8 @@ def step(
     # sticky action
     action = jax.lax.cond(
         jax.random.uniform(rng0) < sticky_action_prob,
-        lambda _: state.last_action,
-        lambda _: action,
-        0,
+        lambda : state.last_action,
+        lambda : action,
     )
 
     lr = jax.random.choice(rng1, jnp.array([True, False]))
@@ -72,7 +71,7 @@ def step(
         slots,
     )
     slots = jax.lax.cond(
-        slots.sum() == 0, lambda _: slots.at[0].set(1), lambda _: slots, 0
+        slots.sum() == 0, lambda : slots.at[0].set(1), lambda : slots
     )
     p = slots / slots.sum()
     slot = jax.random.choice(rng3, jnp.arange(8), p=p)
