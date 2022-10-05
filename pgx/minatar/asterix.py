@@ -103,6 +103,20 @@ def _step_det(
     is_gold: bool,
     slot: int,
 ) -> Tuple[MinAtarAsterixState, int, bool]:
+     return jax.lax.cond(
+        state.terminal,
+        lambda : (state.replace(last_action=action), 0, True),
+        lambda : _step_det_at_non_terminal(state, action, lr, is_gold, slot)
+    )
+
+
+def _step_det_at_non_terminal(
+    state: MinAtarAsterixState,
+    action: jnp.ndarray,
+    lr: bool,
+    is_gold: bool,
+    slot: int,
+) -> Tuple[MinAtarAsterixState, int, bool]:
     player_x = state.player_x
     player_y = state.player_y
     entities = state.entities
@@ -236,12 +250,6 @@ def _step_det(
         terminal,
         last_action,
     )  # type: ignore
-
-    next_state, r, terminal = jax.lax.cond(
-        state.terminal,
-        lambda : (terminal_state, 0, True),
-        lambda : (next_state, r, terminal),
-    )
 
     return next_state, r, terminal
 
