@@ -28,15 +28,18 @@ class MinAtarFreewayState:
     last_action: int = 0
 
 
-# TODO: make me @jax.jit
+@jax.jit
 def step(
     state: MinAtarFreewayState,
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[MinAtarFreewayState, int, bool]:
-    if jax.random.uniform(rng) < sticky_action_prob:
-        action = state.last_action  # type: ignore
+    action = jax.lax.cond(
+        jax.random.uniform(rng) < sticky_action_prob,
+        lambda: state.last_action,
+        lambda: action
+    )
     speeds, directions = _random_speed_directions(rng)
     return _step_det(state, action, speeds=speeds, directions=directions)
 
@@ -188,14 +191,11 @@ def _randomize_cars(
     return jax.lax.cond(initialize, _init, _update, cars)
 
 
-# TODO: make me  @jax.jit
+@jax.jit
 def _random_speed_directions(rng):
-    # TDOO: use jnp instead
-    # TDOO: rng must be splitted
-    import numpy as np
-
-    speeds = np.random.randint(1, 6, 8)
-    directions = np.random.choice([-1, 1], 8)
+    _, rng1, rng2 = jax.random.split(rng, 3)
+    speeds = jax.random.randint(rng1, [8], 1, 6, dtype=jnp.int8)
+    directions = jax.random.choice(rng2, jnp.array([-1,1], dtype=jnp.int8), [8])
     return speeds, directions
 
 
