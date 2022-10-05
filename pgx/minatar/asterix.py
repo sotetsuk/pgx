@@ -51,8 +51,8 @@ def step(
     # sticky action
     action = jax.lax.cond(
         jax.random.uniform(rng0) < sticky_action_prob,
-        lambda : state.last_action,
-        lambda : action,
+        lambda: state.last_action,
+        lambda: action,
     )
 
     lr = jax.random.choice(rng1, jnp.array([True, False]))
@@ -71,7 +71,7 @@ def step(
         slots,
     )
     slots = jax.lax.cond(
-        slots.sum() == 0, lambda : slots.at[0].set(1), lambda : slots
+        slots.sum() == 0, lambda: slots.at[0].set(1), lambda: slots
     )
     p = slots / slots.sum()
     slot = jax.random.choice(rng3, jnp.arange(8), p=p)
@@ -102,10 +102,10 @@ def _step_det(
     is_gold: bool,
     slot: int,
 ) -> Tuple[MinAtarAsterixState, int, bool]:
-     return jax.lax.cond(
+    return jax.lax.cond(
         state.terminal,
-        lambda : (state.replace(last_action=action), 0, True),
-        lambda : _step_det_at_non_terminal(state, action, lr, is_gold, slot)
+        lambda: (state.replace(last_action=action), 0, True),  # type: ignore
+        lambda: _step_det_at_non_terminal(state, action, lr, is_gold, slot),
     )
 
 
@@ -153,7 +153,7 @@ def _step_det_at_non_terminal(
             lambda: (jax.lax.min(NINE, player_x + 1), player_y),  # 3
             lambda: (player_x, jax.lax.min(EIGHT, player_y + 1)),  # 4
             lambda: (player_x, player_y),  # 5
-        ]
+        ],
     )
 
     # Update entities
@@ -264,8 +264,8 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     )
     entities = jax.lax.cond(
         (entities[i, 0] < 0) | (entities[i, 0] > 9),
-        lambda : entities.at[i, :].set(INF),
-        lambda : entities,
+        lambda: entities.at[i, :].set(INF),
+        lambda: entities,
     )
     entities, player_x, player_y, r, terminal = _update_entities(
         entities, player_x, player_y, r, terminal, i
@@ -282,7 +282,7 @@ def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
             lambda: (spawn_speed, move_speed, ramp_timer - 1, ramp_index),
             lambda: __update_ramp(spawn_speed, move_speed, ramp_index),
         ),
-        lambda: (spawn_speed, move_speed, ramp_timer, ramp_index)
+        lambda: (spawn_speed, move_speed, ramp_timer, ramp_index),
     )
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
@@ -291,8 +291,8 @@ def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
 def __update_ramp(spawn_speed, move_speed, ramp_index):
     move_speed = jax.lax.cond(
         (move_speed > 1) & (ramp_index % 2),
-        lambda :move_speed - 1,
-        lambda :move_speed,
+        lambda: move_speed - 1,
+        lambda: move_speed,
     )
     spawn_speed = jax.lax.cond(
         spawn_speed > 1,
