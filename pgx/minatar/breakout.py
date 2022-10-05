@@ -75,8 +75,12 @@ def _step_det(
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
     return jax.lax.cond(
         state.terminal,
-        lambda :(state.replace(last_action=action), 0, jnp.array(True, dtype=jnp.bool_)),
-        lambda: _step_det_at_non_terminal(state, action)
+        lambda: (
+            state.replace(last_action=action),
+            0,
+            jnp.array(True, dtype=jnp.bool_),
+        ),
+        lambda: _step_det_at_non_terminal(state, action),
     )
 
 
@@ -104,7 +108,7 @@ def _step_det_at_non_terminal(
     new_x, ball_dir = jax.lax.cond(
         (new_x < 0) | (new_x > 9),
         lambda: update_ball_pos_x(new_x, ball_dir),
-        lambda: (new_x, ball_dir)
+        lambda: (new_x, ball_dir),
     )
 
     is_new_y_negative = new_y < 0
@@ -113,25 +117,27 @@ def _step_det_at_non_terminal(
     new_y, ball_dir = jax.lax.cond(
         is_new_y_negative,
         lambda: update_ball_pos_y(ball_dir),
-        lambda: (new_y, ball_dir)
+        lambda: (new_y, ball_dir),
     )
     strike_toggle = ~is_new_y_negative & is_strike
     r, strike, brick_map, new_y, ball_dir = jax.lax.cond(
         ~is_new_y_negative & is_strike & ~strike,
         lambda: update_by_strike(
-                r, brick_map, new_x, new_y, last_y, ball_dir, strike
+            r, brick_map, new_x, new_y, last_y, ball_dir, strike
         ),
-        lambda: (r, strike, brick_map, new_y, ball_dir)
+        lambda: (r, strike, brick_map, new_y, ball_dir),
     )
     brick_map, new_y, ball_dir, terminal = jax.lax.cond(
         ~is_new_y_negative & ~is_strike & is_bottom,
         lambda: update_by_bottom(
             brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
         ),
-        lambda: (brick_map, new_y, ball_dir, terminal)
+        lambda: (brick_map, new_y, ball_dir, terminal),
     )
 
-    strike = jax.lax.cond(~strike_toggle, lambda: jnp.zeros_like(strike), lambda: strike)
+    strike = jax.lax.cond(
+        ~strike_toggle, lambda: jnp.zeros_like(strike), lambda: strike
+    )
 
     state = MinAtarBreakoutState(
         ball_y=new_y,
@@ -150,8 +156,12 @@ def _step_det_at_non_terminal(
 
 @jax.jit
 def apply_action(pos, action):
-    pos = jax.lax.cond(action == 1, lambda: jax.lax.max(ZERO, pos - ONE), lambda: pos)
-    pos = jax.lax.cond(action == 3, lambda: jax.lax.min(NINE, pos + ONE), lambda: pos)
+    pos = jax.lax.cond(
+        action == 1, lambda: jax.lax.max(ZERO, pos - ONE), lambda: pos
+    )
+    pos = jax.lax.cond(
+        action == 3, lambda: jax.lax.min(NINE, pos + ONE), lambda: pos
+    )
     return pos
 
 
@@ -163,8 +173,8 @@ def update_ball_pos(ball_x, ball_y, ball_dir):
             lambda: (ball_x - ONE, ball_y - ONE),
             lambda: (ball_x + ONE, ball_y - ONE),
             lambda: (ball_x + ONE, ball_y + ONE),
-            lambda: (ball_x - ONE, ball_y + ONE)
-        ]
+            lambda: (ball_x - ONE, ball_y + ONE),
+        ],
     )
 
 
@@ -197,16 +207,24 @@ def update_by_bottom(
     brick_map = jax.lax.cond(
         brick_map.sum() == 0,
         lambda: brick_map.at[1:4, :].set(True),
-        lambda: brick_map
+        lambda: brick_map,
     )
     new_y, ball_dir, terminal = jax.lax.cond(
         ball_x == pos,
-        lambda: (last_y, jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir], terminal),
+        lambda: (
+            last_y,
+            jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir],
+            terminal,
+        ),
         lambda: jax.lax.cond(
             new_x == pos,
-            lambda: (last_y, jnp.array([2, 3, 0, 1], dtype=jnp.int8)[ball_dir], terminal),
-            lambda: (new_y, ball_dir, jnp.array(True, dtype=jnp.bool_))
-        )
+            lambda: (
+                last_y,
+                jnp.array([2, 3, 0, 1], dtype=jnp.int8)[ball_dir],
+                terminal,
+            ),
+            lambda: (new_y, ball_dir, jnp.array(True, dtype=jnp.bool_)),
+        ),
     )
     return brick_map, new_y, ball_dir, terminal
 
