@@ -128,7 +128,6 @@ def _step_det_at_non_terminal(
     ramp_timer = state.ramp_timer
     ramp_index = state.ramp_index
     terminal = state.terminal
-    last_action = action
 
     ramping: bool = True
     r = 0
@@ -213,20 +212,19 @@ def _step_det_at_non_terminal(
     )
 
     next_state = MinAtarAsterixState(
-        player_x,
-        player_y,
-        entities,
-        shot_timer,
-        spawn_speed,
-        spawn_timer,
-        move_speed,
-        move_timer,
-        ramp_timer,
-        ramp_index,
-        terminal,
-        last_action,
+        player_x=player_x,
+        player_y=player_y,
+        entities=entities,
+        shot_timer=shot_timer,
+        spawn_speed=spawn_speed,
+        spawn_timer=spawn_timer,
+        move_speed=move_speed,
+        move_timer=move_timer,
+        ramp_timer=ramp_timer,
+        ramp_index=ramp_index,
+        terminal=terminal,
+        last_action=action,
     )  # type: ignore
-
     return next_state, r, terminal
 
 
