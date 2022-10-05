@@ -131,25 +131,7 @@ def _step_det_at_non_terminal(
     last_action = action
 
     ramping: bool = True
-
-    terminal_state = MinAtarAsterixState(
-        player_x,
-        player_y,
-        entities,
-        shot_timer,
-        spawn_speed,
-        spawn_timer,
-        move_speed,
-        move_timer,
-        ramp_timer,
-        ramp_index,
-        terminal,
-        last_action,
-    )  # type: ignore
-
     r = 0
-    # if terminal:
-    #     return state, r, terminal
 
     # Spawn enemy if timer is up
     entities, spawn_timer = jax.lax.cond(
@@ -170,20 +152,14 @@ def _step_det_at_non_terminal(
     player_x, player_y = jax.lax.switch(
         action,
         [
-            lambda x, y: (x, y),  # 0
-            lambda x, y: (x - 1, y),  # 1
-            lambda x, y: (x, y - 1),  # 2
-            lambda x, y: (x + 1, y),  # 3
-            lambda x, y: (x, y + 1),  # 4
-            lambda x, y: (x, y),  # 5
-        ],
-        player_x,
-        player_y,
+            lambda: (player_x, player_y),  # 0
+            lambda: (jax.lax.max(ZERO, player_x - 1), player_y),  # 1
+            lambda: (player_x, jax.lax.max(ONE, player_y - 1)),  # 2
+            lambda: (jax.lax.min(NINE, player_x + 1), player_y),  # 3
+            lambda: (player_x, jax.lax.min(EIGHT, player_y + 1)),  # 4
+            lambda: (player_x, player_y),  # 5
+        ]
     )
-    player_x = jax.lax.max(ZERO, player_x)
-    player_x = jax.lax.min(NINE, player_x)
-    player_y = jax.lax.max(ONE, player_y)
-    player_y = jax.lax.min(EIGHT, player_y)
     # if action == 1:
     #     player_x = max(0, player_x - 1)
     # elif action == 3:
