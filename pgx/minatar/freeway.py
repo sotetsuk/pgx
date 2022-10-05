@@ -21,6 +21,7 @@ ZERO = jnp.array(0, dtype=jnp.int8)
 ONE = jnp.array(1, dtype=jnp.int8)
 NINE = jnp.array(9, dtype=jnp.int8)
 
+
 @struct.dataclass
 class MinAtarFreewayState:
     cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int8)
