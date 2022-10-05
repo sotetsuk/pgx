@@ -12,11 +12,16 @@ import jax
 from flax import struct
 from jax import numpy as jnp
 
-ramp_interval: jnp.ndarray = jnp.array(100, dtype=int)
-init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=int)
-init_move_interval: jnp.ndarray = jnp.array(5, dtype=int)
-shot_cool_down: jnp.ndarray = jnp.array(5, dtype=int)
-INF: jnp.ndarray = jnp.array(int(1e5), dtype=int)
+ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int8)
+init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int8)
+init_move_interval: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
+shot_cool_down: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
+INF: jnp.ndarray = jnp.array(99, dtype=jnp.int8)
+
+ZERO = jnp.array(0, dtype=jnp.int8)
+ONE = jnp.array(1, dtype=jnp.int8)
+EIGHT = jnp.array(8, dtype=jnp.int8)
+NINE = jnp.array(9, dtype=jnp.int8)
 
 
 @struct.dataclass
@@ -161,10 +166,10 @@ def _step_det(
         player_x,
         player_y,
     )
-    player_x = jax.lax.max(0, player_x)
-    player_x = jax.lax.min(9, player_x)
-    player_y = jax.lax.max(1, player_y)
-    player_y = jax.lax.min(8, player_y)
+    player_x = jax.lax.max(ZERO, player_x)
+    player_x = jax.lax.min(NINE, player_x)
+    player_y = jax.lax.max(ONE, player_y)
+    player_y = jax.lax.min(EIGHT, player_y)
     # if action == 1:
     #     player_x = max(0, player_x - 1)
     # elif action == 3:

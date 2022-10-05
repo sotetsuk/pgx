@@ -20,7 +20,7 @@ def test_step_det():
     env = Environment("freeway", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 1  # TDOO: increase N
+    N = 3
     for _ in range(N):
         env.reset()
         done = False
@@ -58,14 +58,13 @@ def test_step_det():
 
 def test_reset_det():
     env = Environment("freeway", sticky_action_prob=0.0)
-    N = 1  # TODO: increase N
+    N = 10
     for _ in range(N):
         env.reset()
         s = extract_state(env, state_keys)
         # extract random variables
-        speeds, directions = jnp.array(env.env.speeds), jnp.array(
-            env.env.directions
-        )
+        speeds = jnp.array(env.env.speeds)
+        directions = jnp.array(env.env.directions)
         s_pgx = freeway._reset_det(speeds, directions)
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
