@@ -201,28 +201,20 @@ def _random_speed_directions(rng):
     return speeds, directions
 
 
+@jax.jit
 def _to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
-    import numpy as np  # TODO: remove me
+    obs = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
+    obs = obs.at[state.pos, 4, 0].set(1)
 
-    obs = np.zeros((10, 10, 7), dtype=bool)
-    obs[state.pos, 4, 0] = 1
-    for car in state.cars:
-        obs[car[1], car[0], 1] = 1
-        back_x = car[0] - 1 if car[3] > 0 else car[0] + 1
-        if back_x < 0:
-            back_x = 9
-        elif back_x > 9:
-            back_x = 0
-        if abs(car[3]) == 1:
-            trail = 2
-        elif abs(car[3]) == 2:
-            trail = 3
-        elif abs(car[3]) == 3:
-            trail = 4
-        elif abs(car[3]) == 4:
-            trail = 5
-        elif abs(car[3]) == 5:
-            trail = 6
-        obs[car[1], back_x, trail] = 1
+    def _update_obs(i, _obs):
+        car = state.cars[i]
+        _obs = _obs.at[car[1], car[0], 1].set(1)
+        back_x = jax.lax.cond(car[3] > 0, lambda: car[0] - 1, lambda: car[0] + 1)
+        back_x = jax.lax.cond(back_x < 0, lambda: 9, lambda: back_x)
+        back_x = jax.lax.cond(back_x > 9, lambda: 0, lambda: back_x)
+        trail = jax.lax.abs(car[3]) + 1
+        _obs = _obs.at[car[1], back_x, trail].set(1)
+        return _obs
 
-    return jnp.array(obs)
+    obs = jax.lax.fori_loop(0, 8, _update_obs, obs)
+    return obs
