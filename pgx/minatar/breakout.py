@@ -1,4 +1,4 @@
-"""MinAtar/Breakout: A form of github.com/kenjyoung/MinAtar
+"""MinAtar/Breakout: A fork of github.com/kenjyoung/MinAtar
 
 The player controls a paddle on the bottom of the screen and must bounce a ball to break 3 rows of bricks along the
 top of the screen. A reward of +1 is given for each brick broken by the ball.  When all bricks are cleared another 3
