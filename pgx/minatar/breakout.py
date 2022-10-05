@@ -145,20 +145,17 @@ def apply_action(pos, action):
     return pos
 
 
+@jax.jit
 def update_ball_pos(ball_x, ball_y, ball_dir):
-    if ball_dir == 0:
-        new_x = ball_x - 1
-        new_y = ball_y - 1
-    elif ball_dir == 1:
-        new_x = ball_x + 1
-        new_y = ball_y - 1
-    elif ball_dir == 2:
-        new_x = ball_x + 1
-        new_y = ball_y + 1
-    elif ball_dir == 3:
-        new_x = ball_x - 1
-        new_y = ball_y + 1
-    return new_x, new_y
+    return jax.lax.switch(
+        ball_dir,
+        [
+            lambda: (ball_x - ONE, ball_y - ONE),
+            lambda: (ball_x + ONE, ball_y - ONE),
+            lambda: (ball_x + ONE, ball_y + ONE),
+            lambda: (ball_x - ONE, ball_y + ONE)
+        ]
+    )
 
 
 def update_ball_pos_x(new_x, ball_dir):
