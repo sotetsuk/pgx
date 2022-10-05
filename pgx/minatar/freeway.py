@@ -17,6 +17,9 @@ from jax import numpy as jnp
 player_speed = jnp.array(3, dtype=jnp.int8)
 time_limit = jnp.array(2500, dtype=jnp.int16)
 
+ZERO = jnp.array(0, dtype=jnp.int8)
+ONE = jnp.array(1, dtype=jnp.int8)
+NINE = jnp.array(9, dtype=jnp.int8)
 
 @struct.dataclass
 class MinAtarFreewayState:
@@ -88,12 +91,12 @@ def _step_det_at_non_terminal(
 
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),
-        lambda: (player_speed, jax.lax.max(0, pos - 1)),
+        lambda: (player_speed, jax.lax.max(ZERO, pos - ONE)),
         lambda: (move_timer, pos),
     )
     move_timer, pos = jax.lax.cond(
         (action == 4) & (move_timer == 0),
-        lambda: (player_speed, jax.lax.min(9, pos + 1)),
+        lambda: (player_speed, jax.lax.min(NINE, pos + ONE)),
         lambda: (move_timer, pos),
     )
 
@@ -103,7 +106,7 @@ def _step_det_at_non_terminal(
         lambda: (
             _randomize_cars(speeds, directions, cars, initialize=False),
             r + 1,
-            9,
+            NINE,
         ),
         lambda: (cars, r, pos),
     )
@@ -114,7 +117,7 @@ def _step_det_at_non_terminal(
     move_timer = jax.lax.cond(
         move_timer > 0, lambda: move_timer - 1, lambda: move_timer
     )
-    terminate_timer -= 1
+    terminate_timer -= ONE
     terminal = terminate_timer < 0
 
     next_state = MinAtarFreewayState(
@@ -139,13 +142,13 @@ def _update_cars(pos, cars):
         car = jax.lax.cond(car[0] < 0, lambda: car.at[0].set(9), lambda: car)
         car = jax.lax.cond(car[0] > 9, lambda: car.at[0].set(0), lambda: car)
         pos = jax.lax.cond(
-            (car[0] == 4) & (car[1] == pos), lambda: 9, lambda: pos
+            (car[0] == 4) & (car[1] == pos), lambda: NINE, lambda: pos
         )
         return pos, car
 
     def _update_car(pos, car):
         pos = jax.lax.cond(
-            (car[0] == 4) & (car[1] == pos), lambda: 9, lambda: pos
+            (car[0] == 4) & (car[1] == pos), lambda: NINE, lambda: pos
         )
         pos, car = jax.lax.cond(
             car[2] == 0,
@@ -212,8 +215,8 @@ def _to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
         back_x = jax.lax.cond(
             car[3] > 0, lambda: car[0] - 1, lambda: car[0] + 1
         )
-        back_x = jax.lax.cond(back_x < 0, lambda: 9, lambda: back_x)
-        back_x = jax.lax.cond(back_x > 9, lambda: 0, lambda: back_x)
+        back_x = jax.lax.cond(back_x < 0, lambda: NINE, lambda: back_x)
+        back_x = jax.lax.cond(back_x > 9, lambda: ZERO, lambda: back_x)
         trail = jax.lax.abs(car[3]) + 1
         _obs = _obs.at[car[1], back_x, trail].set(1)
         return _obs
