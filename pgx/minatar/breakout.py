@@ -138,12 +138,10 @@ def _step_det_at_non_terminal(
     return state, r, terminal
 
 
+@jax.jit
 def apply_action(pos, action):
-    # self.action_map = ['n','l','u','r','d','f']
-    if action == 1:
-        pos = max(0, pos - 1)
-    elif action == 3:
-        pos = min(9, pos + 1)
+    pos = jax.lax.cond(action == 1, lambda: jax.lax.max(ZERO, pos - ONE), lambda: pos)
+    pos = jax.lax.cond(action == 3, lambda: jax.lax.min(NINE, pos + ONE), lambda: pos)
     return pos
 
 
