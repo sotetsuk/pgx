@@ -239,11 +239,8 @@ def _step_det(
 
     next_state, r, terminal = jax.lax.cond(
         state.terminal,
-        lambda _next_state, _r, _terminal: (terminal_state, 0, True),
-        lambda _next_state, _r, _terminal: (next_state, r, terminal),
-        next_state,
-        r,
-        terminal,
+        lambda : (terminal_state, 0, True),
+        lambda : (next_state, r, terminal),
     )
 
     return next_state, r, terminal
