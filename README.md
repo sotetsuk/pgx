@@ -30,19 +30,18 @@ def observe(state: State) -> jnp.ndarray:
 
 ## Roadmap
 
-* [ ] Tic-tac-toe
-* [x] AnimalShogi (in progress)
-* [x] Go 
-* [ ] MinAtar
-  * [x] Breakout
-  * [x] Asterix
-  * [ ] SpaceInvaders
-  * [ ] Seaquest
-  * [ ] Freeway
-* [ ] Shogi
-* [ ] Chess
-* [ ] Mahjong
-* [ ] Contract bridge bidding
+|Game|Logic|Jit|Baseline|Visualization|
+|:---|:---|:---|:---|:---|
+|TicTacToe|||||
+|AnimalShogi| :white_check_mark: | :white_check_mark: |||
+|MiniMahjong| :white_check_mark: | :white_check_mark: |||
+|MinAtar|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br>Freeway<br>Seaquest<br>SpaceInvaders|||
+|Chess|||||
+|Shogi|||||
+|Go| :white_check_mark: | :white_check_mark: |||
+|ContractBridgeBidding|||||
+|Backgammon|||||
+|Mahjong|||||
 
 # LICENSE
 
