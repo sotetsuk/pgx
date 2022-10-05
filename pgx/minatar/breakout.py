@@ -69,37 +69,44 @@ def to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
     return _to_obs(state)
 
 
-@jax.jit
 def _step_det(
     state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, int, bool]:
+    ball_y = state.ball_y
+    ball_x = state.ball_x
+    ball_dir = state.ball_dir
+    pos = state.pos
+    brick_map = state.brick_map
+    strike = state.strike
+    last_x = state.last_x
+    last_y = state.last_y
+    terminal = state.terminal
+
     r = 0
-    if self.terminal:
-        return r, self.terminal
+    if state.terminal:
+        return state.replace(last_action=action), r, terminal
 
-    a = self.action_map[a]
-
-    # Resolve player action
-    if a == "l":
-        self.pos = max(0, self.pos - 1)
-    elif a == "r":
-        self.pos = min(9, self.pos + 1)
+    # self.action_map = ['n','l','u','r','d','f']
+    if action == 1:
+        pos = max(0, pos - 1)
+    elif action == 3:
+        pos = min(9, pos + 1)
 
     # Update ball position
-    self.last_x = self.ball_x
-    self.last_y = self.ball_y
-    if self.ball_dir == 0:
-        new_x = self.ball_x - 1
-        new_y = self.ball_y - 1
-    elif self.ball_dir == 1:
-        new_x = self.ball_x + 1
-        new_y = self.ball_y - 1
-    elif self.ball_dir == 2:
-        new_x = self.ball_x + 1
-        new_y = self.ball_y + 1
-    elif self.ball_dir == 3:
-        new_x = self.ball_x - 1
-        new_y = self.ball_y + 1
+    last_x = ball_x
+    last_y = ball_y
+    if ball_dir == 0:
+        new_x = ball_x - 1
+        new_y = ball_y - 1
+    elif ball_dir == 1:
+        new_x = ball_x + 1
+        new_y = ball_y - 1
+    elif ball_dir == 2:
+        new_x = ball_x + 1
+        new_y = ball_y + 1
+    elif ball_dir == 3:
+        new_x = ball_x - 1
+        new_y = ball_y + 1
 
     strike_toggle = False
     if new_x < 0 or new_x > 9:
@@ -107,36 +114,48 @@ def _step_det(
             new_x = 0
         if new_x > 9:
             new_x = 9
-        self.ball_dir = [1, 0, 3, 2][self.ball_dir]
+        ball_dir = [1, 0, 3, 2][ball_dir]
     if new_y < 0:
         new_y = 0
-        self.ball_dir = [3, 2, 1, 0][self.ball_dir]
-    elif self.brick_map[new_y, new_x] == 1:
+        ball_dir = [3, 2, 1, 0][ball_dir]
+    elif brick_map[new_y, new_x] == 1:
         strike_toggle = True
-        if not self.strike:
+        if not strike:
             r += 1
-            self.strike = True
-            self.brick_map[new_y, new_x] = 0
-            new_y = self.last_y
-            self.ball_dir = [3, 2, 1, 0][self.ball_dir]
+            strike = True
+            brick_map = brick_map.at[new_y, new_x].set(False)
+            new_y = last_y
+            ball_dir = [3, 2, 1, 0][ball_dir]
     elif new_y == 9:
-        if np.count_nonzero(self.brick_map) == 0:
-            self.brick_map[1:4, :] = 1
-        if self.ball_x == self.pos:
-            self.ball_dir = [3, 2, 1, 0][self.ball_dir]
-            new_y = self.last_y
-        elif new_x == self.pos:
-            self.ball_dir = [2, 3, 0, 1][self.ball_dir]
-            new_y = self.last_y
+        if brick_map.sum() == 0:
+            brick_map = brick_map.at[1:4, :].set(True)
+        if ball_x == pos:
+            ball_dir = [3, 2, 1, 0][ball_dir]
+            new_y = last_y
+        elif new_x == pos:
+            ball_dir = [2, 3, 0, 1][ball_dir]
+            new_y = last_y
         else:
-            self.terminal = True
+            terminal = jnp.array(True, dtype=jnp.bool_)
 
     if not strike_toggle:
-        self.strike = False
+        strike = jnp.array(False, dtype=jnp.bool_)
 
-    self.ball_x = new_x
-    self.ball_y = new_y
-    return r, self.terminal
+    ball_x = new_x
+    ball_y = new_y
+    state = MinAtarBreakoutState(
+        ball_y=ball_y,
+        ball_x=ball_x,
+        ball_dir=ball_dir,
+        pos=pos,
+        brick_map=brick_map,
+        strike=strike,
+        last_x=last_x,
+        last_y=last_y,
+        terminal=terminal,
+        last_action=action,
+    )
+    return state, r, terminal
 
 
 @jax.jit

@@ -51,7 +51,7 @@ def test_step_det():
 
 def test_reset_det():
     env = Environment("breakout", sticky_action_prob=0.0)
-    N = 100
+    N = 1
     for _ in range(N):
         env.reset()
         ball_start = 0 if env.env.ball_x == 0 else 1
