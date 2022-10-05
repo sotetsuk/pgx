@@ -5,6 +5,8 @@ import numpy as np
 from jax import numpy as jnp
 
 
+INF = 99
+
 def extract_state(env, state_keys):
     state_dict = {}
     # task-dependent attribute
@@ -36,7 +38,7 @@ def pgx2minatar(state, keys) -> Dict[str, Any]:
         if key == "entities":
             val = [None] * 8
             for i in range(8):
-                if d[key][i][0] != 1e5:
+                if d[key][i][0] != INF:
                     e = [d[key][i][j] for j in range(4)]
                     val[i] = e
             d[key] = val
@@ -50,7 +52,7 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
 
         # Exception in Asterix
         if key == "entities":
-            _val = [[int(1e5) if x is None else x[j] for j in range(4)] for i, x in enumerate(val)]
+            _val = [[INF if x is None else x[j] for j in range(4)] for i, x in enumerate(val)]
             val = jnp.array(_val, dtype=jnp.int8)
             d[key] = val
             continue
