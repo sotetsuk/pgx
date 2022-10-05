@@ -48,7 +48,7 @@ def step(
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
-) -> Tuple[MinAtarBreakoutState, int, bool]:
+) -> Tuple[MinAtarBreakoutState, int, jnp.ndarray]:
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
@@ -71,11 +71,11 @@ def to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
 @jax.jit
 def _step_det(
     state: MinAtarBreakoutState, action: jnp.ndarray
-) -> Tuple[MinAtarBreakoutState, int, bool]:
+) -> Tuple[MinAtarBreakoutState, int, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
         lambda: (
-            state.replace(last_action=action),
+            state.replace(last_action=action),  # type: ignore
             0,
             jnp.array(True, dtype=jnp.bool_),
         ),
@@ -86,7 +86,7 @@ def _step_det(
 @jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarBreakoutState, action: jnp.ndarray
-) -> Tuple[MinAtarBreakoutState, int, bool]:
+) -> Tuple[MinAtarBreakoutState, int, jnp.ndarray]:
     ball_y = state.ball_y
     ball_x = state.ball_x
     ball_dir = state.ball_dir
@@ -149,7 +149,7 @@ def _step_det_at_non_terminal(
         last_y=last_y,
         terminal=terminal,
         last_action=action,
-    )
+    )  # type: ignore
     return state, r, terminal
 
 
