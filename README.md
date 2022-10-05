@@ -30,7 +30,7 @@ def observe(state: State) -> jnp.ndarray:
 
 ## Roadmap
 
-|Game|Logic|Jit|Gym|Baseline|Visualization|
+|Game|Logic|Jit|Baseline|Visualization|Gym/PettingZoo|
 |:---|:---|:---|:---|:---|:---|
 |TicTacToe||||||
 |AnimalShogi| :white_check_mark: | :white_check_mark: ||||
