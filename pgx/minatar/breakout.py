@@ -180,19 +180,24 @@ def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir):
     return r + 1, jnp.array(True, dtype=jnp.bool_), brick_map, new_y, ball_dir
 
 
+@jax.jit
 def update_by_bottom(
     brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
 ):
-    if brick_map.sum() == 0:
-        brick_map = brick_map.at[1:4, :].set(True)
-    if ball_x == pos:
-        ball_dir = [3, 2, 1, 0][ball_dir]
-        new_y = last_y
-    elif new_x == pos:
-        ball_dir = [2, 3, 0, 1][ball_dir]
-        new_y = last_y
-    else:
-        terminal = jnp.array(True, dtype=jnp.bool_)
+    brick_map = jax.lax.cond(
+        brick_map.sum() == 0,
+        lambda: brick_map.at[1:4, :].set(True),
+        lambda: brick_map
+    )
+    new_y, ball_dir, terminal = jax.lax.cond(
+        ball_x == pos,
+        lambda: (last_y, jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir], terminal),
+        lambda: jax.lax.cond(
+            new_x == pos,
+            lambda: (last_y, jnp.array([2, 3, 0, 1], dtype=jnp.int8)[ball_dir], terminal),
+            lambda: (new_y, ball_dir, jnp.array(True, dtype=jnp.bool_))
+        )
+    )
     return brick_map, new_y, ball_dir, terminal
 
 
