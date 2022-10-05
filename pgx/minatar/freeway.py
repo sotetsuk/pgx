@@ -209,7 +209,9 @@ def _to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
     def _update_obs(i, _obs):
         car = state.cars[i]
         _obs = _obs.at[car[1], car[0], 1].set(1)
-        back_x = jax.lax.cond(car[3] > 0, lambda: car[0] - 1, lambda: car[0] + 1)
+        back_x = jax.lax.cond(
+            car[3] > 0, lambda: car[0] - 1, lambda: car[0] + 1
+        )
         back_x = jax.lax.cond(back_x < 0, lambda: 9, lambda: back_x)
         back_x = jax.lax.cond(back_x > 9, lambda: 0, lambda: back_x)
         trail = jax.lax.abs(car[3]) + 1
