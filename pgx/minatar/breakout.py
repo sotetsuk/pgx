@@ -103,8 +103,12 @@ def _step_det_at_non_terminal(
     new_x, new_y = update_ball_pos(ball_x, ball_y, ball_dir)
 
     strike_toggle = False
-    if new_x < 0 or new_x > 9:
-        new_x, ball_dir = update_ball_pos_x(new_x, ball_dir)
+    new_x, ball_dir = jax.lax.cond(
+        (new_x < 0) | (new_x > 9),
+        lambda: update_ball_pos_x(new_x, ball_dir),
+        lambda: (new_x, ball_dir)
+    )
+
     if new_y < 0:
         new_y, ball_dir = update_ball_pos_y(ball_dir)
     elif brick_map[new_y, new_x] == 1:
