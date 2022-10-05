@@ -30,15 +30,15 @@ def observe(state: State) -> jnp.ndarray:
 
 ## Roadmap
 
-|Game|Logic| Jit                                                                                |Baseline|Visualization|Gym/PettingZoo|
-|:---|:---|:-----------------------------------------------------------------------------------|:---|:---|:---|
+|Game|Logic| Jit                                                                                                                      |Baseline|Visualization|Gym/PettingZoo|
+|:---|:---|:-------------------------------------------------------------------------------------------------------------------------|:---|:---|:---|
 |TicTacToe||||||
-|AnimalShogi| :white_check_mark: | :white_check_mark:                                                                 ||||
-|MiniMahjong| :white_check_mark: | :white_check_mark:                                                                 ||||
-|MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> Breakdown<br> :white_check_mark: Freeway<br>Seaquest<br>SpaceInvaders ||||
+|AnimalShogi| :white_check_mark: | :white_check_mark:                                                                                                       ||||
+|MiniMahjong| :white_check_mark: | :white_check_mark:                                                                                                       ||||
+|MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br>Seaquest<br>SpaceInvaders ||||
 |Chess||||||
 |Shogi| :construction: |||||
-|Go| :white_check_mark: | :white_check_mark:                                                                 ||||
+|Go| :white_check_mark: | :white_check_mark:                                                                                                       ||||
 |ContractBridgeBidding||||||
 |Backgammon||||||
 |Mahjong| :construction: |||||

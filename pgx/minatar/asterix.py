@@ -1,4 +1,4 @@
-"""MinAtar/Asterix: A form of github.com/kenjyoung/MinAtar
+"""MinAtar/Asterix: A fork of github.com/kenjyoung/MinAtar
 
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)

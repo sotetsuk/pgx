@@ -1,4 +1,4 @@
-"""MinAtar/Asterix: A form of github.com/kenjyoung/MinAtar
+"""MinAtar/Asterix: A fork of github.com/kenjyoung/MinAtar
 
 https://github.com/kenjyoung/MinAtar/blob/master/minatar/environments/freeway.py
 
