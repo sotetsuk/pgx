@@ -1,4 +1,4 @@
-import svgwrite
+import svgwrite  # type: ignore
 from svgwrite import cm
 
 from .go import GoState, get_board
