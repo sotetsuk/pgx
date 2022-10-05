@@ -17,7 +17,6 @@ class Visualizer:
         BOARD_SIZE = state.size[0]
         GRID_SIZE = 1
 
-        # grid
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
@@ -35,6 +34,8 @@ class Visualizer:
             )
         )
 
+        # board
+        # #grid
         board_g = dwg.g()
         hlines = board_g.add(dwg.g(id="hlines", stroke="black"))
         for y in range(BOARD_SIZE):
@@ -58,6 +59,34 @@ class Visualizer:
                     ),
                 )
             )
+
+        # hoshi
+        hoshi_g = dwg.g()
+        hosi_pos = []
+        if BOARD_SIZE == 19:
+            hosi_pos = [
+                (4, 4),
+                (4, 10),
+                (4, 16),
+                (10, 4),
+                (10, 10),
+                (10, 16),
+                (16, 4),
+                (16, 10),
+                (16, 16),
+            ]
+        elif BOARD_SIZE == 5:
+            hosi_pos = [(3, 3)]
+
+        for x, y in hosi_pos:
+            hoshi_g.add(
+                dwg.circle(
+                    center=((x - 1) * cm, (y - 1) * cm),
+                    r=GRID_SIZE / 10 * cm,
+                    fill="black",
+                )
+            )
+        board_g.add(hoshi_g)
 
         # stones
         board = get_board(state)
