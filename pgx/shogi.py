@@ -593,30 +593,30 @@ def _rook_move(state: ShogiState, point: int) -> np.ndarray:
 
 def _horse_move(state: ShogiState, point: int) -> np.ndarray:
     array = _bishop_move(state, point)
-    u, d, r, l_ = _is_side(point)
+    u, d, l, r = _is_side(point)
     if not u:
         array[point - 1] = 1
     if not d:
         array[point + 1] = 1
     if not r:
         array[point - 9] = 1
-    if not l_:
+    if not l:
         array[point + 9] = 1
     return array
 
 
 def _dragon_move(state: ShogiState, point: int) -> np.ndarray:
     array = _rook_move(state, point)
-    u, d, r, l_ = _is_side(point)
+    u, d, l, r = _is_side(point)
     if not u:
         if not r:
             array[point - 10] = 1
-        if not l_:
+        if not l:
             array[point + 8] = 1
     if not d:
         if not r:
             array[point - 8] = 1
-        if not l_:
+        if not l:
             array[point + 10] = 1
     return array
 
