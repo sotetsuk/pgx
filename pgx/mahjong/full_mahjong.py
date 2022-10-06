@@ -551,6 +551,107 @@ class Yaku:
 
     @staticmethod
     @jit
+    def update(
+        is_pinfu: jnp.ndarray,
+        is_outside: jnp.ndarray,
+        double_chows: jnp.ndarray,
+        all_chow: jnp.ndarray,
+        all_pung: jnp.ndarray,
+        concealed_pungs: jnp.ndarray,
+        fu: jnp.ndarray,
+        code: int,
+        begin: int,
+        end: int,
+        last: int,
+        is_ron: bool,
+    ):
+        chow = Yaku.chow(code)
+        pung = Yaku.pung(code)
+
+        left = chow
+        right = chow << 3
+        len = end - begin
+        open_end = (left ^ (left & 1) * (begin % 9 == 0)) << 2 | (
+            right ^ ((right >> len & 1) * (end % 9 == 0) << len)
+        ) >> 3
+        # リャンメン待ちにできる位置
+
+        pos = last - begin  # WARNING: may be negative
+        in_range = (0 <= pos) & (pos < len)
+        pos *= in_range
+
+        is_pinfu &= (in_range == 0) | (open_end >> pos & 1) == 1
+        is_pinfu &= pung == 0
+
+        outside = Yaku.CACHE[code] >> 22 & 0b11
+        is_outside &= (
+            (code == 0)
+            | (begin % 9 == 0) & (outside & 1)
+            | (end % 9 == 0) & (outside >> 1 & 1)
+        ) == 1
+
+        double_chows += Yaku.double_chows(code)
+        all_chow |= chow << begin
+        all_pung |= pung << begin
+
+        pungs = (
+            (pung & 1)
+            + (pung >> 1 & 1)
+            + (pung >> 2 & 1)
+            + (pung >> 3 & 1)
+            + (pung >> 4 & 1)
+            + (pung >> 5 & 1)
+            + (pung >> 6 & 1)
+            + (pung >> 7 & 1)
+            + (pung >> 8 & 1)
+        )
+        # 刻子の数
+
+        chow_range = chow | chow << 1 | chow << 2
+
+        loss = (
+            is_ron
+            & in_range
+            & ((chow_range >> pos & 1) == 0)
+            & (pung >> pos & 1)
+        )
+        # ロンして明刻扱いになってしまう場合
+
+        concealed_pungs += pungs - loss
+
+        outside_pung = ((begin % 9 == 0) & (pung & 1)) | (
+            (end % 9 == 0) & (pung >> len & 1)
+        ) << len
+
+        strong = (
+            in_range
+            & (
+                (1 << Yaku.head(code))
+                | (((begin % 9 == 0) & (chow & 1)) << 2)
+                | ((end % 9 == 0) & (chow << 3 >> len & 1))
+                | (chow << 1)
+            )
+            >> pos
+            & 1
+        )
+        # 強い待ち(カンチャン, ペンチャン, 単騎)にできるか
+
+        loss <<= outside_pung >> pos & 1
+
+        fu += 4 * (pungs + (outside_pung > 0)) - 2 * loss + 2 * strong
+
+        return (
+            is_pinfu,
+            is_outside,
+            double_chows,
+            all_chow,
+            all_pung,
+            concealed_pungs,
+            fu,
+        )
+
+    @staticmethod
+    @jit
     def judge(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
@@ -582,13 +683,13 @@ class Yaku:
         )
         double_chows = jnp.full(Yaku.MAX_PATTERNS, 0)
 
-        chow = jnp.full(
+        all_chow = jnp.full(
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
                 0, meld_num, lambda i, chow: chow | Meld.chow(melds[i]), 0
             ),
         )
-        pung = jnp.full(
+        all_pung = jnp.full(
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
                 0,
@@ -607,49 +708,70 @@ class Yaku:
             begin = 9 * suit
             for tile in range(9 * suit, 9 * (suit + 1)):
                 (
-                    code,
                     is_pinfu,
                     is_outside,
                     double_chows,
-                    chow,
-                    pung,
+                    all_chow,
+                    all_pung,
                     concealed_pungs,
                     fu,
+                    code,
                     begin,
                 ) = jax.lax.cond(
                     hand[tile] == 0,
                     lambda: (
+                        *Yaku.update(
+                            is_pinfu,
+                            is_outside,
+                            double_chows,
+                            all_chow,
+                            all_pung,
+                            concealed_pungs,
+                            fu,
+                            code,
+                            begin,
+                            tile,
+                            last,
+                            is_ron,
+                        ),
                         0,
-                        is_pinfu & Yaku.is_pinfu(code, begin, tile, last),
-                        is_outside & Yaku.is_outside(code, begin, tile),
-                        double_chows + Yaku.double_chows(code),
-                        chow | Yaku.chow(code) << begin,
-                        pung | Yaku.pung(code) << begin,
-                        concealed_pungs
-                        + Yaku.concealed_pungs(code, is_ron, begin, last),
-                        fu + Yaku.fu(code, is_ron, begin, tile, last),
                         tile + 1,
                     ),
                     lambda: (
-                        ((code << 1) + 1) << (hand[tile].astype(int) - 1),
                         is_pinfu,
                         is_outside,
                         double_chows,
-                        chow,
-                        pung,
+                        all_chow,
+                        all_pung,
                         concealed_pungs,
                         fu,
+                        ((code << 1) + 1) << (hand[tile].astype(int) - 1),
                         begin,
                     ),
                 )
 
-            is_pinfu &= Yaku.is_pinfu(code, begin, 9 * (suit + 1), last)
-            is_outside &= Yaku.is_outside(code, begin, 9 * (suit + 1))
-            double_chows += Yaku.double_chows(code)
-            chow |= Yaku.chow(code) << begin
-            pung |= Yaku.pung(code) << begin
-            concealed_pungs += Yaku.concealed_pungs(code, is_ron, begin, last)
-            fu += Yaku.fu(code, is_ron, begin, 9 * (suit + 1), last)
+            (
+                is_pinfu,
+                is_outside,
+                double_chows,
+                all_chow,
+                all_pung,
+                concealed_pungs,
+                fu,
+            ) = Yaku.update(
+                is_pinfu,
+                is_outside,
+                double_chows,
+                all_chow,
+                all_pung,
+                concealed_pungs,
+                fu,
+                code,
+                begin,
+                9 * (suit + 1),
+                last,
+                is_ron,
+            )
 
         concealed_pungs += jnp.sum(hand[27:] >= 3) - (
             is_ron & (last >= 27) & (hand[last] >= 3)
@@ -679,13 +801,13 @@ class Yaku:
             .at[Yaku.純全帯么九]
             .set(is_outside & (has_honor == 0))
             .at[Yaku.一気通貫]
-            .set(Yaku.is_pure_straight(chow))
+            .set(Yaku.is_pure_straight(all_chow))
             .at[Yaku.三色同順]
-            .set(Yaku.is_triple_chow(chow))
+            .set(Yaku.is_triple_chow(all_chow))
             .at[Yaku.三色同刻]
-            .set(Yaku.is_triple_pung(pung))
+            .set(Yaku.is_triple_pung(all_pung))
             .at[Yaku.対々和]
-            .set(chow == 0)
+            .set(all_chow == 0)
             .at[Yaku.三暗刻]
             .set(concealed_pungs == 3)
         )
