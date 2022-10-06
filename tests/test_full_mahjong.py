@@ -157,14 +157,6 @@ def test_yaku_pinfu():
     assert Yaku.judge(hand, melds, meld_num=0, last=6)[Yaku.平和]
     assert Yaku.judge(hand, melds, meld_num=0, last=7)[Yaku.平和]
 
-    hand = Hand.from_str("11222333444456m")
-    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.平和]
-    assert Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.平和]
-    assert not Yaku.judge(hand, melds, meld_num=0, last=2)[Yaku.平和]
-    assert Yaku.judge(hand, melds, meld_num=0, last=3)[Yaku.平和]
-    assert not Yaku.judge(hand, melds, meld_num=0, last=4)[Yaku.平和]
-    assert Yaku.judge(hand, melds, meld_num=0, last=5)[Yaku.平和]
-
 
 def test_yaku_outside():
     hand = Hand.from_str("11223399m789p123s")
@@ -299,6 +291,14 @@ def test_yaku_coner_cases():
     # assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.三暗刻]
     # assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.純全帯么九]
     # # 副露純チャン < 三暗刻 (符で有利)
+
+    # TODO
+    # hand = Hand.from_str("11222333444456m")
+    # assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.平和]
+    # assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.一盃口]
+    # assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.三暗刻]
+    # # 平和一盃口 < 三暗刻 (符で有利)
+
 
 
 def test_state():
