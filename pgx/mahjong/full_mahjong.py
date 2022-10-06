@@ -146,31 +146,16 @@ class Hand:
         heads = 0
         valid = True
 
-        for i in range(3):
-            heads, valid, code, size = jax.lax.fori_loop(
-                0,
-                9,
-                lambda j, tpl: jax.lax.cond(
-                    hand[9 * i + j] == 0,
-                    lambda: (
-                        tpl[0] + (tpl[3] % 3 == 2),
-                        tpl[1] & (Hand.cache(tpl[2]) != 0),
-                        0,
-                        0,
-                    ),
-                    lambda: (
-                        tpl[0],
-                        tpl[1],
-                        ((tpl[2] << 1) + 1)
-                        << (hand[9 * i + j].astype(int) - 1),
-                        tpl[3] + hand[9 * i + j].astype(int),
-                    ),
-                ),
-                (heads, valid, 0, 0),
+        for suit in range(3):
+            valid &= Hand.cache(
+                jax.lax.fori_loop(
+                    9 * suit,
+                    9 * (suit + 1),
+                    lambda i, code: code * 5 + hand[i].astype(int),
+                    0,
+                )
             )
-
-            heads += size % 3 == 2
-            valid &= Hand.cache(code) != 0
+            heads += jnp.sum(hand[9 * suit : 9 * (suit + 1)]) % 3 == 2
 
         heads, valid = jax.lax.fori_loop(
             27,
@@ -182,7 +167,7 @@ class Hand:
             (heads, valid),
         )
 
-        return valid & (heads == 1)
+        return (valid & (heads == 1)) == 1
 
     @staticmethod
     @jit
