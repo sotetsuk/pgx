@@ -30,9 +30,9 @@ class Action:
 
     RON = 37
     PON = 38
-    CHI_R = 39  # 45[6]
+    CHI_L = 39  # [4]56
     CHI_M = 40  # 4[5]6
-    CHI_L = 41  # [4]56
+    CHI_R = 41  # 45[6]
     PASS = 42
 
     NONE = 43
@@ -194,15 +194,15 @@ class Hand:
     @jit
     def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
         # assert jnp.sum(hand) % 3 == 1
-        # assert action is Action.CHI_R, CHI_M or CHI_L
+        # assert action is Action.CHI_L, CHI_M or CHI_R
         return jax.lax.switch(
-            action - Action.CHI_R,
+            action - Action.CHI_L,
             [
                 lambda: (
                     (tile < 27)
-                    & (tile % 9 > 1)
-                    & (hand[tile - 2] > 0)
-                    & (hand[tile - 1] > 0)
+                    & (tile % 9 < 7)
+                    & (hand[tile + 1] > 0)
+                    & (hand[tile + 2] > 0)
                 ),
                 lambda: (
                     (tile < 27)
@@ -213,9 +213,9 @@ class Hand:
                 ),
                 lambda: (
                     (tile < 27)
-                    & (tile % 9 < 7)
-                    & (hand[tile + 1] > 0)
-                    & (hand[tile + 2] > 0)
+                    & (tile % 9 > 1)
+                    & (hand[tile - 2] > 0)
+                    & (hand[tile - 1] > 0)
                 ),
             ],
         )
@@ -242,13 +242,13 @@ class Hand:
     @jit
     def chi(hand: jnp.ndarray, tile: int, action: int) -> jnp.ndarray:
         # assert Hand.can_chi(hand, tile, action)
-        # assert action is Action.CHI_R, CHI_M or CHI_L
+        # assert action is Action.CHI_L, CHI_M or CHI_R
         return jax.lax.switch(
-            action - Action.CHI_R,
+            action - Action.CHI_L,
             [
-                lambda: Hand.sub(Hand.sub(hand, tile - 2), tile - 1),
-                lambda: Hand.sub(Hand.sub(hand, tile - 1), tile + 1),
                 lambda: Hand.sub(Hand.sub(hand, tile + 1), tile + 2),
+                lambda: Hand.sub(Hand.sub(hand, tile - 1), tile + 1),
+                lambda: Hand.sub(Hand.sub(hand, tile - 2), tile - 1),
             ],
         )
 
@@ -302,17 +302,17 @@ class Meld:
         suit, num = target // 9, target % 9 + 1
         if action == Action.PON:
             return "{}{}{}{}".format(num, num, num, ["m", "p", "s", "z"][suit])
-        if action == Action.CHI_R:
+        if action == Action.CHI_L:
             return "{}{}{}{}".format(
-                num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
+                num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
             )
         if action == Action.CHI_M:
             return "{}{}{}{}".format(
                 num - 1, num, num + 1, ["m", "p", "s", "z"][suit]
             )
-        if action == Action.CHI_L:
+        if action == Action.CHI_R:
             return "{}{}{}{}".format(
-                num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
+                num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
             )
         return ""
 
@@ -334,10 +334,10 @@ class Meld:
             Meld.action(meld) - Action.PON,
             [
                 lambda: Tile.is_outside(target),
-                lambda: Tile.is_outside(target - 2) | Tile.is_outside(target),
+                lambda: Tile.is_outside(target) | Tile.is_outside(target + 2),
                 lambda: Tile.is_outside(target - 1)
                 | Tile.is_outside(target + 1),
-                lambda: Tile.is_outside(target) | Tile.is_outside(target + 2),
+                lambda: Tile.is_outside(target - 2) | Tile.is_outside(target),
             ],
         )
 
@@ -352,11 +352,13 @@ class Yaku:
     二盃口 = 3
     混全帯么九 = 4
     純全帯么九 = 5
+    一気通貫 = 6
+    三色同順 = 7
 
     FAN = jnp.array(
         [
-            [1, 0, 0, 0, 1, 2],  # 副露
-            [1, 1, 1, 3, 2, 3],  # 面前
+            [1, 0, 0, 0, 1, 2, 1, 1],  # 副露
+            [1, 1, 1, 3, 2, 3, 2, 2],  # 面前
         ]
     )
 
@@ -389,6 +391,7 @@ class Yaku:
     @jit
     def double_chows(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 20 & 0b11
+
 
     @staticmethod
     @jit
@@ -427,9 +430,12 @@ class Yaku:
     ) -> jnp.ndarray:
         # assert Hand.can_tsumo(hand)
 
+        is_menzen = meld_num == 0
+
         is_pinfu = jnp.full(
             Yaku.MAX_PATTERNS,
-            jnp.all(hand[28:31] < 3)
+            is_menzen
+            & jnp.all(hand[28:31] < 3)
             & (hand[27] == 0)
             & jnp.all(hand[31:34] == 0),
         )
@@ -446,18 +452,28 @@ class Yaku:
         )
         double_chows = jnp.full(Yaku.MAX_PATTERNS, 0)
 
+        chows = jnp.full(Yaku.MAX_PATTERNS, 0)
+        #chows = jnp.full(Yaku.MAX_PATTERNS,
+        #        jax.lax.fori_loop(
+        #            0,
+        #            meld_num,
+        #            lambda i, chows: chows | (Meld.action(melds[i]) == )
+        #            )
+        #        )
+
         for suit in range(3):
             code = 0
             begin = 9 * suit
             for tile in range(9 * suit, 9 * (suit + 1)):
                 # print(code, begin, tile)
-                code, is_pinfu, is_outside, double_chows, begin = jax.lax.cond(
+                code, is_pinfu, is_outside, double_chows, chows, begin = jax.lax.cond(
                     hand[tile] == 0,
                     lambda: (
                         0,
                         is_pinfu & Yaku.is_pinfu(code, begin, tile, last),
                         is_outside & Yaku.is_outside(code, begin, tile),
                         double_chows + Yaku.double_chows(code),
+                        chows | Yaku.chow(code) << begin,
                         tile + 1,
                     ),
                     lambda: (
@@ -465,6 +481,7 @@ class Yaku:
                         is_pinfu,
                         is_outside,
                         double_chows,
+                        chows,
                         begin,
                     ),
                 )
@@ -488,8 +505,8 @@ class Yaku:
             .set(is_outside & jnp.all(flatten[27:] == 0))
         )
 
-        is_menzen = jax.lax.cond(meld_num == 0, lambda: 1, lambda: 0)
-        yaku = yaku.T[jnp.argmax(jnp.dot(Yaku.FAN[is_menzen], yaku))]
+        fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]
+        yaku = yaku.T[jnp.argmax(jnp.dot(fan, yaku))]
 
         return yaku.at[Yaku.断么九].set(Yaku._is_tanyao(flatten))
 
@@ -511,13 +528,13 @@ class Yaku:
             [
                 lambda: Hand.add(hand, target, 3),
                 lambda: Hand.add(
-                    Hand.add(Hand.add(hand, target - 2), target - 1), target
+                    Hand.add(Hand.add(hand, target + 1), target + 2), target
                 ),
                 lambda: Hand.add(
                     Hand.add(Hand.add(hand, target - 1), target + 1), target
                 ),
                 lambda: Hand.add(
-                    Hand.add(Hand.add(hand, target + 1), target + 2), target
+                    Hand.add(Hand.add(hand, target - 2), target - 1), target
                 ),
             ],
         )
@@ -652,17 +669,17 @@ class State:
                 | self.deck.is_empty()
                 | self.riichi[player],
                 lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.CHI_R)]
+                lambda: legal_actions.at[(player, Action.CHI_L)]
                 .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_R)
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_L)
                 )
                 .at[(player, Action.CHI_M)]
                 .set(
                     Hand.can_chi(self.hand[player], self.target, Action.CHI_M)
                 )
-                .at[(player, Action.CHI_L)]
+                .at[(player, Action.CHI_R)]
                 .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_L)
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_R)
                 ),
             )
             legal_actions = legal_actions.at[(player, Action.PASS)].set(
@@ -731,9 +748,9 @@ class State:
                     lambda: State._tsumo(state),
                     lambda: State._ron(state, player),
                     lambda: State._pon(state, player),
-                    lambda: State._chi(state, player, Action.CHI_R),
-                    lambda: State._chi(state, player, Action.CHI_M),
                     lambda: State._chi(state, player, Action.CHI_L),
+                    lambda: State._chi(state, player, Action.CHI_M),
+                    lambda: State._chi(state, player, Action.CHI_R),
                     lambda: State._try_draw(state),
                 ],
             ),
