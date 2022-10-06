@@ -449,6 +449,11 @@ class Yaku:
 
     @staticmethod
     @jit
+    def fu(code: int, begin: int, end: int) -> jnp.ndarray:
+        pass
+
+    @staticmethod
+    @jit
     def is_pure_straight(chow: jnp.ndarray) -> jnp.ndarray:
         return (
             ((chow & 0b1001001) == 0b1001001)
@@ -491,8 +496,8 @@ class Yaku:
         melds: jnp.ndarray,
         meld_num: int,
         last: int,
-        is_ron: bool = False,
-    ) -> jnp.ndarray:
+        is_ron: bool,
+    ) -> tuple[jnp.ndarray, int]:
         # assert Hand.can_tsumo(hand)
 
         is_menzen = meld_num == 0
@@ -534,6 +539,9 @@ class Yaku:
         )
 
         concealed_pungs = jnp.full(Yaku.MAX_PATTERNS, 0)
+
+        fu = jnp.full(Yaku.MAX_PATTERNS, 20)
+        fu += 10 * (is_menzen & is_ron)
 
         for suit in range(3):
             code = 0
@@ -611,7 +619,11 @@ class Yaku:
         )
 
         fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]
-        yaku = yaku.T[jnp.argmax(jnp.dot(fan, yaku))]
+
+        best_pattern = jnp.argmax(jnp.dot(fan, yaku) * 200 + fu)
+
+        yaku = yaku.T[best_pattern]
+        fu = fu[best_pattern]
 
         is_tanyao = Yaku.is_tanyao(flatten)
         is_flush = Yaku.is_flush(flatten)
@@ -625,7 +637,7 @@ class Yaku:
             .set(is_flush & (has_honor == 0))
         )
 
-        return yaku
+        return (yaku, fu)
 
     @staticmethod
     @jit
