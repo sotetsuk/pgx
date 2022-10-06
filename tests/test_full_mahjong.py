@@ -270,6 +270,37 @@ def test_yaku_triple_pung():
     assert not Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.三色同刻]
 
 
+def test_yaku_three_concealed_pungs():
+    hand = Hand.from_str("11122233344455m")
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    assert Yaku.judge(hand, melds, meld_num=0, last=0, is_ron=True)[Yaku.三暗刻]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=4, is_ron=True)[Yaku.三暗刻]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.三暗刻]
+
+    hand = Hand.from_str("111333m66677z")
+    melds = melds.at[0].set(Meld.init(Action.PON, 11, src=0))  # 333p
+    assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.三暗刻]
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0, is_ron=True)[Yaku.三暗刻]
+    assert Yaku.judge(hand, melds, meld_num=1, last=33)[Yaku.三暗刻]
+    assert Yaku.judge(hand, melds, meld_num=1, last=33, is_ron=True)[Yaku.三暗刻]
+
+
+def test_yaku_coner_cases():
+    hand = Hand.from_str("111222333789m22z")
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    assert not Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.三暗刻]
+    assert Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.一盃口]
+    assert Yaku.judge(hand, melds, meld_num=0, last=1)[Yaku.混全帯么九]
+    # 面前チャンタ一盃口 > 三暗刻
+
+    # TODO
+    # hand = Hand.from_str("111222333m11p")
+    # melds = melds.at[0].set(Meld.init(Action.CHI_M, 7, src=0))  # 7[8]9m
+    # assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.三暗刻]
+    # assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.純全帯么九]
+    # # 副露純チャン < 三暗刻 (符で有利)
+
+
 def test_state():
     state = init(jax.random.PRNGKey(seed=0))
 

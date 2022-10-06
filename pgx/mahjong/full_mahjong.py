@@ -374,11 +374,12 @@ class Yaku:
     三色同順 = 7
     三色同刻 = 8
     対々和 = 9
+    三暗刻 = 10
 
     FAN = jnp.array(
         [
-            [1, 0, 0, 0, 1, 2, 1, 1, 2, 2],  # 副露
-            [1, 1, 1, 3, 2, 3, 2, 2, 2, 2],  # 面前
+            [1, 0, 0, 0, 1, 2, 1, 1, 2, 2, 2],  # 副露
+            [1, 1, 1, 3, 2, 3, 2, 2, 2, 2, 2],  # 面前
         ]
     )
 
@@ -406,6 +407,35 @@ class Yaku:
     @jit
     def pung(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 11 & 0b111111111
+
+    @staticmethod
+    @jit
+    def concealed_pungs(
+        code: int, is_ron: bool, begin: int, last: int
+    ) -> jnp.ndarray:
+        chow = Yaku.chow(code)
+        chow |= chow << 1 | chow << 2
+
+        pung = Yaku.pung(code)
+        pungs = (
+            (pung & 1)
+            + (pung >> 1 & 1)
+            + (pung >> 2 & 1)
+            + (pung >> 3 & 1)
+            + (pung >> 4 & 1)
+            + (pung >> 5 & 1)
+            + (pung >> 6 & 1)
+            + (pung >> 7 & 1)
+            + (pung >> 8 & 1)
+        )
+
+        pos = last - begin  # WARNING: may be negative
+        valid = pos >= 0
+        pos *= valid
+
+        return pungs - (
+            is_ron & valid & (pung >> pos & 1) & (chow >> pos == 0)
+        )
 
     @staticmethod
     @jit
@@ -443,9 +473,9 @@ class Yaku:
     @jit
     def is_pure_straight(chow: jnp.ndarray) -> jnp.ndarray:
         return (
-            ((chow & 1) & (chow >> 3 & 1) & (chow >> 6 & 1))
-            | ((chow >> 9 & 1) & (chow >> 12 & 1) & (chow >> 15 & 1))
-            | ((chow >> 18 & 1) & (chow >> 21 & 1) & (chow >> 24 & 1))
+            ((chow & 0b1001001) == 0b1001001)
+            | ((chow >> 9 & 0b1001001) == 0b1001001)
+            | ((chow >> 18 & 0b1001001) == 0b1001001)
         ) == 1
 
     @staticmethod
@@ -483,6 +513,7 @@ class Yaku:
         melds: jnp.ndarray,
         meld_num: int,
         last: int,
+        is_ron: bool = False,
     ) -> jnp.ndarray:
         # assert Hand.can_tsumo(hand)
 
@@ -524,6 +555,8 @@ class Yaku:
             ),
         )
 
+        concealed_pungs = jnp.full(Yaku.MAX_PATTERNS, 0)
+
         for suit in range(3):
             code = 0
             begin = 9 * suit
@@ -535,6 +568,7 @@ class Yaku:
                     double_chows,
                     chow,
                     pung,
+                    concealed_pungs,
                     begin,
                 ) = jax.lax.cond(
                     hand[tile] == 0,
@@ -545,6 +579,8 @@ class Yaku:
                         double_chows + Yaku.double_chows(code),
                         chow | Yaku.chow(code) << begin,
                         pung | Yaku.pung(code) << begin,
+                        concealed_pungs
+                        + Yaku.concealed_pungs(code, is_ron, begin, last),
                         tile + 1,
                     ),
                     lambda: (
@@ -554,6 +590,7 @@ class Yaku:
                         double_chows,
                         chow,
                         pung,
+                        concealed_pungs,
                         begin,
                     ),
                 )
@@ -563,6 +600,11 @@ class Yaku:
             double_chows += Yaku.double_chows(code)
             chow |= Yaku.chow(code) << begin
             pung |= Yaku.pung(code) << begin
+            concealed_pungs += Yaku.concealed_pungs(code, is_ron, begin, last)
+
+        concealed_pungs += jnp.sum(hand[27:] >= 3) - (
+            is_ron & (last >= 27) & (hand[last] >= 3)
+        )
 
         flatten = Yaku.flatten(hand, melds, meld_num)
         yaku = (
@@ -585,6 +627,8 @@ class Yaku:
             .set(Yaku.is_triple_pung(pung))
             .at[Yaku.対々和]
             .set(chow == 0)
+            .at[Yaku.三暗刻]
+            .set(concealed_pungs == 3)
         )
 
         fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]
