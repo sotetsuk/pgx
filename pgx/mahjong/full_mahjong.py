@@ -385,16 +385,6 @@ class Yaku:
 
     @staticmethod
     @jit
-    def shift(code: int) -> int:
-        code -= (code >> 12 > 1) << 12
-        code -= (code >> 9 > 1) << 9
-        code -= (code >> 6 > 1) << 6
-        code -= (code >> 3 > 1) << 3
-        code -= code > 1
-        return code
-
-    @staticmethod
-    @jit
     def head(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] & 0b1111
 
