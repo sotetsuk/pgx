@@ -384,11 +384,12 @@ class Yaku:
     一気通貫 = 6
     三色同順 = 7
     三色同刻 = 8
+    対々和 = 9
 
     FAN = jnp.array(
         [
-            [1, 0, 0, 0, 1, 2, 1, 1, 2],  # 副露
-            [1, 1, 1, 3, 2, 3, 2, 2, 2],  # 面前
+            [1, 0, 0, 0, 1, 2, 1, 1, 2, 2],  # 副露
+            [1, 1, 1, 3, 2, 3, 2, 2, 2, 2],  # 面前
         ]
     )
 
@@ -593,6 +594,8 @@ class Yaku:
             .set(Yaku.is_triple_chow(chow))
             .at[Yaku.三色同刻]
             .set(Yaku.is_triple_pung(pung))
+            .at[Yaku.対々和]
+            .set(chow == 0)
         )
 
         fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]

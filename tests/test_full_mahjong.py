@@ -237,6 +237,23 @@ def test_yaku_triple_chow():
     assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.三色同順]
 
 
+def test_all_pungs():
+    hand = Hand.from_str("11133m111p")
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    melds = melds.at[0].set(Meld.init(Action.PON, 10, src=0))  # 222s
+    melds = melds.at[1].set(Meld.init(Action.PON, 33, src=0))  # 777z
+    assert Yaku.judge(hand, melds, meld_num=2, last=0)[Yaku.対々和]
+
+    melds = melds.at[1].set(Meld.init(Action.CHI_L, 10, src=0))  # [2]34s
+    assert not Yaku.judge(hand, melds, meld_num=2, last=0)[Yaku.対々和]
+
+    hand = Hand.from_str("11133m111789p")
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.対々和]
+
+    hand = Hand.from_str("11133m111777p")
+    assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.対々和]
+    
+
 def test_yaku_triple_pung():
     hand = Hand.from_str("111333m111p11188s")
     melds = jnp.zeros(4, dtype=jnp.int32)
@@ -246,10 +263,10 @@ def test_yaku_triple_pung():
     assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.三色同刻]
 
     hand = Hand.from_str("222333m22288s")
-    melds = melds.at[0].set(Meld.init(Action.PON, 10, src=0))
+    melds = melds.at[0].set(Meld.init(Action.PON, 10, src=0))  # 222p
     assert Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.三色同刻]
 
-    melds = melds.at[0].set(Meld.init(Action.PON, 11, src=0))
+    melds = melds.at[0].set(Meld.init(Action.PON, 11, src=0))  # 333p
     assert not Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.三色同刻]
 
 
