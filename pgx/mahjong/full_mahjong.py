@@ -58,7 +58,7 @@ class Deck:
 
     @staticmethod
     @jit
-    def draw(deck: Deck) -> tuple[Deck, int]:
+    def draw(deck: Deck):
         # assert not deck.is_empty()
         tile = deck.arr[deck.idx]
         deck.idx += 1
@@ -179,8 +179,14 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_pon(hand: jnp.ndarray, tile: int) -> bool:
+    def can_pon(hand: jnp.ndarray, tile: int):
         return hand[tile] >= 2
+        #return jax.lax.cond(
+        #        hand[tile] >= 2,
+        #        lambda: True,
+        #        lambda: False,
+        #        )
+        #return hand[tile] >= 2
 
     @staticmethod
     @jit
@@ -360,15 +366,9 @@ class Yaku:
     def twice_double_chows(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 20 & 1
 
-    # @staticmethod
-    # @jit
-    # def next(code: int) -> int:
-    #    next = Yaku.CACHE_SUITED[code] >> 21
-    #    return next | (next == 0) * code
-
     @staticmethod
     @jit
-    def is_pinfu(code: int, begin: int, end: int, last: int) -> bool:
+    def is_pinfu(code: int, begin: int, end: int, last: int) -> jnp.ndarray:
         len = end - begin
         left = Yaku.chow(code)
         right = Yaku.chow(code) << 3
@@ -385,7 +385,7 @@ class Yaku:
 
     @staticmethod
     @jit
-    def double_chows(code: int, sum: int) -> int:
+    def double_chows(code: int, sum: int) -> jnp.ndarray:
         chow = Yaku.chow(code)
         pung = Yaku.pung(code)
 

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Tuple
+import json
+import os
 
 import jax
 import jax.numpy as jnp
@@ -32,7 +33,7 @@ class Deck:
 
     @staticmethod
     @jit
-    def draw(deck: Deck) -> Tuple[Deck, int]:
+    def draw(deck: Deck):
         tile = deck.arr[deck.idx]
         deck.idx += 1
         return deck, tile
@@ -45,19 +46,23 @@ class Deck:
 tree_util.register_pytree_node(Deck, Deck._tree_flatten, Deck._tree_unflatten)
 
 
-class Hand:
-    # fmt: off
-    CACHE_SUITED = jnp.array(
-        [1385955477, 2569143448, 0, 0, 3686684160, 2569143708, 5413232, 1385976476, 2569142272, 2569143448, 9961984, 0, 301312, 39200, 2569143440, 2569143448, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14326640, 1385976476, 3686719232, 2569182652, 2574425584, 3686684316, 2579103744, 2569143512, 1385976464, 0, 301312, 39200, 2569143440, 421659800, 0, 1386011580, 2569143696, 2569143448, 5413120, 1385976476, 0, 0, 3686662144, 2569143708, 5413232, 1385976476, 3686684160, 421660060, 5413232, 303846044, 0, 0, 0, 0, 301312, 39200, 2569143440, 2569143448, 2569142272, 2569143448, 9961984, 0, 301312, 39200, 2569143440, 421659800, 0, 4, 39200, 0, 2569143296, 2569143448, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2569143440, 2569143448, 9961984, 0, 0, 0, 262144, 39200, 2569143440, 421659800, 0, 0, 0, 0, 0, 2569143448, 9961984, 0, 301312, 39200, 421659792, 287442072, 2569142272, 421659800, 9961984, 0, 301312, 6432, 287442064, 16909336, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1386011580, 2569182640, 2569143448, 2574425344, 3686684316, 0, 0, 3686662144, 2569143708, 5413232, 1385976476, 3686684160, 421660060, 5413232, 303846044, 0, 0, 2583338992, 3686684316, 3686719232, 2569182652, 2574425584, 1539200668, 2579365888, 2569182712, 3686684304, 421659800, 301312, 39200, 421659792, 287442072, 0, 3686719420, 2579105680, 421659800, 5675264, 1386011580, 421659792, 287442072, 3686662144, 421660060, 14326640, 303846044, 1539235584, 287448508, 292691440, 18224668, 0, 0, 0, 0, 2569444608, 2569182648, 2569143440, 421659800, 2574385152, 3686684316, 9961984, 0, 301312, 39200, 421659792, 287442072, 0, 2569143708, 5413232, 1385976476, 3686684160, 421660060, 5413232, 303846044, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2569143440, 421659800, 9961984, 0, 0, 0, 262144, 39200, 421659792, 287442072, 0, 0, 0, 0, 0, 421659800, 9961984, 0, 301312, 6432, 287442064, 16909336, 421658624, 287442072, 1573376, 0, 268544, 4384, 16909328, 16, 0, 0, 0, 0, 0, 0, 0, 0, 3686662144, 2569182652, 2574425584, 1539200668, 3686684160, 421660060, 5413232, 303846044, 0, 2569143512, 1385976464, 0, 301312, 39200, 421659792, 287442072, 2569142272, 421659800, 9961984, 0, 301312, 6432, 287442064, 16909336, 0, 0, 2569143696, 421659800, 5413120, 1385976476, 0, 0, 3686662144, 421660060, 5413232, 303846044, 1539200512, 287442332, 5380464, 1315356, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3686719232, 421699004, 426941936, 322852508, 2579103744, 421659864, 1385976464, 0, 301312, 6432, 287442064, 16909336, 0, 1386011580, 421660048, 287442072, 5413120, 303846044, 0, 0, 1539178496, 287442332, 5380464, 1315356, 322852352, 16909596, 1184112, 20, 0, 0, 14326640, 303846044, 1539235584, 287448508, 292691440, 18224668, 431620096, 287442136, 303846032, 0, 268544, 4384, 16909328, 16, 0, 303848380, 287442320, 16909336, 5380352, 1315356, 0, 0, 322830336, 16909596, 1184112, 20, 18224640, 276, 272]
-        , dtype=jnp.uint32,
-    )
-    # fmt: on
-    CACHE_HONOR = jnp.array([1, 0, 1, 1, 0])
+class CacheLoader:
+    DIR = os.path.join(os.path.dirname(__file__), "cache")
 
     @staticmethod
     @jit
-    def cache_suited(code: int) -> int:
-        return (Hand.CACHE_SUITED[code >> 5] >> (code & 0b11111)) & 1
+    def load_hand_cache():
+        with open(os.path.join(CacheLoader.DIR, "hand_cache.json")) as f:
+            return jnp.array(json.load(f), dtype=jnp.uint32)
+
+
+class Hand:
+    CACHE = CacheLoader.load_hand_cache()
+
+    @staticmethod
+    @jit
+    def cache(code: int) -> int:
+        return (Hand.CACHE[code >> 5] >> (code & 0b11111)) & 1
 
     @staticmethod
     @jit
@@ -69,37 +74,48 @@ class Hand:
     def can_tsumo(hand: jnp.ndarray) -> bool:
         heads = 0
         valid = True
+
         for i in range(3):
-            code = 0
-            size = 0
-            for j in range(9):
-                heads, valid, code, size = jax.lax.cond(
+            heads, valid, code, size = jax.lax.fori_loop(
+                0,
+                9,
+                lambda j, tpl: jax.lax.cond(
                     hand[9 * i + j] == 0,
                     lambda: (
-                        heads + (size % 3 == 2),
-                        valid & (Hand.cache_suited(code) != 0),
+                        tpl[0] + (tpl[3] % 3 == 2),
+                        tpl[1] & (Hand.cache(tpl[2]) != 0),
                         0,
                         0,
                     ),
                     lambda: (
-                        heads,
-                        valid,
-                        ((code << 1) + 1) << (hand[9 * i + j].astype(int) - 1),
-                        size + hand[9 * i + j].astype(int),
+                        tpl[0],
+                        tpl[1],
+                        ((tpl[2] << 1) + 1)
+                        << (hand[9 * i + j].astype(int) - 1),
+                        tpl[3] + hand[9 * i + j].astype(int),
                     ),
-                )
-            heads += size % 3 == 2
-            valid &= Hand.cache_suited(code) != 0
+                ),
+                (heads, valid, 0, 0),
+            )
 
-        for i in range(27, 34):
-            heads += hand[i] % 3 == 2
-            valid &= Hand.CACHE_HONOR[hand[i]] != 0
+            heads += size % 3 == 2
+            valid &= Hand.cache(code) != 0
+
+        heads, valid = jax.lax.fori_loop(
+            27,
+            34,
+            lambda i, tpl: (
+                tpl[0] + (hand[i] == 2),
+                tpl[1] & (hand[i] != 1) & (hand[i] != 4),
+            ),
+            (heads, valid),
+        )
 
         return valid & (heads == 1)
 
     @staticmethod
     @jit
-    def can_pon(hand: jnp.ndarray, tile: int) -> bool:
+    def can_pon(hand: jnp.ndarray, tile: int):
         return hand[tile] >= 2
 
     @staticmethod
@@ -271,7 +287,7 @@ class State:
     @jit
     def step(
         state: State, actions: jnp.ndarray
-    ) -> Tuple[State, jnp.ndarray, bool]:
+    ) -> tuple[State, jnp.ndarray, bool]:
         player = jnp.argmin(actions)
         return State._step(state, player, actions[player])
 
@@ -279,7 +295,7 @@ class State:
     @jit
     def _step(
         state: State, player: int, action: int
-    ) -> Tuple[State, jnp.ndarray, bool]:
+    ) -> tuple[State, jnp.ndarray, bool]:
         return jax.lax.cond(
             action < 34,
             lambda: State._discard(state, action),
@@ -299,7 +315,7 @@ class State:
 
     @staticmethod
     @jit
-    def _discard(state: State, tile: int) -> Tuple[State, jnp.ndarray, bool]:
+    def _discard(state: State, tile: int) -> tuple[State, jnp.ndarray, bool]:
         state.hand = state.hand.at[state.turn].set(
             Hand.sub(state.hand[state.turn], tile)
         )
@@ -312,7 +328,7 @@ class State:
 
     @staticmethod
     @jit
-    def _try_draw(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _try_draw(state: State) -> tuple[State, jnp.ndarray, bool]:
         state.target = -1
         return jax.lax.cond(
             state.deck.is_empty(),
@@ -322,7 +338,7 @@ class State:
 
     @staticmethod
     @jit
-    def _draw(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _draw(state: State) -> tuple[State, jnp.ndarray, bool]:
         state.turn += 1
         state.turn %= 4
         state.deck, tile = Deck.draw(state.deck)
@@ -333,12 +349,12 @@ class State:
 
     @staticmethod
     @jit
-    def _ryukyoku(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _ryukyoku(state: State) -> tuple[State, jnp.ndarray, bool]:
         return state, jnp.full(4, 0), True
 
     @staticmethod
     @jit
-    def _ron(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
+    def _ron(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         return (
             state,
             jnp.full(4, 0).at[state.turn].set(-1).at[player].set(1),
@@ -347,7 +363,7 @@ class State:
 
     @staticmethod
     @jit
-    def _pon(state: State, player: int) -> Tuple[State, jnp.ndarray, bool]:
+    def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state.hand = state.hand.at[player].set(
             Hand.pon(state.hand[player], state.target)
         )
@@ -359,7 +375,7 @@ class State:
     @jit
     def _chi(
         state: State, player: int, pos: int
-    ) -> Tuple[State, jnp.ndarray, bool]:
+    ) -> tuple[State, jnp.ndarray, bool]:
         state.hand = state.hand.at[player].set(
             Hand.chi(state.hand[player], state.target, pos)
         )
@@ -369,7 +385,7 @@ class State:
 
     @staticmethod
     @jit
-    def _tsumo(state: State) -> Tuple[State, jnp.ndarray, bool]:
+    def _tsumo(state: State) -> tuple[State, jnp.ndarray, bool]:
         return state, jnp.full(4, -1).at[state.turn].set(1), True
 
     def _tree_flatten(self):
@@ -395,5 +411,5 @@ def init(key) -> State:
 @jit
 def step(
     state: State, actions: jnp.ndarray
-) -> Tuple[State, jnp.ndarray, bool]:
+) -> tuple[State, jnp.ndarray, bool]:
     return State.step(state, actions)
