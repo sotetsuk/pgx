@@ -837,7 +837,7 @@ class State:
         riichi_declared = False
         riichi = jnp.full(4, False)
         meld_num = jnp.zeros(4, dtype=jnp.uint8)
-        melds = jnp.zeros((4, 4), dtype=jnp.uint32)
+        melds = jnp.zeros((4, 4), dtype=jnp.int32)
         return State(
             deck,
             hand,
