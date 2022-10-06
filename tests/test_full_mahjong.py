@@ -276,6 +276,12 @@ def test_yaku_three_concealed_pungs():
     assert Yaku.judge(hand, melds, meld_num=1, last=33)[Yaku.三暗刻]
     assert Yaku.judge(hand, melds, meld_num=1, last=33, is_ron=True)[Yaku.三暗刻]
 
+    hand = Hand.from_str("111123m11166677z")
+    assert Yaku.judge(hand, melds, meld_num=0, last=0, is_ron=True)[Yaku.三暗刻]
+
+    hand = Hand.from_str("111234m11166677z")
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0, is_ron=True)[Yaku.三暗刻]
+
 
 def test_yaku_coner_cases():
     hand = Hand.from_str("111222333789m22z")
