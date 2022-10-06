@@ -349,22 +349,25 @@ class Yaku:
     CACHE = CacheLoader.load_yaku_cache()
     MAX_PATTERNS = 4
 
-    断么九 = 0
-    平和 = 1
-    一盃口 = 2
-    二盃口 = 3
-    混全帯么九 = 4
-    純全帯么九 = 5
-    一気通貫 = 6
-    三色同順 = 7
-    三色同刻 = 8
-    対々和 = 9
-    三暗刻 = 10
+    平和 = 0
+    一盃口 = 1
+    二盃口 = 2
+    混全帯么九 = 3
+    純全帯么九 = 4
+    一気通貫 = 5
+    三色同順 = 6
+    三色同刻 = 7
+    対々和 = 8
+    三暗刻 = 9
+
+    断么九 = 10
+    混一色 = 11
+    清一色 = 12
 
     FAN = jnp.array(
         [
-            [1, 0, 0, 0, 1, 2, 1, 1, 2, 2, 2],  # 副露
-            [1, 1, 1, 3, 2, 3, 2, 2, 2, 2, 2],  # 面前
+            [0, 0, 0, 1, 2, 1, 1, 2, 2, 2, 1, 2, 5],  # 副露
+            [1, 1, 3, 2, 3, 2, 2, 2, 2, 2, 1, 3, 6],  # 面前
         ]
     )
 
@@ -582,6 +585,7 @@ class Yaku:
         )
 
         flatten = Yaku.flatten(hand, melds, meld_num)
+        has_honor = jnp.any(flatten[27:] > 0)
         yaku = (
             jnp.full((Yaku.FAN.shape[1], Yaku.MAX_PATTERNS), False)
             .at[Yaku.平和]
@@ -591,9 +595,9 @@ class Yaku:
             .at[Yaku.二盃口]
             .set(is_menzen & (double_chows == 2))
             .at[Yaku.混全帯么九]
-            .set(is_outside & jnp.any(flatten[27:] > 0))
+            .set(is_outside & has_honor)
             .at[Yaku.純全帯么九]
-            .set(is_outside & jnp.all(flatten[27:] == 0))
+            .set(is_outside & (has_honor == 0))
             .at[Yaku.一気通貫]
             .set(Yaku.is_pure_straight(chow))
             .at[Yaku.三色同順]
@@ -609,7 +613,19 @@ class Yaku:
         fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]
         yaku = yaku.T[jnp.argmax(jnp.dot(fan, yaku))]
 
-        return yaku.at[Yaku.断么九].set(Yaku._is_tanyao(flatten))
+        is_tanyao = Yaku.is_tanyao(flatten)
+        is_flush = Yaku.is_flush(flatten)
+
+        yaku = (
+            yaku.at[Yaku.断么九]
+            .set(is_tanyao)
+            .at[Yaku.混一色]
+            .set(is_flush & has_honor)
+            .at[Yaku.清一色]
+            .set(is_flush & (has_honor == 0))
+        )
+
+        return yaku
 
     @staticmethod
     @jit
@@ -642,7 +658,7 @@ class Yaku:
 
     @staticmethod
     @jit
-    def _is_tanyao(hand: jnp.ndarray) -> bool:
+    def is_tanyao(hand: jnp.ndarray) -> bool:
         return (
             (hand[0] == 0)
             & (hand[8] == 0)
@@ -651,6 +667,15 @@ class Yaku:
             & (hand[18] == 0)
             & jnp.all(hand[26:] == 0)
         )
+
+    @staticmethod
+    @jit
+    def is_flush(hand: jnp.ndarray) -> bool:
+        return (
+            jnp.any(hand[0:9] > 0).astype(int)
+            + jnp.any(hand[9:18] > 0).astype(int)
+            + jnp.any(hand[18:27] > 0).astype(int)
+        ) == 1
 
 
 @dataclass

@@ -125,6 +125,34 @@ def test_yaku_tanyao():
     melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))
     assert not Yaku.judge(hand, melds, meld_num=1, last=1)[Yaku.断么九]
 
+def test_yaku_flush():
+    hand = Hand.from_str("11223355577789m")
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.混一色]
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.清一色]
+
+    hand = Hand.from_str("11223355577m789p")
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.混一色]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.清一色]
+
+    hand = Hand.from_str("11223355577m777z")
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.混一色]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.清一色]
+
+    hand = Hand.from_str("11223355577m")
+    melds = melds.at[0].set(Meld.init(Action.CHI_L, 6, 0))  # [7]89m
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.混一色]
+    assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.清一色]
+
+    melds = melds.at[0].set(Meld.init(Action.CHI_L, 15, 0))  # [7]89p
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.混一色]
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.清一色]
+
+    melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))  # 777z
+    assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.混一色]
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.清一色]
+
+
 def test_yaku_pinfu():
     hand = Hand.from_str("12345666m789p123s")
     melds = jnp.zeros(4, dtype=jnp.int32)
