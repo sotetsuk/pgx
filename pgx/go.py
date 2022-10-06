@@ -471,7 +471,7 @@ def _my_color(_state: GoState):
 
 
 @jit
-def _opponent_color(_state: GoState) -> int:
+def _opponent_color(_state: GoState) -> jnp.ndarray:
     return (_state.turn[0] + 1) % 2
 
 

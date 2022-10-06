@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import os
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
@@ -33,7 +33,8 @@ class Deck:
 
     @staticmethod
     @jit
-    def draw(deck: Deck):
+    def draw(deck: Deck) -> tuple[Deck, jnp.ndarray]:
+        # -> tuple[Deck, int]
         tile = deck.arr[deck.idx]
         deck.idx += 1
         return deck, tile
@@ -71,8 +72,8 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_tsumo(hand: jnp.ndarray) -> bool:
-        heads = 0
+    def can_tsumo(hand: jnp.ndarray) -> jnp.ndarray:
+        heads: jnp.ndarray = jnp.array(0, dtype=int)
         valid = True
 
         for i in range(3):
@@ -115,7 +116,8 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_pon(hand: jnp.ndarray, tile: int):
+    def can_pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # -> bool
         return hand[tile] >= 2
 
     @staticmethod

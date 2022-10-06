@@ -5,6 +5,8 @@ import numpy as np
 from jax import numpy as jnp
 
 
+INF = 99
+
 def extract_state(env, state_keys):
     state_dict = {}
     # task-dependent attribute
@@ -36,7 +38,7 @@ def pgx2minatar(state, keys) -> Dict[str, Any]:
         if key == "entities":
             val = [None] * 8
             for i in range(8):
-                if d[key][i][0] != 1e5:
+                if d[key][i][0] != INF:
                     e = [d[key][i][j] for j in range(4)]
                     val[i] = e
             d[key] = val
@@ -50,13 +52,15 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
 
         # Exception in Asterix
         if key == "entities":
-            _val = jnp.ones((8, 4), dtype=int) * int(1e5)
-            for i, x in enumerate(val):
-                if x is None:
-                    continue
-                for j in range(4):
-                    _val = _val.at[i, j].set(x[j])
-            val = _val
+            _val = [[INF if x is None else x[j] for j in range(4)] for i, x in enumerate(val)]
+            val = jnp.array(_val, dtype=jnp.int8)
+            d[key] = val
+            continue
+
+        if key == "terminate_timer":
+            val = jnp.array(val, dtype=jnp.int16)
+            d[key] = val
+            continue
 
         # Cast to bool
         if isinstance(val, np.ndarray):
@@ -66,14 +70,17 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
                 "f_bullet_map",
                 "e_bullet_map",
             ):
-                val = jnp.array(val, dtype=bool)
+                val = jnp.array(val, dtype=jnp.bool_)
             else:
-                val = jnp.array(val, dtype=int)
+                val = jnp.array(val, dtype=jnp.int8)
+            d[key] = val
+            continue
 
-        # TODO: change all vals to jnparray
-        if isinstance(val, list):
-            val = jnp.array(val, dtype=int)
-
+        if key == "terminal":
+            val = jnp.array(val, dtype=jnp.bool_)
+        else:
+            val = jnp.array(val, dtype=jnp.int8)
         d[key] = val
+
     s = state_cls(**d)
     return s

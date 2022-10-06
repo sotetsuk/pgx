@@ -3,7 +3,7 @@ from typing import Optional, Tuple
 import jax.numpy as jnp
 import jax.random
 
-from pgx.minatar import asterix, breakout
+from pgx.minatar import asterix
 
 
 class MinAtar:
@@ -20,11 +20,7 @@ class MinAtar:
         self.sticky_action_prob: jnp.ndarray = (
             jnp.ones(self.batch_size) * sticky_action_prob
         )
-        if self.game == "breakout":
-            self._reset = jax.vmap(breakout.reset)
-            self._step = jax.vmap(breakout.step)
-            self._to_obs = jax.vmap(breakout.to_obs)
-        elif self.game == "asterix":
+        if self.game == "asterix":
             self._reset = jax.vmap(asterix.reset)
             self._step = jax.vmap(asterix.step)
             self._to_obs = jax.vmap(asterix.to_obs)

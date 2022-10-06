@@ -38,25 +38,8 @@ class ShogiState:
     # の14種の値を増減させる
     hand: np.ndarray = np.zeros(14, dtype=np.int32)
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
-    # move/dropによって変化させる
-    # もしかしたら香車や大駒の動きは別で追加した方が良いかも？
     legal_actions_black: np.ndarray = np.zeros(2754, dtype=np.int32)
     legal_actions_white: np.ndarray = np.zeros(2754, dtype=np.int32)
-    # checked: ターンプレイヤーの王に王手がかかっているかどうか
-    is_check: int = 0
-    # checking_piece: ターンプレイヤーに王手をかけている駒の座標
-    checking_piece: np.ndarray = np.zeros(81, dtype=np.int32)
-
-
-# BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
-# 端にいる場合は対応するところに0をかけていけないようにする
-# BLACK_PAWN_MOVE = np.array([[0, 0, 0, 0], [1, 0, 0, 0], [0, 0, 0, 0]])
-# WHITE_PAWN_MOVE = np.array([[0, 0, 0, 0], [0, 0, 1, 0], [0, 0, 0, 0]])
-# BLACK_GOLD_MOVE = np.array([[1, 1, 0, 0], [1, 0, 1, 0], [1, 1, 0, 0]])
-# WHITE_GOLD_MOVE = np.array([[0, 1, 1, 0], [1, 0, 1, 0], [0, 1, 1, 0]])
-# ROOK_MOVE = np.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
-# BISHOP_MOVE = np.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
-# KING_MOVE = np.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
 
 def init():
@@ -65,7 +48,7 @@ def init():
     return _init_legal_actions(state)
 
 
-def _make_init_board():
+def _make_init_board() -> np.ndarray:
     array = np.zeros((29, 81), dtype=np.int32)
     for i in range(81):
         if i % 9 == 6:
@@ -123,7 +106,7 @@ def _make_init_board():
     return array
 
 
-def _pawn_move(turn: int):
+def _pawn_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
     if turn == 0:
         array[4][3] = 1
@@ -132,7 +115,7 @@ def _pawn_move(turn: int):
     return array
 
 
-def _knight_move(turn: int):
+def _knight_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
     if turn == 0:
         array[3][2] = 1
@@ -143,7 +126,7 @@ def _knight_move(turn: int):
     return array
 
 
-def _silver_move(turn: int):
+def _silver_move(turn: int) -> np.ndarray:
     array = _pawn_move(turn)
     array[3][3] = 1
     array[3][5] = 1
@@ -152,7 +135,7 @@ def _silver_move(turn: int):
     return array
 
 
-def _gold_move(turn: int):
+def _gold_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
     if turn == 0:
         array[3][3] = 1
@@ -167,7 +150,7 @@ def _gold_move(turn: int):
     return array
 
 
-def _king_move():
+def _king_move() -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
     for i in range(3):
         for j in range(3):
@@ -227,9 +210,9 @@ def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
         direction = 6
     if _is_same_declining(_from, to) and dis < 0:
         direction = 7
-    if dis == 7:
+    if dis == 7 and not _is_same_column(_from, to):
         direction = 8
-    if dis == -11:
+    if dis == -11 and not _is_same_column(_from, to):
         direction = 9
     if promote:
         direction += 10
@@ -321,7 +304,7 @@ def _direction_to_hand(direction: int) -> int:
         return direction - 12
 
 
-def _piece_type(state: ShogiState, point: int) -> int:
+def _piece_type(state: ShogiState, point: int):
     return state.board[:, point].argmax()
 
 
@@ -471,7 +454,7 @@ def _action_board(array: np.ndarray, point: int) -> np.ndarray:
     return np.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
 
 
-def _lance_move(state: ShogiState, point: int, turn: int):
+def _lance_move(state: ShogiState, point: int, turn: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
     pieces_owner = _pieces_owner(state)
     flag = True
@@ -489,7 +472,7 @@ def _lance_move(state: ShogiState, point: int, turn: int):
     return array
 
 
-def _bishop_move(state: ShogiState, point: int):
+def _bishop_move(state: ShogiState, point: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
     pieces_owner = _pieces_owner(state)
     ur_flag = True
@@ -520,7 +503,7 @@ def _bishop_move(state: ShogiState, point: int):
     return array
 
 
-def _rook_move(state: ShogiState, point: int):
+def _rook_move(state: ShogiState, point: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
     pieces_owner = _pieces_owner(state)
     u_flag = True
@@ -551,7 +534,7 @@ def _rook_move(state: ShogiState, point: int):
     return array
 
 
-def _horse_move(state: ShogiState, point: int):
+def _horse_move(state: ShogiState, point: int) -> np.ndarray:
     array = _bishop_move(state, point)
     u, d, r, l_ = _is_side(point)
     if not u:
@@ -565,7 +548,7 @@ def _horse_move(state: ShogiState, point: int):
     return array
 
 
-def _dragon_move(state: ShogiState, point: int):
+def _dragon_move(state: ShogiState, point: int) -> np.ndarray:
     array = _rook_move(state, point)
     u, d, r, l_ = _is_side(point)
     if not u:
@@ -582,7 +565,7 @@ def _dragon_move(state: ShogiState, point: int):
 
 
 # 駒種と位置から到達できる場所を返す
-def _piece_moves(state: ShogiState, piece: int, point: int):
+def _piece_moves(state: ShogiState, piece: int, point: int) -> np.ndarray:
     turn = _owner(piece)
     piece_type = piece % 14
     # 歩の動き
@@ -620,7 +603,7 @@ def _piece_moves(state: ShogiState, piece: int, point: int):
 
 
 # 小駒のactionのみを返すpiece_moves
-def _small_piece_moves(piece: int, point: int):
+def _small_piece_moves(piece: int, point: int) -> np.ndarray:
     turn = _owner(piece)
     piece_type = piece % 14
     # 歩の動き
@@ -642,14 +625,14 @@ def _small_piece_moves(piece: int, point: int):
 
 
 # 敵陣かどうか
-def _is_enemy_zone(turn: int, point: int):
+def _is_enemy_zone(turn: int, point: int) -> bool:
     if turn == 0:
         return point % 9 <= 2
     else:
         return point % 9 >= 6
 
 
-def _can_promote(piece: int, _from: int, to: int):
+def _can_promote(piece: int, _from: int, to: int) -> bool:
     # pieceが飛車以下でないと成れない
     if piece % 14 > 6 or piece % 14 == 0:
         return False
@@ -659,7 +642,7 @@ def _can_promote(piece: int, _from: int, to: int):
     )
 
 
-def _create_actions(piece: int, _from: int, to: np.ndarray):
+def _create_actions(piece: int, _from: int, to: np.ndarray) -> np.ndarray:
     actions = np.zeros(2754, dtype=np.int32)
     for i in range(81):
         if to[i] == 0:
@@ -674,13 +657,13 @@ def _create_actions(piece: int, _from: int, to: np.ndarray):
     return actions
 
 
-def _create_piece_actions(piece: int, _from: int):
+def _create_piece_actions(piece: int, _from: int) -> np.ndarray:
     moves = _small_piece_moves(piece, _from)
     return _create_actions(piece, _from, moves)
 
 
 # actionを追加する
-def _add_action(add_array: np.ndarray, origin_array: np.ndarray):
+def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
     new_array = copy.deepcopy(origin_array)
     for i in range(2754):
         if add_array[i] == 1:
@@ -761,19 +744,71 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
     return s
 
 
-# 王手判定 ついでに王手している駒の位置も返す
-# 近接による王手と遠隔による王手の二種に分けて返す
-def _is_check(state: ShogiState) -> bool:
-    is_check = False
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
-    bs = _board_status(state)
-    for i in range(81):
-        piece = bs[i]
-        if _owner(piece) != _another_color(state):
-            continue
-        if _piece_moves(state, piece, i)[king_point] == 1:
-            is_check = True
-    return is_check
+# 駒の移動によるlegal_actionsの更新
+def _update_legal_move_actions(
+    state: ShogiState, action: ShogiAction
+) -> ShogiState:
+    s = copy.deepcopy(state)
+    if s.turn == 0:
+        player_actions = s.legal_actions_black
+        enemy_actions = s.legal_actions_white
+    else:
+        player_actions = s.legal_actions_white
+        enemy_actions = s.legal_actions_black
+    # 元の位置にいたときのフラグを折る
+    new_player_actions = _filter_move_actions(
+        action.piece, action.from_, player_actions
+    )
+    new_enemy_actions = enemy_actions
+    # 移動後の位置からの移動のフラグを立てる
+    new_piece = action.piece
+    if action.is_promote:
+        new_piece += 8
+    new_player_actions = _add_move_actions(
+        new_piece, action.to, new_player_actions
+    )
+    # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
+    if action.captured != 0:
+        new_enemy_actions = _filter_move_actions(
+            action.captured, action.to, new_enemy_actions
+        )
+        captured = _convert_piece(action.captured)
+        # 成駒の場合成る前の駒に変換
+        if captured % 14 == 0 or captured % 14 >= 9:
+            captured -= 8
+        new_player_actions = _add_drop_actions(captured, new_player_actions)
+    if s.turn == 0:
+        s.legal_actions_black = new_player_actions
+        s.legal_actions_white = new_enemy_actions
+    else:
+        s.legal_actions_black = new_enemy_actions
+        s.legal_actions_white = new_player_actions
+    return s
+
+
+# 駒打ちによるlegal_actionsの更新
+def _update_legal_drop_actions(
+    state: ShogiState, action: ShogiAction
+) -> ShogiState:
+    s = copy.deepcopy(state)
+    if s.turn == 0:
+        player_actions = s.legal_actions_black
+    else:
+        player_actions = s.legal_actions_white
+    # 移動後の位置からの移動のフラグを立てる
+    new_player_actions = _add_move_actions(
+        action.to, action.piece, player_actions
+    )
+    # 持ち駒がもうない場合、その駒を打つフラグを折る
+    if s.hand[_piece_to_hand(action.piece)] == 1:
+        new_player_actions = _filter_drop_actions(
+            action.piece, new_player_actions
+        )
+    if s.turn == 0:
+        s.legal_actions_black = new_player_actions
+    else:
+        s.legal_actions_white = new_player_actions
+    return s
 
 
 # 自分の駒がある位置への移動を除く
@@ -839,3 +874,58 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
     # 駒がある地点への駒打ちactionを除く
     action_array = _filter_occupied_drop_actions(state.turn, own, action_array)
     return action_array
+
+
+# 王手判定
+def _is_check(state: ShogiState) -> bool:
+    is_check = False
+    king_point = state.board[8 + 14 * state.turn, :].argmax()
+    bs = _board_status(state)
+    for i in range(81):
+        piece = bs[i]
+        if _owner(piece) != _another_color(state):
+            continue
+        if _piece_moves(state, piece, i)[king_point] == 1:
+            is_check = True
+    return is_check
+
+
+# 二歩判定
+# 手番側でチェックする
+def _is_double_pawn(state: ShogiState) -> bool:
+    is_double_pawn = False
+    bs = _board_status(state)
+    for i in range(9):
+        num_pawn = 0
+        for j in range(9):
+            if bs[9 * i + j] == 1 + state.turn * 14:
+                num_pawn += 1
+        if num_pawn >= 2:
+            is_double_pawn = True
+    return is_double_pawn
+
+
+# 行き所のない駒判定
+def _is_stuck(state: ShogiState) -> bool:
+    is_stuck = False
+    bs = _board_status(state)
+    for i in range(9):
+        for j in range(9):
+            piece = bs[9 * i + j]
+            if (
+                state.turn == 0
+                and (piece == 1 or piece == 2 or piece == 3)
+                and j == 0
+            ):
+                is_stuck = True
+            if state.turn == 0 and piece == 3 and j == 1:
+                is_stuck = True
+            if (
+                state.turn == 1
+                and (piece == 15 or piece == 16 or piece == 17)
+                and j == 8
+            ):
+                is_stuck = True
+            if state.turn == 1 and piece == 17 and j == 7:
+                is_stuck = True
+    return is_stuck

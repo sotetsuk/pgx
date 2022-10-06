@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import json
 import os
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
@@ -58,7 +58,8 @@ class Deck:
 
     @staticmethod
     @jit
-    def draw(deck: Deck):
+    def draw(deck: Deck) -> tuple[Deck, jnp.ndarray]:
+        # -> tuple[Deck, int]
         # assert not deck.is_empty()
         tile = deck.arr[deck.idx]
         deck.idx += 1
@@ -179,14 +180,9 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_pon(hand: jnp.ndarray, tile: int):
+    def can_pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # -> bool
         return hand[tile] >= 2
-        #return jax.lax.cond(
-        #        hand[tile] >= 2,
-        #        lambda: True,
-        #        lambda: False,
-        #        )
-        #return hand[tile] >= 2
 
     @staticmethod
     @jit

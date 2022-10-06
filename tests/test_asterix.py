@@ -21,9 +21,11 @@ state_keys = {
     "last_action",
 }
 
+INF = 99
+
 
 def test_spawn_entity():
-    entities = jnp.ones((8, 4), dtype=int) * 1e5
+    entities = jnp.ones((8, 4), dtype=jnp.int8) * INF
     entities = entities.at[:, :].set(
         asterix._spawn_entity(entities, True, True, 1)
     )
