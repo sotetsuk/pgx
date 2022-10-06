@@ -409,7 +409,7 @@ class Yaku:
         pos *= valid
 
         return pungs - (
-            is_ron & valid & (pung >> pos & 1) & (chow >> pos == 0)
+            is_ron & valid & (pung >> pos & 1) & ((chow >> pos & 1) == 0)
         )
 
     @staticmethod
