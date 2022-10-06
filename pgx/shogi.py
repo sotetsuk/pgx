@@ -59,7 +59,7 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
         return s, _turn_to_reward(_another_color(s)), True
     # legal_actionsにactionがない場合、そのactionは非合法手
     if legal_actions[action] == 0:
-        print("an illegal action")
+        print("an illegal action2")
         return s, _turn_to_reward(_another_color(s)), True
     # 合法手の場合
     # 駒打ち
@@ -923,9 +923,14 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
             )
         # 馬の動きを追加
         if piece == 13 + 14 * state.turn:
-            action_array = _create_actions(piece, i, _horse_move(state, i))
+            action_array = _add_action(
+                _create_actions(piece, i, _horse_move(state, i)), action_array
+            )
+        # 龍の動きを追加
         if piece == 14 + 14 * state.turn:
-            action_array = _create_actions(piece, i, _dragon_move(state, i))
+            action_array = _add_action(
+                _create_actions(piece, i, _dragon_move(state, i)), action_array
+            )
     # 自分の駒がある位置への移動actionを除く
     action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
     # 駒がある地点への駒打ちactionを除く
