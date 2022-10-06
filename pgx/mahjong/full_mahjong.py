@@ -143,8 +143,8 @@ class Hand:
     @jit
     def can_tsumo(hand: jnp.ndarray) -> bool:
         # assert jnp.sum(hand) % 3 == 2
-        heads = 0
-        valid = True
+
+        heads, valid = 0, True
 
         for suit in range(3):
             valid &= Hand.cache(
