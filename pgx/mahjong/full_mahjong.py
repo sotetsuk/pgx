@@ -434,7 +434,6 @@ class Yaku:
             begin = 9 * suit
             sum = 0
             for tile in range(9 * suit, 9 * (suit + 1)):
-                print(code, begin, tile, last)
                 code, is_pinfu, double_chows, begin, sum = jax.lax.cond(
                     hand[tile] == 0,
                     lambda: (
