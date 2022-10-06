@@ -451,6 +451,15 @@ class Yaku:
 
     @staticmethod
     @jit
+    def is_pure_straight(chow: jnp.ndarray) -> jnp.ndarray:
+        return (
+            ((chow & 1) & (chow >> 3 & 1) & (chow >> 6 & 1))
+            | ((chow >> 9 & 1) & (chow >> 12 & 1) & (chow >> 15 & 1))
+            | ((chow >> 18 & 1) & (chow >> 21 & 1) & (chow >> 24 & 1))
+        ) == 1
+
+    @staticmethod
+    @jit
     def is_triple_chow(chow: jnp.ndarray) -> jnp.ndarray:
         return (
             ((chow & 1) & (chow >> 9 & 1) & (chow >> 18 & 1))
@@ -578,6 +587,8 @@ class Yaku:
             .set(is_outside & jnp.any(flatten[27:] > 0))
             .at[Yaku.純全帯么九]
             .set(is_outside & jnp.all(flatten[27:] == 0))
+            .at[Yaku.一気通貫]
+            .set(Yaku.is_pure_straight(chow))
             .at[Yaku.三色同順]
             .set(Yaku.is_triple_chow(chow))
             .at[Yaku.三色同刻]

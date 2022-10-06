@@ -205,6 +205,22 @@ def test_yaku_double_chows():
     assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.二盃口]
 
 
+def test_is_pure_straight():
+    hand = Hand.from_str("12345678999m345p")
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.一気通貫]
+
+    hand = Hand.from_str("123456999m33345p")
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.一気通貫]
+
+    hand = Hand.from_str("99m123456p345s")
+    melds = melds.at[0].set(Meld.init(Action.CHI_M, 16, src=0))  # 7[8]9p
+    assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.一気通貫]
+
+    melds = melds.at[0].set(Meld.init(Action.CHI_M, 75, src=0))  # 7[8]9s
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.一気通貫]
+
+
 def test_yaku_triple_chow():
     hand = Hand.from_str("112233m123p12388s")
     melds = jnp.zeros(4, dtype=jnp.int32)
@@ -213,7 +229,7 @@ def test_yaku_triple_chow():
     hand = Hand.from_str("112233m123p23488s")
     assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.三色同順]
 
-    melds = melds.at[0].set(Meld.init(Action.CHI_L, 9, src=0))  # [1]23s
+    melds = melds.at[0].set(Meld.init(Action.CHI_L, 9, src=0))  # [1]23p
     hand = Hand.from_str("112233m12388s")
     assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.三色同順]
 
