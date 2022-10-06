@@ -172,14 +172,14 @@ fn main() {
         }
     }
 
-    let mut cache = vec![vec![0; 4]; 16329];
+    let mut cache = vec![vec![0; 3]; 16329];
 
     for (idx,vs) in arr.iter().enumerate() {
         if vs.is_empty() {
             continue;
         }
         let vs: Vec<_> = vs.iter().collect();
-        for i in 0..4 {
+        for i in 0..3 {
             let &(h, chow, pung, double_chows, outside) = vs[i % vs.len()];
             cache[idx][i] = h | (chow << 4) | (pung << 11) | (double_chows << 20) | (outside << 22);
         }

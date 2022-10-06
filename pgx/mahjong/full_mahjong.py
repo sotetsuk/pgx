@@ -347,7 +347,7 @@ class Meld:
 
 class Yaku:
     CACHE = CacheLoader.load_yaku_cache()
-    MAX_PATTERNS = 4
+    MAX_PATTERNS = 3
 
     平和 = 0
     一盃口 = 1
