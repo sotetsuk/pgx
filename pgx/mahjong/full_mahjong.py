@@ -329,8 +329,13 @@ class Yaku:
     平和 = 1
     一盃口 = 2
     二盃口 = 3
+    混全帯么九 = 4
+    純全帯么九 = 5
 
-    FAN = jnp.array([1, 1, 1, 3])
+    FAN = jnp.array([
+        [1, 0, 0, 0, 1, 2],  # 副露
+        [1, 1, 1, 3, 2, 3],  # 面前
+        ])
 
     @staticmethod
     @jit
@@ -359,8 +364,8 @@ class Yaku:
 
     @staticmethod
     @jit
-    def twice_double_chows(code: int) -> jnp.ndarray:
-        return Yaku.CACHE[code] >> 20 & 1
+    def double_chows(code: int) -> jnp.ndarray:
+        return Yaku.CACHE[code] >> 20 & 0b11
 
     @staticmethod
     @jit
@@ -379,35 +384,16 @@ class Yaku:
             Yaku.pung(code) == 0
         )
 
-    @staticmethod
-    @jit
-    def double_chows(code: int, sum: int) -> jnp.ndarray:
-        chow = Yaku.chow(code)
-        pung = Yaku.pung(code)
+    #@staticmethod
+    #@jit
+    #def is_outside(code: int, begin: int, end: int) -> jnp.ndarray:
+    #    head = Yaku.head(code)
+    #    chow = Yaku.chow(code)
+    #    pung = Yaku.pung(code)
 
-        unique = (
-            (chow & 1)
-            + (chow >> 1 & 1)
-            + (chow >> 2 & 1)
-            + (chow >> 3 & 1)
-            + (chow >> 4 & 1)
-            + (chow >> 5 & 1)
-            + (chow >> 6 & 1)
-            + (pung & 1)
-            + (pung >> 1 & 1)
-            + (pung >> 2 & 1)
-            + (pung >> 3 & 1)
-            + (pung >> 4 & 1)
-            + (pung >> 5 & 1)
-            + (pung >> 6 & 1)
-            + (pung >> 7 & 1)
-            + (pung >> 8 & 1)
-        )
-
-        return (sum // 3 > unique) + Yaku.twice_double_chows(code)
 
     @staticmethod
-    @jit
+    #@jit
     def judge(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
@@ -416,12 +402,9 @@ class Yaku:
     ) -> jnp.ndarray:
         # assert Hand.can_tsumo(hand)
 
-        menzen = meld_num == 0
-
         is_pinfu = jnp.full(
             Yaku.MAX_PATTERNS,
-            menzen
-            & jnp.all(hand[28:31] < 3)
+            jnp.all(hand[28:31] < 3)
             & (hand[27] == 0)
             & jnp.all(hand[31:34] == 0),
         )
@@ -432,39 +415,39 @@ class Yaku:
         for suit in range(3):
             code = 0
             begin = 9 * suit
-            sum = 0
             for tile in range(9 * suit, 9 * (suit + 1)):
-                code, is_pinfu, double_chows, begin, sum = jax.lax.cond(
+                code, is_pinfu, double_chows, begin = jax.lax.cond(
                     hand[tile] == 0,
                     lambda: (
                         0,
                         is_pinfu & Yaku.is_pinfu(code, begin, tile, last),
-                        double_chows + Yaku.double_chows(code, sum),
+                        double_chows + Yaku.double_chows(code),
                         tile + 1,
-                        0,
                     ),
                     lambda: (
                         ((code << 1) + 1) << (hand[tile].astype(int) - 1),
                         is_pinfu,
                         double_chows,
                         begin,
-                        sum + hand[tile].astype(int),
                     ),
                 )
             is_pinfu &= Yaku.is_pinfu(code, begin, 9 * (suit + 1), last)
-            double_chows += Yaku.double_chows(code, sum)
+            double_chows += Yaku.double_chows(code)
+
+            print(double_chows)
 
         yaku = (
-            jnp.full((Yaku.FAN.shape[0], Yaku.MAX_PATTERNS), False)
+            jnp.full((Yaku.FAN.shape[1], Yaku.MAX_PATTERNS), False)
             .at[Yaku.平和]
             .set(is_pinfu)
             .at[Yaku.一盃口]
-            .set(menzen & (double_chows == 1))
+            .set(double_chows == 1)
             .at[Yaku.二盃口]
-            .set(menzen & (double_chows == 2))
+            .set(double_chows == 2)
         )
 
-        yaku = yaku.T[jnp.argmax(jnp.dot(Yaku.FAN, yaku))]
+        #is_menzen = meld_num == 0
+        yaku = yaku.T[jnp.argmax(jnp.dot(Yaku.FAN[1], yaku))]
 
         flatten = Yaku.flatten(hand, melds, meld_num)
         return yaku.at[Yaku.断么九].set(Yaku._is_tanyao(flatten))
