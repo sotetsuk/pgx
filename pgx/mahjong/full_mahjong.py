@@ -328,17 +328,46 @@ class Meld:
 
     @staticmethod
     @jit
-    def is_outside(meld: int) -> int:
+    def suited_pung(meld: int) -> int:
+        action = Meld.action(meld)
         target = Meld.target(meld)
-        return jax.lax.switch(
-            Meld.action(meld) - Action.PON,
-            [
-                lambda: Tile.is_outside(target),
-                lambda: Tile.is_outside(target) | Tile.is_outside(target + 2),
-                lambda: Tile.is_outside(target - 1)
-                | Tile.is_outside(target + 1),
-                lambda: Tile.is_outside(target - 2) | Tile.is_outside(target),
-            ],
+        is_suited_pon = (action == Action.PON) & (target < 27)
+
+        return is_suited_pon << target
+
+    @staticmethod
+    @jit
+    def chow(meld: int) -> int:
+        action = Meld.action(meld)
+        is_chi = (Action.CHI_L <= action) & (action < Action.CHI_R)
+        pos = Meld.target(meld) - (
+            action - Action.CHI_L
+        )  # WARNING: may be negative
+
+        pos *= is_chi
+        return is_chi << pos
+
+        # target = Meld.target(meld)
+        # return jax.lax.switch(
+        #        Meld.action(meld) - Action.PON,
+        #        [
+        #            lambda: 0,
+        #            lambda: 1 << target,
+        #            lambda: 1 << target - 1,
+        #            lambda: 1 << target - 2,
+        #        ]
+        #        )
+
+    @staticmethod
+    @jit
+    def is_outside(meld: int) -> int:
+        action = Meld.action(meld)
+        target = Meld.target(meld)
+        return jax.lax.cond(
+            action == Action.PON,
+            lambda: Tile.is_outside(target),
+            lambda: Tile.is_outside(target - (action - Action.CHI_L))
+            | Tile.is_outside(target - (action - Action.CHI_L) + 2),
         )
 
 
@@ -354,11 +383,12 @@ class Yaku:
     純全帯么九 = 5
     一気通貫 = 6
     三色同順 = 7
+    三色同刻 = 8
 
     FAN = jnp.array(
         [
-            [1, 0, 0, 0, 1, 2, 1, 1],  # 副露
-            [1, 1, 1, 3, 2, 3, 2, 2],  # 面前
+            [1, 0, 0, 0, 1, 2, 1, 1, 2],  # 副露
+            [1, 1, 1, 3, 2, 3, 2, 2, 2],  # 面前
         ]
     )
 
@@ -392,7 +422,6 @@ class Yaku:
     def double_chows(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 20 & 0b11
 
-
     @staticmethod
     @jit
     def is_outside(code: int, begin: int, end: int) -> jnp.ndarray:
@@ -419,6 +448,34 @@ class Yaku:
         return ((in_range == 0) | (open_end >> pos & 1) == 1) & (
             Yaku.pung(code) == 0
         )
+
+    @staticmethod
+    @jit
+    def is_triple_chow(chow: jnp.ndarray) -> jnp.ndarray:
+        return (
+            ((chow & 1) & (chow >> 9 & 1) & (chow >> 18 & 1))
+            | ((chow >> 1 & 1) & (chow >> 10 & 1) & (chow >> 19 & 1))
+            | ((chow >> 2 & 1) & (chow >> 11 & 1) & (chow >> 20 & 1))
+            | ((chow >> 3 & 1) & (chow >> 12 & 1) & (chow >> 21 & 1))
+            | ((chow >> 4 & 1) & (chow >> 13 & 1) & (chow >> 22 & 1))
+            | ((chow >> 5 & 1) & (chow >> 14 & 1) & (chow >> 23 & 1))
+            | ((chow >> 6 & 1) & (chow >> 15 & 1) & (chow >> 24 & 1))
+        ) == 1
+
+    @staticmethod
+    @jit
+    def is_triple_pung(pung: jnp.ndarray) -> jnp.ndarray:
+        return (
+            ((pung & 1) & (pung >> 9 & 1) & (pung >> 18 & 1))
+            | ((pung >> 1 & 1) & (pung >> 10 & 1) & (pung >> 19 & 1))
+            | ((pung >> 2 & 1) & (pung >> 11 & 1) & (pung >> 20 & 1))
+            | ((pung >> 3 & 1) & (pung >> 12 & 1) & (pung >> 21 & 1))
+            | ((pung >> 4 & 1) & (pung >> 13 & 1) & (pung >> 22 & 1))
+            | ((pung >> 5 & 1) & (pung >> 14 & 1) & (pung >> 23 & 1))
+            | ((pung >> 6 & 1) & (pung >> 15 & 1) & (pung >> 24 & 1))
+            | ((pung >> 7 & 1) & (pung >> 16 & 1) & (pung >> 25 & 1))
+            | ((pung >> 8 & 1) & (pung >> 17 & 1) & (pung >> 26 & 1))
+        ) == 1
 
     @staticmethod
     @jit
@@ -452,28 +509,43 @@ class Yaku:
         )
         double_chows = jnp.full(Yaku.MAX_PATTERNS, 0)
 
-        chows = jnp.full(Yaku.MAX_PATTERNS, 0)
-        #chows = jnp.full(Yaku.MAX_PATTERNS,
-        #        jax.lax.fori_loop(
-        #            0,
-        #            meld_num,
-        #            lambda i, chows: chows | (Meld.action(melds[i]) == )
-        #            )
-        #        )
+        chow = jnp.full(
+            Yaku.MAX_PATTERNS,
+            jax.lax.fori_loop(
+                0, meld_num, lambda i, chow: chow | Meld.chow(melds[i]), 0
+            ),
+        )
+        pung = jnp.full(
+            Yaku.MAX_PATTERNS,
+            jax.lax.fori_loop(
+                0,
+                meld_num,
+                lambda i, pung: pung | Meld.suited_pung(melds[i]),
+                0,
+            ),
+        )
 
         for suit in range(3):
             code = 0
             begin = 9 * suit
             for tile in range(9 * suit, 9 * (suit + 1)):
-                # print(code, begin, tile)
-                code, is_pinfu, is_outside, double_chows, chows, begin = jax.lax.cond(
+                (
+                    code,
+                    is_pinfu,
+                    is_outside,
+                    double_chows,
+                    chow,
+                    pung,
+                    begin,
+                ) = jax.lax.cond(
                     hand[tile] == 0,
                     lambda: (
                         0,
                         is_pinfu & Yaku.is_pinfu(code, begin, tile, last),
                         is_outside & Yaku.is_outside(code, begin, tile),
                         double_chows + Yaku.double_chows(code),
-                        chows | Yaku.chow(code) << begin,
+                        chow | Yaku.chow(code) << begin,
+                        pung | Yaku.pung(code) << begin,
                         tile + 1,
                     ),
                     lambda: (
@@ -481,7 +553,8 @@ class Yaku:
                         is_pinfu,
                         is_outside,
                         double_chows,
-                        chows,
+                        chow,
+                        pung,
                         begin,
                     ),
                 )
@@ -489,6 +562,8 @@ class Yaku:
             is_pinfu &= Yaku.is_pinfu(code, begin, 9 * (suit + 1), last)
             is_outside &= Yaku.is_outside(code, begin, 9 * (suit + 1))
             double_chows += Yaku.double_chows(code)
+            chow |= Yaku.chow(code) << begin
+            pung |= Yaku.pung(code) << begin
 
         flatten = Yaku.flatten(hand, melds, meld_num)
         yaku = (
@@ -496,13 +571,17 @@ class Yaku:
             .at[Yaku.平和]
             .set(is_pinfu)
             .at[Yaku.一盃口]
-            .set(double_chows == 1)
+            .set(is_menzen & (double_chows == 1))
             .at[Yaku.二盃口]
-            .set(double_chows == 2)
+            .set(is_menzen & (double_chows == 2))
             .at[Yaku.混全帯么九]
             .set(is_outside & jnp.any(flatten[27:] > 0))
             .at[Yaku.純全帯么九]
             .set(is_outside & jnp.all(flatten[27:] == 0))
+            .at[Yaku.三色同順]
+            .set(Yaku.is_triple_chow(chow))
+            .at[Yaku.三色同刻]
+            .set(Yaku.is_triple_pung(pung))
         )
 
         fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]
