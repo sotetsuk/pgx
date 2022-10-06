@@ -89,7 +89,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
                         _ => 0b00,
                     };
 
-                    arr[code].insert((0, chow, pung, double_chows, outside));
+                    arr[code].insert((9, chow, pung, double_chows, outside));
                 }
             }
         } else {
@@ -148,7 +148,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
                             _ => 0b00,
                         };
 
-                        arr[code].insert((head_idx + 1, chow, pung, double_chows, outside));
+                        arr[code].insert((head_idx, chow, pung, double_chows, outside));
                     }
                 }
             }

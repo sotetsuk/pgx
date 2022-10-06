@@ -344,6 +344,14 @@ class Meld:
             | Tile.is_outside(target - (action - Action.CHI_L) + 2),
         )
 
+    @staticmethod
+    @jit
+    def fu(meld: int) -> int:
+        action = Meld.action(meld)
+        target = Meld.target(meld)
+
+        return (action == Action.PON) * 2 * (1 + (Tile.is_outside(target)))
+
 
 class Yaku:
     CACHE = CacheLoader.load_yaku_cache()
@@ -388,35 +396,6 @@ class Yaku:
 
     @staticmethod
     @jit
-    def concealed_pungs(
-        code: int, is_ron: bool, begin: int, last: int
-    ) -> jnp.ndarray:
-        chow = Yaku.chow(code)
-        chow |= chow << 1 | chow << 2
-
-        pung = Yaku.pung(code)
-        pungs = (
-            (pung & 1)
-            + (pung >> 1 & 1)
-            + (pung >> 2 & 1)
-            + (pung >> 3 & 1)
-            + (pung >> 4 & 1)
-            + (pung >> 5 & 1)
-            + (pung >> 6 & 1)
-            + (pung >> 7 & 1)
-            + (pung >> 8 & 1)
-        )
-
-        pos = last - begin  # WARNING: may be negative
-        valid = pos >= 0
-        pos *= valid
-
-        return pungs - (
-            is_ron & valid & (pung >> pos & 1) & ((chow >> pos & 1) == 0)
-        )
-
-    @staticmethod
-    @jit
     def double_chows(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 20 & 0b11
 
@@ -437,8 +416,9 @@ class Yaku:
         left = Yaku.chow(code)
         right = Yaku.chow(code) << 3
         open_end = (left ^ (left & 1) * (begin % 9 == 0)) << 2 | (
-            right ^ (right >> len & 1) * (end % 9 == 0) << len
+            right ^ ((right >> len & 1) * (end % 9 == 0) << len)
         ) >> 3
+        # リャンメン待ちにできる位置
 
         pos = last - begin  # WARNING: may be negative
         in_range = (0 <= pos) & (pos < len)
@@ -449,8 +429,88 @@ class Yaku:
 
     @staticmethod
     @jit
-    def fu(code: int, begin: int, end: int) -> jnp.ndarray:
-        pass
+    def concealed_pungs(
+        code: int, is_ron: bool, begin: int, last: int
+    ) -> jnp.ndarray:
+        chow = Yaku.chow(code)
+
+        pung = Yaku.pung(code)
+        pungs = (
+            (pung & 1)
+            + (pung >> 1 & 1)
+            + (pung >> 2 & 1)
+            + (pung >> 3 & 1)
+            + (pung >> 4 & 1)
+            + (pung >> 5 & 1)
+            + (pung >> 6 & 1)
+            + (pung >> 7 & 1)
+            + (pung >> 8 & 1)
+        )
+        # 刻子の数
+
+        pos = last - begin  # WARNING: may be negative
+        valid = pos >= 0
+        pos *= valid
+
+        loss = (
+            is_ron
+            & valid
+            & (pung >> pos & 1)
+            & (((chow | chow << 1 | chow << 2) >> pos & 1) == 0)
+        )
+        # ロンして明刻扱いになってしまう場合
+
+        return pungs - loss
+
+    @staticmethod
+    @jit
+    def fu(
+        code: int, is_ron: bool, begin: int, end: int, last: int
+    ) -> jnp.ndarray:
+        len = end - begin
+        pung = Yaku.pung(code)
+        pungs = (
+            (pung & 1)
+            + (pung >> 1 & 1)
+            + (pung >> 2 & 1)
+            + (pung >> 3 & 1)
+            + (pung >> 4 & 1)
+            + (pung >> 5 & 1)
+            + (pung >> 6 & 1)
+            + (pung >> 7 & 1)
+            + (pung >> 8 & 1)
+        )
+        outside_pung = ((begin % 9 == 0) & (pung & 1)) | (
+            (end % 9 == 0) & (pung >> len & 1)
+        ) << len
+
+        pos = last - begin  # WARNING: may be negative
+        valid = pos >= 0
+        pos *= valid
+
+        chow = Yaku.chow(code)
+
+        loss = (
+            is_ron
+            & valid
+            & (((chow | chow << 1 | chow << 2) >> pos & 1) == 0)
+            & ((pung >> pos & 1) + (outside_pung >> pos & 1))
+        )
+
+        strong = (
+            valid
+            & (
+                (1 << Yaku.head(code))
+                | (((begin % 9 == 0) & (chow & 1)) << 2)
+                | ((end % 9 == 0) & (chow << 3 >> len & 1))
+                | (chow << 1)
+            )
+            >> pos
+            & 1
+        )
+        # 強い待ち(カンチャン, ペンチャン, 単騎)にできるか
+
+        return 4 * (pungs + (outside_pung > 0)) - 2 * loss + 2 * strong
 
     @staticmethod
     @jit
@@ -540,8 +600,7 @@ class Yaku:
 
         concealed_pungs = jnp.full(Yaku.MAX_PATTERNS, 0)
 
-        fu = jnp.full(Yaku.MAX_PATTERNS, 20)
-        fu += 10 * (is_menzen & is_ron)
+        fu = jnp.full(Yaku.MAX_PATTERNS, 2 * (is_ron == 0))
 
         for suit in range(3):
             code = 0
@@ -555,6 +614,7 @@ class Yaku:
                     chow,
                     pung,
                     concealed_pungs,
+                    fu,
                     begin,
                 ) = jax.lax.cond(
                     hand[tile] == 0,
@@ -567,6 +627,7 @@ class Yaku:
                         pung | Yaku.pung(code) << begin,
                         concealed_pungs
                         + Yaku.concealed_pungs(code, is_ron, begin, last),
+                        fu + Yaku.fu(code, is_ron, begin, tile, last),
                         tile + 1,
                     ),
                     lambda: (
@@ -577,6 +638,7 @@ class Yaku:
                         chow,
                         pung,
                         concealed_pungs,
+                        fu,
                         begin,
                     ),
                 )
@@ -587,9 +649,19 @@ class Yaku:
             chow |= Yaku.chow(code) << begin
             pung |= Yaku.pung(code) << begin
             concealed_pungs += Yaku.concealed_pungs(code, is_ron, begin, last)
+            fu += Yaku.fu(code, is_ron, begin, 9 * (suit + 1), last)
 
         concealed_pungs += jnp.sum(hand[27:] >= 3) - (
             is_ron & (last >= 27) & (hand[last] >= 3)
+        )
+
+        fu *= is_pinfu == 0
+        fu += (
+            20
+            + 10 * (is_menzen & is_ron)
+            + jax.lax.fori_loop(
+                0, meld_num, lambda i, sum: sum + Meld.fu(melds[i]), 0
+            )
         )
 
         flatten = Yaku.flatten(hand, melds, meld_num)
@@ -623,7 +695,9 @@ class Yaku:
         best_pattern = jnp.argmax(jnp.dot(fan, yaku) * 200 + fu)
 
         yaku = yaku.T[best_pattern]
+
         fu = fu[best_pattern]
+        fu += -fu % 10
 
         is_tanyao = Yaku.is_tanyao(flatten)
         is_flush = Yaku.is_flush(flatten)
