@@ -166,6 +166,32 @@ def test_yaku_pinfu():
     assert Yaku.judge(hand, melds, meld_num=0, last=5)[Yaku.平和]
 
 
+def test_yaku_outside():
+    hand = Hand.from_str("11223399m789p123s")
+    melds = jnp.zeros(4, dtype=jnp.uint32)
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.純全帯么九]
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.混全帯么九]
+
+    hand = Hand.from_str("11123m789p123s333z")
+    assert not Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.純全帯么九]
+    assert Yaku.judge(hand, melds, meld_num=0, last=0)[Yaku.混全帯么九]
+
+    melds = melds.at[0].set(Meld.init(Action.CHI_R, 2, src=0))
+    hand = Hand.from_str("11223399m789p")
+    assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.純全帯么九]
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.混全帯么九]
+
+    melds = melds.at[0].set(Meld.init(Action.CHI_R, 4, src=0))
+    hand = Hand.from_str("11223399m789p")
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.純全帯么九]
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.混全帯么九]
+
+    melds = melds.at[0].set(Meld.init(Action.PON, 33, src=0))
+    hand = Hand.from_str("11223399m789p")
+    assert not Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.純全帯么九]
+    assert Yaku.judge(hand, melds, meld_num=1, last=0)[Yaku.混全帯么九]
+
+
 def test_yaku_double_chows():
     hand = Hand.from_str("11223388m789p123s")
     melds = jnp.zeros(4, dtype=jnp.uint32)

@@ -15,6 +15,12 @@ class Tile:
         suit, num = tile // 9, tile % 9 + 1
         return str(num) + ["m", "p", "s", "z"][suit]
 
+    @staticmethod
+    @jit
+    def is_outside(tile: int) -> bool:
+        num = tile % 9
+        return (tile >= 27) | (num == 0) | (num == 8)
+
 
 class Action:
     # 手出し: 0~33
@@ -320,6 +326,21 @@ class Meld:
     def action(meld: int) -> int:
         return meld & 0b111111
 
+    @staticmethod
+    @jit
+    def is_outside(meld: int) -> int:
+        target = Meld.target(meld)
+        return jax.lax.switch(
+            Meld.action(meld) - Action.PON,
+            [
+                lambda: Tile.is_outside(target),
+                lambda: Tile.is_outside(target - 2) | Tile.is_outside(target),
+                lambda: Tile.is_outside(target - 1)
+                | Tile.is_outside(target + 1),
+                lambda: Tile.is_outside(target) | Tile.is_outside(target + 2),
+            ],
+        )
+
 
 class Yaku:
     CACHE = CacheLoader.load_yaku_cache()
@@ -332,10 +353,12 @@ class Yaku:
     混全帯么九 = 4
     純全帯么九 = 5
 
-    FAN = jnp.array([
-        [1, 0, 0, 0, 1, 2],  # 副露
-        [1, 1, 1, 3, 2, 3],  # 面前
-        ])
+    FAN = jnp.array(
+        [
+            [1, 0, 0, 0, 1, 2],  # 副露
+            [1, 1, 1, 3, 2, 3],  # 面前
+        ]
+    )
 
     @staticmethod
     @jit
@@ -369,6 +392,16 @@ class Yaku:
 
     @staticmethod
     @jit
+    def is_outside(code: int, begin: int, end: int) -> jnp.ndarray:
+        outside = Yaku.CACHE[code] >> 22 & 0b11
+        return (
+            (code == 0)
+            | (begin % 9 == 0) & (outside & 1)
+            | (end % 9 == 0) & (outside >> 1 & 1)
+        ) == 1
+
+    @staticmethod
+    @jit
     def is_pinfu(code: int, begin: int, end: int, last: int) -> jnp.ndarray:
         len = end - begin
         left = Yaku.chow(code)
@@ -384,16 +417,8 @@ class Yaku:
             Yaku.pung(code) == 0
         )
 
-    #@staticmethod
-    #@jit
-    #def is_outside(code: int, begin: int, end: int) -> jnp.ndarray:
-    #    head = Yaku.head(code)
-    #    chow = Yaku.chow(code)
-    #    pung = Yaku.pung(code)
-
-
     @staticmethod
-    #@jit
+    @jit
     def judge(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
@@ -410,32 +435,45 @@ class Yaku:
         )
         # NOTE: 南,西,北: オタ風扱い
 
+        is_outside = jnp.full(
+            Yaku.MAX_PATTERNS,
+            jax.lax.fori_loop(
+                0,
+                meld_num,
+                lambda i, valid: valid & Meld.is_outside(melds[i]),
+                True,
+            ),
+        )
         double_chows = jnp.full(Yaku.MAX_PATTERNS, 0)
 
         for suit in range(3):
             code = 0
             begin = 9 * suit
             for tile in range(9 * suit, 9 * (suit + 1)):
-                code, is_pinfu, double_chows, begin = jax.lax.cond(
+                # print(code, begin, tile)
+                code, is_pinfu, is_outside, double_chows, begin = jax.lax.cond(
                     hand[tile] == 0,
                     lambda: (
                         0,
                         is_pinfu & Yaku.is_pinfu(code, begin, tile, last),
+                        is_outside & Yaku.is_outside(code, begin, tile),
                         double_chows + Yaku.double_chows(code),
                         tile + 1,
                     ),
                     lambda: (
                         ((code << 1) + 1) << (hand[tile].astype(int) - 1),
                         is_pinfu,
+                        is_outside,
                         double_chows,
                         begin,
                     ),
                 )
+
             is_pinfu &= Yaku.is_pinfu(code, begin, 9 * (suit + 1), last)
+            is_outside &= Yaku.is_outside(code, begin, 9 * (suit + 1))
             double_chows += Yaku.double_chows(code)
 
-            print(double_chows)
-
+        flatten = Yaku.flatten(hand, melds, meld_num)
         yaku = (
             jnp.full((Yaku.FAN.shape[1], Yaku.MAX_PATTERNS), False)
             .at[Yaku.平和]
@@ -444,12 +482,15 @@ class Yaku:
             .set(double_chows == 1)
             .at[Yaku.二盃口]
             .set(double_chows == 2)
+            .at[Yaku.混全帯么九]
+            .set(is_outside & jnp.any(flatten[27:] > 0))
+            .at[Yaku.純全帯么九]
+            .set(is_outside & jnp.all(flatten[27:] == 0))
         )
 
-        #is_menzen = meld_num == 0
-        yaku = yaku.T[jnp.argmax(jnp.dot(Yaku.FAN[1], yaku))]
+        is_menzen = jax.lax.cond(meld_num == 0, lambda: 1, lambda: 0)
+        yaku = yaku.T[jnp.argmax(jnp.dot(Yaku.FAN[is_menzen], yaku))]
 
-        flatten = Yaku.flatten(hand, melds, meld_num)
         return yaku.at[Yaku.断么九].set(Yaku._is_tanyao(flatten))
 
     @staticmethod
