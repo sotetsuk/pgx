@@ -56,7 +56,7 @@ def test_reset_det():
         env.reset()
         ball_start = 0 if env.env.ball_x == 0 else 1
         s = extract_state(env, state_keys)
-        s_pgx = breakout._reset_det(ball_start)
+        s_pgx = breakout._init_det(ball_start)
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
@@ -71,7 +71,7 @@ def test_to_obs():
         while not done:
             s = extract_state(env, state_keys)
             s_pgx = minatar2pgx(s, breakout.MinAtarBreakoutState)
-            obs_pgx = breakout.to_obs(s_pgx)
+            obs_pgx = breakout.observe(s_pgx)
             assert jnp.allclose(
                 env.state(),
                 obs_pgx,
@@ -82,7 +82,7 @@ def test_to_obs():
         # check terminal state
         s = extract_state(env, state_keys)
         s_pgx = minatar2pgx(s, breakout.MinAtarBreakoutState)
-        obs_pgx = breakout.to_obs(s_pgx)
+        obs_pgx = breakout.observe(s_pgx)
         assert jnp.allclose(
             env.state(),
             obs_pgx,

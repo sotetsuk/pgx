@@ -46,7 +46,7 @@ def step(
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
-) -> Tuple[MinAtarAsterixState, int, jnp.ndarray]:
+) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
     rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
     # sticky action
     action = jax.lax.cond(
@@ -85,12 +85,12 @@ def step(
 
 
 @jax.jit
-def reset(rng: jnp.ndarray) -> MinAtarAsterixState:
-    return _reset_det()
+def init(rng: jnp.ndarray) -> MinAtarAsterixState:
+    return _init_det()
 
 
 @jax.jit
-def to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
+def observe(state: MinAtarAsterixState) -> jnp.ndarray:
     return _to_obs(state)
 
 
@@ -101,7 +101,7 @@ def _step_det(
     lr: bool,
     is_gold: bool,
     slot: int,
-) -> Tuple[MinAtarAsterixState, int, jnp.ndarray]:
+) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
         lambda: (state.replace(last_action=action), 0, True),  # type: ignore
@@ -115,7 +115,7 @@ def _step_det_at_non_terminal(
     lr: bool,
     is_gold: bool,
     slot: int,
-) -> Tuple[MinAtarAsterixState, int, jnp.ndarray]:
+) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
     player_x = state.player_x
     player_y = state.player_y
     entities = state.entities
@@ -305,7 +305,7 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
 
 
 @jax.jit
-def _reset_det() -> MinAtarAsterixState:
+def _init_det() -> MinAtarAsterixState:
     return MinAtarAsterixState()
 
 

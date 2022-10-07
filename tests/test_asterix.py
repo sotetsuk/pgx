@@ -76,7 +76,7 @@ def test_reset_det():
     for _ in range(N):
         env.reset()
         s = extract_state(env, state_keys)
-        s_pgx = asterix._reset_det()
+        s_pgx = asterix._init_det()
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 

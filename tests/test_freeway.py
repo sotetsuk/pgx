@@ -65,7 +65,7 @@ def test_reset_det():
         # extract random variables
         speeds = jnp.array(env.env.speeds)
         directions = jnp.array(env.env.directions)
-        s_pgx = freeway._reset_det(speeds, directions)
+        s_pgx = freeway._init_det(speeds, directions)
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
