@@ -382,11 +382,12 @@ class Yaku:
     断么九 = 10
     混一色 = 11
     清一色 = 12
+    混老頭 = 13
 
     FAN = jnp.array(
         [
-            [0, 0, 0, 1, 2, 1, 1, 2, 2, 2, 1, 2, 5],  # 副露
-            [1, 1, 3, 2, 3, 2, 2, 2, 2, 2, 1, 3, 6],  # 面前
+            [0, 0, 0, 1, 2, 1, 1, 2, 2, 2, 1, 2, 5, 2],  # 副露
+            [1, 1, 3, 2, 3, 2, 2, 2, 2, 2, 1, 3, 6, 2],  # 面前
         ]
     )
 
@@ -686,6 +687,16 @@ class Yaku:
 
         flatten = Yaku.flatten(hand, melds, meld_num)
         has_honor = jnp.any(flatten[27:] > 0)
+        has_outside = (
+                (flatten[0] > 0)
+                | (flatten[8] > 0)
+                | (flatten[9] > 0)
+                | (flatten[17] > 0)
+                | (flatten[18] > 0)
+                | (flatten[26] > 0)
+                )
+        has_tanyao = jnp.any(flatten[1:8]) | jnp.any(flatten[10:17]) | jnp.any(flatten[19:26])
+
         yaku = (
             jnp.full((Yaku.FAN.shape[1], Yaku.MAX_PATTERNS), False)
             .at[Yaku.平和]
@@ -695,7 +706,7 @@ class Yaku:
             .at[Yaku.二盃口]
             .set(is_menzen & (double_chows == 2))
             .at[Yaku.混全帯么九]
-            .set(is_outside & has_honor)
+            .set(is_outside & has_honor & has_tanyao)
             .at[Yaku.純全帯么九]
             .set(is_outside & (has_honor == 0))
             .at[Yaku.一気通貫]
@@ -719,16 +730,17 @@ class Yaku:
         fu = fu[best_pattern]
         fu += -fu % 10
 
-        is_tanyao = Yaku.is_tanyao(flatten)
         is_flush = Yaku.is_flush(flatten)
 
         yaku = (
             yaku.at[Yaku.断么九]
-            .set(is_tanyao)
+            .set((has_honor | has_outside) == 0)
             .at[Yaku.混一色]
             .set(is_flush & has_honor)
             .at[Yaku.清一色]
             .set(is_flush & (has_honor == 0))
+            .at[Yaku.混老頭]
+            .set(has_tanyao == 0)
         )
 
         return (yaku, fu)
@@ -760,18 +772,6 @@ class Yaku:
                     Hand.add(Hand.add(hand, target - 2), target - 1), target
                 ),
             ],
-        )
-
-    @staticmethod
-    @jit
-    def is_tanyao(hand: jnp.ndarray) -> bool:
-        return (
-            (hand[0] == 0)
-            & (hand[8] == 0)
-            & (hand[9] == 0)
-            & (hand[17] == 0)
-            & (hand[18] == 0)
-            & jnp.all(hand[26:] == 0)
         )
 
     @staticmethod

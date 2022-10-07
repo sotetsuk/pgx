@@ -210,6 +210,18 @@ def test_yaku_flush():
     assert not has_yaku(Yaku.清一色, hand, melds, meld_num=1, last=0)
 
 
+def test_yaku_without_tanyao():
+    hand = Hand.from_str("111999m11p")
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))  # 777z
+    melds = melds.at[1].set(Meld.init(Action.PON, 32, 0))  # 666z
+    assert has_yaku(Yaku.混老頭, hand, melds, meld_num=2, last=0)
+    assert not has_yaku(Yaku.混全帯么九, hand, melds, meld_num=2, last=0)
+
+    hand = Hand.from_str("123999m11p")
+    assert not has_yaku(Yaku.混老頭, hand, melds, meld_num=2, last=0)
+
+
 def test_yaku_pinfu():
     hand = Hand.from_str("12345666m789p123s")
     melds = jnp.zeros(4, dtype=jnp.int32)
@@ -369,14 +381,12 @@ def test_yaku_coner_cases():
     assert has_yaku(Yaku.混全帯么九, hand, melds, meld_num=0, last=1)
     # 面前チャンタ一盃口 > 三暗刻
 
-    # TODO
     hand = Hand.from_str("111222333m11p")
     melds = melds.at[0].set(Meld.init(Action.CHI_M, 7, src=0))  # 7[8]9m
     assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=1, last=0)
     assert not has_yaku(Yaku.純全帯么九, hand, melds, meld_num=1, last=0)
     # 副露純チャン < 三暗刻 (符で有利)
 
-    # TODO
     hand = Hand.from_str("11222333444456m")
     assert not has_yaku(Yaku.平和, hand, melds, meld_num=0, last=0)
     assert not has_yaku(Yaku.一盃口, hand, melds, meld_num=0, last=0)
