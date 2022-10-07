@@ -70,7 +70,7 @@ def test_step_det():
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
 
-def test_reset_det():
+def test_init_det():
     env = Environment("asterix", sticky_action_prob=0.0)
     N = 100
     for _ in range(N):
@@ -80,7 +80,7 @@ def test_reset_det():
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
-def test_to_obs():
+def test_observe():
     env = Environment("asterix", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
