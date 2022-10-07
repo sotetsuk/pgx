@@ -407,121 +407,18 @@ class Yaku:
 
     @staticmethod
     @jit
+    def pungs(code: int) -> jnp.ndarray:
+        return Yaku.CACHE[code] >> 20 & 0b111
+
+    @staticmethod
+    @jit
     def double_chows(code: int) -> jnp.ndarray:
-        return Yaku.CACHE[code] >> 20 & 0b11
+        return Yaku.CACHE[code] >> 23 & 0b11
 
     @staticmethod
     @jit
-    def is_outside(code: int, begin: int, end: int) -> jnp.ndarray:
-        outside = Yaku.CACHE[code] >> 22 & 0b11
-        return (
-            (code == 0)
-            | (begin % 9 == 0) & (outside & 1)
-            | (end % 9 == 0) & (outside >> 1 & 1)
-        ) == 1
-
-    @staticmethod
-    @jit
-    def is_pinfu(code: int, begin: int, end: int, last: int) -> jnp.ndarray:
-        len = end - begin
-        left = Yaku.chow(code)
-        right = Yaku.chow(code) << 3
-        open_end = (left ^ (left & 1) * (begin % 9 == 0)) << 2 | (
-            right ^ ((right >> len & 1) * (end % 9 == 0) << len)
-        ) >> 3
-        # リャンメン待ちにできる位置
-
-        pos = last - begin  # WARNING: may be negative
-        in_range = (0 <= pos) & (pos < len)
-        pos *= in_range
-        return ((in_range == 0) | (open_end >> pos & 1) == 1) & (
-            Yaku.pung(code) == 0
-        )
-
-    @staticmethod
-    @jit
-    def concealed_pungs(
-        code: int, is_ron: bool, begin: int, last: int
-    ) -> jnp.ndarray:
-        chow = Yaku.chow(code)
-
-        pung = Yaku.pung(code)
-        pungs = (
-            (pung & 1)
-            + (pung >> 1 & 1)
-            + (pung >> 2 & 1)
-            + (pung >> 3 & 1)
-            + (pung >> 4 & 1)
-            + (pung >> 5 & 1)
-            + (pung >> 6 & 1)
-            + (pung >> 7 & 1)
-            + (pung >> 8 & 1)
-        )
-        # 刻子の数
-
-        pos = last - begin  # WARNING: may be negative
-        valid = pos >= 0
-        pos *= valid
-
-        loss = (
-            is_ron
-            & valid
-            & (pung >> pos & 1)
-            & (((chow | chow << 1 | chow << 2) >> pos & 1) == 0)
-        )
-        # ロンして明刻扱いになってしまう場合
-
-        return pungs - loss
-
-    @staticmethod
-    @jit
-    def fu(
-        code: int, is_ron: bool, begin: int, end: int, last: int
-    ) -> jnp.ndarray:
-        len = end - begin
-        pung = Yaku.pung(code)
-        pungs = (
-            (pung & 1)
-            + (pung >> 1 & 1)
-            + (pung >> 2 & 1)
-            + (pung >> 3 & 1)
-            + (pung >> 4 & 1)
-            + (pung >> 5 & 1)
-            + (pung >> 6 & 1)
-            + (pung >> 7 & 1)
-            + (pung >> 8 & 1)
-        )
-        outside_pung = ((begin % 9 == 0) & (pung & 1)) | (
-            (end % 9 == 0) & (pung >> len & 1)
-        ) << len
-
-        pos = last - begin  # WARNING: may be negative
-        valid = pos >= 0
-        pos *= valid
-
-        chow = Yaku.chow(code)
-
-        loss = (
-            is_ron
-            & valid
-            & (((chow | chow << 1 | chow << 2) >> pos & 1) == 0)
-            & ((pung >> pos & 1) + (outside_pung >> pos & 1))
-        )
-
-        strong = (
-            valid
-            & (
-                (1 << Yaku.head(code))
-                | (((begin % 9 == 0) & (chow & 1)) << 2)
-                | ((end % 9 == 0) & (chow << 3 >> len & 1))
-                | (chow << 1)
-            )
-            >> pos
-            & 1
-        )
-        # 強い待ち(カンチャン, ペンチャン, 単騎)にできるか
-
-        return 4 * (pungs + (outside_pung > 0)) - 2 * loss + 2 * strong
+    def outside(code: int) -> jnp.ndarray:
+        return Yaku.CACHE[code] >> 25 & 0b11
 
     @staticmethod
     @jit
@@ -594,7 +491,7 @@ class Yaku:
         is_pinfu &= (in_range == 0) | (open_end >> pos & 1) == 1
         is_pinfu &= pung == 0
 
-        outside = Yaku.CACHE[code] >> 22 & 0b11
+        outside = Yaku.outside(code)
         is_outside &= (
             (code == 0)
             | (begin % 9 == 0) & (outside & 1)
@@ -605,17 +502,7 @@ class Yaku:
         all_chow |= chow << begin
         all_pung |= pung << begin
 
-        pungs = (
-            (pung & 1)
-            + (pung >> 1 & 1)
-            + (pung >> 2 & 1)
-            + (pung >> 3 & 1)
-            + (pung >> 4 & 1)
-            + (pung >> 5 & 1)
-            + (pung >> 6 & 1)
-            + (pung >> 7 & 1)
-            + (pung >> 8 & 1)
-        )
+        pungs = Yaku.pungs(code)
         # 刻子の数
 
         chow_range = chow | chow << 1 | chow << 2

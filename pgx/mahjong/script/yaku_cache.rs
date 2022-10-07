@@ -1,5 +1,5 @@
-use std::io::Write;
 use std::collections::BTreeSet;
+use std::io::Write;
 
 fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize, usize)>>) {
     assert!(x <= 4);
@@ -82,7 +82,13 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
                     }
 
                     let outside = match code {
-                        0b100010001000 | 0b100100100 => if pung == 0 { 0b11 } else { 0 },
+                        0b100010001000 | 0b100100100 => {
+                            if pung == 0 {
+                                0b11
+                            } else {
+                                0
+                            }
+                        }
                         0b101010 | 0b111 | 0b100 => 0b11,
                         0b100011 => 0b01,
                         0b111000 => 0b10,
@@ -174,14 +180,19 @@ fn main() {
 
     let mut cache = vec![vec![0; 3]; 16329];
 
-    for (idx,vs) in arr.iter().enumerate() {
+    for (idx, vs) in arr.iter().enumerate() {
         if vs.is_empty() {
             continue;
         }
         let vs: Vec<_> = vs.iter().collect();
         for i in 0..3 {
             let &(h, chow, pung, double_chows, outside) = vs[i % vs.len()];
-            cache[idx][i] = h | (chow << 4) | (pung << 11) | (double_chows << 20) | (outside << 22);
+            cache[idx][i] = h
+                | (chow << 4)
+                | (pung << 11)
+                | ((pung as u32).count_ones() << 20) as usize
+                | (double_chows << 23)
+                | (outside << 25);
         }
     }
 
