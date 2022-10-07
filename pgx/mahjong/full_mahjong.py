@@ -24,73 +24,25 @@ class Tile:
 
 class Action:
     # 手出し: 0~33
-    TSUMOGIRI = 34
-    RIICHI = 35
-    TSUMO = 36
+    # 暗/加槓: 34~67
+    TSUMOGIRI = 68
+    RIICHI = 69
+    TSUMO = 70
 
-    RON = 37
-    PON = 38
-    MINKAN = 39
-    CHI_L = 40  # [4]56
-    CHI_M = 41  # 4[5]6
-    CHI_R = 42  # 45[6]
-    PASS = 43
+    RON = 71
+    PON = 72
+    MINKAN = 73
+    CHI_L = 74  # [4]56
+    CHI_M = 75  # 4[5]6
+    CHI_R = 76  # 45[6]
+    PASS = 77
 
-    NONE = 44
-
-
-@dataclass
-class Deck:
-    idx: int
-    arr: jnp.ndarray
-    end: int = 122
-    doras: int = 1
-
-    # 0 ... end-1 | 122 ... 126 | 127 ... 131 | 132 ... 135
-    # -----------------------------------------------------
-    #    used     | 裏ドラ表示牌 | ドラ表示牌 | 嶺上牌
-
-    @jit
-    def is_empty(self) -> bool:
-        return self.size() == 0
-
-    @jit
-    def size(self) -> int:
-        return self.end - self.idx
+    NONE = 78
 
     @staticmethod
     @jit
-    def init(key: jnp.ndarray) -> Deck:
-        arr = jax.random.permutation(key, jnp.arange(136) // 4)
-        return Deck(0, arr)
-
-    @staticmethod
-    @jit
-    def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, jnp.ndarray]:
-        # -> tuple[Deck, int]
-        # assert not deck.is_empty()
-
-        tile = deck.arr[
-            deck.idx * (is_kan == False) | (131 + deck.doras) * is_kan
-        ]
-        deck.idx += is_kan == False
-        deck.end -= is_kan
-        deck.doras += is_kan
-        # NOTE: 先めくりで統一
-
-        return deck, tile
-
-    def _tree_flatten(self):
-        children = (self.idx, self.arr, self.end, self.doras)
-        aux_data = {}
-        return (children, aux_data)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):
-        return cls(*children, **aux_data)
-
-
-tree_util.register_pytree_node(Deck, Deck._tree_flatten, Deck._tree_unflatten)
+    def is_selfkan(action: int) -> bool:
+        return (34 <= action) & (action < 68)
 
 
 class CacheLoader:
@@ -204,7 +156,19 @@ class Hand:
     @jit
     def can_minkan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
         # -> bool
-        return hand[tile] >= 3
+        return hand[tile] == 3
+
+    @staticmethod
+    @jit
+    def can_kakan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # -> bool
+        return hand[tile] == 1
+
+    @staticmethod
+    @jit
+    def can_ankan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # -> bool
+        return hand[tile] == 4
 
     @staticmethod
     @jit
@@ -262,6 +226,18 @@ class Hand:
 
     @staticmethod
     @jit
+    def kakan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # assert Hand.can_kakan(hand, tile)
+        return Hand.sub(hand, tile)
+
+    @staticmethod
+    @jit
+    def ankan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # assert Hand.can_ankan(hand, tile)
+        return Hand.sub(hand, tile, 4)
+
+    @staticmethod
+    @jit
     def chi(hand: jnp.ndarray, tile: int, action: int) -> jnp.ndarray:
         # assert Hand.can_chi(hand, tile, action)
         # assert action is Action.CHI_L, CHI_M or CHI_R
@@ -305,6 +281,82 @@ class Hand:
 
 
 @dataclass
+class Deck:
+    arr: jnp.ndarray
+    idx: int = 135
+    end: int = 13
+    doras: int = 1
+
+    # 0   2 | 4 - 12 | 14 - 134
+    # 1   3 | 5 - 13 | 15 - 135
+    # -------------------------
+    # 嶺上牌| ドラ   | to be used
+    #       | 裏ドラ |
+
+    @jit
+    def is_empty(self) -> bool:
+        return self.size() == 0
+
+    @jit
+    def size(self) -> int:
+        return self.idx - self.end
+
+    @staticmethod
+    @jit
+    def init(key: jnp.ndarray) -> Deck:
+        arr = jax.random.permutation(key, jnp.arange(136) // 4)
+        return Deck(arr)
+
+    @staticmethod
+    @jit
+    def deal(deck: Deck) -> tuple[Deck, jnp.ndarray, jnp.ndarray]:
+        hand = jnp.zeros((4, 34), dtype=jnp.uint8)
+        for i in range(3):
+            for j in range(4):
+                for k in range(4):
+                    hand = hand.at[j].set(
+                        Hand.add(hand[j], deck.arr[16 * i + 4 * j + k])
+                    )
+        for j in range(4):
+            hand = hand.at[j].set(Hand.add(hand[j], deck.arr[16 * 3 + j]))
+
+        last_draw = deck.arr[16 * 3 + 4]
+        hand = hand.at[0].set(Hand.add(hand[0], last_draw))
+
+        deck.idx -= 53
+
+        return deck, hand, last_draw
+
+    @staticmethod
+    @jit
+    def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, jnp.ndarray]:
+        # -> tuple[Deck, int]
+        # assert not deck.is_empty()
+
+        tile = deck.arr[
+            deck.idx * (is_kan == False) | (deck.doras - 1) * is_kan
+        ]
+        deck.idx -= is_kan == False
+        deck.end += is_kan
+        deck.doras += is_kan
+        # NOTE: 先めくりで統一
+
+        return deck, tile
+
+    def _tree_flatten(self):
+        children = (self.arr, self.idx, self.end, self.doras)
+        aux_data = {}
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        return cls(*children, **aux_data)
+
+
+tree_util.register_pytree_node(Deck, Deck._tree_flatten, Deck._tree_unflatten)
+
+
+@dataclass
 class Observation:
     hand: jnp.ndarray
     target: int
@@ -314,50 +366,117 @@ class Observation:
 class Meld:
     @staticmethod
     @jit
-    def init(action: int, target: int, src: int) -> int:
-        return (src << 12) | (target << 6) | action
+    def init(action: int, target: int, src: int, is_menzen: int = 0) -> int:
+        # src: 相対位置
+        # - 1: 下家
+        # - 2: 対面
+        # - 3: 上家
+        return (is_menzen << 15) | (src << 13) | (target << 7) | action
 
     @staticmethod
     def to_str(meld: int) -> str:
         action = Meld.action(meld)
         target = Meld.target(meld)
+        src = Meld.src(meld)
+        is_menzen = Meld.is_menzen(meld)
         suit, num = target // 9, target % 9 + 1
+
         if action == Action.PON:
-            return "{}{}{}{}".format(num, num, num, ["m", "p", "s", "z"][suit])
+            if src == 1:
+                return "{}{}[{}]{}".format(
+                    num, num, num, ["m", "p", "s", "z"][suit]
+                )
+            if src == 2:
+                return "{}[{}]{}{}".format(
+                    num, num, num, ["m", "p", "s", "z"][suit]
+                )
+            if src == 3:
+                return "[{}]{}{}{}".format(
+                    num, num, num, ["m", "p", "s", "z"][suit]
+                )
+            return "INVALID"
+        if Action.is_selfkan(action):
+            if is_menzen:
+                return "{}{}{}{}{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
+            else:
+                if src == 1:
+                    return "{}{}[{}{}]{}".format(
+                        num, num, num, num, ["m", "p", "s", "z"][suit]
+                    )
+                if src == 2:
+                    return "{}[{}{}]{}{}".format(
+                        num, num, num, num, ["m", "p", "s", "z"][suit]
+                    )
+                if src == 3:
+                    return "[{}{}]{}{}{}".format(
+                        num, num, num, num, ["m", "p", "s", "z"][suit]
+                    )
+                return "INVALID"
         if action == Action.MINKAN:
-            return "{}{}{}{}{}".format(
-                num, num, num, num, ["m", "p", "s", "z"][suit]
-            )
+            if src == 1:
+                return "{}{}{}[{}]{}".format(
+                    num, num, num, num, ["m", "p", "s", "z"][suit]
+                )
+            if src == 2:
+                return "{}[{}]{}{}{}".format(
+                    num, num, num, num, ["m", "p", "s", "z"][suit]
+                )
+            if src == 3:
+                return "[{}]{}{}{}{}".format(
+                    num, num, num, num, ["m", "p", "s", "z"][suit]
+                )
+            return "INVALID"
         if action == Action.CHI_L:
-            return "{}{}{}{}".format(
-                num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
-            )
+            if src == 3:
+                return "[{}]{}{}{}".format(
+                    num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
+                )
+            return "INVALID"
         if action == Action.CHI_M:
-            return "{}{}{}{}".format(
-                num - 1, num, num + 1, ["m", "p", "s", "z"][suit]
-            )
+            if src == 3:
+                return "[{}]{}{}{}".format(
+                    num - 1, num, num + 1, ["m", "p", "s", "z"][suit]
+                )
+            return "INVALID"
         if action == Action.CHI_R:
-            return "{}{}{}{}".format(
-                num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
-            )
-        return ""
+            if src == 3:
+                return "[{}]{}{}{}".format(
+                    num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
+                )
+            return "INVALID"
+        return "INVALID"
+
+    @staticmethod
+    @jit
+    def is_menzen(meld: int) -> int:
+        return meld >> 15 & 1
+
+    @staticmethod
+    @jit
+    def src(meld: int) -> int:
+        return meld >> 13 & 0b11
 
     @staticmethod
     @jit
     def target(meld: int) -> int:
-        return (meld >> 6) & 0b111111
+        return (meld >> 7) & 0b111111
 
     @staticmethod
     @jit
     def action(meld: int) -> int:
-        return meld & 0b111111
+        return meld & 0b1111111
 
     @staticmethod
     @jit
     def suited_pung(meld: int) -> int:
         action = Meld.action(meld)
         target = Meld.target(meld)
-        is_suited_pon = (action == Action.PON) & (target < 27)
+        is_pung = (
+            (action == Action.PON)
+            | (action == Action.MINKAN)
+            | Action.is_selfkan(action)
+        )
+        is_suited_pon = is_pung & (target < 27)
 
         return is_suited_pon << target
 
@@ -378,20 +497,27 @@ class Meld:
     def is_outside(meld: int) -> int:
         action = Meld.action(meld)
         target = Meld.target(meld)
+        is_chi = (Action.CHI_L <= action) & (action < Action.CHI_R)
+
         return jax.lax.cond(
-            action == Action.PON,
-            lambda: Tile.is_outside(target),
+            is_chi,
             lambda: Tile.is_outside(target - (action - Action.CHI_L))
             | Tile.is_outside(target - (action - Action.CHI_L) + 2),
+            lambda: Tile.is_outside(target),
         )
 
     @staticmethod
     @jit
     def fu(meld: int) -> int:
         action = Meld.action(meld)
-        target = Meld.target(meld)
 
-        return (action == Action.PON) * 2 * (1 + (Tile.is_outside(target)))
+        fu = (
+            (action == Action.PON) * 2
+            + (action == Action.MINKAN) * 8
+            + (Action.is_selfkan(action) * 8 * (1 + Meld.is_menzen(meld)))
+        )
+
+        return fu * (1 + (Tile.is_outside(Meld.target(meld))))
 
 
 @dataclass
@@ -406,6 +532,7 @@ class State:
     meld_num: jnp.ndarray  # 各playerの副露回数
     melds: jnp.ndarray
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
+    is_menzen: jnp.ndarray
 
     # reward:
     # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
@@ -424,8 +551,7 @@ class State:
             | self.riichi_declared
             | self.riichi[self.turn]
             | (self.deck.size() < 4)
-            # | (jnp.sum(self.hand[self.turn]) < 14),
-            | (self.meld_num[self.turn]),
+            | (self.is_menzen[self.turn] == 0),
             lambda: legal_actions,
             lambda: legal_actions.at[(self.turn, Action.RIICHI)].set(
                 Hand.can_riichi(self.hand[self.turn])
@@ -435,7 +561,7 @@ class State:
         # リーチ宣言直後の打牌
         legal_actions = jax.lax.cond(
             (self.last_draw != -1) & self.riichi_declared,
-            lambda arr: jax.lax.fori_loop(
+            lambda: jax.lax.fori_loop(
                 0,
                 34,
                 lambda i, arr: arr.at[(self.turn, i)].set(
@@ -447,24 +573,38 @@ class State:
                         lambda: False,
                     )
                 ),
-                arr,
+                legal_actions,
             )
             .at[(self.turn, Action.TSUMOGIRI)]
             .set(
                 Hand.is_tenpai(Hand.sub(self.hand[self.turn], self.last_draw))
             ),
-            lambda arr: arr,
-            legal_actions,
+            lambda: legal_actions,
         )
 
-        # ツモ切り, ツモ
+        # ツモ切り, ツモ, 暗/加槓
         legal_actions = jax.lax.cond(
             (self.last_draw == -1) | self.riichi_declared,
             lambda: legal_actions,
-            lambda: legal_actions.at[(self.turn, Action.TSUMOGIRI)]
-            .set(True)
-            .at[(self.turn, Action.TSUMO)]
-            .set(Hand.can_tsumo(self.hand[self.turn])),
+            lambda: legal_actions
+                .at[(self.turn, Action.TSUMOGIRI)]
+                .set(True)
+                .at[(self.turn, Action.TSUMO)]
+                .set(Hand.can_tsumo(self.hand[self.turn])),
+        )
+        can_kakan = self._can_kakan()
+        legal_actions = jax.lax.cond(
+            (self.last_draw == -1) | self.riichi_declared | self.deck.is_empty(),
+            lambda: legal_actions,
+            lambda: jax.lax.fori_loop(
+                0,
+                34,
+                lambda i, arr: arr.at[(self.turn, i + 34)].set(
+                    (Hand.can_ankan(self.hand[self.turn], i) | (can_kakan[i] > 0))
+                    & (self.deck.doras < 4)  # 5回目の槓はできない
+                ),
+                legal_actions,
+            )
         )
 
         # 手出し, 鳴いた後の手出し
@@ -541,23 +681,15 @@ class State:
     @jit
     def init(key) -> State:
         deck = Deck.init(key)
-        hand = jnp.zeros((4, 34), dtype=jnp.uint8)
-
-        for i in range(4):
-            for _ in range(13):
-                deck, tile = Deck.draw(deck)
-                hand = hand.at[i].set(Hand.add(hand[i], tile))
-
-        deck, tile = Deck.draw(deck)
-        hand = hand.at[0].set(Hand.add(hand[0], tile))
+        deck, hand, last_draw = Deck.deal(deck)
 
         turn = 0
         target = -1
-        last_draw = tile
         riichi_declared = False
         riichi = jnp.full(4, False)
-        meld_num = jnp.zeros(4, dtype=jnp.uint8)
+        meld_num = jnp.zeros(4, dtype=jnp.int32)
         melds = jnp.zeros((4, 4), dtype=jnp.int32)
+        is_menzen = jnp.full(4, True)
         return State(
             deck,
             hand,
@@ -568,6 +700,7 @@ class State:
             riichi,
             meld_num,
             melds,
+            is_menzen,
         )
 
     @staticmethod
@@ -586,20 +719,24 @@ class State:
         return jax.lax.cond(
             action < 34,
             lambda: State._discard(state, action),
-            lambda: jax.lax.switch(
-                action - 34,
-                [
-                    lambda: State._tsumogiri(state),
-                    lambda: State._riichi(state),
-                    lambda: State._tsumo(state),
-                    lambda: State._ron(state, player),
-                    lambda: State._pon(state, player),
-                    lambda: State._minkan(state, player),
-                    lambda: State._chi(state, player, Action.CHI_L),
-                    lambda: State._chi(state, player, Action.CHI_M),
-                    lambda: State._chi(state, player, Action.CHI_R),
-                    lambda: State._try_draw(state),
-                ],
+            lambda: jax.lax.cond(
+                action < 68,
+                lambda: State._selfkan(state, action),
+                lambda: jax.lax.switch(
+                    action - 68,
+                    [
+                        lambda: State._tsumogiri(state),
+                        lambda: State._riichi(state),
+                        lambda: State._tsumo(state),
+                        lambda: State._ron(state, player),
+                        lambda: State._pon(state, player),
+                        lambda: State._minkan(state, player),
+                        lambda: State._chi(state, player, Action.CHI_L),
+                        lambda: State._chi(state, player, Action.CHI_M),
+                        lambda: State._chi(state, player, Action.CHI_R),
+                        lambda: State._try_draw(state),
+                    ],
+                ),
             ),
         )
 
@@ -643,7 +780,9 @@ class State:
 
     @staticmethod
     @jit
-    def _draw(state: State) -> tuple[State, jnp.ndarray, bool]:
+    def _draw(
+        state: State
+    ) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
         state.turn += 1
         state.turn %= 4
@@ -686,14 +825,78 @@ class State:
     @jit
     def _minkan(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
-        meld = Meld.init(Action.MINKAN, state.target, state.turn)
+        meld = Meld.init(
+            Action.MINKAN, state.target, (state.turn - player) % 4
+        )
         state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
             Hand.minkan(state.hand[player], state.target)
         )
         state.target = -1
         state.turn = player
+        state.is_menzen = state.is_menzen.at[player].set(False)
 
+        state.deck, tile = Deck.draw(state.deck, is_kan=True)
+        state.last_draw = tile
+        state.hand = state.hand.at[state.turn].set(
+            Hand.add(state.hand[state.turn], tile)
+        )
+        return state, jnp.full(4, 0), False
+
+    @jit
+    def _can_kakan(self) -> jnp.ndarray:
+        return jax.lax.fori_loop(
+            0,
+            self.meld_num[self.turn],
+            lambda i, sum: sum.at[Meld.target(self.melds[self.turn][i])].set(
+                (
+                    Hand.can_kakan(self.hand[self.turn], Meld.target(self.melds[self.turn][i]))
+                    & (Meld.action(self.melds[self.turn][i]) == Action.PON)
+                )
+                * Meld.src(self.melds[self.turn][i])
+            ),
+            jnp.full(34, 0),
+        )
+
+    @staticmethod
+    @jit
+    def _selfkan(state: State, action: int) -> tuple[State, jnp.ndarray, bool]:
+        target = action - 34
+        src = state._can_kakan()[target]
+
+        return jax.lax.cond(
+            src == 0,
+            lambda: State._ankan(state, target),
+            lambda: State._kakan(state, target, src),
+        )
+
+    @staticmethod
+    @jit
+    def _ankan(state: State, target: int) -> tuple[State, jnp.ndarray, bool]:
+        meld = Meld.init(target + 34, target, src=0, is_menzen=True)
+        state = State._append_meld(state, meld, state.turn)
+        state.hand = state.hand.at[state.turn].set(
+            Hand.ankan(state.hand[state.turn], target)
+        )
+        # TODO: 国士無双ロンの受付
+        state.deck, tile = Deck.draw(state.deck, is_kan=True)
+        state.last_draw = tile
+        state.hand = state.hand.at[state.turn].set(
+            Hand.add(state.hand[state.turn], tile)
+        )
+        return state, jnp.full(4, 0), False
+
+    @staticmethod
+    @jit
+    def _kakan(
+        state: State, target: int, src: int
+    ) -> tuple[State, jnp.ndarray, bool]:
+        meld = Meld.init(target + 34, target, src)
+        state = State._append_meld(state, meld, state.turn)
+        state.hand = state.hand.at[state.turn].set(
+            Hand.kakan(state.hand[state.turn], target)
+        )
+        # TODO: 槍槓の受付
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
         state.hand = state.hand.at[state.turn].set(
@@ -705,11 +908,12 @@ class State:
     @jit
     def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
-        meld = Meld.init(Action.PON, state.target, state.turn)
+        meld = Meld.init(Action.PON, state.target, (state.turn - player) % 4)
         state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
             Hand.pon(state.hand[player], state.target)
         )
+        state.is_menzen = state.is_menzen.at[player].set(False)
         state.target = -1
         state.turn = player
         return state, jnp.full(4, 0), False
@@ -720,11 +924,12 @@ class State:
         state: State, player: int, action: int
     ) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
-        meld = Meld.init(action, state.target, state.turn)
+        meld = Meld.init(action, state.target, src=3)
         state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
             Hand.chi(state.hand[player], state.target, action)
         )
+        state.is_menzen = state.is_menzen.at[player].set(False)
         state.target = -1
         state.turn = player
         return state, jnp.full(4, 0), False
@@ -751,6 +956,7 @@ class State:
             self.riichi,
             self.meld_num,
             self.melds,
+            self.is_menzen,
         )
         aux_data = {}
         return (children, aux_data)

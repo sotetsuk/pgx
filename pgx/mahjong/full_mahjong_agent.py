@@ -19,7 +19,12 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
     if legal_actions[Action.RIICHI]:
         return Action.RIICHI
     if legal_actions[Action.MINKAN]:
+        print("MINKAN")
         return Action.MINKAN
+    if jnp.any(legal_actions[34:68]):
+        print("SELFKAN")
+        print(obs.hand)
+        return jnp.where(legal_actions[34:68])[0][0] + 34
 
     if jnp.sum(obs.hand) % 3 == 2:
         min_shanten = 999
@@ -34,10 +39,10 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
                     discard = tile
         return discard if obs.last_draw != discard else Action.TSUMOGIRI
 
-    if legal_actions[Action.PON]:
-        s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
-        if s < shanten(obs.hand) and random.random() < 0.5:
-            return Action.PON
+    #if legal_actions[Action.PON]:
+    #    s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
+    #    if s < shanten(obs.hand) and random.random() < 0.5:
+    #        return Action.PON
 
     if legal_actions[Action.CHI_R]:
         s = shanten(
@@ -97,6 +102,7 @@ if __name__ == "__main__":
                 list(map(Meld.to_str, state.melds[i][: state.meld_num[i]])),
             )
         print("riichi:", state.riichi)
+        print("is_menzen:", state.is_menzen)
         print("doras:", state.deck.doras)
         print("end:", state.deck.end)
         if state.target != -1:
