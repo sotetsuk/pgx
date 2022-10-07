@@ -114,13 +114,7 @@ def _step_det_at_non_terminal(
 
     # Resolve player action
     # action_map = ['n','l','u','r','d','f']
-    if action == 5 and shot_timer == 0:
-        f_bullet_map = f_bullet_map.at[9, pos].set(1)
-        shot_timer = SHOT_COOL_DOWN
-    elif action == 1:
-        pos = max(0, pos - 1)
-    elif action == 3:
-        pos = min(9, pos + 1)
+    pos, f_bullet_map, shot_timer = _resole_action(pos, f_bullet_map, shot_timer, action)
 
     # Update Friendly Bullets
     f_bullet_map = jnp.roll(f_bullet_map, -1, axis=0)
@@ -139,9 +133,7 @@ def _step_det_at_non_terminal(
         alien_move_timer = min(
             jnp.count_nonzero(alien_map), enemy_move_interval
         )
-        if (jnp.sum(alien_map[:, 0]) > 0 and alien_dir < 0) or (
-            jnp.sum(alien_map[:, 9]) > 0 and alien_dir > 0
-        ):
+        if (jnp.sum(alien_map[:, 0]) > 0 and alien_dir < 0) or ( jnp.sum(alien_map[:, 9]) > 0 and alien_dir > 0 ):
             alien_dir = -alien_dir
             if jnp.sum(alien_map[9, :]) > 0:
                 terminal = jnp.bool_(True)
@@ -192,6 +184,17 @@ def _step_det_at_non_terminal(
         r,
         terminal,
     )
+
+
+def _resole_action(pos, f_bullet_map, shot_timer, action):
+    if action == 5 and shot_timer == 0:
+        f_bullet_map = f_bullet_map.at[9, pos].set(1)
+        shot_timer = SHOT_COOL_DOWN
+    elif action == 1:
+        pos = max(0, pos - 1)
+    elif action == 3:
+        pos = min(9, pos + 1)
+    return pos, f_bullet_map, shot_timer
 
 
 def _nearest_alien(pos, alien_map):
