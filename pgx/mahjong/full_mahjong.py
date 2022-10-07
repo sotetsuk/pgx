@@ -58,11 +58,6 @@ class Deck:
     def size(self) -> int:
         return self.end - self.idx
 
-    def _tree_flatten(self):
-        children = (self.idx, self.arr, self.end, self.doras)
-        aux_data = {}
-        return (children, aux_data)
-
     @staticmethod
     @jit
     def init(key: jnp.ndarray) -> Deck:
@@ -84,6 +79,11 @@ class Deck:
         # NOTE: 先めくりで統一
 
         return deck, tile
+
+    def _tree_flatten(self):
+        children = (self.idx, self.arr, self.end, self.doras)
+        aux_data = {}
+        return (children, aux_data)
 
     @classmethod
     def _tree_unflatten(cls, aux_data, children):
