@@ -22,6 +22,14 @@ state_keys = [
 ]
 
 
+def test_neareset_alien():
+    pos: jnp.ndarray = jnp.int8(3)
+    alien_map: jnp.ndarray = (
+        jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(True)
+    )
+    alien_map = alien_map.at[3, 3].set(False)
+    assert space_invaders._nearest_alien(pos, alien_map) == (jnp.int8(2), jnp.int8(3))
+
 def test_step_det():
     env = Environment("space_invaders", sticky_action_prob=0.0)
     num_actions = env.num_actions()
