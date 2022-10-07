@@ -28,21 +28,27 @@ class Action:
     RIICHI = 35
     TSUMO = 36
 
-    RON = 39
-    PON = 40
-    MINKAN = 41
-    CHI_L = 42  # [4]56
-    CHI_M = 43  # 4[5]6
-    CHI_R = 44  # 45[6]
-    PASS = 45
+    RON = 37
+    PON = 38
+    MINKAN = 39
+    CHI_L = 40  # [4]56
+    CHI_M = 41  # 4[5]6
+    CHI_R = 42  # 45[6]
+    PASS = 43
 
-    NONE = 46
+    NONE = 44
 
 
 @dataclass
 class Deck:
     idx: int
     arr: jnp.ndarray
+    end: int = 122
+    doras: int = 1
+
+    # 0 ... end-1 | 122 ... 126 | 127 ... 131 | 132 ... 135
+    # -----------------------------------------------------
+    #    used     | 裏ドラ表示牌 | ドラ表示牌 | 嶺上牌
 
     @jit
     def is_empty(self) -> bool:
@@ -50,10 +56,10 @@ class Deck:
 
     @jit
     def size(self) -> int:
-        return 122 - self.idx
+        return self.end - self.idx
 
     def _tree_flatten(self):
-        children = (self.idx, self.arr)
+        children = (self.idx, self.arr, self.end, self.doras)
         aux_data = {}
         return (children, aux_data)
 
@@ -65,11 +71,18 @@ class Deck:
 
     @staticmethod
     @jit
-    def draw(deck: Deck) -> tuple[Deck, jnp.ndarray]:
+    def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, jnp.ndarray]:
         # -> tuple[Deck, int]
         # assert not deck.is_empty()
-        tile = deck.arr[deck.idx]
-        deck.idx += 1
+
+        tile = deck.arr[
+            deck.idx * (is_kan == False) | (131 + deck.doras) * is_kan
+        ]
+        deck.idx += is_kan == False
+        deck.end -= is_kan
+        deck.doras += is_kan
+        # NOTE: 先めくりで統一
+
         return deck, tile
 
     @classmethod
@@ -311,6 +324,10 @@ class Meld:
         suit, num = target // 9, target % 9 + 1
         if action == Action.PON:
             return "{}{}{}{}".format(num, num, num, ["m", "p", "s", "z"][suit])
+        if action == Action.MINKAN:
+            return "{}{}{}{}{}".format(
+                num, num, num, num, ["m", "p", "s", "z"][suit]
+            )
         if action == Action.CHI_L:
             return "{}{}{}{}".format(
                 num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
@@ -476,15 +493,19 @@ class State:
                     Hand.can_ron(self.hand[player], self.target)
                 ),
             )
-            # ポン
+            # ポン,明槓
             legal_actions = jax.lax.cond(
                 (self.target == -1)
                 | (player == self.turn)
                 | self.deck.is_empty()
                 | self.riichi[player],
                 lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.PON)].set(
-                    Hand.can_pon(self.hand[player], self.target)
+                lambda: legal_actions.at[(player, Action.PON)]
+                .set(Hand.can_pon(self.hand[player], self.target))
+                .at[(player, Action.MINKAN)]
+                .set(
+                    Hand.can_minkan(self.hand[player], self.target)
+                    & (self.deck.doras < 4)  # 5回目の槓はできない
                 ),
             )
             # チー
@@ -573,6 +594,7 @@ class State:
                     lambda: State._tsumo(state),
                     lambda: State._ron(state, player),
                     lambda: State._pon(state, player),
+                    lambda: State._minkan(state, player),
                     lambda: State._chi(state, player, Action.CHI_L),
                     lambda: State._chi(state, player, Action.CHI_M),
                     lambda: State._chi(state, player, Action.CHI_R),
@@ -659,6 +681,25 @@ class State:
             state.meld_num[player] + 1
         )
         return state
+
+    @staticmethod
+    @jit
+    def _minkan(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
+        state = State._accept_riichi(state)
+        meld = Meld.init(Action.MINKAN, state.target, state.turn)
+        state = State._append_meld(state, meld, player)
+        state.hand = state.hand.at[player].set(
+            Hand.minkan(state.hand[player], state.target)
+        )
+        state.target = -1
+        state.turn = player
+
+        state.deck, tile = Deck.draw(state.deck, is_kan=True)
+        state.last_draw = tile
+        state.hand = state.hand.at[state.turn].set(
+            Hand.add(state.hand[state.turn], tile)
+        )
+        return state, jnp.full(4, 0), False
 
     @staticmethod
     @jit

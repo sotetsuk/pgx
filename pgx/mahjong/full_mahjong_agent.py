@@ -18,6 +18,8 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
         return Action.RON
     if legal_actions[Action.RIICHI]:
         return Action.RIICHI
+    if legal_actions[Action.MINKAN]:
+        return Action.MINKAN
 
     if jnp.sum(obs.hand) % 3 == 2:
         min_shanten = 999
@@ -71,7 +73,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
 
 
 if __name__ == "__main__":
-    for i in range(10):
+    for i in range(100):
         state = init(jax.random.PRNGKey(seed=i))
         reward = jnp.full(4, 0)
         done = False
@@ -95,6 +97,8 @@ if __name__ == "__main__":
                 list(map(Meld.to_str, state.melds[i][: state.meld_num[i]])),
             )
         print("riichi:", state.riichi)
+        print("doras:", state.deck.doras)
+        print("end:", state.deck.end)
         if state.target != -1:
             print("target:", Tile.to_str(state.target))
         if state.last_draw != -1:
