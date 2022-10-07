@@ -76,7 +76,7 @@ def _step_det(
         state.terminal,
         lambda: (
             state.replace(last_action=action),  # type: ignore
-            0,
+            jnp.array(0, dtype=jnp.int16),
             jnp.array(True, dtype=jnp.bool_),
         ),
         lambda: _step_det_at_non_terminal(state, action),

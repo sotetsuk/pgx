@@ -104,7 +104,7 @@ def _step_det(
 ) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), 0, True),  # type: ignore
+        lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int16), True),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, lr, is_gold, slot),
     )
 
