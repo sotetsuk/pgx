@@ -144,8 +144,6 @@ def _step_det_at_non_terminal(
         ),
         lambda: (alien_move_timer, alien_map, alien_dir, terminal),
     )
-    # if alien_move_timer == 0:
-    #     alien_move_timer,alien_map, alien_dir, terminal = _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal)
     timer_zero = alien_shot_timer == 0
     alien_shot_timer = lax.cond(
         timer_zero, lambda: ENEMY_SHOT_INTERVAL, lambda: alien_shot_timer
