@@ -146,25 +146,25 @@ class Hand:
 
         for suit in range(3):
             heads, valid, code, size = jax.lax.fori_loop(
-                    9 * suit,
-                    9 * (suit + 1),
-                    lambda i, tpl: jax.lax.cond(
-                        hand[i] == 0,
-                        lambda: (
-                            tpl[0] + (tpl[3] % 3 == 2),
-                            tpl[1] & (Hand.cache(tpl[2]) != 0),
-                            0,
-                            0,
-                            ),
-                        lambda: (
-                            tpl[0],
-                            tpl[1],
-                            ((tpl[2] << 1) + 1) << (hand[i].astype(int) - 1),
-                            tpl[3] + hand[i].astype(int),
-                            )
-                        ),
-                    (heads, valid, 0, 0),
-                    )
+                9 * suit,
+                9 * (suit + 1),
+                lambda i, tpl: jax.lax.cond(
+                    hand[i] == 0,
+                    lambda: (
+                        tpl[0] + (tpl[3] % 3 == 2),
+                        tpl[1] & (Hand.cache(tpl[2]) != 0),
+                        0,
+                        0,
+                    ),
+                    lambda: (
+                        tpl[0],
+                        tpl[1],
+                        ((tpl[2] << 1) + 1) << (hand[i].astype(int) - 1),
+                        tpl[3] + hand[i].astype(int),
+                    ),
+                ),
+                (heads, valid, 0, 0),
+            )
             heads += size % 3 == 2
             valid &= Hand.cache(code) != 0
 
@@ -378,18 +378,36 @@ class Yaku:
     三色同刻 = 7
     対々和 = 8
     三暗刻 = 9
-
     断么九 = 10
     混一色 = 11
     清一色 = 12
     混老頭 = 13
+    小三元 = 14
+    白 = 15
+    發 = 16
+    中 = 17
+    場風 = 18
+    自風 = 19
+    門前清自摸和 = 20
 
-    FAN = jnp.array(
-        [
-            [0, 0, 0, 1, 2, 1, 1, 2, 2, 2, 1, 2, 5, 2],  # 副露
-            [1, 1, 3, 2, 3, 2, 2, 2, 2, 2, 1, 3, 6, 2],  # 面前
-        ]
-    )
+    大三元 = 21
+    小四喜 = 22
+    大四喜 = 23
+    九蓮宝燈 = 24
+    国士無双 = 25
+    清老頭 = 26
+    字一色 = 27
+    緑一色 = 28
+    四暗刻 = 29
+
+    # fmt: off
+    FAN = jnp.array([
+        [0,0,0,1,2,1,1,2,2,2,1,2,5,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
+        [1,1,3,2,3,2,2,2,2,2,1,3,6,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],
+        ])
+    # fmt: on
+
+    NINE_GATES = jnp.array([3, 1, 1, 1, 1, 1, 1, 1, 3])
 
     @staticmethod
     @jit
@@ -420,6 +438,11 @@ class Yaku:
     @jit
     def outside(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 25 & 0b11
+
+    @staticmethod
+    @jit
+    def nine_gates(code: int) -> jnp.ndarray:
+        return Yaku.CACHE[code] >> 27 & 1
 
     @staticmethod
     @jit
@@ -467,6 +490,7 @@ class Yaku:
         all_chow: jnp.ndarray,
         all_pung: jnp.ndarray,
         concealed_pungs: jnp.ndarray,
+        nine_gates: jnp.ndarray,
         fu: jnp.ndarray,
         code: int,
         begin: int,
@@ -518,6 +542,8 @@ class Yaku:
 
         concealed_pungs += pungs - loss
 
+        nine_gates |= Yaku.nine_gates(code) == 1
+
         outside_pung = ((begin % 9 == 0) & (pung & 1)) | (
             (end % 9 == 0) & (pung >> len & 1)
         ) << len
@@ -546,6 +572,7 @@ class Yaku:
             all_chow,
             all_pung,
             concealed_pungs,
+            nine_gates,
             fu,
         )
 
@@ -599,6 +626,7 @@ class Yaku:
         )
 
         concealed_pungs = jnp.full(Yaku.MAX_PATTERNS, 0)
+        nine_gates = jnp.full(Yaku.MAX_PATTERNS, False)
 
         fu = jnp.full(Yaku.MAX_PATTERNS, 2 * (is_ron == 0))
 
@@ -613,6 +641,7 @@ class Yaku:
                     all_chow,
                     all_pung,
                     concealed_pungs,
+                    nine_gates,
                     fu,
                     code,
                     begin,
@@ -626,6 +655,7 @@ class Yaku:
                             all_chow,
                             all_pung,
                             concealed_pungs,
+                            nine_gates,
                             fu,
                             code,
                             begin,
@@ -643,6 +673,7 @@ class Yaku:
                         all_chow,
                         all_pung,
                         concealed_pungs,
+                        nine_gates,
                         fu,
                         ((code << 1) + 1) << (hand[tile].astype(int) - 1),
                         begin,
@@ -656,6 +687,7 @@ class Yaku:
                 all_chow,
                 all_pung,
                 concealed_pungs,
+                nine_gates,
                 fu,
             ) = Yaku.update(
                 is_pinfu,
@@ -664,6 +696,7 @@ class Yaku:
                 all_chow,
                 all_pung,
                 concealed_pungs,
+                nine_gates,
                 fu,
                 code,
                 begin,
@@ -686,16 +719,30 @@ class Yaku:
         )
 
         flatten = Yaku.flatten(hand, melds, meld_num)
+
+        four_winds = jnp.sum(flatten[27:31] >= 3)
+        three_dragons = jnp.sum(flatten[31:34] >= 3)
+
+        has_tanyao = (
+            jnp.any(flatten[1:8])
+            | jnp.any(flatten[10:17])
+            | jnp.any(flatten[19:26])
+        )
         has_honor = jnp.any(flatten[27:] > 0)
+        is_flush = (
+            jnp.any(flatten[0:9] > 0).astype(int)
+            + jnp.any(flatten[9:18] > 0).astype(int)
+            + jnp.any(flatten[18:27] > 0).astype(int)
+        ) == 1
+
         has_outside = (
-                (flatten[0] > 0)
-                | (flatten[8] > 0)
-                | (flatten[9] > 0)
-                | (flatten[17] > 0)
-                | (flatten[18] > 0)
-                | (flatten[26] > 0)
-                )
-        has_tanyao = jnp.any(flatten[1:8]) | jnp.any(flatten[10:17]) | jnp.any(flatten[19:26])
+            (flatten[0] > 0)
+            | (flatten[8] > 0)
+            | (flatten[9] > 0)
+            | (flatten[17] > 0)
+            | (flatten[18] > 0)
+            | (flatten[26] > 0)
+        )
 
         yaku = (
             jnp.full((Yaku.FAN.shape[1], Yaku.MAX_PATTERNS), False)
@@ -730,8 +777,6 @@ class Yaku:
         fu = fu[best_pattern]
         fu += -fu % 10
 
-        is_flush = Yaku.is_flush(flatten)
-
         yaku = (
             yaku.at[Yaku.断么九]
             .set((has_honor | has_outside) == 0)
@@ -741,9 +786,63 @@ class Yaku:
             .set(is_flush & (has_honor == 0))
             .at[Yaku.混老頭]
             .set(has_tanyao == 0)
+            .at[Yaku.白]
+            .set(flatten[31] >= 3)
+            .at[Yaku.發]
+            .set(flatten[32] >= 3)
+            .at[Yaku.中]
+            .set(flatten[33] >= 3)
+            .at[Yaku.小三元]
+            .set(jnp.all(flatten[31:34] >= 2) & (three_dragons >= 2))
+            .at[Yaku.場風]
+            .set(flatten[27] >= 3)
+            .at[Yaku.自風]
+            .set(flatten[27] >= 3)
+            .at[Yaku.門前清自摸和]
+            .set(is_menzen & (is_ron == 0))
         )
 
-        return (yaku, fu)
+        yakuman = (
+            jnp.full(Yaku.FAN.shape[1], False)
+            .at[Yaku.大三元]
+            .set(three_dragons == 3)
+            .at[Yaku.小四喜]
+            .set(jnp.all(flatten[27:31] >= 2) & (four_winds == 3))
+            .at[Yaku.大四喜]
+            .set(four_winds == 4)
+            .at[Yaku.九蓮宝燈]
+            .set(jnp.any(nine_gates))
+            .at[Yaku.国士無双]
+            .set(
+                (hand[0] > 0)
+                & (hand[8] > 0)
+                & (hand[9] > 0)
+                & (hand[17] > 0)
+                & (hand[18] > 0)
+                & jnp.all(hand[26:] > 0)
+                & (has_tanyao == 0)
+            )
+            .at[Yaku.清老頭]
+            .set((has_tanyao == 0) & (has_honor == 0))
+            .at[Yaku.字一色]
+            .set(jnp.all(flatten[0:27] == 0))
+            .at[Yaku.緑一色]
+            .set(
+                jnp.all(flatten[0:19] == 0)
+                & (flatten[22] == 0)
+                & (flatten[24] == 0)
+                & jnp.all(flatten[26:32] == 0)
+                & (flatten[33] == 0)
+            )
+            .at[Yaku.四暗刻]
+            .set(jnp.any(concealed_pungs == 4))
+        )
+
+        return jax.lax.cond(
+            jnp.any(yakuman),
+            lambda: (yakuman, 0),
+            lambda: (yaku, fu),
+        )
 
     @staticmethod
     @jit
@@ -773,15 +872,6 @@ class Yaku:
                 ),
             ],
         )
-
-    @staticmethod
-    @jit
-    def is_flush(hand: jnp.ndarray) -> bool:
-        return (
-            jnp.any(hand[0:9] > 0).astype(int)
-            + jnp.any(hand[9:18] > 0).astype(int)
-            + jnp.any(hand[18:27] > 0).astype(int)
-        ) == 1
 
 
 @dataclass

@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 use std::io::Write;
 
-fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize, usize)>>) {
+fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize, usize, usize)>>) {
     assert!(x <= 4);
     assert!(y <= 1);
     let sets = vec![
@@ -95,7 +95,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
                         _ => 0b00,
                     };
 
-                    arr[code].insert((9, chow, pung, double_chows, outside));
+                    arr[code].insert((9, chow, pung, double_chows, outside, 0));
                 }
             }
         } else {
@@ -154,7 +154,24 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
                             _ => 0b00,
                         };
 
-                        arr[code].insert((head_idx, chow, pung, double_chows, outside));
+                        let nine_gates = (code == 0b10001111111100)
+                            | (code == 0b10010111111100)
+                            | (code == 0b10011011111100)
+                            | (code == 0b10011101111100)
+                            | (code == 0b10011110111100)
+                            | (code == 0b10011111011100)
+                            | (code == 0b10011111101100)
+                            | (code == 0b10011111110100)
+                            | (code == 0b10011111111000);
+
+                        arr[code].insert((
+                            head_idx,
+                            chow,
+                            pung,
+                            double_chows,
+                            outside,
+                            nine_gates as usize,
+                        ));
                     }
                 }
             }
@@ -186,13 +203,14 @@ fn main() {
         }
         let vs: Vec<_> = vs.iter().collect();
         for i in 0..3 {
-            let &(h, chow, pung, double_chows, outside) = vs[i % vs.len()];
+            let &(h, chow, pung, double_chows, outside, nine_gates) = vs[i % vs.len()];
             cache[idx][i] = h
                 | (chow << 4)
                 | (pung << 11)
                 | ((pung as u32).count_ones() << 20) as usize
                 | (double_chows << 23)
-                | (outside << 25);
+                | (outside << 25)
+                | (nine_gates << 27);
         }
     }
 

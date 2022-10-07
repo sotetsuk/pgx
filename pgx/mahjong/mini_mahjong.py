@@ -77,25 +77,25 @@ class Hand:
 
         for suit in range(3):
             heads, valid, code, size = jax.lax.fori_loop(
-                    9 * suit,
-                    9 * (suit + 1),
-                    lambda i, tpl: jax.lax.cond(
-                        hand[i] == 0,
-                        lambda: (
-                            tpl[0] + (tpl[3] % 3 == 2),
-                            tpl[1] & (Hand.cache(tpl[2]) != 0),
-                            0,
-                            0,
-                            ),
-                        lambda: (
-                            tpl[0],
-                            tpl[1],
-                            ((tpl[2] << 1) + 1) << (hand[i].astype(int) - 1),
-                            tpl[3] + hand[i].astype(int),
-                            )
-                        ),
-                    (heads, valid, 0, 0),
-                    )
+                9 * suit,
+                9 * (suit + 1),
+                lambda i, tpl: jax.lax.cond(
+                    hand[i] == 0,
+                    lambda: (
+                        tpl[0] + (tpl[3] % 3 == 2),
+                        tpl[1] & (Hand.cache(tpl[2]) != 0),
+                        0,
+                        0,
+                    ),
+                    lambda: (
+                        tpl[0],
+                        tpl[1],
+                        ((tpl[2] << 1) + 1) << (hand[i].astype(int) - 1),
+                        tpl[3] + hand[i].astype(int),
+                    ),
+                ),
+                (heads, valid, 0, 0),
+            )
             heads += size % 3 == 2
             valid &= Hand.cache(code) != 0
 
