@@ -19,6 +19,8 @@ SHOT_COOL_DOWN = jnp.int8(5)
 ENEMY_MOVE_INTERVAL = jnp.int8(12)
 ENEMY_SHOT_INTERVAL = jnp.int8(10)
 
+ZERO = jnp.int8(0)
+NINE = jnp.int8(9)
 
 @struct.dataclass
 class MinAtarSpaceInvadersState:
@@ -175,14 +177,12 @@ def _step_det_at_non_terminal(
     )
 
 
+@jax.jit
 def _resole_action(pos, f_bullet_map, shot_timer, action):
-    if action == 5 and shot_timer == 0:
-        f_bullet_map = f_bullet_map.at[9, pos].set(1)
-        shot_timer = SHOT_COOL_DOWN
-    elif action == 1:
-        pos = max(0, pos - 1)
-    elif action == 3:
-        pos = min(9, pos + 1)
+    f_bullet_map = lax.cond((action == 5) & (shot_timer == 0), lambda: f_bullet_map.at[9, pos].set(1), lambda: f_bullet_map)
+    shot_timer =  lax.cond((action == 5) & (shot_timer == 0), lambda: SHOT_COOL_DOWN, lambda: shot_timer)
+    pos = lax.cond(action == 1, lambda: jax.lax.max(ZERO, pos-1), lambda: pos)
+    pos = lax.cond(action == 3, lambda: jax.lax.min(NINE, pos+1), lambda: pos)
     return pos, f_bullet_map, shot_timer
 
 
