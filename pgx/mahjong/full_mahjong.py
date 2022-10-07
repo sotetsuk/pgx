@@ -104,31 +104,17 @@ class Hand:
     @staticmethod
     @jit
     def can_tsumo(hand: jnp.ndarray) -> bool:
-        heads, valid = 0, True
-
+        heads, valid = 0, 1
         for suit in range(3):
-            heads, valid, code, size = jax.lax.fori_loop(
-                9 * suit,
-                9 * (suit + 1),
-                lambda i, tpl: jax.lax.cond(
-                    hand[i] == 0,
-                    lambda: (
-                        tpl[0] + (tpl[3] % 3 == 2),
-                        tpl[1] & (Hand.cache(tpl[2]) != 0),
-                        0,
-                        0,
-                    ),
-                    lambda: (
-                        tpl[0],
-                        tpl[1],
-                        ((tpl[2] << 1) + 1) << (hand[i].astype(int) - 1),
-                        tpl[3] + hand[i].astype(int),
-                    ),
-                ),
-                (heads, valid, 0, 0),
+            valid &= Hand.cache(
+                jax.lax.fori_loop(
+                    9 * suit,
+                    9 * (suit + 1),
+                    lambda i, code: code * 5 + hand[i].astype(int),
+                    0,
+                )
             )
-            heads += size % 3 == 2
-            valid &= Hand.cache(code) != 0
+            heads += jnp.sum(hand[9 * suit : 9 * (suit + 1)]) % 3 == 2
 
         heads, valid = jax.lax.fori_loop(
             27,
@@ -309,10 +295,14 @@ class Deck:
         hand = jnp.zeros((4, 34), dtype=jnp.uint8)
         for i in range(3):
             for j in range(4):
-                for k in range(4):
-                    hand = hand.at[j].set(
-                        Hand.add(hand[j], deck.arr[16 * i + 4 * j + k])
+                hand = hand.at[j].set(
+                    jax.lax.fori_loop(
+                        0,
+                        4,
+                        lambda k, h: Hand.add(h, deck.arr[16 * i + 4 * j + k]),
+                        hand[j],
                     )
+                )
         for j in range(4):
             hand = hand.at[j].set(Hand.add(hand[j], deck.arr[16 * 3 + j]))
 
@@ -328,15 +318,12 @@ class Deck:
     def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, jnp.ndarray]:
         # -> tuple[Deck, int]
         # assert not deck.is_empty()
-
         tile = deck.arr[
             deck.idx * (is_kan is False) | (deck.doras - 1) * is_kan
         ]
         deck.idx -= is_kan is False
         deck.end += is_kan
-        deck.doras += is_kan
-        # NOTE: 先めくりで統一
-
+        deck.doras += is_kan  # NOTE: 先めくりで統一
         return deck, tile
 
     def _tree_flatten(self):
@@ -1199,7 +1186,6 @@ class Yaku:
         is_ron: bool,
     ) -> tuple[jnp.ndarray, int]:
         # assert Hand.can_tsumo(hand)
-
         is_menzen = meld_num == 0
 
         is_pinfu = jnp.full(

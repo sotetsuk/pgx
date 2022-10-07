@@ -19,11 +19,8 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
     if legal_actions[Action.RIICHI]:
         return Action.RIICHI
     if legal_actions[Action.MINKAN]:
-        print("MINKAN")
         return Action.MINKAN
     if jnp.any(legal_actions[34:68]):
-        print("SELFKAN")
-        print(obs.hand)
         return jnp.where(legal_actions[34:68])[0][0] + 34
 
     if jnp.sum(obs.hand) % 3 == 2:
@@ -78,7 +75,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
 
 
 if __name__ == "__main__":
-    for i in range(100):
+    for i in range(20):
         state = init(jax.random.PRNGKey(seed=i))
         reward = jnp.full(4, 0)
         done = False

@@ -43,24 +43,10 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
                 .collect();
             if hand.iter().all(|&h| h <= 4) {
                 let mut code = 0;
-                let mut zero = false;
-                let mut valid = true;
                 for i in 0..9 {
-                    if hand[i] == 0 {
-                        zero = true;
-                    } else {
-                        if zero {
-                            valid = false;
-                            break;
-                        }
-                        code <<= 1;
-                        code += 1;
-                        code <<= hand[i] - 1;
-                    }
+                    code = code * 5 + hand[i];
                 }
-                if valid {
-                    arr[code >> 5] |= 1 << (code & 0b11111);
-                }
+                arr[code >> 5] |= 1 << (code & 0b11111);
             }
         } else {
             for head in heads.iter() {
@@ -69,24 +55,10 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
                     .collect();
                 if hand.iter().all(|&h| h <= 4) {
                     let mut code = 0;
-                    let mut zero = false;
-                    let mut valid = true;
                     for i in 0..9 {
-                        if hand[i] == 0 {
-                            zero = true;
-                        } else {
-                            if zero {
-                                valid = false;
-                                break;
-                            }
-                            code <<= 1;
-                            code += 1;
-                            code <<= hand[i] - 1;
-                        }
+                        code = code * 5 + hand[i];
                     }
-                    if valid {
-                        arr[code >> 5] |= 1 << (code & 0b11111);
-                    }
+                    arr[code >> 5] |= 1 << (code & 0b11111);
                 }
             }
         }
@@ -102,7 +74,7 @@ fn search(x: usize, y: usize, arr: &mut Vec<usize>) {
 }
 
 fn main() {
-    let mut arr = vec![0; (16329 >> 5) + 1];
+    let mut arr = vec![0; (1953125 >> 5) + 1];
     for x in 0..5 {
         for y in 0..2 {
             search(x, y, &mut arr);
