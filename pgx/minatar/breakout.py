@@ -48,7 +48,7 @@ def step(
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
-) -> Tuple[MinAtarBreakoutState, int, jnp.ndarray]:
+) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
@@ -58,25 +58,25 @@ def step(
 
 
 @jax.jit
-def reset(rng: jnp.ndarray) -> MinAtarBreakoutState:
+def init(rng: jnp.ndarray) -> MinAtarBreakoutState:
     ball_start = jax.random.choice(rng, 2)
-    return _reset_det(ball_start=ball_start)
+    return _init_det(ball_start=ball_start)
 
 
 @jax.jit
-def to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
+def observe(state: MinAtarBreakoutState) -> jnp.ndarray:
     return _to_obs(state)
 
 
 @jax.jit
 def _step_det(
     state: MinAtarBreakoutState, action: jnp.ndarray
-) -> Tuple[MinAtarBreakoutState, int, jnp.ndarray]:
+) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
         lambda: (
             state.replace(last_action=action),  # type: ignore
-            0,
+            jnp.array(0, dtype=jnp.int16),
             jnp.array(True, dtype=jnp.bool_),
         ),
         lambda: _step_det_at_non_terminal(state, action),
@@ -86,7 +86,7 @@ def _step_det(
 @jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarBreakoutState, action: jnp.ndarray
-) -> Tuple[MinAtarBreakoutState, int, jnp.ndarray]:
+) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
     ball_y = state.ball_y
     ball_x = state.ball_x
     ball_dir = state.ball_dir
@@ -95,7 +95,7 @@ def _step_det_at_non_terminal(
     strike = state.strike
     terminal = state.terminal
 
-    r = 0
+    r = jnp.array(0, dtype=jnp.int16)
 
     pos = apply_action(pos, action)
 
@@ -229,7 +229,7 @@ def update_by_bottom(
 
 
 @jax.jit
-def _reset_det(ball_start: jnp.ndarray) -> MinAtarBreakoutState:
+def _init_det(ball_start: jnp.ndarray) -> MinAtarBreakoutState:
     ball_x, ball_dir = jax.lax.switch(
         ball_start,
         [lambda: (ZERO, TWO), lambda: (NINE, THREE)],

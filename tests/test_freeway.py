@@ -56,7 +56,7 @@ def test_step_det():
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
 
-def test_reset_det():
+def test_init_det():
     env = Environment("freeway", sticky_action_prob=0.0)
     N = 10
     for _ in range(N):
@@ -65,11 +65,11 @@ def test_reset_det():
         # extract random variables
         speeds = jnp.array(env.env.speeds)
         directions = jnp.array(env.env.directions)
-        s_pgx = freeway._reset_det(speeds, directions)
+        s_pgx = freeway._init_det(speeds, directions)
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
-def test_to_obs():
+def test_observe():
     env = Environment("freeway", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
