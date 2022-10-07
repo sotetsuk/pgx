@@ -71,14 +71,11 @@ class Hand:
     @staticmethod
     @jit
     def can_ron(hand: jnp.ndarray, tile: int) -> bool:
-        # assert jnp.sum(hand) % 3 == 1
-        # assert hand[tile] < 4
         return Hand.can_tsumo(Hand.add(hand, tile))
 
     @staticmethod
     @jit
     def can_riichi(hand: jnp.ndarray) -> bool:
-        # assert: hand is menzen
         return jax.lax.fori_loop(
             0,
             34,
@@ -93,7 +90,6 @@ class Hand:
     @staticmethod
     @jit
     def is_tenpai(hand: jnp.ndarray) -> bool:
-        # assert jnp.sum(hand) % 3 == 1
         return jax.lax.fori_loop(
             0,
             34,
@@ -334,9 +330,9 @@ class Deck:
         # assert not deck.is_empty()
 
         tile = deck.arr[
-            deck.idx * (is_kan == False) | (deck.doras - 1) * is_kan
+            deck.idx * (is_kan is False) | (deck.doras - 1) * is_kan
         ]
-        deck.idx -= is_kan == False
+        deck.idx -= is_kan is False
         deck.end += is_kan
         deck.doras += is_kan
         # NOTE: 先めくりで統一
@@ -382,71 +378,64 @@ class Meld:
         suit, num = target // 9, target % 9 + 1
 
         if action == Action.PON:
+            assert src != 0
             if src == 1:
                 return "{}{}[{}]{}".format(
                     num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            if src == 2:
+            elif src == 2:
                 return "{}[{}]{}{}".format(
                     num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            if src == 3:
+            else:
                 return "[{}]{}{}{}".format(
                     num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            return "INVALID"
-        if Action.is_selfkan(action):
+        elif Action.is_selfkan(action):
             if is_menzen:
                 return "{}{}{}{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
+            assert src != 0
+            if src == 1:
+                return "{}{}[{}{}]{}".format(
+                    num, num, num, num, ["m", "p", "s", "z"][suit]
+                )
+            elif src == 2:
+                return "{}[{}{}]{}{}".format(
+                    num, num, num, num, ["m", "p", "s", "z"][suit]
+                )
             else:
-                if src == 1:
-                    return "{}{}[{}{}]{}".format(
-                        num, num, num, num, ["m", "p", "s", "z"][suit]
-                    )
-                if src == 2:
-                    return "{}[{}{}]{}{}".format(
-                        num, num, num, num, ["m", "p", "s", "z"][suit]
-                    )
-                if src == 3:
-                    return "[{}{}]{}{}{}".format(
-                        num, num, num, num, ["m", "p", "s", "z"][suit]
-                    )
-                return "INVALID"
-        if action == Action.MINKAN:
+                return "[{}{}]{}{}{}".format(
+                    num, num, num, num, ["m", "p", "s", "z"][suit]
+                )
+        elif action == Action.MINKAN:
+            assert src != 0
             if src == 1:
                 return "{}{}{}[{}]{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            if src == 2:
+            elif src == 2:
                 return "{}[{}]{}{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            if src == 3:
+            else:
                 return "[{}]{}{}{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            return "INVALID"
+        assert src == 3
         if action == Action.CHI_L:
-            if src == 3:
-                return "[{}]{}{}{}".format(
-                    num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
-                )
-            return "INVALID"
-        if action == Action.CHI_M:
-            if src == 3:
-                return "[{}]{}{}{}".format(
-                    num - 1, num, num + 1, ["m", "p", "s", "z"][suit]
-                )
-            return "INVALID"
-        if action == Action.CHI_R:
-            if src == 3:
-                return "[{}]{}{}{}".format(
-                    num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
-                )
-            return "INVALID"
-        return "INVALID"
+            return "[{}]{}{}{}".format(
+                num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
+            )
+        elif action == Action.CHI_M:
+            return "[{}]{}{}{}".format(
+                num - 1, num, num + 1, ["m", "p", "s", "z"][suit]
+            )
+        else:
+            return "[{}]{}{}{}".format(
+                num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
+            )
 
     @staticmethod
     @jit
@@ -1028,12 +1017,10 @@ class Yaku:
 
     # fmt: off
     FAN = jnp.array([
-        [0,0,0,1,2,1,1,2,2,2,1,2,5,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],
-        [1,1,3,2,3,2,2,2,2,2,1,3,6,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],
-        ])
+        [0,0,0,1,2,1,1,2,2,2,1,2,5,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],  # noqa
+        [1,1,3,2,3,2,2,2,2,2,1,3,6,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],  # noqa
+    ])
     # fmt: on
-
-    NINE_GATES = jnp.array([3, 1, 1, 1, 1, 1, 1, 1, 3])
 
     @staticmethod
     @jit
