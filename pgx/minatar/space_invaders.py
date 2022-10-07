@@ -186,16 +186,14 @@ def _resole_action(pos, f_bullet_map, shot_timer, action):
     return pos, f_bullet_map, shot_timer
 
 
+@jax.jit
 def _nearest_alien(pos, alien_map):
     search_order = jnp.argsort(jnp.abs(jnp.arange(10, dtype=jnp.int8) - pos))
-    for i in search_order:
-        if jnp.sum(alien_map[:, i]) > 0:
-            return (jnp.max(jnp.arange(10, dtype=jnp.int8)[alien_map[:, i]]), jnp.int8(i))
-    # mask = alien_map.sum(axis=0) > 0
-    # pos_i = jnp.max(jnp.repeat(jnp.arange(1, 11)[:, None], 10, axis=1) * alien_map, axis=0) - 1
-    # search_order = search_order.at[~mask].set(99)  # INF
-    # i = jnp.min(search_order)
-    # j = pos_i[jnp.argmin(search_order)]
+    x = jnp.max(jnp.repeat(jnp.arange(1, 11)[:, None], 10, axis=1) * alien_map, axis=0) - 1
+    non_zero_ix = lax.while_loop(lambda ix: x[search_order[ix]] == 0, lambda ix: ix + 1, 0)
+    j = search_order[non_zero_ix]
+    i = x[j]
+    return (i, j)
 
 def _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal):
     alien_move_timer = min(
