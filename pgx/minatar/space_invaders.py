@@ -50,8 +50,17 @@ def init(rng: jnp.ndarray) -> MinAtarSpaceInvadersState:
 
 
 @jax.jit
-def observe(state: MinAtarSpaceInvadersState) -> jnp.ndarray:
-    ...
+def observe(obs: MinAtarSpaceInvadersState) -> jnp.ndarray:
+    obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
+    obs[9, obs.pos, obs.channels['cannon']] = 1
+    obs[:, :, obs.channels['alien']] = obs.alien_map
+    if (obs.alien_dir < 0):
+        obs[:, :, obs.channels['alien_left']] = obs.alien_map
+    else:
+        obs[:, :, obs.channels['alien_right']] = obs.alien_map
+    obs[:, :, obs.channels['friendly_bullet']] = obs.f_bullet_map
+    obs[:, :, obs.channels['enemy_bullet']] = obs.e_bullet_map
+    return obs
 
 @jax.jit
 def _init_det() -> MinAtarSpaceInvadersState:
