@@ -397,7 +397,9 @@ class Meld:
             return "INVALID"
         if Action.is_selfkan(action):
             if is_menzen:
-                return "{}{}{}{}{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
+                return "{}{}{}{}{}".format(
+                    num, num, num, num, ["m", "p", "s", "z"][suit]
+                )
             else:
                 if src == 1:
                     return "{}{}[{}{}]{}".format(
@@ -586,25 +588,29 @@ class State:
         legal_actions = jax.lax.cond(
             (self.last_draw == -1) | self.riichi_declared,
             lambda: legal_actions,
-            lambda: legal_actions
-                .at[(self.turn, Action.TSUMOGIRI)]
-                .set(True)
-                .at[(self.turn, Action.TSUMO)]
-                .set(Hand.can_tsumo(self.hand[self.turn])),
+            lambda: legal_actions.at[(self.turn, Action.TSUMOGIRI)]
+            .set(True)
+            .at[(self.turn, Action.TSUMO)]
+            .set(Hand.can_tsumo(self.hand[self.turn])),
         )
         can_kakan = self._can_kakan()
         legal_actions = jax.lax.cond(
-            (self.last_draw == -1) | self.riichi_declared | self.deck.is_empty(),
+            (self.last_draw == -1)
+            | self.riichi_declared
+            | self.deck.is_empty(),
             lambda: legal_actions,
             lambda: jax.lax.fori_loop(
                 0,
                 34,
                 lambda i, arr: arr.at[(self.turn, i + 34)].set(
-                    (Hand.can_ankan(self.hand[self.turn], i) | (can_kakan[i] > 0))
+                    (
+                        Hand.can_ankan(self.hand[self.turn], i)
+                        | (can_kakan[i] > 0)
+                    )
                     & (self.deck.doras < 4)  # 5回目の槓はできない
                 ),
                 legal_actions,
-            )
+            ),
         )
 
         # 手出し, 鳴いた後の手出し
@@ -780,9 +786,7 @@ class State:
 
     @staticmethod
     @jit
-    def _draw(
-        state: State
-    ) -> tuple[State, jnp.ndarray, bool]:
+    def _draw(state: State) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
         state.turn += 1
         state.turn %= 4
@@ -850,7 +854,10 @@ class State:
             self.meld_num[self.turn],
             lambda i, sum: sum.at[Meld.target(self.melds[self.turn][i])].set(
                 (
-                    Hand.can_kakan(self.hand[self.turn], Meld.target(self.melds[self.turn][i]))
+                    Hand.can_kakan(
+                        self.hand[self.turn],
+                        Meld.target(self.melds[self.turn][i]),
+                    )
                     & (Meld.action(self.melds[self.turn][i]) == Action.PON)
                 )
                 * Meld.src(self.melds[self.turn][i])
