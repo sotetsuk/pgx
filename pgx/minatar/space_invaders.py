@@ -22,6 +22,7 @@ ENEMY_SHOT_INTERVAL = jnp.int8(10)
 ZERO = jnp.int8(0)
 NINE = jnp.int8(9)
 
+
 @struct.dataclass
 class MinAtarSpaceInvadersState:
     pos: jnp.ndarray = jnp.int8(5)
@@ -89,10 +90,12 @@ def _step_det(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
 ) -> Tuple[MinAtarSpaceInvadersState, jnp.ndarray, jnp.ndarray]:
-    return lax.cond(state.terminal,
+    return lax.cond(
+        state.terminal,
         lambda: (state.replace(last_action=action), jnp.int16(0), state.terminal),  # type: ignore
-        lambda: _step_det_at_non_terminal(state, action)
+        lambda: _step_det_at_non_terminal(state, action),
     )
+
 
 @jax.jit
 def _step_det_at_non_terminal(
@@ -115,7 +118,9 @@ def _step_det_at_non_terminal(
 
     # Resolve player action
     # action_map = ['n','l','u','r','d','f']
-    pos, f_bullet_map, shot_timer = _resole_action(pos, f_bullet_map, shot_timer, action)
+    pos, f_bullet_map, shot_timer = _resole_action(
+        pos, f_bullet_map, shot_timer, action
+    )
 
     # Update Friendly Bullets
     f_bullet_map = jnp.roll(f_bullet_map, -1, axis=0)
@@ -124,19 +129,32 @@ def _step_det_at_non_terminal(
     # Update Enemy Bullets
     e_bullet_map = jnp.roll(e_bullet_map, 1, axis=0)
     e_bullet_map = e_bullet_map.at[0, :].set(0)
-    terminal = lax.cond(e_bullet_map[9, pos], lambda: jnp.bool_(True), lambda: terminal)
+    terminal = lax.cond(
+        e_bullet_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
+    )
 
     # Update aliens
-    terminal = lax.cond(alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal)
-    alien_move_timer,alien_map, alien_dir, terminal = lax.cond(alien_move_timer == 0,
-             lambda: _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal),
-             lambda: (alien_move_timer,alien_map, alien_dir, terminal)
-             )
+    terminal = lax.cond(
+        alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
+    )
+    alien_move_timer, alien_map, alien_dir, terminal = lax.cond(
+        alien_move_timer == 0,
+        lambda: _update_alien_by_move_timer(
+            alien_map, alien_dir, enemy_move_interval, pos, terminal
+        ),
+        lambda: (alien_move_timer, alien_map, alien_dir, terminal),
+    )
     # if alien_move_timer == 0:
     #     alien_move_timer,alien_map, alien_dir, terminal = _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal)
     timer_zero = alien_shot_timer == 0
-    alien_shot_timer  = lax.cond(timer_zero, lambda: ENEMY_SHOT_INTERVAL, lambda: alien_shot_timer)
-    e_bullet_map = lax.cond(timer_zero, lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(1), lambda: e_bullet_map)
+    alien_shot_timer = lax.cond(
+        timer_zero, lambda: ENEMY_SHOT_INTERVAL, lambda: alien_shot_timer
+    )
+    e_bullet_map = lax.cond(
+        timer_zero,
+        lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(1),
+        lambda: e_bullet_map,
+    )
 
     kill_locations = alien_map & (alien_map == f_bullet_map)
 
@@ -150,9 +168,19 @@ def _step_det_at_non_terminal(
     alien_shot_timer -= 1
     ramping = True
     is_enemy_zero = jnp.count_nonzero(alien_map) == 0
-    enemy_move_interval = lax.cond(is_enemy_zero & (enemy_move_interval > 6) &ramping, lambda:enemy_move_interval - 1, lambda: enemy_move_interval)
-    ramp_index = lax.cond(is_enemy_zero & (enemy_move_interval > 6) &ramping, lambda:ramp_index+ 1, lambda: ramp_index)
-    alien_map = lax.cond(is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(1), lambda: alien_map)
+    enemy_move_interval = lax.cond(
+        is_enemy_zero & (enemy_move_interval > 6) & ramping,
+        lambda: enemy_move_interval - 1,
+        lambda: enemy_move_interval,
+    )
+    ramp_index = lax.cond(
+        is_enemy_zero & (enemy_move_interval > 6) & ramping,
+        lambda: ramp_index + 1,
+        lambda: ramp_index,
+    )
+    alien_map = lax.cond(
+        is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(1), lambda: alien_map
+    )
 
     return (
         MinAtarSpaceInvadersState(
@@ -176,10 +204,22 @@ def _step_det_at_non_terminal(
 
 @jax.jit
 def _resole_action(pos, f_bullet_map, shot_timer, action):
-    f_bullet_map = lax.cond((action == 5) & (shot_timer == 0), lambda: f_bullet_map.at[9, pos].set(1), lambda: f_bullet_map)
-    shot_timer =  lax.cond((action == 5) & (shot_timer == 0), lambda: SHOT_COOL_DOWN, lambda: shot_timer)
-    pos = lax.cond(action == 1, lambda: jax.lax.max(ZERO, pos-1), lambda: pos)
-    pos = lax.cond(action == 3, lambda: jax.lax.min(NINE, pos+1), lambda: pos)
+    f_bullet_map = lax.cond(
+        (action == 5) & (shot_timer == 0),
+        lambda: f_bullet_map.at[9, pos].set(1),
+        lambda: f_bullet_map,
+    )
+    shot_timer = lax.cond(
+        (action == 5) & (shot_timer == 0),
+        lambda: SHOT_COOL_DOWN,
+        lambda: shot_timer,
+    )
+    pos = lax.cond(
+        action == 1, lambda: jax.lax.max(ZERO, pos - 1), lambda: pos
+    )
+    pos = lax.cond(
+        action == 3, lambda: jax.lax.min(NINE, pos + 1), lambda: pos
+    )
     return pos, f_bullet_map, shot_timer
 
 
@@ -189,29 +229,40 @@ def _nearest_alien(pos, alien_map):
     search_order = jnp.argsort(jnp.abs(jnp.arange(10, dtype=jnp.int8) - pos))
     ix = lax.while_loop(
         lambda i: jnp.sum(alien_map[:, search_order[i]]) <= 0,
-        lambda i: i+1,
-        0
+        lambda i: i + 1,
+        0,
     )
     ix = search_order[ix]
-    j = lax.while_loop(
-        lambda i: alien_map[i, ix] == 0,
-        lambda i: i - 1,
-        9
-    )
+    j = lax.while_loop(lambda i: alien_map[i, ix] == 0, lambda i: i - 1, 9)
     return (j, ix)
 
 
 @jax.jit
-def _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal):
+def _update_alien_by_move_timer(
+    alien_map, alien_dir, enemy_move_interval, pos, terminal
+):
     alien_move_timer = lax.min(
         jnp.sum(alien_map, dtype=jnp.int8), enemy_move_interval
     )
-    cond = ((jnp.sum(alien_map[:, 0]) > 0) & (alien_dir < 0)) | ((jnp.sum(alien_map[:, 9]) > 0) & (alien_dir > 0))
-    terminal = lax.cond(cond & (jnp.sum(alien_map[9, :]) > 0), lambda: jnp.bool_(True), lambda: terminal)
-    alien_dir = lax.cond(cond, lambda: - alien_dir, lambda: alien_dir)
-    alien_map = lax.cond(cond, lambda: jnp.roll(alien_map, 1, axis=0), lambda: jnp.roll(alien_map, alien_dir, axis=1))
-    terminal = lax.cond(alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal)
-    return alien_move_timer,alien_map, alien_dir, terminal
+    cond = ((jnp.sum(alien_map[:, 0]) > 0) & (alien_dir < 0)) | (
+        (jnp.sum(alien_map[:, 9]) > 0) & (alien_dir > 0)
+    )
+    terminal = lax.cond(
+        cond & (jnp.sum(alien_map[9, :]) > 0),
+        lambda: jnp.bool_(True),
+        lambda: terminal,
+    )
+    alien_dir = lax.cond(cond, lambda: -alien_dir, lambda: alien_dir)
+    alien_map = lax.cond(
+        cond,
+        lambda: jnp.roll(alien_map, 1, axis=0),
+        lambda: jnp.roll(alien_map, alien_dir, axis=1),
+    )
+    terminal = lax.cond(
+        alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
+    )
+    return alien_move_timer, alien_map, alien_dir, terminal
+
 
 @jax.jit
 def _init_det() -> MinAtarSpaceInvadersState:
