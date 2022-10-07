@@ -26,7 +26,7 @@ def test_step_det():
     env = Environment("space_invaders", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 3
+    N = 1
     for _ in range(N):
         env.reset()
         done = False
@@ -34,16 +34,10 @@ def test_step_det():
             s = extract_state(env, state_keys)
             a = random.randrange(num_actions)
             r, done = env.act(a)
-            # extract random variables
-            speeds, directions = jnp.array(env.env.speeds), jnp.array(
-                env.env.directions
-            )
             s_next = extract_state(env, state_keys)
             s_next_pgx, _, _ = space_invaders._step_det(
                 minatar2pgx(s, space_invaders.MinAtarSpaceInvadersState),
                 a,
-                speeds,
-                directions,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
@@ -51,13 +45,9 @@ def test_step_det():
         s = extract_state(env, state_keys)
         a = random.randrange(num_actions)
         r, done = env.act(a)
-        # extract random variables
-        speeds, directions = jnp.array(env.env.speeds), jnp.array(
-            env.env.directions
-        )
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = space_invaders.step(
-            minatar2pgx(s, space_invaders.MinAtarSpaceInvadersState), a, speeds, directions
+        s_next_pgx, _, _ = space_invaders._step_det(
+            minatar2pgx(s, space_invaders.MinAtarSpaceInvadersState), a
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
