@@ -88,7 +88,7 @@ def _step_det(
     action: jnp.ndarray,
 ) -> Tuple[MinAtarSpaceInvadersState, jnp.ndarray, jnp.ndarray]:
     if state.terminal:
-        return state.replace(last_action=action), jnp.int16(0), state.terminal
+        return state.replace(last_action=action), jnp.int16(0), state.terminal  # type: ignore
     else:
         return _step_det_at_non_terminal(state, action)
 
@@ -130,11 +130,11 @@ def _step_det_at_non_terminal(
     e_bullet_map = jnp.roll(e_bullet_map, 1, axis=0)
     e_bullet_map = e_bullet_map.at[0, :].set(0)
     if e_bullet_map[9, pos]:
-        terminal = True
+        terminal = jnp.bool_(True)
 
     # Update aliens
     if alien_map[9, pos]:
-        terminal = True
+        terminal = jnp.bool_(True)
     if alien_move_timer == 0:
         alien_move_timer = min(
             jnp.count_nonzero(alien_map), enemy_move_interval
@@ -144,12 +144,12 @@ def _step_det_at_non_terminal(
         ):
             alien_dir = -alien_dir
             if jnp.sum(alien_map[9, :]) > 0:
-                terminal = True
+                terminal = jnp.bool_(True)
             alien_map = jnp.roll(alien_map, 1, axis=0)
         else:
             alien_map = jnp.roll(alien_map, alien_dir, axis=1)
         if alien_map[9, pos]:
-            terminal = True
+            terminal = jnp.bool_(True)
     if alien_shot_timer == 0:
         alien_shot_timer = enemy_shot_interval
         nearest_alien = _nearest_alien(pos, alien_map)
@@ -188,7 +188,7 @@ def _step_det_at_non_terminal(
             shot_timer=shot_timer,
             terminal=terminal,
             last_action=action,
-        ),
+        ),  # type: ignore
         r,
         terminal,
     )
