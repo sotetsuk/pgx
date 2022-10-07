@@ -28,14 +28,15 @@ class Action:
     RIICHI = 35
     TSUMO = 36
 
-    RON = 37
-    PON = 38
-    CHI_L = 39  # [4]56
-    CHI_M = 40  # 4[5]6
-    CHI_R = 41  # 45[6]
-    PASS = 42
+    RON = 39
+    PON = 40
+    MINKAN = 41
+    CHI_L = 42  # [4]56
+    CHI_M = 43  # 4[5]6
+    CHI_R = 44  # 45[6]
+    PASS = 45
 
-    NONE = 43
+    NONE = 46
 
 
 @dataclass
@@ -188,6 +189,12 @@ class Hand:
 
     @staticmethod
     @jit
+    def can_minkan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # -> bool
+        return hand[tile] >= 3
+
+    @staticmethod
+    @jit
     def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
         # assert jnp.sum(hand) % 3 == 1
         # assert action is Action.CHI_L, CHI_M or CHI_R
@@ -233,6 +240,12 @@ class Hand:
     def pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
         # assert Hand.can_pon(hand, tile)
         return Hand.sub(hand, tile, 2)
+
+    @staticmethod
+    @jit
+    def minkan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+        # assert Hand.can_minkan(hand, tile)
+        return Hand.sub(hand, tile, 3)
 
     @staticmethod
     @jit
@@ -362,6 +375,365 @@ class Meld:
         target = Meld.target(meld)
 
         return (action == Action.PON) * 2 * (1 + (Tile.is_outside(target)))
+
+
+@dataclass
+class State:
+    deck: Deck
+    hand: jnp.ndarray
+    turn: int  # 手牌が3n+2枚, もしくは直前に牌を捨てたplayer
+    target: int  # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
+    last_draw: int  # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
+    riichi_declared: bool  # state.turn がリーチ宣言してから, その直後の打牌が通るまでTrue
+    riichi: jnp.ndarray  # 各playerのリーチが成立しているかどうか
+    meld_num: jnp.ndarray  # 各playerの副露回数
+    melds: jnp.ndarray
+    # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
+
+    # reward:
+    # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
+    # - player0 がツモ             => [ 2,-2,-2,-2]
+    # - 流局時 全員聴牌            => [ 1, 1, 1, 1]
+    # - 流局時 全員ノー聴          => [-1,-1,-1,-1]
+    # - 流局時 player0 だけ聴牌    => [ 1,-1,-1,-1]
+
+    @jit
+    def legal_actions(self) -> jnp.ndarray:
+        legal_actions = jnp.full((4, Action.NONE), False)
+
+        # リーチ
+        legal_actions = jax.lax.cond(
+            (self.last_draw == -1)
+            | self.riichi_declared
+            | self.riichi[self.turn]
+            | (self.deck.size() < 4)
+            # | (jnp.sum(self.hand[self.turn]) < 14),
+            | (self.meld_num[self.turn]),
+            lambda: legal_actions,
+            lambda: legal_actions.at[(self.turn, Action.RIICHI)].set(
+                Hand.can_riichi(self.hand[self.turn])
+            ),
+        )
+
+        # リーチ宣言直後の打牌
+        legal_actions = jax.lax.cond(
+            (self.last_draw != -1) & self.riichi_declared,
+            lambda arr: jax.lax.fori_loop(
+                0,
+                34,
+                lambda i, arr: arr.at[(self.turn, i)].set(
+                    jax.lax.cond(
+                        self.hand[self.turn][i] > (i == self.last_draw),
+                        lambda: Hand.is_tenpai(
+                            Hand.sub(self.hand[self.turn], i)
+                        ),
+                        lambda: False,
+                    )
+                ),
+                arr,
+            )
+            .at[(self.turn, Action.TSUMOGIRI)]
+            .set(
+                Hand.is_tenpai(Hand.sub(self.hand[self.turn], self.last_draw))
+            ),
+            lambda arr: arr,
+            legal_actions,
+        )
+
+        # ツモ切り, ツモ
+        legal_actions = jax.lax.cond(
+            (self.last_draw == -1) | self.riichi_declared,
+            lambda: legal_actions,
+            lambda: legal_actions.at[(self.turn, Action.TSUMOGIRI)]
+            .set(True)
+            .at[(self.turn, Action.TSUMO)]
+            .set(Hand.can_tsumo(self.hand[self.turn])),
+        )
+
+        # 手出し, 鳴いた後の手出し
+        legal_actions = jax.lax.cond(
+            (self.target != -1)
+            | self.riichi_declared
+            | self.riichi[self.turn],
+            lambda arr: arr,
+            lambda arr: jax.lax.fori_loop(
+                0,
+                34,
+                lambda i, arr: arr.at[(self.turn, i)].set(
+                    self.hand[self.turn][i] > (i == self.last_draw),
+                ),
+                arr,
+            ),
+            legal_actions,
+        )
+
+        for player in range(4):
+            # ロン
+            legal_actions = jax.lax.cond(
+                (self.target == -1) | (player == self.turn),
+                lambda: legal_actions,
+                lambda: legal_actions.at[(player, Action.RON)].set(
+                    Hand.can_ron(self.hand[player], self.target)
+                ),
+            )
+            # ポン
+            legal_actions = jax.lax.cond(
+                (self.target == -1)
+                | (player == self.turn)
+                | self.deck.is_empty()
+                | self.riichi[player],
+                lambda: legal_actions,
+                lambda: legal_actions.at[(player, Action.PON)].set(
+                    Hand.can_pon(self.hand[player], self.target)
+                ),
+            )
+            # チー
+            legal_actions = jax.lax.cond(
+                (self.target == -1)
+                | (player != (self.turn + 1) % 4)
+                | self.deck.is_empty()
+                | self.riichi[player],
+                lambda: legal_actions,
+                lambda: legal_actions.at[(player, Action.CHI_L)]
+                .set(
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_L)
+                )
+                .at[(player, Action.CHI_M)]
+                .set(
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_M)
+                )
+                .at[(player, Action.CHI_R)]
+                .set(
+                    Hand.can_chi(self.hand[player], self.target, Action.CHI_R)
+                ),
+            )
+            legal_actions = legal_actions.at[(player, Action.PASS)].set(
+                (player != self.turn) & jnp.any(legal_actions[player])
+            )
+
+        return legal_actions
+
+    def observe(self, player: int) -> Observation:
+        return Observation(self.hand[player], self.target, self.last_draw)
+
+    @staticmethod
+    @jit
+    def init(key) -> State:
+        deck = Deck.init(key)
+        hand = jnp.zeros((4, 34), dtype=jnp.uint8)
+
+        for i in range(4):
+            for _ in range(13):
+                deck, tile = Deck.draw(deck)
+                hand = hand.at[i].set(Hand.add(hand[i], tile))
+
+        deck, tile = Deck.draw(deck)
+        hand = hand.at[0].set(Hand.add(hand[0], tile))
+
+        turn = 0
+        target = -1
+        last_draw = tile
+        riichi_declared = False
+        riichi = jnp.full(4, False)
+        meld_num = jnp.zeros(4, dtype=jnp.uint8)
+        melds = jnp.zeros((4, 4), dtype=jnp.int32)
+        return State(
+            deck,
+            hand,
+            turn,
+            target,
+            last_draw,
+            riichi_declared,
+            riichi,
+            meld_num,
+            melds,
+        )
+
+    @staticmethod
+    @jit
+    def step(
+        state: State, actions: jnp.ndarray
+    ) -> tuple[State, jnp.ndarray, bool]:
+        player = jnp.argmin(actions)
+        return State._step(state, player, actions[player])
+
+    @staticmethod
+    @jit
+    def _step(
+        state: State, player: int, action: int
+    ) -> tuple[State, jnp.ndarray, bool]:
+        return jax.lax.cond(
+            action < 34,
+            lambda: State._discard(state, action),
+            lambda: jax.lax.switch(
+                action - 34,
+                [
+                    lambda: State._tsumogiri(state),
+                    lambda: State._riichi(state),
+                    lambda: State._tsumo(state),
+                    lambda: State._ron(state, player),
+                    lambda: State._pon(state, player),
+                    lambda: State._chi(state, player, Action.CHI_L),
+                    lambda: State._chi(state, player, Action.CHI_M),
+                    lambda: State._chi(state, player, Action.CHI_R),
+                    lambda: State._try_draw(state),
+                ],
+            ),
+        )
+
+    @staticmethod
+    @jit
+    def _tsumogiri(state: State) -> tuple[State, jnp.ndarray, bool]:
+        return State._discard(state, state.last_draw)
+
+    @staticmethod
+    @jit
+    def _discard(state: State, tile: int) -> tuple[State, jnp.ndarray, bool]:
+        state.hand = state.hand.at[state.turn].set(
+            Hand.sub(state.hand[state.turn], tile)
+        )
+        state.target = tile
+        state.last_draw = -1
+        return jax.lax.cond(
+            jnp.any(state.legal_actions()),
+            lambda: (state, jnp.full(4, 0), False),
+            lambda: State._try_draw(state),
+        )
+
+    @staticmethod
+    @jit
+    def _try_draw(state: State) -> tuple[State, jnp.ndarray, bool]:
+        state.target = -1
+        return jax.lax.cond(
+            state.deck.is_empty(),
+            lambda: State._ryukyoku(state),
+            lambda: State._draw(state),
+        )
+
+    @staticmethod
+    @jit
+    def _accept_riichi(state: State) -> State:
+        state.riichi = state.riichi.at[state.turn].set(
+            state.riichi[state.turn] | state.riichi_declared
+        )
+        state.riichi_declared = False
+        return state
+
+    @staticmethod
+    @jit
+    def _draw(state: State) -> tuple[State, jnp.ndarray, bool]:
+        state = State._accept_riichi(state)
+        state.turn += 1
+        state.turn %= 4
+        state.deck, tile = Deck.draw(state.deck)
+        state.last_draw = tile
+        state.hand = state.hand.at[state.turn].set(
+            Hand.add(state.hand[state.turn], tile)
+        )
+        return state, jnp.full(4, 0), False
+
+    @staticmethod
+    @jit
+    def _ryukyoku(state: State) -> tuple[State, jnp.ndarray, bool]:
+        reward = jnp.array(
+            [2 * Hand.is_tenpai(state.hand[i]) - 1 for i in range(4)]
+        )
+        return state, reward, True
+
+    @staticmethod
+    @jit
+    def _ron(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
+        return (
+            state,
+            jnp.full(4, 0).at[state.turn].set(-2).at[player].set(2),
+            True,
+        )
+
+    @staticmethod
+    @jit
+    def _append_meld(state: State, meld: int, player: int) -> State:
+        state.melds = state.melds.at[(player, state.meld_num[player])].set(
+            meld
+        )
+        state.meld_num = state.meld_num.at[player].set(
+            state.meld_num[player] + 1
+        )
+        return state
+
+    @staticmethod
+    @jit
+    def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
+        state = State._accept_riichi(state)
+        meld = Meld.init(Action.PON, state.target, state.turn)
+        state = State._append_meld(state, meld, player)
+        state.hand = state.hand.at[player].set(
+            Hand.pon(state.hand[player], state.target)
+        )
+        state.target = -1
+        state.turn = player
+        return state, jnp.full(4, 0), False
+
+    @staticmethod
+    @jit
+    def _chi(
+        state: State, player: int, action: int
+    ) -> tuple[State, jnp.ndarray, bool]:
+        state = State._accept_riichi(state)
+        meld = Meld.init(action, state.target, state.turn)
+        state = State._append_meld(state, meld, player)
+        state.hand = state.hand.at[player].set(
+            Hand.chi(state.hand[player], state.target, action)
+        )
+        state.target = -1
+        state.turn = player
+        return state, jnp.full(4, 0), False
+
+    @staticmethod
+    @jit
+    def _tsumo(state: State) -> tuple[State, jnp.ndarray, bool]:
+        return state, jnp.full(4, -2).at[state.turn].set(2), True
+
+    @staticmethod
+    @jit
+    def _riichi(state: State) -> tuple[State, jnp.ndarray, bool]:
+        state.riichi_declared = True
+        return state, jnp.full(4, 0), False
+
+    def _tree_flatten(self):
+        children = (
+            self.deck,
+            self.hand,
+            self.turn,
+            self.target,
+            self.last_draw,
+            self.riichi_declared,
+            self.riichi,
+            self.meld_num,
+            self.melds,
+        )
+        aux_data = {}
+        return (children, aux_data)
+
+    @classmethod
+    def _tree_unflatten(cls, aux_data, children):
+        return cls(*children, **aux_data)
+
+
+tree_util.register_pytree_node(
+    State, State._tree_flatten, State._tree_unflatten
+)
+
+
+@jit
+def init(key) -> State:
+    return State.init(key)
+
+
+@jit
+def step(
+    state: State, actions: jnp.ndarray
+) -> tuple[State, jnp.ndarray, bool]:
+    return State.step(state, actions)
 
 
 class Yaku:
@@ -872,362 +1244,3 @@ class Yaku:
                 ),
             ],
         )
-
-
-@dataclass
-class State:
-    deck: Deck
-    hand: jnp.ndarray
-    turn: int  # 手牌が3n+2枚, もしくは直前に牌を捨てたplayer
-    target: int  # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
-    last_draw: int  # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
-    riichi_declared: bool  # state.turn がリーチ宣言してから, その直後の打牌が通るまでTrue
-    riichi: jnp.ndarray  # 各playerのリーチが成立しているかどうか
-    meld_num: jnp.ndarray  # 各playerの副露回数
-    melds: jnp.ndarray
-    # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
-
-    # reward:
-    # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
-    # - player0 がツモ             => [ 2,-2,-2,-2]
-    # - 流局時 全員聴牌            => [ 1, 1, 1, 1]
-    # - 流局時 全員ノー聴          => [-1,-1,-1,-1]
-    # - 流局時 player0 だけ聴牌    => [ 1,-1,-1,-1]
-
-    @jit
-    def legal_actions(self) -> jnp.ndarray:
-        legal_actions = jnp.full((4, 43), False)
-
-        # リーチ
-        legal_actions = jax.lax.cond(
-            (self.last_draw == -1)
-            | self.riichi_declared
-            | self.riichi[self.turn]
-            | (self.deck.size() < 4)
-            # | (jnp.sum(self.hand[self.turn]) < 14),
-            | (self.meld_num[self.turn]),
-            lambda: legal_actions,
-            lambda: legal_actions.at[(self.turn, Action.RIICHI)].set(
-                Hand.can_riichi(self.hand[self.turn])
-            ),
-        )
-
-        # リーチ宣言直後の打牌
-        legal_actions = jax.lax.cond(
-            (self.last_draw != -1) & self.riichi_declared,
-            lambda arr: jax.lax.fori_loop(
-                0,
-                34,
-                lambda i, arr: arr.at[(self.turn, i)].set(
-                    jax.lax.cond(
-                        self.hand[self.turn][i] > (i == self.last_draw),
-                        lambda: Hand.is_tenpai(
-                            Hand.sub(self.hand[self.turn], i)
-                        ),
-                        lambda: False,
-                    )
-                ),
-                arr,
-            )
-            .at[(self.turn, Action.TSUMOGIRI)]
-            .set(
-                Hand.is_tenpai(Hand.sub(self.hand[self.turn], self.last_draw))
-            ),
-            lambda arr: arr,
-            legal_actions,
-        )
-
-        # ツモ切り, ツモ
-        legal_actions = jax.lax.cond(
-            (self.last_draw == -1) | self.riichi_declared,
-            lambda: legal_actions,
-            lambda: legal_actions.at[(self.turn, Action.TSUMOGIRI)]
-            .set(True)
-            .at[(self.turn, Action.TSUMO)]
-            .set(Hand.can_tsumo(self.hand[self.turn])),
-        )
-
-        # 手出し, 鳴いた後の手出し
-        legal_actions = jax.lax.cond(
-            (self.target != -1)
-            | self.riichi_declared
-            | self.riichi[self.turn],
-            lambda arr: arr,
-            lambda arr: jax.lax.fori_loop(
-                0,
-                34,
-                lambda i, arr: arr.at[(self.turn, i)].set(
-                    self.hand[self.turn][i] > (i == self.last_draw),
-                ),
-                arr,
-            ),
-            legal_actions,
-        )
-
-        for player in range(4):
-            # ロン
-            legal_actions = jax.lax.cond(
-                (self.target == -1) | (player == self.turn),
-                lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.RON)].set(
-                    Hand.can_ron(self.hand[player], self.target)
-                ),
-            )
-            # ポン
-            legal_actions = jax.lax.cond(
-                (self.target == -1)
-                | (player == self.turn)
-                | self.deck.is_empty()
-                | self.riichi[player],
-                lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.PON)].set(
-                    Hand.can_pon(self.hand[player], self.target)
-                ),
-            )
-            # チー
-            legal_actions = jax.lax.cond(
-                (self.target == -1)
-                | (player != (self.turn + 1) % 4)
-                | self.deck.is_empty()
-                | self.riichi[player],
-                lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.CHI_L)]
-                .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_L)
-                )
-                .at[(player, Action.CHI_M)]
-                .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_M)
-                )
-                .at[(player, Action.CHI_R)]
-                .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_R)
-                ),
-            )
-            legal_actions = legal_actions.at[(player, Action.PASS)].set(
-                (player != self.turn) & jnp.any(legal_actions[player])
-            )
-
-        return legal_actions
-
-    def observe(self, player: int) -> Observation:
-        return Observation(self.hand[player], self.target, self.last_draw)
-
-    @staticmethod
-    @jit
-    def init(key) -> State:
-        deck = Deck.init(key)
-        hand = jnp.zeros((4, 34), dtype=jnp.uint8)
-
-        for i in range(4):
-            for _ in range(13):
-                deck, tile = Deck.draw(deck)
-                hand = hand.at[i].set(Hand.add(hand[i], tile))
-
-        deck, tile = Deck.draw(deck)
-        hand = hand.at[0].set(Hand.add(hand[0], tile))
-
-        turn = 0
-        target = -1
-        last_draw = tile
-        riichi_declared = False
-        riichi = jnp.full(4, False)
-        meld_num = jnp.zeros(4, dtype=jnp.uint8)
-        melds = jnp.zeros((4, 4), dtype=jnp.int32)
-        return State(
-            deck,
-            hand,
-            turn,
-            target,
-            last_draw,
-            riichi_declared,
-            riichi,
-            meld_num,
-            melds,
-        )
-
-    @staticmethod
-    @jit
-    def step(
-        state: State, actions: jnp.ndarray
-    ) -> tuple[State, jnp.ndarray, bool]:
-        player = jnp.argmin(actions)
-        return State._step(state, player, actions[player])
-
-    @staticmethod
-    @jit
-    def _step(
-        state: State, player: int, action: int
-    ) -> tuple[State, jnp.ndarray, bool]:
-        return jax.lax.cond(
-            action < 34,
-            lambda: State._discard(state, action),
-            lambda: jax.lax.switch(
-                action - 34,
-                [
-                    lambda: State._tsumogiri(state),
-                    lambda: State._riichi(state),
-                    lambda: State._tsumo(state),
-                    lambda: State._ron(state, player),
-                    lambda: State._pon(state, player),
-                    lambda: State._chi(state, player, Action.CHI_L),
-                    lambda: State._chi(state, player, Action.CHI_M),
-                    lambda: State._chi(state, player, Action.CHI_R),
-                    lambda: State._try_draw(state),
-                ],
-            ),
-        )
-
-    @staticmethod
-    @jit
-    def _tsumogiri(state: State) -> tuple[State, jnp.ndarray, bool]:
-        return State._discard(state, state.last_draw)
-
-    @staticmethod
-    @jit
-    def _discard(state: State, tile: int) -> tuple[State, jnp.ndarray, bool]:
-        state.hand = state.hand.at[state.turn].set(
-            Hand.sub(state.hand[state.turn], tile)
-        )
-        state.target = tile
-        state.last_draw = -1
-        return jax.lax.cond(
-            jnp.any(state.legal_actions()),
-            lambda: (state, jnp.full(4, 0), False),
-            lambda: State._try_draw(state),
-        )
-
-    @staticmethod
-    @jit
-    def _try_draw(state: State) -> tuple[State, jnp.ndarray, bool]:
-        state.target = -1
-        return jax.lax.cond(
-            state.deck.is_empty(),
-            lambda: State._ryukyoku(state),
-            lambda: State._draw(state),
-        )
-
-    @staticmethod
-    @jit
-    def _accept_riichi(state: State) -> State:
-        state.riichi = state.riichi.at[state.turn].set(
-            state.riichi[state.turn] | state.riichi_declared
-        )
-        state.riichi_declared = False
-        return state
-
-    @staticmethod
-    @jit
-    def _draw(state: State) -> tuple[State, jnp.ndarray, bool]:
-        state = State._accept_riichi(state)
-        state.turn += 1
-        state.turn %= 4
-        state.deck, tile = Deck.draw(state.deck)
-        state.last_draw = tile
-        state.hand = state.hand.at[state.turn].set(
-            Hand.add(state.hand[state.turn], tile)
-        )
-        return state, jnp.full(4, 0), False
-
-    @staticmethod
-    @jit
-    def _ryukyoku(state: State) -> tuple[State, jnp.ndarray, bool]:
-        reward = jnp.array(
-            [2 * Hand.is_tenpai(state.hand[i]) - 1 for i in range(4)]
-        )
-        return state, reward, True
-
-    @staticmethod
-    @jit
-    def _ron(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
-        return (
-            state,
-            jnp.full(4, 0).at[state.turn].set(-2).at[player].set(2),
-            True,
-        )
-
-    @staticmethod
-    @jit
-    def _append_meld(state: State, meld: int, player: int) -> State:
-        state.melds = state.melds.at[(player, state.meld_num[player])].set(
-            meld
-        )
-        state.meld_num = state.meld_num.at[player].set(
-            state.meld_num[player] + 1
-        )
-        return state
-
-    @staticmethod
-    @jit
-    def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
-        state = State._accept_riichi(state)
-        meld = Meld.init(Action.PON, state.target, state.turn)
-        state = State._append_meld(state, meld, player)
-        state.hand = state.hand.at[player].set(
-            Hand.pon(state.hand[player], state.target)
-        )
-        state.target = -1
-        state.turn = player
-        return state, jnp.full(4, 0), False
-
-    @staticmethod
-    @jit
-    def _chi(
-        state: State, player: int, action: int
-    ) -> tuple[State, jnp.ndarray, bool]:
-        state = State._accept_riichi(state)
-        meld = Meld.init(action, state.target, state.turn)
-        state = State._append_meld(state, meld, player)
-        state.hand = state.hand.at[player].set(
-            Hand.chi(state.hand[player], state.target, action)
-        )
-        state.target = -1
-        state.turn = player
-        return state, jnp.full(4, 0), False
-
-    @staticmethod
-    @jit
-    def _tsumo(state: State) -> tuple[State, jnp.ndarray, bool]:
-        return state, jnp.full(4, -2).at[state.turn].set(2), True
-
-    @staticmethod
-    @jit
-    def _riichi(state: State) -> tuple[State, jnp.ndarray, bool]:
-        state.riichi_declared = True
-        return state, jnp.full(4, 0), False
-
-    def _tree_flatten(self):
-        children = (
-            self.deck,
-            self.hand,
-            self.turn,
-            self.target,
-            self.last_draw,
-            self.riichi_declared,
-            self.riichi,
-            self.meld_num,
-            self.melds,
-        )
-        aux_data = {}
-        return (children, aux_data)
-
-    @classmethod
-    def _tree_unflatten(cls, aux_data, children):
-        return cls(*children, **aux_data)
-
-
-tree_util.register_pytree_node(
-    State, State._tree_flatten, State._tree_unflatten
-)
-
-
-@jit
-def init(key) -> State:
-    return State.init(key)
-
-
-@jit
-def step(
-    state: State, actions: jnp.ndarray
-) -> tuple[State, jnp.ndarray, bool]:
-    return State.step(state, actions)
