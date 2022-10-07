@@ -11,20 +11,23 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Tuple
 
 import jax
+import jax.lax as lax
 from flax import struct
 from jax import numpy as jnp
-import jax.lax as lax
 
 shot_cool_down = jnp.int8(5)
 enemy_move_interval = jnp.int8(12)
 enemy_shot_interval = jnp.int8(10)
+
 
 @struct.dataclass
 class MinAtarSpaceInvadersState:
     pos: jnp.ndarray = jnp.int8(5)
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     e_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
-    alien_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4,2:8].set(True)
+    alien_map: jnp.ndarray = (
+        jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(True)
+    )
     alien_dir: jnp.ndarray = jnp.int8(-1)
     enemy_move_interval: jnp.ndarray = enemy_move_interval
     alien_move_timer: jnp.ndarray = enemy_move_interval
@@ -60,15 +63,24 @@ def observe(state: MinAtarSpaceInvadersState) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
     obs = obs.at[9, state.pos, 0].set(1)
     obs = obs.at[:, :, 1].set(state.alien_map)
-    obs = obs.at[:, :, 2].set(lax.cond(state.alien_dir < 0,
-                              lambda: state.alien_map,
-                              lambda: jnp.zeros_like(state.alien_map)))
-    obs = obs.at[:, :, 3].set(lax.cond(state.alien_dir < 0,
-                              lambda: jnp.zeros_like(state.alien_map),
-                              lambda: state.alien_map))
+    obs = obs.at[:, :, 2].set(
+        lax.cond(
+            state.alien_dir < 0,
+            lambda: state.alien_map,
+            lambda: jnp.zeros_like(state.alien_map),
+        )
+    )
+    obs = obs.at[:, :, 3].set(
+        lax.cond(
+            state.alien_dir < 0,
+            lambda: jnp.zeros_like(state.alien_map),
+            lambda: state.alien_map,
+        )
+    )
     obs = obs.at[:, :, 4].set(state.f_bullet_map)
     obs = obs.at[:, :, 5].set(state.e_bullet_map)
     return obs
+
 
 # @jax.jit
 def _step_det(
@@ -79,6 +91,7 @@ def _step_det(
         return state.replace(last_action=action), jnp.int16(0), state.terminal
     else:
         return _step_det_at_non_terminal(state, action)
+
 
 # @jax.jit
 def _step_det_at_non_terminal(
@@ -101,12 +114,12 @@ def _step_det_at_non_terminal(
 
     # Resolve player action
     # action_map = ['n','l','u','r','d','f']
-    if (action == 5 and shot_timer == 0):
+    if action == 5 and shot_timer == 0:
         f_bullet_map = f_bullet_map.at[9, pos].set(1)
         shot_timer = shot_cool_down
-    elif (action == 1):
+    elif action == 1:
         pos = max(0, pos - 1)
-    elif (action == 3):
+    elif action == 3:
         pos = min(9, pos + 1)
 
     # Update Friendly Bullets
@@ -116,28 +129,33 @@ def _step_det_at_non_terminal(
     # Update Enemy Bullets
     e_bullet_map = jnp.roll(e_bullet_map, 1, axis=0)
     e_bullet_map = e_bullet_map.at[0, :].set(0)
-    if (e_bullet_map[9, pos]):
+    if e_bullet_map[9, pos]:
         terminal = True
 
     # Update aliens
-    if (alien_map[9, pos]):
+    if alien_map[9, pos]:
         terminal = True
-    if (alien_move_timer == 0):
-        alien_move_timer = min(jnp.count_nonzero(alien_map), enemy_move_interval)
-        if ((jnp.sum(alien_map[:, 0]) > 0 and alien_dir < 0) or (
-                jnp.sum(alien_map[:, 9]) > 0 and alien_dir > 0)):
+    if alien_move_timer == 0:
+        alien_move_timer = min(
+            jnp.count_nonzero(alien_map), enemy_move_interval
+        )
+        if (jnp.sum(alien_map[:, 0]) > 0 and alien_dir < 0) or (
+            jnp.sum(alien_map[:, 9]) > 0 and alien_dir > 0
+        ):
             alien_dir = -alien_dir
-            if (jnp.sum(alien_map[9, :]) > 0):
+            if jnp.sum(alien_map[9, :]) > 0:
                 terminal = True
             alien_map = jnp.roll(alien_map, 1, axis=0)
         else:
             alien_map = jnp.roll(alien_map, alien_dir, axis=1)
-        if (alien_map[9, pos]):
+        if alien_map[9, pos]:
             terminal = True
-    if (alien_shot_timer == 0):
+    if alien_shot_timer == 0:
         alien_shot_timer = enemy_shot_interval
         nearest_alien = _nearest_alien(pos, alien_map)
-        e_bullet_map = e_bullet_map.at[nearest_alien[0], nearest_alien[1]].set(1)
+        e_bullet_map = e_bullet_map.at[nearest_alien[0], nearest_alien[1]].set(
+            1
+        )
 
     kill_locations = jnp.logical_and(alien_map, alien_map == f_bullet_map)
 
@@ -150,33 +168,37 @@ def _step_det_at_non_terminal(
     alien_move_timer -= 1
     alien_shot_timer -= 1
     ramping = True
-    if (jnp.count_nonzero(alien_map) == 0):
-        if (enemy_move_interval > 6 and ramping):
+    if jnp.count_nonzero(alien_map) == 0:
+        if enemy_move_interval > 6 and ramping:
             enemy_move_interval -= 1
             ramp_index += 1
         alien_map = alien_map.at[0:4, 2:8].set(1)
 
-    return  MinAtarSpaceInvadersState(
-        pos = pos,
-        f_bullet_map = f_bullet_map,
-        e_bullet_map = e_bullet_map,
-        alien_map = alien_map,
-        alien_dir = alien_dir,
-        enemy_move_interval = enemy_move_interval,
-        alien_move_timer = alien_move_timer,
-        alien_shot_timer = alien_shot_timer,
-        ramp_index = ramp_index,
-        shot_timer = shot_timer,
-        terminal = terminal,
-        last_action=action
-    ), r, terminal
+    return (
+        MinAtarSpaceInvadersState(
+            pos=pos,
+            f_bullet_map=f_bullet_map,
+            e_bullet_map=e_bullet_map,
+            alien_map=alien_map,
+            alien_dir=alien_dir,
+            enemy_move_interval=enemy_move_interval,
+            alien_move_timer=alien_move_timer,
+            alien_shot_timer=alien_shot_timer,
+            ramp_index=ramp_index,
+            shot_timer=shot_timer,
+            terminal=terminal,
+            last_action=action,
+        ),
+        r,
+        terminal,
+    )
 
 
 def _nearest_alien(pos, alien_map):
     search_order = [i for i in range(10)]
     search_order.sort(key=lambda x: abs(x - pos))
     for i in search_order:
-        if (jnp.sum(alien_map[:, i]) > 0):
+        if jnp.sum(alien_map[:, i]) > 0:
             return [jnp.max(jnp.arange(10)[alien_map[:, i]]), i]
 
 
