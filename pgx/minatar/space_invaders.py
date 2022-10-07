@@ -40,7 +40,7 @@ class MinAtarSpaceInvadersState:
     last_action: jnp.ndarray = jnp.int8(0)
 
 
-# @jax.jit
+@jax.jit
 def step(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
@@ -84,23 +84,22 @@ def observe(state: MinAtarSpaceInvadersState) -> jnp.ndarray:
     return obs
 
 
-# @jax.jit
+@jax.jit
 def _step_det(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
 ) -> Tuple[MinAtarSpaceInvadersState, jnp.ndarray, jnp.ndarray]:
-    if state.terminal:
-        return state.replace(last_action=action), jnp.int16(0), state.terminal  # type: ignore
-    else:
-        return _step_det_at_non_terminal(state, action)
-
+    return lax.cond(state.terminal,
+        lambda: (state.replace(last_action=action), jnp.int16(0), state.terminal),  # type: ignore
+        lambda: _step_det_at_non_terminal(state, action)
+    )
 
 @jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
 ) -> Tuple[MinAtarSpaceInvadersState, jnp.ndarray, jnp.ndarray]:
-    r = 0
+    r = jnp.int16(0)
 
     pos = state.pos
     f_bullet_map = state.f_bullet_map
@@ -141,7 +140,7 @@ def _step_det_at_non_terminal(
 
     kill_locations = alien_map & (alien_map == f_bullet_map)
 
-    r += jnp.sum(kill_locations)
+    r += jnp.sum(kill_locations, dtype=jnp.int16)
     alien_map = alien_map & (~kill_locations)
     f_bullet_map = f_bullet_map & (~kill_locations)
 
