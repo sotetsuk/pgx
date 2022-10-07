@@ -95,7 +95,7 @@ def _step_det_at_non_terminal(
     strike = state.strike
     terminal = state.terminal
 
-    r = 0
+    r = jnp.array(0, dtype=jnp.int16)
 
     pos = apply_action(pos, action)
 

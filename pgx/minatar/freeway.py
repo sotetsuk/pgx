@@ -88,7 +88,7 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
     last_action = action
 
-    r = 0
+    r = jnp.array(0, dtype=jnp.int16)
 
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),

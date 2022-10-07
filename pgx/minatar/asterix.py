@@ -129,7 +129,7 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
 
     ramping: bool = True
-    r = 0
+    r = jnp.array(0, dtype=jnp.int16)
 
     # Spawn enemy if timer is up
     entities, spawn_timer = jax.lax.cond(
