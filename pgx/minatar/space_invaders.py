@@ -95,7 +95,7 @@ def _step_det(
         return _step_det_at_non_terminal(state, action)
 
 
-# @jax.jit
+@jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
@@ -139,11 +139,11 @@ def _step_det_at_non_terminal(
     alien_shot_timer  = lax.cond(timer_zero, lambda: ENEMY_SHOT_INTERVAL, lambda: alien_shot_timer)
     e_bullet_map = lax.cond(timer_zero, lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(1), lambda: e_bullet_map)
 
-    kill_locations = jnp.logical_and(alien_map, alien_map == f_bullet_map)
+    kill_locations = alien_map & (alien_map == f_bullet_map)
 
     r += jnp.sum(kill_locations)
-    alien_map = alien_map.at[kill_locations].set(0)
-    f_bullet_map = f_bullet_map.at[kill_locations].set(0)
+    alien_map = alien_map & (~kill_locations)
+    f_bullet_map = f_bullet_map & (~kill_locations)
 
     # Update various timers
     shot_timer -= shot_timer > 0
