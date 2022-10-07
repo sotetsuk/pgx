@@ -130,18 +130,7 @@ def _step_det_at_non_terminal(
     if alien_map[9, pos]:
         terminal = jnp.bool_(True)
     if alien_move_timer == 0:
-        alien_move_timer = min(
-            jnp.count_nonzero(alien_map), enemy_move_interval
-        )
-        if (jnp.sum(alien_map[:, 0]) > 0 and alien_dir < 0) or ( jnp.sum(alien_map[:, 9]) > 0 and alien_dir > 0 ):
-            alien_dir = -alien_dir
-            if jnp.sum(alien_map[9, :]) > 0:
-                terminal = jnp.bool_(True)
-            alien_map = jnp.roll(alien_map, 1, axis=0)
-        else:
-            alien_map = jnp.roll(alien_map, alien_dir, axis=1)
-        if alien_map[9, pos]:
-            terminal = jnp.bool_(True)
+        alien_move_timer,alien_map, alien_dir, terminal = _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal)
     if alien_shot_timer == 0:
         alien_shot_timer = ENEMY_SHOT_INTERVAL
         nearest_alien = _nearest_alien(pos, alien_map)
@@ -204,6 +193,22 @@ def _nearest_alien(pos, alien_map):
         if jnp.sum(alien_map[:, i]) > 0:
             return [jnp.max(jnp.arange(10)[alien_map[:, i]]), i]
 
+
+def _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal):
+    alien_move_timer = min(
+        jnp.count_nonzero(alien_map), enemy_move_interval
+    )
+    if (jnp.sum(alien_map[:, 0]) > 0 and alien_dir < 0) or ( jnp.sum(alien_map[:, 9]) > 0 and alien_dir > 0 ):
+        alien_dir = -alien_dir
+        if jnp.sum(alien_map[9, :]) > 0:
+            terminal = jnp.bool_(True)
+        alien_map = jnp.roll(alien_map, 1, axis=0)
+    else:
+        alien_map = jnp.roll(alien_map, alien_dir, axis=1)
+    if alien_map[9, pos]:
+        terminal = jnp.bool_(True)
+
+    return alien_move_timer,alien_map, alien_dir, terminal
 
 @jax.jit
 def _init_det() -> MinAtarSpaceInvadersState:
