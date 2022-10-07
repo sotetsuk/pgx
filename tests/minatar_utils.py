@@ -69,6 +69,7 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
                 "alien_map",
                 "f_bullet_map",
                 "e_bullet_map",
+                "allien_map",
             ):
                 val = jnp.array(val, dtype=jnp.bool_)
             else:
