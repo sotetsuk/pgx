@@ -195,10 +195,15 @@ def _nearest_alien(pos, alien_map):
     i = x[j]
     return (i, j)
 
+# @jax.jit
 def _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal):
-    alien_move_timer = min(
-        jnp.count_nonzero(alien_map), enemy_move_interval
+    alien_move_timer = lax.min(
+        jnp.sum(alien_map, dtype=jnp.int8), enemy_move_interval
     )
+    # cond = ((jnp.sum(alien_map[:, 0]) > 0) & (alien_dir < 0)) | ((jnp.sum(alien_map[:, 9]) > 0) & (alien_dir > 0))
+    # terminal = lax.cond(cond & (jnp.sum(alien_map[9, :]) > 0), lambda: jnp.bool_(True), lambda: terminal)
+    # alien_dir = lax.cond(cond, lambda: - alien_dir, lambda: alien_dir)
+    # alien_map = lax.cond(cond,lambda: jnp.roll(alien_map, 1, axis=0) , lambda: jnp.roll(alien_map, alien_dir, axis=1))
     if (jnp.sum(alien_map[:, 0]) > 0 and alien_dir < 0) or ( jnp.sum(alien_map[:, 9]) > 0 and alien_dir > 0 ):
         alien_dir = -alien_dir
         if jnp.sum(alien_map[9, :]) > 0:
