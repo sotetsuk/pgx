@@ -187,8 +187,7 @@ def _resole_action(pos, f_bullet_map, shot_timer, action):
 
 
 def _nearest_alien(pos, alien_map):
-    search_order = [i for i in range(10)]
-    search_order.sort(key=lambda x: abs(x - pos))
+    search_order = jnp.argsort(jnp.abs(jnp.arange(10) - pos))
     for i in search_order:
         if jnp.sum(alien_map[:, i]) > 0:
             return [jnp.max(jnp.arange(10)[alien_map[:, i]]), i]
