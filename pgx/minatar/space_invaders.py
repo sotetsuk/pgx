@@ -15,9 +15,9 @@ import jax.lax as lax
 from flax import struct
 from jax import numpy as jnp
 
-shot_cool_down = jnp.int8(5)
-enemy_move_interval = jnp.int8(12)
-enemy_shot_interval = jnp.int8(10)
+SHOT_COOL_DOWN = jnp.int8(5)
+ENEMY_MOVE_INTERVAL = jnp.int8(12)
+ENEMY_SHOT_INTERVAL = jnp.int8(10)
 
 
 @struct.dataclass
@@ -29,9 +29,9 @@ class MinAtarSpaceInvadersState:
         jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(True)
     )
     alien_dir: jnp.ndarray = jnp.int8(-1)
-    enemy_move_interval: jnp.ndarray = enemy_move_interval
-    alien_move_timer: jnp.ndarray = enemy_move_interval
-    alien_shot_timer: jnp.ndarray = enemy_shot_interval
+    enemy_move_interval: jnp.ndarray = ENEMY_MOVE_INTERVAL
+    alien_move_timer: jnp.ndarray = ENEMY_MOVE_INTERVAL
+    alien_shot_timer: jnp.ndarray = ENEMY_SHOT_INTERVAL
     ramp_index: jnp.ndarray = jnp.int8(0)
     shot_timer: jnp.ndarray = jnp.int8(0)
     terminal: jnp.ndarray = jnp.bool_(False)
@@ -116,7 +116,7 @@ def _step_det_at_non_terminal(
     # action_map = ['n','l','u','r','d','f']
     if action == 5 and shot_timer == 0:
         f_bullet_map = f_bullet_map.at[9, pos].set(1)
-        shot_timer = shot_cool_down
+        shot_timer = SHOT_COOL_DOWN
     elif action == 1:
         pos = max(0, pos - 1)
     elif action == 3:
@@ -151,7 +151,7 @@ def _step_det_at_non_terminal(
         if alien_map[9, pos]:
             terminal = jnp.bool_(True)
     if alien_shot_timer == 0:
-        alien_shot_timer = enemy_shot_interval
+        alien_shot_timer = ENEMY_SHOT_INTERVAL
         nearest_alien = _nearest_alien(pos, alien_map)
         e_bullet_map = e_bullet_map.at[nearest_alien[0], nearest_alien[1]].set(
             1
