@@ -125,20 +125,21 @@ def _step_det_at_non_terminal(
     # Update Enemy Bullets
     e_bullet_map = jnp.roll(e_bullet_map, 1, axis=0)
     e_bullet_map = e_bullet_map.at[0, :].set(0)
-    if e_bullet_map[9, pos]:
-        terminal = jnp.bool_(True)
+    terminal = lax.cond(e_bullet_map[9, pos], lambda: jnp.bool_(True), lambda: terminal)
 
     # Update aliens
-    if alien_map[9, pos]:
-        terminal = jnp.bool_(True)
-    if alien_move_timer == 0:
-        alien_move_timer,alien_map, alien_dir, terminal = _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal)
+    terminal = lax.cond(alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal)
+    alien_move_timer,alien_map, alien_dir, terminal = lax.cond(alien_move_timer == 0,
+             lambda: _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal),
+             lambda: (alien_move_timer,alien_map, alien_dir, terminal)
+             )
+    # if alien_move_timer == 0:
+    #     alien_move_timer,alien_map, alien_dir, terminal = _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal)
+    # alien_shot_timer  = lax.cond(alien_shot_timer == 0, lambda: ENEMY_SHOT_INTERVAL, lambda: alien_shot_timer)
     if alien_shot_timer == 0:
         alien_shot_timer = ENEMY_SHOT_INTERVAL
         nearest_alien = _nearest_alien(pos, alien_map)
-        e_bullet_map = e_bullet_map.at[nearest_alien[0], nearest_alien[1]].set(
-            1
-        )
+        e_bullet_map = e_bullet_map.at[nearest_alien[0], nearest_alien[1]].set(1)
 
     kill_locations = jnp.logical_and(alien_map, alien_map == f_bullet_map)
 
