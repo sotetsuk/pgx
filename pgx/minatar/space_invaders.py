@@ -13,6 +13,7 @@ from typing import Tuple
 import jax
 from flax import struct
 from jax import numpy as jnp
+import jax.lax as lax
 
 shot_cool_down = jnp.int8(5)
 enemy_move_interval = jnp.int8(12)
@@ -50,16 +51,18 @@ def init(rng: jnp.ndarray) -> MinAtarSpaceInvadersState:
 
 
 @jax.jit
-def observe(obs: MinAtarSpaceInvadersState) -> jnp.ndarray:
+def observe(state: MinAtarSpaceInvadersState) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
-    obs[9, obs.pos, obs.channels['cannon']] = 1
-    obs[:, :, obs.channels['alien']] = obs.alien_map
-    if (obs.alien_dir < 0):
-        obs[:, :, obs.channels['alien_left']] = obs.alien_map
-    else:
-        obs[:, :, obs.channels['alien_right']] = obs.alien_map
-    obs[:, :, obs.channels['friendly_bullet']] = obs.f_bullet_map
-    obs[:, :, obs.channels['enemy_bullet']] = obs.e_bullet_map
+    obs = obs.at[9, state.pos, 0].set(1)
+    obs = obs.at[:, :, 1].set(state.alien_map)
+    obs = obs.at[:, :, 2].set(lax.cond(state.alien_dir < 0,
+                              lambda: state.alien_map,
+                              lambda: jnp.zeros_like(state.alien_map)))
+    obs = obs.at[:, :, 3].set(lax.cond(state.alien_dir < 0,
+                              lambda: jnp.zeros_like(state.alien_map),
+                              lambda: state.alien_map))
+    obs = obs.at[:, :, 4].set(state.f_bullet_map)
+    obs = obs.at[:, :, 5].set(state.e_bullet_map)
     return obs
 
 @jax.jit

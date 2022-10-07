@@ -76,7 +76,7 @@ def test_observe():
     env = Environment("space_invaders", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 1  # TODO: increase N
+    N = 10  # TODO: increase N
     for _ in range(N):
         env.reset()
         done = False
