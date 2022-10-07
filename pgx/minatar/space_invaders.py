@@ -113,7 +113,14 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
 
     # Resolve player action
-    pos, shot_timer, f_bullet_map = _resolve_action(pos, shot_timer, f_bullet_map, action)
+    # action_map = ['n','l','u','r','d','f']
+    if action == 5 and shot_timer == 0:
+        f_bullet_map = f_bullet_map.at[9, pos].set(1)
+        shot_timer = shot_cool_down
+    elif action == 1:
+        pos = max(0, pos - 1)
+    elif action == 3:
+        pos = min(9, pos + 1)
 
     # Update Friendly Bullets
     f_bullet_map = jnp.roll(f_bullet_map, -1, axis=0)
@@ -126,51 +133,6 @@ def _step_det_at_non_terminal(
         terminal = jnp.bool_(True)
 
     # Update aliens
-    alien_map,alien_dir,  alien_move_timer, alien_shot_timer,  f_bullet_map,e_bullet_map, r, terminal = _update_aliens(pos, alien_map, alien_dir, alien_move_timer, alien_shot_timer, f_bullet_map, e_bullet_map, r, terminal)
-
-    # Update various timers
-    shot_timer -= shot_timer > 0
-    alien_move_timer -= 1
-    alien_shot_timer -= 1
-    ramping = True
-    if jnp.count_nonzero(alien_map) == 0:
-        if enemy_move_interval > 6 and ramping:
-            enemy_move_interval -= 1
-            ramp_index += 1
-        alien_map = alien_map.at[0:4, 2:8].set(1)
-
-    return (
-        MinAtarSpaceInvadersState(
-            pos=pos,
-            f_bullet_map=f_bullet_map,
-            e_bullet_map=e_bullet_map,
-            alien_map=alien_map,
-            alien_dir=alien_dir,
-            enemy_move_interval=enemy_move_interval,
-            alien_move_timer=alien_move_timer,
-            alien_shot_timer=alien_shot_timer,
-            ramp_index=ramp_index,
-            shot_timer=shot_timer,
-            terminal=terminal,
-            last_action=action,
-        ),  # type: ignore
-        r,
-        terminal,
-    )
-
-
-def _resolve_action(pos, shot_timer, f_bullet_map, action):
-    # action_map = ['n','l','u','r','d','f']
-    if action == 5 and shot_timer == 0:
-        f_bullet_map = f_bullet_map.at[9, pos].set(1)
-        shot_timer = shot_cool_down
-    elif action == 1:
-        pos = max(0, pos - 1)
-    elif action == 3:
-        pos = min(9, pos + 1)
-    return pos, shot_timer, f_bullet_map
-
-def _update_aliens(pos, alien_map, alien_dir, alien_move_timer, alien_shot_timer, f_bullet_map, e_bullet_map, r, terminal):
     if alien_map[9, pos]:
         terminal = jnp.bool_(True)
     if alien_move_timer == 0:
@@ -201,7 +163,35 @@ def _update_aliens(pos, alien_map, alien_dir, alien_move_timer, alien_shot_timer
     alien_map = alien_map.at[kill_locations].set(0)
     f_bullet_map = f_bullet_map.at[kill_locations].set(0)
 
-    return alien_map,alien_dir,  alien_move_timer, alien_shot_timer,  f_bullet_map,e_bullet_map, r, terminal
+    # Update various timers
+    shot_timer -= shot_timer > 0
+    alien_move_timer -= 1
+    alien_shot_timer -= 1
+    ramping = True
+    if jnp.count_nonzero(alien_map) == 0:
+        if enemy_move_interval > 6 and ramping:
+            enemy_move_interval -= 1
+            ramp_index += 1
+        alien_map = alien_map.at[0:4, 2:8].set(1)
+
+    return (
+        MinAtarSpaceInvadersState(
+            pos=pos,
+            f_bullet_map=f_bullet_map,
+            e_bullet_map=e_bullet_map,
+            alien_map=alien_map,
+            alien_dir=alien_dir,
+            enemy_move_interval=enemy_move_interval,
+            alien_move_timer=alien_move_timer,
+            alien_shot_timer=alien_shot_timer,
+            ramp_index=ramp_index,
+            shot_timer=shot_timer,
+            terminal=terminal,
+            last_action=action,
+        ),  # type: ignore
+        r,
+        terminal,
+    )
 
 
 def _nearest_alien(pos, alien_map):
