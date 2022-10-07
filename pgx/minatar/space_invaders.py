@@ -135,11 +135,9 @@ def _step_det_at_non_terminal(
              )
     # if alien_move_timer == 0:
     #     alien_move_timer,alien_map, alien_dir, terminal = _update_alien_by_move_timer(alien_map, alien_dir, enemy_move_interval, pos, terminal)
-    # alien_shot_timer  = lax.cond(alien_shot_timer == 0, lambda: ENEMY_SHOT_INTERVAL, lambda: alien_shot_timer)
-    if alien_shot_timer == 0:
-        alien_shot_timer = ENEMY_SHOT_INTERVAL
-        nearest_alien = _nearest_alien(pos, alien_map)
-        e_bullet_map = e_bullet_map.at[nearest_alien[0], nearest_alien[1]].set(1)
+    timer_zero = alien_shot_timer == 0
+    alien_shot_timer  = lax.cond(timer_zero, lambda: ENEMY_SHOT_INTERVAL, lambda: alien_shot_timer)
+    e_bullet_map = lax.cond(timer_zero, lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(1), lambda: e_bullet_map)
 
     kill_locations = jnp.logical_and(alien_map, alien_map == f_bullet_map)
 
@@ -152,11 +150,10 @@ def _step_det_at_non_terminal(
     alien_move_timer -= 1
     alien_shot_timer -= 1
     ramping = True
-    if jnp.count_nonzero(alien_map) == 0:
-        if enemy_move_interval > 6 and ramping:
-            enemy_move_interval -= 1
-            ramp_index += 1
-        alien_map = alien_map.at[0:4, 2:8].set(1)
+    is_enemy_zero = jnp.count_nonzero(alien_map) == 0
+    enemy_move_interval = lax.cond(is_enemy_zero & (enemy_move_interval > 6) &ramping, lambda:enemy_move_interval - 1, lambda: enemy_move_interval)
+    ramp_index = lax.cond(is_enemy_zero & (enemy_move_interval > 6) &ramping, lambda:ramp_index+ 1, lambda: ramp_index)
+    alien_map = lax.cond(is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(1), lambda: alien_map)
 
     return (
         MinAtarSpaceInvadersState(
