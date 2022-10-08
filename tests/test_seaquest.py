@@ -29,14 +29,12 @@ state_keys = {
     "last_action",
 }
 
-INF = 99
-
 
 def test_step_det():
     env = Environment("seaquest", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 1
+    N = 100
     for _ in range(N):
         env.reset()
         done = False
@@ -58,7 +56,6 @@ def test_step_det():
                 env.state(),
                 seaquest.observe(s_next_pgx),
             )
-
 
         # check terminal state
         s = extract_state(env, state_keys)
@@ -103,7 +100,6 @@ def test_observe():
             s = extract_state(env, state_keys)
             s_pgx = minatar2pgx(s, seaquest.MinAtarSeaquestState)
             obs_pgx = seaquest.observe(s_pgx)
-            assert env.state().sum() == obs_pgx.sum()
             assert jnp.allclose(
                 env.state(),
                 obs_pgx,
@@ -115,7 +111,6 @@ def test_observe():
         s = extract_state(env, state_keys)
         s_pgx = minatar2pgx(s, seaquest.MinAtarSeaquestState)
         obs_pgx = seaquest.observe(s_pgx)
-        assert env.state().sum() == obs_pgx.sum()
         assert jnp.allclose(
             env.state(),
             obs_pgx,
