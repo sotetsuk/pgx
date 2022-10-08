@@ -207,11 +207,19 @@ def _step_det(
     return state, r, terminal
 
 
+@jax.jit
+def find_ix(arr):
+    ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
+    return ix
+
+
 def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
     if action == 5 and shot_timer == 0:
-        _f_bullets = _to_list(f_bullets)
-        _f_bullets += [[sub_x, sub_y, sub_or]]
-        f_bullets = _to_arr(5, 3, _f_bullets)
+        ix = find_ix(f_bullets)
+        f_bullets = f_bullets.at[ix].set(jnp.int8([sub_x, sub_y, sub_or]))
+        # _f_bullets = _to_list(f_bullets)
+        # _f_bullets += [[sub_x, sub_y, sub_or]]
+        # f_bullets = _to_arr(5, 3, _f_bullets)
         shot_timer = SHOT_COOL_DOWN
     elif action == 1:
         sub_x = max(ZERO, sub_x - 1)
@@ -380,12 +388,6 @@ def _surface(
     move_speed = lax.cond(ramp_update & ((move_speed > 2) & (ramp_index % 2)), lambda: move_speed - 1, lambda: move_speed)
     e_spawn_speed = lax.cond(ramp_update & (e_spawn_speed > 1), lambda: e_spawn_speed - 1, lambda : e_spawn_speed)
     return r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index
-
-
-@jax.jit
-def find_ix(arr):
-    ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
-    return ix
 
 
 # Spawn an enemy fish or submarine in random row and random direction,
