@@ -354,26 +354,23 @@ def step_obj(arr, ix):
 
 
 @jax.jit
-def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
-    terminal = lax.fori_loop(
-        0, 25, lambda i, t: lax.cond(
-            (e_bullets[i][0] == sub_x) & (e_bullets[i][1] == sub_y),
+def hit(arr, ix, x, y):
+    return lax.fori_loop(
+        0, ix, lambda i, t: lax.cond(
+            (arr[i][0] == x) & (arr[i][1] == y),
             lambda: TRUE,
             lambda: t
-        ), terminal
+        ), FALSE
     )
 
+
+@jax.jit
+def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     ix = find_ix(e_bullets)
+    terminal |= hit(e_bullets, ix, sub_x, sub_y)
     e_bullets = step_obj(e_bullets, ix)
     e_bullets = remove_out(e_bullets, ix)
-
-    terminal = lax.fori_loop(
-        0, 25, lambda i, t: lax.cond(
-            (e_bullets[i][0] == sub_x) & (e_bullets[i][1] == sub_y),
-            lambda: TRUE,
-            lambda: t
-        ), terminal
-    )
+    terminal |= hit(e_bullets, ix, sub_x, sub_y)
     return e_bullets, terminal
 
 
