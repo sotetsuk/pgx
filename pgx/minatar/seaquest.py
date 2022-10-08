@@ -401,12 +401,13 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
     return _to_arr(25, 5, _e_subs), _to_arr(25, 4, _e_fish)
 
 
+@jax.jit
 # Spawn a diver in random row with random direction
 def _spawn_diver(divers, diver_lr, diver_y):
-    _divers = _to_list(divers)
-    x = 0 if diver_lr else 9
-    _divers += [[x, diver_y, diver_lr, DIVER_MOVE_INTERVAL]]
-    return _to_arr(5, 4, _divers)
+    x = lax.cond(diver_lr, lambda: ZERO, lambda: NINE)
+    ix = lax.while_loop(lambda i: divers[i][0] != -1, lambda i: i + 1, 0)
+    divers = divers.at[ix].set(jnp.array([x, diver_y, diver_lr, DIVER_MOVE_INTERVAL], dtype=jnp.int8))
+    return divers
 
 
 @jax.jit
