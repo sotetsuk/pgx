@@ -116,9 +116,9 @@ def _step_det(
         e_subs, e_fish = _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y)
         e_spawn_timer = e_spawn_speed
 
-    if state.d_spawn_timer == 0:
+    if d_spawn_timer == 0:
         divers = _spawn_diver(divers, diver_lr, diver_y)
-        state.d_spawn_timer = DIVER_SPAWN_SPEED
+        d_spawn_timer = DIVER_SPAWN_SPEED
 
     # Resolve player action
     # elf.action_map = ['n','l','u','r','d','f']
@@ -126,13 +126,13 @@ def _step_det(
         _f_bullets = _to_list(f_bullets)
         _f_bullets += [[state.sub_x, state.sub_y, state.sub_or]]
         f_bullets = _to_arr(5, 3, _f_bullets)
-        state.shot_timer = SHOT_COOL_DOWN
+        shot_timer = SHOT_COOL_DOWN
     elif action == 1:
         sub_x = max(ZERO, sub_x - 1)
         sub_or = FALSE
     elif action == 3:
-        state.sub_x = min(NINE, sub_x + 1)
-        state.sub_or = TRUE
+        sub_x = min(NINE, sub_x + 1)
+        sub_or = TRUE
     elif action == 2:
         sub_y = max(ZERO, sub_y - 1)
     elif action == 4:
@@ -153,20 +153,20 @@ def _step_det(
     # Update friendly Bullets
     for bullet in reversed(_f_bullets):
         bullet[0] += 1 if bullet[2] else -1
-        if (bullet[0] < 0 or bullet[0] > 9):
+        if bullet[0] < 0 or bullet[0] > 9:
             _f_bullets.remove(bullet)
         else:
             removed = False
             for x in _e_fish:
-                if (bullet[0:2] == x[0:2]):
+                if bullet[0:2] == x[0:2]:
                     _e_fish.remove(x)
                     _f_bullets.remove(bullet)
                     r += 1
                     removed = True
                     break
-            if (not removed):
+            if not removed:
                 for x in _e_subs:
-                    if (bullet[0:2] == x[0:2]):
+                    if bullet[0:2] == x[0:2]:
                         _e_subs.remove(x)
                         _f_bullets.remove(bullet)
                         r += 1
@@ -174,16 +174,16 @@ def _step_det(
 
     # Update divers
     for diver in reversed(_divers):
-        if (diver[0:2] == [sub_x, sub_y] and diver_count < 6):
+        if diver[0:2] == [sub_x, sub_y] and diver_count < 6:
             _divers.remove(diver)
             diver_count += 1
         else:
-            if (diver[3] == 0):
+            if diver[3] == 0:
                 diver[3] = DIVER_MOVE_INTERVAL
                 diver[0] += 1 if diver[2] else -1
-                if (diver[0] < 0 or diver[0] > 9):
+                if diver[0] < 0 or diver[0] > 9:
                     _divers.remove(diver)
-                elif (diver[0:2] == [sub_x, sub_y] and diver_count < 6):
+                elif diver[0:2] == [sub_x, sub_y] and diver_count < 6:
                     _divers.remove(diver)
                     diver_count += 1
             else:
@@ -191,25 +191,25 @@ def _step_det(
 
     # Update enemy subs
     for sub in reversed(_e_subs):
-        if (sub[0:2] == [sub_x, sub_y]):
+        if sub[0:2] == [sub_x, sub_y]:
             terminal = TRUE
         if (sub[3] == 0):
             sub[3] = move_speed
             sub[0] += 1 if sub[2] else -1
-            if (sub[0] < 0 or sub[0] > 9):
+            if sub[0] < 0 or sub[0] > 9:
                 _e_subs.remove(sub)
-            elif (sub[0:2] == [sub_x, sub_y]):
+            elif sub[0:2] == [sub_x, sub_y]:
                 terminal = TRUE
             else:
                 for x in _f_bullets:
-                    if (sub[0:2] == x[0:2]):
+                    if sub[0:2] == x[0:2]:
                         _e_subs.remove(sub)
                         _f_bullets.remove(x)
                         r += 1
                         break
         else:
             sub[3] -= 1
-        if (sub[4] == 0):
+        if sub[4] == 0:
             sub[4] = ENEMY_SHOT_INTERVAL
             _e_bullets += [[sub[0] if sub[2] else sub[0], sub[1], sub[2]]]
         else:
@@ -251,14 +251,14 @@ def _step_det(
     e_spawn_timer -= e_spawn_timer > 0
     d_spawn_timer -= d_spawn_timer > 0
     shot_timer -= shot_timer > 0
-    if (oxygen < 0):
+    if oxygen < 0:
         terminal = TRUE
-    if (sub_y > 0):
+    if sub_y > 0:
         oxygen -= 1
         surface = FALSE
     else:
-        if (not surface):
-            if (diver_count == 0):
+        if not surface:
+            if diver_count == 0:
                 terminal = TRUE
             else:
                 surface = TRUE
@@ -324,7 +324,7 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
 
     # Do not spawn in same row an opposite direction as existing
     if (any([z[1] == enemy_y and z[2] != enemy_lr for z in _e_subs + _e_fish])):
-        return
+        return _to_arr(25, 5, _e_subs), _to_arr(25, 4, _e_fish)
     if (is_sub):
         _e_subs += [[x, enemy_y, enemy_lr, move_speed, ENEMY_SHOT_INTERVAL]]
     else:
@@ -336,7 +336,7 @@ def _spawn_diver(divers, diver_lr, diver_y):
     _divers = _to_list(divers)
     x = 0 if diver_lr else 9
     _divers += [[x, diver_y, diver_lr, DIVER_MOVE_INTERVAL]]
-    return _to_arr(5, 4, divers)
+    return _to_arr(5, 4, _divers)
 
 
 @jax.jit
@@ -352,9 +352,12 @@ def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
         state.sub_or, lambda: state.sub_x - 1, lambda: state.sub_x + 1
     )
     obs = obs.at[state.sub_y, back_x, 1].set(1)
+    oxygen_guage = state.oxygen * 10 // MAX_OXYGEN
+    # hotfix to align to original minatar
+    oxygen_guage = lax.cond(state.oxygen < 0, lambda: jnp.int16(9), lambda: oxygen_guage)
     obs = lax.fori_loop(
         jnp.int16(0),
-        state.oxygen * 10 // MAX_OXYGEN,
+        oxygen_guage,
         lambda i, _obs: _obs.at[9, i, 7].set(1),
         obs,
     )
