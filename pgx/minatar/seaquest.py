@@ -346,6 +346,18 @@ def _remove_out_of_bound(arr, ix):
 
 
 @jax.jit
+def _remove_hit(arr, ix, x, y):
+    arr = lax.fori_loop(
+        0, ix, lambda i, a: lax.cond(
+            (a[i][0] == x) & (a[i][1] == y),
+            lambda: _remove_i(a, i),
+            lambda: a
+        ), arr
+    )
+    return arr
+
+
+@jax.jit
 def _step_obj(arr, ix):
     arr = lax.fori_loop(
         0, ix, lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)), arr
