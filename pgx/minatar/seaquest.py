@@ -203,7 +203,7 @@ def _step_det(
         surface=surface,
         terminal=terminal,
         last_action=action,
-    )
+    )  # type: ignore
     return state, r, terminal
 
 
