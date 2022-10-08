@@ -104,6 +104,27 @@ class Hand:
     @staticmethod
     @jit
     def can_tsumo(hand: jnp.ndarray) -> bool:
+        thirteen_orphan = (
+            (hand[0] > 0)
+            & (hand[8] > 0)
+            & (hand[9] > 0)
+            & (hand[17] > 0)
+            & (hand[18] > 0)
+            & jnp.all(hand[26:] > 0)
+            & (
+                (
+                    hand[0]
+                    + hand[8]
+                    + hand[9]
+                    + hand[17]
+                    + hand[18]
+                    + jnp.sum(hand[26:])
+                )
+                == 14
+            )
+        )
+        seven_pairs = jnp.sum(hand == 2) == 7
+
         heads, valid = 0, 1
         for suit in range(3):
             valid &= Hand.cache(
@@ -126,7 +147,7 @@ class Hand:
             (heads, valid),
         )
 
-        return (valid & (heads == 1)) == 1
+        return ((valid & (heads == 1)) | thirteen_orphan | seven_pairs) == 1
 
     @staticmethod
     @jit
@@ -469,7 +490,7 @@ class Meld:
     def is_outside(meld: int) -> int:
         action = Meld.action(meld)
         target = Meld.target(meld)
-        is_chi = (Action.CHI_L <= action) & (action < Action.CHI_R)
+        is_chi = (Action.CHI_L <= action) & (action <= Action.CHI_R)
 
         return jax.lax.cond(
             is_chi,
@@ -1488,9 +1509,11 @@ class Yaku:
     def _flatten(hand: jnp.ndarray, meld: int) -> jnp.ndarray:
         target, action = Meld.target(meld), Meld.action(meld)
         return jax.lax.switch(
-            action - Action.PON,
+            action - Action.PON + 1,
             [
+                lambda: Hand.add(hand, target, 4),
                 lambda: Hand.add(hand, target, 3),
+                lambda: Hand.add(hand, target, 4),
                 lambda: Hand.add(
                     Hand.add(Hand.add(hand, target + 1), target + 2), target
                 ),
