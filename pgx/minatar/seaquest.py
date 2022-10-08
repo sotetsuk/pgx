@@ -389,9 +389,12 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
     _e_subs = _to_list(e_subs)
     _e_fish = _to_list(e_fish)
 
-    x = 0 if enemy_lr else 9
+    x = lax.cond(enemy_lr, lambda: ZERO, lambda: NINE)
+    # x = 0 if enemy_lr else 9
 
+    # has_collision = ((e_subs[:, 1] == enemy_y) & (e_subs[:, 2] != enemy_lr)).sum() > 0
     # Do not spawn in same row an opposite direction as existing
+    #if has_collision:
     if any([z[1] == enemy_y and z[2] != enemy_lr for z in _e_subs + _e_fish]):
         return _to_arr(25, 5, _e_subs), _to_arr(25, 4, _e_fish)
     if is_sub:
