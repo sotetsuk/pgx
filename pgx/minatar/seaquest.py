@@ -124,21 +124,7 @@ def _step_det(
 
     # Resolve player action
     # elf.action_map = ['n','l','u','r','d','f']
-    if action == 5 and state.shot_timer == 0:
-        _f_bullets = _to_list(f_bullets)
-        _f_bullets += [[state.sub_x, state.sub_y, state.sub_or]]
-        f_bullets = _to_arr(5, 3, _f_bullets)
-        shot_timer = SHOT_COOL_DOWN
-    elif action == 1:
-        sub_x = max(ZERO, sub_x - 1)
-        sub_or = FALSE
-    elif action == 3:
-        sub_x = min(NINE, sub_x + 1)
-        sub_or = TRUE
-    elif action == 2:
-        sub_y = max(ZERO, sub_y - 1)
-    elif action == 4:
-        sub_y = min(jnp.int8(8), state.sub_y + 1)
+    f_bullets, shot_timer, sub_x, sub_y, sub_or = _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or)
 
     _f_bullets = _to_list(f_bullets)
     _e_bullets = _to_list(e_bullets)
@@ -308,6 +294,25 @@ def _step_det(
         last_action=action,
     )
     return state, r, terminal
+
+
+def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
+    if action == 5 and shot_timer == 0:
+        _f_bullets = _to_list(f_bullets)
+        _f_bullets += [[sub_x, sub_y, sub_or]]
+        f_bullets = _to_arr(5, 3, _f_bullets)
+        shot_timer = SHOT_COOL_DOWN
+    elif action == 1:
+        sub_x = max(ZERO, sub_x - 1)
+        sub_or = FALSE
+    elif action == 3:
+        sub_x = min(NINE, sub_x + 1)
+        sub_or = TRUE
+    elif action == 2:
+        sub_y = max(ZERO, sub_y - 1)
+    elif action == 4:
+        sub_y = min(jnp.int8(8), sub_y + 1)
+    return f_bullets, shot_timer, sub_x, sub_y, sub_or
 
 
 # Called when player hits surface (top row) if they have no divers, this ends the game,
