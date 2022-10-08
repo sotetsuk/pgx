@@ -326,7 +326,7 @@ def _update_enemy_subs(
     return f_bullets, e_subs, e_bullets, terminal, r
 
 @jax.jit
-def remove_i(arr, i):
+def _remove_i(arr, i):
     N = arr.shape[0]
     arr = lax.fori_loop(
         i, N - 1, lambda j, _arr: _arr.at[j].set(arr[j+1]), arr
@@ -334,11 +334,11 @@ def remove_i(arr, i):
     return arr
 
 @jax.jit
-def remove_out(arr, ix):
+def _remove_out_of_bound(arr, ix):
     arr = lax.fori_loop(
         0, ix, lambda i, a: lax.cond(
             (a[i][0] < 0) & (a[i][1] > 9),
-            lambda: remove_i(a, i),
+            lambda: _remove_i(a, i),
             lambda: a
         ), arr
     )
@@ -346,7 +346,7 @@ def remove_out(arr, ix):
 
 
 @jax.jit
-def step_obj(arr, ix):
+def _step_obj(arr, ix):
     arr = lax.fori_loop(
         0, ix, lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)), arr
     )
@@ -354,7 +354,7 @@ def step_obj(arr, ix):
 
 
 @jax.jit
-def hit(arr, ix, x, y):
+def _hit(arr, ix, x, y):
     return lax.fori_loop(
         0, ix, lambda i, t: lax.cond(
             (arr[i][0] == x) & (arr[i][1] == y),
@@ -367,10 +367,10 @@ def hit(arr, ix, x, y):
 @jax.jit
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     ix = find_ix(e_bullets)
-    terminal |= hit(e_bullets, ix, sub_x, sub_y)
-    e_bullets = step_obj(e_bullets, ix)
-    e_bullets = remove_out(e_bullets, ix)
-    terminal |= hit(e_bullets, ix, sub_x, sub_y)
+    terminal |= _hit(e_bullets, ix, sub_x, sub_y)
+    e_bullets = _step_obj(e_bullets, ix)
+    e_bullets = _remove_out_of_bound(e_bullets, ix)
+    terminal |= _hit(e_bullets, ix, sub_x, sub_y)
     return e_bullets, terminal
 
 
