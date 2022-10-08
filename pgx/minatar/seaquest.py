@@ -364,22 +364,21 @@ def _update_enemy_fish(
 # Called when player hits surface (top row) if they have no divers, this ends the game,
 # if they have 6 divers this gives reward proportional to the remaining oxygen and restores full oxygen
 # otherwise this reduces the number of divers and restores full oxygen
+@jax.jit
 def _surface(
     diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index
 ):
-    if diver_count == 6:
-        diver_count = 0
-        r = oxygen * 10 // MAX_OXYGEN
-    else:
-        r = 0
+    diver_count, r = lax.cond(
+        diver_count == 6,
+        lambda: (ZERO, oxygen * 10 // MAX_OXYGEN),
+        lambda: (diver_count, jnp.int16(0))
+    )
     oxygen = MAX_OXYGEN
     diver_count -= 1
-    if ramping and (e_spawn_speed > 1 or move_speed > 2):
-        if move_speed > 2 and ramp_index % 2:
-            move_speed -= 1
-        if e_spawn_speed > 1:
-            e_spawn_speed -= 1
-        ramp_index += 1
+    ramp_update = ramping & ((e_spawn_speed > 1) | (move_speed > 2))
+    ramp_index = lax.cond(ramp_update, lambda: ramp_index + 1, lambda: ramp_index)
+    move_speed = lax.cond(ramp_update & ((move_speed > 2) & (ramp_index % 2)), lambda: move_speed - 1, lambda: move_speed)
+    e_spawn_speed = lax.cond(ramp_update & (e_spawn_speed > 1), lambda: e_spawn_speed - 1, lambda : e_spawn_speed)
     return r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index
 
 
