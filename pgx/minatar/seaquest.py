@@ -335,23 +335,29 @@ def remove_i(arr, i):
 
 
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
+    terminal = lax.fori_loop(
+        0, 25, lambda i, t: lax.cond(
+            (e_bullets[i][0] == sub_x) & (e_bullets[i][1] == sub_y),
+            lambda: TRUE,
+            lambda: t
+        ), terminal
+    )
+
     _e_bullets = _to_list(e_bullets)
-
-    for i, bullet in enumerate(reversed(_e_bullets)):
-        if bullet[0:2] == [sub_x, sub_y]:
-            terminal = TRUE
-
     for i, bullet in enumerate(reversed(_e_bullets)):
         j = 25 - i - 1
         bullet[0] += 1 if bullet[2] else -1
         if bullet[0] < 0 or bullet[0] > 9:
             e_bullets = remove_i(e_bullets, j)
-
-    for i, bullet in enumerate(reversed(_e_bullets)):
-        if bullet[0:2] == [sub_x, sub_y]:
-            terminal = TRUE
-
     e_bullets = _to_arr(25, 3, _e_bullets)
+
+    terminal = lax.fori_loop(
+        0, 25, lambda i, t: lax.cond(
+            (e_bullets[i][0] == sub_x) & (e_bullets[i][1] == sub_y),
+            lambda: TRUE,
+            lambda: t
+        ), terminal
+    )
     return e_bullets, terminal
 
 
