@@ -56,6 +56,59 @@ class MinAtarSeaquestState:
 def init(rng: jnp.ndarray) -> MinAtarSeaquestState:
     return _init_det()
 
+def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
+    """
+            self.channels ={
+            'sub_front':0,
+            'sub_back':1,
+            'friendly_bullet':2,
+            'trail':3,
+            'enemy_bullet':4,
+            'enemy_fish':5,
+            'enemy_sub':6,
+            'oxygen_guage':7,
+            'diver_guage':8,
+            'diver':9
+        }
+    """
+    obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
+    obs = obs.at[state.sub_y, state.sub_x, 0].set(1)
+    back_x = state.sub_x - 1 if state.sub_or else state.sub_x + 1
+    obs = obs.at[state.sub_y, back_x, 1].set(1)
+    obs = obs.at[9, 0:state.oxygen * 10 // MAX_OXYGEN, 7].set(1)
+    obs = obs.at[9, 9 - state.diver_count:9, 8].set(1)
+    for bullet in state.f_bullets:
+        if bullet[0] == -1:
+            continue
+        obs = obs.at[bullet[1], bullet[0], 2].set(1)
+    for bullet in state.e_bullets:
+        if bullet[0] == -1:
+            continue
+        obs = obs.at[bullet[1], bullet[0], 4].set(1)
+    for fish in state.e_fish:
+        if fish[0] == -1:
+            continue
+        obs = obs.at[fish[1], fish[0], 5].set(1)
+        back_x = fish[0] - 1 if fish[2] else fish[0] + 1
+        if (back_x >= 0 and back_x <= 9):
+            obs = obs.at[fish[1], back_x, 3].set(1)
+    for sub in state.e_subs:
+        if sub[0] == -1:
+            continue
+        obs = obs.at[sub[1], sub[0], 6].set(1)
+        back_x = sub[0] - 1 if sub[2] else sub[0] + 1
+        if (back_x >= 0 and back_x <= 9):
+            obs = obs.at[sub[1], back_x, 3].set(1)
+    for diver in state.divers:
+        if diver[0] == -1:
+            continue
+        obs = obs.at[diver[1], diver[0], 9].set(1)
+        back_x = diver[0] - 1 if diver[2] else diver[0] + 1
+        if (back_x >= 0 and back_x <= 9):
+            obs = obs.at[diver[1], back_x, 3].set(1)
+
+    return obs
+
 
 @jax.jit
 def _init_det() -> MinAtarSeaquestState:

@@ -97,7 +97,8 @@ def test_observe():
         while not done:
             s = extract_state(env, state_keys)
             s_pgx = minatar2pgx(s, seaquest.MinAtarSeaquestState)
-            obs_pgx = seaquest._to_obs(s_pgx)
+            obs_pgx = seaquest.observe(s_pgx)
+            assert env.state().sum() == obs_pgx.sum()
             assert jnp.allclose(
                 env.state(),
                 obs_pgx,
@@ -108,7 +109,8 @@ def test_observe():
         # check terminal state
         s = extract_state(env, state_keys)
         s_pgx = minatar2pgx(s, seaquest.MinAtarSeaquestState)
-        obs_pgx = seaquest._to_obs(s_pgx)
+        obs_pgx = seaquest.observe(s_pgx)
+        assert env.state().sum() == obs_pgx.sum()
         assert jnp.allclose(
             env.state(),
             obs_pgx,

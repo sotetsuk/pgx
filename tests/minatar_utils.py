@@ -61,6 +61,8 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
         if key in ["f_bullets", "e_bullets", "e_fish", "e_subs", "divers"]:
             N = 25 if key.startswith("e_") else 5
             M = 3 if key.endswith("bullets") else 4
+            if key == "e_subs":
+                M = 5
             v = - jnp.ones((N, M), dtype=jnp.int8)
             for i, x in enumerate(val):
                 v = v.at[i, :].set(jnp.array(x))
