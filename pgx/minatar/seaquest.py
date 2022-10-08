@@ -388,25 +388,50 @@ def _surface(
 @jax.jit
 def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
     x = lax.cond(enemy_lr, lambda: ZERO, lambda: NINE)
-    has_collision = ((e_subs[:, 1] == enemy_y) & (e_subs[:, 2] != enemy_lr)).sum() > 0
-    has_collision |= ((e_fish[:, 1] == enemy_y) & (e_fish[:, 2] != enemy_lr)).sum() > 0
-    # Do not spawn in same row an opposite direction as existing
+    has_collision = (
+        (e_subs[:, 1] == enemy_y) & (e_subs[:, 2] != enemy_lr)
+    ).sum() > 0
+    has_collision |= (
+        (e_fish[:, 1] == enemy_y) & (e_fish[:, 2] != enemy_lr)
+    ).sum() > 0
     return lax.cond(
         has_collision,
         lambda: (e_subs, e_fish),
         lambda: lax.cond(
             is_sub,
-            lambda: (e_subs.at[lax.while_loop(lambda i: e_subs[i][0] != -1, lambda i: i + 1, 0)].set(jnp.array([x, enemy_y, enemy_lr, move_speed, ENEMY_SHOT_INTERVAL], dtype=jnp.int8)), e_fish),
-            lambda: (e_subs, e_fish.at[lax.while_loop(lambda i: e_fish[i][0] != -1, lambda i: i + 1, 0)].set(jnp.array([x, enemy_y, enemy_lr, move_speed], dtype=jnp.int8))),
-        )
+            lambda: (
+                e_subs.at[
+                    lax.while_loop(
+                        lambda i: e_subs[i][0] != -1, lambda i: i + 1, 0
+                    )
+                ].set(
+                    jnp.array(
+                        [
+                            x,
+                            enemy_y,
+                            enemy_lr,
+                            move_speed,
+                            ENEMY_SHOT_INTERVAL,
+                        ],
+                        dtype=jnp.int8,
+                    )
+                ),
+                e_fish,
+            ),
+            lambda: (
+                e_subs,
+                e_fish.at[
+                    lax.while_loop(
+                        lambda i: e_fish[i][0] != -1, lambda i: i + 1, 0
+                    )
+                ].set(
+                    jnp.array(
+                        [x, enemy_y, enemy_lr, move_speed], dtype=jnp.int8
+                    )
+                ),
+            ),
+        ),
     )
-    # if has_collision:
-    #     return (e_subs, e_fish)
-    # if is_sub:
-    #     e_subs += [[x, enemy_y, enemy_lr, move_speed, ENEMY_SHOT_INTERVAL]]
-    # else:
-    #     e_fish += [[x, enemy_y, enemy_lr, move_speed]]
-    # return (e_subs, e_fish)
 
 
 @jax.jit
@@ -414,7 +439,9 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
 def _spawn_diver(divers, diver_lr, diver_y):
     x = lax.cond(diver_lr, lambda: ZERO, lambda: NINE)
     ix = lax.while_loop(lambda i: divers[i][0] != -1, lambda i: i + 1, 0)
-    divers = divers.at[ix].set(jnp.array([x, diver_y, diver_lr, DIVER_MOVE_INTERVAL], dtype=jnp.int8))
+    divers = divers.at[ix].set(
+        jnp.array([x, diver_y, diver_lr, DIVER_MOVE_INTERVAL], dtype=jnp.int8)
+    )
     return divers
 
 
