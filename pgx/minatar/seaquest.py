@@ -132,6 +132,9 @@ def _step_det(
     # Update divers
     divers, diver_count = _update_divers(divers, diver_count, sub_x, sub_y)
 
+    # Update enemy subs
+    f_bullets, e_subs, e_bullets, terminal, r = _update_enemy_subs(f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r)
+
     _f_bullets = _to_list(f_bullets)
     _e_bullets = _to_list(e_bullets)
     _e_fish = _to_list(e_fish)
@@ -143,31 +146,6 @@ def _step_det(
     # e_subs = _to_arr(25, 5, _e_subs)
     # divers = _to_arr(5, 4, _divers)
 
-    # Update enemy subs
-    for sub in reversed(_e_subs):
-        if sub[0:2] == [sub_x, sub_y]:
-            terminal = TRUE
-        if sub[3] == 0:
-            sub[3] = move_speed
-            sub[0] += 1 if sub[2] else -1
-            if sub[0] < 0 or sub[0] > 9:
-                _e_subs.remove(sub)
-            elif sub[0:2] == [sub_x, sub_y]:
-                terminal = TRUE
-            else:
-                for x in _f_bullets:
-                    if sub[0:2] == x[0:2]:
-                        _e_subs.remove(sub)
-                        _f_bullets.remove(x)
-                        r += 1
-                        break
-        else:
-            sub[3] -= 1
-        if sub[4] == 0:
-            sub[4] = ENEMY_SHOT_INTERVAL
-            _e_bullets += [[sub[0] if sub[2] else sub[0], sub[1], sub[2]]]
-        else:
-            sub[4] -= 1
 
     # Update enemy bullets
     for bullet in reversed(_e_bullets):
@@ -332,6 +310,43 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
                 diver[3] -= 1
     divers = _to_arr(5, 4, _divers)
     return divers, diver_count
+
+
+def _update_enemy_subs(f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r):
+    _f_bullets = _to_list(f_bullets)
+    _e_subs = _to_list(e_subs)
+    _e_bullets = _to_list(e_bullets)
+
+    for sub in reversed(_e_subs):
+        if sub[0:2] == [sub_x, sub_y]:
+            terminal = TRUE
+        if sub[3] == 0:
+            sub[3] = move_speed
+            sub[0] += 1 if sub[2] else -1
+            if sub[0] < 0 or sub[0] > 9:
+                _e_subs.remove(sub)
+            elif sub[0:2] == [sub_x, sub_y]:
+                terminal = TRUE
+            else:
+                for x in _f_bullets:
+                    if sub[0:2] == x[0:2]:
+                        _e_subs.remove(sub)
+                        _f_bullets.remove(x)
+                        r += 1
+                        break
+        else:
+            sub[3] -= 1
+        if sub[4] == 0:
+            sub[4] = ENEMY_SHOT_INTERVAL
+            _e_bullets += [[sub[0] if sub[2] else sub[0], sub[1], sub[2]]]
+        else:
+            sub[4] -= 1
+
+    f_bullets = _to_arr(5, 3, _f_bullets)
+    e_bullets = _to_arr(25, 3, _e_bullets)
+    e_subs = _to_arr(25, 5, _e_subs)
+
+    return f_bullets, e_subs, e_bullets, terminal, r
 
 
 # Called when player hits surface (top row) if they have no divers, this ends the game,
