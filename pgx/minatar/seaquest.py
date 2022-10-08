@@ -138,6 +138,9 @@ def _step_det(
     # Update enemy bullets
     e_bullets, terminal = _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal)
 
+    # Update enemy fish
+    f_bullets, e_fish, terminal, r = _update_enemy_fish(f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r)
+
     _f_bullets = _to_list(f_bullets)
     _e_bullets = _to_list(e_bullets)
     _e_fish = _to_list(e_fish)
@@ -149,26 +152,7 @@ def _step_det(
     # e_subs = _to_arr(25, 5, _e_subs)
     # divers = _to_arr(5, 4, _divers)
 
-    # Update enemy fish
-    for fish in reversed(_e_fish):
-        if fish[0:2] == [sub_x, sub_y]:
-            terminal = TRUE
-        if fish[3] == 0:
-            fish[3] = move_speed
-            fish[0] += 1 if fish[2] else -1
-            if fish[0] < 0 or fish[0] > 9:
-                _e_fish.remove(fish)
-            elif fish[0:2] == [sub_x, sub_y]:
-                terminal = TRUE
-            else:
-                for x in _f_bullets:
-                    if fish[0:2] == x[0:2]:
-                        _e_fish.remove(fish)
-                        _f_bullets.remove(x)
-                        r += 1
-                        break
-        else:
-            fish[3] -= 1
+
 
     # Update various timers
     e_spawn_timer -= e_spawn_timer > 0
@@ -353,6 +337,33 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
                 terminal = TRUE
     e_bullets = _to_arr(25, 3, _e_bullets)
     return e_bullets, terminal
+
+
+def _update_enemy_fish(f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r):
+    _f_bullets = _to_list(f_bullets)
+    _e_fish = _to_list(e_fish)
+    for fish in reversed(_e_fish):
+        if fish[0:2] == [sub_x, sub_y]:
+            terminal = TRUE
+        if fish[3] == 0:
+            fish[3] = move_speed
+            fish[0] += 1 if fish[2] else -1
+            if fish[0] < 0 or fish[0] > 9:
+                _e_fish.remove(fish)
+            elif fish[0:2] == [sub_x, sub_y]:
+                terminal = TRUE
+            else:
+                for x in _f_bullets:
+                    if fish[0:2] == x[0:2]:
+                        _e_fish.remove(fish)
+                        _f_bullets.remove(x)
+                        r += 1
+                        break
+        else:
+            fish[3] -= 1
+    f_bullets = _to_arr(5, 3, _f_bullets)
+    e_fish = _to_arr(25, 4, _e_fish)
+    return f_bullets, e_fish, terminal, r
 
 
 # Called when player hits surface (top row) if they have no divers, this ends the game,
