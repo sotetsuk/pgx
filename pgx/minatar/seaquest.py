@@ -6,8 +6,6 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
-
 import jax
 import jax.lax as lax
 from flax import struct
@@ -64,17 +62,17 @@ class MinAtarSeaquestState:
 
 
 def _to_list(arr):
-    l = []
+    list_ = []
     for i in range(arr.shape[0]):
         if arr[i][0] == -1:
             break
-        l.append([x for x in arr[i]])
-    return l
+        list_.append([x for x in arr[i]])
+    return list_
 
 
-def _to_arr(N, M, l):
+def _to_arr(N, M, list_):
     arr = -jnp.ones((N, M), dtype=jnp.int8)
-    for i, row in enumerate(l):
+    for i, row in enumerate(list_):
         arr = arr.at[i].set(jnp.int8(row))
     return arr
 
