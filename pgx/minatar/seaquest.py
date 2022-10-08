@@ -124,22 +124,32 @@ def _step_det(
 
     # Resolve player action
     # elf.action_map = ['n','l','u','r','d','f']
-    f_bullets, shot_timer, sub_x, sub_y, sub_or = _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or)
+    f_bullets, shot_timer, sub_x, sub_y, sub_or = _resolve_action(
+        action, shot_timer, f_bullets, sub_x, sub_y, sub_or
+    )
 
     # Update friendly Bullets
-    f_bullets, e_subs, e_fish, r = _update_friendly_bullets(f_bullets, e_subs, e_fish, r)
+    f_bullets, e_subs, e_fish, r = _update_friendly_bullets(
+        f_bullets, e_subs, e_fish, r
+    )
 
     # Update divers
     divers, diver_count = _update_divers(divers, diver_count, sub_x, sub_y)
 
     # Update enemy subs
-    f_bullets, e_subs, e_bullets, terminal, r = _update_enemy_subs(f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r)
+    f_bullets, e_subs, e_bullets, terminal, r = _update_enemy_subs(
+        f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
+    )
 
     # Update enemy bullets
-    e_bullets, terminal = _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal)
+    e_bullets, terminal = _update_enemy_bullets(
+        e_bullets, sub_x, sub_y, terminal
+    )
 
     # Update enemy fish
-    f_bullets, e_fish, terminal, r = _update_enemy_fish(f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r)
+    f_bullets, e_fish, terminal, r = _update_enemy_fish(
+        f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
+    )
 
     # Update various timers
     e_spawn_timer -= e_spawn_timer > 0
@@ -268,7 +278,9 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
     return divers, diver_count
 
 
-def _update_enemy_subs(f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r):
+def _update_enemy_subs(
+    f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
+):
     _f_bullets = _to_list(f_bullets)
     _e_subs = _to_list(e_subs)
     _e_bullets = _to_list(e_bullets)
@@ -320,7 +332,9 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     return e_bullets, terminal
 
 
-def _update_enemy_fish(f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r):
+def _update_enemy_fish(
+    f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
+):
     _f_bullets = _to_list(f_bullets)
     _e_fish = _to_list(e_fish)
     for fish in reversed(_e_fish):
