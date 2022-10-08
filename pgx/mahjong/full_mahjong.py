@@ -349,19 +349,19 @@ class Observation:
 class Meld:
     @staticmethod
     @jit
-    def init(action: int, target: int, src: int, is_menzen: int = 0) -> int:
+    def init(action: int, target: int, src: int) -> int:
         # src: 相対位置
+        # - 0: 自分(暗槓の場合のみ)
         # - 1: 下家
         # - 2: 対面
         # - 3: 上家
-        return (is_menzen << 15) | (src << 13) | (target << 7) | action
+        return (src << 13) | (target << 7) | action
 
     @staticmethod
     def to_str(meld: int) -> str:
         action = Meld.action(meld)
         target = Meld.target(meld)
         src = Meld.src(meld)
-        is_menzen = Meld.is_menzen(meld)
         suit, num = target // 9, target % 9 + 1
 
         if action == Action.PON:
@@ -379,11 +379,10 @@ class Meld:
                     num, num, num, ["m", "p", "s", "z"][suit]
                 )
         elif Action.is_selfkan(action):
-            if is_menzen:
+            if src == 0:
                 return "{}{}{}{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            assert src != 0
             if src == 1:
                 return "{}{}[{}{}]{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
@@ -423,11 +422,6 @@ class Meld:
             return "[{}]{}{}{}".format(
                 num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
             )
-
-    @staticmethod
-    @jit
-    def is_menzen(meld: int) -> int:
-        return meld >> 15 & 1
 
     @staticmethod
     @jit
@@ -492,7 +486,7 @@ class Meld:
         fu = (
             (action == Action.PON) * 2
             + (action == Action.MINKAN) * 8
-            + (Action.is_selfkan(action) * 8 * (1 + Meld.is_menzen(meld)))
+            + (Action.is_selfkan(action) * 8 * (1 + (Meld.src(meld) == 0)))
         )
 
         return fu * (1 + (Tile.is_outside(Meld.target(meld))))
@@ -510,7 +504,11 @@ class State:
     meld_num: jnp.ndarray  # 各playerの副露回数
     melds: jnp.ndarray
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
+
+    # 以下計算効率のために保持
     is_menzen: jnp.ndarray
+    pon_src: jnp.ndarray
+    # pos_src[i][j]: player i がjをポンを所有している場合, そのsrc
 
     # reward:
     # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
@@ -520,25 +518,52 @@ class State:
     # - 流局時 player0 だけ聴牌    => [ 1,-1,-1,-1]
 
     @jit
+    def can_kakan(self, tile: int) -> bool:
+        return (self.pon_src[(self.turn, tile)] > 0) & Hand.can_kakan(
+            self.hand[self.turn], tile
+        )
+
+    @jit
     def legal_actions(self) -> jnp.ndarray:
         legal_actions = jnp.full((4, Action.NONE), False)
 
-        # リーチ
+        # 暗/加槓, ツモ切り, ツモ, リーチ
         legal_actions = jax.lax.cond(
-            (self.last_draw == -1)
-            | self.riichi_declared
-            | self.riichi[self.turn]
-            | (self.deck.size() < 4)
-            | (self.is_menzen[self.turn] == 0),
+            (self.last_draw == -1) | self.riichi_declared,
             lambda: legal_actions,
-            lambda: legal_actions.at[(self.turn, Action.RIICHI)].set(
-                Hand.can_riichi(self.hand[self.turn])
+            lambda: jax.lax.fori_loop(
+                0,
+                34,
+                lambda tile, arr: arr.at[(self.turn, tile + 34)].set(
+                    (
+                        Hand.can_ankan(self.hand[self.turn], tile)
+                        | self.can_kakan(tile)
+                    )
+                    & (self.deck.doras < 5)  # 5回目の槓はできない
+                    & (self.deck.is_empty() == 0)
+                ),
+                legal_actions,
+            )
+            .at[(self.turn, Action.TSUMOGIRI)]
+            .set(True)
+            .at[(self.turn, Action.TSUMO)]
+            .set(Hand.can_tsumo(self.hand[self.turn]))
+            .at[(self.turn, Action.RIICHI)]
+            .set(
+                jax.lax.cond(
+                    self.riichi[self.turn]
+                    | (self.is_menzen[self.turn] == 0)
+                    | (self.deck.size() < 4),
+                    lambda: False,
+                    lambda: Hand.can_riichi(self.hand[self.turn]),
+                )
             ),
         )
 
         # リーチ宣言直後の打牌
         legal_actions = jax.lax.cond(
-            (self.last_draw != -1) & self.riichi_declared,
+            (self.last_draw == -1) | (self.riichi_declared == 0),
+            lambda: legal_actions,
             lambda: jax.lax.fori_loop(
                 0,
                 34,
@@ -556,36 +581,6 @@ class State:
             .at[(self.turn, Action.TSUMOGIRI)]
             .set(
                 Hand.is_tenpai(Hand.sub(self.hand[self.turn], self.last_draw))
-            ),
-            lambda: legal_actions,
-        )
-
-        # ツモ切り, ツモ, 暗/加槓
-        legal_actions = jax.lax.cond(
-            (self.last_draw == -1) | self.riichi_declared,
-            lambda: legal_actions,
-            lambda: legal_actions.at[(self.turn, Action.TSUMOGIRI)]
-            .set(True)
-            .at[(self.turn, Action.TSUMO)]
-            .set(Hand.can_tsumo(self.hand[self.turn])),
-        )
-        can_kakan = self._can_kakan()
-        legal_actions = jax.lax.cond(
-            (self.last_draw == -1)
-            | self.riichi_declared
-            | self.deck.is_empty(),
-            lambda: legal_actions,
-            lambda: jax.lax.fori_loop(
-                0,
-                34,
-                lambda i, arr: arr.at[(self.turn, i + 34)].set(
-                    (
-                        Hand.can_ankan(self.hand[self.turn], i)
-                        | (can_kakan[i] > 0)
-                    )
-                    & (self.deck.doras < 4)  # 5回目の槓はできない
-                ),
-                legal_actions,
             ),
         )
 
@@ -606,53 +601,98 @@ class State:
             legal_actions,
         )
 
-        for player in range(4):
-            # ロン
-            legal_actions = jax.lax.cond(
-                (self.target == -1) | (player == self.turn),
-                lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.RON)].set(
-                    Hand.can_ron(self.hand[player], self.target)
+        # 他家の行動
+        legal_actions = jax.lax.cond(
+            self.target == -1,
+            lambda: legal_actions,
+            lambda: jax.lax.fori_loop(
+                0,
+                4,
+                lambda player, legal_actions: jax.lax.cond(
+                    (player == self.turn) | (self.target == -1),
+                    lambda: legal_actions,
+                    lambda: jax.lax.cond(
+                        self.deck.is_empty() | self.riichi[player],
+                        lambda legal_actions: legal_actions,
+                        lambda legal_actions: jax.lax.cond(
+                            (player - self.turn) % 4 != 1,
+                            lambda legal_actions: legal_actions,
+                            lambda legal_actions: legal_actions.at[
+                                (player, Action.CHI_L)
+                            ]
+                            .set(
+                                Hand.can_chi(
+                                    self.hand[player],
+                                    self.target,
+                                    Action.CHI_L,
+                                )
+                            )
+                            .at[(player, Action.CHI_M)]
+                            .set(
+                                Hand.can_chi(
+                                    self.hand[player],
+                                    self.target,
+                                    Action.CHI_M,
+                                )
+                            )
+                            .at[(player, Action.CHI_R)]
+                            .set(
+                                Hand.can_chi(
+                                    self.hand[player],
+                                    self.target,
+                                    Action.CHI_R,
+                                )
+                            ),
+                            legal_actions.at[(player, Action.PON)]
+                            .set(Hand.can_pon(self.hand[player], self.target))
+                            .at[(player, Action.MINKAN)]
+                            .set(
+                                Hand.can_minkan(self.hand[player], self.target)
+                                & (self.deck.doras < 5)
+                            ),
+                        ),
+                        legal_actions.at[(player, Action.RON)].set(
+                            Hand.can_ron(self.hand[player], self.target)
+                        ),
+                    ),
                 ),
-            )
-            # ポン,明槓
-            legal_actions = jax.lax.cond(
-                (self.target == -1)
-                | (player == self.turn)
-                | self.deck.is_empty()
-                | self.riichi[player],
-                lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.PON)]
-                .set(Hand.can_pon(self.hand[player], self.target))
-                .at[(player, Action.MINKAN)]
-                .set(
-                    Hand.can_minkan(self.hand[player], self.target)
-                    & (self.deck.doras < 4)  # 5回目の槓はできない
-                ),
-            )
-            # チー
-            legal_actions = jax.lax.cond(
-                (self.target == -1)
-                | (player != (self.turn + 1) % 4)
-                | self.deck.is_empty()
-                | self.riichi[player],
-                lambda: legal_actions,
-                lambda: legal_actions.at[(player, Action.CHI_L)]
-                .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_L)
-                )
-                .at[(player, Action.CHI_M)]
-                .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_M)
-                )
-                .at[(player, Action.CHI_R)]
-                .set(
-                    Hand.can_chi(self.hand[player], self.target, Action.CHI_R)
-                ),
-            )
-            legal_actions = legal_actions.at[(player, Action.PASS)].set(
-                (player != self.turn) & jnp.any(legal_actions[player])
-            )
+                legal_actions,
+            ),
+        )
+        # if self.target != -1:
+        #    for player in range(4):
+        #        if player == self.turn
+        #            continue
+
+        #        legal_actions[(player, Action.RON)] = Hand.can_ron(
+        #                self.hand[player], self.target)
+
+        #        if self.deck.is_empty() | self.riichi[player]:
+        #            continue
+
+        #        legal_actions[(player, Action.PON)] = Hand.can_pon(
+        #                self.hand[player], self.target)
+
+        #        legal_actions[(player, Action.MINKAN)] = Hand.can_minkan(
+        #                self.hand[player], self.target) & (self.deck.doras < 5)
+
+        #        if (player - self.turn) % 4 != 1:
+        #            continue
+        #        legal_actions[(player, Action.CHI_L)] = Hand.can_chi(
+        #                self.hand[player], self.target, Action.CHI_L)
+        #        legal_actions[(player, Action.CHI_M)] = Hand.can_chi(
+        #                self.hand[player], self.target, Action.CHI_M)
+        #        legal_actions[(player, Action.CHI_R)] = Hand.can_chi(
+        #                self.hand[player], self.target, Action.CHI_R)
+
+        legal_actions = jax.lax.fori_loop(
+            0,
+            4,
+            lambda player, legal_actions: legal_actions.at[
+                (player, Action.PASS)
+            ].set((player != self.turn) & jnp.any(legal_actions[player])),
+            legal_actions,
+        )
 
         return legal_actions
 
@@ -672,6 +712,7 @@ class State:
         meld_num = jnp.zeros(4, dtype=jnp.int32)
         melds = jnp.zeros((4, 4), dtype=jnp.int32)
         is_menzen = jnp.full(4, True)
+        pon_src = jnp.zeros((4, 34), dtype=jnp.int32)
         return State(
             deck,
             hand,
@@ -683,6 +724,7 @@ class State:
             meld_num,
             melds,
             is_menzen,
+            pon_src,
         )
 
     @staticmethod
@@ -737,7 +779,7 @@ class State:
         state.last_draw = -1
         return jax.lax.cond(
             jnp.any(state.legal_actions()),
-            lambda: (state, jnp.full(4, 0), False),
+            lambda: (state, jnp.zeros(4, dtype=jnp.int32), False),
             lambda: State._try_draw(state),
         )
 
@@ -771,7 +813,7 @@ class State:
         state.hand = state.hand.at[state.turn].set(
             Hand.add(state.hand[state.turn], tile)
         )
-        return state, jnp.full(4, 0), False
+        return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
     @jit
@@ -786,7 +828,11 @@ class State:
     def _ron(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         return (
             state,
-            jnp.full(4, 0).at[state.turn].set(-2).at[player].set(2),
+            jnp.zeros(4, dtype=jnp.int32)
+            .at[state.turn]
+            .set(-2)
+            .at[player]
+            .set(2),
             True,
         )
 
@@ -821,32 +867,13 @@ class State:
         state.hand = state.hand.at[state.turn].set(
             Hand.add(state.hand[state.turn], tile)
         )
-        return state, jnp.full(4, 0), False
-
-    @jit
-    def _can_kakan(self) -> jnp.ndarray:
-        return jax.lax.fori_loop(
-            0,
-            self.meld_num[self.turn],
-            lambda i, sum: sum.at[Meld.target(self.melds[self.turn][i])].set(
-                (
-                    Hand.can_kakan(
-                        self.hand[self.turn],
-                        Meld.target(self.melds[self.turn][i]),
-                    )
-                    & (Meld.action(self.melds[self.turn][i]) == Action.PON)
-                )
-                * Meld.src(self.melds[self.turn][i])
-            ),
-            jnp.full(34, 0),
-        )
+        return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
     @jit
     def _selfkan(state: State, action: int) -> tuple[State, jnp.ndarray, bool]:
         target = action - 34
-        src = state._can_kakan()[target]
-
+        src = state.pon_src[(state.turn, target)]
         return jax.lax.cond(
             src == 0,
             lambda: State._ankan(state, target),
@@ -856,7 +883,7 @@ class State:
     @staticmethod
     @jit
     def _ankan(state: State, target: int) -> tuple[State, jnp.ndarray, bool]:
-        meld = Meld.init(target + 34, target, src=0, is_menzen=True)
+        meld = Meld.init(target + 34, target, src=0)
         state = State._append_meld(state, meld, state.turn)
         state.hand = state.hand.at[state.turn].set(
             Hand.ankan(state.hand[state.turn], target)
@@ -867,7 +894,7 @@ class State:
         state.hand = state.hand.at[state.turn].set(
             Hand.add(state.hand[state.turn], tile)
         )
-        return state, jnp.full(4, 0), False
+        return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
     @jit
@@ -879,27 +906,30 @@ class State:
         state.hand = state.hand.at[state.turn].set(
             Hand.kakan(state.hand[state.turn], target)
         )
+        state.pon_src = state.pon_src.at[(state.turn, target)].set(0)
         # TODO: 槍槓の受付
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
         state.hand = state.hand.at[state.turn].set(
             Hand.add(state.hand[state.turn], tile)
         )
-        return state, jnp.full(4, 0), False
+        return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
     @jit
     def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
-        meld = Meld.init(Action.PON, state.target, (state.turn - player) % 4)
+        src = (state.turn - player) % 4
+        meld = Meld.init(Action.PON, state.target, src)
         state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
             Hand.pon(state.hand[player], state.target)
         )
         state.is_menzen = state.is_menzen.at[player].set(False)
+        state.pon_src = state.pon_src.at[(player, state.target)].set(src)
         state.target = -1
         state.turn = player
-        return state, jnp.full(4, 0), False
+        return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
     @jit
@@ -915,7 +945,7 @@ class State:
         state.is_menzen = state.is_menzen.at[player].set(False)
         state.target = -1
         state.turn = player
-        return state, jnp.full(4, 0), False
+        return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
     @jit
@@ -926,7 +956,7 @@ class State:
     @jit
     def _riichi(state: State) -> tuple[State, jnp.ndarray, bool]:
         state.riichi_declared = True
-        return state, jnp.full(4, 0), False
+        return state, jnp.zeros(4, dtype=jnp.int32), False
 
     def _tree_flatten(self):
         children = (
@@ -940,6 +970,7 @@ class State:
             self.meld_num,
             self.melds,
             self.is_menzen,
+            self.pon_src,
         )
         aux_data = {}
         return (children, aux_data)
