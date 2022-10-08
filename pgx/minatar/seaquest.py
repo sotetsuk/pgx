@@ -130,13 +130,31 @@ def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
     #     back_x = fish[0] - 1 if fish[2] else fish[0] + 1
     #     if (back_x >= 0 and back_x <= 9):
     #         obs = obs.at[fish[1], back_x, 3].set(1)
-    for sub in state.e_subs:
-        if sub[0] == -1:
-            continue
-        obs = obs.at[sub[1], sub[0], 6].set(1)
-        back_x = sub[0] - 1 if sub[2] else sub[0] + 1
-        if (back_x >= 0 and back_x <= 9):
-            obs = obs.at[sub[1], back_x, 3].set(1)
+
+    def set_e_subs(_obs, sub):
+        _obs = _obs.at[sub[1], sub[0], 6].set(1)
+        back_x = sub[0] + jnp.array([1, -1], dtype=jnp.int8)[sub[2]]
+        _obs = lax.cond(
+            (0 <= back_x) & (back_x <= 9),
+            lambda: _obs.at[sub[1], back_x, 3].set(1),
+            lambda: _obs,
+        )
+        return _obs
+
+    obs = lax.fori_loop(
+        0, 25, lambda i, _obs: lax.cond(
+            state.e_subs[i][0] >= 0,
+            lambda: set_e_subs(_obs, state.e_subs[i]),
+            lambda: _obs
+        ),obs
+    )
+    # for sub in state.e_subs:
+    #     if sub[0] == -1:
+    #         continue
+    #     obs = obs.at[sub[1], sub[0], 6].set(1)
+    #     back_x = sub[0] - 1 if sub[2] else sub[0] + 1
+    #     if (back_x >= 0 and back_x <= 9):
+    #         obs = obs.at[sub[1], back_x, 3].set(1)
     for diver in state.divers:
         if diver[0] == -1:
             continue
