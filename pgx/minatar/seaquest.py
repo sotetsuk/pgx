@@ -336,17 +336,21 @@ def remove_i(arr, i):
 
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     _e_bullets = _to_list(e_bullets)
+
     for i, bullet in enumerate(reversed(_e_bullets)):
-        j = 25 - i - 1
         if bullet[0:2] == [sub_x, sub_y]:
             terminal = TRUE
+
+    for i, bullet in enumerate(reversed(_e_bullets)):
+        j = 25 - i - 1
         bullet[0] += 1 if bullet[2] else -1
         if bullet[0] < 0 or bullet[0] > 9:
             e_bullets = remove_i(e_bullets, j)
-            # _e_bullets.remove(bullet)
-        else:
-            if bullet[0:2] == [sub_x, sub_y]:
-                terminal = TRUE
+
+    for i, bullet in enumerate(reversed(_e_bullets)):
+        if bullet[0:2] == [sub_x, sub_y]:
+            terminal = TRUE
+
     e_bullets = _to_arr(25, 3, _e_bullets)
     return e_bullets, terminal
 
