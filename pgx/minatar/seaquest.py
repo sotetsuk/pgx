@@ -388,6 +388,7 @@ def find_ix(arr):
     ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
     return ix
 
+
 # Spawn an enemy fish or submarine in random row and random direction,
 # if the resulting row and direction would lead to a collision, do nothing instead
 @jax.jit
@@ -406,15 +407,14 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
             is_sub,
             lambda: (
                 e_subs.at[find_ix(e_subs)].set(
-                    jnp.array(
+                    jnp.int8(
                         [
                             x,
                             enemy_y,
                             enemy_lr,
                             move_speed,
                             ENEMY_SHOT_INTERVAL,
-                        ],
-                        dtype=jnp.int8,
+                        ]
                     )
                 ),
                 e_fish,
@@ -422,9 +422,7 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
             lambda: (
                 e_subs,
                 e_fish.at[find_ix(e_fish)].set(
-                    jnp.array(
-                        [x, enemy_y, enemy_lr, move_speed], dtype=jnp.int8
-                    )
+                    jnp.int8([x, enemy_y, enemy_lr, move_speed])
                 ),
             ),
         ),
