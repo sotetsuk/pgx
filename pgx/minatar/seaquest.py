@@ -126,6 +126,9 @@ def _step_det(
     # elf.action_map = ['n','l','u','r','d','f']
     f_bullets, shot_timer, sub_x, sub_y, sub_or = _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or)
 
+    # Update friendly Bullets
+    f_bullets, e_subs, e_fish, r = _update_friendly_bullets(f_bullets, e_subs, e_fish, r)
+
     _f_bullets = _to_list(f_bullets)
     _e_bullets = _to_list(e_bullets)
     _e_fish = _to_list(e_fish)
@@ -136,28 +139,6 @@ def _step_det(
     # e_fish = _to_arr(25, 4, _e_fish)
     # e_subs = _to_arr(25, 5, _e_subs)
     # divers = _to_arr(5, 4, _divers)
-
-    # Update friendly Bullets
-    for bullet in reversed(_f_bullets):
-        bullet[0] += 1 if bullet[2] else -1
-        if bullet[0] < 0 or bullet[0] > 9:
-            _f_bullets.remove(bullet)
-        else:
-            removed = False
-            for x in _e_fish:
-                if bullet[0:2] == x[0:2]:
-                    _e_fish.remove(x)
-                    _f_bullets.remove(bullet)
-                    r += 1
-                    removed = True
-                    break
-            if not removed:
-                for x in _e_subs:
-                    if bullet[0:2] == x[0:2]:
-                        _e_subs.remove(x)
-                        _f_bullets.remove(bullet)
-                        r += 1
-                        break
 
     # Update divers
     for diver in reversed(_divers):
@@ -313,6 +294,37 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
     elif action == 4:
         sub_y = min(jnp.int8(8), sub_y + 1)
     return f_bullets, shot_timer, sub_x, sub_y, sub_or
+
+
+def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
+    _f_bullets = _to_list(f_bullets)
+    _e_subs = _to_list(e_subs)
+    _e_fish = _to_list(e_fish)
+    for bullet in reversed(_f_bullets):
+        bullet[0] += 1 if bullet[2] else -1
+        if bullet[0] < 0 or bullet[0] > 9:
+            _f_bullets.remove(bullet)
+        else:
+            removed = False
+            for x in _e_fish:
+                if bullet[0:2] == x[0:2]:
+                    _e_fish.remove(x)
+                    _f_bullets.remove(bullet)
+                    r += 1
+                    removed = True
+                    break
+            if not removed:
+                for x in _e_subs:
+                    if bullet[0:2] == x[0:2]:
+                        _e_subs.remove(x)
+                        _f_bullets.remove(bullet)
+                        r += 1
+                        break
+
+    f_bullets = _to_arr(5, 3, _f_bullets)
+    e_subs = _to_arr(25, 5, _e_subs)
+    e_fish = _to_arr(25, 4, _e_fish)
+    return f_bullets, e_subs, e_fish, r
 
 
 # Called when player hits surface (top row) if they have no divers, this ends the game,
