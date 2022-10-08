@@ -141,19 +141,6 @@ def _step_det(
     # Update enemy fish
     f_bullets, e_fish, terminal, r = _update_enemy_fish(f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r)
 
-    _f_bullets = _to_list(f_bullets)
-    _e_bullets = _to_list(e_bullets)
-    _e_fish = _to_list(e_fish)
-    _e_subs = _to_list(e_subs)
-    _divers = _to_list(divers)
-    # f_bullets = _to_arr(5, 3, _f_bullets)
-    # e_bullets = _to_arr(25, 3, _e_bullets)
-    # e_fish = _to_arr(25, 4, _e_fish)
-    # e_subs = _to_arr(25, 5, _e_subs)
-    # divers = _to_arr(5, 4, _divers)
-
-
-
     # Update various timers
     e_spawn_timer -= e_spawn_timer > 0
     d_spawn_timer -= d_spawn_timer > 0
@@ -185,12 +172,6 @@ def _step_det(
                     ramp_index,
                 )
                 r += _r
-
-    f_bullets = _to_arr(5, 3, _f_bullets)
-    e_bullets = _to_arr(25, 3, _e_bullets)
-    e_fish = _to_arr(25, 4, _e_fish)
-    e_subs = _to_arr(25, 5, _e_subs)
-    divers = _to_arr(5, 4, _divers)
 
     state = MinAtarSeaquestState(
         oxygen=oxygen,
