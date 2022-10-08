@@ -386,7 +386,6 @@ class Meld:
         suit, num = target // 9, target % 9 + 1
 
         if action == Action.PON:
-            assert src != 0
             if src == 1:
                 return "{}{}[{}]{}".format(
                     num, num, num, ["m", "p", "s", "z"][suit]
@@ -395,7 +394,7 @@ class Meld:
                 return "{}[{}]{}{}".format(
                     num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            else:
+            elif src == 3:
                 return "[{}]{}{}{}".format(
                     num, num, num, ["m", "p", "s", "z"][suit]
                 )
@@ -412,12 +411,11 @@ class Meld:
                 return "{}[{}{}]{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            else:
+            elif src == 3:
                 return "[{}{}]{}{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
         elif action == Action.MINKAN:
-            assert src != 0
             if src == 1:
                 return "{}{}{}[{}]{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
@@ -426,23 +424,19 @@ class Meld:
                 return "{}[{}]{}{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
-            else:
+            elif src == 3:
                 return "[{}]{}{}{}{}".format(
                     num, num, num, num, ["m", "p", "s", "z"][suit]
                 )
-        assert src == 3
-        if action == Action.CHI_L:
+        elif Action.CHI_L <= action <= Action.CHI_R:
+            assert src == 3
+            pos = action - Action.CHI_L
+            t = [num - pos + i for i in range(3)]
+            t[0],t[pos] = t[pos],t[0]
             return "[{}]{}{}{}".format(
-                num, num + 1, num + 2, ["m", "p", "s", "z"][suit]
+                *t, ["m", "p", "s", "z"][suit]
             )
-        elif action == Action.CHI_M:
-            return "[{}]{}{}{}".format(
-                num - 1, num, num + 1, ["m", "p", "s", "z"][suit]
-            )
-        else:
-            return "[{}]{}{}{}".format(
-                num - 2, num - 1, num, ["m", "p", "s", "z"][suit]
-            )
+        assert False
 
     @staticmethod
     @jit
