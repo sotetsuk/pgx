@@ -333,7 +333,27 @@ def remove_i(arr, i):
     )
     return arr
 
+@jax.jit
+def remove_out(arr, ix):
+    arr = lax.fori_loop(
+        0, ix, lambda i, a: lax.cond(
+            (a[i][0] < 0) & (a[i][1] > 9),
+            lambda: remove_i(a, i),
+            lambda: a
+        ), arr
+    )
+    return arr
 
+
+@jax.jit
+def step_obj(arr, ix):
+    arr = lax.fori_loop(
+        0, ix, lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)), arr
+    )
+    return arr
+
+
+@jax.jit
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     terminal = lax.fori_loop(
         0, 25, lambda i, t: lax.cond(
@@ -343,13 +363,9 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
         ), terminal
     )
 
-    _e_bullets = _to_list(e_bullets)
-    for i, bullet in enumerate(reversed(_e_bullets)):
-        j = 25 - i - 1
-        bullet[0] += 1 if bullet[2] else -1
-        if bullet[0] < 0 or bullet[0] > 9:
-            e_bullets = remove_i(e_bullets, j)
-    e_bullets = _to_arr(25, 3, _e_bullets)
+    ix = find_ix(e_bullets)
+    e_bullets = step_obj(e_bullets, ix)
+    e_bullets = remove_out(e_bullets, ix)
 
     terminal = lax.fori_loop(
         0, 25, lambda i, t: lax.cond(
