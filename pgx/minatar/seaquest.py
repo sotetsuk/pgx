@@ -129,6 +129,9 @@ def _step_det(
     # Update friendly Bullets
     f_bullets, e_subs, e_fish, r = _update_friendly_bullets(f_bullets, e_subs, e_fish, r)
 
+    # Update divers
+    divers, diver_count = _update_divers(divers, diver_count, sub_x, sub_y)
+
     _f_bullets = _to_list(f_bullets)
     _e_bullets = _to_list(e_bullets)
     _e_fish = _to_list(e_fish)
@@ -139,23 +142,6 @@ def _step_det(
     # e_fish = _to_arr(25, 4, _e_fish)
     # e_subs = _to_arr(25, 5, _e_subs)
     # divers = _to_arr(5, 4, _divers)
-
-    # Update divers
-    for diver in reversed(_divers):
-        if diver[0:2] == [sub_x, sub_y] and diver_count < 6:
-            _divers.remove(diver)
-            diver_count += 1
-        else:
-            if diver[3] == 0:
-                diver[3] = DIVER_MOVE_INTERVAL
-                diver[0] += 1 if diver[2] else -1
-                if diver[0] < 0 or diver[0] > 9:
-                    _divers.remove(diver)
-                elif diver[0:2] == [sub_x, sub_y] and diver_count < 6:
-                    _divers.remove(diver)
-                    diver_count += 1
-            else:
-                diver[3] -= 1
 
     # Update enemy subs
     for sub in reversed(_e_subs):
@@ -325,6 +311,27 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
     e_subs = _to_arr(25, 5, _e_subs)
     e_fish = _to_arr(25, 4, _e_fish)
     return f_bullets, e_subs, e_fish, r
+
+
+def _update_divers(divers, diver_count, sub_x, sub_y):
+    _divers = _to_list(divers)
+    for diver in reversed(_divers):
+        if diver[0:2] == [sub_x, sub_y] and diver_count < 6:
+            _divers.remove(diver)
+            diver_count += 1
+        else:
+            if diver[3] == 0:
+                diver[3] = DIVER_MOVE_INTERVAL
+                diver[0] += 1 if diver[2] else -1
+                if diver[0] < 0 or diver[0] > 9:
+                    _divers.remove(diver)
+                elif diver[0:2] == [sub_x, sub_y] and diver_count < 6:
+                    _divers.remove(diver)
+                    diver_count += 1
+            else:
+                diver[3] -= 1
+    divers = _to_arr(5, 4, _divers)
+    return divers, diver_count
 
 
 # Called when player hits surface (top row) if they have no divers, this ends the game,
