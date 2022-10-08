@@ -485,6 +485,27 @@ def test_is_stuck():
 def test_step():
     board = np.zeros((29, 81), dtype=np.int32)
     board[0] = np.ones(81, dtype=np.int32)
+    # 先手歩の動作確認
+    board[0][40] = 0
+    board[1][40] = 1
+    s = _init_legal_actions(ShogiState(board=board))
+    for i in range(2754):
+        s_, r, t = step(s, i)
+        if i == 39:
+            assert t
+        else:
+            assert not t
+    board[1][40] = 0
+    board[2][40] = 1
+    s = _init_legal_actions(ShogiState(board=board))
+    for i in range(2754):
+        s_, r, t = step(s, i)
+        if i :
+            assert t
+        else:
+            assert not t
+    board = np.zeros((29, 81), dtype=np.int32)
+    board[0] = np.ones(81, dtype=np.int32)
     board[0][11] = 0
     board[7][11] = 1
     board[0][10] = 0
@@ -495,31 +516,53 @@ def test_step():
     hand[0] = 1
     hand[1] = 1
     s = _init_legal_actions(ShogiState(board=board, hand=hand))
+    # 打ち不詰め
     action1 = _action_to_dlaction(ShogiAction(True, 1, 1), 0)
     s1, r1, t = step(s, action1)
     assert r1 == -1
     assert t
+    # スティルメイトは最終手のstepの段階では勝敗判定を出さない
+    # 次の手がどのような手でも非合法手なので負けになる
+    action1 = _action_to_dlaction(ShogiAction(True, 1, 2), 0)
+    s1, r1, t = step(s, action1)
+    assert r1 == 0
+    assert not t
+    # 詰み（合い駒なし）
     action2 = _action_to_dlaction(ShogiAction(True, 2, 8), 0)
     s2, r2, t = step(s, action2)
     assert r2 == 1
     assert t
+    # 行き所のない駒
     action3 = _action_to_dlaction(ShogiAction(True, 2, 9), 0)
     s3, r3, t = step(s, action3)
     assert r3 == -1
     assert t
+    # 二歩
     action4 = _action_to_dlaction(ShogiAction(True, 1, 17), 0)
     s4, r4, t = step(s, action4)
     assert r4 == -1
     assert t
+    # 行き所のない駒
     action5 = _action_to_dlaction(ShogiAction(False, 1, 9, 10, 0, False), 0)
     s5, r5, t = step(s, action5)
     assert r5 == -1
     assert t
+    # 合法手
     action6 = _action_to_dlaction(ShogiAction(False, 1, 9, 10, 0, True), 0)
     s6, r6, t = step(s, action6)
     assert r6 == 0
     assert not t
     s = init()
+    # 相手は指せるが自分は指せない手
+    action7 = _action_to_dlaction(ShogiAction(False, 1, 2, 3, 0, False), 0)
+    s7, r7, t = step(s, action7)
+    assert r7 == -1
+    assert t
+    # 自分の駒を跳び越す手
+    action8 = _action_to_dlaction(ShogiAction(False, 5, 10, 70, 15, True), 0)
+    s8, r8, t = step(s, action8)
+    assert r8 == -1
+    assert t
     moves = [
         59, 66, 162 + 52, 21, 81 + 60, 57, 14, 55, 13, 81 + 19, 81 + 61, 48, 81 + 34, 648 + 56, 567 + 62, 162 + 28,
         23, 81 + 47, 162 + 24, 39, 243 + 53, 67, 162 + 52, 81 + 20, 41, 567 + 18, 81 + 32, 49, 22, 22, 162 + 22,
@@ -539,7 +582,6 @@ def test_step():
         else:
             assert r == 0
             assert not t
-    print(_board_status(s))
     assert np.all(_board_status(s) == np.array([16, 0, 1, 0, 15, 0, 0, 0, 2, 0, 0, 0, 0, 15, 0, 0, 0, 6, 0, 0, 9, 0, 0, 0, 0, 15, 0, 22, 4, 0, 7, 0, 4, 1, 23, 0, 0, 0, 1, 18, 15, 0, 0, 0, 0, 0, 21, 0, 19, 0, 1, 0, 0, 0, 0, 0, 17, 15, 0, 1, 4, 21, 0, 20, 0, 0, 0, 0, 1, 8, 0, 3, 16, 0, 15, 0, 0, 1, 0, 25, 2]))
     s = init()
     moves = [
@@ -579,7 +621,6 @@ def test_step():
     ]
     for i in range(99):
         action = moves[i]
-        print(i, _dlaction_to_action(action, s))
         s, r, t = step(s, action)
         if i == 98:
             assert r == -1
