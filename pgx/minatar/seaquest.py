@@ -383,6 +383,11 @@ def _surface(
     return r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index
 
 
+@jax.jit
+def find_ix(arr):
+    ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
+    return ix
+
 # Spawn an enemy fish or submarine in random row and random direction,
 # if the resulting row and direction would lead to a collision, do nothing instead
 @jax.jit
@@ -400,11 +405,7 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
         lambda: lax.cond(
             is_sub,
             lambda: (
-                e_subs.at[
-                    lax.while_loop(
-                        lambda i: e_subs[i][0] != -1, lambda i: i + 1, 0
-                    )
-                ].set(
+                e_subs.at[find_ix(e_subs)].set(
                     jnp.array(
                         [
                             x,
@@ -420,11 +421,7 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
             ),
             lambda: (
                 e_subs,
-                e_fish.at[
-                    lax.while_loop(
-                        lambda i: e_fish[i][0] != -1, lambda i: i + 1, 0
-                    )
-                ].set(
+                e_fish.at[find_ix(e_fish)].set(
                     jnp.array(
                         [x, enemy_y, enemy_lr, move_speed], dtype=jnp.int8
                     )
@@ -438,7 +435,7 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
 # Spawn a diver in random row with random direction
 def _spawn_diver(divers, diver_lr, diver_y):
     x = lax.cond(diver_lr, lambda: ZERO, lambda: NINE)
-    ix = lax.while_loop(lambda i: divers[i][0] != -1, lambda i: i + 1, 0)
+    ix = find_ix(divers)
     divers = divers.at[ix].set(
         jnp.array([x, diver_y, diver_lr, DIVER_MOVE_INTERVAL], dtype=jnp.int8)
     )
