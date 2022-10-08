@@ -62,6 +62,7 @@ class MinAtarSeaquestState:
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = ZERO
 
+
 def _to_list(arr):
     l = []
     for i in range(arr.shape[0]):
@@ -72,19 +73,20 @@ def _to_list(arr):
 
 
 def _to_arr(N, M, l):
-    arr = - jnp.ones((N, M), dtype=jnp.int8)
+    arr = -jnp.ones((N, M), dtype=jnp.int8)
     for i, row in enumerate(l):
         arr = arr.at[i].set(jnp.int8(row))
     return arr
 
+
 def _step_det(
-     state: MinAtarSeaquestState,
-     action: jnp.ndarray,
-                enemy_lr,
-                is_sub,
-                enemy_y,
-                diver_lr,
-                diver_y
+    state: MinAtarSeaquestState,
+    action: jnp.ndarray,
+    enemy_lr,
+    is_sub,
+    enemy_y,
+    diver_lr,
+    diver_y,
 ):
     ramping = TRUE
 
@@ -113,7 +115,9 @@ def _step_det(
 
     # Spawn enemy if timer is up
     if e_spawn_timer == 0:
-        e_subs, e_fish = _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y)
+        e_subs, e_fish = _spawn_enemy(
+            e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y
+        )
         e_spawn_timer = e_spawn_speed
 
     if d_spawn_timer == 0:
@@ -137,7 +141,6 @@ def _step_det(
         sub_y = max(ZERO, sub_y - 1)
     elif action == 4:
         sub_y = min(jnp.int8(8), state.sub_y + 1)
-
 
     _f_bullets = _to_list(f_bullets)
     _e_bullets = _to_list(e_bullets)
@@ -193,7 +196,7 @@ def _step_det(
     for sub in reversed(_e_subs):
         if sub[0:2] == [sub_x, sub_y]:
             terminal = TRUE
-        if (sub[3] == 0):
+        if sub[3] == 0:
             sub[3] = move_speed
             sub[0] += 1 if sub[2] else -1
             if sub[0] < 0 or sub[0] > 9:
@@ -217,29 +220,29 @@ def _step_det(
 
     # Update enemy bullets
     for bullet in reversed(_e_bullets):
-        if (bullet[0:2] == [sub_x, sub_y]):
+        if bullet[0:2] == [sub_x, sub_y]:
             terminal = TRUE
         bullet[0] += 1 if bullet[2] else -1
-        if (bullet[0] < 0 or bullet[0] > 9):
+        if bullet[0] < 0 or bullet[0] > 9:
             _e_bullets.remove(bullet)
         else:
-            if (bullet[0:2] == [sub_x, sub_y]):
+            if bullet[0:2] == [sub_x, sub_y]:
                 terminal = TRUE
 
     # Update enemy fish
     for fish in reversed(_e_fish):
-        if (fish[0:2] == [sub_x, sub_y]):
+        if fish[0:2] == [sub_x, sub_y]:
             terminal = TRUE
-        if (fish[3] == 0):
+        if fish[3] == 0:
             fish[3] = move_speed
             fish[0] += 1 if fish[2] else -1
-            if (fish[0] < 0 or fish[0] > 9):
+            if fish[0] < 0 or fish[0] > 9:
                 _e_fish.remove(fish)
-            elif (fish[0:2] == [sub_x, sub_y]):
+            elif fish[0:2] == [sub_x, sub_y]:
                 terminal = TRUE
             else:
                 for x in _f_bullets:
-                    if (fish[0:2] == x[0:2]):
+                    if fish[0:2] == x[0:2]:
                         _e_fish.remove(fish)
                         _f_bullets.remove(x)
                         r += 1
@@ -262,9 +265,22 @@ def _step_det(
                 terminal = TRUE
             else:
                 surface = TRUE
-                _r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index = _surface(diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index)
+                (
+                    _r,
+                    oxygen,
+                    diver_count,
+                    move_speed,
+                    e_spawn_speed,
+                    ramp_index,
+                ) = _surface(
+                    diver_count,
+                    oxygen,
+                    e_spawn_speed,
+                    move_speed,
+                    ramping,
+                    ramp_index,
+                )
                 r += _r
-
 
     f_bullets = _to_arr(5, 3, _f_bullets)
     e_bullets = _to_arr(25, 3, _e_bullets)
@@ -291,14 +307,17 @@ def _step_det(
         shot_timer=shot_timer,
         surface=surface,
         terminal=terminal,
-        last_action=action
+        last_action=action,
     )
     return state, r, terminal
+
 
 # Called when player hits surface (top row) if they have no divers, this ends the game,
 # if they have 6 divers this gives reward proportional to the remaining oxygen and restores full oxygen
 # otherwise this reduces the number of divers and restores full oxygen
-def _surface(diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index):
+def _surface(
+    diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index
+):
     if diver_count == 6:
         diver_count = 0
         r = oxygen * 10 // MAX_OXYGEN
@@ -314,6 +333,7 @@ def _surface(diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index
         ramp_index += 1
     return r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index
 
+
 # Spawn an enemy fish or submarine in random row and random direction,
 # if the resulting row and direction would lead to a collision, do nothing instead
 def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
@@ -323,13 +343,14 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
     x = 0 if enemy_lr else 9
 
     # Do not spawn in same row an opposite direction as existing
-    if (any([z[1] == enemy_y and z[2] != enemy_lr for z in _e_subs + _e_fish])):
+    if any([z[1] == enemy_y and z[2] != enemy_lr for z in _e_subs + _e_fish]):
         return _to_arr(25, 5, _e_subs), _to_arr(25, 4, _e_fish)
-    if (is_sub):
+    if is_sub:
         _e_subs += [[x, enemy_y, enemy_lr, move_speed, ENEMY_SHOT_INTERVAL]]
     else:
         _e_fish += [[x, enemy_y, enemy_lr, move_speed]]
     return _to_arr(25, 5, _e_subs), _to_arr(25, 4, _e_fish)
+
 
 # Spawn a diver in random row with random direction
 def _spawn_diver(divers, diver_lr, diver_y):
@@ -354,7 +375,9 @@ def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
     obs = obs.at[state.sub_y, back_x, 1].set(1)
     oxygen_guage = state.oxygen * 10 // MAX_OXYGEN
     # hotfix to align to original minatar
-    oxygen_guage = lax.cond(state.oxygen < 0, lambda: jnp.int16(9), lambda: oxygen_guage)
+    oxygen_guage = lax.cond(
+        state.oxygen < 0, lambda: jnp.int16(9), lambda: oxygen_guage
+    )
     obs = lax.fori_loop(
         jnp.int16(0),
         oxygen_guage,
