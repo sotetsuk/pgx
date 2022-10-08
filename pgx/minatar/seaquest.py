@@ -225,23 +225,13 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
         lambda: (lax.max(ZERO, sub_x - 1), FALSE),
         lambda: (sub_x, sub_or)
     )
-    # if action == 1:
-    #     sub_x = max(ZERO, sub_x - 1)
-    #     sub_or = FALSE
     sub_x, sub_or = lax.cond(
         action == 3,
         lambda: (lax.min(NINE, sub_x + 1), TRUE),
         lambda: (sub_x, sub_or)
     )
-    # if action == 3:
-    #     sub_x = min(NINE, sub_x + 1)
-    #     sub_or = TRUE
     sub_y = lax.cond(action == 2, lambda: lax.max(ZERO, sub_y - 1), lambda: sub_y)
-    # if action == 2:
-    #     sub_y = max(ZERO, sub_y - 1)
     sub_y = lax.cond(action == 4, lambda: lax.min(jnp.int8(8), sub_y + 1), lambda: sub_y)
-    # if action == 4:
-    #     sub_y = min(jnp.int8(8), sub_y + 1)
     return f_bullets, shot_timer, sub_x, sub_y, sub_or
 
 
