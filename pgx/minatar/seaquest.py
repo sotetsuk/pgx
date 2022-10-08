@@ -9,6 +9,7 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Tuple
 
 import jax
+import jax.lax as lax
 from flax import struct
 from jax import numpy as jnp
 
@@ -56,6 +57,7 @@ class MinAtarSeaquestState:
 def init(rng: jnp.ndarray) -> MinAtarSeaquestState:
     return _init_det()
 
+
 def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
     """
             self.channels ={
@@ -73,18 +75,33 @@ def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
     """
     obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
     obs = obs.at[state.sub_y, state.sub_x, 0].set(1)
-    back_x = state.sub_x - 1 if state.sub_or else state.sub_x + 1
+    back_x = lax.cond(state.sub_or, lambda: state.sub_x - 1, lambda: state.sub_x + 1)
     obs = obs.at[state.sub_y, back_x, 1].set(1)
     obs = obs.at[9, 0:state.oxygen * 10 // MAX_OXYGEN, 7].set(1)
     obs = obs.at[9, 9 - state.diver_count:9, 8].set(1)
-    for bullet in state.f_bullets:
-        if bullet[0] == -1:
-            continue
-        obs = obs.at[bullet[1], bullet[0], 2].set(1)
-    for bullet in state.e_bullets:
-        if bullet[0] == -1:
-            continue
-        obs = obs.at[bullet[1], bullet[0], 4].set(1)
+    obs = lax.fori_loop(
+        0, 5, lambda i, _obs : lax.cond(
+            state.f_bullets[i][0] >= 0,
+            lambda: _obs.at[state.f_bullets[i][1], state.f_bullets[i][0], 2].set(1),
+            lambda: _obs
+        ),
+        obs
+    )
+    # for bullet in state.f_bullets:
+    #     if bullet[0] == -1:
+    #         continue
+    #     obs = obs.at[bullet[1], bullet[0], 2].set(1)
+    obs = lax.fori_loop(
+        0, 25, lambda i, _obs: lax.cond(
+            state.e_bullets[i][0] >= 0,
+            lambda: _obs.at[state.e_bullets[i][1], state.e_bullets[i][0], 4].set(1),
+            lambda: _obs
+        ), obs
+    )
+    # for bullet in state.e_bullets:
+    #     if bullet[0] == -1:
+    #         continue
+    #     obs = obs.at[bullet[1], bullet[0], 4].set(1)
     for fish in state.e_fish:
         if fish[0] == -1:
             continue
