@@ -6,13 +6,12 @@ from pgx.mahjong.full_mahjong import Deck, Hand, Action, Yaku, Meld, init, step
 
 def test_deck():
     deck = Deck.init(jax.random.PRNGKey(seed=0))
-    assert deck.idx == 0
     deck, tile1 = Deck.draw(deck)
-    assert deck.idx == 1
-    deck = Deck.init(jax.random.PRNGKey(seed=1))
-    assert deck.idx == 0
     deck, tile2 = Deck.draw(deck)
-    assert tile1 != tile2
+    deck, tile3 = Deck.draw(deck)
+    deck, tile4 = Deck.draw(deck)
+    deck, tile5 = Deck.draw(deck)
+    assert tile1 != tile2 or tile2 != tile3 or tile3 != tile4 or tile4 != tile5
 
 
 def test_hand():
