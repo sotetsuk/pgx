@@ -90,7 +90,7 @@ def test_observe():
     env = Environment("seaquest", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 10
+    N = 100
     for _ in range(N):
         env.reset()
         done = False
