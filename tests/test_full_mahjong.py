@@ -105,6 +105,9 @@ def test_hand():
             Hand.from_str("119m15667p666z")
             )
 
+    hand = Hand.from_str("117788m22s6677z")
+    assert Hand.can_tsumo(hand)
+
 def fu(
     hand: jnp.ndarray,
     melds: jnp.ndarray,
