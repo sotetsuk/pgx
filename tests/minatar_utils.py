@@ -90,7 +90,7 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
             d[key] = val
             continue
 
-        if key == "terminal":
+        if key in ["terminal", "sub_or"]:
             val = jnp.array(val, dtype=jnp.bool_)
         else:
             val = jnp.array(val, dtype=jnp.int8)
