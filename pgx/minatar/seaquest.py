@@ -21,10 +21,11 @@ INIT_MOVE_INTERVAL: jnp.ndarray = jnp.int8(5)
 SHOT_COOL_DOWN: jnp.ndarray = jnp.int8(5)
 ENEMY_SHOT_INTERVAL: jnp.ndarray = jnp.int8(10)
 ENEMY_MOVE_INTERVAL: jnp.ndarray = jnp.int8(5)
-DIVER_MORE_INTERVAL: jnp.ndarray = jnp.int8(5)
+DIVER_MOVE_INTERVAL: jnp.ndarray = jnp.int8(5)
 
 
 ZERO: jnp.ndarray = jnp.int8(0)
+NINE: jnp.ndarray = jnp.int8(9)
 TRUE: jnp.ndarray = jnp.bool_(True)
 FALSE: jnp.ndarray = jnp.bool_(False)
 
@@ -46,7 +47,7 @@ class MinAtarSeaquestState:
         (25, 4), dtype=jnp.int8
     )  # <= 19  TODO: confirm
     e_subs: jnp.ndarray = -jnp.ones(
-        (25, 4), dtype=jnp.int8
+        (25, 5), dtype=jnp.int8
     )  # <= 19  TODO: confirm
     divers: jnp.ndarray = -jnp.ones(
         (5, 4), dtype=jnp.int8
@@ -61,6 +62,282 @@ class MinAtarSeaquestState:
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = ZERO
 
+def _to_list(arr):
+    l = []
+    for i in range(arr.shape[0]):
+        if arr[i][0] == -1:
+            break
+        l.append([x for x in arr[i]])
+    return l
+
+
+def _to_arr(N, M, l):
+    arr = - jnp.ones((N, M), dtype=jnp.int8)
+    for i, row in enumerate(l):
+        arr = arr.at[i].set(jnp.int8(row))
+    return arr
+
+def _step_det(
+     state: MinAtarSeaquestState,
+     action: jnp.ndarray,
+                enemy_lr,
+                is_sub,
+                enemy_y,
+                diver_lr,
+                diver_y
+):
+    ramping = TRUE
+
+    oxygen = state.oxygen
+    diver_count = state.diver_count
+    sub_x = state.sub_x
+    sub_y = state.sub_y
+    sub_or = state.sub_or
+    f_bullets = state.f_bullets
+    e_bullets = state.e_bullets
+    e_fish = state.e_fish
+    e_subs = state.e_subs
+    divers = state.divers
+    e_spawn_speed = state.e_spawn_speed
+    e_spawn_timer = state.e_spawn_timer
+    d_spawn_timer = state.d_spawn_timer
+    move_speed = state.move_speed
+    ramp_index = state.ramp_index
+    shot_timer = state.shot_timer
+    surface = state.surface
+    terminal = state.terminal
+
+    r = 0
+    if terminal:
+        return state, r, state.terminal
+
+    # Spawn enemy if timer is up
+    if e_spawn_timer == 0:
+        e_subs, e_fish = _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y)
+        e_spawn_timer = e_spawn_speed
+
+    if state.d_spawn_timer == 0:
+        divers = _spawn_diver(divers, diver_lr, diver_y)
+        state.d_spawn_timer = DIVER_SPAWN_SPEED
+
+    # Resolve player action
+    # elf.action_map = ['n','l','u','r','d','f']
+    if action == 5 and state.shot_timer == 0:
+        _f_bullets = _to_list(f_bullets)
+        _f_bullets += [[state.sub_x, state.sub_y, state.sub_or]]
+        f_bullets = _to_arr(5, 3, _f_bullets)
+        state.shot_timer = SHOT_COOL_DOWN
+    elif action == 1:
+        sub_x = max(ZERO, sub_x - 1)
+        sub_or = FALSE
+    elif action == 3:
+        state.sub_x = min(NINE, sub_x + 1)
+        state.sub_or = TRUE
+    elif action == 2:
+        sub_y = max(ZERO, sub_y - 1)
+    elif action == 4:
+        sub_y = min(jnp.int8(8), state.sub_y + 1)
+
+
+    _f_bullets = _to_list(f_bullets)
+    _e_bullets = _to_list(e_bullets)
+    _e_fish = _to_list(e_fish)
+    _e_subs = _to_list(e_subs)
+    _divers = _to_list(divers)
+    # f_bullets = _to_arr(5, 3, _f_bullets)
+    # e_bullets = _to_arr(25, 3, _e_bullets)
+    # e_fish = _to_arr(25, 4, _e_fish)
+    # e_subs = _to_arr(25, 5, _e_subs)
+    # divers = _to_arr(5, 4, _divers)
+
+    # Update friendly Bullets
+    for bullet in reversed(_f_bullets):
+        bullet[0] += 1 if bullet[2] else -1
+        if (bullet[0] < 0 or bullet[0] > 9):
+            _f_bullets.remove(bullet)
+        else:
+            removed = False
+            for x in _e_fish:
+                if (bullet[0:2] == x[0:2]):
+                    _e_fish.remove(x)
+                    _f_bullets.remove(bullet)
+                    r += 1
+                    removed = True
+                    break
+            if (not removed):
+                for x in _e_subs:
+                    if (bullet[0:2] == x[0:2]):
+                        _e_subs.remove(x)
+                        _f_bullets.remove(bullet)
+                        r += 1
+                        break
+
+    # Update divers
+    for diver in reversed(_divers):
+        if (diver[0:2] == [sub_x, sub_y] and diver_count < 6):
+            _divers.remove(diver)
+            diver_count += 1
+        else:
+            if (diver[3] == 0):
+                diver[3] = DIVER_MOVE_INTERVAL
+                diver[0] += 1 if diver[2] else -1
+                if (diver[0] < 0 or diver[0] > 9):
+                    _divers.remove(diver)
+                elif (diver[0:2] == [sub_x, sub_y] and diver_count < 6):
+                    _divers.remove(diver)
+                    diver_count += 1
+            else:
+                diver[3] -= 1
+
+    # Update enemy subs
+    for sub in reversed(_e_subs):
+        if (sub[0:2] == [sub_x, sub_y]):
+            terminal = TRUE
+        if (sub[3] == 0):
+            sub[3] = move_speed
+            sub[0] += 1 if sub[2] else -1
+            if (sub[0] < 0 or sub[0] > 9):
+                _e_subs.remove(sub)
+            elif (sub[0:2] == [sub_x, sub_y]):
+                terminal = TRUE
+            else:
+                for x in _f_bullets:
+                    if (sub[0:2] == x[0:2]):
+                        _e_subs.remove(sub)
+                        _f_bullets.remove(x)
+                        r += 1
+                        break
+        else:
+            sub[3] -= 1
+        if (sub[4] == 0):
+            sub[4] = ENEMY_SHOT_INTERVAL
+            _e_bullets += [[sub[0] if sub[2] else sub[0], sub[1], sub[2]]]
+        else:
+            sub[4] -= 1
+
+    # Update enemy bullets
+    for bullet in reversed(_e_bullets):
+        if (bullet[0:2] == [sub_x, sub_y]):
+            terminal = TRUE
+        bullet[0] += 1 if bullet[2] else -1
+        if (bullet[0] < 0 or bullet[0] > 9):
+            _e_bullets.remove(bullet)
+        else:
+            if (bullet[0:2] == [sub_x, sub_y]):
+                terminal = TRUE
+
+    # Update enemy fish
+    for fish in reversed(_e_fish):
+        if (fish[0:2] == [sub_x, sub_y]):
+            terminal = TRUE
+        if (fish[3] == 0):
+            fish[3] = move_speed
+            fish[0] += 1 if fish[2] else -1
+            if (fish[0] < 0 or fish[0] > 9):
+                _e_fish.remove(fish)
+            elif (fish[0:2] == [sub_x, sub_y]):
+                terminal = TRUE
+            else:
+                for x in _f_bullets:
+                    if (fish[0:2] == x[0:2]):
+                        _e_fish.remove(fish)
+                        _f_bullets.remove(x)
+                        r += 1
+                        break
+        else:
+            fish[3] -= 1
+
+    # Update various timers
+    e_spawn_timer -= e_spawn_timer > 0
+    d_spawn_timer -= d_spawn_timer > 0
+    shot_timer -= shot_timer > 0
+    if (oxygen < 0):
+        terminal = TRUE
+    if (sub_y > 0):
+        oxygen -= 1
+        surface = FALSE
+    else:
+        if (not surface):
+            if (diver_count == 0):
+                terminal = TRUE
+            else:
+                surface = TRUE
+                _r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index = _surface(diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index)
+                r += _r
+
+
+    f_bullets = _to_arr(5, 3, _f_bullets)
+    e_bullets = _to_arr(25, 3, _e_bullets)
+    e_fish = _to_arr(25, 4, _e_fish)
+    e_subs = _to_arr(25, 5, _e_subs)
+    divers = _to_arr(5, 4, _divers)
+
+    state = MinAtarSeaquestState(
+        oxygen=oxygen,
+        diver_count=diver_count,
+        sub_x=sub_x,
+        sub_y=sub_y,
+        sub_or=sub_or,
+        f_bullets=f_bullets,
+        e_bullets=e_bullets,
+        e_fish=e_fish,
+        e_subs=e_subs,
+        divers=divers,
+        e_spawn_speed=e_spawn_speed,
+        e_spawn_timer=e_spawn_timer,
+        d_spawn_timer=d_spawn_timer,
+        move_speed=move_speed,
+        ramp_index=ramp_index,
+        shot_timer=shot_timer,
+        surface=surface,
+        terminal=terminal,
+        last_action=action
+    )
+    return state, r, terminal
+
+# Called when player hits surface (top row) if they have no divers, this ends the game,
+# if they have 6 divers this gives reward proportional to the remaining oxygen and restores full oxygen
+# otherwise this reduces the number of divers and restores full oxygen
+def _surface(diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index):
+    if diver_count == 6:
+        diver_count = 0
+        r = oxygen * 10 // MAX_OXYGEN
+    else:
+        r = 0
+    oxygen = MAX_OXYGEN
+    diver_count -= 1
+    if ramping and (e_spawn_speed > 1 or move_speed > 2):
+        if move_speed > 2 and ramp_index % 2:
+            move_speed -= 1
+        if e_spawn_speed > 1:
+            e_spawn_speed -= 1
+        ramp_index += 1
+    return r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index
+
+# Spawn an enemy fish or submarine in random row and random direction,
+# if the resulting row and direction would lead to a collision, do nothing instead
+def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
+    _e_subs = _to_list(e_subs)
+    _e_fish = _to_list(e_fish)
+
+    x = 0 if enemy_lr else 9
+
+    # Do not spawn in same row an opposite direction as existing
+    if (any([z[1] == enemy_y and z[2] != enemy_lr for z in _e_subs + _e_fish])):
+        return
+    if (is_sub):
+        _e_subs += [[x, enemy_y, enemy_lr, move_speed, ENEMY_SHOT_INTERVAL]]
+    else:
+        _e_fish += [[x, enemy_y, enemy_lr, move_speed]]
+    return _to_arr(25, 5, _e_subs), _to_arr(25, 4, _e_fish)
+
+# Spawn a diver in random row with random direction
+def _spawn_diver(divers, diver_lr, diver_y):
+    _divers = _to_list(divers)
+    x = 0 if diver_lr else 9
+    _divers += [[x, diver_y, diver_lr, DIVER_MOVE_INTERVAL]]
+    return _to_arr(5, 4, divers)
+
 
 @jax.jit
 def init(rng: jnp.ndarray) -> MinAtarSeaquestState:
@@ -69,20 +346,6 @@ def init(rng: jnp.ndarray) -> MinAtarSeaquestState:
 
 @jax.jit
 def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
-    """
-        self.channels ={
-        'sub_front':0,
-        'sub_back':1,
-        'friendly_bullet':2,
-        'trail':3,
-        'enemy_bullet':4,
-        'enemy_fish':5,
-        'enemy_sub':6,
-        'oxygen_guage':7,
-        'diver_guage':8,
-        'diver':9
-    }
-    """
     obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
     obs = obs.at[state.sub_y, state.sub_x, 0].set(1)
     back_x = lax.cond(

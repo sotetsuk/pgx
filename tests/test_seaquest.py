@@ -36,7 +36,7 @@ def test_step_det():
     env = Environment("seaquest", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 100
+    N = 1
     for _ in range(N):
         env.reset()
         done = False
@@ -45,7 +45,6 @@ def test_step_det():
             a = random.randrange(num_actions)
             r, done = env.act(a)
             enemy_lr, is_sub, enemy_y, diver_lr, diver_y = env.env.enemy_lr, env.env.is_sub, env.env.enemy_y, env.env.diver_lr, env.env.diver_y
-            s_next = extract_state(env, state_keys)
             s_next_pgx, _, _ = seaquest._step_det(
                 minatar2pgx(s, seaquest.MinAtarSeaquestState),
                 a,
@@ -55,14 +54,17 @@ def test_step_det():
                 diver_lr,
                 diver_y
             )
-            assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+            assert jnp.allclose(
+                env.state(),
+                seaquest.observe(s_next_pgx),
+            )
+
 
         # check terminal state
         s = extract_state(env, state_keys)
         a = random.randrange(num_actions)
         r, done = env.act(a)
         enemy_lr, is_sub, enemy_y, diver_lr, diver_y = env.env.enemy_lr, env.env.is_sub, env.env.enemy_y, env.env.diver_lr, env.env.diver_y
-        s_next = extract_state(env, state_keys)
         s_next_pgx, _, _ = seaquest._step_det(
             minatar2pgx(s, seaquest.MinAtarSeaquestState), a,
             enemy_lr,
@@ -71,7 +73,10 @@ def test_step_det():
             diver_lr,
             diver_y
         )
-        assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+        assert jnp.allclose(
+            env.state(),
+            seaquest.observe(s_next_pgx),
+        )
 
 
 def test_init_det():
