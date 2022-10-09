@@ -1329,7 +1329,11 @@ class Yaku:
         riichi: bool,
         is_ron: bool,
     ) -> tuple[jnp.ndarray, int]:
-        is_menzen = meld_num == 0
+        is_menzen = jax.lax.fori_loop(
+                0, meld_num, lambda i, menzen: menzen & (
+                    Action.is_selfkan(Meld.action(melds[i]))
+                    & (Meld.src(melds[i]) == 0)
+                ), True)
 
         is_pinfu = jnp.full(
             Yaku.MAX_PATTERNS,
@@ -1378,9 +1382,12 @@ class Yaku:
             )
             + (hand[27] == 2) * 4
             + jnp.any(hand[31:] == 2) * 2
-            + (hand[27] == 3) * 8
-            + jnp.any(hand[31:] == 3) * 8
+            + (hand[27] == 3) * 4 * (2 - (is_ron & (27 == last)))
+            + (hand[31] == 3) * 4 * (2 - (is_ron & (31 == last)))
+            + (hand[32] == 3) * 4 * (2 - (is_ron & (32 == last)))
+            + (hand[33] == 3) * 4 * (2 - (is_ron & (33 == last)))
             # NOTE: 東場東家
+            + ((27 <= last) & (hand[last] == 2))
         )
 
         for suit in range(3):

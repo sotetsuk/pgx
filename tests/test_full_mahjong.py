@@ -168,6 +168,9 @@ def test_yaku_fu():
     assert fu("123456789m11666z", "", "1m", is_ron=True) == 50
     # 連風牌の雀頭は4符
 
+    assert fu("123m11666z", "9999m,1111s", "6z", is_ron=True) == 110
+    # 1翻110符
+
 
 def has_yaku(
         yaku: int,
