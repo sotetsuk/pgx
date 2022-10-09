@@ -419,7 +419,7 @@ def _update_enemy_fish(
 ):
 
     @jax.jit
-    def _update_by_hit(j, _e_fish, _f_bullets, _r):
+    def _update_by_hit(j, _f_bullets,_e_fish, _terminal, _r):
         k = lax.while_loop(
             lambda i: ~_is_hit(_e_fish[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
             lambda i: i + 1,
@@ -430,25 +430,29 @@ def _update_enemy_fish(
             lambda: (_remove_i(_e_fish, j), _remove_i(_f_bullets, k)),
             lambda: (_e_fish, _f_bullets)
         )
-        return _e_fish, _f_bullets, _r
+        return _f_bullets, _e_fish, _terminal, _r
 
+    @jax.jit
     def _update_fish(j, _f_bullets, _e_fish, _terminal, _r ):
         _e_fish = _e_fish.at[j, 3].set(move_speed)
         _e_fish = _e_fish.at[j, 0].add(lax.cond(_e_fish[j, 2], lambda: 1, lambda: -1))
-        if _is_out(_e_fish[j]):
-            _e_fish = _remove_i(_e_fish, j)
-        elif _is_hit(_e_fish[j], sub_x, sub_y):
-            _terminal = TRUE
-        else:
-            _e_fish, _f_bullets, _r = _update_by_hit(j, _e_fish, _f_bullets, _r)
-
+        _f_bullets, _e_fish, _terminal, _r = lax.cond(
+            _is_out(_e_fish[j]),
+            lambda: (_f_bullets, _remove_i(_e_fish, j), _terminal, _r),
+            lambda: lax.cond(
+                _is_hit(_e_fish[j], sub_x, sub_y),
+                lambda: (_f_bullets, _e_fish, TRUE, _r),
+                lambda: _update_by_hit(j, _f_bullets, _e_fish, _terminal, _r)
+            )
+        )
         return _f_bullets, _e_fish, _terminal, _r
 
     def _update_each(i, x):
         j = 25 - i - 1
         _f_bullets, _e_fish, _terminal, _r = x
-        if _is_hit(_e_fish[j], sub_x, sub_y):
-            _terminal = TRUE
+        _terminal = lax.cond(_is_hit(_e_fish[j], sub_x, sub_y), TRUE, _terminal)
+        # if _is_hit(_e_fish[j], sub_x, sub_y):
+        #     _terminal = TRUE
         if _e_fish[j, 3] == 0:
             _f_bullets, _e_fish, _terminal, _r  = _update_fish(j, _f_bullets, _e_fish, _terminal, _r )
         else:
