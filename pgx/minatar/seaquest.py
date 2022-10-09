@@ -234,6 +234,20 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
     sub_y = lax.cond(action == 4, lambda: lax.min(jnp.int8(8), sub_y + 1), lambda: sub_y)
     return f_bullets, shot_timer, sub_x, sub_y, sub_or
 
+@jax.jit
+def _update_by_f_bullets_hit(j, _f_bullets, e):
+    k = lax.while_loop(
+        lambda i: ~_is_hit(_f_bullets[j], e[i, 0], e[i, 1]) & (i < 25),
+        lambda i: i + 1,
+        0
+    )
+    _f_bullets, e, removed = lax.cond(
+        k < 25,
+        lambda: (_remove_i(_f_bullets, j), _remove_i(e, k),  TRUE),
+        lambda: (_f_bullets, e,  FALSE)
+    )
+    return _f_bullets, e, removed
+
 
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
     for i in range(5):
@@ -244,17 +258,19 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
         if f_bullets[j, 0] < 0 or f_bullets[j, 0] > 9:
             f_bullets = _remove_i(f_bullets, j)
         else:
-            removed = False
-            for k in range(25):
-                x = e_fish[k]
-                # if not _is_filled(x):
-                #     continue
-                if _is_hit(f_bullets[j], x[0], x[1]):
-                    e_fish = _remove_i(e_fish, k)
-                    f_bullets = _remove_i(f_bullets, j)
-                    r += 1
-                    removed = True
-                    break
+            # removed = False
+            f_bullets, e_fish, removed = _update_by_f_bullets_hit(j, f_bullets, e_fish)
+            r += removed
+            # for k in range(25):
+            #     x = e_fish[k]
+            #     # if not _is_filled(x):
+            #     #     continue
+            #     if _is_hit(f_bullets[j], x[0], x[1]):
+            #         e_fish = _remove_i(e_fish, k)
+            #         f_bullets = _remove_i(f_bullets, j)
+            #         r += 1
+            #         removed = True
+            #         break
             if not removed:
                 for l in range(25):
                     x = e_subs[l]
