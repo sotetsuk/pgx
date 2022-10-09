@@ -258,29 +258,11 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
         if f_bullets[j, 0] < 0 or f_bullets[j, 0] > 9:
             f_bullets = _remove_i(f_bullets, j)
         else:
-            # removed = False
             f_bullets, e_fish, removed = _update_by_f_bullets_hit(j, f_bullets, e_fish)
             r += removed
-            # for k in range(25):
-            #     x = e_fish[k]
-            #     # if not _is_filled(x):
-            #     #     continue
-            #     if _is_hit(f_bullets[j], x[0], x[1]):
-            #         e_fish = _remove_i(e_fish, k)
-            #         f_bullets = _remove_i(f_bullets, j)
-            #         r += 1
-            #         removed = True
-            #         break
             if not removed:
-                for l in range(25):
-                    x = e_subs[l]
-                    # if not _is_filled(x):
-                    #     continue
-                    if _is_hit(f_bullets[j], x[0], x[1]):
-                        e_subs = _remove_i(e_subs, l)
-                        f_bullets = _remove_i(f_bullets, j)
-                        r += 1
-                        break
+                f_bullets, e_subs, removed = _update_by_f_bullets_hit(j, f_bullets, e_subs)
+                r += removed
 
     return f_bullets, e_subs, e_fish, r
 
