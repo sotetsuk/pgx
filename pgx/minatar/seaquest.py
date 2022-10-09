@@ -74,7 +74,7 @@ def _step_det(
     return lax.cond(
         state.terminal,
         lambda: (
-            state.replace(last_action=action),
+            state.replace(last_action=action),  # type: ignore
             jnp.int16(0),
             state.terminal,
         ),
