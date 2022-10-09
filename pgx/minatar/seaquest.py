@@ -73,9 +73,16 @@ def _step_det(
 ):
     return lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.int16(0), state.terminal),
-        lambda: _step_det_at_non_terminal(state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y)
+        lambda: (
+            state.replace(last_action=action),
+            jnp.int16(0),
+            state.terminal,
+        ),
+        lambda: _step_det_at_non_terminal(
+            state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y
+        ),
     )
+
 
 def _step_det_at_non_terminal(
     state: MinAtarSeaquestState,
@@ -112,16 +119,20 @@ def _step_det_at_non_terminal(
     # Spawn enemy if timer is up
     e_subs, e_fish = lax.cond(
         e_spawn_timer == 0,
-        lambda: _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y),
-        lambda: (e_subs, e_fish)
+        lambda: _spawn_enemy(
+            e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y
+        ),
+        lambda: (e_subs, e_fish),
     )
-    e_spawn_timer = lax.cond(e_spawn_timer == 0, lambda: e_spawn_speed, lambda: e_spawn_timer)
+    e_spawn_timer = lax.cond(
+        e_spawn_timer == 0, lambda: e_spawn_speed, lambda: e_spawn_timer
+    )
 
     # Spawn diver if timer is up
     divers, d_spawn_timer = lax.cond(
         d_spawn_timer == 0,
         lambda: (_spawn_diver(divers, diver_lr, diver_y), DIVER_SPAWN_SPEED),
-        lambda: (divers, d_spawn_timer )
+        lambda: (divers, d_spawn_timer),
     )
 
     # Resolve player action
@@ -153,19 +164,38 @@ def _step_det_at_non_terminal(
     )
 
     # Update various timers
-    e_spawn_timer = lax.cond(e_spawn_timer > 0, lambda: e_spawn_timer - 1, lambda: e_spawn_timer)
-    d_spawn_timer = lax.cond(d_spawn_timer, lambda: d_spawn_timer - 1, lambda: d_spawn_timer)
-    shot_timer = lax.cond(shot_timer > 0, lambda: shot_timer - 1, lambda: shot_timer)
+    e_spawn_timer = lax.cond(
+        e_spawn_timer > 0, lambda: e_spawn_timer - 1, lambda: e_spawn_timer
+    )
+    d_spawn_timer = lax.cond(
+        d_spawn_timer, lambda: d_spawn_timer - 1, lambda: d_spawn_timer
+    )
+    shot_timer = lax.cond(
+        shot_timer > 0, lambda: shot_timer - 1, lambda: shot_timer
+    )
     terminal |= oxygen < 0
     tmp = surface
     oxygen = lax.cond(sub_y > 0, lambda: oxygen - 1, lambda: oxygen)
     surface = lax.cond(sub_y > 0, lambda: FALSE, lambda: surface)
-    terminal = lax.cond((sub_y <= 0) & ~tmp & (diver_count == 0), lambda: TRUE, lambda: terminal)
+    terminal = lax.cond(
+        (sub_y <= 0) & ~tmp & (diver_count == 0),
+        lambda: TRUE,
+        lambda: terminal,
+    )
     surface |= (sub_y <= 0) & ~tmp & (diver_count != 0)
     _r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index = lax.cond(
         (sub_y <= 0) & ~tmp & (diver_count != 0),
-        lambda: _surface(diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index),
-        lambda: (jnp.int16(0), oxygen, diver_count, move_speed, e_spawn_speed, ramp_index)
+        lambda: _surface(
+            diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index
+        ),
+        lambda: (
+            jnp.int16(0),
+            oxygen,
+            diver_count,
+            move_speed,
+            e_spawn_speed,
+            ramp_index,
+        ),
     )
     r += _r
 
@@ -201,46 +231,57 @@ def find_ix(arr):
 def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
     f_bullets, shot_timer = lax.cond(
         (action == 5) & (shot_timer == 0),
-        lambda: (f_bullets.at[find_ix(f_bullets)].set(jnp.int8([sub_x, sub_y, sub_or])), SHOT_COOL_DOWN),
-        lambda: (f_bullets, shot_timer)
+        lambda: (
+            f_bullets.at[find_ix(f_bullets)].set(
+                jnp.int8([sub_x, sub_y, sub_or])
+            ),
+            SHOT_COOL_DOWN,
+        ),
+        lambda: (f_bullets, shot_timer),
     )
     sub_x, sub_or = lax.cond(
         action == 1,
         lambda: (lax.max(ZERO, sub_x - 1), FALSE),
-        lambda: (sub_x, sub_or)
+        lambda: (sub_x, sub_or),
     )
     sub_x, sub_or = lax.cond(
         action == 3,
         lambda: (lax.min(NINE, sub_x + 1), TRUE),
-        lambda: (sub_x, sub_or)
+        lambda: (sub_x, sub_or),
     )
-    sub_y = lax.cond(action == 2, lambda: lax.max(ZERO, sub_y - 1), lambda: sub_y)
-    sub_y = lax.cond(action == 4, lambda: lax.min(jnp.int8(8), sub_y + 1), lambda: sub_y)
+    sub_y = lax.cond(
+        action == 2, lambda: lax.max(ZERO, sub_y - 1), lambda: sub_y
+    )
+    sub_y = lax.cond(
+        action == 4, lambda: lax.min(jnp.int8(8), sub_y + 1), lambda: sub_y
+    )
     return f_bullets, shot_timer, sub_x, sub_y, sub_or
+
 
 def _update_by_f_bullets_hit(j, _f_bullets, e):
     k = lax.while_loop(
         lambda i: ~_is_hit(_f_bullets[j], e[i, 0], e[i, 1]) & (i < 25),
         lambda i: i + 1,
-        0
+        0,
     )
     _f_bullets, e, removed = lax.cond(
         k < 25,
-        lambda: (_remove_i(_f_bullets, j), _remove_i(e, k),  TRUE),
-        lambda: (_f_bullets, e,  FALSE)
+        lambda: (_remove_i(_f_bullets, j), _remove_i(e, k), TRUE),
+        lambda: (_f_bullets, e, FALSE),
     )
     return _f_bullets, e, removed
 
 
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
-
     def _remove(j, _f_bullets, _e_subs, _e_fish, _r):
-        _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_fish)
+        _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(
+            j, _f_bullets, _e_fish
+        )
         _r += removed
         _f_bullets, _e_subs, removed = lax.cond(
             removed,
             lambda: (_f_bullets, _e_subs, removed),
-            lambda: _update_by_f_bullets_hit(j, _f_bullets, _e_subs)
+            lambda: _update_by_f_bullets_hit(j, _f_bullets, _e_subs),
         )
         _r += removed
         return _f_bullets, _e_subs, _e_fish, _r
@@ -251,17 +292,19 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
         is_filled = _is_filled(_f_bullets[j])
         _f_bullets = lax.cond(
             is_filled,
-            lambda: _f_bullets.at[j, 0].add(lax.cond(_f_bullets[j, 2], lambda: 1, lambda: -1)),
-            lambda: _f_bullets
+            lambda: _f_bullets.at[j, 0].add(
+                lax.cond(_f_bullets[j, 2], lambda: 1, lambda: -1)
+            ),
+            lambda: _f_bullets,
         )
         _f_bullets, _e_subs, _e_fish, _r = lax.cond(
             is_filled,
             lambda: lax.cond(
                 _is_out(_f_bullets[j]),
                 lambda: (_remove_i(_f_bullets, j), _e_subs, _e_fish, _r),
-                lambda: _remove(j, _f_bullets, _e_subs, _e_fish, _r)
+                lambda: _remove(j, _f_bullets, _e_subs, _e_fish, _r),
             ),
-            lambda: (_f_bullets, _e_subs, _e_fish, _r)
+            lambda: (_f_bullets, _e_subs, _e_fish, _r),
         )
         return _f_bullets, _e_subs, _e_fish, _r
 
@@ -270,29 +313,33 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
     )
     return f_bullets, e_subs, e_fish, r
 
+
 def _is_hit(row, x, y):
     return (row[0] == x) & (row[1] == y)
 
+
 def _is_out(row):
     return (row[0] < 0) | (row[0] > 9)
+
 
 def _is_filled(row):
     return jnp.any(row != -1)
 
 
 def _update_divers(divers, diver_count, sub_x, sub_y):
-
     def _update_by_move(_divers, _diver_count, j):
         _divers = _divers.at[j, 3].set(DIVER_MOVE_INTERVAL)
-        _divers = _divers.at[j, 0].add(lax.cond(_divers[j, 2], lambda: 1, lambda: -1))
+        _divers = _divers.at[j, 0].add(
+            lax.cond(_divers[j, 2], lambda: 1, lambda: -1)
+        )
         _divers, _diver_count = lax.cond(
             _is_out(_divers[j]),
             lambda: (_remove_i(_divers, j), _diver_count),
             lambda: lax.cond(
                 _is_hit(_divers[j], sub_x, sub_y) & (_diver_count < 6),
                 lambda: (_remove_i(_divers, j), _diver_count + 1),
-                lambda: (_divers, _diver_count)
-            )
+                lambda: (_divers, _diver_count),
+            ),
         )
         return _divers, _diver_count
 
@@ -307,10 +354,10 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
                 lambda: lax.cond(
                     _divers[j, 3] == 0,
                     lambda: _update_by_move(_divers, _diver_count, j),
-                    lambda: (_divers.at[j, 3].add(-1), _diver_count)
-                )
+                    lambda: (_divers.at[j, 3].add(-1), _diver_count),
+                ),
             ),
-            lambda: (_divers, _diver_count)
+            lambda: (_divers, _diver_count),
         )
 
     divers, diver_count = lax.fori_loop(
@@ -323,45 +370,62 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
 def _update_enemy_subs(
     f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
 ):
-
     def _update_sub(j, _f_bullets, _e_subs, _terminal, _r):
         _e_subs = _e_subs.at[j, 3].set(move_speed)
-        _e_subs = _e_subs.at[j, 0].add(lax.cond(_e_subs[j, 2], lambda: 1, lambda: -1))
+        _e_subs = _e_subs.at[j, 0].add(
+            lax.cond(_e_subs[j, 2], lambda: 1, lambda: -1)
+        )
         is_out = _is_out(_e_subs[j])
         is_hit = _is_hit(_e_subs[j], sub_x, sub_y)
-        _e_subs = lax.cond(is_out, lambda: _remove_i(_e_subs, j), lambda: _e_subs)
+        _e_subs = lax.cond(
+            is_out, lambda: _remove_i(_e_subs, j), lambda: _e_subs
+        )
         _terminal = lax.cond(~is_out & is_hit, lambda: TRUE, lambda: _terminal)
-        _f_bullets, _e_subs, removed = lax.cond(~is_out & ~is_hit,
-                             lambda: _update_by_hit(j, _f_bullets, _e_subs),
-                             lambda: (_f_bullets, _e_subs, FALSE))
+        _f_bullets, _e_subs, removed = lax.cond(
+            ~is_out & ~is_hit,
+            lambda: _update_by_hit(j, _f_bullets, _e_subs),
+            lambda: (_f_bullets, _e_subs, FALSE),
+        )
         _r += removed
         return _f_bullets, _e_subs, _terminal, _r
 
     def _update_each_filled(j, x):
         _f_bullets, _e_subs, _e_bullets, _terminal, _r = x
         _terminal |= _is_hit(_e_subs[j], sub_x, sub_y)
-        _f_bullets, _e_subs, _terminal, _r  = lax.cond(
+        _f_bullets, _e_subs, _terminal, _r = lax.cond(
             _e_subs[j, 3] == 0,
             lambda: _update_sub(j, _f_bullets, _e_subs, _terminal, _r),
-            lambda: (_f_bullets, _e_subs.at[j, 3].add(-1) , _terminal, _r)
+            lambda: (_f_bullets, _e_subs.at[j, 3].add(-1), _terminal, _r),
         )
         timer_zero = _e_subs[j, 4] == 0
-        _e_subs = lax.cond(timer_zero, lambda:_e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL), lambda: _e_subs.at[j, 4].add(-1))
+        _e_subs = lax.cond(
+            timer_zero,
+            lambda: _e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL),
+            lambda: _e_subs.at[j, 4].add(-1),
+        )
         _e_bullets = lax.cond(
             timer_zero,
             lambda: _e_bullets.at[find_ix(_e_bullets)].set(
-                jnp.int8([lax.cond(_e_subs[j, 2], lambda:_e_subs[j, 0], lambda:_e_subs[j, 0]), _e_subs[j, 1], _e_subs[j, 2]])
+                jnp.int8(
+                    [
+                        lax.cond(
+                            _e_subs[j, 2],
+                            lambda: _e_subs[j, 0],
+                            lambda: _e_subs[j, 0],
+                        ),
+                        _e_subs[j, 1],
+                        _e_subs[j, 2],
+                    ]
+                )
             ),
-            lambda: _e_bullets
+            lambda: _e_bullets,
         )
         return _f_bullets, _e_subs, _e_bullets, _terminal, _r
 
     def _update_each(i, x):
         j = 25 - i - 1
         return lax.cond(
-            _is_filled(x[1][j]),
-            lambda: (_update_each_filled(j, x)),
-            lambda: x
+            _is_filled(x[1][j]), lambda: (_update_each_filled(j, x)), lambda: x
         )
 
     f_bullets, e_subs, e_bullets, terminal, r = lax.fori_loop(
@@ -370,49 +434,57 @@ def _update_enemy_subs(
 
     return f_bullets, e_subs, e_bullets, terminal, r
 
+
 def _remove_i(arr, i):
     N = arr.shape[0]
     arr = lax.fori_loop(
-        i, N - 1, lambda j, _arr: _arr.at[j].set(arr[j+1]), arr
+        i, N - 1, lambda j, _arr: _arr.at[j].set(arr[j + 1]), arr
     )
     return arr
 
+
 def _remove_out_of_bound(arr, ix):
     arr = lax.fori_loop(
-        0, ix, lambda i, a: lax.cond(
-            (a[i][0] < 0) & (a[i][1] > 9),
-            lambda: _remove_i(a, i),
-            lambda: a
-        ), arr
+        0,
+        ix,
+        lambda i, a: lax.cond(
+            (a[i][0] < 0) & (a[i][1] > 9), lambda: _remove_i(a, i), lambda: a
+        ),
+        arr,
     )
     return arr
 
 
 def _remove_hit(arr, ix, x, y):
     arr = lax.fori_loop(
-        0, ix, lambda i, a: lax.cond(
-            (a[i][0] == x) & (a[i][1] == y),
-            lambda: _remove_i(a, i),
-            lambda: a
-        ), arr
+        0,
+        ix,
+        lambda i, a: lax.cond(
+            (a[i][0] == x) & (a[i][1] == y), lambda: _remove_i(a, i), lambda: a
+        ),
+        arr,
     )
     return arr
 
 
 def _step_obj(arr, ix):
     arr = lax.fori_loop(
-        0, ix, lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)), arr
+        0,
+        ix,
+        lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)),
+        arr,
     )
     return arr
 
 
 def _hit(arr, ix, x, y):
     return lax.fori_loop(
-        0, ix, lambda i, t: lax.cond(
-            (arr[i][0] == x) & (arr[i][1] == y),
-            lambda: TRUE,
-            lambda: t
-        ), FALSE
+        0,
+        ix,
+        lambda i, t: lax.cond(
+            (arr[i][0] == x) & (arr[i][1] == y), lambda: TRUE, lambda: t
+        ),
+        FALSE,
     )
 
 
@@ -424,16 +496,17 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     terminal |= _hit(e_bullets, ix, sub_x, sub_y)
     return e_bullets, terminal
 
+
 def _update_by_hit(j, _f_bullets, e):
     k = lax.while_loop(
         lambda i: ~_is_hit(e[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
         lambda i: i + 1,
-        0
+        0,
     )
     _f_bullets, e, removed = lax.cond(
         k < 5,
-        lambda: (_remove_i(_f_bullets, k), _remove_i(e, j),  TRUE),
-        lambda: (_f_bullets, e,  FALSE)
+        lambda: (_remove_i(_f_bullets, k), _remove_i(e, j), TRUE),
+        lambda: (_f_bullets, e, FALSE),
     )
     return _f_bullets, e, removed
 
@@ -441,23 +514,25 @@ def _update_by_hit(j, _f_bullets, e):
 def _update_enemy_fish(
     f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
 ):
-
     def _update_by_hit_fish(j, _f_bullets, e, _terminal, _r):
         _f_bullets, e, removed = _update_by_hit(j, _f_bullets, e)
         return _f_bullets, e, _terminal, _r + removed
 
-
-    def _update_fish(j, _f_bullets, _e_fish, _terminal, _r ):
+    def _update_fish(j, _f_bullets, _e_fish, _terminal, _r):
         _e_fish = _e_fish.at[j, 3].set(move_speed)
-        _e_fish = _e_fish.at[j, 0].add(lax.cond(_e_fish[j, 2], lambda: 1, lambda: -1))
+        _e_fish = _e_fish.at[j, 0].add(
+            lax.cond(_e_fish[j, 2], lambda: 1, lambda: -1)
+        )
         _f_bullets, _e_fish, _terminal, _r = lax.cond(
             _is_out(_e_fish[j]),
             lambda: (_f_bullets, _remove_i(_e_fish, j), _terminal, _r),
             lambda: lax.cond(
                 _is_hit(_e_fish[j], sub_x, sub_y),
                 lambda: (_f_bullets, _e_fish, TRUE, _r),
-                lambda: _update_by_hit_fish(j, _f_bullets, _e_fish, _terminal, _r)
-            )
+                lambda: _update_by_hit_fish(
+                    j, _f_bullets, _e_fish, _terminal, _r
+                ),
+            ),
         )
         return _f_bullets, _e_fish, _terminal, _r
 
@@ -469,10 +544,10 @@ def _update_enemy_fish(
             _is_filled(_e_fish[j]),
             lambda: lax.cond(
                 _e_fish[j, 3] == 0,
-                lambda: _update_fish(j,  _f_bullets, _e_fish, _terminal, _r),
-                lambda: (_f_bullets, _e_fish.at[j, 3].add(-1), _terminal, _r)
+                lambda: _update_fish(j, _f_bullets, _e_fish, _terminal, _r),
+                lambda: (_f_bullets, _e_fish.at[j, 3].add(-1), _terminal, _r),
             ),
-            lambda: (_f_bullets, _e_fish, _terminal, _r)
+            lambda: (_f_bullets, _e_fish, _terminal, _r),
         )
         return _f_bullets, _e_fish, _terminal, _r
 
@@ -492,14 +567,24 @@ def _surface(
     diver_count, r = lax.cond(
         diver_count == 6,
         lambda: (ZERO, oxygen * 10 // MAX_OXYGEN),
-        lambda: (diver_count, jnp.int16(0))
+        lambda: (diver_count, jnp.int16(0)),
     )
     oxygen = MAX_OXYGEN
     diver_count -= 1
     ramp_update = ramping & ((e_spawn_speed > 1) | (move_speed > 2))
-    ramp_index = lax.cond(ramp_update, lambda: ramp_index + 1, lambda: ramp_index)
-    move_speed = lax.cond(ramp_update & ((move_speed > 2) & (ramp_index % 2)), lambda: move_speed - 1, lambda: move_speed)
-    e_spawn_speed = lax.cond(ramp_update & (e_spawn_speed > 1), lambda: e_spawn_speed - 1, lambda : e_spawn_speed)
+    ramp_index = lax.cond(
+        ramp_update, lambda: ramp_index + 1, lambda: ramp_index
+    )
+    move_speed = lax.cond(
+        ramp_update & ((move_speed > 2) & (ramp_index % 2)),
+        lambda: move_speed - 1,
+        lambda: move_speed,
+    )
+    e_spawn_speed = lax.cond(
+        ramp_update & (e_spawn_speed > 1),
+        lambda: e_spawn_speed - 1,
+        lambda: e_spawn_speed,
+    )
     return r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index
 
 
