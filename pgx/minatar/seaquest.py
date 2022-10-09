@@ -278,9 +278,9 @@ def _is_filled(row):
     return jnp.any(row != -1)
 
 
+@jax.jit
 def _update_divers(divers, diver_count, sub_x, sub_y):
 
-    @jax.jit
     def _update_by_move(_divers, _diver_count, j):
         _divers = _divers.at[j, 3].set(DIVER_MOVE_INTERVAL)
         _divers = _divers.at[j, 0].add(lax.cond(_divers[j, 2], lambda: 1, lambda: -1))
@@ -295,17 +295,22 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
         )
         return _divers, _diver_count
 
-    for i in range(5):
+    def _update_each(i, x):
+        _divers, _diver_count = x
         j = 5 - i - 1
-        if _is_hit(divers[j], sub_x, sub_y) & (diver_count < 6):
-            divers = _remove_i(divers, j)
-            diver_count += 1
-        else:
-            divers, diver_count = lax.cond(
-                divers[j, 3] == 0,
-                lambda: _update_by_move(divers, diver_count, j),
-                lambda: (divers.at[j, 3].add(-1), diver_count)
+        return lax.cond(
+            _is_hit(_divers[j], sub_x, sub_y) & (_diver_count < 6),
+            lambda: (_remove_i(divers, j), _diver_count + 1),
+            lambda: lax.cond(
+                _divers[j, 3] == 0,
+                lambda: _update_by_move(_divers, _diver_count, j),
+                lambda: (_divers.at[j, 3].add(-1), _diver_count)
             )
+        )
+
+    divers, diver_count = lax.fori_loop(
+        0, 5, _update_each, (divers, diver_count)
+    )
 
     return divers, diver_count
 
