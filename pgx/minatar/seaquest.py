@@ -265,7 +265,19 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
     e_fish = _to_arr(25, 4, _e_fish)
     return f_bullets, e_subs, e_fish, r
 
+@jax.jit
+def _is_hit(row, x, y):
+    return (row[0] == x) & (row[1] == y)
 
+@jax.jit
+def _is_out(row):
+    return (row[0] < 0) | (row[0] > 9)
+
+@jax.jit
+def _is_filled(row):
+    return jnp.any(row != -1)
+
+@jax.jit
 def _update_divers(divers, diver_count, sub_x, sub_y):
     _divers = _to_list(divers)
     for diver in reversed(_divers):
