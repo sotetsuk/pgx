@@ -374,6 +374,15 @@ def test_yaku_three_concealed_pungs():
     assert has_yaku(Yaku.三暗刻, "111123m11166677z", "", "1m", is_ron=True)
     assert has_yaku(Yaku.三暗刻, "111234m11166677z", "", "1m", is_ron=True) == False
 
+def test_yaku_seven_pairs():
+    assert has_yaku(Yaku.七対子, "113355m778899p33z", "", "1m")
+    assert has_yaku(Yaku.七対子, "12355m778899p333z", "", "1m") == False
+    assert has_yaku(Yaku.七対子, "112233445566m88p", "", "1m") == False
+    # 二盃口 < 七対子
+
+    assert has_yaku(Yaku.七対子, "1122445566m3344z", "", "1m")
+    assert has_yaku(Yaku.混一色, "1122445566m3344z", "", "1m")
+
 def test_yaku_coner_cases():
     assert has_yaku(Yaku.三暗刻, "111222333789m22z", "", "2m") == False
     assert has_yaku(Yaku.一盃口, "111222333789m22z", "", "2m")
