@@ -437,7 +437,7 @@ class Meld:
             assert src == 3
             pos = action - Action.CHI_L
             t = [num - pos + i for i in range(3)]
-            t[0], t[pos] = t[pos], t[0]
+            t.insert(0, t.pop(pos))
             return "[{}]{}{}{}".format(*t, ["m", "p", "s", "z"][suit])
         assert False
 
@@ -612,6 +612,40 @@ class State:
         )
 
     @jit
+    def can_tsumo(self) -> bool:
+        return jax.lax.cond(
+            Hand.can_tsumo(self.hand[self.turn]),
+            lambda: jnp.any(
+                Yaku.judge(
+                    self.hand[self.turn],
+                    self.melds[self.turn],
+                    self.meld_num[self.turn],
+                    self.last_draw,
+                    self.riichi[self.turn],
+                    False,
+                )[0]
+            ),
+            lambda: False,
+        )
+
+    @jit
+    def can_ron(self, player: int) -> bool:
+        return jax.lax.cond(
+            Hand.can_ron(self.hand[player], self.target),
+            lambda: jnp.any(
+                Yaku.judge(
+                    Hand.add(self.hand[player], self.target),
+                    self.melds[player],
+                    self.meld_num[player],
+                    self.last_draw,
+                    self.riichi[player],
+                    True,
+                )[0]
+            ),
+            lambda: False,
+        )
+
+    @jit
     def legal_actions(self) -> jnp.ndarray:
         legal_actions = jnp.full((4, Action.NONE), False)
 
@@ -635,7 +669,7 @@ class State:
             .at[(self.turn, Action.TSUMOGIRI)]
             .set(True)
             .at[(self.turn, Action.TSUMO)]
-            .set(Hand.can_tsumo(self.hand[self.turn]))
+            .set(self.can_tsumo())
             .at[(self.turn, Action.RIICHI)]
             .set(
                 jax.lax.cond(
@@ -740,7 +774,7 @@ class State:
                             ),
                         ),
                         legal_actions.at[(player, Action.RON)].set(
-                            Hand.can_ron(self.hand[player], self.target)
+                            self.can_ron(player)
                         ),
                     ),
                 ),
@@ -1110,21 +1144,22 @@ class Yaku:
     場風 = 18
     自風 = 19
     門前清自摸和 = 20
+    立直 = 21
 
-    大三元 = 21
-    小四喜 = 22
-    大四喜 = 23
-    九蓮宝燈 = 24
-    国士無双 = 25
-    清老頭 = 26
-    字一色 = 27
-    緑一色 = 28
-    四暗刻 = 29
+    大三元 = 22
+    小四喜 = 23
+    大四喜 = 24
+    九蓮宝燈 = 25
+    国士無双 = 26
+    清老頭 = 27
+    字一色 = 28
+    緑一色 = 29
+    四暗刻 = 30
 
     # fmt: off
     FAN = jnp.array([
-        [0,0,0,1,2,1,1,2,2,2,1,2,5,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0],  # noqa
-        [1,1,3,2,3,2,2,2,2,2,1,3,6,2,2,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],  # noqa
+        [0,0,0,1,2,1,1,2,2,2,1,2,5,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],  # noqa
+        [1,1,3,2,3,2,2,2,2,2,1,3,6,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],  # noqa
     ])
     # fmt: on
 
@@ -1302,6 +1337,7 @@ class Yaku:
         melds: jnp.ndarray,
         meld_num: int,
         last: int,
+        riichi: bool,
         is_ron: bool,
     ) -> tuple[jnp.ndarray, int]:
         # assert Hand.can_tsumo(hand)
@@ -1518,6 +1554,8 @@ class Yaku:
             .set(flatten[27] >= 3)
             .at[Yaku.門前清自摸和]
             .set(is_menzen & (is_ron == 0))
+            .at[Yaku.立直]
+            .set(riichi)
         )
 
         yakuman = (
