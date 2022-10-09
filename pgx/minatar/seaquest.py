@@ -345,38 +345,35 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
 def _update_enemy_subs(
     f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
 ):
-    _f_bullets = _to_list(f_bullets)
-    _e_subs = _to_list(e_subs)
-    _e_bullets = _to_list(e_bullets)
-
-    for sub in reversed(_e_subs):
-        if sub[0:2] == [sub_x, sub_y]:
+    for i in range(25):
+        j = 25 - i - 1
+        if _is_hit(e_subs[j], sub_x, sub_y):
             terminal = TRUE
-        if sub[3] == 0:
-            sub[3] = move_speed
-            sub[0] += 1 if sub[2] else -1
-            if sub[0] < 0 or sub[0] > 9:
-                _e_subs.remove(sub)
-            elif sub[0:2] == [sub_x, sub_y]:
+        if e_subs[j, 3] == 0:
+            e_subs = e_subs.at[j, 3].set(move_speed)
+            e_subs = e_subs.at[j, 0].add(1 if e_subs[j, 2] else -1)
+            if e_subs[j, 0] < 0 or e_subs[j, 0] > 9:
+                e_subs = _remove_i(e_subs, j)
+            elif _is_hit(e_subs[j], sub_x, sub_y):
                 terminal = TRUE
             else:
-                for x in _f_bullets:
-                    if sub[0:2] == x[0:2]:
-                        _e_subs.remove(sub)
-                        _f_bullets.remove(x)
+                for k in range(5):
+                    x = f_bullets[k]
+                    if _is_hit(e_subs[j], x[0], x[1]):
+                        e_subs = _remove_i(e_subs, j)
+                        f_bullets = _remove_i(f_bullets, k)
                         r += 1
                         break
         else:
-            sub[3] -= 1
-        if sub[4] == 0:
-            sub[4] = ENEMY_SHOT_INTERVAL
-            _e_bullets += [[sub[0] if sub[2] else sub[0], sub[1], sub[2]]]
+            e_subs = e_subs.at[j, 3].add(-1)
+        if e_subs[j, 4] == 0:
+            e_subs = e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL)
+            ix = find_ix(e_bullets)
+            e_bullets = e_bullets.at[ix].set(
+                jnp.int8([lax.cond(e_subs[j, 2], lambda:e_subs[j, 0], lambda:e_subs[j, 0]), e_subs[j, 1], e_subs[j, 2]])
+            )
         else:
-            sub[4] -= 1
-
-    f_bullets = _to_arr(5, 3, _f_bullets)
-    e_bullets = _to_arr(25, 3, _e_bullets)
-    e_subs = _to_arr(25, 5, _e_subs)
+            e_subs = e_subs.at[j, 4].add(-1)
 
     return f_bullets, e_subs, e_bullets, terminal, r
 
