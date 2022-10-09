@@ -417,7 +417,15 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
 def _update_enemy_fish(
     f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
 ):
-    # for fish in reversed(_e_fish):
+    def _update_by_hit(_e_fish, _f_bullets, _r):
+        for k, bullet in enumerate(_f_bullets):
+            if _is_hit(_e_fish[j], bullet[0], bullet[1]):
+                _e_fish = _remove_i(_e_fish, j)
+                _f_bullets = _remove_i(_f_bullets, k)
+                _r += 1
+                break
+        return _e_fish, _f_bullets, _r
+
     for i in range(25):
         j = 25 - i - 1
         if _is_hit(e_fish[j], sub_x, sub_y):
@@ -430,12 +438,7 @@ def _update_enemy_fish(
             elif _is_hit(e_fish[j], sub_x, sub_y):
                 terminal = TRUE
             else:
-                for k, bullet in enumerate(f_bullets):
-                    if _is_hit(e_fish[j], bullet[0], bullet[1]):
-                        e_fish = _remove_i(e_fish, j)
-                        f_bullets = _remove_i(f_bullets, k)
-                        r += 1
-                        break
+                e_fish, f_bullets, r = _update_by_hit(e_fish, f_bullets, r)
         else:
             e_fish = e_fish.at[j, 3].add(-1)
     return f_bullets, e_fish, terminal, r
