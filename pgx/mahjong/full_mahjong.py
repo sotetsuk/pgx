@@ -1162,7 +1162,50 @@ class Yaku:
         [0,0,0,1,2,1,1,2,2,2,0,1,2,5,2,2,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0],  # noqa
         [1,1,3,2,3,2,2,2,2,2,2,1,3,6,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0],  # noqa
     ])
+    YAKUMAN = jnp.array([
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,1,1,1,1,1,1
+        ])
     # fmt: on
+
+    @staticmethod
+    @jit
+    def score(
+        hand: jnp.ndarray,
+        melds: jnp.ndarray,
+        meld_num: int,
+        last: int,
+        riichi: bool,
+        is_ron: bool,
+    ) -> int:
+        yaku, fan, fu = Yaku.judge(hand, melds, meld_num, last, riichi, is_ron)
+        score = fu * (1 << (fan + 2))
+        return jax.lax.cond(
+            fan == 0,
+            lambda: 8000 * jnp.dot(yaku, Yaku.YAKUMAN),
+            lambda: jax.lax.cond(
+                score < 2000,
+                lambda: score,
+                lambda: jax.lax.switch(
+                    fan - 5,
+                    [
+                        # 5翻以下
+                        lambda: 2000,
+                        # 6-7翻
+                        lambda: 3000,
+                        lambda: 3000,
+                        # 8-10翻
+                        lambda: 4000,
+                        lambda: 4000,
+                        lambda: 4000,
+                        # 11-12翻
+                        lambda: 6000,
+                        lambda: 6000,
+                        # 13翻以上
+                        lambda: 8000,
+                    ],
+                ),
+            ),
+        )
 
     @staticmethod
     @jit
@@ -1328,12 +1371,17 @@ class Yaku:
         last: int,
         riichi: bool,
         is_ron: bool,
-    ) -> tuple[jnp.ndarray, int]:
+    ) -> tuple[jnp.ndarray, int, int]:
         is_menzen = jax.lax.fori_loop(
-                0, meld_num, lambda i, menzen: menzen & (
-                    Action.is_selfkan(Meld.action(melds[i]))
-                    & (Meld.src(melds[i]) == 0)
-                ), True)
+            0,
+            meld_num,
+            lambda i, menzen: menzen
+            & (
+                Action.is_selfkan(Meld.action(melds[i]))
+                & (Meld.src(melds[i]) == 0)
+            ),
+            True,
+        )
 
         is_pinfu = jnp.full(
             Yaku.MAX_PATTERNS,
@@ -1387,7 +1435,7 @@ class Yaku:
             + (hand[32] == 3) * 4 * (2 - (is_ron & (32 == last)))
             + (hand[33] == 3) * 4 * (2 - (is_ron & (33 == last)))
             # NOTE: 東場東家
-            + ((27 <= last) & (hand[last] == 2))
+            + ((27 <= last) & (hand[last] == 2)),
         )
 
         for suit in range(3):
@@ -1484,7 +1532,6 @@ class Yaku:
         best_pattern = jnp.argmax(jnp.dot(fan, yaku) * 200 + fu)
 
         yaku = yaku.T[best_pattern]
-
         fu = fu[best_pattern]
         fu += -fu % 10
 
@@ -1562,8 +1609,8 @@ class Yaku:
 
         return jax.lax.cond(
             jnp.any(yakuman),
-            lambda: (yakuman, 0),
-            lambda: (yaku, fu),
+            lambda: (yakuman, 0, 0),
+            lambda: (yaku, jnp.dot(fan, yaku), fu),
         )
 
     @staticmethod

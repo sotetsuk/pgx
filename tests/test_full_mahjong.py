@@ -126,7 +126,7 @@ def fu(
         melds = melds.at[meld_num].set(Meld.from_str(s))
         meld_num += 1
     last = Tile.from_str(last_s)
-    return Yaku.judge(hand, melds, meld_num, last, False, is_ron)[1]
+    return Yaku.judge(hand, melds, meld_num, last, False, is_ron)[2]
 
 def test_yaku_fu():
     # リャンメン(平和)
@@ -415,6 +415,49 @@ def test_yaku_coner_cases():
     assert has_yaku(Yaku.一盃口, "22334455m234p234s", "", "3m")
     assert has_yaku(Yaku.三色同順, "22334455m234p234s", "", "3m")
     # 平和と三色が両立しないケース
+
+
+def score(
+        hand_s: str,
+        melds_s: str,
+        last_s: str,
+        riichi: bool = False,
+        is_ron: bool = False
+        ) -> int:
+    hand = Hand.from_str(hand_s)
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    meld_num=0
+    for s in melds_s.split(","):
+        if not s:
+            continue
+        melds = melds.at[meld_num].set(Meld.from_str(s))
+        meld_num += 1
+    last = Tile.from_str(last_s)
+    return Yaku.score(hand, melds, meld_num, last, riichi, is_ron)
+
+def roundup(n):
+    return n + (-n % 100)
+
+def test_yaku_score():
+    assert roundup(score("11123456789999m", "", "5m", riichi=True, is_ron=True)) == 8000
+    # 九蓮宝燈
+    assert roundup(score("11122233344455m", "", "1m", riichi=True)) == 8000
+    # 四暗刻
+    assert roundup(score("11122233344455m", "", "1m", riichi=True, is_ron=True)) == 6000
+    # 清一色,三暗刻,対々和,立直=11翻
+    assert roundup(score("11122233344455m", "", "1m", is_ron=True)) == 4000
+    # 清一色,三暗刻,対々和=10翻
+
+    s = score("112233m123p12333s", "", "2m")
+    assert roundup(s) == 2000
+    assert roundup(s * 2) == 3900
+    # ツモ,一盃口,三色=4翻,30符 => 2000,3900 / 3900オール
+
+    s = score("112233m7788p3344s", "", "1m", riichi=True)
+    assert roundup(s) == 1600
+    assert roundup(s * 2) == 3200
+    # ツモ,七対子,立直=4翻,25符 => 1600,3200 / 3200オール
+
 
 def test_state():
     state = init(jax.random.PRNGKey(seed=0))
