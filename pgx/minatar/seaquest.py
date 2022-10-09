@@ -300,7 +300,7 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
         j = 5 - i - 1
         return lax.cond(
             _is_hit(_divers[j], sub_x, sub_y) & (_diver_count < 6),
-            lambda: (_remove_i(divers, j), _diver_count + 1),
+            lambda: (_remove_i(_divers, j), _diver_count + 1),
             lambda: lax.cond(
                 _divers[j, 3] == 0,
                 lambda: _update_by_move(_divers, _diver_count, j),
@@ -451,9 +451,13 @@ def _update_enemy_fish(
         _f_bullets, _e_fish, _terminal, _r = x
         _terminal |= _is_hit(_e_fish[j], sub_x, sub_y)
         _f_bullets, _e_fish, _terminal, _r = lax.cond(
-            _e_fish[j, 3] == 0,
-            lambda: _update_fish(j,  _f_bullets, _e_fish, _terminal, _r),
-            lambda: (_f_bullets, _e_fish.at[j, 3].add(-1), _terminal, _r)
+            _is_filled(_e_fish[j]),
+            lambda: lax.cond(
+                _e_fish[j, 3] == 0,
+                lambda: _update_fish(j,  _f_bullets, _e_fish, _terminal, _r),
+                lambda: (_f_bullets, _e_fish.at[j, 3].add(-1), _terminal, _r)
+            ),
+            lambda: (_f_bullets, _e_fish, _terminal, _r)
         )
         return _f_bullets, _e_fish, _terminal, _r
 
