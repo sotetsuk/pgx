@@ -417,29 +417,27 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
 def _update_enemy_fish(
     f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
 ):
-    _f_bullets = _to_list(f_bullets)
-    _e_fish = _to_list(e_fish)
-    for fish in reversed(_e_fish):
-        if fish[0:2] == [sub_x, sub_y]:
+    # for fish in reversed(_e_fish):
+    for i in range(25):
+        j = 25 - i - 1
+        if _is_hit(e_fish[j], sub_x, sub_y):
             terminal = TRUE
-        if fish[3] == 0:
-            fish[3] = move_speed
-            fish[0] += 1 if fish[2] else -1
-            if fish[0] < 0 or fish[0] > 9:
-                _e_fish.remove(fish)
-            elif fish[0:2] == [sub_x, sub_y]:
+        if e_fish[j, 3] == 0:
+            e_fish = e_fish.at[j, 3].set(move_speed)
+            e_fish = e_fish.at[j, 0].add(lax.cond(e_fish[j, 2], lambda: 1, lambda: -1))
+            if _is_out(e_fish[j]):
+                e_fish = _remove_i(e_fish, j)
+            elif _is_hit(e_fish[j], sub_x, sub_y):
                 terminal = TRUE
             else:
-                for x in _f_bullets:
-                    if fish[0:2] == x[0:2]:
-                        _e_fish.remove(fish)
-                        _f_bullets.remove(x)
+                for k, bullet in enumerate(f_bullets):
+                    if _is_hit(e_fish[j], bullet[0], bullet[1]):
+                        e_fish = _remove_i(e_fish, j)
+                        f_bullets = _remove_i(f_bullets, k)
                         r += 1
                         break
         else:
-            fish[3] -= 1
-    f_bullets = _to_arr(5, 3, _f_bullets)
-    e_fish = _to_arr(25, 4, _e_fish)
+            e_fish = e_fish.at[j, 3].add(-1)
     return f_bullets, e_fish, terminal, r
 
 
