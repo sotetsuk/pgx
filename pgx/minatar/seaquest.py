@@ -268,15 +268,7 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
         if not _is_filled(_f_bullets[j]):
             return _f_bullets, _e_subs, _e_fish, _r
         _f_bullets = _f_bullets.at[j, 0].add(1 if _f_bullets[j, 2] else -1)
-        if _f_bullets[j, 0] < 0 or _f_bullets[j, 0] > 9:
-            _f_bullets = _remove_i(_f_bullets, j)
-        else:
-            _f_bullets, _e_subs, _e_fish, _r = _remove(j, _f_bullets, _e_subs, _e_fish, _r)
-            # _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_fish)
-            # _r += removed
-            # if not removed:
-            #     _f_bullets, _e_subs, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_subs)
-            #     _r += removed
+        _f_bullets, _e_subs, _e_fish, _r = (_remove_i(_f_bullets, j), _e_subs, _e_fish, _r) if _is_out(_f_bullets[j]) else _remove(j, _f_bullets, _e_subs, _e_fish, _r)
         return _f_bullets, _e_subs, _e_fish, _r
 
     for i in range(5):
@@ -318,13 +310,17 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
         _divers, _diver_count = x
         j = 5 - i - 1
         return lax.cond(
-            _is_hit(_divers[j], sub_x, sub_y) & (_diver_count < 6),
-            lambda: (_remove_i(_divers, j), _diver_count + 1),
+            _is_filled(_divers[j]),
             lambda: lax.cond(
-                _divers[j, 3] == 0,
-                lambda: _update_by_move(_divers, _diver_count, j),
-                lambda: (_divers.at[j, 3].add(-1), _diver_count)
-            )
+                _is_hit(_divers[j], sub_x, sub_y) & (_diver_count < 6),
+                lambda: (_remove_i(_divers, j), _diver_count + 1),
+                lambda: lax.cond(
+                    _divers[j, 3] == 0,
+                    lambda: _update_by_move(_divers, _diver_count, j),
+                    lambda: (_divers.at[j, 3].add(-1), _diver_count)
+                )
+            ),
+            lambda: (_divers, _diver_count)
         )
 
     divers, diver_count = lax.fori_loop(
