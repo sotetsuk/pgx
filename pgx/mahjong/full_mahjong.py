@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 from dataclasses import dataclass
 
 import jax
@@ -14,6 +15,10 @@ class Tile:
     def to_str(tile: int) -> str:
         suit, num = tile // 9, tile % 9 + 1
         return str(num) + ["m", "p", "s", "z"][suit]
+
+    @staticmethod
+    def from_str(s: str) -> int:
+        return (int(s[0]) - 1) + 9 * ["m", "p", "s", "z"].index(s[1])
 
     @staticmethod
     @jit
@@ -432,10 +437,78 @@ class Meld:
             assert src == 3
             pos = action - Action.CHI_L
             t = [num - pos + i for i in range(3)]
-            t[0],t[pos] = t[pos],t[0]
-            return "[{}]{}{}{}".format(
-                *t, ["m", "p", "s", "z"][suit]
+            t[0], t[pos] = t[pos], t[0]
+            return "[{}]{}{}{}".format(*t, ["m", "p", "s", "z"][suit])
+        assert False
+
+    @staticmethod
+    def from_str(s: str) -> Meld:
+        l3 = re.match(r"^\[(\d)\](\d)(\d)([mpsz])$", s)
+        m3 = re.match(r"^(\d)\[(\d)\](\d)([mpsz])$", s)
+        r3 = re.match(r"^(\d)(\d)\[(\d)\]([mpsz])$", s)
+        l4 = re.match(r"^\[(\d)\](\d)(\d)(\d)([mpsz])$", s)
+        m4 = re.match(r"^(\d)\[(\d)\](\d)(\d)([mpsz])$", s)
+        r4 = re.match(r"^(\d)(\d)(\d)\[(\d)\]([mpsz])$", s)
+        ll4 = re.match(r"^\[(\d)](\d)\](\d)(\d)([mpsz])$", s)
+        mm4 = re.match(r"^(\d)\[(\d)(\d)\](\d)([mpsz])$", s)
+        rr4 = re.match(r"^(\d)(\d)\[(\d)(\d)\]([mpsz])$", s)
+        ankan = re.match(r"^(\d)(\d)(\d)(\d)([mpsz])$", s)
+        if l3:
+            num = list(map(int, [l3[1], l3[2], l3[3]]))
+            target = (num[0] - 1) + 9 * ["m", "p", "s", "z"].index(l3[4])
+            src = 3
+            if num[0] == num[1] and num[1] == num[2]:
+                return Meld.init(Action.PON, target, src)
+            if num[0] + 1 == num[1] and num[1] + 1 == num[2]:
+                return Meld.init(Action.CHI_L, target, src)
+            if num[0] == num[1] + 1 and num[1] + 2 == num[2]:
+                return Meld.init(Action.CHI_M, target, src)
+            if num[0] == num[1] + 2 and num[1] + 1 == num[2]:
+                return Meld.init(Action.CHI_R, target, src)
+        if m3:
+            assert m3[1] == m3[2] and m3[2] == m3[3]
+            target = (int(m3[1]) - 1) + 9 * ["m", "p", "s", "z"].index(m3[4])
+            return Meld.init(Action.PON, target, src=2)
+        if r3:
+            assert r3[1] == r3[2] and r3[2] == r3[3]
+            target = (int(r3[1]) - 1) + 9 * ["m", "p", "s", "z"].index(r3[4])
+            return Meld.init(Action.PON, target, src=1)
+        if l4:
+            assert l4[1] == l4[2] and l4[2] == l4[3] and l4[4] == l4[4]
+            target = (int(l4[1]) - 1) + 9 * ["m", "p", "s", "z"].index(l4[5])
+            return Meld.init(Action.MINKAN, target, src=3)
+        if m4:
+            assert m4[1] == m4[2] and m4[2] == m4[3] and m4[4] == m4[4]
+            target = (int(m4[1]) - 1) + 9 * ["m", "p", "s", "z"].index(m4[5])
+            return Meld.init(Action.MINKAN, target, src=2)
+        if r4:
+            assert r4[1] == r4[2] and r4[2] == r4[3] and r4[4] == r4[4]
+            target = (int(r4[1]) - 1) + 9 * ["m", "p", "s", "z"].index(r4[5])
+            return Meld.init(Action.MINKAN, target, src=1)
+        if ll4:
+            target = (int(ll4[1]) - 1) + 9 * ["m", "p", "s", "z"].index(ll4[5])
+            assert ll4[1] == ll4[2] and ll4[2] == ll4[3] and ll4[4] == ll4[4]
+            return Meld.init(target + 34, target, src=3)
+        if mm4:
+            target = (int(mm4[1]) - 1) + 9 * ["m", "p", "s", "z"].index(mm4[5])
+            assert mm4[1] == mm4[2] and mm4[2] == mm4[3] and mm4[4] == mm4[4]
+            return Meld.init(target + 34, target, src=2)
+        if rr4:
+            target = (int(rr4[1]) - 1) + 9 * ["m", "p", "s", "z"].index(rr4[5])
+            assert rr4[1] == rr4[2] and rr4[2] == rr4[3] and rr4[4] == rr4[4]
+            return Meld.init(target + 34, target, src=1)
+        if ankan:
+            target = int(ankan[1]) - 1
+            target = (int(ankan[1]) - 1) + 9 * ["m", "p", "s", "z"].index(
+                ankan[5]
             )
+            assert (
+                ankan[1] == ankan[2]
+                and ankan[2] == ankan[3]
+                and ankan[4] == ankan[4]
+            )
+            return Meld.init(target + 34, target, src=0)
+
         assert False
 
     @staticmethod
@@ -471,7 +544,7 @@ class Meld:
     @jit
     def chow(meld: int) -> int:
         action = Meld.action(meld)
-        is_chi = (Action.CHI_L <= action) & (action < Action.CHI_R)
+        is_chi = (Action.CHI_L <= action) & (action <= Action.CHI_R)
         pos = Meld.target(meld) - (
             action - Action.CHI_L
         )  # WARNING: may be negative

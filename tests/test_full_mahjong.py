@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.mahjong.full_mahjong import Deck, Hand, Action, Yaku, Meld, init, step
+from pgx.mahjong.full_mahjong import Deck, Hand, Action, Yaku, Meld, Tile, init, step
 
 
 def test_deck():
@@ -112,392 +112,281 @@ def test_hand():
     assert Hand.can_tsumo(hand)
 
 def fu(
-    hand: jnp.ndarray,
-    melds: jnp.ndarray,
-    meld_num: int,
-    last: int,
-    is_ron: bool = False,
-) -> bool:
+        hand_s: str,
+        melds_s: str,
+        last_s: str,
+        is_ron: bool = False
+        ) -> bool:
+    hand = Hand.from_str(hand_s)
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    meld_num=0
+    for s in melds_s.split(","):
+        if not s:
+            continue
+        melds = melds.at[meld_num].set(Meld.from_str(s))
+        meld_num += 1
+    last = Tile.from_str(last_s)
     return Yaku.judge(hand, melds, meld_num, last, is_ron)[1]
 
 def test_yaku_fu():
-    hand = Hand.from_str("112233567m34588p")
-    melds = jnp.zeros(4, dtype=jnp.int32)
     # リャンメン(平和)
-    assert fu(hand, melds, meld_num=0, last=0) == 20
-    assert fu(hand, melds, meld_num=0, last=0, is_ron=True) == 30
+    assert fu("112233567m34588p", "", "1m") == 20
+    assert fu("112233567m34588p", "", "1m", is_ron=True) == 30
 
     # 単騎
-    assert fu(hand, melds, meld_num=0, last=16) == 30
-    assert fu(hand, melds, meld_num=0, last=16, is_ron=True) == 40
+    assert fu("112233567m34588p", "", "8p") == 30
+    assert fu("112233567m34588p", "", "8p", is_ron=True) == 40
 
     # ペンチャン
-    assert fu(hand, melds, meld_num=0, last=2) == 30
-    assert fu(hand, melds, meld_num=0, last=2, is_ron=True) == 40
+    assert fu("112233567m34588p", "", "3m") == 30
+    assert fu("112233567m34588p", "", "3m", is_ron=True) == 40
 
     # カンチャン
-    assert fu(hand, melds, meld_num=0, last=1) == 30
-    assert fu(hand, melds, meld_num=0, last=1, is_ron=True) == 40
+    assert fu("112233567m34588p", "", "2m") == 30
+    assert fu("112233567m34588p", "", "2m", is_ron=True) == 40
 
-    hand = Hand.from_str("111222333567m88p")
-    assert fu(hand, melds, meld_num=0, last=0) == 40
+    assert fu("111222333567m88p", "", "1m") == 40
     # 平和一盃口 == 三暗刻. 符で三暗刻が優先される.
 
-    hand = Hand.from_str("233445m23456799p")
-    assert fu(hand, melds, meld_num=0, last=3) == 20
+    assert fu("233445m23456799p", "", "4m") == 20
     # 平和がつくのでリャンメンにとる
-    hand = Hand.from_str("233445m22234599p")
-    assert fu(hand, melds, meld_num=0, last=3) == 30
+    assert fu("233445m22234599p", "", "4m") == 30
     # 平和がつかないのでカンチャンにとる
 
-    hand = Hand.from_str("11123456m111234p")
-    assert fu(hand, melds, meld_num=0, last=0) == 40
+    assert fu("11123456m111234p", "", "1m") == 40
     # 単騎 > リャンメン
 
-    hand = Hand.from_str("111123456m11222p")
-    assert fu(hand, melds, meld_num=0, last=0, is_ron=True) == 50
+    assert fu("111123456m11222p", "", "1m", is_ron=True) == 50
     # リャンメン > シャンポン
 
-
 def has_yaku(
-    yaku: int,
-    hand: jnp.ndarray,
-    melds: jnp.ndarray,
-    meld_num: int,
-    last: int,
-    is_ron: bool = False,
-) -> bool:
+        yaku: int,
+        hand_s: str,
+        melds_s: str,
+        last_s: str,
+        is_ron: bool = False
+        ) -> bool:
+    hand = Hand.from_str(hand_s)
+    melds = jnp.zeros(4, dtype=jnp.int32)
+    meld_num=0
+    for s in melds_s.split(","):
+        if not s:
+            continue
+        melds = melds.at[meld_num].set(Meld.from_str(s))
+        meld_num += 1
+    last = Tile.from_str(last_s)
     return Yaku.judge(hand, melds, meld_num, last, is_ron)[0][yaku]
 
 def test_yaku_tanyao():
-    hand = jnp.zeros(34, dtype=jnp.uint8)
-    hand = Hand.add(hand, 1, 2)
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.断么九, hand, melds, meld_num=0, last=1)
+    assert has_yaku(Yaku.断么九, "23456777m678p", "[4]23m", "2m")
 
-    melds = melds.at[0].set(Meld.init(Action.CHI_R, 3, 0))
-    assert has_yaku(Yaku.断么九, hand, melds, meld_num=1, last=1)
+    assert has_yaku(Yaku.断么九, "23456777m678p", "[3]12m", "2m") == False
 
-    melds = melds.at[0].set(Meld.init(Action.CHI_R, 2, 0))
-    assert not has_yaku(Yaku.断么九, hand, melds, meld_num=1, last=1)
+    assert has_yaku(Yaku.断么九, "23456777m678p", "[5]55m", "2m")
 
-    melds = melds.at[0].set(Meld.init(Action.PON, 6, 0))
-    assert has_yaku(Yaku.断么九, hand, melds, meld_num=1, last=1)
-
-    melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))
-    assert not has_yaku(Yaku.断么九, hand, melds, meld_num=1, last=1)
+    assert has_yaku(Yaku.断么九, "23456777m678p", "[6]66z", "2m") == False
 
 def test_yaku_flush():
-    hand = Hand.from_str("11223355577789m")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert not has_yaku(Yaku.混一色, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.清一色, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.混一色, "11223355577789m", "", "1m") == False
+    assert has_yaku(Yaku.清一色, "11223355577789m", "", "1m")
 
-    hand = Hand.from_str("11223355577m789p")
-    assert not has_yaku(Yaku.混一色, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.清一色, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.混一色, "11223355577m789p", "", "1m") == False
+    assert has_yaku(Yaku.清一色, "11223355577m789p", "", "1m") == False
 
-    hand = Hand.from_str("11223355577m777z")
-    assert has_yaku(Yaku.混一色, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.清一色, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.混一色, "11223355577m777z", "", "1m")
+    assert has_yaku(Yaku.清一色, "11223355577m777z", "", "1m") == False
 
-    hand = Hand.from_str("11223355577m")
-    melds = melds.at[0].set(Meld.init(Action.CHI_L, 6, 0))  # [7]89m
-    assert not has_yaku(Yaku.混一色, hand, melds, meld_num=1, last=0)
-    assert has_yaku(Yaku.清一色, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.混一色, "11223355577m", "[7]89m", "1m") == False
+    assert has_yaku(Yaku.清一色, "11223355577m", "[7]89m", "1m")
 
-    melds = melds.at[0].set(Meld.init(Action.CHI_L, 15, 0))  # [7]89p
-    assert not has_yaku(Yaku.混一色, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.清一色, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.混一色, "11223355577m", "[7]89p", "1m") == False
+    assert has_yaku(Yaku.清一色, "11223355577m", "[7]89p", "1m") == False
 
-    melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))  # 777z
-    assert has_yaku(Yaku.混一色, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.清一色, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.混一色, "11223355577m", "7[7]7z", "1m")
+    assert has_yaku(Yaku.清一色, "11223355577m", "7[7]7z", "1m") == False
 
 
 def test_yaku_without_tanyao():
-    hand = Hand.from_str("111999m11p")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))  # 777z
-    melds = melds.at[1].set(Meld.init(Action.PON, 32, 0))  # 666z
-    assert has_yaku(Yaku.混老頭, hand, melds, meld_num=2, last=0)
-    assert not has_yaku(Yaku.混全帯么九, hand, melds, meld_num=2, last=0)
+    assert has_yaku(Yaku.混老頭, "111999m11p", "6[6]66z,7777z", "1m")
+    assert has_yaku(Yaku.混全帯么九, "111999m11p", "6[6]66z,7777z", "1m") == False
 
-    hand = Hand.from_str("123999m11p")
-    assert not has_yaku(Yaku.混老頭, hand, melds, meld_num=2, last=0)
-
-
+    assert has_yaku(Yaku.混老頭, "123999m11p", "6[6]66z,7777z", "1m") == False
+ 
+ 
 def test_yaku_dragons():
-    hand = Hand.from_str("123m456p55566677z")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.小三元, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.白, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.發, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.中, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.小三元, "123m456p55566677z", "", "1m")
+    assert has_yaku(Yaku.白, "123m456p55566677z", "", "1m")
+    assert has_yaku(Yaku.發, "123m456p55566677z", "", "1m")
+    assert has_yaku(Yaku.中, "123m456p55566677z", "", "1m") == False
 
-    hand = Hand.from_str("11m456p555666z")
-    melds = melds.at[0].set(Meld.init(Action.PON, 33, 0))  # 777z
-    assert has_yaku(Yaku.大三元, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.白, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.發, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.中, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.大三元, "11m456p555666z", "7[77]7z", "1m")
+    assert has_yaku(Yaku.白, "11m456p555666z", "7[77]7z", "1m") == False
+    assert has_yaku(Yaku.發, "11m456p555666z", "7[77]7z", "1m") == False
+    assert has_yaku(Yaku.中, "11m456p555666z", "7[77]7z", "1m") == False
 
 def test_yaku_winds():
-    hand = Hand.from_str("12345666m789p111z")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.場風, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.自風, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.場風, "12345666m789p111z", "", "1m")
+    assert has_yaku(Yaku.自風, "12345666m789p111z", "", "1m")
 
-    hand = Hand.from_str("11m222333444z")
-    melds = melds.at[0].set(Meld.init(Action.PON, 27, 0))  # 111z
-    assert has_yaku(Yaku.大四喜, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.小四喜, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.大四喜, "11m222333444z", "11[1]z", "1m")
+    assert has_yaku(Yaku.小四喜, "11m222333444z", "11[1]z", "1m") == False
 
-    hand = Hand.from_str("111m22333444z")
-    melds = melds.at[0].set(Meld.init(Action.PON, 27, 0))  # 111z
-    assert not has_yaku(Yaku.大四喜, hand, melds, meld_num=1, last=0)
-    assert has_yaku(Yaku.小四喜, hand, melds, meld_num=1, last=0)
-
+    assert has_yaku(Yaku.大四喜, "111m22333444z", "11[1]z", "1m") == False
+    assert has_yaku(Yaku.小四喜, "111m22333444z", "11[1]z", "1m")
 
 def test_yaku_tsumo():
-    hand = Hand.from_str("12345666m778899p")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.門前清自摸和, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.門前清自摸和, hand, melds, meld_num=0, last=0, is_ron=True)
+    assert has_yaku(Yaku.門前清自摸和, "12345666m778899p", "", "1m")
+    assert has_yaku(Yaku.門前清自摸和, "12345666m778899p", "", "1m", is_ron=True) == False
 
-    hand = Hand.from_str("12345666m789p")
-    melds = melds.at[0].set(Meld.init(Action.CHI_R, 17, 0))  # 78[9]p
-    assert not has_yaku(Yaku.門前清自摸和, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.門前清自摸和, "12345666m789p", "[9]78p", "1m") == False
 
 def test_yaku_nine_gates():
-    hand = Hand.from_str("11123455678999m")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.九蓮宝燈, hand, melds, meld_num=0, last=0)
-
-    hand = Hand.from_str("11123455678m")
-    melds = melds.at[0].set(Meld.init(Action.PON, 8, 0))  # 999m
-    assert not has_yaku(Yaku.九蓮宝燈, hand, melds, meld_num=1, last=0)
-
+    assert has_yaku(Yaku.九蓮宝燈, "11123455678999m", "", "1m")
+    assert has_yaku(Yaku.九蓮宝燈, "11123455678m", "[9]99m", "1m") == False
 
 def test_yaku_thirteen_orphans():
-    hand = Hand.from_str("19m19p19s12345677z")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.国士無双, hand, melds, meld_num=0, last=0)
-
-    hand = Hand.from_str("19m19p159s1234567z")
-    assert not has_yaku(Yaku.国士無双, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.国士無双, "19m19p19s12345677z", "", "1m")
+    assert has_yaku(Yaku.国士無双, "19m19p179s1234567z", "", "1m") == False
 
 def test_yaku_one_and_nines():
-    hand = Hand.from_str("111m999m111p999p11s")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.清老頭, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.混老頭, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.清老頭, "111999m111999p11s", "", "1m")
+    assert has_yaku(Yaku.混老頭, "111999m111999p11s", "", "1m") == False
 
-    hand = Hand.from_str("111m999m111p11s")
-    melds = melds.at[0].set(Meld.init(Action.PON, 33, src=0))  # 777z
-    assert not has_yaku(Yaku.清老頭, hand, melds, meld_num=1, last=0)
-    assert has_yaku(Yaku.混老頭, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.清老頭, "111999m111p11s", "7[7]7z", "1m") == False
+    assert has_yaku(Yaku.混老頭, "111999m111p11s", "7[7]7z", "1m")
 
-    hand = Hand.from_str("111m999m111p11s")
-    melds = melds.at[0].set(Meld.init(Action.CHI_L, 0, src=0))  # [1]23m
-    assert not has_yaku(Yaku.清老頭, hand, melds, meld_num=1, last=0)
-    assert has_yaku(Yaku.純全帯么九, hand, melds, meld_num=1, last=0)
-
+    assert has_yaku(Yaku.混老頭, "111999m111p11s", "[1]23m", "1m") == False
+    assert has_yaku(Yaku.純全帯么九, "111999m111p11s", "[1]23m", "1m")
 
 def test_yaku_all_honors():
-    hand = Hand.from_str("11122233366677z")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.字一色, hand, melds, meld_num=0, last=33)
+    assert has_yaku(Yaku.字一色, "11122233366677z", "", "7z")
 
-    hand = Hand.from_str("111m22233366677z")
-    assert not has_yaku(Yaku.字一色, hand, melds, meld_num=0, last=33)
+    assert has_yaku(Yaku.字一色, "111m22233366677z", "", "7z") == False
 
 def test_yaku_all_green():
-    hand = Hand.from_str("223344666s666z")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    melds = melds.at[0].set(Meld.init(Action.PON, 25, src=0))  # 888s
-    assert has_yaku(Yaku.緑一色, hand, melds, meld_num=1, last=32)
-
-    melds = melds.at[0].set(Meld.init(Action.PON, 24, src=0))  # 777s
-    assert not has_yaku(Yaku.緑一色, hand, melds, meld_num=1, last=32)
+    assert has_yaku(Yaku.緑一色, "223344666s666z", "[8]88s", "6z")
+    assert has_yaku(Yaku.緑一色, "223344666s666z", "[7]77s", "6z") == False
 
 def test_yaku_four_concealed_pungs():
-    hand = Hand.from_str("11122233344455m")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.四暗刻, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.四暗刻, hand, melds, meld_num=0, last=0, is_ron=True)
-    assert has_yaku(Yaku.四暗刻, hand, melds, meld_num=0, last=4, is_ron=True)
-
-
+    assert has_yaku(Yaku.四暗刻, "11122233344455m", "", "1m")
+    assert has_yaku(Yaku.四暗刻, "11122233344455m", "", "1m", is_ron=True) == False
+    assert has_yaku(Yaku.四暗刻, "11122233344455m", "", "5m", is_ron=True)
+ 
+ 
 def test_yaku_pinfu():
-    hand = Hand.from_str("12345666m789p123s")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.平和, hand, melds, meld_num=0, last=2)
-    assert not has_yaku(Yaku.平和, hand, melds, meld_num=0, last=15)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=26)
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "1m")
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "2m") == False
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "3m") == False
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "4m")
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "5m") == False
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "6m")
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "7p") == False
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "8p") == False
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "9p")
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "1s")
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "2s") == False
+    assert has_yaku(Yaku.平和, "12345666m789p123s", "", "3s") == False
 
-    hand = Hand.from_str("11223344556677m")
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=1)
-    assert not has_yaku(Yaku.平和, hand, melds, meld_num=0, last=2)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=3)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=4)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=5)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=6)
+    assert has_yaku(Yaku.平和, "11223344556677m", "", "1m")
+    assert has_yaku(Yaku.平和, "11223344556677m", "", "2m")
+    assert has_yaku(Yaku.平和, "11223344556677m", "", "3m") == False
+    assert has_yaku(Yaku.平和, "11223344556677m", "", "4m")
+    assert has_yaku(Yaku.平和, "11223344556677m", "", "5m")
+    assert has_yaku(Yaku.平和, "11223344556677m", "", "6m")
+    assert has_yaku(Yaku.平和, "11223344556677m", "", "7m")
 
-    hand = Hand.from_str("22334455667788m")
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=2)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=3)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=4)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=5)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=6)
-    assert has_yaku(Yaku.平和, hand, melds, meld_num=0, last=7)
+    assert has_yaku(Yaku.平和, "22334455667788m", "", "2m")
+    assert has_yaku(Yaku.平和, "22334455667788m", "", "3m")
+    assert has_yaku(Yaku.平和, "22334455667788m", "", "4m")
+    assert has_yaku(Yaku.平和, "22334455667788m", "", "5m")
+    assert has_yaku(Yaku.平和, "22334455667788m", "", "6m")
+    assert has_yaku(Yaku.平和, "22334455667788m", "", "7m")
+    assert has_yaku(Yaku.平和, "22334455667788m", "", "8m")
 
 
 def test_yaku_outside():
-    hand = Hand.from_str("11223399m789p123s")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.純全帯么九, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.混全帯么九, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.純全帯么九, "11223399m789p123s", "", "1m")
+    assert has_yaku(Yaku.混全帯么九, "11223399m789p123s", "", "1m") == False
 
-    hand = Hand.from_str("11123m789p123s333z")
-    assert not has_yaku(Yaku.純全帯么九, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.混全帯么九, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.純全帯么九, "11123m789p123s", "33[3]z", "1m") == False
+    assert has_yaku(Yaku.混全帯么九, "11123m789p123s", "33[3]z", "1m")
 
-    melds = melds.at[0].set(Meld.init(Action.CHI_R, 2, src=0))
-    hand = Hand.from_str("11223399m789p")
-    assert has_yaku(Yaku.純全帯么九, hand, melds, meld_num=1, last=0)
-    #assert not has_yaku(Yaku.混全帯么九, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.純全帯么九, "11223399m789p", "[2]13s", "1m")
+    assert has_yaku(Yaku.混全帯么九, "11223399m789p", "[2]13s", "1m") == False
 
-    melds = melds.at[0].set(Meld.init(Action.CHI_R, 4, src=0))
-    hand = Hand.from_str("11223399m789p")
-    assert not has_yaku(Yaku.純全帯么九, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.混全帯么九, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.純全帯么九, "11223399m789p", "[2]34s", "1m") == False
+    assert has_yaku(Yaku.混全帯么九, "11223399m789p", "[2]34s", "1m") == False
 
-    melds = melds.at[0].set(Meld.init(Action.PON, 33, src=0))
-    hand = Hand.from_str("11223399m789p")
-    assert not has_yaku(Yaku.純全帯么九, hand, melds, meld_num=1, last=0)
-    assert has_yaku(Yaku.混全帯么九, hand, melds, meld_num=1, last=0)
-
+    assert has_yaku(Yaku.純全帯么九, "11223399m789p", "[2]22z", "1m") == False
+    assert has_yaku(Yaku.混全帯么九, "11223399m789p", "[2]22z", "1m")
 
 def test_yaku_double_chows():
-    hand = Hand.from_str("11223388m789p123s")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.一盃口, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.一盃口, "11223388m789p123s", "", "1m")
+    assert has_yaku(Yaku.一盃口, "11223388m789p", "[3]12s", "1m") == False
 
-    hand = Hand.from_str("11223388m778899p")
-    assert not has_yaku(Yaku.一盃口, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.二盃口, hand, melds, meld_num=0, last=0)
-
-    hand = Hand.from_str("11122223333444m")
-    assert not has_yaku(Yaku.二盃口, hand, melds, meld_num=0, last=0)
-
+    assert has_yaku(Yaku.一盃口, "11223388m778899p", "", "1m") == False
+    assert has_yaku(Yaku.二盃口, "11223388m778899p", "", "1m")
+    assert has_yaku(Yaku.一盃口, "11223388m", "[7]89p,[8]79p", "1m") == False
+    assert has_yaku(Yaku.二盃口, "11223388m", "[7]89p,[8]79p", "1m") == False
 
 def test_is_pure_straight():
-    hand = Hand.from_str("12345678999m345p")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.一気通貫, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.一気通貫, "12345678999m345p", "", "1m")
 
-    hand = Hand.from_str("123456999m33345p")
-    assert not has_yaku(Yaku.一気通貫, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.一気通貫, "12345699m345789p", "", "1m") == False
 
-    hand = Hand.from_str("99m123456p345s")
-    melds = melds.at[0].set(Meld.init(Action.CHI_M, 16, src=0))  # 7[8]9p
-    assert has_yaku(Yaku.一気通貫, hand, melds, meld_num=1, last=0)
-
-    melds = melds.at[0].set(Meld.init(Action.CHI_M, 75, src=0))  # 7[8]9s
-    assert not has_yaku(Yaku.一気通貫, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.一気通貫, "99m123456p345s", "[9]78p", "9m")
+    assert has_yaku(Yaku.一気通貫, "99m123456p345s", "[9]78s", "9m") == False
 
 
 def test_yaku_triple_chow():
-    hand = Hand.from_str("112233m123p12388s")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.三色同順, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.三色同順, "112233m123p12388s", "", "1m")
+    assert has_yaku(Yaku.三色同順, "112233m123p23488s", "", "1m") == False
 
-    hand = Hand.from_str("112233m123p23488s")
-    assert not has_yaku(Yaku.三色同順, hand, melds, meld_num=0, last=0)
-
-    melds = melds.at[0].set(Meld.init(Action.CHI_L, 9, src=0))  # [1]23p
-    hand = Hand.from_str("112233m12388s")
-    assert has_yaku(Yaku.三色同順, hand, melds, meld_num=1, last=0)
-
-    hand = Hand.from_str("112233m123p23488s")
-    assert not has_yaku(Yaku.三色同順, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.三色同順, "112233m12388s", "[1]23p", "1m")
+    assert has_yaku(Yaku.三色同順, "112233m23488s", "[1]23p", "1m") == False
 
 
 def test_all_pungs():
-    hand = Hand.from_str("11133m111p")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    melds = melds.at[0].set(Meld.init(Action.PON, 10, src=0))  # 222s
-    melds = melds.at[1].set(Meld.init(Action.PON, 33, src=0))  # 777z
-    assert has_yaku(Yaku.対々和, hand, melds, meld_num=2, last=0)
+    assert has_yaku(Yaku.対々和, "11133m111p", "2[2]2s,7777z", "1m")
 
-    melds = melds.at[1].set(Meld.init(Action.CHI_L, 10, src=0))  # [2]34s
-    assert not has_yaku(Yaku.対々和, hand, melds, meld_num=2, last=0)
+    assert has_yaku(Yaku.対々和, "11133m111p", "2[2]2s,[2]34s", "1m") == False
 
-    hand = Hand.from_str("11133m111789p")
-    assert not has_yaku(Yaku.対々和, hand, melds, meld_num=1, last=0)
-
-    hand = Hand.from_str("11133m111777p")
-    assert has_yaku(Yaku.対々和, hand, melds, meld_num=1, last=0)
-    
+    assert has_yaku(Yaku.対々和, "11133m111789p", "2[2]2s", "1m") == False
+    assert has_yaku(Yaku.対々和, "11133m111777p", "2[2]2s", "1m")
 
 def test_yaku_triple_pung():
-    hand = Hand.from_str("111333m111p11188s")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.三色同刻, hand, melds, meld_num=0, last=0, is_ron=True)
+    assert has_yaku(Yaku.三色同刻, "111333m111p11188s", "", "1m", is_ron=True)
+    assert has_yaku(Yaku.三色同刻, "111333m222p11188s", "", "1m", is_ron=True) == False
 
-    hand = Hand.from_str("111333m222p11188s")
-    assert not has_yaku(Yaku.三色同刻, hand, melds, meld_num=0, last=0, is_ron=True)
-
-    hand = Hand.from_str("222333m22288s")
-    melds = melds.at[0].set(Meld.init(Action.PON, 10, src=0))  # 222p
-    assert has_yaku(Yaku.三色同刻, hand, melds, meld_num=1, last=1)
-
-    melds = melds.at[0].set(Meld.init(Action.PON, 11, src=0))  # 333p
-    assert not has_yaku(Yaku.三色同刻, hand, melds, meld_num=1, last=1)
-
+    assert has_yaku(Yaku.三色同刻, "222333m22288s", "[2]22p", "2m")
+    assert has_yaku(Yaku.三色同刻, "222333m22288s", "[3]33p", "2m") == False
 
 def test_yaku_three_concealed_pungs():
-    hand = Hand.from_str("11122233344455m")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=0, last=0, is_ron=True)
-    assert not has_yaku(Yaku.三暗刻, hand, melds, meld_num=0, last=4, is_ron=True)
-    assert not has_yaku(Yaku.三暗刻, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.三暗刻, "11122233344455m", "", "1m", is_ron=True)
+    assert has_yaku(Yaku.三暗刻, "11122233344455m", "", "5m", is_ron=True) == False
+    assert has_yaku(Yaku.三暗刻, "11122233344455m", "", "1m") == False
 
-    hand = Hand.from_str("111333m66677z")
-    melds = melds.at[0].set(Meld.init(Action.PON, 11, src=0))  # 333p
-    assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.三暗刻, hand, melds, meld_num=1, last=0, is_ron=True)
-    assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=1, last=33)
-    assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=1, last=33, is_ron=True)
+    assert has_yaku(Yaku.三暗刻, "111333m66677z", "[3]33p", "1m")
+    assert has_yaku(Yaku.三暗刻, "111333m66677z", "[3]33p", "1m", is_ron=True) == False
+    assert has_yaku(Yaku.三暗刻, "111333m66677z", "[3]33p", "7z")
+    assert has_yaku(Yaku.三暗刻, "111333m66677z", "[3]33p", "7z", is_ron=True)
 
-    hand = Hand.from_str("111123m11166677z")
-    assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=0, last=0, is_ron=True)
-
-    hand = Hand.from_str("111234m11166677z")
-    assert not has_yaku(Yaku.三暗刻, hand, melds, meld_num=0, last=0, is_ron=True)
-
+    assert has_yaku(Yaku.三暗刻, "111123m11166677z", "", "1m", is_ron=True)
+    assert has_yaku(Yaku.三暗刻, "111234m11166677z", "", "1m", is_ron=True) == False
 
 def test_yaku_coner_cases():
-    hand = Hand.from_str("111222333789m22z")
-    melds = jnp.zeros(4, dtype=jnp.int32)
-    assert not has_yaku(Yaku.三暗刻, hand, melds, meld_num=0, last=1)
-    assert has_yaku(Yaku.一盃口, hand, melds, meld_num=0, last=1)
-    assert has_yaku(Yaku.混全帯么九, hand, melds, meld_num=0, last=1)
+    assert has_yaku(Yaku.三暗刻, "111222333789m22z", "", "2m") == False
+    assert has_yaku(Yaku.一盃口, "111222333789m22z", "", "2m")
+    assert has_yaku(Yaku.混全帯么九, "111222333789m22z", "", "2m")
     # 面前チャンタ一盃口 > 三暗刻
 
-    hand = Hand.from_str("111222333m11p")
-    melds = melds.at[0].set(Meld.init(Action.CHI_M, 7, src=0))  # 7[8]9m
-    assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=1, last=0)
-    assert not has_yaku(Yaku.純全帯么九, hand, melds, meld_num=1, last=0)
+    assert has_yaku(Yaku.三暗刻, "111222333m11p", "[8]79m", "1m")
+    assert has_yaku(Yaku.純全帯么九, "111222333m11p", "[8]79m", "1m") == False
     # 副露純チャン < 三暗刻 (符で有利)
 
-    hand = Hand.from_str("11222333444456m")
-    assert not has_yaku(Yaku.平和, hand, melds, meld_num=0, last=0)
-    assert not has_yaku(Yaku.一盃口, hand, melds, meld_num=0, last=0)
-    assert has_yaku(Yaku.三暗刻, hand, melds, meld_num=0, last=0)
+    assert has_yaku(Yaku.平和, "11222333444456m", "", "1m") == False
+    assert has_yaku(Yaku.一盃口, "11222333444456m", "", "1m") == False
+    assert has_yaku(Yaku.三暗刻, "11222333444456m", "", "1m")
     # 平和一盃口 < 三暗刻 (符で有利)
 
 
