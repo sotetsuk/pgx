@@ -61,21 +61,6 @@ class MinAtarSeaquestState:
     last_action: jnp.ndarray = ZERO
 
 
-def _to_list(arr):
-    list_ = []
-    for i in range(arr.shape[0]):
-        if arr[i][0] == -1:
-            break
-        list_.append([x for x in arr[i]])
-    return list_
-
-
-def _to_arr(N, M, list_):
-    arr = -jnp.ones((N, M), dtype=jnp.int8)
-    for i, row in enumerate(list_):
-        arr = arr.at[i].set(jnp.int8(row))
-    return arr
-
 @jax.jit
 def _step_det(
     state: MinAtarSeaquestState,
@@ -92,7 +77,6 @@ def _step_det(
         lambda: _step_det_at_non_terminal(state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y)
     )
 
-@jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarSeaquestState,
     action: jnp.ndarray,
@@ -209,13 +193,11 @@ def _step_det_at_non_terminal(
     return state, r, terminal
 
 
-@jax.jit
 def find_ix(arr):
     ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
     return ix
 
 
-@jax.jit
 def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
     f_bullets, shot_timer = lax.cond(
         (action == 5) & (shot_timer == 0),
@@ -236,7 +218,6 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
     sub_y = lax.cond(action == 4, lambda: lax.min(jnp.int8(8), sub_y + 1), lambda: sub_y)
     return f_bullets, shot_timer, sub_x, sub_y, sub_or
 
-@jax.jit
 def _update_by_f_bullets_hit(j, _f_bullets, e):
     k = lax.while_loop(
         lambda i: ~_is_hit(_f_bullets[j], e[i, 0], e[i, 1]) & (i < 25),
@@ -251,7 +232,6 @@ def _update_by_f_bullets_hit(j, _f_bullets, e):
     return _f_bullets, e, removed
 
 
-@jax.jit
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
 
     def _remove(j, _f_bullets, _e_subs, _e_fish, _r):
@@ -290,20 +270,16 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
     )
     return f_bullets, e_subs, e_fish, r
 
-@jax.jit
 def _is_hit(row, x, y):
     return (row[0] == x) & (row[1] == y)
 
-@jax.jit
 def _is_out(row):
     return (row[0] < 0) | (row[0] > 9)
 
-@jax.jit
 def _is_filled(row):
     return jnp.any(row != -1)
 
 
-@jax.jit
 def _update_divers(divers, diver_count, sub_x, sub_y):
 
     def _update_by_move(_divers, _diver_count, j):
@@ -344,7 +320,6 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
     return divers, diver_count
 
 
-@jax.jit
 def _update_enemy_subs(
     f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
 ):
@@ -395,7 +370,6 @@ def _update_enemy_subs(
 
     return f_bullets, e_subs, e_bullets, terminal, r
 
-@jax.jit
 def _remove_i(arr, i):
     N = arr.shape[0]
     arr = lax.fori_loop(
@@ -403,7 +377,6 @@ def _remove_i(arr, i):
     )
     return arr
 
-@jax.jit
 def _remove_out_of_bound(arr, ix):
     arr = lax.fori_loop(
         0, ix, lambda i, a: lax.cond(
@@ -415,7 +388,6 @@ def _remove_out_of_bound(arr, ix):
     return arr
 
 
-@jax.jit
 def _remove_hit(arr, ix, x, y):
     arr = lax.fori_loop(
         0, ix, lambda i, a: lax.cond(
@@ -427,7 +399,6 @@ def _remove_hit(arr, ix, x, y):
     return arr
 
 
-@jax.jit
 def _step_obj(arr, ix):
     arr = lax.fori_loop(
         0, ix, lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)), arr
@@ -435,7 +406,6 @@ def _step_obj(arr, ix):
     return arr
 
 
-@jax.jit
 def _hit(arr, ix, x, y):
     return lax.fori_loop(
         0, ix, lambda i, t: lax.cond(
@@ -446,7 +416,6 @@ def _hit(arr, ix, x, y):
     )
 
 
-@jax.jit
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     ix = find_ix(e_bullets)
     terminal |= _hit(e_bullets, ix, sub_x, sub_y)
@@ -455,7 +424,6 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     terminal |= _hit(e_bullets, ix, sub_x, sub_y)
     return e_bullets, terminal
 
-@jax.jit
 def _update_by_hit(j, _f_bullets, e):
     k = lax.while_loop(
         lambda i: ~_is_hit(e[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
@@ -470,7 +438,6 @@ def _update_by_hit(j, _f_bullets, e):
     return _f_bullets, e, removed
 
 
-@jax.jit
 def _update_enemy_fish(
     f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
 ):
@@ -519,7 +486,6 @@ def _update_enemy_fish(
 # Called when player hits surface (top row) if they have no divers, this ends the game,
 # if they have 6 divers this gives reward proportional to the remaining oxygen and restores full oxygen
 # otherwise this reduces the number of divers and restores full oxygen
-@jax.jit
 def _surface(
     diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index
 ):
@@ -539,7 +505,6 @@ def _surface(
 
 # Spawn an enemy fish or submarine in random row and random direction,
 # if the resulting row and direction would lead to a collision, do nothing instead
-@jax.jit
 def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
     x = lax.cond(enemy_lr, lambda: ZERO, lambda: NINE)
     has_collision = (
@@ -577,7 +542,6 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
     )
 
 
-@jax.jit
 # Spawn a diver in random row with random direction
 def _spawn_diver(divers, diver_lr, diver_y):
     x = lax.cond(diver_lr, lambda: ZERO, lambda: NINE)
