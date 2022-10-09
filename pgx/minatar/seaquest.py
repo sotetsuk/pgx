@@ -358,13 +358,8 @@ def _update_enemy_subs(
             elif _is_hit(_e_subs[j], sub_x, sub_y):
                 _terminal = TRUE
             else:
-                for k in range(5):
-                    x = _f_bullets[k]
-                    if _is_hit(_e_subs[j], x[0], x[1]):
-                        _e_subs = _remove_i(_e_subs, j)
-                        _f_bullets = _remove_i(_f_bullets, k)
-                        _r += 1
-                        break
+                _f_bullets, _e_subs, removed = _update_by_hit(j, _f_bullets, _e_subs)
+                _r += removed
         else:
             _e_subs = _e_subs.at[j, 3].add(-1)
         if _e_subs[j, 4] == 0:
