@@ -301,10 +301,11 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
             divers = _remove_i(divers, j)
             diver_count += 1
         else:
-            if divers[j,3] == 0:
-                divers, diver_count = _update_by_move(divers, diver_count, j)
-            else:
-                divers = divers.at[j, 3].add(-1)
+            divers, diver_count = lax.cond(
+                divers[j, 3] == 0,
+                lambda: _update_by_move(divers, diver_count, j),
+                lambda: (divers.at[j, 3].add(-1), diver_count)
+            )
 
     return divers, diver_count
 
