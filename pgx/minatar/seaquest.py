@@ -76,6 +76,7 @@ def _to_arr(N, M, list_):
         arr = arr.at[i].set(jnp.int8(row))
     return arr
 
+@jax.jit
 def _step_det(
     state: MinAtarSeaquestState,
     action: jnp.ndarray,
@@ -85,10 +86,11 @@ def _step_det(
     diver_lr,
     diver_y,
 ):
-    if state.terminal:
-         return state, jnp.int16(0), state.terminal
-    else:
-        return _step_det_at_non_terminal(state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y)
+    return lax.cond(
+        state.terminal,
+        lambda: (state.replace(last_action=action), jnp.int16(0), state.terminal),
+        lambda: _step_det_at_non_terminal(state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y)
+    )
 
 @jax.jit
 def _step_det_at_non_terminal(
