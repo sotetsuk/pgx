@@ -414,11 +414,11 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
     return e_bullets, terminal
 
 
+@jax.jit
 def _update_enemy_fish(
     f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
 ):
 
-    @jax.jit
     def _update_by_hit(j, _f_bullets,_e_fish, _terminal, _r):
         k = lax.while_loop(
             lambda i: ~_is_hit(_e_fish[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
@@ -432,7 +432,6 @@ def _update_enemy_fish(
         )
         return _f_bullets, _e_fish, _terminal, _r
 
-    @jax.jit
     def _update_fish(j, _f_bullets, _e_fish, _terminal, _r ):
         _e_fish = _e_fish.at[j, 3].set(move_speed)
         _e_fish = _e_fish.at[j, 0].add(lax.cond(_e_fish[j, 2], lambda: 1, lambda: -1))
@@ -450,20 +449,17 @@ def _update_enemy_fish(
     def _update_each(i, x):
         j = 25 - i - 1
         _f_bullets, _e_fish, _terminal, _r = x
-        _terminal = lax.cond(_is_hit(_e_fish[j], sub_x, sub_y), TRUE, _terminal)
-        # if _is_hit(_e_fish[j], sub_x, sub_y):
-        #     _terminal = TRUE
-        if _e_fish[j, 3] == 0:
-            _f_bullets, _e_fish, _terminal, _r  = _update_fish(j, _f_bullets, _e_fish, _terminal, _r )
-        else:
-            _e_fish = _e_fish.at[j, 3].add(-1)
+        _terminal |= _is_hit(_e_fish[j], sub_x, sub_y)
+        _f_bullets, _e_fish, _terminal, _r = lax.cond(
+            _e_fish[j, 3] == 0,
+            lambda: _update_fish(j,  _f_bullets, _e_fish, _terminal, _r),
+            lambda: (_f_bullets, _e_fish.at[j, 3].add(-1), _terminal, _r)
+        )
         return _f_bullets, _e_fish, _terminal, _r
 
-    for i in range(25):
-        f_bullets, e_fish, terminal, r = _update_each(i, (f_bullets, e_fish, terminal, r))
-    # f_bullets, e_fish, terminal, r = lax.cond(
-    #     0, 25, _update_each, (f_bullets, e_fish, terminal, r)
-    # )
+    f_bullets, e_fish, terminal, r = lax.fori_loop(
+        0, 25, _update_each, (f_bullets, e_fish, terminal, r)
+    )
 
     return f_bullets, e_fish, terminal, r
 
