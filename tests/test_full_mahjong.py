@@ -126,7 +126,7 @@ def fu(
         melds = melds.at[meld_num].set(Meld.from_str(s))
         meld_num += 1
     last = Tile.from_str(last_s)
-    return Yaku.judge(hand, melds, meld_num, last, is_ron)[1]
+    return Yaku.judge(hand, melds, meld_num, last, False, is_ron)[1]
 
 def test_yaku_fu():
     # リャンメン(平和)
@@ -175,7 +175,7 @@ def has_yaku(
         melds = melds.at[meld_num].set(Meld.from_str(s))
         meld_num += 1
     last = Tile.from_str(last_s)
-    return Yaku.judge(hand, melds, meld_num, last, is_ron)[0][yaku]
+    return Yaku.judge(hand, melds, meld_num, last, False, is_ron)[0][yaku]
 
 def test_yaku_tanyao():
     assert has_yaku(Yaku.断么九, "23456777m678p", "[4]23m", "2m")
