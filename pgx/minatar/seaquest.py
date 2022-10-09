@@ -277,15 +277,22 @@ def _is_out(row):
 def _is_filled(row):
     return jnp.any(row != -1)
 
+
 def _update_divers(divers, diver_count, sub_x, sub_y):
+
+    @jax.jit
     def _update_by_move(_divers, _diver_count, j):
         _divers = _divers.at[j, 3].set(DIVER_MOVE_INTERVAL)
-        _divers = _divers.at[j, 0].add(1 if _divers[j, 2] else -1)
-        if _divers[j, 0] < 0 or _divers[j, 0] > 9:
-            _divers = _remove_i(_divers, j)
-        elif _is_hit(_divers[j], sub_x, sub_y) and _diver_count < 6:
-            _divers = _remove_i(_divers, j)
-            _diver_count += 1
+        _divers = _divers.at[j, 0].add(lax.cond(_divers[j, 2], lambda: 1, lambda: -1))
+        _divers, _diver_count = lax.cond(
+            _is_out(_divers[j]),
+            lambda: (_remove_i(_divers, j), _diver_count),
+            lambda: lax.cond(
+                _is_hit(_divers[j], sub_x, sub_y) & (_diver_count < 6),
+                lambda: (_remove_i(_divers, j), _diver_count + 1),
+                lambda: (_divers, _diver_count)
+            )
+        )
         return _divers, _diver_count
 
     for i in range(5):
