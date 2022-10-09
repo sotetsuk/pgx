@@ -251,6 +251,18 @@ def _update_by_f_bullets_hit(j, _f_bullets, e):
 
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
 
+    @jax.jit
+    def _remove(j, _f_bullets, _e_subs, _e_fish, _r):
+        _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_fish)
+        _r += removed
+        _f_bullets, _e_subs, removed = lax.cond(
+            removed,
+            lambda: (_f_bullets, _e_subs, removed),
+            lambda: _update_by_f_bullets_hit(j, _f_bullets, _e_subs)
+        )
+        _r += removed
+        return _f_bullets, _e_subs, _e_fish, _r
+
     def _update_each(i, _f_bullets, _e_subs, _e_fish, _r):
         j = 5 - i - 1
         if not _is_filled(_f_bullets[j]):
@@ -259,11 +271,12 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
         if _f_bullets[j, 0] < 0 or _f_bullets[j, 0] > 9:
             _f_bullets = _remove_i(_f_bullets, j)
         else:
-            _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_fish)
-            _r += removed
-            if not removed:
-                _f_bullets, _e_subs, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_subs)
-                _r += removed
+            _f_bullets, _e_subs, _e_fish, _r = _remove(j, _f_bullets, _e_subs, _e_fish, _r)
+            # _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_fish)
+            # _r += removed
+            # if not removed:
+            #     _f_bullets, _e_subs, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_subs)
+            #     _r += removed
         return _f_bullets, _e_subs, _e_fish, _r
 
     for i in range(5):
