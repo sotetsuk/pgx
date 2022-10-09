@@ -346,17 +346,18 @@ def _update_enemy_subs(
     f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
 ):
 
+    @jax.jit
     def _update_sub(j, _f_bullets, _e_subs, _terminal, _r):
         _e_subs = _e_subs.at[j, 3].set(move_speed)
-        _e_subs = _e_subs.at[j, 0].add(1 if _e_subs[j, 2] else -1)
-        if _e_subs[j, 0] < 0 or _e_subs[j, 0] > 9:
-            _e_subs = _remove_i(_e_subs, j)
-        elif _is_hit(_e_subs[j], sub_x, sub_y):
-            _terminal = TRUE
-        else:
-            _f_bullets, _e_subs, removed = _update_by_hit(j, _f_bullets, _e_subs)
-            _r += removed
-
+        _e_subs = _e_subs.at[j, 0].add(lax.cond(_e_subs[j, 2], lambda: 1, lambda: -1))
+        is_out = _is_out(_e_subs[j])
+        is_hit = _is_hit(_e_subs[j], sub_x, sub_y)
+        _e_subs = lax.cond(is_out, lambda: _remove_i(_e_subs, j), lambda: _e_subs)
+        _terminal = lax.cond(~is_out & is_hit, lambda: TRUE, lambda: _terminal)
+        _f_bullets, _e_subs, removed = lax.cond(~is_out & ~is_hit,
+                             lambda: _update_by_hit(j, _f_bullets, _e_subs),
+                             lambda: (_f_bullets, _e_subs, FALSE))
+        _r += removed
         return _f_bullets, _e_subs, _terminal, _r
 
     def _update_each(i, x):
