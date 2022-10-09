@@ -249,9 +249,9 @@ def _update_by_f_bullets_hit(j, _f_bullets, e):
     return _f_bullets, e, removed
 
 
+@jax.jit
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
 
-    @jax.jit
     def _remove(j, _f_bullets, _e_subs, _e_fish, _r):
         _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_fish)
         _r += removed
@@ -263,17 +263,29 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
         _r += removed
         return _f_bullets, _e_subs, _e_fish, _r
 
-    def _update_each(i, _f_bullets, _e_subs, _e_fish, _r):
+    def _update_each(i, x):
+        _f_bullets, _e_subs, _e_fish, _r = x
         j = 5 - i - 1
-        if not _is_filled(_f_bullets[j]):
-            return _f_bullets, _e_subs, _e_fish, _r
-        _f_bullets = _f_bullets.at[j, 0].add(1 if _f_bullets[j, 2] else -1)
-        _f_bullets, _e_subs, _e_fish, _r = (_remove_i(_f_bullets, j), _e_subs, _e_fish, _r) if _is_out(_f_bullets[j]) else _remove(j, _f_bullets, _e_subs, _e_fish, _r)
+        is_filled = _is_filled(_f_bullets[j])
+        _f_bullets = lax.cond(
+            is_filled,
+            lambda: _f_bullets.at[j, 0].add(lax.cond(_f_bullets[j, 2], lambda: 1, lambda: -1)),
+            lambda: _f_bullets
+        )
+        _f_bullets, _e_subs, _e_fish, _r = lax.cond(
+            is_filled,
+            lambda: lax.cond(
+                _is_out(_f_bullets[j]),
+                lambda: (_remove_i(_f_bullets, j), _e_subs, _e_fish, _r),
+                lambda: _remove(j, _f_bullets, _e_subs, _e_fish, _r)
+            ),
+            lambda: (_f_bullets, _e_subs, _e_fish, _r)
+        )
         return _f_bullets, _e_subs, _e_fish, _r
 
-    for i in range(5):
-        f_bullets, e_subs, e_fish, r = _update_each(i, f_bullets, e_subs, e_fish, r)
-
+    f_bullets, e_subs, e_fish, r = lax.fori_loop(
+        0, 5, _update_each, (f_bullets, e_subs, e_fish, r)
+    )
     return f_bullets, e_subs, e_fish, r
 
 @jax.jit
