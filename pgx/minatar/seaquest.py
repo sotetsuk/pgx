@@ -345,20 +345,26 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
 def _update_enemy_subs(
     f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
 ):
+
+    def _update_sub(j, _f_bullets, _e_subs, _terminal, _r):
+        _e_subs = _e_subs.at[j, 3].set(move_speed)
+        _e_subs = _e_subs.at[j, 0].add(1 if _e_subs[j, 2] else -1)
+        if _e_subs[j, 0] < 0 or _e_subs[j, 0] > 9:
+            _e_subs = _remove_i(_e_subs, j)
+        elif _is_hit(_e_subs[j], sub_x, sub_y):
+            _terminal = TRUE
+        else:
+            _f_bullets, _e_subs, removed = _update_by_hit(j, _f_bullets, _e_subs)
+            _r += removed
+
+        return _f_bullets, _e_subs, _terminal, _r
+
     def _update_each(i, x):
         _f_bullets, _e_subs, _e_bullets, _terminal, _r = x
         j = 25 - i - 1
         _terminal |= _is_hit(_e_subs[j], sub_x, sub_y)
         if _e_subs[j, 3] == 0:
-            _e_subs = _e_subs.at[j, 3].set(move_speed)
-            _e_subs = _e_subs.at[j, 0].add(1 if _e_subs[j, 2] else -1)
-            if _e_subs[j, 0] < 0 or _e_subs[j, 0] > 9:
-                _e_subs = _remove_i(_e_subs, j)
-            elif _is_hit(_e_subs[j], sub_x, sub_y):
-                _terminal = TRUE
-            else:
-                _f_bullets, _e_subs, removed = _update_by_hit(j, _f_bullets, _e_subs)
-                _r += removed
+            _f_bullets, _e_subs, _terminal, _r = _update_sub(j, _f_bullets, _e_subs, _terminal, _r)
         else:
             _e_subs = _e_subs.at[j, 3].add(-1)
         if _e_subs[j, 4] == 0:
