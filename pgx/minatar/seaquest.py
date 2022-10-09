@@ -425,10 +425,10 @@ def _update_enemy_fish(
             lambda i: i + 1,
             0
         )
-        _e_fish, _f_bullets = lax.cond(
+        _e_fish, _f_bullets, _r = lax.cond(
             k < 5,
-            lambda: (_remove_i(_e_fish, j), _remove_i(_f_bullets, k)),
-            lambda: (_e_fish, _f_bullets)
+            lambda: (_remove_i(_e_fish, j), _remove_i(_f_bullets, k), _r + 1),
+            lambda: (_e_fish, _f_bullets, _r)
         )
         return _f_bullets, _e_fish, _terminal, _r
 
