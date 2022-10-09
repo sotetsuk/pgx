@@ -250,19 +250,24 @@ def _update_by_f_bullets_hit(j, _f_bullets, e):
 
 
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
-    for i in range(5):
+
+    def _update_each(i, _f_bullets, _e_subs, _e_fish, _r):
         j = 5 - i - 1
-        if not _is_filled(f_bullets[j]):
-            continue
-        f_bullets = f_bullets.at[j, 0].add(1 if f_bullets[j, 2] else -1)
-        if f_bullets[j, 0] < 0 or f_bullets[j, 0] > 9:
-            f_bullets = _remove_i(f_bullets, j)
+        if not _is_filled(_f_bullets[j]):
+            return _f_bullets, _e_subs, _e_fish, _r
+        _f_bullets = _f_bullets.at[j, 0].add(1 if _f_bullets[j, 2] else -1)
+        if _f_bullets[j, 0] < 0 or _f_bullets[j, 0] > 9:
+            _f_bullets = _remove_i(_f_bullets, j)
         else:
-            f_bullets, e_fish, removed = _update_by_f_bullets_hit(j, f_bullets, e_fish)
-            r += removed
+            _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_fish)
+            _r += removed
             if not removed:
-                f_bullets, e_subs, removed = _update_by_f_bullets_hit(j, f_bullets, e_subs)
-                r += removed
+                _f_bullets, _e_subs, removed = _update_by_f_bullets_hit(j, _f_bullets, _e_subs)
+                _r += removed
+        return _f_bullets, _e_subs, _e_fish, _r
+
+    for i in range(5):
+        f_bullets, e_subs, e_fish, r = _update_each(i, f_bullets, e_subs, e_fish, r)
 
     return f_bullets, e_subs, e_fish, r
 
