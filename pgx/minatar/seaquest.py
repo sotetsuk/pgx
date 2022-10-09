@@ -236,33 +236,36 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
 
 
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
-    _f_bullets = _to_list(f_bullets)
-    _e_subs = _to_list(e_subs)
-    _e_fish = _to_list(e_fish)
-    for bullet in reversed(_f_bullets):
-        bullet[0] += 1 if bullet[2] else -1
-        if bullet[0] < 0 or bullet[0] > 9:
-            _f_bullets.remove(bullet)
+    for i in range(5):
+        j = 5 - i - 1
+        if not _is_filled(f_bullets[j]):
+            continue
+        f_bullets = f_bullets.at[j, 0].add(1 if f_bullets[j, 2] else -1)
+        if f_bullets[j, 0] < 0 or f_bullets[j, 0] > 9:
+            f_bullets = _remove_i(f_bullets, j)
         else:
             removed = False
-            for x in _e_fish:
-                if bullet[0:2] == x[0:2]:
-                    _e_fish.remove(x)
-                    _f_bullets.remove(bullet)
+            for k in range(25):
+                x = e_fish[k]
+                # if not _is_filled(x):
+                #     continue
+                if _is_hit(f_bullets[j], x[0], x[1]):
+                    e_fish = _remove_i(e_fish, k)
+                    f_bullets = _remove_i(f_bullets, j)
                     r += 1
                     removed = True
                     break
             if not removed:
-                for x in _e_subs:
-                    if bullet[0:2] == x[0:2]:
-                        _e_subs.remove(x)
-                        _f_bullets.remove(bullet)
+                for l in range(25):
+                    x = e_subs[l]
+                    # if not _is_filled(x):
+                    #     continue
+                    if _is_hit(f_bullets[j], x[0], x[1]):
+                        e_subs = _remove_i(e_subs, l)
+                        f_bullets = _remove_i(f_bullets, j)
                         r += 1
                         break
 
-    f_bullets = _to_arr(5, 3, _f_bullets)
-    e_subs = _to_arr(25, 5, _e_subs)
-    e_fish = _to_arr(25, 4, _e_fish)
     return f_bullets, e_subs, e_fish, r
 
 @jax.jit
