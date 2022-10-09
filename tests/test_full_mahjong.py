@@ -398,6 +398,10 @@ def test_yaku_coner_cases():
     assert has_yaku(Yaku.三暗刻, "11222333444456m", "", "1m")
     # 平和一盃口 < 三暗刻 (符で有利)
 
+    assert has_yaku(Yaku.平和, "22334455m234p234s", "", "3m") == False
+    assert has_yaku(Yaku.一盃口, "22334455m234p234s", "", "3m")
+    assert has_yaku(Yaku.三色同順, "22334455m234p234s", "", "3m")
+    # 平和と三色が両立しないケース
 
 def test_state():
     state = init(jax.random.PRNGKey(seed=0))
