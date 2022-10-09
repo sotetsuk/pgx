@@ -265,37 +265,32 @@ def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
     e_fish = _to_arr(25, 4, _e_fish)
     return f_bullets, e_subs, e_fish, r
 
-@jax.jit
 def _is_hit(row, x, y):
     return (row[0] == x) & (row[1] == y)
 
-@jax.jit
 def _is_out(row):
     return (row[0] < 0) | (row[0] > 9)
 
-@jax.jit
 def _is_filled(row):
     return jnp.any(row != -1)
 
-@jax.jit
 def _update_divers(divers, diver_count, sub_x, sub_y):
-    _divers = _to_list(divers)
-    for diver in reversed(_divers):
-        if diver[0:2] == [sub_x, sub_y] and diver_count < 6:
-            _divers.remove(diver)
+    for i in range(5):
+        j = 5 - i - 1
+        if _is_hit(divers[j], sub_x, sub_y) & (diver_count < 6):
+            divers = _remove_i(divers, j)
             diver_count += 1
         else:
-            if diver[3] == 0:
-                diver[3] = DIVER_MOVE_INTERVAL
-                diver[0] += 1 if diver[2] else -1
-                if diver[0] < 0 or diver[0] > 9:
-                    _divers.remove(diver)
-                elif diver[0:2] == [sub_x, sub_y] and diver_count < 6:
-                    _divers.remove(diver)
+            if divers[j,3] == 0:
+                divers = divers.at[j, 3].set(DIVER_MOVE_INTERVAL)
+                divers = divers.at[j, 0].add(1 if divers[j, 2] else -1)
+                if divers[j, 0] < 0 or divers[j, 0] > 9:
+                    divers = _remove_i(divers, j)
+                elif _is_hit(divers[j], sub_x, sub_y) and diver_count < 6:
+                    divers = _remove_i(divers, j)
                     diver_count += 1
             else:
-                diver[3] -= 1
-    divers = _to_arr(5, 4, _divers)
+                divers = divers.at[j, 3].add(-1)
     return divers, diver_count
 
 
