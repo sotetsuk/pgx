@@ -595,8 +595,8 @@ class State:
 
     # 以下計算効率のために保持
     is_menzen: jnp.ndarray
-    pon_src: jnp.ndarray
-    # pos_src[i][j]: player i がjをポンを所有している場合, そのsrc
+    pon: jnp.ndarray
+    # pon[i][j]: player i がjをポンを所有している場合, src << 2 | index. or 0
 
     # reward:
     # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
@@ -607,7 +607,7 @@ class State:
 
     @jit
     def can_kakan(self, tile: int) -> bool:
-        return (self.pon_src[(self.turn, tile)] > 0) & Hand.can_kakan(
+        return (self.pon[(self.turn, tile)] > 0) & Hand.can_kakan(
             self.hand[self.turn], tile
         )
 
@@ -834,7 +834,7 @@ class State:
         meld_num = jnp.zeros(4, dtype=jnp.int32)
         melds = jnp.zeros((4, 4), dtype=jnp.int32)
         is_menzen = jnp.full(4, True)
-        pon_src = jnp.zeros((4, 34), dtype=jnp.int32)
+        pon = jnp.zeros((4, 34), dtype=jnp.int32)
         return State(
             deck,
             hand,
@@ -846,7 +846,7 @@ class State:
             meld_num,
             melds,
             is_menzen,
-            pon_src,
+            pon,
         )
 
     @staticmethod
@@ -940,23 +940,75 @@ class State:
     @staticmethod
     @jit
     def _ryukyoku(state: State) -> tuple[State, jnp.ndarray, bool]:
-        reward = jnp.array(
-            [2 * Hand.is_tenpai(state.hand[i]) - 1 for i in range(4)]
+        is_tenpai = jax.lax.fori_loop(
+            0,
+            4,
+            lambda i, arr: arr.at[i].set(Hand.is_tenpai(state.hand[i])),
+            jnp.full(4, False),
         )
+        tenpais = jnp.sum(is_tenpai)
+        plus, minus = jax.lax.switch(
+            tenpais,
+            [
+                lambda: (0, 0),
+                lambda: (3000, 1000),
+                lambda: (1500, 1500),
+                lambda: (1000, 3000),
+                lambda: (0, 0),
+            ],
+        )
+        reward = jax.lax.fori_loop(
+            0,
+            4,
+            lambda i, arr: arr.at[i].set(
+                jax.lax.cond(
+                    is_tenpai[i],
+                    lambda: plus,
+                    lambda: -minus,
+                )
+            ),
+            jnp.zeros(4, dtype=jnp.int32),
+        )
+
+        # 供託
+        reward -= 1000 * state.riichi
+        top = jnp.argmax(reward)
+        reward = reward.at[top].set(reward[top] + 1000 * jnp.sum(state.riichi))
+
         return state, reward, True
 
     @staticmethod
     @jit
     def _ron(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
-        return (
-            state,
-            jnp.zeros(4, dtype=jnp.int32)
-            .at[state.turn]
-            .set(-2)
-            .at[player]
-            .set(2),
-            True,
+        score = Yaku.score(
+            state.hand[player],
+            state.melds[player],
+            state.meld_num[player],
+            state.target,
+            state.riichi[player],
+            is_ron=True,
         )
+        score = jax.lax.cond(
+            player == 0,
+            lambda: score * 6,
+            lambda: score * 4,
+        )
+        score += -score % 100
+        reward = (
+            jnp.zeros(4, dtype=jnp.int32)
+            .at[player]
+            .set(score)
+            .at[state.turn]
+            .set(-score)
+        )
+
+        # 供託
+        reward -= 1000 * state.riichi
+        reward = reward.at[player].set(
+            reward[player] + 1000 * jnp.sum(state.riichi)
+        )
+
+        return state, reward, True
 
     @staticmethod
     @jit
@@ -995,11 +1047,13 @@ class State:
     @jit
     def _selfkan(state: State, action: int) -> tuple[State, jnp.ndarray, bool]:
         target = action - 34
-        src = state.pon_src[(state.turn, target)]
+        pon = state.pon[(state.turn, target)]
         return jax.lax.cond(
-            src == 0,
+            pon == 0,
             lambda: State._ankan(state, target),
-            lambda: State._kakan(state, target, src),
+            lambda: State._kakan(
+                state, target, pon_src=pon >> 2, pon_idx=pon & 0b11
+            ),
         )
 
     @staticmethod
@@ -1021,14 +1075,15 @@ class State:
     @staticmethod
     @jit
     def _kakan(
-        state: State, target: int, src: int
+        state: State, target: int, pon_src: int, pon_idx: int
     ) -> tuple[State, jnp.ndarray, bool]:
-        meld = Meld.init(target + 34, target, src)
-        state = State._append_meld(state, meld, state.turn)
+        state.melds = state.melds.at[pon_idx].set(
+            Meld.init(target + 34, target, pon_src)
+        )
         state.hand = state.hand.at[state.turn].set(
             Hand.kakan(state.hand[state.turn], target)
         )
-        state.pon_src = state.pon_src.at[(state.turn, target)].set(0)
+        state.pon = state.pon.at[(state.turn, target)].set(0)
         # TODO: 槍槓の受付
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
@@ -1048,7 +1103,9 @@ class State:
             Hand.pon(state.hand[player], state.target)
         )
         state.is_menzen = state.is_menzen.at[player].set(False)
-        state.pon_src = state.pon_src.at[(player, state.target)].set(src)
+        state.pon = state.pon.at[(player, state.target)].set(
+            src << 2 | state.meld_num[player] - 1
+        )
         state.target = -1
         state.turn = player
         return state, jnp.zeros(4, dtype=jnp.int32), False
@@ -1072,7 +1129,34 @@ class State:
     @staticmethod
     @jit
     def _tsumo(state: State) -> tuple[State, jnp.ndarray, bool]:
-        return state, jnp.full(4, -2).at[state.turn].set(2), True
+        score = Yaku.score(
+            state.hand[state.turn],
+            state.melds[state.turn],
+            state.meld_num[state.turn],
+            state.target,
+            state.riichi[state.turn],
+            is_ron=False,
+        )
+        s1 = score + (-score) % 100
+        s2 = (score * 2) + (-(score * 2)) % 100
+
+        reward = jax.lax.cond(
+            state.turn == 0,
+            lambda: jnp.full(4, -s2).at[state.turn].set(s2 * 3),
+            lambda: jnp.full(4, -s1)
+            .at[0]
+            .set(-s2)
+            .at[state.turn]
+            .set(s1 * 2 + s2),
+        )
+
+        # 供託
+        reward -= 1000 * state.riichi
+        reward = reward.at[state.turn].set(
+            reward[state.turn] + 1000 * jnp.sum(state.riichi)
+        )
+
+        return state, reward, True
 
     @staticmethod
     @jit
@@ -1092,7 +1176,7 @@ class State:
             self.meld_num,
             self.melds,
             self.is_menzen,
-            self.pon_src,
+            self.pon,
         )
         aux_data = {}
         return (children, aux_data)

@@ -36,10 +36,10 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
                     discard = tile
         return discard if obs.last_draw != discard else Action.TSUMOGIRI
 
-    # if legal_actions[Action.PON]:
-    #    s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
-    #    if s < shanten(obs.hand) and random.random() < 0.5:
-    #        return Action.PON
+    if legal_actions[Action.PON]:
+        s = shanten(obs.hand.at[obs.target].set(obs.hand[obs.target] - 2))
+        if s < shanten(obs.hand) and random.random() < 0.5:
+            return Action.PON
 
     if legal_actions[Action.CHI_R]:
         s = shanten(
@@ -75,7 +75,7 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
 
 
 if __name__ == "__main__":
-    for i in range(20):
+    for i in range(50):
         state = init(jax.random.PRNGKey(seed=i))
         reward = jnp.full(4, 0)
         done = False
