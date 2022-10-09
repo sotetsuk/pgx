@@ -598,13 +598,6 @@ class State:
     pon: jnp.ndarray
     # pon[i][j]: player i がjをポンを所有している場合, src << 2 | index. or 0
 
-    # reward:
-    # - player0 がplayer1 からロン => [ 2,-2, 0, 0]
-    # - player0 がツモ             => [ 2,-2,-2,-2]
-    # - 流局時 全員聴牌            => [ 1, 1, 1, 1]
-    # - 流局時 全員ノー聴          => [-1,-1,-1,-1]
-    # - 流局時 player0 だけ聴牌    => [ 1,-1,-1,-1]
-
     @jit
     def can_kakan(self, tile: int) -> bool:
         return (self.pon[(self.turn, tile)] > 0) & Hand.can_kakan(
