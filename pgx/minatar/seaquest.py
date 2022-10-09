@@ -76,8 +76,22 @@ def _to_arr(N, M, list_):
         arr = arr.at[i].set(jnp.int8(row))
     return arr
 
-
 def _step_det(
+    state: MinAtarSeaquestState,
+    action: jnp.ndarray,
+    enemy_lr,
+    is_sub,
+    enemy_y,
+    diver_lr,
+    diver_y,
+):
+    if state.terminal:
+         return state, jnp.int16(0), state.terminal
+    else:
+        return _step_det_at_non_terminal(state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y)
+
+@jax.jit
+def _step_det_at_non_terminal(
     state: MinAtarSeaquestState,
     action: jnp.ndarray,
     enemy_lr,
@@ -107,23 +121,24 @@ def _step_det(
     surface = state.surface
     terminal = state.terminal
 
-    r = 0
-    if terminal:
-        return state, r, state.terminal
+    r = jnp.int16(0)
 
     # Spawn enemy if timer is up
-    if e_spawn_timer == 0:
-        e_subs, e_fish = _spawn_enemy(
-            e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y
-        )
-        e_spawn_timer = e_spawn_speed
+    e_subs, e_fish = lax.cond(
+        e_spawn_timer == 0,
+        lambda: _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y),
+        lambda: (e_subs, e_fish)
+    )
+    e_spawn_timer = lax.cond(e_spawn_timer == 0, lambda: e_spawn_speed, lambda: e_spawn_timer)
 
-    if d_spawn_timer == 0:
-        divers = _spawn_diver(divers, diver_lr, diver_y)
-        d_spawn_timer = DIVER_SPAWN_SPEED
+    # Spawn diver if timer is up
+    divers, d_spawn_timer = lax.cond(
+        d_spawn_timer == 0,
+        lambda: (_spawn_diver(divers, diver_lr, diver_y), DIVER_SPAWN_SPEED),
+        lambda: (divers, d_spawn_timer )
+    )
 
     # Resolve player action
-    # elf.action_map = ['n','l','u','r','d','f']
     f_bullets, shot_timer, sub_x, sub_y, sub_or = _resolve_action(
         action, shot_timer, f_bullets, sub_x, sub_y, sub_or
     )
@@ -152,36 +167,21 @@ def _step_det(
     )
 
     # Update various timers
-    e_spawn_timer -= e_spawn_timer > 0
-    d_spawn_timer -= d_spawn_timer > 0
-    shot_timer -= shot_timer > 0
-    if oxygen < 0:
-        terminal = TRUE
-    if sub_y > 0:
-        oxygen -= 1
-        surface = FALSE
-    else:
-        if not surface:
-            if diver_count == 0:
-                terminal = TRUE
-            else:
-                surface = TRUE
-                (
-                    _r,
-                    oxygen,
-                    diver_count,
-                    move_speed,
-                    e_spawn_speed,
-                    ramp_index,
-                ) = _surface(
-                    diver_count,
-                    oxygen,
-                    e_spawn_speed,
-                    move_speed,
-                    ramping,
-                    ramp_index,
-                )
-                r += _r
+    e_spawn_timer = lax.cond(e_spawn_timer > 0, lambda: e_spawn_timer - 1, lambda: e_spawn_timer)
+    d_spawn_timer = lax.cond(d_spawn_timer, lambda: d_spawn_timer - 1, lambda: d_spawn_timer)
+    shot_timer = lax.cond(shot_timer > 0, lambda: shot_timer - 1, lambda: shot_timer)
+    terminal |= oxygen < 0
+    tmp = surface
+    oxygen = lax.cond(sub_y > 0, lambda: oxygen - 1, lambda: oxygen)
+    surface = lax.cond(sub_y > 0, lambda: FALSE, lambda: surface)
+    terminal = lax.cond((sub_y <= 0) & ~tmp & (diver_count == 0), lambda: TRUE, lambda: terminal)
+    surface |= (sub_y <= 0) & ~tmp & (diver_count != 0)
+    _r, oxygen, diver_count, move_speed, e_spawn_speed, ramp_index = lax.cond(
+        (sub_y <= 0) & ~tmp & (diver_count != 0),
+        lambda: _surface(diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index),
+        lambda: (jnp.int16(0), oxygen, diver_count, move_speed, e_spawn_speed, ramp_index)
+    )
+    r += _r
 
     state = MinAtarSeaquestState(
         oxygen=oxygen,
