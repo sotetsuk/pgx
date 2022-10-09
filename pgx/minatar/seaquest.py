@@ -417,7 +417,7 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
 def _update_enemy_fish(
     f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
 ):
-    def _update_by_hit(_e_fish, _f_bullets, _r):
+    def _update_by_hit(j, _e_fish, _f_bullets, _r):
         for k, bullet in enumerate(_f_bullets):
             if _is_hit(_e_fish[j], bullet[0], bullet[1]):
                 _e_fish = _remove_i(_e_fish, j)
@@ -426,21 +426,30 @@ def _update_enemy_fish(
                 break
         return _e_fish, _f_bullets, _r
 
-    for i in range(25):
+    def _update_each(i, x):
         j = 25 - i - 1
-        if _is_hit(e_fish[j], sub_x, sub_y):
-            terminal = TRUE
-        if e_fish[j, 3] == 0:
-            e_fish = e_fish.at[j, 3].set(move_speed)
-            e_fish = e_fish.at[j, 0].add(lax.cond(e_fish[j, 2], lambda: 1, lambda: -1))
-            if _is_out(e_fish[j]):
-                e_fish = _remove_i(e_fish, j)
-            elif _is_hit(e_fish[j], sub_x, sub_y):
-                terminal = TRUE
+        _f_bullets, _e_fish, _terminal, _r = x
+        if _is_hit(_e_fish[j], sub_x, sub_y):
+            _terminal = TRUE
+        if _e_fish[j, 3] == 0:
+            _e_fish = _e_fish.at[j, 3].set(move_speed)
+            _e_fish = _e_fish.at[j, 0].add(lax.cond(_e_fish[j, 2], lambda: 1, lambda: -1))
+            if _is_out(_e_fish[j]):
+                _e_fish = _remove_i(_e_fish, j)
+            elif _is_hit(_e_fish[j], sub_x, sub_y):
+                _terminal = TRUE
             else:
-                e_fish, f_bullets, r = _update_by_hit(e_fish, f_bullets, r)
+                _e_fish, _f_bullets, _r = _update_by_hit(j, _e_fish, _f_bullets, _r)
         else:
-            e_fish = e_fish.at[j, 3].add(-1)
+            _e_fish = _e_fish.at[j, 3].add(-1)
+        return _f_bullets, _e_fish, _terminal, _r
+
+    for i in range(25):
+        f_bullets, e_fish, terminal, r = _update_each(i, (f_bullets, e_fish, terminal, r))
+    # f_bullets, e_fish, terminal, r = lax.cond(
+    #     0, 25, _update_each, (f_bullets, e_fish, terminal, r)
+    # )
+
     return f_bullets, e_fish, terminal, r
 
 
