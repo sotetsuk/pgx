@@ -417,13 +417,19 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
 def _update_enemy_fish(
     f_bullets, e_fish, sub_x, sub_y, move_speed, terminal, r
 ):
+
+    @jax.jit
     def _update_by_hit(j, _e_fish, _f_bullets, _r):
-        for k, bullet in enumerate(_f_bullets):
-            if _is_hit(_e_fish[j], bullet[0], bullet[1]):
-                _e_fish = _remove_i(_e_fish, j)
-                _f_bullets = _remove_i(_f_bullets, k)
-                _r += 1
-                break
+        k = lax.while_loop(
+            lambda i: ~_is_hit(_e_fish[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
+            lambda i: i + 1,
+            0
+        )
+        _e_fish, _f_bullets = lax.cond(
+            k < 5,
+            lambda: (_remove_i(_e_fish, j), _remove_i(_f_bullets, k)),
+            lambda: (_e_fish, _f_bullets)
+        )
         return _e_fish, _f_bullets, _r
 
     def _update_each(i, x):
