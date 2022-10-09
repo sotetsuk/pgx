@@ -1338,7 +1338,7 @@ class Yaku:
             & (hand[27] == 0)
             & jnp.all(hand[31:34] == 0),
         )
-        # NOTE: 南,西,北: オタ風扱い
+        # NOTE: 東場東家
 
         is_outside = jnp.full(
             Yaku.MAX_PATTERNS,
@@ -1370,7 +1370,18 @@ class Yaku:
         concealed_pungs = jnp.full(Yaku.MAX_PATTERNS, 0)
         nine_gates = jnp.full(Yaku.MAX_PATTERNS, False)
 
-        fu = jnp.full(Yaku.MAX_PATTERNS, 2 * (is_ron == 0))
+        fu = jnp.full(
+            Yaku.MAX_PATTERNS,
+            2 * (is_ron == 0)
+            + jax.lax.fori_loop(
+                0, meld_num, lambda i, sum: sum + Meld.fu(melds[i]), 0
+            )
+            + (hand[27] == 2) * 4
+            + jnp.any(hand[31:] == 2) * 2
+            + (hand[27] == 3) * 8
+            + jnp.any(hand[31:] == 3) * 8
+            # NOTE: 東場東家
+        )
 
         for suit in range(3):
             code = jax.lax.fori_loop(
@@ -1408,13 +1419,8 @@ class Yaku:
         )
 
         fu *= is_pinfu == 0
-        fu += (
-            20
-            + 10 * (is_menzen & is_ron)
-            + jax.lax.fori_loop(
-                0, meld_num, lambda i, sum: sum + Meld.fu(melds[i]), 0
-            )
-        )
+        fu += 20 + 10 * (is_menzen & is_ron)
+        fu += 10 * ((is_menzen == 0) & (fu == 20))
 
         flatten = Yaku.flatten(hand, melds, meld_num)
 

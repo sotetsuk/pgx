@@ -159,6 +159,16 @@ def test_yaku_fu():
     assert fu("111123456m11222p", "", "1m", is_ron=True) == 50
     # リャンメン > シャンポン
 
+    assert fu("123456789m77p", "[3]45p", "1m", is_ron=True) == 30
+    # 鳴き平和は例外的に30符扱い
+
+    assert fu("123456789m66677z", "", "1m") == 40
+    # 役牌の雀頭は2符
+
+    assert fu("123456789m11666z", "", "1m", is_ron=True) == 50
+    # 連風牌の雀頭は4符
+
+
 def has_yaku(
         yaku: int,
         hand_s: str,
