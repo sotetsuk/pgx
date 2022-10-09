@@ -345,35 +345,42 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
 def _update_enemy_subs(
     f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
 ):
-    for i in range(25):
+    def _update_each(i, x):
+        _f_bullets, _e_subs, _e_bullets, _terminal, _r = x
         j = 25 - i - 1
-        if _is_hit(e_subs[j], sub_x, sub_y):
-            terminal = TRUE
-        if e_subs[j, 3] == 0:
-            e_subs = e_subs.at[j, 3].set(move_speed)
-            e_subs = e_subs.at[j, 0].add(1 if e_subs[j, 2] else -1)
-            if e_subs[j, 0] < 0 or e_subs[j, 0] > 9:
-                e_subs = _remove_i(e_subs, j)
-            elif _is_hit(e_subs[j], sub_x, sub_y):
-                terminal = TRUE
+        if _is_hit(_e_subs[j], sub_x, sub_y):
+            _terminal = TRUE
+        if _e_subs[j, 3] == 0:
+            _e_subs = _e_subs.at[j, 3].set(move_speed)
+            _e_subs = _e_subs.at[j, 0].add(1 if _e_subs[j, 2] else -1)
+            if _e_subs[j, 0] < 0 or _e_subs[j, 0] > 9:
+                _e_subs = _remove_i(_e_subs, j)
+            elif _is_hit(_e_subs[j], sub_x, sub_y):
+                _terminal = TRUE
             else:
                 for k in range(5):
-                    x = f_bullets[k]
-                    if _is_hit(e_subs[j], x[0], x[1]):
-                        e_subs = _remove_i(e_subs, j)
-                        f_bullets = _remove_i(f_bullets, k)
-                        r += 1
+                    x = _f_bullets[k]
+                    if _is_hit(_e_subs[j], x[0], x[1]):
+                        _e_subs = _remove_i(_e_subs, j)
+                        _f_bullets = _remove_i(_f_bullets, k)
+                        _r += 1
                         break
         else:
-            e_subs = e_subs.at[j, 3].add(-1)
-        if e_subs[j, 4] == 0:
-            e_subs = e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL)
-            ix = find_ix(e_bullets)
-            e_bullets = e_bullets.at[ix].set(
-                jnp.int8([lax.cond(e_subs[j, 2], lambda:e_subs[j, 0], lambda:e_subs[j, 0]), e_subs[j, 1], e_subs[j, 2]])
+            _e_subs = _e_subs.at[j, 3].add(-1)
+        if _e_subs[j, 4] == 0:
+            _e_subs = _e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL)
+            ix = find_ix(_e_bullets)
+            _e_bullets = _e_bullets.at[ix].set(
+                jnp.int8([lax.cond(_e_subs[j, 2], lambda:_e_subs[j, 0], lambda:_e_subs[j, 0]), _e_subs[j, 1], _e_subs[j, 2]])
             )
         else:
-            e_subs = e_subs.at[j, 4].add(-1)
+            _e_subs = _e_subs.at[j, 4].add(-1)
+
+        return _f_bullets, _e_subs, _e_bullets, _terminal, _r
+
+    for i in range(25):
+        x = (f_bullets, e_subs, e_bullets, terminal, r)
+        f_bullets, e_subs, e_bullets, terminal, r = _update_each(i, x)
 
     return f_bullets, e_subs, e_bullets, terminal, r
 
