@@ -348,8 +348,7 @@ def _update_enemy_subs(
     def _update_each(i, x):
         _f_bullets, _e_subs, _e_bullets, _terminal, _r = x
         j = 25 - i - 1
-        if _is_hit(_e_subs[j], sub_x, sub_y):
-            _terminal = TRUE
+        _terminal |= _is_hit(_e_subs[j], sub_x, sub_y)
         if _e_subs[j, 3] == 0:
             _e_subs = _e_subs.at[j, 3].set(move_speed)
             _e_subs = _e_subs.at[j, 0].add(1 if _e_subs[j, 2] else -1)
