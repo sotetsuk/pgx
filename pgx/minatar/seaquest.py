@@ -342,11 +342,11 @@ def _update_divers(divers, diver_count, sub_x, sub_y):
     return divers, diver_count
 
 
+@jax.jit
 def _update_enemy_subs(
     f_bullets, e_subs, e_bullets, sub_x, sub_y, move_speed, terminal, r
 ):
 
-    @jax.jit
     def _update_sub(j, _f_bullets, _e_subs, _terminal, _r):
         _e_subs = _e_subs.at[j, 3].set(move_speed)
         _e_subs = _e_subs.at[j, 0].add(lax.cond(_e_subs[j, 2], lambda: 1, lambda: -1))
@@ -360,28 +360,36 @@ def _update_enemy_subs(
         _r += removed
         return _f_bullets, _e_subs, _terminal, _r
 
-    def _update_each(i, x):
+    def _update_each_filled(j, x):
         _f_bullets, _e_subs, _e_bullets, _terminal, _r = x
-        j = 25 - i - 1
         _terminal |= _is_hit(_e_subs[j], sub_x, sub_y)
-        if _e_subs[j, 3] == 0:
-            _f_bullets, _e_subs, _terminal, _r = _update_sub(j, _f_bullets, _e_subs, _terminal, _r)
-        else:
-            _e_subs = _e_subs.at[j, 3].add(-1)
-        if _e_subs[j, 4] == 0:
-            _e_subs = _e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL)
-            ix = find_ix(_e_bullets)
-            _e_bullets = _e_bullets.at[ix].set(
+        _f_bullets, _e_subs, _terminal, _r  = lax.cond(
+            _e_subs[j, 3] == 0,
+            lambda: _update_sub(j, _f_bullets, _e_subs, _terminal, _r),
+            lambda: (_f_bullets, _e_subs.at[j, 3].add(-1) , _terminal, _r)
+        )
+        timer_zero = _e_subs[j, 4] == 0
+        _e_subs = lax.cond(timer_zero, lambda:_e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL), lambda: _e_subs.at[j, 4].add(-1))
+        _e_bullets = lax.cond(
+            timer_zero,
+            lambda: _e_bullets.at[find_ix(_e_bullets)].set(
                 jnp.int8([lax.cond(_e_subs[j, 2], lambda:_e_subs[j, 0], lambda:_e_subs[j, 0]), _e_subs[j, 1], _e_subs[j, 2]])
-            )
-        else:
-            _e_subs = _e_subs.at[j, 4].add(-1)
-
+            ),
+            lambda: _e_bullets
+        )
         return _f_bullets, _e_subs, _e_bullets, _terminal, _r
 
-    for i in range(25):
-        x = (f_bullets, e_subs, e_bullets, terminal, r)
-        f_bullets, e_subs, e_bullets, terminal, r = _update_each(i, x)
+    def _update_each(i, x):
+        j = 25 - i - 1
+        return lax.cond(
+            _is_filled(x[1][j]),
+            lambda: (_update_each_filled(j, x)),
+            lambda: x
+        )
+
+    f_bullets, e_subs, e_bullets, terminal, r = lax.fori_loop(
+        0, 25, _update_each, (f_bullets, e_subs, e_bullets, terminal, r)
+    )
 
     return f_bullets, e_subs, e_bullets, terminal, r
 
