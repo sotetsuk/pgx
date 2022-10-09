@@ -44,23 +44,51 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
                 .collect();
             if hand.iter().all(|&h| h <= 4) {
                 let mut code = 0;
-                let mut zero = false;
-                let mut valid = true;
                 for i in 0..9 {
-                    if hand[i] == 0 {
-                        zero = true;
+                    code = code * 5 + hand[i];
+                }
+
+                let mut chow = 0;
+                let mut pung = 0;
+                for i in 0..x {
+                    if sid[i] < 7 {
+                        chow |= 1 << sid[i];
                     } else {
-                        if zero {
-                            valid = false;
-                            break;
-                        }
-                        code <<= 1;
-                        code += 1;
-                        code <<= hand[i] - 1;
+                        pung |= 1 << sid[i] - 7;
+                    }
+                }
+                let mut double_chows = 0;
+                let mut used = 0;
+                for j in 0..x {
+                    if (used >> sid[j] & 1) == 1 {
+                        double_chows += 1;
+                        used ^= 1 << sid[j];
+                    } else {
+                        used ^= 1 << sid[j];
                     }
                 }
 
-                if valid {
+                let mut outside = 1;
+                for i in 0..x {
+                    outside &= match sid[i] {
+                        0 | 6 | 7 | 15 => 1,
+                        _ => 0,
+                    };
+                }
+
+                arr[code].insert((9, chow, pung, double_chows, outside, 0));
+            }
+        } else {
+            for (head_idx, head) in heads.iter().enumerate() {
+                let hand: Vec<usize> = (0..9)
+                    .map(|i| (0..x).map(|j| sets[sid[j]][i]).sum::<usize>() + head[i])
+                    .collect();
+                if hand.iter().all(|&h| h <= 4) {
+                    let mut code = 0;
+                    for i in 0..9 {
+                        code = code * 5 + hand[i];
+                    }
+
                     let mut chow = 0;
                     let mut pung = 0;
                     for i in 0..x {
@@ -81,98 +109,34 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
                         }
                     }
 
-                    let outside = match code {
-                        0b100010001000 | 0b100100100 => {
-                            if pung == 0 {
-                                0b11
-                            } else {
-                                0
-                            }
-                        }
-                        0b101010 | 0b111 | 0b100 => 0b11,
-                        0b100011 => 0b01,
-                        0b111000 => 0b10,
-                        _ => 0b00,
+                    let mut outside = match head_idx {
+                        0 | 8 => 1,
+                        _ => 0,
                     };
-
-                    arr[code].insert((9, chow, pung, double_chows, outside, 0));
-                }
-            }
-        } else {
-            for (head_idx, head) in heads.iter().enumerate() {
-                let hand: Vec<usize> = (0..9)
-                    .map(|i| (0..x).map(|j| sets[sid[j]][i]).sum::<usize>() + head[i])
-                    .collect();
-                if hand.iter().all(|&h| h <= 4) {
-                    let mut code = 0;
-                    let mut zero = false;
-                    let mut valid = true;
-                    for i in 0..9 {
-                        if hand[i] == 0 {
-                            zero = true;
-                        } else {
-                            if zero {
-                                valid = false;
-                                break;
-                            }
-                            code <<= 1;
-                            code += 1;
-                            code <<= hand[i] - 1;
-                        }
-                    }
-
-                    if valid {
-                        let mut chow = 0;
-                        let mut pung = 0;
-                        for i in 0..x {
-                            if sid[i] < 7 {
-                                chow |= 1 << sid[i];
-                            } else {
-                                pung |= 1 << sid[i] - 7;
-                            }
-                        }
-                        let mut double_chows = 0;
-                        let mut used = 0;
-                        for j in 0..x {
-                            if (used >> sid[j] & 1) == 1 {
-                                double_chows += 1;
-                                used ^= 1 << sid[j];
-                            } else {
-                                used ^= 1 << sid[j];
-                            }
-                        }
-
-                        // 11112233m (only left)
-                        // 11223333m (only right)
-                        // 11123m (only left)
-                        // 12333m (only right)
-                        // 11m
-                        let outside = match code {
-                            0b10 => 0b11,
-                            0b10001010 | 0b10011 => 0b01,
-                            0b10101000 | 0b11100 => 0b10,
-                            _ => 0b00,
+                    for i in 0..x {
+                        outside &= match sid[i] {
+                            0 | 6 | 7 | 15 => 1,
+                            _ => 0,
                         };
-
-                        let nine_gates = (code == 0b10001111111100)
-                            | (code == 0b10010111111100)
-                            | (code == 0b10011011111100)
-                            | (code == 0b10011101111100)
-                            | (code == 0b10011110111100)
-                            | (code == 0b10011111011100)
-                            | (code == 0b10011111101100)
-                            | (code == 0b10011111110100)
-                            | (code == 0b10011111111000);
-
-                        arr[code].insert((
-                            head_idx,
-                            chow,
-                            pung,
-                            double_chows,
-                            outside,
-                            nine_gates as usize,
-                        ));
                     }
+
+                    let nine_gates = (hand[0] >= 3)
+                        & (hand[1] >= 1)
+                        & (hand[2] >= 1)
+                        & (hand[3] >= 1)
+                        & (hand[4] >= 1)
+                        & (hand[5] >= 1)
+                        & (hand[6] >= 1)
+                        & (hand[7] >= 1)
+                        & (hand[8] >= 3);
+                    arr[code].insert((
+                        head_idx,
+                        chow,
+                        pung,
+                        double_chows,
+                        outside,
+                        nine_gates as usize,
+                    ));
                 }
             }
         }
@@ -188,14 +152,14 @@ fn search(x: usize, y: usize, arr: &mut Vec<BTreeSet<(usize, usize, usize, usize
 }
 
 fn main() {
-    let mut arr = vec![BTreeSet::new(); 16329];
+    let mut arr = vec![BTreeSet::new(); 1953125];
     for x in 0..5 {
         for y in 0..2 {
             search(x, y, &mut arr);
         }
     }
 
-    let mut cache = vec![vec![0; 3]; 16329];
+    let mut cache = vec![vec![0; 3]; 1953125];
 
     for (idx, vs) in arr.iter().enumerate() {
         if vs.is_empty() {
@@ -210,7 +174,7 @@ fn main() {
                 | ((pung as u32).count_ones() << 20) as usize
                 | (double_chows << 23)
                 | (outside << 25)
-                | (nine_gates << 27);
+                | (nine_gates << 26);
         }
     }
 

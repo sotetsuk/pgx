@@ -1191,12 +1191,14 @@ class Yaku:
     @staticmethod
     @jit
     def outside(code: int) -> jnp.ndarray:
-        return Yaku.CACHE[code] >> 25 & 0b11
+        # return Yaku.CACHE[code] >> 25 & 0b11
+        return Yaku.CACHE[code] >> 25 & 1
 
     @staticmethod
     @jit
     def nine_gates(code: int) -> jnp.ndarray:
-        return Yaku.CACHE[code] >> 27 & 1
+        # return Yaku.CACHE[code] >> 27 & 1
+        return Yaku.CACHE[code] >> 26
 
     @staticmethod
     @jit
@@ -1247,39 +1249,27 @@ class Yaku:
         nine_gates: jnp.ndarray,
         fu: jnp.ndarray,
         code: int,
-        begin: int,
-        end: int,
+        suit: int,
         last: int,
         is_ron: bool,
     ):
         chow = Yaku.chow(code)
         pung = Yaku.pung(code)
 
-        left = chow
-        right = chow << 3
-        len = end - begin
-        open_end = (left ^ (left & 1) * (begin % 9 == 0)) << 2 | (
-            right ^ ((right >> len & 1) * (end % 9 == 0) << len)
-        ) >> 3
+        open_end = (chow ^ (chow & 1)) << 2 | (chow ^ (chow & 0b1000000))
         # リャンメン待ちにできる位置
 
-        pos = last - begin  # WARNING: may be negative
-        in_range = (0 <= pos) & (pos < len)
-        pos *= in_range
+        in_range = suit == last // 9
+        pos = last % 9
 
         is_pinfu &= (in_range == 0) | (open_end >> pos & 1) == 1
         is_pinfu &= pung == 0
 
-        outside = Yaku.outside(code)
-        is_outside &= (
-            (code == 0)
-            | (begin % 9 == 0) & (outside & 1)
-            | (end % 9 == 0) & (outside >> 1 & 1)
-        ) == 1
+        is_outside &= Yaku.outside(code) == 1
 
         double_chows += Yaku.double_chows(code)
-        all_chow |= chow << begin
-        all_pung |= pung << begin
+        all_chow |= chow << 9 * suit
+        all_pung |= pung << 9 * suit
 
         pungs = Yaku.pungs(code)
         # 刻子の数
@@ -1298,16 +1288,14 @@ class Yaku:
 
         nine_gates |= Yaku.nine_gates(code) == 1
 
-        outside_pung = ((begin % 9 == 0) & (pung & 1)) | (
-            (end % 9 == 0) & (pung >> len & 1)
-        ) << len
+        outside_pung = pung & 0b100000001
 
         strong = (
             in_range
             & (
                 (1 << Yaku.head(code))
-                | (((begin % 9 == 0) & (chow & 1)) << 2)
-                | ((end % 9 == 0) & (chow << 3 >> len & 1))
+                | ((chow & 1) << 2)
+                | (chow & 0b1000000)
                 | (chow << 1)
             )
             >> pos
@@ -1340,7 +1328,6 @@ class Yaku:
         riichi: bool,
         is_ron: bool,
     ) -> tuple[jnp.ndarray, int]:
-        # assert Hand.can_tsumo(hand)
         is_menzen = meld_num == 0
 
         is_pinfu = jnp.full(
@@ -1385,55 +1372,12 @@ class Yaku:
         fu = jnp.full(Yaku.MAX_PATTERNS, 2 * (is_ron == 0))
 
         for suit in range(3):
-            code = 0
-            begin = 9 * suit
-            for tile in range(9 * suit, 9 * (suit + 1)):
-                (
-                    is_pinfu,
-                    is_outside,
-                    double_chows,
-                    all_chow,
-                    all_pung,
-                    concealed_pungs,
-                    nine_gates,
-                    fu,
-                    code,
-                    begin,
-                ) = jax.lax.cond(
-                    hand[tile] == 0,
-                    lambda: (
-                        *Yaku.update(
-                            is_pinfu,
-                            is_outside,
-                            double_chows,
-                            all_chow,
-                            all_pung,
-                            concealed_pungs,
-                            nine_gates,
-                            fu,
-                            code,
-                            begin,
-                            tile,
-                            last,
-                            is_ron,
-                        ),
-                        0,
-                        tile + 1,
-                    ),
-                    lambda: (
-                        is_pinfu,
-                        is_outside,
-                        double_chows,
-                        all_chow,
-                        all_pung,
-                        concealed_pungs,
-                        nine_gates,
-                        fu,
-                        ((code << 1) + 1) << (hand[tile].astype(int) - 1),
-                        begin,
-                    ),
-                )
-
+            code = jax.lax.fori_loop(
+                9 * suit,
+                9 * (suit + 1),
+                lambda i, code: code * 5 + hand[i].astype(int),
+                0,
+            )
             (
                 is_pinfu,
                 is_outside,
@@ -1453,8 +1397,7 @@ class Yaku:
                 nine_gates,
                 fu,
                 code,
-                begin,
-                9 * (suit + 1),
+                suit,
                 last,
                 is_ron,
             )
