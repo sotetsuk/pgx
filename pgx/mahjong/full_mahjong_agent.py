@@ -1,7 +1,7 @@
 import random
 
 import numpy as np
-from full_mahjong import (
+from _full_mahjong import (
     Action,
     Deck,
     Hand,
@@ -11,8 +11,6 @@ from full_mahjong import (
     Tile,
     step,
 )
-
-# from _full_mahjong import Action, Hand, Meld, Observation, Tile, Deck, State, step
 from shanten_tools import shanten  # type: ignore
 
 random.seed(0)
