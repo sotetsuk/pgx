@@ -940,6 +940,9 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
 
 # 王手判定
 def _is_check(state: ShogiState) -> bool:
+    # そもそも王がいない場合はFalse
+    if np.all(state.board[8 + 14 * state.turn] == 0):
+        return False
     is_check = False
     king_point = state.board[8 + 14 * state.turn, :].argmax()
     bs = _board_status(state)
