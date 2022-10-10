@@ -157,96 +157,85 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # -> bool
-        return hand[tile] >= 2
+    def can_pon(hand: jnp.ndarray, tile: int) -> bool:
+        return hand[tile] >= 2  # type: ignore
 
     @staticmethod
     @jit
-    def can_minkan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # -> bool
-        return hand[tile] == 3
+    def can_minkan(hand: jnp.ndarray, tile: int) -> bool:
+        return hand[tile] == 3  # type: ignore
 
     @staticmethod
     @jit
-    def can_kakan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # -> bool
-        return hand[tile] == 1
+    def can_kakan(hand: jnp.ndarray, tile: int) -> bool:
+        return hand[tile] == 1  # type: ignore
 
     @staticmethod
     @jit
-    def can_ankan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # -> bool
-        return hand[tile] == 4
+    def can_ankan(hand: jnp.ndarray, tile: int) -> bool:
+        return hand[tile] == 4  # type: ignore
 
     @staticmethod
     @jit
     def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
-        # assert jnp.sum(hand) % 3 == 1
-        # assert action is Action.CHI_L, CHI_M or CHI_R
         return jax.lax.cond(
-            tile >= 27,
+            (tile >= 27) | (action < Action.CHI_L) | (Action.CHI_R < action),
             lambda: False,
-            lambda: (
-                jax.lax.cond(
-                    tile % 9 < 7,
-                    lambda: (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
-                    lambda: False,
-                )
-                | jax.lax.cond(
-                    (tile % 9 < 8) & (tile % 9 > 0),
-                    lambda: (hand[tile - 1] > 0) & (hand[tile + 1] > 0),
-                    lambda: False,
-                )
-                | jax.lax.cond(
-                    tile % 9 > 1,
-                    lambda: (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
-                    lambda: False,
-                )
+            lambda: jax.lax.switch(
+                action - Action.CHI_L,
+                [
+                    lambda: jax.lax.cond(
+                        tile % 9 < 7,
+                        lambda: (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
+                        lambda: False,
+                    ),
+                    lambda: jax.lax.cond(
+                        (tile % 9 < 8) & (tile % 9 > 0),
+                        lambda: (hand[tile - 1] > 0) & (hand[tile + 1] > 0),
+                        lambda: False,
+                    ),
+                    lambda: jax.lax.cond(
+                        tile % 9 > 1,
+                        lambda: (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
+                        lambda: False,
+                    ),
+                ],
             ),
         )
 
     @staticmethod
     @jit
     def add(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
-        # assert 0 <= hand[tile] + x <= 4
         return hand.at[tile].set(hand[tile] + x)
 
     @staticmethod
     @jit
     def sub(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
-        # assert 0 <= hand[tile] - x <= 4
         return Hand.add(hand, tile, -x)
 
     @staticmethod
     @jit
     def pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # assert Hand.can_pon(hand, tile)
         return Hand.sub(hand, tile, 2)
 
     @staticmethod
     @jit
     def minkan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # assert Hand.can_minkan(hand, tile)
         return Hand.sub(hand, tile, 3)
 
     @staticmethod
     @jit
     def kakan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # assert Hand.can_kakan(hand, tile)
         return Hand.sub(hand, tile)
 
     @staticmethod
     @jit
     def ankan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
-        # assert Hand.can_ankan(hand, tile)
         return Hand.sub(hand, tile, 4)
 
     @staticmethod
     @jit
     def chi(hand: jnp.ndarray, tile: int, action: int) -> jnp.ndarray:
-        # assert Hand.can_chi(hand, tile, action)
-        # assert action is Action.CHI_L, CHI_M or CHI_R
         return jax.lax.switch(
             action - Action.CHI_L,
             [
@@ -315,7 +304,7 @@ class Deck:
 
     @staticmethod
     @jit
-    def deal(deck: Deck) -> tuple[Deck, jnp.ndarray, jnp.ndarray]:
+    def deal(deck: Deck) -> tuple[Deck, jnp.ndarray, int]:
         hand = jnp.zeros((4, 34), dtype=jnp.uint8)
         for i in range(3):
             for j in range(4):
@@ -324,33 +313,34 @@ class Deck:
                         0,
                         4,
                         lambda k, h: Hand.add(
-                            h, deck.arr[-(16 * i + 4 * j + k)]
+                            h, deck.arr[-(16 * i + 4 * j + k + 1)]
                         ),
                         hand[j],
                     )
                 )
         for j in range(4):
-            hand = hand.at[j].set(Hand.add(hand[j], deck.arr[-(16 * 3 + j)]))
+            hand = hand.at[j].set(
+                Hand.add(hand[j], deck.arr[-(16 * 3 + j + 1)])
+            )
 
-        last_draw = deck.arr[-(16 * 3 + 4)]
+        last_draw = deck.arr[-(16 * 3 + 4 + 1)].astype(int)
         hand = hand.at[0].set(Hand.add(hand[0], last_draw))
 
         deck.idx -= 53
 
-        return deck, hand, last_draw
+        return deck, hand, last_draw  # type: ignore
 
     @staticmethod
     @jit
-    def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, jnp.ndarray]:
-        # -> tuple[Deck, int]
-        # assert not deck.is_empty()
+    def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, int]:
         tile = deck.arr[
             deck.idx * (is_kan is False) | (deck.doras - 1) * is_kan
         ]
         deck.idx -= is_kan is False
         deck.end += is_kan
         deck.doras += is_kan  # NOTE: 先めくりで統一
-        return deck, tile
+
+        return deck, tile  # type: ignore
 
     def _tree_flatten(self):
         children = (self.arr, self.idx, self.end, self.doras)
@@ -774,31 +764,6 @@ class State:
                 legal_actions,
             ),
         )
-        # if self.target != -1:
-        #    for player in range(4):
-        #        if player == self.turn
-        #            continue
-
-        #        legal_actions[(player, Action.RON)] = Hand.can_ron(
-        #                self.hand[player], self.target)
-
-        #        if self.deck.is_empty() | self.riichi[player]:
-        #            continue
-
-        #        legal_actions[(player, Action.PON)] = Hand.can_pon(
-        #                self.hand[player], self.target)
-
-        #        legal_actions[(player, Action.MINKAN)] = Hand.can_minkan(
-        #                self.hand[player], self.target) & (self.deck.doras < 5)
-
-        #        if (player - self.turn) % 4 != 1:
-        #            continue
-        #        legal_actions[(player, Action.CHI_L)] = Hand.can_chi(
-        #                self.hand[player], self.target, Action.CHI_L)
-        #        legal_actions[(player, Action.CHI_M)] = Hand.can_chi(
-        #                self.hand[player], self.target, Action.CHI_M)
-        #        legal_actions[(player, Action.CHI_R)] = Hand.can_chi(
-        #                self.hand[player], self.target, Action.CHI_R)
 
         legal_actions = jax.lax.fori_loop(
             0,
@@ -816,8 +781,12 @@ class State:
 
     @staticmethod
     @jit
-    def init(key) -> State:
-        deck = Deck.init(key)
+    def init(key: jnp.ndarray) -> State:
+        return State.init_with_deck(Deck.init(key))
+
+    @staticmethod
+    @jit
+    def init_with_deck(deck: Deck) -> State:
         deck, hand, last_draw = Deck.deal(deck)
 
         turn = 0
@@ -933,12 +902,8 @@ class State:
     @staticmethod
     @jit
     def _ryukyoku(state: State) -> tuple[State, jnp.ndarray, bool]:
-        # TODO: jax.map が使えるかも
-        is_tenpai = jax.lax.fori_loop(
-            0,
-            4,
-            lambda i, arr: arr.at[i].set(Hand.is_tenpai(state.hand[i])),
-            jnp.full(4, False),
+        is_tenpai = jax.lax.map(
+            lambda i: Hand.is_tenpai(state.hand[i]), jnp.arange(4)
         )
         tenpais = jnp.sum(is_tenpai)
         plus, minus = jax.lax.switch(
@@ -951,17 +916,13 @@ class State:
                 lambda: (0, 0),
             ],
         )
-        reward = jax.lax.fori_loop(
-            0,
-            4,
-            lambda i, arr: arr.at[i].set(
-                jax.lax.cond(
-                    is_tenpai[i],
-                    lambda: plus,
-                    lambda: -minus,
-                )
+        reward = jax.lax.map(
+            lambda i: jax.lax.cond(
+                is_tenpai[i],
+                lambda: plus,
+                lambda: -minus,
             ),
-            jnp.zeros(4, dtype=jnp.int32),
+            jnp.arange(4),
         )
 
         # 供託
@@ -1030,6 +991,7 @@ class State:
         state.turn = player
         state.is_menzen = state.is_menzen.at[player].set(False)
 
+        # 嶺上牌
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
         state.hand = state.hand.at[state.turn].set(
@@ -1045,9 +1007,7 @@ class State:
         return jax.lax.cond(
             pon == 0,
             lambda: State._ankan(state, target),
-            lambda: State._kakan(
-                state, target, pon_src=pon >> 2, pon_idx=pon & 0b11
-            ),
+            lambda: State._kakan(state, target, pon >> 2, pon & 0b11),
         )
 
     @staticmethod
@@ -1059,6 +1019,8 @@ class State:
             Hand.ankan(state.hand[state.turn], target)
         )
         # TODO: 国士無双ロンの受付
+
+        # 嶺上牌
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
         state.hand = state.hand.at[state.turn].set(
@@ -1071,19 +1033,16 @@ class State:
     def _kakan(
         state: State, target: int, pon_src: int, pon_idx: int
     ) -> tuple[State, jnp.ndarray, bool]:
-        # WARNING: bug?
-        # state.melds = state.melds.at[pon_idx].set(
-        #    Meld.init(target + 34, target, pon_src)
-        # )
         state.melds = state.melds.at[(state.turn, pon_idx)].set(
             Meld.init(target + 34, target, pon_src)
         )
-
         state.hand = state.hand.at[state.turn].set(
             Hand.kakan(state.hand[state.turn], target)
         )
         state.pon = state.pon.at[(state.turn, target)].set(0)
         # TODO: 槍槓の受付
+
+        # 嶺上牌
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
         state.hand = state.hand.at[state.turn].set(
@@ -1309,12 +1268,12 @@ class Yaku:
 
     @staticmethod
     @jit
-    def pungs(code: int) -> jnp.ndarray:
+    def n_pung(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 20 & 0b111
 
     @staticmethod
     @jit
-    def double_chows(code: int) -> jnp.ndarray:
+    def n_double_chow(code: int) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 23 & 0b11
 
     @staticmethod
@@ -1369,10 +1328,10 @@ class Yaku:
     def update(
         is_pinfu: jnp.ndarray,
         is_outside: jnp.ndarray,
-        double_chows: jnp.ndarray,
+        n_double_chow: jnp.ndarray,
         all_chow: jnp.ndarray,
         all_pung: jnp.ndarray,
-        concealed_pungs: jnp.ndarray,
+        n_concealed_pung: jnp.ndarray,
         nine_gates: jnp.ndarray,
         fu: jnp.ndarray,
         code: int,
@@ -1394,11 +1353,11 @@ class Yaku:
 
         is_outside &= Yaku.outside(code) == 1
 
-        double_chows += Yaku.double_chows(code)
+        n_double_chow += Yaku.n_double_chow(code)
         all_chow |= chow << 9 * suit
         all_pung |= pung << 9 * suit
 
-        pungs = Yaku.pungs(code)
+        n_pung = Yaku.n_pung(code)
         # 刻子の数
 
         chow_range = chow | chow << 1 | chow << 2
@@ -1411,7 +1370,7 @@ class Yaku:
         )
         # ロンして明刻扱いになってしまう場合
 
-        concealed_pungs += pungs - loss
+        n_concealed_pung += n_pung - loss
 
         nine_gates |= Yaku.nine_gates(code) == 1
 
@@ -1432,15 +1391,15 @@ class Yaku:
 
         loss <<= outside_pung >> pos & 1
 
-        fu += 4 * (pungs + (outside_pung > 0)) - 2 * loss + 2 * strong
+        fu += 4 * (n_pung + (outside_pung > 0)) - 2 * loss + 2 * strong
 
         return (
             is_pinfu,
             is_outside,
-            double_chows,
+            n_double_chow,
             all_chow,
             all_pung,
-            concealed_pungs,
+            n_concealed_pung,
             nine_gates,
             fu,
         )
@@ -1484,7 +1443,7 @@ class Yaku:
                 True,
             ),
         )
-        double_chows = jnp.full(Yaku.MAX_PATTERNS, 0)
+        n_double_chow = jnp.full(Yaku.MAX_PATTERNS, 0)
 
         all_chow = jnp.full(
             Yaku.MAX_PATTERNS,
@@ -1502,7 +1461,7 @@ class Yaku:
             ),
         )
 
-        concealed_pungs = jnp.full(Yaku.MAX_PATTERNS, 0)
+        n_concealed_pung = jnp.full(Yaku.MAX_PATTERNS, 0)
         nine_gates = jnp.full(Yaku.MAX_PATTERNS, False)
 
         fu = jnp.full(
@@ -1531,19 +1490,19 @@ class Yaku:
             (
                 is_pinfu,
                 is_outside,
-                double_chows,
+                n_double_chow,
                 all_chow,
                 all_pung,
-                concealed_pungs,
+                n_concealed_pung,
                 nine_gates,
                 fu,
             ) = Yaku.update(
                 is_pinfu,
                 is_outside,
-                double_chows,
+                n_double_chow,
                 all_chow,
                 all_pung,
-                concealed_pungs,
+                n_concealed_pung,
                 nine_gates,
                 fu,
                 code,
@@ -1552,7 +1511,7 @@ class Yaku:
                 is_ron,
             )
 
-        concealed_pungs += jnp.sum(hand[27:] >= 3) - (
+        n_concealed_pung += jnp.sum(hand[27:] >= 3) - (
             is_ron & (last >= 27) & (hand[last] >= 3)
         )
 
@@ -1591,9 +1550,9 @@ class Yaku:
             .at[Yaku.平和]
             .set(is_pinfu)
             .at[Yaku.一盃口]
-            .set(is_menzen & (double_chows == 1))
+            .set(is_menzen & (n_double_chow == 1))
             .at[Yaku.二盃口]
-            .set(double_chows == 2)
+            .set(n_double_chow == 2)
             .at[Yaku.混全帯么九]
             .set(is_outside & has_honor & has_tanyao)
             .at[Yaku.純全帯么九]
@@ -1607,28 +1566,28 @@ class Yaku:
             .at[Yaku.対々和]
             .set(all_chow == 0)
             .at[Yaku.三暗刻]
-            .set(concealed_pungs == 3)
+            .set(n_concealed_pung == 3)
         )
 
         fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]
 
         best_pattern = jnp.argmax(jnp.dot(fan, yaku) * 200 + fu)
 
-        yaku = yaku.T[best_pattern]
-        fu = fu[best_pattern]
-        fu += -fu % 10
+        yaku_best = yaku.T[best_pattern]
+        fu_best = fu[best_pattern]
+        fu_best += -fu_best % 10
 
-        yaku, fu = jax.lax.cond(
-            yaku[Yaku.二盃口] | (jnp.sum(hand == 2) < 7),
-            lambda: (yaku, fu),
+        yaku_best, fu_best = jax.lax.cond(
+            yaku_best[Yaku.二盃口] | (jnp.sum(hand == 2) < 7),
+            lambda: (yaku_best, fu_best),
             lambda: (
                 jnp.full(Yaku.FAN.shape[1], False).at[Yaku.七対子].set(True),
                 25,
             ),
         )
 
-        yaku = (
-            yaku.at[Yaku.断么九]
+        yaku_best = (
+            yaku_best.at[Yaku.断么九]
             .set((has_honor | has_outside) == 0)
             .at[Yaku.混一色]
             .set(is_flush & has_honor)
@@ -1687,13 +1646,13 @@ class Yaku:
                 & (flatten[33] == 0)
             )
             .at[Yaku.四暗刻]
-            .set(jnp.any(concealed_pungs == 4))
+            .set(jnp.any(n_concealed_pung == 4))
         )
 
         return jax.lax.cond(
             jnp.any(yakuman),
             lambda: (yakuman, 0, 0),
-            lambda: (yaku, jnp.dot(fan, yaku), fu),
+            lambda: (yaku_best, jnp.dot(fan, yaku_best), fu_best),
         )
 
     @staticmethod
