@@ -535,7 +535,7 @@ class State:
                 self.riichi[self.turn],
                 False,
             )[0]
-            return np.any(yaku)
+            return bool(np.any(yaku))
         return False
 
     def can_ron(self, player: int) -> bool:
@@ -548,7 +548,7 @@ class State:
                 self.riichi[player],
                 True,
             )[0]
-            return np.any(yaku)
+            return bool(np.any(yaku))
         return False
 
     def legal_actions(self) -> np.ndarray:
@@ -669,7 +669,7 @@ class State:
     def step(
         state: State, actions: np.ndarray
     ) -> tuple[State, np.ndarray, bool]:
-        player = np.argmin(actions)
+        player = int(np.argmin(actions))
         return State._step(state, player, actions[player])
 
     @staticmethod
@@ -1274,27 +1274,29 @@ class Yaku:
 
         best_pattern = np.argmax(np.dot(fan, yaku) * 200 + fu)
 
-        yaku = yaku.T[best_pattern]
-        fu = fu[best_pattern]
-        fu += -fu % 10
+        yaku_best = yaku.T[best_pattern]
+        fu_best = fu[best_pattern]
+        fu_best += -fu_best % 10
 
-        if (not yaku[Yaku.二盃口]) & (np.sum(hand == 2) == 7):
-            yaku &= False
-            yaku[Yaku.七対子] = True
-            fu = 25
+        if (not yaku_best[Yaku.二盃口]) & (np.sum(hand == 2) == 7):
+            yaku_best &= False
+            yaku_best[Yaku.七対子] = True
+            fu_best = 25
 
-        yaku[Yaku.断么九] = (has_honor | has_outside) == 0
-        yaku[Yaku.混一色] = is_flush & has_honor
-        yaku[Yaku.清一色] = is_flush & (has_honor == 0)
-        yaku[Yaku.混老頭] = has_tanyao == 0
-        yaku[Yaku.白] = flatten[31] >= 3
-        yaku[Yaku.發] = flatten[32] >= 3
-        yaku[Yaku.中] = flatten[33] >= 3
-        yaku[Yaku.小三元] = np.all(flatten[31:34] >= 2) & (three_dragons >= 2)
-        yaku[Yaku.場風] = flatten[27] >= 3
-        yaku[Yaku.自風] = flatten[27] >= 3
-        yaku[Yaku.門前清自摸和] = is_menzen & (is_ron == 0)
-        yaku[Yaku.立直] = riichi
+        yaku_best[Yaku.断么九] = (has_honor | has_outside) == 0
+        yaku_best[Yaku.混一色] = is_flush & has_honor
+        yaku_best[Yaku.清一色] = is_flush & (has_honor == 0)
+        yaku_best[Yaku.混老頭] = has_tanyao == 0
+        yaku_best[Yaku.白] = flatten[31] >= 3
+        yaku_best[Yaku.發] = flatten[32] >= 3
+        yaku_best[Yaku.中] = flatten[33] >= 3
+        yaku_best[Yaku.小三元] = np.all(flatten[31:34] >= 2) & (
+            three_dragons >= 2
+        )
+        yaku_best[Yaku.場風] = flatten[27] >= 3
+        yaku_best[Yaku.自風] = flatten[27] >= 3
+        yaku_best[Yaku.門前清自摸和] = is_menzen & (is_ron == 0)
+        yaku_best[Yaku.立直] = riichi
 
         yakuman = np.full(Yaku.FAN.shape[1], False)
 
@@ -1324,7 +1326,7 @@ class Yaku:
 
         if np.any(yakuman):
             return (yakuman, 0, 0)
-        return yaku, np.dot(fan, yaku), fu
+        return yaku_best, np.dot(fan, yaku_best), fu_best
 
     @staticmethod
     def flatten(

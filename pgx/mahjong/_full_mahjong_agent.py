@@ -9,16 +9,14 @@ def act(legal_actions: np.ndarray, obs: Observation) -> int:
     if not np.any(legal_actions):
         return Action.NONE
 
-    if legal_actions[Action.TSUMO]:
-        return Action.TSUMO
-    if legal_actions[Action.RON]:
-        return Action.RON
-    if legal_actions[Action.RIICHI]:
-        return Action.RIICHI
-    if legal_actions[Action.MINKAN]:
-        return Action.MINKAN
-    if np.any(legal_actions[34:68]):
-        return np.where(legal_actions[34:68])[0][0] + 34
+    for action in list(range(34, 68)) + [
+        Action.TSUMO,
+        Action.RON,
+        Action.RIICHI,
+        Action.MINKAN,
+    ]:
+        if legal_actions[action]:
+            return action
 
     if np.sum(obs.hand) % 3 == 2:
         min_shanten = 999
@@ -34,33 +32,22 @@ def act(legal_actions: np.ndarray, obs: Observation) -> int:
         return discard if obs.last_draw != discard else Action.TSUMOGIRI
 
     if legal_actions[Action.PON]:
-        s = shanten(Hand.sub(obs.hand, obs.target, 2))
+        s = shanten(Hand.pon(obs.hand, obs.target))
         if s < shanten(obs.hand) and random.random() < 0.5:
             return Action.PON
 
     if legal_actions[Action.CHI_R]:
-        if (obs.hand[obs.target - 1] == 0) | (obs.hand[obs.target - 2] == 0):
-            print(obs.hand)
-            print(obs.target)
-            print(legal_actions)
-            print(Hand.can_chi(obs.hand, obs.target, Action.CHI_R))
-        s = shanten(
-            Hand.sub(Hand.sub(obs.hand, obs.target - 2), obs.target - 1)
-        )
+        s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_R))
         if s < shanten(obs.hand) and random.random() < 0.5:
             return Action.CHI_R
 
     if legal_actions[Action.CHI_M]:
-        s = shanten(
-            Hand.sub(Hand.sub(obs.hand, obs.target - 1), obs.target + 1)
-        )
+        s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_M))
         if s < shanten(obs.hand) and random.random() < 0.5:
             return Action.CHI_M
 
     if legal_actions[Action.CHI_L]:
-        s = shanten(
-            Hand.sub(Hand.sub(obs.hand, obs.target + 1), obs.target + 2)
-        )
+        s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_L))
         if s < shanten(obs.hand) and random.random() < 0.5:
             return Action.CHI_L
 
