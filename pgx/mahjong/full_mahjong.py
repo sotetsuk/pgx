@@ -158,22 +158,22 @@ class Hand:
     @staticmethod
     @jit
     def can_pon(hand: jnp.ndarray, tile: int) -> bool:
-        return bool(hand[tile] >= 2)
+        return hand[tile] >= 2  # type: ignore
 
     @staticmethod
     @jit
     def can_minkan(hand: jnp.ndarray, tile: int) -> bool:
-        return bool(hand[tile] == 3)
+        return hand[tile] == 3  # type: ignore
 
     @staticmethod
     @jit
     def can_kakan(hand: jnp.ndarray, tile: int) -> bool:
-        return bool(hand[tile] == 1)
+        return hand[tile] == 1  # type: ignore
 
     @staticmethod
     @jit
     def can_ankan(hand: jnp.ndarray, tile: int) -> bool:
-        return bool(hand[tile] == 4)
+        return hand[tile] == 4  # type: ignore
 
     @staticmethod
     @jit
@@ -313,31 +313,34 @@ class Deck:
                         0,
                         4,
                         lambda k, h: Hand.add(
-                            h, deck.arr[-(16 * i + 4 * j + k)]
+                            h, deck.arr[-(16 * i + 4 * j + k + 1)]
                         ),
                         hand[j],
                     )
                 )
         for j in range(4):
-            hand = hand.at[j].set(Hand.add(hand[j], deck.arr[-(16 * 3 + j)]))
+            hand = hand.at[j].set(
+                Hand.add(hand[j], deck.arr[-(16 * 3 + j + 1)])
+            )
 
-        last_draw = int(deck.arr[-(16 * 3 + 4)])
+        last_draw = deck.arr[-(16 * 3 + 4 + 1)].astype(int)
         hand = hand.at[0].set(Hand.add(hand[0], last_draw))
 
         deck.idx -= 53
 
-        return deck, hand, last_draw
+        return deck, hand, last_draw  # type: ignore
 
     @staticmethod
     @jit
     def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, int]:
-        tile = int(
-            deck.arr[deck.idx * (is_kan is False) | (deck.doras - 1) * is_kan]
-        )
+        tile = deck.arr[
+            deck.idx * (is_kan is False) | (deck.doras - 1) * is_kan
+        ]
         deck.idx -= is_kan is False
         deck.end += is_kan
         deck.doras += is_kan  # NOTE: 先めくりで統一
-        return deck, tile
+
+        return deck, tile  # type: ignore
 
     def _tree_flatten(self):
         children = (self.arr, self.idx, self.end, self.doras)
@@ -1649,7 +1652,7 @@ class Yaku:
         return jax.lax.cond(
             jnp.any(yakuman),
             lambda: (yakuman, 0, 0),
-            lambda: (yaku, jnp.dot(fan, yaku_best), fu_best),
+            lambda: (yaku_best, jnp.dot(fan, yaku_best), fu_best),
         )
 
     @staticmethod
