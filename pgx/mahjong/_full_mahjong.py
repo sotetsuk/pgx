@@ -1008,11 +1008,11 @@ class Yaku:
         return Yaku.CACHE[code] >> 11 & 0b111111111
 
     @staticmethod
-    def pungs(code: int) -> np.ndarray:
+    def n_pung(code: int) -> np.ndarray:
         return Yaku.CACHE[code] >> 20 & 0b111
 
     @staticmethod
-    def double_chows(code: int) -> np.ndarray:
+    def n_double_chow(code: int) -> np.ndarray:
         return Yaku.CACHE[code] >> 23 & 0b11
 
     @staticmethod
@@ -1061,10 +1061,10 @@ class Yaku:
     def update(
         is_pinfu: np.ndarray,
         is_outside: np.ndarray,
-        double_chows: np.ndarray,
+        n_double_chow: np.ndarray,
         all_chow: np.ndarray,
         all_pung: np.ndarray,
-        concealed_pungs: np.ndarray,
+        n_concealed_pung: np.ndarray,
         nine_gates: np.ndarray,
         fu: np.ndarray,
         code: int,
@@ -1086,11 +1086,11 @@ class Yaku:
 
         is_outside &= Yaku.outside(code) == 1
 
-        double_chows += Yaku.double_chows(code)
+        n_double_chow += Yaku.n_double_chow(code)
         all_chow |= chow << 9 * suit
         all_pung |= pung << 9 * suit
 
-        pungs = Yaku.pungs(code)
+        n_pung = Yaku.n_pung(code)
         # 刻子の数
 
         chow_range = chow | chow << 1 | chow << 2
@@ -1103,7 +1103,7 @@ class Yaku:
         )
         # ロンして明刻扱いになってしまう場合
 
-        concealed_pungs += pungs - loss
+        n_concealed_pung += n_pung - loss
 
         nine_gates |= Yaku.nine_gates(code) == 1
 
@@ -1124,15 +1124,15 @@ class Yaku:
 
         loss <<= outside_pung >> pos & 1
 
-        fu += 4 * (pungs + (outside_pung > 0)) - 2 * loss + 2 * strong
+        fu += 4 * (n_pung + (outside_pung > 0)) - 2 * loss + 2 * strong
 
         return (
             is_pinfu,
             is_outside,
-            double_chows,
+            n_double_chow,
             all_chow,
             all_pung,
-            concealed_pungs,
+            n_concealed_pung,
             nine_gates,
             fu,
         )
@@ -1166,7 +1166,7 @@ class Yaku:
         for i in range(meld_num):
             is_outside &= Meld.is_outside(melds[i])
 
-        double_chows = np.full(Yaku.MAX_PATTERNS, 0)
+        n_double_chow = np.full(Yaku.MAX_PATTERNS, 0)
 
         all_chow = np.full(Yaku.MAX_PATTERNS, 0)
         for i in range(meld_num):
@@ -1176,7 +1176,7 @@ class Yaku:
         for i in range(meld_num):
             all_pung |= Meld.suited_pung(melds[i])
 
-        concealed_pungs = np.full(Yaku.MAX_PATTERNS, 0)
+        n_concealed_pung = np.full(Yaku.MAX_PATTERNS, 0)
         nine_gates = np.full(Yaku.MAX_PATTERNS, False)
 
         fu = np.full(Yaku.MAX_PATTERNS, 0)
@@ -1201,19 +1201,19 @@ class Yaku:
             (
                 is_pinfu,
                 is_outside,
-                double_chows,
+                n_double_chow,
                 all_chow,
                 all_pung,
-                concealed_pungs,
+                n_concealed_pung,
                 nine_gates,
                 fu,
             ) = Yaku.update(
                 is_pinfu,
                 is_outside,
-                double_chows,
+                n_double_chow,
                 all_chow,
                 all_pung,
-                concealed_pungs,
+                n_concealed_pung,
                 nine_gates,
                 fu,
                 code,
@@ -1222,7 +1222,7 @@ class Yaku:
                 is_ron,
             )
 
-        concealed_pungs += np.sum(hand[27:] >= 3) - (
+        n_concealed_pung += np.sum(hand[27:] >= 3) - (
             is_ron & (last >= 27) & (hand[last] >= 3)
         )
 
@@ -1258,19 +1258,17 @@ class Yaku:
 
         yaku = np.full((Yaku.FAN.shape[1], Yaku.MAX_PATTERNS), False)
         yaku[Yaku.平和] = is_pinfu
-        yaku[Yaku.一盃口] = is_menzen & (double_chows == 1)
-        yaku[Yaku.二盃口] = double_chows == 2
+        yaku[Yaku.一盃口] = is_menzen & (n_double_chow == 1)
+        yaku[Yaku.二盃口] = n_double_chow == 2
         yaku[Yaku.混全帯么九] = is_outside & has_honor & has_tanyao
         yaku[Yaku.純全帯么九] = is_outside & (has_honor == 0)
         yaku[Yaku.一気通貫] = Yaku.is_pure_straight(all_chow)
         yaku[Yaku.三色同順] = Yaku.is_triple_chow(all_chow)
         yaku[Yaku.三色同刻] = Yaku.is_triple_pung(all_pung)
         yaku[Yaku.対々和] = all_chow == 0
-        yaku[Yaku.三暗刻] = concealed_pungs == 3
+        yaku[Yaku.三暗刻] = n_concealed_pung == 3
 
         fan = Yaku.FAN[1 if is_menzen else 0]
-        print(fan)
-        print(np.dot(fan, yaku))
 
         best_pattern = np.argmax(np.dot(fan, yaku) * 200 + fu)
 
@@ -1322,7 +1320,7 @@ class Yaku:
             & np.all(flatten[26:32] == 0)
             & (flatten[33] == 0)
         )
-        yakuman[Yaku.四暗刻] = np.any(concealed_pungs == 4)
+        yakuman[Yaku.四暗刻] = np.any(n_concealed_pung == 4)
 
         if np.any(yakuman):
             return (yakuman, 0, 0)
