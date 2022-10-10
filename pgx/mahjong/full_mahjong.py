@@ -60,6 +60,7 @@ class CacheLoader:
             return jnp.array(json.load(f), dtype=jnp.uint32)
 
     @staticmethod
+    @jit
     def load_yaku_cache():
         with open(os.path.join(CacheLoader.DIR, "yaku_cache.json")) as f:
             return jnp.array(json.load(f), dtype=jnp.int32)
@@ -183,29 +184,26 @@ class Hand:
     def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
         # assert jnp.sum(hand) % 3 == 1
         # assert action is Action.CHI_L, CHI_M or CHI_R
-        return jax.lax.switch(
-            action - Action.CHI_L,
-            [
-                lambda: (
-                    (tile < 27)
-                    & (tile % 9 < 7)
-                    & (hand[tile + 1] > 0)
-                    & (hand[tile + 2] > 0)
-                ),
-                lambda: (
-                    (tile < 27)
-                    & (tile % 9 > 0)
-                    & (tile % 9 < 8)
-                    & (hand[tile - 1] > 0)
-                    & (hand[tile + 1] > 0)
-                ),
-                lambda: (
-                    (tile < 27)
-                    & (tile % 9 > 1)
-                    & (hand[tile - 2] > 0)
-                    & (hand[tile - 1] > 0)
-                ),
-            ],
+        return jax.lax.cond(
+            tile >= 27,
+            lambda: False,
+            lambda: (
+                jax.lax.cond(
+                    tile % 9 < 7,
+                    lambda: (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
+                    lambda: False,
+                )
+                | jax.lax.cond(
+                    (tile % 9 < 8) & (tile % 9 > 0),
+                    lambda: (hand[tile - 1] > 0) & (hand[tile + 1] > 0),
+                    lambda: False,
+                )
+                | jax.lax.cond(
+                    tile % 9 > 1,
+                    lambda: (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
+                    lambda: False,
+                )
+            ),
         )
 
     @staticmethod
@@ -325,14 +323,16 @@ class Deck:
                     jax.lax.fori_loop(
                         0,
                         4,
-                        lambda k, h: Hand.add(h, deck.arr[16 * i + 4 * j + k]),
+                        lambda k, h: Hand.add(
+                            h, deck.arr[-(16 * i + 4 * j + k)]
+                        ),
                         hand[j],
                     )
                 )
         for j in range(4):
-            hand = hand.at[j].set(Hand.add(hand[j], deck.arr[16 * 3 + j]))
+            hand = hand.at[j].set(Hand.add(hand[j], deck.arr[-(16 * 3 + j)]))
 
-        last_draw = deck.arr[16 * 3 + 4]
+        last_draw = deck.arr[-(16 * 3 + 4)]
         hand = hand.at[0].set(Hand.add(hand[0], last_draw))
 
         deck.idx -= 53
@@ -442,7 +442,7 @@ class Meld:
         assert False
 
     @staticmethod
-    def from_str(s: str) -> Meld:
+    def from_str(s: str) -> int:
         l3 = re.match(r"^\[(\d)\](\d)(\d)([mpsz])$", s)
         m3 = re.match(r"^(\d)\[(\d)\](\d)([mpsz])$", s)
         r3 = re.match(r"^(\d)(\d)\[(\d)\]([mpsz])$", s)
@@ -933,6 +933,7 @@ class State:
     @staticmethod
     @jit
     def _ryukyoku(state: State) -> tuple[State, jnp.ndarray, bool]:
+        # TODO: jax.map が使えるかも
         is_tenpai = jax.lax.fori_loop(
             0,
             4,
@@ -1070,9 +1071,14 @@ class State:
     def _kakan(
         state: State, target: int, pon_src: int, pon_idx: int
     ) -> tuple[State, jnp.ndarray, bool]:
-        state.melds = state.melds.at[pon_idx].set(
+        # WARNING: bug?
+        # state.melds = state.melds.at[pon_idx].set(
+        #    Meld.init(target + 34, target, pon_src)
+        # )
+        state.melds = state.melds.at[(state.turn, pon_idx)].set(
             Meld.init(target + 34, target, pon_src)
         )
+
         state.hand = state.hand.at[state.turn].set(
             Hand.kakan(state.hand[state.turn], target)
         )
@@ -1135,8 +1141,10 @@ class State:
 
         reward = jax.lax.cond(
             state.turn == 0,
-            lambda: jnp.full(4, -s2).at[state.turn].set(s2 * 3),
-            lambda: jnp.full(4, -s1)
+            lambda: jnp.full(4, -s2, dtype=jnp.int32)
+            .at[state.turn]
+            .set(s2 * 3),
+            lambda: jnp.full(4, -s1, dtype=jnp.int32)
             .at[0]
             .set(-s2)
             .at[state.turn]
@@ -1255,9 +1263,9 @@ class Yaku:
         is_ron: bool,
     ) -> int:
         yaku, fan, fu = Yaku.judge(hand, melds, meld_num, last, riichi, is_ron)
-        score = fu * (1 << (fan + 2))
+        score = fu << (fan + 2)
         return jax.lax.cond(
-            fan == 0,
+            fu == 0,
             lambda: 8000 * jnp.dot(yaku, Yaku.YAKUMAN),
             lambda: jax.lax.cond(
                 score < 2000,
@@ -1312,13 +1320,11 @@ class Yaku:
     @staticmethod
     @jit
     def outside(code: int) -> jnp.ndarray:
-        # return Yaku.CACHE[code] >> 25 & 0b11
         return Yaku.CACHE[code] >> 25 & 1
 
     @staticmethod
     @jit
     def nine_gates(code: int) -> jnp.ndarray:
-        # return Yaku.CACHE[code] >> 27 & 1
         return Yaku.CACHE[code] >> 26
 
     @staticmethod
