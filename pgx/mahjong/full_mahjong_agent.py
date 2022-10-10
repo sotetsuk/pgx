@@ -1,15 +1,15 @@
 import random
 
-import jax
-import jax.numpy as jnp
-from full_mahjong import Action, Hand, Meld, Observation, Tile, init, step
+import numpy as np
+from full_mahjong import Action, Hand, Meld, Observation, Tile, Deck, State, step
+#from _full_mahjong import Action, Hand, Meld, Observation, Tile, Deck, State, step
 from shanten_tools import shanten  # type: ignore
 
 random.seed(0)
 
 
-def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
-    if not jnp.any(legal_actions):
+def act(legal_actions: np.ndarray, obs: Observation) -> int:
+    if not np.any(legal_actions):
         return Action.NONE
 
     for action in list(range(34, 68)) + [
@@ -21,14 +21,14 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
         if legal_actions[action]:
             return action
 
-    if jnp.sum(obs.hand) % 3 == 2:
+    if np.sum(obs.hand) % 3 == 2:
         min_shanten = 999
         discard = -1
         for tile in range(34):
             if legal_actions[tile] or (
                 tile == obs.last_draw and legal_actions[Action.TSUMOGIRI]
             ):
-                s = shanten(obs.hand.at[tile].set(obs.hand[tile] - 1))
+                s = shanten(Hand.sub(obs.hand, tile))
                 if s < min_shanten:
                     s = min_shanten
                     discard = tile
@@ -59,12 +59,13 @@ def act(legal_actions: jnp.ndarray, obs: Observation) -> int:
 
 if __name__ == "__main__":
     for i in range(50):
-        state = init(jax.random.PRNGKey(seed=i))
-        reward = jnp.full(4, 0)
+        state = State.init_with_deck(
+                Deck(np.random.permutation(np.arange(136) // 4))
+                )
         done = False
         while not done:
             legal_actions = state.legal_actions()
-            selected = jnp.array(
+            selected = np.array(
                 [act(legal_actions[i], state.observe(i)) for i in range(4)]
             )
             state, reward, done = step(state, selected)
