@@ -120,15 +120,15 @@ def fu(
         ) -> bool:
     hand = Hand.from_str(hand_s)
     melds = np.zeros(4, dtype=np.int32)
-    meld_num=0
+    n_meld=0
     for s in melds_s.split(","):
         if not s:
             continue
-        melds[meld_num] = Meld.from_str(s)
+        melds[n_meld] = Meld.from_str(s)
         melds
-        meld_num += 1
+        n_meld += 1
     last = Tile.from_str(last_s)
-    return Yaku.judge(hand, melds, meld_num, last, False, is_ron)[2]
+    return Yaku.judge(hand, melds, n_meld, last, False, is_ron)[2]
 
 def test_yaku_fu():
     # リャンメン(平和)
@@ -183,14 +183,14 @@ def has_yaku(
         ) -> bool:
     hand = Hand.from_str(hand_s)
     melds = np.zeros(4, dtype=np.int32)
-    meld_num=0
+    n_meld=0
     for s in melds_s.split(","):
         if not s:
             continue
-        melds[meld_num] = Meld.from_str(s)
-        meld_num += 1
+        melds[n_meld] = Meld.from_str(s)
+        n_meld += 1
     last = Tile.from_str(last_s)
-    return Yaku.judge(hand, melds, meld_num, last, False, is_ron)[0][yaku]
+    return Yaku.judge(hand, melds, n_meld, last, False, is_ron)[0][yaku]
 
 def test_yaku_tanyao():
     assert has_yaku(Yaku.断么九, "23456777m678p", "[4]23m", "2m")
@@ -428,14 +428,14 @@ def score(
         ) -> int:
     hand = Hand.from_str(hand_s)
     melds = np.zeros(4, dtype=np.int32)
-    meld_num=0
+    n_meld=0
     for s in melds_s.split(","):
         if not s:
             continue
-        melds[meld_num] = Meld.from_str(s)
-        meld_num += 1
+        melds[n_meld] = Meld.from_str(s)
+        n_meld += 1
     last = Tile.from_str(last_s)
-    return Yaku.score(hand, melds, meld_num, last, riichi, is_ron)
+    return Yaku.score(hand, melds, n_meld, last, riichi, is_ron)
 
 def roundup(n):
     return n + (-n % 100)
@@ -569,7 +569,7 @@ def test_jax():
             last_draw=state.last_draw,
             riichi_declared=state.riichi_declared,
             riichi=jnp.array(state.riichi.copy()),
-            meld_num=jnp.array(state.meld_num.copy()),
+            n_meld=jnp.array(state.n_meld.copy()),
             melds=jnp.array(state.melds.copy()),
             is_menzen=jnp.array(state.is_menzen.copy()),
             pon=jnp.array(state.pon.copy()),
@@ -592,7 +592,7 @@ def test_jax():
         assert state.last_draw == jnp_state.last_draw
         assert state.riichi_declared == jnp_state.riichi_declared
         assert np.all(state.riichi == jnp_state.riichi)
-        assert np.all(state.meld_num == jnp_state.meld_num)
+        assert np.all(state.n_meld == jnp_state.n_meld)
         assert np.all(state.melds == jnp_state.melds)
         assert np.all(state.is_menzen == jnp_state.is_menzen)
         assert np.all(state.pon == jnp_state.pon)

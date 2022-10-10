@@ -511,7 +511,7 @@ class State:
     last_draw: int  # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
     riichi_declared: bool  # state.turn がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi: np.ndarray  # 各playerのリーチが成立しているかどうか
-    meld_num: np.ndarray  # 各playerの副露回数
+    n_meld: np.ndarray  # 各playerの副露回数
     melds: np.ndarray
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
 
@@ -530,7 +530,7 @@ class State:
             yaku = Yaku.judge(
                 self.hand[self.turn],
                 self.melds[self.turn],
-                self.meld_num[self.turn],
+                self.n_meld[self.turn],
                 self.last_draw,
                 self.riichi[self.turn],
                 False,
@@ -543,7 +543,7 @@ class State:
             yaku = Yaku.judge(
                 Hand.add(self.hand[player], self.target),
                 self.melds[player],
-                self.meld_num[player],
+                self.n_meld[player],
                 self.last_draw,
                 self.riichi[player],
                 True,
@@ -653,7 +653,7 @@ class State:
         target = -1
         riichi_declared = False
         riichi = np.full(4, False)
-        meld_num = np.zeros(4, dtype=np.int32)
+        n_meld = np.zeros(4, dtype=np.int32)
         melds = np.zeros((4, 4), dtype=np.int32)
         is_menzen = np.full(4, True)
         pon = np.zeros((4, 34), dtype=np.int32)
@@ -665,7 +665,7 @@ class State:
             last_draw,
             riichi_declared,
             riichi,
-            meld_num,
+            n_meld,
             melds,
             is_menzen,
             pon,
@@ -778,7 +778,7 @@ class State:
         score = Yaku.score(
             state.hand[player],
             state.melds[player],
-            state.meld_num[player],
+            state.n_meld[player],
             state.target,
             state.riichi[player],
             is_ron=True,
@@ -798,8 +798,8 @@ class State:
 
     @staticmethod
     def _append_meld(state: State, meld: int, player: int) -> State:
-        state.melds[(player, state.meld_num[player])] = meld
-        state.meld_num[player] += 1
+        state.melds[(player, state.n_meld[player])] = meld
+        state.n_meld[player] += 1
         return state
 
     @staticmethod
@@ -868,7 +868,7 @@ class State:
         state.hand[player] = Hand.pon(state.hand[player], state.target)
         state.is_menzen[player] = False
         state.pon[(player, state.target)] = (
-            src << 2 | state.meld_num[player] - 1
+            src << 2 | state.n_meld[player] - 1
         )
         state.target = -1
         state.turn = player
@@ -892,7 +892,7 @@ class State:
         score = Yaku.score(
             state.hand[state.turn],
             state.melds[state.turn],
-            state.meld_num[state.turn],
+            state.n_meld[state.turn],
             state.target,
             state.riichi[state.turn],
             is_ron=False,
@@ -985,12 +985,12 @@ class Yaku:
     def score(
         hand: np.ndarray,
         melds: np.ndarray,
-        meld_num: int,
+        n_meld: int,
         last: int,
         riichi: bool,
         is_ron: bool,
     ) -> int:
-        yaku, fan, fu = Yaku.judge(hand, melds, meld_num, last, riichi, is_ron)
+        yaku, fan, fu = Yaku.judge(hand, melds, n_meld, last, riichi, is_ron)
         score = fu << (fan + 2)
         if fu == 0:
             return 8000 * np.dot(yaku, Yaku.YAKUMAN)
@@ -1152,14 +1152,14 @@ class Yaku:
     def judge(
         hand: np.ndarray,
         melds: np.ndarray,
-        meld_num: int,
+        n_meld: int,
         last: int,
         riichi: bool,
         is_ron: bool,
     ) -> tuple[np.ndarray, int, int]:
 
         is_menzen = True
-        for i in range(meld_num):
+        for i in range(n_meld):
             is_menzen &= Action.is_selfkan(Meld.action(melds[i])) & (
                 Meld.src(melds[i]) == 0
             )
@@ -1174,24 +1174,24 @@ class Yaku:
         # NOTE: 東場東家
 
         is_outside = np.full(Yaku.MAX_PATTERNS, True)
-        for i in range(meld_num):
+        for i in range(n_meld):
             is_outside &= Meld.is_outside(melds[i])
 
         n_double_chow = np.full(Yaku.MAX_PATTERNS, 0)
 
         all_chow = np.full(Yaku.MAX_PATTERNS, 0)
-        for i in range(meld_num):
+        for i in range(n_meld):
             all_chow |= Meld.chow(melds[i])
 
         all_pung = np.full(Yaku.MAX_PATTERNS, 0)
-        for i in range(meld_num):
+        for i in range(n_meld):
             all_pung |= Meld.suited_pung(melds[i])
 
         n_concealed_pung = np.full(Yaku.MAX_PATTERNS, 0)
         nine_gates = np.full(Yaku.MAX_PATTERNS, False)
 
         fu = np.full(Yaku.MAX_PATTERNS, 0)
-        for i in range(meld_num):
+        for i in range(n_meld):
             fu += Meld.fu(melds[i])
         fu += (
             2 * (is_ron == 0)
@@ -1241,7 +1241,7 @@ class Yaku:
         fu += 20 + 10 * (is_menzen & is_ron)
         fu += 10 * ((is_menzen == 0) & (fu == 20))
 
-        flatten = Yaku.flatten(hand, melds, meld_num)
+        flatten = Yaku.flatten(hand, melds, n_meld)
 
         four_winds = np.sum(flatten[27:31] >= 3)
         three_dragons = np.sum(flatten[31:34] >= 3)
@@ -1339,9 +1339,9 @@ class Yaku:
 
     @staticmethod
     def flatten(
-        hand: np.ndarray, melds: np.ndarray, meld_num: int
+        hand: np.ndarray, melds: np.ndarray, n_meld: int
     ) -> np.ndarray:
-        for i in range(meld_num):
+        for i in range(n_meld):
             hand = Yaku._flatten(hand, melds[i])
         return hand
 

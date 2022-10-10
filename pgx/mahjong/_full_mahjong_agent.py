@@ -71,12 +71,12 @@ if __name__ == "__main__":
             print("     ", Hand.to_str(state.hand[i]))
         print(
             "melds:",
-            list(map(Meld.to_str, state.melds[0][: state.meld_num[0]])),
+            list(map(Meld.to_str, state.melds[0][: state.n_meld[0]])),
         )
         for i in range(1, 4):
             print(
                 "      ",
-                list(map(Meld.to_str, state.melds[i][: state.meld_num[i]])),
+                list(map(Meld.to_str, state.melds[i][: state.n_meld[i]])),
             )
         print("riichi:", state.riichi)
         print("is_menzen:", state.is_menzen)

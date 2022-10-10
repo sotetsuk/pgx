@@ -579,7 +579,7 @@ class State:
     last_draw: int  # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
     riichi_declared: bool  # state.turn がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi: jnp.ndarray  # 各playerのリーチが成立しているかどうか
-    meld_num: jnp.ndarray  # 各playerの副露回数
+    n_meld: jnp.ndarray  # 各playerの副露回数
     melds: jnp.ndarray
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
 
@@ -602,7 +602,7 @@ class State:
                 Yaku.judge(
                     self.hand[self.turn],
                     self.melds[self.turn],
-                    self.meld_num[self.turn],
+                    self.n_meld[self.turn],
                     self.last_draw,
                     self.riichi[self.turn],
                     False,
@@ -619,7 +619,7 @@ class State:
                 Yaku.judge(
                     Hand.add(self.hand[player], self.target),
                     self.melds[player],
-                    self.meld_num[player],
+                    self.n_meld[player],
                     self.last_draw,
                     self.riichi[player],
                     True,
@@ -793,7 +793,7 @@ class State:
         target = -1
         riichi_declared = False
         riichi = jnp.full(4, False)
-        meld_num = jnp.zeros(4, dtype=jnp.int32)
+        n_meld = jnp.zeros(4, dtype=jnp.int32)
         melds = jnp.zeros((4, 4), dtype=jnp.int32)
         is_menzen = jnp.full(4, True)
         pon = jnp.zeros((4, 34), dtype=jnp.int32)
@@ -805,7 +805,7 @@ class State:
             last_draw,
             riichi_declared,
             riichi,
-            meld_num,
+            n_meld,
             melds,
             is_menzen,
             pon,
@@ -938,7 +938,7 @@ class State:
         score = Yaku.score(
             state.hand[player],
             state.melds[player],
-            state.meld_num[player],
+            state.n_meld[player],
             state.target,
             state.riichi[player],
             is_ron=True,
@@ -968,11 +968,11 @@ class State:
     @staticmethod
     @jit
     def _append_meld(state: State, meld: int, player: int) -> State:
-        state.melds = state.melds.at[(player, state.meld_num[player])].set(
+        state.melds = state.melds.at[(player, state.n_meld[player])].set(
             meld
         )
-        state.meld_num = state.meld_num.at[player].set(
-            state.meld_num[player] + 1
+        state.n_meld = state.n_meld.at[player].set(
+            state.n_meld[player] + 1
         )
         return state
 
@@ -1062,7 +1062,7 @@ class State:
         )
         state.is_menzen = state.is_menzen.at[player].set(False)
         state.pon = state.pon.at[(player, state.target)].set(
-            src << 2 | state.meld_num[player] - 1
+            src << 2 | state.n_meld[player] - 1
         )
         state.target = -1
         state.turn = player
@@ -1090,7 +1090,7 @@ class State:
         score = Yaku.score(
             state.hand[state.turn],
             state.melds[state.turn],
-            state.meld_num[state.turn],
+            state.n_meld[state.turn],
             state.target,
             state.riichi[state.turn],
             is_ron=False,
@@ -1133,7 +1133,7 @@ class State:
             self.last_draw,
             self.riichi_declared,
             self.riichi,
-            self.meld_num,
+            self.n_meld,
             self.melds,
             self.is_menzen,
             self.pon,
@@ -1216,12 +1216,12 @@ class Yaku:
     def score(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
-        meld_num: int,
+        n_meld: int,
         last: int,
         riichi: bool,
         is_ron: bool,
     ) -> int:
-        yaku, fan, fu = Yaku.judge(hand, melds, meld_num, last, riichi, is_ron)
+        yaku, fan, fu = Yaku.judge(hand, melds, n_meld, last, riichi, is_ron)
         score = fu << (fan + 2)
         return jax.lax.cond(
             fu == 0,
@@ -1409,14 +1409,14 @@ class Yaku:
     def judge(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
-        meld_num: int,
+        n_meld: int,
         last: int,
         riichi: bool,
         is_ron: bool,
     ) -> tuple[jnp.ndarray, int, int]:
         is_menzen = jax.lax.fori_loop(
             0,
-            meld_num,
+            n_meld,
             lambda i, menzen: menzen
             & (
                 Action.is_selfkan(Meld.action(melds[i]))
@@ -1438,7 +1438,7 @@ class Yaku:
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
                 0,
-                meld_num,
+                n_meld,
                 lambda i, valid: valid & Meld.is_outside(melds[i]),
                 True,
             ),
@@ -1448,14 +1448,14 @@ class Yaku:
         all_chow = jnp.full(
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
-                0, meld_num, lambda i, chow: chow | Meld.chow(melds[i]), 0
+                0, n_meld, lambda i, chow: chow | Meld.chow(melds[i]), 0
             ),
         )
         all_pung = jnp.full(
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
                 0,
-                meld_num,
+                n_meld,
                 lambda i, pung: pung | Meld.suited_pung(melds[i]),
                 0,
             ),
@@ -1468,7 +1468,7 @@ class Yaku:
             Yaku.MAX_PATTERNS,
             2 * (is_ron == 0)
             + jax.lax.fori_loop(
-                0, meld_num, lambda i, sum: sum + Meld.fu(melds[i]), 0
+                0, n_meld, lambda i, sum: sum + Meld.fu(melds[i]), 0
             )
             + (hand[27] == 2) * 4
             + jnp.any(hand[31:] == 2) * 2
@@ -1519,7 +1519,7 @@ class Yaku:
         fu += 20 + 10 * (is_menzen & is_ron)
         fu += 10 * ((is_menzen == 0) & (fu == 20))
 
-        flatten = Yaku.flatten(hand, melds, meld_num)
+        flatten = Yaku.flatten(hand, melds, n_meld)
 
         four_winds = jnp.sum(flatten[27:31] >= 3)
         three_dragons = jnp.sum(flatten[31:34] >= 3)
@@ -1658,10 +1658,10 @@ class Yaku:
     @staticmethod
     @jit
     def flatten(
-        hand: jnp.ndarray, melds: jnp.ndarray, meld_num: int
+        hand: jnp.ndarray, melds: jnp.ndarray, n_meld: int
     ) -> jnp.ndarray:
         return jax.lax.fori_loop(
-            0, meld_num, lambda i, arr: Yaku._flatten(arr, melds[i]), hand
+            0, n_meld, lambda i, arr: Yaku._flatten(arr, melds[i]), hand
         )
 
     @staticmethod
