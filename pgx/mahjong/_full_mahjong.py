@@ -867,9 +867,7 @@ class State:
         state = State._append_meld(state, meld, player)
         state.hand[player] = Hand.pon(state.hand[player], state.target)
         state.is_menzen[player] = False
-        state.pon[(player, state.target)] = (
-            src << 2 | state.n_meld[player] - 1
-        )
+        state.pon[(player, state.target)] = src << 2 | state.n_meld[player] - 1
         state.target = -1
         state.turn = player
         return state, np.zeros(4, dtype=np.int32), False

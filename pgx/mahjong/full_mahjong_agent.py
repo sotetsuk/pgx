@@ -1,8 +1,18 @@
 import random
 
 import numpy as np
-from full_mahjong import Action, Hand, Meld, Observation, Tile, Deck, State, step
-#from _full_mahjong import Action, Hand, Meld, Observation, Tile, Deck, State, step
+from full_mahjong import (
+    Action,
+    Deck,
+    Hand,
+    Meld,
+    Observation,
+    State,
+    Tile,
+    step,
+)
+
+# from _full_mahjong import Action, Hand, Meld, Observation, Tile, Deck, State, step
 from shanten_tools import shanten  # type: ignore
 
 random.seed(0)
@@ -60,8 +70,8 @@ def act(legal_actions: np.ndarray, obs: Observation) -> int:
 if __name__ == "__main__":
     for i in range(50):
         state = State.init_with_deck(
-                Deck(np.random.permutation(np.arange(136) // 4))
-                )
+            Deck(np.random.permutation(np.arange(136) // 4))
+        )
         done = False
         while not done:
             legal_actions = state.legal_actions()

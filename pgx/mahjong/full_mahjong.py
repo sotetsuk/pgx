@@ -968,12 +968,8 @@ class State:
     @staticmethod
     @jit
     def _append_meld(state: State, meld: int, player: int) -> State:
-        state.melds = state.melds.at[(player, state.n_meld[player])].set(
-            meld
-        )
-        state.n_meld = state.n_meld.at[player].set(
-            state.n_meld[player] + 1
-        )
+        state.melds = state.melds.at[(player, state.n_meld[player])].set(meld)
+        state.n_meld = state.n_meld.at[player].set(state.n_meld[player] + 1)
         return state
 
     @staticmethod
