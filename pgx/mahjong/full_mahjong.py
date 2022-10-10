@@ -778,8 +778,12 @@ class State:
 
     @staticmethod
     @jit
-    def init(key) -> State:
-        deck = Deck.init(key)
+    def init(key: jnp.ndarray) -> State:
+        return State.init_with_deck(Deck.init(key))
+
+    @staticmethod
+    @jit
+    def init_with_deck(deck: Deck) -> State:
         deck, hand, last_draw = Deck.deal(deck)
 
         turn = 0

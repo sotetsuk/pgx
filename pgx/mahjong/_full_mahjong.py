@@ -271,12 +271,12 @@ class Deck:
             for j in range(4):
                 for k in range(4):
                     hand[j] = Hand.add(
-                        hand[j], deck.arr[-(16 * i + 4 * j + k)]
+                        hand[j], deck.arr[-(16 * i + 4 * j + k + 1)]
                     )
         for j in range(4):
-            hand[j] = Hand.add(hand[j], deck.arr[-(16 * 3 + j)])
+            hand[j] = Hand.add(hand[j], deck.arr[-(16 * 3 + j + 1)])
 
-        last_draw = deck.arr[-(16 * 3 + 4)]
+        last_draw = deck.arr[-(16 * 3 + 4 + 1)]
         hand[0] = Hand.add(hand[0], last_draw)
 
         deck.idx -= 53
@@ -629,6 +629,9 @@ class State:
                     self.hand[player], self.target, Action.CHI_R
                 )
 
+            for player in range(4):
+                if player == self.turn:
+                    continue
                 legal_actions[(player, Action.PASS)] = np.any(
                     legal_actions[player]
                 )
@@ -640,7 +643,10 @@ class State:
 
     @staticmethod
     def init() -> State:
-        deck = Deck.init()
+        return State.init_with_deck(Deck.init())
+
+    @staticmethod
+    def init_with_deck(deck: Deck) -> State:
         deck, hand, last_draw = Deck.deal(deck)
 
         turn = 0
@@ -919,6 +925,11 @@ def init() -> State:
 
 
 def step(state: State, actions: np.ndarray) -> tuple[State, np.ndarray, bool]:
+    legal_actions = state.legal_actions()
+    for i in range(4):
+        if actions[i] == Action.NONE:
+            continue
+        assert legal_actions[(i, actions[i])]
     return State.step(state, actions)
 
 
