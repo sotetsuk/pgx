@@ -108,6 +108,6 @@ if __name__ == "__main__":
         print("reward:", reward)
         print("-" * 30)
 
-    print('legal_action:', legal_action_time)
-    print('select:', select_time)
-    print('step:', step_time)
+    print("legal_action:", legal_action_time)
+    print("select:", select_time)
+    print("step:", step_time)
