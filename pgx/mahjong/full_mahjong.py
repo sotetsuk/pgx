@@ -298,9 +298,8 @@ class Deck:
 
     @staticmethod
     @jit
-    def init(key: jnp.ndarray) -> Deck:
-        arr = jax.random.permutation(key, jnp.arange(136) // 4)
-        return Deck(arr)
+    def init_arr(key: jnp.ndarray) -> jnp.ndarray:
+        return jax.random.permutation(key, jnp.arange(136) // 4)
 
     @staticmethod
     @jit
@@ -782,12 +781,12 @@ class State:
     @staticmethod
     @jit
     def init(key: jnp.ndarray) -> State:
-        return State.init_with_deck(Deck.init(key))
+        return State.init_with_deck(Deck.init_arr(key))
 
     @staticmethod
     @jit
-    def init_with_deck(deck: Deck) -> State:
-        deck, hand, last_draw = Deck.deal(deck)
+    def init_with_deck(arr: jnp.ndarray) -> State:
+        deck, hand, last_draw = Deck.deal(Deck(arr))
 
         turn = 0
         target = -1

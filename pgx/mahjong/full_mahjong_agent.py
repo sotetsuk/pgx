@@ -1,16 +1,8 @@
 import random
+import time
 
 import numpy as np
-from _full_mahjong import (
-    Action,
-    Deck,
-    Hand,
-    Meld,
-    Observation,
-    State,
-    Tile,
-    step,
-)
+from full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
 from shanten_tools import shanten  # type: ignore
 
 random.seed(0)
@@ -66,17 +58,32 @@ def act(legal_actions: np.ndarray, obs: Observation) -> int:
 
 
 if __name__ == "__main__":
-    for i in range(50):
+    legal_action_time = 0.0
+    select_time = 0.0
+    step_time = 0.0
+
+    for i in range(20):
         state = State.init_with_deck(
-            Deck(np.random.permutation(np.arange(136) // 4))
+            np.random.permutation(np.arange(136) // 4)
         )
         done = False
         while not done:
+            tmp = time.time()
             legal_actions = state.legal_actions()
+            if i != 0:
+                legal_action_time += time.time() - tmp
+
+            tmp = time.time()
             selected = np.array(
                 [act(legal_actions[i], state.observe(i)) for i in range(4)]
             )
+            if i != 0:
+                select_time += time.time() - tmp
+
+            tmp = time.time()
             state, reward, done = step(state, selected)
+            if i != 0:
+                step_time += time.time() - tmp
 
         print("hand:", Hand.to_str(state.hand[0]))
         for i in range(1, 4):
@@ -100,3 +107,7 @@ if __name__ == "__main__":
             print("last_draw:", Tile.to_str(state.last_draw))
         print("reward:", reward)
         print("-" * 30)
+
+    print('legal_action:', legal_action_time)
+    print('select:', select_time)
+    print('step:', step_time)
