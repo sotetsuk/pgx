@@ -538,7 +538,7 @@ HISTORY = np.array([
 
 def test_state():
     wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
-    state = State.init_with_deck(Deck(np.array(wall) // 4))
+    state = State.init_with_deck_arr(np.array(wall) // 4)
 
     reward = np.zeros(4, dtype=np.int32)
     done = False
@@ -547,13 +547,27 @@ def test_state():
 
     # 中,赤2,ドラ1 = 4翻40符で8000点だが, ドラ未実装のため1300点.
     # リー棒も合わせて2300点の収支.
-    assert np.all(reward == [0, 0, 2300, -2300])
+    assert np.all(reward == np.array([0, 0, 2300, -2300]))
     assert done
 
 def test_jax():
     wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
+    state = full_mahjong.State.init_with_deck_arr(jnp.array(wall) // 4)
 
-    state = State.init_with_deck(Deck(np.array(wall) // 4))
+    reward = np.zeros(4, dtype=jnp.int32)
+    done = False
+    for i in range(len(HISTORY)):
+        state, reward, done = full_mahjong.step(state, HISTORY[i])
+
+    # 中,赤2,ドラ1 = 4翻40符で8000点だが, ドラ未実装のため1300点.
+    # リー棒も合わせて2300点の収支.
+    assert jnp.all(reward == np.array([0, 0, 2300, -2300]))
+    assert done
+
+def test_jax_compatibility():
+    wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
+
+    state = State.init_with_deck_arr(np.array(wall) // 4)
 
     for i in range(len(HISTORY)):
 

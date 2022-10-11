@@ -261,8 +261,7 @@ class Deck:
 
     @staticmethod
     def init() -> Deck:
-        arr = np.random.permutation(np.arange(136) // 4)
-        return Deck(arr)
+        return Deck(np.random.permutation(np.arange(136) // 4))
 
     @staticmethod
     def deal(deck: Deck) -> tuple[Deck, np.ndarray, int]:
@@ -646,6 +645,10 @@ class State:
         return State.init_with_deck(Deck.init())
 
     @staticmethod
+    def init_with_deck_arr(arr: np.ndarray) -> State:
+        return State.init_with_deck(Deck(arr))
+
+    @staticmethod
     def init_with_deck(deck: Deck) -> State:
         deck, hand, last_draw = Deck.deal(deck)
 
@@ -904,7 +907,7 @@ class State:
         else:
             reward = np.full(4, -s1, dtype=np.int32)
             reward[0] = -s2
-            reward[state.turn] = s1 + s2 * 2
+            reward[state.turn] = s1 * 2 + s2
 
         # 供託
         reward -= 1000 * state.riichi
