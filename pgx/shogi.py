@@ -1013,3 +1013,7 @@ def _is_mate(state: ShogiState) -> bool:
         if not _is_check(s1):
             is_mate = False
     return is_mate
+
+
+def _is_mate2(state: ShogiState) -> bool:
+    return True
