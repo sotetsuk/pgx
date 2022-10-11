@@ -538,7 +538,7 @@ HISTORY = np.array([
 
 def test_state():
     wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
-    state = State.init_with_deck(Deck(np.array(wall) // 4))
+    state = State.init_with_deck_arr(np.array(wall) // 4)
 
     reward = np.zeros(4, dtype=np.int32)
     done = False
@@ -552,7 +552,7 @@ def test_state():
 
 def test_jax():
     wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
-    state = full_mahjong.State.init_with_deck(full_mahjong.Deck(jnp.array(wall) // 4))
+    state = full_mahjong.State.init_with_deck_arr(jnp.array(wall) // 4)
 
     reward = np.zeros(4, dtype=jnp.int32)
     done = False
@@ -567,7 +567,7 @@ def test_jax():
 def test_jax_compatibility():
     wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
 
-    state = State.init_with_deck(Deck(np.array(wall) // 4))
+    state = State.init_with_deck_arr(np.array(wall) // 4)
 
     for i in range(len(HISTORY)):
 

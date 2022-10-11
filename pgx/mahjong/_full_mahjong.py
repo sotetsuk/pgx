@@ -260,8 +260,8 @@ class Deck:
         return self.idx - self.end
 
     @staticmethod
-    def init_arr() -> np.ndarray:
-        return np.random.permutation(np.arange(136) // 4)
+    def init() -> Deck:
+        return Deck(np.random.permutation(np.arange(136) // 4))
 
     @staticmethod
     def deal(deck: Deck) -> tuple[Deck, np.ndarray, int]:
@@ -642,11 +642,15 @@ class State:
 
     @staticmethod
     def init() -> State:
-        return State.init_with_deck(Deck.init_arr())
+        return State.init_with_deck(Deck.init())
 
     @staticmethod
-    def init_with_deck(arr: np.ndarray) -> State:
-        deck, hand, last_draw = Deck.deal(Deck(arr))
+    def init_with_deck_arr(arr: np.ndarray) -> State:
+        return State.init_with_deck(Deck(arr))
+
+    @staticmethod
+    def init_with_deck(deck: Deck) -> State:
+        deck, hand, last_draw = Deck.deal(deck)
 
         turn = 0
         target = -1
