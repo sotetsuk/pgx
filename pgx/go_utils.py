@@ -35,7 +35,7 @@ class Visualizer:
 
         if "ipykernel" in sys.modules:
             # Jupyter Notebook
-            from IPython.display import display_svg
+            from IPython.display import display_svg  # type:ignore
 
             display_svg(self._to_dwg(color_mode).tostring(), raw=True)
         else:
