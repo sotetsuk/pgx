@@ -47,6 +47,7 @@ def step(
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
+    action = jnp.int8(action)
     rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
     # sticky action
     action = jax.lax.cond(

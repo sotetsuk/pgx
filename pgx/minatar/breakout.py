@@ -49,6 +49,7 @@ def step(
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
+    action = jnp.int8(action)
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
