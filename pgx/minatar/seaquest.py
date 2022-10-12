@@ -11,6 +11,8 @@ import jax.lax as lax
 from flax import struct
 from jax import numpy as jnp
 
+from typing import Tuple
+
 RAMP_INTERVAL: jnp.ndarray = jnp.int8(100)
 MAX_OXYGEN: jnp.ndarray = jnp.int16(200)
 INIT_SPAWN_SPEED: jnp.ndarray = jnp.int8(20)
@@ -59,6 +61,30 @@ class MinAtarSeaquestState:
     surface: jnp.ndarray = TRUE
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = ZERO
+
+
+@jax.jit
+def step(
+    state: MinAtarSeaquestState,
+    action: jnp.ndarray,
+    rng: jnp.ndarray,
+    sticky_action_prob: jnp.ndarray,
+) -> Tuple[MinAtarSeaquestState, jnp.ndarray, jnp.ndarray]:
+    rngs = jax.random.split(rng, 6)
+    # sticky action
+    action = jax.lax.cond(
+        jax.random.uniform(rngs[0]) < sticky_action_prob,
+        lambda: state.last_action,
+        lambda: action,
+    )
+    enemy_lr = jax.random.choice(rngs[1], jnp.array([True, False]))
+    is_sub = jax.random.choice(
+        rngs[2], jnp.array([True, False]), p=jnp.array([1 / 3, 2 / 3])
+    )
+    enemy_y = jax.random.choice(rngs[3], jnp.arange(1, 9))
+    diver_lr = jax.random.choice(rngs[4], jnp.array([True, False]))
+    diver_y = jax.random.choice(rngs[5], jnp.arange(1, 9))
+    return _step_det(state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y)
 
 
 @jax.jit
