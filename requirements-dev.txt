@@ -11,5 +11,6 @@ jax[cpu]
 brax
 argdcls
 tqdm
+tenhou_wall_reproducer
 shanten_tools
 svgwrite

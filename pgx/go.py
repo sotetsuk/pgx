@@ -69,10 +69,8 @@ def step(
 ) -> Tuple[GoState, jnp.ndarray, bool]:
     return jax.lax.cond(
         action < 0,
-        lambda state, action: _pass_move(state, size),
-        lambda state, action: _not_pass_move(state, action),
-        state,
-        action,
+        lambda: _pass_move(state, size),
+        lambda: _not_pass_move(state, action),
     )
 
 
@@ -82,13 +80,12 @@ def _pass_move(
 ) -> Tuple[GoState, jnp.ndarray, bool]:
     return jax.lax.cond(
         _state.passed[0],
-        lambda _state: (
+        lambda: (
             _add_turn(_state),
             _get_reward(_state, _size),
             True,
         ),  # game end
-        lambda _state: (_add_pass(_state), jnp.array([0, 0]), False),
-        _state,
+        lambda: (_add_pass(_state), jnp.array([0, 0]), False),
     )
 
 
@@ -151,16 +148,14 @@ def _not_pass_move(
         adj_xy = adj_pos[0] * state.size[0] + adj_pos[1]
         state = jax.lax.cond(
             _is_off_board(adj_pos, state.size[0]),
-            lambda state, xy, adj_xy: state,  # 盤外
-            lambda state, xy, adj_xy: jax.lax.cond(
+            lambda: state,  # 盤外
+            lambda: jax.lax.cond(
                 state.ren_id_board[_my_color(state), adj_xy] != -1,
-                lambda state, xy, adj_xy: _merge_ren(state, xy, adj_xy),
-                lambda state, xy, adj_xy: jax.lax.cond(
+                lambda: _merge_ren(state, xy, adj_xy),
+                lambda: jax.lax.cond(
                     state.ren_id_board[_opponent_color(state), adj_xy] != -1,
-                    lambda state, xy, adj_xy: _set_stone_next_to_oppo_ren(
-                        state, xy, adj_xy
-                    ),
-                    lambda state, xy, adj_xy: GoState(  # type:ignore
+                    lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
+                    lambda: GoState(  # type:ignore
                         size=state.size,
                         ren_id_board=state.ren_id_board,
                         available_ren_id=state.available_ren_id,
@@ -175,17 +170,8 @@ def _not_pass_move(
                         passed=state.passed,
                         kou=state.kou,
                     ),
-                    state,
-                    xy,
-                    adj_xy,
                 ),
-                state,
-                xy,
-                adj_xy,
             ),
-            state,
-            xy,
-            adj_xy,
         )
 
     # 自殺手
@@ -214,18 +200,16 @@ def _not_pass_move(
                 kou_occurred
                 & state.agehama[_my_color(_state)] - agehama_before
                 == 1,
-                lambda _: state.kou[0],
-                lambda _: -1,
-                0,
+                lambda: state.kou[0],
+                lambda: -1,
             )
         ),
     )
 
     return jax.lax.cond(
         is_illegal,
-        lambda state: _illegal_move(state),
-        lambda state: (_add_turn(state), jnp.array([0, 0]), False),
-        state,
+        lambda: _illegal_move(state),
+        lambda: (_add_turn(state), jnp.array([0, 0]), False),
     )
 
 
@@ -280,9 +264,8 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     small_id, large_id = jax.lax.cond(
         adj_ren_id < new_id,
-        lambda _: (adj_ren_id, new_id),
-        lambda _: (new_id, adj_ren_id),
-        0,
+        lambda: (adj_ren_id, new_id),
+        lambda: (new_id, adj_ren_id),
     )
     # 大きいidの連を消し、小さいidの連と繋げる
 
@@ -311,8 +294,8 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     return jax.lax.cond(
         new_id == adj_ren_id,
-        lambda _state, liberty: _state,
-        lambda _state, liberty: GoState(  # type:ignore
+        lambda: _state,
+        lambda: GoState(  # type:ignore
             _state.size,
             _state.ren_id_board.at[_my_color(_state)].set(ren_id_board),
             _state.available_ren_id.at[_my_color(_state), large_id].set(True),
@@ -326,8 +309,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
             _state.passed,
             _state.kou,
         ),
-        _state,
-        liberty,
     )
 
 
@@ -379,13 +360,8 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
             state.liberty[_opponent_color(state), oppo_ren_id] == 1
         )
         == 0,
-        lambda state, oppo_ren_id, _adj_xy: _remove_stones(
-            state, oppo_ren_id, _adj_xy
-        ),
-        lambda state, oppo_ren_id, _adj_xy: state,
-        state,
-        oppo_ren_id,
-        _adj_xy,
+        lambda: _remove_stones(state, oppo_ren_id, _adj_xy),
+        lambda: state,
     )
 
 
@@ -529,9 +505,9 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     b = _count_ji(_state, BLACK, _size) - _state.agehama[WHITE]
     w = _count_ji(_state, WHITE, _size) - _state.agehama[BLACK]
     r = jax.lax.cond(
-        b == w, lambda _: jnp.array([0, 0]), lambda _: jnp.array([-1, 1]), 0
+        b == w, lambda: jnp.array([0, 0]), lambda: jnp.array([-1, 1])
     )
-    r = jax.lax.cond(b > w, lambda r: jnp.array([1, -1]), lambda r: r, r)
+    r = jax.lax.cond(b > w, lambda: jnp.array([1, -1]), lambda: r)
 
     return r
 
@@ -607,11 +583,8 @@ def _count_ji_loop(_ji: JI) -> JI:
     board = board.at[xy - _BOARD_WIDTH].set(
         jax.lax.cond(
             board[xy - _BOARD_WIDTH] == POINT,
-            lambda board, xy, o_color: o_color,
-            lambda board, xy, o_color: board[xy - _BOARD_WIDTH],
-            board,
-            xy,
-            o_color,
+            lambda: o_color,
+            lambda: board[xy - _BOARD_WIDTH],
         )
     )
     candidate_xy = candidate_xy.at[xy - _BOARD_WIDTH].set(
@@ -624,11 +597,8 @@ def _count_ji_loop(_ji: JI) -> JI:
     board = board.at[xy + _BOARD_WIDTH].set(
         jax.lax.cond(
             board[xy + _BOARD_WIDTH] == POINT,
-            lambda board, xy, o_color: o_color,
-            lambda board, xy, o_color: board[xy + _BOARD_WIDTH],
-            board,
-            xy,
-            o_color,
+            lambda: o_color,
+            lambda: board[xy + _BOARD_WIDTH],
         )
     )
     candidate_xy = candidate_xy.at[xy + _BOARD_WIDTH].set(
@@ -641,11 +611,8 @@ def _count_ji_loop(_ji: JI) -> JI:
     board = board.at[xy - 1].set(
         jax.lax.cond(
             board[xy - 1] == POINT,
-            lambda board, xy, o_color: o_color,
-            lambda board, xy, o_color: board[xy - 1],
-            board,
-            xy,
-            o_color,
+            lambda: o_color,
+            lambda: board[xy - 1],
         )
     )
     candidate_xy = candidate_xy.at[xy - 1].set(
@@ -658,11 +625,8 @@ def _count_ji_loop(_ji: JI) -> JI:
     board = board.at[xy + 1].set(
         jax.lax.cond(
             board[xy + 1] == POINT,
-            lambda board, xy, o_color: o_color,
-            lambda board, xy, o_color: board[xy + 1],
-            board,
-            xy,
-            o_color,
+            lambda: o_color,
+            lambda: board[xy + 1],
         )
     )
     candidate_xy = candidate_xy.at[xy + 1].set(

@@ -1,4 +1,4 @@
-"""MinAtar/Asterix: A form of github.com/kenjyoung/MinAtar
+"""MinAtar/Asterix: A fork of github.com/kenjyoung/MinAtar
 
 https://github.com/kenjyoung/MinAtar/blob/master/minatar/environments/freeway.py
 
@@ -38,7 +38,8 @@ def step(
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
-) -> Tuple[MinAtarFreewayState, int, bool]:
+) -> Tuple[MinAtarFreewayState, jnp.ndarray, jnp.ndarray]:
+    action = jnp.int8(action)
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
@@ -49,13 +50,13 @@ def step(
 
 
 @jax.jit
-def reset(rng: jnp.ndarray) -> MinAtarFreewayState:
+def init(rng: jnp.ndarray) -> MinAtarFreewayState:
     speeds, directions = _random_speed_directions(rng)
-    return _reset_det(speeds=speeds, directions=directions)
+    return _init_det(speeds=speeds, directions=directions)
 
 
 @jax.jit
-def to_obs(state: MinAtarFreewayState) -> jnp.ndarray:
+def observe(state: MinAtarFreewayState) -> jnp.ndarray:
     return _to_obs(state)
 
 
@@ -65,10 +66,10 @@ def _step_det(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[MinAtarFreewayState, int, jnp.ndarray]:
+) -> Tuple[MinAtarFreewayState, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), 0, True),  # type: ignore
+        lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int16), True),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, speeds, directions),
     )
 
@@ -79,7 +80,7 @@ def _step_det_at_non_terminal(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[MinAtarFreewayState, int, jnp.ndarray]:
+) -> Tuple[MinAtarFreewayState, jnp.ndarray, jnp.ndarray]:
 
     cars = state.cars
     pos = state.pos
@@ -88,7 +89,7 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
     last_action = action
 
-    r = 0
+    r = jnp.array(0, dtype=jnp.int16)
 
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),
@@ -164,7 +165,7 @@ def _update_cars(pos, cars):
 
 
 @jax.jit
-def _reset_det(
+def _init_det(
     speeds: jnp.ndarray, directions: jnp.ndarray
 ) -> MinAtarFreewayState:
     cars = _randomize_cars(speeds, directions, initialize=True)
