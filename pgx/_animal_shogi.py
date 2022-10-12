@@ -113,6 +113,10 @@ def step(
         s = _update_legal_move_actions(s, _action)
         s = _move(s, _action)
         print("move: piece =", _action.piece, ", to =", _action.to)
+        # トライ成功時には手番側の勝ちで終了
+        if _is_try(_action):
+            print("try")
+            return s, _turn_to_reward(s.turn), True
     s.turn = _another_color(s)
     s.is_check = _is_check(s)
     # 王手をかけている駒は直前に動かした駒
@@ -706,3 +710,13 @@ def _legal_actions(state: AnimalShogiState) -> np.ndarray:
     # その他の反則手を除く
     # どうぶつ将棋の場合はなし
     return action_array
+
+
+# トライルールによる勝利判定
+# 王が最奥に動くactionならTrue
+def _is_try(action: AnimalShogiAction) -> bool:
+    if action.piece == 4 and action.to % 4 == 0:
+        return True
+    if action.piece == 9 and action.to % 4 == 3:
+        return True
+    return False

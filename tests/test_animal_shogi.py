@@ -382,6 +382,45 @@ def test_update_legal_actions_drop():
         assert white1[i] == w1[i]
 
 
+def test_step():
+    s = init()
+    # 詰みによる勝ち判定
+    moves = [
+        22, 13, 91, 40, 2, 100000
+    ]
+    for i in range(6):
+        s, r, t = step(s, moves[i])
+        if i == 5:
+            assert r == 1
+            assert t
+        else:
+            assert not t
+    s = init()
+    # トライルールによる勝ち判定(先手)
+    moves = [
+        26, 33, 1, 10, 0
+    ]
+    for i in range(5):
+        s, r, t = step(s, moves[i])
+        if i == 4:
+            assert r == 1
+            assert t
+        else:
+            assert not t
+    s = init()
+    # トライルールによる勝ち判定(後手)
+    moves = [
+        26, 33, 1, 10, 5, 11
+    ]
+    for i in range(6):
+        s, r, t = step(s, moves[i])
+        if i == 5:
+            assert r == -1
+            assert t
+        else:
+            assert not t
+
+
 def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
     turn = jnp.array([state.turn])
     board = jnp.zeros((11, 12), dtype=jnp.int32)
