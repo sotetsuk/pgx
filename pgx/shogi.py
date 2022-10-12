@@ -957,11 +957,11 @@ def _is_check(state: ShogiState) -> bool:
 
 # 王手判定2
 def _is_check2(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
-    # そもそも王がいない場合はFalse
     check_near = 0
     check_far = 0
     checking_point_near = np.zeros(81, dtype=np.int32)
     checking_point_far = np.zeros(81, dtype=np.int32)
+    # そもそも王がいない場合はFalse
     if np.all(state.board[8 + 14 * state.turn] == 0):
         return check_near, checking_point_near, check_far, checking_point_far
     king_point = state.board[8 + 14 * state.turn, :].argmax()
@@ -972,7 +972,8 @@ def _is_check2(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
         if _owner(piece) != _another_color(state):
             continue
         if _piece_moves(state, piece, i)[king_point] == 1:
-            if near_king[i] == 1:
+            # 桂馬の王手も密接としてカウント
+            if near_king[i] == 1 or piece % 14 == 3:
                 check_near += 1
                 checking_point_near[i] = 1
             else:
@@ -1039,6 +1040,11 @@ def _is_mate(state: ShogiState) -> bool:
         if not _is_check(s1):
             is_mate = False
     return is_mate
+
+
+def _between(point1: int, point2: int) -> np.ndarray:
+    direction = _point_to_direction(point1, point2, False, 0)
+    dif = _direction_to_dif(direction, 0)
 
 
 def _is_mate2(state: ShogiState) -> bool:
