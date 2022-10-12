@@ -6,12 +6,12 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
+from typing import Tuple
+
 import jax
 import jax.lax as lax
 from flax import struct
 from jax import numpy as jnp
-
-from typing import Tuple
 
 RAMP_INTERVAL: jnp.ndarray = jnp.int8(100)
 MAX_OXYGEN: jnp.ndarray = jnp.int16(200)
@@ -84,7 +84,9 @@ def step(
     enemy_y = jax.random.choice(rngs[3], jnp.arange(1, 9))
     diver_lr = jax.random.choice(rngs[4], jnp.array([True, False]))
     diver_y = jax.random.choice(rngs[5], jnp.arange(1, 9))
-    return _step_det(state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y)
+    return _step_det(
+        state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y
+    )
 
 
 @jax.jit
