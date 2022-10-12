@@ -1,17 +1,18 @@
 import time
 
 import numpy as np
-from full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
 import shanten_tools  # type: ignore
+from full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
 
 np.random.seed(0)
 
 
 def shanten(hand: np.ndarray) -> int:
-    return shanten_tools.shanten(np.array(hand))
+    return shanten_tools.shanten(np.array(hand))  # type: ignore
 
-def shanten_discard(hand: np.ndarray) -> int:
-    return shanten_tools.shanten_discard(np.array(hand))
+
+def shanten_discard(hand: np.ndarray) -> np.ndarray:
+    return shanten_tools.shanten_discard(np.array(hand))  # type: ignore
 
 
 def act(legal_actions: np.ndarray, obs: Observation) -> int:
@@ -30,27 +31,27 @@ def act(legal_actions: np.ndarray, obs: Observation) -> int:
         return np.argmax(legal_actions[34:68]) + 34  # type: ignore
 
     if np.sum(obs.hand) % 3 == 2:
-        discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))
+        discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))  # type: ignore
         return discard if obs.last_draw != discard else Action.TSUMOGIRI  # type: ignore
 
     if legal_actions[Action.PON]:
         s = shanten(Hand.pon(obs.hand, obs.target))
-        if s < shanten(obs.hand) and np.random.random() < 0.5:
+        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.PON
 
     if legal_actions[Action.CHI_R]:
         s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_R))
-        if s < shanten(obs.hand) and np.random.random() < 0.5:
+        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.CHI_R
 
     if legal_actions[Action.CHI_M]:
         s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_M))
-        if s < shanten(obs.hand) and np.random.random() < 0.5:
+        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.CHI_M
 
     if legal_actions[Action.CHI_L]:
         s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_L))
-        if s < shanten(obs.hand) and np.random.random() < 0.5:
+        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.CHI_L
 
     return Action.PASS
