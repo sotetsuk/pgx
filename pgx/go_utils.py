@@ -49,7 +49,7 @@ class Visualizer:
         if color_mode is None:
             color_set = (
                 VisualizerConfig(
-                    "white", "black", "white", "white", "#202020", "white"
+                    "gray", "black", "white", "white", "#202020", "white"
                 )
                 if self.color_mode == "dark"
                 else VisualizerConfig()
@@ -57,7 +57,7 @@ class Visualizer:
         else:
             color_set = (
                 VisualizerConfig(
-                    "white", "black", "white", "white", "#202020", "white"
+                    "gray", "black", "white", "white", "#202020", "white"
                 )
                 if color_mode == "dark"
                 else VisualizerConfig()
