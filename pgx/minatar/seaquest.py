@@ -71,6 +71,7 @@ def step(
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[MinAtarSeaquestState, jnp.ndarray, jnp.ndarray]:
     rngs = jax.random.split(rng, 6)
+    action = jnp.int8(action)
     # sticky action
     action = jax.lax.cond(
         jax.random.uniform(rngs[0]) < sticky_action_prob,
