@@ -140,8 +140,8 @@ class Visualizer:
             if stone == 2:
                 continue
             # ndarrayのx,yと違うことに注意
-            y = xy // BOARD_SIZE * GRID_SIZE
-            x = xy % BOARD_SIZE * GRID_SIZE
+            stone_y = xy // BOARD_SIZE * GRID_SIZE
+            stone_x = xy % BOARD_SIZE * GRID_SIZE
 
             color = (
                 color_set.black_color if stone == 0 else color_set.white_color
@@ -153,7 +153,7 @@ class Visualizer:
             )
             board_g.add(
                 dwg.circle(
-                    center=(x * cm, y * cm),
+                    center=(stone_x * cm, stone_y * cm),
                     r=GRID_SIZE / 2.2 * cm,
                     stroke=outline,
                     fill=color,
