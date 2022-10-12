@@ -121,6 +121,17 @@ def step(
             lambda: _move(_update_legal_move_actions(s, _action), _action),
         ),
     )
+    # トライルールによる勝利判定
+    reward = jax.lax.cond(
+        (terminated is False) & _is_try(_action),
+        lambda: _turn_to_reward(s.turn[0]),
+        lambda: reward,
+    )
+    terminated = jax.lax.cond(
+        (terminated is False) & _is_try(_action),
+        lambda: True,
+        lambda: terminated,
+    )
     turn = jnp.zeros(1, dtype=jnp.int32).at[0].set(_another_color(s))
     s = JaxAnimalShogiState(
         turn=turn,
@@ -295,7 +306,7 @@ def _dlaction_to_action(
 
 # 手番側でない色を返す
 @jax.jit
-def _another_color(state: JaxAnimalShogiState) -> jnp.ndarray:
+def _another_color(state: JaxAnimalShogiState) -> int:
     return (state.turn[0] + 1) % 2
 
 
@@ -932,3 +943,21 @@ def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
     # その他の反則手を除く
     # どうぶつ将棋の場合はなし
     return action_array
+
+
+# トライルールによる勝利判定
+# 王が最奥に動くactionならTrue
+@jax.jit
+def _is_try(action: JaxAnimalShogiAction) -> bool:
+    flag = False
+    flag = jax.lax.cond(
+        (action.piece[0] == 4) & (action.to[0] % 4 == 0),
+        True,
+        flag
+    )
+    flag = jax.lax.cond(
+        (action.piece[0] == 9) & (action.to[0] % 4 == 3),
+        True,
+        flag
+    )
+    return flag
