@@ -953,11 +953,11 @@ def _is_try(action: JaxAnimalShogiAction) -> bool:
     flag = jax.lax.cond(
         (action.piece[0] == 4) & (action.to[0] % 4 == 0),
         lambda: True,
-        lambda: flag
+        lambda: flag,
     )
     flag = jax.lax.cond(
         (action.piece[0] == 9) & (action.to[0] % 4 == 3),
         lambda: True,
-        lambda: flag
+        lambda: flag,
     )
     return flag
