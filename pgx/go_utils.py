@@ -1,21 +1,67 @@
+from dataclasses import dataclass
+
 import svgwrite  # type: ignore
 from svgwrite import cm
 
 from .go import GoState, get_board
 
 
+@dataclass
+class VisualizerConfig:
+    black_color: str = "black"
+    white_color: str = "white"
+    black_outline: str = "black"
+    white_outline: str = "black"
+    background_color: str = "white"
+    grid_color: str = "black"
+
+
 class Visualizer:
-    def __init__(self, state: GoState) -> None:
+    def __init__(self, state: GoState, color_mode: str = "light") -> None:
         self.state = state
+        self.color_mode = color_mode
 
     def _repr_html_(self) -> None:
         assert self.state is not None
         return self._to_svg_string()
 
-    def _to_dwg(self):
+    def save_svg(self, filename="temp.svg"):
+        assert self.state is not None
+        assert filename.endswith(".svg")
+        self._to_dwg().saveas(filename=filename)
+
+    def show_svg(self, color_mode: str = "light") -> None:
+        import sys
+
+        if "ipykernel" in sys.modules:
+            # Jupyter Notebook
+            from IPython.display import display_svg
+
+            display_svg(self._to_dwg(color_mode).tostring(), raw=True)
+        else:
+            # Not Jupyter
+            pass
+
+    def _to_dwg(self, color_mode: str = "light"):
         state = self.state
         BOARD_SIZE = state.size[0]
         GRID_SIZE = 1
+        if color_mode is None:
+            color_set = (
+                VisualizerConfig(
+                    "white", "black", "white", "white", "#202020", "white"
+                )
+                if self.color_mode == "dark"
+                else VisualizerConfig()
+            )
+        else:
+            color_set = (
+                VisualizerConfig(
+                    "white", "black", "white", "white", "#202020", "white"
+                )
+                if color_mode == "dark"
+                else VisualizerConfig()
+            )
 
         dwg = svgwrite.Drawing(
             "temp.svg",
@@ -30,14 +76,14 @@ class Visualizer:
                 (0, 0),
                 (BOARD_SIZE * GRID_SIZE * cm, BOARD_SIZE * GRID_SIZE * cm),
                 # stroke=svgwrite.rgb(10, 10, 16, "%"),
-                fill="white",
+                fill=color_set.background_color,
             )
         )
 
         # board
-        # #grid
+        # grid
         board_g = dwg.g()
-        hlines = board_g.add(dwg.g(id="hlines", stroke="black"))
+        hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
         for y in range(BOARD_SIZE):
             hlines.add(
                 dwg.line(
@@ -48,7 +94,7 @@ class Visualizer:
                     ),
                 )
             )
-        vlines = board_g.add(dwg.g(id="vline", stroke="black"))
+        vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
         for x in range(BOARD_SIZE):
             vlines.add(
                 dwg.line(
@@ -83,7 +129,7 @@ class Visualizer:
                 dwg.circle(
                     center=((x - 1) * cm, (y - 1) * cm),
                     r=GRID_SIZE / 10 * cm,
-                    fill="black",
+                    fill=color_set.grid_color,
                 )
             )
         board_g.add(hoshi_g)
@@ -97,12 +143,19 @@ class Visualizer:
             y = xy // BOARD_SIZE * GRID_SIZE
             x = xy % BOARD_SIZE * GRID_SIZE
 
-            color = "black" if stone == 0 else "white"
+            color = (
+                color_set.black_color if stone == 0 else color_set.white_color
+            )
+            outline = (
+                color_set.black_outline
+                if stone == 0
+                else color_set.white_outline
+            )
             board_g.add(
                 dwg.circle(
                     center=(x * cm, y * cm),
                     r=GRID_SIZE / 2.2 * cm,
-                    stroke=svgwrite.rgb(10, 10, 16, "%"),
+                    stroke=outline,
                     fill=color,
                 )
             )
@@ -112,9 +165,4 @@ class Visualizer:
         return dwg
 
     def _to_svg_string(self):
-        return self._to_dwg().tostring()
-
-    def save_svg(self, filename="temp.svg"):
-        assert self.state is not None
-        assert filename.endswith(".svg")
-        self._to_dwg().saveas(filename=filename)
+        return self._to_dwg(self.color_mode).tostring()
