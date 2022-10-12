@@ -2,9 +2,10 @@
 
 # Pgx
 
-Parallel game simulator for reinforcement learning.
+Highly parallel game simulator for reinforcement learning.
 
-## API
+## Basic API
+Pgx's basic API consists of *pure functions* following the JAX's design principle.
 
 ```py
 
@@ -19,7 +20,7 @@ def init(rng: jnp.ndarray, **kwargs) -> State:
   return State()
 
 @jax.jit
-def step(state: State, action: jnp.ndarray, rng: jnp.ndarray, **kwargs) -> Tuple[State, float, bool]:
+def step(state: State, action: jnp.ndarray, rng: jnp.ndarray, **kwargs) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
   return State(), r, terminated
 
 @jax.jit
@@ -35,7 +36,7 @@ def observe(state: State) -> jnp.ndarray:
 |TicTacToe||||||
 |AnimalShogi| :white_check_mark: | :white_check_mark:                                                                                                       ||||
 |MiniMahjong| :white_check_mark: | :white_check_mark:                                                                                                       ||||
-|MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br>Seaquest<br> :white_check_mark: SpaceInvaders ||||
+|MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br> :white_check_mark: Seaquest<br> :white_check_mark: SpaceInvaders ||||
 |Chess||||||
 |Shogi| :construction: |||||
 |Go| :white_check_mark: | :white_check_mark:                                                                                                       ||||
