@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import find_packages, setup
 
 setup(
     name="pgx",
@@ -9,7 +9,7 @@ setup(
     author_email="sotetsu.koyamada@gmail.com",
     keywords="",
     packages=find_packages(),
-    install_requires=["jax", "flax", "gym"],
+    install_requires=["jax", "flax", "gym", "svgwrite"],
     classifiers=[
         "Programming Language :: Python :: 3.8",
     ],
