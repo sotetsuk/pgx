@@ -49,6 +49,22 @@ def test_hand():
         ])
     assert Hand.can_tsumo(hand)
 
+    hand = jnp.array([
+        2,0,0,0,0,0,0,1,0,
+        1,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0
+        ])
+    assert not Hand.can_chi(hand, 8, M)
+
+    hand = jnp.array([
+        2,0,0,0,0,0,0,0,1,
+        1,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0
+        ])
+    assert not Hand.can_chi(hand, 7, L)
+
 
 def test_state():
     state = init(jax.random.PRNGKey(seed=0))

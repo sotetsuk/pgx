@@ -48,6 +48,63 @@ def init():
     return _init_legal_actions(state)
 
 
+def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
+    # state, 勝敗判定,終了判定を返す
+    s = copy.deepcopy(state)
+    legal_actions = _legal_actions(s)
+    _action = _dlaction_to_action(action, s)
+    # actionのfromが盤外の場合は非合法手なので負け
+    if not _is_in_board(_action.from_):
+        print("an illegal action")
+        return s, _turn_to_reward(_another_color(s)), True
+    # legal_actionsにactionがない場合、そのactionは非合法手
+    if legal_actions[action] == 0:
+        print("an illegal action2")
+        return s, _turn_to_reward(_another_color(s)), True
+    # 合法手の場合
+    # 駒打ち
+    if _action.is_drop:
+        s = _update_legal_drop_actions(s, _action)
+        s = _drop(s, _action)
+        print("drop: piece =", _action.piece, ", to =", _action.to)
+    # 駒の移動
+    else:
+        s = _update_legal_move_actions(s, _action)
+        s = _move(s, _action)
+        print("move: piece =", _action.piece, ", to =", _action.to)
+    # 王手がかかったままの場合、王手放置またｈ自殺手で負け
+    if _is_check(s):
+        print("check is remained")
+        return s, _turn_to_reward(_another_color(s)), True
+    # その他の反則
+    if _is_double_pawn(s):
+        print("two pawns in the same file")
+        return s, _turn_to_reward(_another_color(s)), True
+    if _is_stuck(s):
+        print("some pieces are stuck")
+        return s, _turn_to_reward(_another_color(s)), True
+    s.turn = _another_color(s)
+    # 相手に合法手がない場合→詰み
+    if _is_mate(s):
+        # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
+        if _action.is_drop and (_action.piece == 1 or _action.piece == 15):
+            print("mate by dropped pawn")
+            return s, _turn_to_reward(s.turn), True
+        # そうでなければ普通の詰みで勝ち
+        else:
+            print("mate")
+            return s, _turn_to_reward(_another_color(s)), True
+    else:
+        return s, 0, False
+
+
+def _turn_to_reward(turn: int) -> int:
+    if turn == 0:
+        return 1
+    else:
+        return -1
+
+
 def _make_init_board() -> np.ndarray:
     array = np.zeros((29, 81), dtype=np.int32)
     for i in range(81):
@@ -536,30 +593,30 @@ def _rook_move(state: ShogiState, point: int) -> np.ndarray:
 
 def _horse_move(state: ShogiState, point: int) -> np.ndarray:
     array = _bishop_move(state, point)
-    u, d, r, l_ = _is_side(point)
+    u, d, l, r = _is_side(point)
     if not u:
         array[point - 1] = 1
     if not d:
         array[point + 1] = 1
     if not r:
         array[point - 9] = 1
-    if not l_:
+    if not l:
         array[point + 9] = 1
     return array
 
 
 def _dragon_move(state: ShogiState, point: int) -> np.ndarray:
     array = _rook_move(state, point)
-    u, d, r, l_ = _is_side(point)
+    u, d, l, r = _is_side(point)
     if not u:
         if not r:
             array[point - 10] = 1
-        if not l_:
+        if not l:
             array[point + 8] = 1
     if not d:
         if not r:
             array[point - 8] = 1
-        if not l_:
+        if not l:
             array[point + 10] = 1
     return array
 
@@ -797,7 +854,7 @@ def _update_legal_drop_actions(
         player_actions = s.legal_actions_white
     # 移動後の位置からの移動のフラグを立てる
     new_player_actions = _add_move_actions(
-        action.to, action.piece, player_actions
+        action.piece, action.to, player_actions
     )
     # 持ち駒がもうない場合、その駒を打つフラグを折る
     if s.hand[_piece_to_hand(action.piece)] == 1:
@@ -866,9 +923,14 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
             )
         # 馬の動きを追加
         if piece == 13 + 14 * state.turn:
-            action_array = _create_actions(piece, i, _horse_move(state, i))
+            action_array = _add_action(
+                _create_actions(piece, i, _horse_move(state, i)), action_array
+            )
+        # 龍の動きを追加
         if piece == 14 + 14 * state.turn:
-            action_array = _create_actions(piece, i, _dragon_move(state, i))
+            action_array = _add_action(
+                _create_actions(piece, i, _dragon_move(state, i)), action_array
+            )
     # 自分の駒がある位置への移動actionを除く
     action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
     # 駒がある地点への駒打ちactionを除く
@@ -878,6 +940,9 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
 
 # 王手判定
 def _is_check(state: ShogiState) -> bool:
+    # そもそも王がいない場合はFalse
+    if np.all(state.board[8 + 14 * state.turn] == 0):
+        return False
     is_check = False
     king_point = state.board[8 + 14 * state.turn, :].argmax()
     bs = _board_status(state)
@@ -929,3 +994,22 @@ def _is_stuck(state: ShogiState) -> bool:
             if state.turn == 1 and piece == 17 and j == 7:
                 is_stuck = True
     return is_stuck
+
+
+def _is_mate(state: ShogiState) -> bool:
+    # 王手がかかっていない場合は無視
+    if not _is_check(state):
+        return False
+    is_mate = True
+    player_actions = _legal_actions(state)
+    for i in range(2754):
+        if player_actions[i] == 0:
+            continue
+        action = _dlaction_to_action(i, state)
+        if action.is_drop:
+            s1 = _drop(state, action)
+        else:
+            s1 = _move(state, action)
+        if not _is_check(s1):
+            is_mate = False
+    return is_mate
