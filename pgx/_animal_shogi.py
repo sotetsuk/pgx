@@ -113,6 +113,7 @@ def step(
         s = _update_legal_move_actions(s, _action)
         s = _move(s, _action)
         print("move: piece =", _action.piece, ", to =", _action.to)
+        # トライ成功時には手番側の勝ちで終了
         if _is_try(_action):
             print("try")
             return s, _turn_to_reward(s.turn), True
