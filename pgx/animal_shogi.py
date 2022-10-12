@@ -306,7 +306,7 @@ def _dlaction_to_action(
 
 # 手番側でない色を返す
 @jax.jit
-def _another_color(state: JaxAnimalShogiState) -> int:
+def _another_color(state: JaxAnimalShogiState) -> jnp.ndarray:
     return (state.turn[0] + 1) % 2
 
 
