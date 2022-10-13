@@ -1043,8 +1043,20 @@ def _is_mate(state: ShogiState) -> bool:
 
 
 def _between(point1: int, point2: int) -> np.ndarray:
+    flag = True
+    between = np.zeros(81, dtype=np.int32)
     direction = _point_to_direction(point1, point2, False, 0)
+    if direction == -1:
+        return between
     dif = _direction_to_dif(direction, 0)
+    p = point1
+    for i in range(7):
+        p += dif
+        if p == point2:
+            flag = False
+        if flag:
+            between[p] = 1
+    return between
 
 
 def _is_mate2(state: ShogiState) -> bool:

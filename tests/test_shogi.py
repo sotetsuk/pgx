@@ -1,6 +1,6 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between
 
 import numpy as np
 
@@ -901,6 +901,30 @@ def test_step():
          0, 28, 0, 16, 0, 15, 1, 0, 0, 0, 0, 0]))
 
 
+def test_between():
+    b1 = _between(36, 44)
+    for i in range(81):
+        if 37 <= i <= 43:
+            assert b1[i] == 1
+        else:
+            assert b1[i] == 0
+    b2 = _between(44, 36)
+    for i in range(81):
+        if 37 <= i <= 43:
+            assert b2[i] == 1
+        else:
+            assert b2[i] == 0
+    b3 = _between(40, 0)
+    for i in range(81):
+        if i == 10 or i == 20 or i == 30:
+            assert b3[i] == 1
+        else:
+            assert b3[i] == 0
+    b4 = _between(40, 1)
+    for i in range(81):
+        assert b4[i] == 0
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -913,5 +937,6 @@ if __name__ == '__main__':
     test_update_legal_actions()
     test_is_double_pawn()
     test_is_stuck()
-    test_step_piece()
-    test_step()
+    #test_step_piece()
+    #test_step()
+    test_between()
