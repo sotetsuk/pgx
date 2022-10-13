@@ -50,7 +50,7 @@ class Visualizer:
         if color_mode is None:  # selfを参照
             color_set = (
                 VisualizerConfig(
-                    "gray", "black", "white", "white", "#202020", "white"
+                    "black", "gray", "white", "white", "#202020", "white"
                 )
                 if self.color_mode == "dark"
                 else VisualizerConfig()
@@ -58,7 +58,7 @@ class Visualizer:
         else:  # 引数を参照
             color_set = (
                 VisualizerConfig(
-                    "gray", "black", "white", "white", "#202020", "white"
+                    "black", "gray", "white", "white", "#202020", "white"
                 )
                 if color_mode == "dark"
                 else VisualizerConfig()
