@@ -7,8 +7,6 @@ from dataclasses import dataclass
 
 import numpy as np
 
-np.random.seed(0)
-
 
 class Tile:
     @staticmethod
