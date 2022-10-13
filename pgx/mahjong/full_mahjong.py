@@ -359,6 +359,7 @@ class Observation:
     hand: jnp.ndarray
     target: int
     last_draw: int
+    riichi: jnp.ndarray
 
 
 class Meld:
@@ -776,7 +777,12 @@ class State:
         return legal_actions
 
     def observe(self, player: int) -> Observation:
-        return Observation(self.hand[player], self.target, self.last_draw)
+        return Observation(
+            self.hand[player],
+            self.target,
+            self.last_draw,
+            self.riichi,
+        )
 
     @staticmethod
     @jit
@@ -1156,10 +1162,14 @@ def init(key) -> State:
     return State.init(key)
 
 
-@jit
 def step(
     state: State, actions: jnp.ndarray
 ) -> tuple[State, jnp.ndarray, bool]:
+    legal_actions = state.legal_actions()
+    for i in range(4):
+        if actions[i] == Action.NONE:
+            continue
+        assert legal_actions[(i, actions[i])]
     return State.step(state, actions)
 
 

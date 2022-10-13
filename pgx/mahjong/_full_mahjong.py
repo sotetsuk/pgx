@@ -299,6 +299,7 @@ class Observation:
     hand: np.ndarray
     target: int
     last_draw: int
+    riichi: np.ndarray
 
 
 class Meld:
@@ -638,7 +639,12 @@ class State:
         return legal_actions
 
     def observe(self, player: int) -> Observation:
-        return Observation(self.hand[player], self.target, self.last_draw)
+        return Observation(
+            self.hand[player],
+            self.target,
+            self.last_draw,
+            self.riichi,
+        )
 
     @staticmethod
     def init() -> State:

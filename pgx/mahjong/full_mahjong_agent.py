@@ -2,7 +2,7 @@ import time
 
 import numpy as np
 import shanten_tools  # type: ignore
-from full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
+from _full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
 
 np.random.seed(0)
 
@@ -15,7 +15,7 @@ def shanten_discard(hand: np.ndarray) -> np.ndarray:
     return shanten_tools.shanten_discard(np.array(hand))  # type: ignore
 
 
-def act(legal_actions: np.ndarray, obs: Observation) -> int:
+def act(player: int, legal_actions: np.ndarray, obs: Observation) -> int:
     if not np.any(legal_actions):
         return Action.NONE
 
@@ -25,14 +25,21 @@ def act(legal_actions: np.ndarray, obs: Observation) -> int:
         return Action.RON
     if legal_actions[Action.RIICHI]:
         return Action.RIICHI
-    if legal_actions[Action.MINKAN]:
-        return Action.MINKAN
     if np.any(legal_actions[34:68]):
         return np.argmax(legal_actions[34:68]) + 34  # type: ignore
 
     if np.sum(obs.hand) % 3 == 2:
-        discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))  # type: ignore
-        return discard if obs.last_draw != discard else Action.TSUMOGIRI  # type: ignore
+        if obs.riichi[player]:
+            return Action.TSUMOGIRI
+        else:
+            discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))  # type: ignore
+            return discard if obs.last_draw != discard else Action.TSUMOGIRI  # type: ignore
+
+    if obs.riichi:
+        return Action.PASS
+
+    if legal_actions[Action.MINKAN]:
+        return Action.MINKAN
 
     if legal_actions[Action.PON]:
         s = shanten(Hand.pon(obs.hand, obs.target))
@@ -75,7 +82,7 @@ if __name__ == "__main__":
 
             tmp = time.time()
             selected = np.array(
-                [act(legal_actions[i], state.observe(i)) for i in range(4)]
+                [act(i, legal_actions[i], state.observe(i)) for i in range(4)]
             )
             if i != 0:
                 select_time += time.time() - tmp
