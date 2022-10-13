@@ -1067,6 +1067,8 @@ def _is_mate2(state: ShogiState) -> bool:
     # 玉が逃げる手以外の合法手
     king_point = state.board[8 + 14 * state.turn, :].argmax()
     legal_actions = _filter_move_actions(8, king_point, legal_actions)
+    # ピンされている駒の動きものぞく
+
     # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
     if cn != 0 and cf != 0:
         return True
@@ -1090,7 +1092,7 @@ def _is_mate2(state: ShogiState) -> bool:
     if cf == 1:
         point = cfp.argmax()
         # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
-        between = np.zeros(81, dtype=np.int32)
+        between = _between(king_point, point)
         for i in range(34):
             for j in range(81):
                 if between[j] != 1 and not (i <= 19 and j == point):
