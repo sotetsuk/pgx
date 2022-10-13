@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional
 
 import svgwrite  # type: ignore
 from svgwrite import cm
@@ -21,16 +22,16 @@ class Visualizer:
         self.state = state
         self.color_mode = color_mode
 
-    def _repr_html_(self) -> None:
+    def _repr_html_(self) -> str:
         assert self.state is not None
         return self._to_svg_string()
 
-    def save_svg(self, filename="temp.svg"):
+    def save_svg(self, filename="temp.svg") -> None:
         assert self.state is not None
         assert filename.endswith(".svg")
         self._to_dwg().saveas(filename=filename)
 
-    def show_svg(self, color_mode: str = "light") -> None:
+    def show_svg(self, color_mode: Optional[str] = None) -> None:
         import sys
 
         if "ipykernel" in sys.modules:
@@ -40,24 +41,24 @@ class Visualizer:
             display_svg(self._to_dwg(color_mode).tostring(), raw=True)
         else:
             # Not Jupyter
-            pass
+            sys.stdout.write("This function only works in Jupyter Notebook.")
 
-    def _to_dwg(self, color_mode: str = "light"):
+    def _to_dwg(self, color_mode: Optional[str] = None) -> svgwrite.Drawing:
         state = self.state
         BOARD_SIZE = state.size[0]
         GRID_SIZE = 1
-        if color_mode is None:
+        if color_mode is None:  # selfを参照
             color_set = (
                 VisualizerConfig(
-                    "gray", "black", "white", "white", "#202020", "white"
+                    "black", "gray", "white", "white", "#202020", "white"
                 )
                 if self.color_mode == "dark"
                 else VisualizerConfig()
             )
-        else:
+        else:  # 引数を参照
             color_set = (
                 VisualizerConfig(
-                    "gray", "black", "white", "white", "#202020", "white"
+                    "black", "gray", "white", "white", "#202020", "white"
                 )
                 if color_mode == "dark"
                 else VisualizerConfig()
@@ -164,5 +165,5 @@ class Visualizer:
 
         return dwg
 
-    def _to_svg_string(self):
+    def _to_svg_string(self) -> str:
         return self._to_dwg(self.color_mode).tostring()
