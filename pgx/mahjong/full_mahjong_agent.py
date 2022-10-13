@@ -1,21 +1,25 @@
 import time
 
+import _full_mahjong
 import numpy as np
-import shanten_tools  # type: ignore
 from full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
+from shanten_tools import shanten, shanten_discard  # type: ignore
 
 np.random.seed(0)
 
 
-def shanten(hand: np.ndarray) -> int:
-    return shanten_tools.shanten(np.array(hand))  # type: ignore
+def to_np(obs: Observation) -> _full_mahjong.Observation:
+    return _full_mahjong.Observation(
+        np.array(obs.hand),
+        obs.target,
+        obs.last_draw,
+        np.array(obs.riichi),
+    )
 
 
-def shanten_discard(hand: np.ndarray) -> np.ndarray:
-    return shanten_tools.shanten_discard(np.array(hand))  # type: ignore
-
-
-def act(legal_actions: np.ndarray, obs: Observation) -> int:
+def act(
+    player: int, legal_actions: np.ndarray, obs: _full_mahjong.Observation
+) -> int:
     if not np.any(legal_actions):
         return Action.NONE
 
@@ -25,34 +29,52 @@ def act(legal_actions: np.ndarray, obs: Observation) -> int:
         return Action.RON
     if legal_actions[Action.RIICHI]:
         return Action.RIICHI
-    if legal_actions[Action.MINKAN]:
-        return Action.MINKAN
     if np.any(legal_actions[34:68]):
         return np.argmax(legal_actions[34:68]) + 34  # type: ignore
 
     if np.sum(obs.hand) % 3 == 2:
-        discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))  # type: ignore
-        return discard if obs.last_draw != discard else Action.TSUMOGIRI  # type: ignore
+        if obs.riichi[player]:
+            return Action.TSUMOGIRI
+        else:
+            discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))  # type: ignore
+            return discard if obs.last_draw != discard else Action.TSUMOGIRI  # type: ignore
 
+    if obs.riichi[player]:
+        return Action.PASS
+
+    if legal_actions[Action.MINKAN]:
+        return Action.MINKAN
+
+    s = shanten(obs.hand)
     if legal_actions[Action.PON]:
-        s = shanten(Hand.pon(obs.hand, obs.target))
+        obs.hand[obs.target] -= 2
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.PON
+        obs.hand[obs.target] += 2
 
     if legal_actions[Action.CHI_R]:
-        s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_R))
+        obs.hand[obs.target - 2] -= 1
+        obs.hand[obs.target - 1] -= 1
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.CHI_R
+        obs.hand[obs.target - 2] += 1
+        obs.hand[obs.target - 1] += 1
 
     if legal_actions[Action.CHI_M]:
-        s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_M))
+        obs.hand[obs.target - 1] -= 1
+        obs.hand[obs.target + 1] -= 1
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.CHI_M
+        obs.hand[obs.target - 1] += 1
+        obs.hand[obs.target + 1] += 1
 
     if legal_actions[Action.CHI_L]:
-        s = shanten(Hand.chi(obs.hand, obs.target, Action.CHI_L))
+        obs.hand[obs.target + 1] -= 1
+        obs.hand[obs.target + 2] -= 1
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
             return Action.CHI_L
+        obs.hand[obs.target + 1] += 1
+        obs.hand[obs.target + 2] += 1
 
     return Action.PASS
 
@@ -75,13 +97,16 @@ if __name__ == "__main__":
 
             tmp = time.time()
             selected = np.array(
-                [act(legal_actions[i], state.observe(i)) for i in range(4)]
+                [
+                    act(i, np.array(legal_actions[i]), to_np(state.observe(i)))
+                    for i in range(4)
+                ]
             )
             if i != 0:
                 select_time += time.time() - tmp
 
             tmp = time.time()
-            state, reward, done = step(state, selected)
+            state, reward, done = step(state, selected)  # type: ignore
             if i != 0:
                 step_time += time.time() - tmp
 
