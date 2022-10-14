@@ -50,29 +50,66 @@ def observe(state: State) -> jnp.ndarray:
 
 #### なぜJaxを使うのか
 
-`jax.numpy` は `numpy` と同じAPIで利用できる自動微分ライブラリです。
+Jaxの `jax.numpy` はNumpyと同じAPIで利用できる自動微分ライブラリです。
 PyTorchと比べて、Numpyを知っていれば新しくAPIを学習する必要がないというメリットがあります。
 その他にこのプロジェクトで利用する重要な機能として、`jax.jit` と `jax.vmap` があります。
 
-**jax.jit** は関数をJIT (Just In Time Compilation) によってアクセラレータ（GPU/TPU）に特化したコードに書き換えることができます。
-これによって通常のPythonコードであっても、GPU/TPUを利用した効率的な演算が可能になります。
+`jax.jit` は関数をJIT (Just In Time Compilation) によって実行直前に、実行するアクセラレータ（CPU/GPU/TPU）に特化したコードに書き換えることができます。
+これによってGPU/TPUを利用した効率的な演算が可能になります。
 
-**jax.vmap** を利用すると、自動で関数をバッチ化することができます。
+TODO: JIT example
+
+`jax.vmap` を利用すると、自動で関数をバッチ化することができます。
 最初の次元が自動的にバッチサイズに対応します。
 これによって、並列化を全く意識せずにコードを書いても、あとから簡単にGPU/TPU上で並列化することができます。
 
-Pgxでは、Jaxを使ってゲームのシミュレータを書くことで、GPU/TPU上で高速かつ並列化可能なゲームの実装を目指します。
+TDOO: vmap example
 
-#### Jitの制約
+Pgxでは、Jaxを使ってゲームのシミュレータを書くことで、GPU/TPU上で高速かつ並列化可能なゲームの実装を目指します。
+似たような目的で、同様にJaxを使って高速なシミュレータを実装しているものとして[Brax](https://github.com/google/brax)があります。
+
+### Jitの制約
 
 `jax.jit` を使うことで、アクセラレータに特化したコードへの変換が可能だと説明しましたが、
-**任意のPythonコードが変換可能なわけではありません。**
-GPU/TPU上での効率的な演算を可能にするため、
+**任意のPythonコードがJIT可能なわけではありません。**
+GPU/TPU上での効率的な演算を可能にするため、例えば `ndarray` はstaticである必要があります（実行前にサイズが決まっている必要があります）。
+Jit化できないコードの例として次のようなものがあります。
+
+<table>
+<tr>
+<td> Jit不可な事例 </td> <td> コード </td>
+</tr>
+<tr>
+<td> 動的な配列 </td>
+<td>
+
+```py
+# Error! Array size is not static.
+@jax.jit
+def f(N):
+  return np.ones(N)
+```
+
+</td>
+</tr>
+<tr>
+<td> X </td>
+<td>
+
+```py
+@jax.jit
+def f():
+  ...
+```
+
+</td>
+</tr>
+</table>
 
 
-TODO: Jit不可能な例（if, for, 早期リターン）
+TODO: Jit不可能な例（staticでないndarray、if, for, 早期リターン）
 
-#### Tips
+### Tips
 
 * いきなり `jax.lax` を使って実装するのは難しいので、まずNumpyでロジックとテストを書き、テストが通るようにNumpyをjax.numpyへ書き換え、そのあと少しずつJit可能なコードへ書き換えるという段階を経るのが良い。
 * なるべくfor/whileではなくNumpyでの行列演算ができないか考える。
@@ -82,7 +119,7 @@ TODO: Jit不可能な例（if, for, 早期リターン）
 * 早期リターンが必要な場合には、早期リターン以後のロジックを別関数に切り分けて
 * 可変長listは絶対に使わない（append/deleteは使わない）
 
-#### `jax.jit` 可能なコードへの変換例
+### `jax.jit` 可能なコードへの変換例
 
 
 ### 開発手順
