@@ -361,7 +361,9 @@ for: [`jax.lax.map`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.m
 
 ```py
 def map(f, xs):
-  return np.stack([f(x) for x in xs])
+  return np.stack(
+    [f(x) for x in xs]
+  )
 ```
 
 Note: いわゆる関数型プログラミングのmap操作を行う。配列の各要素に対して作用させたい場合に使う。
@@ -423,7 +425,7 @@ Note: `fori_loop` と `map` の操作を同時に行うことができる。
 <td>
 
 ```py
-# apply abs and find argmax index
+# apply abs and find argmax
 def f(n):
   ix = -1
   m = 0
