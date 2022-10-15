@@ -335,19 +335,37 @@ def f(n):
 <tr>
 <td> 
 
-for: [`jax.lax.fori_loop`]()
+for: [`jax.lax.scan`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.scan.html)
 
 ```py
+def scan(f, init, xs, length=None):
+  if xs is None:
+    xs = [None] * length
+  carry = init
+  ys = []
+  for x in xs:
+    carry, y = f(carry, x)
+    ys.append(y)
+  return carry, np.stack(ys)
 ```
 
-Note: 
+Note: `fori_loop` と `map` の操作を同時に行うことができる。
 
 </td>
 <td>
 
 ```py
+# apply abs and find argmax index
 def f(n):
-  ...
+  ix = -1
+  m = 0
+  arr = jnp.array([5, -7, 3])
+  abs_arr = jnp.zeros_like(arr)
+  for i in range(3):
+    abs_arr[i] = abs(arr[i])
+    if m < abs_arr[i]:
+      ix = i
+  return ix, abs_arr
 ```
 
 </td>
@@ -356,7 +374,18 @@ def f(n):
 ```py
 @jax.jit
 def f(n):
-  ...
+  m = 0
+  arr = jnp.array([5, -7, 3])
+
+  def each_fn(ix, i):
+    val = abs(arr[i])
+    if m < val:
+      ix = i
+    return i, val
+      
+  return jax.lax.scan(
+    each_fn, -1, jnp.arange(3)
+  )
 ```
 
 
