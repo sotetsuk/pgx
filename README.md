@@ -175,7 +175,7 @@ def f(n):
 
 上述のように、Jit可能なコードには制限がありますが、 `jax.lax` を使うことで、これらの制約を緩和してプログラムを書くことができます。
 `jax.lax` は関数型プログラミングでのコーディングを強制することでコンパイラがコードを変換するのに必要な情報を保証します。
-ここでは、ユースケース毎にどのようにコードを書き換えたら良いのかを列挙します。
+ここでは、if/for/whileについて、どのようにコードを書き換えたら良いのかを列挙します。
 
 
 <table>
@@ -400,9 +400,15 @@ def f(n):
 <tr>
 <td> 
 
-for: [`jax.lax.fori_loop`]()
+while: [`jax.lax.while_loop`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.while_loop.html)
 
 ```py
+def while_loop(cond_fun, 
+         body_fun, init_val):
+  val = init_val
+  while cond_fun(val):
+    val = body_fun(val)
+  return val
 ```
 
 Note: 
@@ -412,7 +418,12 @@ Note:
 
 ```py
 def f(n):
-  ...
+  s = 0
+  i = 1
+  while s + (i * i) < n:
+    s += i * i
+    i += 1
+  return s
 ```
 
 </td>
@@ -421,51 +432,23 @@ def f(n):
 ```py
 @jax.jit
 def f(n):
-  ...
+  def cond_fn(x):
+    i, s = x
+    return s + (i * i) < n
+
+  def body_fn(x):
+    i, s = x
+    return i + 1, s + (i * i)
+
+  return jax.lax.while_loop(
+    cond_fn,
+    body_fn,
+    (1, 0)
+  )
 ```
-
-
 
 </td>
 </tr>
-
-
-
-
-<tr>
-<td> 
-
-for: [`jax.lax.fori_loop`]()
-
-```py
-```
-
-Note: 
-
-</td>
-<td>
-
-```py
-def f(n):
-  ...
-```
-
-</td>
-<td>
-
-```py
-@jax.jit
-def f(n):
-  ...
-```
-
-
-
-</td>
-</tr>
-
-
-
 
 </table>
 
