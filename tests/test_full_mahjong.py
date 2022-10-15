@@ -7,6 +7,33 @@ from pgx.mahjong import full_mahjong
 
 import tenhou_wall_reproducer
 
+def test_tile():
+    Tile.to_str(Tile.from_str("1m")) == "1m"
+    Tile.to_str(Tile.from_str("2m")) == "2m"
+    Tile.to_str(Tile.from_str("9m")) == "9m"
+    Tile.to_str(Tile.from_str("0m")) == "0m"
+    Tile.to_str(Tile.from_str("5m")) == "5m"
+    Tile.to_str(Tile.from_str("1p")) == "1p"
+    Tile.to_str(Tile.from_str("1s")) == "1s"
+    Tile.to_str(Tile.from_str("1z")) == "1z"
+
+def test_meld():
+    Meld.to_str(Meld.from_str("[1]11m")) == "[1]11m"
+    Meld.to_str(Meld.from_str("2[2]2p")) == "2[2]2p"
+    Meld.to_str(Meld.from_str("[3]45m")) == "[3]45m"
+    Meld.to_str(Meld.from_str("[3]24m")) == "[3]24m"
+    Meld.to_str(Meld.from_str("[3]12m")) == "[3]12m"
+    Meld.to_str(Meld.from_str("[3]40m")) == "[3]40m"
+    Meld.to_str(Meld.from_str("[0]46p")) == "[0]46p"
+    Meld.to_str(Meld.from_str("5[0]55m")) == "5[0]55m"
+    Meld.to_str(Meld.from_str("0[5]55m")) == "0[5]55m"
+    Meld.to_str(Meld.from_str("0[55]5m")) == "0[55]5m"
+    Meld.to_str(Meld.from_str("5[50]5m")) == "5[50]5m"
+    Meld.to_str(Meld.from_str("5[05]5m")) == "5[05]5m"
+    Meld.to_str(Meld.from_str("5555m")) == "5555m"
+    Meld.to_str(Meld.from_str("2[2]22z")) == "2[2]22z"
+    Meld.to_str(Meld.from_str("2222z")) == "2222z"
+
 
 def test_deck():
     deck = Deck.init()
@@ -112,7 +139,7 @@ def fu(
         melds_s: str,
         last_s: str,
         is_ron: bool = False
-        ) -> bool:
+        ) -> int:
     hand, _ = Hand.from_str(hand_s)
     melds = np.zeros(4, dtype=np.int32)
     n_meld=0
@@ -176,7 +203,7 @@ def has_yaku(
         last_s: str,
         is_ron: bool = False
         ) -> bool:
-    hand = Hand.from_str(hand_s)
+    hand, _ = Hand.from_str(hand_s)
     melds = np.zeros(4, dtype=np.int32)
     n_meld=0
     for s in melds_s.split(","):
@@ -421,7 +448,8 @@ def score(
         riichi: bool = False,
         is_ron: bool = False
         ) -> int:
-    hand = Hand.from_str(hand_s)
+    hand, red = Hand.from_str(hand_s)
+    dora = np.zeros(34, dtype=np.uint8)
     melds = np.zeros(4, dtype=np.int32)
     n_meld=0
     for s in melds_s.split(","):
@@ -430,7 +458,7 @@ def score(
         melds[n_meld] = Meld.from_str(s)
         n_meld += 1
     last = Tile.from_str(last_s)
-    return Yaku.score(hand, melds, n_meld, last, riichi, is_ron)
+    return Yaku.score(hand, red, melds, n_meld, last, riichi, is_ron, dora)
 
 def roundup(n):
     return n + (-n % 100)
@@ -456,6 +484,17 @@ def test_yaku_score():
     # ツモ,七対子,立直=4翻,25符 => 1600,3200 / 3200オール
 
 SEED = "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"
+
+WALL = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
+for i in range(136):
+    if WALL[i] == 4 * 4:  # 0m
+        WALL[i] = 4 * 34
+    if WALL[i] == 4 * 13:  # 0p
+        WALL[i] = 4 * 35
+    if WALL[i] == 4 * 22:  # 0s
+        WALL[i] = 4 * 36
+WALL = np.array(WALL) // 4
+
 HISTORY = np.array([
     [31, Action.NONE, Action.NONE, Action.NONE],
     [Action.NONE, 30, Action.NONE, Action.NONE],
@@ -493,7 +532,7 @@ HISTORY = np.array([
     [Action.NONE, Action.NONE, Action.NONE, 26],
     [Action.TSUMOGIRI, Action.NONE, Action.NONE, Action.NONE],
     [Action.NONE, 32, Action.NONE, Action.NONE],
-    [Action.NONE, Action.NONE, 33+34, Action.NONE],
+    [Action.NONE, Action.NONE, 33+37, Action.NONE],
     [Action.NONE, Action.NONE, Action.TSUMOGIRI, Action.NONE],
     [Action.NONE, Action.NONE, Action.NONE, Action.TSUMOGIRI],
     [Action.TSUMOGIRI, Action.NONE, Action.NONE, Action.NONE],
@@ -531,18 +570,18 @@ HISTORY = np.array([
     [Action.NONE, Action.NONE, Action.RON, Action.NONE],
         ])
 
+
 def test_state():
-    wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
-    state = State.init_with_deck_arr(np.array(wall) // 4)
+    state = State.init_with_deck_arr(WALL)
 
     reward = np.zeros(4, dtype=np.int32)
     done = False
     for i in range(len(HISTORY)):
         state, reward, done = step(state, HISTORY[i])
 
-    # 中,赤2,ドラ1 = 4翻40符で8000点だが, ドラ未実装のため1300点.
-    # リー棒も合わせて2300点の収支.
-    assert np.all(reward == np.array([0, 0, 2300, -2300]))
+    # 中,赤2,ドラ1 = 4翻40符で8000点.
+    # リー棒も合わせて9000点の収支.
+    assert np.all(reward == np.array([0, 0, 9000, -9000]))
     assert done
 
 def test_jax():
@@ -571,7 +610,7 @@ def test_jax_compatibility():
                 arr=jnp.array(state.deck.arr.copy()),
                 idx=state.deck.idx,
                 end=state.deck.end,
-                doras=state.deck.doras),
+                n_dora=state.deck.n_dora),
             hand=jnp.array(state.hand.copy()),
             turn=state.turn,
             target=state.target,
@@ -594,7 +633,7 @@ def test_jax_compatibility():
         assert np.all(state.deck.arr == jnp_state.deck.arr)
         assert state.deck.idx == jnp_state.deck.idx
         assert state.deck.end == jnp_state.deck.end
-        assert state.deck.doras == jnp_state.deck.doras
+        assert state.deck.n_dora == jnp_state.deck.n_dora
         assert np.all(state.hand == jnp_state.hand)
         assert state.turn == jnp_state.turn
         assert state.target == jnp_state.target

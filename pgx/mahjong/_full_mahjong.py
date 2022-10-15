@@ -30,7 +30,17 @@ class Tile:
     def is_outside(tile: int) -> bool:
         num = Tile.num(tile)
         suit = Tile.suit(tile)
-        return (suit == 4) | (num == 0) | (num == 8)
+        return (suit == 3) | (num == 0) | (num == 8)
+
+    @staticmethod
+    def next(tile: int) -> int:
+        num = Tile.num(tile)
+        suit = Tile.suit(tile)
+        if suit < 3:
+            return (num + 1) % 9 + 9 * suit
+        elif num < 4:
+            return (num + 1) % 4 + 27
+        return num % 3 + 31
 
     @staticmethod
     def to_str(tile: int) -> str:
@@ -176,59 +186,56 @@ class Hand:
     ) -> bool:
         assert np.sum(hand) % 3 == 1
         tile = Tile.unred(tile)
+        num = Tile.num(tile)
+        suit = Tile.suit(tile)
+        has_red = red[suit] if suit < 3 else False
         if action == Action.PON:
-            return hand[tile] >= 2 + red[Tile.suit(tile)]
+            return hand[tile] >= 2 + has_red
         if action == Action.PON_EXPOSE_RED:
-            return (hand[tile] >= 2) & red[Tile.suit(tile)]
+            return (hand[tile] >= 2) & has_red
         if action == Action.MINKAN:
             return hand[tile] >= 3
         if action == Action.CHI_L:
-            num = Tile.num(tile)
-            suit = Tile.suit(tile)
-            assert num < 7
-            return (hand[tile + 1] > (num + 1 == 4) & red[suit]) & (
-                hand[tile + 2] > (num + 2 == 4) & red[suit]
+            if (suit == 3) | (num >= 7):
+                return False
+            return (hand[tile + 1] > (num + 1 == 4) & has_red) & (
+                hand[tile + 2] > (num + 2 == 4) & has_red
             )
         if action == Action.CHI_L_EXPOSE_RED:
-            num = Tile.num(tile)
-            suit = Tile.suit(tile)
-            assert num < 7
+            if (suit == 3) | (num >= 7):
+                return False
             return (
-                red[suit]
+                has_red
                 & (hand[tile + 1] > 0)
                 & (hand[tile + 2] > 0)
                 & ((num + 1 == 4) | (num + 2 == 4))
             )
         if action == Action.CHI_M:
-            num = Tile.num(tile)
-            suit = Tile.suit(tile)
-            assert 0 < num < 8
-            return (hand[tile - 1] > (num - 1 == 4) & red[suit]) & (
-                hand[tile + 1] > (num + 1 == 4) & red[suit]
+            if (suit == 3) | (num == 0) | (num == 8):
+                return False
+            return (hand[tile - 1] > (num - 1 == 4) & has_red) & (
+                hand[tile + 1] > (num + 1 == 4) & has_red
             )
         if action == Action.CHI_M_EXPOSE_RED:
-            num = Tile.num(tile)
-            suit = Tile.suit(tile)
-            assert 0 < num < 8
+            if (suit == 3) | (num == 0) | (num == 8):
+                return False
             return (
-                red[suit]
+                has_red
                 & (hand[tile - 1] > 0)
                 & (hand[tile + 1] > 0)
                 & ((num - 1 == 4) | (num + 1 == 4))
             )
         if action == Action.CHI_R:
-            num = Tile.num(tile)
-            suit = Tile.suit(tile)
-            assert num > 1
-            return (hand[tile - 2] > (num - 2 == 4) & red[suit]) & (
-                hand[tile - 1] > (num - 1 == 4) & red[suit]
+            if (suit == 3) | (num <= 1):
+                return False
+            return (hand[tile - 2] > (num - 2 == 4) & has_red) & (
+                hand[tile - 1] > (num - 1 == 4) & has_red
             )
         if action == Action.CHI_R_EXPOSE_RED:
-            num = Tile.num(tile)
-            suit = Tile.suit(tile)
-            assert num > 1
+            if (suit == 3) | (num <= 1):
+                return False
             return (
-                red[suit]
+                has_red
                 & (hand[tile - 2] > 0)
                 & (hand[tile - 1] > 0)
                 & ((num - 2 == 4) | (num - 1 == 4))
@@ -239,13 +246,13 @@ class Hand:
     @staticmethod
     def can_kakan(hand: np.ndarray, tile: int) -> bool:
         assert np.sum(hand) % 3 == 2
-        assert 0 < tile < 34
+        assert 0 <= tile < 34
         return hand[Tile.unred(tile)] == 1
 
     @staticmethod
     def can_ankan(hand: np.ndarray, tile: int) -> bool:
         assert np.sum(hand) % 3 == 2
-        assert 0 < tile < 34
+        assert 0 <= tile < 34
         return hand[tile] == 4
 
     @staticmethod
@@ -352,11 +359,10 @@ class Hand:
     ) -> bool:
         # 手出しできるかどうか
         suit = Tile.suit(tile)
-        has_red = red[suit] if suit < 3 else False
-
         if Tile.is_red(tile):
-            return has_red > (tile == last_draw)
+            return red[suit] & (tile != last_draw)
         else:
+            has_red = red[suit] if suit < 3 and Tile.num(tile) == 4 else False
             return hand[tile] > (tile == last_draw) + has_red
 
     @staticmethod
@@ -395,8 +401,8 @@ class Deck:
     end: int = 13
     n_dora: int = 1
 
-    # 0   2 | 4 - 12 | 14 - 134
     # 1   3 | 5 - 13 | 15 - 135
+    # 0   2 | 4 - 12 | 14 - 134
     # -------------------------
     # 嶺上牌| ドラ   | to be used
     #       | 裏ドラ |
@@ -410,11 +416,11 @@ class Deck:
     def dora(self, is_riichi: bool) -> np.ndarray:
         dora = np.zeros(34, dtype=np.uint8)
         for i in range(self.n_dora):
-            dora[4 + 2 * i] += 1
+            dora[Tile.next(self.arr[5 + 2 * i])] += 1
 
         if is_riichi:
             for i in range(self.n_dora):
-                dora[5 + 2 * i] += 1
+                dora[Tile.next(self.arr[4 + 2 * i])] += 1
 
         return dora
 
@@ -458,12 +464,12 @@ class Deck:
     @staticmethod
     def draw(deck: Deck, is_kan: bool = False) -> tuple[Deck, int]:
         assert not deck.is_empty()
-        tile = deck.arr[
-            deck.idx * (is_kan is False) | (deck.n_dora - 1) * is_kan
-        ]
-        deck.idx -= is_kan is False
-        deck.end += is_kan
-        deck.n_dora += is_kan  # NOTE: 先めくりで統一
+        tile = deck.arr[(deck.n_dora - 1) ^ 1 if is_kan else deck.idx]
+        if is_kan:
+            deck.end += 1
+            deck.n_dora += 1  # NOTE: 先めくりで統一
+        else:
+            deck.idx -= 1
         return deck, tile
 
 
@@ -621,7 +627,14 @@ class Meld:
         if g := re.match(r"^\[(\d)\](\d)(\d)([mpsz])$", s):
             stolen = Tile.from_str(g[1] + g[4])
             src = 3
-            num = list(map(int, [g[1], g[2], g[3]]))
+            num = list(
+                map(
+                    Tile.num,
+                    map(
+                        Tile.from_str, [g[1] + g[4], g[2] + g[4], g[3] + g[4]]
+                    ),
+                )
+            )
             expose_red = g[2] == "0" or g[3] == "0"
             if num[0] == num[1] and num[0] == num[2]:
                 return Meld.init(
@@ -649,7 +662,6 @@ class Meld:
                 )
 
         if g := re.match(r"^(\d)\[(\d)\](\d)([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3]
             stolen = Tile.from_str(g[2] + g[4])
             src = 2
             expose_red = g[1] == "0" or g[3] == "0"
@@ -657,7 +669,6 @@ class Meld:
             return Meld.init(action, stolen, src)
 
         if g := re.match(r"^(\d)(\d)\[(\d)\]([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3]
             stolen = Tile.from_str(g[3] + g[4])
             src = 1
             expose_red = g[1] == "0" or g[2] == "0"
@@ -665,46 +676,39 @@ class Meld:
             return Meld.init(action, stolen, src)
 
         if g := re.match(r"^\[(\d)\](\d)(\d)(\d)([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3] and g[1] == g[4]
             stolen = Tile.from_str(g[1] + g[5])
             src = 3
             return Meld.init(Action.MINKAN, stolen, src)
 
         if g := re.match(r"^(\d)\[(\d)\](\d)(\d)([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3] and g[1] == g[4]
             stolen = Tile.from_str(g[2] + g[5])
             src = 2
             return Meld.init(Action.MINKAN, stolen, src)
 
         if g := re.match(r"^(\d)(\d)(\d)\[(\d)\]([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3] and g[1] == g[4]
             stolen = Tile.from_str(g[4] + g[5])
             src = 1
             return Meld.init(Action.MINKAN, stolen, src)
 
         if g := re.match(r"^\[(\d)(\d)\](\d)(\d)([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3] and g[1] == g[4]
-            action = 37 + Tile.from_str(g[2] + g[5])
+            action = 37 + Tile.unred(Tile.from_str(g[2] + g[5]))
             stolen = Tile.from_str(g[1] + g[5])
             src = 3
             return Meld.init(action, stolen, src)
 
         if g := re.match(r"^(\d)\[(\d)(\d)\](\d)([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3] and g[1] == g[4]
-            action = 37 + Tile.from_str(g[3] + g[5])
+            action = 37 + Tile.unred(Tile.from_str(g[3] + g[5]))
             stolen = Tile.from_str(g[2] + g[5])
             src = 2
             return Meld.init(action, stolen, src)
 
         if g := re.match(r"^(\d)(\d)\[(\d)(\d)\]([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3] and g[1] == g[4]
-            action = 37 + Tile.from_str(g[4] + g[5])
+            action = 37 + Tile.unred(Tile.from_str(g[4] + g[5]))
             stolen = Tile.from_str(g[3] + g[5])
             src = 1
             return Meld.init(action, stolen, src)
 
         if g := re.match(r"^(\d)(\d)(\d)(\d)([mpsz])$", s):
-            assert g[1] == g[2] and g[1] == g[3] and g[1] == g[4]
             action = 37 + Tile.unred(Tile.from_str(g[1] + g[5]))
             stolen = 0
             src = 0
@@ -838,7 +842,7 @@ class State:
         # 暗/加槓, ツモ切り, ツモ, リーチ
         if (self.last_draw != -1) & (not self.riichi_declared):
             for tile in range(34):
-                legal_actions[(self.turn, tile + 34)] = (
+                legal_actions[(self.turn, tile + 37)] = (
                     (
                         Hand.can_ankan(self.hand[self.turn], tile)
                         | self.can_kakan(tile)
@@ -1031,7 +1035,7 @@ class State:
     ) -> tuple[State, np.ndarray, bool]:
         if action < 37:
             return State._discard(state, action)
-        if action < 70:
+        if action < 37 + 34:
             return State._selfkan(state, action)
         if action == Action.TSUMOGIRI:
             return State._tsumogiri(state)
@@ -1128,12 +1132,12 @@ class State:
     @staticmethod
     def _ron(state: State, player: int) -> tuple[State, np.ndarray, bool]:
         is_ron = True
+        last = Tile.unred(state.target)
         score = Yaku.score(
-            state.hand[player],
-            state.red[player],
+            *Hand.add(state.hand[player], state.red[player], state.target),
             state.melds[player],
             state.n_meld[player],
-            state.target,
+            last,
             state.riichi[player],
             is_ron,
             state.deck.dora(state.riichi[player]),
@@ -1328,6 +1332,7 @@ class Yaku:
         is_ron: bool,
         dora: np.ndarray,
     ) -> int:
+        assert Hand.can_tsumo(hand)
         flatten, n_red = Yaku.flatten(hand, melds, n_meld)
         n_red += np.sum(red)
         yaku, fan, fu = Yaku._judge(
@@ -1706,13 +1711,6 @@ class Yaku:
         hand = hand.copy()
 
         action = Meld.action(meld)
-
-        if Action.is_selfkan(action) | (action == Action.MINKAN):
-            tile = action - 37
-            hand = Hand._add(hand, tile, 4)
-            has_red = (Tile.suit(tile) < 3) & (Tile.num(tile) == 4)
-            return hand, has_red
-
         stolen = Meld.stolen(meld)
         tile = Tile.unred(stolen)
         has_red = (
@@ -1722,6 +1720,10 @@ class Yaku:
             | (action == Action.CHI_M_EXPOSE_RED)
             | (action == Action.CHI_R_EXPOSE_RED)
         )
+
+        if Action.is_selfkan(action) | (action == Action.MINKAN):
+            hand = Hand._add(hand, tile, 4)
+            has_red = (Tile.suit(tile) < 3) & (Tile.num(tile) == 4)
 
         if Action.is_pon(action):
             hand = Hand._add(hand, tile, 3)
