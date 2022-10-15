@@ -20,12 +20,20 @@ def init(rng: jnp.ndarray, **kwargs) -> State:
   return State()
 
 @jax.jit
-def step(state: State, action: jnp.ndarray, rng: jnp.ndarray, **kwargs) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+def step(state: State, action: jnp.ndarray, **kwargs) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
   return State(), r, terminated
 
 @jax.jit
 def observe(state: State) -> jnp.ndarray:
   return jnp.ones(...)
+
+# step is deterministic but shuffle can make step stochastic
+# Usage:
+#   state = shuffle(state, key)
+#   state = step(state, action)
+@jax.jit
+def shuffle(state: State, rng: jnp.ndarray) -> State:
+  return State()
 
 ```
 
@@ -521,8 +529,6 @@ def f(n):
 </tr>
 
 </table>
-
-TODO: switch
 
 
 ### Tips
