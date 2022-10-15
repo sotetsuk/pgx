@@ -198,7 +198,8 @@ def f(n):
 if: [`jax.lax.cond`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html)
 
 ```py
-def cond(pred, true_fun, false_fun, *operands):
+def cond(pred, true_fun, false_fun, 
+         *operands):
   if pred:
     return true_fun(*operands)
   else:
