@@ -46,12 +46,12 @@ def shuffle(state: State, rng: jnp.ndarray) -> State:
 #   * Be simple than be universal
 # 
 # [Notes]
-#   * Does NOT provide original RL API, but support OpenAI Gym (with OpponentPool).
 #   * Not RL API but minimam game simulator.
 #   * Does NOT support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
 #   * Does NOT support chance player. (Deos NOT support Poker research)
 #
 # [Concerns]
+#   * Can we support OpenAI Gym API? Even if we skip opponent turn, we cannot compute V(s') in AlphaGo.
 #   * Does PettingZoo support vector env and auto reset? None?
 #   * For efficient computation, current_player must be synchronized? but this is difficult (impossible?). The termination timing must be different
 ```
