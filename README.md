@@ -180,18 +180,30 @@ def f(n):
 
 <table>
 <tr>
-<td> ユースケース </td> 
 <td> 
 
-`jax.lax` 
+ドキュメント（等価なコード）
+
+</td> 
+<td> 
+
+例 Before
 
 </td>
-<td> 使用例 </td>
+<td> 例 After </td>
 </tr>
 <tr>
 <td> 
 
-`jax.lax.cond` 
+if: [`jax.lax.cond`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.cond.html)
+
+```py
+def cond(pred, true_fun, false_fun, *operands):
+  if pred:
+    return true_fun(*operands)
+  else:
+    return false_fun(*operands)
+```
 
 </td>
 <td>
@@ -216,6 +228,9 @@ def f(n):
     lambda: jnp.ones(3)
   )
 ```
+
+Note: `true_fn` と `false_fn` の返り値の型が同じで必要があります。
+
 
 </td>
 </tr>
