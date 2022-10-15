@@ -126,7 +126,7 @@ Pgxでは、Jaxを使ってゲームのシミュレータを書くことで、GP
 GPU/TPU上での効率的な演算を可能にするため、例えば `ndarray` はstaticである必要があります（実行前にサイズが決まっている必要があります）。
 Jit化できないコードの例として次のようなものがあります。
 
-<table>
+<table width=100%>
 <tr>
 <td> Jit不可な事例 </td> <td> コード </td>
 </tr>
@@ -207,7 +207,7 @@ def f(n):
 ここでは、if/for/whileについて、どのようにコードを書き換えたら良いのかを列挙します。
 
 
-<table>
+<table width=100%>
 <tr>
 <td> 
 
@@ -243,7 +243,8 @@ Note: `true_fn` と `false_fn` の返り値の型が同じで必要がありま�
 
 ```py
 def f(n):
-  if n % 2 == 0 and n % 3 == 0:
+  if (n % 2 == 0 and 
+      n % 3 == 0):
     return jnp.zeros(3) 
   else:
     return jnp.ones(3)
@@ -275,11 +276,12 @@ def f(n):
 if: [`jax.lax.switch`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.switch.html)
 
 ```py
-def switch(index, branches, 
-            *operands):
+def switch(index, branches, *operands):
   index = clamp(0, index, 
-                len(branches) - 1)
-  return branches[index](*operands)
+            len(branches) - 1)
+  return branches[index](
+    *operands
+  )
 ```
 
 Note: 3つ以上の条件分岐のときなどに使えます。返り値の型は同じである必要があります。
@@ -304,7 +306,7 @@ def f(n):
 @jax.jit
 def f(n):
   return jax.lax.switch(
-    n
+    n,
     [lambda: jnp.zeros(3),
      lambda: jnp.ones(3),
      lambda: jnp.ones(3) * 2],
@@ -416,7 +418,8 @@ def f(n):
 for: [`jax.lax.scan`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.scan.html)
 
 ```py
-def scan(f, init, xs, length=None):
+def scan(f, init, xs, 
+         length=None):
   if xs is None:
     xs = [None] * length
   carry = init
@@ -482,7 +485,7 @@ while: [`jax.lax.while_loop`](https://jax.readthedocs.io/en/latest/_autosummary/
 
 ```py
 def while_loop(cond_fun, 
-         body_fun, init_val):
+    body_fun, init_val):
   val = init_val
   while cond_fun(val):
     val = body_fun(val)
