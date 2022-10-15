@@ -54,16 +54,38 @@ Jaxの `jax.numpy` はNumpyと同じAPIで利用できる自動微分ライブ�
 PyTorchと比べて、Numpyを知っていれば新しくAPIを学習する必要がないというメリットがあります。
 その他にこのプロジェクトで利用する重要な機能として、`jax.jit` と `jax.vmap` があります。
 
-`jax.jit` は関数をJIT (Just In Time Compilation) によって実行直前に、実行するアクセラレータ（CPU/GPU/TPU）に特化したコードに書き換えることができます。
+`jax.jit` は関数をJIT (Just In Time Compilation) によって実行直前に、実行するアクセラレータ（CPU/GPU/TPU）に特化したコードにコンパイルすることができます。
 これによってGPU/TPUを利用した効率的な演算が可能になります。
+次の例では、最初の実行時にforの結果をそのまま返すコードにコンパイルされています。
 
-TODO: JIT example
+```py
+>>> def f():
+...    s = 0
+...    for i in range(1, 11):
+...        s += i
+...    return s
+
+>>> f_jit = jax.jit(f)
+>>> f_jit()
+55
+>>> jax.make_jaxpr(f)()
+{ lambda ; . let  in (55,) }
+```
 
 `jax.vmap` を利用すると、自動で関数をバッチ化することができます。
 最初の次元が自動的にバッチサイズに対応します。
 これによって、並列化を全く意識せずにコードを書いても、あとから簡単にGPU/TPU上で並列化することができます。
 
-TDOO: vmap example
+```py
+>>> def f(n):
+...     return jax.numpy.ones(3) * n
+
+>>> f_vmap = jax.vmap(f)
+>>> f_vmap(jnp.arange(3))
+[[0. 0. 0.]
+ [1. 1. 1.]
+ [2. 2. 2.]]
+```
 
 Pgxでは、Jaxを使ってゲームのシミュレータを書くことで、GPU/TPU上で高速かつ並列化可能なゲームの実装を目指します。
 似たような目的で、同様にJaxを使って高速なシミュレータを実装しているものとして[Brax](https://github.com/google/brax)があります。
@@ -84,7 +106,6 @@ Jit化できないコードの例として次のようなものがあります�
 <td>
 
 ```py
-# Error! Array size is not static.
 @jax.jit
 def f(N):
   return np.ones(N)
@@ -92,22 +113,67 @@ def f(N):
 
 </td>
 </tr>
+
 <tr>
-<td> X </td>
+<td> 引数を条件にしたif </td>
 <td>
 
 ```py
 @jax.jit
-def f():
-  ...
+def f(n):
+  if n == 0:
+    return 0
+  else:
+    return 1
+  
 ```
 
 </td>
 </tr>
+
+<tr>
+<td> 引数で回数が決まるfor </td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  s = 0
+  for i in range(n):
+    s += i
+  return s
+```
+
+</td>
+</tr>
+
+<tr>
+<td> 引数を条件にしたwhile </td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  s = 0
+  while i < n:
+    s += i
+    i += 1
+  return s
+```
+
+</td>
+</tr>
+
+
 </table>
 
+これらのコードに共通するのは、**実行時に必要な情報が決まっていないということです。**
+例えば行列のサイズやforの回数が決まっていません。
+またifでは条件分岐したときに返り値の値が同じ型なのかどうかの保証がありません。
 
-TODO: Jit不可能な例（staticでないndarray、if, for, 早期リターン）
+### `jax.jit` 可能なコードへの変換例
+
+
 
 ### Tips
 
@@ -118,9 +184,6 @@ TODO: Jit不可能な例（staticでないndarray、if, for, 早期リターン�
 * break/continueはなるべく避ける。どうしても必要な場合には `jax.lax.while` の使用を考える。
 * 早期リターンが必要な場合には、早期リターン以後のロジックを別関数に切り分けて
 * 可変長listは絶対に使わない（append/deleteは使わない）
-
-### `jax.jit` 可能なコードへの変換例
-
 
 ### 開発手順
 
