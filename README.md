@@ -14,9 +14,11 @@ Pgx's basic API consists of *pure functions* following the JAX's design principl
 
 @dataclass
 class State:
-  current_player: jnp.ndarray  # (1,) 0, ..., N-1. -1 at terminal
+  current_player: jnp.ndarray  # (1,) 
+  # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
+  # -1 if terminal
   legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
-  is_terminal: jnp.ndarray  #  (N,) or (1,)?
+  is_terminal: jnp.ndarray  #  (1,)
   ...
 
 @jax.jit
