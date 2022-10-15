@@ -305,7 +305,8 @@ Note: いわゆる関数型プログラミングのmap操作を行う。配列�
 ```py
 def f(n):
   arr = jnp.arange(10)
-  return jnp.array([is_odd(arr[i]) for i in range(10)])
+  l = [is_odd(arr[i]) for i in range(10)]
+  return jnp.array(l)
 ```
 
 </td>
@@ -315,7 +316,10 @@ def f(n):
 @jax.jit
 def f(n):
   arr = jnp.arange(10)
-  return jax.lax.map(lambda: is_odd(arr[i]), jnp.arange(10))
+  return jax.lax.map(
+    lambda: is_odd(arr[i]), 
+    jnp.arange(10)
+  )
 # jax.lax.map(is_odd, arr) is enough in this case
 # Access to out of scope array is often used
 ```
