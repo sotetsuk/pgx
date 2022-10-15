@@ -192,6 +192,8 @@ def f(n):
 </td>
 <td> 例 After </td>
 </tr>
+
+
 <tr>
 <td> 
 
@@ -205,6 +207,8 @@ def cond(pred, true_fun, false_fun,
   else:
     return false_fun(*operands)
 ```
+
+Note: `true_fn` と `false_fn` の返り値の型が同じで必要があります。
 
 </td>
 <td>
@@ -230,11 +234,199 @@ def f(n):
   )
 ```
 
-Note: `true_fn` と `false_fn` の返り値の型が同じで必要があります。
 
 
 </td>
 </tr>
+
+
+<tr>
+<td> 
+
+for: [`jax.lax.fori_loop`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.fori_loop.html)
+
+```py
+def fori_loop(lower, upper, 
+              body_fun, init_val):
+  val = init_val
+  for i in range(lower, upper):
+    val = body_fun(i, val)
+  return val
+```
+
+Note: 一つの変数valに繰り返し同じ操作を行う場合、 `fori_loop` を使う。
+
+</td>
+<td>
+
+```py
+def f(n):
+  s = 0
+  for i in range(1, n + 1):
+    s += i
+  return s
+```
+
+</td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  s = jax.lax.fori_loop(
+    1, n + 1,
+    lambda i, x: x + i
+  )
+  return s
+# Practically, use jnp.sum()
+```
+
+
+
+</td>
+</tr>
+
+
+<tr>
+<td> 
+
+for: [`jax.lax.fori_loop`]()
+
+```py
+```
+
+Note: 
+
+</td>
+<td>
+
+```py
+def f(n):
+  ...
+```
+
+</td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  ...
+```
+
+
+
+</td>
+</tr>
+
+
+
+
+<tr>
+<td> 
+
+for: [`jax.lax.fori_loop`]()
+
+```py
+```
+
+Note: 
+
+</td>
+<td>
+
+```py
+def f(n):
+  ...
+```
+
+</td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  ...
+```
+
+
+
+</td>
+</tr>
+
+
+
+
+
+<tr>
+<td> 
+
+for: [`jax.lax.fori_loop`]()
+
+```py
+```
+
+Note: 
+
+</td>
+<td>
+
+```py
+def f(n):
+  ...
+```
+
+</td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  ...
+```
+
+
+
+</td>
+</tr>
+
+
+
+
+<tr>
+<td> 
+
+for: [`jax.lax.fori_loop`]()
+
+```py
+```
+
+Note: 
+
+</td>
+<td>
+
+```py
+def f(n):
+  ...
+```
+
+</td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  ...
+```
+
+
+
+</td>
+</tr>
+
+
+
 
 </table>
 
