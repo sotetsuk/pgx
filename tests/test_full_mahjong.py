@@ -20,24 +20,25 @@ def test_deck():
 
 def test_hand():
     hand = np.zeros(34, dtype=np.uint8)
-    hand = Hand.add(hand, 0)
+    red = np.full(3, False)
+    hand, red = Hand.add(hand, red, 0)
     assert Hand.can_ron(hand, 0)
     assert not Hand.can_ron(hand, 1)
-    hand = Hand.add(hand, 0)
+    hand, red = Hand.add(hand, red, 0)
     assert Hand.can_tsumo(hand)
-    hand = Hand.add(hand, 1, 2)
-    assert Hand.can_pon(hand, 0)
+    hand, red = Hand.add(hand, red, tile=1, x=2)
+    assert Hand.can_steal(hand, red, tile=0, action=Action.PON)
 
-    assert Hand.can_chi(hand, 2, Action.CHI_R)
-    assert Hand.can_chi(hand, 1, Action.CHI_M) == False
-    hand = Hand.add(hand, 2, 3)  # 1122333m
-    assert Hand.can_chi(hand, 1, Action.CHI_M)
+    assert Hand.can_steal(hand, red, tile=2, action=Action.CHI_R)
+    assert Hand.can_steal(hand, red, tile=1, action=Action.CHI_M) == False
+    hand, red = Hand.add(hand, red, tile=2, x=3)  # 1122333m
+    assert Hand.can_steal(hand, red, tile=1, action=Action.CHI_M)
 
-    hand = Hand.chi(hand, 1, Action.CHI_M)
+    hand, red = Hand.steal(hand, red, tile=1, action=Action.CHI_M)
     # 12233m
-    hand = Hand.sub(hand, 1)
+    hand, red = Hand.sub(hand, red, tile=1)
     # 1233m
-    hand = Hand.pon(hand, 2)
+    hand = Hand.steal(hand, red, tile=2, action=Action.PON)
     # 12m
 
     hand = np.array([
@@ -81,20 +82,14 @@ def test_hand():
     assert not Hand.can_riichi(hand)
 
     hand = np.array([
-        2,0,0,0,0,0,0,1,0,
-        1,0,0,0,0,0,0,0,0,
+        2,0,0,0,0,0,1,1,0,
+        0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0
         ])
-    assert not Hand.can_chi(hand, 8, Action.CHI_M)
-
-    hand = np.array([
-        2,0,0,0,0,0,0,0,1,
-        1,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0
-        ])
-    assert not Hand.can_chi(hand, 7, Action.CHI_L)
+    assert Hand.can_steal(hand, red, tile=5, action=Action.CHI_L)
+    assert not Hand.can_steal(hand, red, tile=5, action=Action.CHI_M)
+    assert not Hand.can_steal(hand, red, tile=5, action=Action.CHI_R)
 
     assert np.all(
             np.array([
@@ -103,13 +98,13 @@ def test_hand():
                     0,0,0,0,0,0,0,0,0,
                     0,0,0,0,0,3,0
                 ]) ==
-            Hand.from_str("119m15667p666z")
+            Hand.from_str("119m15667p666z")[0]
             )
 
-    hand = Hand.from_str("117788m2233s6677z")
+    hand, red = Hand.from_str("117788m2233s6677z")
     assert Hand.can_tsumo(hand)
 
-    hand = Hand.from_str("19m19p199s1234567z")
+    hand, red = Hand.from_str("19m19p199s1234567z")
     assert Hand.can_tsumo(hand)
 
 def fu(
@@ -118,7 +113,7 @@ def fu(
         last_s: str,
         is_ron: bool = False
         ) -> bool:
-    hand = Hand.from_str(hand_s)
+    hand, _ = Hand.from_str(hand_s)
     melds = np.zeros(4, dtype=np.int32)
     n_meld=0
     for s in melds_s.split(","):
