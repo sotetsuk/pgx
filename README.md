@@ -411,7 +411,7 @@ def while_loop(cond_fun,
   return val
 ```
 
-Note: 
+Note: `break` を使いたいときなどに使用を考える。
 
 </td>
 <td>
