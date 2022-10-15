@@ -4,28 +4,33 @@
 
 Highly parallel game simulator for reinforcement learning.
 
-## Basic API
+## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
 
 ```py
+# N: num agents
+# A: action space size
+# M: observation dim
 
 @dataclass
 class State:
-  i: np.ndarray = jnp.zeros(1)
-  board: np.ndarray = jnp.array((10, 10))
-
-
-@jax.jit
-def init(rng: jnp.ndarray, **kwargs) -> State:
-  return State()
+  current_player: jnp.ndarray  # (1,) 0, ..., N-1. -1 at terminal
+  legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
+  is_terminal: jnp.ndarray  #  (N,) or (1,)?
+  ...
 
 @jax.jit
-def step(state: State, action: jnp.ndarray, **kwargs) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-  return State(), r, terminated
+def init(rng: jnp.ndarray) -> State:
+  return state 
+
+# step is deterministic
+@jax.jit
+def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
+  return state, rewards  # rewards: (N,) 
 
 @jax.jit
 def observe(state: State) -> jnp.ndarray:
-  return jnp.ones(...)
+  return obs  # (N, M) N is required to compute V(s') (e.g., AlphaGo)
 
 # step is deterministic but shuffle can make step stochastic
 # Usage:
@@ -33,8 +38,20 @@ def observe(state: State) -> jnp.ndarray:
 #   state = step(state, action)
 @jax.jit
 def shuffle(state: State, rng: jnp.ndarray) -> State:
-  return State()
+  return state
 
+# [Design goal]
+#   * Be simple than be universal
+# 
+# [Notes]
+#   * Does NOT provide original RL API, but support OpenAI Gym (with OpponentPool).
+#   * Not RL API but minimam game simulator.
+#   * Does NOT support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
+#   * Does NOT support chance player. (Deos NOT support Poker research)
+#
+# [Concerns]
+#   * Does PettingZoo support vector env and auto reset? None?
+#   * For efficient computation, current_player must be synchronized? but this is difficult (impossible?). The termination timing must be different
 ```
 
 ## Roadmap
@@ -126,7 +143,7 @@ Pgxでは、Jaxを使ってゲームのシミュレータを書くことで、GP
 GPU/TPU上での効率的な演算を可能にするため、例えば `ndarray` はstaticである必要があります（実行前にサイズが決まっている必要があります）。
 Jit化できないコードの例として次のようなものがあります。
 
-<table width=100%>
+<table>
 <tr>
 <td> Jit不可な事例 </td> <td> コード </td>
 </tr>
@@ -207,7 +224,7 @@ def f(n):
 ここでは、if/for/whileについて、どのようにコードを書き換えたら良いのかを列挙します。
 
 
-<table width=100%>
+<table>
 <tr>
 <td> 
 
@@ -276,7 +293,8 @@ def f(n):
 if: [`jax.lax.switch`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.switch.html)
 
 ```py
-def switch(index, branches, *operands):
+def switch(index, branches, 
+           *operands):
   index = clamp(0, index, 
             len(branches) - 1)
   return branches[index](
