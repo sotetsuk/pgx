@@ -90,6 +90,10 @@ PyTorchと比べて、Numpyを知っていれば新しくAPIを学習する必�
 Pgxでは、Jaxを使ってゲームのシミュレータを書くことで、GPU/TPU上で高速かつ並列化可能なゲームの実装を目指します。
 似たような目的で、同様にJaxを使って高速なシミュレータを実装しているものとして[Brax](https://github.com/google/brax)があります。
 
+### Numpyとの違い
+
+* immutable
+
 ### Jitの制約
 
 `jax.jit` を使うことで、アクセラレータに特化したコードへの変換が可能だと説明しましたが、
@@ -208,14 +212,14 @@ def cond(pred, true_fun, false_fun,
     return false_fun(*operands)
 ```
 
-Note: `true_fn` と `false_fn` の返り値の型が同じで必要があります。
+Note: `true_fn` と `false_fn` の返り値の型が同じで必要があります。`and/or` の代わりに `&/|` を使います。
 
 </td>
 <td>
 
 ```py
 def f(n):
-  if n == 0:
+  if n % 2 == 0 and n % 3 == 0:
     return jnp.zeros(3) 
   else:
     return jnp.ones(3)
@@ -228,7 +232,7 @@ def f(n):
 @jax.jit
 def f(n):
   return jax.lax.cond(
-    n == 0:
+    (n % 2 == 0) & (n % 3 == 0):
     lambda: jnp.zeros(3),
     lambda: jnp.ones(3)
   )
@@ -452,19 +456,18 @@ def f(n):
 
 </table>
 
-
-
-
+TODO: switch
 
 
 ### Tips
 
 * いきなり `jax.lax` を使って実装するのは難しいので、まずNumpyでロジックとテストを書き、テストが通るようにNumpyをjax.numpyへ書き換え、そのあと少しずつJit可能なコードへ書き換えるという段階を経るのが良い。
 * なるべくfor/whileではなくNumpyでの行列演算ができないか考える。
-* 書き換えのテストしやすさを考慮し、実装は細かい純粋関数に分ける。細かすぎて困ることはない。Numpy実装で各十行以内くらいが一つの目安。
-* forを回すときは、carryの更新か、map操作のどちらかにする（あるいはそれらの組み合わせ）。
+* 書き換えのしやすさを考慮し、ifやforの深いネストは避け、細かい純粋関数に分ける。細かすぎて困ることはない。Numpy実装で各十行以内くらいが一つの目安。
+* forを回すときは、carryの更新か、map操作のどちらかになるように実装する（あるいはそれらの組み合わせ）。
+* 通常のforはかなり遅いので、固定長であってもすべて `fori_loop` 等で書き換える。
 * break/continueはなるべく避ける。どうしても必要な場合には `jax.lax.while` の使用を考える。
-* 早期リターンが必要な場合には、早期リターン以後のロジックを別関数に切り分けて
+* 早期リターンが必要な場合には、早期リターン以後のロジックを別関数に切り分ける。
 * 可変長listは絶対に使わない（append/deleteは使わない）
 
 ### 開発手順
