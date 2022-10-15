@@ -54,7 +54,7 @@ Jaxの `jax.numpy` はNumpyと同じAPIで利用できる自動微分ライブ�
 PyTorchと比べて、Numpyを知っていれば新しくAPIを学習する必要がないというメリットがあります。
 その他にこのプロジェクトで利用する重要な機能として、`jax.jit` と `jax.vmap` があります。
 
-`jax.jit` は関数をJIT (Just In Time Compilation) によって実行直前に、実行するアクセラレータ（CPU/GPU/TPU）に特化したコードにコンパイルすることができます。
+`jax.jit` は関数をJIT (Just In Time Compilation) によって実行しているアクセラレータ（CPU/GPU/TPU）に特化したコードにコンパイルしてから実行することができます。
 これによってGPU/TPUを利用した効率的な演算が可能になります。
 次の例では、最初の実行時にforの結果をそのまま返すコードにコンパイルされています。
 
@@ -172,6 +172,58 @@ def f(n):
 またifでは条件分岐したときに返り値の値が同じ型なのかどうかの保証がありません。
 
 ### `jax.jit` 可能なコードへの変換例
+
+上述のように、Jit可能なコードには制限がありますが、 `jax.lax` を使うことで、これらの制約を緩和してプログラムを書くことができます。
+`jax.lax` は関数型プログラミングでのコーディングを強制することでコンパイラがコードを変換するのに必要な情報を保証します。
+ここでは、ユースケース毎にどのようにコードを書き換えたら良いのかを列挙します。
+
+
+<table>
+<tr>
+<td> ユースケース </td> 
+<td> 
+
+`jax.lax` 
+
+</td>
+<td> 使用例 </td>
+</tr>
+<tr>
+<td> 
+
+`jax.lax.cond` 
+
+</td>
+<td>
+
+```py
+def f(n):
+  if n == 0:
+    return jnp.zeros(3) 
+  else:
+    return jnp.ones(3)
+```
+
+</td>
+<td>
+
+```py
+@jax.jit
+def f(n):
+  return jax.lax.cond(
+    n == 0:
+    lambda: jnp.zeros(3),
+    lambda: jnp.ones(3)
+  )
+```
+
+</td>
+</tr>
+
+</table>
+
+
+
 
 
 
