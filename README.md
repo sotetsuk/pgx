@@ -6,6 +6,8 @@ Highly parallel game simulator for reinforcement learning.
 
 ## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
+This is to explicitly let users know that state transition is determined ONLY from `state` and `action`.
+
 
 ```py
 @jax.jit
@@ -30,7 +32,6 @@ def observe(state: State) -> jnp.ndarray:
 def shuffle(state: State, rng: jnp.ndarray) -> State:
   return state
 
-
 # N: num agents
 # A: action space size
 # M: observation dim
@@ -40,8 +41,9 @@ class State:
   # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
   # -1 if terminal
   legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
-  is_terminal: jnp.ndarray  #  (1,)
-  is_truncated: jnp.ndarray  #  (1,)
+  terminated: jnp.ndarray  #  (1,) moved into state to support auto_reset 
+  # truncated: jnp.ndarray  #  (1,)
+  # elapsed_steps: jnp.ndarray  #  (1,)
   ... 
 ```
 
@@ -54,7 +56,7 @@ class State:
 * Does NOT support Chance player (Nature player) with action selection.
 
 ### `skip_chance`
-* We prepare skip_chance=True option for some environments. This enables to consider value function for "post-decision states" (See AlgoRL book). However, we do not allow chance agent to choose action like OpenSpiel. This is because the action space of chance agent and usual agent are different. Thus, when the chance player is chosen (`current_player=-1`), `action=-1` must be returned to step function. Use `shuffle` to make `step` stochastic.
+* We prepare skip_chance=True option for some environments. This makes it possible to consider value function for "post-decision states" (See AlgoRL book). However, we do not allow chance agent to choose action like OpenSpiel. This is because the action space of chance agent and usual agent are different. Thus, when the chance player is chosen (`current_player=-1`), `action=-1` must be returned to step function. Use `shuffle` to make `step` stochastic.
 
 ### truncatation and auto_reset
 * supported by `make(env_id="...", auto_reset=True, max_episode_length=64)`
