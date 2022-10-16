@@ -2,7 +2,7 @@ import time
 
 import _full_mahjong
 import numpy as np
-from full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
+from _full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
 from shanten_tools import shanten, shanten_discard  # type: ignore
 
 np.random.seed(0)
@@ -11,6 +11,7 @@ np.random.seed(0)
 def to_np(obs: Observation) -> _full_mahjong.Observation:
     return _full_mahjong.Observation(
         np.array(obs.hand),
+        np.array(obs.red),
         obs.target,
         obs.last_draw,
         np.array(obs.riichi),
@@ -114,9 +115,9 @@ if __name__ == "__main__":
             if i != 0:
                 step_time += time.time() - tmp
 
-        print("hand:", Hand.to_str(state.hand[0]))
+        print("hand:", Hand.to_str(state.hand[0], state.red[0]))
         for i in range(1, 4):
-            print("     ", Hand.to_str(state.hand[i]))
+            print("     ", Hand.to_str(state.hand[i], state.red[i]))
         print(
             "melds:",
             list(map(Meld.to_str, state.melds[0][: state.n_meld[0]])),
@@ -128,7 +129,7 @@ if __name__ == "__main__":
             )
         print(f"{state.riichi=}")
         print(f"{state.is_menzen=}")
-        print(f"{state.deck.doras=}")
+        print(f"{state.deck.n_dora=}")
         print(f"{state.deck.end=}")
         if state.target != -1:
             print("target:", Tile.to_str(state.target))

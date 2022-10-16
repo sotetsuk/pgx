@@ -493,133 +493,127 @@ class Meld:
         return (src << 13) | (stolen << 7) | action
 
     @staticmethod
+    def _to_str_pon(src: int, suit: str, num: int, is_red: bool) -> str:
+        stolen = 0 if is_red else num
+        if src == 1:
+            return f"{num}{num}[{stolen}]{suit}"
+        elif src == 2:
+            return f"{num}[{stolen}]{num}{suit}"
+        elif src == 3:
+            return f"[{stolen}]{num}{num}{suit}"
+        assert False
+
+    @staticmethod
+    def _to_str_pon_expose_red(src: int, suit: str, num: int) -> str:
+        if src == 1:
+            return f"{0}{num}[{num}]{suit}"
+        elif src == 2:
+            return f"{0}[{num}]{num}{suit}"
+        elif src == 3:
+            return f"[{num}]{0}{num}{suit}"
+        assert False
+
+    @staticmethod
+    def _to_str_minkan(src: int, suit: str, num: int, is_red: bool) -> str:
+        stolen = 0 if is_red else num
+        first = 0 if num == 5 and not is_red else num
+        if src == 1:
+            return f"{first}{num}{num}[{stolen}]{suit}"
+        elif src == 2:
+            return f"{first}[{stolen}]{num}{num}{suit}"
+        elif src == 3:
+            return f"[{stolen}]{first}{num}{num}{suit}"
+        assert False
+
+    @staticmethod
+    def _to_str_chi_l(suit: str, num: int, is_red: bool) -> str:
+        stolen = 0 if is_red else num
+        return f"[{stolen}]{num + 1}{num + 2}{suit}"
+
+    @staticmethod
+    def _to_str_chi_l_expose_red(suit: str, num: int) -> str:
+        first = 0 if num + 1 == 5 else num + 1
+        second = 0 if num + 2 == 5 else num + 2
+        return f"[{num}]{first}{second}{suit}"
+
+    @staticmethod
+    def _to_str_chi_m(suit: str, num: int, is_red: bool) -> str:
+        stolen = 0 if is_red else num
+        return f"[{stolen}]{num - 1}{num + 1}{suit}"
+
+    @staticmethod
+    def _to_str_chi_m_expose_red(suit: str, num: int) -> str:
+        first = 0 if num - 1 == 5 else num - 1
+        second = 0 if num + 1 == 5 else num + 1
+        return f"[{num}]{first}{second}{suit}"
+
+    @staticmethod
+    def _to_str_chi_r(suit: str, num: int, is_red: bool) -> str:
+        stolen = 0 if is_red else num
+        return f"[{stolen}]{num - 2}{num - 1}{suit}"
+
+    @staticmethod
+    def _to_str_chi_r_expose_red(suit: str, num: int) -> str:
+        first = 0 if num - 2 == 5 else num - 2
+        second = 0 if num - 1 == 5 else num - 1
+        return f"[{num}]{first}{second}{suit}"
+
+    @staticmethod
+    def _to_str_selfkan(
+        action: int, src: int, suit: str, num: int, is_red: bool
+    ) -> str:
+        if src == 0:
+            return f"{num}{num}{num}{num}{suit}"
+        add_red = action >= 34
+        if src == 1:
+            if is_red:
+                return f"{num}{num}[{0}{num}]{suit}"
+            if add_red:
+                return f"{num}{num}[{num}{0}]{suit}"
+            return f"{0 if num == 5 else num}{num}[{num}{num}]{suit}"
+        if src == 2:
+            if is_red:
+                return f"{num}[{0}{num}]{num}{suit}"
+            if add_red:
+                return f"{num}[{num}{0}]{num}{suit}"
+            return f"{0 if num == 5 else num}[{num}{num}]{num}{suit}"
+        if src == 3:
+            if is_red:
+                return f"[{0}{num}]{num}{num}{suit}"
+            if add_red:
+                return f"[{num}{0}]{num}{num}{suit}"
+            return f"[{num}{num}]{0 if num == 5 else num}{num}{suit}"
+        assert False
+
+    @staticmethod
     def to_str(meld: int) -> str:
         action = Meld.action(meld)
         stolen = Meld.stolen(meld)
         src = Meld.src(meld)
-
         suit = ["m", "p", "s", "z"][Tile.suit(stolen)]
         num = Tile.num(stolen) + 1
         is_red = Tile.is_red(stolen)
 
         if action == Action.PON:
-            if src == 1:
-                return "{}{}[{}]{}".format(
-                    num, num, 0 if is_red else num, suit
-                )
-            elif src == 2:
-                return "{}[{}]{}{}".format(
-                    num, 0 if is_red else num, num, suit
-                )
-            elif src == 3:
-                return "[{}]{}{}{}".format(
-                    0 if is_red else num, num, num, suit
-                )
+            return Meld._to_str_pon(src, suit, num, is_red)
         elif action == Action.PON_EXPOSE_RED:
-            assert not is_red
-            if src == 1:
-                return "{}{}[{}]{}".format(0, num, num, suit)
-            elif src == 2:
-                return "{}[{}]{}{}".format(0, num, num, suit)
-            elif src == 3:
-                return "[{}]{}{}{}".format(num, 0, num, suit)
+            return Meld._to_str_pon_expose_red(src, suit, num)
         elif action == Action.MINKAN:
-            if src == 1:
-                return "{}{}{}[{}]{}".format(
-                    0 if num == 5 and not is_red else num,
-                    num,
-                    num,
-                    0 if is_red else num,
-                    suit,
-                )
-            elif src == 2:
-                return "{}[{}]{}{}{}".format(
-                    0 if num == 5 and not is_red else num,
-                    0 if is_red else num,
-                    num,
-                    num,
-                    suit,
-                )
-            elif src == 3:
-                return "[{}]{}{}{}{}".format(
-                    0 if is_red else num,
-                    0 if num == 5 and not is_red else num,
-                    num,
-                    num,
-                    suit,
-                )
+            return Meld._to_str_minkan(src, suit, num, is_red)
         elif action == Action.CHI_L:
-            assert src == 3
-            return "[{}]{}{}{}".format(
-                0 if is_red else num, num + 1, num + 2, suit
-            )
+            return Meld._to_str_chi_l(suit, num, is_red)
         elif action == Action.CHI_L_EXPOSE_RED:
-            assert src == 3
-            assert not is_red
-            return "[{}]{}{}{}".format(
-                num,
-                0 if num + 1 == 5 else num + 1,
-                0 if num + 2 == 5 else num + 2,
-                suit,
-            )
+            return Meld._to_str_chi_l_expose_red(suit, num)
         elif action == Action.CHI_M:
-            assert src == 3
-            return "[{}]{}{}{}".format(
-                0 if is_red else num, num - 1, num + 1, suit
-            )
+            return Meld._to_str_chi_m(suit, num, is_red)
         elif action == Action.CHI_M_EXPOSE_RED:
-            assert src == 3
-            assert not is_red
-            return "[{}]{}{}{}".format(
-                num,
-                0 if num - 1 == 5 else num - 1,
-                0 if num + 1 == 5 else num + 1,
-                suit,
-            )
+            return Meld._to_str_chi_m_expose_red(suit, num)
         elif action == Action.CHI_R:
-            assert src == 3
-            return "[{}]{}{}{}".format(
-                0 if is_red else num, num - 2, num - 1, suit
-            )
+            return Meld._to_str_chi_r(suit, num, is_red)
         elif action == Action.CHI_R_EXPOSE_RED:
-            assert src == 3
-            assert not is_red
-            return "[{}]{}{}{}".format(
-                num,
-                0 if num - 2 == 5 else num - 2,
-                0 if num - 1 == 5 else num - 1,
-                suit,
-            )
+            return Meld._to_str_chi_r_expose_red(suit, num)
         elif Action.is_selfkan(action):
-            if src == 0:
-                return "{}{}{}{}{}".format(
-                    0 if num == 5 else num, num, num, num, suit
-                )
-            add_red = action >= 34
-            if src == 1:
-                if is_red:
-                    return "{}{}[{}{}]{}".format(num, num, 0, num, suit)
-                if add_red:
-                    return "{}{}[{}{}]{}".format(num, num, num, 0, suit)
-                return "{}{}[{}{}]{}".format(
-                    0 if num == 5 else num, num, num, num, suit
-                )
-            if src == 2:
-                if is_red:
-                    return "{}[{}{}]{}{}".format(num, 0, num, num, suit)
-                if add_red:
-                    return "{}[{}{}]{}{}".format(num, num, 0, num, suit)
-                return "{}[{}{}]{}{}".format(
-                    0 if num == 5 else num, num, num, num, suit
-                )
-            if src == 3:
-                if is_red:
-                    return "[{}{}]{}{}{}".format(0, num, num, num, suit)
-                if add_red:
-                    return "[{}{}]{}{}{}".format(num, 0, num, num, suit)
-                return "[{}{}]{}{}{}".format(
-                    num, num, 0 if num == 5 else num, num, suit
-                )
+            return Meld._to_str_selfkan(action, src, suit, num, is_red)
         assert False
 
     @staticmethod
@@ -1026,7 +1020,7 @@ class State:
     def step(
         state: State, actions: np.ndarray
     ) -> tuple[State, np.ndarray, bool]:
-        player = np.argmin(actions)
+        player = int(np.argmin(actions))
         return State._step(state, player, actions[player])
 
     @staticmethod
