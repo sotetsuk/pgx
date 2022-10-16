@@ -371,7 +371,8 @@ class Hand:
         for i in range(4):
             t = ""
             for j in range(9 if i < 3 else 7):
-                if i < 3 and red[i]:
+                if j == 4 and i < 3 and red[i]:
+                    assert hand[9 * i + j] > 0
                     t += "0" + str(j + 1) * (hand[9 * i + j] - 1)
                 else:
                     t += str(j + 1) * hand[9 * i + j]
@@ -396,6 +397,19 @@ class Hand:
 
 @dataclass
 class Deck:
+    # fmt: off
+    DeckList = np.array([
+         0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,34, 4,  # noqa
+         4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8,  # noqa
+         9, 9, 9, 9,10,10,10,10,11,11,11,11,12,12,12,12,35,13,  # noqa
+        13,13,14,14,14,14,15,15,15,15,16,16,16,16,17,17,17,17,  # noqa
+        18,18,18,18,19,19,19,19,20,20,20,20,21,21,21,21,36,22,  # noqa
+        22,22,23,23,23,23,24,24,24,24,25,25,25,25,26,26,26,26,  # noqa
+        27,27,27,27,28,28,28,28,29,29,29,29,30,30,30,30,31,31,  # noqa
+        31,31,32,32,32,32,33,33,33,33,  # noqa
+    ])
+    # fmt: on
+
     arr: np.ndarray
     idx: int = 135
     end: int = 13
@@ -426,18 +440,7 @@ class Deck:
 
     @staticmethod
     def init() -> Deck:
-        # fmt: off
-        return Deck(np.random.permutation(np.array([
-             0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3,34, 4,  # noqa
-             4, 4, 5, 5, 5, 5, 6, 6, 6, 6, 7, 7, 7, 7, 8, 8, 8, 8,  # noqa
-             9, 9, 9, 9,10,10,10,10,11,11,11,11,12,12,12,12,35,13,  # noqa
-            13,13,14,14,14,14,15,15,15,15,16,16,16,16,17,17,17,17,  # noqa
-            18,18,18,18,19,19,19,19,20,20,20,20,21,21,21,21,36,22,  # noqa
-            22,22,23,23,23,23,24,24,24,24,25,25,25,25,26,26,26,26,  # noqa
-            27,27,27,27,28,28,28,28,29,29,29,29,30,30,30,30,31,31,  # noqa
-            31,31,32,32,32,32,33,33,33,33,  # noqa
-        ])))
-        # fmt: on
+        return Deck(np.random.permutation(Deck.DeckList))
 
     @staticmethod
     def deal(deck: Deck) -> tuple[Deck, np.ndarray, np.ndarray, int]:
@@ -1263,6 +1266,12 @@ def step(state: State, actions: np.ndarray) -> tuple[State, np.ndarray, bool]:
     for i in range(4):
         if actions[i] == Action.NONE:
             continue
+        if not legal_actions[(i, actions[i])]:
+            print(f"{legal_actions[i]=}")
+            print(f"{state.hand[i]=}")
+            print(f"{state.red[i]=}")
+            print(f"{state.last_draw=}")
+            print(f"{actions[i]=}")
         assert legal_actions[(i, actions[i])]
     return State.step(state, actions)
 

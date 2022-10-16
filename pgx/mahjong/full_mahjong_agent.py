@@ -2,7 +2,16 @@ import time
 
 import _full_mahjong
 import numpy as np
-from _full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
+from _full_mahjong import (
+    Action,
+    Deck,
+    Hand,
+    Meld,
+    Observation,
+    State,
+    Tile,
+    step,
+)
 from shanten_tools import shanten, shanten_discard  # type: ignore
 
 np.random.seed(0)
@@ -30,15 +39,23 @@ def act(
         return Action.RON
     if legal_actions[Action.RIICHI]:
         return Action.RIICHI
-    if np.any(legal_actions[34:68]):
-        return np.argmax(legal_actions[34:68]) + 34  # type: ignore
+    if np.any(legal_actions[37:70]):
+        return np.argmax(legal_actions[37:70]) + 37  # type: ignore
 
     if np.sum(obs.hand) % 3 == 2:
         if obs.riichi[player]:
             return Action.TSUMOGIRI
         else:
             discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))  # type: ignore
-            return discard if obs.last_draw != discard else Action.TSUMOGIRI  # type: ignore
+            if legal_actions[discard]:
+                return discard
+            if (
+                Tile.unred(obs.last_draw) == discard
+                and legal_actions[Action.TSUMOGIRI]
+            ):
+                return Action.TSUMOGIRI
+            assert Tile.num(discard) == 4 and Tile.suit(discard) < 3
+            return Tile.suit(discard) + 34
 
     if obs.riichi[player]:
         return Action.PASS
@@ -47,35 +64,52 @@ def act(
         return Action.MINKAN
 
     s = shanten(obs.hand)
-    if legal_actions[Action.PON]:
-        obs.hand[obs.target] -= 2
+    target = Tile.unred(obs.target)
+    if legal_actions[Action.PON] | legal_actions[Action.PON]:
+        obs.hand[target] -= 2
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
-            return Action.PON
-        obs.hand[obs.target] += 2
+            return (
+                Action.PON
+                if legal_actions[Action.PON]
+                else Action.PON_EXPOSE_RED
+            )
+        obs.hand[target] += 2
 
-    if legal_actions[Action.CHI_R]:
-        obs.hand[obs.target - 2] -= 1
-        obs.hand[obs.target - 1] -= 1
+    if legal_actions[Action.CHI_L] | legal_actions[Action.CHI_L_EXPOSE_RED]:
+        obs.hand[target + 1] -= 1
+        obs.hand[target + 2] -= 1
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
-            return Action.CHI_R
-        obs.hand[obs.target - 2] += 1
-        obs.hand[obs.target - 1] += 1
+            return (
+                Action.CHI_L
+                if legal_actions[Action.CHI_L]
+                else legal_actions[Action.CHI_R_EXPOSE_RED]
+            )
+        obs.hand[target + 1] += 1
+        obs.hand[target + 2] += 1
 
-    if legal_actions[Action.CHI_M]:
-        obs.hand[obs.target - 1] -= 1
-        obs.hand[obs.target + 1] -= 1
+    if legal_actions[Action.CHI_M] | legal_actions[Action.CHI_M_EXPOSE_RED]:
+        obs.hand[target - 1] -= 1
+        obs.hand[target + 1] -= 1
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
-            return Action.CHI_M
-        obs.hand[obs.target - 1] += 1
-        obs.hand[obs.target + 1] += 1
+            return (
+                Action.CHI_M
+                if legal_actions[Action.CHI_M]
+                else Action.CHI_M_EXPOSE_RED
+            )
+        obs.hand[target - 1] += 1
+        obs.hand[target + 1] += 1
 
-    if legal_actions[Action.CHI_L]:
-        obs.hand[obs.target + 1] -= 1
-        obs.hand[obs.target + 2] -= 1
+    if legal_actions[Action.CHI_R] | legal_actions[Action.CHI_R_EXPOSE_RED]:
+        obs.hand[target - 2] -= 1
+        obs.hand[target - 1] -= 1
         if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
-            return Action.CHI_L
-        obs.hand[obs.target + 1] += 1
-        obs.hand[obs.target + 2] += 1
+            return (
+                Action.CHI_R
+                if legal_actions[Action.CHI_R]
+                else Action.CHI_R_EXPOSE_RED
+            )
+        obs.hand[target - 2] += 1
+        obs.hand[target - 1] += 1
 
     return Action.PASS
 
@@ -87,9 +121,7 @@ if __name__ == "__main__":
     step_time = 0.0
 
     for i in range(20):
-        state = State.init_with_deck_arr(
-            np.random.permutation(np.arange(136) // 4)
-        )
+        state = State.init_with_deck_arr(np.random.permutation(Deck.DeckList))
         done = False
         while not done:
             tmp = time.time()
