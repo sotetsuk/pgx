@@ -21,7 +21,7 @@ class VisualizerConfig:
 class Visualizer:
     def __init__(
         self,
-        state: Union[AnimalShogiState, JaxAnimalShogiState],
+        state: Union[None, AnimalShogiState, JaxAnimalShogiState] = None,
         color_mode: str = "light",
     ) -> None:
         self.state = state
@@ -36,19 +36,39 @@ class Visualizer:
         assert filename.endswith(".svg")
         self._to_dwg().saveas(filename=filename)
 
-    def show_svg(self, color_mode: Optional[str] = None) -> None:
+    def show_svg(
+        self,
+        state: Union[None, AnimalShogiState, JaxAnimalShogiState] = None,
+        color_mode: Optional[str] = None,
+    ) -> None:
         import sys
 
         if "ipykernel" in sys.modules:
             # Jupyter Notebook
             from IPython.display import display_svg  # type:ignore
 
-            display_svg(self._to_dwg(color_mode).tostring(), raw=True)
+            display_svg(
+                self._to_dwg(state=state, color_mode=color_mode).tostring(),
+                raw=True,
+            )
         else:
             # Not Jupyter
             sys.stdout.write("This function only works in Jupyter Notebook.")
 
-    def _to_dwg(self, color_mode: Optional[str] = None) -> svgwrite.Drawing:
+    def set_state(
+        self, state: Union[AnimalShogiState, JaxAnimalShogiState]
+    ) -> None:
+        self.state = state
+
+    def _to_dwg(
+        self,
+        *,
+        state: Union[None, AnimalShogiState, JaxAnimalShogiState] = None,
+        color_mode: Optional[str] = None,
+    ) -> svgwrite.Drawing:
+        if state is None:
+            assert self.state is not None
+            state = self.state
         BOARD_WIDTH = 3
         BOARD_HEIGHT = 4
         GRID_SIZE = 2
@@ -135,7 +155,7 @@ class Visualizer:
         p2_pieces_g = dwg.g()
         for i, piece_pos, piece_type in zip(
             range(10),
-            self.state.board[1:11],
+            state.board[1:11],
             ["P", "R", "B", "K", "G", "P", "R", "B", "K", "G"],
         ):
             for xy, is_set in enumerate(piece_pos):
@@ -196,7 +216,7 @@ class Visualizer:
                         )
         # hand
         for i, piece_num, piece_type in zip(
-            range(6), self.state.hand, ["P", "R", "B", "P", "R", "B"]
+            range(6), state.hand, ["P", "R", "B", "P", "R", "B"]
         ):
             _g = p1_pieces_g if i < 3 else p2_pieces_g
             _g.add(
@@ -225,4 +245,4 @@ class Visualizer:
         return dwg
 
     def _to_svg_string(self) -> str:
-        return self._to_dwg(self.color_mode).tostring()
+        return self._to_dwg(color_mode=self.color_mode).tostring()
