@@ -8,24 +8,12 @@ Highly parallel game simulator for reinforcement learning.
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
 
 ```py
-# N: num agents
-# A: action space size
-# M: observation dim
-
-@dataclass
-class State:
-  current_player: jnp.ndarray  # (1,) 
-  # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
-  # -1 if terminal
-  legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
-  is_terminal: jnp.ndarray  #  (1,)
-  ...
-
 @jax.jit
 def init(rng: jnp.ndarray) -> State:
   return state 
 
 # step is deterministic
+# behavior when state.is_terminal=True is undefined
 @jax.jit
 def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
   return state, rewards  # rewards: (N,) 
@@ -42,19 +30,45 @@ def observe(state: State) -> jnp.ndarray:
 def shuffle(state: State, rng: jnp.ndarray) -> State:
   return state
 
-# [Design goal]
-#   * Be simple than be universal
-# 
-# [Notes]
-#   * Not RL API but minimam game simulator.
-#   * Does NOT support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
-#   * Does NOT support chance player. (Deos NOT support Poker research)
-#
-# [Concerns]
-#   * Can we support OpenAI Gym API? Even if we skip opponent turn, we cannot compute V(s') in AlphaGo.
-#   * Does PettingZoo support vector env and auto reset? None?
-#   * For efficient computation, current_player must be synchronized? but this is difficult (impossible?). The termination timing must be different
+
+# N: num agents
+# A: action space size
+# M: observation dim
+@dataclass
+class State:
+  current_player: jnp.ndarray  # (1,) 
+  # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
+  # -1 if terminal
+  legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
+  is_terminal: jnp.ndarray  #  (1,)
+  is_truncated: jnp.ndarray  #  (1,)
+  ... 
 ```
+
+### Design goal
+* Be simple than be universal
+* Implement AEC
+
+### Notes
+* Does NOT support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
+* Does NOT support Chance player (Nature player) with action selection.
+
+### `skip_chance`
+* We prepare skip_chance=True option for some environments. This enables to consider value function for "post-decision states" (See AlgoRL book). However, we do not allow chance agent to choose action like OpenSpiel. This is because the action space of chance agent and usual agent are different. Thus, when the chance player is chosen (`current_player=-1`), `action=-1` must be returned to step function. Use `shuffle` to make `step` stochastic.
+
+### truncatation and auto_reset
+* supported by `make(env_id="...", auto_reset=True, max_episode_length=64)`
+* `auto_reset` will replace the terminal state by initial state (but `is_terminal=True` is set)
+* `is_truncated=True` is also set to state
+
+### FAQ
+  * Does Pgx support OpenAI Gym?  **No.**
+      * OpenAI Gym is for single-agent environment. Most of Pgx environments are multi-player games. Just defining opponents is not enough for converting multi-agent environemnts to OpenAI Gym environment. E.g., in the game of go, the next state s' is defined as the state just after placing a stone in AlhaGo paper. However, s' becomes the state after the opponents' play. This changes the definition of V(s').
+  * Does Pgx support PettingZoo?  **No.**
+      * As far as we know, PettingZOo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
+
+### Concerns
+* For efficient computation, current_player must be synchronized? but it seems difficult (or impossible?). It is impossible to synchronize the terminations.
 
 ## Roadmap
 
