@@ -19,6 +19,9 @@ def init(rng: jnp.ndarray) -> State:
 @jax.jit
 def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
   return state, rewards  # rewards: (N,) 
+  # terminated is moved into State class to support auto_reset 
+  # truncated is moved into State class along with terminated
+  # info is removed as State class can hold additional information
 
 @jax.jit
 def observe(state: State) -> jnp.ndarray:
@@ -41,7 +44,7 @@ class State:
   # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
   # -1 if terminal
   legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
-  terminated: jnp.ndarray  #  (1,) moved into state to support auto_reset 
+  terminated: jnp.ndarray  #  (1,)
   # truncated: jnp.ndarray  #  (1,)
   # elapsed_steps: jnp.ndarray  #  (1,)
   ... 
