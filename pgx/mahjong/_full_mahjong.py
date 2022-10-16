@@ -278,9 +278,12 @@ class Hand:
         assert False
 
     @staticmethod
-    def can_kakan(hand: np.ndarray, tile: int) -> bool:
+    def can_kakan(hand: np.ndarray, red: np.ndarray, tile: int) -> bool:
         assert np.sum(hand) % 3 == 2
-        return hand[Tile.unred(tile)] == 1
+        if Tile.is_red(tile):
+            return red[Tile.suit(tile)]
+        else:
+            return hand[tile] == 1
 
     @staticmethod
     def can_ankan(hand: np.ndarray, tile: int) -> bool:
@@ -366,7 +369,7 @@ class Hand:
     def kakan(
         hand: np.ndarray, red: np.ndarray, tile: int
     ) -> tuple[np.ndarray, np.ndarray]:
-        assert Hand.can_kakan(hand, tile)
+        assert Hand.can_kakan(hand, red, tile)
         hand, red = Hand.sub(hand, red, tile)
         suit = Tile.suit(tile)
         num = Tile.num(tile)
@@ -864,10 +867,9 @@ class State:
     # pon_idx[i][j]: player i がj(0<j<34) のポンを所有している場合, そのindex + 1. or 0
 
     def can_kakan(self, tile: int) -> bool:
-        tile = Tile.unred(tile)
-        return (self.pon_idx[(self.turn, tile)] > 0) & (
-            self.hand[(self.turn, tile)] > 0
-        )
+        return (
+            self.pon_idx[(self.turn, Tile.unred(tile))] > 0
+        ) & Hand.can_kakan(self.hand[self.turn], self.red[self.turn], tile)
 
     def can_tsumo(self) -> bool:
         if Hand.can_tsumo(self.hand[self.turn]):
@@ -875,7 +877,7 @@ class State:
                 self.hand[self.turn],
                 self.melds[self.turn],
                 self.n_meld[self.turn],
-                self.last_draw,
+                Tile.unred(self.last_draw),
                 self.riichi[self.turn],
                 False,
             )[1]
@@ -888,7 +890,7 @@ class State:
                 Hand._add(self.hand[self.turn], Tile.unred(self.target)),
                 self.melds[self.turn],
                 self.n_meld[self.turn],
-                self.last_draw,
+                Tile.unred(self.last_draw),
                 self.riichi[self.turn],
                 True,
             )[1]
@@ -1195,8 +1197,8 @@ class State:
 
     @staticmethod
     def _ron(state: State, player: int) -> tuple[State, np.ndarray, bool]:
-        is_ron = True
         last = Tile.unred(state.target)
+        is_ron = True
         score = Yaku.score(
             *Hand.add(state.hand[player], state.red[player], state.target),
             state.melds[player],
@@ -1287,13 +1289,14 @@ class State:
 
     @staticmethod
     def _tsumo(state: State) -> tuple[State, np.ndarray, bool]:
+        last = Tile.unred(state.last_draw)
         is_ron = False
         score = Yaku.score(
             state.hand[state.turn],
             state.red[state.turn],
             state.melds[state.turn],
             state.n_meld[state.turn],
-            state.target,
+            last,
             state.riichi[state.turn],
             is_ron,
             state.deck.dora(state.riichi[state.turn]),
