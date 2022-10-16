@@ -4,30 +4,72 @@
 
 Highly parallel game simulator for reinforcement learning.
 
-## Basic API
+## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
+This is to explicitly let users know that state transition is determined ONLY from `state` and `action` and easy to use `jax.jit`.
+
 
 ```py
+def init(rng: jnp.ndarray) -> State:
+  return state 
 
+# step is deterministic
+# if state.is_terminal=True, the behavior is undefined
+def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
+  return state, rewards  # rewards: (N,) 
+  # terminated is moved into State class to support auto_reset 
+  # truncated is moved into State class along with terminated
+  # info is removed as State class can hold additional information
+
+def observe(state: State) -> jnp.ndarray:
+  return obs  # (N, M) N is required to compute V(s') (e.g., AlphaGo)
+
+# step is deterministic but shuffle can make step stochastic
+# Usage:
+#   state = shuffle(state, key)
+#   state = step(state, action)
+def shuffle(state: State, rng: jnp.ndarray) -> State:
+  return state
+
+# N: num agents
+# A: action space size
+# M: observation dim
 @dataclass
 class State:
-  i: np.ndarray = jnp.zeros(1)
-  board: np.ndarray = jnp.array((10, 10))
-
-
-@jax.jit
-def init(rng: jnp.ndarray, **kwargs) -> State:
-  return State()
-
-@jax.jit
-def step(state: State, action: jnp.ndarray, rng: jnp.ndarray, **kwargs) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-  return State(), r, terminated
-
-@jax.jit
-def observe(state: State) -> jnp.ndarray:
-  return jnp.ones(...)
-
+  current_player: jnp.ndarray  # (1,) 
+  # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
+  # -1 if terminal
+  legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
+  terminated: jnp.ndarray  #  (1,)
+  # truncated: jnp.ndarray  #  (1,)
+  # elapsed_steps: jnp.ndarray  #  (1,)
+  ... 
 ```
+
+### Design goal
+* Be simple than be universal
+* Implement AEC (see PettingZoo paper)
+
+### Notes
+* Does NOT support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
+* Does NOT support Chance player (Nature player) with action selection.
+
+### `skip_chance`
+* We prepare skip_chance=True option for some environments. This makes it possible to consider value function for "post-decision states" (See AlgoRL book). However, we do not allow chance agent to choose action like OpenSpiel. This is because the action space of chance agent and usual agent are different. Thus, when the chance player is chosen (`current_player=-1`), `action=-1` must be returned to step function. Use `shuffle` to make `step` stochastic.
+
+### truncatation and auto_reset
+* supported by `make(env_id="...", auto_reset=True, max_episode_length=64)`
+* `auto_reset` will replace the terminal state by initial state (but `is_terminal=True` is set)
+* `is_truncated=True` is also set to state
+
+### FAQ
+  * Does Pgx support OpenAI Gym?  **No.**
+      * OpenAI Gym is for single-agent environment. Most of Pgx environments are multi-player games. Just defining opponents is not enough for converting multi-agent environemnts to OpenAI Gym environment. E.g., in the game of go, the next state s' is defined as the state just after placing a stone in AlhaGo paper. However, s' becomes the state after the opponents' play. This changes the definition of V(s').
+  * Does Pgx support PettingZoo?  **No.**
+      * As far as we know, PettingZoo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
+
+### Concerns
+* For efficient computation, current_player must be synchronized? but it seems difficult (or impossible?). It is impossible to synchronize the terminations.
 
 ## Roadmap
 
@@ -235,7 +277,8 @@ Note: `true_fn` と `false_fn` の返り値の型が同じで必要がありま�
 
 ```py
 def f(n):
-  if n % 2 == 0 and n % 3 == 0:
+  if (n % 2 == 0 and 
+      n % 3 == 0):
     return jnp.zeros(3) 
   else:
     return jnp.ones(3)
@@ -268,10 +311,12 @@ if: [`jax.lax.switch`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax
 
 ```py
 def switch(index, branches, 
-            *operands):
+           *operands):
   index = clamp(0, index, 
-                len(branches) - 1)
-  return branches[index](*operands)
+            len(branches) - 1)
+  return branches[index](
+    *operands
+  )
 ```
 
 Note: 3つ以上の条件分岐のときなどに使えます。返り値の型は同じである必要があります。
@@ -296,7 +341,7 @@ def f(n):
 @jax.jit
 def f(n):
   return jax.lax.switch(
-    n
+    n,
     [lambda: jnp.zeros(3),
      lambda: jnp.ones(3),
      lambda: jnp.ones(3) * 2],
@@ -408,7 +453,8 @@ def f(n):
 for: [`jax.lax.scan`](https://jax.readthedocs.io/en/latest/_autosummary/jax.lax.scan.html)
 
 ```py
-def scan(f, init, xs, length=None):
+def scan(f, init, xs, 
+         length=None):
   if xs is None:
     xs = [None] * length
   carry = init
@@ -474,7 +520,7 @@ while: [`jax.lax.while_loop`](https://jax.readthedocs.io/en/latest/_autosummary/
 
 ```py
 def while_loop(cond_fun, 
-         body_fun, init_val):
+    body_fun, init_val):
   val = init_val
   while cond_fun(val):
     val = body_fun(val)
@@ -521,8 +567,6 @@ def f(n):
 </tr>
 
 </table>
-
-TODO: switch
 
 
 ### Tips
