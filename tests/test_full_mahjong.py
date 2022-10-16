@@ -532,7 +532,7 @@ HISTORY = np.array([
     [Action.NONE, Action.NONE, Action.NONE, 26],
     [Action.TSUMOGIRI, Action.NONE, Action.NONE, Action.NONE],
     [Action.NONE, 32, Action.NONE, Action.NONE],
-    [Action.NONE, Action.NONE, 33+37, Action.NONE],
+    [Action.NONE, Action.NONE, Action.kakan(33), Action.NONE],
     [Action.NONE, Action.NONE, Action.TSUMOGIRI, Action.NONE],
     [Action.NONE, Action.NONE, Action.NONE, Action.TSUMOGIRI],
     [Action.TSUMOGIRI, Action.NONE, Action.NONE, Action.NONE],
