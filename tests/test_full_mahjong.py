@@ -593,64 +593,63 @@ def test_state():
     assert np.all(reward == np.array([0, 0, 9000, -9000]))
     assert done
 
-def test_jax():
-    wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
-    state = full_mahjong.State.init_with_deck_arr(jnp.array(wall) // 4)
-
-    reward = np.zeros(4, dtype=jnp.int32)
-    done = False
-    for i in range(len(HISTORY)):
-        state, reward, done = full_mahjong.step(state, HISTORY[i])
-
-    # 中,赤2,ドラ1 = 4翻40符で8000点だが, ドラ未実装のため1300点.
-    # リー棒も合わせて2300点の収支.
-    assert jnp.all(reward == np.array([0, 0, 2300, -2300]))
-    assert done
-
-def test_jax_compatibility():
-    wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
-
-    state = State.init_with_deck_arr(np.array(wall) // 4)
-
-    for i in range(len(HISTORY)):
-
-        jnp_state = full_mahjong.State(
-            deck=full_mahjong.Deck(
-                arr=jnp.array(state.deck.arr.copy()),
-                idx=state.deck.idx,
-                end=state.deck.end,
-                n_dora=state.deck.n_dora),
-            hand=jnp.array(state.hand.copy()),
-            turn=state.turn,
-            target=state.target,
-            last_draw=state.last_draw,
-            riichi_declared=state.riichi_declared,
-            riichi=jnp.array(state.riichi.copy()),
-            n_meld=jnp.array(state.n_meld.copy()),
-            melds=jnp.array(state.melds.copy()),
-            is_menzen=jnp.array(state.is_menzen.copy()),
-            pon=jnp.array(state.pon.copy()),
-            )
-
-        state, reward, done = step(state, HISTORY[i])
-        jnp_state, jnp_reward, jnp_done = full_mahjong.step(
-                jnp_state, jnp.array(HISTORY[i])
-                )
-
-        assert done == jnp_done
-        assert np.all(reward == jnp_reward)
-        assert np.all(state.deck.arr == jnp_state.deck.arr)
-        assert state.deck.idx == jnp_state.deck.idx
-        assert state.deck.end == jnp_state.deck.end
-        assert state.deck.n_dora == jnp_state.deck.n_dora
-        assert np.all(state.hand == jnp_state.hand)
-        assert state.turn == jnp_state.turn
-        assert state.target == jnp_state.target
-        assert state.last_draw == jnp_state.last_draw
-        assert state.riichi_declared == jnp_state.riichi_declared
-        assert np.all(state.riichi == jnp_state.riichi)
-        assert np.all(state.n_meld == jnp_state.n_meld)
-        assert np.all(state.melds == jnp_state.melds)
-        assert np.all(state.is_menzen == jnp_state.is_menzen)
-        assert np.all(state.pon == jnp_state.pon)
-
+#def test_jax():
+#    wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
+#    state = full_mahjong.State.init_with_deck_arr(jnp.array(wall) // 4)
+#
+#    reward = np.zeros(4, dtype=jnp.int32)
+#    done = False
+#    for i in range(len(HISTORY)):
+#        state, reward, done = full_mahjong.step(state, HISTORY[i])
+#
+#    # 中,赤2,ドラ1 = 4翻40符で8000点だが, ドラ未実装のため1300点.
+#    # リー棒も合わせて2300点の収支.
+#    assert jnp.all(reward == np.array([0, 0, 2300, -2300]))
+#    assert done
+#
+#def test_jax_compatibility():
+#    wall = tenhou_wall_reproducer.reproduce(SEED, 1)[0][0]
+#
+#    state = State.init_with_deck_arr(np.array(wall) // 4)
+#
+#    for i in range(len(HISTORY)):
+#
+#        jnp_state = full_mahjong.State(
+#            deck=full_mahjong.Deck(
+#                arr=jnp.array(state.deck.arr.copy()),
+#                idx=state.deck.idx,
+#                end=state.deck.end,
+#                n_dora=state.deck.n_dora),
+#            hand=jnp.array(state.hand.copy()),
+#            turn=state.turn,
+#            target=state.target,
+#            last_draw=state.last_draw,
+#            riichi_declared=state.riichi_declared,
+#            riichi=jnp.array(state.riichi.copy()),
+#            n_meld=jnp.array(state.n_meld.copy()),
+#            melds=jnp.array(state.melds.copy()),
+#            is_menzen=jnp.array(state.is_menzen.copy()),
+#            pon=jnp.array(state.pon.copy()),
+#            )
+#
+#        state, reward, done = step(state, HISTORY[i])
+#        jnp_state, jnp_reward, jnp_done = full_mahjong.step(
+#                jnp_state, jnp.array(HISTORY[i])
+#                )
+#
+#        assert done == jnp_done
+#        assert np.all(reward == jnp_reward)
+#        assert np.all(state.deck.arr == jnp_state.deck.arr)
+#        assert state.deck.idx == jnp_state.deck.idx
+#        assert state.deck.end == jnp_state.deck.end
+#        assert state.deck.n_dora == jnp_state.deck.n_dora
+#        assert np.all(state.hand == jnp_state.hand)
+#        assert state.turn == jnp_state.turn
+#        assert state.target == jnp_state.target
+#        assert state.last_draw == jnp_state.last_draw
+#        assert state.riichi_declared == jnp_state.riichi_declared
+#        assert np.all(state.riichi == jnp_state.riichi)
+#        assert np.all(state.n_meld == jnp_state.n_meld)
+#        assert np.all(state.melds == jnp_state.melds)
+#        assert np.all(state.is_menzen == jnp_state.is_menzen)
+#        assert np.all(state.pon == jnp_state.pon)
