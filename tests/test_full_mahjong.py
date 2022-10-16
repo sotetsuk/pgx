@@ -212,7 +212,8 @@ def has_yaku(
         melds[n_meld] = Meld.from_str(s)
         n_meld += 1
     last = Tile.from_str(last_s)
-    return Yaku.judge(hand, melds, n_meld, last, False, is_ron)[0][yaku]
+    riichi = False
+    return Yaku.judge(hand, melds, n_meld, last, riichi, is_ron)[0][yaku]
 
 def test_yaku_tanyao():
     assert has_yaku(Yaku.断么九, "23456777m678p", "[4]23m", "2m")
@@ -439,6 +440,14 @@ def test_yaku_coner_cases():
     assert has_yaku(Yaku.一盃口, "22334455m234p234s", "", "3m")
     assert has_yaku(Yaku.三色同順, "22334455m234p234s", "", "3m")
     # 平和と三色が両立しないケース
+
+    # 234m, 234m, 234m, 456m, 66m
+    assert has_yaku(Yaku.平和, "22233344445666m", "", "2m", is_ron=True)
+    assert has_yaku(Yaku.三暗刻, "22233344445666m", "", "2m", is_ron=True) == False
+
+    # 222m, 333m, 444m, 456m, 66m
+    assert has_yaku(Yaku.平和, "22233344445666m", "", "2m") == False
+    assert has_yaku(Yaku.三暗刻, "22233344445666m", "", "2m")
 
 
 def score(

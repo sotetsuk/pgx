@@ -1330,12 +1330,6 @@ def step(state: State, actions: np.ndarray) -> tuple[State, np.ndarray, bool]:
     for i in range(4):
         if actions[i] == Action.NONE:
             continue
-        if not legal_actions[(i, actions[i])]:
-            print(f"{legal_actions[i]=}")
-            print(f"{state.hand[i]=}")
-            print(f"{state.red[i]=}")
-            print(f"{state.last_draw=}")
-            print(f"{actions[i]=}")
         assert legal_actions[(i, actions[i])]
     return State.step(state, actions)
 
@@ -1585,6 +1579,8 @@ class Yaku:
         is_ron: bool,
         flatten: np.ndarray,
     ) -> tuple[np.ndarray, int, int]:
+        assert 0 <= last < 34
+
         is_menzen = True
         for i in range(n_meld):
             is_menzen &= Action.is_ankan(Meld.action(melds[i]))
