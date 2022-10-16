@@ -48,7 +48,7 @@ class State:
 
 ### Design goal
 * Be simple than be universal
-* Implement AEC
+* Implement AEC (see PettingZoo paper)
 
 ### Notes
 * Does NOT support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
@@ -66,7 +66,7 @@ class State:
   * Does Pgx support OpenAI Gym?  **No.**
       * OpenAI Gym is for single-agent environment. Most of Pgx environments are multi-player games. Just defining opponents is not enough for converting multi-agent environemnts to OpenAI Gym environment. E.g., in the game of go, the next state s' is defined as the state just after placing a stone in AlhaGo paper. However, s' becomes the state after the opponents' play. This changes the definition of V(s').
   * Does Pgx support PettingZoo?  **No.**
-      * As far as we know, PettingZOo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
+      * As far as we know, PettingZoo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
 
 ### Concerns
 * For efficient computation, current_player must be synchronized? but it seems difficult (or impossible?). It is impossible to synchronize the terminations.
