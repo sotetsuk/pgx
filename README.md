@@ -13,7 +13,7 @@ def init(rng: jnp.ndarray) -> State:
   return state 
 
 # step is deterministic
-# behavior when state.is_terminal=True is undefined
+# if state.is_terminal=True, the behavior is undefined
 @jax.jit
 def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
   return state, rewards  # rewards: (N,) 
