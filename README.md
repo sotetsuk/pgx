@@ -6,24 +6,21 @@ Highly parallel game simulator for reinforcement learning.
 
 ## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
-This is to explicitly let users know that state transition is determined ONLY from `state` and `action`.
+This is to explicitly let users know that state transition is determined ONLY from `state` and `action` and easy to use `jax.jit`.
 
 
 ```py
-@jax.jit
 def init(rng: jnp.ndarray) -> State:
   return state 
 
 # step is deterministic
 # if state.is_terminal=True, the behavior is undefined
-@jax.jit
 def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
   return state, rewards  # rewards: (N,) 
   # terminated is moved into State class to support auto_reset 
   # truncated is moved into State class along with terminated
   # info is removed as State class can hold additional information
 
-@jax.jit
 def observe(state: State) -> jnp.ndarray:
   return obs  # (N, M) N is required to compute V(s') (e.g., AlphaGo)
 
@@ -31,7 +28,6 @@ def observe(state: State) -> jnp.ndarray:
 # Usage:
 #   state = shuffle(state, key)
 #   state = step(state, action)
-@jax.jit
 def shuffle(state: State, rng: jnp.ndarray) -> State:
   return state
 
