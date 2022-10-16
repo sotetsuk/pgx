@@ -65,25 +65,20 @@ class Visualizer:
             ],
             "G": [(1, 0), (0, 1), (-1, 0), (0, -1), (-1, -1), (1, -1)],
         }
-        if color_mode is None:  # selfを参照
-            color_set = (
-                VisualizerConfig(
-                    "black", "gray", "white", "white", "#202020", "white"
-                )
-                if self.color_mode == "dark"
-                else VisualizerConfig(
-                    "white", "white", "black", "black", "white", "black"
-                )
+        if (
+            color_mode is None and self.color_mode == "dark"
+        ) or color_mode == "dark":
+            color_set = VisualizerConfig(
+                "dimgray",
+                "black",
+                "whitesmoke",
+                "whitesmoke",
+                "#202020",
+                "white",
             )
-        else:  # 引数を参照
-            color_set = (
-                VisualizerConfig(
-                    "black", "gray", "white", "white", "#202020", "white"
-                )
-                if color_mode == "dark"
-                else VisualizerConfig(
-                    "white", "white", "black", "black", "white", "black"
-                )
+        else:
+            color_set = VisualizerConfig(
+                "white", "lightgray", "black", "black", "white", "black"
             )
 
         dwg = svgwrite.Drawing(
