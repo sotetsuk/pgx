@@ -49,13 +49,31 @@ class Visualizer:
         BOARD_WIDTH = 3
         BOARD_HEIGHT = 4
         GRID_SIZE = 2
+        MOVE = {
+            "P": [(0, -1)],
+            "R": [(1, 0), (0, 1), (-1, 0), (0, -1)],
+            "B": [(1, 1), (-1, 1), (-1, -1), (1, -1)],
+            "K": [
+                (1, 0),
+                (0, 1),
+                (-1, 0),
+                (0, -1),
+                (1, 1),
+                (-1, 1),
+                (-1, -1),
+                (1, -1),
+            ],
+            "G": [(1, 0), (0, 1), (-1, 0), (0, -1), (-1, -1), (1, -1)],
+        }
         if color_mode is None:  # selfを参照
             color_set = (
                 VisualizerConfig(
                     "black", "gray", "white", "white", "#202020", "white"
                 )
                 if self.color_mode == "dark"
-                else VisualizerConfig()
+                else VisualizerConfig(
+                    "white", "white", "black", "black", "white", "black"
+                )
             )
         else:  # 引数を参照
             color_set = (
@@ -63,13 +81,15 @@ class Visualizer:
                     "black", "gray", "white", "white", "#202020", "white"
                 )
                 if color_mode == "dark"
-                else VisualizerConfig()
+                else VisualizerConfig(
+                    "white", "white", "black", "black", "white", "black"
+                )
             )
 
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
-                (BOARD_WIDTH + 1) * GRID_SIZE * cm,
+                (BOARD_WIDTH + 2) * GRID_SIZE * cm,
                 (BOARD_HEIGHT + 1) * GRID_SIZE * cm,
             ),
         )
@@ -78,7 +98,7 @@ class Visualizer:
             dwg.rect(
                 (0, 0),
                 (
-                    (BOARD_WIDTH + 1) * GRID_SIZE * cm,
+                    (BOARD_WIDTH + 2) * GRID_SIZE * cm,
                     (BOARD_HEIGHT + 1) * GRID_SIZE * cm,
                 ),
                 # stroke=svgwrite.rgb(10, 10, 16, "%"),
@@ -113,12 +133,11 @@ class Visualizer:
             )
 
         # pieces
-        board = self.state.board
         p1_pieces_g = dwg.g()
         p2_pieces_g = dwg.g()
         for i, piece_pos, piece_type in zip(
             range(10),
-            board[1:11],
+            self.state.board[1:11],
             ["P", "R", "B", "K", "G", "P", "R", "B", "K", "G"],
         ):
             for xy, is_set in enumerate(piece_pos):
@@ -127,19 +146,15 @@ class Visualizer:
                         pieces_g = p1_pieces_g
                         x = 2 - xy // BOARD_HEIGHT  # AnimalShogiStateは右上原点
                         y = xy % BOARD_HEIGHT
+                        fill_color = color_set.p1_color
+                        stroke = color_set.p1_outline
                     else:
                         pieces_g = p2_pieces_g
                         x = xy // BOARD_HEIGHT
                         y = 3 - xy % BOARD_HEIGHT
-                    print(x, y, piece_type)
-                    pieces_g.add(
-                        dwg.rect(
-                            ((x + 1) * cm, (y + 1) * cm),
-                            ((GRID_SIZE - 2) * cm, (GRID_SIZE - 2) * cm),
-                            stroke=svgwrite.rgb(10, 10, 16, "%"),
-                            fill="black",
-                        )
-                    )
+                        fill_color = color_set.p2_color
+                        stroke = color_set.p2_outline
+
                     pieces_g.add(
                         dwg.rect(
                             insert=(
@@ -152,8 +167,8 @@ class Visualizer:
                             ),
                             rx=0.1 * cm,
                             ry=0.1 * cm,
-                            stroke=svgwrite.rgb(10, 10, 16, "%"),
-                            fill="none",
+                            stroke=stroke,
+                            fill=fill_color,
                         )
                     )
                     pieces_g.add(
@@ -163,22 +178,41 @@ class Visualizer:
                                 (x + 0.27) * GRID_SIZE * cm,
                                 (y + 0.72) * GRID_SIZE * cm,
                             ),
+                            fill=stroke,
                             font_size="4em",
                             font_family="Courier",
                         )
                     )
-
-        p2_pieces_g.add(
-            dwg.text(
-                text="a",
-                insert=(
-                    -1 * GRID_SIZE * cm,
-                    -1 * GRID_SIZE * cm,
-                ),
-                font_size="4em",
-                font_family="Courier",
+                    # 移動可能方向
+                    for _x, _y in MOVE[piece_type]:
+                        pieces_g.add(
+                            dwg.circle(
+                                center=(
+                                    (x + 0.5 + _x * 0.35) * GRID_SIZE * cm,
+                                    (y + 0.5 + _y * 0.35) * GRID_SIZE * cm,
+                                ),
+                                r=GRID_SIZE * 0.01 * cm,
+                                stroke=stroke,
+                                fill=stroke,
+                            )
+                        )
+        # hand
+        for i, piece_num, piece_type in zip(
+            range(6), self.state.hand, ["P", "R", "B", "P", "R", "B"]
+        ):
+            _g = p1_pieces_g if i < 3 else p2_pieces_g
+            _g.add(
+                dwg.text(
+                    text=f"{piece_type}:{piece_num}",
+                    insert=(
+                        3.1 * GRID_SIZE * cm,
+                        (3.3 + (i % 3) * 0.3) * GRID_SIZE * cm,
+                    ),
+                    fill=color_set.p1_outline,
+                    font_size="2em",
+                    font_family="Courier",
+                )
             )
-        )
 
         board_g.add(p1_pieces_g)
         p2_pieces_g.rotate(angle=180)
@@ -187,33 +221,7 @@ class Visualizer:
         )  # no units allowed
         board_g.add(p2_pieces_g)
 
-        """
-        board = state.board
-        for xy, stone in enumerate(board):
-            if stone == 2:
-                continue
-            # ndarrayのx,yと違うことに注意
-            stone_y = xy // BOARD_SIZE * GRID_SIZE
-            stone_x = xy % BOARD_SIZE * GRID_SIZE
-
-            color = (
-                color_set.black_color if stone == 0 else color_set.white_color
-            )
-            outline = (
-                color_set.black_outline
-                if stone == 0
-                else color_set.white_outline
-            )
-            board_g.add(
-                dwg.circle(
-                    center=(stone_x * cm, stone_y * cm),
-                    r=GRID_SIZE / 2.2 * cm,
-                    stroke=outline,
-                    fill=color,
-                )
-            )
-        """
-        board_g.translate(GRID_SIZE * 20, GRID_SIZE * 20)  # no units allowed
+        board_g.translate(GRID_SIZE * 35, GRID_SIZE * 20)  # no units allowed
         dwg.add(board_g)
 
         return dwg
