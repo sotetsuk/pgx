@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Union
 
 import svgwrite  # type: ignore
 from svgwrite import cm
 
 from ._animal_shogi import AnimalShogiState
+from .animal_shogi import JaxAnimalShogiState
 
 
 @dataclass
@@ -19,7 +20,9 @@ class VisualizerConfig:
 
 class Visualizer:
     def __init__(
-        self, state: AnimalShogiState, color_mode: str = "light"
+        self,
+        state: Union[AnimalShogiState, JaxAnimalShogiState],
+        color_mode: str = "light",
     ) -> None:
         self.state = state
         self.color_mode = color_mode
