@@ -1025,16 +1025,17 @@ def _is_stuck(state: ShogiState) -> bool:
 
 # ピンされた（動かすと相手の駒の利きが玉に通ってしまうので動かせない）駒の位置とピンの方向（縦横右上がり右下がり）を記録
 # ピンされた駒はピンされている方向以外には動かせない
-def _pin(state: ShogiState) -> np.array:
-    pins = np.zeros(81, dtype=np.int32)
-    bs = _board_status(state)
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
+def _up_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
     # 上方向のピン
-    u = king_point - 1
-    u_piece = -1
+    u = king_point
     u_num = 0
+    u_piece = -1
     u_flag = False
+    # 自分より上は最大八マスしかない
     for i in range(8):
+        # 探索位置の更新
+        u -= 1
         # 探索が終わっている場合はスルー
         if u_flag:
             continue
@@ -1047,25 +1048,255 @@ def _pin(state: ShogiState) -> np.array:
             continue
         # 駒がある場合
         u_num += 1
-        # 1枚目が自分の駒であるとき、位置を記憶しておく
-        if u_num == 1 and _owner(piece) == state.turn:
-            u_piece = u
-        # 2枚目があるときかつ1枚目でu_pieceを更新している時
-        if u_num == 2 and u_piece != -1:
+        # 1枚目
+        if u_num == 1:
+            # 自分の駒なら位置を記録
+            if _owner(piece) == turn:
+                u_piece = u
+            # 相手の駒なら関係ないので探索終了
+            else:
+                u_flag = True
+        # 2枚目
+        if u_num == 2:
             # 先手の場合、香車、飛車、龍によってピン
-            if state.turn == 0:
+            if turn == 0:
                 if piece == 16 or piece == 20 or piece == 28:
-                    pins[u_piece] = 1
+                    new_array[u_piece] = 1
             # 後手の場合、飛車、龍によってピン
             else:
                 if piece == 6 or piece == 14:
-                    pins[u_piece] = 1
+                    new_array[u_piece] = 1
             # 一回通ったら探索する必要はない
             u_flag = True
-        # 探索位置の更新
-        u -= 1
+    return new_array
 
 
+def _up_left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
+    ul = king_point
+    ul_num = 0
+    ul_flag = False
+    for i in range(8):
+        if ul_flag:
+            continue
+        ul += 8
+        if not _is_in_board(ul) or not _is_same_declining(king_point, ul):
+            continue
+        piece = bs[ul]
+        if piece == 0:
+            continue
+        ul_num += 1
+        if ul_num == 1:
+            if _owner(piece) == turn:
+                ul_piece = ul
+            else:
+                ul_flag = True
+        if ul_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[ul_piece] = 2
+            ul_flag = True
+    return new_array
+
+
+def _up_right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
+    ur = king_point
+    ur_num = 0
+    ur_piece = -1
+    ur_flag = False
+    for i in range(8):
+        if ur_flag:
+            continue
+        ur -= 10
+        if not _is_in_board(ur) or not _is_same_rising(king_point, ur):
+            continue
+        piece = bs[ur]
+        if piece == 0:
+            continue
+        ur_num += 1
+        if ur_num == 1:
+            if _owner(piece) == turn:
+                ur_piece = ur
+            # 相手の駒なら関係ないので探索終了
+            else:
+                ur_flag = True
+        # 2枚目
+        if ur_num == 2:
+            # 相手の角・馬によってピン
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[ur_piece] = 3
+            ur_flag = True
+    return new_array
+
+
+def _left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
+    l = king_point
+    l_num = 0
+    l_flag = False
+    for i in range(8):
+        if l_flag:
+            continue
+        l += 9
+        if not _is_in_board(l) or not _is_same_row(king_point, l):
+            continue
+        piece = bs[l]
+        if piece == 0:
+            continue
+        l_num += 1
+        if l_num == 1:
+            if _owner(piece) == turn:
+                l_piece = l
+            else:
+                l_flag = True
+        # 2枚目
+        if l_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 6 or piece % 14 == 0):
+                new_array[l_piece] = 4
+            l_flag = True
+    return new_array
+
+
+def _right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
+    r = king_point
+    r_num = 0
+    r_flag = False
+    for i in range(8):
+        if r_flag:
+            continue
+        r -= 9
+        if not _is_in_board(r) or not _is_same_row(king_point, r):
+            continue
+        piece = bs[r]
+        if piece == 0:
+            continue
+        r_num += 1
+        if r_num == 1:
+            if _owner(piece) == turn:
+                r_piece = r
+            else:
+                r_flag = True
+        # 2枚目
+        if r_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 6 or piece % 14 == 0):
+                new_array[r_piece] = 4
+            r_flag = True
+    return new_array
+
+
+def _down_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
+    d = king_point
+    d_num = 0
+    d_piece = -1
+    d_flag = False
+    for i in range(8):
+        d += 1
+        if d_flag:
+            continue
+        if not _is_in_board(d) or not _is_same_column(king_point, d):
+            continue
+        piece = bs[d]
+        if piece == 0:
+            continue
+        # 駒がある場合
+        d_num += 1
+        # 1枚目
+        if d_num == 1:
+            # 自分の駒なら位置を記録
+            if _owner(piece) == turn:
+                d_piece = d
+            # 相手の駒なら関係ないので探索終了
+            else:
+                d_flag = True
+        # 2枚目
+        if d_num == 2:
+            # 先手の場合、香車、飛車、龍によってピン
+            if turn == 0:
+                if piece == 20 or piece == 28:
+                    new_array[d_piece] = 1
+            # 後手の場合、飛車、龍によってピン
+            else:
+                if piece == 2 or piece == 6 or piece == 14:
+                    new_array[d_piece] = 1
+            # 一回通ったら探索する必要はない
+            d_flag = True
+    return new_array
+
+
+def _down_left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
+    dl = king_point
+    dl_num = 0
+    dl_flag = False
+    for i in range(8):
+        if dl_flag:
+            continue
+        dl += 10
+        if not _is_in_board(dl) or not _is_same_rising(king_point, dl):
+            continue
+        piece = bs[dl]
+        if piece == 0:
+            continue
+        dl_num += 1
+        if dl_num == 1:
+            if _owner(piece) == turn:
+                dl_piece = dl
+            else:
+                dl_flag = True
+        if dl_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[dl_piece] = 3
+            dl_flag = True
+    return new_array
+
+
+def _down_right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+    new_array = copy.deepcopy(array)
+    dr = king_point
+    dr_num = 0
+    dr_piece = -1
+    dr_flag = False
+    for i in range(8):
+        if dr_flag:
+            continue
+        dr -= 8
+        if not _is_in_board(dr) or not _is_same_declining(king_point, dr):
+            continue
+        piece = bs[dr]
+        if piece == 0:
+            continue
+        dr_num += 1
+        if dr_num == 1:
+            if _owner(piece) == turn:
+                dr_piece = dr
+            # 相手の駒なら関係ないので探索終了
+            else:
+                dr_flag = True
+        # 2枚目
+        if dr_num == 2:
+            # 相手の角・馬によってピン
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[dr_piece] = 3
+            dr_flag = True
+    return new_array
+
+
+def _pin(state: ShogiState):
+    bs = _board_status(state)
+    turn = state.turn
+    pins = np.zeros(81, dtype=np.int32)
+    king_point = state.board[:, 8 + 14 * turn].argmax()
+    pins = _up_pin(bs, turn, king_point, pins)
+    pins = _up_left_pin(bs, turn, king_point, pins)
+    pins = _up_right_pin(bs, turn, king_point, pins)
+    pins = _left_pin(bs, turn, king_point, pins)
+    pins = _right_pin(bs, turn, king_point, pins)
+    pins = _down_pin(bs, turn, king_point, pins)
+    pins = _down_left_pin(bs, turn, king_point, pins)
+    pins = _down_right_pin(bs, turn, king_point, pins)
+    return pins
 
 
 def _is_mate(state: ShogiState) -> bool:
