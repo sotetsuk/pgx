@@ -948,7 +948,7 @@ def _is_check(state: ShogiState) -> bool:
         piece = bs[i]
         if _owner(piece) != _another_color(state):
             continue
-        if _piece_moves(state, piece, i)[king_point] == 1:
+        if _piece_moves(bs, piece, i)[king_point] == 1:
             is_check = True
     return is_check
 

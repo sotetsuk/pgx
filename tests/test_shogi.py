@@ -140,7 +140,7 @@ def test_drop():
 
 def test_piece_moves():
     b1 = init()
-    array1 = _piece_moves(b1, 6, 16)
+    array1 = _piece_moves(_board_status(b1), 6, 16)
     array2 = np.zeros(81, dtype=np.int32)
     for i in range(8):
         array2[9 * i + 7] = 1
@@ -148,7 +148,7 @@ def test_piece_moves():
     array2[16] = 0
     array2[17] = 1
     assert np.all(array1 == array2)
-    array3 = _piece_moves(b1, 5, 70)
+    array3 = _piece_moves(_board_status(b1), 5, 70)
     array4 = np.zeros(81, dtype=np.int32)
     array4[60] = 1
     array4[62] = 1
@@ -158,21 +158,21 @@ def test_piece_moves():
     # 76歩を指して角道を開けたときの挙動確認
     action = 59
     b1 = _move(b1, _dlaction_to_action(action, b1))
-    new_array3 = _piece_moves(b1, 5, 70)
+    new_array3 = _piece_moves(_board_status(b1), 5, 70)
     for i in range(4):
         array4[20 + i * 10] = 1
     assert np.all(new_array3 == array4)
     b2 = make_test_board()
-    array5 = _piece_moves(b2, 1, 40)
+    array5 = _piece_moves(_board_status(b2), 1, 40)
     array6 = np.zeros(81, dtype=np.int32)
     array6[39] = 1
     assert np.all(array5 == array6)
-    array7 = _piece_moves(b2, 2, 8)
+    array7 = _piece_moves(_board_status(b2), 2, 8)
     array8 = np.zeros(81, dtype=np.int32)
     for i in range(8):
         array8[i] = 1
     assert np.all(array7 == array8)
-    array9 = _piece_moves(b2, 27, 44)
+    array9 = _piece_moves(_board_status(b2), 27, 44)
     array10 = np.zeros(81, dtype=np.int32)
     for i in range(4):
         array10[34 - 10 * i] = 1
