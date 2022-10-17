@@ -21,8 +21,8 @@ def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
   # truncated is moved into State class along with terminated
   # info is removed as State class can hold additional information
 
-def observe(state: State) -> jnp.ndarray:
-  return obs  # (N, M) N is required to compute V(s') (e.g., AlphaGo)
+def observe(state: State, player_id=0, all=False) -> jnp.ndarray:
+  return obs  # (M,) or (N, M) all=True will ignore player_id
 
 # step is deterministic but shuffle can make step stochastic
 # Usage:
@@ -73,15 +73,15 @@ class State:
 
 ## Roadmap
 
-|Game|Logic| Jit                                                                                                                      |Baseline|Visualization|Gym/PettingZoo|
+|Game|Logic| Jit                                                                                                                      |Visualization|Speed benchmark|Baseline|
 |:---|:---|:-------------------------------------------------------------------------------------------------------------------------|:---|:---|:---|
 |TicTacToe||||||
-|AnimalShogi| :white_check_mark: | :white_check_mark:                                                                                                       ||||
+|AnimalShogi| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark:|||
 |MiniMahjong| :white_check_mark: | :white_check_mark:                                                                                                       ||||
 |MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br> :white_check_mark: Seaquest<br> :white_check_mark: SpaceInvaders ||||
 |Chess||||||
 |Shogi| :construction: |||||
-|Go| :white_check_mark: | :white_check_mark:                                                                                                       ||||
+|Go| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark:|||
 |ContractBridgeBidding||||||
 |Backgammon||||||
 |Mahjong| :construction: |||||
