@@ -1287,7 +1287,7 @@ def _pin(state: ShogiState):
     bs = _board_status(state)
     turn = state.turn
     pins = np.zeros(81, dtype=np.int32)
-    king_point = state.board[:, 8 + 14 * turn].argmax()
+    king_point = state.board[8 + 14 * turn, :].argmax()
     pins = _up_pin(bs, turn, king_point, pins)
     pins = _up_left_pin(bs, turn, king_point, pins)
     pins = _up_right_pin(bs, turn, king_point, pins)

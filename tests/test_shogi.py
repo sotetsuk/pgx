@@ -1,6 +1,6 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin
 
 import numpy as np
 
@@ -925,6 +925,66 @@ def test_between():
         assert b4[i] == 0
 
 
+def test_pin():
+    s = ShogiState()
+    s.board[8][40] = 1
+    s.board[0][40] = 0
+    s.board[16][38] = 1
+    s.board[0][38] = 0
+    s.board[3][39] = 1
+    s.board[0][39] = 0
+    s.board[19][64] = 1
+    s.board[0][64] = 0
+    s.board[15][56] = 1
+    s.board[0][56] = 0
+    s.board[28][76] = 1
+    s.board[0][76] = 0
+    s.board[1][67] = 1
+    s.board[0][67] = 0
+    s.board[27][80] = 1
+    s.board[0][80] = 0
+    s.board[2][50] = 1
+    s.board[0][50] = 0
+    pins = _pin(s)
+    assert pins[39] == 1
+    assert pins[56] == 0
+    assert pins[67] == 4
+    assert pins[50] == 3
+    s2 = ShogiState(board=np.zeros((29, 81), dtype=np.int32))
+    s2.board[22][40] = 1
+    s2.board[0][40] = 0
+    s2.board[14][38] = 1
+    s2.board[0][38] = 0
+    s2.board[23][39] = 1
+    s2.board[0][39] = 0
+    s2.board[5][64] = 1
+    s2.board[0][64] = 0
+    s2.board[15][56] = 1
+    s2.board[0][56] = 0
+    s2.board[6][76] = 1
+    s2.board[0][76] = 0
+    s2.board[20][67] = 1
+    s2.board[0][67] = 0
+    s2.board[26][58] = 1
+    s2.board[0][58] = 0
+    s2.board[13][80] = 1
+    s2.board[0][80] = 0
+    s2.board[17][50] = 1
+    s2.board[0][50] = 0
+    s2.board[2][44] = 1
+    s2.board[0][44] = 0
+    s2.board[17][42] = 1
+    s2.board[0][42] = 0
+    s2.turn = 1
+    pins2 = _pin(s2)
+    assert pins2[39] == 1
+    assert pins2[56] == 2
+    assert pins2[67] == 0
+    assert pins2[58] == 0
+    assert pins2[50] == 3
+    assert pins2[42] == 1
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -940,3 +1000,4 @@ if __name__ == '__main__':
     #test_step_piece()
     #test_step()
     test_between()
+    test_pin()
