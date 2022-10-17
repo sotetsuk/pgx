@@ -1023,6 +1023,51 @@ def _is_stuck(state: ShogiState) -> bool:
     return is_stuck
 
 
+# ピンされた（動かすと相手の駒の利きが玉に通ってしまうので動かせない）駒の位置とピンの方向（縦横右上がり右下がり）を記録
+# ピンされた駒はピンされている方向以外には動かせない
+def _pin(state: ShogiState) -> np.array:
+    pins = np.zeros(81, dtype=np.int32)
+    bs = _board_status(state)
+    king_point = state.board[8 + 14 * state.turn, :].argmax()
+    # 上方向のピン
+    u = king_point - 1
+    u_piece = -1
+    u_num = 0
+    u_flag = False
+    for i in range(8):
+        # 探索が終わっている場合はスルー
+        if u_flag:
+            continue
+        # 盤外や同じ列にない場合は弾く
+        if not _is_in_board(u) or not _is_same_column(king_point, u):
+            continue
+        piece = bs[u]
+        # 駒がない場合は処理をしない
+        if piece == 0:
+            continue
+        # 駒がある場合
+        u_num += 1
+        # 1枚目が自分の駒であるとき、位置を記憶しておく
+        if u_num == 1 and _owner(piece) == state.turn:
+            u_piece = u
+        # 2枚目があるときかつ1枚目でu_pieceを更新している時
+        if u_num == 2 and u_piece != -1:
+            # 先手の場合、香車、飛車、龍によってピン
+            if state.turn == 0:
+                if piece == 16 or piece == 20 or piece == 28:
+                    pins[u_piece] = 1
+            # 後手の場合、飛車、龍によってピン
+            else:
+                if piece == 6 or piece == 14:
+                    pins[u_piece] = 1
+            # 一回通ったら探索する必要はない
+            u_flag = True
+        # 探索位置の更新
+        u -= 1
+
+
+
+
 def _is_mate(state: ShogiState) -> bool:
     # 王手がかかっていない場合は無視
     if not _is_check(state):
