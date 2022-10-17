@@ -53,7 +53,7 @@ def init(rng: jnp.ndarray) -> State:
 
 # step is deterministic by default
 # if state.is_terminal=True, the behavior is undefined
-# 
+# if rng is specified, the rng is used instead of State.rng (or shuffle the hidden data)
 def step(state: State, action: jnp.ndarray, Optional[jnp.ndarray]: rng) -> Tuple[State, jnp.ndarray]:
   return state, rewards  # rewards: (N,) 
   # terminated is moved into State class to support auto_reset 
@@ -62,13 +62,6 @@ def step(state: State, action: jnp.ndarray, Optional[jnp.ndarray]: rng) -> Tuple
 
 def observe(state: State, player_id=0, all=False) -> jnp.ndarray:
   return obs  # (M,) or (N, M) all=True will ignore player_id
-
-# step is deterministic but shuffle can make step stochastic
-# Usage:
-#   state = shuffle(state, key)
-#   state = step(state, action)
-def shuffle(state: State, rng: jnp.ndarray) -> State:
-  return state
 
 # N: num agents
 # A: action space size
