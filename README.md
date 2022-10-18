@@ -7,29 +7,68 @@ Highly parallel game simulator for reinforcement learning.
 ## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
 This is to explicitly let users know that state transition is determined ONLY from `state` and `action` and easy to use `jax.jit`.
+Pgx implements AEC games (see PettingZoo paper), in which only one agent acts and then turn changes.
 
+
+### Design goal
+1. Be explicit
+2. Be simple than be universal
+
+
+
+### Usage
 
 ```py
-def init(rng: jnp.ndarray) -> State:
-  return state 
+import jax
+import pgx
 
-# step is deterministic
+num_envs = 100
+
+init, step, observe, info = pgx.make(
+  env_id="Go-5x5",
+  max_time_steps=1000,
+  autoreset=False,
+  stochastic_step=False,
+)
+models = {0: ..., 1: ...}
+
+def rollout(rng):
+    curr_player, state = init(rng)
+    # TODO: use lax.while_loop
+    while not state.terminated:
+        obs = observe(state, curr_player)
+        action = models[curr_player](obs)
+        curr_player, state, rewards = step(obs, action)
+
+rollout_vmap = jax.vmap(rollout)
+key = jax.random.PRGNKey(42)
+keys = jax.random.split(key, num_envs)
+rollout_vmap(keys)
+```
+
+### API Description
+
+```py
+def init(rng: jnp.ndarray) -> Tuple[jnp.ndarray, State]:
+  return curr_player, state 
+
+# step is deterministic by default
 # if state.is_terminal=True, the behavior is undefined
-def step(state: State, action: jnp.ndarray) -> Tuple[State, jnp.ndarray]:
-  return state, rewards  # rewards: (N,) 
+# if rng is specified, the rng is used instead of State.rng (or shuffle the hidden data)
+def step(state: State, 
+         action: jnp.ndarray, 
+         rng: Optional[jnp.ndarray]) 
+    -> Tuple[jnp.ndarray, State, jnp.ndarray]:
+  return curr_player, state, rewards  # rewards: (N,) 
   # terminated is moved into State class to support auto_reset 
   # truncated is moved into State class along with terminated
   # info is removed as State class can hold additional information
 
-def observe(state: State, player_id=0, all=False) -> jnp.ndarray:
+def observe(state: State, 
+            player_id: jnp.ndarray, 
+            observe_all=False) 
+    -> jnp.ndarray:
   return obs  # (M,) or (N, M) all=True will ignore player_id
-
-# step is deterministic but shuffle can make step stochastic
-# Usage:
-#   state = shuffle(state, key)
-#   state = step(state, action)
-def shuffle(state: State, rng: jnp.ndarray) -> State:
-  return state
 
 # N: num agents
 # A: action space size
@@ -46,13 +85,15 @@ class State:
   ... 
 ```
 
-### Design goal
-* Be simple than be universal
-* Implement AEC (see PettingZoo paper)
+### Limitations (for the simplicity)
+* Does **NOT** support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
+* Does **NOT** support Chance player (Nature player) with action selection.
+* Does **NOT** support OpenAI Gym API.
+    * OpenAI Gym is for single-agent environment. Most of Pgx environments are multi-player games. Just defining opponents is not enough for converting multi-agent environemnts to OpenAI Gym environment. E.g., in the game of go, the next state s' is defined as the state just after placing a stone in AlhaGo paper. However, s' becomes the state after the opponents' play. This changes the definition of V(s').
+* Does **NOT** support PettingZoo API.
+    * PettingZoo is *Gym for multi-agent RL*. As far as we know, PettingZoo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
 
-### Notes
-* Does NOT support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
-* Does NOT support Chance player (Nature player) with action selection.
+
 
 ### `skip_chance`
 * We prepare skip_chance=True option for some environments. This makes it possible to consider value function for "post-decision states" (See AlgoRL book). However, we do not allow chance agent to choose action like OpenSpiel. This is because the action space of chance agent and usual agent are different. Thus, when the chance player is chosen (`current_player=-1`), `action=-1` must be returned to step function. Use `shuffle` to make `step` stochastic.
@@ -61,12 +102,6 @@ class State:
 * supported by `make(env_id="...", auto_reset=True, max_episode_length=64)`
 * `auto_reset` will replace the terminal state by initial state (but `is_terminal=True` is set)
 * `is_truncated=True` is also set to state
-
-### FAQ
-  * Does Pgx support OpenAI Gym?  **No.**
-      * OpenAI Gym is for single-agent environment. Most of Pgx environments are multi-player games. Just defining opponents is not enough for converting multi-agent environemnts to OpenAI Gym environment. E.g., in the game of go, the next state s' is defined as the state just after placing a stone in AlhaGo paper. However, s' becomes the state after the opponents' play. This changes the definition of V(s').
-  * Does Pgx support PettingZoo?  **No.**
-      * As far as we know, PettingZoo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
 
 ### Concerns
 * For efficient computation, current_player must be synchronized? but it seems difficult (or impossible?). It is impossible to synchronize the terminations.
