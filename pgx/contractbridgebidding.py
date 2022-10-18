@@ -27,7 +27,7 @@ class ContractBridgeBiddingState:
     # 0 = non vul, 1 = vul
     vul_EW: np.ndarray = np.zeros(1, dtype=np.bool8)
     # legal_actions プレイヤーの可能なbidの一覧
-    legal_actions: np.ndarray = np.zeros(38, dtype=np.bool8)
+    legal_actions: np.ndarray = np.ones(38, dtype=np.bool8)
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
     first_denomination_NS: np.ndarray = np.zeros(5, dtype=np.int8)
