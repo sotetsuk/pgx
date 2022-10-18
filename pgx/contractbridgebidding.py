@@ -43,11 +43,11 @@ class ContractBridgeBiddingState:
 
 
 def init() -> ContractBridgeBiddingState:
-    hand = _make_init_hand()
-    dealer = _make_init_dealer()
-    vul_NS = _make_init_vul()
-    vul_EW = _make_init_vul()
-    dealer = _make_init_dealer()
+    hand = np.arange(0, 52)
+    np.random.shuffle(hand)
+    vul_NS = np.random.randint(0, 1, 1)
+    vul_EW = np.random.randint(0, 1, 1)
+    dealer = np.random.randint(0, 3, 1)
     state = ContractBridgeBiddingState(
         hand=hand,
         dealer=dealer,
@@ -55,22 +55,3 @@ def init() -> ContractBridgeBiddingState:
         vul_EW=vul_EW
     )
     return state
-
-
-def _make_init_hand() -> np.ndarray:
-    hand = np.arange(0, 52)
-    np.random.shuffle(hand)
-    return hand
-
-
-def _make_init_dealer() -> np.ndarray:
-    return np.random.randint(0, 3, 1)
-
-
-def _make_init_vul() -> np.ndarray:
-    return np.random.randint(0, 1, 1)
-
-
-if __name__ == "__main__":
-    state = init()
-    print(state)
