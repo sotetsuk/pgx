@@ -1,6 +1,6 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, _make_board, _is_mate2
 
 import numpy as np
 
@@ -985,6 +985,44 @@ def test_pin():
     assert pins2[42] == 1
 
 
+def test_is_mate():
+    board = np.zeros(81, dtype=np.int32)
+    board[30] = 1
+    board[31] = 1
+    board[32] = 1
+    board[48] = 1
+    board[49] = 1
+    board[50] = 1
+    board[40] = 8
+    board[38] = 16
+    s = _make_board(board)
+    s = _init_legal_actions(s)
+    assert _is_mate2(s)
+    board = np.zeros(81, dtype=np.int32)
+    board[8] = 8
+    board[7] = 1
+    board[16] = 1
+    board[26] = 25
+    board[15] = 17
+    board[64] = 27
+    s = _make_board(board)
+    s = _init_legal_actions(s)
+    assert _is_mate2(s)
+    board[56] = 28
+    s = _make_board(board)
+    s = _init_legal_actions(s)
+    assert not _is_mate2(s)
+    board = np.zeros(81, dtype=np.int32)
+    board[8] = 8
+    board[7] = 1
+    board[64] = 27
+    board[56] = 5
+    board[48] = 19
+    s = _make_board(board)
+    s = _init_legal_actions(s)
+    assert not _is_mate2(s)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -1001,3 +1039,4 @@ if __name__ == '__main__':
     #test_step()
     test_between()
     test_pin()
+    test_is_mate()

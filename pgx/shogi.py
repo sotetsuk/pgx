@@ -163,6 +163,14 @@ def _make_init_board() -> np.ndarray:
     return array
 
 
+def _make_board(bs: np.ndarray) -> ShogiState:
+    board = np.zeros((29, 81), dtype=np.int32)
+    for i in range(81):
+        board[0][i] = 0
+        board[bs[i]][i] = 1
+    return ShogiState(board=board)
+
+
 def _pawn_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
     if turn == 0:
@@ -725,6 +733,15 @@ def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
     return new_array
 
 
+# actionを削除する
+def _filter_action(filter_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
+    new_array = copy.deepcopy(origin_array)
+    for i in range(2754):
+        if filter_array[i] == 1:
+            new_array[i] = 0
+    return new_array
+
+
 # 駒の種類と位置から生成できるactionのフラグを立てる
 def _add_move_actions(piece: int, _from: int, array: np.ndarray) -> np.ndarray:
     new_array = copy.deepcopy(array)
@@ -1183,38 +1200,6 @@ def _right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.
     return new_array
 
 
-# 特定の方向の動きだけを除いたactionを生成する
-def _eliminate_direction(actions: np.ndarray, direction: int):
-    new_array = copy.deepcopy(actions)
-    # 2方向と成・不成の4方向のフラグを折る
-    dir1 = 0
-    dir2 = 0
-    # 縦
-    if direction == 1:
-        dir1 = 0
-        dir2 = 5
-    # 右下がり
-    if direction == 2:
-        dir1 = 1
-        dir2 = 7
-    # 右上がり
-    if direction == 3:
-        dir1 = 2
-        dir2 = 6
-    # 横
-    if direction == 4:
-        dir1 = 3
-        dir2 = 4
-    pro_dir1 = dir1 + 8
-    pro_dir2 = dir2 + 8
-    for i in range(81):
-        new_array[dir1 * 81 + i] = 0
-        new_array[dir2 * 81 + i] = 0
-        new_array[pro_dir1 * 81 + i] = 0
-        new_array[pro_dir2 * 81 + i] = 0
-    return new_array
-
-
 def _down_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
     new_array = copy.deepcopy(array)
     d = king_point
@@ -1329,6 +1314,38 @@ def _pin(state: ShogiState):
     return pins
 
 
+# 特定の方向の動きだけを除いたactionを生成する
+def _eliminate_direction(actions: np.ndarray, direction: int):
+    new_array = copy.deepcopy(actions)
+    # 2方向と成・不成の4方向のフラグを折る
+    dir1 = 0
+    dir2 = 0
+    # 縦
+    if direction == 1:
+        dir1 = 0
+        dir2 = 5
+    # 右下がり
+    if direction == 2:
+        dir1 = 1
+        dir2 = 7
+    # 右上がり
+    if direction == 3:
+        dir1 = 2
+        dir2 = 6
+    # 横
+    if direction == 4:
+        dir1 = 3
+        dir2 = 4
+    pro_dir1 = dir1 + 8
+    pro_dir2 = dir2 + 8
+    for i in range(81):
+        new_array[dir1 * 81 + i] = 0
+        new_array[dir2 * 81 + i] = 0
+        new_array[pro_dir1 * 81 + i] = 0
+        new_array[pro_dir2 * 81 + i] = 0
+    return new_array
+
+
 def _is_mate(state: ShogiState) -> bool:
     # 王手がかかっていない場合は無視
     if not _is_check(state):
@@ -1400,16 +1417,19 @@ def _is_mate2(state: ShogiState) -> bool:
     # 玉が逃げる手が合法ならその時点で詰んでない
     if _king_escape(state):
         return False
-    # 玉が逃げる手以外の合法手
     king_point = state.board[8 + 14 * state.turn, :].argmax()
     legal_actions = _filter_move_actions(8, king_point, legal_actions)
+    # 玉が逃げる手以外の合法手
+    legal_actions = _filter_action(_create_piece_actions(8, king_point), legal_actions)
     # ピンされている駒の動きものぞく
     pins = _pin(state)
     for i in range(81):
         if pins[i] == 0:
             continue
         action = _create_piece_actions(bs[i], i)
-
+        # ピンされた方向以外のaction
+        action = _eliminate_direction(action, pins[i])
+        legal_actions = _filter_action(action, legal_actions)
     # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
     if cn != 0 and cf != 0:
         return True
