@@ -34,3 +34,37 @@ class ContractBridgeBiddingState:
     # first_denominaton_EW EWチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
     first_denomination_EW: np.ndarray = np.zeros(5, dtype=np.int8)
+
+
+def init() -> ContractBridgeBiddingState:
+    hand = _make_init_hand()
+    dealer = _make_init_dealer()
+    vul_NS = _make_init_vul()
+    vul_EW = _make_init_vul()
+    dealer = _make_init_dealer()
+    state = ContractBridgeBiddingState(
+        hand=hand,
+        dealer=dealer,
+        vul_NS=vul_NS,
+        vul_EW=vul_EW
+    )
+    return state
+
+
+def _make_init_hand() -> np.ndarray:
+    hand = np.arange(0, 52)
+    np.random.shuffle(hand)
+    return hand
+
+
+def _make_init_dealer() -> np.ndarray:
+    return np.random.randint(0, 3, 1)
+
+
+def _make_init_vul() -> np.ndarray:
+    return np.random.randint(0, 1, 1)
+
+
+if __name__ == "__main__":
+    state = init()
+    print(state)
