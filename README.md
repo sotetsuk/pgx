@@ -25,7 +25,7 @@ import pgx
 num_envs = 100
 
 init, step, observe, info = pgx.make(
-  env_id="Go5x5",
+  env_id="Go-5x5",
   max_time_steps=1000,
   autoreset=False,
   stochastic_step=False,
@@ -34,12 +34,13 @@ models = {0: ..., 1: ...}
 
 def rollout(rng):
     curr_player, state = init(rng)
+    # TODO: use lax.while_loop
     while not state.terminated:
         obs = observe(state, curr_player)
         action = models[curr_player](obs)
         curr_player, state, rewards = step(obs, action)
 
-rollout = jax.vmap(train_rollout)
+rollout_vmap = jax.vmap(rollout)
 key = jax.random.PRGNKey(42)
 keys = jax.random.split(key, num_envs)
 rollout_vmap(keys)
@@ -48,19 +49,25 @@ rollout_vmap(keys)
 ### API Description
 
 ```py
-def init(rng: jnp.ndarray) -> State:
-  return state 
+def init(rng: jnp.ndarray) -> Tuple[jnp.ndarray, State]:
+  return curr_player, state 
 
 # step is deterministic by default
 # if state.is_terminal=True, the behavior is undefined
 # if rng is specified, the rng is used instead of State.rng (or shuffle the hidden data)
-def step(state: State, action: jnp.ndarray, Optional[jnp.ndarray]: rng) -> Tuple[State, jnp.ndarray]:
-  return state, rewards  # rewards: (N,) 
+def step(state: State, 
+         action: jnp.ndarray, 
+         rng: Optional[jnp.ndarray]) 
+    -> Tuple[jnp.ndarray, State, jnp.ndarray]:
+  return curr_player, state, rewards  # rewards: (N,) 
   # terminated is moved into State class to support auto_reset 
   # truncated is moved into State class along with terminated
   # info is removed as State class can hold additional information
 
-def observe(state: State, player_id=0, all=False) -> jnp.ndarray:
+def observe(state: State, 
+            player_id: jnp.ndarray, 
+            observe_all=False) 
+    -> jnp.ndarray:
   return obs  # (M,) or (N, M) all=True will ignore player_id
 
 # N: num agents
