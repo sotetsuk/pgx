@@ -49,9 +49,6 @@ def init() -> ContractBridgeBiddingState:
     vul_EW = np.random.randint(0, 1, 1)
     dealer = np.random.randint(0, 3, 1)
     state = ContractBridgeBiddingState(
-        hand=hand,
-        dealer=dealer,
-        vul_NS=vul_NS,
-        vul_EW=vul_EW
+        hand=hand, dealer=dealer, vul_NS=vul_NS, vul_EW=vul_EW
     )
     return state
