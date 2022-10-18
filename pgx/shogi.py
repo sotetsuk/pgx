@@ -1183,6 +1183,38 @@ def _right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.
     return new_array
 
 
+# 特定の方向の動きだけを除いたactionを生成する
+def _eliminate_direction(actions: np.ndarray, direction: int):
+    new_array = copy.deepcopy(actions)
+    # 2方向と成・不成の4方向のフラグを折る
+    dir1 = 0
+    dir2 = 0
+    # 縦
+    if direction == 1:
+        dir1 = 0
+        dir2 = 5
+    # 右下がり
+    if direction == 2:
+        dir1 = 1
+        dir2 = 7
+    # 右上がり
+    if direction == 3:
+        dir1 = 2
+        dir2 = 6
+    # 横
+    if direction == 4:
+        dir1 = 3
+        dir2 = 4
+    pro_dir1 = dir1 + 8
+    pro_dir2 = dir2 + 8
+    for i in range(81):
+        new_array[dir1 * 81 + i] = 0
+        new_array[dir2 * 81 + i] = 0
+        new_array[pro_dir1 * 81 + i] = 0
+        new_array[pro_dir2 * 81 + i] = 0
+    return new_array
+
+
 def _down_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
     new_array = copy.deepcopy(array)
     d = king_point
@@ -1318,14 +1350,11 @@ def _is_mate(state: ShogiState) -> bool:
 
 # 利きの判定
 # 玉の位置を透過する（玉をいないものとして扱う）ことで香車や角などの利きを玉の奥まで通す
-def _kigless_effected_positions(state: ShogiState, turn: int) -> np.ndarray:
-    king_point = state.board[8 + 14 * turn, :].argmax()
+def _kingless_effected_positions(bs: np.ndarray, king_point: int, turn: int) -> np.ndarray:
     all_effect = np.zeros(81)
-    bs = _board_status(state)
     bs[king_point] = 0
-    piece_owner = _pieces_owner(state)
     for i in range(81):
-        own = piece_owner[i]
+        own = _owner(bs[i])
         if own != turn:
             continue
         piece = bs[i]
@@ -1337,11 +1366,12 @@ def _kigless_effected_positions(state: ShogiState, turn: int) -> np.ndarray:
 # 玉が移動する手に合法なものがあるかを調べる
 def _king_escape(state: ShogiState) -> bool:
     king_point = state.board[8 + 14 * state.turn, :].argmax()
-    effects = _kigless_effected_positions(state, _another_color(state))
+    bs = _board_status(state)
+    effects = _kingless_effected_positions(bs, king_point, _another_color(state))
     king_moves = _small_piece_moves(8, king_point)
     flag = False
     for i in range(81):
-        if king_moves[i] == 1 and effects[i] == 0:
+        if king_moves[i] == 1 and _owner(bs[i]) != state.turn and effects[i] == 0:
             flag = True
     return flag
 
@@ -1366,6 +1396,7 @@ def _between(point1: int, point2: int) -> np.ndarray:
 def _is_mate2(state: ShogiState) -> bool:
     cn, cnp, cf, cfp = _is_check2(state)
     legal_actions = _legal_actions(state)
+    bs = _board_status(state)
     # 玉が逃げる手が合法ならその時点で詰んでない
     if _king_escape(state):
         return False
@@ -1373,6 +1404,11 @@ def _is_mate2(state: ShogiState) -> bool:
     king_point = state.board[8 + 14 * state.turn, :].argmax()
     legal_actions = _filter_move_actions(8, king_point, legal_actions)
     # ピンされている駒の動きものぞく
+    pins = _pin(state)
+    for i in range(81):
+        if pins[i] == 0:
+            continue
+        action = _create_piece_actions(bs[i], i)
 
     # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
     if cn != 0 and cf != 0:
