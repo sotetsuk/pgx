@@ -34,8 +34,6 @@ class ContractBridgeBiddingState:
     call_xx: np.ndarray = np.zeros(1, dtype=np.bool8)
     # legal_actions プレイヤーの可能なbidの一覧
     legal_actions: np.ndarray = np.ones(38, dtype=np.bool8)
-    # 最初はdable, redoubleできない
-    legal_actions[-2:] = 0
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
     first_denomination_NS: np.ndarray = np.zeros(5, dtype=np.int8)
@@ -50,7 +48,14 @@ def init() -> ContractBridgeBiddingState:
     vul_NS = np.random.randint(0, 1, 1)
     vul_EW = np.random.randint(0, 1, 1)
     dealer = np.random.randint(0, 3, 1)
+    legal_actions = np.ones(38, dtype=np.bool8)
+    # 最初はdable, redoubleできない
+    legal_actions[-2:] = 0
     state = ContractBridgeBiddingState(
-        hand=hand, dealer=dealer, vul_NS=vul_NS, vul_EW=vul_EW
+        hand=hand,
+        dealer=dealer,
+        vul_NS=vul_NS,
+        vul_EW=vul_EW,
+        legal_actions=legal_actions,
     )
     return state
