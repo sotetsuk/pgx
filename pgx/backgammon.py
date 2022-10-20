@@ -25,5 +25,3 @@ class BackgammonState:
 
     # bear offできるかどうか.
     is_bearable: np.ndarray = np.zeros(2, dtype=bool)
-
-    legal_actions: np.ndarray = np.zeros((2,))
