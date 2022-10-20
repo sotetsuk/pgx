@@ -1,7 +1,7 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
     _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, _make_board, \
-    _is_mate, _is_check2
+    _is_mate
 
 
 import numpy as np

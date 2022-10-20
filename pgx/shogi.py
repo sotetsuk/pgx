@@ -73,7 +73,8 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
         s = _move(s, _action)
         print("move: piece =", _action.piece, ", to =", _action.to)
     # 王手がかかったままの場合、王手放置またｈ自殺手で負け
-    if _is_check(s):
+    cn, cnp, cf, cfp = _is_check(s)
+    if cn + cf != 0:
         print("check is remained")
         return s, _turn_to_reward(_another_color(s)), True
     # その他の反則
@@ -956,24 +957,8 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
 
 
 # 王手判定
-def _is_check(state: ShogiState) -> bool:
-    # そもそも王がいない場合はFalse
-    if np.all(state.board[8 + 14 * state.turn] == 0):
-        return False
-    is_check = False
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
-    bs = _board_status(state)
-    for i in range(81):
-        piece = bs[i]
-        if _owner(piece) != _another_color(state):
-            continue
-        if _piece_moves(bs, piece, i)[king_point] == 1:
-            is_check = True
-    return is_check
-
-
-# 王手判定2
-def _is_check2(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
+# 密接・遠隔の王手で分ける
+def _is_check(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
     check_near = 0
     check_far = 0
     checking_point_near = np.zeros(81, dtype=np.int32)
@@ -1156,22 +1141,22 @@ def _left_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
     new_array = copy.deepcopy(array)
-    l = king_point
+    l_ = king_point
     l_num = 0
     l_flag = False
     for i in range(8):
         if l_flag:
             continue
-        l += 9
-        if not _is_in_board(l) or not _is_same_row(king_point, l):
+        l_ += 9
+        if not _is_in_board(l_) or not _is_same_row(king_point, l_):
             continue
-        piece = bs[l]
+        piece = bs[l_]
         if piece == 0:
             continue
         l_num += 1
         if l_num == 1:
             if _owner(piece) == turn:
-                l_piece = l
+                l_piece = l_
             else:
                 l_flag = True
         # 2枚目
@@ -1418,7 +1403,7 @@ def _between(point1: int, point2: int) -> np.ndarray:
 
 
 def _is_mate(state: ShogiState) -> bool:
-    cn, cnp, cf, cfp = _is_check2(state)
+    cn, cnp, cf, cfp = _is_check(state)
     # 王手がかかっていないならFalse
     if cn + cf == 0:
         return False
@@ -1460,15 +1445,13 @@ def _is_mate(state: ShogiState) -> bool:
                     # point以外への移動は王手放置
                     if j != point:
                         legal_actions[81 * i + j] = 0
-        return np.all(legal_actions == 0)
     # 開き王手
     if cf == 1:
         point = cfp.argmax()
         # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
-        between = _between(king_point, point)
+        between = _between(int(king_point), int(point))
         for i in range(34):
             for j in range(81):
                 if between[j] != 1 and not (i <= 19 and j == point):
                     legal_actions[81 * i + j] = 0
-        return np.all(legal_actions == 0)
-    return False
+    return (legal_actions == 0).all()
