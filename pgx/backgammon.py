@@ -25,3 +25,6 @@ class BackgammonState:
 
     # bear offできるかどうか.
     is_bearable: np.ndarray = np.zeros(2, dtype=bool)
+
+    # サイコロの出目
+    dice: np.ndarray = np.zeros(4, dtype=int)
