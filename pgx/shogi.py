@@ -966,7 +966,7 @@ def _is_check(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
     # そもそも王がいない場合はFalse
     if np.all(state.board[8 + 14 * state.turn] == 0):
         return check_near, checking_point_near, check_far, checking_point_far
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
+    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
     near_king = _small_piece_moves(8 + 14 * state.turn, king_point)
     bs = _board_status(state)
     for i in range(81):
@@ -1305,7 +1305,7 @@ def _pin(state: ShogiState):
     bs = _board_status(state)
     turn = state.turn
     pins = np.zeros(81, dtype=np.int32)
-    king_point = state.board[8 + 14 * turn, :].argmax()
+    king_point = int(state.board[8 + 14 * turn, :].argmax())
     pins = _up_pin(bs, turn, king_point, pins)
     pins = _up_left_pin(bs, turn, king_point, pins)
     pins = _up_right_pin(bs, turn, king_point, pins)
@@ -1368,7 +1368,7 @@ def _kingless_effected_positions(
 
 # 玉が移動する手に合法なものがあるかを調べる
 def _king_escape(state: ShogiState) -> bool:
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
+    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
     bs = _board_status(state)
     effects = _kingless_effected_positions(
         bs, king_point, _another_color(state)
@@ -1412,7 +1412,7 @@ def _is_mate(state: ShogiState) -> bool:
     # 玉が逃げる手が合法ならその時点で詰んでない
     if _king_escape(state):
         return False
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
+    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
     legal_actions = _filter_move_actions(
         8 + 14 * state.turn, king_point, legal_actions
     )
@@ -1435,7 +1435,7 @@ def _is_mate(state: ShogiState) -> bool:
     # 密接の王手
     if cn == 1:
         # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
-        point = cnp.argmax()
+        point = int(cnp.argmax())
         for i in range(34):
             for j in range(81):
                 # 駒打ちは不可
@@ -1447,9 +1447,9 @@ def _is_mate(state: ShogiState) -> bool:
                         legal_actions[81 * i + j] = 0
     # 開き王手
     if cf == 1:
-        point = cfp.argmax()
+        point = int(cfp.argmax())
         # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
-        between = _between(int(king_point), int(point))
+        between = _between(king_point, point)
         for i in range(34):
             for j in range(81):
                 if between[j] != 1 and not (i <= 19 and j == point):
