@@ -1,6 +1,8 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, _make_board, _is_mate2
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, _make_board, \
+    _is_mate, _is_check2
+
 
 import numpy as np
 
@@ -997,30 +999,44 @@ def test_is_mate():
     board[38] = 16
     s = _make_board(board)
     s = _init_legal_actions(s)
-    assert _is_mate2(s)
-    board = np.zeros(81, dtype=np.int32)
-    board[8] = 8
-    board[7] = 1
-    board[16] = 1
-    board[26] = 25
-    board[15] = 17
-    board[64] = 27
-    s = _make_board(board)
+    assert _is_mate(s)
+    s.hand[0] = 1
     s = _init_legal_actions(s)
-    assert _is_mate2(s)
-    board[56] = 28
-    s = _make_board(board)
-    s = _init_legal_actions(s)
-    assert not _is_mate2(s)
-    board = np.zeros(81, dtype=np.int32)
-    board[8] = 8
-    board[7] = 1
-    board[64] = 27
-    board[56] = 5
-    board[48] = 19
-    s = _make_board(board)
-    s = _init_legal_actions(s)
-    assert not _is_mate2(s)
+    assert not _is_mate(s)
+    board1 = np.zeros(81, dtype=np.int32)
+    board1[8] = 8
+    board1[7] = 1
+    board1[16] = 1
+    board1[26] = 25
+    board1[15] = 17
+    board1[64] = 27
+    s1 = _make_board(board1)
+    s1 = _init_legal_actions(s1)
+    assert _is_mate(s1)
+    board1[56] = 28
+    s1 = _make_board(board1)
+    s1 = _init_legal_actions(s1)
+    assert not _is_mate(s1)
+    board2 = np.zeros(81, dtype=np.int32)
+    board2[8] = 8
+    board2[7] = 1
+    board2[64] = 27
+    board2[56] = 5
+    board2[48] = 19
+    s2 = _make_board(board2)
+    s2 = _init_legal_actions(s2)
+    assert not _is_mate(s2)
+    board3 = np.zeros(81, dtype=np.int32)
+    board3[8] = 8
+    board3[7] = 15
+    board3[14] = 17
+    board3[16] = 7
+    board3[17] = 4
+    board3[24] = 19
+    board3[35] = 28
+    s3 = _make_board(board3)
+    s3 = _init_legal_actions(s3)
+    assert _is_mate(s3)
 
 
 if __name__ == '__main__':
@@ -1035,8 +1051,7 @@ if __name__ == '__main__':
     test_update_legal_actions()
     test_is_double_pawn()
     test_is_stuck()
-    #test_step_piece()
-    #test_step()
+    test_step()
     test_between()
     test_pin()
     test_is_mate()

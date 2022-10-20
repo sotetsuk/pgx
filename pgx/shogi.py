@@ -1346,25 +1346,6 @@ def _eliminate_direction(actions: np.ndarray, direction: int):
     return new_array
 
 
-def _is_mate(state: ShogiState) -> bool:
-    # 王手がかかっていない場合は無視
-    if not _is_check(state):
-        return False
-    is_mate = True
-    player_actions = _legal_actions(state)
-    for i in range(2754):
-        if player_actions[i] == 0:
-            continue
-        action = _dlaction_to_action(i, state)
-        if action.is_drop:
-            s1 = _drop(state, action)
-        else:
-            s1 = _move(state, action)
-        if not _is_check(s1):
-            is_mate = False
-    return is_mate
-
-
 # 利きの判定
 # 玉の位置を透過する（玉をいないものとして扱う）ことで香車や角などの利きを玉の奥まで通す
 def _kingless_effected_positions(bs: np.ndarray, king_point: int, turn: int) -> np.ndarray:
@@ -1410,17 +1391,20 @@ def _between(point1: int, point2: int) -> np.ndarray:
     return between
 
 
-def _is_mate2(state: ShogiState) -> bool:
+def _is_mate(state: ShogiState) -> bool:
     cn, cnp, cf, cfp = _is_check2(state)
+    # 王手がかかっていないならFalse
+    if cn + cf == 0:
+        return False
     legal_actions = _legal_actions(state)
     bs = _board_status(state)
     # 玉が逃げる手が合法ならその時点で詰んでない
     if _king_escape(state):
         return False
     king_point = state.board[8 + 14 * state.turn, :].argmax()
-    legal_actions = _filter_move_actions(8, king_point, legal_actions)
+    legal_actions = _filter_move_actions(8 + 14 * state.turn, king_point, legal_actions)
     # 玉が逃げる手以外の合法手
-    legal_actions = _filter_action(_create_piece_actions(8, king_point), legal_actions)
+    legal_actions = _filter_action(_create_piece_actions(8 + 14 * state.turn, king_point), legal_actions)
     # ピンされている駒の動きものぞく
     pins = _pin(state)
     for i in range(81):
@@ -1431,9 +1415,7 @@ def _is_mate2(state: ShogiState) -> bool:
         action = _eliminate_direction(action, pins[i])
         legal_actions = _filter_action(action, legal_actions)
     # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
-    if cn != 0 and cf != 0:
-        return True
-    if cf >= 2:
+    if cn + cf >= 2:
         return True
     # 密接の王手
     if cn == 1:
