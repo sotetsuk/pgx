@@ -4,7 +4,7 @@ import numpy as np
 
 
 @dataclass
-class ContractBridgeBiddingState:
+class BackgammonState:
     # 白なら0黒なら1
     turn: int = 0
     # 各point(24)にあるcheckerの数, 白と黒で二次元.
