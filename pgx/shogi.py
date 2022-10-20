@@ -42,7 +42,7 @@ class ShogiState:
     legal_actions_white: np.ndarray = np.zeros(2754, dtype=np.int32)
 
 
-def init():
+def init() -> ShogiState:
     board = _make_init_board()
     state = ShogiState(board=board)
     return _init_legal_actions(state)
@@ -734,7 +734,9 @@ def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
 
 
 # actionを削除する
-def _filter_action(filter_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
+def _filter_action(
+    filter_array: np.ndarray, origin_array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(origin_array)
     for i in range(2754):
         if filter_array[i] == 1:
@@ -1040,7 +1042,9 @@ def _is_stuck(state: ShogiState) -> bool:
 
 # ピンされた（動かすと相手の駒の利きが玉に通ってしまうので動かせない）駒の位置とピンの方向（縦横右上がり右下がり）を記録
 # ピンされた駒はピンされている方向以外には動かせない
-def _up_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _up_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     # 上方向のピン
     u = king_point
@@ -1086,7 +1090,9 @@ def _up_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.arr
     return new_array
 
 
-def _up_left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _up_left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     ul = king_point
     ul_num = 0
@@ -1113,7 +1119,9 @@ def _up_left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> n
     return new_array
 
 
-def _up_right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _up_right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     ur = king_point
     ur_num = 0
@@ -1144,7 +1152,9 @@ def _up_right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> 
     return new_array
 
 
-def _left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     l = king_point
     l_num = 0
@@ -1172,7 +1182,9 @@ def _left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.a
     return new_array
 
 
-def _right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     r = king_point
     r_num = 0
@@ -1200,7 +1212,9 @@ def _right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.
     return new_array
 
 
-def _down_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _down_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     d = king_point
     d_num = 0
@@ -1240,7 +1254,9 @@ def _down_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.a
     return new_array
 
 
-def _down_left_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _down_left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     dl = king_point
     dl_num = 0
@@ -1267,7 +1283,9 @@ def _down_left_pin(bs: np.array, turn: int, king_point: int, array: np.array) ->
     return new_array
 
 
-def _down_right_pin(bs: np.array, turn: int, king_point: int, array: np.array) -> np.array:
+def _down_right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
     new_array = copy.deepcopy(array)
     dr = king_point
     dr_num = 0
@@ -1348,7 +1366,9 @@ def _eliminate_direction(actions: np.ndarray, direction: int):
 
 # 利きの判定
 # 玉の位置を透過する（玉をいないものとして扱う）ことで香車や角などの利きを玉の奥まで通す
-def _kingless_effected_positions(bs: np.ndarray, king_point: int, turn: int) -> np.ndarray:
+def _kingless_effected_positions(
+    bs: np.ndarray, king_point: int, turn: int
+) -> np.ndarray:
     all_effect = np.zeros(81)
     bs[king_point] = 0
     for i in range(81):
@@ -1365,11 +1385,17 @@ def _kingless_effected_positions(bs: np.ndarray, king_point: int, turn: int) -> 
 def _king_escape(state: ShogiState) -> bool:
     king_point = state.board[8 + 14 * state.turn, :].argmax()
     bs = _board_status(state)
-    effects = _kingless_effected_positions(bs, king_point, _another_color(state))
+    effects = _kingless_effected_positions(
+        bs, king_point, _another_color(state)
+    )
     king_moves = _small_piece_moves(8, king_point)
     flag = False
     for i in range(81):
-        if king_moves[i] == 1 and _owner(bs[i]) != state.turn and effects[i] == 0:
+        if (
+            king_moves[i] == 1
+            and _owner(bs[i]) != state.turn
+            and effects[i] == 0
+        ):
             flag = True
     return flag
 
@@ -1402,9 +1428,13 @@ def _is_mate(state: ShogiState) -> bool:
     if _king_escape(state):
         return False
     king_point = state.board[8 + 14 * state.turn, :].argmax()
-    legal_actions = _filter_move_actions(8 + 14 * state.turn, king_point, legal_actions)
+    legal_actions = _filter_move_actions(
+        8 + 14 * state.turn, king_point, legal_actions
+    )
     # 玉が逃げる手以外の合法手
-    legal_actions = _filter_action(_create_piece_actions(8 + 14 * state.turn, king_point), legal_actions)
+    legal_actions = _filter_action(
+        _create_piece_actions(8 + 14 * state.turn, king_point), legal_actions
+    )
     # ピンされている駒の動きものぞく
     pins = _pin(state)
     for i in range(81):
