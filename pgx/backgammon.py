@@ -54,7 +54,7 @@ def init() -> BackgammonState:
 
 
 def _make_init_board() -> np.ndarray:
-    board: np.ndarray = np.zeros(28, dtype=int)
+    board: np.ndarray = np.zeros(28, dtype=np.int8)
     board[0] = 2
     board[5] = -5
     board[7] = -3
