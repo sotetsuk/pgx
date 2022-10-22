@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from random import randint
+from typing import List
 
 import numpy as np
 
@@ -7,7 +8,7 @@ import numpy as np
 @dataclass
 class BackgammonState:
 
-    # 各point(24) bar(2) off(2)にあるcheckerの数 正の値は白, 負の値は黒
+    # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: np.ndarray = np.zeros(28, dtype=np.int8)
 
     # ゲームの報酬. doublingが起こると変わる.
@@ -22,7 +23,7 @@ class BackgammonState:
     # サイコロの出目
     dice: np.ndarray = np.zeros(2, dtype=np.int8)
 
-    # 白なら0黒なら1
+    # 白なら-1, 黒なら1
     turn: np.ndarray = np.zeros(0, dtype=np.int8)
 
     # 合法手
@@ -71,10 +72,53 @@ def _roll_init_dice() -> np.ndarray:
     # 違う目が出るまで振り続ける.
     while roll[0] == roll[1]:
         roll = randint(1, 6), randint(1, 6)
-    return np.array(roll)
+    return np.array(roll, dtype=np.int8)
 
 
 def _init_turn(dice: np.ndarray) -> np.ndarray:
     diff = dice[1] - dice[0]
-    turn = int((1 + np.sign(diff)) / 2)  # diff > 0 : turn=1, diff < 0: turn=0
-    return np.array([turn])
+    turn = np.sign(diff)  # diff > 0 : turn=1, diff < 0: turn=0
+    return np.array([turn], dtype=np.int8)
+
+
+def _home_board(turn: int) -> np.ndarray:
+    """
+    白: [18~23], 黒: [0~5]
+    """
+    fin_idx: int = 23 - (23 + 5 * np.clip(turn, a_min=0, a_max=1))
+    return np.array([i for i in range(fin_idx - 5, fin_idx)], dtype=np.int8)
+
+
+def _off(board: np.ndarray, turn: np.ndarray) -> np.ndarray:
+    t: int = turn[0]
+    off: int = board[26 + np.clip(t, a_min=0, a_max=1)]
+    return np.array([off], dtype=np.int8)
+
+
+def _bar(board: np.ndarray, turn: np.ndarray) -> np.ndarray:
+    t: int = turn[0]
+    bar: int = board[24 + np.clip(t, a_min=0, a_max=1)]
+    return np.array([bar], dtype=np.int8)
+
+
+def _can_bear_off(board: np.ndarray, turn: np.ndarray) -> bool:
+    """
+    全てのcheckerがhome boardにあれば bear offできる.
+    """
+    t: int = turn[0]
+    home_board: np.ndarray = _home_board(t)
+    on_home_boad: int = np.array(
+        [board[i] for i in home_board if board[i] * turn >= 0]
+    ).sum()
+    off: int = _off(board, turn)[0]
+    return (15 - off) == on_home_boad
+
+
+def _is_open(board: np.ndarray, turn: np.ndarray, point: int) -> bool:
+    """
+    手番のplayerにとって, pointが空いてるかを判定する.
+    pointにある相手のcheckerの数が1以下なら自分のcheckerをそのpointにおける.
+    """
+    t: int = turn[0]
+    checkers: int = board[point]
+    return t * checkers >= 2  # 黒と白のcheckerは異符号
