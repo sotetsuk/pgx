@@ -77,7 +77,7 @@ def _roll_init_dice() -> np.ndarray:
 
 def _init_turn(dice: np.ndarray) -> np.ndarray:
     diff = dice[1] - dice[0]
-    turn = np.sign(diff)  # diff > 0 : turn=1, diff < 0: turn=0
+    turn = np.sign(diff)  # diff > 0 : turn=1, diff < 0: turn=-1
     return np.array([turn], dtype=np.int8)
 
 
