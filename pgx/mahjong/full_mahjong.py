@@ -1704,7 +1704,22 @@ class Yaku:
 
 
 class Shanten:
+    # See the link below for the algorithm details.
+    # https://github.com/sotetsuk/pgx/pull/123
+
     CACHE = CacheLoader.load_shanten_cache()
+
+    @staticmethod
+    @jit
+    def discard(hand: jnp.ndarray) -> jnp.ndarray:
+        return jax.lax.map(
+            lambda i: jax.lax.cond(
+                hand[i] == 0,
+                lambda: 0,
+                lambda: Shanten.number(hand.at[i].set(hand[i] - 1)),
+            ),
+            jnp.arange(34),
+        )
 
     @staticmethod
     @jit
@@ -1770,7 +1785,7 @@ class Shanten:
             jnp.arange(4),
         )
 
-        n_set = jnp.sum(hand) // 3
+        n_set = jnp.sum(hand).astype(int) // 3
 
         return jnp.min(
             jax.lax.map(
