@@ -8,35 +8,39 @@ import numpy as np
 class BackgammonState:
 
     # 各point(24) bar(2) off(2)にあるcheckerの数 正の値は白, 負の値は黒
-    board: np.ndarray = np.zeros(28, dtype=int)
+    board: np.ndarray = np.zeros(28, dtype=np.int8)
 
     # ゲームの報酬. doublingが起こると変わる.
-    game_reward: int = 0
+    game_reward: np.ndarray = np.zeros(0, dtype=np.int8)
 
     # doubligをしたかどうか.
-    has_doubled: np.ndarray = np.zeros(2, dtype=bool)
+    has_doubled: np.ndarray = np.zeros(2, dtype=np.int8)
 
     # bear offできるかどうか.
-    is_bearable: np.ndarray = np.zeros(2, dtype=bool)
+    is_bearable: np.ndarray = np.zeros(2, dtype=np.int8)
 
     # サイコロの出目
-    dice: np.ndarray = np.zeros(2, dtype=int)
+    dice: np.ndarray = np.zeros(2, dtype=np.int8)
 
     # 白なら0黒なら1
-    turn: int = 0
+    turn: np.ndarray = np.zeros(0, dtype=np.int8)
 
     # 合法手
-    legal_actions: np.ndarray = np.zeros((2, 4 * (6 * 26 + 6)), dtype=int)
+    legal_action_musk: np.ndarray = np.zeros(
+        (2, 4 * (6 * 26 + 6)), dtype=np.int8
+    )
 
 
 def init() -> BackgammonState:
     board: np.ndarray = _make_init_board()
-    game_reward: int = 1
-    has_doubled: np.ndarray = np.zeros(2, dtype=int)
-    is_bearable: np.ndarray = np.zeros(2, dtype=int)
+    game_reward: np.ndarray = np.array([1])
+    has_doubled: np.ndarray = np.zeros(2, dtype=np.int8)
+    is_bearable: np.ndarray = np.zeros(2, dtype=np.int8)
     dice: np.ndarray = _roll_init_dice()
-    turn: int = _init_turn(dice)
-    legal_actions: np.ndarray = np.zeros((2, 4 * (6 * 26 + 6)), dtype=int)
+    turn: np.ndarray = _init_turn(dice)
+    legal_action_musk: np.ndarray = np.zeros(
+        (2, 4 * (6 * 26 + 6)), dtype=np.int8
+    )
     state = BackgammonState(
         board=board,
         game_reward=game_reward,
@@ -44,7 +48,7 @@ def init() -> BackgammonState:
         is_bearable=is_bearable,
         dice=dice,
         turn=turn,
-        legal_actions=legal_actions,
+        legal_action_musk=legal_action_musk,
     )
     return state
 
@@ -70,7 +74,7 @@ def _roll_init_dice() -> np.ndarray:
     return np.array(roll)
 
 
-def _init_turn(dice: np.ndarray) -> int:
+def _init_turn(dice: np.ndarray) -> np.ndarray:
     diff = dice[1] - dice[0]
     turn = int((1 + np.sign(diff)) / 2)  # diff > 0 : turn=1, diff < 0: turn=0
-    return turn
+    return np.array([turn])
