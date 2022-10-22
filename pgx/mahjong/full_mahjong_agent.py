@@ -2,8 +2,18 @@ import time
 
 import _full_mahjong
 import numpy as np
-from full_mahjong import Action, Hand, Meld, Observation, State, Tile, step
-from shanten_tools import shanten, shanten_discard  # type: ignore
+from full_mahjong import (
+    Action,
+    Hand,
+    Meld,
+    Observation,
+    Shanten,
+    State,
+    Tile,
+    step,
+)
+
+# from shanten_tools import shanten, shanten_discard  # type: ignore
 
 np.random.seed(0)
 
@@ -36,7 +46,7 @@ def act(
         if obs.riichi[player]:
             return Action.TSUMOGIRI
         else:
-            discard = np.argmin((obs.hand == 0) * 99 + shanten_discard(obs.hand))  # type: ignore
+            discard = np.argmin((obs.hand == 0) * 99 + Shanten.discard(obs.hand))  # type: ignore
             return discard if obs.last_draw != discard else Action.TSUMOGIRI  # type: ignore
 
     if obs.riichi[player]:
@@ -45,17 +55,17 @@ def act(
     if legal_actions[Action.MINKAN]:
         return Action.MINKAN
 
-    s = shanten(obs.hand)
+    s = Shanten.number(obs.hand)
     if legal_actions[Action.PON]:
         obs.hand[obs.target] -= 2
-        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return Action.PON
         obs.hand[obs.target] += 2
 
     if legal_actions[Action.CHI_R]:
         obs.hand[obs.target - 2] -= 1
         obs.hand[obs.target - 1] -= 1
-        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return Action.CHI_R
         obs.hand[obs.target - 2] += 1
         obs.hand[obs.target - 1] += 1
@@ -63,7 +73,7 @@ def act(
     if legal_actions[Action.CHI_M]:
         obs.hand[obs.target - 1] -= 1
         obs.hand[obs.target + 1] -= 1
-        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return Action.CHI_M
         obs.hand[obs.target - 1] += 1
         obs.hand[obs.target + 1] += 1
@@ -71,7 +81,7 @@ def act(
     if legal_actions[Action.CHI_L]:
         obs.hand[obs.target + 1] -= 1
         obs.hand[obs.target + 2] -= 1
-        if np.random.random() < 0.5 and s < shanten(obs.hand):  # type: ignore
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return Action.CHI_L
         obs.hand[obs.target + 1] += 1
         obs.hand[obs.target + 2] += 1
