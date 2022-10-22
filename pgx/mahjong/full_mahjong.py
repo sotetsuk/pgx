@@ -1708,8 +1708,48 @@ class Shanten:
 
     @staticmethod
     @jit
-    def normal(hand: jnp.ndarray):
+    def number(hand: jnp.ndarray) -> int:
+        return jnp.min(
+            jnp.array(
+                [
+                    Shanten.normal(hand),
+                    Shanten.seven_pairs(hand),
+                    Shanten.thirteen_orphan(hand),
+                ]
+            )
+        )
 
+    @staticmethod
+    @jit
+    def seven_pairs(hand: jnp.ndarray) -> int:
+        n_pair = jnp.sum(hand >= 2)
+        n_kind = jnp.sum(hand > 0)
+        return 7 - n_pair + jax.lax.max(7 - n_kind, 0)
+
+    @staticmethod
+    @jit
+    def thirteen_orphan(hand: jnp.ndarray) -> int:
+        n_pair = (
+            (hand[0] >= 2).astype(int)
+            + (hand[8] >= 2).astype(int)
+            + (hand[9] >= 2).astype(int)
+            + (hand[17] >= 2).astype(int)
+            + (hand[18] >= 2).astype(int)
+            + jnp.sum(hand[26:34] >= 2)
+        )
+        n_kind = (
+            (hand[0] > 0).astype(int)
+            + (hand[8] > 0).astype(int)
+            + (hand[9] > 0).astype(int)
+            + (hand[17] > 0).astype(int)
+            + (hand[18] > 0).astype(int)
+            + jnp.sum(hand[26:34] > 0)
+        )
+        return 14 - n_kind - (n_pair > 0)
+
+    @staticmethod
+    @jit
+    def normal(hand: jnp.ndarray) -> int:
         code = jax.lax.map(
             lambda suit: jax.lax.cond(
                 suit == 3,
@@ -1740,7 +1780,7 @@ class Shanten:
 
     @staticmethod
     @jit
-    def _normal(code: jnp.ndarray, n_set: int, head_suit: int):
+    def _normal(code: jnp.ndarray, n_set: int, head_suit: int) -> int:
         cost = Shanten.CACHE[code[head_suit]][4]
         idx = jnp.full(4, 0).at[head_suit].set(5)
         cost, idx = jax.lax.fori_loop(
