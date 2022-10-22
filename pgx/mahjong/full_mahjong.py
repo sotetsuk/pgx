@@ -65,6 +65,12 @@ class CacheLoader:
         with open(os.path.join(CacheLoader.DIR, "yaku_cache.json")) as f:
             return jnp.array(json.load(f), dtype=jnp.int32)
 
+    @staticmethod
+    @jit
+    def load_shanten_cache():
+        with open(os.path.join(CacheLoader.DIR, "shanten_cache.json")) as f:
+            return jnp.array(json.load(f), dtype=jnp.int32)
+
 
 class Hand:
     CACHE = CacheLoader.load_hand_cache()
@@ -1695,3 +1701,62 @@ class Yaku:
                 ),
             ],
         )
+
+
+class Shanten:
+    CACHE = CacheLoader.load_shanten_cache()
+
+    @staticmethod
+    @jit
+    def normal(hand: jnp.ndarray):
+
+        code = jax.lax.map(
+            lambda suit: jax.lax.cond(
+                suit == 3,
+                lambda: jax.lax.fori_loop(
+                    27,
+                    34,
+                    lambda i, code: code * 5 + hand[i].astype(int),
+                    0,
+                )
+                + 1953125,
+                lambda: jax.lax.fori_loop(
+                    9 * suit,
+                    9 * (suit + 1),
+                    lambda i, code: code * 5 + hand[i].astype(int),
+                    0,
+                ),
+            ),
+            jnp.arange(4),
+        )
+
+        n_set = jnp.sum(hand) // 3
+
+        return jnp.min(
+            jax.lax.map(
+                lambda suit: Shanten._normal(code, n_set, suit), jnp.arange(4)
+            )
+        )
+
+    @staticmethod
+    @jit
+    def _normal(code: jnp.ndarray, n_set: int, head_suit: int):
+        cost = Shanten.CACHE[code[head_suit]][4]
+        idx = jnp.full(4, 0).at[head_suit].set(5)
+        cost, idx = jax.lax.fori_loop(
+            0,
+            n_set,
+            lambda _, tpl: Shanten._update(code, *tpl),
+            (cost, idx),
+        )
+        return cost
+
+    @staticmethod
+    @jit
+    def _update(
+        code: jnp.ndarray, cost: int, idx: jnp.ndarray
+    ) -> tuple[int, jnp.ndarray]:
+        i = jnp.argmin(Shanten.CACHE[code][[0, 1, 2, 3], idx])
+        cost += Shanten.CACHE[code][i][idx[i]]
+        idx = idx.at[i].set(idx[i] + 1)
+        return (cost, idx)
