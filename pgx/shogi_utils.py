@@ -255,28 +255,51 @@ class Visualizer:
                         y = 8 - xy % BOARD_HEIGHT
                         stroke = color_set.p2_outline
 
-                    pieces_g.add(
-                        dwg.text(
-                            text=piece_type,
-                            insert=(
-                                (x + 0.05) * GRID_SIZE * cm,
-                                (y + 0.85) * GRID_SIZE * cm,
-                            ),
-                            fill=stroke,
-                            font_size=f"{GRID_SIZE*2.5}em",
-                            font_family="Serif",
+                    if len(piece_type) > 1:
+                        pieces_g.add(
+                            dwg.text(
+                                text=piece_type[0],
+                                insert=(
+                                    (x + 0.22) * GRID_SIZE * cm,
+                                    (y + 0.45) * GRID_SIZE * cm,
+                                ),
+                                fill=stroke,
+                                font_size=f"{GRID_SIZE*1.5}em",
+                                font_family="Serif",
+                            )
                         )
-                    )
+                        pieces_g.add(
+                            dwg.text(
+                                text=piece_type[1],
+                                insert=(
+                                    (x + 0.22) * GRID_SIZE * cm,
+                                    (y + 0.95) * GRID_SIZE * cm,
+                                ),
+                                fill=stroke,
+                                font_size=f"{GRID_SIZE*1.5}em",
+                                font_family="Serif",
+                            )
+                        )
+                    else:
+                        pieces_g.add(
+                            dwg.text(
+                                text=piece_type,
+                                insert=(
+                                    (x + 0.05) * GRID_SIZE * cm,
+                                    (y + 0.85) * GRID_SIZE * cm,
+                                ),
+                                fill=stroke,
+                                font_size=f"{GRID_SIZE*2.5}em",
+                                font_family="Serif",
+                            )
+                        )
 
         # hand
-        p1_hand = ["☗", "先", "手"]
-        p2_hand = ["☖", "後", "手"]
+        p1_hand = ["☗", "先", "手", ""]
+        p2_hand = ["☖", "後", "手", ""]
         for i, piece_num, piece_type in zip(
             range(14), state.hand[::-1], PIECES[6::-1] + PIECES[6::-1]
         ):
-            # 頭悪い方法だと思うが、他に簡潔な方法が思いつかない
-            # 最大は歩を18枚持つとき
-
             hand = p2_hand if i < 7 else p1_hand
             if piece_num == 10:
                 hand.append(piece_type)
