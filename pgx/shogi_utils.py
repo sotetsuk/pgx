@@ -271,8 +271,6 @@ class Visualizer:
         # hand
         p1_hand = ["☗", "先", "手"]
         p2_hand = ["☖", "後", "手"]
-        print(PIECES[6::-1])
-        print(PIECES[6::-1] + PIECES[6::-1])
         for i, piece_num, piece_type in zip(
             range(14), state.hand[::-1], PIECES[6::-1] + PIECES[6::-1]
         ):
