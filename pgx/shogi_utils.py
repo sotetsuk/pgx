@@ -118,12 +118,12 @@ class Visualizer:
             color_mode is None and self.color_mode == "dark"
         ) or color_mode == "dark":
             color_set = VisualizerConfig(
-                "dimgray",
+                "gray",
                 "black",
-                "whitesmoke",
-                "whitesmoke",
+                "gray",
+                "gray",
                 "#202020",
-                "white",
+                "gray",
             )
         else:
             color_set = VisualizerConfig(
@@ -320,7 +320,7 @@ class Visualizer:
         return dwg
 
     def _to_svg_string(self) -> str:
-        return self._to_dwg(color_mode=self.color_mode).tostring()
+        return self._to_dwg().tostring()
 
     def _sort_pieces(self, state, p1_hand, p2_hand):
         """
