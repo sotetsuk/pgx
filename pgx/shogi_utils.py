@@ -50,37 +50,6 @@ NUM_TO_CHAR = [
     "十",
 ]
 
-PIECES_FULL = [
-    "歩兵",
-    "香車",
-    "桂馬",
-    "銀将",
-    "角行",
-    "飛車",
-    "金将",
-    "玉将",
-    "と金",
-    "成香",
-    "成桂",
-    "成銀",
-    "竜馬",
-    "龍王",
-    "歩兵",
-    "香車",
-    "桂馬",
-    "銀将",
-    "角行",
-    "飛車",
-    "金将",
-    "玉将",
-    "と金",
-    "成香",
-    "成桂",
-    "成銀",
-    "竜馬",
-    "龍王",
-]
-
 
 @dataclass
 class VisualizerConfig:
@@ -184,7 +153,7 @@ class Visualizer:
         # grid
         board_g = dwg.g()
         hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
-        for y in range(BOARD_HEIGHT + 1):
+        for y in range(1, BOARD_HEIGHT):
             hlines.add(
                 dwg.line(
                     start=(0 * cm, GRID_SIZE * y * cm),
@@ -192,11 +161,11 @@ class Visualizer:
                         GRID_SIZE * BOARD_WIDTH * cm,
                         GRID_SIZE * y * cm,
                     ),
-                    stroke_width=2,
+                    stroke_width=GRID_SIZE * 2,
                 )
             )
         vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
-        for x in range(BOARD_WIDTH + 1):
+        for x in range(1, BOARD_WIDTH):
             vlines.add(
                 dwg.line(
                     start=(GRID_SIZE * x * cm, 0 * cm),
@@ -204,9 +173,21 @@ class Visualizer:
                         GRID_SIZE * x * cm,
                         GRID_SIZE * BOARD_HEIGHT * cm,
                     ),
-                    stroke_width=2,
+                    stroke_width=GRID_SIZE * 2,
                 )
             )
+        board_g.add(
+            dwg.rect(
+                (0, 0),
+                (
+                    BOARD_WIDTH * GRID_SIZE * cm,
+                    BOARD_HEIGHT * GRID_SIZE * cm,
+                ),
+                fill="none",
+                stroke=color_set.grid_color,
+                stroke_width=GRID_SIZE * 3,
+            )
+        )
 
         # dan,suji
         cord = board_g.add(dwg.g(id="cord", stroke=color_set.grid_color))
@@ -218,7 +199,7 @@ class Visualizer:
                         (9.1) * GRID_SIZE * cm,
                         (i + 0.6) * GRID_SIZE * cm,
                     ),
-                    font_size=f"{GRID_SIZE}em",
+                    font_size=f"{GRID_SIZE*14}px",
                     font_family="Serif",
                 )
             )
@@ -229,7 +210,7 @@ class Visualizer:
                         (8 - i + 0.4) * GRID_SIZE * cm,
                         (-0.1) * GRID_SIZE * cm,
                     ),
-                    font_size=f"{GRID_SIZE}em",
+                    font_size=f"{GRID_SIZE*14}px",
                     font_family="Serif",
                 )
             )
@@ -264,7 +245,7 @@ class Visualizer:
                                     (y + 0.45) * GRID_SIZE * cm,
                                 ),
                                 fill=stroke,
-                                font_size=f"{GRID_SIZE*1.5}em",
+                                font_size=f"{GRID_SIZE*21}px",
                                 font_family="Serif",
                             )
                         )
@@ -276,7 +257,7 @@ class Visualizer:
                                     (y + 0.95) * GRID_SIZE * cm,
                                 ),
                                 fill=stroke,
-                                font_size=f"{GRID_SIZE*1.5}em",
+                                font_size=f"{GRID_SIZE*21}px",
                                 font_family="Serif",
                             )
                         )
@@ -289,7 +270,7 @@ class Visualizer:
                                     (y + 0.85) * GRID_SIZE * cm,
                                 ),
                                 fill=stroke,
-                                font_size=f"{GRID_SIZE*2.5}em",
+                                font_size=f"{GRID_SIZE*35}px",
                                 font_family="Serif",
                             )
                         )
@@ -297,19 +278,9 @@ class Visualizer:
         # hand
         p1_hand = ["☗", "先", "手", ""]
         p2_hand = ["☖", "後", "手", ""]
-        for i, piece_num, piece_type in zip(
-            range(14), state.hand[::-1], PIECES[6::-1] + PIECES[6::-1]
-        ):
-            hand = p2_hand if i < 7 else p1_hand
-            if piece_num == 10:
-                hand.append(piece_type)
-                hand.append("十")
-            elif piece_num > 0:
-                hand.append(piece_type)
-                if piece_num > 9:
-                    hand.append("十")
-                if piece_num > 1:
-                    hand.append(NUM_TO_CHAR[piece_num % 10 - 1])
+
+        # 成り駒をソートする処理
+        p1_hand, p2_hand = self._sort_pieces(state, p1_hand, p2_hand)
 
         for i in range(2):
             if i == 0:
@@ -331,7 +302,7 @@ class Visualizer:
                             (9 - (offset - j) * 0.7) * GRID_SIZE * cm,
                         ),
                         fill=stroke,
-                        font_size=f"{GRID_SIZE*2}em",
+                        font_size=f"{GRID_SIZE*28}px",
                         font_family="Serif",
                     )
                 )
@@ -350,3 +321,33 @@ class Visualizer:
 
     def _to_svg_string(self) -> str:
         return self._to_dwg(color_mode=self.color_mode).tostring()
+
+    def _sort_pieces(self, state, p1_hand, p2_hand):
+        """
+        ShogiStateのhandを飛、角、金、銀、桂、香、歩の順にする
+        """
+        hands = state.hand[::-1]
+        hands[0], hands[1], hands[2], hands[7], hands[8], hands[9] = (
+            hands[1],
+            hands[2],
+            hands[0],
+            hands[8],
+            hands[9],
+            hands[7],
+        )
+        pieces = PIECES[6::-1]
+        pieces[0], pieces[1], pieces[2] = pieces[1], pieces[2], pieces[0]
+
+        for i, piece_num, piece_type in zip(range(14), hands, pieces + pieces):
+            hand = p2_hand if i < 7 else p1_hand
+            if piece_num == 10:
+                hand.append(piece_type)
+                hand.append("十")
+            elif piece_num > 0:
+                hand.append(piece_type)
+                if piece_num > 9:
+                    hand.append("十")
+                if piece_num > 1:
+                    hand.append(NUM_TO_CHAR[piece_num % 10 - 1])
+
+        return p1_hand, p2_hand
