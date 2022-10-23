@@ -130,7 +130,7 @@ class Visualizer:
             state = self.state
         BOARD_WIDTH = 9
         BOARD_HEIGHT = 9
-        GRID_SIZE = 2
+        GRID_SIZE = 1
 
         if (
             color_mode is None and self.color_mode == "dark"
@@ -179,6 +179,7 @@ class Visualizer:
                         GRID_SIZE * BOARD_WIDTH * cm,
                         GRID_SIZE * y * cm,
                     ),
+                    stroke_width=2,
                 )
             )
         vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
@@ -190,6 +191,7 @@ class Visualizer:
                         GRID_SIZE * x * cm,
                         GRID_SIZE * BOARD_HEIGHT * cm,
                     ),
+                    stroke_width=2,
                 )
             )
 
@@ -199,7 +201,7 @@ class Visualizer:
         for i, piece_pos, piece_type in zip(
             range(28),
             state.board[1:29],
-            PIECES_FULL,
+            PIECES,
         ):
             for xy, is_set in enumerate(piece_pos):
                 if is_set == 1:
@@ -207,115 +209,81 @@ class Visualizer:
                         pieces_g = p1_pieces_g
                         x = 8 - xy // BOARD_HEIGHT  # ShogiStateは右上原点
                         y = xy % BOARD_HEIGHT
-                        fill_color = color_set.p1_color
                         stroke = color_set.p1_outline
                     else:
                         pieces_g = p2_pieces_g
                         x = xy // BOARD_HEIGHT
                         y = 8 - xy % BOARD_HEIGHT
-                        fill_color = color_set.p2_color
                         stroke = color_set.p2_outline
 
-                    # cm = 37.8
-                    # pieces_g.add(
-                    #    dwg.polygon(
-                    #        points=[
-                    #            (
-                    #                (x + 0.5) * GRID_SIZE * _cm,
-                    #                (y + 0.1) * GRID_SIZE * _cm,
-                    #            ),
-                    #            (
-                    #                (x + 0.3) * GRID_SIZE * _cm,
-                    #                (y + 0.2) * GRID_SIZE * _cm,
-                    #            ),
-                    #            (
-                    #                (x + 0.1) * GRID_SIZE * _cm,
-                    #                (y + 0.9) * GRID_SIZE * _cm,
-                    #            ),
-                    #            (
-                    #                (x + 0.9) * GRID_SIZE * _cm,
-                    #                (y + 0.9) * GRID_SIZE * _cm,
-                    #            ),
-                    #            (
-                    #                (x + 0.7) * GRID_SIZE * _cm,
-                    #                (y + 0.2) * GRID_SIZE * _cm,
-                    #            ),
-                    #        ],
-                    #        stroke=stroke,
-                    #        fill=fill_color,
-                    #    )
-                    # )
                     pieces_g.add(
                         dwg.text(
-                            text="☖",
+                            text=piece_type,
                             insert=(
                                 (x + 0.05) * GRID_SIZE * cm,
-                                (y + 0.8) * GRID_SIZE * cm,
+                                (y + 0.85) * GRID_SIZE * cm,
                             ),
                             fill=stroke,
-                            font_size="4.8em",
-                            font_family="Serif",
-                        )
-                    )
-                    pieces_g.add(
-                        dwg.text(
-                            text=piece_type[0],
-                            insert=(
-                                (x + 0.3) * GRID_SIZE * cm,
-                                (y + 0.45) * GRID_SIZE * cm,
-                            ),
-                            fill=stroke,
-                            font_size="2em",
-                            font_family="Serif",
-                        )
-                    )
-                    pieces_g.add(
-                        dwg.text(
-                            text=piece_type[1],
-                            insert=(
-                                (x + 0.3) * GRID_SIZE * cm,
-                                (y + 0.78) * GRID_SIZE * cm,
-                            ),
-                            fill=stroke,
-                            font_size="2em",
+                            font_size=f"{GRID_SIZE*2.5}em",
                             font_family="Serif",
                         )
                     )
 
         # hand
+        p1_hand = ["☖", "先", "手"]
+        p2_hand = ["☗", "後", "手"]
         for i, piece_num, piece_type in zip(
-            range(14),
-            state.hand,
-            [
-                "歩",
-                "香",
-                "桂",
-                "銀",
-                "角",
-                "飛",
-                "金",
-                "歩",
-                "香",
-                "桂",
-                "銀",
-                "角",
-                "飛",
-                "金",
-            ],
+            range(14), state.hand[::-1], PIECES[:7:-1] + PIECES[:7:-1]
         ):
-            _g = p1_pieces_g if i < 7 else p2_pieces_g
-            _g.add(
-                dwg.text(
-                    text=f"{piece_type}:{piece_num}",
-                    insert=(
-                        9.1 * GRID_SIZE * cm,
-                        (6 + (i % 7) * 0.5) * GRID_SIZE * cm,
-                    ),
-                    fill=color_set.p1_outline,
-                    font_size="2em",
-                    font_family="Serif",
+            # 頭悪い方法だと思うが、他に簡潔な方法が思いつかない
+            # 最大は歩を18枚持つとき
+            _num_char = [
+                "一",
+                "二",
+                "三",
+                "四",
+                "五",
+                "六",
+                "七",
+                "八",
+                "九",
+                "十",
+            ]
+            hand = p2_hand if i < 7 else p1_hand
+            if piece_num == 10:
+                hand.append(piece_type)
+                hand.append("十")
+            elif piece_num > 0:
+                hand.append(piece_type)
+                if piece_num > 9:
+                    hand.append("十")
+                if piece_num > 1:
+                    hand.append(_num_char[piece_num % 10 - 1])
+
+        for i in range(2):
+            if i == 0:
+                pieces_g = p1_pieces_g
+                hand = p1_hand
+                stroke = color_set.p1_outline
+                offset = len(p1_hand)
+            else:
+                pieces_g = p2_pieces_g
+                hand = p2_hand
+                stroke = color_set.p2_outline
+                offset = len(p2_hand)
+            for i, txt in enumerate(hand):
+                pieces_g.add(
+                    dwg.text(
+                        text=txt,
+                        insert=(
+                            9.1 * GRID_SIZE * cm,
+                            (9 - (offset - i) * 0.7) * GRID_SIZE * cm,
+                        ),
+                        fill=stroke,
+                        font_size=f"{GRID_SIZE*2}em",
+                        font_family="Serif",
+                    )
                 )
-            )
 
         board_g.add(p1_pieces_g)
         p2_pieces_g.rotate(angle=180)
