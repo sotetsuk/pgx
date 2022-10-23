@@ -37,6 +37,19 @@ PIECES = [
     "龍",
 ]
 
+NUM_TO_CHAR = [
+    "一",
+    "二",
+    "三",
+    "四",
+    "五",
+    "六",
+    "七",
+    "八",
+    "九",
+    "十",
+]
+
 PIECES_FULL = [
     "歩兵",
     "香車",
@@ -151,7 +164,7 @@ class Visualizer:
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
-                (BOARD_WIDTH + 2) * GRID_SIZE * cm,
+                (BOARD_WIDTH + 2.5) * GRID_SIZE * cm,
                 (BOARD_HEIGHT + 1) * GRID_SIZE * cm,
             ),
         )
@@ -160,7 +173,7 @@ class Visualizer:
             dwg.rect(
                 (0, 0),
                 (
-                    (BOARD_WIDTH + 2) * GRID_SIZE * cm,
+                    (BOARD_WIDTH + 2.5) * GRID_SIZE * cm,
                     (BOARD_HEIGHT + 1) * GRID_SIZE * cm,
                 ),
                 fill=color_set.background_color,
@@ -192,6 +205,32 @@ class Visualizer:
                         GRID_SIZE * BOARD_HEIGHT * cm,
                     ),
                     stroke_width=2,
+                )
+            )
+
+        # dan,suji
+        cord = board_g.add(dwg.g(id="cord", stroke=color_set.grid_color))
+        for i in range(9):
+            cord.add(
+                dwg.text(
+                    text=f"{NUM_TO_CHAR[i]}",
+                    insert=(
+                        (9.1) * GRID_SIZE * cm,
+                        (i + 0.6) * GRID_SIZE * cm,
+                    ),
+                    font_size=f"{GRID_SIZE}em",
+                    font_family="Serif",
+                )
+            )
+            cord.add(
+                dwg.text(
+                    text=f"{i+1}",
+                    insert=(
+                        (8 - i + 0.4) * GRID_SIZE * cm,
+                        (-0.1) * GRID_SIZE * cm,
+                    ),
+                    font_size=f"{GRID_SIZE}em",
+                    font_family="Serif",
                 )
             )
 
@@ -230,25 +269,14 @@ class Visualizer:
                     )
 
         # hand
-        p1_hand = ["☖", "先", "手"]
-        p2_hand = ["☗", "後", "手"]
+        p1_hand = ["☗", "先", "手"]
+        p2_hand = ["☖", "後", "手"]
         for i, piece_num, piece_type in zip(
             range(14), state.hand[::-1], PIECES[:7:-1] + PIECES[:7:-1]
         ):
             # 頭悪い方法だと思うが、他に簡潔な方法が思いつかない
             # 最大は歩を18枚持つとき
-            _num_char = [
-                "一",
-                "二",
-                "三",
-                "四",
-                "五",
-                "六",
-                "七",
-                "八",
-                "九",
-                "十",
-            ]
+
             hand = p2_hand if i < 7 else p1_hand
             if piece_num == 10:
                 hand.append(piece_type)
@@ -258,7 +286,7 @@ class Visualizer:
                 if piece_num > 9:
                     hand.append("十")
                 if piece_num > 1:
-                    hand.append(_num_char[piece_num % 10 - 1])
+                    hand.append(NUM_TO_CHAR[piece_num % 10 - 1])
 
         for i in range(2):
             if i == 0:
@@ -271,13 +299,13 @@ class Visualizer:
                 hand = p2_hand
                 stroke = color_set.p2_outline
                 offset = len(p2_hand)
-            for i, txt in enumerate(hand):
+            for j, txt in enumerate(hand):
                 pieces_g.add(
                     dwg.text(
                         text=txt,
                         insert=(
-                            9.1 * GRID_SIZE * cm,
-                            (9 - (offset - i) * 0.7) * GRID_SIZE * cm,
+                            (9.5 - i * 0.4) * GRID_SIZE * cm,
+                            (9 - (offset - j) * 0.7) * GRID_SIZE * cm,
                         ),
                         fill=stroke,
                         font_size=f"{GRID_SIZE*2}em",
