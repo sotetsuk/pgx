@@ -142,6 +142,11 @@ class CacheLoader:
         with open(os.path.join(CacheLoader.DIR, "yaku_cache.json")) as f:
             return np.array(json.load(f), dtype=np.int32)
 
+    @staticmethod
+    def load_shanten_cache():
+        with open(os.path.join(CacheLoader.DIR, "shanten_cache.json")) as f:
+            return np.array(json.load(f), dtype=np.int32)
+
 
 class Hand:
     # 純手牌を管理するクラス
@@ -1812,3 +1817,83 @@ class Yaku:
             )
 
         return hand, has_red
+
+
+class Shanten:
+    # See the link below for the algorithm details.
+    # https://github.com/sotetsuk/pgx/pull/123
+
+    CACHE = CacheLoader.load_shanten_cache()
+
+    @staticmethod
+    def discard(hand: np.ndarray) -> np.ndarray:
+        s = np.full(34, 0)
+        for i in range(34):
+            if hand[i] == 0:
+                continue
+            hand[i] -= 1
+            s[i] = Shanten.number(hand)
+            hand[i] += 1
+        return s
+
+    @staticmethod
+    def number(hand: np.ndarray) -> int:
+        return min(
+            [
+                Shanten.normal(hand),
+                Shanten.seven_pairs(hand),
+                Shanten.thirteen_orphan(hand),
+            ]
+        )
+
+    @staticmethod
+    def seven_pairs(hand: np.ndarray) -> int:
+        n_pair = int(np.sum(hand >= 2))
+        n_kind = int(np.sum(hand > 0))
+        return 7 - n_pair + max(7 - n_kind, 0)
+
+    @staticmethod
+    def thirteen_orphan(hand: np.ndarray) -> int:
+        n_pair = (
+            int(hand[0] >= 2)
+            + int(hand[8] >= 2)
+            + int(hand[9] >= 2)
+            + int(hand[17] >= 2)
+            + int(hand[18] >= 2)
+            + int(np.sum(hand[26:34] >= 2))
+        )
+        n_kind = (
+            int(hand[0] > 0)
+            + int(hand[8] > 0)
+            + int(hand[9] > 0)
+            + int(hand[17] > 0)
+            + int(hand[18] > 0)
+            + int(np.sum(hand[26:34] > 0))
+        )
+        return 14 - n_kind - (n_pair > 0)
+
+    @staticmethod
+    def normal(hand: np.ndarray) -> int:
+        code = np.full(4, 0)
+        for suit in range(3):
+            for i in range(9 * suit, 9 * (suit + 1)):
+                code[suit] = code[suit] * 5 + hand[i]
+        for i in range(27, 34):
+            code[3] = code[3] * 5 + hand[i]
+
+        n_set = int(np.sum(hand)) // 3
+
+        return min([Shanten._normal(code, n_set, suit) for suit in range(4)])
+
+    @staticmethod
+    def _normal(code: np.ndarray, n_set: int, head_suit: int) -> int:
+        cost = Shanten.CACHE[code[head_suit]][4]
+        idx = np.full(4, 0)
+        idx[head_suit] = 5
+
+        for _ in range(n_set):
+            i = np.argmin(Shanten.CACHE[code][[0, 1, 2, 3], idx])
+            cost += Shanten.CACHE[code][i][idx[i]]
+            idx[i] += 1
+
+        return cost

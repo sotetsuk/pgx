@@ -11,11 +11,11 @@ from _full_mahjong import (
     Hand,
     Meld,
     Observation,
+    Shanten,
     State,
     Tile,
     step,
 )
-from shanten_tools import shanten, shanten_discard
 
 np.random.seed(0)
 
@@ -50,7 +50,7 @@ def act(
             return Action.TSUMOGIRI
         else:
             discard = np.argmin(
-                (obs.hand == 0) * 99 + shanten_discard(obs.hand)
+                (obs.hand == 0) * 99 + Shanten.discard(obs.hand)
             )
             if legal_actions[discard]:
                 return discard
@@ -68,11 +68,11 @@ def act(
     if legal_actions[Action.MINKAN]:
         return Action.MINKAN
 
-    s = shanten(obs.hand)
+    s = Shanten.number(obs.hand)
     target = Tile.unred(obs.target)
     if legal_actions[Action.PON] | legal_actions[Action.PON]:
         obs.hand[target] -= 2
-        if np.random.random() < 0.5 and s < shanten(obs.hand):
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return (
                 Action.PON
                 if legal_actions[Action.PON]
@@ -83,7 +83,7 @@ def act(
     if legal_actions[Action.CHI_L] | legal_actions[Action.CHI_L_EXPOSE_RED]:
         obs.hand[target + 1] -= 1
         obs.hand[target + 2] -= 1
-        if np.random.random() < 0.5 and s < shanten(obs.hand):
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return (
                 Action.CHI_L
                 if legal_actions[Action.CHI_L]
@@ -95,7 +95,7 @@ def act(
     if legal_actions[Action.CHI_M] | legal_actions[Action.CHI_M_EXPOSE_RED]:
         obs.hand[target - 1] -= 1
         obs.hand[target + 1] -= 1
-        if np.random.random() < 0.5 and s < shanten(obs.hand):
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return (
                 Action.CHI_M
                 if legal_actions[Action.CHI_M]
@@ -107,7 +107,7 @@ def act(
     if legal_actions[Action.CHI_R] | legal_actions[Action.CHI_R_EXPOSE_RED]:
         obs.hand[target - 2] -= 1
         obs.hand[target - 1] -= 1
-        if np.random.random() < 0.5 and s < shanten(obs.hand):
+        if np.random.random() < 0.5 and s < Shanten.number(obs.hand):
             return (
                 Action.CHI_R
                 if legal_actions[Action.CHI_R]
