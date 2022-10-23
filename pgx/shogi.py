@@ -42,7 +42,7 @@ class ShogiState:
     legal_actions_white: np.ndarray = np.zeros(2754, dtype=np.int32)
 
 
-def init():
+def init() -> ShogiState:
     board = _make_init_board()
     state = ShogiState(board=board)
     return _init_legal_actions(state)
@@ -73,7 +73,8 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
         s = _move(s, _action)
         print("move: piece =", _action.piece, ", to =", _action.to)
     # 王手がかかったままの場合、王手放置またｈ自殺手で負け
-    if _is_check(s):
+    cn, cnp, cf, cfp = _is_check(s)
+    if cn + cf != 0:
         print("check is remained")
         return s, _turn_to_reward(_another_color(s)), True
     # その他の反則
@@ -161,6 +162,14 @@ def _make_init_board() -> np.ndarray:
             p = 0
         array[p][i] = 1
     return array
+
+
+def _make_board(bs: np.ndarray) -> ShogiState:
+    board = np.zeros((29, 81), dtype=np.int32)
+    for i in range(81):
+        board[0][i] = 0
+        board[bs[i]][i] = 1
+    return ShogiState(board=board)
 
 
 def _pawn_move(turn: int) -> np.ndarray:
@@ -511,9 +520,8 @@ def _action_board(array: np.ndarray, point: int) -> np.ndarray:
     return np.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
 
 
-def _lance_move(state: ShogiState, point: int, turn: int) -> np.ndarray:
+def _lance_move(bs: np.ndarray, point: int, turn: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
-    pieces_owner = _pieces_owner(state)
     flag = True
     for i in range(8):
         if turn == 0:
@@ -524,14 +532,13 @@ def _lance_move(state: ShogiState, point: int, turn: int) -> np.ndarray:
         if _is_in_board(p) and _is_same_column(point, p) and flag:
             array[p] = 1
         # pが盤外、または空白でない場合はフラグを折ってそれより奥に到達できないようにする
-        if not _is_in_board(p) or pieces_owner[p] != 2:
+        if not _is_in_board(p) or bs[p] != 0:
             flag = False
     return array
 
 
-def _bishop_move(state: ShogiState, point: int) -> np.ndarray:
+def _bishop_move(bs: np.ndarray, point: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
-    pieces_owner = _pieces_owner(state)
     ur_flag = True
     ul_flag = True
     dr_flag = True
@@ -549,20 +556,19 @@ def _bishop_move(state: ShogiState, point: int) -> np.ndarray:
             array[dr] = 1
         if _is_in_board(dl) and _is_same_rising(point, dl) and dl_flag:
             array[dl] = 1
-        if not _is_in_board(ur) or pieces_owner[ur] != 2:
+        if not _is_in_board(ur) or bs[ur] != 0:
             ur_flag = False
-        if not _is_in_board(ul) or pieces_owner[ul] != 2:
+        if not _is_in_board(ul) or bs[ul] != 0:
             ul_flag = False
-        if not _is_in_board(dr) or pieces_owner[dr] != 2:
+        if not _is_in_board(dr) or bs[dr] != 0:
             dr_flag = False
-        if not _is_in_board(dl) or pieces_owner[dl] != 2:
+        if not _is_in_board(dl) or bs[dl] != 0:
             dl_flag = False
     return array
 
 
-def _rook_move(state: ShogiState, point: int) -> np.ndarray:
+def _rook_move(bs: np.ndarray, point: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
-    pieces_owner = _pieces_owner(state)
     u_flag = True
     d_flag = True
     r_flag = True
@@ -580,19 +586,19 @@ def _rook_move(state: ShogiState, point: int) -> np.ndarray:
             array[r] = 1
         if _is_in_board(l_) and _is_same_row(point, l_) and l_flag:
             array[l_] = 1
-        if not _is_in_board(u) or pieces_owner[u] != 2:
+        if not _is_in_board(u) or bs[u] != 0:
             u_flag = False
-        if not _is_in_board(d) or pieces_owner[d] != 2:
+        if not _is_in_board(d) or bs[d] != 0:
             d_flag = False
-        if not _is_in_board(r) or pieces_owner[r] != 2:
+        if not _is_in_board(r) or bs[r] != 0:
             r_flag = False
-        if not _is_in_board(l_) or pieces_owner[l_] != 2:
+        if not _is_in_board(l_) or bs[l_] != 0:
             l_flag = False
     return array
 
 
-def _horse_move(state: ShogiState, point: int) -> np.ndarray:
-    array = _bishop_move(state, point)
+def _horse_move(bs: np.ndarray, point: int) -> np.ndarray:
+    array = _bishop_move(bs, point)
     u, d, l, r = _is_side(point)
     if not u:
         array[point - 1] = 1
@@ -605,8 +611,8 @@ def _horse_move(state: ShogiState, point: int) -> np.ndarray:
     return array
 
 
-def _dragon_move(state: ShogiState, point: int) -> np.ndarray:
-    array = _rook_move(state, point)
+def _dragon_move(bs: np.ndarray, point: int) -> np.ndarray:
+    array = _rook_move(bs, point)
     u, d, l, r = _is_side(point)
     if not u:
         if not r:
@@ -622,7 +628,7 @@ def _dragon_move(state: ShogiState, point: int) -> np.ndarray:
 
 
 # 駒種と位置から到達できる場所を返す
-def _piece_moves(state: ShogiState, piece: int, point: int) -> np.ndarray:
+def _piece_moves(bs: np.ndarray, piece: int, point: int) -> np.ndarray:
     turn = _owner(piece)
     piece_type = piece % 14
     # 歩の動き
@@ -630,7 +636,7 @@ def _piece_moves(state: ShogiState, piece: int, point: int) -> np.ndarray:
         return _action_board(_pawn_move(turn), point)
     # 香車の動き
     if piece_type == 2:
-        return _lance_move(state, point, turn)
+        return _lance_move(bs, point, turn)
     # 桂馬の動き
     if piece_type == 3:
         return _action_board(_knight_move(turn), point)
@@ -639,10 +645,10 @@ def _piece_moves(state: ShogiState, piece: int, point: int) -> np.ndarray:
         return _action_board(_silver_move(turn), point)
     # 角の動き
     if piece_type == 5:
-        return _bishop_move(state, point)
+        return _bishop_move(bs, point)
     # 飛車の動き
     if piece_type == 6:
-        return _rook_move(state, point)
+        return _rook_move(bs, point)
     # 金および成金の動き
     if piece_type == 7 or 9 <= piece_type <= 12:
         return _action_board(_gold_move(turn), point)
@@ -651,11 +657,11 @@ def _piece_moves(state: ShogiState, piece: int, point: int) -> np.ndarray:
         return _action_board(_king_move(), point)
     # 馬の動き
     if piece_type == 13:
-        return _horse_move(state, point)
+        return _horse_move(bs, point)
     # 龍の動き
     # piece_typeが0になってしまっているのでpieceで判別
     if piece == 14 or piece == 28:
-        return _dragon_move(state, point)
+        return _dragon_move(bs, point)
     return np.zeros(81, dtype=np.int32)
 
 
@@ -725,6 +731,17 @@ def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
     for i in range(2754):
         if add_array[i] == 1:
             new_array[i] = 1
+    return new_array
+
+
+# actionを削除する
+def _filter_action(
+    filter_array: np.ndarray, origin_array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(origin_array)
+    for i in range(2754):
+        if filter_array[i] == 1:
+            new_array[i] = 0
     return new_array
 
 
@@ -902,34 +919,35 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
         action_array = copy.deepcopy(state.legal_actions_black)
     else:
         action_array = copy.deepcopy(state.legal_actions_white)
+    bs = _board_status(state)
     own = _pieces_owner(state)
     for i in range(81):
         piece = _piece_type(state, i)
         # 香車の動きを追加
         if piece == 2 + 14 * state.turn:
             action_array = _add_action(
-                _create_actions(piece, i, _lance_move(state, i, state.turn)),
+                _create_actions(piece, i, _lance_move(bs, i, state.turn)),
                 action_array,
             )
         # 角の動きを追加
         if piece == 5 + 14 * state.turn:
             action_array = _add_action(
-                _create_actions(piece, i, _bishop_move(state, i)), action_array
+                _create_actions(piece, i, _bishop_move(bs, i)), action_array
             )
         # 飛車の動きを追加
         if piece == 6 + 14 * state.turn:
             action_array = _add_action(
-                _create_actions(piece, i, _rook_move(state, i)), action_array
+                _create_actions(piece, i, _rook_move(bs, i)), action_array
             )
         # 馬の動きを追加
         if piece == 13 + 14 * state.turn:
             action_array = _add_action(
-                _create_actions(piece, i, _horse_move(state, i)), action_array
+                _create_actions(piece, i, _horse_move(bs, i)), action_array
             )
         # 龍の動きを追加
         if piece == 14 + 14 * state.turn:
             action_array = _add_action(
-                _create_actions(piece, i, _dragon_move(state, i)), action_array
+                _create_actions(piece, i, _dragon_move(bs, i)), action_array
             )
     # 自分の駒がある位置への移動actionを除く
     action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
@@ -939,20 +957,31 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
 
 
 # 王手判定
-def _is_check(state: ShogiState) -> bool:
+# 密接・遠隔の王手で分ける
+def _is_check(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
+    check_near = 0
+    check_far = 0
+    checking_point_near = np.zeros(81, dtype=np.int32)
+    checking_point_far = np.zeros(81, dtype=np.int32)
     # そもそも王がいない場合はFalse
     if np.all(state.board[8 + 14 * state.turn] == 0):
-        return False
-    is_check = False
-    king_point = state.board[8 + 14 * state.turn, :].argmax()
+        return check_near, checking_point_near, check_far, checking_point_far
+    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+    near_king = _small_piece_moves(8 + 14 * state.turn, king_point)
     bs = _board_status(state)
     for i in range(81):
         piece = bs[i]
         if _owner(piece) != _another_color(state):
             continue
-        if _piece_moves(state, piece, i)[king_point] == 1:
-            is_check = True
-    return is_check
+        if _piece_moves(bs, piece, i)[king_point] == 1:
+            # 桂馬の王手も密接としてカウント
+            if near_king[i] == 1 or piece % 14 == 3:
+                check_near += 1
+                checking_point_near[i] = 1
+            else:
+                check_far += 1
+                checking_point_far[i] = 1
+    return check_near, checking_point_near, check_far, checking_point_far
 
 
 # 二歩判定
@@ -996,20 +1025,433 @@ def _is_stuck(state: ShogiState) -> bool:
     return is_stuck
 
 
-def _is_mate(state: ShogiState) -> bool:
-    # 王手がかかっていない場合は無視
-    if not _is_check(state):
-        return False
-    is_mate = True
-    player_actions = _legal_actions(state)
-    for i in range(2754):
-        if player_actions[i] == 0:
+# ピンされた（動かすと相手の駒の利きが玉に通ってしまうので動かせない）駒の位置とピンの方向（縦横右上がり右下がり）を記録
+# ピンされた駒はピンされている方向以外には動かせない
+def _up_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    # 上方向のピン
+    u = king_point
+    u_num = 0
+    u_piece = -1
+    u_flag = False
+    # 自分より上は最大八マスしかない
+    for i in range(8):
+        # 探索位置の更新
+        u -= 1
+        # 探索が終わっている場合はスルー
+        if u_flag:
             continue
-        action = _dlaction_to_action(i, state)
-        if action.is_drop:
-            s1 = _drop(state, action)
-        else:
-            s1 = _move(state, action)
-        if not _is_check(s1):
-            is_mate = False
-    return is_mate
+        # 盤外や同じ列にない場合は弾く
+        if not _is_in_board(u) or not _is_same_column(king_point, u):
+            continue
+        piece = bs[u]
+        # 駒がない場合は処理をしない
+        if piece == 0:
+            continue
+        # 駒がある場合
+        u_num += 1
+        # 1枚目
+        if u_num == 1:
+            # 自分の駒なら位置を記録
+            if _owner(piece) == turn:
+                u_piece = u
+            # 相手の駒なら関係ないので探索終了
+            else:
+                u_flag = True
+        # 2枚目
+        if u_num == 2:
+            # 先手の場合、香車、飛車、龍によってピン
+            if turn == 0:
+                if piece == 16 or piece == 20 or piece == 28:
+                    new_array[u_piece] = 1
+            # 後手の場合、飛車、龍によってピン
+            else:
+                if piece == 6 or piece == 14:
+                    new_array[u_piece] = 1
+            # 一回通ったら探索する必要はない
+            u_flag = True
+    return new_array
+
+
+def _up_left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    ul = king_point
+    ul_num = 0
+    ul_flag = False
+    for i in range(8):
+        if ul_flag:
+            continue
+        ul += 8
+        if not _is_in_board(ul) or not _is_same_declining(king_point, ul):
+            continue
+        piece = bs[ul]
+        if piece == 0:
+            continue
+        ul_num += 1
+        if ul_num == 1:
+            if _owner(piece) == turn:
+                ul_piece = ul
+            else:
+                ul_flag = True
+        if ul_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[ul_piece] = 2
+            ul_flag = True
+    return new_array
+
+
+def _up_right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    ur = king_point
+    ur_num = 0
+    ur_piece = -1
+    ur_flag = False
+    for i in range(8):
+        if ur_flag:
+            continue
+        ur -= 10
+        if not _is_in_board(ur) or not _is_same_rising(king_point, ur):
+            continue
+        piece = bs[ur]
+        if piece == 0:
+            continue
+        ur_num += 1
+        if ur_num == 1:
+            if _owner(piece) == turn:
+                ur_piece = ur
+            # 相手の駒なら関係ないので探索終了
+            else:
+                ur_flag = True
+        # 2枚目
+        if ur_num == 2:
+            # 相手の角・馬によってピン
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[ur_piece] = 3
+            ur_flag = True
+    return new_array
+
+
+def _left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    l_ = king_point
+    l_num = 0
+    l_flag = False
+    for i in range(8):
+        if l_flag:
+            continue
+        l_ += 9
+        if not _is_in_board(l_) or not _is_same_row(king_point, l_):
+            continue
+        piece = bs[l_]
+        if piece == 0:
+            continue
+        l_num += 1
+        if l_num == 1:
+            if _owner(piece) == turn:
+                l_piece = l_
+            else:
+                l_flag = True
+        # 2枚目
+        if l_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 6 or piece % 14 == 0):
+                new_array[l_piece] = 4
+            l_flag = True
+    return new_array
+
+
+def _right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    r = king_point
+    r_num = 0
+    r_flag = False
+    for i in range(8):
+        if r_flag:
+            continue
+        r -= 9
+        if not _is_in_board(r) or not _is_same_row(king_point, r):
+            continue
+        piece = bs[r]
+        if piece == 0:
+            continue
+        r_num += 1
+        if r_num == 1:
+            if _owner(piece) == turn:
+                r_piece = r
+            else:
+                r_flag = True
+        # 2枚目
+        if r_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 6 or piece % 14 == 0):
+                new_array[r_piece] = 4
+            r_flag = True
+    return new_array
+
+
+def _down_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    d = king_point
+    d_num = 0
+    d_piece = -1
+    d_flag = False
+    for i in range(8):
+        d += 1
+        if d_flag:
+            continue
+        if not _is_in_board(d) or not _is_same_column(king_point, d):
+            continue
+        piece = bs[d]
+        if piece == 0:
+            continue
+        # 駒がある場合
+        d_num += 1
+        # 1枚目
+        if d_num == 1:
+            # 自分の駒なら位置を記録
+            if _owner(piece) == turn:
+                d_piece = d
+            # 相手の駒なら関係ないので探索終了
+            else:
+                d_flag = True
+        # 2枚目
+        if d_num == 2:
+            # 先手の場合、香車、飛車、龍によってピン
+            if turn == 0:
+                if piece == 20 or piece == 28:
+                    new_array[d_piece] = 1
+            # 後手の場合、飛車、龍によってピン
+            else:
+                if piece == 2 or piece == 6 or piece == 14:
+                    new_array[d_piece] = 1
+            # 一回通ったら探索する必要はない
+            d_flag = True
+    return new_array
+
+
+def _down_left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    dl = king_point
+    dl_num = 0
+    dl_flag = False
+    for i in range(8):
+        if dl_flag:
+            continue
+        dl += 10
+        if not _is_in_board(dl) or not _is_same_rising(king_point, dl):
+            continue
+        piece = bs[dl]
+        if piece == 0:
+            continue
+        dl_num += 1
+        if dl_num == 1:
+            if _owner(piece) == turn:
+                dl_piece = dl
+            else:
+                dl_flag = True
+        if dl_num == 2:
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[dl_piece] = 3
+            dl_flag = True
+    return new_array
+
+
+def _down_right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    dr = king_point
+    dr_num = 0
+    dr_piece = -1
+    dr_flag = False
+    for i in range(8):
+        if dr_flag:
+            continue
+        dr -= 8
+        if not _is_in_board(dr) or not _is_same_declining(king_point, dr):
+            continue
+        piece = bs[dr]
+        if piece == 0:
+            continue
+        dr_num += 1
+        if dr_num == 1:
+            if _owner(piece) == turn:
+                dr_piece = dr
+            # 相手の駒なら関係ないので探索終了
+            else:
+                dr_flag = True
+        # 2枚目
+        if dr_num == 2:
+            # 相手の角・馬によってピン
+            if _owner(piece) != turn and (piece % 14 == 5 or piece % 14 == 13):
+                new_array[dr_piece] = 3
+            dr_flag = True
+    return new_array
+
+
+def _pin(state: ShogiState):
+    bs = _board_status(state)
+    turn = state.turn
+    pins = np.zeros(81, dtype=np.int32)
+    king_point = int(state.board[8 + 14 * turn, :].argmax())
+    pins = _up_pin(bs, turn, king_point, pins)
+    pins = _up_left_pin(bs, turn, king_point, pins)
+    pins = _up_right_pin(bs, turn, king_point, pins)
+    pins = _left_pin(bs, turn, king_point, pins)
+    pins = _right_pin(bs, turn, king_point, pins)
+    pins = _down_pin(bs, turn, king_point, pins)
+    pins = _down_left_pin(bs, turn, king_point, pins)
+    pins = _down_right_pin(bs, turn, king_point, pins)
+    return pins
+
+
+# 特定の方向の動きだけを除いたactionを生成する
+def _eliminate_direction(actions: np.ndarray, direction: int):
+    new_array = copy.deepcopy(actions)
+    # 2方向と成・不成の4方向のフラグを折る
+    dir1 = 0
+    dir2 = 0
+    # 縦
+    if direction == 1:
+        dir1 = 0
+        dir2 = 5
+    # 右下がり
+    if direction == 2:
+        dir1 = 1
+        dir2 = 7
+    # 右上がり
+    if direction == 3:
+        dir1 = 2
+        dir2 = 6
+    # 横
+    if direction == 4:
+        dir1 = 3
+        dir2 = 4
+    pro_dir1 = dir1 + 8
+    pro_dir2 = dir2 + 8
+    for i in range(81):
+        new_array[dir1 * 81 + i] = 0
+        new_array[dir2 * 81 + i] = 0
+        new_array[pro_dir1 * 81 + i] = 0
+        new_array[pro_dir2 * 81 + i] = 0
+    return new_array
+
+
+# 利きの判定
+# 玉の位置を透過する（玉をいないものとして扱う）ことで香車や角などの利きを玉の奥まで通す
+def _kingless_effected_positions(
+    bs: np.ndarray, king_point: int, turn: int
+) -> np.ndarray:
+    all_effect = np.zeros(81)
+    bs[king_point] = 0
+    for i in range(81):
+        own = _owner(bs[i])
+        if own != turn:
+            continue
+        piece = bs[i]
+        effect = _piece_moves(bs, piece, i)
+        all_effect += effect
+    return all_effect
+
+
+# 玉が移動する手に合法なものがあるかを調べる
+def _king_escape(state: ShogiState) -> bool:
+    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+    bs = _board_status(state)
+    effects = _kingless_effected_positions(
+        bs, king_point, _another_color(state)
+    )
+    king_moves = _small_piece_moves(8, king_point)
+    flag = False
+    for i in range(81):
+        if (
+            king_moves[i] == 1
+            and _owner(bs[i]) != state.turn
+            and effects[i] == 0
+        ):
+            flag = True
+    return flag
+
+
+def _between(point1: int, point2: int) -> np.ndarray:
+    flag = True
+    between = np.zeros(81, dtype=np.int32)
+    direction = _point_to_direction(point1, point2, False, 0)
+    if direction == -1:
+        return between
+    dif = _direction_to_dif(direction, 0)
+    p = point1
+    for i in range(7):
+        p += dif
+        if p == point2:
+            flag = False
+        if flag:
+            between[p] = 1
+    return between
+
+
+def _is_mate(state: ShogiState) -> bool:
+    cn, cnp, cf, cfp = _is_check(state)
+    # 王手がかかっていないならFalse
+    if cn + cf == 0:
+        return False
+    legal_actions = _legal_actions(state)
+    bs = _board_status(state)
+    # 玉が逃げる手が合法ならその時点で詰んでない
+    if _king_escape(state):
+        return False
+    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+    legal_actions = _filter_move_actions(
+        8 + 14 * state.turn, king_point, legal_actions
+    )
+    # 玉が逃げる手以外の合法手
+    legal_actions = _filter_action(
+        _create_piece_actions(8 + 14 * state.turn, king_point), legal_actions
+    )
+    # ピンされている駒の動きものぞく
+    pins = _pin(state)
+    for i in range(81):
+        if pins[i] == 0:
+            continue
+        action = _create_piece_actions(bs[i], i)
+        # ピンされた方向以外のaction
+        action = _eliminate_direction(action, pins[i])
+        legal_actions = _filter_action(action, legal_actions)
+    # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
+    if cn + cf >= 2:
+        return True
+    # 密接の王手
+    if cn == 1:
+        # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
+        point = int(cnp.argmax())
+        for i in range(34):
+            for j in range(81):
+                # 駒打ちは不可
+                if i >= 20:
+                    legal_actions[81 * i + j] = 0
+                else:
+                    # point以外への移動は王手放置
+                    if j != point:
+                        legal_actions[81 * i + j] = 0
+    # 開き王手
+    if cf == 1:
+        point = int(cfp.argmax())
+        # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
+        between = _between(king_point, point)
+        for i in range(34):
+            for j in range(81):
+                if between[j] != 1 and not (i <= 19 and j == point):
+                    legal_actions[81 * i + j] = 0
+    return (legal_actions == 0).all()

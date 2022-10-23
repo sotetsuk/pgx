@@ -1,6 +1,8 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, _make_board, \
+    _is_mate
+
 
 import numpy as np
 
@@ -140,7 +142,7 @@ def test_drop():
 
 def test_piece_moves():
     b1 = init()
-    array1 = _piece_moves(b1, 6, 16)
+    array1 = _piece_moves(_board_status(b1), 6, 16)
     array2 = np.zeros(81, dtype=np.int32)
     for i in range(8):
         array2[9 * i + 7] = 1
@@ -148,7 +150,7 @@ def test_piece_moves():
     array2[16] = 0
     array2[17] = 1
     assert np.all(array1 == array2)
-    array3 = _piece_moves(b1, 5, 70)
+    array3 = _piece_moves(_board_status(b1), 5, 70)
     array4 = np.zeros(81, dtype=np.int32)
     array4[60] = 1
     array4[62] = 1
@@ -158,21 +160,21 @@ def test_piece_moves():
     # 76歩を指して角道を開けたときの挙動確認
     action = 59
     b1 = _move(b1, _dlaction_to_action(action, b1))
-    new_array3 = _piece_moves(b1, 5, 70)
+    new_array3 = _piece_moves(_board_status(b1), 5, 70)
     for i in range(4):
         array4[20 + i * 10] = 1
     assert np.all(new_array3 == array4)
     b2 = make_test_board()
-    array5 = _piece_moves(b2, 1, 40)
+    array5 = _piece_moves(_board_status(b2), 1, 40)
     array6 = np.zeros(81, dtype=np.int32)
     array6[39] = 1
     assert np.all(array5 == array6)
-    array7 = _piece_moves(b2, 2, 8)
+    array7 = _piece_moves(_board_status(b2), 2, 8)
     array8 = np.zeros(81, dtype=np.int32)
     for i in range(8):
         array8[i] = 1
     assert np.all(array7 == array8)
-    array9 = _piece_moves(b2, 27, 44)
+    array9 = _piece_moves(_board_status(b2), 27, 44)
     array10 = np.zeros(81, dtype=np.int32)
     for i in range(4):
         array10[34 - 10 * i] = 1
@@ -901,6 +903,142 @@ def test_step():
          0, 28, 0, 16, 0, 15, 1, 0, 0, 0, 0, 0]))
 
 
+def test_between():
+    b1 = _between(36, 44)
+    for i in range(81):
+        if 37 <= i <= 43:
+            assert b1[i] == 1
+        else:
+            assert b1[i] == 0
+    b2 = _between(44, 36)
+    for i in range(81):
+        if 37 <= i <= 43:
+            assert b2[i] == 1
+        else:
+            assert b2[i] == 0
+    b3 = _between(40, 0)
+    for i in range(81):
+        if i == 10 or i == 20 or i == 30:
+            assert b3[i] == 1
+        else:
+            assert b3[i] == 0
+    b4 = _between(40, 1)
+    for i in range(81):
+        assert b4[i] == 0
+
+
+def test_pin():
+    s = ShogiState()
+    s.board[8][40] = 1
+    s.board[0][40] = 0
+    s.board[16][38] = 1
+    s.board[0][38] = 0
+    s.board[3][39] = 1
+    s.board[0][39] = 0
+    s.board[19][64] = 1
+    s.board[0][64] = 0
+    s.board[15][56] = 1
+    s.board[0][56] = 0
+    s.board[28][76] = 1
+    s.board[0][76] = 0
+    s.board[1][67] = 1
+    s.board[0][67] = 0
+    s.board[27][80] = 1
+    s.board[0][80] = 0
+    s.board[2][50] = 1
+    s.board[0][50] = 0
+    pins = _pin(s)
+    assert pins[39] == 1
+    assert pins[56] == 0
+    assert pins[67] == 4
+    assert pins[50] == 3
+    s2 = ShogiState(board=np.zeros((29, 81), dtype=np.int32))
+    s2.board[22][40] = 1
+    s2.board[0][40] = 0
+    s2.board[14][38] = 1
+    s2.board[0][38] = 0
+    s2.board[23][39] = 1
+    s2.board[0][39] = 0
+    s2.board[5][64] = 1
+    s2.board[0][64] = 0
+    s2.board[15][56] = 1
+    s2.board[0][56] = 0
+    s2.board[6][76] = 1
+    s2.board[0][76] = 0
+    s2.board[20][67] = 1
+    s2.board[0][67] = 0
+    s2.board[26][58] = 1
+    s2.board[0][58] = 0
+    s2.board[13][80] = 1
+    s2.board[0][80] = 0
+    s2.board[17][50] = 1
+    s2.board[0][50] = 0
+    s2.board[2][44] = 1
+    s2.board[0][44] = 0
+    s2.board[17][42] = 1
+    s2.board[0][42] = 0
+    s2.turn = 1
+    pins2 = _pin(s2)
+    assert pins2[39] == 1
+    assert pins2[56] == 2
+    assert pins2[67] == 0
+    assert pins2[58] == 0
+    assert pins2[50] == 3
+    assert pins2[42] == 1
+
+
+def test_is_mate():
+    board = np.zeros(81, dtype=np.int32)
+    board[30] = 1
+    board[31] = 1
+    board[32] = 1
+    board[48] = 1
+    board[49] = 1
+    board[50] = 1
+    board[40] = 8
+    board[38] = 16
+    s = _make_board(board)
+    s = _init_legal_actions(s)
+    assert _is_mate(s)
+    s.hand[0] = 1
+    s = _init_legal_actions(s)
+    assert not _is_mate(s)
+    board1 = np.zeros(81, dtype=np.int32)
+    board1[8] = 8
+    board1[7] = 1
+    board1[16] = 1
+    board1[26] = 25
+    board1[15] = 17
+    board1[64] = 27
+    s1 = _make_board(board1)
+    s1 = _init_legal_actions(s1)
+    assert _is_mate(s1)
+    board1[56] = 28
+    s1 = _make_board(board1)
+    s1 = _init_legal_actions(s1)
+    assert not _is_mate(s1)
+    board2 = np.zeros(81, dtype=np.int32)
+    board2[8] = 8
+    board2[7] = 1
+    board2[64] = 27
+    board2[56] = 5
+    board2[48] = 19
+    s2 = _make_board(board2)
+    s2 = _init_legal_actions(s2)
+    assert not _is_mate(s2)
+    board3 = np.zeros(81, dtype=np.int32)
+    board3[8] = 8
+    board3[7] = 15
+    board3[14] = 17
+    board3[16] = 7
+    board3[17] = 4
+    board3[24] = 19
+    board3[35] = 28
+    s3 = _make_board(board3)
+    s3 = _init_legal_actions(s3)
+    assert _is_mate(s3)
+
+
 if __name__ == '__main__':
     test_dlaction_to_action()
     test_action_to_dlaction()
@@ -913,5 +1051,7 @@ if __name__ == '__main__':
     test_update_legal_actions()
     test_is_double_pawn()
     test_is_stuck()
-    test_step_piece()
     test_step()
+    test_between()
+    test_pin()
+    test_is_mate()
