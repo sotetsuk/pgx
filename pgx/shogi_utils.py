@@ -299,7 +299,7 @@ class Visualizer:
                         text=txt,
                         insert=(
                             (9.5 - i * 0.4) * GRID_SIZE * cm,
-                            (9 - (offset - j) * 0.7) * GRID_SIZE * cm,
+                            (9.5 - (offset - j) * 0.7) * GRID_SIZE * cm,
                         ),
                         fill=stroke,
                         font_size=f"{GRID_SIZE*28}px",
