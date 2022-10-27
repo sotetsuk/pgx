@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from random import randint
 from typing import Tuple
@@ -16,8 +17,10 @@ class BackgammonState:
 
     # 白なら-1, 黒なら1
     turn: np.ndarray = np.zeros(0, dtype=np.int8)
-
-    # 合法手
+    """
+    合法手
+    action = 1 * 1st micro_actioin + 162 * 2nd micro_actioin + 3 * 3rd micro_action + 4 * 4th micro_action
+    """
     legal_action_musk: np.ndarray = np.zeros(
         (2, 4 * (6 * 26 + 6)), dtype=np.int8
     )
@@ -37,6 +40,21 @@ def init() -> BackgammonState:
         legal_action_musk=legal_action_musk,
     )
     return state
+
+
+def step(
+    state: BackgammonState, action: np.ndarray
+) -> Tuple[BackgammonState, int, bool]:
+    for i in range(4):
+        micro_action = action[i]
+        state.board = _micro_move(state.board, state.turn, micro_action)
+    if _is_all_off(state.board, state.turn):  # 全てのcheckerがoffにあるとき手番のプレイヤーの勝利
+        reward = _calc_win_score(
+            state.board, state.turn
+        )  # 相手のcheckerの進出具合によって受け取る報酬が変わる.
+        return state, reward, True
+    else:
+        return state, 0, False
 
 
 def _make_init_board() -> np.ndarray:
@@ -218,3 +236,39 @@ def _micro_move(
         board[tgt] + t + (board[tgt] == -t) * t
     )  # hitした際は符号が変わるので余分に+1
     return board
+
+
+def _is_all_off(borad: np.ndarray, turn: np.ndarray) -> bool:
+    return False
+
+
+def _calc_win_score(board: np.ndarray, turn: np.ndarray) -> int:
+    if _is_backgammon(board, turn):
+        return 4
+    if _is_gammon(board, turn):
+        return 2
+    else:
+        return 1
+
+
+def _is_gammon(board: np.ndarray, turn: np.ndarray) -> bool:
+    return False
+
+
+def _is_backgammon(board: np.ndarray, turn: np.ndarray) -> bool:
+    return False
+
+
+def _legal_actions_normal(board, turn, dice, legal_action_musk):
+    """
+    異なる目が出た際のlegal action
+    """
+    for i in range(26):
+        b = copy.deepcopy(board)
+        micro_action_1 = i * 6 + dice[0]
+        if _is_micro_action_legal(b, turn, micro_action_1):
+            b = _micro_move(b, turn, micro_action_1)
+            for j in range(26):
+                micro_action_2 = j * 6 + dice[0]
+                if _is_micro_action_legal(b, turn, micro_action_1):
+                    pass
