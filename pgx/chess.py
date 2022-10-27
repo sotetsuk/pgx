@@ -122,6 +122,7 @@ def _separate_int_action(action: int) -> Tuple[int, int]:
     # 右
     elif action <= 72:
         return 18, action - 69
+    return -1, 0
 
 
 # AlphaZeroのdirectionは後ろ、前、左、右、左下、右上、左上、右下の順で記録
@@ -175,6 +176,7 @@ def _direction_to_dif(direction: int) -> int:
     # 右上
     if direction == 15:
         return 17
+    return 0
 
 
 def convert_to(from_: int, dir: int, dis: int, turn: int):
