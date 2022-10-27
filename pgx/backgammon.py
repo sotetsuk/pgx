@@ -85,8 +85,10 @@ def _home_board(turn: int) -> np.ndarray:
     """
     白: [18~23], 黒: [0~5]
     """
-    fin_idx: int = 23 - (23 + 5 * np.clip(turn, a_min=0, a_max=1))
-    return np.array([i for i in range(fin_idx - 5, fin_idx)], dtype=np.int8)
+    fin_idx: int = 6 * np.clip(turn, a_min=0, a_max=1) + np.abs(
+        24 * np.clip(turn, a_min=-1, a_max=0)
+    )
+    return np.array([i for i in range(fin_idx - 6, fin_idx)], dtype=np.int8)
 
 
 def _off(board: np.ndarray, turn: np.ndarray) -> np.ndarray:
@@ -108,9 +110,11 @@ def _can_bear_off(board: np.ndarray, turn: np.ndarray) -> bool:
     t: int = turn[0]
     home_board: np.ndarray = _home_board(t)
     on_home_boad: int = np.array(
-        [board[i] for i in home_board if board[i] * turn >= 0]
+        [board[i] * t for i in home_board if board[i] * t >= 0]
     ).sum()
-    off: int = _off(board, turn)[0]
+    print(on_home_boad)
+    off: int = _off(board, turn)[0] * t
+    print(off)
     return (15 - off) == on_home_boad
 
 
@@ -121,4 +125,4 @@ def _is_open(board: np.ndarray, turn: np.ndarray, point: int) -> bool:
     """
     t: int = turn[0]
     checkers: int = board[point]
-    return t * checkers >= 2  # 黒と白のcheckerは異符号
+    return t * checkers >= -1  # 黒と白のcheckerは異符号

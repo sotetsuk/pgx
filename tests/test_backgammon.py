@@ -1,6 +1,6 @@
 import numpy as np
 
-from pgx.backgammon import _can_bear_off, _is_open, init
+from pgx.backgammon import _can_bear_off, _home_board, _is_open, init
 
 
 def make_test_boad():
@@ -21,7 +21,7 @@ def make_test_boad():
 
 def test_init():
     state = init()
-    assert state.turn[0] == 1 or state.turn[0] == 0
+    assert state.turn[0] == -1 or state.turn[0] == 1
 
 
 def test_is_open():
@@ -45,6 +45,7 @@ def test_can_bear_off():
     board = make_test_boad()
     # 白
     turn = np.array([-1])
+    print(_can_bear_off(board, turn))
     assert _can_bear_off(board, turn)
 
     # 黒
