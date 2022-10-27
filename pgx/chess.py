@@ -165,3 +165,37 @@ def int_to_action(state: ChessState, action: int):
 
 def _piece_type(state: ChessState, position: int):
     return state.board[:, position].argmax()
+
+
+# actionがプロモーションかどうか
+def _is_promotion(action: ChessAction):
+    if action.piece == 1 and action.to % 8 == 7:
+        return True
+    if action.piece == 7 and action.to % 8 == 0:
+        return True
+    return False
+
+
+def _move(state: ChessState, action: ChessAction) -> ChessState:
+    s = copy.deepcopy(state)
+    s.board[action.piece][action.from_] = 0
+    s.board[0][action.from_] = 1
+    s.board[0: 13][action.to] = 0
+    p = action.piece
+    # プロモーションの場合
+    if _is_promotion(action):
+        # Queenの場合
+        if action.is_promote == 0:
+            p += 4
+        # Rook
+        elif action.is_promote == 1:
+            p += 3
+        # Knight
+        elif action.is_promote == 2:
+            p += 1
+        # Bishop
+        elif action.is_promote == 3:
+            p += 2
+    s.board[p][action.to] = 1
+    # 各種フラグの更新
+    return s
