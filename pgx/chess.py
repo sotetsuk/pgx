@@ -16,7 +16,7 @@ class ChessAction:
     to: int
     # promotion: プロモーションで成る駒を選ぶ。デフォルトはクイーン
     # 0: Queen, 1: Rook, 2: Knight, 3:Bishop
-    is_promote: int = 0
+    promotion: int = 0
 
 
 # 盤面のdataclass
@@ -46,6 +46,39 @@ class ChessState:
     br2_move_count: bool = False
     # 後手番キング
     bk_move_count: bool = False
+
+
+def init():
+    bs = np.zeros(64, dtype=np.int32)
+    for i in range(8):
+        bs[1 + 8 * i] = 1
+    bs[8] = 2
+    bs[48] = 2
+    bs[16] = 3
+    bs[40] = 3
+    bs[0] = 4
+    bs[56] = 4
+    bs[24] = 5
+    bs[32] = 6
+    for i in range(8):
+        bs[6 + 8 * i] = 7
+    bs[15] = 8
+    bs[55] = 8
+    bs[23] = 9
+    bs[47] = 9
+    bs[7] = 10
+    bs[63] = 10
+    bs[31] = 11
+    bs[39] = 12
+    return ChessState(board=_make_board(bs))
+
+
+def _make_board(bs: np.ndarray) -> np.ndarray:
+    board = np.zeros((13, 64), dtype=np.int32)
+    for i in range(64):
+        board[0][i] = 0
+        board[bs[i]][i] = 1
+    return board
 
 
 # intのactionを向きと距離に変換
@@ -208,21 +241,22 @@ def _move(state: ChessState, action: ChessAction) -> ChessState:
     s = copy.deepcopy(state)
     s.board[action.piece][action.from_] = 0
     s.board[0][action.from_] = 1
-    s.board[0: 13][action.to] = 0
+    for i in range(13):
+        s.board[i][action.to] = 0
     p = action.piece
     # プロモーションの場合
     if _is_promotion(action):
         # Queenの場合
-        if action.is_promote == 0:
+        if action.promotion == 0:
             p += 4
         # Rook
-        elif action.is_promote == 1:
+        elif action.promotion == 1:
             p += 3
         # Knight
-        elif action.is_promote == 2:
+        elif action.promotion == 2:
             p += 1
         # Bishop
-        elif action.is_promote == 3:
+        elif action.promotion == 3:
             p += 2
     s.board[p][action.to] = 1
     # 左キャスリング
@@ -232,13 +266,13 @@ def _move(state: ChessState, action: ChessAction) -> ChessState:
             s.board[0][0] = 1
             s.board[0][24] = 0
             s.board[4][24] = 1
-            s.wr1_count_move = True
+            s.wr1_move_count = True
         else:
             s.board[10][7] = 0
             s.board[0][7] = 1
             s.board[0][31] = 0
             s.board[10][31] = 1
-            s.br1_count_move = True
+            s.br1_move_count = True
     # 右キャスリング
     if _is_castling(action) == 2:
         if s.turn == 0:
@@ -246,24 +280,31 @@ def _move(state: ChessState, action: ChessAction) -> ChessState:
             s.board[0][56] = 1
             s.board[0][40] = 0
             s.board[4][40] = 1
-            s.wr2_count_move = True
+            s.wr2_move_count = True
         else:
             s.board[10][63] = 0
             s.board[0][63] = 1
             s.board[0][47] = 0
             s.board[10][47] = 1
-            s.br2_count_move = True
+            s.br2_move_count = True
     # 各種フラグの更新
-    if not s.wr1_count_move and action.from_ == 0:
-        s.wr1_count_move = True
-    if not s.wr2_count_move and action.from_ == 56:
-        s.wr2_count_move = True
-    if not s.br1_count_move and action.from_ == 7:
-        s.br1_count_move = True
-    if not s.br2_count_move and action.from_ == 63:
-        s.br2_count_move = True
+    if not s.wr1_move_count and action.from_ == 0:
+        s.wr1_move_count = True
+    if not s.wr2_move_count and action.from_ == 56:
+        s.wr2_move_count = True
+    if not s.br1_move_count and action.from_ == 7:
+        s.br1_move_count = True
+    if not s.br2_move_count and action.from_ == 63:
+        s.br2_move_count = True
     if action.piece % 6 == 1 and abs(action.from_ - action.to) == 2:
         s.en_passant = action.to
     else:
         s.en_passant = -1
     return s
+
+
+def _board_status(state: ChessState):
+    bs = np.zeros(64, dtype=np.int32)
+    for i in range(64):
+        bs[i] = _piece_type(state, i)
+    return bs
