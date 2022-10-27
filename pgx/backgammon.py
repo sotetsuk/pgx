@@ -80,22 +80,20 @@ def _home_board(turn: int) -> np.ndarray:
     return np.array([i for i in range(fin_idx - 6, fin_idx)], dtype=np.int8)
 
 
-def _off(board: np.ndarray, turn: np.ndarray) -> np.ndarray:
+def _off_idx(turn: np.ndarray) -> int:
     """
     白: 26, 黒: 27
     """
     t: int = turn[0]
-    off: int = board[26 + np.clip(t, a_min=0, a_max=1)]
-    return np.array([off], dtype=np.int8)
+    return 26 + np.clip(t, a_min=0, a_max=1)
 
 
-def _bar(board: np.ndarray, turn: np.ndarray) -> np.ndarray:
+def _bar_idx(turn: np.ndarray) -> int:
     """
     白: 24, 黒 25
     """
     t: int = turn[0]
-    bar: int = board[24 + np.clip(t, a_min=0, a_max=1)]
-    return np.array([bar], dtype=np.int8)
+    return 24 + np.clip(t, a_min=0, a_max=1)
 
 
 def _rear_distance(board: np.ndarray, turn: np.ndarray) -> int:
@@ -120,7 +118,7 @@ def _is_all_on_homeboad(board: np.ndarray, turn: np.ndarray) -> bool:
     on_home_boad: int = np.array(
         [board[i] * t for i in home_board if board[i] * t >= 0], dtype=np.int8
     ).sum()
-    off: int = _off(board, turn)[0] * t
+    off: int = board[_off_idx(turn)] * t
     return (15 - off) == on_home_boad
 
 
@@ -145,24 +143,25 @@ def _exists(board: np.ndarray, turn: np.ndarray, point: int) -> bool:
 
 def _calc_src(src: int, turn: np.ndarray) -> int:
     """
-    boardとindexを合わせる.
+    boardのindexに合わせる.
     """
-    t = turn[0]
-    if src == 1:
-        return 24 + np.clip(t, a_min=0, a_max=1)
-    else:
+    if src == 1:  # srcがbarの時
+        return _bar_idx(turn)
+    else:  # point to point
         return src - 2
 
 
-def _calc_tgt(idx: int, turn: np.ndarray, die) -> int:
+def _calc_tgt(src: int, turn: np.ndarray, die) -> int:
     """
-    srcがbarだった際の対応
+    boardのindexに合わせる.
     """
     t = turn[0]
-    if idx >= 24:
+    if src >= 24:  # srcがbarの時
         return np.clip(24 * t, a_min=-1, a_max=24) + die * -turn[0]
-    else:
-        return idx + die * -turn[0]
+    elif src + die * -turn[0] >= 24 or src + die * -turn[0] <= -1:  # 行き先がoffの時
+        return _off_idx(turn)
+    else:  # point to point
+        return src + die * -turn[0]
 
 
 def _decompose_micro_action(micro_action: int, turn: np.ndarray) -> Tuple:
@@ -195,7 +194,7 @@ def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
         return (
             (_exists(board, turn, src))
             and (_is_open(board, turn, tgt))
-            and (_bar(board, turn)[0] == 0)
+            and (board[_bar_idx(turn)] == 0)
         )
     else:  # bear off
         return (
@@ -208,4 +207,12 @@ def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
 def _micro_move(
     board: np.ndarray, turn: np.ndarray, micro_action: int
 ) -> np.ndarray:
-    pass
+    t = turn[0]
+    src, _, tgt = _decompose_micro_action(micro_action, turn)
+    board[_bar_idx(-1 * turn)] = board[_bar_idx(-1 * turn)] + (
+        (board[tgt] == -t) * -t
+    )
+
+    board[src] = board[src] - t
+    board[tgt] = board[tgt] + t + (board[tgt] == -t) * t
+    return board

@@ -1,5 +1,8 @@
+import sys
+
 import numpy as np
 
+sys.path.append("../")
 from pgx.backgammon import (
     _calc_src,
     _is_all_on_homeboad,
@@ -90,7 +93,7 @@ def test_is_micro_action_legal():
     assert not _is_micro_action_legal(
         board, turn, (22 + 2) * 6 + 2
     )  # 22 -> 25: 22に白がない
-    assert _is_micro_action_legal(board, turn, (19 + 2) * 6 + 6)  # bear off
+    assert _is_micro_action_legal(board, turn, (19 + 2) * 6 + 5)  # bear off
     assert not _is_micro_action_legal(
         board, turn, (20 + 2) * 6 + 6
     )  # 後ろにまだ白があるためbear offできない.
@@ -112,15 +115,20 @@ def test_micro_move():
     # point to off
     board = make_test_boad()
     turn = np.array([-1])
-    board = _micro_move(board, turn, (19 + 2) * 6 + 6)  # 19->21
+    board = _micro_move(board, turn, (19 + 2) * 6 + 5)  # 19->26
     assert board[19] == -9 and board[26] == -3
     # enter
     board = make_test_boad()
     turn = np.array([1])
-    board = _micro_move(board, turn, (1) * 6 + 0)  # bar -> 23
+    board = _micro_move(board, turn, (1) * 6 + 0)  # 25 -> 23
     assert board[25] == 3 and board[23] == 1
     # hit
     board = make_test_boad()
     turn = np.array([1])
     board = _micro_move(board, turn, (22 + 2) * 6 + 1)  # 22 -> 20
-    assert board[25] == 2 and board[23] == 1 and board[24] == 1
+    assert board[22] == 2 and board[20] == 1 and board[24] == -1
+
+
+if __name__ == "__main__":
+    # test_is_micro_action_legal()
+    test_micro_move()
