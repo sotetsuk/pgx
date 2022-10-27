@@ -205,5 +205,7 @@ def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
         )
 
 
-def _micro_move(board: np.ndarray, micro_action: int, turn: np.ndarray):
+def _micro_move(
+    board: np.ndarray, turn: np.ndarray, micro_action: int
+) -> np.ndarray:
     pass

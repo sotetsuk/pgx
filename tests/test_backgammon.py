@@ -5,6 +5,7 @@ from pgx.backgammon import (
     _is_all_on_homeboad,
     _is_micro_action_legal,
     _is_open,
+    _micro_move,
     _rear_distance,
     init,
 )
@@ -13,9 +14,9 @@ from pgx.backgammon import (
 def make_test_boad():
     board = np.zeros(28, dtype=np.int8)
     # 白
-    board[19] = -5
-    board[20] = -5
-    board[21] = -3
+    board[19] = -10
+    board[20] = -1
+    board[21] = -2
     board[26] = -2
     # 黒
     board[3] = 2
@@ -100,3 +101,26 @@ def test_is_micro_action_legal():
     )  # 3->2: barにcheckerが残っているので動かせない.
     assert _is_micro_action_legal(board, turn, (1) * 6 + 0)  # bar -> 23
     assert not _is_micro_action_legal(board, turn, (1) * 6 + 2)  # bar -> 21
+
+
+def test_micro_move():
+    # point to point
+    board = make_test_boad()
+    turn = np.array([-1])
+    board = _micro_move(board, turn, (19 + 2) * 6 + 1)  # 19->21
+    assert board[19] == -9 and board[21] == -3
+    # point to off
+    board = make_test_boad()
+    turn = np.array([-1])
+    board = _micro_move(board, turn, (19 + 2) * 6 + 6)  # 19->21
+    assert board[19] == -9 and board[26] == -3
+    # enter
+    board = make_test_boad()
+    turn = np.array([1])
+    board = _micro_move(board, turn, (1) * 6 + 0)  # bar -> 23
+    assert board[25] == 3 and board[23] == 1
+    # hit
+    board = make_test_boad()
+    turn = np.array([1])
+    board = _micro_move(board, turn, (22 + 2) * 6 + 1)  # 22 -> 20
+    assert board[25] == 2 and board[23] == 1 and board[24] == 1
