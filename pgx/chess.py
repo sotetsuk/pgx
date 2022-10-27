@@ -32,6 +32,20 @@ class ChessState:
     # 直前の動きがポーンを2マス進めるものだった場合は、位置を記録
     # 普段は-1
     en_passant: int = -1
+    # move_count ルークやキングがすでに動いたかどうか
+    # キャスリングの判定に使用
+    # 先手番左ルーク
+    wr1_move_count: bool = False
+    # 先手番右ルーク
+    wr2_move_count: bool = False
+    # 先手番キング
+    wk_move_count: bool = False
+    # 後手番左ルーク
+    br1_move_count: bool = False
+    # 後手番右ルーク
+    br2_move_count: bool = False
+    # 後手番キング
+    bk_move_count: bool = False
 
 
 # intのactionを向きと距離に変換
@@ -176,6 +190,20 @@ def _is_promotion(action: ChessAction):
     return False
 
 
+# castling判定
+def _is_castling(action: ChessAction) -> int:
+    # King以外の動きは無視
+    if action.piece % 6 != 0:
+        return 0
+    # 左キャスリング
+    if action.from_ - action.to == 16:
+        return 1
+    # 右キャスリング
+    if action.from_ - action.to == -16:
+        return 2
+    return 0
+
+
 def _move(state: ChessState, action: ChessAction) -> ChessState:
     s = copy.deepcopy(state)
     s.board[action.piece][action.from_] = 0
@@ -197,5 +225,45 @@ def _move(state: ChessState, action: ChessAction) -> ChessState:
         elif action.is_promote == 3:
             p += 2
     s.board[p][action.to] = 1
+    # 左キャスリング
+    if _is_castling(action) == 1:
+        if s.turn == 0:
+            s.board[4][0] = 0
+            s.board[0][0] = 1
+            s.board[0][24] = 0
+            s.board[4][24] = 1
+            s.wr1_count_move = True
+        else:
+            s.board[10][7] = 0
+            s.board[0][7] = 1
+            s.board[0][31] = 0
+            s.board[10][31] = 1
+            s.br1_count_move = True
+    # 右キャスリング
+    if _is_castling(action) == 2:
+        if s.turn == 0:
+            s.board[4][56] = 0
+            s.board[0][56] = 1
+            s.board[0][40] = 0
+            s.board[4][40] = 1
+            s.wr2_count_move = True
+        else:
+            s.board[10][63] = 0
+            s.board[0][63] = 1
+            s.board[0][47] = 0
+            s.board[10][47] = 1
+            s.br2_count_move = True
     # 各種フラグの更新
+    if not s.wr1_count_move and action.from_ == 0:
+        s.wr1_count_move = True
+    if not s.wr2_count_move and action.from_ == 56:
+        s.wr2_count_move = True
+    if not s.br1_count_move and action.from_ == 7:
+        s.br1_count_move = True
+    if not s.br2_count_move and action.from_ == 63:
+        s.br2_count_move = True
+    if action.piece % 6 == 1 and abs(action.from_ - action.to) == 2:
+        s.en_passant = action.to
+    else:
+        s.en_passant = -1
     return s
