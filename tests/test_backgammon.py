@@ -1,8 +1,5 @@
-import sys
-
 import numpy as np
 
-sys.path.append("../")
 from pgx.backgammon import (
     _calc_src,
     _is_all_on_homeboad,
@@ -130,5 +127,6 @@ def test_micro_move():
 
 
 if __name__ == "__main__":
-    # test_is_micro_action_legal()
+    test_rear_distance()
+    test_is_micro_action_legal()
     test_micro_move()

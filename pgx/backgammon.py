@@ -211,8 +211,10 @@ def _micro_move(
     src, _, tgt = _decompose_micro_action(micro_action, turn)
     board[_bar_idx(-1 * turn)] = board[_bar_idx(-1 * turn)] + (
         (board[tgt] == -t) * -t
-    )
+    )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動
 
     board[src] = board[src] - t
-    board[tgt] = board[tgt] + t + (board[tgt] == -t) * t
+    board[tgt] = (
+        board[tgt] + t + (board[tgt] == -t) * t
+    )  # hitした際は符号が変わるので余分に+1
     return board
