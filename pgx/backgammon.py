@@ -11,9 +11,6 @@ class BackgammonState:
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: np.ndarray = np.zeros(28, dtype=np.int8)
 
-    # bear offできるかどうか.
-    is_bearable: np.ndarray = np.zeros(2, dtype=np.int8)
-
     # サイコロの出目
     dice: np.ndarray = np.zeros(2, dtype=np.int8)
 
@@ -28,7 +25,6 @@ class BackgammonState:
 
 def init() -> BackgammonState:
     board: np.ndarray = _make_init_board()
-    is_bearable: np.ndarray = np.zeros(2, dtype=np.int8)
     dice: np.ndarray = _roll_init_dice()
     turn: np.ndarray = _init_turn(dice)
     legal_action_musk: np.ndarray = np.zeros(
@@ -36,7 +32,6 @@ def init() -> BackgammonState:
     )
     state = BackgammonState(
         board=board,
-        is_bearable=is_bearable,
         dice=dice,
         turn=turn,
         legal_action_musk=legal_action_musk,
