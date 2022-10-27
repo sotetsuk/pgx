@@ -203,3 +203,7 @@ def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
             and _is_all_on_homeboad(board, turn)
             and (_rear_distance(board, turn) <= die)
         )
+
+
+def _micro_move(board: np.ndarray, micro_action: int, turn: np.ndarray):
+    pass
