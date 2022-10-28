@@ -2,18 +2,17 @@
 
 # Pgx
 
-Highly parallel game simulator for reinforcement learning.
+A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
 
 ## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
-This is to explicitly let users know that state transition is determined ONLY from `state` and `action` and easy to use `jax.jit`.
-Pgx implements AEC games (see PettingZoo paper), in which only one agent acts and then turn changes.
+This is to explicitly let users know that state transition is determined ONLY from `state` and `action` and to make it easy to use `jax.jit`.
+Pgx defines the games as AEC games (see PettingZoo paper), in which only one agent acts and then turn changes.
 
 
 ### Design goal
 1. Be explicit
 2. Be simple than be universal
-
 
 
 ### Usage
@@ -54,10 +53,8 @@ def init(rng: jnp.ndarray) -> Tuple[jnp.ndarray, State]:
 
 # step is deterministic by default
 # if state.is_terminal=True, the behavior is undefined
-# if rng is specified, the rng is used instead of State.rng (or shuffle the hidden data)
 def step(state: State, 
-         action: jnp.ndarray, 
-         rng: Optional[jnp.ndarray]) 
+         action: jnp.ndarray)
     -> Tuple[jnp.ndarray, State, jnp.ndarray]:
   return curr_player, state, rewards  # rewards: (N,) 
   # terminated is moved into State class to support auto_reset 
@@ -69,6 +66,12 @@ def observe(state: State,
             observe_all=False) 
     -> jnp.ndarray:
   return obs  # (M,) or (N, M) all=True will ignore player_id
+
+# replace state.rng or shuffle hidden states (e.g., unopened public cards)
+def shuffle(state: State,
+            rng: Optional[jnp.ndarray]) 
+    -> State:
+   return state
 
 # N: num agents
 # A: action space size
@@ -110,15 +113,15 @@ class State:
 
 |Game|Logic| Jit                                                                                                                      |Visualization|Speed benchmark|Baseline|
 |:---|:---|:-------------------------------------------------------------------------------------------------------------------------|:---|:---|:---|
-|TicTacToe|:white_check_mark:|:white_check_mark:||||
-|AnimalShogi| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark:|||
+|TicTacToe| :white_check_mark: | :white_check_mark: ||||
+|AnimalShogi| :white_check_mark: | :white_check_mark:                                                                                                       | :white_check_mark: |||
 |MiniMahjong| :white_check_mark: | :white_check_mark:                                                                                                       ||||
 |MinAtar <br>[kenjyoung/MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br> :white_check_mark: Seaquest<br> :white_check_mark: SpaceInvaders ||||
-|Chess||||||
+|Chess| :white_check_mark: |||||
 |Shogi| :construction: |||||
-|Go| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark:|||
-|ContractBridgeBidding||||||
-|Backgammon||||||
+|Go| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark: |||
+|BridgeBidding| :white_check_mark: |||||
+|Backgammon| :white_check_mark: |||||
 |Mahjong| :construction: |||||
 
 ## Development guide (in Japanese)
