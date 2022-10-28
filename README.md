@@ -116,7 +116,6 @@ class State:
 |TicTacToe| :white_check_mark: | :white_check_mark: ||||
 | [Animal Shogi](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi) | :white_check_mark: | :white_check_mark:                                                                                                       | :white_check_mark: |||
 | [Sparrow Mahjong](https://sugorokuya.jp/p/suzume-jong) |  |                                                                                                        ||||
-| MiniMahjong | :white_check_mark: | :white_check_mark:                                                                                                       ||||
 | [MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br> :white_check_mark: Seaquest<br> :white_check_mark: SpaceInvaders ||||
 |Chess| :white_check_mark: |||||
 |Shogi| :white_check_mark: |||||
