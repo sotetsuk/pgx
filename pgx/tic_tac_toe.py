@@ -4,17 +4,17 @@ import jax
 import jax.numpy as jnp
 from flax import struct
 
-FALSE = jnp.zeros(1, jnp.bool_)
-TRUE = jnp.ones(1, jnp.bool_)
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
 
 
 @struct.dataclass
 class State:
-    curr_player: jnp.ndarray = jnp.zeros(1, jnp.int8)
+    curr_player: jnp.ndarray = jnp.int8(0)
     legal_action_mask: jnp.ndarray = jnp.ones(9, jnp.bool_)
-    terminated: jnp.ndarray = jnp.zeros(0, jnp.bool_)
+    terminated: jnp.ndarray = jnp.bool_(False)
     # 0: 先手, 1: 後手
-    turn: jnp.ndarray = jnp.zeros(1, jnp.int8)
+    turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
@@ -23,7 +23,7 @@ class State:
 
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
-    curr_player = jax.random.bernoulli(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(rng))
     return curr_player, State(curr_player=curr_player)  # type:ignore
 
 
@@ -33,37 +33,26 @@ def step(
     # TODO(sotetsuk): illegal action check
     # if state.legal_action_mask.at[action]:
     #     ...
-    board = state.board.at[action].set(state.turn[0])
+    board = state.board.at[action].set(state.turn)
     won = _win_check(board, state.turn)
-    next_player = jnp.int8((state.curr_player + 1) % 2)
-
-    rewards = jnp.zeros(2, jnp.int16)
     rewards = jax.lax.cond(
-        jnp.all(won),
-        lambda: rewards.at[jnp.int8(state.curr_player)].set(1),
-        lambda: rewards,
+        won,
+        lambda: jnp.int16([-1, -1]).at[state.curr_player].set(1),
+        lambda: jnp.zeros(2, jnp.int16),
     )
-    rewards = jax.lax.cond(
-        jnp.all(won),
-        lambda: rewards.at[jnp.int8(next_player)].set(-1),
-        lambda: rewards,
-    )
-    # if won:
-    #     rewards = rewards.at[state.curr_player].set(1)
-    #     rewards =
-
+    terminated = won | jnp.all(board != -1)
+    curr_player = (state.curr_player + 1) % 2
     state = State(
-        curr_player=next_player,
+        curr_player=curr_player,
         legal_action_mask=board < 0,
-        terminated=won,
+        terminated=terminated,
         turn=(state.turn + 1) % 2,
         board=board,
     )  # type: ignore
+    return curr_player, state, rewards
 
-    return next_player, state, rewards
 
-
-def _win_check(board, turn):
+def _win_check(board, turn) -> jnp.ndarray:
     # board:
     #   0 1 2
     #   3 4 5
@@ -80,12 +69,12 @@ def _win_check(board, turn):
             jnp.all(board[i:9:3] == turn), lambda: TRUE, lambda: won
         )
     won = jax.lax.cond(
-        jnp.all((board[0] == turn) & (board[4] == turn) & (board[8] == turn)),
+        jnp.all(board[jnp.int8([0, 4, 8])] == turn),
         lambda: TRUE,
         lambda: won,
     )
     won = jax.lax.cond(
-        jnp.all((board[2] == turn) & (board[4] == turn) & (board[6] == turn)),
+        jnp.all(board[jnp.int8([2, 4, 6])] == turn),
         lambda: TRUE,
         lambda: won,
     )
