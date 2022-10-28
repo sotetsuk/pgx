@@ -33,29 +33,22 @@ def step(
     #     ...
     board = state.board.at[action].set(state.turn[0])
     won = _win_check(board, state.turn)
-    next_player = (state.curr_player + 1) % 2
 
-    rewards = jnp.zeros(2, jnp.int16)
     rewards = jax.lax.cond(
         won,
-        lambda: rewards.at[state.curr_player].set(1),
-        lambda: rewards,
-    )
-    rewards = jax.lax.cond(
-        won,
-        lambda: rewards.at[next_player].set(-1),
-        lambda: rewards,
+        lambda: jnp.int16([-1, -1]).at[state.curr_player].set(1),
+        lambda: jnp.zeros(2, jnp.int16)
     )
 
+    curr_player = (state.curr_player + 1) % 2
     state = State(
-        curr_player=next_player,
+        curr_player=curr_player,
         legal_action_mask=board < 0,
         terminated=jnp.bool_(won),
         turn=(state.turn + 1) % 2,
         board=board,
     )  # type: ignore
-
-    return next_player, state, rewards
+    return curr_player, state, rewards
 
 
 def _win_check(board, turn) -> bool:
