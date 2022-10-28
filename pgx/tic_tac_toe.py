@@ -19,7 +19,7 @@ class State:
     # 3 4 5
     # 6 7 8
     # -1: empty, 0: 先手, 1: 後手
-    board: jnp.ndarray = - jnp.ones(9, jnp.int8)
+    board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
@@ -38,8 +38,16 @@ def step(
     next_player = jnp.int8((state.curr_player + 1) % 2)
 
     rewards = jnp.zeros(2, jnp.int16)
-    rewards = jax.lax.cond(jnp.all(won), lambda: rewards.at[jnp.int8(state.curr_player)].set(1), lambda: rewards)
-    rewards = jax.lax.cond(jnp.all(won), lambda: rewards.at[jnp.int8(next_player)].set(-1), lambda: rewards)
+    rewards = jax.lax.cond(
+        jnp.all(won),
+        lambda: rewards.at[jnp.int8(state.curr_player)].set(1),
+        lambda: rewards,
+    )
+    rewards = jax.lax.cond(
+        jnp.all(won),
+        lambda: rewards.at[jnp.int8(next_player)].set(-1),
+        lambda: rewards,
+    )
     # if won:
     #     rewards = rewards.at[state.curr_player].set(1)
     #     rewards =
@@ -63,19 +71,23 @@ def _win_check(board, turn):
     won = FALSE
     for i in range(0, 9, 3):
         # e.g., [0, 1, 2]
-        won = jax.lax.cond(jnp.all(board[i: i + 3] == turn), lambda: TRUE, lambda: won)
+        won = jax.lax.cond(
+            jnp.all(board[i : i + 3] == turn), lambda: TRUE, lambda: won
+        )
     for i in range(3):
         # e.g., [0, 3, 6]
-        won = jax.lax.cond(jnp.all(board[i:9:3] == turn), lambda: TRUE, lambda: won)
+        won = jax.lax.cond(
+            jnp.all(board[i:9:3] == turn), lambda: TRUE, lambda: won
+        )
     won = jax.lax.cond(
         jnp.all((board[0] == turn) & (board[4] == turn) & (board[8] == turn)),
         lambda: TRUE,
-        lambda: won
+        lambda: won,
     )
     won = jax.lax.cond(
         jnp.all((board[2] == turn) & (board[4] == turn) & (board[6] == turn)),
         lambda: TRUE,
-        lambda: won
+        lambda: won,
     )
     return won
 
