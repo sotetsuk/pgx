@@ -120,8 +120,8 @@ class State:
 |Chess| :white_check_mark: |||||
 |Shogi| :white_check_mark: |||||
 |Go| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark: |||
-|BridgeBidding| :construction: |||||
 |Backgammon| :construction: |||||
+|Bridge Bidding| :construction: |||||
 |Mahjong| :construction: |||||
 
 ## Development guide (in Japanese)
