@@ -39,23 +39,20 @@ def step(
 
     rewards = jnp.zeros(2, jnp.int16)
     rewards = jax.lax.cond(
-        jnp.all(won),
+        won,
         lambda: rewards.at[jnp.int8(state.curr_player)].set(1),
         lambda: rewards,
     )
     rewards = jax.lax.cond(
-        jnp.all(won),
+        won,
         lambda: rewards.at[jnp.int8(next_player)].set(-1),
         lambda: rewards,
     )
-    # if won:
-    #     rewards = rewards.at[state.curr_player].set(1)
-    #     rewards =
 
     state = State(
         curr_player=next_player,
         legal_action_mask=board < 0,
-        terminated=won,
+        terminated=jnp.bool_(won),
         turn=(state.turn + 1) % 2,
         board=board,
     )  # type: ignore
@@ -68,25 +65,25 @@ def _win_check(board, turn):
     #   0 1 2
     #   3 4 5
     #   6 7 8
-    won = FALSE
+    won = False
     for i in range(0, 9, 3):
         # e.g., [0, 1, 2]
         won = jax.lax.cond(
-            jnp.all(board[i : i + 3] == turn), lambda: TRUE, lambda: won
+            jnp.all(board[i : i + 3] == turn), lambda: True, lambda: won
         )
     for i in range(3):
         # e.g., [0, 3, 6]
         won = jax.lax.cond(
-            jnp.all(board[i:9:3] == turn), lambda: TRUE, lambda: won
+            jnp.all(board[i:9:3] == turn), lambda: True, lambda: won
         )
     won = jax.lax.cond(
         jnp.all((board[0] == turn) & (board[4] == turn) & (board[8] == turn)),
-        lambda: TRUE,
+        lambda: True,
         lambda: won,
     )
     won = jax.lax.cond(
         jnp.all((board[2] == turn) & (board[4] == turn) & (board[6] == turn)),
-        lambda: TRUE,
+        lambda: True,
         lambda: won,
     )
     return won
