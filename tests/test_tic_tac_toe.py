@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.tic_tac_toe import init, step
+from pgx.tic_tac_toe import init, step, _win_check
 
 
 def test_init():
@@ -81,3 +81,93 @@ def test_step():
     #  1  0 -1
     # -1  0 -1
     # -1  0  1
+
+
+def test_win_check():
+    board = jnp.int8(
+        [-1, -1, -1,
+         -1, -1, -1,
+         -1, -1, -1]
+    )
+    turn = jnp.int8(1)
+    assert not _win_check(board, turn)
+
+    board = jnp.int8(
+        [1, -1, -1,
+         -1, 1, -1,
+         0, -1, 0]
+    )
+    turn = jnp.int8(1)
+    assert not _win_check(board, turn)
+
+    board = jnp.int8(
+        [1, -1, -1,
+         -1, 1, -1,
+         -1, -1, 1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [-1, -1, 1,
+         -1, 1, -1,
+         1, -1, -1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [1, 1, 1,
+         -1, -1, -1,
+         -1, -1, -1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [-1, -1, -1,
+          1, 1, 1,
+         -1, -1, -1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [-1, -1, -1,
+         -1, -1, -1,
+         1, 1, 1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [1, -1, -1,
+         1, -1, -1,
+         1, -1, -1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [-1, 1, -1,
+         -1, 1, -1,
+         -1, 1, -1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [-1, -1, 1,
+         -1, -1, 1,
+         -1, -1, 1]
+    )
+    turn = jnp.int8(1)
+    assert _win_check(board, turn)
+
+    board = jnp.int8(
+        [-1, 0, -1,
+         -1, 0, -1,
+         -1, 0, -1]
+    )
+    turn = jnp.int8(0)
+    assert _win_check(board, turn)
