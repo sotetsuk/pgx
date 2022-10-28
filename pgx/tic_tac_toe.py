@@ -22,6 +22,7 @@ class State:
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
+@jax.jit
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     curr_player = jax.random.bernoulli(rng)
     return curr_player, State(curr_player=curr_player)  # type:ignore
@@ -35,7 +36,7 @@ def step(
     #     ...
     board = state.board.at[action].set(state.turn[0])
     won = _win_check(board, state.turn)
-    next_player = jnp.int8((state.curr_player + 1) % 2)
+    next_player = (state.curr_player + 1) % 2
 
     rewards = jnp.zeros(2, jnp.int16)
     rewards = jax.lax.cond(
@@ -60,7 +61,7 @@ def step(
     return next_player, state, rewards
 
 
-def _win_check(board, turn):
+def _win_check(board, turn) -> bool:
     # board:
     #   0 1 2
     #   3 4 5
