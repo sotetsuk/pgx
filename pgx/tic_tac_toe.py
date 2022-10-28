@@ -7,6 +7,7 @@ from flax import struct
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
+
 @struct.dataclass
 class State:
     curr_player: jnp.ndarray = jnp.int8(0)
