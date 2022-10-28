@@ -113,14 +113,14 @@ class State:
 
 |Game|Logic| Jit                                                                                                                      |Visualization|Speed benchmark|Baseline|
 |:---|:---|:-------------------------------------------------------------------------------------------------------------------------|:---|:---|:---|
-|TicTacToe| :white_check_mark: | :white_check_mark: ||||
+| Tic-tac-toe | :white_check_mark: | :white_check_mark: ||||
 | [Animal Shogi](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi) | :white_check_mark: | :white_check_mark:                                                                                                       | :white_check_mark: |||
 | [Sparrow Mahjong](https://sugorokuya.jp/p/suzume-jong) |  |                                                                                                        ||||
 | [MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br> :white_check_mark: Seaquest<br> :white_check_mark: SpaceInvaders ||||
-|Chess| :white_check_mark: |||||
-|Shogi| :white_check_mark: |||||
+|Chess| :white_check_mark: ||:construction:|||
+|Shogi| :white_check_mark: || :white_check_mark: |||
 |Go| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark: |||
-|Backgammon| :construction: |||||
+|Backgammon| :construction: ||:construction:|||
 |Bridge Bidding| :construction: |||||
 |Mahjong| :construction: |||||
 
