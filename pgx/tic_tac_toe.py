@@ -37,7 +37,7 @@ def step(
     rewards = jax.lax.cond(
         won,
         lambda: jnp.int16([-1, -1]).at[state.curr_player].set(1),
-        lambda: jnp.zeros(2, jnp.int16)
+        lambda: jnp.zeros(2, jnp.int16),
     )
 
     curr_player = (state.curr_player + 1) % 2
