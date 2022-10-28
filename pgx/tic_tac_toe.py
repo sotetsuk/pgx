@@ -67,12 +67,12 @@ def _win_check(board, turn) -> bool:
             jnp.all(board[i:9:3] == turn), lambda: True, lambda: won
         )
     won = jax.lax.cond(
-        jnp.all((board[0] == turn) & (board[4] == turn) & (board[8] == turn)),
+        jnp.all(board[jnp.int8([0, 4, 8])] == turn),
         lambda: True,
         lambda: won,
     )
     won = jax.lax.cond(
-        jnp.all((board[2] == turn) & (board[4] == turn) & (board[6] == turn)),
+        jnp.all(board[jnp.int8([2, 4, 6])] == turn),
         lambda: True,
         lambda: won,
     )
