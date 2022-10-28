@@ -17,6 +17,7 @@ def test_step():
     assert state.turn == 0
     assert jnp.all(state.legal_action_mask == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_))  # fmt: ignore
     assert jnp.all(state.board == jnp.int8([-1, -1, -1, -1, -1, -1, -1, -1, -1]))
+    assert not state.terminated
     # -1 -1 -1
     # -1 -1 -1
     # -1 -1 -1
@@ -28,6 +29,7 @@ def test_step():
     assert jnp.all(state.legal_action_mask == jnp.array([1, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_))  # fmt: ignore
     assert jnp.all(state.board == jnp.int8([-1, -1, -1, -1, 0, -1, -1, -1, -1]))
     assert jnp.all(rewards == 0)  # fmt: ignore
+    assert not state.terminated
     # -1 -1 -1
     # -1  0 -1
     # -1 -1 -1
@@ -39,6 +41,7 @@ def test_step():
     assert jnp.all(state.legal_action_mask == jnp.array([0, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_))  # fmt: ignore
     assert jnp.all(state.board == jnp.int8([1, -1, -1, -1, 0, -1, -1, -1, -1]))
     assert jnp.all(rewards == 0)  # fmt: ignore
+    assert not state.terminated
     #  1 -1 -1
     # -1  0 -1
     # -1 -1 -1
@@ -50,6 +53,7 @@ def test_step():
     assert jnp.all(state.legal_action_mask == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 1], jnp.bool_))  # fmt: ignore
     assert jnp.all(state.board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, -1]))
     assert jnp.all(rewards == 0)  # fmt: ignore
+    assert not state.terminated
     #  1  0 -1
     # -1  0 -1
     # -1 -1 -1
@@ -61,6 +65,7 @@ def test_step():
     assert jnp.all(state.legal_action_mask == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 0], jnp.bool_))  # fmt: ignore
     assert jnp.all(state.board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, 1]))
     assert jnp.all(rewards == 0)  # fmt: ignore
+    assert not state.terminated
     #  1  0 -1
     # -1  0 -1
     # -1 -1  1
@@ -72,6 +77,7 @@ def test_step():
     assert jnp.all(state.legal_action_mask == jnp.array([0, 0, 1, 1, 0, 1, 1, 0, 0], jnp.bool_))  # fmt: ignore
     assert jnp.all(state.board == jnp.int8([1, 0, -1, -1, 0, -1, -1, 0, 1]))
     assert jnp.all(rewards == jnp.int16([-1, 1]))  # fmt: ignore
+    assert state.terminated
     #  1  0 -1
     # -1  0 -1
     # -1  0  1
