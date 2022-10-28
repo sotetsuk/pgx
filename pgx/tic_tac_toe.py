@@ -7,11 +7,11 @@ from flax import struct
 
 @struct.dataclass
 class State:
-    curr_player: jnp.ndarray = jnp.zeros(1, jnp.int8)
+    curr_player: jnp.ndarray = jnp.int8(0)
     legal_action_mask: jnp.ndarray = jnp.ones(9, jnp.bool_)
-    terminated: jnp.ndarray = jnp.zeros(0, jnp.bool_)
+    terminated: jnp.ndarray = jnp.bool_(False)
     # 0: 先手, 1: 後手
-    turn: jnp.ndarray = jnp.zeros(1, jnp.int8)
+    turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
@@ -30,7 +30,7 @@ def step(
     # TODO(sotetsuk): illegal action check
     # if state.legal_action_mask.at[action]:
     #     ...
-    board = state.board.at[action].set(state.turn[0])
+    board = state.board.at[action].set(state.turn)
     won = _win_check(board, state.turn)
 
     rewards = jax.lax.cond(
