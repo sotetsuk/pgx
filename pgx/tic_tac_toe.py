@@ -19,7 +19,6 @@ class State:
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
-@jax.jit
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     curr_player = jnp.int8(jax.random.bernoulli(rng))
     return curr_player, State(curr_player=curr_player)  # type:ignore
