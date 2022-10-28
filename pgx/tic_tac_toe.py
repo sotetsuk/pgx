@@ -4,9 +4,6 @@ import jax
 import jax.numpy as jnp
 from flax import struct
 
-FALSE = jnp.zeros(1, jnp.bool_)
-TRUE = jnp.ones(1, jnp.bool_)
-
 
 @struct.dataclass
 class State:
@@ -24,7 +21,7 @@ class State:
 
 @jax.jit
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
-    curr_player = jax.random.bernoulli(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(rng))
     return curr_player, State(curr_player=curr_player)  # type:ignore
 
 
@@ -41,12 +38,12 @@ def step(
     rewards = jnp.zeros(2, jnp.int16)
     rewards = jax.lax.cond(
         won,
-        lambda: rewards.at[jnp.int8(state.curr_player)].set(1),
+        lambda: rewards.at[state.curr_player].set(1),
         lambda: rewards,
     )
     rewards = jax.lax.cond(
         won,
-        lambda: rewards.at[jnp.int8(next_player)].set(-1),
+        lambda: rewards.at[next_player].set(-1),
         lambda: rewards,
     )
 
