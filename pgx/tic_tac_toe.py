@@ -24,7 +24,7 @@ class State:
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     curr_player = jax.random.bernoulli(rng)
-    return curr_player, State(curr_player)
+    return curr_player, State(curr_player=curr_player)  # type:ignore
 
 
 def step(
@@ -58,7 +58,7 @@ def step(
         terminated=won,
         turn=(state.turn + 1) % 2,
         board=board,
-    )
+    )  # type: ignore
 
     return next_player, state, rewards
 
