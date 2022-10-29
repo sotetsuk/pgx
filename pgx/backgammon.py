@@ -1,4 +1,3 @@
-import copy
 from dataclasses import dataclass
 from random import randint
 from typing import Tuple
@@ -12,48 +11,64 @@ class BackgammonState:
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: np.ndarray = np.zeros(28, dtype=np.int8)
 
-    # サイコロの出目
+    # サイコロの出目 0~5: 1~6
     dice: np.ndarray = np.zeros(2, dtype=np.int8)
+
+    # プレイできるサイコロの目
+    playable_dice: np.ndarray = np.zeros(4, dtype=np.int8)
+
+    # プレイしたサイコロの目の数
+    played_dice_num: np.ndarray = np.zeros(1, dtype=np.int8)
 
     # 白なら-1, 黒なら1
     turn: np.ndarray = np.zeros(0, dtype=np.int8)
     """
     合法手
-    action = 1 * 1st micro_actioin + 162 * 2nd micro_actioin + 3 * 3rd micro_action + 4 * 4th micro_action
+    micro action = 6*src+die
     """
-    legal_action_musk: np.ndarray = np.zeros(
-        (2, 4 * (6 * 26 + 6)), dtype=np.int8
+    legal_micro_action_mask: np.ndarray = np.zeros(
+        (2, (6 * 26 + 6)), dtype=np.int8
     )
 
 
 def init() -> BackgammonState:
     board: np.ndarray = _make_init_board()
     dice: np.ndarray = _roll_init_dice()
+    playable_dice: np.ndarray = _set_playable_dice(dice)
+    played_dice_num: np.ndarray = np.zeros(1, np.int8)
     turn: np.ndarray = _init_turn(dice)
-    legal_action_musk: np.ndarray = np.zeros(
-        (2, 4 * (6 * 26 + 6)), dtype=np.int8
+    legal_micro_action_mask: np.ndarray = np.zeros(
+        (2, (6 * 26 + 6)), dtype=np.int8
     )
     state = BackgammonState(
         board=board,
         dice=dice,
+        playable_dice=playable_dice,
+        played_dice_num=played_dice_num,
         turn=turn,
-        legal_action_musk=legal_action_musk,
+        legal_micro_action_mask=legal_micro_action_mask,
     )
     return state
 
 
 def step(
-    state: BackgammonState, action: np.ndarray
+    state: BackgammonState, micro_action: int
 ) -> Tuple[BackgammonState, int, bool]:
-    for i in range(4):
-        micro_action = action[i]
-        state.board = _micro_move(state.board, state.turn, micro_action)
+    state.board = _micro_move(state.board, state.turn, micro_action)
+    state.played_dice_num += 1
+    state.playable_dice = _update_playable_dice(
+        state.playable_dice, state.played_dice_num, state.dice, micro_action
+    )
     if _is_all_off(state.board, state.turn):  # 全てのcheckerがoffにあるとき手番のプレイヤーの勝利
         reward = _calc_win_score(
             state.board, state.turn
         )  # 相手のcheckerの進出具合によって受け取る報酬が変わる.
         return state, reward, True
     else:
+        if _is_turn_end(state):
+            state = _change_turn(state)
+            if _is_turn_end(state):  # danceの場合
+                state = _change_turn(state)
         return state, 0, False
 
 
@@ -70,11 +85,31 @@ def _make_init_board() -> np.ndarray:
     return board
 
 
+def _is_turn_end(state: BackgammonState) -> bool:
+    return (
+        state.playable_dice.sum() == 0
+        or state.legal_micro_action_mask.sum() == 0
+    )  # play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
+
+
+def _change_turn(state: BackgammonState) -> BackgammonState:
+    state.turn = -1 * state.turn  # turnを変える
+    state.dice = _roll_dice()  # diceを振る
+    state.playable_dice = _set_playable_dice(state.dice)  # play可能なサイコロを初期化
+    state.played_dice_num = np.zeros(1, np.int8)
+    return state
+
+
 def _roll_init_dice() -> np.ndarray:
-    roll = randint(1, 6), randint(1, 6)
+    roll = randint(0, 5), randint(0, 5)
     # 違う目が出るまで振り続ける.
     while roll[0] == roll[1]:
-        roll = randint(1, 6), randint(1, 6)
+        roll = randint(0, 5), randint(0, 5)
+    return np.array(roll, dtype=np.int8)
+
+
+def _roll_dice() -> np.ndarray:
+    roll = randint(0, 5), randint(0, 5)
     return np.array(roll, dtype=np.int8)
 
 
@@ -88,12 +123,35 @@ def _init_turn(dice: np.ndarray) -> np.ndarray:
     return np.array([turn], dtype=np.int8)
 
 
-def _home_board(turn: int) -> np.ndarray:
+def _set_playable_dice(dice: np.ndarray) -> np.ndarray:
+    if dice[0] == dice[1]:
+        return np.array([dice[-1] * 4], dtype=np.int8)
+    else:
+        return np.array([dice[0], dice[1], -1, -1], dtype=np.int8)
+
+
+def _update_playable_dice(
+    playable_dice: np.ndarray,
+    played_dice_num: np.ndarray,
+    dice: np.ndarray,
+    micro_action: int,
+) -> np.ndarray:
+    _n = played_dice_num[0]
+    die = micro_action % 6
+    if dice[0] == dice[1]:
+        playable_dice[3 - _n] = -1  # プレイしたサイコロの目を-1にする.
+    else:
+        playable_dice[playable_dice == die] = -1  # プレイしたサイコロの目を-1にする.
+    return playable_dice
+
+
+def _home_board(turn: np.ndarray) -> np.ndarray:
     """
     白: [18~23], 黒: [0~5]
     """
-    fin_idx: int = 6 * np.clip(turn, a_min=0, a_max=1) + np.abs(
-        24 * np.clip(turn, a_min=-1, a_max=0)
+    t = turn[0]
+    fin_idx: int = 6 * np.clip(t, a_min=0, a_max=1) + np.abs(
+        24 * np.clip(t, a_min=-1, a_max=0)
     )
     return np.array([i for i in range(fin_idx - 6, fin_idx)], dtype=np.int8)
 
@@ -129,10 +187,10 @@ def _rear_distance(board: np.ndarray, turn: np.ndarray) -> int:
 
 def _is_all_on_homeboad(board: np.ndarray, turn: np.ndarray) -> bool:
     """
-    全てのcheckerがhome boardにあれば bear offできる.
+    全てのcheckerがhome boardにあれば, bear offできる.
     """
     t: int = turn[0]
-    home_board: np.ndarray = _home_board(t)
+    home_board: np.ndarray = _home_board(turn)
     on_home_boad: int = np.array(
         [board[i] * t for i in home_board if board[i] * t >= 0], dtype=np.int8
     ).sum()
@@ -208,6 +266,8 @@ def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
     src, die, tgt = _decompose_micro_action(micro_action, turn)
     if src >= 24:  # barからpointへの移動
         return (_exists(board, turn, src)) and (_is_open(board, turn, tgt))
+    elif src < 0:
+        return False
     elif 0 <= tgt <= 23:  # pointからpointへの移動
         return (
             (_exists(board, turn, src))
@@ -238,13 +298,16 @@ def _micro_move(
     return board
 
 
-def _is_all_off(borad: np.ndarray, turn: np.ndarray) -> bool:
-    return False
+def _is_all_off(board: np.ndarray, turn: np.ndarray) -> bool:
+    """
+    手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.
+    """
+    return board[_off_idx(turn)] * turn[0] == 15
 
 
 def _calc_win_score(board: np.ndarray, turn: np.ndarray) -> int:
     if _is_backgammon(board, turn):
-        return 4
+        return 3
     if _is_gammon(board, turn):
         return 2
     else:
@@ -252,23 +315,38 @@ def _calc_win_score(board: np.ndarray, turn: np.ndarray) -> int:
 
 
 def _is_gammon(board: np.ndarray, turn: np.ndarray) -> bool:
-    return False
+    return board[_off_idx(-1 * turn)] == 0
 
 
 def _is_backgammon(board: np.ndarray, turn: np.ndarray) -> bool:
-    return False
+    return (
+        board[_off_idx(-1 * turn)] == 0
+        and board[_home_board(-1 * turn)].sum() != 0
+    )
 
 
-def _legal_actions_normal(board, turn, dice, legal_action_musk):
+def _legal_micro_action_musk(
+    board: np.ndarray, turn: np.ndarray, dice: np.ndarray
+) -> np.ndarray:
+    legal_action_musk = np.zeros(26 * 6 + 6, dtype=np.int8)
+    for die in dice:
+        if die != -1:
+            legal_action_musk = (
+                legal_action_musk
+                | _legal_micro_action_musk_for_single_die(board, turn, die)
+            )  # play可能なサイコロごとのlegal micro actionの論理和
+    return legal_action_musk
+
+
+def _legal_micro_action_musk_for_single_die(
+    board: np.ndarray, turn: np.ndarray, die: int
+) -> np.ndarray:
     """
     異なる目が出た際のlegal action
     """
+    legal_action_musk = np.zeros(26 * 6 + 6, dtype=np.int8)
     for i in range(26):
-        b = copy.deepcopy(board)
-        micro_action_1 = i * 6 + dice[0]
-        if _is_micro_action_legal(b, turn, micro_action_1):
-            b = _micro_move(b, turn, micro_action_1)
-            for j in range(26):
-                micro_action_2 = j * 6 + dice[0]
-                if _is_micro_action_legal(b, turn, micro_action_1):
-                    pass
+        micro_action = i * 6 + die
+        if _is_micro_action_legal(board, turn, micro_action):
+            legal_action_musk[micro_action] = 1
+    return legal_action_musk

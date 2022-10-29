@@ -1,10 +1,16 @@
+import sys
+
 import numpy as np
+
+sys.path.append("../")
 
 from pgx.backgammon import (
     _calc_src,
+    _calc_win_score,
     _is_all_on_homeboad,
     _is_micro_action_legal,
     _is_open,
+    _legal_micro_action_musk,
     _micro_move,
     _rear_distance,
     init,
@@ -126,7 +132,78 @@ def test_micro_move():
     assert board[22] == 2 and board[20] == 1 and board[24] == -1
 
 
+def test_legal_micro_action():
+    board = make_test_boad()
+    # 白
+    turn = np.array([-1])
+    playable_dice = np.array([3, 2, -1, -1])
+    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)
+    _ = [6 * 21 + 2, 6 * 22 + 2]
+    expected_legal_micro_action_musk[_] = 1
+    legal_micro_action_musk = _legal_micro_action_musk(
+        board, turn, playable_dice
+    )
+    assert (
+        expected_legal_micro_action_musk - legal_micro_action_musk
+    ).sum() == 0
+
+    playable_dice = np.array([6, 6, 6, 6])
+    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)
+    _ = [6 * 21 + 5]
+    expected_legal_micro_action_musk[_] = 1
+    legal_micro_action_musk = _legal_micro_action_musk(
+        board, turn, playable_dice
+    )
+
+    # 黒
+    turn = np.array([1])
+    playable_dice = np.array([4, 1, -1, -1])
+    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)
+    _ = [6 * 1 + 1]
+    expected_legal_micro_action_musk[_] = 1
+    legal_micro_action_musk = _legal_micro_action_musk(
+        board, turn, playable_dice
+    )
+    assert (
+        expected_legal_micro_action_musk - legal_micro_action_musk
+    ).sum() == 0
+
+    turn = np.array([1])
+    playable_dice = np.array([4, 4, 4, 4])
+    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)  # dance
+    legal_micro_action_musk = _legal_micro_action_musk(
+        board, turn, playable_dice
+    )
+    assert (
+        expected_legal_micro_action_musk - legal_micro_action_musk
+    ).sum() == 0
+
+
+def test_calc_win_score():
+    turn: np.ndarray = np.array([-1], dtype=np.int8)
+    # 白のバックギャモン勝ち
+    back_gammon_board = np.zeros(28, dtype=np.int8)
+    back_gammon_board[26] = -15
+    back_gammon_board[1] = 15
+    assert _calc_win_score(back_gammon_board, turn) == 3
+
+    # 白のギャモン勝ち
+    gammon_board = np.zeros(28, dtype=np.int8)
+    gammon_board[26] = -15
+    gammon_board[7] = 15
+    assert _calc_win_score(gammon_board, turn) == 2
+
+    # 白のシングル勝ち
+    single_board = np.zeros(28, dtype=np.int8)
+    single_board[26] = -15
+    single_board[27] = 3
+    single_board[3] = 12
+    assert _calc_win_score(single_board, turn) == 1
+
+
 if __name__ == "__main__":
     test_rear_distance()
     test_is_micro_action_legal()
     test_micro_move()
+    test_legal_micro_action()
+    test_calc_win_score()
