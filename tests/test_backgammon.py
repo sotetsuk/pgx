@@ -40,14 +40,13 @@ def test_is_open():
     turn = np.array([-1])
     assert _is_open(board, turn, 9)
     assert _is_open(board, turn, 19)
-    assert _is_open(board, turn, 19)
     assert _is_open(board, turn, 4)
     assert not _is_open(board, turn, 10)
     # 黒
     turn = np.array([1])
     assert _is_open(board, turn, 9)
     assert _is_open(board, turn, 8)
-    assert not _is_open(board, turn, 20)
+    assert not _is_open(board, turn, 19)
     assert not _is_open(board, turn, 21)
 
 
