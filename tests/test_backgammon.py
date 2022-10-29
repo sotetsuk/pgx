@@ -6,7 +6,7 @@ from pgx.backgammon import (
     _is_all_on_homeboad,
     _is_micro_action_legal,
     _is_open,
-    _legal_micro_action_musk,
+    _legal_micro_action_mask,
     _micro_move,
     _rear_distance,
     init,
@@ -133,45 +133,45 @@ def test_legal_micro_action():
     # 白
     turn = np.array([-1])
     playable_dice = np.array([3, 2, -1, -1])
-    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)
+    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)
     _ = [6 * 21 + 2, 6 * 22 + 2]
-    expected_legal_micro_action_musk[_] = 1
-    legal_micro_action_musk = _legal_micro_action_musk(
+    expected_legal_micro_action_mask[_] = 1
+    legal_micro_action_mask = _legal_micro_action_mask(
         board, turn, playable_dice
     )
     assert (
-        expected_legal_micro_action_musk - legal_micro_action_musk
+        expected_legal_micro_action_mask - legal_micro_action_mask
     ).sum() == 0
 
     playable_dice = np.array([6, 6, 6, 6])
-    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)
+    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)
     _ = [6 * 21 + 5]
-    expected_legal_micro_action_musk[_] = 1
-    legal_micro_action_musk = _legal_micro_action_musk(
+    expected_legal_micro_action_mask[_] = 1
+    legal_micro_action_mask = _legal_micro_action_mask(
         board, turn, playable_dice
     )
 
     # 黒
     turn = np.array([1])
     playable_dice = np.array([4, 1, -1, -1])
-    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)
+    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)
     _ = [6 * 1 + 1]
-    expected_legal_micro_action_musk[_] = 1
-    legal_micro_action_musk = _legal_micro_action_musk(
+    expected_legal_micro_action_mask[_] = 1
+    legal_micro_action_mask = _legal_micro_action_mask(
         board, turn, playable_dice
     )
     assert (
-        expected_legal_micro_action_musk - legal_micro_action_musk
+        expected_legal_micro_action_mask - legal_micro_action_mask
     ).sum() == 0
 
     turn = np.array([1])
     playable_dice = np.array([4, 4, 4, 4])
-    expected_legal_micro_action_musk = np.zeros(6 * 26 + 6)  # dance
-    legal_micro_action_musk = _legal_micro_action_musk(
+    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)  # dance
+    legal_micro_action_mask = _legal_micro_action_mask(
         board, turn, playable_dice
     )
     assert (
-        expected_legal_micro_action_musk - legal_micro_action_musk
+        expected_legal_micro_action_mask - legal_micro_action_mask
     ).sum() == 0
 
 

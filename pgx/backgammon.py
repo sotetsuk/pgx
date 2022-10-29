@@ -87,7 +87,7 @@ def _make_init_board() -> np.ndarray:
 
 def _is_turn_end(state: BackgammonState) -> bool:
     return (
-        state.playable_dice.sum() == 0
+        state.playable_dice.sum() == -4
         or state.legal_micro_action_mask.sum() == 0
     )  # play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
 
@@ -124,6 +124,9 @@ def _init_turn(dice: np.ndarray) -> np.ndarray:
 
 
 def _set_playable_dice(dice: np.ndarray) -> np.ndarray:
+    """
+    -1でemptyを表す.
+    """
     if dice[0] == dice[1]:
         return np.array([dice[-1] * 4], dtype=np.int8)
     else:
@@ -325,28 +328,28 @@ def _is_backgammon(board: np.ndarray, turn: np.ndarray) -> bool:
     )
 
 
-def _legal_micro_action_musk(
+def _legal_micro_action_mask(
     board: np.ndarray, turn: np.ndarray, dice: np.ndarray
 ) -> np.ndarray:
-    legal_action_musk = np.zeros(26 * 6 + 6, dtype=np.int8)
+    legal_action_mask = np.zeros(26 * 6 + 6, dtype=np.int8)
     for die in dice:
         if die != -1:
-            legal_action_musk = (
-                legal_action_musk
-                | _legal_micro_action_musk_for_single_die(board, turn, die)
+            legal_action_mask = (
+                legal_action_mask
+                | _legal_micro_action_mask_for_single_die(board, turn, die)
             )  # play可能なサイコロごとのlegal micro actionの論理和
-    return legal_action_musk
+    return legal_action_mask
 
 
-def _legal_micro_action_musk_for_single_die(
+def _legal_micro_action_mask_for_single_die(
     board: np.ndarray, turn: np.ndarray, die: int
 ) -> np.ndarray:
     """
     一つのサイコロの目に対するlegal action
     """
-    legal_action_musk = np.zeros(26 * 6 + 6, dtype=np.int8)
+    legal_action_mask = np.zeros(26 * 6 + 6, dtype=np.int8)
     for i in range(26):
         micro_action = i * 6 + die
         if _is_micro_action_legal(board, turn, micro_action):
-            legal_action_musk[micro_action] = 1
-    return legal_action_musk
+            legal_action_mask[micro_action] = 1
+    return legal_action_mask
