@@ -342,7 +342,7 @@ def _legal_micro_action_musk_for_single_die(
     board: np.ndarray, turn: np.ndarray, die: int
 ) -> np.ndarray:
     """
-    異なる目が出た際のlegal action
+    一つのサイコロの目に対するlegal action
     """
     legal_action_musk = np.zeros(26 * 6 + 6, dtype=np.int8)
     for i in range(26):
