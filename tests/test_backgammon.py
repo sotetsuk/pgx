@@ -1,8 +1,4 @@
-import sys
-
 import numpy as np
-
-sys.path.append("../")
 
 from pgx.backgammon import (
     _calc_src,
