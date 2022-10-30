@@ -76,10 +76,10 @@ class Visualizer:
             color_set = VisualizerConfig(
                 "gray",
                 "black",
-                "gray",
-                "gray",
+                "black",
+                "dimgray",
                 "#202020",
-                "gray",
+                "gainsboro",
             )
         else:
             color_set = VisualizerConfig(
