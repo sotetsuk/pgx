@@ -1,4 +1,8 @@
+import sys
+
 import numpy as np
+
+sys.path.append("../")
 
 from pgx.backgammon import (
     _calc_src,
@@ -10,6 +14,7 @@ from pgx.backgammon import (
     _micro_move,
     _rear_distance,
     init,
+    step,
 )
 
 
@@ -29,9 +34,50 @@ def make_test_boad():
     return board
 
 
+def make_test_state(
+    board: np.ndarray,
+    turn: np.ndarray,
+    dice: np.ndarray,
+    playable_dice: np.ndarray,
+    played_dice_num: np.ndarray,
+):
+    state = init()
+    state.board = board
+    state.turn = turn
+    state.dice = dice
+    state.playable_dice = playable_dice
+    state.played_dice_num = played_dice_num
+    return state
+
+
 def test_init():
     state = init()
     assert state.turn[0] == -1 or state.turn[0] == 1
+
+
+def test_step():
+    board = make_test_boad()
+    state = make_test_state(
+        board=board,
+        turn=np.array([1]),
+        dice=np.array([0, 1]),
+        playable_dice=np.array([0, 1, -1, -1]),
+        played_dice_num=np.array([0]),
+    )
+    # 黒がサイコロ2をplay
+    state, _, _ = step(state=state, micro_action=(22 + 2) * 6 + 1)
+    assert (
+        state.playable_dice - np.array([0, -1, -1, -1])
+    ).sum() == 0  # playable diceが正しく更新されているか
+    assert state.played_dice_num[0] == 1  # played diceが増えているか.
+    assert state.turn[0] == 1  # turnが変わっていないか.
+    assert (
+        state.board[22] == 2 and state.board[20] == 1 and state.board[24] == -1
+    )
+    # 黒がサイコロ1をplay
+    state, _, _ = step(state=state, micro_action=(4 + 2) * 6 + 0)
+    assert state.played_dice_num[0] == 0
+    assert state.turn[0] == -1  # turnが変わっているか
 
 
 def test_is_open():
@@ -202,3 +248,4 @@ if __name__ == "__main__":
     test_micro_move()
     test_legal_micro_action()
     test_calc_win_score()
+    test_step()

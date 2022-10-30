@@ -59,6 +59,9 @@ def step(
     state.playable_dice = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, micro_action
     )
+    state.legal_micro_action_mask = _legal_micro_action_mask(
+        state.board, state.turn, state.playable_dice
+    )  # legal micro actionを更新
     if _is_all_off(state.board, state.turn):  # 全てのcheckerがoffにあるとき手番のプレイヤーの勝利
         reward = _calc_win_score(
             state.board, state.turn
@@ -97,6 +100,9 @@ def _change_turn(state: BackgammonState) -> BackgammonState:
     state.dice = _roll_dice()  # diceを振る
     state.playable_dice = _set_playable_dice(state.dice)  # play可能なサイコロを初期化
     state.played_dice_num = np.zeros(1, np.int8)
+    state.legal_micro_action_mask = _legal_micro_action_mask(
+        state.board, state.turn, state.dice
+    )
     return state
 
 
@@ -128,7 +134,7 @@ def _set_playable_dice(dice: np.ndarray) -> np.ndarray:
     -1でemptyを表す.
     """
     if dice[0] == dice[1]:
-        return np.array([dice[-1] * 4], dtype=np.int8)
+        return np.array([dice[0] * 4], dtype=np.int8)
     else:
         return np.array([dice[0], dice[1], -1, -1], dtype=np.int8)
 
