@@ -290,6 +290,9 @@ def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
 def _micro_move(
     board: np.ndarray, turn: np.ndarray, micro_action: int
 ) -> np.ndarray:
+    """
+    micro actionに基づく状態更新
+    """
     t = turn[0]
     src, _, tgt = _decompose_micro_action(micro_action, turn)
     board[_bar_idx(-1 * turn)] = board[_bar_idx(-1 * turn)] + (
@@ -320,10 +323,17 @@ def _calc_win_score(board: np.ndarray, turn: np.ndarray) -> int:
 
 
 def _is_gammon(board: np.ndarray, turn: np.ndarray) -> bool:
+    """
+    相手のoffに一つもcheckerがなければgammon勝ち
+    """
     return board[_off_idx(-1 * turn)] == 0
 
 
 def _is_backgammon(board: np.ndarray, turn: np.ndarray) -> bool:
+    """
+    相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
+    => backgammon勝ち
+    """
     return (
         board[_off_idx(-1 * turn)] == 0
         and board[_home_board(-1 * turn)].sum() != 0
@@ -347,7 +357,7 @@ def _legal_micro_action_mask_for_single_die(
     board: np.ndarray, turn: np.ndarray, die: int
 ) -> np.ndarray:
     """
-    一つのサイコロの目に対するlegal action
+    一つのサイコロの目に対するlegal micro action
     """
     legal_action_mask = np.zeros(26 * 6 + 6, dtype=np.int8)
     for i in range(26):
