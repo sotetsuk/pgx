@@ -215,38 +215,6 @@ class Visualizer:
         # off
         board_g.add(
             dwg.rect(
-                (13 * cm, 0),
-                (
-                    4 * cm,
-                    2 * cm,
-                ),
-                stroke=color_set.grid_color,
-                fill=color_set.background_color,
-            )
-        )
-        board_g.add(
-            dwg.circle(
-                center=(14 * cm, 1 * cm),
-                r=0.5 * cm,
-                stroke=color_set.grid_color,
-                fill=color_set.p1_color,
-            )
-        )
-        board_g.add(
-            dwg.text(
-                text=f"× {-state.board[26]}",  # 26:白
-                insert=(
-                    14.8 * cm,
-                    1.3 * cm,
-                ),
-                fill=color_set.grid_color,
-                font_size=f"{GRID_SIZE*17}px",
-                font_family="serif",
-            )
-        )
-
-        board_g.add(
-            dwg.rect(
                 (13 * cm, 12 * cm),
                 (
                     4 * cm,
@@ -261,6 +229,38 @@ class Visualizer:
                 center=(14 * cm, 13 * cm),
                 r=0.5 * cm,
                 stroke=color_set.grid_color,
+                fill=color_set.p1_color,
+            )
+        )
+        board_g.add(
+            dwg.text(
+                text=f"× {-state.board[26]}",  # 26:白
+                insert=(
+                    14.8 * cm,
+                    13.3 * cm,
+                ),
+                fill=color_set.grid_color,
+                font_size=f"{GRID_SIZE*17}px",
+                font_family="serif",
+            )
+        )
+
+        board_g.add(
+            dwg.rect(
+                (13 * cm, 0),
+                (
+                    4 * cm,
+                    2 * cm,
+                ),
+                stroke=color_set.grid_color,
+                fill=color_set.background_color,
+            )
+        )
+        board_g.add(
+            dwg.circle(
+                center=(14 * cm, 1 * cm),
+                r=0.5 * cm,
+                stroke=color_set.grid_color,
                 fill=color_set.p2_color,
             )
         )
@@ -269,7 +269,7 @@ class Visualizer:
                 text=f"× {state.board[27]}",  # 27:黒
                 insert=(
                     14.8 * cm,
-                    13.3 * cm,
+                    1.3 * cm,
                 ),
                 fill=color_set.grid_color,
                 font_size=f"{GRID_SIZE*17}px",
