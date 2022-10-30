@@ -26,9 +26,7 @@ class BackgammonState:
     合法手
     micro action = 6*src+die
     """
-    legal_micro_action_mask: np.ndarray = np.zeros(
-        (2, (6 * 26 + 6)), dtype=np.int8
-    )
+    legal_micro_action_mask: np.ndarray = np.zeros(6 * 26 + 6, dtype=np.int8)
 
 
 def init() -> BackgammonState:
@@ -37,9 +35,7 @@ def init() -> BackgammonState:
     playable_dice: np.ndarray = _set_playable_dice(dice)
     played_dice_num: np.ndarray = np.zeros(1, np.int8)
     turn: np.ndarray = _init_turn(dice)
-    legal_micro_action_mask: np.ndarray = np.zeros(
-        (2, (6 * 26 + 6)), dtype=np.int8
-    )
+    legal_micro_action_mask: np.ndarray = np.zeros(6 * 26 + 6, dtype=np.int8)
     state = BackgammonState(
         board=board,
         dice=dice,
