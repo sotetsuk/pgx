@@ -1,8 +1,4 @@
-import sys
-
 import numpy as np
-
-sys.path.append("../")
 
 from pgx.backgammon import (
     _calc_src,
@@ -240,12 +236,3 @@ def test_calc_win_score():
     single_board[27] = 3
     single_board[3] = 12
     assert _calc_win_score(single_board, turn) == 1
-
-
-if __name__ == "__main__":
-    test_rear_distance()
-    test_is_micro_action_legal()
-    test_micro_move()
-    test_legal_micro_action()
-    test_calc_win_score()
-    test_step()
