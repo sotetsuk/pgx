@@ -251,7 +251,7 @@ def test_calc_win_score():
 
 
 if __name__ == "__main__":
-    test_init()
+    # test_init()
     test_is_open()
     test_calc_src()
     test_calc_win_score()
@@ -259,3 +259,4 @@ if __name__ == "__main__":
     test_rear_distance()
     test_calc_tgt()
     test_move()
+    test_is_action_legal()

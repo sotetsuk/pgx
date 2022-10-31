@@ -32,6 +32,7 @@ class BackgammonState:
     legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.int8)
 
 
+@jit
 def init() -> BackgammonState:
     board: jnp.ndarray = _make_init_board()
     dice: jnp.ndarray = _roll_init_dice()
@@ -286,6 +287,7 @@ def _is_no_op(action):
     return action // 6 == 0
 
 
+@jit
 def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
     """
     micro actionの合法判定
@@ -293,22 +295,43 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
     src = [no op., from bar, 0, .., 23]
     """
     src, die, tgt = _decompose_action(action, turn)
-    if src >= 24:  # barからpointへの移動
-        return (_exists(board, turn, src)) and (_is_open(board, turn, tgt))
-    elif src < 0:
-        return False
-    elif 0 <= tgt <= 23:  # pointからpointへの移動
-        return (
-            (_exists(board, turn, src))
-            and (_is_open(board, turn, tgt))
-            and (board.at[_bar_idx(turn)].get() == 0)
-        )
-    else:  # bear off
-        return (
-            _exists(board, turn, src)
-            and _is_all_on_homeboad(board, turn)
-            and (_rear_distance(board, turn) <= die)
-        )
+    return jax.lax.cond(
+        (0 <= tgt) & (tgt <= 23),
+        lambda: _is_to_point_legal(board, turn, src, tgt),
+        lambda: _is_to_off_legal(board, turn, src, tgt, die),
+    )
+
+
+@jit
+def _is_to_off_legal(
+    board: jnp.ndarray, turn: np.int8, src: int, tgt: int, die: int
+) -> bool:
+    """
+    boad外への移動についての合法判定
+    """
+    return jax.lax.cond(
+        src < 0,
+        lambda: False,
+        lambda: _exists(board, turn, src)
+        & _is_all_on_homeboad(board, turn)
+        & (_rear_distance(board, turn) <= die),
+    )
+
+
+@jit
+def _is_to_point_legal(
+    board: jnp.ndarray, turn: np.int8, src: int, tgt: int
+) -> bool:
+    """
+    tgtがpointの場合の合法手判定
+    """
+    return jax.lax.cond(
+        src >= 24,
+        lambda: (_exists(board, turn, src)) & (_is_open(board, turn, tgt)),
+        lambda: (_exists(board, turn, src))
+        & (_is_open(board, turn, tgt))
+        & (board.at[_bar_idx(turn)].get() == 0),
+    )
 
 
 @jit
