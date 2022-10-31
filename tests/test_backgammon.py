@@ -1,3 +1,5 @@
+import jax
+import jax.numpy as jnp
 import numpy as np
 
 from pgx.backgammon import (
@@ -15,18 +17,18 @@ from pgx.backgammon import (
 
 
 def make_test_boad():
-    board = np.zeros(28, dtype=np.int8)
+    board = jnp.zeros(28, dtype=np.int8)
     # 白
-    board[19] = -10
-    board[20] = -1
-    board[21] = -2
-    board[26] = -2
+    board.at[19].set(-10)
+    board.at[20].set(-1)
+    board.at[21].set(-2)
+    board.at[26].set(-2)
     # 黒
-    board[3] = 2
-    board[4] = 1
-    board[10] = 5
-    board[22] = 3
-    board[25] = 4
+    board.at[3].set(2)
+    board.at[4].set(1)
+    board.at[10].set(5)
+    board.at[22].set(3)
+    board.at[25].set(4)
     return board
 
 
