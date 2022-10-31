@@ -1,13 +1,13 @@
-from dataclasses import dataclass
 from random import randint
 from typing import Tuple
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+from flax import struct
 
 
-@dataclass
+@struct.dataclass
 class BackgammonState:
 
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
@@ -53,7 +53,7 @@ def step(
     state: BackgammonState, action: int
 ) -> Tuple[BackgammonState, int, bool]:
     state.board = _move(state.board, state.turn, action)
-    state.played_dice_num += jnp.int8(1)
+    state.played_dice_num = state.played_dice_num + jnp.int8(1)
     state.playable_dice = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
@@ -75,14 +75,14 @@ def step(
 
 def _make_init_board() -> jnp.ndarray:
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
-    board[0] = 2
-    board[5] = -5
-    board[7] = -3
-    board[11] = 5
-    board[12] = -5
-    board[16] = 3
-    board[18] = 5
-    board[23] = -2
+    board.at[0].set(2)
+    board.at[5].set(-5)
+    board.at[7].set(-3)
+    board.at[11].set(5)
+    board.at[12].set(-5)
+    board.at[16].set(3)
+    board.at[18].set(5)
+    board.at[23].set(-2)
     return board
 
 
@@ -182,7 +182,7 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> int:
     b = board[:24]
     exists: jnp.ndarray = jnp.where((b * turn > 0))[0]
     if turn == 1:
-        return int(np.max(exists)) + 1
+        return int(jnp.max(exists)) + 1
     else:
         return 24 - int(np.min(exists))
 
