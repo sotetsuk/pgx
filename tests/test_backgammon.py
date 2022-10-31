@@ -2,7 +2,6 @@ import sys
 
 import jax
 import jax.numpy as jnp
-import numpy as jnp
 
 sys.path.append("../")
 
@@ -24,16 +23,16 @@ from pgx.backgammon import (
 def make_test_boad():
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     # 白
-    board.at[19].set(-10)
-    board.at[20].set(-1)
-    board.at[21].set(-2)
-    board.at[26].set(-2)
+    board = board.at[19].set(-10)
+    board = board.at[20].set(-1)
+    board = board.at[21].set(-2)
+    board = board.at[26].set(-2)
     # 黒
-    board.at[3].set(2)
-    board.at[4].set(1)
-    board.at[10].set(5)
-    board.at[22].set(3)
-    board.at[25].set(4)
+    board = board.at[3].set(2)
+    board = board.at[4].set(1)
+    board = board.at[10].set(5)
+    board = board.at[22].set(3)
+    board = board.at[25].set(4)
     return board
 
 
@@ -102,10 +101,9 @@ def test_is_open():
 
 
 def test_is_all_on_home_boad():
-    board = make_test_boad()
+    board: jnp.ndarray = make_test_boad()
     # 白
-    turn = jnp.int8(-1)
-    print(_is_all_on_homeboad(board, turn))
+    turn: jnp.int8 = jnp.int8(-1)
     assert _is_all_on_homeboad(board, turn)
     # 黒
     turn = jnp.int8(1)
@@ -188,14 +186,20 @@ def test_legal_action():
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.int8
     )
-    expected_legal_action_mask.at[6 * 21 + 2].set(1)
-    expected_legal_action_mask.at[6 * 22 + 2].set(1)
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * 21 + 2].set(
+        1
+    )
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * 22 + 2].set(
+        1
+    )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     assert (expected_legal_action_mask - legal_action_mask).sum() == 0
 
     playable_dice = jnp.array([6, 6, 6, 6])
     expected_legal_action_mask = jnp.zeros(6 * 26 + 6)
-    expected_legal_action_mask.at[6 * 21 + 5].set(1)
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * 21 + 5].set(
+        1
+    )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
 
     # 黒
@@ -204,7 +208,9 @@ def test_legal_action():
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.int8
     )
-    expected_legal_action_mask.at[6 * 1 + 1].set(1)
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * 1 + 1].set(
+        1
+    )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     assert (expected_legal_action_mask - legal_action_mask).sum() == 0
 
@@ -219,23 +225,28 @@ def test_calc_win_score():
     turn: jnp.int8 = jnp.int8(-1)
     # 白のバックギャモン勝ち
     back_gammon_board = jnp.zeros(28, dtype=jnp.int8)
-    back_gammon_board.at[26].set(-15)
-    back_gammon_board.at[1].set(15)
+    back_gammon_board = back_gammon_board.at[26].set(-15)
+    back_gammon_board = back_gammon_board.at[1].set(15)
     assert _calc_win_score(back_gammon_board, turn) == 3
 
     # 白のギャモン勝ち
     gammon_board = jnp.zeros(28, dtype=jnp.int8)
-    gammon_board.at[26].set(-15)
-    gammon_board.at[7].set(15)
+    gammon_board = gammon_board.at[26].set(-15)
+    gammon_board = gammon_board.at[7].set(15)
     assert _calc_win_score(gammon_board, turn) == 2
 
     # 白のシングル勝ち
     single_board = jnp.zeros(28, dtype=jnp.int8)
-    single_board.at[26].set(-15)
-    single_board.at[27].set(3)
-    single_board.at[3].set(12)
+    single_board = single_board.at[26].set(-15)
+    single_board = single_board.at[27].set(3)
+    single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
 
 
 if __name__ == "__main__":
     test_init()
+    test_is_open()
+    test_calc_src()
+    test_calc_win_score()
+    test_is_all_on_home_boad()
+    test_rear_distance()

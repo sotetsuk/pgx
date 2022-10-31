@@ -5,6 +5,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 from flax import struct
+from jax import jit
 
 
 @struct.dataclass
@@ -73,16 +74,17 @@ def step(
         return state, 0, False
 
 
+@jit
 def _make_init_board() -> jnp.ndarray:
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
-    board.at[0].set(2)
-    board.at[5].set(-5)
-    board.at[7].set(-3)
-    board.at[11].set(5)
-    board.at[12].set(-5)
-    board.at[16].set(3)
-    board.at[18].set(5)
-    board.at[23].set(-2)
+    board = board.at[0].set(2)
+    board = board.at[5].set(-5)
+    board = board.at[7].set(-3)
+    board = board.at[11].set(5)
+    board = board.at[12].set(-5)
+    board = board.at[16].set(3)
+    board = board.at[18].set(5)
+    board = board.at[23].set(-2)
     return board
 
 
@@ -145,48 +147,54 @@ def _update_playable_dice(
     _n = played_dice_num
     die = action % 6
     if dice[0] == dice[1]:
-        playable_dice[3 - _n] = -1  # プレイしたサイコロの目を-1にする.
+        playable_dice = playable_dice.at[3 - _n].set(-1)  # プレイしたサイコロの目を-1にする.
     else:
-        playable_dice[playable_dice == die] = -1  # プレイしたサイコロの目を-1にする.
+        playable_dice = playable_dice.at[playable_dice == die].set(
+            -1
+        )  # プレイしたサイコロの目を-1にする.
     return playable_dice
 
 
+@jit
 def _home_board(turn: jnp.int8) -> jnp.ndarray:
     """
     白: [18~23], 黒: [0~5]
     """
-    fin_idx: int = 6 * jnp.clip(turn, a_min=0, a_max=1) + np.abs(
-        24 * jnp.clip(turn, a_min=-1, a_max=0)
+    return jax.lax.cond(
+        turn == -1, lambda: jnp.arange(18, 24), lambda: jnp.arange(0, 6)
     )
-    return np.arange(fin_idx - 6, fin_idx, dtype=np.int8)
 
 
+@jit
 def _off_idx(turn: jnp.int8) -> int:
     """
     白: 26, 黒: 27
     """
-    return int(26 + jnp.clip(turn, a_min=0, a_max=1))
+    return jax.lax.cond(turn == -1, lambda: 26, lambda: 27)
 
 
+@jit
 def _bar_idx(turn: jnp.int8) -> int:
     """
     白: 24, 黒 25
     """
-    return int(24 + jnp.clip(turn, a_min=0, a_max=1))
+    return jax.lax.cond(turn == -1, lambda: 24, lambda: 25)
 
 
+@jit
 def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> int:
     """
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
     """
-    b = board[:24]
-    exists: jnp.ndarray = jnp.where((b * turn > 0))[0]
-    if turn == 1:
-        return int(jnp.max(exists)) + 1
-    else:
-        return 24 - int(np.min(exists))
+    b = jnp.take(board, jnp.arange(24))
+    return jax.lax.cond(
+        turn == 1,
+        lambda: jnp.where((b * turn > 0))[0],
+        lambda: jnp.where((b * turn > 0))[0],
+    )
 
 
+@jit
 def _is_all_on_homeboad(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     全てのcheckerがhome boardにあれば, bear offできる.
@@ -195,35 +203,35 @@ def _is_all_on_homeboad(board: jnp.ndarray, turn: jnp.int8) -> bool:
     on_home_board: int = jnp.clip(
         -1 * board[home_board], a_min=0, a_max=15
     ).sum()
-    off: int = board[_off_idx(turn)] * turn
+    off: int = board.at[_off_idx(turn)].get() * turn
     return (15 - off) == on_home_board
 
 
+@jit
 def _is_open(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
     """
     手番のplayerにとって, pointが空いてるかを判定する.
     pointにある相手のcheckerの数が1以下なら自分のcheckerをそのpointにおける.
     """
-    checkers: int = board[point]
-    return bool(turn * checkers >= -1)  # 黒と白のcheckerは異符号
+    checkers: int = board.at[point].get()
+    return turn * checkers >= -1  # 黒と白のcheckerは異符号
 
 
+@jit
 def _exists(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
     """
     指定pointに手番のchckerが存在するか.
     """
-    checkers: int = board[point]
+    checkers: int = board.at[point].get()
     return bool(turn * checkers >= 1)
 
 
+@jit
 def _calc_src(src: int, turn: jnp.int8) -> int:
     """
     boardのindexに合わせる.
     """
-    if src == 1:  # srcがbarの時
-        return _bar_idx(turn)
-    else:  # point to point
-        return src - 2
+    return jax.lax.cond(src == 1, lambda: _bar_idx(turn), lambda: src - 2)
 
 
 def _calc_tgt(src: int, turn: jnp.int8, die) -> int:
@@ -231,11 +239,13 @@ def _calc_tgt(src: int, turn: jnp.int8, die) -> int:
     boardのindexに合わせる.
     """
     if src >= 24:  # srcがbarの時
-        return jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -turn
-    elif src + die * -turn >= 24 or src + die * -turn <= -1:  # 行き先がoffの時
+        return jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
+    elif (
+        src + die * -1 * turn >= 24 or src + die * -1 * turn <= -1
+    ):  # 行き先がoffの時
         return _off_idx(turn)
     else:  # point to point
-        return src + die * -turn
+        return src + die * -1 * turn
 
 
 def _decompose_action(action: int, turn: jnp.int8) -> Tuple:
@@ -270,7 +280,7 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
         return (
             (_exists(board, turn, src))
             and (_is_open(board, turn, tgt))
-            and (board[_bar_idx(turn)] == 0)
+            and (board.at[_bar_idx(turn)].get() == 0)
         )
     else:  # bear off
         return (
@@ -285,8 +295,10 @@ def _move(board: jnp.ndarray, turn: jnp.int8, action: int) -> jnp.ndarray:
     micro actionに基づく状態更新
     """
     src, _, tgt = _decompose_action(action, turn)
-    board[_bar_idx(-1 * turn)] = board[_bar_idx(-1 * turn)] + (
-        (board[tgt] == -turn) * -turn
+    board.at[_bar_idx(-1 * turn)].get() == board.at[
+        _bar_idx(-1 * turn)
+    ].get() + (
+        (board.at[tgt].get() == -1 * turn) * -1 * turn
     )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動
 
     board[src] = board[src] - turn
@@ -300,33 +312,47 @@ def _is_all_off(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.
     """
-    return board[_off_idx(turn)] * turn == 15
+    return board.at[_off_idx(turn)].get() * turn == 15
 
 
+@jit
 def _calc_win_score(board: jnp.ndarray, turn: jnp.int8) -> int:
-    if _is_backgammon(board, turn):
-        return 3
-    if _is_gammon(board, turn):
-        return 2
-    else:
-        return 1
+    return jax.lax.cond(
+        _is_gammon(board, turn),
+        lambda: _score(board, turn),
+        lambda: 1,
+    )
 
 
+@jit
+def _score(board: jnp.ndarray, turn: jnp.int8) -> int:
+    return jax.lax.cond(
+        _remains_at_inner(board, turn),
+        lambda: 3,
+        lambda: 2,
+    )
+
+
+@jit
 def _is_gammon(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     相手のoffに一つもcheckerがなければgammon勝ち
     """
-    return board[_off_idx(-1 * turn)] == 0
+    return jax.lax.cond(
+        board.at[_off_idx(-1 * turn)].get() == 0, lambda: True, lambda: False
+    )
 
 
-def _is_backgammon(board: jnp.ndarray, turn: jnp.int8) -> bool:
+@jit
+def _remains_at_inner(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
     => backgammon勝ち
     """
-    return (
-        board[_off_idx(-1 * turn)] == 0
-        and board[_home_board(-1 * turn)].sum() != 0
+    return jax.lax.cond(
+        jnp.take(board, _home_board(-1 * turn)).sum() != 0,
+        lambda: True,
+        lambda: False,
     )
 
 
