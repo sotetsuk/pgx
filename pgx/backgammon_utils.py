@@ -3,7 +3,7 @@ from typing import Optional, Union
 
 import svgwrite  # type: ignore
 
-from ._backgammon import BackgammonState
+from .backgammon import BackgammonState
 
 
 @dataclass
