@@ -249,19 +249,21 @@ def _calc_src(src: int, turn: jnp.int8) -> int:
 
 
 @jit
-def _calc_tgt(src: int, turn: jnp.int8, die) -> int:
+def _calc_tgt(src: int, turn: jnp.int8, die) -> jnp.int8:
     """
     boardのindexに合わせる.
     """
     return jax.lax.cond(
         src >= 24,
-        lambda: jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn,
-        lambda: _to_other_than_bar(src, turn, die),
+        lambda: jnp.int8(
+            jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
+        ),
+        lambda: jnp.int8(_from_other_than_bar(src, turn, die)),
     )
 
 
 @jit
-def _to_other_than_bar(src: int, turn: jnp.int8, die: int) -> int:
+def _from_other_than_bar(src: int, turn: jnp.int8, die: int) -> int:
     return jax.lax.cond(
         (jnp.abs(src + die * -1 * turn - 25 / 2) < 25 / 2),
         lambda: jnp.int8(src + die * -1 * turn),
@@ -274,7 +276,7 @@ def _decompose_action(action: int, turn: jnp.int8) -> Tuple:
     """
     action(int)をsource, die, tagetに分解する.
     """
-    src = _calc_src(action // 6, turn)
+    src = _calc_src(action // 6, turn)  # 0~25
     die = action % 6 + 1  # 0~5 -> 1~6
     tgt = _calc_tgt(src, turn, die)
     return src, die, tgt
@@ -296,7 +298,7 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
     """
     src, die, tgt = _decompose_action(action, turn)
     return jax.lax.cond(
-        (0 <= tgt) & (tgt <= 23),
+        (0 <= tgt) & (tgt <= 23) & (src >= 0),
         lambda: _is_to_point_legal(board, turn, src, tgt),
         lambda: _is_to_off_legal(board, turn, src, tgt, die),
     )
@@ -399,29 +401,51 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.int8) -> bool:
     )
 
 
+@jit
 def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.int8, dice: jnp.ndarray
 ) -> jnp.ndarray:
     legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=np.int8)
-    for die in dice:
-        legal_action_mask = (
-            legal_action_mask
-            | _legal_action_mask_for_single_die(board, turn, die)
-        )  # play可能なサイコロごとのlegal micro actionの論理和
+
+    @jit
+    def _update(i: int, legal_action_mask: jnp.ndarray) -> jnp.ndarray:
+        return legal_action_mask | _legal_action_mask_for_single_die(
+            board, turn, dice[i]
+        )
+
+    legal_action_mask = jax.lax.fori_loop(0, 4, _update, legal_action_mask)
     return legal_action_mask
 
 
+@jit
 def _legal_action_mask_for_single_die(
     board: jnp.ndarray, turn: jnp.int8, die: int
 ) -> jnp.ndarray:
     """
     一つのサイコロの目に対するlegal micro action
     """
+    return jax.lax.cond(
+        die == -1,
+        lambda: jnp.zeros(26 * 6 + 6, dtype=np.int8),
+        lambda: _legal_action_mask_for_valid_single_dice(board, turn, die),
+    )
+
+
+@jit
+def _legal_action_mask_for_valid_single_dice(
+    board: jnp.ndarray, turn: jnp.int8, die: int
+) -> jnp.ndarray:
+    """
+    -1以外のサイコロの目に対して合法判定
+    """
     legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=np.int8)
-    if die == -1:
-        return legal_action_mask
-    for i in range(26):
+
+    @jit
+    def _is_legal(i: int, legal_action_mask: jnp.ndarray):
         action = i * 6 + die
-        if _is_action_legal(board, turn, action):
-            legal_action_mask[action] = 1
-    return legal_action_mask
+        legal_action_mask = legal_action_mask.at[action].set(
+            _is_action_legal(board, turn, action)
+        )
+        return legal_action_mask
+
+    return jax.lax.fori_loop(0, 26, _is_legal, legal_action_mask)

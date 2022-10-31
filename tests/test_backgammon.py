@@ -10,6 +10,7 @@ from pgx.backgammon import (
     _calc_src,
     _calc_tgt,
     _calc_win_score,
+    _exists,
     _is_action_legal,
     _is_all_on_homeboad,
     _is_open,
@@ -200,6 +201,9 @@ def test_legal_action():
         1
     )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
+    print(_is_open(board, turn, 2), _is_open(board, turn, 3))
+    print(_exists(board, turn, 0))
+    print(legal_action_mask)
     assert (expected_legal_action_mask - legal_action_mask).sum() == 0
 
     playable_dice = jnp.array([6, 6, 6, 6])
@@ -260,3 +264,4 @@ if __name__ == "__main__":
     test_calc_tgt()
     test_move()
     test_is_action_legal()
+    test_legal_action()
