@@ -190,12 +190,9 @@ def _is_all_on_homeboad(board: np.ndarray, turn: np.int8) -> bool:
     全てのcheckerがhome boardにあれば, bear offできる.
     """
     home_board: np.ndarray = _home_board(turn)
-    on_home_boad: int = np.array(
-        [board[i] * turn for i in home_board if board[i] * turn >= 0],
-        dtype=np.int8,
-    ).sum()
+    on_home_board: int = home_board[home_board * turn >= 0].sum()
     off: int = board[_off_idx(turn)] * turn
-    return (15 - off) == on_home_boad
+    return (15 - off) == on_home_board
 
 
 def _is_open(board: np.ndarray, turn: np.int8, point: int) -> bool:
