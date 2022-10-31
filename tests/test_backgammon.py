@@ -3,11 +3,11 @@ import numpy as np
 from pgx.backgammon import (
     _calc_src,
     _calc_win_score,
+    _is_action_legal,
     _is_all_on_homeboad,
-    _is_micro_action_legal,
     _is_open,
-    _legal_micro_action_mask,
-    _micro_move,
+    _legal_action_mask,
+    _move,
     _rear_distance,
     init,
     step,
@@ -32,10 +32,10 @@ def make_test_boad():
 
 def make_test_state(
     board: np.ndarray,
-    turn: np.ndarray,
+    turn: np.int8,
     dice: np.ndarray,
     playable_dice: np.ndarray,
-    played_dice_num: np.ndarray,
+    played_dice_num: np.int8,
 ):
     state = init()
     state.board = board
@@ -48,44 +48,44 @@ def make_test_state(
 
 def test_init():
     state = init()
-    assert state.turn[0] == -1 or state.turn[0] == 1
+    assert state.turn == -1 or state.turn == 1
 
 
 def test_step():
     board = make_test_boad()
     state = make_test_state(
         board=board,
-        turn=np.array([1]),
+        turn=np.int8(1),
         dice=np.array([0, 1]),
         playable_dice=np.array([0, 1, -1, -1]),
-        played_dice_num=np.array([0]),
+        played_dice_num=np.int8(0),
     )
     # 黒がサイコロ2をplay
-    state, _, _ = step(state=state, micro_action=(22 + 2) * 6 + 1)
+    state, _, _ = step(state=state, action=(22 + 2) * 6 + 1)
     assert (
         state.playable_dice - np.array([0, -1, -1, -1])
     ).sum() == 0  # playable diceが正しく更新されているか
-    assert state.played_dice_num[0] == 1  # played diceが増えているか.
-    assert state.turn[0] == 1  # turnが変わっていないか.
+    assert state.played_dice_num == 1  # played diceが増えているか.
+    assert state.turn == 1  # turnが変わっていないか.
     assert (
         state.board[22] == 2 and state.board[20] == 1 and state.board[24] == -1
     )
     # 黒がサイコロ1をplay
-    state, _, _ = step(state=state, micro_action=(4 + 2) * 6 + 0)
-    assert state.played_dice_num[0] == 0
-    assert state.turn[0] == -1  # turnが変わっているか
+    state, _, _ = step(state=state, action=(4 + 2) * 6 + 0)
+    assert state.played_dice_num == 0
+    assert state.turn == -1  # turnが変わっているか
 
 
 def test_is_open():
     board = make_test_boad()
     # 白
-    turn = np.array([-1])
+    turn = np.int8(-1)
     assert _is_open(board, turn, 9)
     assert _is_open(board, turn, 19)
     assert _is_open(board, turn, 4)
     assert not _is_open(board, turn, 10)
     # 黒
-    turn = np.array([1])
+    turn = np.int8(1)
     assert _is_open(board, turn, 9)
     assert _is_open(board, turn, 8)
     assert not _is_open(board, turn, 19)
@@ -95,129 +95,113 @@ def test_is_open():
 def test_is_all_on_home_boad():
     board = make_test_boad()
     # 白
-    turn = np.array([-1])
+    turn = np.int8(-1)
     print(_is_all_on_homeboad(board, turn))
     assert _is_all_on_homeboad(board, turn)
     # 黒
-    turn = np.array([1])
+    turn = np.int8(1)
     assert not _is_all_on_homeboad(board, turn)
 
 
 def test_rear_distance():
     board = make_test_boad()
-    turn = np.array([-1])
+    turn = np.int8(-1)
     # 白
     assert _rear_distance(board, turn) == 5
     # 黒
-    turn = np.array([1])
+    turn = np.int8(1)
     assert _rear_distance(board, turn) == 23
 
 
 def test_calc_src():
-    assert _calc_src(1, np.array([-1])) == 24
-    assert _calc_src(1, np.array([1])) == 25
-    assert _calc_src(2, np.array([1])) == 0
+    assert _calc_src(1, np.int8(-1)) == 24
+    assert _calc_src(1, np.int8(1)) == 25
+    assert _calc_src(2, np.int8(1)) == 0
 
 
-def test_is_micro_action_legal():
+def test_is_action_legal():
     board = make_test_boad()
     # 白
-    turn = np.array([-1])
-    assert _is_micro_action_legal(board, turn, (19 + 2) * 6 + 1)  # 19->21
-    assert not _is_micro_action_legal(
-        board, turn, (19 + 2) * 6 + 2
-    )  # 19 -> 22
-    assert not _is_micro_action_legal(
+    turn = np.int8(-1)
+    assert _is_action_legal(board, turn, (19 + 2) * 6 + 1)  # 19->21
+    assert not _is_action_legal(board, turn, (19 + 2) * 6 + 2)  # 19 -> 22
+    assert not _is_action_legal(
         board, turn, (19 + 2) * 6 + 2
     )  # 19 -> 22: 22に黒が複数ある.
-    assert not _is_micro_action_legal(
+    assert not _is_action_legal(
         board, turn, (22 + 2) * 6 + 2
     )  # 22 -> 25: 22に白がない
-    assert _is_micro_action_legal(board, turn, (19 + 2) * 6 + 5)  # bear off
-    assert not _is_micro_action_legal(
+    assert _is_action_legal(board, turn, (19 + 2) * 6 + 5)  # bear off
+    assert not _is_action_legal(
         board, turn, (20 + 2) * 6 + 6
     )  # 後ろにまだ白があるためbear offできない.
-    turn = np.array([1])
+    turn = np.int8(1)
     # 黒
-    assert not _is_micro_action_legal(
+    assert not _is_action_legal(
         board, turn, (3 + 2) * 6 + 0
     )  # 3->2: barにcheckerが残っているので動かせない.
-    assert _is_micro_action_legal(board, turn, (1) * 6 + 0)  # bar -> 23
-    assert not _is_micro_action_legal(board, turn, (1) * 6 + 2)  # bar -> 21
+    assert _is_action_legal(board, turn, (1) * 6 + 0)  # bar -> 23
+    assert not _is_action_legal(board, turn, (1) * 6 + 2)  # bar -> 21
 
 
-def test_micro_move():
+def test_move():
     # point to point
     board = make_test_boad()
-    turn = np.array([-1])
-    board = _micro_move(board, turn, (19 + 2) * 6 + 1)  # 19->21
+    turn = np.int8(-1)
+    board = _move(board, turn, (19 + 2) * 6 + 1)  # 19->21
     assert board[19] == -9 and board[21] == -3
     # point to off
     board = make_test_boad()
-    turn = np.array([-1])
-    board = _micro_move(board, turn, (19 + 2) * 6 + 5)  # 19->26
+    turn = np.int8(-1)
+    board = _move(board, turn, (19 + 2) * 6 + 5)  # 19->26
     assert board[19] == -9 and board[26] == -3
     # enter
     board = make_test_boad()
-    turn = np.array([1])
-    board = _micro_move(board, turn, (1) * 6 + 0)  # 25 -> 23
+    turn = np.int8(1)
+    board = _move(board, turn, (1) * 6 + 0)  # 25 -> 23
     assert board[25] == 3 and board[23] == 1
     # hit
     board = make_test_boad()
-    turn = np.array([1])
-    board = _micro_move(board, turn, (22 + 2) * 6 + 1)  # 22 -> 20
+    turn = np.int8(1)
+    board = _move(board, turn, (22 + 2) * 6 + 1)  # 22 -> 20
     assert board[22] == 2 and board[20] == 1 and board[24] == -1
 
 
-def test_legal_micro_action():
+def test_legal_action():
     board = make_test_boad()
     # 白
-    turn = np.array([-1])
+    turn = np.int8(-1)
     playable_dice = np.array([3, 2, -1, -1])
-    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)
+    expected_legal_action_mask = np.zeros(6 * 26 + 6)
     _ = [6 * 21 + 2, 6 * 22 + 2]
-    expected_legal_micro_action_mask[_] = 1
-    legal_micro_action_mask = _legal_micro_action_mask(
-        board, turn, playable_dice
-    )
-    assert (
-        expected_legal_micro_action_mask - legal_micro_action_mask
-    ).sum() == 0
+    expected_legal_action_mask[_] = 1
+    legal_action_mask = _legal_action_mask(board, turn, playable_dice)
+    assert (expected_legal_action_mask - legal_action_mask).sum() == 0
 
     playable_dice = np.array([6, 6, 6, 6])
-    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)
+    expected_legal_action_mask = np.zeros(6 * 26 + 6)
     _ = [6 * 21 + 5]
-    expected_legal_micro_action_mask[_] = 1
-    legal_micro_action_mask = _legal_micro_action_mask(
-        board, turn, playable_dice
-    )
+    expected_legal_action_mask[_] = 1
+    legal_action_mask = _legal_action_mask(board, turn, playable_dice)
 
     # 黒
-    turn = np.array([1])
+    turn = np.int8(1)
     playable_dice = np.array([4, 1, -1, -1])
-    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)
+    expected_legal_action_mask = np.zeros(6 * 26 + 6)
     _ = [6 * 1 + 1]
-    expected_legal_micro_action_mask[_] = 1
-    legal_micro_action_mask = _legal_micro_action_mask(
-        board, turn, playable_dice
-    )
-    assert (
-        expected_legal_micro_action_mask - legal_micro_action_mask
-    ).sum() == 0
+    expected_legal_action_mask[_] = 1
+    legal_action_mask = _legal_action_mask(board, turn, playable_dice)
+    assert (expected_legal_action_mask - legal_action_mask).sum() == 0
 
-    turn = np.array([1])
+    turn = np.int8(1)
     playable_dice = np.array([4, 4, 4, 4])
-    expected_legal_micro_action_mask = np.zeros(6 * 26 + 6)  # dance
-    legal_micro_action_mask = _legal_micro_action_mask(
-        board, turn, playable_dice
-    )
-    assert (
-        expected_legal_micro_action_mask - legal_micro_action_mask
-    ).sum() == 0
+    expected_legal_action_mask = np.zeros(6 * 26 + 6)  # dance
+    legal_action_mask = _legal_action_mask(board, turn, playable_dice)
+    assert (expected_legal_action_mask - legal_action_mask).sum() == 0
 
 
 def test_calc_win_score():
-    turn: np.ndarray = np.array([-1], dtype=np.int8)
+    turn: np.int8 = np.int8(-1)
     # 白のバックギャモン勝ち
     back_gammon_board = np.zeros(28, dtype=np.int8)
     back_gammon_board[26] = -15
