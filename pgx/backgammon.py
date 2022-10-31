@@ -182,15 +182,28 @@ def _bar_idx(turn: jnp.int8) -> int:
 
 
 @jit
-def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> int:
+def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> jnp.int8:
     """
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
     """
     b = jnp.take(board, jnp.arange(24))
+
+    @jit
+    def _filter_to_idx(idx):
+        return jax.lax.cond(
+            _exists(b, turn, idx),
+            lambda: turn * jnp.int8(idx),
+            lambda: jnp.int8(-30),
+        )
+
     return jax.lax.cond(
         turn == 1,
-        lambda: jnp.where((b * turn > 0))[0],
-        lambda: jnp.where((b * turn > 0))[0],
+        lambda: jnp.int8(
+            jnp.max(jax.lax.map(_filter_to_idx, jnp.arange(24))) + 1
+        ),
+        lambda: jnp.int8(
+            24 - -1 * jnp.max(jax.lax.map(_filter_to_idx, jnp.arange(24)))
+        ),
     )
 
 
@@ -223,7 +236,7 @@ def _exists(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
     指定pointに手番のchckerが存在するか.
     """
     checkers: int = board.at[point].get()
-    return bool(turn * checkers >= 1)
+    return jax.lax.cond(turn * checkers >= 1, lambda: True, lambda: False)
 
 
 @jit
@@ -234,20 +247,28 @@ def _calc_src(src: int, turn: jnp.int8) -> int:
     return jax.lax.cond(src == 1, lambda: _bar_idx(turn), lambda: src - 2)
 
 
+@jit
 def _calc_tgt(src: int, turn: jnp.int8, die) -> int:
     """
     boardのindexに合わせる.
     """
-    if src >= 24:  # srcがbarの時
-        return jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
-    elif (
-        src + die * -1 * turn >= 24 or src + die * -1 * turn <= -1
-    ):  # 行き先がoffの時
-        return _off_idx(turn)
-    else:  # point to point
-        return src + die * -1 * turn
+    return jax.lax.cond(
+        src >= 24,
+        lambda: jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn,
+        lambda: _to_other_than_bar(src, turn, die),
+    )
 
 
+@jit
+def _to_other_than_bar(src: int, turn: jnp.int8, die: int) -> int:
+    return jax.lax.cond(
+        (jnp.abs(src + die * -1 * turn - 25 / 2) < 25 / 2),
+        lambda: jnp.int8(src + die * -1 * turn),
+        lambda: jnp.int8(_off_idx(turn)),
+    )
+
+
+@jit
 def _decompose_action(action: int, turn: jnp.int8) -> Tuple:
     """
     action(int)をsource, die, tagetに分解する.
@@ -290,24 +311,23 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
         )
 
 
+@jit
 def _move(board: jnp.ndarray, turn: jnp.int8, action: int) -> jnp.ndarray:
     """
     micro actionに基づく状態更新
     """
     src, _, tgt = _decompose_action(action, turn)
-    board.at[_bar_idx(-1 * turn)].get() == board.at[
-        _bar_idx(-1 * turn)
-    ].get() + (
-        (board.at[tgt].get() == -1 * turn) * -1 * turn
+    board = board.at[_bar_idx(-1 * turn)].add(
+        -1 * turn
     )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動
-
-    board[src] = board[src] - turn
-    board[tgt] = (
-        board[tgt] + turn + (board[tgt] == -turn) * turn
+    board = board.at[src].add(-1 * turn)
+    board = board.at[tgt].add(
+        turn + (board[tgt] == -1 * turn) * turn
     )  # hitした際は符号が変わるので余分に+1
     return board
 
 
+@jit
 def _is_all_off(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.

@@ -8,6 +8,7 @@ sys.path.append("../")
 from pgx.backgammon import (
     BackgammonState,
     _calc_src,
+    _calc_tgt,
     _calc_win_score,
     _is_action_legal,
     _is_all_on_homeboad,
@@ -124,6 +125,12 @@ def test_calc_src():
     assert _calc_src(1, jnp.int8(-1)) == 24
     assert _calc_src(1, jnp.int8(1)) == 25
     assert _calc_src(2, jnp.int8(1)) == 0
+
+
+def test_calc_tgt():
+    assert _calc_tgt(24, jnp.int8(-1), 1) == 0
+    assert _calc_tgt(6, jnp.int8(1), 2) == 4
+    assert _calc_tgt(2, jnp.int8(1), 6) == 27
 
 
 def test_is_action_legal():
@@ -250,3 +257,5 @@ if __name__ == "__main__":
     test_calc_win_score()
     test_is_all_on_home_boad()
     test_rear_distance()
+    test_calc_tgt()
+    test_move()
