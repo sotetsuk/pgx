@@ -11,32 +11,64 @@ class BackgammonState:
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: np.ndarray = np.zeros(28, dtype=np.int8)
 
-    # サイコロの出目
+    # サイコロの出目 0~5: 1~6
     dice: np.ndarray = np.zeros(2, dtype=np.int8)
 
-    # 白なら-1, 黒なら1
-    turn: np.ndarray = np.zeros(0, dtype=np.int8)
+    # プレイできるサイコロの目
+    playable_dice: np.ndarray = np.zeros(4, dtype=np.int8)
 
-    # 合法手
-    legal_action_musk: np.ndarray = np.zeros(
-        (2, 4 * (6 * 26 + 6)), dtype=np.int8
-    )
+    # プレイしたサイコロの目の数
+    played_dice_num: np.int8 = np.int8(0)
+
+    # 白なら-1, 黒なら1
+    turn: np.int8 = np.int8(1)
+    """
+    合法手
+    micro action = 6*src+die
+    """
+    legal_action_mask: np.ndarray = np.zeros(6 * 26 + 6, dtype=np.int8)
 
 
 def init() -> BackgammonState:
     board: np.ndarray = _make_init_board()
     dice: np.ndarray = _roll_init_dice()
-    turn: np.ndarray = _init_turn(dice)
-    legal_action_musk: np.ndarray = np.zeros(
-        (2, 4 * (6 * 26 + 6)), dtype=np.int8
-    )
+    playable_dice: np.ndarray = _set_playable_dice(dice)
+    played_dice_num = np.int8(0)
+    turn: np.int8 = _init_turn(dice)
+    legal_action_mask: np.ndarray = np.zeros(6 * 26 + 6, dtype=np.int8)
     state = BackgammonState(
         board=board,
         dice=dice,
+        playable_dice=playable_dice,
+        played_dice_num=played_dice_num,
         turn=turn,
-        legal_action_musk=legal_action_musk,
+        legal_action_mask=legal_action_mask,
     )
     return state
+
+
+def step(
+    state: BackgammonState, action: int
+) -> Tuple[BackgammonState, int, bool]:
+    state.board = _move(state.board, state.turn, action)
+    state.played_dice_num += np.int8(1)
+    state.playable_dice = _update_playable_dice(
+        state.playable_dice, state.played_dice_num, state.dice, action
+    )
+    state.legal_action_mask = _legal_action_mask(
+        state.board, state.turn, state.playable_dice
+    )  # legal micro actionを更新
+    if _is_all_off(state.board, state.turn):  # 全てのcheckerがoffにあるとき手番のプレイヤーの勝利
+        reward = _calc_win_score(
+            state.board, state.turn
+        )  # 相手のcheckerの進出具合によって受け取る報酬が変わる.
+        return state, reward, True
+    else:
+        if _is_turn_end(state):
+            state = _change_turn(state)
+            if _is_turn_end(state):  # danceの場合
+                state = _change_turn(state)
+        return state, 0, False
 
 
 def _make_init_board() -> np.ndarray:
@@ -52,150 +84,191 @@ def _make_init_board() -> np.ndarray:
     return board
 
 
+def _is_turn_end(state: BackgammonState) -> bool:
+    return (
+        state.playable_dice.sum() == -4 or state.legal_action_mask.sum() == 0
+    )  # play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
+
+
+def _change_turn(state: BackgammonState) -> BackgammonState:
+    state.turn = -1 * state.turn  # turnを変える
+    state.dice = _roll_dice()  # diceを振る
+    state.playable_dice = _set_playable_dice(state.dice)  # play可能なサイコロを初期化
+    state.played_dice_num = np.int8(0)
+    state.legal_action_mask = _legal_action_mask(
+        state.board, state.turn, state.dice
+    )
+    return state
+
+
 def _roll_init_dice() -> np.ndarray:
-    roll = randint(1, 6), randint(1, 6)
+    roll = randint(0, 5), randint(0, 5)
     # 違う目が出るまで振り続ける.
     while roll[0] == roll[1]:
-        roll = randint(1, 6), randint(1, 6)
+        roll = randint(0, 5), randint(0, 5)
     return np.array(roll, dtype=np.int8)
 
 
-def _init_turn(dice: np.ndarray) -> np.ndarray:
+def _roll_dice() -> np.ndarray:
+    roll = randint(0, 5), randint(0, 5)
+    return np.array(roll, dtype=np.int8)
+
+
+def _init_turn(dice: np.ndarray) -> np.int8:
     """
     ゲーム開始時のターン決め.
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
     turn = np.sign(diff)  # diff > 0 : turn=1, diff < 0: turn=-1
-    return np.array([turn], dtype=np.int8)
+    return np.int8(turn)
 
 
-def _home_board(turn: int) -> np.ndarray:
+def _set_playable_dice(dice: np.ndarray) -> np.ndarray:
+    """
+    -1でemptyを表す.
+    """
+    if dice[0] == dice[1]:
+        return np.array([dice[0] * 4], dtype=np.int8)
+    else:
+        return np.array([dice[0], dice[1], -1, -1], dtype=np.int8)
+
+
+def _update_playable_dice(
+    playable_dice: np.ndarray,
+    played_dice_num: np.int8,
+    dice: np.ndarray,
+    action: int,
+) -> np.ndarray:
+    _n = played_dice_num
+    die = action % 6
+    if dice[0] == dice[1]:
+        playable_dice[3 - _n] = -1  # プレイしたサイコロの目を-1にする.
+    else:
+        playable_dice[playable_dice == die] = -1  # プレイしたサイコロの目を-1にする.
+    return playable_dice
+
+
+def _home_board(turn: np.int8) -> np.ndarray:
     """
     白: [18~23], 黒: [0~5]
     """
     fin_idx: int = 6 * np.clip(turn, a_min=0, a_max=1) + np.abs(
         24 * np.clip(turn, a_min=-1, a_max=0)
     )
-    return np.array([i for i in range(fin_idx - 6, fin_idx)], dtype=np.int8)
+    return np.arange(fin_idx - 6, fin_idx, dtype=np.int8)
 
 
-def _off(board: np.ndarray, turn: np.ndarray) -> np.ndarray:
+def _off_idx(turn: np.int8) -> int:
     """
     白: 26, 黒: 27
     """
-    t: int = turn[0]
-    off: int = board[26 + np.clip(t, a_min=0, a_max=1)]
-    return np.array([off], dtype=np.int8)
+    return int(26 + np.clip(turn, a_min=0, a_max=1))
 
 
-def _bar(board: np.ndarray, turn: np.ndarray) -> np.ndarray:
+def _bar_idx(turn: np.int8) -> int:
     """
     白: 24, 黒 25
     """
-    t: int = turn[0]
-    bar: int = board[24 + np.clip(t, a_min=0, a_max=1)]
-    return np.array([bar], dtype=np.int8)
+    return int(24 + np.clip(turn, a_min=0, a_max=1))
 
 
-def _rear_distance(board: np.ndarray, turn: np.ndarray) -> int:
+def _rear_distance(board: np.ndarray, turn: np.int8) -> int:
     """
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
     """
-    t: int = turn[0]
     b = board[:24]
-    exists: np.ndarray = np.where((b * t > 0))[0]
+    exists: np.ndarray = np.where((b * turn > 0))[0]
     if turn == 1:
         return int(np.max(exists)) + 1
     else:
         return 24 - int(np.min(exists))
 
 
-def _is_all_on_homeboad(board: np.ndarray, turn: np.ndarray) -> bool:
+def _is_all_on_homeboad(board: np.ndarray, turn: np.int8) -> bool:
     """
-    全てのcheckerがhome boardにあれば bear offできる.
+    全てのcheckerがhome boardにあれば, bear offできる.
     """
-    t: int = turn[0]
-    home_board: np.ndarray = _home_board(t)
-    on_home_boad: int = np.array(
-        [board[i] * t for i in home_board if board[i] * t >= 0], dtype=np.int8
+    home_board: np.ndarray = _home_board(turn)
+    on_home_board: int = np.clip(
+        -1 * board[home_board], a_min=0, a_max=15
     ).sum()
-    off: int = _off(board, turn)[0] * t
-    return (15 - off) == on_home_boad
+    off: int = board[_off_idx(turn)] * turn
+    return (15 - off) == on_home_board
 
 
-def _is_open(board: np.ndarray, turn: np.ndarray, point: int) -> bool:
+def _is_open(board: np.ndarray, turn: np.int8, point: int) -> bool:
     """
     手番のplayerにとって, pointが空いてるかを判定する.
     pointにある相手のcheckerの数が1以下なら自分のcheckerをそのpointにおける.
     """
-    t: int = turn[0]
     checkers: int = board[point]
-    return t * checkers >= -1  # 黒と白のcheckerは異符号
+    return bool(turn * checkers >= -1)  # 黒と白のcheckerは異符号
 
 
-def _exists(board: np.ndarray, turn: np.ndarray, point: int) -> bool:
+def _exists(board: np.ndarray, turn: np.int8, point: int) -> bool:
     """
     指定pointに手番のchckerが存在するか.
     """
-    t: int = turn[0]
     checkers: int = board[point]
-    return t * checkers >= 1
+    return bool(turn * checkers >= 1)
 
 
-def _calc_src(src: int, turn: np.ndarray) -> int:
+def _calc_src(src: int, turn: np.int8) -> int:
     """
-    boardとindexを合わせる.
+    boardのindexに合わせる.
     """
-    t = turn[0]
-    if src == 1:
-        return 24 + np.clip(t, a_min=0, a_max=1)
-    else:
+    if src == 1:  # srcがbarの時
+        return _bar_idx(turn)
+    else:  # point to point
         return src - 2
 
 
-def _calc_tgt(idx: int, turn: np.ndarray, die) -> int:
+def _calc_tgt(src: int, turn: np.int8, die) -> int:
     """
-    srcがbarだった際の対応
+    boardのindexに合わせる.
     """
-    t = turn[0]
-    if idx >= 24:
-        return np.clip(24 * t, a_min=-1, a_max=24) + die * -turn[0]
-    else:
-        return idx + die * -turn[0]
+    if src >= 24:  # srcがbarの時
+        return np.clip(24 * turn, a_min=-1, a_max=24) + die * -turn
+    elif src + die * -turn >= 24 or src + die * -turn <= -1:  # 行き先がoffの時
+        return _off_idx(turn)
+    else:  # point to point
+        return src + die * -turn
 
 
-def _decompose_micro_action(micro_action: int, turn: np.ndarray) -> Tuple:
+def _decompose_action(action: int, turn: np.int8) -> Tuple:
     """
-    micro_action(int)をsource, die, tagetに分解する.
+    action(int)をsource, die, tagetに分解する.
     """
-    src = _calc_src(micro_action // 6, turn)
-    die = micro_action % 6 + 1  # 0~5 -> 1~6
+    src = _calc_src(action // 6, turn)
+    die = action % 6 + 1  # 0~5 -> 1~6
     tgt = _calc_tgt(src, turn, die)
     return src, die, tgt
 
 
-def _is_no_op(micro_action):
+def _is_no_op(action):
     """
     no operationかどうか判定する.
     """
-    return micro_action // 6 == 0
+    return action // 6 == 0
 
 
-def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
+def _is_action_legal(board: np.ndarray, turn, action: int) -> bool:
     """
     micro actionの合法判定
-    micro_action = src * 6 + die
+    action = src * 6 + die
     src = [no op., from bar, 0, .., 23]
     """
-    src, die, tgt = _decompose_micro_action(micro_action, turn)
+    src, die, tgt = _decompose_action(action, turn)
     if src >= 24:  # barからpointへの移動
         return (_exists(board, turn, src)) and (_is_open(board, turn, tgt))
+    elif src < 0:
+        return False
     elif 0 <= tgt <= 23:  # pointからpointへの移動
         return (
             (_exists(board, turn, src))
             and (_is_open(board, turn, tgt))
-            and (_bar(board, turn)[0] == 0)
+            and (board[_bar_idx(turn)] == 0)
         )
     else:  # bear off
         return (
@@ -203,3 +276,81 @@ def _is_micro_action_legal(board: np.ndarray, turn, micro_action: int) -> bool:
             and _is_all_on_homeboad(board, turn)
             and (_rear_distance(board, turn) <= die)
         )
+
+
+def _move(board: np.ndarray, turn: np.int8, action: int) -> np.ndarray:
+    """
+    micro actionに基づく状態更新
+    """
+    src, _, tgt = _decompose_action(action, turn)
+    board[_bar_idx(-1 * turn)] = board[_bar_idx(-1 * turn)] + (
+        (board[tgt] == -turn) * -turn
+    )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動
+
+    board[src] = board[src] - turn
+    board[tgt] = (
+        board[tgt] + turn + (board[tgt] == -turn) * turn
+    )  # hitした際は符号が変わるので余分に+1
+    return board
+
+
+def _is_all_off(board: np.ndarray, turn: np.int8) -> bool:
+    """
+    手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.
+    """
+    return board[_off_idx(turn)] * turn == 15
+
+
+def _calc_win_score(board: np.ndarray, turn: np.int8) -> int:
+    if _is_backgammon(board, turn):
+        return 3
+    if _is_gammon(board, turn):
+        return 2
+    else:
+        return 1
+
+
+def _is_gammon(board: np.ndarray, turn: np.int8) -> bool:
+    """
+    相手のoffに一つもcheckerがなければgammon勝ち
+    """
+    return board[_off_idx(-1 * turn)] == 0
+
+
+def _is_backgammon(board: np.ndarray, turn: np.int8) -> bool:
+    """
+    相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
+    => backgammon勝ち
+    """
+    return (
+        board[_off_idx(-1 * turn)] == 0
+        and board[_home_board(-1 * turn)].sum() != 0
+    )
+
+
+def _legal_action_mask(
+    board: np.ndarray, turn: np.int8, dice: np.ndarray
+) -> np.ndarray:
+    legal_action_mask = np.zeros(26 * 6 + 6, dtype=np.int8)
+    for die in dice:
+        legal_action_mask = (
+            legal_action_mask
+            | _legal_action_mask_for_single_die(board, turn, die)
+        )  # play可能なサイコロごとのlegal micro actionの論理和
+    return legal_action_mask
+
+
+def _legal_action_mask_for_single_die(
+    board: np.ndarray, turn: np.int8, die: int
+) -> np.ndarray:
+    """
+    一つのサイコロの目に対するlegal micro action
+    """
+    legal_action_mask = np.zeros(26 * 6 + 6, dtype=np.int8)
+    if die == -1:
+        return legal_action_mask
+    for i in range(26):
+        action = i * 6 + die
+        if _is_action_legal(board, turn, action):
+            legal_action_mask[action] = 1
+    return legal_action_mask
