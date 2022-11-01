@@ -20,6 +20,19 @@ def test_move():
     assert _piece_type(s5, 48) == 6
     assert _piece_type(s5, 40) == 4
     assert _piece_type(s5, 56) == 0
+    m6 = ChessAction(7, 30, 28)
+    m7 = ChessAction(1, 35, 29)
+    s6 = _move(s2, m6)
+    assert _piece_type(s6, 28) == 7
+    s7 = _move(s6, m7)
+    assert _piece_type(s7, 29) == 1
+    assert _piece_type(s7, 28) == 0
+    sx1 = _move(s, m6)
+    sx2 = _move(s, m2)
+    m8 = ChessAction(7, 28, 34)
+    s8 = _move(sx2, m8)
+    assert _piece_type(s8, 34) == 7
+    assert _piece_type(s8, 35) == 0
 
 
 if __name__ == '__main__':

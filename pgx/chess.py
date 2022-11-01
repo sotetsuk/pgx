@@ -216,13 +216,24 @@ def _piece_type(state: ChessState, position: int):
     return state.board[:, position].argmax()
 
 
-# actionがプロモーションかどうか
-def _is_promotion(action: ChessAction):
-    if action.piece == 1 and action.to % 8 == 7:
-        return True
-    if action.piece == 7 and action.to % 8 == 0:
-        return True
-    return False
+# promotionの場合にはpromotion後の駒、そうでない場合は元の駒を返す
+def _promoted_piece(action: ChessAction):
+    if (action.piece == 1 and action.to % 8 == 7) or (
+        action.piece == 7 and action.to % 8 == 0
+    ):
+        # Queenの場合
+        if action.promotion == 0:
+            return action.piece + 4
+        # Rook
+        elif action.promotion == 1:
+            return action.piece + 3
+        # Knight
+        elif action.promotion == 2:
+            return action.piece + 1
+        # Bishop
+        else:
+            return action.piece + 2
+    return action.piece
 
 
 # castling判定
@@ -243,24 +254,15 @@ def _move(state: ChessState, action: ChessAction) -> ChessState:
     s = copy.deepcopy(state)
     s.board[action.piece][action.from_] = 0
     s.board[0][action.from_] = 1
-    for i in range(13):
-        s.board[i][action.to] = 0
-    p = action.piece
-    # プロモーションの場合
-    if _is_promotion(action):
-        # Queenの場合
-        if action.promotion == 0:
-            p += 4
-        # Rook
-        elif action.promotion == 1:
-            p += 3
-        # Knight
-        elif action.promotion == 2:
-            p += 1
-        # Bishop
-        elif action.promotion == 3:
-            p += 2
+    s.board[:, action.to] *= 0
+    p = _promoted_piece(action)
     s.board[p][action.to] = 1
+    # 先手側のアンパッサン
+    if action.piece == 1 and action.to == s.en_passant + 1:
+        s.board[:, s.en_passant] *= 0
+    # 後手側のアンパッサン
+    if action.piece == 7 and action.to == s.en_passant - 1:
+        s.board[:, s.en_passant] *= 0
     # 左キャスリング
     if _is_castling(action) == 1:
         if s.turn == 0:
@@ -298,6 +300,10 @@ def _move(state: ChessState, action: ChessAction) -> ChessState:
         s.br1_move_count = True
     if not s.br2_move_count and action.from_ == 63:
         s.br2_move_count = True
+    if not s.wk_move_count and action.from_ == 32:
+        s.wk_move_count = True
+    if not s.bk_move_count and action.from_ == 39:
+        s.bk_move_count = True
     if action.piece % 6 == 1 and abs(action.from_ - action.to) == 2:
         s.en_passant = action.to
     else:
