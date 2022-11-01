@@ -311,6 +311,35 @@ def _move(state: ChessState, action: ChessAction) -> ChessState:
     return s
 
 
+def point_to_coordinate(point: int):
+    return point // 8, point % 8
+
+
+def _is_same_column(_from: int, to: int) -> bool:
+    x1, y1 = point_to_coordinate(_from)
+    x2, y2 = point_to_coordinate(to)
+    return x1 == x2
+
+
+def _is_same_row(_from: int, to: int) -> bool:
+    x1, y1 = point_to_coordinate(_from)
+    x2, y2 = point_to_coordinate(to)
+    return y1 == y2
+
+
+def _is_same_rising(_from: int, to: int) -> bool:
+    x1, y1 = point_to_coordinate(_from)
+    x2, y2 = point_to_coordinate(to)
+    return x1 - x2 == y1 - y2
+
+
+# from, toが右肩下がりの斜め方向で同じ筋にあるか
+def _is_same_declining(_from: int, to: int) -> bool:
+    x1, y1 = point_to_coordinate(_from)
+    x2, y2 = point_to_coordinate(to)
+    return x1 - x2 == y2 - y1
+
+
 def _board_status(state: ChessState):
     bs = np.zeros(64, dtype=np.int32)
     for i in range(64):
@@ -323,6 +352,38 @@ def _owner(piece: int):
         return 2
     else:
         return (piece - 1) // 6
+
+
+def _is_in_board(point: int):
+    return 0 <= point <= 63
+
+
+def _is_side(point: int):
+    x, y = point_to_coordinate(point)
+    u, d, l, r = False
+    if y == 7:
+        u = True
+    if y == 0:
+        d = True
+    if x == 0:
+        l = True
+    if x == 7:
+        r = True
+    return u, d, l, r
+
+
+def _is_second_line(point: int):
+    x, y = point_to_coordinate(point)
+    su, sd, sl, sr = False
+    if y >= 6:
+        su = True
+    if y <= 1:
+        sd = True
+    if x <= 1:
+        sl = True
+    if x >= 6:
+        sr = True
+    return su, sd, sl, sr
 
 
 def _white_pawn_moves(state: ChessState, from_: int):
@@ -341,3 +402,122 @@ def _white_pawn_moves(state: ChessState, from_: int):
     if _owner(bs[from_ + 9]) == 1 or state.en_passant == from_ + 8:
         to[from_ + 9] = 1
     return to
+
+
+def _black_pawn_moves(state: ChessState, from_: int):
+    to = np.zeros(64, dtype=np.int32)
+    bs = _board_status(state)
+    if bs[from_ - 1] == 0:
+        to[from_ - 1] = 1
+        # 初期位置の場合はニマス進める
+        if from_ % 8 == 6 and bs[from_ - 2] == 0:
+            to[from_ - 2] = 1
+    # 斜めには相手の駒があるときかアンパッサンの時のみ進める
+    # 左斜め前
+    if _owner(bs[from_ - 9]) == 1 or state.en_passant == from_ - 8:
+        to[from_ - 9] = 1
+    # 右斜め前
+    if _owner(bs[from_ + 7]) == 1 or state.en_passant == from_ + 8:
+        to[from_ + 7] = 1
+    return to
+
+
+def _knight_moves(state: ChessState, from_: int, turn: int):
+    to = np.zeros(64, dtype=np.int32)
+    bs = _board_status(state)
+    u, d, l, r = _is_side(from_)
+    su, sd, sl, sr = _is_second_line(from_)
+    # 上方向
+    if not su:
+        if not l and _owner(bs[from_ - 6]) != turn:
+            to[from_ - 6] = 1
+        if not r and _owner(bs[from_ + 10]) != turn:
+            to[from_ + 10] = 1
+    # 左方向
+    if not sl:
+        if not u and _owner(bs[from_ - 15]) != turn:
+            to[from_ - 15] = 1
+        if not d and _owner(bs[from_ - 17]) != turn:
+            to[from_ - 17] = 1
+    # 下方向
+    if not sd:
+        if not l and _owner(bs[from_ - 10]) != turn:
+            to[from_ - 10] = 1
+        if not r and _owner(bs[from_ + 6]) != turn:
+            to[from_ + 6] = 1
+    # 右方向
+    if not sr:
+        if not u and _owner(bs[from_ + 17]) != turn:
+            to[from_ + 17] = 1
+        if not d and _owner(bs[from_ + 15]) != turn:
+            to[from_ + 15] = 1
+    return to
+
+
+def _bishop_move(state: ChessState, from_: int, turn: int):
+    to = np.zeros(64, dtype=np.int32)
+    bs = _board_status(state)
+    ur_flag = True
+    ul_flag = True
+    dr_flag = True
+    dl_flag = True
+    for i in range(8):
+        ur = from_ + 9 * (1 + i)
+        ul = from_ - 7 * (1 + i)
+        dr = from_ + 7 * (1 + i)
+        dl = from_ - 9 * (1 + i)
+        if ur_flag and _is_in_board(ur) and _is_same_rising(from_, ur) and _owner(bs[ur]) != turn:
+            to[ur] = 1
+        if ul_flag and _is_in_board(ul) and _is_same_declining(from_, ul) and _owner(bs[ul]) != turn:
+            to[ul] = 1
+        if dr_flag and _is_in_board(dr) and _is_same_declining(from_, dr) and _owner(bs[dr]) != turn:
+            to[dr] = 1
+        if dl_flag and _is_in_board(dl) and _is_same_rising(from_, dl) and _owner(bs[dl]) != turn:
+            to[dl] = 1
+        if not _is_in_board(ur) or bs[ur] != 0:
+            ur_flag = False
+        if not _is_in_board(ul) or bs[ul] != 0:
+            ul_flag = False
+        if not _is_in_board(dr) or bs[dr] != 0:
+            dr_flag = False
+        if not _is_in_board(dl) or bs[dl] != 0:
+            dl_flag = False
+    return to
+
+
+def _rook_move(state: ChessState, from_: int, turn: int):
+    to = np.zeros(81, dtype=np.int32)
+    bs = _board_status(state)
+    u_flag = True
+    d_flag = True
+    r_flag = True
+    l_flag = True
+    for i in range(8):
+        u = from_ + 1 * (1 + i)
+        d = from_ - 1 * (1 + i)
+        l = from_ - 8 * (1 + i)
+        r = from_ + 8 * (1 + i)
+        if u_flag and _is_in_board(u) and _is_same_column(from_, u) and _owner(bs[u]) == turn:
+            to[u] = 1
+        if d_flag and _is_in_board(d) and _is_same_column(from_, d) and _owner(bs[d]) == turn:
+            to[d] = 1
+        if l_flag and _is_in_board(l) and _is_same_row(from_, l) and _owner(bs[l]) == turn:
+            to[l] = 1
+        if l_flag and _is_in_board(r) and _is_same_row(from_, r) and _owner(bs[r]) == turn:
+            to[r] = 1
+        if not _is_in_board(u) or bs[u] != 0:
+            u_flag = False
+        if not _is_in_board(d) or bs[d] != 0:
+            d_flag = False
+        if not _is_in_board(l) or bs[l] != 0:
+            l_flag = False
+        if not _is_in_board(r) or bs[r] != 0:
+            r_flag = False
+    return to
+
+
+def _queen_move(state: ChessState, from_: int, turn: int):
+    r_move = _rook_move(state, from_, turn)
+    b_move = _bishop_move(state, from_, turn)
+    # r_moveとb_moveは共通項がないので足してよい
+    return r_move + b_move
