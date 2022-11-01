@@ -56,9 +56,9 @@ def make_test_state(
     )
 
 
-def test_init():
-    state: BackgammonState = init()
-    assert state.turn == -1 or state.turn == 1
+# def test_init():
+#    state: BackgammonState = init()
+#    assert state.turn == -1 or state.turn == 1
 
 
 def test_init_roll():
