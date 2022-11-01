@@ -10,6 +10,7 @@ from pgx.backgammon import (
     _calc_src,
     _calc_tgt,
     _calc_win_score,
+    _change_turn,
     _exists,
     _is_action_legal,
     _is_all_on_homeboad,
@@ -46,13 +47,13 @@ def make_test_state(
     playable_dice: jnp.ndarray,
     played_dice_num: jnp.int8,
 ):
-    state = init()
-    state.board = board
-    state.turn = turn
-    state.dice = dice
-    state.playable_dice = playable_dice
-    state.played_dice_num = played_dice_num
-    return state
+    return BackgammonState(
+        board=board,
+        turn=turn,
+        dice=dice,
+        playable_dice=playable_dice,
+        played_dice_num=played_dice_num,
+    )
 
 
 def test_init():
@@ -65,13 +66,22 @@ def test_init_roll():
     print(a)
 
 
+def test_change_turn():
+    state: BackgammonState = init()
+    _turn = state.turn
+    state, has_changed = _change_turn(state)
+    print(state, has_changed)
+    assert state.turn == _turn
+    assert not has_changed
+
+
 def test_step():
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
         board=board,
         turn=jnp.int8(1),
-        dice=jnp.array([0, 1]),
-        playable_dice=jnp.array([0, 1, -1, -1]),
+        dice=jnp.array([0, 1], dtype=jnp.int8),
+        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int8),
         played_dice_num=jnp.int8(0),
     )
     # 黒がサイコロ2をplay
@@ -218,7 +228,7 @@ def test_legal_action():
 
     # 黒
     turn = jnp.int8(1)
-    playable_dice = jnp.array([4, 1, -1, -1])
+    playable_dice = jnp.array([4, 1, -1, -1], dtype=jnp.int8)
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.int8
     )
@@ -258,7 +268,8 @@ def test_calc_win_score():
 
 
 if __name__ == "__main__":
-    test_init_roll()
+    # test_change_turn()
+    # test_init_roll()
     test_init()
     test_is_open()
     test_calc_src()
@@ -269,3 +280,4 @@ if __name__ == "__main__":
     test_move()
     test_is_action_legal()
     test_legal_action()
+    test_step()

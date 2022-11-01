@@ -39,7 +39,9 @@ def init() -> BackgammonState:
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
     played_dice_num: jnp.int8 = jnp.int8(0)
     turn: jnp.int8 = _init_turn(dice)
-    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.int8)
+    legal_action_mask: jnp.ndarray = _legal_action_mask(
+        board, turn, playable_dice
+    )
     state = BackgammonState(
         board=board,
         dice=dice,
@@ -51,28 +53,59 @@ def init() -> BackgammonState:
     return state
 
 
+@jit
 def step(
     state: BackgammonState, action: int
 ) -> Tuple[BackgammonState, int, bool]:
-    state.board = _move(state.board, state.turn, action)
-    state.played_dice_num = state.played_dice_num + jnp.int8(1)
-    state.playable_dice = _update_playable_dice(
+    state = _update_by_action(state, action)
+    return jax.lax.cond(
+        _is_all_off(state.board, state.turn),
+        lambda: _winnint_step(state),
+        lambda: _normal_step(state),
+    )
+
+
+@jit
+def _winnint_step(state: BackgammonState) -> Tuple[BackgammonState, int, bool]:
+    """
+    勝利者がいる場合のstep
+    """
+    reward = reward = _calc_win_score(state.board, state.turn)
+    return (state, reward, True)
+
+
+@jit
+def _normal_step(state: BackgammonState) -> Tuple[BackgammonState, int, bool]:
+    """
+    勝利者がいない場合のstep, ターンが回ってきたが, 動かせる場所がない場合(dance)すぐさまターンを変える必要がある.
+    """
+    state, has_changed = _change_turn(state)
+    print(_change_turn(state)[0])
+    return jax.lax.cond(
+        has_changed & _is_turn_end(state),
+        lambda: (_change_turn(state)[0], 0, False),
+        lambda: (state, 0, False),
+    )
+
+
+@jit
+def _update_by_action(state: BackgammonState, action: int):
+    board: jnp.ndarray = _move(state.board, state.turn, action)
+    played_dice_num: jnp.int8 = jnp.int8(state.played_dice_num + 1)
+    played_dice: jnp.ndarray = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
-    state.legal_action_mask = _legal_action_mask(
+    legal_action_mask: jnp.ndarray = _legal_action_mask(
         state.board, state.turn, state.playable_dice
-    )  # legal micro actionを更新
-    if _is_all_off(state.board, state.turn):  # 全てのcheckerがoffにあるとき手番のプレイヤーの勝利
-        reward = _calc_win_score(
-            state.board, state.turn
-        )  # 相手のcheckerの進出具合によって受け取る報酬が変わる.
-        return state, reward, True
-    else:
-        if _is_turn_end(state):
-            state = _change_turn(state)
-            if _is_turn_end(state):  # danceの場合
-                state = _change_turn(state)
-        return state, 0, False
+    )
+    return BackgammonState(
+        board=board,
+        turn=state.turn,
+        dice=state.dice,
+        playable_dice=played_dice,
+        played_dice_num=played_dice_num,
+        legal_action_mask=legal_action_mask,
+    )
 
 
 @jit
@@ -89,41 +122,73 @@ def _make_init_board() -> jnp.ndarray:
     return board
 
 
+@jit
 def _is_turn_end(state: BackgammonState) -> bool:
-    return (state.playable_dice.sum() == -4) | (
-        state.legal_action_mask.sum() == 0
-    )  # play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
+    """
+    play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
+    """
+    return jax.lax.cond(
+        (state.playable_dice.sum() == -4)
+        | (state.legal_action_mask.sum() == 0),
+        lambda: True,
+        lambda: False,
+    )
 
 
-def _change_turn(state: BackgammonState) -> BackgammonState:
-    state.turn = -1 * state.turn  # turnを変える
-    state.dice = _roll_dice()  # diceを振る
-    state.playable_dice = _set_playable_dice(state.dice)  # play可能なサイコロを初期化
-    state.played_dice_num = jnp.int8(0)
-    state.legal_action_mask = _legal_action_mask(
+@jit
+def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
+    """
+    ターンが変わる場合は新しいstateを, そうでない場合は元のstateを返す.
+    """
+    board: jnp.ndarray = state.board
+    turn: jnp.int8 = jnp.int8(-1 * state.turn)  # turnを変える
+    dice: jnp.ndarray = _roll_dice()  # diceを振る
+    playable_dice: jnp.ndarray = _set_playable_dice(
+        state.dice
+    )  # play可能なサイコロを初期化
+    played_dice_num: jnp.int8 = jnp.int8(0)
+    legal_action_mask: jnp.ndarray = _legal_action_mask(
         state.board, state.turn, state.dice
     )
-    return state
+    return jax.lax.cond(
+        _is_turn_end(state),
+        lambda: (
+            BackgammonState(
+                board=board,
+                turn=turn,
+                dice=dice,
+                playable_dice=playable_dice,
+                played_dice_num=played_dice_num,
+                legal_action_mask=legal_action_mask,
+            ),
+            True,
+        ),
+        lambda: (state, False),
+    )
 
 
 @jax.jit
 def _roll_init_dice() -> jnp.ndarray:
-    roll = randint(0, 5), randint(0, 5)
+    """
     # 違う目が出るまで振り続ける.
-    def _cond_fn(roll: Tuple[int, int]):
+    """
+
+    def _cond_fn(roll: jnp.ndarray):
         return roll[0] == roll[1]
 
-    def _body_fn(roll: Tuple[int, int]):
-        roll = randint(0, 5), randint(0, 5)
-        return roll
+    def _body_fn(_roll: jnp.ndarray):
+        roll: Tuple[int, int] = randint(0, 5), randint(0, 5)
+        return jnp.array([roll[0], roll[1]], dtype=jnp.int8)
 
-    return jax.lax.while_loop(_cond_fn, _body_fn, roll)
+    return jax.lax.while_loop(
+        _cond_fn, _body_fn, jnp.array([0, 0], dtype=jnp.int8)
+    )
 
 
 @jit
 def _roll_dice() -> jnp.ndarray:
     roll = randint(0, 5), randint(0, 5)
-    return jnp.array(roll, dtype=np.int8)
+    return jnp.array([roll[0], roll[1]], dtype=jnp.int8)
 
 
 @jit
@@ -148,6 +213,7 @@ def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
     )
 
 
+@jit
 def _update_playable_dice(
     playable_dice: jnp.ndarray,
     played_dice_num: jnp.int8,
@@ -156,13 +222,23 @@ def _update_playable_dice(
 ) -> jnp.ndarray:
     _n = played_dice_num
     die = action % 6
-    if dice[0] == dice[1]:
-        playable_dice = playable_dice.at[3 - _n].set(-1)  # プレイしたサイコロの目を-1にする.
-    else:
-        playable_dice = playable_dice.at[playable_dice == die].set(
-            -1
-        )  # プレイしたサイコロの目を-1にする.
-    return playable_dice
+
+    @jit
+    def _update_for_diff_dice(die: int, playable_dice: np.ndarray):
+        return jax.lax.fori_loop(
+            0,
+            4,
+            lambda i, x: jax.lax.cond(
+                die == x.at[i].get(), lambda: x.at[i].set(-1), lambda: x
+            ),
+            playable_dice,
+        )
+
+    return jax.lax.cond(
+        dice[0] == dice[1],
+        lambda: playable_dice.at[3 - _n].set(-1),
+        lambda: _update_for_diff_dice(die, playable_dice),
+    )
 
 
 @jit
@@ -250,11 +326,13 @@ def _exists(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
 
 
 @jit
-def _calc_src(src: int, turn: jnp.int8) -> int:
+def _calc_src(src: int, turn: jnp.int8) -> jnp.int8:
     """
     boardのindexに合わせる.
     """
-    return jax.lax.cond(src == 1, lambda: _bar_idx(turn), lambda: src - 2)
+    return jax.lax.cond(
+        src == 1, lambda: jnp.int8(_bar_idx(turn)), lambda: jnp.int8(src - 2)
+    )
 
 
 @jit
@@ -419,7 +497,7 @@ def _legal_action_mask(
     @jit
     def _update(i: int, legal_action_mask: jnp.ndarray) -> jnp.ndarray:
         return legal_action_mask | _legal_action_mask_for_single_die(
-            board, turn, dice[i]
+            board, turn, dice.at[i].get()
         )
 
     legal_action_mask = jax.lax.fori_loop(0, 4, _update, legal_action_mask)
