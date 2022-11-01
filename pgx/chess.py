@@ -316,3 +316,28 @@ def _board_status(state: ChessState):
     for i in range(64):
         bs[i] = _piece_type(state, i)
     return bs
+
+
+def _owner(piece: int):
+    if piece == 0:
+        return 2
+    else:
+        return (piece - 1) // 6
+
+
+def _white_pawn_moves(state: ChessState, from_: int):
+    to = np.zeros(64, dtype=np.int32)
+    bs = _board_status(state)
+    if bs[from_ + 1] == 0:
+        to[from_ + 1] = 1
+        # 初期位置の場合はニマス進める
+        if from_ % 8 == 1 and bs[from_ + 2] == 0:
+            to[from_ + 2] = 1
+    # 斜めには相手の駒があるときかアンパッサンの時のみ進める
+    # 左斜め前
+    if _owner(bs[from_ - 7]) == 1 or state.en_passant == from_ - 8:
+        to[from_ - 7] = 1
+    # 右斜め前
+    if _owner(bs[from_ + 9]) == 1 or state.en_passant == from_ + 8:
+        to[from_ + 9] = 1
+    return to
