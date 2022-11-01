@@ -56,9 +56,9 @@ def make_test_state(
     )
 
 
-# def test_init():
-#    state: BackgammonState = init()
-#    assert state.turn == -1 or state.turn == 1
+def test_init():
+    state: BackgammonState = init()
+    assert state.turn == -1 or state.turn == 1
 
 
 def test_init_roll():
@@ -268,8 +268,8 @@ def test_calc_win_score():
 
 
 if __name__ == "__main__":
-    # test_change_turn()
-    # test_init_roll()
+    test_change_turn()
+    test_init_roll()
     test_init()
     test_is_open()
     test_calc_src()
