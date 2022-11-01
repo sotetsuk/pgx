@@ -360,21 +360,27 @@ def _is_in_board(point: int):
 
 def _is_side(point: int):
     x, y = point_to_coordinate(point)
-    u, d, l, r = False
+    u = False
+    d = False
+    l_ = False
+    r = False
     if y == 7:
         u = True
     if y == 0:
         d = True
     if x == 0:
-        l = True
+        l_ = True
     if x == 7:
         r = True
-    return u, d, l, r
+    return u, d, l_, r
 
 
 def _is_second_line(point: int):
     x, y = point_to_coordinate(point)
-    su, sd, sl, sr = False
+    su = False
+    sd = False
+    sl = False
+    sr = False
     if y >= 6:
         su = True
     if y <= 1:
@@ -432,11 +438,11 @@ def _pawn_moves(state: ChessState, from_: int, turn: int):
 def _knight_moves(state: ChessState, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
     bs = _board_status(state)
-    u, d, l, r = _is_side(from_)
+    u, d, l_, r = _is_side(from_)
     su, sd, sl, sr = _is_second_line(from_)
     # 上方向
     if not su:
-        if not l and _owner(bs[from_ - 6]) != turn:
+        if not l_ and _owner(bs[from_ - 6]) != turn:
             to[from_ - 6] = 1
         if not r and _owner(bs[from_ + 10]) != turn:
             to[from_ + 10] = 1
@@ -448,7 +454,7 @@ def _knight_moves(state: ChessState, from_: int, turn: int):
             to[from_ - 17] = 1
     # 下方向
     if not sd:
-        if not l and _owner(bs[from_ - 10]) != turn:
+        if not l_ and _owner(bs[from_ - 10]) != turn:
             to[from_ - 10] = 1
         if not r and _owner(bs[from_ + 6]) != turn:
             to[from_ + 6] = 1
@@ -472,13 +478,33 @@ def _bishop_move(bs: np.ndarray, from_: int, turn: int):
         ul = from_ - 7 * (1 + i)
         dr = from_ + 7 * (1 + i)
         dl = from_ - 9 * (1 + i)
-        if ur_flag and _is_in_board(ur) and _is_same_rising(from_, ur) and _owner(bs[ur]) != turn:
+        if (
+            ur_flag
+            and _is_in_board(ur)
+            and _is_same_rising(from_, ur)
+            and _owner(bs[ur]) != turn
+        ):
             to[ur] = 1
-        if ul_flag and _is_in_board(ul) and _is_same_declining(from_, ul) and _owner(bs[ul]) != turn:
+        if (
+            ul_flag
+            and _is_in_board(ul)
+            and _is_same_declining(from_, ul)
+            and _owner(bs[ul]) != turn
+        ):
             to[ul] = 1
-        if dr_flag and _is_in_board(dr) and _is_same_declining(from_, dr) and _owner(bs[dr]) != turn:
+        if (
+            dr_flag
+            and _is_in_board(dr)
+            and _is_same_declining(from_, dr)
+            and _owner(bs[dr]) != turn
+        ):
             to[dr] = 1
-        if dl_flag and _is_in_board(dl) and _is_same_rising(from_, dl) and _owner(bs[dl]) != turn:
+        if (
+            dl_flag
+            and _is_in_board(dl)
+            and _is_same_rising(from_, dl)
+            and _owner(bs[dl]) != turn
+        ):
             to[dl] = 1
         if not _is_in_board(ur) or bs[ur] != 0:
             ur_flag = False
@@ -500,21 +526,41 @@ def _rook_move(bs: np.ndarray, from_: int, turn: int):
     for i in range(8):
         u = from_ + 1 * (1 + i)
         d = from_ - 1 * (1 + i)
-        l = from_ - 8 * (1 + i)
+        l_ = from_ - 8 * (1 + i)
         r = from_ + 8 * (1 + i)
-        if u_flag and _is_in_board(u) and _is_same_column(from_, u) and _owner(bs[u]) == turn:
+        if (
+            u_flag
+            and _is_in_board(u)
+            and _is_same_column(from_, u)
+            and _owner(bs[u]) == turn
+        ):
             to[u] = 1
-        if d_flag and _is_in_board(d) and _is_same_column(from_, d) and _owner(bs[d]) == turn:
+        if (
+            d_flag
+            and _is_in_board(d)
+            and _is_same_column(from_, d)
+            and _owner(bs[d]) == turn
+        ):
             to[d] = 1
-        if l_flag and _is_in_board(l) and _is_same_row(from_, l) and _owner(bs[l]) == turn:
-            to[l] = 1
-        if r_flag and _is_in_board(r) and _is_same_row(from_, r) and _owner(bs[r]) == turn:
+        if (
+            l_flag
+            and _is_in_board(l_)
+            and _is_same_row(from_, l_)
+            and _owner(bs[l_]) == turn
+        ):
+            to[l_] = 1
+        if (
+            r_flag
+            and _is_in_board(r)
+            and _is_same_row(from_, r)
+            and _owner(bs[r]) == turn
+        ):
             to[r] = 1
         if not _is_in_board(u) or bs[u] != 0:
             u_flag = False
         if not _is_in_board(d) or bs[d] != 0:
             d_flag = False
-        if not _is_in_board(l) or bs[l] != 0:
+        if not _is_in_board(l_) or bs[l_] != 0:
             l_flag = False
         if not _is_in_board(r) or bs[r] != 0:
             r_flag = False
@@ -530,22 +576,22 @@ def _queen_move(bs: np.ndarray, from_: int, turn: int):
 
 def _king_moves(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
-    u, d, l, r = _is_side(from_)
+    u, d, l_, r = _is_side(from_)
     if not u:
         if _owner(bs[from_ + 1]) != turn:
             to[from_ + 1] = 1
-        if not l and _owner(bs[from_ - 7]) != turn:
+        if not l_ and _owner(bs[from_ - 7]) != turn:
             to[from_ - 7] = 1
         if not r and _owner(bs[from_ + 9]) != turn:
             to[from_ + 9] = 1
-    if not l and _owner(bs[from_ - 8]) != turn:
+    if not l_ and _owner(bs[from_ - 8]) != turn:
         to[from_ - 8] = 1
     if not r and _owner(bs[from_ + 8]) != turn:
         to[from_ + 8] = 1
     if not d:
         if _owner(bs[from_ - 1]) != turn:
             to[from_ - 1] = 1
-        if not l and _owner(bs[from_ - 9]) != turn:
+        if not l_ and _owner(bs[from_ - 9]) != turn:
             to[from_ - 9] = 1
         if not r and _owner(bs[from_ + 7]) != turn:
             to[from_ + 7] = 1
