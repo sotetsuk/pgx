@@ -414,12 +414,19 @@ def _black_pawn_moves(state: ChessState, from_: int):
             to[from_ - 2] = 1
     # 斜めには相手の駒があるときかアンパッサンの時のみ進める
     # 左斜め前
-    if _owner(bs[from_ - 9]) == 1 or state.en_passant == from_ - 8:
+    if _owner(bs[from_ - 9]) == 0 or state.en_passant == from_ - 8:
         to[from_ - 9] = 1
     # 右斜め前
-    if _owner(bs[from_ + 7]) == 1 or state.en_passant == from_ + 8:
+    if _owner(bs[from_ + 7]) == 0 or state.en_passant == from_ + 8:
         to[from_ + 7] = 1
     return to
+
+
+def _pawn_moves(state: ChessState, from_: int, turn: int):
+    if turn == 0:
+        return _white_pawn_moves(state, from_)
+    else:
+        return _black_pawn_moves(state, from_)
 
 
 def _knight_moves(state: ChessState, from_: int, turn: int):
@@ -454,9 +461,8 @@ def _knight_moves(state: ChessState, from_: int, turn: int):
     return to
 
 
-def _bishop_move(state: ChessState, from_: int, turn: int):
+def _bishop_move(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
-    bs = _board_status(state)
     ur_flag = True
     ul_flag = True
     dr_flag = True
@@ -485,9 +491,8 @@ def _bishop_move(state: ChessState, from_: int, turn: int):
     return to
 
 
-def _rook_move(state: ChessState, from_: int, turn: int):
-    to = np.zeros(81, dtype=np.int32)
-    bs = _board_status(state)
+def _rook_move(bs: np.ndarray, from_: int, turn: int):
+    to = np.zeros(64, dtype=np.int32)
     u_flag = True
     d_flag = True
     r_flag = True
@@ -503,7 +508,7 @@ def _rook_move(state: ChessState, from_: int, turn: int):
             to[d] = 1
         if l_flag and _is_in_board(l) and _is_same_row(from_, l) and _owner(bs[l]) == turn:
             to[l] = 1
-        if l_flag and _is_in_board(r) and _is_same_row(from_, r) and _owner(bs[r]) == turn:
+        if r_flag and _is_in_board(r) and _is_same_row(from_, r) and _owner(bs[r]) == turn:
             to[r] = 1
         if not _is_in_board(u) or bs[u] != 0:
             u_flag = False
@@ -516,8 +521,31 @@ def _rook_move(state: ChessState, from_: int, turn: int):
     return to
 
 
-def _queen_move(state: ChessState, from_: int, turn: int):
-    r_move = _rook_move(state, from_, turn)
-    b_move = _bishop_move(state, from_, turn)
+def _queen_move(bs: np.ndarray, from_: int, turn: int):
+    r_move = _rook_move(bs, from_, turn)
+    b_move = _bishop_move(bs, from_, turn)
     # r_moveとb_moveは共通項がないので足してよい
     return r_move + b_move
+
+
+def _king_moves(bs: np.ndarray, from_: int, turn: int):
+    to = np.zeros(64, dtype=np.int32)
+    u, d, l, r = _is_side(from_)
+    if not u:
+        if _owner(bs[from_ + 1]) != turn:
+            to[from_ + 1] = 1
+        if not l and _owner(bs[from_ - 7]) != turn:
+            to[from_ - 7] = 1
+        if not r and _owner(bs[from_ + 9]) != turn:
+            to[from_ + 9] = 1
+    if not l and _owner(bs[from_ - 8]) != turn:
+        to[from_ - 8] = 1
+    if not r and _owner(bs[from_ + 8]) != turn:
+        to[from_ + 8] = 1
+    if not d:
+        if _owner(bs[from_ - 1]) != turn:
+            to[from_ - 1] = 1
+        if not l and _owner(bs[from_ - 9]) != turn:
+            to[from_ - 9] = 1
+        if not r and _owner(bs[from_ + 7]) != turn:
+            to[from_ + 7] = 1
