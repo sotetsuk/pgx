@@ -90,8 +90,8 @@ def _make_init_board() -> jnp.ndarray:
 
 
 def _is_turn_end(state: BackgammonState) -> bool:
-    return (
-        state.playable_dice.sum() == -4 or state.legal_action_mask.sum() == 0
+    return (state.playable_dice.sum() == -4) | (
+        state.legal_action_mask.sum() == 0
     )  # play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
 
 
@@ -106,37 +106,46 @@ def _change_turn(state: BackgammonState) -> BackgammonState:
     return state
 
 
+@jax.jit
 def _roll_init_dice() -> jnp.ndarray:
     roll = randint(0, 5), randint(0, 5)
     # 違う目が出るまで振り続ける.
-    while roll[0] == roll[1]:
+    def _cond_fn(roll: Tuple[int, int]):
+        return roll[0] == roll[1]
+
+    def _body_fn(roll: Tuple[int, int]):
         roll = randint(0, 5), randint(0, 5)
-    return jnp.array(roll, dtype=np.int8)
+        return roll
+
+    return jax.lax.while_loop(_cond_fn, _body_fn, roll)
 
 
+@jit
 def _roll_dice() -> jnp.ndarray:
     roll = randint(0, 5), randint(0, 5)
     return jnp.array(roll, dtype=np.int8)
 
 
+@jit
 def _init_turn(dice: jnp.ndarray) -> jnp.int8:
     """
     ゲーム開始時のターン決め.
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
-    turn = np.sign(diff)  # diff > 0 : turn=1, diff < 0: turn=-1
-    return jnp.int8(turn)
+    return jax.lax.cond(diff > 0, lambda: jnp.int8(1), lambda: jnp.int8(-1))
 
 
+@jit
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
     """
     -1でemptyを表す.
     """
-    if dice[0] == dice[1]:
-        return jnp.array([dice[0] * 4], dtype=np.int8)
-    else:
-        return jnp.array([dice[0], dice[1], -1, -1], dtype=np.int8)
+    return jax.lax.cond(
+        dice[0] == dice[1],
+        lambda: jnp.array([dice[0]] * 4, dtype=np.int8),
+        lambda: jnp.array([dice[0], dice[1], -1, -1], dtype=np.int8),
+    )
 
 
 def _update_playable_dice(

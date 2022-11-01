@@ -17,6 +17,7 @@ from pgx.backgammon import (
     _legal_action_mask,
     _move,
     _rear_distance,
+    _roll_init_dice,
     init,
     step,
 )
@@ -57,6 +58,11 @@ def make_test_state(
 def test_init():
     state: BackgammonState = init()
     assert state.turn == -1 or state.turn == 1
+
+
+def test_init_roll():
+    a = _roll_init_dice()
+    print(a)
 
 
 def test_step():
@@ -201,9 +207,6 @@ def test_legal_action():
         1
     )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
-    print(_is_open(board, turn, 2), _is_open(board, turn, 3))
-    print(_exists(board, turn, 0))
-    print(legal_action_mask)
     assert (expected_legal_action_mask - legal_action_mask).sum() == 0
 
     playable_dice = jnp.array([6, 6, 6, 6])
@@ -255,7 +258,8 @@ def test_calc_win_score():
 
 
 if __name__ == "__main__":
-    # test_init()
+    test_init_roll()
+    test_init()
     test_is_open()
     test_calc_src()
     test_calc_win_score()
