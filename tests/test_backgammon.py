@@ -1,9 +1,5 @@
-import sys
-
 import jax
 import jax.numpy as jnp
-
-sys.path.append("../")
 
 from pgx.backgammon import (
     BackgammonState,
@@ -265,19 +261,3 @@ def test_calc_win_score():
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
-
-
-if __name__ == "__main__":
-    test_change_turn()
-    test_init_roll()
-    test_init()
-    test_is_open()
-    test_calc_src()
-    test_calc_win_score()
-    test_is_all_on_home_boad()
-    test_rear_distance()
-    test_calc_tgt()
-    test_move()
-    test_is_action_legal()
-    test_legal_action()
-    test_step()
