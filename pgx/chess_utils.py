@@ -96,7 +96,7 @@ class Visualizer:
                 "none",
                 "none",
                 "gray",
-                "#303030",
+                "#404040",
                 "#202020",
                 "silver",
             )
