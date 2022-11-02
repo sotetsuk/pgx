@@ -93,16 +93,21 @@ class Visualizer:
             color_mode is None and self.color_mode == "dark"
         ) or color_mode == "dark":
             color_set = VisualizerConfig(
+                "none",
+                "none",
                 "gray",
-                "black",
-                "gray",
-                "gray",
+                "#303030",
                 "#202020",
-                "gray",
+                "silver",
             )
         else:
             color_set = VisualizerConfig(
-                "lightgray", "lightgray", "white", "black", "lightgray", "gray"
+                "none",
+                "none",
+                "white",
+                "gray",
+                "white",
+                "black",
             )
 
         dwg = svgwrite.Drawing(
@@ -129,20 +134,22 @@ class Visualizer:
         board_g = dwg.g()
         for i in range(BOARD_WIDTH * BOARD_HEIGHT):
             if (i // BOARD_HEIGHT) % 2 != i % 2:
-                x = i % BOARD_WIDTH
-                y = i // BOARD_HEIGHT
-                board_g.add(
-                    dwg.rect(
-                        (x * cm, y * cm),
-                        (
-                            GRID_SIZE * cm,
-                            GRID_SIZE * cm,
-                        ),
-                        fill=color_set.grid_color,
-                        stroke=color_set.grid_color,
-                        # stroke_width=GRID_SIZE * 3,
-                    )
+                fill_color = color_set.p1_outline
+            else:
+                fill_color = color_set.p2_outline
+
+            x = i % BOARD_WIDTH
+            y = i // BOARD_HEIGHT
+            board_g.add(
+                dwg.rect(
+                    (x * cm, y * cm),
+                    (
+                        GRID_SIZE * cm,
+                        GRID_SIZE * cm,
+                    ),
+                    fill=fill_color,
                 )
+            )
 
         board_g.add(
             dwg.rect(
@@ -176,7 +183,7 @@ class Visualizer:
                     text=f"{NUM_TO_CHAR[i]}",
                     insert=(
                         (i + 0.4) * GRID_SIZE * cm,
-                        (8.4) * GRID_SIZE * cm,
+                        (8.35) * GRID_SIZE * cm,
                     ),
                     font_size=f"{GRID_SIZE*14}px",
                     font_family="Serif",
@@ -194,50 +201,20 @@ class Visualizer:
         ):
             for xy, is_set in enumerate(piece_pos):
                 if is_set == 1:
+                    x = xy // BOARD_HEIGHT  # ChessStateは左下原点
+                    y = 7 - xy % BOARD_HEIGHT
                     if i < 6:
                         pieces_g = p1_pieces_g
-                        x = xy // BOARD_HEIGHT  # ChessStateは左下原点
-                        y = 7 - xy % BOARD_HEIGHT
                         stroke = color_set.p1_outline
                     else:
                         pieces_g = p2_pieces_g
-                        x = 8 - xy // BOARD_HEIGHT
-                        y = xy % BOARD_HEIGHT
                         stroke = color_set.p2_outline
 
-                    # x = xy // BOARD_HEIGHT  # ChessStateは左下原点
-                    # y = 7 - xy % BOARD_HEIGHT
-                    # if i < 6:
-                    #    pieces_g = p1_pieces_g
-                    #
-                    #    stroke = color_set.p1_outline
-                    # else:
-                    #    pieces_g = p2_pieces_g
-                    #    stroke = color_set.p2_outline
-                    #    # piece_type = "w" + piece_type
-
-                    # テキスト表示
-                    # pieces_g.add(
-                    #    dwg.text(
-                    #        text=piece_type,
-                    #        insert=(
-                    #            (x + 0.2) * GRID_SIZE * cm,
-                    #            (y + -0.2) * GRID_SIZE * cm,
-                    #        ),
-                    #        fill=stroke,
-                    #        font_size=f"{GRID_SIZE*30}px",
-                    #        font_family="Serif",
-                    #    )
-                    # )
                     pieces_g = self._set_piece(
                         x, y, piece_type, dwg, pieces_g, stroke
                     )
 
         board_g.add(p1_pieces_g)
-        p2_pieces_g.rotate(angle=180)
-        p2_pieces_g.translate(
-            -GRID_SIZE * 340, -GRID_SIZE * 303
-        )  # no units allowed
         board_g.add(p2_pieces_g)
 
         board_g.translate(GRID_SIZE * 35, GRID_SIZE * 20)  # no units allowed
