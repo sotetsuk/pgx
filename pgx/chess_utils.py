@@ -95,8 +95,8 @@ class Visualizer:
             color_set = VisualizerConfig(
                 "none",
                 "none",
-                "gray",
                 "#404040",
+                "gray",
                 "#202020",
                 "silver",
             )
@@ -104,8 +104,8 @@ class Visualizer:
             color_set = VisualizerConfig(
                 "none",
                 "none",
-                "white",
                 "gray",
+                "white",
                 "white",
                 "black",
             )
