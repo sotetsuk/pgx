@@ -192,8 +192,7 @@ class Visualizer:
 
         # pieces
 
-        p1_pieces_g = dwg.g()
-        p2_pieces_g = dwg.g()
+        pieces_g = dwg.g()
         for i, piece_pos, piece_type in zip(
             range(12),
             state.board[1:13],
@@ -203,19 +202,15 @@ class Visualizer:
                 if is_set == 1:
                     x = xy // BOARD_HEIGHT  # ChessStateは左下原点
                     y = 7 - xy % BOARD_HEIGHT
-                    if i < 6:
-                        pieces_g = p1_pieces_g
-                        stroke = color_set.p1_outline
-                    else:
-                        pieces_g = p2_pieces_g
-                        stroke = color_set.p2_outline
-
                     pieces_g = self._set_piece(
-                        x, y, piece_type, dwg, pieces_g, stroke
+                        x,
+                        y,
+                        piece_type,
+                        dwg,
+                        pieces_g,
                     )
 
-        board_g.add(p1_pieces_g)
-        board_g.add(p2_pieces_g)
+        board_g.add(pieces_g)
 
         board_g.translate(GRID_SIZE * 35, GRID_SIZE * 20)  # no units allowed
         dwg.add(board_g)
@@ -225,7 +220,7 @@ class Visualizer:
     def _to_svg_string(self) -> str:
         return self._to_dwg().tostring()
 
-    def _set_piece(self, _x, _y, _type, _dwg, _dwg_g, stroke):
+    def _set_piece(self, _x, _y, _type, _dwg, _dwg_g):
         PATH = {
             "P": "images/bPawn.svg",
             "N": "images/bKnight.svg",
@@ -250,8 +245,6 @@ class Visualizer:
             "data:image/svg+xml;base64," + b64_img.decode("ascii"),
             insert=((_x + 0.1) * cm, (_y + 0.1) * cm),
             size=(self.GRID_SIZE * 0.8 * cm, self.GRID_SIZE * 0.8 * cm),
-            fill="white",
-            stroke="white",
         )
         _dwg_g.add(img)
 
