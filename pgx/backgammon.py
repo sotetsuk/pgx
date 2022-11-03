@@ -42,7 +42,7 @@ def init() -> BackgammonState:
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, turn, playable_dice
     )
-    state = BackgammonState(
+    state = BackgammonState(  # type: ignore
         board=board,
         dice=dice,
         playable_dice=playable_dice,
@@ -98,7 +98,7 @@ def _update_by_action(state: BackgammonState, action: int):
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         state.board, state.turn, state.playable_dice
     )
-    return BackgammonState(
+    return BackgammonState(  # type: ignore
         board=board,
         turn=state.turn,
         dice=state.dice,
@@ -153,7 +153,7 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
     return jax.lax.cond(
         _is_turn_end(state),
         lambda: (
-            BackgammonState(
+            BackgammonState(  # type: ignore
                 board=board,
                 turn=turn,
                 dice=dice,
