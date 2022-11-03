@@ -1,5 +1,5 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
-    _knight_moves
+    _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves
 import numpy as np
 
 
@@ -94,7 +94,66 @@ def test_knight_move():
             assert km2[i] == 0
 
 
+def test_bishop_move():
+    b = np.zeros(64, dtype=np.int32)
+    b[32] = 3
+    bm = _bishop_moves(b, 32, 0)
+    for i in range(64):
+        if i == 41 or i == 50 or i == 59 or i == 25 or i == 18 or i == 11 or i == 4:
+            assert bm[i] == 1
+        else:
+            assert bm[i] == 0
+    b[50] = 1
+    b[18] = 7
+    bm1 = _bishop_moves(b, 32, 0)
+    for i in range(64):
+        if i == 41 or i == 25 or i == 18:
+            assert bm1[i] == 1
+        else:
+            assert bm1[i] == 0
+
+
+def test_rook_move():
+    b = np.zeros(64, dtype=np.int32)
+    b[32] = 4
+    rm = _rook_moves(b, 32, 0)
+    for i in range(64):
+        if i == 32:
+            assert rm[i] == 0
+        elif i == 33 or i == 34 or i == 35 or i == 36 or i == 37 or i == 38 or i == 39 or i % 8 == 0:
+            assert rm[i] == 1
+        else:
+            assert rm[i] == 0
+    b[35] = 1
+    b[16] = 8
+    b[40] = 5
+    rm1 = _rook_moves(b, 32, 0)
+    for i in range(64):
+        if i == 33 or i == 34 or i == 24 or i == 16:
+            assert rm1[i] == 1
+        else:
+            assert rm1[i] == 0
+
+
+def test_king_move():
+    b = np.zeros(64, dtype=np.int32)
+    b[36] = 6
+    b[37] = 1
+    b[44] = 7
+    b[43] = 1
+    b[29] = 1
+    km = _king_moves(b, 36, 0)
+    for i in range(64):
+        if i == 45 or i == 44 or i == 35 or i == 27 or i == 28:
+            assert km[i] == 1
+        else:
+            assert km[i] == 0
+
+
 if __name__ == '__main__':
     test_move()
     test_pawn_move()
     test_knight_move()
+    test_bishop_move()
+    test_rook_move()
+    test_king_move()

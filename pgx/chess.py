@@ -464,7 +464,7 @@ def _knight_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _bishop_move(bs: np.ndarray, from_: int, turn: int):
+def _bishop_moves(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
     ur_flag = True
     ul_flag = True
@@ -514,7 +514,7 @@ def _bishop_move(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _rook_move(bs: np.ndarray, from_: int, turn: int):
+def _rook_moves(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
     u_flag = True
     d_flag = True
@@ -529,28 +529,28 @@ def _rook_move(bs: np.ndarray, from_: int, turn: int):
             u_flag
             and _is_in_board(u)
             and _is_same_column(from_, u)
-            and _owner(bs[u]) == turn
+            and _owner(bs[u]) != turn
         ):
             to[u] = 1
         if (
             d_flag
             and _is_in_board(d)
             and _is_same_column(from_, d)
-            and _owner(bs[d]) == turn
+            and _owner(bs[d]) != turn
         ):
             to[d] = 1
         if (
             l_flag
             and _is_in_board(l_)
             and _is_same_row(from_, l_)
-            and _owner(bs[l_]) == turn
+            and _owner(bs[l_]) != turn
         ):
             to[l_] = 1
         if (
             r_flag
             and _is_in_board(r)
             and _is_same_row(from_, r)
-            and _owner(bs[r]) == turn
+            and _owner(bs[r]) != turn
         ):
             to[r] = 1
         if not _is_in_board(u) or bs[u] != 0:
@@ -564,9 +564,9 @@ def _rook_move(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _queen_move(bs: np.ndarray, from_: int, turn: int):
-    r_move = _rook_move(bs, from_, turn)
-    b_move = _bishop_move(bs, from_, turn)
+def _queen_moves(bs: np.ndarray, from_: int, turn: int):
+    r_move = _rook_moves(bs, from_, turn)
+    b_move = _bishop_moves(bs, from_, turn)
     # r_moveとb_moveは共通項がないので足してよい
     return r_move + b_move
 
@@ -592,3 +592,4 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
             to[from_ - 9] = 1
         if not r and _owner(bs[from_ + 7]) != turn:
             to[from_ + 7] = 1
+    return to
