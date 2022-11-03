@@ -1,6 +1,9 @@
+import sys
+
 import jax
 import jax.numpy as jnp
 
+sys.path.append("../")
 from pgx.backgammon import (
     BackgammonState,
     _calc_src,
@@ -66,9 +69,32 @@ def test_change_turn():
     state: BackgammonState = init()
     _turn = state.turn
     state, has_changed = _change_turn(state)
-    print(state, has_changed)
     assert state.turn == _turn
     assert not has_changed
+
+    # 黒のdance
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        board=board,
+        turn=jnp.int8(1),
+        dice=jnp.array([2, 2], dtype=jnp.int8),
+        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int8),
+        played_dice_num=jnp.int8(0),
+    )
+    state, has_changed = _change_turn(state)
+    assert state.turn == jnp.int8(-1)
+
+    # playable diceがない場合
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        board=board,
+        turn=jnp.int8(1),
+        dice=jnp.array([2, 2], dtype=jnp.int8),
+        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int8),
+        played_dice_num=jnp.int8(2),
+    )
+    state, has_changed = _change_turn(state)
+    assert state.turn == jnp.int8(-1)
 
 
 def test_step():
@@ -261,3 +287,18 @@ def test_calc_win_score():
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
+
+
+if __name__ == "__main__":
+    test_calc_src()
+    test_calc_tgt()
+    test_calc_win_score()
+    test_change_turn()
+    test_init()
+    test_init_roll()
+    test_is_action_legal()
+    test_is_all_on_home_boad()
+    test_is_open()
+    test_legal_action()
+    test_move()
+    test_rear_distance()
