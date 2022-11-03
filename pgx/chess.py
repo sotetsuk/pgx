@@ -634,3 +634,46 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
         if not r and _owner(bs[from_ + 7]) != turn:
             to[from_ + 7] = 1
     return to
+
+
+def _piece_moves(bs: np.ndarray, from_: int, piece: int, en_passant: int):
+    if piece == 0:
+        return np.zeros(64, dtype=np.int32)
+    turn = (piece - 1) // 6
+    p = piece % 6
+    if p == 1:
+        return _pawn_moves(bs, from_, en_passant, turn)
+    elif p == 2:
+        return _knight_moves(bs, from_, turn)
+    elif p == 3:
+        return _bishop_moves(bs, from_, turn)
+    elif p == 4:
+        return _rook_moves(bs, from_, turn)
+    elif p == 5:
+        return _queen_moves(bs, from_, turn)
+    else:
+        return _king_moves(bs, from_, turn)
+
+
+def _create_actions(from_: int, to: np.ndarray):
+    actions = np.zeros(1216, dtype=np.int32)
+    for i in range(64):
+        if to[i] == 0:
+            continue
+        dir = dif_to_direction(from_, i)
+        actions[64 * dir + from_] = 1
+    return actions
+
+
+def _legal_actions(state: ChessState):
+    actions = np.zeros(1216, dtype=np.int32)
+    bs = _board_status(state)
+    for i in range(64):
+        piece = bs[i]
+        if _owner(piece) != state.turn:
+            continue
+        p_moves = _piece_moves(bs, i, piece, state.en_passant)
+        p_actions = _create_actions(i, p_moves)
+        actions += p_actions
+        # promotionの場合
+    return actions
