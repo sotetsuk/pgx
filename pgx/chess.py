@@ -212,6 +212,47 @@ def int_to_action(state: ChessState, action: int):
         return ChessAction(_piece_type(state, from_), from_, to, dis)
 
 
+def dif_to_direction(from_: int, to: int):
+    dif = to - from_
+    if _is_same_column(from_, to):
+        if dif < 0:
+            return 0
+        else:
+            return 1
+    elif _is_same_row(from_, to):
+        if dif < 0:
+            return 2
+        else:
+            return 3
+    elif _is_same_rising(from_, to):
+        if dif < 0:
+            return 4
+        else:
+            return 5
+    elif _is_same_declining(from_, to):
+        if dif < 0:
+            return 6
+        else:
+            return 7
+    elif dif == -6:
+        return 8
+    elif dif == 10:
+        return 9
+    elif dif == -15:
+        return 10
+    elif dif == -17:
+        return 11
+    elif dif == 6:
+        return 12
+    elif dif == -10:
+        return 13
+    elif dif == 15:
+        return 14
+    elif dif == 17:
+        return 15
+    return -1
+
+
 def _piece_type(state: ChessState, position: int):
     return state.board[:, position].argmax()
 
