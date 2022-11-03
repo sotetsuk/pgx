@@ -392,9 +392,8 @@ def _is_second_line(point: int):
     return su, sd, sl, sr
 
 
-def _white_pawn_moves(state: ChessState, from_: int):
+def _white_pawn_moves(bs: np.ndarray, from_: int, en_passant: int):
     to = np.zeros(64, dtype=np.int32)
-    bs = _board_status(state)
     if bs[from_ + 1] == 0:
         to[from_ + 1] = 1
         # 初期位置の場合はニマス進める
@@ -402,17 +401,16 @@ def _white_pawn_moves(state: ChessState, from_: int):
             to[from_ + 2] = 1
     # 斜めには相手の駒があるときかアンパッサンの時のみ進める
     # 左斜め前
-    if _owner(bs[from_ - 7]) == 1 or state.en_passant == from_ - 8:
+    if _owner(bs[from_ - 7]) == 1 or en_passant == from_ - 8:
         to[from_ - 7] = 1
     # 右斜め前
-    if _owner(bs[from_ + 9]) == 1 or state.en_passant == from_ + 8:
+    if _owner(bs[from_ + 9]) == 1 or en_passant == from_ + 8:
         to[from_ + 9] = 1
     return to
 
 
-def _black_pawn_moves(state: ChessState, from_: int):
+def _black_pawn_moves(bs: np.ndarray, from_: int, en_passant: int):
     to = np.zeros(64, dtype=np.int32)
-    bs = _board_status(state)
     if bs[from_ - 1] == 0:
         to[from_ - 1] = 1
         # 初期位置の場合はニマス進める
@@ -420,24 +418,23 @@ def _black_pawn_moves(state: ChessState, from_: int):
             to[from_ - 2] = 1
     # 斜めには相手の駒があるときかアンパッサンの時のみ進める
     # 左斜め前
-    if _owner(bs[from_ - 9]) == 0 or state.en_passant == from_ - 8:
+    if _owner(bs[from_ - 9]) == 0 or en_passant == from_ - 8:
         to[from_ - 9] = 1
     # 右斜め前
-    if _owner(bs[from_ + 7]) == 0 or state.en_passant == from_ + 8:
+    if _owner(bs[from_ + 7]) == 0 or en_passant == from_ + 8:
         to[from_ + 7] = 1
     return to
 
 
-def _pawn_moves(state: ChessState, from_: int, turn: int):
+def _pawn_moves(bs: np.ndarray, from_: int, en_passant: int, turn: int):
     if turn == 0:
-        return _white_pawn_moves(state, from_)
+        return _white_pawn_moves(bs, from_, en_passant)
     else:
-        return _black_pawn_moves(state, from_)
+        return _black_pawn_moves(bs, from_, en_passant)
 
 
-def _knight_moves(state: ChessState, from_: int, turn: int):
+def _knight_moves(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
-    bs = _board_status(state)
     u, d, l_, r = _is_side(from_)
     su, sd, sl, sr = _is_second_line(from_)
     # 上方向
