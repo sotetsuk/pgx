@@ -224,10 +224,22 @@ def _update_playable_dice(
 ) -> jnp.ndarray:
     _n = played_dice_num
     die = action % 6
+
+    @jit
+    def _update_for_diff_dice(die: int, playable_dice: np.ndarray):
+        return jax.lax.fori_loop(
+            0,
+            4,
+            lambda i, x: jax.lax.cond(
+                die == x[i], lambda: x.at[i].set(-1), lambda: x
+            ),
+            playable_dice,
+        )
+
     return jax.lax.cond(
         dice[0] == dice[1],
         lambda: playable_dice.at[3 - _n].set(-1),
-        lambda: playable_dice.at[playable_dice == die].set(-1),
+        lambda: _update_for_diff_dice(die, playable_dice),
     )
 
 
