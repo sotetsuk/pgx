@@ -14,6 +14,7 @@ from pgx.backgammon import (
     _is_action_legal,
     _is_all_on_homeboad,
     _is_open,
+    _is_turn_end,
     _legal_action_mask,
     _move,
     _rear_distance,
