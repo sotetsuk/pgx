@@ -128,8 +128,8 @@ def _is_turn_end(state: BackgammonState) -> bool:
     """
     play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
     """
-    return (state.playable_dice.sum() == -4) | (
-        state.legal_action_mask.sum() == 0
+    return bool(
+        state.playable_dice.sum() == -4 or state.legal_action_mask.sum() == 0
     )
 
 
@@ -465,7 +465,7 @@ def _is_gammon(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     相手のoffに一つもcheckerがなければgammon勝ち
     """
-    return board[_off_idx(-1 * turn)] == 0
+    return bool(board[_off_idx(-1 * turn)] == 0)
 
 
 @jit
