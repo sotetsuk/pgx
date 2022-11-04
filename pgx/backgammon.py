@@ -1,4 +1,3 @@
-from random import randint
 from typing import Tuple
 
 import jax
@@ -6,6 +5,9 @@ import jax.numpy as jnp
 import numpy as np
 from flax import struct
 from jax import jit
+
+seed = 1701
+key = jax.random.PRNGKey(seed)
 
 
 @struct.dataclass
@@ -173,8 +175,10 @@ def _roll_init_dice() -> jnp.ndarray:
         return roll[0] == roll[1]
 
     def _body_fn(_roll: jnp.ndarray):
-        roll: Tuple[int, int] = randint(0, 5), randint(0, 5)
-        return jnp.array([roll[0], roll[1]], dtype=jnp.int8)
+        roll: jnp.ndarray = jax.random.randint(
+            key, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
+        )
+        return roll[0]
 
     return jax.lax.while_loop(
         _cond_fn, _body_fn, jnp.array([0, 0], dtype=jnp.int8)
@@ -183,8 +187,10 @@ def _roll_init_dice() -> jnp.ndarray:
 
 @jit
 def _roll_dice() -> jnp.ndarray:
-    roll = randint(0, 5), randint(0, 5)
-    return jnp.array([roll[0], roll[1]], dtype=jnp.int8)
+    roll: jnp.ndarray = jax.random.randint(
+        key, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
+    )
+    return roll[0]
 
 
 @jit

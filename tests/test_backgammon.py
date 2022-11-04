@@ -1,5 +1,9 @@
+import sys
+
 import jax
 import jax.numpy as jnp
+
+sys.path.append("../")
 
 from pgx.backgammon import (
     BackgammonState,
@@ -7,7 +11,6 @@ from pgx.backgammon import (
     _calc_tgt,
     _calc_win_score,
     _change_turn,
-    _exists,
     _is_action_legal,
     _is_all_on_homeboad,
     _is_open,
@@ -59,7 +62,6 @@ def test_init():
 
 def test_init_roll():
     a = _roll_init_dice()
-    print(a)
 
 
 def test_change_turn():
@@ -284,3 +286,18 @@ def test_calc_win_score():
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
+
+
+if __name__ == "__main__":
+    test_calc_src()
+    test_calc_tgt()
+    test_calc_win_score()
+    test_change_turn()
+    test_init()
+    test_init_roll()
+    test_is_action_legal()
+    test_is_all_on_home_boad()
+    test_is_open()
+    test_legal_action()
+    test_move()
+    test_rear_distance()
