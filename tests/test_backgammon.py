@@ -1,9 +1,5 @@
-import sys
-
 import jax
 import jax.numpy as jnp
-
-sys.path.append("../")
 
 from pgx.backgammon import (
     BackgammonState,
@@ -121,7 +117,9 @@ def test_step():
     # 黒がサイコロ1をplay
     state, _, _ = step(state=state, action=(4 + 2) * 6 + 0)
     assert state.played_dice_num == 0
-    assert state.turn == -1  # turnが変わっているか
+    assert (
+        state.turn == -1 or state.turn == 1 and (state.dice - 3) == 0
+    )  # turnが変わっているか
 
 
 def test_is_open():
@@ -287,18 +285,3 @@ def test_calc_win_score():
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
-
-
-if __name__ == "__main__":
-    test_calc_src()
-    test_calc_tgt()
-    test_calc_win_score()
-    test_change_turn()
-    test_init()
-    test_init_roll()
-    test_is_action_legal()
-    test_is_all_on_home_boad()
-    test_is_open()
-    test_legal_action()
-    test_move()
-    test_rear_distance()
