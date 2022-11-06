@@ -126,7 +126,7 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
             _get_reward(_state, _size),
         ),
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: (_set_pass(_state, jnp.bool_(True)), jnp.array([0, 0])),
+        lambda: (_set_pass(_state, True), jnp.array([0, 0])),
     )
 
 
@@ -167,7 +167,7 @@ def _change_player(_state: GoState) -> GoState:
 
 
 @jit
-def _set_pass(_state: GoState, _pass: jnp.bool_) -> GoState:
+def _set_pass(_state: GoState, _pass: bool) -> GoState:
     return GoState(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
@@ -206,7 +206,7 @@ def _update_terminated(_state: GoState) -> GoState:
 def _not_pass_move(
     _state: GoState, _action: int
 ) -> Tuple[GoState, jnp.ndarray]:
-    state = _set_pass(_state, jnp.bool_(False))
+    state = _set_pass(_state, False)
     xy = _action
     agehama_before = state.agehama[_my_color(state)]
     is_illegal = _is_illegal_move(state, xy)  # 既に他の石が置かれている or コウ
@@ -544,12 +544,12 @@ def _show_details(state: GoState) -> None:
 
 
 @jit
-def _my_color(_state: GoState) -> jnp.int32:
+def _my_color(_state: GoState):
     return jnp.int32(_state.turn % 2)
 
 
 @jit
-def _opponent_color(_state: GoState) -> jnp.int32:
+def _opponent_color(_state: GoState):
     return jnp.int32((_state.turn + 1) % 2)
 
 
