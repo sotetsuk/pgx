@@ -13,24 +13,24 @@ BLACK_CHAR = "@"
 WHITE_CHAR = "O"
 POINT_CHAR = "+"
 
-NSEW = jnp.array([[-1, 0], [1, 0], [0, 1], [0, -1]], dtype=jnp.int8)
+NSEW = jnp.array([[-1, 0], [1, 0], [0, 1], [0, -1]], dtype=jnp.int32)
 
 
 @struct.dataclass
 class GoState:
     # 横幅, マスの数ではない
-    size: jnp.ndarray = jnp.int8(19)  # type:ignore
+    size: jnp.ndarray = jnp.int32(19)  # type:ignore
 
     # 連
     ren_id_board: jnp.ndarray = jnp.full(
-        (2, 19 * 19), -1, dtype=jnp.int8
+        (2, 19 * 19), -1, dtype=jnp.int32
     )  # type:ignore
 
     # 連idが使えるか
     available_ren_id: jnp.ndarray = jnp.ones((2, 19 * 19), dtype=jnp.bool_)
 
     # 連周りの情報 0:None 1:呼吸点 2:石
-    liberty: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.int8)
+    liberty: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.int32)
 
     # 隣接している敵の連id
     adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.bool_)
@@ -39,19 +39,19 @@ class GoState:
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.bool_)
 
     # 経過ターン, 0始まり
-    turn: jnp.ndarray = jnp.int8(0)  # type:ignore
+    turn: jnp.ndarray = jnp.int32(0)  # type:ignore
 
     # 0: 先手, 1: 後手
-    curr_player: jnp.ndarray = jnp.int8(0)  # type:ignore
+    curr_player: jnp.ndarray = jnp.int32(0)  # type:ignore
 
     # [0]: 黒の得たアゲハマ, [1]: 白の方
-    agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int8)
+    agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
 
     # 直前のactionがパスだとTrue
-    passed: jnp.ndarray = jnp.zeros(1, dtype=jnp.bool_)
+    passed: jnp.ndarray = jnp.bool_(False)  # type:ignore
 
     # コウによる着手禁止点(xy), 無ければ(-1)
-    kou: jnp.ndarray = jnp.int8(-1)  # type:ignore
+    kou: jnp.ndarray = jnp.int32(-1)  # type:ignore
 
     # 終局判定
     terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
@@ -60,11 +60,13 @@ class GoState:
 @partial(jit, static_argnums=(0,))
 def init(size: int) -> GoState:
     return GoState(  # type:ignore
-        size=jnp.int8(size),  # type:ignore
-        ren_id_board=jnp.full((2, size * size), -1, dtype=int),  # type:ignore
-        available_ren_id=jnp.ones((2, size * size), dtype=bool),
-        liberty=jnp.zeros((2, size * size, size * size), dtype=int),
-        adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=bool),
+        size=jnp.int32(size),  # type:ignore
+        ren_id_board=jnp.full(
+            (2, size * size), -1, dtype=jnp.int32
+        ),  # type:ignore
+        available_ren_id=jnp.ones((2, size * size), dtype=jnp.bool_),
+        liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
+        adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
     )
 
 
@@ -108,7 +110,7 @@ def step(
 @partial(jit, static_argnums=(1,))
 def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
     return jax.lax.cond(
-        _state.passed[0],
+        _state.passed,
         # 連続でパスならば終局
         lambda: (
             _update_terminated(_state),
@@ -167,7 +169,7 @@ def _set_pass(_state: GoState, _pass: jnp.bool_) -> GoState:
         turn=_state.turn,
         curr_player=_state.curr_player,
         agehama=_state.agehama,
-        passed=_state.passed.at[0].set(_pass),
+        passed=_pass,  # type:ignore
         kou=_state.kou,
         terminated=_state.terminated,
     )
@@ -207,7 +209,7 @@ def _not_pass_move(
     # 周囲の連を調べる
     for nsew in NSEW:  # type:ignore
         adj_pos = (
-            jnp.array([xy // state.size, xy % state.size], dtype=jnp.int8)
+            jnp.array([xy // state.size, xy % state.size], dtype=jnp.int32)
             + nsew
         )
         adj_xy = adj_pos[0] * state.size + adj_pos[1]
@@ -269,7 +271,7 @@ def _not_pass_move(
             kou_occurred & state.agehama[_my_color(state)] - agehama_before
             == 1,
             lambda: state.kou,
-            lambda: jnp.int8(-1),
+            lambda: jnp.int32(-1),
         ),
         terminated=state.terminated,
     )
@@ -486,7 +488,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         curr_player=_state.curr_player,
         agehama=_state.agehama.at[_my_color(_state)].add(agehama),
         passed=_state.passed,
-        kou=jnp.int8(_rm_stone_xy),  # type:ignore
+        kou=jnp.int32(_rm_stone_xy),  # type:ignore
         terminated=_state.terminated,
     )
 
@@ -531,13 +533,13 @@ def _show_details(state: GoState) -> None:
 
 
 @jit
-def _my_color(_state: GoState) -> jnp.int8:
-    return jnp.int8(_state.turn % 2)
+def _my_color(_state: GoState) -> jnp.int32:
+    return jnp.int32(_state.turn % 2)
 
 
 @jit
-def _opponent_color(_state: GoState) -> jnp.int8:
-    return jnp.int8((_state.turn + 1) % 2)
+def _opponent_color(_state: GoState) -> jnp.int32:
+    return jnp.int32((_state.turn + 1) % 2)
 
 
 @jit
