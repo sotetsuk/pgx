@@ -19,47 +19,52 @@ NSEW = jnp.array([[-1, 0], [1, 0], [0, 1], [0, -1]])
 @struct.dataclass
 class GoState:
     # 横幅, マスの数ではない
-    size: jnp.ndarray = jnp.full(1, 19, dtype=int)  # type:ignore
+    size: jnp.ndarray = jnp.int8(19)  # type:ignore
 
     # 連
     ren_id_board: jnp.ndarray = jnp.full(
-        (2, 19 * 19), -1, dtype=int
+        (2, 19 * 19), -1, dtype=jnp.int8
     )  # type:ignore
 
     # 連idが使えるか
-    available_ren_id: jnp.ndarray = jnp.ones((2, 19 * 19), dtype=bool)
+    available_ren_id: jnp.ndarray = jnp.ones((2, 19 * 19), dtype=jnp.bool_)
 
     # 連周りの情報 0:None 1:呼吸点 2:石
-    liberty: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=int)
+    liberty: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.int8)
 
     # 隣接している敵の連id
-    adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=bool)
+    adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.bool_)
+
+    # 設置可能なマスをTrueとしたマスク
+    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.bool_)
 
     # 経過ターン, 0始まり
-    turn: jnp.ndarray = jnp.zeros(1, dtype=int)
+    turn: jnp.ndarray = jnp.int8(0)  # type:ignore
+
+    # 0: 先手, 1: 後手
+    curr_player: jnp.ndarray = jnp.int8(0)  # type:ignore
 
     # [0]: 黒の得たアゲハマ, [1]: 白の方
-    agehama: jnp.ndarray = jnp.zeros(2, dtype=int)
+    agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int8)
 
     # 直前のactionがパスだとTrue
-    passed: jnp.ndarray = jnp.zeros(1, dtype=bool)
+    passed: jnp.ndarray = jnp.zeros(1, dtype=jnp.bool_)
 
     # コウによる着手禁止点(xy), 無ければ(-1)
-    kou: jnp.ndarray = jnp.full(1, -1, dtype=int)  # type:ignore
+    kou: jnp.ndarray = jnp.int8(-1)  # type:ignore
+
+    # 終局判定
+    terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
 
 
 @partial(jit, static_argnums=(0,))
 def init(size: int) -> GoState:
     return GoState(  # type:ignore
-        size=jnp.full(1, size, dtype=int),  # type:ignore
+        size=jnp.int8(size),  # type:ignore
         ren_id_board=jnp.full((2, size * size), -1, dtype=int),  # type:ignore
         available_ren_id=jnp.ones((2, size * size), dtype=bool),
         liberty=jnp.zeros((2, size * size, size * size), dtype=int),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=bool),
-        turn=jnp.zeros(1, dtype=int),
-        agehama=jnp.zeros(2, dtype=int),
-        passed=jnp.zeros(1, dtype=bool),
-        kou=jnp.full(1, -1, dtype=int),  # type:ignore
     )
 
 
