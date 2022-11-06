@@ -75,27 +75,17 @@ def step(
     state: GoState, action: int, size: int
 ) -> Tuple[jnp.ndarray, GoState, jnp.ndarray]:
     # update state
-    _state, reward = jax.lax.cond(
-        action < 0,
-        lambda: _pass_move(state, size),
-        lambda: _not_pass_move(state, action),
-    )
+    _state, reward = _update_state_wo_legal_action(state, action, size)
 
-    # increase turn
-    _state = _increase_turn(_state)
-
-    # change player
-    _state = _change_player(_state)
-
-    # add legal_actions
+    # add legal actions
     _state = GoState(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
-        # legal_action_mask=legal_actions(_state, size),
-        legal_action_mask=_state.legal_action_mask,
+        legal_action_mask=legal_actions(_state, size),
+        # legal_action_mask=_state.legal_action_mask,
         turn=_state.turn,
         curr_player=_state.curr_player,
         agehama=_state.agehama,
@@ -105,6 +95,25 @@ def step(
     )
 
     return (_state.curr_player, _state, reward)
+
+
+@partial(jit, static_argnums=(2,))
+def _update_state_wo_legal_action(
+    _state: GoState, _action: int, _size: int
+) -> Tuple[GoState, jnp.ndarray]:
+    _state, _reward = jax.lax.cond(
+        _action < 0,
+        lambda: _pass_move(_state, _size),
+        lambda: _not_pass_move(_state, _action),
+    )
+
+    # increase turn
+    _state = _increase_turn(_state)
+
+    # change player
+    _state = _change_player(_state)
+
+    return _state, _reward
 
 
 @partial(jit, static_argnums=(1,))
@@ -497,9 +506,11 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     return jnp.logical_not(
         jax.lax.map(
-            lambda xy: step(state, xy, size),
+            lambda xy: _update_state_wo_legal_action(state, xy, size)[
+                0
+            ].terminated,
             jnp.arange(0, size * size),
-        )[2]
+        )
     )
 
 
