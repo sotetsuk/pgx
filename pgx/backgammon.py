@@ -278,7 +278,9 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> jnp.int8:
 
     exists: np.ndarray = jnp.where(
         (b * turn > 0), size=24, fill_value=jnp.nan
-    )[0]
+    )[
+        0
+    ]  # type: ignore
     return jax.lax.cond(
         turn == 1,
         lambda: jnp.int8(
@@ -299,7 +301,7 @@ def _is_all_on_homeboad(board: jnp.ndarray, turn: jnp.int8) -> bool:
     on_home_board: int = jnp.clip(
         -1 * board[home_board], a_min=0, a_max=15
     ).sum()
-    off: int = board[_off_idx(turn)] * turn
+    off: int = board[_off_idx(turn)] * turn  # type: ignore
     return (15 - off) == on_home_board
 
 
@@ -310,7 +312,7 @@ def _is_open(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
     pointにある相手のcheckerの数が1以下なら自分のcheckerをそのpointにおける.
     """
     checkers = board[point]
-    return turn * checkers >= -1  # 黒と白のcheckerは異符号
+    return turn * checkers >= -1  # type: ignore
 
 
 @jit
@@ -319,7 +321,7 @@ def _exists(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
     指定pointに手番のchckerが存在するか.
     """
     checkers = board[point]
-    return turn * checkers >= 1
+    return turn * checkers >= 1  # type: ignore
 
 
 @jit
@@ -343,7 +345,7 @@ def _calc_tgt(src: int, turn: jnp.int8, die) -> jnp.int8:
             jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
         ),
         lambda: jnp.int8(_from_other_than_bar(src, turn, die)),
-    )
+    )  # type: ignore
 
 
 @jit
@@ -352,7 +354,7 @@ def _from_other_than_bar(src: int, turn: jnp.int8, die: int) -> int:
         (jnp.abs(src + die * -1 * turn - 25 / 2) < 25 / 2),
         lambda: jnp.int8(src + die * -1 * turn),
         lambda: jnp.int8(_off_idx(turn)),
-    )
+    )  # type: ignore
 
 
 @jit
@@ -434,7 +436,7 @@ def _is_all_off(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.
     """
-    return board[_off_idx(turn)] * turn == 15
+    return board[_off_idx(turn)] * turn == 15  # type: ignore
 
 
 @jit
@@ -469,7 +471,7 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.int8) -> bool:
     相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
     => backgammon勝ち
     """
-    return jnp.take(board, _home_board(-1 * turn)).sum() != 0
+    return jnp.take(board, _home_board(-1 * turn)).sum() != 0  # type: ignore
 
 
 @jit
