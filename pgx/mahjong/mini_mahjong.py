@@ -72,8 +72,8 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_tsumo(hand: jnp.ndarray) -> bool:
-        heads, valid = 0, 1
+    def can_tsumo(hand: jnp.ndarray):
+        heads, valid = jnp.int32(0), jnp.int32(1)
         for suit in range(3):
             valid &= Hand.cache(
                 jax.lax.fori_loop(
