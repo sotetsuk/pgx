@@ -269,26 +269,19 @@ def _bar_idx(turn: jnp.int8) -> int:
     return jax.lax.cond(turn == -1, lambda: 24, lambda: 25)
 
 
-@jit
 def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> jnp.int8:
     """
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
     """
     b = board[:24]
 
-    @jit
-    def _filter_to_idx(idx) -> int:
-        return jax.lax.cond(
-            _exists(b, turn, idx),
-            lambda: turn * jnp.int8(idx),
-            lambda: jnp.int8(-30),
-        )
-
-    _rear_candidate: int = jnp.max(jax.lax.map(_filter_to_idx, jnp.arange(24)))
+    exists: np.ndarray = jnp.where(
+        (b * turn > 0), size=24, fill_value=jnp.nan
+    )[0]
     return jax.lax.cond(
         turn == 1,
-        lambda: jnp.int8(_rear_candidate + 1),
-        lambda: jnp.int8(24 + _rear_candidate),
+        lambda: jnp.max(jnp.nan_to_num(exists, nan=jnp.int8(-100))) + 1,
+        lambda: 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int8(100))),
     )
 
 
