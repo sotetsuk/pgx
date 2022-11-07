@@ -62,13 +62,13 @@ def step(
     state = _update_by_action(state, action)
     return jax.lax.cond(
         _is_all_off(state.board, state.turn),
-        lambda: _winnint_step(state),
+        lambda: _winning_step(state),
         lambda: _normal_step(state),
     )
 
 
 @jit
-def _winnint_step(state: BackgammonState) -> Tuple[BackgammonState, int, bool]:
+def _winning_step(state: BackgammonState) -> Tuple[BackgammonState, int, bool]:
     """
     勝利者がいる場合のstep
     """
@@ -274,24 +274,21 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> jnp.int8:
     """
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
     """
-    b = jnp.take(board, jnp.arange(24))
+    b = board[:24]
 
     @jit
-    def _filter_to_idx(idx):
+    def _filter_to_idx(idx) -> int:
         return jax.lax.cond(
             _exists(b, turn, idx),
             lambda: turn * jnp.int8(idx),
             lambda: jnp.int8(-30),
         )
 
+    _rear_candidate: int = jnp.max(jax.lax.map(_filter_to_idx, jnp.arange(24)))
     return jax.lax.cond(
         turn == 1,
-        lambda: jnp.int8(
-            jnp.max(jax.lax.map(_filter_to_idx, jnp.arange(24))) + 1
-        ),
-        lambda: jnp.int8(
-            24 - -1 * jnp.max(jax.lax.map(_filter_to_idx, jnp.arange(24)))
-        ),
+        lambda: jnp.int8(_rear_candidate + 1),
+        lambda: jnp.int8(24 + _rear_candidate),
     )
 
 
