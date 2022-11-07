@@ -151,6 +151,7 @@ def test_rear_distance():
     board = make_test_boad()
     turn = jnp.int8(-1)
     # 白
+
     assert _rear_distance(board, turn) == 5
     # 黒
     turn = jnp.int8(1)

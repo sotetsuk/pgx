@@ -269,6 +269,7 @@ def _bar_idx(turn: jnp.int8) -> int:
     return jax.lax.cond(turn == -1, lambda: 24, lambda: 25)
 
 
+@jit
 def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> jnp.int8:
     """
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
