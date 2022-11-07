@@ -281,8 +281,12 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> jnp.int8:
     )[0]
     return jax.lax.cond(
         turn == 1,
-        lambda: jnp.max(jnp.nan_to_num(exists, nan=jnp.int8(-100))) + 1,
-        lambda: 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int8(100))),
+        lambda: jnp.int8(
+            jnp.max(jnp.nan_to_num(exists, nan=jnp.int8(-100))) + 1
+        ),
+        lambda: jnp.int8(
+            24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int8(100)))
+        ),
     )
 
 
