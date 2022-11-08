@@ -230,6 +230,15 @@ def test_legal_action():
     assert actions[25 + 64 * 35]
     assert actions[25 + 64 * 48]
     assert actions[25 + 64 * 49]
+    s = init()
+    actions = _legal_actions(s)
+    for i in range(8):
+        for j in range(2):
+            assert actions[1 + 8 * i + 64 * (7 + j)]
+    assert actions[8 + 64 * 56]
+    assert actions[8 + 64 * 57]
+    assert actions[48 + 64 * 56]
+    assert actions[48 + 64 * 57]
 
 
 if __name__ == '__main__':

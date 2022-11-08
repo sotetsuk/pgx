@@ -443,10 +443,10 @@ def _white_pawn_moves(bs: np.ndarray, from_: int, en_passant: int):
             to[from_ + 2] = 1
     # 斜めには相手の駒があるときかアンパッサンの時のみ進める
     # 左斜め前
-    if _owner(bs[from_ - 7]) == 1 or en_passant == from_ - 8:
+    if _is_in_board(from_ - 7) and _owner(bs[from_ - 7]) == 1 or en_passant == from_ - 8:
         to[from_ - 7] = 1
     # 右斜め前
-    if _owner(bs[from_ + 9]) == 1 or en_passant == from_ + 8:
+    if _is_in_board(from_ + 9) and _owner(bs[from_ + 9]) == 1 or en_passant == from_ + 8:
         to[from_ + 9] = 1
     return to
 
@@ -460,10 +460,10 @@ def _black_pawn_moves(bs: np.ndarray, from_: int, en_passant: int):
             to[from_ - 2] = 1
     # 斜めには相手の駒があるときかアンパッサンの時のみ進める
     # 左斜め前
-    if _owner(bs[from_ - 9]) == 0 or en_passant == from_ - 8:
+    if _is_in_board(from_ - 9) and _owner(bs[from_ - 9]) == 0 or en_passant == from_ - 8:
         to[from_ - 9] = 1
     # 右斜め前
-    if _owner(bs[from_ + 7]) == 0 or en_passant == from_ + 8:
+    if _is_in_board(from_ + 7) and _owner(bs[from_ + 7]) == 0 or en_passant == from_ + 8:
         to[from_ + 7] = 1
     return to
 
