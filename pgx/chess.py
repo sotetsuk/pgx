@@ -73,6 +73,29 @@ def init():
     return ChessState(board=_make_board(bs))
 
 
+def step(state: ChessState, i_action: int):
+    action = int_to_action(state, i_action)
+    is_castling = _is_castling(action)
+    s = _move(state, action, is_castling)
+    # 各種フラグの更新
+    if not s.wr1_move_count and action.from_ == 0:
+        s.wr1_move_count = True
+    if not s.wr2_move_count and action.from_ == 56:
+        s.wr2_move_count = True
+    if not s.br1_move_count and action.from_ == 7:
+        s.br1_move_count = True
+    if not s.br2_move_count and action.from_ == 63:
+        s.br2_move_count = True
+    if not s.wk_move_count and action.from_ == 32:
+        s.wk_move_count = True
+    if not s.bk_move_count and action.from_ == 39:
+        s.bk_move_count = True
+    if action.piece % 6 == 1 and abs(action.from_ - action.to) == 2:
+        s.en_passant = action.to
+    else:
+        s.en_passant = -1
+
+
 def _make_board(bs: np.ndarray) -> np.ndarray:
     board = np.zeros((13, 64), dtype=np.int32)
     for i in range(64):
@@ -292,64 +315,37 @@ def _is_castling(action: ChessAction) -> int:
     return 0
 
 
-def _move(state: ChessState, action: ChessAction) -> ChessState:
+def _move(state: ChessState, action: ChessAction, is_castling: int) -> ChessState:
     s = copy.deepcopy(state)
     s.board[action.piece][action.from_] = 0
     s.board[0][action.from_] = 1
     s.board[:, action.to] *= 0
     p = _promoted_piece(action)
     s.board[p][action.to] = 1
-    # 先手側のアンパッサン
-    if action.piece == 1 and action.to == s.en_passant + 1:
-        s.board[:, s.en_passant] *= 0
-    # 後手側のアンパッサン
-    if action.piece == 7 and action.to == s.en_passant - 1:
-        s.board[:, s.en_passant] *= 0
     # 左キャスリング
-    if _is_castling(action) == 1:
+    if is_castling == 1:
         if s.turn == 0:
             s.board[4][0] = 0
             s.board[0][0] = 1
             s.board[0][24] = 0
             s.board[4][24] = 1
-            s.wr1_move_count = True
         else:
             s.board[10][7] = 0
             s.board[0][7] = 1
             s.board[0][31] = 0
             s.board[10][31] = 1
-            s.br1_move_count = True
     # 右キャスリング
-    if _is_castling(action) == 2:
+    if is_castling == 2:
         if s.turn == 0:
             s.board[4][56] = 0
             s.board[0][56] = 1
             s.board[0][40] = 0
             s.board[4][40] = 1
-            s.wr2_move_count = True
         else:
             s.board[10][63] = 0
             s.board[0][63] = 1
             s.board[0][47] = 0
             s.board[10][47] = 1
-            s.br2_move_count = True
-    # 各種フラグの更新
-    if not s.wr1_move_count and action.from_ == 0:
-        s.wr1_move_count = True
-    if not s.wr2_move_count and action.from_ == 56:
-        s.wr2_move_count = True
-    if not s.br1_move_count and action.from_ == 7:
-        s.br1_move_count = True
-    if not s.br2_move_count and action.from_ == 63:
-        s.br2_move_count = True
-    if not s.wk_move_count and action.from_ == 32:
-        s.wk_move_count = True
-    if not s.bk_move_count and action.from_ == 39:
-        s.bk_move_count = True
-    if action.piece % 6 == 1 and abs(action.from_ - action.to) == 2:
-        s.en_passant = action.to
-    else:
-        s.en_passant = -1
     return s
 
 
@@ -680,4 +676,30 @@ def _legal_actions(state: ChessState):
         p_actions = _create_actions(i, p_moves)
         actions += p_actions
         # promotionの場合
+        if piece == 1 and i % 8 == 6:
+            if _is_in_board(i - 7) and p_moves[i - 7] == 1:
+                actions[i + 64 * 67] = 1
+                actions[i + 64 * 68] = 1
+                actions[i + 64 * 69] = 1
+            if _is_in_board(i + 1) and p_moves[i + 1] == 1:
+                actions[i + 64 * 64] = 1
+                actions[i + 64 * 65] = 1
+                actions[i + 64 * 66] = 1
+            if _is_in_board(i + 9) and p_moves[i + 9] == 1:
+                actions[i + 64 * 70] = 1
+                actions[i + 64 * 71] = 1
+                actions[i + 64 * 72] = 1
+        if piece == 7 and i % 8 == 1:
+            if _is_in_board(i - 9) and p_moves[i - 9] == 1:
+                actions[i + 64 * 67] = 1
+                actions[i + 64 * 68] = 1
+                actions[i + 64 * 69] = 1
+            if _is_in_board(i - 1) and p_moves[i - 1] == 1:
+                actions[i + 64 * 64] = 1
+                actions[i + 64 * 65] = 1
+                actions[i + 64 * 66] = 1
+            if _is_in_board(i + 7) and p_moves[i + 7] == 1:
+                actions[i + 64 * 70] = 1
+                actions[i + 64 * 71] = 1
+                actions[i + 64 * 72] = 1
     return actions
