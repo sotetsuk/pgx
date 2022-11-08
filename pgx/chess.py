@@ -212,45 +212,46 @@ def int_to_action(state: ChessState, action: int):
         return ChessAction(_piece_type(state, from_), from_, to, dis)
 
 
+# 二地点の位置関係と距離
 def dif_to_direction(from_: int, to: int):
     dif = to - from_
     if _is_same_column(from_, to):
         if dif < 0:
-            return 0
+            return 0, 7 + dif
         else:
-            return 1
+            return 1, dif - 1
     elif _is_same_row(from_, to):
         if dif < 0:
-            return 2
+            return 2, 7 + dif // 8
         else:
-            return 3
+            return 3, dif // 8 - 1
     elif _is_same_rising(from_, to):
         if dif < 0:
-            return 4
+            return 4, 7 + dif // 9
         else:
-            return 5
+            return 5, dif // 9 - 1
     elif _is_same_declining(from_, to):
         if dif < 0:
-            return 6
+            return 6, 7 + dif // 7
         else:
-            return 7
+            return 7, dif // 7 - 1
     elif dif == -6:
-        return 8
+        return 8, 1
     elif dif == 10:
-        return 9
+        return 9, 1
     elif dif == -15:
-        return 10
+        return 10, 1
     elif dif == -17:
-        return 11
+        return 11, 1
     elif dif == 6:
-        return 12
+        return 12, 1
     elif dif == -10:
-        return 13
+        return 13, 1
     elif dif == 15:
-        return 14
+        return 14, 1
     elif dif == 17:
-        return 15
-    return -1
+        return 15, 1
+    return -1, 0
 
 
 def _piece_type(state: ChessState, position: int):
@@ -656,17 +657,20 @@ def _piece_moves(bs: np.ndarray, from_: int, piece: int, en_passant: int):
 
 
 def _create_actions(from_: int, to: np.ndarray):
-    actions = np.zeros(1216, dtype=np.int32)
+    actions = np.zeros(4608, dtype=np.int32)
     for i in range(64):
         if to[i] == 0:
             continue
-        dir = dif_to_direction(from_, i)
-        actions[64 * dir + from_] = 1
+        dir, dis = dif_to_direction(from_, i)
+        if dir <= 7:
+            actions[64 * (7 * dir + dis) + from_] = 1
+        else:
+            actions[64 * (48 + dir) + from_] = 1
     return actions
 
 
 def _legal_actions(state: ChessState):
-    actions = np.zeros(1216, dtype=np.int32)
+    actions = np.zeros(4608, dtype=np.int32)
     bs = _board_status(state)
     for i in range(64):
         piece = bs[i]

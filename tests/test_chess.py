@@ -1,5 +1,5 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
-    _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves
+    _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions
 import numpy as np
 
 
@@ -150,6 +150,88 @@ def test_king_move():
             assert km[i] == 0
 
 
+def test_legal_action():
+    b = np.zeros(64, dtype=np.int32)
+    b[25] = 1
+    s = ChessState(board=_make_board(b))
+    actions = _legal_actions(s)
+    assert actions[25 + 64 * 7] == 1
+    assert actions[25 + 64 * 8] == 1
+    b[25] = 2
+    s = ChessState(board=_make_board(b))
+    actions = _legal_actions(s)
+    assert actions[25 + 64 * 56]
+    assert actions[25 + 64 * 57]
+    assert actions[25 + 64 * 62]
+    assert actions[25 + 64 * 63]
+    b[25] = 3
+    s = ChessState(board=_make_board(b))
+    actions = _legal_actions(s)
+    assert actions[25 + 64 * 34]
+    assert actions[25 + 64 * 35]
+    assert actions[25 + 64 * 36]
+    assert actions[25 + 64 * 37]
+    assert actions[25 + 64 * 38]
+    assert actions[25 + 64 * 46]
+    assert actions[25 + 64 * 47]
+    assert actions[25 + 64 * 48]
+    assert actions[25 + 64 * 49]
+    b[25] = 4
+    s = ChessState(board=_make_board(b))
+    actions = _legal_actions(s)
+    assert actions[25 + 64 * 6]
+    assert actions[25 + 64 * 7]
+    assert actions[25 + 64 * 8]
+    assert actions[25 + 64 * 9]
+    assert actions[25 + 64 * 10]
+    assert actions[25 + 64 * 11]
+    assert actions[25 + 64 * 12]
+    assert actions[25 + 64 * 18]
+    assert actions[25 + 64 * 19]
+    assert actions[25 + 64 * 20]
+    assert actions[25 + 64 * 21]
+    assert actions[25 + 64 * 22]
+    assert actions[25 + 64 * 23]
+    assert actions[25 + 64 * 24]
+    b[25] = 5
+    s = ChessState(board=_make_board(b))
+    actions = _legal_actions(s)
+    assert actions[25 + 64 * 34]
+    assert actions[25 + 64 * 35]
+    assert actions[25 + 64 * 36]
+    assert actions[25 + 64 * 37]
+    assert actions[25 + 64 * 38]
+    assert actions[25 + 64 * 46]
+    assert actions[25 + 64 * 47]
+    assert actions[25 + 64 * 48]
+    assert actions[25 + 64 * 49]
+    assert actions[25 + 64 * 6]
+    assert actions[25 + 64 * 7]
+    assert actions[25 + 64 * 8]
+    assert actions[25 + 64 * 9]
+    assert actions[25 + 64 * 10]
+    assert actions[25 + 64 * 11]
+    assert actions[25 + 64 * 12]
+    assert actions[25 + 64 * 18]
+    assert actions[25 + 64 * 19]
+    assert actions[25 + 64 * 20]
+    assert actions[25 + 64 * 21]
+    assert actions[25 + 64 * 22]
+    assert actions[25 + 64 * 23]
+    assert actions[25 + 64 * 24]
+    b[25] = 6
+    s = ChessState(board=_make_board(b))
+    actions = _legal_actions(s)
+    assert actions[25 + 64 * 6]
+    assert actions[25 + 64 * 7]
+    assert actions[25 + 64 * 20]
+    assert actions[25 + 64 * 21]
+    assert actions[25 + 64 * 34]
+    assert actions[25 + 64 * 35]
+    assert actions[25 + 64 * 48]
+    assert actions[25 + 64 * 49]
+
+
 if __name__ == '__main__':
     test_move()
     test_pawn_move()
@@ -157,3 +239,4 @@ if __name__ == '__main__':
     test_bishop_move()
     test_rook_move()
     test_king_move()
+    test_legal_action()
