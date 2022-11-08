@@ -6,33 +6,35 @@ import numpy as np
 def test_move():
     s = init()
     m1 = ChessAction(1, 1, 3)
-    s1 = _move(s, m1)
+    s1 = _move(s, m1, 0)
     assert _piece_type(s1, 3) == 1
     m2 = ChessAction(1, 33, 35)
     m3 = ChessAction(2, 48, 42)
     m4 = ChessAction(3, 40, 19)
     m5 = ChessAction(6, 32, 48)
-    s2 = _move(s, m2)
+    s2 = _move(s, m2, 0)
     assert _piece_type(s2, 35) == 1
-    s3 = _move(s2, m3)
+    s3 = _move(s2, m3, 0)
     assert _piece_type(s3, 42) == 2
-    s4 = _move(s3, m4)
+    s4 = _move(s3, m4, 0)
     assert _piece_type(s4, 19) == 3
-    s5 = _move(s4, m5)
+    s5 = _move(s4, m5, 2)
     assert _piece_type(s5, 48) == 6
     assert _piece_type(s5, 40) == 4
     assert _piece_type(s5, 56) == 0
     m6 = ChessAction(7, 30, 28)
     m7 = ChessAction(1, 35, 29)
-    s6 = _move(s2, m6)
+    s6 = _move(s2, m6, 0)
     assert _piece_type(s6, 28) == 7
-    s7 = _move(s6, m7)
+    s6.en_passant = 28
+    s7 = _move(s6, m7, 0)
     assert _piece_type(s7, 29) == 1
     assert _piece_type(s7, 28) == 0
-    sx1 = _move(s, m6)
-    sx2 = _move(sx1, m2)
+    sx1 = _move(s, m6, 0)
+    sx2 = _move(sx1, m2, 0)
+    sx2.en_passant = 35
     m8 = ChessAction(7, 28, 34)
-    s8 = _move(sx2, m8)
+    s8 = _move(sx2, m8, 0)
     assert _piece_type(s8, 34) == 7
     assert _piece_type(s8, 35) == 0
 
@@ -232,13 +234,16 @@ def test_legal_action():
     assert actions[25 + 64 * 49]
     s = init()
     actions = _legal_actions(s)
-    for i in range(8):
-        for j in range(2):
-            assert actions[1 + 8 * i + 64 * (7 + j)]
-    assert actions[8 + 64 * 56]
-    assert actions[8 + 64 * 57]
-    assert actions[48 + 64 * 56]
-    assert actions[48 + 64 * 57]
+    for i in range(4608):
+        if i == 8 + 64 * 56 or i == 8 + 64 * 57 or i == 48 + 64 * 56 or i == 48 + 64 * 57:
+            assert actions[i] == 1
+        elif 64 * 7 <= i <= 64 * 9:
+            if (i % 64) % 8 == 1:
+                assert actions[i] == 1
+            else:
+                assert actions[i] == 0
+        else:
+            assert actions[i] == 0
 
 
 if __name__ == '__main__':

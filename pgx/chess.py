@@ -322,6 +322,12 @@ def _move(state: ChessState, action: ChessAction, is_castling: int) -> ChessStat
     s.board[:, action.to] *= 0
     p = _promoted_piece(action)
     s.board[p][action.to] = 1
+    # 先手側のアンパッサン
+    if action.piece == 1 and action.to == s.en_passant + 1:
+        s.board[:, s.en_passant] *= 0
+    # 後手側のアンパッサン
+    if action.piece == 7 and action.to == s.en_passant - 1:
+        s.board[:, s.en_passant] *= 0
     # 左キャスリング
     if is_castling == 1:
         if s.turn == 0:
@@ -702,4 +708,5 @@ def _legal_actions(state: ChessState):
                 actions[i + 64 * 70] = 1
                 actions[i + 64 * 71] = 1
                 actions[i + 64 * 72] = 1
+
     return actions
