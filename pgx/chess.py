@@ -671,6 +671,14 @@ def _create_actions(from_: int, to: np.ndarray):
     return actions
 
 
+def _can_left_castling(state: ChessState):
+    return False
+
+
+def _can_right_castling(state: ChessState):
+    return False
+
+
 def _legal_actions(state: ChessState):
     actions = np.zeros(4608, dtype=np.int32)
     bs = _board_status(state)
@@ -708,5 +716,13 @@ def _legal_actions(state: ChessState):
                 actions[i + 64 * 70] = 1
                 actions[i + 64 * 71] = 1
                 actions[i + 64 * 72] = 1
-
+    # castling
+    if state.turn == 0 and _can_left_castling(state):
+        actions[32 + 64 * 19] = 1
+    if state.turn == 1 and _can_left_castling(state):
+        actions[39 + 64 * 19] = 1
+    if state.turn == 0 and _can_right_castling(state):
+        actions[32 + 64 * 22] = 1
+    if state.turn == 1 and _can_right_castling(state):
+        actions[39 + 64 * 22] = 1
     return actions
