@@ -6,8 +6,15 @@ from pgx.go import get_board, init, step
 BOARD_SIZE = 5
 
 
+def test_init():
+    rng = jax.random.PRNGKey(0)
+    state = init(size=BOARD_SIZE, rng=rng)
+    assert state.curr_player == 1
+
+
 def test_end_by_pass():
-    state = init(BOARD_SIZE)
+    rng = jax.random.PRNGKey(0)
+    state = init(size=BOARD_SIZE, rng=rng)
 
     _, state, _ = step(state=state, action=-1, size=BOARD_SIZE)
     assert state.passed
@@ -27,7 +34,9 @@ def test_step():
     """
     https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
     """
-    state = init(size=BOARD_SIZE)
+    rng = jax.random.PRNGKey(0)
+    state = init(size=BOARD_SIZE, rng=rng)
+
     _, state, _ = step(state=state, action=12, size=BOARD_SIZE)  # BLACK
     _, state, _ = step(state=state, action=11, size=BOARD_SIZE)  # WHITE
     _, state, _ = step(state=state, action=17, size=BOARD_SIZE)
@@ -74,7 +83,8 @@ def test_step():
 
 
 def test_kou():
-    state = init(size=BOARD_SIZE)
+    rng = jax.random.PRNGKey(0)
+    state = init(size=BOARD_SIZE, rng=rng)
     _, state, _ = step(state=state, action=2, size=BOARD_SIZE)  # BLACK
     _, state, _ = step(state=state, action=17, size=BOARD_SIZE)  # WHITE
     _, state, _ = step(state=state, action=6, size=BOARD_SIZE)  # BLACK
@@ -114,7 +124,8 @@ def test_kou():
 def test_random_play():
     import numpy as np
 
-    state = init(size=BOARD_SIZE)
+    rng = jax.random.PRNGKey(0)
+    state = init(size=BOARD_SIZE, rng=rng)
     while not state.terminated:
         actions = np.where(state.legal_action_mask)
         if len(actions[0]) == 0:
@@ -136,7 +147,8 @@ def test_random_play_19():
 
     BOARD_SIZE = 19
 
-    state = init(size=BOARD_SIZE)
+    rng = jax.random.PRNGKey(0)
+    state = init(size=BOARD_SIZE, rng=rng)
     while not state.terminated:
         actions = np.where(state.legal_action_mask)
         if len(actions[0]) == 0:

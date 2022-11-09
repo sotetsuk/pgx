@@ -41,7 +41,7 @@ class GoState:
     # 経過ターン, 0始まり
     turn: jnp.ndarray = jnp.int32(0)  # type:ignore
 
-    # 0: 先手, 1: 後手
+    # プレイヤーID
     curr_player: jnp.ndarray = jnp.int32(0)  # type:ignore
 
     # [0]: 黒の得たアゲハマ, [1]: 白の方
@@ -58,7 +58,8 @@ class GoState:
 
 
 @partial(jit, static_argnums=(0,))
-def init(size: int) -> GoState:
+def init(size: int, rng: jax.random.KeyArray) -> GoState:
+    curr_player = jnp.int32(jax.random.bernoulli(rng))
     return GoState(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.full(
@@ -67,6 +68,7 @@ def init(size: int) -> GoState:
         available_ren_id=jnp.ones((2, size * size), dtype=jnp.bool_),
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
+        curr_player=curr_player,  # type:ignore
     )
 
 
@@ -85,7 +87,6 @@ def step(
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=legal_actions(_state, size),
-        # legal_action_mask=_state.legal_action_mask,
         turn=_state.turn,
         curr_player=_state.curr_player,
         agehama=_state.agehama,
@@ -194,7 +195,7 @@ def _update_terminated(_state: GoState) -> GoState:
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
         turn=_state.turn,
-        curr_player=_state.curr_player,
+        curr_player=jnp.int32(-1),  # type:ignore
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
