@@ -39,8 +39,8 @@ def init() -> BackgammonState:
     board: jnp.ndarray = _make_init_board()
     dice: jnp.ndarray = _roll_init_dice()
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
-    played_dice_num = jnp.int8(0)
-    turn = _init_turn(dice)
+    played_dice_num: jnp.int8 = jnp.int8(0)
+    turn: jnp.int8 = _init_turn(dice)
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, turn, playable_dice
     )
@@ -92,7 +92,7 @@ def _normal_step(state: BackgammonState) -> Tuple[BackgammonState, int, bool]:
 @jit
 def _update_by_action(state: BackgammonState, action: int):
     board: jnp.ndarray = _move(state.board, state.turn, action)
-    played_dice_num = jnp.int8(state.played_dice_num + 1)
+    played_dice_num: jnp.int8 = jnp.int8(state.played_dice_num + 1)
     played_dice: jnp.ndarray = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
@@ -139,12 +139,12 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
     ターンが変わる場合は新しいstateを, そうでない場合は元のstateを返す.
     """
     board: jnp.ndarray = state.board
-    turn = -state.turn  # turnを変える
+    turn: jnp.int8 = -state.turn  # turnを変える
     dice: jnp.ndarray = _roll_dice()  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(
         state.dice
     )  # play可能なサイコロを初期化
-    played_dice_num = jnp.int8(0)
+    played_dice_num: jnp.int8 = jnp.int8(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         state.board, state.turn, state.dice
     )
@@ -194,7 +194,7 @@ def _roll_dice() -> jnp.ndarray:
 
 
 @jit
-def _init_turn(dice: jnp.ndarray):
+def _init_turn(dice: jnp.ndarray) -> jnp.int8:
     """
     ゲーム開始時のターン決め.
     サイコロの目が大きい方が手番.
@@ -218,7 +218,7 @@ def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
 @jit
 def _update_playable_dice(
     playable_dice: jnp.ndarray,
-    played_dice_num,
+    played_dice_num: jnp.int8,
     dice: jnp.ndarray,
     action: int,
 ) -> jnp.ndarray:
@@ -244,7 +244,7 @@ def _update_playable_dice(
 
 
 @jit
-def _home_board(turn) -> jnp.ndarray:
+def _home_board(turn: jnp.int8) -> jnp.ndarray:
     """
     白: [18~23], 黒: [0~5]
     """
@@ -254,7 +254,7 @@ def _home_board(turn) -> jnp.ndarray:
 
 
 @jit
-def _off_idx(turn) -> int:
+def _off_idx(turn: jnp.int8) -> int:
     """
     白: 26, 黒: 27
     """
@@ -262,7 +262,7 @@ def _off_idx(turn) -> int:
 
 
 @jit
-def _bar_idx(turn) -> int:
+def _bar_idx(turn: jnp.int8) -> int:
     """
     白: 24, 黒 25
     """
@@ -270,7 +270,7 @@ def _bar_idx(turn) -> int:
 
 
 @jit
-def _rear_distance(board: jnp.ndarray, turn):
+def _rear_distance(board: jnp.ndarray, turn: jnp.int8) -> jnp.int8:
     """
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
     """
@@ -293,7 +293,7 @@ def _rear_distance(board: jnp.ndarray, turn):
 
 
 @jit
-def _is_all_on_homeboad(board: jnp.ndarray, turn) -> bool:
+def _is_all_on_homeboad(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     全てのcheckerがhome boardにあれば, bear offできる.
     """
@@ -306,7 +306,7 @@ def _is_all_on_homeboad(board: jnp.ndarray, turn) -> bool:
 
 
 @jit
-def _is_open(board: jnp.ndarray, turn, point: int) -> bool:
+def _is_open(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
     """
     手番のplayerにとって, pointが空いてるかを判定する.
     pointにある相手のcheckerの数が1以下なら自分のcheckerをそのpointにおける.
@@ -316,7 +316,7 @@ def _is_open(board: jnp.ndarray, turn, point: int) -> bool:
 
 
 @jit
-def _exists(board: jnp.ndarray, turn, point: int) -> bool:
+def _exists(board: jnp.ndarray, turn: jnp.int8, point: int) -> bool:
     """
     指定pointに手番のchckerが存在するか.
     """
@@ -325,7 +325,7 @@ def _exists(board: jnp.ndarray, turn, point: int) -> bool:
 
 
 @jit
-def _calc_src(src: int, turn):
+def _calc_src(src: int, turn: jnp.int8) -> jnp.int8:
     """
     boardのindexに合わせる.
     """
@@ -335,7 +335,7 @@ def _calc_src(src: int, turn):
 
 
 @jit
-def _calc_tgt(src: int, turn, die):
+def _calc_tgt(src: int, turn: jnp.int8, die) -> jnp.int8:
     """
     boardのindexに合わせる.
     """
@@ -349,7 +349,7 @@ def _calc_tgt(src: int, turn, die):
 
 
 @jit
-def _from_other_than_bar(src: int, turn, die: int) -> int:
+def _from_other_than_bar(src: int, turn: jnp.int8, die: int) -> int:
     return jax.lax.cond(
         (jnp.abs(src + die * -1 * turn - 25 / 2) < 25 / 2),
         lambda: jnp.int8(src + die * -1 * turn),
@@ -358,7 +358,7 @@ def _from_other_than_bar(src: int, turn, die: int) -> int:
 
 
 @jit
-def _decompose_action(action: int, turn) -> Tuple:
+def _decompose_action(action: int, turn: jnp.int8) -> Tuple:
     """
     action(int)をsource, die, tagetに分解する.
     """
@@ -385,7 +385,7 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
 
 @jit
 def _is_to_off_legal(
-    board: jnp.ndarray, turn, src: int, tgt: int, die: int
+    board: jnp.ndarray, turn: np.int8, src: int, tgt: int, die: int
 ) -> bool:
     """
     boad外への移動についての合法判定
@@ -400,7 +400,9 @@ def _is_to_off_legal(
 
 
 @jit
-def _is_to_point_legal(board: jnp.ndarray, turn, src: int, tgt: int) -> bool:
+def _is_to_point_legal(
+    board: jnp.ndarray, turn: np.int8, src: int, tgt: int
+) -> bool:
     """
     tgtがpointの場合の合法手判定
     """
@@ -414,7 +416,7 @@ def _is_to_point_legal(board: jnp.ndarray, turn, src: int, tgt: int) -> bool:
 
 
 @jit
-def _move(board: jnp.ndarray, turn, action: int) -> jnp.ndarray:
+def _move(board: jnp.ndarray, turn: jnp.int8, action: int) -> jnp.ndarray:
     """
     micro actionに基づく状態更新
     """
@@ -430,7 +432,7 @@ def _move(board: jnp.ndarray, turn, action: int) -> jnp.ndarray:
 
 
 @jit
-def _is_all_off(board: jnp.ndarray, turn) -> bool:
+def _is_all_off(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.
     """
@@ -438,7 +440,7 @@ def _is_all_off(board: jnp.ndarray, turn) -> bool:
 
 
 @jit
-def _calc_win_score(board: jnp.ndarray, turn) -> int:
+def _calc_win_score(board: jnp.ndarray, turn: jnp.int8) -> int:
     return jax.lax.cond(
         _is_gammon(board, turn),
         lambda: _score(board, turn),
@@ -447,7 +449,7 @@ def _calc_win_score(board: jnp.ndarray, turn) -> int:
 
 
 @jit
-def _score(board: jnp.ndarray, turn) -> int:
+def _score(board: jnp.ndarray, turn: jnp.int8) -> int:
     return jax.lax.cond(
         _remains_at_inner(board, turn),
         lambda: 3,
@@ -456,7 +458,7 @@ def _score(board: jnp.ndarray, turn) -> int:
 
 
 @jit
-def _is_gammon(board: jnp.ndarray, turn) -> bool:
+def _is_gammon(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     相手のoffに一つもcheckerがなければgammon勝ち
     """
@@ -464,7 +466,7 @@ def _is_gammon(board: jnp.ndarray, turn) -> bool:
 
 
 @jit
-def _remains_at_inner(board: jnp.ndarray, turn) -> bool:
+def _remains_at_inner(board: jnp.ndarray, turn: jnp.int8) -> bool:
     """
     相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
     => backgammon勝ち
@@ -474,7 +476,7 @@ def _remains_at_inner(board: jnp.ndarray, turn) -> bool:
 
 @jit
 def _legal_action_mask(
-    board: jnp.ndarray, turn, dice: jnp.ndarray
+    board: jnp.ndarray, turn: jnp.int8, dice: jnp.ndarray
 ) -> jnp.ndarray:
     legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=np.int8)
 
@@ -490,7 +492,7 @@ def _legal_action_mask(
 
 @jit
 def _legal_action_mask_for_single_die(
-    board: jnp.ndarray, turn, die: int
+    board: jnp.ndarray, turn: jnp.int8, die: int
 ) -> jnp.ndarray:
     """
     一つのサイコロの目に対するlegal micro action
@@ -504,7 +506,7 @@ def _legal_action_mask_for_single_die(
 
 @jit
 def _legal_action_mask_for_valid_single_dice(
-    board: jnp.ndarray, turn, die: int
+    board: jnp.ndarray, turn: jnp.int8, die: int
 ) -> jnp.ndarray:
     """
     -1以外のサイコロの目に対して合法判定
