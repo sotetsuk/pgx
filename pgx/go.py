@@ -58,9 +58,9 @@ class GoState:
 
 
 @partial(jit, static_argnums=(0,))
-def init(size: int, rng: jax.random.KeyArray) -> GoState:
+def init(size: int, rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, GoState]:
     curr_player = jnp.int32(jax.random.bernoulli(rng))
-    return GoState(  # type:ignore
+    return curr_player, GoState(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.full(
             (2, size * size), -1, dtype=jnp.int32
