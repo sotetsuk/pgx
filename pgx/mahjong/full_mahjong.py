@@ -115,7 +115,7 @@ class Hand:
 
     @staticmethod
     @jit
-    def can_tsumo(hand: jnp.ndarray) -> bool:
+    def can_tsumo(hand: jnp.ndarray):
         thirteen_orphan = (
             (hand[0] > 0)
             & (hand[8] > 0)
@@ -137,7 +137,7 @@ class Hand:
         )
         seven_pairs = jnp.sum(hand == 2) == 7
 
-        heads, valid = 0, 1
+        heads, valid = jnp.int32(0), jnp.int32(1)
         for suit in range(3):
             valid &= Hand.cache(
                 jax.lax.fori_loop(
@@ -1723,7 +1723,7 @@ class Shanten:
 
     @staticmethod
     @jit
-    def number(hand: jnp.ndarray) -> int:
+    def number(hand: jnp.ndarray):
         return jnp.min(
             jnp.array(
                 [
@@ -1736,14 +1736,14 @@ class Shanten:
 
     @staticmethod
     @jit
-    def seven_pairs(hand: jnp.ndarray) -> int:
+    def seven_pairs(hand: jnp.ndarray):
         n_pair = jnp.sum(hand >= 2)
         n_kind = jnp.sum(hand > 0)
         return 7 - n_pair + jax.lax.max(7 - n_kind, 0)
 
     @staticmethod
     @jit
-    def thirteen_orphan(hand: jnp.ndarray) -> int:
+    def thirteen_orphan(hand: jnp.ndarray):
         n_pair = (
             (hand[0] >= 2).astype(int)
             + (hand[8] >= 2).astype(int)
@@ -1764,7 +1764,7 @@ class Shanten:
 
     @staticmethod
     @jit
-    def normal(hand: jnp.ndarray) -> int:
+    def normal(hand: jnp.ndarray):
         code = jax.lax.map(
             lambda suit: jax.lax.cond(
                 suit == 3,
