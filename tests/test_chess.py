@@ -244,6 +244,30 @@ def test_legal_action():
                 assert actions[i] == 0
         else:
             assert actions[i] == 0
+    s = init()
+    m1 = ChessAction(1, 33, 35)
+    m2 = ChessAction(2, 48, 42)
+    m3 = ChessAction(3, 40, 19)
+    m4 = ChessAction(6, 32, 48)
+    s2 = _move(s, m1, 0)
+    s3 = _move(s2, m2, 0)
+    assert _legal_actions(s3)[32 + 64 * 22] == 0
+    s4 = _move(s3, m3, 0)
+    la = _legal_actions(s4)
+    for i in range(4608):
+        if i == 1 + 64 * 7 or i == 9 + 64 * 7 or i == 17 + 64 * 7 or i == 25 + 64 * 7 or i == 35 + 64 * 7 or i == 49 + 64 * 7 or i == 57 + 64 * 7 or i == 32 + 64 * 7:
+            assert la[i] == 1
+        elif i == 1 + 64 * 8 or i == 9 + 64 * 8 or i == 25 + 64 * 8 or i == 49 + 64 * 8 or i == 57 + 64 * 8:
+            assert la[i] == 1
+        elif i == 56 + 64 * 20 or i == 56 + 64 * 19 or i == 32 + 64 * 21 or i == 32 + 64 * 22:
+            assert la[i] == 1
+        elif i == 19 + 64 * 34 or i == 19 + 64 * 35 or i == 19 + 64 * 36 or i == 19 + 64 * 37 or i == 19 + 64 * 47 or i == 19 + 64 * 48 or i == 19 + 64 * 49 or i == 19 + 64 * 50 or i == 19 + 64 * 51 or i == 24 + 64 * 35:
+            assert la[i] == 1
+        elif i == 8 + 64 * 56 or i == 8 + 64 * 57 or i == 42 + 64 * 56 or i == 42 + 64 * 57 or i == 42 + 64 * 58 or i == 42 + 64 * 60 or i == 42 + 64 * 63:
+            assert la[i] == 1
+        else:
+            assert la[i] == 0
+    s5 = _move(s4, m4, 2)
 
 
 if __name__ == '__main__':
