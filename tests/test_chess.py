@@ -43,9 +43,9 @@ def test_pawn_move():
     b = np.zeros(64, dtype=np.int32)
     b[28] = 1
     b[20] = 7
-    pm = _pawn_moves(b, 28, 20, 0)
+    pm = _pawn_moves(b, 28, 0)
     for i in range(64):
-        if i == 29 or i == 21:
+        if i == 29:
             assert pm[i] == 1
         else:
             assert pm[i] == 0
@@ -53,7 +53,7 @@ def test_pawn_move():
     b1[9] = 1
     b1[2] = 7
     b1[18] = 7
-    pm1 = _pawn_moves(b1, 9, -1, 0)
+    pm1 = _pawn_moves(b1, 9, 0)
     for i in range(64):
         if i == 2 or i == 18 or i == 10 or i == 11:
             assert pm1[i] == 1
@@ -62,7 +62,7 @@ def test_pawn_move():
     b2 = np.zeros(64, dtype=np.int32)
     b2[6] = 7
     b2[5] = 1
-    pm2 = _pawn_moves(b2, 6, -1, 1)
+    pm2 = _pawn_moves(b2, 6, 1)
     for i in range(64):
         assert pm2[i] == 0
 

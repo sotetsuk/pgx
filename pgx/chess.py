@@ -436,45 +436,46 @@ def _is_second_line(point: int):
     return su, sd, sl, sr
 
 
-def _white_pawn_moves(bs: np.ndarray, from_: int, en_passant: int):
+def _white_pawn_moves(bs: np.ndarray, from_: int):
     to = np.zeros(64, dtype=np.int32)
     if bs[from_ + 1] == 0:
         to[from_ + 1] = 1
         # 初期位置の場合はニマス進める
         if from_ % 8 == 1 and bs[from_ + 2] == 0:
             to[from_ + 2] = 1
-    # 斜めには相手の駒があるときかアンパッサンの時のみ進める
+    # 斜めには相手の駒があるとき進める
+    # アンパッサンはリーガルアクションで追加
     # 左斜め前
-    if _is_in_board(from_ - 7) and _owner(bs[from_ - 7]) == 1 or en_passant == from_ - 8:
+    if _is_in_board(from_ - 7) and _owner(bs[from_ - 7]) == 1:
         to[from_ - 7] = 1
     # 右斜め前
-    if _is_in_board(from_ + 9) and _owner(bs[from_ + 9]) == 1 or en_passant == from_ + 8:
+    if _is_in_board(from_ + 9) and _owner(bs[from_ + 9]) == 1:
         to[from_ + 9] = 1
     return to
 
 
-def _black_pawn_moves(bs: np.ndarray, from_: int, en_passant: int):
+def _black_pawn_moves(bs: np.ndarray, from_: int):
     to = np.zeros(64, dtype=np.int32)
     if bs[from_ - 1] == 0:
         to[from_ - 1] = 1
         # 初期位置の場合はニマス進める
         if from_ % 8 == 6 and bs[from_ - 2] == 0:
             to[from_ - 2] = 1
-    # 斜めには相手の駒があるときかアンパッサンの時のみ進める
+    # 斜めには相手の駒があるとき進める
     # 左斜め前
-    if _is_in_board(from_ - 9) and _owner(bs[from_ - 9]) == 0 or en_passant == from_ - 8:
+    if _is_in_board(from_ - 9) and _owner(bs[from_ - 9]) == 0:
         to[from_ - 9] = 1
     # 右斜め前
-    if _is_in_board(from_ + 7) and _owner(bs[from_ + 7]) == 0 or en_passant == from_ + 8:
+    if _is_in_board(from_ + 7) and _owner(bs[from_ + 7]) == 0:
         to[from_ + 7] = 1
     return to
 
 
-def _pawn_moves(bs: np.ndarray, from_: int, en_passant: int, turn: int):
+def _pawn_moves(bs: np.ndarray, from_: int, turn: int):
     if turn == 0:
-        return _white_pawn_moves(bs, from_, en_passant)
+        return _white_pawn_moves(bs, from_)
     else:
-        return _black_pawn_moves(bs, from_, en_passant)
+        return _black_pawn_moves(bs, from_)
 
 
 def _knight_moves(bs: np.ndarray, from_: int, turn: int):
@@ -639,13 +640,13 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _piece_moves(bs: np.ndarray, from_: int, piece: int, en_passant: int):
+def _piece_moves(bs: np.ndarray, from_: int, piece: int):
     if piece == 0:
         return np.zeros(64, dtype=np.int32)
     turn = (piece - 1) // 6
     p = piece % 6
     if p == 1:
-        return _pawn_moves(bs, from_, en_passant, turn)
+        return _pawn_moves(bs, from_, turn)
     elif p == 2:
         return _knight_moves(bs, from_, turn)
     elif p == 3:
@@ -671,12 +672,57 @@ def _create_actions(from_: int, to: np.ndarray):
     return actions
 
 
-def _can_left_castling(state: ChessState):
-    return False
+def _effected_positions(bs: np.ndarray, turn: int):
+    effects = np.zeros(64, dtype=np.int32)
+    for i in range(64):
+        piece = bs[i]
+        if _owner(piece) != turn:
+            continue
+        moves = _piece_moves(bs, i, piece)
+        effects += moves
+    return effects
 
 
-def _can_right_castling(state: ChessState):
-    return False
+def _can_left_castling(state: ChessState, bs: np.ndarray):
+    if state.turn == 0:
+        if state.wk_move_count or state.wr1_move_count:
+            return False
+        # 間に他の駒がある場合不可
+        if bs[8] + bs[16] + bs[24] != 0:
+            return False
+        effects = _effected_positions(bs, 1)
+        # 相手の駒の利きが通り道にある場合不可
+        return effects[16] + effects[24] + effects[32] == 0
+    if state.turn == 1:
+        if state.bk_move_count or state.br1_move_count:
+            return False
+        # 間に他の駒がある場合不可
+        if bs[15] + bs[23] + bs[31] != 0:
+            return False
+        effects = _effected_positions(bs, 0)
+        # 相手の駒の利きが通り道にある場合不可
+        return effects[23] + effects[31] + effects[39] == 0
+
+
+def _can_right_castling(state: ChessState, bs: np.ndarray):
+    if state.turn == 0:
+        if state.wk_move_count or state.wr2_move_count:
+            return False
+        # 間に他の駒がある場合不可
+        if bs[48] + bs[40] != 0:
+            return False
+        effects = _effected_positions(bs, 1)
+        # 相手の駒の利きが通り道にある場合不可
+        return effects[48] + effects[40] + effects[32] == 0
+    if state.turn == 1:
+        if state.bk_move_count or state.br2_move_count:
+            return False
+        # 間に他の駒がある場合不可
+        if bs[55] + bs[47] != 0:
+            return False
+        effects = _effected_positions(bs, 0)
+        # 相手の駒の利きが通り道にある場合不可
+        return effects[55] + effects[47] + effects[39] == 0
 
 
 def _legal_actions(state: ChessState):
@@ -686,7 +732,7 @@ def _legal_actions(state: ChessState):
         piece = bs[i]
         if _owner(piece) != state.turn:
             continue
-        p_moves = _piece_moves(bs, i, piece, state.en_passant)
+        p_moves = _piece_moves(bs, i, piece)
         p_actions = _create_actions(i, p_moves)
         actions += p_actions
         # promotionの場合
@@ -716,13 +762,18 @@ def _legal_actions(state: ChessState):
                 actions[i + 64 * 70] = 1
                 actions[i + 64 * 71] = 1
                 actions[i + 64 * 72] = 1
+        # アンパッサンの場合
+        if piece == 1 and i - 8 == state.en_passant:
+            actions[i + 64 * 6] = 1
+        if piece == 1 and i + 8 == state.en_passant:
+            actions[i + 64 * 5] = 1
+        if piece == 7 and i - 8 == state.en_passant:
+            actions[i + 64 * 4] = 1
+        if piece == 7 and i + 8 == state.en_passant:
+            actions[i + 64 * 7] = 1
     # castling
-    if state.turn == 0 and _can_left_castling(state):
-        actions[32 + 64 * 19] = 1
-    if state.turn == 1 and _can_left_castling(state):
-        actions[39 + 64 * 19] = 1
-    if state.turn == 0 and _can_right_castling(state):
-        actions[32 + 64 * 22] = 1
-    if state.turn == 1 and _can_right_castling(state):
-        actions[39 + 64 * 22] = 1
+    if _can_left_castling(state, bs):
+        actions[32 + state.turn * 7 + 64 * 19] = 1
+    if _can_right_castling(state, bs):
+        actions[32 + state.turn * 7 + 64 * 22] = 1
     return actions
