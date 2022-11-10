@@ -82,4 +82,4 @@ def _win_check(board, turn) -> jnp.ndarray:
 
 
 def observe(state: State) -> jnp.ndarray:
-    ...
+    return jnp.int8(0)
