@@ -315,7 +315,9 @@ def _is_castling(action: ChessAction) -> int:
     return 0
 
 
-def _move(state: ChessState, action: ChessAction, is_castling: int) -> ChessState:
+def _move(
+    state: ChessState, action: ChessAction, is_castling: int
+) -> ChessState:
     s = copy.deepcopy(state)
     s.board[action.piece][action.from_] = 0
     s.board[0][action.from_] = 1
