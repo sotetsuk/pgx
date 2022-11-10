@@ -1,8 +1,6 @@
-import sys
-
+import jax
 import jax.numpy as jnp
 
-sys.path.append("../")
 from pgx.backgammon import (
     BackgammonState,
     _calc_src,
@@ -19,6 +17,9 @@ from pgx.backgammon import (
     init,
     step,
 )
+
+seed = 1701
+rng = jax.random.PRNGKey(seed)
 
 
 def make_test_boad():
@@ -38,13 +39,17 @@ def make_test_boad():
 
 
 def make_test_state(
+    curr_player: jnp.ndarray,
+    rng: jax.random.KeyArray,
     board: jnp.ndarray,
-    turn: jnp.int8,
+    turn: jnp.ndarray,
     dice: jnp.ndarray,
     playable_dice: jnp.ndarray,
-    played_dice_num: jnp.int8,
+    played_dice_num: jnp.ndarray,
 ):
     return BackgammonState(
+        curr_player=curr_player,
+        rng=rng,
         board=board,
         turn=turn,
         dice=dice,
@@ -54,16 +59,16 @@ def make_test_state(
 
 
 def test_init():
-    state: BackgammonState = init()
+    _, state = init(rng)
     assert state.turn == -1 or state.turn == 1
 
 
 def test_init_roll():
-    a = _roll_init_dice()
+    a = _roll_init_dice(rng)
 
 
 def test_change_turn():
-    state: BackgammonState = init()
+    _, state = init(rng)
     _turn = state.turn
     state, has_changed = _change_turn(state)
     assert state.turn == _turn
@@ -72,6 +77,8 @@ def test_change_turn():
     # 黒のdance
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
+        curr_player=jnp.int8(1),
+        rng=rng,
         board=board,
         turn=jnp.int8(1),
         dice=jnp.array([2, 2], dtype=jnp.int8),
@@ -84,6 +91,8 @@ def test_change_turn():
     # playable diceがない場合
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
+        curr_player=jnp.int8(1),
+        rng=rng,
         board=board,
         turn=jnp.int8(1),
         dice=jnp.array([2, 2], dtype=jnp.int8),
@@ -97,6 +106,8 @@ def test_change_turn():
 def test_step():
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
+        curr_player=jnp.int8(1),
+        rng=rng,
         board=board,
         turn=jnp.int8(1),
         dice=jnp.array([0, 1], dtype=jnp.int8),
@@ -104,7 +115,7 @@ def test_step():
         played_dice_num=jnp.int8(0),
     )
     # 黒がサイコロ2をplay
-    state, _, _ = step(state=state, action=(22 + 2) * 6 + 1)
+    _, state, _ = step(state=state, action=(22 + 2) * 6 + 1)
     assert (
         state.playable_dice - jnp.array([0, -1, -1, -1])
     ).sum() == 0  # playable diceが正しく更新されているか
@@ -116,7 +127,7 @@ def test_step():
         and state.board.at[24].get() == -1
     )
     # 黒がサイコロ1をplay
-    state, _, _ = step(state=state, action=(4 + 2) * 6 + 0)
+    _, state, _ = step(state=state, action=(4 + 2) * 6 + 0)
     assert state.played_dice_num == 0
     assert (
         state.turn == -1 or state.turn == 1 and (state.dice - 3) == 0
@@ -287,18 +298,3 @@ def test_calc_win_score():
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
-
-
-if __name__ == "__main__":
-    test_calc_src()
-    test_calc_tgt()
-    test_calc_win_score()
-    test_change_turn()
-    test_init()
-    test_init_roll()
-    test_is_action_legal()
-    test_is_all_on_home_boad()
-    test_is_open()
-    test_legal_action()
-    test_move()
-    test_rear_distance()

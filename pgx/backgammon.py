@@ -6,15 +6,14 @@ import numpy as np
 from flax import struct
 from jax import jit
 
-seed = 1701
-key = jax.random.PRNGKey(seed)
-
 
 @struct.dataclass
 class BackgammonState:
-
+    curr_player: jnp.ndarray = jnp.int8(0)
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+
+    rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint32)
 
     # サイコロの出目 0~5: 1~6
     dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int8)
@@ -35,9 +34,11 @@ class BackgammonState:
 
 
 @jit
-def init() -> BackgammonState:
+def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
+    rng1, rng2 = jax.random.split(rng)
+    curr_player: jnp.ndarray = jnp.int8(jax.random.bernoulli(rng1))
     board: jnp.ndarray = _make_init_board()
-    dice: jnp.ndarray = _roll_init_dice()
+    dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
     played_dice_num: jnp.ndarray = jnp.int8(0)
     turn: jnp.ndarray = _init_turn(dice)
@@ -45,6 +46,8 @@ def init() -> BackgammonState:
         board, turn, playable_dice
     )
     state = BackgammonState(  # type: ignore
+        curr_player=curr_player,
+        rng=rng2,
         board=board,
         dice=dice,
         playable_dice=playable_dice,
@@ -52,7 +55,7 @@ def init() -> BackgammonState:
         turn=turn,
         legal_action_mask=legal_action_mask,
     )
-    return state
+    return curr_player, state
 
 
 @jit
@@ -68,24 +71,32 @@ def step(
 
 
 @jit
-def _winning_step(state: BackgammonState) -> Tuple[BackgammonState, int, bool]:
+def _winning_step(
+    state: BackgammonState,
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
     勝利者がいる場合のstep
     """
     reward = _calc_win_score(state.board, state.turn)
-    return (state, reward, True)
+    return state.curr_player, state, reward
 
 
 @jit
-def _normal_step(state: BackgammonState) -> Tuple[BackgammonState, int, bool]:
+def _normal_step(
+    state: BackgammonState,
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
     勝利者がいない場合のstep, ターンが回ってきたが, 動かせる場所がない場合(dance)すぐさまターンを変える必要がある.
     """
     state, has_changed = _change_turn(state)
     return jax.lax.cond(
         has_changed & _is_turn_end(state),
-        lambda: (_change_turn(state)[0], 0, False),
-        lambda: (state, 0, False),
+        lambda: (
+            _change_turn(state)[0].curr_player,
+            _change_turn(state)[0],
+            0,
+        ),
+        lambda: (state.curr_player, state, 0),
     )
 
 
@@ -138,9 +149,11 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
     """
     ターンが変わる場合は新しいstateを, そうでない場合は元のstateを返す.
     """
+    rng1, rng2 = jax.random.split(state.rng)
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = -state.turn  # turnを変える
-    dice: jnp.ndarray = _roll_dice()  # diceを振る
+    curr_player: jnp.ndarray = (state.curr_player + 1) % 2
+    dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(
         state.dice
     )  # play可能なサイコロを初期化
@@ -152,6 +165,8 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
         _is_turn_end(state),
         lambda: (
             BackgammonState(  # type: ignore
+                curr_player=curr_player,
+                rng=rng1,
                 board=board,
                 turn=turn,
                 dice=dice,
@@ -166,7 +181,7 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
 
 
 @jax.jit
-def _roll_init_dice() -> jnp.ndarray:
+def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     """
     # 違う目が出るまで振り続ける.
     """
@@ -176,7 +191,7 @@ def _roll_init_dice() -> jnp.ndarray:
 
     def _body_fn(_roll: jnp.ndarray):
         roll: jnp.ndarray = jax.random.randint(
-            key, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
+            rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
         )
         return roll[0]
 
@@ -186,9 +201,9 @@ def _roll_init_dice() -> jnp.ndarray:
 
 
 @jit
-def _roll_dice() -> jnp.ndarray:
+def _roll_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     roll: jnp.ndarray = jax.random.randint(
-        key, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
+        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
     )
     return roll[0]
 
@@ -278,7 +293,7 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
 
     exists = jnp.where((b * turn > 0), size=24, fill_value=jnp.nan)[  # type: ignore
         0
-    ]  # type: ignore
+    ]
     return jax.lax.cond(
         turn == 1,
         lambda: jnp.int8(
