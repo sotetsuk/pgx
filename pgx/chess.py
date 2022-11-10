@@ -74,9 +74,30 @@ def init():
 
 
 def step(state: ChessState, i_action: int):
+    legal_actions = _legal_actions(state)
+    # 指定値が合法手でない
+    if legal_actions[i_action] == 0:
+        return state, _turn_to_reward(_another_color(state)), True
     action = int_to_action(state, i_action)
     is_castling = _is_castling(action)
     s = _move(state, action, is_castling)
+    # move後にcheckがかかっている
+    if _is_check(
+        _board_status(s), s.turn, s.board[6 + s.turn * 6, :].argmax()
+    ):
+        return s, _turn_to_reward(_another_color(state)), True
+    s.turn = _another_color(s)
+    enemy_legal_actions = _legal_actions(s)
+    # 相手に合法手が存在しない
+    if np.all(enemy_legal_actions == 0):
+        # checkがかかっている場合→mate
+        if _is_check(
+            _board_status(s), s.turn, s.board[6 + s.turn * 6, :].argmax()
+        ):
+            return s, _turn_to_reward(_another_color(state)), True
+        # そうでない場合→スティルメイト
+        else:
+            return s, 0, True
     # 各種フラグの更新
     if not s.wr1_move_count and action.from_ == 0:
         s.wr1_move_count = True
@@ -94,6 +115,18 @@ def step(state: ChessState, i_action: int):
         s.en_passant = action.to
     else:
         s.en_passant = -1
+    return s, 0, False
+
+
+def _turn_to_reward(turn: int) -> int:
+    if turn == 0:
+        return 1
+    else:
+        return -1
+
+
+def _another_color(state: ChessState):
+    return (state.turn + 1) % 2
 
 
 def _make_board(bs: np.ndarray) -> np.ndarray:
@@ -685,6 +718,11 @@ def _effected_positions(bs: np.ndarray, turn: int):
     return effects
 
 
+def _is_check(bs: np.ndarray, turn: int, kp: int):
+    effects = _effected_positions(bs, (turn + 1) % 2)
+    return effects[kp] != 0
+
+
 def _can_left_castling(state: ChessState, bs: np.ndarray):
     if state.turn == 0:
         if state.wk_move_count or state.wr1_move_count:
@@ -779,3 +817,19 @@ def _legal_actions(state: ChessState):
     if _can_right_castling(state, bs):
         actions[32 + state.turn * 7 + 64 * 22] = 1
     return actions
+
+
+# メイトおよびスティルメイトの判定関数
+def _is_mate(state: ChessState, actions: np.ndarray):
+    f = True
+    for i in range(4608):
+        if actions[i] == 0:
+            continue
+        action = int_to_action(state, i)
+        # is_castlingは呼び出す必要がない（castling後にcheckがかかる場合は弾いている）
+        s = _move(state, action, 0)
+        king_point = state.board[6 + 6 * state.turn, :].argmax()
+        # move後にcheckがかかっていない手が存在するならFalse
+        if not _is_check(_board_status(s), s.turn, king_point):
+            f = False
+    return f
