@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from mini_mahjong import Action, Observation, init, step
+from mini_mahjong import Action, Observation, init, step  # type: ignore
 from shanten_tools import shanten  # type: ignore
 
 
