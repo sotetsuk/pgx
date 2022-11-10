@@ -764,13 +764,13 @@ def _legal_actions(state: ChessState):
                 actions[i + 64 * 72] = 1
         # アンパッサンの場合
         if piece == 1 and i - 8 == state.en_passant:
-            actions[i + 64 * 6] = 1
+            actions[i + 64 * 48] = 1
         if piece == 1 and i + 8 == state.en_passant:
-            actions[i + 64 * 5] = 1
+            actions[i + 64 * 35] = 1
         if piece == 7 and i - 8 == state.en_passant:
-            actions[i + 64 * 4] = 1
+            actions[i + 64 * 34] = 1
         if piece == 7 and i + 8 == state.en_passant:
-            actions[i + 64 * 7] = 1
+            actions[i + 64 * 49] = 1
     # castling
     if _can_left_castling(state, bs):
         actions[32 + state.turn * 7 + 64 * 19] = 1

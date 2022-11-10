@@ -267,7 +267,22 @@ def test_legal_action():
             assert la[i] == 1
         else:
             assert la[i] == 0
-    s5 = _move(s4, m4, 2)
+    bs = _board_status(s4)
+    bs[26] = 11
+    s5 = ChessState(board=_make_board(bs))
+    assert _legal_actions(s5)[32 + 64 * 22] == 0
+    m1 = ChessAction(1, 33, 35)
+    m2 = ChessAction(1, 35, 36)
+    m3 = ChessAction(7, 30, 28)
+    s2 = _move(s, m1, 0)
+    s3 = _move(s2, m2, 0)
+    s4 = _move(s3, m3, 0)
+    s4.en_passant = 28
+    assert _legal_actions(s4)[36 + 64 * 48] == 1
+    m4 = ChessAction(7, 46, 44)
+    s5 = _move(s4, m4, 0)
+    s5.en_passant = 44
+    assert _legal_actions(s5)[36 + 64 * 35] == 1
 
 
 if __name__ == '__main__':
