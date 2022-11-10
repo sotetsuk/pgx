@@ -276,9 +276,7 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
     """
     b = board[:24]
 
-    exists: np.ndarray = jnp.where(
-        (b * turn > 0), size=24, fill_value=jnp.nan
-    )[
+    exists = jnp.where((b * turn > 0), size=24, fill_value=jnp.nan)[
         0
     ]  # type: ignore
     return jax.lax.cond(
@@ -358,7 +356,7 @@ def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
 
 
 @jit
-def _decompose_action(action: int, turn: jnp.int8) -> Tuple:
+def _decompose_action(action: int, turn: jnp.ndarray) -> Tuple:
     """
     action(int)をsource, die, tagetに分解する.
     """
