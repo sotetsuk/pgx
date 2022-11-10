@@ -276,7 +276,7 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
     """
     b = board[:24]
 
-    exists = jnp.where((b * turn > 0), size=24, fill_value=jnp.nan)[
+    exists = jnp.where((b * turn > 0), size=24, fill_value=jnp.nan)[  # type: ignore
         0
     ]  # type: ignore
     return jax.lax.cond(
