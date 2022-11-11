@@ -15,6 +15,8 @@ class BackgammonState:
 
     rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint32)
 
+    terminated: jnp.ndarray = jnp.bool_(False)
+
     # サイコロの出目 0~5: 1~6
     dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int8)
 
@@ -35,9 +37,10 @@ class BackgammonState:
 
 @jit
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
-    rng1, rng2 = jax.random.split(rng)
+    rng1, rng2, rng3 = jax.random.split(rng, num=3)
     curr_player: jnp.ndarray = jnp.int8(jax.random.bernoulli(rng1))
     board: jnp.ndarray = _make_init_board()
+    terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
     played_dice_num: jnp.ndarray = jnp.int8(0)
@@ -47,8 +50,9 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
     )
     state = BackgammonState(  # type: ignore
         curr_player=curr_player,
-        rng=rng2,
+        rng=rng3,
         board=board,
+        terminated=terminated,
         dice=dice,
         playable_dice=playable_dice,
         played_dice_num=played_dice_num,
@@ -78,6 +82,7 @@ def _winning_step(
     勝利者がいる場合のstep
     """
     reward = _calc_win_score(state.board, state.turn)
+    state = state.replace(terminated=jnp.bool_(True))  # type: ignore
     return state.curr_player, state, reward
 
 
@@ -102,6 +107,9 @@ def _normal_step(
 
 @jit
 def _update_by_action(state: BackgammonState, action: int):
+    rng = state.rng
+    curr_player = state.curr_player
+    terminated = state.terminated
     board: jnp.ndarray = _move(state.board, state.turn, action)
     played_dice_num: jnp.ndarray = jnp.int8(state.played_dice_num + 1)
     played_dice: jnp.ndarray = _update_playable_dice(
@@ -111,6 +119,9 @@ def _update_by_action(state: BackgammonState, action: int):
         state.board, state.turn, state.playable_dice
     )
     return BackgammonState(  # type: ignore
+        curr_player=curr_player,
+        rng=rng,
+        terminated=terminated,
         board=board,
         turn=state.turn,
         dice=state.dice,
@@ -153,6 +164,7 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = -state.turn  # turnを変える
     curr_player: jnp.ndarray = (state.curr_player + 1) % 2
+    terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(
         state.dice
@@ -166,8 +178,9 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
         lambda: (
             BackgammonState(  # type: ignore
                 curr_player=curr_player,
-                rng=rng1,
+                rng=rng2,
                 board=board,
+                terminated=terminated,
                 turn=turn,
                 dice=dice,
                 playable_dice=playable_dice,
