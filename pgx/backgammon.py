@@ -77,6 +77,32 @@ def step(
 
 
 @jit
+def observe(state: BackgammonState) -> jnp.ndarray:
+    board: jnp.ndarray = state.board
+    turn: jnp.ndarray = state.turn
+    zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state.playable_dice)
+    return jnp.concatenate((turn * board, zero_one_dice_vec), axis=None)
+
+
+@jit
+def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
+    """
+    playできるサイコロを6次元の0-1ベクトルで返す.
+    """
+    zero_one_dice_vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int8)
+    return jax.lax.fori_loop(
+        0,
+        4,
+        lambda i, x: jax.lax.cond(
+            playable_dice[i] != -1,
+            lambda: x.at[playable_dice[i]].set(1),
+            lambda: x,
+        ),
+        zero_one_dice_vec,
+    )
+
+
+@jit
 def _winning_step(
     state: BackgammonState,
 ) -> Tuple[jnp.ndarray, BackgammonState, int]:
@@ -108,10 +134,13 @@ def _normal_step(
 
 
 @jit
-def _update_by_action(state: BackgammonState, action: int):
+def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
+    """
+    行動を受け取って状態をupdate
+    """
     rng = state.rng
-    curr_player = state.curr_player
-    terminated = state.terminated
+    curr_player: jnp.ndarray = state.curr_player
+    terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state.board, state.turn, action)
     played_dice_num: jnp.ndarray = jnp.int8(state.played_dice_num + 1)
     played_dice: jnp.ndarray = _update_playable_dice(
