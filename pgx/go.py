@@ -57,6 +57,10 @@ class GoState:
     terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
 
 
+def observe(state: GoState, player_id: jnp.ndarray, observe_all=False):
+    pass
+
+
 @partial(jit, static_argnums=(0,))
 def init(size: int, rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, GoState]:
     curr_player = jnp.int32(jax.random.bernoulli(rng))
