@@ -151,7 +151,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (board, jnp.array([1, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state) - expected_obs).sum() == 0
+    assert (observe(state, jnp.int8(1)) - expected_obs).sum() == 0
 
     # curr_playerが白で, playできるdiceが(2)のみの場合
     state = make_test_state(
@@ -166,7 +166,21 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (-1 * board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state) - expected_obs).sum() == 0
+    assert (observe(state, jnp.int8(1)) - expected_obs).sum() == 0
+
+    state = make_test_state(
+        curr_player=jnp.int8(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int8(-1),
+        dice=jnp.array([0, 1], dtype=jnp.int8),
+        playable_dice=jnp.array([-1, 1, -1, -1], dtype=jnp.int8),
+        played_dice_num=jnp.int8(0),
+    )
+    expected_obs = jnp.concatenate(
+        (1 * board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
+    )
+    assert (observe(state, jnp.int8(-1)) - expected_obs).sum() == 0
 
 
 def test_is_open():

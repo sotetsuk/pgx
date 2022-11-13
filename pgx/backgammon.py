@@ -77,11 +77,19 @@ def step(
 
 
 @jit
-def observe(state: BackgammonState) -> jnp.ndarray:
+def observe(state: BackgammonState, curr_player: jnp.ndarray) -> jnp.ndarray:
+    """
+    手番のplayerに対する観測を返す.
+    """
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = state.turn
+    _curr_player: jnp.ndarray = state.curr_player
     zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state.playable_dice)
-    return jnp.concatenate((turn * board, zero_one_dice_vec), axis=None)
+    return jax.lax.cond(
+        curr_player == _curr_player,
+        lambda: jnp.concatenate((turn * board, zero_one_dice_vec), axis=None),
+        lambda: jnp.concatenate((-turn * board, zero_one_dice_vec), axis=None),
+    )
 
 
 @jit
