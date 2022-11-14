@@ -13,7 +13,7 @@ class BackgammonState:
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
 
-    # サイコロを振るたびにrngを更新する.
+    # サイコロを振るたびにrngをsplitして更新する.
     rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint32)
 
     # 終了しているかどうか.
