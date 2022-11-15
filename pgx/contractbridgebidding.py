@@ -74,22 +74,20 @@ def step(
     state.bidding_history[state.turn] = action
     # 非合法手判断
     if not state.legal_actions[action]:
-        return state, -1, True
+        return state, 0, True
     # pass
     if action == 35:
-        state.pass_num += 1
+        state = _state_pass(state)
         # 終了判定
         if _is_over(state):
             reward = _calc_reward()
             return state, reward, True
     # double
     elif action == 36:
-        state.call_x[0] = True
-        state.pass_num[0] = 0
+        state = _state_X(state)
     # redouble
     elif action == 37:
-        state.call_xx[0] = True
-        state.pass_num[0] = 0
+        state = _state_XX(state)
     # bid
     else:
         state = _state_bid(state, action)
@@ -109,7 +107,26 @@ def _is_over(state: ContractBridgeBiddingState) -> bool:
 
 # コントラクトから報酬を計算
 def _calc_reward():
-    return 20
+    return 0
+
+
+def _state_pass(
+    state: ContractBridgeBiddingState,
+) -> ContractBridgeBiddingState:
+    state.pass_num[0] += 1
+    return state
+
+
+def _state_X(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
+    state.call_x[0] = True
+    state.pass_num[0] = 0
+    return state
+
+
+def _state_XX(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
+    state.call_xx[0] = True
+    state.pass_num[0] = 0
+    return state
 
 
 # bidによるstateの変化
