@@ -1,5 +1,5 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
-    _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions
+    _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step
 import numpy as np
 
 
@@ -285,6 +285,25 @@ def test_legal_action():
     assert _legal_actions(s5)[36 + 64 * 35] == 1
 
 
+def test_step():
+    s = init()
+    m = [33 + 64 * 8, 38 + 64 * 5, 41 + 64 * 8, 36 + 64 * 49, 40 + 64 * 46, 31 + 64 * 52, 32 + 64 * 21, 14 + 64 * 5,
+         19 + 64 * 48, 55 + 64 * 61, 48 + 64 * 56, 59 + 64 * 8, 25 + 64 * 7, 45 + 64 * 62, 42 + 64 * 63, 61 + 64 * 34,
+         59 + 64 * 58, 22 + 64 * 6, 49 + 64 * 8, 60 + 64 * 58, 56 + 64 * 20, 21 + 64 * 34, 57 + 64 * 8, 52 + 64 * 7,
+         59 + 64 * 7, 53 + 64 * 6, 24 + 64 * 36, 45 + 64 * 57, 16 + 64 * 37, 52 + 64 * 48, 8 + 64 * 57, 47 + 64 * 32,
+         18 + 64 * 57, 45 + 64 * 31, 43 + 64 * 47, 20 + 64 * 35, 44 + 64 * 58, 39 + 64 * 21, 42 + 64 * 10]
+    for move in m:
+        print(move)
+        s, r, t = step(s, move)
+        if move == 42 + 64 * 10:
+            print(_board_status(s))
+            assert t
+            assert r == 1
+        else:
+            assert not t
+            assert r == 0
+
+
 if __name__ == '__main__':
     test_move()
     test_pawn_move()
@@ -293,3 +312,4 @@ if __name__ == '__main__':
     test_rook_move()
     test_king_move()
     test_legal_action()
+    test_step()
