@@ -836,3 +836,7 @@ def _is_mate(state: ChessState, actions: np.ndarray) -> bool:
         if not _is_check(_board_status(s), s.turn, king_point):
             f = False
     return f
+
+
+def _is_mate2(state: ChessState) -> bool:
+    return False
