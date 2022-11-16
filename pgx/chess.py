@@ -73,10 +73,31 @@ def init():
     return ChessState(board=_make_board(bs))
 
 
-def step(state: ChessState, i_action: int):
+def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
+    legal_actions = _legal_actions(state)
+    # 指定値が合法手でない
+    if legal_actions[i_action] == 0:
+        return state, _turn_to_reward(_another_color(state)), True
     action = int_to_action(state, i_action)
     is_castling = _is_castling(action)
     s = _move(state, action, is_castling)
+    # move後にcheckがかかっている
+    if _is_check(
+        _board_status(s), s.turn, int(s.board[6 + s.turn * 6, :].argmax())
+    ):
+        return s, _turn_to_reward(_another_color(state)), True
+    s.turn = _another_color(s)
+    enemy_legal_actions = _legal_actions(s)
+    # 相手に合法手が存在しない
+    if _is_mate(s, enemy_legal_actions):
+        # checkがかかっている場合→mate
+        if _is_check(
+            _board_status(s), s.turn, int(s.board[6 + s.turn * 6, :].argmax())
+        ):
+            return s, _turn_to_reward(_another_color(s)), True
+        # そうでない場合→スティルメイト
+        else:
+            return s, 0, True
     # 各種フラグの更新
     if not s.wr1_move_count and action.from_ == 0:
         s.wr1_move_count = True
@@ -94,6 +115,18 @@ def step(state: ChessState, i_action: int):
         s.en_passant = action.to
     else:
         s.en_passant = -1
+    return s, 0, False
+
+
+def _turn_to_reward(turn: int) -> int:
+    if turn == 0:
+        return 1
+    else:
+        return -1
+
+
+def _another_color(state: ChessState) -> int:
+    return (state.turn + 1) % 2
 
 
 def _make_board(bs: np.ndarray) -> np.ndarray:
@@ -150,59 +183,59 @@ def _separate_int_action(action: int) -> Tuple[int, int]:
 
 # AlphaZeroのdirectionは後ろ、前、左、右、左下、右上、左上、右下の順で記録
 def _direction_to_dif(direction: int) -> int:
-    # 後ろ
+    # 後ろ 0~6
     if direction == 0:
         return -1
-    # 前
+    # 前 7~13
     if direction == 1:
         return 1
-    # 左
+    # 左 14~20
     if direction == 2:
         return -8
-    # 右
+    # 右 21~27
     if direction == 3:
         return 8
-    # 左下
+    # 左下 28~34
     if direction == 4:
         return -9
-    # 右上
+    # 右上 35~41
     if direction == 5:
         return 9
-    # 左上
+    # 左上 42~48
     if direction == 6:
         return -7
-    # 右下
+    # 右下 49~55
     if direction == 7:
         return 7
     # Knightのdif
-    # 上左
+    # 上左 56
     if direction == 8:
         return -6
-    # 上右
+    # 上右 57
     if direction == 9:
         return 10
-    # 左上
+    # 左上 58
     if direction == 10:
         return -15
-    # 左下
+    # 左下 59
     if direction == 11:
         return -17
-    # 下右
+    # 下右 60
     if direction == 12:
         return 6
-    # 下左
+    # 下左 61
     if direction == 13:
         return -10
-    # 右下
+    # 右下 62
     if direction == 14:
         return 15
-    # 右上
+    # 右上 63
     if direction == 15:
         return 17
     return 0
 
 
-def convert_to(from_: int, dir: int, dis: int, turn: int):
+def convert_to(from_: int, dir: int, dis: int, turn: int) -> int:
     if dir <= 15:
         return from_ + _direction_to_dif(dir) * dis
     # 直進のプロモーション
@@ -223,9 +256,10 @@ def convert_to(from_: int, dir: int, dis: int, turn: int):
             return from_ + 9
         else:
             return from_ + 7
+    return from_
 
 
-def int_to_action(state: ChessState, action: int):
+def int_to_action(state: ChessState, action: int) -> ChessAction:
     from_ = action % 64
     dir, dis = _separate_int_action(action // 64)
     to = convert_to(from_, dir, dis, state.turn)
@@ -236,7 +270,7 @@ def int_to_action(state: ChessState, action: int):
 
 
 # 二地点の位置関係と距離
-def dif_to_direction(from_: int, to: int):
+def dif_to_direction(from_: int, to: int) -> Tuple[int, int]:
     dif = to - from_
     if _is_same_column(from_, to):
         if dif < 0:
@@ -277,12 +311,12 @@ def dif_to_direction(from_: int, to: int):
     return -1, 0
 
 
-def _piece_type(state: ChessState, position: int):
-    return state.board[:, position].argmax()
+def _piece_type(state: ChessState, position: int) -> int:
+    return int(state.board[:, position].argmax())
 
 
 # promotionの場合にはpromotion後の駒、そうでない場合は元の駒を返す
-def _promoted_piece(action: ChessAction):
+def _promoted_piece(action: ChessAction) -> int:
     if (action.piece == 1 and action.to % 8 == 7) or (
         action.piece == 7 and action.to % 8 == 0
     ):
@@ -357,7 +391,7 @@ def _move(
     return s
 
 
-def point_to_coordinate(point: int):
+def point_to_coordinate(point: int) -> Tuple[int, int]:
     return point // 8, point % 8
 
 
@@ -386,25 +420,25 @@ def _is_same_declining(_from: int, to: int) -> bool:
     return x1 - x2 == y2 - y1
 
 
-def _board_status(state: ChessState):
+def _board_status(state: ChessState) -> np.ndarray:
     bs = np.zeros(64, dtype=np.int32)
     for i in range(64):
         bs[i] = _piece_type(state, i)
     return bs
 
 
-def _owner(piece: int):
+def _owner(piece: int) -> int:
     if piece == 0:
         return 2
     else:
         return (piece - 1) // 6
 
 
-def _is_in_board(point: int):
+def _is_in_board(point: int) -> bool:
     return 0 <= point <= 63
 
 
-def _is_side(point: int):
+def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
     x, y = point_to_coordinate(point)
     u = False
     d = False
@@ -421,7 +455,7 @@ def _is_side(point: int):
     return u, d, l_, r
 
 
-def _is_second_line(point: int):
+def _is_second_line(point: int) -> Tuple[bool, bool, bool, bool]:
     x, y = point_to_coordinate(point)
     su = False
     sd = False
@@ -438,7 +472,7 @@ def _is_second_line(point: int):
     return su, sd, sl, sr
 
 
-def _white_pawn_moves(bs: np.ndarray, from_: int):
+def _white_pawn_moves(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     if bs[from_ + 1] == 0:
         to[from_ + 1] = 1
@@ -456,7 +490,7 @@ def _white_pawn_moves(bs: np.ndarray, from_: int):
     return to
 
 
-def _black_pawn_moves(bs: np.ndarray, from_: int):
+def _black_pawn_moves(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     if bs[from_ - 1] == 0:
         to[from_ - 1] = 1
@@ -473,14 +507,14 @@ def _black_pawn_moves(bs: np.ndarray, from_: int):
     return to
 
 
-def _pawn_moves(bs: np.ndarray, from_: int, turn: int):
+def _pawn_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     if turn == 0:
         return _white_pawn_moves(bs, from_)
     else:
         return _black_pawn_moves(bs, from_)
 
 
-def _knight_moves(bs: np.ndarray, from_: int, turn: int):
+def _knight_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     u, d, l_, r = _is_side(from_)
     su, sd, sl, sr = _is_second_line(from_)
@@ -511,7 +545,7 @@ def _knight_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _bishop_moves(bs: np.ndarray, from_: int, turn: int):
+def _bishop_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     ur_flag = True
     ul_flag = True
@@ -561,7 +595,7 @@ def _bishop_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _rook_moves(bs: np.ndarray, from_: int, turn: int):
+def _rook_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     u_flag = True
     d_flag = True
@@ -611,7 +645,7 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _queen_moves(bs: np.ndarray, from_: int, turn: int):
+def _queen_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     r_move = _rook_moves(bs, from_, turn)
     b_move = _bishop_moves(bs, from_, turn)
     # r_moveとb_moveは共通項がないので足してよい
@@ -642,7 +676,7 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _piece_moves(bs: np.ndarray, from_: int, piece: int):
+def _piece_moves(bs: np.ndarray, from_: int, piece: int) -> np.ndarray:
     if piece == 0:
         return np.zeros(64, dtype=np.int32)
     turn = (piece - 1) // 6
@@ -661,7 +695,7 @@ def _piece_moves(bs: np.ndarray, from_: int, piece: int):
         return _king_moves(bs, from_, turn)
 
 
-def _create_actions(from_: int, to: np.ndarray):
+def _create_actions(from_: int, to: np.ndarray) -> np.ndarray:
     actions = np.zeros(4608, dtype=np.int32)
     for i in range(64):
         if to[i] == 0:
@@ -674,7 +708,7 @@ def _create_actions(from_: int, to: np.ndarray):
     return actions
 
 
-def _effected_positions(bs: np.ndarray, turn: int):
+def _effected_positions(bs: np.ndarray, turn: int) -> np.ndarray:
     effects = np.zeros(64, dtype=np.int32)
     for i in range(64):
         piece = bs[i]
@@ -685,7 +719,12 @@ def _effected_positions(bs: np.ndarray, turn: int):
     return effects
 
 
-def _can_left_castling(state: ChessState, bs: np.ndarray):
+def _is_check(bs: np.ndarray, turn: int, kp: int) -> bool:
+    effects = _effected_positions(bs, (turn + 1) % 2)
+    return effects[kp] != 0
+
+
+def _can_left_castling(state: ChessState, bs: np.ndarray) -> bool:
     if state.turn == 0:
         if state.wk_move_count or state.wr1_move_count:
             return False
@@ -704,9 +743,10 @@ def _can_left_castling(state: ChessState, bs: np.ndarray):
         effects = _effected_positions(bs, 0)
         # 相手の駒の利きが通り道にある場合不可
         return effects[23] + effects[31] + effects[39] == 0
+    return False
 
 
-def _can_right_castling(state: ChessState, bs: np.ndarray):
+def _can_right_castling(state: ChessState, bs: np.ndarray) -> bool:
     if state.turn == 0:
         if state.wk_move_count or state.wr2_move_count:
             return False
@@ -725,9 +765,10 @@ def _can_right_castling(state: ChessState, bs: np.ndarray):
         effects = _effected_positions(bs, 0)
         # 相手の駒の利きが通り道にある場合不可
         return effects[55] + effects[47] + effects[39] == 0
+    return False
 
 
-def _legal_actions(state: ChessState):
+def _legal_actions(state: ChessState) -> np.ndarray:
     actions = np.zeros(4608, dtype=np.int32)
     bs = _board_status(state)
     for i in range(64):
@@ -779,3 +820,19 @@ def _legal_actions(state: ChessState):
     if _can_right_castling(state, bs):
         actions[32 + state.turn * 7 + 64 * 22] = 1
     return actions
+
+
+# メイトおよびスティルメイトの判定関数
+def _is_mate(state: ChessState, actions: np.ndarray) -> bool:
+    f = True
+    for i in range(4608):
+        if actions[i] == 0:
+            continue
+        action = int_to_action(state, i)
+        # is_castlingは呼び出す必要がない（castling後にcheckがかかる場合は弾いている）
+        s = _move(state, action, 0)
+        king_point = int(s.board[6 + 6 * state.turn, :].argmax())
+        # move後にcheckがかかっていない手が存在するならFalse
+        if not _is_check(_board_status(s), s.turn, king_point):
+            f = False
+    return f
