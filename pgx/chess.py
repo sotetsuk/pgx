@@ -83,7 +83,7 @@ def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     s = _move(state, action, is_castling)
     # move後にcheckがかかっている
     if _is_check(
-        _board_status(s), s.turn, s.board[6 + s.turn * 6, :].argmax()
+        _board_status(s), s.turn, int(s.board[6 + s.turn * 6, :].argmax())
     ):
         return s, _turn_to_reward(_another_color(state)), True
     s.turn = _another_color(s)
@@ -92,7 +92,7 @@ def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     if _is_mate(s, enemy_legal_actions):
         # checkがかかっている場合→mate
         if _is_check(
-            _board_status(s), s.turn, s.board[6 + s.turn * 6, :].argmax()
+            _board_status(s), s.turn, int(s.board[6 + s.turn * 6, :].argmax())
         ):
             return s, _turn_to_reward(_another_color(s)), True
         # そうでない場合→スティルメイト
@@ -312,7 +312,7 @@ def dif_to_direction(from_: int, to: int) -> Tuple[int, int]:
 
 
 def _piece_type(state: ChessState, position: int) -> int:
-    return state.board[:, position].argmax()
+    return int(state.board[:, position].argmax())
 
 
 # promotionの場合にはpromotion後の駒、そうでない場合は元の駒を返す
@@ -831,7 +831,7 @@ def _is_mate(state: ChessState, actions: np.ndarray) -> bool:
         action = int_to_action(state, i)
         # is_castlingは呼び出す必要がない（castling後にcheckがかかる場合は弾いている）
         s = _move(state, action, 0)
-        king_point = s.board[6 + 6 * state.turn, :].argmax()
+        king_point = int(s.board[6 + 6 * state.turn, :].argmax())
         # move後にcheckがかかっていない手が存在するならFalse
         if not _is_check(_board_status(s), s.turn, king_point):
             f = False
