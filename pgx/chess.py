@@ -256,6 +256,7 @@ def convert_to(from_: int, dir: int, dis: int, turn: int) -> int:
             return from_ + 9
         else:
             return from_ + 7
+    return from_
 
 
 def int_to_action(state: ChessState, action: int) -> ChessAction:
@@ -742,6 +743,7 @@ def _can_left_castling(state: ChessState, bs: np.ndarray) -> bool:
         effects = _effected_positions(bs, 0)
         # 相手の駒の利きが通り道にある場合不可
         return effects[23] + effects[31] + effects[39] == 0
+    return False
 
 
 def _can_right_castling(state: ChessState, bs: np.ndarray) -> bool:
@@ -763,6 +765,7 @@ def _can_right_castling(state: ChessState, bs: np.ndarray) -> bool:
         effects = _effected_positions(bs, 0)
         # 相手の駒の利きが通り道にある場合不可
         return effects[55] + effects[47] + effects[39] == 0
+    return False
 
 
 def _legal_actions(state: ChessState) -> np.ndarray:
