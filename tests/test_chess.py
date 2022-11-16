@@ -1,5 +1,6 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
-    _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step
+    _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
+    _is_mate, _effected_positions, _is_check
 import numpy as np
 
 
@@ -285,6 +286,18 @@ def test_legal_action():
     assert _legal_actions(s5)[36 + 64 * 35] == 1
 
 
+def test_is_mate():
+    bs = np.zeros(64, dtype=np.int32)
+    bs[11] = 3
+    bs[6] = 4
+    bs[39] = 9
+    bs[40] = 6
+    bs[47] = 12
+    bs[55] = 10
+    state = ChessState(turn=1, board=_make_board(bs))
+    assert _is_mate(state, _legal_actions(state))
+
+
 def test_step():
     s = init()
     m = [33 + 64 * 8, 38 + 64 * 5, 41 + 64 * 8, 36 + 64 * 49, 40 + 64 * 46, 31 + 64 * 52, 32 + 64 * 21, 14 + 64 * 5,
@@ -293,10 +306,8 @@ def test_step():
          59 + 64 * 7, 53 + 64 * 6, 24 + 64 * 36, 45 + 64 * 57, 16 + 64 * 37, 52 + 64 * 48, 8 + 64 * 57, 47 + 64 * 32,
          18 + 64 * 57, 45 + 64 * 31, 43 + 64 * 47, 20 + 64 * 35, 44 + 64 * 58, 39 + 64 * 21, 42 + 64 * 10]
     for move in m:
-        print(move)
         s, r, t = step(s, move)
         if move == 42 + 64 * 10:
-            print(_board_status(s))
             assert t
             assert r == 1
         else:
@@ -312,4 +323,5 @@ if __name__ == '__main__':
     test_rook_move()
     test_king_move()
     test_legal_action()
+    test_is_mate()
     test_step()

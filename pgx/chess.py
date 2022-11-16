@@ -94,7 +94,7 @@ def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
         if _is_check(
             _board_status(s), s.turn, s.board[6 + s.turn * 6, :].argmax()
         ):
-            return s, _turn_to_reward(_another_color(state)), True
+            return s, _turn_to_reward(_another_color(s)), True
         # そうでない場合→スティルメイト
         else:
             return s, 0, True
@@ -828,7 +828,7 @@ def _is_mate(state: ChessState, actions: np.ndarray) -> bool:
         action = int_to_action(state, i)
         # is_castlingは呼び出す必要がない（castling後にcheckがかかる場合は弾いている）
         s = _move(state, action, 0)
-        king_point = state.board[6 + 6 * state.turn, :].argmax()
+        king_point = s.board[6 + 6 * state.turn, :].argmax()
         # move後にcheckがかかっていない手が存在するならFalse
         if not _is_check(_board_status(s), s.turn, king_point):
             f = False
