@@ -63,12 +63,12 @@ class GoState:
 
 
 @jit
-def observe(state: GoState, player_id: jnp.int32, observe_all=False):
+def observe(state: GoState, player_id, observe_all=False):
     return _get_alphazero_features(state, player_id, observe_all)
 
 
 @jit
-def _get_alphazero_features(state: GoState, player_id: jnp.int32, observe_all):
+def _get_alphazero_features(state: GoState, player_id, observe_all):
     """
     17 x (size x size)
     0: player_idの石
