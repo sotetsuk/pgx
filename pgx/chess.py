@@ -472,6 +472,30 @@ def _is_second_line(point: int) -> Tuple[bool, bool, bool, bool]:
     return su, sd, sl, sr
 
 
+# fromの座標とtoの座標からdirを生成
+# 8方向のみ生成
+def _point_to_direction(_from: int, to: int) -> int:
+    direction = -1
+    dis = to - _from
+    if _is_same_column(_from, to) and dis < 0:
+        direction = 0
+    if _is_same_column(_from, to) and dis > 0:
+        direction = 1
+    if _is_same_row(_from, to) and dis < 0:
+        direction = 2
+    if _is_same_row(_from, to) and dis > 0:
+        direction = 3
+    if _is_same_rising(_from, to) and dis < 0:
+        direction = 4
+    if _is_same_rising(_from, to) and dis > 0:
+        direction = 5
+    if _is_same_declining(_from, to) and dis < 0:
+        direction = 6
+    if _is_same_declining(_from, to) and dis > 0:
+        direction = 7
+    return direction
+
+
 def _white_pawn_moves(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     if bs[from_ + 1] == 0:
@@ -908,8 +932,70 @@ def _check_legal_actions(state: ChessState) -> np.ndarray:
     return actions
 
 
-def _is_mate2(state: ChessState) -> bool:
-    return False
+# point1とpoint2の間の位置を返す
+# point2も含める
+def _between(point1: int, point2: int) -> np.ndarray:
+    flag = True
+    between = np.zeros(81, dtype=np.int32)
+    between[point2] = 1
+    direction = _point_to_direction(point1, point2)
+    if direction == -1:
+        return between
+    dif = _direction_to_dif(direction)
+    p = point1
+    for i in range(7):
+        p += dif
+        if p == point2:
+            flag = False
+        if flag:
+            between[p] = 1
+    return between
+
+
+# checkを受けているときの詰み判定
+def _is_mate_check(state: ChessState, kp: int) -> bool:
+    # Kingが逃げる手に合法手が存在するかを考える
+    bs = _board_status(state)
+    king_move = _king_moves(bs, kp, state.turn)
+    num_check, checking_piece = _is_check2(bs, state.turn, kp)
+    kingless_bs = _board_status(state)
+    kingless_bs[kp] = 0
+    kingless_effects = _effected_positions(kingless_bs, _another_color(state))
+    # king_moveが1かつkingless_effectsが0の地点があれば詰みではない
+    if np.any(king_move - kingless_effects == 1):
+        return False
+    # Kingを動かさない回避手の存在判定
+    # 2枚以上からCheckされている場合→詰み
+    if num_check == 2:
+        return True
+    check_point = int(checking_piece.argmax())
+    bet = _between(kp, check_point)
+    for i in range(64):
+        piece = kingless_bs[i]
+        if _owner(piece) != state.turn:
+            continue
+        pm = _piece_moves(bs, i, state.turn)
+        # checkしている駒やその駒との間に動ける駒がある場合、詰みでない
+        if np.any(bet + pm == 2):
+            return False
+    return True
+
+
+def _is_mate_non_check(state: ChessState, kp: int) -> bool:
+    # Kingが逃げる手に合法手が存在するかを考える
+    kingless_bs = _board_status(state)
+    king_move = _king_moves(kingless_bs, kp, state.turn)
+    kingless_bs[kp] = 0
+    kingless_effects = _effected_positions(kingless_bs, _another_color(state))
+    # king_moveが1かつkingless_effectsが0の地点があれば詰みではない
+    if np.any(king_move - kingless_effects == 1):
+        return False
+    # Kingが逃げる手以外の合法手を調べる
+    for i in range(64):
+        piece = kingless_bs[i]
+        if _owner(piece) != state.turn:
+            continue
+    return True
 
 
 def _is_legal_action(state: ChessState, action: int):
