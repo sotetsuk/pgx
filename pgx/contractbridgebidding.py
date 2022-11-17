@@ -125,7 +125,7 @@ def _calc_reward() -> np.ndarray:
 
 # passによるstateの変化
 def _state_pass(
-    state: ContractBridgeBiddingState,
+    state: ContractBridgeBiddingState
 ) -> ContractBridgeBiddingState:
     state.pass_num[0] += 1
     return state
@@ -218,8 +218,3 @@ def _update_legal_action_X_XX(
 # playerがパートナーか判断
 def _is_partner(player1: int, player2: int):
     return (abs(player1 - player2) + 1) % 2
-
-
-# ターン数、dealerから現在のプレイヤーを計算
-def _active_player(turn, dealer):
-    return (dealer + turn) % 4
