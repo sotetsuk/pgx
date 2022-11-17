@@ -178,7 +178,7 @@ def test_observe():
         played_dice_num=jnp.int8(0),
     )
     expected_obs = jnp.concatenate(
-        (1 * board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
+        (1 * board, jnp.array([0, 0, 0, 0, 0, 0])), axis=None
     )
     assert (observe(state, jnp.int8(-1)) - expected_obs).sum() == 0
 

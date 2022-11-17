@@ -88,7 +88,9 @@ def observe(state: BackgammonState, curr_player: jnp.ndarray) -> jnp.ndarray:
     return jax.lax.cond(
         curr_player == _curr_player,
         lambda: jnp.concatenate((turn * board, zero_one_dice_vec), axis=None),
-        lambda: jnp.concatenate((-turn * board, zero_one_dice_vec), axis=None),
+        lambda: jnp.concatenate(
+            (-turn * board, jnp.zeros(6, dtype=jnp.int8)), axis=None
+        ),
     )
 
 
