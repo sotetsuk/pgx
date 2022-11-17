@@ -535,9 +535,6 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     #   P
-    # Passが3回続いたので終了
-    # state.terminated = True
-    # state.curr_player = -1
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
     first_denomination_EW = np.array([-1, -1, 3, 1, -1])
 
@@ -568,6 +565,9 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     #   P  P
+    # Passが3回続いたので終了
+    # state.terminated = True
+    # state.curr_player = -1
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
     first_denomination_EW = np.array([-1, -1, 3, 1, -1])
 
