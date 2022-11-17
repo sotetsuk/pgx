@@ -76,7 +76,7 @@ def init():
 def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     legal_actions = _legal_actions(state)
     # 指定値が合法手でない
-    if legal_actions[i_action] == 0:
+    if not _is_legal_action(state, i_action):
         return state, _turn_to_reward(_another_color(state)), True
     action = int_to_action(state, i_action)
     is_castling = _is_castling(action)
@@ -724,6 +724,21 @@ def _is_check(bs: np.ndarray, turn: int, kp: int) -> bool:
     return effects[kp] != 0
 
 
+# 王手している駒の位置も返すis_check
+def _is_check2(bs: np.ndarray, turn: int, kp: int) -> Tuple[int, np.ndarray]:
+    num_check = 0
+    checking_piece = np.zeros(64, dtype=np.int32)
+    for i in range(64):
+        piece = bs[i]
+        if _owner(piece) != turn and _owner(piece) != 0:
+            continue
+        moves = _piece_moves(bs, i, piece)
+        if moves[kp] == 1:
+            num_check += 1
+            checking_piece[i] = 1
+    return num_check, checking_piece
+
+
 def _can_left_castling(state: ChessState, bs: np.ndarray) -> bool:
     if state.turn == 0:
         if state.wk_move_count or state.wr1_move_count:
@@ -838,5 +853,96 @@ def _is_mate(state: ChessState, actions: np.ndarray) -> bool:
     return f
 
 
+# checkをかけられているときのlegal_actions
+def _check_legal_actions(state: ChessState) -> np.ndarray:
+    actions = np.zeros(4608, dtype=np.int32)
+    bs = _board_status(state)
+    for i in range(64):
+        piece = bs[i]
+        if _owner(piece) != state.turn:
+            continue
+        p_moves = _piece_moves(bs, i, piece)
+        p_actions = _create_actions(i, p_moves)
+        # promotionの場合
+        if piece == 1 and i % 8 == 6:
+            if _is_in_board(i - 7) and p_moves[i - 7] == 1:
+                p_actions[i + 64 * 67] = 1
+                p_actions[i + 64 * 68] = 1
+                p_actions[i + 64 * 69] = 1
+            if _is_in_board(i + 1) and p_moves[i + 1] == 1:
+                p_actions[i + 64 * 64] = 1
+                p_actions[i + 64 * 65] = 1
+                p_actions[i + 64 * 66] = 1
+            if _is_in_board(i + 9) and p_moves[i + 9] == 1:
+                p_actions[i + 64 * 70] = 1
+                p_actions[i + 64 * 71] = 1
+                p_actions[i + 64 * 72] = 1
+        if piece == 7 and i % 8 == 1:
+            if _is_in_board(i - 9) and p_moves[i - 9] == 1:
+                p_actions[i + 64 * 67] = 1
+                p_actions[i + 64 * 68] = 1
+                p_actions[i + 64 * 69] = 1
+            if _is_in_board(i - 1) and p_moves[i - 1] == 1:
+                p_actions[i + 64 * 64] = 1
+                p_actions[i + 64 * 65] = 1
+                p_actions[i + 64 * 66] = 1
+            if _is_in_board(i + 7) and p_moves[i + 7] == 1:
+                p_actions[i + 64 * 70] = 1
+                p_actions[i + 64 * 71] = 1
+                p_actions[i + 64 * 72] = 1
+        # アンパッサンの場合
+        if piece == 1 and i - 8 == state.en_passant:
+            p_actions[i + 64 * 48] = 1
+        if piece == 1 and i + 8 == state.en_passant:
+            p_actions[i + 64 * 35] = 1
+        if piece == 7 and i - 8 == state.en_passant:
+            p_actions[i + 64 * 34] = 1
+        if piece == 7 and i + 8 == state.en_passant:
+            p_actions[i + 64 * 49] = 1
+        actions += p_actions
+    # castling
+    if _can_left_castling(state, bs):
+        actions[32 + state.turn * 7 + 64 * 19] = 1
+    if _can_right_castling(state, bs):
+        actions[32 + state.turn * 7 + 64 * 22] = 1
+    return actions
+
+
 def _is_mate2(state: ChessState) -> bool:
     return False
+
+
+def _is_legal_action(state: ChessState, action: int):
+    bs = _board_status(state)
+    from_ = action % 64
+    direction = action // 64
+    piece = bs[from_]
+    p_moves = _piece_moves(bs, from_, piece)
+    p_actions = _create_actions(from_, p_moves)
+    # en_passantを追加
+    if piece == 1 and from_ - 8 == state.en_passant:
+        p_actions[from_ + 64 * 48] = 1
+    if piece == 1 and from_ + 8 == state.en_passant:
+        p_actions[from_ + 64 * 35] = 1
+    if piece == 7 and from_ - 8 == state.en_passant:
+        p_actions[from_ + 64 * 34] = 1
+    if piece == 7 and from_ + 8 == state.en_passant:
+        p_actions[from_ + 64 * 49] = 1
+    # Queen以外へのpromotionの場合、Queenへのpromotionが合法ならOK
+    format_action = action
+    if direction >= 64:
+        if piece == 1:
+            if direction <= 66:
+                format_action = from_ + 64 * 7
+            elif direction <= 69:
+                format_action = from_ + 64 * 48
+            else:
+                format_action = from_ + 64 * 35
+        elif piece == 7:
+            if direction <= 66:
+                format_action = from_ + 64 * 6
+            elif direction <= 69:
+                format_action = from_ + 64 * 34
+            else:
+                format_action = from_ + 64 * 49
+    return p_actions[format_action] == 1
