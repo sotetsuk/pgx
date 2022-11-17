@@ -125,7 +125,7 @@ def _calc_reward() -> np.ndarray:
 
 # passによるstateの変化
 def _state_pass(
-    state: ContractBridgeBiddingState
+    state: ContractBridgeBiddingState,
 ) -> ContractBridgeBiddingState:
     state.pass_num[0] += 1
     return state
