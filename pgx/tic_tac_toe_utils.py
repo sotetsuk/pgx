@@ -111,7 +111,13 @@ class Visualizer:
         board_g = dwg.g()
 
         # grid
-        hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
+        hlines = board_g.add(
+            dwg.g(
+                id="hlines",
+                stroke=color_set.grid_color,
+                fill=color_set.grid_color,
+            )
+        )
         for y in range(1, BOARD_HEIGHT):
             hlines.add(
                 dwg.line(
@@ -126,7 +132,7 @@ class Visualizer:
             hlines.add(
                 dwg.circle(
                     center=(0 * cm, GRID_SIZE * y * cm),
-                    r=0.5 * GRID_SIZE,
+                    r=0.75 * GRID_SIZE,
                 )
             )
             hlines.add(
@@ -135,10 +141,16 @@ class Visualizer:
                         GRID_SIZE * BOARD_WIDTH * cm,
                         GRID_SIZE * y * cm,
                     ),
-                    r=0.5 * GRID_SIZE,
+                    r=0.75 * GRID_SIZE,
                 )
             )
-        vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
+        vlines = board_g.add(
+            dwg.g(
+                id="vline",
+                stroke=color_set.grid_color,
+                fill=color_set.grid_color,
+            )
+        )
         for x in range(1, BOARD_WIDTH):
             vlines.add(
                 dwg.line(
@@ -153,7 +165,7 @@ class Visualizer:
             vlines.add(
                 dwg.circle(
                     center=(GRID_SIZE * x * cm, 0 * cm),
-                    r=0.5 * GRID_SIZE,
+                    r=0.75 * GRID_SIZE,
                 )
             )
             vlines.add(
@@ -162,7 +174,7 @@ class Visualizer:
                         GRID_SIZE * x * cm,
                         GRID_SIZE * BOARD_HEIGHT * cm,
                     ),
-                    r=0.5 * GRID_SIZE,
+                    r=0.75 * GRID_SIZE,
                 )
             )
 
