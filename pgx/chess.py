@@ -76,7 +76,7 @@ def init():
 def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     legal_actions = _legal_actions(state)
     # 指定値が合法手でない
-    if not _is_legal_action(state, i_action):
+    if not _is_legal_action(state, i_action, np.zeros(64, dtype=np.int32)):
         return state, _turn_to_reward(_another_color(state)), True
     action = int_to_action(state, i_action)
     is_castling = _is_castling(action)
@@ -98,6 +98,47 @@ def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
         # そうでない場合→スティルメイト
         else:
             return s, 0, True
+    # 各種フラグの更新
+    if not s.wr1_move_count and action.from_ == 0:
+        s.wr1_move_count = True
+    if not s.wr2_move_count and action.from_ == 56:
+        s.wr2_move_count = True
+    if not s.br1_move_count and action.from_ == 7:
+        s.br1_move_count = True
+    if not s.br2_move_count and action.from_ == 63:
+        s.br2_move_count = True
+    if not s.wk_move_count and action.from_ == 32:
+        s.wk_move_count = True
+    if not s.bk_move_count and action.from_ == 39:
+        s.bk_move_count = True
+    if action.piece % 6 == 1 and abs(action.from_ - action.to) == 2:
+        s.en_passant = action.to
+    else:
+        s.en_passant = -1
+    return s, 0, False
+
+
+def new_step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
+    # 指定値が合法手でない
+    kp = int(state.board[6 + state.turn * 6, :].argmax())
+    if not _is_legal_action(state, i_action, _pin(state, kp)):
+        return state, _turn_to_reward(_another_color(state)), True
+    action = int_to_action(state, i_action)
+    is_castling = _is_castling(action)
+    s = _move(state, action, is_castling)
+    # move後にcheckがかかっている
+    bs = _board_status(s)
+    if _is_check(
+        bs, s.turn, kp
+    ):
+        return s, _turn_to_reward(_another_color(state)), True
+    s.turn = _another_color(s)
+    kp = int(s.board[6 + s.turn * 6, :].argmax())
+    pins = _pin(s, kp)
+    if _is_check(bs, s.turn, kp) and _is_mate_check(s, kp, pins):
+        return s, _turn_to_reward(_another_color(state)), True
+    if not _is_check(bs, s.turn, kp) and _is_mate_non_check(s, kp, pins):
+        return s, 0, True
     # 各種フラグの更新
     if not s.wr1_move_count and action.from_ == 0:
         s.wr1_move_count = True
@@ -959,11 +1000,9 @@ def _between(point1: int, point2: int) -> np.ndarray:
 
 
 # checkを受けているときの詰み判定
-def _is_mate_check(state: ChessState, kp: int) -> bool:
+def _is_mate_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
     # Kingが逃げる手に合法手が存在するかを考える
     bs = _board_status(state)
-    # pinを計算できるようになったら変更
-    pins = np.zeros(64, dtype=np.int32)
     king_move = _king_moves(bs, kp, state.turn)
     num_check, checking_piece = _is_check2(bs, state.turn, kp)
     kingless_bs = _board_status(state)
@@ -989,10 +1028,9 @@ def _is_mate_check(state: ChessState, kp: int) -> bool:
     return True
 
 
-def _is_mate_non_check(state: ChessState, kp: int) -> bool:
+def _is_mate_non_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
     # Kingが移動する手に合法手が存在するかを考える
     kingless_bs = _board_status(state)
-    pins = np.zeros(64, dtype=np.int32)
     king_move = _king_moves(kingless_bs, kp, state.turn)
     kingless_bs[kp] = 0
     kingless_effects = _effected_positions(kingless_bs, _another_color(state))
@@ -1011,9 +1049,8 @@ def _is_mate_non_check(state: ChessState, kp: int) -> bool:
     return True
 
 
-def _is_legal_action(state: ChessState, action: int):
+def _is_legal_action(state: ChessState, action: int, pins: np.ndarray):
     bs = _board_status(state)
-    pins = np.zeros(64, dtype=np.int32)
     from_ = action % 64
     pin = pins[from_]
     direction = action // 64
@@ -1047,3 +1084,289 @@ def _is_legal_action(state: ChessState, action: int):
             else:
                 format_action = from_ + 64 * 49
     return p_actions[format_action] == 1
+
+
+def _up_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    # 上方向のピン
+    u = king_point
+    u_num = 0
+    u_piece = -1
+    u_flag = False
+    # 自分より上は最大7マスしかない
+    for i in range(7):
+        # 探索位置の更新
+        u += 1
+        # 探索が終わっている場合はスルー
+        if u_flag:
+            continue
+        # 盤外や同じ列にない場合は弾く
+        if not _is_in_board(u) or not _is_same_column(king_point, u):
+            continue
+        piece = bs[u]
+        # 駒がない場合は処理をしない
+        if piece == 0:
+            continue
+        # 駒がある場合
+        u_num += 1
+        # 1枚目
+        if u_num == 1:
+            # 自分の駒なら位置を記録
+            if _owner(piece) == turn:
+                u_piece = u
+            # 相手の駒なら関係ないので探索終了
+            else:
+                u_flag = True
+        # 2枚目
+        if u_num == 2:
+            # Rook, Queenによってピン
+            if turn == 0 and (piece == 10 or piece == 11):
+                new_array[u_piece] = 1
+            elif turn == 1 and (piece == 4 or piece == 5):
+                new_array[u_piece] = 1
+            # 一回通ったら探索する必要はない
+            u_flag = True
+    return new_array
+
+
+def _down_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    d = king_point
+    d_num = 0
+    d_piece = -1
+    d_flag = False
+    for i in range(7):
+        d -= 1
+        if d_flag:
+            continue
+        if not _is_in_board(d) or not _is_same_column(king_point, d):
+            continue
+        piece = bs[d]
+        if piece == 0:
+            continue
+        d_num += 1
+        if d_num == 1:
+            if _owner(piece) == turn:
+                d_piece = d
+            else:
+                d_flag = True
+        if d_num == 2:
+            if turn == 0 and (piece == 10 or piece == 11):
+                new_array[d_piece] = 1
+            elif turn == 1 and (piece == 4 or piece == 5):
+                new_array[d_piece] = 1
+            d_flag = True
+    return new_array
+
+
+def _left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    l_ = king_point
+    l_num = 0
+    l_piece = -1
+    l_flag = False
+    for i in range(7):
+        l_ -= 8
+        if l_flag:
+            continue
+        if not _is_in_board(l_) or not _is_same_row(king_point, l_):
+            continue
+        piece = bs[l_]
+        if piece == 0:
+            continue
+        l_num += 1
+        if l_num == 1:
+            if _owner(piece) == turn:
+                l_piece = l_
+            else:
+                l_flag = True
+        if l_num == 2:
+            if turn == 0 and (piece == 10 or piece == 11):
+                new_array[l_piece] = 2
+            elif turn == 1 and (piece == 4 or piece == 5):
+                new_array[l_piece] = 2
+            l_flag = True
+    return new_array
+
+
+def _right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    r = king_point
+    r_num = 0
+    r_piece = -1
+    r_flag = False
+    for i in range(7):
+        r += 8
+        if r_flag:
+            continue
+        if not _is_in_board(r) or not _is_same_row(king_point, r):
+            continue
+        piece = bs[r]
+        if piece == 0:
+            continue
+        r_num += 1
+        if r_num == 1:
+            if _owner(piece) == turn:
+                r_piece = r
+            else:
+                r_flag = True
+        if r_num == 2:
+            if turn == 0 and (piece == 10 or piece == 11):
+                new_array[r_piece] = 2
+            elif turn == 1 and (piece == 4 or piece == 5):
+                new_array[r_piece] = 2
+            r_flag = True
+    return new_array
+
+
+def _up_right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    ur = king_point
+    ur_num = 0
+    ur_piece = -1
+    ur_flag = False
+    for i in range(7):
+        ur += 9
+        if ur_flag:
+            continue
+        if not _is_in_board(ur) or not _is_same_rising(king_point, ur):
+            continue
+        piece = bs[ur]
+        if piece == 0:
+            continue
+        ur_num += 1
+        if ur_num == 1:
+            if _owner(piece) == turn:
+                ur_piece = ur
+            else:
+                ur_flag = True
+        # 2枚目
+        if ur_num == 2:
+            # Bishop, Queenによってピン
+            if turn == 0 and (piece == 9 or piece == 11):
+                new_array[ur_piece] = 3
+            elif turn == 1 and (piece == 3 or piece == 5):
+                new_array[ur_piece] = 3
+            ur_flag = True
+    return new_array
+
+
+def _down_left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    dl = king_point
+    dl_num = 0
+    dl_piece = -1
+    dl_flag = False
+    for i in range(7):
+        dl -= 9
+        if dl_flag:
+            continue
+        if not _is_in_board(dl) or not _is_same_rising(king_point, dl):
+            continue
+        piece = bs[dl]
+        if piece == 0:
+            continue
+        dl_num += 1
+        if dl_num == 1:
+            if _owner(piece) == turn:
+                dl_piece = dl
+            else:
+                dl_flag = True
+        if dl_num == 2:
+            if turn == 0 and (piece == 9 or piece == 11):
+                new_array[dl_piece] = 3
+            elif turn == 1 and (piece == 3 or piece == 5):
+                new_array[dl_piece] = 3
+            dl_flag = True
+    return new_array
+
+
+def _up_left_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    ul = king_point
+    ul_num = 0
+    ul_piece = -1
+    ul_flag = False
+    for i in range(7):
+        ul -= 7
+        if ul_flag:
+            continue
+        if not _is_in_board(ul) or not _is_same_row(king_point, ul):
+            continue
+        piece = bs[ul]
+        if piece == 0:
+            continue
+        ul_num += 1
+        if ul_num == 1:
+            if _owner(piece) == turn:
+                ul_piece = ul
+            else:
+                ul_flag = True
+        if ul_num == 2:
+            if turn == 0 and (piece == 9 or piece == 11):
+                new_array[ul_piece] = 4
+            elif turn == 1 and (piece == 3 or piece == 5):
+                new_array[ul_piece] = 4
+            ul_flag = True
+    return new_array
+
+
+def _down_right_pin(
+    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+) -> np.ndarray:
+    new_array = copy.deepcopy(array)
+    dr = king_point
+    dr_num = 0
+    dr_piece = -1
+    dr_flag = False
+    for i in range(7):
+        dr += 7
+        if dr_flag:
+            continue
+        if not _is_in_board(dr) or not _is_same_row(king_point, dr):
+            continue
+        piece = bs[dr]
+        if piece == 0:
+            continue
+        dr_num += 1
+        if dr_num == 1:
+            if _owner(piece) == turn:
+                dr_piece = dr
+            else:
+                dr_flag = True
+        if dr_num == 2:
+            if turn == 0 and (piece == 9 or piece == 11):
+                new_array[dr_piece] = 4
+            elif turn == 1 and (piece == 3 or piece == 5):
+                new_array[dr_piece] = 4
+            dr_flag = True
+    return new_array
+
+
+def _pin(state: ChessState, kp: int):
+    bs = _board_status(state)
+    turn = state.turn
+    pins = np.zeros(64, dtype=np.int32)
+    pins = _up_pin(bs, turn, kp, pins)
+    pins = _up_left_pin(bs, turn, kp, pins)
+    pins = _up_right_pin(bs, turn, kp, pins)
+    pins = _left_pin(bs, turn, kp, pins)
+    pins = _right_pin(bs, turn, kp, pins)
+    pins = _down_pin(bs, turn, kp, pins)
+    pins = _down_left_pin(bs, turn, kp, pins)
+    pins = _down_right_pin(bs, turn, kp, pins)
+    return pins
