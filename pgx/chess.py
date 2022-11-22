@@ -496,9 +496,9 @@ def _point_to_direction(_from: int, to: int) -> int:
     return direction
 
 
-def _white_pawn_moves(bs: np.ndarray, from_: int) -> np.ndarray:
+def _white_pawn_moves(bs: np.ndarray, from_: int, pin: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
-    if bs[from_ + 1] == 0:
+    if bs[from_ + 1] == 0 and (pin == 0 or pin == 1):
         to[from_ + 1] = 1
         # 初期位置の場合はニマス進める
         if from_ % 8 == 1 and bs[from_ + 2] == 0:
@@ -506,40 +506,43 @@ def _white_pawn_moves(bs: np.ndarray, from_: int) -> np.ndarray:
     # 斜めには相手の駒があるとき進める
     # アンパッサンはリーガルアクションで追加
     # 左斜め前
-    if _is_in_board(from_ - 7) and _owner(bs[from_ - 7]) == 1:
+    if _is_in_board(from_ - 7) and _owner(bs[from_ - 7]) == 1 and (pin == 0 or pin == 4):
         to[from_ - 7] = 1
     # 右斜め前
-    if _is_in_board(from_ + 9) and _owner(bs[from_ + 9]) == 1:
+    if _is_in_board(from_ + 9) and _owner(bs[from_ + 9]) == 1 and (pin == 0 or pin == 3):
         to[from_ + 9] = 1
     return to
 
 
-def _black_pawn_moves(bs: np.ndarray, from_: int) -> np.ndarray:
+def _black_pawn_moves(bs: np.ndarray, from_: int, pin: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
-    if bs[from_ - 1] == 0:
+    if bs[from_ - 1] == 0 and (pin == 0 or pin == 1):
         to[from_ - 1] = 1
         # 初期位置の場合はニマス進める
         if from_ % 8 == 6 and bs[from_ - 2] == 0:
             to[from_ - 2] = 1
     # 斜めには相手の駒があるとき進める
     # 左斜め前
-    if _is_in_board(from_ - 9) and _owner(bs[from_ - 9]) == 0:
+    if _is_in_board(from_ - 9) and _owner(bs[from_ - 9]) == 0 and (pin == 0 or pin == 3):
         to[from_ - 9] = 1
     # 右斜め前
-    if _is_in_board(from_ + 7) and _owner(bs[from_ + 7]) == 0:
+    if _is_in_board(from_ + 7) and _owner(bs[from_ + 7]) == 0 and (pin == 0 or pin == 4):
         to[from_ + 7] = 1
     return to
 
 
-def _pawn_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
+def _pawn_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
     if turn == 0:
-        return _white_pawn_moves(bs, from_)
+        return _white_pawn_moves(bs, from_, pin)
     else:
-        return _black_pawn_moves(bs, from_)
+        return _black_pawn_moves(bs, from_, pin)
 
 
-def _knight_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
+def _knight_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
+    # pinされている場合は動けない
+    if pin != 0:
+        return to
     u, d, l_, r = _is_side(from_)
     su, sd, sl, sr = _is_second_line(from_)
     # 上方向
@@ -569,12 +572,13 @@ def _knight_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     return to
 
 
-def _bishop_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
+def _bishop_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
-    ur_flag = True
-    ul_flag = True
-    dr_flag = True
-    dl_flag = True
+    # pinされている方向以外のフラグはあらかじめ折っておく
+    ur_flag = (pin == 0 or pin == 3)
+    ul_flag = (pin == 0 or pin == 4)
+    dr_flag = (pin == 0 or pin == 4)
+    dl_flag = (pin == 0 or pin == 3)
     for i in range(8):
         ur = from_ + 9 * (1 + i)
         ul = from_ - 7 * (1 + i)
@@ -619,12 +623,12 @@ def _bishop_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     return to
 
 
-def _rook_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
+def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
-    u_flag = True
-    d_flag = True
-    r_flag = True
-    l_flag = True
+    u_flag = (pin == 0 or pin == 1)
+    d_flag = (pin == 0 or pin == 1)
+    r_flag = (pin == 0 or pin == 2)
+    l_flag = (pin == 0 or pin == 2)
     for i in range(8):
         u = from_ + 1 * (1 + i)
         d = from_ - 1 * (1 + i)
@@ -669,9 +673,9 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     return to
 
 
-def _queen_moves(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
-    r_move = _rook_moves(bs, from_, turn)
-    b_move = _bishop_moves(bs, from_, turn)
+def _queen_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
+    r_move = _rook_moves(bs, from_, turn, pin)
+    b_move = _bishop_moves(bs, from_, turn, pin)
     # r_moveとb_moveは共通項がないので足してよい
     return r_move + b_move
 
@@ -700,21 +704,22 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _piece_moves(bs: np.ndarray, from_: int, piece: int) -> np.ndarray:
+def _piece_moves(bs: np.ndarray, from_: int, piece: int, pins: np.ndarray) -> np.ndarray:
+    pin = pins[from_]
     if piece == 0:
         return np.zeros(64, dtype=np.int32)
     turn = (piece - 1) // 6
     p = piece % 6
     if p == 1:
-        return _pawn_moves(bs, from_, turn)
+        return _pawn_moves(bs, from_, turn, pin)
     elif p == 2:
-        return _knight_moves(bs, from_, turn)
+        return _knight_moves(bs, from_, turn, pin)
     elif p == 3:
-        return _bishop_moves(bs, from_, turn)
+        return _bishop_moves(bs, from_, turn, pin)
     elif p == 4:
-        return _rook_moves(bs, from_, turn)
+        return _rook_moves(bs, from_, turn, pin)
     elif p == 5:
-        return _queen_moves(bs, from_, turn)
+        return _queen_moves(bs, from_, turn, pin)
     else:
         return _king_moves(bs, from_, turn)
 
@@ -738,7 +743,8 @@ def _effected_positions(bs: np.ndarray, turn: int) -> np.ndarray:
         piece = bs[i]
         if _owner(piece) != turn:
             continue
-        moves = _piece_moves(bs, i, piece)
+        # effectを知りたいときはpinの影響を無視
+        moves = _piece_moves(bs, i, piece, np.zeros(64, dtype=np.int32))
         effects += moves
     return effects
 
@@ -756,7 +762,7 @@ def _is_check2(bs: np.ndarray, turn: int, kp: int) -> Tuple[int, np.ndarray]:
         piece = bs[i]
         if _owner(piece) != turn and _owner(piece) != 0:
             continue
-        moves = _piece_moves(bs, i, piece)
+        moves = _piece_moves(bs, i, piece, np.zeros(64, dtype=np.int32))
         if moves[kp] == 1:
             num_check += 1
             checking_piece[i] = 1
@@ -814,7 +820,7 @@ def _legal_actions(state: ChessState) -> np.ndarray:
         piece = bs[i]
         if _owner(piece) != state.turn:
             continue
-        p_moves = _piece_moves(bs, i, piece)
+        p_moves = _piece_moves(bs, i, piece, np.zeros(64, dtype=np.int32))
         p_actions = _create_actions(i, p_moves)
         actions += p_actions
         # promotionの場合
@@ -956,6 +962,8 @@ def _between(point1: int, point2: int) -> np.ndarray:
 def _is_mate_check(state: ChessState, kp: int) -> bool:
     # Kingが逃げる手に合法手が存在するかを考える
     bs = _board_status(state)
+    # pinを計算できるようになったら変更
+    pins = np.zeros(64, dtype=np.int32)
     king_move = _king_moves(bs, kp, state.turn)
     num_check, checking_piece = _is_check2(bs, state.turn, kp)
     kingless_bs = _board_status(state)
@@ -974,7 +982,7 @@ def _is_mate_check(state: ChessState, kp: int) -> bool:
         piece = kingless_bs[i]
         if _owner(piece) != state.turn:
             continue
-        pm = _piece_moves(bs, i, state.turn)
+        pm = _piece_moves(bs, i, piece, pins)
         # checkしている駒やその駒との間に動ける駒がある場合、詰みでない
         if np.any(bet + pm == 2):
             return False
@@ -982,8 +990,9 @@ def _is_mate_check(state: ChessState, kp: int) -> bool:
 
 
 def _is_mate_non_check(state: ChessState, kp: int) -> bool:
-    # Kingが逃げる手に合法手が存在するかを考える
+    # Kingが移動する手に合法手が存在するかを考える
     kingless_bs = _board_status(state)
+    pins = np.zeros(64, dtype=np.int32)
     king_move = _king_moves(kingless_bs, kp, state.turn)
     kingless_bs[kp] = 0
     kingless_effects = _effected_positions(kingless_bs, _another_color(state))
@@ -995,24 +1004,30 @@ def _is_mate_non_check(state: ChessState, kp: int) -> bool:
         piece = kingless_bs[i]
         if _owner(piece) != state.turn:
             continue
+        pm = _piece_moves(kingless_bs, i, piece, pins)
+        # ひとつでも行ける地点があるならスティルメイトではない
+        if np.any(pm == 1):
+            return False
     return True
 
 
 def _is_legal_action(state: ChessState, action: int):
     bs = _board_status(state)
+    pins = np.zeros(64, dtype=np.int32)
     from_ = action % 64
+    pin = pins[from_]
     direction = action // 64
     piece = bs[from_]
-    p_moves = _piece_moves(bs, from_, piece)
+    p_moves = _piece_moves(bs, from_, piece, pins)
     p_actions = _create_actions(from_, p_moves)
     # en_passantを追加
-    if piece == 1 and from_ - 8 == state.en_passant:
+    if piece == 1 and from_ - 8 == state.en_passant and (pin == 0 or pin == 4):
         p_actions[from_ + 64 * 48] = 1
-    if piece == 1 and from_ + 8 == state.en_passant:
+    if piece == 1 and from_ + 8 == state.en_passant and (pin == 0 or pin == 3):
         p_actions[from_ + 64 * 35] = 1
-    if piece == 7 and from_ - 8 == state.en_passant:
+    if piece == 7 and from_ - 8 == state.en_passant and (pin == 0 or pin == 3):
         p_actions[from_ + 64 * 34] = 1
-    if piece == 7 and from_ + 8 == state.en_passant:
+    if piece == 7 and from_ + 8 == state.en_passant and (pin == 0 or pin == 4):
         p_actions[from_ + 64 * 49] = 1
     # Queen以外へのpromotionの場合、Queenへのpromotionが合法ならOK
     format_action = action

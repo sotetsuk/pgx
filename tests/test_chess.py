@@ -44,7 +44,7 @@ def test_pawn_move():
     b = np.zeros(64, dtype=np.int32)
     b[28] = 1
     b[20] = 7
-    pm = _pawn_moves(b, 28, 0)
+    pm = _pawn_moves(b, 28, 0, 0)
     for i in range(64):
         if i == 29:
             assert pm[i] == 1
@@ -54,7 +54,7 @@ def test_pawn_move():
     b1[9] = 1
     b1[2] = 7
     b1[18] = 7
-    pm1 = _pawn_moves(b1, 9, 0)
+    pm1 = _pawn_moves(b1, 9, 0, 0)
     for i in range(64):
         if i == 2 or i == 18 or i == 10 or i == 11:
             assert pm1[i] == 1
@@ -63,7 +63,7 @@ def test_pawn_move():
     b2 = np.zeros(64, dtype=np.int32)
     b2[6] = 7
     b2[5] = 1
-    pm2 = _pawn_moves(b2, 6, 1)
+    pm2 = _pawn_moves(b2, 6, 1, 0)
     for i in range(64):
         assert pm2[i] == 0
 
@@ -71,7 +71,7 @@ def test_pawn_move():
 def test_knight_move():
     b = np.zeros(64, dtype=np.int32)
     b[28] = 2
-    km = _knight_moves(b, 28, 0)
+    km = _knight_moves(b, 28, 0, 0)
     for i in range(64):
         if i == 22 or i == 38 or i == 45 or i == 43 or i == 34 or i == 18 or i == 11 or i == 13:
             assert km[i] == 1
@@ -79,7 +79,7 @@ def test_knight_move():
             assert km[i] == 0
     b1 = np.zeros(64, dtype=np.int32)
     b1[9] = 2
-    km1 = _knight_moves(b1, 9, 0)
+    km1 = _knight_moves(b1, 9, 0, 0)
     for i in range(64):
         if i == 3 or i == 19 or i == 26 or i == 24:
             assert km1[i] == 1
@@ -89,7 +89,7 @@ def test_knight_move():
     b1[26] = 3
     b1[19] = 8
     b1[24] = 9
-    km2 = _knight_moves(b1, 9, 0)
+    km2 = _knight_moves(b1, 9, 0, 0)
     for i in range(64):
         if i == 19 or i == 24:
             assert km2[i] == 1
@@ -100,7 +100,7 @@ def test_knight_move():
 def test_bishop_move():
     b = np.zeros(64, dtype=np.int32)
     b[32] = 3
-    bm = _bishop_moves(b, 32, 0)
+    bm = _bishop_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 41 or i == 50 or i == 59 or i == 25 or i == 18 or i == 11 or i == 4:
             assert bm[i] == 1
@@ -108,7 +108,7 @@ def test_bishop_move():
             assert bm[i] == 0
     b[50] = 1
     b[18] = 7
-    bm1 = _bishop_moves(b, 32, 0)
+    bm1 = _bishop_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 41 or i == 25 or i == 18:
             assert bm1[i] == 1
@@ -119,7 +119,7 @@ def test_bishop_move():
 def test_rook_move():
     b = np.zeros(64, dtype=np.int32)
     b[32] = 4
-    rm = _rook_moves(b, 32, 0)
+    rm = _rook_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 32:
             assert rm[i] == 0
@@ -130,7 +130,7 @@ def test_rook_move():
     b[35] = 1
     b[16] = 8
     b[40] = 5
-    rm1 = _rook_moves(b, 32, 0)
+    rm1 = _rook_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 33 or i == 34 or i == 24 or i == 16:
             assert rm1[i] == 1
