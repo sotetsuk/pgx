@@ -8,7 +8,7 @@ import numpy as np
 @dataclass
 class ContractBridgeBiddingState:
     # turn 現在のターン数
-    turn: np.ndarray = np.zeros(1, dtype=np.int16)
+    turn: np.ndarray = np.int16(1)
     # curr_player 現在のプレイヤーid
     curr_player: np.ndarray = np.full(1, -1, dtype=np.int8)
     # 終端状態
