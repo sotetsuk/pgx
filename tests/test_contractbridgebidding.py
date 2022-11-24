@@ -591,8 +591,8 @@ def test_step():
 
 
 def max_action_length_agent(state: ContractBridgeBiddingState):
-    if (state.last_bid[0] == -1 and state.pass_num != 3) or (
-        state.last_bid[0] != -1 and state.pass_num != 2
+    if (state.last_bid == -1 and state.pass_num != 3) or (
+        state.last_bid != -1 and state.pass_num != 2
     ):
         return 35
     elif state.legal_action_mask[36]:
@@ -600,23 +600,23 @@ def max_action_length_agent(state: ContractBridgeBiddingState):
     elif state.legal_action_mask[37]:
         return 37
     else:
-        return state.last_bid[0] + 1
+        return state.last_bid + 1
 
 
 def test_max_action():
     _, state = init()
-    state.turn = np.zeros(1, dtype=np.int16)
-    state.terminated = np.zeros(1, dtype=np.bool8)
+    state.turn = np.int16(0)
+    state.terminated = np.bool8(0)
     state.bidding_history = np.full(319, -1, dtype=np.int8)
     state.legal_action_mask = np.ones(38, dtype=np.bool8)
     state.legal_action_mask[-2:] = 0
     state.first_denomination_NS = np.full(5, -1, dtype=np.int8)
     state.first_denomination_EW = np.full(5, -1, dtype=np.int8)
-    state.call_x = np.zeros(1, dtype=np.bool8)
-    state.call_xx = np.zeros(1, dtype=np.bool8)
-    state.pass_num = np.zeros(1, dtype=np.int8)
-    state.last_bid = np.full(1, -1, dtype=np.int8)
-    state.last_bidder = np.full(1, -1, dtype=np.int8)
+    state.call_x = np.bool8(0)
+    state.call_xx = np.bool8(0)
+    state.pass_num = np.bool8(0)
+    state.last_bid = np.int8(-1)
+    state.last_bidder = np.int8(-1)
 
     for i in range(319):
         if i < 318:
