@@ -120,24 +120,32 @@ def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
 
 def new_step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     # 指定値が合法手でない
-    kp = int(state.board[6 + state.turn * 6, :].argmax())
-    if not _is_legal_action(state, i_action, _pin(state, kp)):
-        return state, _turn_to_reward(_another_color(state)), True
     action = int_to_action(state, i_action)
     is_castling = _is_castling(action)
+    kp = int(state.board[6 + state.turn * 6, :].argmax())
+    bs = _board_status(state)
+    if (
+        not _is_legal_action(state, i_action, _pin(state, kp))
+        and not (is_castling == 1 and _can_left_castling(state, bs))
+        and not (is_castling == 2 and _can_right_castling(state, bs))
+    ):
+        print("not legal action")
+        return state, _turn_to_reward(_another_color(state)), True
     s = _move(state, action, is_castling)
     # move後にcheckがかかっている
+    kp = int(s.board[6 + s.turn * 6, :].argmax())
     bs = _board_status(s)
-    if _is_check(
-        bs, s.turn, kp
-    ):
+    if _is_check(bs, s.turn, kp):
+        print("leave check")
         return s, _turn_to_reward(_another_color(state)), True
     s.turn = _another_color(s)
     kp = int(s.board[6 + s.turn * 6, :].argmax())
     pins = _pin(s, kp)
     if _is_check(bs, s.turn, kp) and _is_mate_check(s, kp, pins):
-        return s, _turn_to_reward(_another_color(state)), True
+        print("mate")
+        return s, _turn_to_reward(state.turn), True
     if not _is_check(bs, s.turn, kp) and _is_mate_non_check(s, kp, pins):
+        print("stale mate")
         return s, 0, True
     # 各種フラグの更新
     if not s.wr1_move_count and action.from_ == 0:
@@ -547,11 +555,17 @@ def _white_pawn_moves(bs: np.ndarray, from_: int, pin: int) -> np.ndarray:
     # 斜めには相手の駒があるとき進める
     # アンパッサンはリーガルアクションで追加
     # 左斜め前
-    if _is_in_board(from_ - 7) and _owner(bs[from_ - 7]) == 1 and (pin == 0 or pin == 4):
-        to[from_ - 7] = 1
+    if _is_in_board(from_ - 7) and (pin == 0 or pin == 4):
+        if _owner(bs[from_ - 7]) == 1:
+            to[from_ - 7] = 1
+        elif _owner(bs[from_ - 7]) == 0:
+            to[from_ - 7] = 2
     # 右斜め前
-    if _is_in_board(from_ + 9) and _owner(bs[from_ + 9]) == 1 and (pin == 0 or pin == 3):
-        to[from_ + 9] = 1
+    if _is_in_board(from_ + 9) and (pin == 0 or pin == 3):
+        if _owner(bs[from_ + 9]) == 1:
+            to[from_ + 9] = 1
+        elif _owner(bs[from_ + 9]) == 0:
+            to[from_ + 9] = 2
     return to
 
 
@@ -564,11 +578,17 @@ def _black_pawn_moves(bs: np.ndarray, from_: int, pin: int) -> np.ndarray:
             to[from_ - 2] = 1
     # 斜めには相手の駒があるとき進める
     # 左斜め前
-    if _is_in_board(from_ - 9) and _owner(bs[from_ - 9]) == 0 and (pin == 0 or pin == 3):
-        to[from_ - 9] = 1
+    if _is_in_board(from_ - 9) and (pin == 0 or pin == 3):
+        if _owner(bs[from_ - 9]) == 0:
+            to[from_ - 9] = 1
+        elif _owner(bs[from_ - 9]) == 1:
+            to[from_ - 9] = 2
     # 右斜め前
-    if _is_in_board(from_ + 7) and _owner(bs[from_ + 7]) == 0 and (pin == 0 or pin == 4):
-        to[from_ + 7] = 1
+    if _is_in_board(from_ + 7) and (pin == 0 or pin == 4):
+        if _owner(bs[from_ + 7]) == 0:
+            to[from_ + 7] = 1
+        elif _owner(bs[from_ + 7]) == 1:
+            to[from_ + 7] = 2
     return to
 
 
@@ -579,7 +599,9 @@ def _pawn_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
         return _black_pawn_moves(bs, from_, pin)
 
 
-def _knight_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
+def _knight_moves(
+    bs: np.ndarray, from_: int, turn: int, pin: int
+) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     # pinされている場合は動けない
     if pin != 0:
@@ -588,71 +610,89 @@ def _knight_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray
     su, sd, sl, sr = _is_second_line(from_)
     # 上方向
     if not su:
-        if not l_ and _owner(bs[from_ - 6]) != turn:
-            to[from_ - 6] = 1
-        if not r and _owner(bs[from_ + 10]) != turn:
-            to[from_ + 10] = 1
+        if not l_:
+            if _owner(bs[from_ - 6]) == turn:
+                to[from_ - 6] = 2
+            else:
+                to[from_ - 6] = 1
+        if not r:
+            if _owner(bs[from_ + 10]) == turn:
+                to[from_ + 10] = 2
+            else:
+                to[from_ + 10] = 1
     # 左方向
     if not sl:
-        if not u and _owner(bs[from_ - 15]) != turn:
-            to[from_ - 15] = 1
-        if not d and _owner(bs[from_ - 17]) != turn:
-            to[from_ - 17] = 1
+        if not u:
+            if _owner(bs[from_ - 15]) == turn:
+                to[from_ - 15] = 2
+            else:
+                to[from_ - 15] = 1
+        if not d:
+            if _owner(bs[from_ - 17]) == turn:
+                to[from_ - 17] = 2
+            else:
+                to[from_ - 17] = 1
     # 下方向
     if not sd:
-        if not l_ and _owner(bs[from_ - 10]) != turn:
-            to[from_ - 10] = 1
-        if not r and _owner(bs[from_ + 6]) != turn:
-            to[from_ + 6] = 1
+        if not l_:
+            if _owner(bs[from_ - 10]) == turn:
+                to[from_ - 10] = 2
+            else:
+                to[from_ - 10] = 1
+        if not r:
+            if _owner(bs[from_ + 6]) == turn:
+                to[from_ + 6] = 2
+            else:
+                to[from_ + 6] = 1
     # 右方向
     if not sr:
-        if not u and _owner(bs[from_ + 17]) != turn:
-            to[from_ + 17] = 1
-        if not d and _owner(bs[from_ + 15]) != turn:
-            to[from_ + 15] = 1
+        if not u:
+            if _owner(bs[from_ + 17]) == turn:
+                to[from_ + 17] = 2
+            else:
+                to[from_ + 17] = 1
+        if not d:
+            if _owner(bs[from_ + 15]) == turn:
+                to[from_ + 15] = 2
+            else:
+                to[from_ + 15] = 1
     return to
 
 
-def _bishop_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
+def _bishop_moves(
+    bs: np.ndarray, from_: int, turn: int, pin: int
+) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     # pinされている方向以外のフラグはあらかじめ折っておく
-    ur_flag = (pin == 0 or pin == 3)
-    ul_flag = (pin == 0 or pin == 4)
-    dr_flag = (pin == 0 or pin == 4)
-    dl_flag = (pin == 0 or pin == 3)
+    ur_flag = pin == 0 or pin == 3
+    ul_flag = pin == 0 or pin == 4
+    dr_flag = pin == 0 or pin == 4
+    dl_flag = pin == 0 or pin == 3
     for i in range(8):
         ur = from_ + 9 * (1 + i)
         ul = from_ - 7 * (1 + i)
         dr = from_ + 7 * (1 + i)
         dl = from_ - 9 * (1 + i)
-        if (
-            ur_flag
-            and _is_in_board(ur)
-            and _is_same_rising(from_, ur)
-            and _owner(bs[ur]) != turn
-        ):
-            to[ur] = 1
-        if (
-            ul_flag
-            and _is_in_board(ul)
-            and _is_same_declining(from_, ul)
-            and _owner(bs[ul]) != turn
-        ):
-            to[ul] = 1
-        if (
-            dr_flag
-            and _is_in_board(dr)
-            and _is_same_declining(from_, dr)
-            and _owner(bs[dr]) != turn
-        ):
-            to[dr] = 1
-        if (
-            dl_flag
-            and _is_in_board(dl)
-            and _is_same_rising(from_, dl)
-            and _owner(bs[dl]) != turn
-        ):
-            to[dl] = 1
+        if ur_flag and _is_in_board(ur) and _is_same_rising(from_, ur):
+            if _owner(bs[ur]) == turn:
+                to[ur] = 2
+            else:
+                to[ur] = 1
+        if ul_flag and _is_in_board(ul) and _is_same_declining(from_, ul):
+            if _owner(bs[ul]) == turn:
+                to[ul] = 2
+            else:
+                to[ul] = 1
+        if dr_flag and _is_in_board(dr) and _is_same_declining(from_, dr):
+            if _owner(bs[dr]) == turn:
+                to[dr] = 2
+            else:
+                to[dr] = 1
+        if dl_flag and _is_in_board(dl) and _is_same_rising(from_, dl):
+            if _owner(bs[dl]) == turn:
+                to[dl] = 2
+            else:
+                to[dl] = 1
         if not _is_in_board(ur) or bs[ur] != 0:
             ur_flag = False
         if not _is_in_board(ul) or bs[ul] != 0:
@@ -666,43 +706,35 @@ def _bishop_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray
 
 def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
-    u_flag = (pin == 0 or pin == 1)
-    d_flag = (pin == 0 or pin == 1)
-    r_flag = (pin == 0 or pin == 2)
-    l_flag = (pin == 0 or pin == 2)
+    u_flag = pin == 0 or pin == 1
+    d_flag = pin == 0 or pin == 1
+    r_flag = pin == 0 or pin == 2
+    l_flag = pin == 0 or pin == 2
     for i in range(8):
         u = from_ + 1 * (1 + i)
         d = from_ - 1 * (1 + i)
         l_ = from_ - 8 * (1 + i)
         r = from_ + 8 * (1 + i)
-        if (
-            u_flag
-            and _is_in_board(u)
-            and _is_same_column(from_, u)
-            and _owner(bs[u]) != turn
-        ):
-            to[u] = 1
-        if (
-            d_flag
-            and _is_in_board(d)
-            and _is_same_column(from_, d)
-            and _owner(bs[d]) != turn
-        ):
-            to[d] = 1
-        if (
-            l_flag
-            and _is_in_board(l_)
-            and _is_same_row(from_, l_)
-            and _owner(bs[l_]) != turn
-        ):
-            to[l_] = 1
-        if (
-            r_flag
-            and _is_in_board(r)
-            and _is_same_row(from_, r)
-            and _owner(bs[r]) != turn
-        ):
-            to[r] = 1
+        if u_flag and _is_in_board(u) and _is_same_column(from_, u):
+            if _owner(bs[u]) == turn:
+                to[u] = 2
+            else:
+                to[u] = 1
+        if d_flag and _is_in_board(d) and _is_same_column(from_, d):
+            if _owner(bs[d]) == turn:
+                to[d] = 2
+            else:
+                to[d] = 1
+        if l_flag and _is_in_board(l_) and _is_same_row(from_, l_):
+            if _owner(bs[l_]) == turn:
+                to[l_] = 2
+            else:
+                to[l_] = 1
+        if r_flag and _is_in_board(r) and _is_same_row(from_, r):
+            if _owner(bs[r]) == turn:
+                to[r] = 2
+            else:
+                to[r] = 1
         if not _is_in_board(u) or bs[u] != 0:
             u_flag = False
         if not _is_in_board(d) or bs[d] != 0:
@@ -714,7 +746,9 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
     return to
 
 
-def _queen_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
+def _queen_moves(
+    bs: np.ndarray, from_: int, turn: int, pin: int
+) -> np.ndarray:
     r_move = _rook_moves(bs, from_, turn, pin)
     b_move = _bishop_moves(bs, from_, turn, pin)
     # r_moveとb_moveは共通項がないので足してよい
@@ -725,27 +759,52 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
     u, d, l_, r = _is_side(from_)
     if not u:
-        if _owner(bs[from_ + 1]) != turn:
+        if _owner(bs[from_ + 1]) == turn:
+            to[from_ + 1] = 2
+        else:
             to[from_ + 1] = 1
-        if not l_ and _owner(bs[from_ - 7]) != turn:
-            to[from_ - 7] = 1
-        if not r and _owner(bs[from_ + 9]) != turn:
-            to[from_ + 9] = 1
-    if not l_ and _owner(bs[from_ - 8]) != turn:
-        to[from_ - 8] = 1
-    if not r and _owner(bs[from_ + 8]) != turn:
-        to[from_ + 8] = 1
+        if not l_:
+            if _owner(bs[from_ - 7]) == turn:
+                to[from_ - 7] = 2
+            else:
+                to[from_ - 7] = 1
+        if not r:
+            if _owner(bs[from_ + 9]) == turn:
+                to[from_ + 9] = 2
+            else:
+                to[from_ + 9] = 1
+    if not l_:
+        if _owner(bs[from_ - 8]) == turn:
+            to[from_ - 8] = 2
+        else:
+            to[from_ - 8] = 1
+    if not r:
+        if _owner(bs[from_ + 8]) == turn:
+            to[from_ + 8] = 2
+        else:
+            to[from_ + 8] = 1
     if not d:
-        if _owner(bs[from_ - 1]) != turn:
+        if _owner(bs[from_ - 1]) == turn:
+            to[from_ - 1] = 2
+        else:
             to[from_ - 1] = 1
-        if not l_ and _owner(bs[from_ - 9]) != turn:
-            to[from_ - 9] = 1
-        if not r and _owner(bs[from_ + 7]) != turn:
-            to[from_ + 7] = 1
+        if not l_:
+            if _owner(bs[from_ - 9]) == turn:
+                to[from_ - 9] = 2
+            else:
+                to[from_ - 9] = 1
+        if not r:
+            if _owner(bs[from_ + 7]) == turn:
+                to[from_ + 7] = 2
+            else:
+                to[from_ + 7] = 1
     return to
 
 
-def _piece_moves(bs: np.ndarray, from_: int, piece: int, pins: np.ndarray) -> np.ndarray:
+# 自分の駒へのmoveは2、その他の場所へのmoveは1として記録
+def _piece_moves(
+    bs: np.ndarray, from_: int, piece: int, pins: np.ndarray
+) -> np.ndarray:
     pin = pins[from_]
     if piece == 0:
         return np.zeros(64, dtype=np.int32)
@@ -768,7 +827,7 @@ def _piece_moves(bs: np.ndarray, from_: int, piece: int, pins: np.ndarray) -> np
 def _create_actions(from_: int, to: np.ndarray) -> np.ndarray:
     actions = np.zeros(4608, dtype=np.int32)
     for i in range(64):
-        if to[i] == 0:
+        if to[i] != 1:
             continue
         dir, dis = dif_to_direction(from_, i)
         if dir <= 7:
@@ -924,61 +983,6 @@ def _is_mate(state: ChessState, actions: np.ndarray) -> bool:
     return f
 
 
-# checkをかけられているときのlegal_actions
-def _check_legal_actions(state: ChessState) -> np.ndarray:
-    actions = np.zeros(4608, dtype=np.int32)
-    bs = _board_status(state)
-    for i in range(64):
-        piece = bs[i]
-        if _owner(piece) != state.turn:
-            continue
-        p_moves = _piece_moves(bs, i, piece)
-        p_actions = _create_actions(i, p_moves)
-        # promotionの場合
-        if piece == 1 and i % 8 == 6:
-            if _is_in_board(i - 7) and p_moves[i - 7] == 1:
-                p_actions[i + 64 * 67] = 1
-                p_actions[i + 64 * 68] = 1
-                p_actions[i + 64 * 69] = 1
-            if _is_in_board(i + 1) and p_moves[i + 1] == 1:
-                p_actions[i + 64 * 64] = 1
-                p_actions[i + 64 * 65] = 1
-                p_actions[i + 64 * 66] = 1
-            if _is_in_board(i + 9) and p_moves[i + 9] == 1:
-                p_actions[i + 64 * 70] = 1
-                p_actions[i + 64 * 71] = 1
-                p_actions[i + 64 * 72] = 1
-        if piece == 7 and i % 8 == 1:
-            if _is_in_board(i - 9) and p_moves[i - 9] == 1:
-                p_actions[i + 64 * 67] = 1
-                p_actions[i + 64 * 68] = 1
-                p_actions[i + 64 * 69] = 1
-            if _is_in_board(i - 1) and p_moves[i - 1] == 1:
-                p_actions[i + 64 * 64] = 1
-                p_actions[i + 64 * 65] = 1
-                p_actions[i + 64 * 66] = 1
-            if _is_in_board(i + 7) and p_moves[i + 7] == 1:
-                p_actions[i + 64 * 70] = 1
-                p_actions[i + 64 * 71] = 1
-                p_actions[i + 64 * 72] = 1
-        # アンパッサンの場合
-        if piece == 1 and i - 8 == state.en_passant:
-            p_actions[i + 64 * 48] = 1
-        if piece == 1 and i + 8 == state.en_passant:
-            p_actions[i + 64 * 35] = 1
-        if piece == 7 and i - 8 == state.en_passant:
-            p_actions[i + 64 * 34] = 1
-        if piece == 7 and i + 8 == state.en_passant:
-            p_actions[i + 64 * 49] = 1
-        actions += p_actions
-    # castling
-    if _can_left_castling(state, bs):
-        actions[32 + state.turn * 7 + 64 * 19] = 1
-    if _can_right_castling(state, bs):
-        actions[32 + state.turn * 7 + 64 * 22] = 1
-    return actions
-
-
 # point1とpoint2の間の位置を返す
 # point2も含める
 def _between(point1: int, point2: int) -> np.ndarray:
@@ -1009,8 +1013,9 @@ def _is_mate_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
     kingless_bs[kp] = 0
     kingless_effects = _effected_positions(kingless_bs, _another_color(state))
     # king_moveが1かつkingless_effectsが0の地点があれば詰みではない
-    if np.any(king_move - kingless_effects == 1):
-        return False
+    for i in range(64):
+        if king_move[i] == 1 and kingless_effects[i] == 0:
+            return False
     # Kingを動かさない回避手の存在判定
     # 2枚以上からCheckされている場合→詰み
     if num_check == 2:
@@ -1023,8 +1028,9 @@ def _is_mate_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
             continue
         pm = _piece_moves(bs, i, piece, pins)
         # checkしている駒やその駒との間に動ける駒がある場合、詰みでない
-        if np.any(bet + pm == 2):
-            return False
+        for j in range(64):
+            if bet[j] == 1 and pm[j] == 1:
+                return False
     return True
 
 
