@@ -1,5 +1,4 @@
 import math
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -389,7 +388,7 @@ def step(state: State, action: jnp.ndarray):
             if state.turn == i:
                 continue
             else:
-                hand = state.hand[i]
+                hand = state.hands[i]
                 hand[state.last_discard] += 1
                 if _is_completed(hand):
                     win_players[i] = True
