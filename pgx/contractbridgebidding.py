@@ -22,18 +22,18 @@ class ContractBridgeBiddingState:
     dealer: np.ndarray = np.zeros(4, dtype=np.int8)
     # vul_NS NSチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_NS: np.ndarray = np.zeros(1, dtype=np.bool8)
+    vul_NS: np.ndarray = np.zeros(1, dtype=np.bool_)
     # vul_EW EWチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_EW: np.ndarray = np.zeros(1, dtype=np.bool8)
+    vul_EW: np.ndarray = np.zeros(1, dtype=np.bool_)
     # last_bid 最後にされたbid
     # call_x 最後にされたbidがdoubleされているか
     # call_xx 最後にされたbidがredoubleされているか
     last_bid: np.ndarray = np.zeros(1, dtype=np.int8)
-    call_x: np.ndarray = np.zeros(1, dtype=np.bool8)
-    call_xx: np.ndarray = np.zeros(1, dtype=np.bool8)
+    call_x: np.ndarray = np.zeros(1, dtype=np.bool_)
+    call_xx: np.ndarray = np.zeros(1, dtype=np.bool_)
     # legal_actions プレイヤーの可能なbidの一覧
-    legal_actions: np.ndarray = np.ones(38, dtype=np.bool8)
+    legal_actions: np.ndarray = np.ones(38, dtype=np.bool_)
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
     first_denomination_NS: np.ndarray = np.zeros(5, dtype=np.int8)
@@ -48,7 +48,7 @@ def init() -> ContractBridgeBiddingState:
     vul_NS = np.random.randint(0, 1, 1)
     vul_EW = np.random.randint(0, 1, 1)
     dealer = np.random.randint(0, 3, 1)
-    legal_actions = np.ones(38, dtype=np.bool8)
+    legal_actions = np.ones(38, dtype=np.bool_)
     # 最初はdable, redoubleできない
     legal_actions[-2:] = 0
     state = ContractBridgeBiddingState(
