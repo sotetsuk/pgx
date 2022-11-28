@@ -6,6 +6,7 @@ import jax.numpy as jnp
 from flax import struct
 
 NUM_TILES = 44
+NUM_TILE_TYPES = 11
 N_PLAYER = 3
 MAX_RIVER_LENGTH = math.ceil((NUM_TILES - N_PLAYER * 5) // N_PLAYER)
 WIN_CACHE = jnp.int8(
@@ -335,13 +336,13 @@ class State:
     turn: jnp.ndarray = jnp.int8(0)  # 0 = dealer
     rivers: jnp.ndarray = -jnp.ones(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.int8
-    )
-    last_discard: jnp.ndarray = jnp.int8(-1)
-    hands: jnp.ndarray = jnp.zeros((N_PLAYER, NUM_TILES), dtype=jnp.bool_)
-    walls: jnp.ndarray = jnp.zeros(NUM_TILES, dtype=jnp.int8)
+    )  # type type (0~10) is set
+    last_discard: jnp.ndarray = jnp.int8(-1)  # type type (0~10) is set
+    hands: jnp.ndarray = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)  # type type (0~10) is set
+    walls: jnp.ndarray = jnp.zeros(NUM_TILES, dtype=jnp.int8)  # tile id (0~43) is set
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
     shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)  # 0: dealer, ...
-    dora: jnp.ndarray = jnp.int8(0)
+    dora: jnp.ndarray = jnp.int8(0)  # type type (0~10) is set
 
 
 # TODO: avoid Tenhou
@@ -354,12 +355,12 @@ def init(rng: jax.random.KeyArray):
     walls = jnp.arange(NUM_TILES, dtype=jnp.int8)
     walls = jax.random.shuffle(key2, walls)
     curr_player = shuffled_players[0]  # dealer
-    dora = walls[-1]
+    dora = walls[-1] // 4
     # set hands (hands[0] = dealer's hand)
-    hands = jnp.zeros((N_PLAYER, NUM_TILES), dtype=jnp.int8)
+    hands = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)
     hands = lax.fori_loop(
         0, N_PLAYER * 5,
-        lambda i, x: x.at[i // 5, walls[i]].set(True),
+        lambda i, x: x.at[i // 5, walls[i] // 4].add(1),
         hands
     )
     # first draw
@@ -400,18 +401,16 @@ def _check_ron(state: State) -> jnp.ndarray:
 
 def step(state: State, action: jnp.ndarray):
     # check ron
-    win_players = _check_ron(state)
-    if jnp.any(win_players):
-        rewards = jnp.zeros(N_PLAYER, dtype=jnp.int8)
-        rewards += win_players.astype(jnp.int8)
-    else:
-        win_players
+    # win_players = _check_ron(state)
+    # if jnp.any(win_players):
+    #     rewards = jnp.zeros(N_PLAYER, dtype=jnp.int8)
+    #     rewards += win_players.astype(jnp.int8)
+    # else:
+    #     win_players
+    ...
 
 
-def _tile_to_str(tile) -> str:
-    if tile < 0:
-        return "x"
-    tile_type = tile // 4
+def _tile_type_to_str(tile_type) -> str:
     if tile_type < 9:
         s = str(tile_type + 1)
     elif tile_type == 9:
@@ -423,24 +422,29 @@ def _tile_to_str(tile) -> str:
 
 def _hand_to_str(hand: jnp.ndarray) -> str:
     s = ""
-    for i in range(NUM_TILES):
+    for i in range(NUM_TILE_TYPES):
         for j in range(hand[i]):
-            s += _tile_to_str(i)
+            s += _tile_type_to_str(i)
     return s.ljust(6)
 
 
 def _river_to_str(river: jnp.ndarray) -> str:
     s = ""
     for i in range(MAX_RIVER_LENGTH):
-        tile = river[i]
-        s += _tile_to_str(tile)
+        tile_type = river[i]
+        s += _tile_type_to_str(tile_type) if tile_type >= 0 else 'x'
     return s
 
 
 def _to_str(state: State):
-    s = f"dora: {_tile_to_str(state.dora)}\n"
+    s = f"dora: {_tile_type_to_str(state.dora)}\n"
     for i in range(N_PLAYER):
         s += f"{'*' if state.turn == i else ' '}[{state.shuffled_players[i]}] "
         s += f"{_hand_to_str(state.hands[i])}, "
         s += f"{_river_to_str(state.rivers[i])}\n"
     return s
+
+
+def _is_valid(state: State) -> bool:
+    if state.dora < 0 or 10 < state.dora:
+        return False
