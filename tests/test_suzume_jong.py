@@ -41,3 +41,15 @@ def test_step():
 *[1] 344599, xxxxxxxxx
  [0] 5789r , xxxxxxxxx
 """
+
+def test_random_play():
+    key = jax.random.PRNGKey(0)
+    key, subkey = jax.random.split(key)
+    curr_player, state = init(subkey)
+    print(_to_str(state))
+    while not state.terminated:
+        legal_actions = jnp.where(state.legal_action_mask)[0]
+        key, subkey = jax.random.split(key)
+        action = jax.random.choice(subkey, legal_actions)
+        curr_player, state, r = step(state, action)
+        print(_to_str(state))

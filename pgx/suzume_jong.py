@@ -8,7 +8,7 @@ from flax import struct
 NUM_TILES = 44
 NUM_TILE_TYPES = 11
 N_PLAYER = 3
-MAX_RIVER_LENGTH = math.ceil((NUM_TILES - N_PLAYER * 5) // N_PLAYER)
+MAX_RIVER_LENGTH = 10
 WIN_CACHE = jnp.int8(
     [
         [3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -400,7 +400,6 @@ def _check_ron(state: State) -> jnp.ndarray:
 
 
 def step(state: State, action: jnp.ndarray):
-    # TODO: check ron
     # TODO: check tsumo
     # win_players = _check_ron(state)
     # if jnp.any(win_players):
@@ -410,20 +409,24 @@ def step(state: State, action: jnp.ndarray):
     #     win_players
 
     # discard tile
-    hands = state.hands.at[state.turn, action].add(-1)
-    rivers = state.rivers.at[state.turn, state.turn // 3].set(action)
+    hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
+    rivers = state.rivers.at[state.turn % N_PLAYER, state.turn // N_PLAYER].set(action)
     last_discard = action
+    # TODO: check ron
 
     # draw tile
-    turn = state.turn + 1
-    curr_player = state.curr_player
-    hands = hands.at[turn, state.walls[state.draw_ix] // 4].add(1)
-    draw_ix = state.draw_ix + 1
-    legal_action_mask = hands[turn] > 0
-
-    terminated = jnp.bool_(draw_ix == NUM_TILES - 1)
+    terminated = jnp.bool_(NUM_TILES - 1 <= state.draw_ix)
     if terminated:
+        curr_player = jnp.int8(-1)
         legal_action_mask = jnp.zeros_like(state.legal_action_mask)
+        state = state.replace(hands=hands, rivers=rivers, last_discard=last_discard, curr_player=curr_player, terminated=terminated, legal_action_mask=legal_action_mask)
+        r = jnp.zeros(3, dtype=jnp.float16)  # TODO: fix me
+        return curr_player, state, r
+    turn = state.turn + 1
+    curr_player = state.shuffled_players[turn % N_PLAYER]
+    hands = hands.at[turn % N_PLAYER, state.walls[state.draw_ix] // 4].add(1)
+    draw_ix = state.draw_ix + 1
+    legal_action_mask = hands[turn % N_PLAYER] > 0
 
     state = state.replace(turn=turn)
     state = state.replace(curr_player=curr_player)
@@ -464,9 +467,9 @@ def _river_to_str(river: jnp.ndarray) -> str:
 
 
 def _to_str(state: State):
-    s = f"dora: {_tile_type_to_str(state.dora)}\n"
+    s = f"{'[terminated]' if state. terminated else ''} dora: {_tile_type_to_str(state.dora)}\n"
     for i in range(N_PLAYER):
-        s += f"{'*' if state.turn == i else ' '}[{state.shuffled_players[i]}] "
+        s += f"{'*' if not state.terminated and state.turn % N_PLAYER == i else ' '}[{state.shuffled_players[i]}] "
         s += f"{_hand_to_str(state.hands[i])}, "
         s += f"{_river_to_str(state.rivers[i])}\n"
     return s
