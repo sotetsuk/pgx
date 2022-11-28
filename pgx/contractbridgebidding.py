@@ -247,5 +247,5 @@ def _update_legal_action_X_XX(
 
 
 # playerがパートナーか判断
-def _is_partner(player1: int, player2: int):
+def _is_partner(player1: np.ndarray, player2: np.ndarray) -> bool:
     return (abs(player1 - player2) + 1) % 2
