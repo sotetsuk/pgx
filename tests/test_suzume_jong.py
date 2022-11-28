@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx.suzume_jong import _is_completed
+from pgx.suzume_jong import _is_completed, init, _to_str
 
 
 def test_is_completed():
@@ -12,3 +12,15 @@ def test_is_completed():
     assert not _is_completed(hand)
     hand = jnp.int8([0,0,1,2,1,0,0,0,0,3,0])
     assert not _is_completed(hand)
+
+
+def test_init():
+    curr_player, state = init(jax.random.PRNGKey(1))
+    print(state.hands)
+    print(state.walls)
+    print(_to_str(state))
+    assert _to_str(state) == """dora: r
+*[2] 23358g, xxxxxxxxx
+ [1] 34459 , xxxxxxxxx
+ [0] 5789r , xxxxxxxxx
+"""

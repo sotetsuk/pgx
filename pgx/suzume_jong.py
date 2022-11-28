@@ -1,6 +1,7 @@
 import math
 
 import jax
+import jax.lax as lax
 import jax.numpy as jnp
 from flax import struct
 
@@ -332,42 +333,45 @@ class State:
     legal_action_mask: jnp.ndarray = jnp.zeros(9, jnp.bool_)
     terminated: jnp.ndarray = jnp.bool_(False)
     turn: jnp.ndarray = jnp.int8(0)  # 0 = dealer
-    discards: jnp.ndarray = -jnp.ones(
+    rivers: jnp.ndarray = -jnp.ones(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.int8
     )
     last_discard: jnp.ndarray = jnp.int8(-1)
-    hands: jnp.ndarray = jnp.zeros((N_PLAYER, 11), dtype=jnp.int8)
+    hands: jnp.ndarray = jnp.zeros((N_PLAYER, NUM_TILES), dtype=jnp.bool_)
     walls: jnp.ndarray = jnp.zeros(NUM_TILES, dtype=jnp.int8)
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
-    shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)
+    shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)  # 0: dealer, ...
     dora: jnp.ndarray = jnp.int8(0)
 
 
 # TODO: avoid Tenhou
-def _init_state(rng: jax.random.KeyArray):
+@jax.jit
+def init(rng: jax.random.KeyArray):
     # shuffle players and walls
     key1, key2 = jax.random.split(rng)
     shuffled_players = jnp.arange(N_PLAYER)
-    jax.random.shuffle(key1, shuffled_players)
+    shuffled_players = jax.random.shuffle(key1, shuffled_players)
     walls = jnp.arange(NUM_TILES, dtype=jnp.int8)
-    jax.random.shuffle(key2, walls)
+    walls = jax.random.shuffle(key2, walls)
     curr_player = shuffled_players[0]  # dealer
     dora = walls[-1]
     # set hands (hands[0] = dealer's hand)
-    hands = jnp.zeros((N_PLAYER, 11), dtype=jnp.int8)
-    for p in range(N_PLAYER):
-        for i in range(5):
-            tile = walls[p * 5 + i]
-            hands[p, tile] += 1
+    hands = jnp.zeros((N_PLAYER, NUM_TILES), dtype=jnp.int8)
+    hands = lax.fori_loop(
+        0, N_PLAYER * 5,
+        lambda i, x: x.at[i // 5, walls[i]].set(True),
+        hands
+    )
     # first draw
     draw_ix = jnp.int8(N_PLAYER * 5)
-    hands[0, walls[N_PLAYER * 5]] += 1
+    hands = hands.at[0, walls[N_PLAYER * 5]].add(1)
     draw_ix += 1
     legal_action_mask = hands[0].sum(axis=0) > 0
     state = State(
         curr_player=curr_player,
         legal_action_mask=legal_action_mask,
         hands=hands,
+        walls=walls,
         draw_ix=draw_ix,
         shuffled_players=shuffled_players,
         dora=dora,
@@ -380,8 +384,7 @@ def _is_completed(hand: jnp.ndarray):
     return x == 0
 
 
-def step(state: State, action: jnp.ndarray):
-    # check ron
+def _check_ron(state: State) -> jnp.ndarray:
     win_players = jnp.zeros(N_PLAYER, dtype=jnp.bool_)
     if state.last_discard >= 0:
         for i in range(N_PLAYER):
@@ -392,7 +395,50 @@ def step(state: State, action: jnp.ndarray):
                 hand[state.last_discard] += 1
                 if _is_completed(hand):
                     win_players[i] = True
+    return win_players
+
+
+def step(state: State, action: jnp.ndarray):
+    # check ron
+    win_players = _check_ron(state)
     if jnp.any(win_players):
-        pass
+        rewards = jnp.zeros(N_PLAYER, dtype=jnp.int8)
+        rewards += win_players.astype(jnp.int8)
     else:
         win_players
+
+
+def _tile_to_str(tile) -> str:
+    if tile < 0:
+        return "x"
+    tile_type = tile // 4
+    if tile_type < 9:
+        s = str(tile_type + 1)
+    elif tile_type == 9:
+        s = "g"
+    elif tile_type == 10:
+        s = "r"
+    return s
+
+
+def _hand_to_str(hand: jnp.ndarray) -> str:
+    s = ""
+    for i in range(NUM_TILES):
+        for j in range(hand[i]):
+            s += _tile_to_str(i)
+    return s.ljust(6)
+
+
+def _river_to_str(river: jnp.ndarray) -> str:
+    s = ""
+    for i in range(MAX_RIVER_LENGTH):
+        tile = river[i]
+        s += _tile_to_str(tile)
+    return s
+
+
+def _to_str(state: State):
+    s = f"dora: {_tile_to_str(state.dora)}\n"
+    for i in range(N_PLAYER):
+        s += f"{'*' if state.turn == i else ' '}[{state.shuffled_players[i]}] {_hand_to_str(state.hands[i])}, {_river_to_str(state.rivers[i])}\n"
+    return s
