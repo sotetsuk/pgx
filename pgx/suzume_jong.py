@@ -400,14 +400,36 @@ def _check_ron(state: State) -> jnp.ndarray:
 
 
 def step(state: State, action: jnp.ndarray):
-    # check ron
+    # TODO: check ron
+    # TODO: check tsumo
     # win_players = _check_ron(state)
     # if jnp.any(win_players):
     #     rewards = jnp.zeros(N_PLAYER, dtype=jnp.int8)
     #     rewards += win_players.astype(jnp.int8)
     # else:
     #     win_players
-    ...
+
+    # discard tile
+    hands = state.hands.at[state.turn, action].add(-1)
+    rivers = state.rivers.at[state.turn, state.turn // 3].set(action)
+    last_discard = action
+
+    # draw tile
+    turn = state.turn + 1
+    curr_player = state.curr_player
+    hands = hands.at[turn, state.walls[state.draw_ix] // 4].add(1)
+    draw_ix = state.draw_ix + 1
+
+    # TODO: legal actions
+
+    state = state.replace(turn=turn)
+    state = state.replace(curr_player=curr_player)
+    state = state.replace(hands=hands)
+    state = state.replace(rivers=rivers)
+    state = state.replace(last_discard=last_discard)
+    state = state.replace(draw_ix=draw_ix)
+    r = jnp.zeros(3, dtype=jnp.float16)  # TODO: fix me
+    return curr_player, state, r
 
 
 def _tile_type_to_str(tile_type) -> str:
@@ -448,3 +470,18 @@ def _to_str(state: State):
 def _is_valid(state: State) -> bool:
     if state.dora < 0 or 10 < state.dora:
         return False
+    if 10 < state.last_discard:
+        return False
+    if state.last_discard < 0 and state.rivers[0, 0] >= 0:
+        return False
+    if jnp.any(state.hands < 0):
+        return False
+    counts = state.hands.sum(axis=0)
+    for i in range(N_PLAYER):
+        for j in range(MAX_RIVER_LENGTH):
+            if state.rivers[i, j] >= 0:
+                counts = counts.at[state.rivers[i, j]].add(1)
+    if jnp.any(counts > 4):
+        return False
+
+    return True
