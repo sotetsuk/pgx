@@ -365,7 +365,7 @@ def init(rng: jax.random.KeyArray):
     )
     # first draw
     draw_ix = jnp.int8(N_PLAYER * 5)
-    hands = hands.at[0, walls[N_PLAYER * 5]].add(1)
+    hands = hands.at[0, walls[draw_ix] // 4].add(1)
     draw_ix += 1
     legal_action_mask = hands[0].sum(axis=0) > 0
     state = State(
