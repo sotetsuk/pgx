@@ -205,7 +205,7 @@ def _bid_to_denomination(bid: int) -> int:
 
 
 # playerのチームを判定　0: NSチーム, 1: EWチーム
-def _player_to_team(player: int) -> int:
+def _player_to_team(player: np.ndarray) -> np.ndarray:
     return player % 2
 
 
