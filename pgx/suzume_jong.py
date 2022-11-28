@@ -367,7 +367,7 @@ def init(rng: jax.random.KeyArray):
     draw_ix = jnp.int8(N_PLAYER * 5)
     hands = hands.at[0, walls[draw_ix] // 4].add(1)
     draw_ix += 1
-    legal_action_mask = hands[0].sum(axis=0) > 0
+    legal_action_mask = hands[0] > 0
     state = State(
         curr_player=curr_player,
         legal_action_mask=legal_action_mask,
@@ -419,8 +419,11 @@ def step(state: State, action: jnp.ndarray):
     curr_player = state.curr_player
     hands = hands.at[turn, state.walls[state.draw_ix] // 4].add(1)
     draw_ix = state.draw_ix + 1
+    legal_action_mask = hands[turn] > 0
 
-    # TODO: legal actions
+    terminated = jnp.bool_(draw_ix == NUM_TILES - 1)
+    if terminated:
+        legal_action_mask = jnp.zeros_like(state.legal_action_mask)
 
     state = state.replace(turn=turn)
     state = state.replace(curr_player=curr_player)
@@ -428,6 +431,8 @@ def step(state: State, action: jnp.ndarray):
     state = state.replace(rivers=rivers)
     state = state.replace(last_discard=last_discard)
     state = state.replace(draw_ix=draw_ix)
+    state = state.replace(legal_action_mask=legal_action_mask)
+    state = state.replace(terminated=terminated)
     r = jnp.zeros(3, dtype=jnp.float16)  # TODO: fix me
     return curr_player, state, r
 
@@ -483,5 +488,10 @@ def _is_valid(state: State) -> bool:
                 counts = counts.at[state.rivers[i, j]].add(1)
     if jnp.any(counts > 4):
         return False
+    for i in range(NUM_TILE_TYPES):
+        if state.legal_action_mask[i] and state.hands[state.turn, i] <= 0:
+            return False
+        if not state.legal_action_mask[i] and state.hands[state.turn, i] > 0:
+            return False
 
     return True

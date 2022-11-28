@@ -16,9 +16,6 @@ def test_is_completed():
 
 def test_init():
     curr_player, state = init(jax.random.PRNGKey(1))
-    print(state.hands)
-    print(state.walls)
-    print(_to_str(state))
     assert _is_valid(state)
     assert _to_str(state) == """dora: r
 *[2] 23358g, xxxxxxxxx
@@ -36,6 +33,8 @@ def test_step():
  [0] 5789r , xxxxxxxxx
 """
     curr_player, state, r = step(state, jnp.int8(1))
+    print(state.legal_action_mask)
+    assert not state.terminated
     assert _is_valid(state)
     assert _to_str(state) == """dora: r
  [2] 3358g , 2xxxxxxxx
