@@ -440,5 +440,7 @@ def _river_to_str(river: jnp.ndarray) -> str:
 def _to_str(state: State):
     s = f"dora: {_tile_to_str(state.dora)}\n"
     for i in range(N_PLAYER):
-        s += f"{'*' if state.turn == i else ' '}[{state.shuffled_players[i]}] {_hand_to_str(state.hands[i])}, {_river_to_str(state.rivers[i])}\n"
+        s += f"{'*' if state.turn == i else ' '}[{state.shuffled_players[i]}] "
+        s += f"{_hand_to_str(state.hands[i])}, "
+        s += f"{_river_to_str(state.rivers[i])}\n"
     return s
