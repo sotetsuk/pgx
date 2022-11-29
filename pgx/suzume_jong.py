@@ -404,7 +404,7 @@ def _check_tsumo(state: State) -> jnp.ndarray:
     return jnp.bool_(False)
 
 
-def _step_by_ron(state, win_players):
+def _step_by_ron(state):
     ...
 
 
@@ -445,6 +445,15 @@ def _step_non_terminal(state: State):
     return state.curr_player, state, r
 
 
+def _step_non_tied(state: State):
+    state = _draw_tile(state)
+    is_tsumo = _check_tsumo(state)
+    if is_tsumo:
+        return _step_by_tsumo(state)
+    else:
+        return _step_non_terminal(state)
+
+
 def step(state: State, action: jnp.ndarray):
     # discard tile
     hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
@@ -460,18 +469,12 @@ def step(state: State, action: jnp.ndarray):
 
     win_players = _check_ron(state)
     if jnp.any(win_players):
-        return _step_by_ron(state, win_players)
+        return _step_by_ron(state)
     else:
-        is_tied = jnp.bool_(NUM_TILES - 1 <= state.draw_ix)
-        if is_tied:
+        if jnp.bool_(NUM_TILES - 1 <= state.draw_ix):
             return _step_by_tie(state)
         else:
-            state = _draw_tile(state)
-            is_tsumo = _check_tsumo(state)
-            if is_tsumo:
-                return _step_by_tsumo(state)
-            else:
-                return _step_non_terminal(state)
+            return _step_non_tied(state)
 
 
 def _tile_type_to_str(tile_type) -> str:
