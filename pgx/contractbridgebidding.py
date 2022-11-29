@@ -60,7 +60,7 @@ def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
     vul_EW = np.random.randint(0, 2, 1)
     dealer = np.random.randint(0, 4, 1)
     curr_player = copy.deepcopy(dealer)
-    legal_actions = np.ones(38, dtype=np.bool8)
+    legal_actions = np.ones(38, dtype=np.bool_)
     # 最初はdable, redoubleできない
     legal_actions[-2:] = 0
     state = ContractBridgeBiddingState(
@@ -214,36 +214,41 @@ def _update_legal_action_X_XX(
     state: ContractBridgeBiddingState,
 ) -> Tuple[bool, bool]:
     if state.last_bidder != -1:
-        if (
-            (not state.call_x)
-            and (not state.call_xx)
-            and (
-                not _is_partner(
-                    state.last_bidder,
-                    state.curr_player,
-                )
-            )
-        ):
-            state.legal_action_mask[36] = True
-        else:
-            state.legal_action_mask[36] = False
-        if (
-            state.call_x
-            and (not state.call_xx)
-            and (
-                _is_partner(
-                    state.last_bidder,
-                    state.curr_player,
-                )
-            )
-        ):
-            state.legal_action_mask[37] = True
-        else:
-            state.legal_action_mask[37] = False
+        return _is_legal_X(state), _is_legal_XX(state)
     else:
-        state.legal_action_mask[36] = False
-        state.legal_action_mask[37] = False
-    return state.legal_action_mask[36], state.legal_action_mask[37]
+        return False, False
+
+
+def _is_legal_X(state: ContractBridgeBiddingState) -> bool:
+    if (
+        (not state.call_x)
+        and (not state.call_xx)
+        and (
+            not _is_partner(
+                state.last_bidder,
+                state.curr_player,
+            )
+        )
+    ):
+        return True
+    else:
+        return False
+
+
+def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
+    if (
+        state.call_x
+        and (not state.call_xx)
+        and (
+            _is_partner(
+                state.last_bidder,
+                state.curr_player,
+            )
+        )
+    ):
+        return True
+    else:
+        return False
 
 
 # playerがパートナーか判断
