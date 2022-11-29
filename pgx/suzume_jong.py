@@ -385,16 +385,16 @@ def _is_completed(hand: jnp.ndarray):
     return x == 0
 
 
+@jax.jit
 def _check_ron(state: State) -> jnp.ndarray:
     # TODO: furiten
     # TODO: 5-fan limit
-    winning_players = jnp.zeros(N_PLAYER, dtype=jnp.bool_)
-    for i in range(N_PLAYER):
-        winning_players = lax.cond(
-            (state.last_discard < 0 | state.turn == i),
-            lambda: winning_players,
-            lambda: winning_players.at[i].set(_is_completed(state.hands.at[i, state.last_discard].add(1)[i]))
-        )
+    winning_players = jax.lax.fori_loop(
+        0, N_PLAYER,
+        lambda i, x: x.at[i].set(_is_completed(state.hands.at[i, state.last_discard].add(1)[i])),
+        jnp.zeros(N_PLAYER, dtype=jnp.bool_)
+    )
+    winning_players = winning_players.at[state.turn].set(False)
     return winning_players
 
 
