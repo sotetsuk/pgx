@@ -75,51 +75,6 @@ def init():
 
 def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     # 指定値が合法手でない
-    legal_actions = _legal_actions(state)
-    if legal_actions[i_action] == 0:
-        return state, _turn_to_reward(_another_color(state)), True
-    action = int_to_action(state, i_action)
-    is_castling = _is_castling(action)
-    s = _move(state, action, is_castling)
-    # move後にcheckがかかっている
-    if _is_check(
-        _board_status(s), s.turn, int(s.board[6 + s.turn * 6, :].argmax())
-    ):
-        return s, _turn_to_reward(_another_color(state)), True
-    s.turn = _another_color(s)
-    enemy_legal_actions = _legal_actions(s)
-    # 相手に合法手が存在しない
-    if _is_mate(s, enemy_legal_actions):
-        # checkがかかっている場合→mate
-        if _is_check(
-            _board_status(s), s.turn, int(s.board[6 + s.turn * 6, :].argmax())
-        ):
-            return s, _turn_to_reward(_another_color(s)), True
-        # そうでない場合→スティルメイト
-        else:
-            return s, 0, True
-    # 各種フラグの更新
-    if not s.wr1_move_count and action.from_ == 0:
-        s.wr1_move_count = True
-    if not s.wr2_move_count and action.from_ == 56:
-        s.wr2_move_count = True
-    if not s.br1_move_count and action.from_ == 7:
-        s.br1_move_count = True
-    if not s.br2_move_count and action.from_ == 63:
-        s.br2_move_count = True
-    if not s.wk_move_count and action.from_ == 32:
-        s.wk_move_count = True
-    if not s.bk_move_count and action.from_ == 39:
-        s.bk_move_count = True
-    if action.piece % 6 == 1 and abs(action.from_ - action.to) == 2:
-        s.en_passant = action.to
-    else:
-        s.en_passant = -1
-    return s, 0, False
-
-
-def new_step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
-    # 指定値が合法手でない
     action = int_to_action(state, i_action)
     is_castling = _is_castling(action)
     kp = int(state.board[6 + state.turn * 6, :].argmax())
@@ -142,7 +97,7 @@ def new_step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     kp = int(s.board[6 + s.turn * 6, :].argmax())
     pins = _pin(s, kp)
     if _is_check(bs, s.turn, kp) and _is_mate_check(s, kp, pins):
-        # print("mate")
+        print("mate")
         return s, _turn_to_reward(state.turn), True
     if not _is_check(bs, s.turn, kp) and _is_mate_non_check(s, kp, pins):
         print("stale mate")

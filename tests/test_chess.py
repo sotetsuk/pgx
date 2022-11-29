@@ -1,6 +1,6 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
-    _is_mate, _effected_positions, _is_check, new_step
+    _is_mate, _effected_positions, _is_check
 import numpy as np
 import time
 
@@ -322,16 +322,6 @@ def test_step():
         else:
             assert not t
             assert r == 0
-    s = init()
-    for move in m:
-        s, r, t = new_step(s, move)
-        if move == 42 + 64 * 10:
-
-            assert t
-            assert r == 1
-        else:
-            assert not t
-            assert r == 0
     m2 = [33 + 64 * 8, 38 + 64 * 5, 48 + 64 * 56, 15 + 64 * 60, 40 + 64 * 46, 47 + 64 * 32, 9 + 64 * 8, 20 + 64 * 34,
           17 + 64 * 7, 11 + 64 * 48, 25 + 64 * 8, 36 + 64 * 34, 32 + 64 * 22, 27 + 64 * 6, 24 + 64 * 47, 31 + 64 * 50,
           35 + 64 * 7, 45 + 64 * 21, 40 + 64 * 20, 55 + 64 * 59, 16 + 64 * 47, 14 + 64 * 5, 10 + 64 * 8, 7 + 64 * 21,
@@ -342,7 +332,7 @@ def test_step():
     i = 0
     for move in m2:
         i += 1
-        s, r, t = new_step(s, move)
+        s, r, t = step(s, move)
         if move == 2 + 64 * 38:
             assert t
             assert r == 1
@@ -356,7 +346,7 @@ def test_step():
     i = 0
     for move in m3:
         i += 1
-        s, r, t = new_step(s, move)
+        s, r, t = step(s, move)
         if i == 23:
             assert t
             assert r == 1
@@ -371,7 +361,7 @@ def test_step():
     i = 0
     for move in m4:
         i += 1
-        s, r, t = new_step(s, move)
+        s, r, t = step(s, move)
         if i == 19:
             assert t
             assert r == 1
@@ -386,7 +376,7 @@ def test_step():
     i = 0
     for move in m5:
         i += 1
-        s, r, t = new_step(s, move)
+        s, r, t = step(s, move)
         if i == 19:
             assert t
             assert r == 0
@@ -396,7 +386,7 @@ def test_step():
     m6 = [9 + 64 * 8, 62 + 64 * 5, 11 + 64 * 7, 6 + 64 * 5, 12 + 64 * 48, 60 + 64 * 6, 49 + 64 * 8, 59 + 64 * 34]
     s = init()
     for move in m6:
-        s, r, t = new_step(s, move)
+        s, r, t = step(s, move)
         assert not t
         assert r == 0
     bs = _board_status(s)
