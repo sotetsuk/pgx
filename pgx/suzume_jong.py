@@ -338,8 +338,12 @@ class State:
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.int8
     )  # type type (0~10) is set
     last_discard: jnp.ndarray = jnp.int8(-1)  # type type (0~10) is set
-    hands: jnp.ndarray = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)  # type type (0~10) is set
-    walls: jnp.ndarray = jnp.zeros(NUM_TILES, dtype=jnp.int8)  # tile id (0~43) is set
+    hands: jnp.ndarray = jnp.zeros(
+        (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8
+    )  # type type (0~10) is set
+    walls: jnp.ndarray = jnp.zeros(
+        NUM_TILES, dtype=jnp.int8
+    )  # tile id (0~43) is set
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
     shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)  # 0: dealer, ...
     dora: jnp.ndarray = jnp.int8(0)  # type type (0~10) is set
@@ -359,9 +363,7 @@ def init(rng: jax.random.KeyArray):
     # set hands (hands[0] = dealer's hand)
     hands = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)
     hands = lax.fori_loop(
-        0, N_PLAYER * 5,
-        lambda i, x: x.at[i // 5, walls[i] // 4].add(1),
-        hands
+        0, N_PLAYER * 5, lambda i, x: x.at[i // 5, walls[i] // 4].add(1), hands
     )
     # first draw
     draw_ix = jnp.int8(N_PLAYER * 5)
@@ -410,7 +412,9 @@ def step(state: State, action: jnp.ndarray):
 
     # discard tile
     hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
-    rivers = state.rivers.at[state.turn % N_PLAYER, state.turn // N_PLAYER].set(action)
+    rivers = state.rivers.at[
+        state.turn % N_PLAYER, state.turn // N_PLAYER
+    ].set(action)
     last_discard = action
     # TODO: check ron
 
@@ -419,7 +423,14 @@ def step(state: State, action: jnp.ndarray):
     if terminated:
         curr_player = jnp.int8(-1)
         legal_action_mask = jnp.zeros_like(state.legal_action_mask)
-        state = state.replace(hands=hands, rivers=rivers, last_discard=last_discard, curr_player=curr_player, terminated=terminated, legal_action_mask=legal_action_mask)
+        state = state.replace(
+            hands=hands,
+            rivers=rivers,
+            last_discard=last_discard,
+            curr_player=curr_player,
+            terminated=terminated,
+            legal_action_mask=legal_action_mask,
+        )
         r = jnp.zeros(3, dtype=jnp.float16)  # TODO: fix me
         return curr_player, state, r
     turn = state.turn + 1
@@ -462,7 +473,7 @@ def _river_to_str(river: jnp.ndarray) -> str:
     s = ""
     for i in range(MAX_RIVER_LENGTH):
         tile_type = river[i]
-        s += _tile_type_to_str(tile_type) if tile_type >= 0 else 'x'
+        s += _tile_type_to_str(tile_type) if tile_type >= 0 else "x"
     return s
 
 
