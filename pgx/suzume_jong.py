@@ -386,26 +386,38 @@ def _is_completed(hand: jnp.ndarray):
 
 
 def _check_ron(state: State) -> jnp.ndarray:
-    # win_players = jnp.zeros(N_PLAYER, dtype=jnp.bool_)
-    # if state.last_discard >= 0:
-    #     for i in range(N_PLAYER):
-    #         if state.turn == i:
-    #             continue
-    #         else:
-    #             hand = state.hands[i]
-    #             hand[state.last_discard] += 1
-    #             if _is_completed(hand):
-    #                 win_players[i] = True
-    # return win_players
-    return jnp.bool_([False, False, False])
+    # TODO: furiten
+    # TODO: 5-fan limit
+    winning_players = jnp.zeros(N_PLAYER, dtype=jnp.bool_)
+    for i in range(N_PLAYER):
+        winning_players = lax.cond(
+            (state.last_discard < 0 | state.turn == i),
+            lambda: winning_players,
+            lambda: winning_players.at[i].set(_is_completed(state.hands.at[i, state.last_discard].add(1)[i]))
+        )
+    return winning_players
 
 
 def _check_tsumo(state: State) -> jnp.ndarray:
     return jnp.bool_(False)
 
 
-def _step_by_ron(state):
-    ...
+def _step_by_ron(state: State):
+    winning_players = _check_ron(state)
+    r_by_turn = winning_players.astype(jnp.float16)
+    r_by_turn = r_by_turn.at[state.turn % N_PLAYER].set(- r_by_turn.sum())
+    r = lax.fori_loop(
+        0, N_PLAYER,
+        lambda i, x: x.at[state.shuffled_players[i]].set(r_by_turn[i]),
+        jnp.zeros_like(r_by_turn)
+    )
+    curr_player = jnp.int8(-1)
+    state = state.replace(  # type: ignore
+        curr_player=curr_player,
+        terminated=jnp.bool_(True),
+        legal_action_mask=jnp.zeros_like(state.legal_action_mask),
+    )
+    return curr_player, state, r
 
 
 def _step_by_tsumo(state):
@@ -508,7 +520,8 @@ def _to_str(state: State):
     for i in range(N_PLAYER):
         s += f"{'*' if not state.terminated and state.turn % N_PLAYER == i else ' '}[{state.shuffled_players[i]}] "
         s += f"{_hand_to_str(state.hands[i])}, "
-        s += f"{_river_to_str(state.rivers[i])}\n"
+        s += f"{_river_to_str(state.rivers[i])} "
+        s += "\n"
     return s
 
 
