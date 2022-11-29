@@ -2,6 +2,7 @@ from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
     _is_mate, _effected_positions, _is_check
 import numpy as np
+import time
 
 
 def test_move():
@@ -44,7 +45,7 @@ def test_pawn_move():
     b = np.zeros(64, dtype=np.int32)
     b[28] = 1
     b[20] = 7
-    pm = _pawn_moves(b, 28, 0)
+    pm = _pawn_moves(b, 28, 0, 0)
     for i in range(64):
         if i == 29:
             assert pm[i] == 1
@@ -54,7 +55,7 @@ def test_pawn_move():
     b1[9] = 1
     b1[2] = 7
     b1[18] = 7
-    pm1 = _pawn_moves(b1, 9, 0)
+    pm1 = _pawn_moves(b1, 9, 0, 0)
     for i in range(64):
         if i == 2 or i == 18 or i == 10 or i == 11:
             assert pm1[i] == 1
@@ -63,7 +64,7 @@ def test_pawn_move():
     b2 = np.zeros(64, dtype=np.int32)
     b2[6] = 7
     b2[5] = 1
-    pm2 = _pawn_moves(b2, 6, 1)
+    pm2 = _pawn_moves(b2, 6, 1, 0)
     for i in range(64):
         assert pm2[i] == 0
 
@@ -71,7 +72,7 @@ def test_pawn_move():
 def test_knight_move():
     b = np.zeros(64, dtype=np.int32)
     b[28] = 2
-    km = _knight_moves(b, 28, 0)
+    km = _knight_moves(b, 28, 0, 0)
     for i in range(64):
         if i == 22 or i == 38 or i == 45 or i == 43 or i == 34 or i == 18 or i == 11 or i == 13:
             assert km[i] == 1
@@ -79,7 +80,7 @@ def test_knight_move():
             assert km[i] == 0
     b1 = np.zeros(64, dtype=np.int32)
     b1[9] = 2
-    km1 = _knight_moves(b1, 9, 0)
+    km1 = _knight_moves(b1, 9, 0, 0)
     for i in range(64):
         if i == 3 or i == 19 or i == 26 or i == 24:
             assert km1[i] == 1
@@ -89,10 +90,12 @@ def test_knight_move():
     b1[26] = 3
     b1[19] = 8
     b1[24] = 9
-    km2 = _knight_moves(b1, 9, 0)
+    km2 = _knight_moves(b1, 9, 0, 0)
     for i in range(64):
         if i == 19 or i == 24:
             assert km2[i] == 1
+        elif i == 3 or i == 26:
+            assert km2[i] == 2
         else:
             assert km2[i] == 0
 
@@ -100,7 +103,7 @@ def test_knight_move():
 def test_bishop_move():
     b = np.zeros(64, dtype=np.int32)
     b[32] = 3
-    bm = _bishop_moves(b, 32, 0)
+    bm = _bishop_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 41 or i == 50 or i == 59 or i == 25 or i == 18 or i == 11 or i == 4:
             assert bm[i] == 1
@@ -108,10 +111,12 @@ def test_bishop_move():
             assert bm[i] == 0
     b[50] = 1
     b[18] = 7
-    bm1 = _bishop_moves(b, 32, 0)
+    bm1 = _bishop_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 41 or i == 25 or i == 18:
             assert bm1[i] == 1
+        elif i == 50:
+            assert bm1[i] == 2
         else:
             assert bm1[i] == 0
 
@@ -119,7 +124,7 @@ def test_bishop_move():
 def test_rook_move():
     b = np.zeros(64, dtype=np.int32)
     b[32] = 4
-    rm = _rook_moves(b, 32, 0)
+    rm = _rook_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 32:
             assert rm[i] == 0
@@ -130,10 +135,12 @@ def test_rook_move():
     b[35] = 1
     b[16] = 8
     b[40] = 5
-    rm1 = _rook_moves(b, 32, 0)
+    rm1 = _rook_moves(b, 32, 0, 0)
     for i in range(64):
         if i == 33 or i == 34 or i == 24 or i == 16:
             assert rm1[i] == 1
+        elif i == 35 or i == 40:
+            assert rm1[i] == 2
         else:
             assert rm1[i] == 0
 
@@ -149,6 +156,8 @@ def test_king_move():
     for i in range(64):
         if i == 45 or i == 44 or i == 35 or i == 27 or i == 28:
             assert km[i] == 1
+        elif i == 29 or i == 37 or i == 43:
+            assert km[i] == 2
         else:
             assert km[i] == 0
 
@@ -313,6 +322,76 @@ def test_step():
         else:
             assert not t
             assert r == 0
+    m2 = [33 + 64 * 8, 38 + 64 * 5, 48 + 64 * 56, 15 + 64 * 60, 40 + 64 * 46, 47 + 64 * 32, 9 + 64 * 8, 20 + 64 * 34,
+          17 + 64 * 7, 11 + 64 * 48, 25 + 64 * 8, 36 + 64 * 34, 32 + 64 * 22, 27 + 64 * 6, 24 + 64 * 47, 31 + 64 * 50,
+          35 + 64 * 7, 45 + 64 * 21, 40 + 64 * 20, 55 + 64 * 59, 16 + 64 * 47, 14 + 64 * 5, 10 + 64 * 8, 7 + 64 * 21,
+          12 + 64 * 34, 4 + 64 * 35, 8 + 64 * 63, 23 + 64 * 34, 25 + 64 * 57, 53 + 64 * 34, 19 + 64 * 49, 44 + 64 * 22,
+          35 + 64 * 57, 54 + 64 * 34, 36 + 64 * 35, 63 + 64 * 20, 64 * 23, 60 + 64 * 33, 32 + 64 * 12, 21 + 64 * 63,
+          3 + 64 * 37, 39 + 64 * 34, 26 + 64 * 36, 30 + 64 * 35, 44 + 64 * 47, 39 + 64 * 21, 2 + 64 * 38]
+    s = init()
+    i = 0
+    for move in m2:
+        i += 1
+        s, r, t = step(s, move)
+        if move == 2 + 64 * 38:
+            assert t
+            assert r == 1
+        else:
+            assert not t
+            assert r == 0
+    m3 = [25 + 64 * 8, 54 + 64 * 5, 27 + 64 * 7, 15 + 64 * 60, 17 + 64 * 8, 21 + 64 * 60, 33 + 64 * 7, 6 + 64 * 5,
+          34 + 64 * 48, 7 + 64 * 6, 40 + 64 * 47, 55 + 64 * 61, 48 + 64 * 56, 45 + 64 * 61, 26 + 64 * 35, 63 + 64 * 20,
+          35 + 64 * 37, 4 + 64 * 6, 62 + 64 * 48, 6 + 64 * 7, 42 + 64 * 57, 7 + 64 * 6, 55 + 64 * 34]
+    s = init()
+    i = 0
+    for move in m3:
+        i += 1
+        s, r, t = step(s, move)
+        if i == 23:
+            assert t
+            assert r == 1
+        else:
+            assert not t
+            assert r == 0
+    # promotion Knight
+    m4 = [49 + 64 * 8, 14 + 64 * 6, 51 + 64 * 7, 55 + 64 * 60, 52 + 64 * 7, 63 + 64 * 20, 53 + 64 * 35, 61 + 64 * 59,
+          62 + 64 * 68, 44 + 64 * 61, 41 + 64 * 48, 15 + 64 * 61, 55 + 64 * 60, 46 + 64 * 5, 40 + 64 * 36, 7 + 64 * 21,
+          58 + 64 * 47, 54 + 64 * 6, 44 + 64 * 35]
+    s = init()
+    i = 0
+    for move in m4:
+        i += 1
+        s, r, t = step(s, move)
+        if i == 19:
+            assert t
+            assert r == 1
+        else:
+            assert not t
+            assert r == 0
+    # stalemate
+    m5 = [17 + 64 * 8, 62 + 64 * 5, 57 + 64 * 8, 6 + 64 * 5, 24 + 64 * 46, 7 + 64 * 5, 3 + 64 * 7, 5 + 64 * 27,
+          4 + 64 * 36, 46 + 64 * 6, 22 + 64 * 21, 39 + 64 * 49, 30 + 64 * 19, 31 + 64 * 2, 14 + 64 * 7, 26 + 64 * 38,
+          15 + 64 * 21, 46 + 64 * 49, 23 + 64 * 50]
+    s = init()
+    i = 0
+    for move in m5:
+        i += 1
+        s, r, t = step(s, move)
+        if i == 19:
+            assert t
+            assert r == 0
+        else:
+            assert not t
+            assert r == 0
+    m6 = [9 + 64 * 8, 62 + 64 * 5, 11 + 64 * 7, 6 + 64 * 5, 12 + 64 * 48, 60 + 64 * 6, 49 + 64 * 8, 59 + 64 * 34]
+    s = init()
+    for move in m6:
+        s, r, t = step(s, move)
+        assert not t
+        assert r == 0
+    bs = _board_status(s)
+    assert bs[4] == 0
+    assert bs[51] == 0
 
 
 if __name__ == '__main__':
