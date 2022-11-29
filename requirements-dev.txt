@@ -1,9 +1,9 @@
-pytest
-black
-blackdoc
-isort
-flake8
-mypy
+pytest==7.1.2
+black==22.6.0
+blackdoc==0.3.6
+isort==5.10.1
+flake8==5.0.4
+mypy==0.971
 matplotlib
 ipython
 git+https://github.com/sotetsuk/MinAtar.git
