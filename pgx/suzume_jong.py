@@ -421,7 +421,7 @@ def step(state: State, action: jnp.ndarray):
     if terminated:
         curr_player = jnp.int8(-1)
         legal_action_mask = jnp.zeros_like(state.legal_action_mask)
-        state = state.replace(
+        state = state.replace(  # type: ignore
             hands=hands,
             rivers=rivers,
             last_discard=last_discard,
@@ -437,14 +437,16 @@ def step(state: State, action: jnp.ndarray):
     draw_ix = state.draw_ix + 1
     legal_action_mask = hands[turn % N_PLAYER] > 0
 
-    state = state.replace(turn=turn)
-    state = state.replace(curr_player=curr_player)
-    state = state.replace(hands=hands)
-    state = state.replace(rivers=rivers)
-    state = state.replace(last_discard=last_discard)
-    state = state.replace(draw_ix=draw_ix)
-    state = state.replace(legal_action_mask=legal_action_mask)
-    state = state.replace(terminated=terminated)
+    state = state.replace(  # type: ignore
+        turn=turn,
+        curr_player=curr_player,
+        hands=hands,
+        rivers=rivers,
+        last_discard=last_discard,
+        draw_ix=draw_ix,
+        legal_action_mask=legal_action_mask,
+        terminated=terminated,
+    )
     r = jnp.zeros(3, dtype=jnp.float16)  # TODO: fix me
     return curr_player, state, r
 
