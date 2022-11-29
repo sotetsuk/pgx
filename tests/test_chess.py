@@ -393,6 +393,15 @@ def test_step():
         else:
             assert not t
             assert r == 0
+    m6 = [9 + 64 * 8, 62 + 64 * 5, 11 + 64 * 7, 6 + 64 * 5, 12 + 64 * 48, 60 + 64 * 6, 49 + 64 * 8, 59 + 64 * 34]
+    s = init()
+    for move in m6:
+        s, r, t = new_step(s, move)
+        assert not t
+        assert r == 0
+    bs = _board_status(s)
+    assert bs[4] == 0
+    assert bs[51] == 0
 
 
 if __name__ == '__main__':
