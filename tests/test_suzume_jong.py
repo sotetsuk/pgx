@@ -45,15 +45,15 @@ def test_step():
 
 def test_random_play():
     for seed in range(10):
-        print("=================================")
+        # print("=================================")
         key = jax.random.PRNGKey(seed)
         key, subkey = jax.random.split(key)
         curr_player, state = init(subkey)
-        print(_to_str(state))
+        # print(_to_str(state))
         while not state.terminated:
             legal_actions = jnp.where(state.legal_action_mask)[0]
             key, subkey = jax.random.split(key)
             action = jax.random.choice(subkey, legal_actions)
             curr_player, state, r = step(state, action)
-            print(_to_str(state))
-            print(r)
+        print(_to_str(state))
+        print(r)

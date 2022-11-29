@@ -398,10 +398,12 @@ def _check_ron(state: State) -> jnp.ndarray:
     return winning_players
 
 
+@jax.jit
 def _check_tsumo(state: State) -> jnp.ndarray:
-    return jnp.bool_(False)
+    return _is_completed(state.hands[state.turn])
 
 
+@jax.jit
 def _step_by_ron(state: State):
     winning_players = _check_ron(state)
     r_by_turn = winning_players.astype(jnp.float16)
@@ -420,8 +422,17 @@ def _step_by_ron(state: State):
     return curr_player, state, r
 
 
+@jax.jit
 def _step_by_tsumo(state):
-    ...
+    r = - jnp.ones(N_PLAYER, dtype=jnp.float16) * (1 / (N_PLAYER - 1))
+    r = r.at[state.shuffled_players[state.turn]].set(1)
+    curr_player = jnp.int8(-1)
+    state = state.replace(  # type: ignore
+        curr_player=curr_player,
+        terminated=jnp.bool_(True),
+        legal_action_mask=jnp.zeros_like(state.legal_action_mask),
+    )
+    return curr_player, state, r
 
 
 def _step_by_tie(state):
