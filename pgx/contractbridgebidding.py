@@ -12,7 +12,7 @@ class ContractBridgeBiddingState:
     # curr_player 現在のプレイヤーid
     curr_player: np.ndarray = np.array(-1, dtype=np.int8)
     # 終端状態
-    terminated: np.ndarray = np.array(False, dtype=np.bool8)
+    terminated: np.ndarray = np.array(False, dtype=np.bool_)
     # hand 各プレイヤーの手札
     # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札
     # 各要素にはカードを表す0 ~ 51の整数が格納される
@@ -29,20 +29,20 @@ class ContractBridgeBiddingState:
     dealer: np.ndarray = np.zeros(4, dtype=np.int8)
     # vul_NS NSチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_NS: np.ndarray = np.array(False, dtype=np.bool8)
+    vul_NS: np.ndarray = np.array(False, dtype=np.bool_)
     # vul_EW EWチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_EW: np.ndarray = np.array(False, dtype=np.bool8)
+    vul_EW: np.ndarray = np.array(False, dtype=np.bool_)
     # last_bid 最後にされたbid
     # last_bidder 最後にbidをしたプレイヤー
     # call_x 最後にされたbidがdoubleされているか
     # call_xx 最後にされたbidがredoubleされているか
     last_bid: np.ndarray = np.array(-1, dtype=np.int8)
     last_bidder: np.ndarray = np.array(-1, dtype=np.int8)
-    call_x: np.ndarray = np.array(False, dtype=np.bool8)
-    call_xx: np.ndarray = np.array(False, dtype=np.bool8)
+    call_x: np.ndarray = np.array(False, dtype=np.bool_)
+    call_xx: np.ndarray = np.array(False, dtype=np.bool_)
     # legal_actions プレイヤーの可能なbidの一覧
-    legal_action_mask: np.ndarray = np.ones(38, dtype=np.bool8)
+    legal_action_mask: np.ndarray = np.ones(38, dtype=np.bool_)
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
     first_denomination_NS: np.ndarray = np.full(5, -1, dtype=np.int8)
@@ -107,7 +107,7 @@ def step(
 def _illegal_step(
     state: ContractBridgeBiddingState,
 ) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
-    state.terminated = np.array(True, dtype=np.bool8)
+    state.terminated = np.array(True, dtype=np.bool_)
     state.curr_player = np.array(-1, dtype=np.int8)
     illegal_rewards = np.zeros(4)
     return state.curr_player, state, illegal_rewards
@@ -117,7 +117,7 @@ def _illegal_step(
 def _terminated_step(
     state: ContractBridgeBiddingState,
 ) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
-    state.terminated = np.array(True, dtype=np.bool8)
+    state.terminated = np.array(True, dtype=np.bool_)
     state.curr_player = np.array(-1, dtype=np.int8)
     rewards = _calc_reward()
     return state.curr_player, state, rewards
@@ -164,14 +164,14 @@ def _state_pass(
 
 # Xによるstateの変化
 def _state_X(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
-    state.call_x = np.array(True, dtype=np.bool8)
+    state.call_x = np.array(True, dtype=np.bool_)
     state.pass_num = np.array(0, dtype=np.int8)
     return state
 
 
 # XXによるstateの変化
 def _state_XX(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
-    state.call_xx = np.array(True, dtype=np.bool8)
+    state.call_xx = np.array(True, dtype=np.bool_)
     state.pass_num = np.array(0, dtype=np.int8)
     return state
 
@@ -193,8 +193,8 @@ def _state_bid(
     elif not team and (state.first_denomination_NS[denomination] == -1):
         state.first_denomination_NS[denomination] = state.last_bidder
     state.legal_action_mask[: action + 1] = 0
-    state.call_x = np.array(False, dtype=np.bool8)
-    state.call_xx = np.array(False, dtype=np.bool8)
+    state.call_x = np.array(False, dtype=np.bool_)
+    state.call_xx = np.array(False, dtype=np.bool_)
     state.pass_num = np.array(0, dtype=np.int8)
     return state
 
