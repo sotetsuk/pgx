@@ -390,9 +390,12 @@ def _check_ron(state: State) -> jnp.ndarray:
     # TODO: furiten
     # TODO: 5-fan limit
     winning_players = jax.lax.fori_loop(
-        0, N_PLAYER,
-        lambda i, x: x.at[i].set(_is_completed(state.hands.at[i, state.last_discard].add(1)[i])),
-        jnp.zeros(N_PLAYER, dtype=jnp.bool_)
+        0,
+        N_PLAYER,
+        lambda i, x: x.at[i].set(
+            _is_completed(state.hands.at[i, state.last_discard].add(1)[i])
+        ),
+        jnp.zeros(N_PLAYER, dtype=jnp.bool_),
     )
     winning_players = winning_players.at[state.turn].set(False)
     return winning_players
@@ -407,11 +410,12 @@ def _check_tsumo(state: State) -> jnp.ndarray:
 def _step_by_ron(state: State):
     winning_players = _check_ron(state)
     r_by_turn = winning_players.astype(jnp.float16)
-    r_by_turn = r_by_turn.at[state.turn % N_PLAYER].set(- r_by_turn.sum())
+    r_by_turn = r_by_turn.at[state.turn % N_PLAYER].set(-r_by_turn.sum())
     r = lax.fori_loop(
-        0, N_PLAYER,
+        0,
+        N_PLAYER,
         lambda i, x: x.at[state.shuffled_players[i]].set(r_by_turn[i]),
-        jnp.zeros_like(r_by_turn)
+        jnp.zeros_like(r_by_turn),
     )
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
@@ -424,7 +428,7 @@ def _step_by_ron(state: State):
 
 @jax.jit
 def _step_by_tsumo(state):
-    r = - jnp.ones(N_PLAYER, dtype=jnp.float16) * (1 / (N_PLAYER - 1))
+    r = -jnp.ones(N_PLAYER, dtype=jnp.float16) * (1 / (N_PLAYER - 1))
     r = r.at[state.shuffled_players[state.turn]].set(1)
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
@@ -449,7 +453,9 @@ def _step_by_tie(state):
 def _draw_tile(state: State) -> State:
     turn = state.turn + 1
     curr_player = state.shuffled_players[turn % N_PLAYER]
-    hands = state.hands.at[turn % N_PLAYER, state.walls[state.draw_ix] // 4].add(1)
+    hands = state.hands.at[
+        turn % N_PLAYER, state.walls[state.draw_ix] // 4
+    ].add(1)
     draw_ix = state.draw_ix + 1
     legal_action_mask = hands[turn % N_PLAYER] > 0
     state = state.replace(  # type: ignore
