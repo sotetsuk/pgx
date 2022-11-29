@@ -8,11 +8,11 @@ import numpy as np
 @dataclass
 class ContractBridgeBiddingState:
     # turn 現在のターン数
-    turn: np.ndarray = np.int16(0)
+    turn: np.ndarray = np.array(0, dtype=np.int16)
     # curr_player 現在のプレイヤーid
-    curr_player: np.ndarray = np.int8(-1)
+    curr_player: np.ndarray = np.array(-1, dtype=np.int8)
     # 終端状態
-    terminated: np.ndarray = np.bool8(False)
+    terminated: np.ndarray = np.array(False, dtype=np.bool8)
     # hand 各プレイヤーの手札
     # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札
     # 各要素にはカードを表す0 ~ 51の整数が格納される
@@ -29,18 +29,18 @@ class ContractBridgeBiddingState:
     dealer: np.ndarray = np.zeros(4, dtype=np.int8)
     # vul_NS NSチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_NS: np.ndarray = np.bool8(False)
+    vul_NS: np.ndarray = np.array(False, dtype=np.bool8)
     # vul_EW EWチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_EW: np.ndarray = np.bool8(False)
+    vul_EW: np.ndarray = np.array(False, dtype=np.bool8)
     # last_bid 最後にされたbid
     # last_bidder 最後にbidをしたプレイヤー
     # call_x 最後にされたbidがdoubleされているか
     # call_xx 最後にされたbidがredoubleされているか
-    last_bid: np.ndarray = np.int8(-1)
-    last_bidder: np.ndarray = np.int8(-1)
-    call_x: np.ndarray = np.bool8(False)
-    call_xx: np.ndarray = np.bool8(False)
+    last_bid: np.ndarray = np.array(-1, dtype=np.int8)
+    last_bidder: np.ndarray = np.array(-1, dtype=np.int8)
+    call_x: np.ndarray = np.array(False, dtype=np.bool8)
+    call_xx: np.ndarray = np.array(False, dtype=np.bool8)
     # legal_actions プレイヤーの可能なbidの一覧
     legal_action_mask: np.ndarray = np.ones(38, dtype=np.bool8)
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
@@ -50,7 +50,7 @@ class ContractBridgeBiddingState:
     # が最初にbidしたかを表す
     first_denomination_EW: np.ndarray = np.full(5, -1, dtype=np.int8)
     # passの回数
-    pass_num: np.ndarray = np.int8(0)
+    pass_num: np.ndarray = np.array(0, dtype=np.int8)
 
 
 def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
@@ -107,8 +107,8 @@ def step(
 def _illegal_step(
     state: ContractBridgeBiddingState,
 ) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
-    state.terminated = True
-    state.curr_player = -1
+    state.terminated = np.array(True, dtype=np.bool8)
+    state.curr_player = np.array(-1, dtype=np.int8)
     illegal_rewards = np.zeros(4)
     return state.curr_player, state, illegal_rewards
 
@@ -117,8 +117,8 @@ def _illegal_step(
 def _terminated_step(
     state: ContractBridgeBiddingState,
 ) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
-    state.terminated = True
-    state.curr_player = -1
+    state.terminated = np.array(True, dtype=np.bool8)
+    state.curr_player = np.array(-1, dtype=np.int8)
     rewards = _calc_reward()
     return state.curr_player, state, rewards
 
@@ -164,15 +164,15 @@ def _state_pass(
 
 # Xによるstateの変化
 def _state_X(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
-    state.call_x = True
-    state.pass_num = 0
+    state.call_x = np.array(True, dtype=np.bool8)
+    state.pass_num = np.array(0, dtype=np.int8)
     return state
 
 
 # XXによるstateの変化
 def _state_XX(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
-    state.call_xx = True
-    state.pass_num = 0
+    state.call_xx = np.array(True, dtype=np.bool8)
+    state.pass_num = np.array(0, dtype=np.int8)
     return state
 
 
@@ -181,7 +181,7 @@ def _state_bid(
     state: ContractBridgeBiddingState, action: int
 ) -> ContractBridgeBiddingState:
     # 最後のbidとそのプレイヤーを保存
-    state.last_bid = action
+    state.last_bid = np.array(action, dtype=np.int8)
     state.last_bidder = state.curr_player
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
@@ -193,9 +193,9 @@ def _state_bid(
     elif not team and (state.first_denomination_NS[denomination] == -1):
         state.first_denomination_NS[denomination] = state.last_bidder
     state.legal_action_mask[: action + 1] = 0
-    state.call_x = False
-    state.call_xx = False
-    state.pass_num = 0
+    state.call_x = np.array(False, dtype=np.bool8)
+    state.call_xx = np.array(False, dtype=np.bool8)
+    state.pass_num = np.array(0, dtype=np.int8)
     return state
 
 
