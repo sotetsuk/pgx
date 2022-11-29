@@ -74,9 +74,9 @@ def init():
 
 
 def step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
-    legal_actions = _legal_actions(state)
     # 指定値が合法手でない
-    if not _is_legal_action(state, i_action, np.zeros(64, dtype=np.int32)):
+    legal_actions = _legal_actions(state)
+    if legal_actions[i_action] == 0:
         return state, _turn_to_reward(_another_color(state)), True
     action = int_to_action(state, i_action)
     is_castling = _is_castling(action)
@@ -142,7 +142,7 @@ def new_step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     kp = int(s.board[6 + s.turn * 6, :].argmax())
     pins = _pin(s, kp)
     if _is_check(bs, s.turn, kp) and _is_mate_check(s, kp, pins):
-        print("mate")
+        #print("mate")
         return s, _turn_to_reward(state.turn), True
     if not _is_check(bs, s.turn, kp) and _is_mate_non_check(s, kp, pins):
         print("stale mate")
@@ -1067,19 +1067,21 @@ def _is_mate_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
 
 def _is_mate_non_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
     # Kingが移動する手に合法手が存在するかを考える
+    normal_bs = _board_status(state)
     kingless_bs = _board_status(state)
-    king_move = _king_moves(kingless_bs, kp, state.turn)
+    king_move = _king_moves(normal_bs, kp, state.turn)
     kingless_bs[kp] = 0
     kingless_effects = _effected_positions(kingless_bs, _another_color(state))
     # king_moveが1かつkingless_effectsが0の地点があれば詰みではない
-    if np.any(king_move - kingless_effects == 1):
-        return False
+    for i in range(64):
+        if king_move[i] == 1 and kingless_effects[i] == 0:
+            return False
     # Kingが逃げる手以外の合法手を調べる
     for i in range(64):
         piece = kingless_bs[i]
         if _owner(piece) != state.turn:
             continue
-        pm = _piece_moves(kingless_bs, i, piece, pins)
+        pm = _piece_moves(normal_bs, i, piece, pins)
         # ひとつでも行ける地点があるならスティルメイトではない
         if np.any(pm == 1):
             return False

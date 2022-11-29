@@ -2,6 +2,7 @@ from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
     _is_mate, _effected_positions, _is_check, new_step
 import numpy as np
+import time
 
 
 def test_move():
@@ -346,9 +347,50 @@ def test_step():
             assert t
             assert r == 1
         else:
-            print(i)
-            print(move)
-            print(_board_status(s))
+            assert not t
+            assert r == 0
+    m3 = [25 + 64 * 8, 54 + 64 * 5, 27 + 64 * 7, 15 + 64 * 60, 17 + 64 * 8, 21 + 64 * 60, 33 + 64 * 7, 6 + 64 * 5,
+          34 + 64 * 48, 7 + 64 * 6, 40 + 64 * 47, 55 + 64 * 61, 48 + 64 * 56, 45 + 64 * 61, 26 + 64 * 35, 63 + 64 * 20,
+          35 + 64 * 37, 4 + 64 * 6, 62 + 64 * 48, 6 + 64 * 7, 42 + 64 * 57, 7 + 64 * 6, 55 + 64 * 34]
+    s = init()
+    i = 0
+    for move in m3:
+        i += 1
+        s, r, t = new_step(s, move)
+        if i == 23:
+            assert t
+            assert r == 1
+        else:
+            assert not t
+            assert r == 0
+    # promotion Knight
+    m4 = [49 + 64 * 8, 14 + 64 * 6, 51 + 64 * 7, 55 + 64 * 60, 52 + 64 * 7, 63 + 64 * 20, 53 + 64 * 35, 61 + 64 * 59,
+          62 + 64 * 68, 44 + 64 * 61, 41 + 64 * 48, 15 + 64 * 61, 55 + 64 * 60, 46 + 64 * 5, 40 + 64 * 36, 7 + 64 * 21,
+          58 + 64 * 47, 54 + 64 * 6, 44 + 64 * 35]
+    s = init()
+    i = 0
+    for move in m4:
+        i += 1
+        s, r, t = new_step(s, move)
+        if i == 19:
+            assert t
+            assert r == 1
+        else:
+            assert not t
+            assert r == 0
+    # stalemate
+    m5 = [17 + 64 * 8, 62 + 64 * 5, 57 + 64 * 8, 6 + 64 * 5, 24 + 64 * 46, 7 + 64 * 5, 3 + 64 * 7, 5 + 64 * 27,
+          4 + 64 * 36, 46 + 64 * 6, 22 + 64 * 21, 39 + 64 * 49, 30 + 64 * 19, 31 + 64 * 2, 14 + 64 * 7, 26 + 64 * 38,
+          15 + 64 * 21, 46 + 64 * 49, 23 + 64 * 50]
+    s = init()
+    i = 0
+    for move in m5:
+        i += 1
+        s, r, t = new_step(s, move)
+        if i == 19:
+            assert t
+            assert r == 0
+        else:
             assert not t
             assert r == 0
 
