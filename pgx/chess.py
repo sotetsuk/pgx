@@ -599,6 +599,35 @@ def _pawn_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
         return _black_pawn_moves(bs, from_, pin)
 
 
+def _white_pawn_effects(from_: int) -> np.ndarray:
+    to = np.zeros(64, dtype=np.int32)
+    # 左斜め前
+    if _is_in_board(from_ - 7):
+        to[from_ - 7] = 1
+    # 右斜め前
+    if _is_in_board(from_ + 9):
+        to[from_ + 9] = 1
+    return to
+
+
+def _black_pawn_effects(from_: int) -> np.ndarray:
+    to = np.zeros(64, dtype=np.int32)
+    # 左斜め前
+    if _is_in_board(from_ - 9):
+        to[from_ - 9] = 1
+    # 右斜め前
+    if _is_in_board(from_ + 7):
+        to[from_ + 7] = 1
+    return to
+
+
+def _pawn_effects(from_: int, turn: int) -> np.ndarray:
+    if turn == 0:
+        return _white_pawn_effects(from_)
+    else:
+        return _black_pawn_effects(from_)
+
+
 def _knight_moves(
     bs: np.ndarray, from_: int, turn: int, pin: int
 ) -> np.ndarray:
@@ -843,9 +872,11 @@ def _effected_positions(bs: np.ndarray, turn: int) -> np.ndarray:
         piece = bs[i]
         if _owner(piece) != turn:
             continue
-        # effectを知りたいときはpinの影響を無視
-        moves = _piece_moves(bs, i, piece, np.zeros(64, dtype=np.int32))
-        effects += moves
+        if piece % 6 == 1:
+            effect = _pawn_effects(i, turn)
+        else:
+            effect = _piece_moves(bs, i, piece, np.zeros(64, dtype=np.int32))
+        effects += effect
     return effects
 
 
