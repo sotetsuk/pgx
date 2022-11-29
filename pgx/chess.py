@@ -628,6 +628,13 @@ def _pawn_effects(from_: int, turn: int) -> np.ndarray:
         return _black_pawn_effects(from_)
 
 
+def _piece_turn_to_color(piece: int, turn: int) -> int:
+    if _owner(piece) == turn:
+        return 2
+    else:
+        return 1
+
+
 def _knight_moves(
     bs: np.ndarray, from_: int, turn: int, pin: int
 ) -> np.ndarray:
@@ -640,51 +647,27 @@ def _knight_moves(
     # 上方向
     if not su:
         if not l_:
-            if _owner(bs[from_ - 6]) == turn:
-                to[from_ - 6] = 2
-            else:
-                to[from_ - 6] = 1
+            to[from_ - 6] = _piece_turn_to_color(bs[from_ - 6], turn)
         if not r:
-            if _owner(bs[from_ + 10]) == turn:
-                to[from_ + 10] = 2
-            else:
-                to[from_ + 10] = 1
+            to[from_ + 10] = _piece_turn_to_color(bs[from_ + 10], turn)
     # 左方向
     if not sl:
         if not u:
-            if _owner(bs[from_ - 15]) == turn:
-                to[from_ - 15] = 2
-            else:
-                to[from_ - 15] = 1
+            to[from_ - 15] = _piece_turn_to_color(bs[from_ - 15], turn)
         if not d:
-            if _owner(bs[from_ - 17]) == turn:
-                to[from_ - 17] = 2
-            else:
-                to[from_ - 17] = 1
+            to[from_ - 17] = _piece_turn_to_color(bs[from_ - 17], turn)
     # 下方向
     if not sd:
         if not l_:
-            if _owner(bs[from_ - 10]) == turn:
-                to[from_ - 10] = 2
-            else:
-                to[from_ - 10] = 1
+            to[from_ - 10] = _piece_turn_to_color(bs[from_ - 10], turn)
         if not r:
-            if _owner(bs[from_ + 6]) == turn:
-                to[from_ + 6] = 2
-            else:
-                to[from_ + 6] = 1
+            to[from_ + 6] = _piece_turn_to_color(bs[from_ + 6], turn)
     # 右方向
     if not sr:
         if not u:
-            if _owner(bs[from_ + 17]) == turn:
-                to[from_ + 17] = 2
-            else:
-                to[from_ + 17] = 1
+            to[from_ + 17] = _piece_turn_to_color(bs[from_ + 17], turn)
         if not d:
-            if _owner(bs[from_ + 15]) == turn:
-                to[from_ + 15] = 2
-            else:
-                to[from_ + 15] = 1
+            to[from_ + 15] = _piece_turn_to_color(bs[from_ + 15], turn)
     return to
 
 
