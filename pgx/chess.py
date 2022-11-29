@@ -142,7 +142,7 @@ def new_step(state: ChessState, i_action: int) -> Tuple[ChessState, int, int]:
     kp = int(s.board[6 + s.turn * 6, :].argmax())
     pins = _pin(s, kp)
     if _is_check(bs, s.turn, kp) and _is_mate_check(s, kp, pins):
-        #print("mate")
+        # print("mate")
         return s, _turn_to_reward(state.turn), True
     if not _is_check(bs, s.turn, kp) and _is_mate_non_check(s, kp, pins):
         print("stale mate")
