@@ -58,10 +58,11 @@ def test_step():
 
 
 def test_random_play():
+    results = ""
     for seed in range(10):
-        print("=================================")
-        print(seed)
-        print("=================================")
+        # print("=================================")
+        # print(seed)
+        # print("=================================")
         key = jax.random.PRNGKey(seed)
         key, subkey = jax.random.split(key)
         curr_player, state = init(subkey)
@@ -72,4 +73,56 @@ def test_random_play():
             action = jax.random.choice(subkey, legal_actions)
             curr_player, state, r = step(state, action)
         print(_to_str(state))
-        print(r)
+        # print(r)
+        results += _to_str(state)
+
+    expected = """[terminated] dora: 5
+ [1] 1468g , 7xxxxxxxxx 
+ [0] 5899g , 5xxxxxxxxx 
+ [2] 23467 , xxxxxxxxxx 
+
+[terminated] dora: 4
+ [2] 389gr , 1551812494 
+ [0] 4grrr , 862g75927x 
+ [1] 36668 , 715723g39x 
+
+[terminated] dora: 3
+ [2] 124gr , 7rr8xxxxxx 
+ [1] 56789 , 1732xxxxxx 
+ [0] 168gg , 5954xxxxxx 
+
+[terminated] dora: 3
+ [1] 479rr , 3857xxxxxx 
+ [2] 12357 , 82g7xxxxxx 
+ [0] 259rr , 4986xxxxxx 
+
+[terminated] dora: 3
+ [1] 379gr , g5979r36g3 
+ [0] 11568 , 184g28245x 
+ [2] 24789 , r52r67641x 
+
+[terminated] dora: 3
+ [0] 14568 , 7rxxxxxxxx 
+ [2] 46899 , 33xxxxxxxx 
+ [1] 12345 , rxxxxxxxxx 
+
+[terminated] dora: 6
+ [1] 45588 , 268497gr12 
+ [2] 1356r , 24291539rx 
+ [0] 179gg , g37346r87x 
+
+[terminated] dora: 5
+ [2] 3557g , 92682g1894 
+ [1] 67789 , 584497r62x 
+ [0] 1233r , 4r136rg1gx 
+
+[terminated] dora: 3
+ [0] 2279g , 1rrr27xxxx 
+ [2] 448gg , 79158xxxxx 
+ [1] 23489 , 966r1xxxxx 
+
+[terminated] dora: r
+ [2] 126gr , 4xxxxxxxxx 
+ [0] 234666, xxxxxxxxxx 
+ [1] 11479 , xxxxxxxxxx 
+"""
