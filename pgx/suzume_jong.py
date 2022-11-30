@@ -113,9 +113,10 @@ def _is_completed(hand: jnp.ndarray):
     return jnp.any(_to_base5(hand) == WIN_HANDS)
 
 
+@jax.jit
 def _hand_to_score(hand: jnp.ndarray):
-    m = _to_base5(hand) == WIN_HANDS
-    ix = jnp.arange(NUM_CACHE)[m][0]
+    # behavior for incomplete hand is undefined
+    ix = jnp.argmin(jnp.abs(WIN_HANDS - _to_base5(hand)))
     return BASE_SCORES[ix], YAKU_SCORES[ix]
 
 
