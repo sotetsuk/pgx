@@ -79,7 +79,9 @@ def test_step():
     """
     assert (get_board(state) == expected_board.ravel()).all()
     assert state.terminated
-    assert (reward == jnp.array([0, 0])).all()
+
+    # 同点なのでコミの分黒負け
+    assert (reward == jnp.array([-1, 1])).all()
 
 
 def test_kou():
