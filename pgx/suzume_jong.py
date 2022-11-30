@@ -434,6 +434,8 @@ def _check_ron(state: State) -> jnp.ndarray:
         jnp.zeros(N_PLAYER, dtype=jnp.bool_),
     )
     winning_players = winning_players.at[state.turn].set(False)
+    is_furiten = (state.rivers == state.last_discard).sum(axis=1) > 0
+    winning_players = winning_players & jnp.logical_not(is_furiten)
     return winning_players
 
 
