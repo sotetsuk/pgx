@@ -1,3 +1,26 @@
+"""Suzume-Jong
+
+すずめ雀のルール
+  * 2-6人
+  * 牌はソウズと發中のみの11種44枚
+  * 手牌は基本5枚、ツモ直後6枚
+  * 順子か刻子を2つ完成で手牌完成
+  * チーポンカンはなし
+  * ドラは表示牌がそのままドラ
+  * 中はすべてドラ、各牌ひとつはドラがある
+  * フリテンは自分が捨てた牌はあがれないが、他の牌ではあがれる
+
+Pgx実装での違い
+  * 3人のみ
+  * 一局のみ
+
+実装TODO
+  * [ ] 赤牌
+  * [ ] フリテン
+  * [ ] 上がり役の点数計算
+  * [ ] 5ポイント縛り
+"""
+
 import jax
 import jax.lax as lax
 import jax.numpy as jnp
@@ -334,45 +357,45 @@ class State:
     turn: jnp.ndarray = jnp.int8(0)  # 0 = dealer
     rivers: jnp.ndarray = -jnp.ones(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.int8
-    )  # type type (0~10) is set
-    last_discard: jnp.ndarray = jnp.int8(-1)  # type type (0~10) is set
+    )  # tile type (0~10) is set
+    last_discard: jnp.ndarray = jnp.int8(-1)  # tile type (0~10) is set
     hands: jnp.ndarray = jnp.zeros(
         (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8
-    )  # type type (0~10) is set
-    walls: jnp.ndarray = jnp.zeros(
+    )  # tile type (0~10) is set
+    wall: jnp.ndarray = jnp.zeros(
         NUM_TILES, dtype=jnp.int8
     )  # tile id (0~43) is set
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
     shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)  # 0: dealer, ...
-    dora: jnp.ndarray = jnp.int8(0)  # type type (0~10) is set
+    dora: jnp.ndarray = jnp.int8(0)  # tile type (0~10) is set
 
 
 # TODO: avoid Tenhou
 @jax.jit
 def init(rng: jax.random.KeyArray):
-    # shuffle players and walls
+    # shuffle players and wall
     key1, key2 = jax.random.split(rng)
     shuffled_players = jnp.arange(N_PLAYER)
     shuffled_players = jax.random.shuffle(key1, shuffled_players)
-    walls = jnp.arange(NUM_TILES, dtype=jnp.int8)
-    walls = jax.random.shuffle(key2, walls)
+    wall = jnp.arange(NUM_TILES, dtype=jnp.int8)
+    wall = jax.random.shuffle(key2, wall)
     curr_player = shuffled_players[0]  # dealer
-    dora = walls[-1] // 4
+    dora = wall[-1] // 4
     # set hands (hands[0] = dealer's hand)
     hands = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)
     hands = lax.fori_loop(
-        0, N_PLAYER * 5, lambda i, x: x.at[i // 5, walls[i] // 4].add(1), hands
+        0, N_PLAYER * 5, lambda i, x: x.at[i // 5, wall[i] // 4].add(1), hands
     )
     # first draw
     draw_ix = jnp.int8(N_PLAYER * 5)
-    hands = hands.at[0, walls[draw_ix] // 4].add(1)
+    hands = hands.at[0, wall[draw_ix] // 4].add(1)
     draw_ix += 1
     legal_action_mask = hands[0] > 0
     state = State(
         curr_player=curr_player,
         legal_action_mask=legal_action_mask,
         hands=hands,
-        walls=walls,
+        wall=wall,
         draw_ix=draw_ix,
         shuffled_players=shuffled_players,
         dora=dora,
@@ -454,7 +477,7 @@ def _draw_tile(state: State) -> State:
     turn = state.turn + 1
     curr_player = state.shuffled_players[turn % N_PLAYER]
     hands = state.hands.at[
-        turn % N_PLAYER, state.walls[state.draw_ix] // 4
+        turn % N_PLAYER, state.wall[state.draw_ix] // 4
     ].add(1)
     draw_ix = state.draw_ix + 1
     legal_action_mask = hands[turn % N_PLAYER] > 0
