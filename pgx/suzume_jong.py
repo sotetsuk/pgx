@@ -34,6 +34,7 @@ Pgx実装での違い
     * [x] 親
   * [ ] 点数移動計算（ロン・ツモ）
   * [ ] 5ポイント縛り
+  * [ ] jit
 """
 
 import jax
@@ -74,7 +75,7 @@ class State:
         NUM_TILES, dtype=jnp.int8
     )  # tile id (0~43) is set
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
-    shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)  # 0: dealer, ...
+    shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER, dtype=jnp.int8)  # 0: dealer, ...
     dora: jnp.ndarray = jnp.int8(0)  # tile type (0~10) is set
     scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int8)  # 0 = dealer
 
@@ -84,7 +85,7 @@ class State:
 def init(rng: jax.random.KeyArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
-    shuffled_players = jnp.arange(N_PLAYER)
+    shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int8)
     shuffled_players = jax.random.shuffle(key1, shuffled_players)
     wall = jnp.arange(NUM_TILES, dtype=jnp.int8)
     wall = jax.random.shuffle(key2, wall)
@@ -232,6 +233,7 @@ def _step_by_tsumo(state: State):
     return curr_player, state, r
 
 
+@jax.jit
 def _step_by_tie(state):
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
@@ -243,6 +245,7 @@ def _step_by_tie(state):
     return curr_player, state, r
 
 
+@jax.jit
 def _draw_tile(state: State) -> State:
     turn = state.turn + 1
     curr_player = state.shuffled_players[turn % N_PLAYER]
@@ -267,20 +270,25 @@ def _draw_tile(state: State) -> State:
     return state
 
 
+@jax.jit
 def _step_non_terminal(state: State):
     r = jnp.zeros(3, dtype=jnp.int8)
     return state.curr_player, state, r
 
 
+@jax.jit
 def _step_non_tied(state: State):
     state = _draw_tile(state)
     is_tsumo = _check_tsumo(state)
-    if is_tsumo:
-        return _step_by_tsumo(state)
-    else:
-        return _step_non_terminal(state)
+    return lax.cond(
+        is_tsumo,
+        _step_by_tsumo,
+        _step_non_terminal,
+        state
+    )
 
 
+@jax.jit
 def step(state: State, action: jnp.ndarray):
     # discard tile
     hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
@@ -307,13 +315,15 @@ def step(state: State, action: jnp.ndarray):
     )
 
     win_players = _check_ron(state)
-    if jnp.any(win_players):
-        return _step_by_ron(state)
-    else:
-        if jnp.bool_(NUM_TILES - 1 <= state.draw_ix):
-            return _step_by_tie(state)
-        else:
-            return _step_non_tied(state)
+    return lax.cond(
+        jnp.any(win_players),
+        lambda: _step_by_ron(state),
+        lambda: lax.cond(
+            jnp.bool_(NUM_TILES - 1 <= state.draw_ix),
+            lambda: _step_by_tie(state),
+            lambda: _step_non_tied(state),
+        ),
+    )
 
 
 def _tile_type_to_str(tile_type) -> str:
