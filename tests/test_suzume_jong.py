@@ -17,29 +17,29 @@ def test_is_completed():
 def test_init():
     curr_player, state = init(jax.random.PRNGKey(1))
     assert _is_valid(state)
-    assert _to_str(state) == """dora: r
-*[2] 23358g, xxxxxxxxx
- [1] 34459 , xxxxxxxxx
- [0] 5789r , xxxxxxxxx
+    assert _to_str(state) == """ dora: r
+*[2] 23358g, xxxxxxxxxx 
+ [1] 34459 , xxxxxxxxxx 
+ [0] 5789r , xxxxxxxxxx 
 """
 
 
 def test_step():
     curr_player, state = init(jax.random.PRNGKey(1))
     assert _is_valid(state)
-    assert _to_str(state) == """dora: r
-*[2] 23358g, xxxxxxxxx
- [1] 34459 , xxxxxxxxx
- [0] 5789r , xxxxxxxxx
+    assert _to_str(state) == """ dora: r
+*[2] 23358g, xxxxxxxxxx 
+ [1] 34459 , xxxxxxxxxx 
+ [0] 5789r , xxxxxxxxxx 
 """
     curr_player, state, r = step(state, jnp.int8(1))
     print(state.legal_action_mask)
     assert not state.terminated
     assert _is_valid(state)
-    assert _to_str(state) == """dora: r
- [2] 3358g , 2xxxxxxxx
-*[1] 344599, xxxxxxxxx
- [0] 5789r , xxxxxxxxx
+    assert _to_str(state) == """ dora: r
+ [2] 3358g , 2xxxxxxxxx 
+*[1] 344599, xxxxxxxxxx 
+ [0] 5789r , xxxxxxxxxx 
 """
 
 
