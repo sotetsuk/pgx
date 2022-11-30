@@ -157,7 +157,7 @@ class Visualizer:
             )
 
             # hands
-            x = 5
+            x = 5.0
             y = 8
             for type, num in zip(
                 range(NUM_TILE_TYPES),
@@ -174,7 +174,7 @@ class Visualizer:
                     x += 0.8
 
             # river
-            x = 5
+            x = 5.0
             y = 5
             river_count = 0
             for type in state.rivers[player_id]:
