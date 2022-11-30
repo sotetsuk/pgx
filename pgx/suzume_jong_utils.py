@@ -174,7 +174,7 @@ class Visualizer:
                     x += 0.8
 
             # river
-            x = 5.0
+            x = 5.5
             y = 5
             river_count = 0
             for type in state.rivers[player_id]:
@@ -190,7 +190,7 @@ class Visualizer:
                     river_count += 1
                     if river_count > 4:
                         river_count = 0
-                        x = 5
+                        x = 5.5
                         y += 1
 
             if player_id == 1:
