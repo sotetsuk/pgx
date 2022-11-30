@@ -21,14 +21,14 @@ Pgx実装での違い
   * [x] フリテン
   * [x] ドラ
   * [x] 赤牌
-  * [ ] 手牌点数計算
+  * [x] 手牌点数計算
     * [x] 順子
     * [x] 刻子
     * [x] タンヤオ
     * [x] チャンタ
     * [x] チンヤオ
     * [x] all green
-    * [ ] super red
+    * [x] super red
     * [x] ドラ
     * [x] 赤ドラ
     * [x] 親
@@ -156,6 +156,8 @@ def _hands_to_score(state: State) -> jnp.ndarray:
         bs, ys = _hand_to_score(hand)
         n_doras = hand[state.dora]
         n_red_doras = state.n_red_in_hands[i].sum().astype(jnp.int8)
+        is_super_red = n_red_doras >= 6
+        ys = lax.cond(is_super_red, lambda: jnp.int8(20), lambda: ys)
         s = lax.cond(
             ys >= 10,  # yakuman
             lambda: bs + ys,
