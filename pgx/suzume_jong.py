@@ -239,7 +239,7 @@ def _step_by_tie(state):
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )
-    r = jnp.zeros(3, dtype=jnp.float16)
+    r = jnp.zeros(3, dtype=jnp.int8)
     return curr_player, state, r
 
 
@@ -268,7 +268,7 @@ def _draw_tile(state: State) -> State:
 
 
 def _step_non_terminal(state: State):
-    r = jnp.zeros(3, dtype=jnp.float16)
+    r = jnp.zeros(3, dtype=jnp.int8)
     return state.curr_player, state, r
 
 
