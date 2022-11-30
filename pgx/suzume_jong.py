@@ -18,9 +18,7 @@ Pgx実装での違い
     * ロン・ツモは自動判定
 
 実装TODO
-  * [ ] フリテン
-  * [ ] ドラ
-  * [ ] 赤牌
+  * [x] フリテン
   * [ ] 手牌点数計算
     * [ ] 順子
     * [ ] 刻子
@@ -30,6 +28,8 @@ Pgx実装での違い
     * [ ] all green
     * [ ] super red
   * [ ] 点数移動計算（ロン・ツモ）
+  * [ ] ドラ
+  * [ ] 赤牌
   * [ ] 5ポイント縛り
 """
 
@@ -464,7 +464,7 @@ def _step_by_ron(state: State):
         curr_player=curr_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
-        scores=scores
+        scores=scores,
     )
     r = _order_by_player_idx(scores, state.shuffled_players)
     return curr_player, state, r
@@ -479,7 +479,7 @@ def _step_by_tsumo(state):
         curr_player=curr_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
-        scores=scores
+        scores=scores,
     )
     r = _order_by_player_idx(scores, state.shuffled_players)
     return curr_player, state, r
