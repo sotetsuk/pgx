@@ -102,12 +102,8 @@ def init(rng: jax.random.KeyArray):
 
 @jax.jit
 def _to_base5(hand: jnp.ndarray):
-    return lax.fori_loop(
-        0,
-        NUM_TILE_TYPES,
-        lambda i, x: x + hand[i] * 5 ** (NUM_TILE_TYPES - i - 1),
-        jnp.int32(0),
-    )
+    b = jnp.int32([9765625, 1953125, 390625, 78125, 15625, 3125, 625, 125, 25, 5, 1])
+    return (hand * b).sum()
 
 
 @jax.jit
