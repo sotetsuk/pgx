@@ -58,6 +58,9 @@ class GoState:
     # コウによる着手禁止点(xy), 無ければ(-1)
     kou: jnp.ndarray = jnp.int32(-1)  # type:ignore
 
+    # コミ
+    komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
+
     # 終局判定
     terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
 
@@ -169,6 +172,7 @@ def step(
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
+        komi=_state.komi,
         terminated=_state.terminated,
     )
 
@@ -188,6 +192,7 @@ def step(
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
+        komi=_state.komi,
         terminated=_state.terminated,
     )
 
@@ -242,6 +247,7 @@ def _increase_turn(_state: GoState) -> GoState:
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
+        komi=_state.komi,
         terminated=_state.terminated,
     )
 
@@ -261,6 +267,7 @@ def _change_player(_state: GoState) -> GoState:
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
+        komi=_state.komi,
         terminated=_state.terminated,
     )
 
@@ -280,6 +287,7 @@ def _set_pass(_state: GoState, _pass: bool) -> GoState:
         agehama=_state.agehama,
         passed=_pass,  # type:ignore
         kou=_state.kou,
+        komi=_state.komi,
         terminated=_state.terminated,
     )
 
@@ -299,6 +307,7 @@ def _update_terminated(_state: GoState) -> GoState:
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
+        komi=_state.komi,
         terminated=jnp.bool_(True),  # type:ignore
     )
 
@@ -349,6 +358,7 @@ def _not_pass_move(
                         agehama=state.agehama,
                         passed=state.passed,
                         kou=state.kou,
+                        komi=state.komi,
                         terminated=state.terminated,
                     ),
                 ),
@@ -385,6 +395,7 @@ def _not_pass_move(
             lambda: state.kou,
             lambda: jnp.int32(-1),
         ),
+        komi=state.komi,
         terminated=state.terminated,
     )
 
@@ -441,6 +452,7 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
+        komi=_state.komi,
         terminated=_state.terminated,
     )
 
@@ -505,6 +517,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
             agehama=_state.agehama,
             passed=_state.passed,
             kou=_state.kou,
+            komi=_state.komi,
             terminated=_state.terminated,
         ),
     )
@@ -554,6 +567,7 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
+        komi=_state.komi,
         terminated=_state.terminated,
     )
 
@@ -711,12 +725,11 @@ def _to_xy(x, y, size) -> int:
 
 @partial(jit, static_argnums=(1,))
 def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
-    b = _count_ji(_state, BLACK, _size) - _state.agehama[WHITE]
+    b = _count_ji(_state, BLACK, _size) - _state.agehama[WHITE] - _state.komi
     w = _count_ji(_state, WHITE, _size) - _state.agehama[BLACK]
     r = jax.lax.cond(
-        b == w, lambda: jnp.array([0, 0]), lambda: jnp.array([-1, 1])
+        b > w, lambda: jnp.array([1, -1]), lambda: jnp.array([-1, 1])
     )
-    r = jax.lax.cond(b > w, lambda: jnp.array([1, -1]), lambda: r)
 
     return r
 
