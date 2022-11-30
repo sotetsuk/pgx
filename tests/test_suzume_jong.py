@@ -45,7 +45,9 @@ def test_step():
 
 def test_random_play():
     for seed in range(10):
-        # print("=================================")
+        print("=================================")
+        print(seed)
+        print("=================================")
         key = jax.random.PRNGKey(seed)
         key, subkey = jax.random.split(key)
         curr_player, state = init(subkey)
