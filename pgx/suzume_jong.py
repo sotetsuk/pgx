@@ -33,9 +33,10 @@ Pgx実装での違い
     * [x] 赤ドラ
     * [x] 親
   * [x] 点数移動計算（ロン・ツモ）
-  * [ ] 5ポイント縛り
-  * [ ] ツモアガリ時の得点
+  * [x] 5ポイント縛り
+  * [x] ツモアガリ時の得点
   * [x] jit
+  * [ ] make reward to float
 """
 
 import jax
@@ -221,6 +222,7 @@ def _step_by_tsumo(state: State, scores):
     scores = scores.at[0].add(2)
     winner_score = scores[state.turn]
     loser_score = jnp.ceil(winner_score / (N_PLAYER - 1)).astype(jnp.int8)
+    winner_score = loser_score * (N_PLAYER - 1)
     scores = -jnp.ones(N_PLAYER, dtype=jnp.int8) * loser_score
     scores = scores.at[state.turn % N_PLAYER].set(winner_score)
     curr_player = jnp.int8(-1)
@@ -413,4 +415,6 @@ def _validate(state: State) -> bool:
         assert (
             False
         ), f"\n{state.n_red_in_hands}\n{state.is_red_in_river}\n{_to_str(state)}"
+
+    assert state.scores.sum() == 0, f"\n{state.scores}\n{_to_str(state)}"
     return True
