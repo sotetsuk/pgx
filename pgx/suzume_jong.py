@@ -33,6 +33,7 @@ BASE_SCORES = jnp.int8([4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 2, 4, 4, 4, 4, 3, 3, 3, 3,
 YAKU_SCORES = jnp.int8([15, 15, 15, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 10, 0, 10, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 10, 1, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 10, 1, 10, 10, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 10, 1, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])  # type: ignore
 MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 + 2) // 2 * 2
 
+
 @struct.dataclass
 class State:
     curr_player: jnp.ndarray = jnp.int8(0)
@@ -56,7 +57,9 @@ class State:
         NUM_TILES, dtype=jnp.int8
     )  # tile id (0~43) is set
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
-    shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER, dtype=jnp.int8)  # 0: dealer, ...
+    shuffled_players: jnp.ndarray = jnp.zeros(
+        N_PLAYER, dtype=jnp.int8
+    )  # 0: dealer, ...
     dora: jnp.ndarray = jnp.int8(0)  # tile type (0~10) is set
     scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int8)  # 0 = dealer
 
@@ -142,7 +145,7 @@ def _hands_to_score(state: State) -> jnp.ndarray:
         s = lax.cond(
             ys >= 10,  # yakuman
             lambda: bs + ys,
-            lambda: bs + ys + n_doras + n_red_doras
+            lambda: bs + ys + n_doras + n_red_doras,
         )
         scores = scores.at[i].set(s)
     return scores
@@ -192,7 +195,12 @@ def _step_by_ron(state: State, scores, winning_players):
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
         scores=scores,
     )
-    r = _order_by_player_idx(scores, state.shuffled_players).astype(jnp.float16) / MAX_SCORE
+    r = (
+        _order_by_player_idx(scores, state.shuffled_players).astype(
+            jnp.float16
+        )
+        / MAX_SCORE
+    )
     return curr_player, state, r
 
 
@@ -211,7 +219,12 @@ def _step_by_tsumo(state: State, scores):
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
         scores=scores,
     )
-    r = _order_by_player_idx(scores, state.shuffled_players).astype(jnp.float16) / MAX_SCORE
+    r = (
+        _order_by_player_idx(scores, state.shuffled_players).astype(
+            jnp.float16
+        )
+        / MAX_SCORE
+    )
     return curr_player, state, r
 
 
