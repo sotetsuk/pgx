@@ -119,6 +119,14 @@ def _hand_to_score(hand: jnp.ndarray):
     ix = jnp.argmin(jnp.abs(WIN_HANDS - _to_base5(hand)))
     return BASE_SCORES[ix], YAKU_SCORES[ix]
 
+@jax.jit
+def _hands_to_score(state: State) -> jnp.ndarray:
+    scores = jnp.zeros(3, dtype=jnp.int8)
+    for i in range(N_PLAYER):
+        bs, ys = _hand_to_score(state.hands[i])
+        scores = scores.at[i].set(bs + ys)
+    return scores
+
 
 @jax.jit
 def _check_ron(state: State) -> jnp.ndarray:
@@ -156,7 +164,8 @@ def _order_by_player_idx(x, shuffled_players):
 @jax.jit
 def _step_by_ron(state: State):
     winning_players = _check_ron(state)
-    scores = winning_players.astype(jnp.float16)
+    scores = _hands_to_score(state)
+    scores = scores * winning_players
     scores = scores.at[state.turn % N_PLAYER].set(-scores.sum())
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
@@ -170,9 +179,11 @@ def _step_by_ron(state: State):
 
 
 @jax.jit
-def _step_by_tsumo(state):
-    scores = -jnp.ones(N_PLAYER, dtype=jnp.float16) * (1 / (N_PLAYER - 1))
-    scores = scores.at[state.turn].set(1)
+def _step_by_tsumo(state: State):
+    winner_score = _hands_to_score(state)[state.turn]
+    loser_score = jnp.ceil(winner_score / (N_PLAYER - 1))
+    scores = - jnp.ones(N_PLAYER, dtype=jnp.int8) * loser_score
+    scores = scores.at[state.turn].set(winner_score)
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
         curr_player=curr_player,
