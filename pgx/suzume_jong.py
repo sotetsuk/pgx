@@ -380,6 +380,7 @@ class State:
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
     shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)  # 0: dealer, ...
     dora: jnp.ndarray = jnp.int8(0)  # tile type (0~10) is set
+    scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.float16)  # 0 = dealer
 
 
 # TODO: avoid Tenhou
@@ -442,35 +443,43 @@ def _check_tsumo(state: State) -> jnp.ndarray:
 
 
 @jax.jit
-def _step_by_ron(state: State):
-    winning_players = _check_ron(state)
-    r_by_turn = winning_players.astype(jnp.float16)
-    r_by_turn = r_by_turn.at[state.turn % N_PLAYER].set(-r_by_turn.sum())
-    r = lax.fori_loop(
+def _order_by_player_idx(x, shuffled_players):
+    return lax.fori_loop(
         0,
         N_PLAYER,
-        lambda i, x: x.at[state.shuffled_players[i]].set(r_by_turn[i]),
-        jnp.zeros_like(r_by_turn),
+        lambda i, e: e.at[shuffled_players[i]].set(x[i]),
+        jnp.zeros_like(x),
     )
+
+
+@jax.jit
+def _step_by_ron(state: State):
+    winning_players = _check_ron(state)
+    scores = winning_players.astype(jnp.float16)
+    scores = scores.at[state.turn % N_PLAYER].set(-scores.sum())
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
         curr_player=curr_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
+        scores=scores
     )
+    r = _order_by_player_idx(scores, state.shuffled_players)
     return curr_player, state, r
 
 
 @jax.jit
 def _step_by_tsumo(state):
-    r = -jnp.ones(N_PLAYER, dtype=jnp.float16) * (1 / (N_PLAYER - 1))
-    r = r.at[state.shuffled_players[state.turn]].set(1)
+    scores = -jnp.ones(N_PLAYER, dtype=jnp.float16) * (1 / (N_PLAYER - 1))
+    scores = scores.at[state.turn].set(1)
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
         curr_player=curr_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
+        scores=scores
     )
+    r = _order_by_player_idx(scores, state.shuffled_players)
     return curr_player, state, r
 
 
