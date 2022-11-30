@@ -1,6 +1,13 @@
 import jax
 import jax.numpy as jnp
-from pgx.suzume_jong import _is_completed, init, _to_str, _is_valid, step
+from pgx.suzume_jong import _is_completed, init, _to_str, _is_valid, step, _to_base5
+
+
+def test_to_base5():
+    hand = jnp.int8([0,0,0,0,0,0,0,0,0,3,3])
+    assert _to_base5(hand) == 18
+    hand = jnp.int8([4,1,1,0,0,0,0,0,0,0,0])
+    assert _to_base5(hand) == 41406250
 
 
 def test_is_completed():
