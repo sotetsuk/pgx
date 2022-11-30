@@ -123,8 +123,11 @@ def _hand_to_score(hand: jnp.ndarray):
 def _hands_to_score(state: State) -> jnp.ndarray:
     scores = jnp.zeros(3, dtype=jnp.int8)
     for i in range(N_PLAYER):
-        bs, ys = _hand_to_score(state.hands[i])
-        scores = scores.at[i].set(bs + ys)
+        hand = state.hands[i]
+        hand = jax.lax.cond(hand.sum() == 5, lambda: hand.at[state.last_discard].add(1), lambda: hand)
+        bs, ys = _hand_to_score(hand)
+        n_doras = hand[state.last_discard]
+        scores = scores.at[i].set(bs + ys + n_doras)
     return scores
 
 
