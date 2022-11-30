@@ -76,7 +76,7 @@ class State:
     draw_ix: jnp.ndarray = jnp.int8(N_PLAYER * 5)
     shuffled_players: jnp.ndarray = jnp.zeros(N_PLAYER)  # 0: dealer, ...
     dora: jnp.ndarray = jnp.int8(0)  # tile type (0~10) is set
-    scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.float16)  # 0 = dealer
+    scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int8)  # 0 = dealer
 
 
 # TODO: avoid Tenhou
@@ -218,9 +218,9 @@ def _step_by_ron(state: State):
 @jax.jit
 def _step_by_tsumo(state: State):
     winner_score = _hands_to_score(state)[state.turn]
-    loser_score = jnp.ceil(winner_score / (N_PLAYER - 1))
+    loser_score = jnp.ceil(winner_score / (N_PLAYER - 1)).astype(jnp.int8)
     scores = -jnp.ones(N_PLAYER, dtype=jnp.int8) * loser_score
-    scores = scores.at[state.turn].set(winner_score)
+    scores = scores.at[state.turn % N_PLAYER].set(winner_score)
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
         curr_player=curr_player,
