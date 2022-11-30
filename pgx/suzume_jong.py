@@ -34,6 +34,7 @@ Pgx実装での違い
     * [x] 親
   * [x] 点数移動計算（ロン・ツモ）
   * [ ] 5ポイント縛り
+  * [ ] ツモアガリ時の得点
   * [x] jit
 """
 
@@ -164,14 +165,11 @@ def _hands_to_score(state: State) -> jnp.ndarray:
             lambda: bs + ys + n_doras + n_red_doras
         )
         scores = scores.at[i].set(s)
-    scores = scores.at[0].add(2)
     return scores
 
 
 @jax.jit
-def _check_ron(state: State) -> jnp.ndarray:
-    # TODO: furiten
-    # TODO: 5-fan limit
+def _check_ron(state: State, scores) -> jnp.ndarray:
     winning_players = jax.lax.fori_loop(
         0,
         N_PLAYER,
@@ -183,12 +181,13 @@ def _check_ron(state: State) -> jnp.ndarray:
     winning_players = winning_players.at[state.turn].set(False)
     is_furiten = (state.rivers == state.last_discard).sum(axis=1) > 0
     winning_players = winning_players & jnp.logical_not(is_furiten)
+    winning_players = winning_players & (scores >= 5)
     return winning_players
 
 
 @jax.jit
-def _check_tsumo(state: State) -> jnp.ndarray:
-    return _is_completed(state.hands[state.turn])
+def _check_tsumo(state: State, scores) -> jnp.ndarray:
+    return _is_completed(state.hands[state.turn]) & (scores[state.turn] >= 0)
 
 
 @jax.jit
@@ -202,9 +201,8 @@ def _order_by_player_idx(x, shuffled_players):
 
 
 @jax.jit
-def _step_by_ron(state: State):
-    winning_players = _check_ron(state)
-    scores = _hands_to_score(state)
+def _step_by_ron(state: State, scores, winning_players):
+    scores = scores.at[0].add(2)
     scores = scores * winning_players
     scores = scores.at[state.turn % N_PLAYER].set(-scores.sum())
     curr_player = jnp.int8(-1)
@@ -219,8 +217,9 @@ def _step_by_ron(state: State):
 
 
 @jax.jit
-def _step_by_tsumo(state: State):
-    winner_score = _hands_to_score(state)[state.turn]
+def _step_by_tsumo(state: State, scores):
+    scores = scores.at[0].add(2)
+    winner_score = scores[state.turn]
     loser_score = jnp.ceil(winner_score / (N_PLAYER - 1)).astype(jnp.int8)
     scores = -jnp.ones(N_PLAYER, dtype=jnp.int8) * loser_score
     scores = scores.at[state.turn % N_PLAYER].set(winner_score)
@@ -279,14 +278,14 @@ def _step_non_terminal(state: State):
 
 
 @jax.jit
-def _step_non_tied(state: State):
+def _step_non_tied(state: State, scores):
     state = _draw_tile(state)
-    is_tsumo = _check_tsumo(state)
+    scores = _hands_to_score(state)
+    is_tsumo = _check_tsumo(state, scores)
     return lax.cond(
         is_tsumo,
-        _step_by_tsumo,
-        _step_non_terminal,
-        state
+        lambda: _step_by_tsumo(state, scores),
+        lambda: _step_non_terminal(state),
     )
 
 
@@ -316,14 +315,15 @@ def step(state: State, action: jnp.ndarray):
         last_discard=last_discard,
     )
 
-    win_players = _check_ron(state)
+    scores = _hands_to_score(state)
+    winning_players = _check_ron(state, scores)
     return lax.cond(
-        jnp.any(win_players),
-        lambda: _step_by_ron(state),
+        jnp.any(winning_players),
+        lambda: _step_by_ron(state, scores, winning_players),
         lambda: lax.cond(
             jnp.bool_(NUM_TILES - 1 <= state.draw_ix),
             lambda: _step_by_tie(state),
-            lambda: _step_non_tied(state),
+            lambda: _step_non_tied(state, scores),
         ),
     )
 
