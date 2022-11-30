@@ -103,9 +103,10 @@ def init(rng: jax.random.KeyArray):
 @jax.jit
 def _to_base5(hand: jnp.ndarray):
     return lax.fori_loop(
-        0, NUM_TILE_TYPES,
+        0,
+        NUM_TILE_TYPES,
         lambda i, x: x + hand[i] * 5 ** (NUM_TILE_TYPES - i - 1),
-        jnp.int32(0)
+        jnp.int32(0),
     )
 
 
