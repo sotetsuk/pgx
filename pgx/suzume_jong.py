@@ -20,8 +20,7 @@ Pgx実装での違い
 実装TODO
   * [x] フリテン
   * [x] ドラ
-  * [ ] change hand and river
-  * [ ] 赤牌
+  * [x] 赤牌
   * [ ] 手牌点数計算
     * [ ] 順子
     * [ ] 刻子
@@ -48,6 +47,7 @@ WIN_HANDS = jnp.int32([18, 78, 90, 378, 390, 450, 778, 790, 850, 1150, 1550, 187
 BASE_SCORES = jnp.int8([4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 2, 4, 4, 4, 4, 3, 3, 3, 3, 3, 2, 3, 2, 4, 4, 4, 4, 3, 4, 3, 3, 3, 3, 3, 2, 3, 2, 3, 2, 4, 4, 4, 4, 3, 4, 3, 4, 3, 3, 3, 3, 3, 2, 3, 2, 3, 2, 3, 2, 4, 4, 4, 4, 3, 4, 3, 4, 3, 4, 3, 3, 3, 3, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 4, 4, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 3, 3, 3, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 4, 4, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 3, 3, 3, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 3, 2, 4, 4, 4, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3])  # type: ignore
 YAKU_SCORES = jnp.int8([15, 15, 15, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 0, 10, 0, 10, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 10, 1, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 10, 1, 10, 10, 0, 10, 0, 10, 0, 1, 1, 10, 1, 1, 1, 10, 1, 10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 15, 15, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])  # type: ignore
 
+
 @struct.dataclass
 class State:
     curr_player: jnp.ndarray = jnp.int8(0)
@@ -61,6 +61,12 @@ class State:
     hands: jnp.ndarray = jnp.zeros(
         (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8
     )  # tile type (0~10) is set
+    n_red_in_hands: jnp.ndarray = jnp.zeros(
+        (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8
+    )
+    is_red_in_river: jnp.ndarray = jnp.zeros(
+        (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.bool_
+    )
     wall: jnp.ndarray = jnp.zeros(
         NUM_TILES, dtype=jnp.int8
     )  # tile id (0~43) is set
@@ -86,6 +92,10 @@ def init(rng: jax.random.KeyArray):
     hands = lax.fori_loop(
         0, N_PLAYER * 5, lambda i, x: x.at[i // 5, wall[i] // 4].add(1), hands
     )
+    n_red_in_hands = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)
+    n_red_in_hands = lax.fori_loop(
+        0, N_PLAYER * 5, lambda i, x: x.at[i // 5, wall[i] // 4].add((wall[i] % 4 == 0) | (wall[i] >= 40)), n_red_in_hands
+    )
     # first draw
     draw_ix = jnp.int8(N_PLAYER * 5)
     hands = hands.at[0, wall[draw_ix] // 4].add(1)
@@ -95,6 +105,7 @@ def init(rng: jax.random.KeyArray):
         curr_player=curr_player,
         legal_action_mask=legal_action_mask,
         hands=hands,
+        n_red_in_hands=n_red_in_hands,
         wall=wall,
         draw_ix=draw_ix,
         shuffled_players=shuffled_players,
@@ -213,15 +224,18 @@ def _step_by_tie(state):
 def _draw_tile(state: State) -> State:
     turn = state.turn + 1
     curr_player = state.shuffled_players[turn % N_PLAYER]
-    hands = state.hands.at[
-        turn % N_PLAYER, state.wall[state.draw_ix] // 4
-    ].add(1)
+    tile_id = state.wall[state.draw_ix]
+    tile_type = tile_id // 4
+    is_red = (tile_id % 4 == 0) | (tile_id >= 40)
+    hands = state.hands.at[turn % N_PLAYER, tile_type].add(1)
+    n_red_in_hands = state.n_red_in_hands.at[turn % N_PLAYER, tile_type].add(is_red)
     draw_ix = state.draw_ix + 1
     legal_action_mask = hands[turn % N_PLAYER] > 0
     state = state.replace(  # type: ignore
         turn=turn,
         curr_player=curr_player,
         hands=hands,
+        n_red_in_hands=n_red_in_hands,
         draw_ix=draw_ix,
         legal_action_mask=legal_action_mask,
         terminated=jnp.bool_(False),
@@ -246,13 +260,18 @@ def _step_non_tied(state: State):
 def step(state: State, action: jnp.ndarray):
     # discard tile
     hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
+    is_red_discarded = hands[state.turn % N_PLAYER, action] < state.n_red_in_hands[state.turn % N_PLAYER, action]
+    n_red_in_hands = state.n_red_in_hands.at[state.turn % N_PLAYER, action].add(- is_red_discarded.astype(jnp.int8))
     rivers = state.rivers.at[
         state.turn % N_PLAYER, state.turn // N_PLAYER
     ].set(action)
+    is_red_in_river = state.is_red_in_river.at[state.turn % N_PLAYER, state.turn // N_PLAYER].set(is_red_discarded)
     last_discard = action
     state = state.replace(  # type: ignore
         hands=hands,
+        n_red_in_hands=n_red_in_hands,
         rivers=rivers,
+        is_red_in_river=is_red_in_river,
         last_discard=last_discard,
     )
 
@@ -276,52 +295,67 @@ def _tile_type_to_str(tile_type) -> str:
     return s
 
 
-def _hand_to_str(hand: jnp.ndarray) -> str:
+def _hand_to_str(hand: jnp.ndarray, n_red_in_hands: jnp.ndarray) -> str:
     s = ""
     for i in range(NUM_TILE_TYPES):
         for j in range(hand[i]):
             s += _tile_type_to_str(i)
-    return s.ljust(6)
+            if j < n_red_in_hands[i]:
+                s += "*"
+            else:
+                s += " "
+    return s.ljust(12)
 
 
-def _river_to_str(river: jnp.ndarray) -> str:
+def _river_to_str(river: jnp.ndarray, is_red_in_river: jnp.ndarray) -> str:
     s = ""
     for i in range(MAX_RIVER_LENGTH):
         tile_type = river[i]
-        s += _tile_type_to_str(tile_type) if tile_type >= 0 else "x"
-    return s
+        if tile_type >= 0:
+            s += _tile_type_to_str(tile_type)
+            s += "*" if is_red_in_river[i] else " "
+        else:
+            s += "_ "
+    return s.ljust(20)
 
 
 def _to_str(state: State):
     s = f"{'[terminated]' if state. terminated else ''} dora: {_tile_type_to_str(state.dora)}\n"
     for i in range(N_PLAYER):
         s += f"{'*' if not state.terminated and state.turn % N_PLAYER == i else ' '}[{state.shuffled_players[i]}] "
-        s += f"{_hand_to_str(state.hands[i])}, "
-        s += f"{_river_to_str(state.rivers[i])} "
+        s += f"{_hand_to_str(state.hands[i], state.n_red_in_hands[i])}: "
+        s += f"{_river_to_str(state.rivers[i], state.is_red_in_river[i])} "
         s += "\n"
     return s
 
 
-def _is_valid(state: State) -> bool:
+def _validate(state: State) -> bool:
     if state.dora < 0 or 10 < state.dora:
-        return False
+        assert False
     if 10 < state.last_discard:
-        return False
+        assert False
     if state.last_discard < 0 and state.rivers[0, 0] >= 0:
-        return False
+        assert False
     if jnp.any(state.hands < 0):
-        return False
+        assert False
     counts = state.hands.sum(axis=0)
     for i in range(N_PLAYER):
         for j in range(MAX_RIVER_LENGTH):
             if state.rivers[i, j] >= 0:
                 counts = counts.at[state.rivers[i, j]].add(1)
     if jnp.any(counts > 4):
-        return False
-    for i in range(NUM_TILE_TYPES):
-        if state.legal_action_mask[i] and state.hands[state.turn, i] <= 0:
-            return False
-        if not state.legal_action_mask[i] and state.hands[state.turn, i] > 0:
-            return False
+        assert False
 
+    # check legal_action_mask
+    if not state.terminated:
+        for i in range(NUM_TILE_TYPES):
+            if state.legal_action_mask[i] and state.hands[state.turn % N_PLAYER, i] <= 0:
+                assert False, f"\n{state.legal_action_mask[i]}\n{state.hands[state.turn % N_PLAYER, i]}\n{_to_str(state)}"
+            if not state.legal_action_mask[i] and state.hands[state.turn % N_PLAYER, i] > 0:
+                assert False, f"\n{state.legal_action_mask}\n{state.hands[state.turn % N_PLAYER]}\n{_to_str(state)}"
+
+    if not jnp.all(state.n_red_in_hands[:, :-2] <= 1):
+        assert False
+    if (state.n_red_in_hands.sum() + state.is_red_in_river.sum()) > 14:
+        assert False, f"\n{state.n_red_in_hands}\n{state.is_red_in_river}\n{_to_str(state)}"
     return True
