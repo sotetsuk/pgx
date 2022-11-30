@@ -94,7 +94,12 @@ def init(rng: jax.random.KeyArray):
     )
     n_red_in_hands = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)
     n_red_in_hands = lax.fori_loop(
-        0, N_PLAYER * 5, lambda i, x: x.at[i // 5, wall[i] // 4].add((wall[i] % 4 == 0) | (wall[i] >= 40)), n_red_in_hands
+        0,
+        N_PLAYER * 5,
+        lambda i, x: x.at[i // 5, wall[i] // 4].add(
+            (wall[i] % 4 == 0) | (wall[i] >= 40)
+        ),
+        n_red_in_hands,
     )
     # first draw
     draw_ix = jnp.int8(N_PLAYER * 5)
@@ -116,7 +121,9 @@ def init(rng: jax.random.KeyArray):
 
 @jax.jit
 def _to_base5(hand: jnp.ndarray):
-    b = jnp.int32([9765625, 1953125, 390625, 78125, 15625, 3125, 625, 125, 25, 5, 1])
+    b = jnp.int32(
+        [9765625, 1953125, 390625, 78125, 15625, 3125, 625, 125, 25, 5, 1]
+    )
     return (hand * b).sum()
 
 
@@ -131,12 +138,17 @@ def _hand_to_score(hand: jnp.ndarray):
     ix = jnp.argmin(jnp.abs(WIN_HANDS - _to_base5(hand)))
     return BASE_SCORES[ix], YAKU_SCORES[ix]
 
+
 @jax.jit
 def _hands_to_score(state: State) -> jnp.ndarray:
     scores = jnp.zeros(3, dtype=jnp.int8)
     for i in range(N_PLAYER):
         hand = state.hands[i]
-        hand = jax.lax.cond(hand.sum() == 5, lambda: hand.at[state.last_discard].add(1), lambda: hand)
+        hand = jax.lax.cond(
+            hand.sum() == 5,
+            lambda: hand.at[state.last_discard].add(1),
+            lambda: hand,
+        )
         bs, ys = _hand_to_score(hand)
         n_doras = hand[state.last_discard]
         scores = scores.at[i].set(bs + ys + n_doras)
@@ -197,7 +209,7 @@ def _step_by_ron(state: State):
 def _step_by_tsumo(state: State):
     winner_score = _hands_to_score(state)[state.turn]
     loser_score = jnp.ceil(winner_score / (N_PLAYER - 1))
-    scores = - jnp.ones(N_PLAYER, dtype=jnp.int8) * loser_score
+    scores = -jnp.ones(N_PLAYER, dtype=jnp.int8) * loser_score
     scores = scores.at[state.turn].set(winner_score)
     curr_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
@@ -228,7 +240,9 @@ def _draw_tile(state: State) -> State:
     tile_type = tile_id // 4
     is_red = (tile_id % 4 == 0) | (tile_id >= 40)
     hands = state.hands.at[turn % N_PLAYER, tile_type].add(1)
-    n_red_in_hands = state.n_red_in_hands.at[turn % N_PLAYER, tile_type].add(is_red)
+    n_red_in_hands = state.n_red_in_hands.at[turn % N_PLAYER, tile_type].add(
+        is_red
+    )
     draw_ix = state.draw_ix + 1
     legal_action_mask = hands[turn % N_PLAYER] > 0
     state = state.replace(  # type: ignore
@@ -260,12 +274,19 @@ def _step_non_tied(state: State):
 def step(state: State, action: jnp.ndarray):
     # discard tile
     hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
-    is_red_discarded = hands[state.turn % N_PLAYER, action] < state.n_red_in_hands[state.turn % N_PLAYER, action]
-    n_red_in_hands = state.n_red_in_hands.at[state.turn % N_PLAYER, action].add(- is_red_discarded.astype(jnp.int8))
+    is_red_discarded = (
+        hands[state.turn % N_PLAYER, action]
+        < state.n_red_in_hands[state.turn % N_PLAYER, action]
+    )
+    n_red_in_hands = state.n_red_in_hands.at[
+        state.turn % N_PLAYER, action
+    ].add(-is_red_discarded.astype(jnp.int8))
     rivers = state.rivers.at[
         state.turn % N_PLAYER, state.turn // N_PLAYER
     ].set(action)
-    is_red_in_river = state.is_red_in_river.at[state.turn % N_PLAYER, state.turn // N_PLAYER].set(is_red_discarded)
+    is_red_in_river = state.is_red_in_river.at[
+        state.turn % N_PLAYER, state.turn // N_PLAYER
+    ].set(is_red_discarded)
     last_discard = action
     state = state.replace(  # type: ignore
         hands=hands,
@@ -349,13 +370,25 @@ def _validate(state: State) -> bool:
     # check legal_action_mask
     if not state.terminated:
         for i in range(NUM_TILE_TYPES):
-            if state.legal_action_mask[i] and state.hands[state.turn % N_PLAYER, i] <= 0:
-                assert False, f"\n{state.legal_action_mask[i]}\n{state.hands[state.turn % N_PLAYER, i]}\n{_to_str(state)}"
-            if not state.legal_action_mask[i] and state.hands[state.turn % N_PLAYER, i] > 0:
-                assert False, f"\n{state.legal_action_mask}\n{state.hands[state.turn % N_PLAYER]}\n{_to_str(state)}"
+            if (
+                state.legal_action_mask[i]
+                and state.hands[state.turn % N_PLAYER, i] <= 0
+            ):
+                assert (
+                    False
+                ), f"\n{state.legal_action_mask[i]}\n{state.hands[state.turn % N_PLAYER, i]}\n{_to_str(state)}"
+            if (
+                not state.legal_action_mask[i]
+                and state.hands[state.turn % N_PLAYER, i] > 0
+            ):
+                assert (
+                    False
+                ), f"\n{state.legal_action_mask}\n{state.hands[state.turn % N_PLAYER]}\n{_to_str(state)}"
 
     if not jnp.all(state.n_red_in_hands[:, :-2] <= 1):
         assert False
     if (state.n_red_in_hands.sum() + state.is_red_in_river.sum()) > 14:
-        assert False, f"\n{state.n_red_in_hands}\n{state.is_red_in_river}\n{_to_str(state)}"
+        assert (
+            False
+        ), f"\n{state.n_red_in_hands}\n{state.is_red_in_river}\n{_to_str(state)}"
     return True
