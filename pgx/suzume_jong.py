@@ -22,13 +22,16 @@ Pgx実装での違い
   * [x] ドラ
   * [x] 赤牌
   * [ ] 手牌点数計算
-    * [ ] 順子
-    * [ ] 刻子
-    * [ ] タンヤオ
-    * [ ] チャンタ
-    * [ ] チンヤオ
-    * [ ] all green
+    * [x] 順子
+    * [x] 刻子
+    * [x] タンヤオ
+    * [x] チャンタ
+    * [x] チンヤオ
+    * [x] all green
     * [ ] super red
+    * [x] ドラ
+    * [x] 赤ドラ
+    * [x] 親
   * [ ] 点数移動計算（ロン・ツモ）
   * [ ] 5ポイント縛り
 """
@@ -150,8 +153,15 @@ def _hands_to_score(state: State) -> jnp.ndarray:
             lambda: hand,
         )
         bs, ys = _hand_to_score(hand)
-        n_doras = hand[state.last_discard]
-        scores = scores.at[i].set(bs + ys + n_doras)
+        n_doras = hand[state.dora]
+        n_red_doras = state.n_red_in_hands[i].sum().astype(jnp.int8)
+        s = lax.cond(
+            ys >= 10,  # yakuman
+            lambda: bs + ys,
+            lambda: bs + ys + n_doras + n_red_doras
+        )
+        scores = scores.at[i].set(s)
+    scores = scores.at[0].add(2)
     return scores
 
 
