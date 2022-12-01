@@ -636,9 +636,7 @@ def _filter_move_actions(
 def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    for i in range(12):
-        action = _dlshogi_action(direction, i)
-        new_array = new_array.at[action].set(1)
+    new_array = jnp.where(jnp.arange(180) // 12 == direction, 1, new_array)
     return new_array
 
 
@@ -647,9 +645,7 @@ def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    for i in range(12):
-        action = _dlshogi_action(direction, i)
-        new_array = new_array.at[action].set(0)
+    new_array = jnp.where(jnp.arange(180) // 12 == direction, 0, new_array)
     return new_array
 
 
