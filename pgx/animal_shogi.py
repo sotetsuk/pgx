@@ -87,6 +87,7 @@ def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
     )
     return new_array
 
+
 @jax.jit
 def _action_board(array: jnp.ndarray, point: int) -> jnp.ndarray:
     new_array = array
