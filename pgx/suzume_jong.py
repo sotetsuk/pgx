@@ -64,9 +64,25 @@ class State:
     scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int8)  # 0 = dealer
 
 
-# TODO: avoid Tenhou
 @jax.jit
 def init(rng: jax.random.KeyArray):
+    key, subkey = jax.random.split(rng)
+    curr_player, state = _init(subkey)
+    def f(x):
+        k, _subkey = jax.random.split(x[0])
+        c, s = _init(_subkey)
+        return k, c, s
+
+    # avoid tenhou
+    key, curr_player, state = lax.while_loop(
+        lambda x: _is_completed(x[2].hands[0]) & ((sum(_hand_to_score(x[2].hands[0])) >= 5) | (x[2].n_red_in_hands[0].sum() >= 6)),
+        f,
+        (key, curr_player, state)
+    )
+    return curr_player, state
+
+@jax.jit
+def _init(rng: jax.random.KeyArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
     shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int8)
