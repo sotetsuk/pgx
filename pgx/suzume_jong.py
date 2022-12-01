@@ -16,6 +16,7 @@ Pgx実装での違い
   * 行動選択は打牌選択のみ
     * 打牌選択時、赤牌とそうでない牌がある場合には、常に赤牌でないほうを打牌する
     * ロン・ツモは自動判定
+  * 誰も一つも行動を取らずにエピソードが終わるのを避けるため、親の第一ツモでの和了の場合は配牌し直し（天和を避けている）
 """
 
 import jax
@@ -68,6 +69,7 @@ class State:
 def init(rng: jax.random.KeyArray):
     key, subkey = jax.random.split(rng)
     curr_player, state = _init(subkey)
+
     def f(x):
         k, _subkey = jax.random.split(x[0])
         c, s = _init(_subkey)
@@ -75,7 +77,7 @@ def init(rng: jax.random.KeyArray):
 
     # avoid tenhou
     key, curr_player, state = lax.while_loop(
-        lambda x: _is_completed(x[2].hands[0]) & ((sum(_hand_to_score(x[2].hands[0])) >= 5) | (x[2].n_red_in_hands[0].sum() >= 6)),
+        lambda x: x[2].terminated,
         f,
         (key, curr_player, state)
     )
@@ -120,6 +122,16 @@ def _init(rng: jax.random.KeyArray):
         shuffled_players=shuffled_players,
         dora=dora,
     )  # type: ignore
+
+    # check tenhou
+    scores = _hands_to_score(state)
+    is_tsumo = _check_tsumo(state, scores)
+    curr_player, state = lax.cond(
+        is_tsumo,
+        lambda: _step_by_tsumo(state, scores)[:-1],
+        lambda: (curr_player, state),
+    )
+
     return curr_player, state
 
 
