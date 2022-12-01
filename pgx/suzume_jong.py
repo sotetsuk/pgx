@@ -322,13 +322,14 @@ def step(state: State, action: jnp.ndarray):
     )
 
 
+@jax.jit
 def observe(state: State, player_id: jnp.ndarray, observe_all=False):
     """
     * [binary 4x11] tile type in the player's hand (private info)
     * [binary 1x11] has red doras
     * [binary 1x11] dora
     * [binary 3x11] all discarded tiles by (self, next, after the next)
-    * [binary Nx2x11] discarded tiles in the last N steps (next, after the next)
+    * [binary 3x2x11] discarded tiles in the last 3 steps (next, after the next)
     """
     N = 3
     n_feat = 4 + 1 + 1 + 3 + N * 2
