@@ -56,6 +56,61 @@ ROOK_MOVE = jnp.array([[0, 1, 0, 0], [1, 0, 1, 0], [0, 1, 0, 0]])
 BISHOP_MOVE = jnp.array([[1, 0, 1, 0], [0, 0, 0, 0], [1, 0, 1, 0]])
 KING_MOVE = jnp.array([[1, 1, 1, 0], [1, 0, 1, 0], [1, 1, 1, 0]])
 
+
+#  上下左右の辺に接しているかどうか
+#  接している場合は後の関数で行ける場所を制限する
+@jax.jit
+def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
+    is_up = point % 4 == 0
+    is_down = point % 4 == 3
+    is_left = point >= 8
+    is_right = point <= 3
+    return is_up, is_down, is_left, is_right
+
+
+# はみ出す部分をカットする
+@jax.jit
+def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
+    new_array = array
+    u, d, l, r = _is_side(point)
+    new_array = jax.lax.cond(
+        u, lambda: new_array.at[:3, 0].set(0), lambda: new_array
+    )
+    new_array = jax.lax.cond(
+        d, lambda: new_array.at[:3, 2].set(0), lambda: new_array
+    )
+    new_array = jax.lax.cond(
+        r, lambda: new_array.at[0, :4].set(0), lambda: new_array
+    )
+    new_array = jax.lax.cond(
+        l, lambda: new_array.at[2, :4].set(0), lambda: new_array
+    )
+    return new_array
+
+@jax.jit
+def _action_board(array: jnp.ndarray, point: int) -> jnp.ndarray:
+    new_array = array
+    # point(0~11)を座標((0, 0)~(2, 3))に変換
+    y, t = point // 4, point % 4
+    new_array = _cut_outside(new_array, point)
+    return jnp.roll(new_array, (y - 1, t - 1), axis=(0, 1))
+
+
+#  座標と駒の種類から到達できる座標を列挙
+POINT_MOVES = jnp.zeros((12, 11, 3, 4), dtype=jnp.int32)
+for i in range(12):
+    POINT_MOVES = POINT_MOVES.at[i, 1].set(_action_board(BLACK_PAWN_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 2].set(_action_board(ROOK_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 3].set(_action_board(BISHOP_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 4].set(_action_board(KING_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 5].set(_action_board(BLACK_GOLD_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 6].set(_action_board(WHITE_PAWN_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 7].set(_action_board(ROOK_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 8].set(_action_board(BISHOP_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 9].set(_action_board(KING_MOVE, i))
+    POINT_MOVES = POINT_MOVES.at[i, 10].set(_action_board(WHITE_GOLD_MOVE, i))
+
+
 INIT_BOARD = JaxAnimalShogiState(
     turn=jnp.array([0]),
     board=jnp.array(
@@ -408,129 +463,6 @@ def _pieces_owner(state: JaxAnimalShogiState) -> jnp.ndarray:
     return board
 
 
-#  上下左右の辺に接しているかどうか
-#  接している場合は後の関数で行ける場所を制限する
-@jax.jit
-def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
-    is_up = point % 4 == 0
-    is_down = point % 4 == 3
-    is_left = point >= 8
-    is_right = point <= 3
-    return is_up, is_down, is_left, is_right
-
-
-# point(0~11)を座標((0, 0)~(2, 3))に変換
-@jax.jit
-def _point_to_location(point: int) -> Tuple[int, int]:
-    return point // 4, point % 4
-
-
-# はみ出す部分をカットする
-@jax.jit
-def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = array
-    u, d, l, r = _is_side(point)
-    new_array = jax.lax.cond(
-        u, lambda: new_array.at[:3, 0].set(0), lambda: new_array
-    )
-    new_array = jax.lax.cond(
-        d, lambda: new_array.at[:3, 2].set(0), lambda: new_array
-    )
-    new_array = jax.lax.cond(
-        r, lambda: new_array.at[0, :4].set(0), lambda: new_array
-    )
-    new_array = jax.lax.cond(
-        l, lambda: new_array.at[2, :4].set(0), lambda: new_array
-    )
-    return new_array
-
-
-@jax.jit
-def _action_board(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = array
-    y, t = _point_to_location(point)
-    new_array = _cut_outside(new_array, point)
-    return jnp.roll(new_array, (y - 1, t - 1), axis=(0, 1))
-
-
-# 各駒の動き
-@jax.jit
-def _black_pawn_move(point: int) -> jnp.ndarray:
-    return _action_board(BLACK_PAWN_MOVE, point)
-
-
-@jax.jit
-def _white_pawn_move(point: int) -> jnp.ndarray:
-    return _action_board(WHITE_PAWN_MOVE, point)
-
-
-@jax.jit
-def _black_gold_move(point: int) -> jnp.ndarray:
-    return _action_board(BLACK_GOLD_MOVE, point)
-
-
-@jax.jit
-def _white_gold_move(point: int) -> jnp.ndarray:
-    return _action_board(WHITE_GOLD_MOVE, point)
-
-
-@jax.jit
-def _rook_move(point: int) -> jnp.ndarray:
-    return _action_board(ROOK_MOVE, point)
-
-
-@jax.jit
-def _bishop_move(point: int) -> jnp.ndarray:
-    return _action_board(BISHOP_MOVE, point)
-
-
-@jax.jit
-def _king_move(point: int) -> jnp.ndarray:
-    return _action_board(KING_MOVE, point)
-
-
-#  座標と駒の種類から到達できる座標を列挙する関数
-@jax.jit
-def _point_moves(_from: int, piece: int) -> jnp.ndarray:
-    moves = jnp.zeros((3, 4), dtype=jnp.int32)
-    moves = jax.lax.cond(
-        piece == 1,
-        lambda: _black_pawn_move(_from),
-        lambda: moves,
-    )
-    moves = jax.lax.cond(
-        piece == 6,
-        lambda: _white_pawn_move(_from),
-        lambda: moves,
-    )
-    moves = jax.lax.cond(
-        piece % 5 == 2,
-        lambda: _rook_move(_from),
-        lambda: moves,
-    )
-    moves = jax.lax.cond(
-        piece % 5 == 3,
-        lambda: _bishop_move(_from),
-        lambda: moves,
-    )
-    moves = jax.lax.cond(
-        piece % 5 == 4,
-        lambda: _king_move(_from),
-        lambda: moves,
-    )
-    moves = jax.lax.cond(
-        piece == 5,
-        lambda: _black_gold_move(_from),
-        lambda: moves,
-    )
-    moves = jax.lax.cond(
-        piece == 10,
-        lambda: _white_gold_move(_from),
-        lambda: moves,
-    )
-    return moves
-
-
 # 利きの判定
 @jax.jit
 def _effected_positions(state: JaxAnimalShogiState, turn: int) -> jnp.ndarray:
@@ -540,7 +472,7 @@ def _effected_positions(state: JaxAnimalShogiState, turn: int) -> jnp.ndarray:
     for i in range(12):
         own = piece_owner[i]
         piece = board[i]
-        effect = _point_moves(i, piece).reshape(12)
+        effect = POINT_MOVES[i, piece].reshape(12)
         all_effect = jax.lax.cond(
             own == turn, lambda: all_effect + effect, lambda: all_effect
         )
@@ -587,7 +519,7 @@ def _can_promote(to: int, piece: int) -> bool:
 def _create_piece_actions(_from: int, piece: int) -> jnp.ndarray:
     turn = _owner(piece)
     actions = jnp.zeros(180, dtype=jnp.int32)
-    motion = _point_moves(_from, piece).reshape(12)
+    motion = POINT_MOVES[_from, piece].reshape(12)
     for i in range(12):
         normal_dir = _point_to_direction(_from, i, False, turn)
         normal_act = _dlshogi_action(normal_dir, i)
@@ -843,10 +775,10 @@ def _filter_suicide_actions(
     turn: int, king_sq: int, effects: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
     new_array = array
-    moves = _king_move(king_sq).reshape(12)
+    king_moves = POINT_MOVES[4, king_sq].reshape(12)
     for i in range(12):
         new_array = jax.lax.cond(
-            (moves[i] == 0) | (effects[i] == 0),
+            (king_moves[i] == 0) | (effects[i] == 0),
             lambda: new_array,
             lambda: new_array.at[
                 _dlshogi_action(
@@ -863,7 +795,7 @@ def _filter_leave_check_actions(
     turn: int, king_sq: int, check_piece: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
     new_array = array
-    moves = _king_move(king_sq).reshape(12)
+    king_moves = POINT_MOVES[4, king_sq].reshape(12)
     for i in range(12):
         # 王手をかけている駒の位置以外への移動は王手放置
 
@@ -876,7 +808,7 @@ def _filter_leave_check_actions(
 
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
         new_array = jax.lax.cond(
-            moves[i] == 0,
+            king_moves[i] == 0,
             lambda: new_array,
             lambda: new_array.at[
                 _dlshogi_action(
