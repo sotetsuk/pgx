@@ -398,19 +398,14 @@ def _owner(piece: int) -> int:
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
 @jax.jit
 def _board_status(state: JaxAnimalShogiState) -> jnp.ndarray:
-    board = jnp.zeros(12, dtype=jnp.int32)
-    for i in range(12):
-        board = board.at[i].set(_piece_type(state, i))
-    return board
+    return state.board.argmax(axis=0)
 
 
 # 駒の持ち主の判定
 @jax.jit
 def _pieces_owner(state: JaxAnimalShogiState) -> jnp.ndarray:
-    board = jnp.zeros(12, dtype=jnp.int32)
-    for i in range(12):
-        piece = _piece_type(state, i)
-        board = board.at[i].set(_owner(piece))
+    _piece_types = _board_status(state)
+    board = jnp.where(_piece_types == 0, 2, (_piece_types - 1) // 5)
     return board
 
 
