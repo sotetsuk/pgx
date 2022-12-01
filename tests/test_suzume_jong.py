@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx.suzume_jong import _is_completed, init, _to_str, _validate, step, _to_base5, _hand_to_score, observe
+from pgx.suzume_jong import _is_completed, init, _to_str, _validate, step, _to_base5, _hand_to_score, observe, _init
 
 
 def test_to_base5():
@@ -29,7 +29,7 @@ def test_is_completed():
 
 
 def test_init():
-    curr_player, state = init(jax.random.PRNGKey(1))
+    curr_player, state = _init(jax.random.PRNGKey(1))
     _validate(state)
     print(_to_str(state))
     assert _to_str(state) == """ dora: r
@@ -38,9 +38,13 @@ def test_init():
  [0] 5 7 8 9 r*  : _ _ _ _ _ _ _ _ _ _  
 """
 
+    for seed in range(1000):
+        curr_player, state = init(jax.random.PRNGKey(seed))
+        assert jnp.logical_not(state.terminated)
+
 
 def test_step():
-    curr_player, state = init(jax.random.PRNGKey(1))
+    curr_player, state = _init(jax.random.PRNGKey(1))
     _validate(state)
     print(_to_str(state))
     assert _to_str(state) == """ dora: r
@@ -69,7 +73,7 @@ def test_random_play():
         print("=================================")
         key = jax.random.PRNGKey(seed)
         key, subkey = jax.random.split(key)
-        curr_player, state = init(subkey)
+        curr_player, state = _init(subkey)
         # _validate(state)
         # print(_to_str(state))
         while not state.terminated:
@@ -487,7 +491,7 @@ def test_random_play():
 
 
 def test_observe():
-    curr_player, state = init(jax.random.PRNGKey(1))
+    curr_player, state = _init(jax.random.PRNGKey(1))
     curr_player, state, r = step(state, jnp.int8(1))
     print(_to_str(state))
     obs = observe(state, player_id=jnp.int8(2))
@@ -506,7 +510,7 @@ def test_observe():
     seed = 5
     key = jax.random.PRNGKey(seed)
     key, subkey = jax.random.split(key)
-    curr_player, state = init(subkey)
+    curr_player, state = _init(subkey)
     while not state.terminated:
         legal_actions = jnp.where(state.legal_action_mask)[0]
         key, subkey = jax.random.split(key)
