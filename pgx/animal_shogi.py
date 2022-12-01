@@ -616,10 +616,7 @@ def _add_move_actions(
 ) -> jnp.ndarray:
     new_array = array
     actions = _create_piece_actions(_from, piece)
-    for i in range(180):
-        new_array = jax.lax.cond(
-            actions[i] == 1, lambda: new_array.at[i].set(1), lambda: new_array
-        )
+    new_array = jnp.where(actions == 1, 1, new_array)
     return new_array
 
 
