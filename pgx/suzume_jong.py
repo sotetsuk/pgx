@@ -77,11 +77,10 @@ def init(rng: jax.random.KeyArray):
 
     # avoid tenhou
     key, curr_player, state = lax.while_loop(
-        lambda x: x[2].terminated,
-        f,
-        (key, curr_player, state)
+        lambda x: x[2].terminated, f, (key, curr_player, state)
     )
     return curr_player, state
+
 
 @jax.jit
 def _init(rng: jax.random.KeyArray):
