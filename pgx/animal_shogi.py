@@ -430,20 +430,10 @@ def _point_to_location(point: int) -> Tuple[int, int]:
 def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
     new_array = array
     u, d, l, r = _is_side(point)
-    for i in range(3):
-        new_array = jax.lax.cond(
-            u, lambda: new_array.at[i, 0].set(0), lambda: new_array
-        )
-        new_array = jax.lax.cond(
-            d, lambda: new_array.at[i, 2].set(0), lambda: new_array
-        )
-    for i in range(4):
-        new_array = jax.lax.cond(
-            r, lambda: new_array.at[0, i].set(0), lambda: new_array
-        )
-        new_array = jax.lax.cond(
-            l, lambda: new_array.at[2, i].set(0), lambda: new_array
-        )
+    new_array = jax.lax.cond(u, lambda: new_array.at[:3, 0].set(0), lambda: new_array)
+    new_array = jax.lax.cond(d, lambda: new_array.at[:3, 2].set(0), lambda: new_array)
+    new_array = jax.lax.cond(r, lambda: new_array.at[0, :4].set(0), lambda: new_array)
+    new_array = jax.lax.cond(l, lambda: new_array.at[2, :4].set(0), lambda: new_array)
     return new_array
 
 
