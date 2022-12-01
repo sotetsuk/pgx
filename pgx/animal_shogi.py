@@ -820,13 +820,10 @@ def _filter_my_piece_move_actions(
     turn: int, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
     new_array = array
-    for i in range(12):
-        for j in range(9):
-            new_array = jax.lax.cond(
-                owner[i] == turn,
-                lambda: new_array.at[12 * j + i].set(0),
-                lambda: new_array,
-            )
+    ixs = jnp.arange(180)
+    new_array = jnp.where(
+        ((ixs // 12) < 9) & (owner[ixs % 12] == turn), 0, new_array
+    )
     return new_array
 
 
