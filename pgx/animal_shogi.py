@@ -875,19 +875,14 @@ def _filter_leave_check_actions(
     moves = _king_move(king_sq).reshape(12)
     for i in range(12):
         # 王手をかけている駒の位置以外への移動は王手放置
-        for j in range(15):
-            # 駒打ちのフラグは全て折る
-            new_array = jax.lax.cond(
-                j > 8,
-                lambda: new_array.at[12 * j + i].set(0),
-                lambda: new_array,
-            )
-            # 王手をかけている駒の場所以外への移動ははじく
-            new_array = jax.lax.cond(
-                check_piece[i] == 0,
-                lambda: new_array.at[12 * j + i].set(0),
-                lambda: new_array,
-            )
+
+        # 駒打ちのフラグは全て折る
+        new_array = jnp.where((jnp.arange(180) // 12) > 8, 0, new_array)
+        # 王手をかけている駒の場所以外への移動ははじく
+        new_array = jnp.where(
+            check_piece[jnp.arange(180) % 12] == 0, 0, new_array
+        )
+
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
         new_array = jax.lax.cond(
             moves[i] == 0,
