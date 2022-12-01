@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx.suzume_jong import _is_completed, init, _to_str, _validate, step, _to_base5, _hand_to_score
+from pgx.suzume_jong import _is_completed, init, _to_str, _validate, step, _to_base5, _hand_to_score, observe
 
 
 def test_to_base5():
@@ -484,3 +484,92 @@ def test_random_play():
  [1] 1 1 2 5 9   : 6 r*g 9 7 1 4 r*2 _  
 """
     assert results == expected
+
+
+def test_observe():
+    curr_player, state = init(jax.random.PRNGKey(1))
+    curr_player, state, r = step(state, jnp.int8(1))
+    print(_to_str(state))
+    obs = observe(state, player_id=jnp.int8(2))
+    assert obs.shape[0] == 15
+    assert obs.shape[1] == 11
+    assert jnp.all(obs[0] == jnp.bool_([0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0]))
+    assert jnp.all(obs[1] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[2] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[3] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[4] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0]))
+    assert jnp.all(obs[5] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[6] == jnp.bool_([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[7] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[8] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+
+    seed = 5
+    key = jax.random.PRNGKey(seed)
+    key, subkey = jax.random.split(key)
+    curr_player, state = init(subkey)
+    while not state.terminated:
+        legal_actions = jnp.where(state.legal_action_mask)[0]
+        key, subkey = jax.random.split(key)
+        action = jax.random.choice(subkey, legal_actions)
+        curr_player, state, r = step(state, action)
+    print(_to_str(state))
+    """
+    [terminated] dora: 3
+     [0] 1 4 5 6 8   : 7 r*_ _ _ _ _ _ _ _  
+     [2] 4 6*8 9*9   : 3 3 _ _ _ _ _ _ _ _  
+     [1] 1 2*3 4 5   : r*_ _ _ _ _ _ _ _ _  
+    """
+    obs = observe(state, player_id=jnp.int8(0))
+    assert obs.shape[0] == 15
+    assert obs.shape[1] == 11
+    assert jnp.all(obs[0] == jnp.bool_([1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0]))
+    assert jnp.all(obs[1] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[2] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[3] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[4] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[5] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[6] == jnp.bool_([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1]))
+    assert jnp.all(obs[7] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[8] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[9] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[10] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[11] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[12] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[13] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[14] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    obs = observe(state, player_id=jnp.int8(1))
+    assert obs.shape[0] == 15
+    assert obs.shape[1] == 11
+    assert jnp.all(obs[0] == jnp.bool_([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[1] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[2] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[3] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[4] == jnp.bool_([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[5] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[6] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[7] == jnp.bool_([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1]))
+    assert jnp.all(obs[8] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[9] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[10] == jnp.bool_([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]))
+    assert jnp.all(obs[11] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[12] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[13] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[14] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    obs = observe(state, player_id=jnp.int8(2))
+    assert obs.shape[0] == 15
+    assert obs.shape[1] == 11
+    assert jnp.all(obs[0] == jnp.bool_([0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0]))
+    assert jnp.all(obs[1] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0]))
+    assert jnp.all(obs[2] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[3] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[4] == jnp.bool_([0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0]))
+    assert jnp.all(obs[5] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[6] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[7] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[8] == jnp.bool_([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1]))
+    assert jnp.all(obs[9] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[10] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[11] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+    assert jnp.all(obs[12] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
+    assert jnp.all(obs[13] == jnp.bool_([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]))
+    assert jnp.all(obs[14] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
