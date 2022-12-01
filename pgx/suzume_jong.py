@@ -322,6 +322,7 @@ def step(state: State, action: jnp.ndarray):
     )
 
 
+@jax.jit
 def observe(state: State, player_id: jnp.ndarray, observe_all=False):
     """
     * [binary 4x11] tile type in the player's hand (private info)
