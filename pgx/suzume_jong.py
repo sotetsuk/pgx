@@ -323,7 +323,7 @@ def step(state: State, action: jnp.ndarray):
 
 
 @jax.jit
-def observe(state: State, player_id: jnp.ndarray, observe_all=False):
+def observe(state: State, player_id: jnp.ndarray):
     """
     * [binary 4x11] tile type in the player's hand (private info)
     * [binary 1x11] has red doras
@@ -343,30 +343,99 @@ def observe(state: State, player_id: jnp.ndarray, observe_all=False):
     obs = obs.at[2].set(jnp.where(state.hands[turn] >= 3, ones, zeros))
     obs = obs.at[3].set(jnp.where(state.hands[turn] >= 4, ones, zeros))
     # red dora
-    obs = obs.at[4].set(jnp.where(state.n_red_in_hands[turn] >= 1, ones, zeros))
+    obs = obs.at[4].set(
+        jnp.where(state.n_red_in_hands[turn] >= 1, ones, zeros)
+    )
     # dora
     obs = obs.at[5, state.dora].set(True)
     # all discards
-    obs = obs.at[6].set(lax.fori_loop(
-        0, MAX_RIVER_LENGTH, lambda i, x: lax.cond(state.rivers[turn, i] >= 0, lambda: x.at[state.rivers[turn, i]].set(True), lambda: x), zeros
-    ))
-    obs = obs.at[7].set(lax.fori_loop(
-        0, MAX_RIVER_LENGTH, lambda i, x: lax.cond(state.rivers[(turn+1)%N_PLAYER, i] >= 0, lambda: x.at[state.rivers[(turn+1)%N_PLAYER, i]].set(True), lambda: x), zeros
-    ))
-    obs = obs.at[8].set(lax.fori_loop(
-        0, MAX_RIVER_LENGTH, lambda i, x: lax.cond(state.rivers[(turn+2)%N_PLAYER, i] >= 0, lambda: x.at[state.rivers[(turn+2)%N_PLAYER, i]].set(True), lambda: x), zeros
-    ))
+    obs = obs.at[6].set(
+        lax.fori_loop(
+            0,
+            MAX_RIVER_LENGTH,
+            lambda i, x: lax.cond(
+                state.rivers[turn, i] >= 0,
+                lambda: x.at[state.rivers[turn, i]].set(True),
+                lambda: x,
+            ),
+            zeros,
+        )
+    )
+    obs = obs.at[7].set(
+        lax.fori_loop(
+            0,
+            MAX_RIVER_LENGTH,
+            lambda i, x: lax.cond(
+                state.rivers[(turn + 1) % N_PLAYER, i] >= 0,
+                lambda: x.at[state.rivers[(turn + 1) % N_PLAYER, i]].set(True),
+                lambda: x,
+            ),
+            zeros,
+        )
+    )
+    obs = obs.at[8].set(
+        lax.fori_loop(
+            0,
+            MAX_RIVER_LENGTH,
+            lambda i, x: lax.cond(
+                state.rivers[(turn + 2) % N_PLAYER, i] >= 0,
+                lambda: x.at[state.rivers[(turn + 2) % N_PLAYER, i]].set(True),
+                lambda: x,
+            ),
+            zeros,
+        )
+    )
     # last N discards (N=3)
     zeros = jnp.zeros(MAX_RIVER_LENGTH, dtype=jnp.bool_)
     ones = jnp.ones(MAX_RIVER_LENGTH, dtype=jnp.bool_)
-    ix = (jnp.where(state.rivers[(turn+1)%N_PLAYER] >= 0, ones, zeros)).sum()
-    obs = lax.cond(ix - 1 >= 0, lambda: obs.at[ 9, state.rivers[(turn+1)%N_PLAYER, ix - 1]].set(True), lambda: obs)
-    obs = lax.cond(ix - 2 >= 0, lambda: obs.at[10, state.rivers[(turn+1)%N_PLAYER, ix - 2]].set(True), lambda: obs)
-    obs = lax.cond(ix - 3 >= 0, lambda: obs.at[11, state.rivers[(turn+1)%N_PLAYER, ix - 3]].set(True), lambda: obs)
-    ix = (jnp.where(state.rivers[(turn+2)%N_PLAYER] >= 0, ones, zeros)).sum()
-    obs = lax.cond(ix - 1 >= 0, lambda: obs.at[12, state.rivers[(turn+2)%N_PLAYER, ix - 1]].set(True), lambda: obs)
-    obs = lax.cond(ix - 2 >= 0, lambda: obs.at[13, state.rivers[(turn+2)%N_PLAYER, ix - 2]].set(True), lambda: obs)
-    obs = lax.cond(ix - 3 >= 0, lambda: obs.at[14, state.rivers[(turn+2)%N_PLAYER, ix - 3]].set(True), lambda: obs)
+    ix = (
+        jnp.where(state.rivers[(turn + 1) % N_PLAYER] >= 0, ones, zeros)
+    ).sum()
+    obs = lax.cond(
+        ix - 1 >= 0,
+        lambda: obs.at[9, state.rivers[(turn + 1) % N_PLAYER, ix - 1]].set(
+            True
+        ),
+        lambda: obs,
+    )
+    obs = lax.cond(
+        ix - 2 >= 0,
+        lambda: obs.at[10, state.rivers[(turn + 1) % N_PLAYER, ix - 2]].set(
+            True
+        ),
+        lambda: obs,
+    )
+    obs = lax.cond(
+        ix - 3 >= 0,
+        lambda: obs.at[11, state.rivers[(turn + 1) % N_PLAYER, ix - 3]].set(
+            True
+        ),
+        lambda: obs,
+    )
+    ix = (
+        jnp.where(state.rivers[(turn + 2) % N_PLAYER] >= 0, ones, zeros)
+    ).sum()
+    obs = lax.cond(
+        ix - 1 >= 0,
+        lambda: obs.at[12, state.rivers[(turn + 2) % N_PLAYER, ix - 1]].set(
+            True
+        ),
+        lambda: obs,
+    )
+    obs = lax.cond(
+        ix - 2 >= 0,
+        lambda: obs.at[13, state.rivers[(turn + 2) % N_PLAYER, ix - 2]].set(
+            True
+        ),
+        lambda: obs,
+    )
+    obs = lax.cond(
+        ix - 3 >= 0,
+        lambda: obs.at[14, state.rivers[(turn + 2) % N_PLAYER, ix - 3]].set(
+            True
+        ),
+        lambda: obs,
+    )
     return obs
 
 
