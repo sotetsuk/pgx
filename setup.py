@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="pgx",
-    version="0.0.6",
+    version="0.0.7",
     description="",
     url="",
     author="Sotetsu KOYAMADA",

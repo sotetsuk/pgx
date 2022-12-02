@@ -27,7 +27,7 @@ jobs:
         --outdir dist/
         .
     - name: publish
-      if: github.event_name == 'release' && github.event.action == 'published'
+      if: startsWith(github.ref, 'refs/tags')
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
