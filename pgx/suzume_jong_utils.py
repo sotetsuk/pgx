@@ -6,23 +6,7 @@ from typing import Optional, Union
 import svgwrite  # type: ignore
 from svgwrite import cm
 
-from .suzume_jong import NUM_TILE_TYPES, State, _tile_type_to_str
-
-NUM_TO_CHAR = ["a", "b", "c", "d", "e", "f", "g", "h"]
-PIECES = [
-    "P",
-    "N",
-    "B",
-    "R",
-    "Q",
-    "K",
-    "wP",
-    "wN",
-    "wB",
-    "wR",
-    "wQ",
-    "wK",
-]  # k"N"ight
+from .suzume_jong import NUM_TILE_TYPES, NUM_TILES, State, _tile_type_to_str
 
 
 @dataclass
@@ -33,6 +17,7 @@ class VisualizerConfig:
     p2_outline: str = "black"  # ドラ表示部の囲み線
     background_color: str = "white"
     grid_color: str = "black"  # 手牌の囲み線
+    text_color: str = "black"
 
 
 class Visualizer:
@@ -93,21 +78,17 @@ class Visualizer:
             color_mode is None and self.color_mode == "dark"
         ) or color_mode == "dark":
             color_set = VisualizerConfig(
-                "white",
-                "gray",
+                "lightgray",
+                "dimgray",
                 "#404040",
                 "gray",
                 "#202020",
-                "silver",
+                "darkgray",
+                "whitesmoke",
             )
         else:
             color_set = VisualizerConfig(
-                "white",
-                "white",
-                "gray",
-                "white",
-                "white",
-                "silver",
+                "white", "white", "gray", "white", "white", "silver", "black"
             )
 
         dwg = svgwrite.Drawing(
@@ -231,7 +212,20 @@ class Visualizer:
         board_g = self._set_piece(
             6.5, 1, state.dora, False, dwg, board_g, color_set
         )
-
+        # wall
+        board_g = self._set_piece(6.4, 3, -1, False, dwg, board_g, color_set)
+        board_g.add(
+            dwg.text(
+                text=f"× {NUM_TILES - state.draw_ix-1}",
+                insert=(
+                    7.5 * cm,
+                    3.65 * cm,
+                ),
+                fill=color_set.text_color,
+                font_size=f"{GRID_SIZE*17}px",
+                font_family="serif",
+            )
+        )
         board_g.translate(0, GRID_SIZE * 20)  # no units allowed
         dwg.add(board_g)
 
@@ -268,6 +262,7 @@ class Visualizer:
         PATH.update(
             {f"{i+1}r": f"images/suzume_jong/{i+1}pr.svg" for i in range(9)}
         )
+        PATH["0"] = "images/suzume_jong/b.svg"
         PATH["g"] = "images/suzume_jong/gd.svg"
         PATH["r"] = "images/suzume_jong/rd.svg"
 
