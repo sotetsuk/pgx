@@ -158,7 +158,7 @@ class Visualizer:
 
             # hands
             x = 5.0
-            y = 8
+            y = 8.0
             for type, num in zip(
                 range(NUM_TILE_TYPES),
                 state.hands[player_id],
