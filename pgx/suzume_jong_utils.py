@@ -264,9 +264,10 @@ class Visualizer:
         type_str = _tile_type_to_str(_type)
         if _is_red and type_str != "g" and type_str != "r":
             type_str += "r"
-        PATH = {
-            f"{i+1}": f"images/suzume_jong/{i+1}p.svg" for i in range(9)
-        } | {f"{i+1}r": f"images/suzume_jong/{i+1}pr.svg" for i in range(9)}
+        PATH = {f"{i+1}": f"images/suzume_jong/{i+1}p.svg" for i in range(9)}
+        PATH.update(
+            {f"{i+1}r": f"images/suzume_jong/{i+1}pr.svg" for i in range(9)}
+        )
         PATH["g"] = "images/suzume_jong/gd.svg"
         PATH["r"] = "images/suzume_jong/rd.svg"
 
