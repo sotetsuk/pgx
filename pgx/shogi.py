@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -43,13 +44,13 @@ class ShogiState:
 
 def init() -> ShogiState:
     board = _make_init_board()
-    state = ShogiState(board=board)
+    state = ShogiState(board=board, hand=np.zeros(14, dtype=np.int32))
     return _init_legal_actions(state)
 
 
 def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
-    s = state
+    s = copy.deepcopy(state)
     legal_actions = _legal_actions(s)
     _action = _dlaction_to_action(action, s)
     # actionのfromが盤外の場合は非合法手なので負け
@@ -283,15 +284,14 @@ for i in range(81):
     POINT_MOVES[i][11] = POINT_MOVES[i][7]
     POINT_MOVES[i][12] = POINT_MOVES[i][7]
     POINT_MOVES[i][15] = _action_board(_pawn_move(1), i)
-    POINT_MOVES[i][16] = _action_board(_knight_move(1), i)
-    POINT_MOVES[i][17] = _action_board(_silver_move(1), i)
-    POINT_MOVES[i][20] = _action_board(_gold_move(1), i)
-    POINT_MOVES[i][21] = _action_board(_king_move(), i)
-    POINT_MOVES[i][22] = POINT_MOVES[i][20]
-    POINT_MOVES[i][23] = POINT_MOVES[i][20]
-    POINT_MOVES[i][24] = POINT_MOVES[i][20]
-    POINT_MOVES[i][25] = POINT_MOVES[i][20]
-
+    POINT_MOVES[i][17] = _action_board(_knight_move(1), i)
+    POINT_MOVES[i][18] = _action_board(_silver_move(1), i)
+    POINT_MOVES[i][21] = _action_board(_gold_move(1), i)
+    POINT_MOVES[i][22] = _action_board(_king_move(), i)
+    POINT_MOVES[i][23] = POINT_MOVES[i][21]
+    POINT_MOVES[i][24] = POINT_MOVES[i][21]
+    POINT_MOVES[i][25] = POINT_MOVES[i][21]
+    POINT_MOVES[i][26] = POINT_MOVES[i][21]
 
 
 # dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
@@ -501,10 +501,7 @@ def _owner(piece: int) -> int:
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
 def _board_status(state: ShogiState) -> np.ndarray:
-    board = np.zeros(81, dtype=np.int32)
-    for i in range(81):
-        board[i] = _piece_type(state, i)
-    return board
+    return state.board.argmax(axis=0)
 
 
 # 駒の持ち主の判定
@@ -651,8 +648,12 @@ def _dragon_move(bs: np.ndarray, point: int) -> np.ndarray:
 
 # 駒種と位置から到達できる場所を返す
 def _piece_moves(bs: np.ndarray, piece: int, point: int) -> np.ndarray:
-    turn = _owner(piece)
     moves = POINT_MOVES[point][piece]
+    # 香車の動き
+    if piece == 2:
+        moves = _lance_move(bs, point, 0)
+    if piece == 16:
+        moves = _lance_move(bs, point, 1)
     # 角の動き
     if piece == 5 or piece == 19:
         moves = _bishop_move(bs, point)
@@ -712,7 +713,7 @@ def _create_piece_actions(piece: int, _from: int) -> np.ndarray:
 
 # actionを追加する
 def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
-    #for i in range(2754):
+    # for i in range(2754):
     #    if add_array[i] == 1:
     #        new_array[i] = 1
     return np.where(add_array == 1, 1, origin_array)
