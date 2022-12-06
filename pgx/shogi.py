@@ -915,9 +915,9 @@ def _filter_occupied_drop_actions(
 # 自殺手や反則手はここでは除かない
 def _legal_actions(state: ShogiState) -> np.ndarray:
     if state.turn == 0:
-        action_array = copy.deepcopy(state.legal_actions_black)
+        action_array = state.legal_actions_black
     else:
-        action_array = copy.deepcopy(state.legal_actions_white)
+        action_array = state.legal_actions_white
     bs = _board_status(state)
     own = _pieces_owner(state)
     for i in range(81):
@@ -1029,7 +1029,7 @@ def _is_stuck(state: ShogiState) -> bool:
 def _up_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     # 上方向のピン
     u = king_point
     u_num = 0
@@ -1077,7 +1077,7 @@ def _up_pin(
 def _up_left_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     ul = king_point
     ul_num = 0
     ul_flag = False
@@ -1106,7 +1106,7 @@ def _up_left_pin(
 def _up_right_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     ur = king_point
     ur_num = 0
     ur_piece = -1
@@ -1139,7 +1139,7 @@ def _up_right_pin(
 def _left_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     l_ = king_point
     l_num = 0
     l_flag = False
@@ -1169,7 +1169,7 @@ def _left_pin(
 def _right_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     r = king_point
     r_num = 0
     r_flag = False
@@ -1199,7 +1199,7 @@ def _right_pin(
 def _down_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     d = king_point
     d_num = 0
     d_piece = -1
@@ -1241,7 +1241,7 @@ def _down_pin(
 def _down_left_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     dl = king_point
     dl_num = 0
     dl_flag = False
@@ -1270,7 +1270,7 @@ def _down_left_pin(
 def _down_right_pin(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     dr = king_point
     dr_num = 0
     dr_piece = -1
@@ -1318,7 +1318,7 @@ def _pin(state: ShogiState):
 
 # 特定の方向の動きだけを除いたactionを生成する
 def _eliminate_direction(actions: np.ndarray, direction: int):
-    new_array = copy.deepcopy(actions)
+    new_array = actions
     # 2方向と成・不成の4方向のフラグを折る
     dir1 = 0
     dir2 = 0
