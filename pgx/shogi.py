@@ -1,4 +1,3 @@
-import copy
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -50,7 +49,7 @@ def init() -> ShogiState:
 
 def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
-    s = copy.deepcopy(state)
+    s = state
     legal_actions = _legal_actions(s)
     _action = _dlaction_to_action(action, s)
     # actionのfromが盤外の場合は非合法手なので負け
@@ -452,7 +451,7 @@ def _move(
     state: ShogiState,
     action: ShogiAction,
 ) -> ShogiState:
-    s = copy.deepcopy(state)
+    s = state
     s.board[action.piece][action.from_] = 0
     s.board[0][action.from_] = 1
     s.board[action.captured][action.to] = 0
@@ -466,7 +465,7 @@ def _move(
 
 
 def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
-    s = copy.deepcopy(state)
+    s = state
     s.hand[_piece_to_hand(action.piece)] -= 1
     s.board[action.piece][action.to] = 1
     s.board[0][action.to] = 0
@@ -494,7 +493,7 @@ def _point_to_location(point: int) -> Tuple[int, int]:
 
 
 def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     u, d, l, r = _is_side(point)
     u2, d2 = _is_second_line(point)
     # (4, 4)での動きを基準にはみ出すところをカットする
@@ -514,7 +513,7 @@ def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
 
 
 def _action_board(array: np.ndarray, point: int) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     y, t = _point_to_location(point)
     new_array = _cut_outside(new_array, point)
     return np.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
@@ -727,7 +726,7 @@ def _create_piece_actions(piece: int, _from: int) -> np.ndarray:
 
 # actionを追加する
 def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
-    new_array = copy.deepcopy(origin_array)
+    new_array = origin_array
     for i in range(2754):
         if add_array[i] == 1:
             new_array[i] = 1
@@ -738,7 +737,7 @@ def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
 def _filter_action(
     filter_array: np.ndarray, origin_array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(origin_array)
+    new_array = origin_array
     for i in range(2754):
         if filter_array[i] == 1:
             new_array[i] = 0
@@ -747,7 +746,7 @@ def _filter_action(
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
 def _add_move_actions(piece: int, _from: int, array: np.ndarray) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     actions = _create_piece_actions(piece, _from)
     for i in range(2754):
         if actions[i] == 1:
@@ -759,7 +758,7 @@ def _add_move_actions(piece: int, _from: int, array: np.ndarray) -> np.ndarray:
 def _filter_move_actions(
     piece: int, _from: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     actions = _create_piece_actions(piece, _from)
     for i in range(2754):
         if actions[i] == 1:
@@ -769,7 +768,7 @@ def _filter_move_actions(
 
 # 駒打ちのactionを追加する
 def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     direction = _hand_to_direction(piece)
     for i in range(81):
         action = _dlshogi_action(direction, i)
@@ -779,7 +778,7 @@ def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
 
 # 駒打ちのactionのフラグを折る
 def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     direction = _hand_to_direction(piece)
     for i in range(81):
         action = _dlshogi_action(direction, i)
@@ -790,7 +789,7 @@ def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
 # stateからblack,white両方のlegal_actionsを生成する
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
 def _init_legal_actions(state: ShogiState) -> ShogiState:
-    s = copy.deepcopy(state)
+    s = state
     bs = _board_status(s)
     # 移動の追加
     for i in range(81):
@@ -822,7 +821,7 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
 def _update_legal_move_actions(
     state: ShogiState, action: ShogiAction
 ) -> ShogiState:
-    s = copy.deepcopy(state)
+    s = state
     if s.turn == 0:
         player_actions = s.legal_actions_black
         enemy_actions = s.legal_actions_white
@@ -864,7 +863,7 @@ def _update_legal_move_actions(
 def _update_legal_drop_actions(
     state: ShogiState, action: ShogiAction
 ) -> ShogiState:
-    s = copy.deepcopy(state)
+    s = state
     if s.turn == 0:
         player_actions = s.legal_actions_black
     else:
@@ -889,7 +888,7 @@ def _update_legal_drop_actions(
 def _filter_my_piece_move_actions(
     turn: int, owner: np.ndarray, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     for i in range(81):
         if owner[i] != turn:
             continue
@@ -902,7 +901,7 @@ def _filter_my_piece_move_actions(
 def _filter_occupied_drop_actions(
     turn: int, owner: np.ndarray, array: np.ndarray
 ) -> np.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     for i in range(81):
         if owner[i] == 2:
             continue
