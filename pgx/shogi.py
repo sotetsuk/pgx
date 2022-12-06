@@ -224,6 +224,76 @@ def _king_move() -> np.ndarray:
     return array
 
 
+def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
+    is_up = point % 9 == 0
+    is_down = point % 9 == 8
+    is_left = point >= 72
+    is_right = point <= 8
+    return is_up, is_down, is_left, is_right
+
+
+# 桂馬用
+def _is_second_line(point: int) -> Tuple[bool, bool]:
+    u = point % 9 <= 1
+    d = point % 9 >= 7
+    return u, d
+
+
+# point(0~80)を座標((0, 0)~(8, 8))に変換
+def _point_to_location(point: int) -> Tuple[int, int]:
+    return point // 9, point % 9
+
+
+def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
+    new_array = array
+    u, d, l, r = _is_side(point)
+    u2, d2 = _is_second_line(point)
+    # (4, 4)での動きを基準にはみ出すところをカットする
+    if u:
+        new_array[:, 3] *= 0
+    if d:
+        new_array[:, 5] *= 0
+    if r:
+        new_array[3, :] *= 0
+    if l:
+        new_array[5, :] *= 0
+    if u2:
+        new_array[:, 2] *= 0
+    if d2:
+        new_array[:, 6] *= 0
+    return new_array
+
+
+def _action_board(array: np.ndarray, point: int) -> np.ndarray:
+    new_array = array
+    y, t = _point_to_location(point)
+    new_array = _cut_outside(new_array, point)
+    return np.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
+
+
+POINT_MOVES = np.zeros((81, 29, 81), dtype=np.int32)
+for i in range(81):
+    POINT_MOVES[i][1] = _action_board(_pawn_move(0), i)
+    POINT_MOVES[i][3] = _action_board(_knight_move(0), i)
+    POINT_MOVES[i][4] = _action_board(_silver_move(0), i)
+    POINT_MOVES[i][7] = _action_board(_gold_move(0), i)
+    POINT_MOVES[i][8] = _action_board(_king_move(), i)
+    POINT_MOVES[i][9] = POINT_MOVES[i][7]
+    POINT_MOVES[i][10] = POINT_MOVES[i][7]
+    POINT_MOVES[i][11] = POINT_MOVES[i][7]
+    POINT_MOVES[i][12] = POINT_MOVES[i][7]
+    POINT_MOVES[i][15] = _action_board(_pawn_move(1), i)
+    POINT_MOVES[i][16] = _action_board(_knight_move(1), i)
+    POINT_MOVES[i][17] = _action_board(_silver_move(1), i)
+    POINT_MOVES[i][20] = _action_board(_gold_move(1), i)
+    POINT_MOVES[i][21] = _action_board(_king_move(), i)
+    POINT_MOVES[i][22] = POINT_MOVES[i][20]
+    POINT_MOVES[i][23] = POINT_MOVES[i][20]
+    POINT_MOVES[i][24] = POINT_MOVES[i][20]
+    POINT_MOVES[i][25] = POINT_MOVES[i][20]
+
+
+
 # dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
 def _dlshogi_action(direction: int, to: int) -> int:
     return direction * 81 + to
@@ -472,53 +542,6 @@ def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
     return s
 
 
-def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
-    is_up = point % 9 == 0
-    is_down = point % 9 == 8
-    is_left = point >= 72
-    is_right = point <= 8
-    return is_up, is_down, is_left, is_right
-
-
-# 桂馬用
-def _is_second_line(point: int) -> Tuple[bool, bool]:
-    u = point % 9 <= 1
-    d = point % 9 >= 7
-    return u, d
-
-
-# point(0~80)を座標((0, 0)~(8, 8))に変換
-def _point_to_location(point: int) -> Tuple[int, int]:
-    return point // 9, point % 9
-
-
-def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
-    new_array = array
-    u, d, l, r = _is_side(point)
-    u2, d2 = _is_second_line(point)
-    # (4, 4)での動きを基準にはみ出すところをカットする
-    if u:
-        new_array[:, 3] *= 0
-    if d:
-        new_array[:, 5] *= 0
-    if r:
-        new_array[3, :] *= 0
-    if l:
-        new_array[5, :] *= 0
-    if u2:
-        new_array[:, 2] *= 0
-    if d2:
-        new_array[:, 6] *= 0
-    return new_array
-
-
-def _action_board(array: np.ndarray, point: int) -> np.ndarray:
-    new_array = array
-    y, t = _point_to_location(point)
-    new_array = _cut_outside(new_array, point)
-    return np.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
-
-
 def _lance_move(bs: np.ndarray, point: int, turn: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
     flag = True
@@ -629,61 +652,25 @@ def _dragon_move(bs: np.ndarray, point: int) -> np.ndarray:
 # 駒種と位置から到達できる場所を返す
 def _piece_moves(bs: np.ndarray, piece: int, point: int) -> np.ndarray:
     turn = _owner(piece)
-    piece_type = piece % 14
-    # 歩の動き
-    if piece_type == 1:
-        return _action_board(_pawn_move(turn), point)
-    # 香車の動き
-    if piece_type == 2:
-        return _lance_move(bs, point, turn)
-    # 桂馬の動き
-    if piece_type == 3:
-        return _action_board(_knight_move(turn), point)
-    # 銀の動き
-    if piece_type == 4:
-        return _action_board(_silver_move(turn), point)
+    moves = POINT_MOVES[point][piece]
     # 角の動き
-    if piece_type == 5:
-        return _bishop_move(bs, point)
+    if piece == 5 or piece == 19:
+        moves = _bishop_move(bs, point)
     # 飛車の動き
-    if piece_type == 6:
-        return _rook_move(bs, point)
-    # 金および成金の動き
-    if piece_type == 7 or 9 <= piece_type <= 12:
-        return _action_board(_gold_move(turn), point)
-    # 玉の動き
-    if piece_type == 8:
-        return _action_board(_king_move(), point)
+    if piece == 6 or piece == 20:
+        moves = _rook_move(bs, point)
     # 馬の動き
-    if piece_type == 13:
-        return _horse_move(bs, point)
+    if piece == 13 or piece == 27:
+        moves = _horse_move(bs, point)
     # 龍の動き
-    # piece_typeが0になってしまっているのでpieceで判別
     if piece == 14 or piece == 28:
-        return _dragon_move(bs, point)
-    return np.zeros(81, dtype=np.int32)
+        moves = _dragon_move(bs, point)
+    return moves
 
 
 # 小駒のactionのみを返すpiece_moves
 def _small_piece_moves(piece: int, point: int) -> np.ndarray:
-    turn = _owner(piece)
-    piece_type = piece % 14
-    # 歩の動き
-    if piece_type == 1:
-        return _action_board(_pawn_move(turn), point)
-    # 桂馬の動き
-    if piece_type == 3:
-        return _action_board(_knight_move(turn), point)
-    # 銀の動き
-    if piece_type == 4:
-        return _action_board(_silver_move(turn), point)
-    # 金および成金の動き
-    if piece_type == 7 or 9 <= piece_type <= 12:
-        return _action_board(_gold_move(turn), point)
-    # 玉の動き
-    if piece_type == 8:
-        return _action_board(_king_move(), point)
-    return np.zeros(81, dtype=np.int32)
+    return POINT_MOVES[point][piece]
 
 
 # 敵陣かどうか
@@ -720,50 +707,36 @@ def _create_actions(piece: int, _from: int, to: np.ndarray) -> np.ndarray:
 
 
 def _create_piece_actions(piece: int, _from: int) -> np.ndarray:
-    moves = _small_piece_moves(piece, _from)
-    return _create_actions(piece, _from, moves)
+    return _create_actions(piece, _from, POINT_MOVES[_from][piece])
 
 
 # actionを追加する
 def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
-    new_array = origin_array
-    for i in range(2754):
-        if add_array[i] == 1:
-            new_array[i] = 1
-    return new_array
+    #for i in range(2754):
+    #    if add_array[i] == 1:
+    #        new_array[i] = 1
+    return np.where(add_array == 1, 1, origin_array)
 
 
 # actionを削除する
 def _filter_action(
     filter_array: np.ndarray, origin_array: np.ndarray
 ) -> np.ndarray:
-    new_array = origin_array
-    for i in range(2754):
-        if filter_array[i] == 1:
-            new_array[i] = 0
-    return new_array
+    return np.where(filter_array == 1, 0, origin_array)
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
 def _add_move_actions(piece: int, _from: int, array: np.ndarray) -> np.ndarray:
-    new_array = array
     actions = _create_piece_actions(piece, _from)
-    for i in range(2754):
-        if actions[i] == 1:
-            new_array[i] = 1
-    return new_array
+    return np.where(actions == 1, 1, array)
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
 def _filter_move_actions(
     piece: int, _from: int, array: np.ndarray
 ) -> np.ndarray:
-    new_array = array
     actions = _create_piece_actions(piece, _from)
-    for i in range(2754):
-        if actions[i] == 1:
-            new_array[i] = 0
-    return new_array
+    return np.where(actions == 1, 0, array)
 
 
 # 駒打ちのactionを追加する
