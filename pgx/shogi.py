@@ -713,9 +713,6 @@ def _create_piece_actions(piece: int, _from: int) -> np.ndarray:
 
 # actionを追加する
 def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
-    # for i in range(2754):
-    #    if add_array[i] == 1:
-    #        new_array[i] = 1
     return np.where(add_array == 1, 1, origin_array)
 
 
@@ -744,9 +741,10 @@ def _filter_move_actions(
 def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    for i in range(81):
-        action = _dlshogi_action(direction, i)
-        new_array[action] = 1
+    np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 1)
+    #for i in range(81):
+        #action = _dlshogi_action(direction, i)
+        #new_array[action] = 1
     return new_array
 
 
@@ -754,9 +752,10 @@ def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
 def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    for i in range(81):
-        action = _dlshogi_action(direction, i)
-        new_array[action] = 0
+    np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 0)
+    #for i in range(81):
+    #    action = _dlshogi_action(direction, i)
+    #    new_array[action] = 0
     return new_array
 
 
@@ -866,8 +865,9 @@ def _filter_my_piece_move_actions(
     for i in range(81):
         if owner[i] != turn:
             continue
-        for j in range(20):
-            new_array[81 * j + i] = 0
+        np.put(new_array, np.arange(i, 1620 + i, 81), 0)
+        #for j in range(20):
+        #    new_array[81 * j + i] = 0
     return new_array
 
 
@@ -879,8 +879,9 @@ def _filter_occupied_drop_actions(
     for i in range(81):
         if owner[i] == 2:
             continue
-        for j in range(7):
-            new_array[81 * (j + 20 + 7 * turn) + i] = 0
+        np.put(new_array, np.arange(81 * (20 + 7 * turn) + i, 81 * (27 + 7 * turn) + i, 81), 0)
+        #for j in range(7):
+        #    new_array[81 * (j + 20 + 7 * turn) + i] = 0
     return new_array
 
 
