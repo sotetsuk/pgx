@@ -239,18 +239,18 @@ class Visualizer:
 
     def _set_piece(self, _x, _y, _type, _dwg, _dwg_g):
         PATH = {
-            "P": "images/chess/bPawn.svg",
-            "N": "images/chess/bKnight.svg",
-            "B": "images/chess/bBishop.svg",
-            "R": "images/chess/bRook.svg",
-            "Q": "images/chess/bQueen.svg",
-            "K": "images/chess/bKing.svg",
-            "wP": "images/chess/wPawn.svg",
-            "wN": "images/chess/wKnight.svg",
-            "wB": "images/chess/wBishop.svg",
-            "wR": "images/chess/wRook.svg",
-            "wQ": "images/chess/wQueen.svg",
-            "wK": "images/chess/wKing.svg",
+            "P": "images/bPawn.svg",
+            "N": "images/bKnight.svg",
+            "B": "images/bBishop.svg",
+            "R": "images/bRook.svg",
+            "Q": "images/bQueen.svg",
+            "K": "images/bKing.svg",
+            "wP": "images/wPawn.svg",
+            "wN": "images/wKnight.svg",
+            "wB": "images/wBishop.svg",
+            "wR": "images/wRook.svg",
+            "wQ": "images/wQueen.svg",
+            "wK": "images/wKing.svg",
         }
         file_path = PATH[_type]
         with open(
