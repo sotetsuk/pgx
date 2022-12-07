@@ -118,7 +118,9 @@ class Visualizer:
         p3_g = dwg.g()
 
         # pieces
-        for player_id, pieces_g in zip(range(3), [p1_g, p2_g, p3_g]):
+        for player_id, pieces_g in zip(
+            state.shuffled_players, [p1_g, p2_g, p3_g]
+        ):
             pieces_g = dwg.g()
 
             # border
@@ -170,12 +172,12 @@ class Visualizer:
                         x = 5.4
                         y += 1.1
 
-            if player_id == 1:
+            if player_id == state.shuffled_players[1]:
                 pieces_g.rotate(
                     angle=-90, center=(GRID_SIZE * 285, GRID_SIZE * 100)
                 )
 
-            elif player_id == 2:
+            elif player_id == state.shuffled_players[2]:
                 pieces_g.rotate(
                     angle=90, center=(GRID_SIZE * 285, GRID_SIZE * 100)
                 )
@@ -212,6 +214,34 @@ class Visualizer:
         board_g = self._set_piece(
             6.5, 1, state.dora, False, dwg, board_g, color_set
         )
+
+        board_g.add(
+            dwg.rect(
+                (7.5 * cm, 1.1 * cm),
+                (
+                    0.8 * cm,
+                    0.8 * cm,
+                ),
+                rx="2px",
+                ry="2px",
+                fill="whitesmoke",
+            )
+        )
+
+        with open(
+            os.path.join(
+                os.path.dirname(__file__), "images/suzume_jong/oya.svg"
+            ),
+            "rb",
+        ) as f:
+            b64_img = base64.b64encode(f.read())
+        img = dwg.image(
+            "data:image/svg+xml;base64," + b64_img.decode("ascii"),
+            insert=(7.65 * cm, 1.25 * cm),
+            size=(0.5 * cm, 0.5 * cm),
+        )
+        board_g.add(img)
+
         # wall
         board_g = self._set_piece(6.4, 3, -1, False, dwg, board_g, color_set)
         board_g.add(
