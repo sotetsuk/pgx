@@ -218,9 +218,7 @@ def _gold_move(turn: int) -> np.ndarray:
 
 def _king_move() -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    for i in range(3):
-        for j in range(3):
-            array[3 + i][3 + j] = 1
+    array[3:6, 3:6] = 1
     array[4][4] = 0
     return array
 
@@ -422,7 +420,7 @@ def _direction_to_from(
     _from = -1
     for i in range(9):
         f -= dif
-        if 80 >= f >= 0 and _from == -1 and _piece_type(state, f) != 0:
+        if _is_in_board(f) and _from == -1 and _piece_type(state, f) != 0:
             _from = f
     if direction >= 10:
         return _from, True
@@ -742,9 +740,6 @@ def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
     np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 1)
-    #for i in range(81):
-        #action = _dlshogi_action(direction, i)
-        #new_array[action] = 1
     return new_array
 
 
@@ -753,9 +748,6 @@ def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
     np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 0)
-    #for i in range(81):
-    #    action = _dlshogi_action(direction, i)
-    #    new_array[action] = 0
     return new_array
 
 
@@ -866,8 +858,6 @@ def _filter_my_piece_move_actions(
         if owner[i] != turn:
             continue
         np.put(new_array, np.arange(i, 1620 + i, 81), 0)
-        #for j in range(20):
-        #    new_array[81 * j + i] = 0
     return new_array
 
 
@@ -880,8 +870,6 @@ def _filter_occupied_drop_actions(
         if owner[i] == 2:
             continue
         np.put(new_array, np.arange(81 * (20 + 7 * turn) + i, 81 * (27 + 7 * turn) + i, 81), 0)
-        #for j in range(7):
-        #    new_array[81 * (j + 20 + 7 * turn) + i] = 0
     return new_array
 
 
@@ -896,7 +884,7 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
     bs = _board_status(state)
     own = _pieces_owner(state)
     for i in range(81):
-        piece = _piece_type(state, i)
+        piece = bs[i]
         # 香車の動きを追加
         if piece == 2 + 14 * state.turn:
             action_array = _add_action(
@@ -964,10 +952,7 @@ def _is_double_pawn(state: ShogiState) -> bool:
     is_double_pawn = False
     bs = _board_status(state)
     for i in range(9):
-        num_pawn = 0
-        for j in range(9):
-            if bs[9 * i + j] == 1 + state.turn * 14:
-                num_pawn += 1
+        num_pawn = np.count_nonzero(bs[9 * i:9 * (i + 1)] == 1 + state.turn * 14)
         if num_pawn >= 2:
             is_double_pawn = True
     return is_double_pawn
@@ -1315,11 +1300,10 @@ def _eliminate_direction(actions: np.ndarray, direction: int):
         dir2 = 4
     pro_dir1 = dir1 + 8
     pro_dir2 = dir2 + 8
-    for i in range(81):
-        new_array[dir1 * 81 + i] = 0
-        new_array[dir2 * 81 + i] = 0
-        new_array[pro_dir1 * 81 + i] = 0
-        new_array[pro_dir2 * 81 + i] = 0
+    new_array[dir1 * 81:(dir1 + 1) * 81] = 0
+    new_array[dir2 * 81:(dir2 + 1) * 81] = 0
+    new_array[pro_dir1 * 81:(pro_dir1 + 1) * 81] = 0
+    new_array[pro_dir2 * 81:(pro_dir2 + 1) * 81] = 0
     return new_array
 
 
@@ -1347,7 +1331,7 @@ def _king_escape(state: ShogiState) -> bool:
     effects = _kingless_effected_positions(
         bs, king_point, _another_color(state)
     )
-    king_moves = _small_piece_moves(8, king_point)
+    king_moves = POINT_MOVES[king_point][8]
     flag = False
     for i in range(81):
         if (
@@ -1360,19 +1344,12 @@ def _king_escape(state: ShogiState) -> bool:
 
 
 def _between(point1: int, point2: int) -> np.ndarray:
-    flag = True
     between = np.zeros(81, dtype=np.int32)
     direction = _point_to_direction(point1, point2, False, 0)
     if direction == -1:
         return between
     dif = _direction_to_dif(direction, 0)
-    p = point1
-    for i in range(7):
-        p += dif
-        if p == point2:
-            flag = False
-        if flag:
-            between[p] = 1
+    np.put(between, np.arange(point1 + dif, point2, dif), 1)
     return between
 
 
