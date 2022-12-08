@@ -790,8 +790,8 @@ def test_step():
     s1, r1, t = step(s, action1)
     assert r1 == -1
     assert t
-    # スティルメイトは最終手のstepの段階では勝敗判定を出さない
-    # 次の手がどのような手でも非合法手なので負けになる
+    # スティルメイト
+    print(s.hand)
     action1 = _action_to_dlaction(ShogiAction(True, 1, 2), 0)
     s1, r1, t = step(s, action1)
     assert r1 == 0
