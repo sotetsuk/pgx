@@ -425,10 +425,7 @@ def _is_same_declining(_from: int, to: int) -> bool:
 
 
 def _board_status(state: ChessState) -> np.ndarray:
-    bs = np.zeros(64, dtype=np.int32)
-    for i in range(64):
-        bs[i] = _piece_type(state, i)
-    return bs
+    return state.board.argmax(axis=0)
 
 
 def _owner(piece: int) -> int:
@@ -955,20 +952,12 @@ def _is_mate(state: ChessState, actions: np.ndarray) -> bool:
 # point1とpoint2の間の位置を返す
 # point2も含める
 def _between(point1: int, point2: int) -> np.ndarray:
-    flag = True
-    between = np.zeros(81, dtype=np.int32)
-    between[point2] = 1
+    between = np.zeros(64, dtype=np.int32)
     direction = _point_to_direction(point1, point2)
     if direction == -1:
         return between
     dif = _direction_to_dif(direction)
-    p = point1
-    for i in range(7):
-        p += dif
-        if p == point2:
-            flag = False
-        if flag:
-            between[p] = 1
+    np.put(between, np.arange(point1 + dif, point2 + dif, dif), 1)
     return between
 
 
@@ -982,9 +971,8 @@ def _is_mate_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
     kingless_bs[kp] = 0
     kingless_effects = _effected_positions(kingless_bs, _another_color(state))
     # king_moveが1かつkingless_effectsが0の地点があれば詰みではない
-    for i in range(64):
-        if king_move[i] == 1 and kingless_effects[i] == 0:
-            return False
+    if np.any(king_move * (kingless_effects + 1) == 1):
+        return False
     # Kingを動かさない回避手の存在判定
     # 2枚以上からCheckされている場合→詰み
     if num_check == 2:
@@ -997,9 +985,8 @@ def _is_mate_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
             continue
         pm = _piece_moves(bs, i, piece, pins)
         # checkしている駒やその駒との間に動ける駒がある場合、詰みでない
-        for j in range(64):
-            if bet[j] == 1 and pm[j] == 1:
-                return False
+        if np.any(bet * pm == 1):
+            return False
     return True
 
 
@@ -1011,9 +998,8 @@ def _is_mate_non_check(state: ChessState, kp: int, pins: np.ndarray) -> bool:
     kingless_bs[kp] = 0
     kingless_effects = _effected_positions(kingless_bs, _another_color(state))
     # king_moveが1かつkingless_effectsが0の地点があれば詰みではない
-    for i in range(64):
-        if king_move[i] == 1 and kingless_effects[i] == 0:
-            return False
+    if np.any(king_move * (kingless_effects + 1) == 1):
+        return False
     # Kingが逃げる手以外の合法手を調べる
     for i in range(64):
         piece = kingless_bs[i]
