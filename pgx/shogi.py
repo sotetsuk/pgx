@@ -869,7 +869,11 @@ def _filter_occupied_drop_actions(
     for i in range(81):
         if owner[i] == 2:
             continue
-        np.put(new_array, np.arange(81 * (20 + 7 * turn) + i, 81 * (27 + 7 * turn) + i, 81), 0)
+        np.put(
+            new_array,
+            np.arange(81 * (20 + 7 * turn) + i, 81 * (27 + 7 * turn) + i, 81),
+            0,
+        )
     return new_array
 
 
@@ -952,7 +956,9 @@ def _is_double_pawn(state: ShogiState) -> bool:
     is_double_pawn = False
     bs = _board_status(state)
     for i in range(9):
-        num_pawn = np.count_nonzero(bs[9 * i:9 * (i + 1)] == 1 + state.turn * 14)
+        num_pawn = np.count_nonzero(
+            bs[9 * i : 9 * (i + 1)] == 1 + state.turn * 14
+        )
         if num_pawn >= 2:
             is_double_pawn = True
     return is_double_pawn
@@ -1300,10 +1306,10 @@ def _eliminate_direction(actions: np.ndarray, direction: int):
         dir2 = 4
     pro_dir1 = dir1 + 8
     pro_dir2 = dir2 + 8
-    new_array[dir1 * 81:(dir1 + 1) * 81] = 0
-    new_array[dir2 * 81:(dir2 + 1) * 81] = 0
-    new_array[pro_dir1 * 81:(pro_dir1 + 1) * 81] = 0
-    new_array[pro_dir2 * 81:(pro_dir2 + 1) * 81] = 0
+    new_array[dir1 * 81 : (dir1 + 1) * 81] = 0
+    new_array[dir2 * 81 : (dir2 + 1) * 81] = 0
+    new_array[pro_dir1 * 81 : (pro_dir1 + 1) * 81] = 0
+    new_array[pro_dir2 * 81 : (pro_dir2 + 1) * 81] = 0
     return new_array
 
 
