@@ -94,8 +94,6 @@ def test_knight_move():
     for i in range(64):
         if i == 19 or i == 24:
             assert km2[i] == 1
-        elif i == 3 or i == 26:
-            assert km2[i] == 2
         else:
             assert km2[i] == 0
 
@@ -115,8 +113,6 @@ def test_bishop_move():
     for i in range(64):
         if i == 41 or i == 25 or i == 18:
             assert bm1[i] == 1
-        elif i == 50:
-            assert bm1[i] == 2
         else:
             assert bm1[i] == 0
 
@@ -395,12 +391,12 @@ def test_step():
 
 
 if __name__ == '__main__':
-    test_move()
-    test_pawn_move()
-    test_knight_move()
+    #test_move()
+    #test_pawn_move()
+    #test_knight_move()
     test_bishop_move()
-    test_rook_move()
-    test_king_move()
-    test_legal_action()
-    test_is_mate()
-    test_step()
+    #test_rook_move()
+    #test_king_move()
+    #test_legal_action()
+    #test_is_mate()
+    #test_step()
