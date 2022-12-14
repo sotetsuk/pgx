@@ -43,6 +43,7 @@ class Visualizer:
     def show_svg(
         self,
         states: Union[None, State] = None,
+        scale=1,
         color_mode: Optional[str] = None,
     ) -> None:
         import sys
@@ -72,8 +73,11 @@ class Visualizer:
     ):
         try:
             SIZE = len(states.curr_player)
-            WIDTH = int(math.sqrt(SIZE))
-            HEIGHT = WIDTH + 1
+            WIDTH = math.ceil(math.sqrt(SIZE - 0.1))
+            if SIZE - (WIDTH - 1) ** 2 >= WIDTH:
+                HEIGHT = WIDTH
+            else:
+                HEIGHT = WIDTH - 1
         except TypeError:
             SIZE = 1
             WIDTH = 1
