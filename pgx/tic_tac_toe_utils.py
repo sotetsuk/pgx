@@ -54,7 +54,7 @@ class Visualizer:
 
             display_svg(
                 self._to_dwg_from_states(
-                    states=states, color_mode=color_mode
+                    states=states, scale=scale, color_mode=color_mode
                 ).tostring(),
                 raw=True,
             )
@@ -69,6 +69,7 @@ class Visualizer:
         self,
         *,
         states,
+        scale=1,
         color_mode: Optional[str] = None,
     ):
         try:
@@ -100,13 +101,15 @@ class Visualizer:
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
-                (self.BOARD_WIDTH + 1) * self.GRID_SIZE * WIDTH,
-                (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT,
+                (self.BOARD_WIDTH + 1) * self.GRID_SIZE * WIDTH * scale,
+                (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT * scale,
             ),
         )
 
+        group = dwg.g()
+
         # background
-        dwg.add(
+        group.add(
             dwg.rect(
                 (0, 0),
                 (
@@ -123,7 +126,9 @@ class Visualizer:
                 self.GRID_SIZE * 1 / 2,
                 self.GRID_SIZE * 1 / 2,
             )
-            dwg.add(g)
+            group.add(g)
+            group.scale(scale)
+            dwg.add(group)
             return dwg
 
         for i in range(SIZE):
@@ -143,7 +148,9 @@ class Visualizer:
                 self.GRID_SIZE * 1 / 2
                 + (self.BOARD_WIDTH + 1) * self.GRID_SIZE * y,
             )
-            dwg.add(g)
+            group.add(g)
+        group.scale(scale)
+        dwg.add(group)
         return dwg
 
     def _make_dwg_group(
