@@ -125,7 +125,7 @@ class Visualizer:
         for i in range(SIZE):
             x = i % WIDTH
             y = i // WIDTH
-            _state = State(
+            _state = State(  # type:ignore
                 curr_player=states.curr_player[i],
                 legal_action_mask=states.legal_action_mask[i],
                 terminated=states.terminated[i],
