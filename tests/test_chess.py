@@ -268,6 +268,8 @@ def test_legal_action():
         elif i == 8 + 64 * 56 or i == 8 + 64 * 57 or i == 42 + 64 * 56 or i == 42 + 64 * 57 or i == 42 + 64 * 58 or i == 42 + 64 * 60 or i == 42 + 64 * 63:
             assert la[i] == 1
         else:
+            if la[i] == 1:
+                print(i)
             assert la[i] == 0
     bs = _board_status(s4)
     bs[26] = 11
@@ -391,8 +393,8 @@ if __name__ == '__main__':
     test_pawn_move()
     test_knight_move()
     test_bishop_move()
-    #test_rook_move()
-    #test_king_move()
-    #test_legal_action()
-    #test_is_mate()
-    #test_step()
+    test_rook_move()
+    test_king_move()
+    test_legal_action()
+    test_is_mate()
+    test_step()

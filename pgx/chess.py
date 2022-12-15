@@ -763,7 +763,7 @@ def _bishop_moves(
             else:
                 max_dis = np.max(dl_array)
         else:
-            np.min(dl_array[np.nonzero(dl_array * bs_one)]) - 1
+            max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)]) - 1
         dl_point = from_ - 9 * max_dis
         if (
             _is_in_board(dl_point - 9)

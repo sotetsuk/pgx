@@ -317,6 +317,54 @@ def _is_same_declining(_from: int, to: int) -> bool:
     return _from // 9 + _from % 9 == to // 9 + to % 9
 
 
+def _is_same_line(from_: int, to: int, direction: int):
+    dir = direction % 10
+    if dir == 0 or dir == 5:
+        return _is_same_column(from_, to)
+    elif dir == 3 or dir == 4:
+        return _is_same_row(from_, to)
+    elif dir == 2 or dir == 6:
+        return _is_same_rising(from_, to)
+    elif dir == 1 or dir == 7:
+        return _is_same_declining(from_, to)
+    else:
+        return False
+
+
+def _dis_direction_array(from_: int, turn: int, direction: int):
+    array = np.zeros(64, dtype=np.int32)
+    dif = _direction_to_dif(direction, turn)
+    to = from_ + dif
+    # for i in range(7):
+    #    to_ = from_ + dif * (1 + i)
+    #    if _is_in_board(to_) and _is_same_line(from_, to_, direction):
+    #        array[to_] = i + 1
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 1
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 2
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 3
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 4
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 5
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 6
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 7
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 8
+    return array
+
+
 # fromの座標とtoの座標からdirを生成
 def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
     direction = -1
@@ -560,6 +608,77 @@ def _bishop_move(bs: np.ndarray, point: int) -> np.ndarray:
     ul_flag = True
     dr_flag = True
     dl_flag = True
+    to = np.zeros(64, dtype=np.int32)
+    ur_array = _dis_direction_array(point, 5)
+    ul_array = _dis_direction_array(point, 6)
+    dr_array = _dis_direction_array(point, 7)
+    dl_array = _dis_direction_array(point, 4)
+    bs_one = np.where(bs == 0, 0, 1)
+    if ur_flag:
+        if np.all(bs_one * ur_array == 0):
+            if np.all(ur_array == 0):
+                max_dis = 0
+            else:
+                max_dis = np.max(ur_array)
+        else:
+            max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)]) - 1
+        ur_point = from_ + 9 * max_dis
+        if (
+                _is_in_board(ur_point + 9)
+                and _is_same_rising(from_, ur_point + 9)
+                and _owner(bs[ur_point + 9]) != turn
+        ):
+            ur_point += 9
+        np.put(to, np.arange(ur_point, from_, -9), 1)
+    if ul_flag:
+        if np.all(bs_one * ul_array == 0):
+            if np.all(ul_array == 0):
+                max_dis = 0
+            else:
+                max_dis = np.max(ul_array)
+        else:
+            max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)]) - 1
+        ul_point = from_ - 7 * max_dis
+        if (
+                _is_in_board(ul_point - 7)
+                and _is_same_declining(from_, ul_point - 7)
+                and _owner(bs[ul_point - 7]) != turn
+        ):
+            ul_point -= 7
+        np.put(to, np.arange(ul_point, from_, 7), 1)
+    if dr_flag:
+        if np.all(bs_one * dr_array == 0):
+            if np.all(dr_array == 0):
+                max_dis = 0
+            else:
+                max_dis = np.max(dr_array)
+        else:
+            max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)]) - 1
+        dr_point = from_ + 7 * max_dis
+        if (
+                _is_in_board(dr_point + 7)
+                and _is_same_declining(from_, dr_point + 7)
+                and _owner(bs[dr_point + 7]) != turn
+        ):
+            dr_point += 7
+        np.put(to, np.arange(dr_point, from_, -7), 1)
+    if dl_flag:
+        if np.all(bs_one * dl_array == 0):
+            if np.all(dl_array == 0):
+                max_dis = 0
+            else:
+                max_dis = np.max(dl_array)
+        else:
+            max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)]) - 1
+        dl_point = from_ - 9 * max_dis
+        if (
+                _is_in_board(dl_point - 9)
+                and _is_same_rising(from_, dl_point - 9)
+                and _owner(bs[dl_point - 9]) != turn
+        ):
+            dl_point -= 9
+        np.put(to, np.arange(dl_point, from_, 9), 1)
+    return to
     for i in range(8):
         ur = point - 10 * (1 + i)
         ul = point + 8 * (1 + i)
