@@ -556,14 +556,10 @@ def _white_pawn_moves(bs: np.ndarray, from_: int, pin: int) -> np.ndarray:
     if _is_in_board(from_ - 7) and (pin == 0 or pin == 4):
         if _owner(bs[from_ - 7]) == 1:
             to[from_ - 7] = 1
-        elif _owner(bs[from_ - 7]) == 0:
-            to[from_ - 7] = 2
     # 右斜め前
     if _is_in_board(from_ + 9) and (pin == 0 or pin == 3):
         if _owner(bs[from_ + 9]) == 1:
             to[from_ + 9] = 1
-        elif _owner(bs[from_ + 9]) == 0:
-            to[from_ + 9] = 2
     return to
 
 
@@ -722,11 +718,9 @@ def _bishop_moves(
         else:
             # ur_arrayの途中に駒が存在する
             max_dis = 7 - np.max(bs_one * ur_array)
-        print(max_dis)
         ur_point = from_ + 9 * max_dis
         if _is_in_board(ur_point + 9) and _is_same_rising(from_, ur_point + 9) and _owner(bs[ur_point + 9]) != turn:
             ur_point += 9
-        print(ur_point)
         np.put(to, np.arange(ur_point, from_, -9), 1)
     if ul_flag:
         if np.all(bs_one * ul_array == 0):
@@ -736,11 +730,9 @@ def _bishop_moves(
                 max_dis = 8 - np.min(ul_array[np.nonzero(ul_array)])
         else:
             max_dis = 7 - np.max(bs_one * ul_array)
-        print(max_dis)
         ul_point = from_ - 7 * max_dis
         if _is_in_board(ul_point - 7) and _is_same_declining(from_, ul_point - 7) and _owner(bs[ul_point - 7]) != turn:
             ul_point -= 7
-        print(ul_point)
         np.put(to, np.arange(ul_point, from_, 7), 1)
     if dr_flag:
         if np.all(bs_one * dr_array == 0):
@@ -751,11 +743,9 @@ def _bishop_moves(
         else:
             # ur_arrayの途中に駒が存在する
             max_dis = 7 - np.max(bs_one * dr_array)
-        print(max_dis)
         dr_point = from_ + 7 * max_dis
         if _is_in_board(dr_point + 7) and _is_same_declining(from_, dr_point + 7) and _owner(bs[dr_point + 7]) != turn:
             dr_point += 7
-        print(dr_point)
         np.put(to, np.arange(dr_point, from_, -7), 1)
     if dl_flag:
         if np.all(bs_one * dl_array == 0):
@@ -766,11 +756,9 @@ def _bishop_moves(
         else:
             # ur_arrayの途中に駒が存在する
             max_dis = 7 - np.max(bs_one * dl_array)
-        print(max_dis)
         dl_point = from_ - 9 * max_dis
-        if _is_in_board(dl_point - 9) and _is_same_declining(from_, dl_point - 9) and _owner(bs[dl_point - 9]) != turn:
+        if _is_in_board(dl_point - 9) and _is_same_rising(from_, dl_point - 9) and _owner(bs[dl_point - 9]) != turn:
             dl_point -= 9
-        print(dl_point)
         np.put(to, np.arange(dl_point, from_, 9), 1)
     #for i in range(8):
     #    ur = from_ + 9 * (1 + i)
@@ -873,39 +861,95 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
     d_flag = pin == 0 or pin == 1
     r_flag = pin == 0 or pin == 2
     l_flag = pin == 0 or pin == 2
-    for i in range(8):
-        u = from_ + 1 * (1 + i)
-        d = from_ - 1 * (1 + i)
-        l_ = from_ - 8 * (1 + i)
-        r = from_ + 8 * (1 + i)
-        if u_flag and _is_in_board(u) and _is_same_column(from_, u):
-            if _owner(bs[u]) == turn:
-                to[u] = 2
+    u_array = _dis_direction_array(from_, 1)
+    d_array = _dis_direction_array(from_, 0)
+    r_array = _dis_direction_array(from_, 3)
+    l_array = _dis_direction_array(from_, 2)
+    bs_one = np.where(bs == 0, 0, 1)
+    if u_flag:
+        if np.all(bs_one * u_array == 0):
+            if np.all(u_array == 0):
+                max_dis = 0
             else:
-                to[u] = 1
-        if d_flag and _is_in_board(d) and _is_same_column(from_, d):
-            if _owner(bs[d]) == turn:
-                to[d] = 2
+                max_dis = 8 - np.min(u_array[np.nonzero(u_array)])
+        else:
+            # ur_arrayの途中に駒が存在する
+            max_dis = 7 - np.max(bs_one * u_array)
+        u_point = from_ + max_dis
+        if _is_in_board(u_point + 1) and _is_same_column(from_, u_point + 1) and _owner(bs[u_point + 1]) != turn:
+            u_point += 1
+        np.put(to, np.arange(u_point, from_, -1), 1)
+    if d_flag:
+        if np.all(bs_one * d_array == 0):
+            if np.all(d_array == 0):
+                max_dis = 0
             else:
-                to[d] = 1
-        if l_flag and _is_in_board(l_) and _is_same_row(from_, l_):
-            if _owner(bs[l_]) == turn:
-                to[l_] = 2
+                max_dis = 8 - np.min(d_array[np.nonzero(d_array)])
+        else:
+            max_dis = 7 - np.max(bs_one * d_array)
+        d_point = from_ - max_dis
+        if _is_in_board(d_point - 1) and _is_same_column(from_, d_point - 1) and _owner(bs[d_point - 1]) != turn:
+            d_point -= 1
+        np.put(to, np.arange(d_point, from_, 1), 1)
+    if r_flag:
+        if np.all(bs_one * r_array == 0):
+            if np.all(r_array == 0):
+                max_dis = 0
             else:
-                to[l_] = 1
-        if r_flag and _is_in_board(r) and _is_same_row(from_, r):
-            if _owner(bs[r]) == turn:
-                to[r] = 2
+                max_dis = 8 - np.min(r_array[np.nonzero(r_array)])
+        else:
+            # ur_arrayの途中に駒が存在する
+            max_dis = 7 - np.max(bs_one * r_array)
+        r_point = from_ + 8 * max_dis
+        if _is_in_board(r_point + 8) and _is_same_row(from_, r_point + 8) and _owner(bs[r_point + 8]) != turn:
+            r_point += 8
+        np.put(to, np.arange(r_point, from_, -8), 1)
+    if l_flag:
+        if np.all(bs_one * l_array == 0):
+            if np.all(l_array == 0):
+                max_dis = 0
             else:
-                to[r] = 1
-        if not _is_in_board(u) or bs[u] != 0:
-            u_flag = False
-        if not _is_in_board(d) or bs[d] != 0:
-            d_flag = False
-        if not _is_in_board(l_) or bs[l_] != 0:
-            l_flag = False
-        if not _is_in_board(r) or bs[r] != 0:
-            r_flag = False
+                max_dis = 8 - np.min(l_array[np.nonzero(l_array)])
+        else:
+            # ur_arrayの途中に駒が存在する
+            max_dis = 7 - np.max(bs_one * l_array)
+        l_point = from_ - 8 * max_dis
+        if _is_in_board(l_point - 8) and _is_same_row(from_, l_point - 8) and _owner(bs[l_point - 8]) != turn:
+            l_point -= 8
+        np.put(to, np.arange(l_point, from_, 8), 1)
+    #for i in range(8):
+    #    u = from_ + 1 * (1 + i)
+    #    d = from_ - 1 * (1 + i)
+    #    l_ = from_ - 8 * (1 + i)
+    #    r = from_ + 8 * (1 + i)
+    #    if u_flag and _is_in_board(u) and _is_same_column(from_, u):
+    #        if _owner(bs[u]) == turn:
+    #            to[u] = 2
+    #        else:
+    #            to[u] = 1
+    #    if d_flag and _is_in_board(d) and _is_same_column(from_, d):
+    #        if _owner(bs[d]) == turn:
+    #            to[d] = 2
+    #        else:
+    #            to[d] = 1
+    #    if l_flag and _is_in_board(l_) and _is_same_row(from_, l_):
+    #        if _owner(bs[l_]) == turn:
+    #            to[l_] = 2
+    #        else:
+    #            to[l_] = 1
+    #    if r_flag and _is_in_board(r) and _is_same_row(from_, r):
+    #        if _owner(bs[r]) == turn:
+    #            to[r] = 2
+    #        else:
+    #            to[r] = 1
+    #    if not _is_in_board(u) or bs[u] != 0:
+    #        u_flag = False
+    #    if not _is_in_board(d) or bs[d] != 0:
+    #        d_flag = False
+    #    if not _is_in_board(l_) or bs[l_] != 0:
+    #        l_flag = False
+    #    if not _is_in_board(r) or bs[r] != 0:
+    #        r_flag = False
     return to
 
 
@@ -973,44 +1017,28 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
     u, d, l_, r = _is_side(from_)
     if not u:
-        if _owner(bs[from_ + 1]) == turn:
-            to[from_ + 1] = 2
-        else:
+        if _owner(bs[from_ + 1]) != turn:
             to[from_ + 1] = 1
         if not l_:
-            if _owner(bs[from_ - 7]) == turn:
-                to[from_ - 7] = 2
-            else:
+            if _owner(bs[from_ - 7]) != turn:
                 to[from_ - 7] = 1
         if not r:
-            if _owner(bs[from_ + 9]) == turn:
-                to[from_ + 9] = 2
-            else:
+            if _owner(bs[from_ + 9]) != turn:
                 to[from_ + 9] = 1
     if not l_:
-        if _owner(bs[from_ - 8]) == turn:
-            to[from_ - 8] = 2
-        else:
+        if _owner(bs[from_ - 8]) != turn:
             to[from_ - 8] = 1
     if not r:
-        if _owner(bs[from_ + 8]) == turn:
-            to[from_ + 8] = 2
-        else:
+        if _owner(bs[from_ + 8]) != turn:
             to[from_ + 8] = 1
     if not d:
-        if _owner(bs[from_ - 1]) == turn:
-            to[from_ - 1] = 2
-        else:
+        if _owner(bs[from_ - 1]) != turn:
             to[from_ - 1] = 1
         if not l_:
-            if _owner(bs[from_ - 9]) == turn:
-                to[from_ - 9] = 2
-            else:
+            if _owner(bs[from_ - 9]) != turn:
                 to[from_ - 9] = 1
         if not r:
-            if _owner(bs[from_ + 7]) == turn:
-                to[from_ + 7] = 2
-            else:
+            if _owner(bs[from_ + 7]) != turn:
                 to[from_ + 7] = 1
     return to
 
@@ -1019,45 +1047,21 @@ def _king_effect(bs: np.ndarray, from_: int, turn: int):
     to = np.zeros(64, dtype=np.int32)
     u, d, l_, r = _is_side(from_)
     if not u:
-        if _owner(bs[from_ + 1]) == turn:
-            to[from_ + 1] = 2
-        else:
-            to[from_ + 1] = 1
+        to[from_ + 1] = 1
         if not l_:
-            if _owner(bs[from_ - 7]) == turn:
-                to[from_ - 7] = 2
-            else:
-                to[from_ - 7] = 1
+            to[from_ - 7] = 1
         if not r:
-            if _owner(bs[from_ + 9]) == turn:
-                to[from_ + 9] = 2
-            else:
-                to[from_ + 9] = 1
+            to[from_ + 9] = 1
     if not l_:
-        if _owner(bs[from_ - 8]) == turn:
-            to[from_ - 8] = 2
-        else:
-            to[from_ - 8] = 1
+        to[from_ - 8] = 1
     if not r:
-        if _owner(bs[from_ + 8]) == turn:
-            to[from_ + 8] = 2
-        else:
-            to[from_ + 8] = 1
+        to[from_ + 8] = 1
     if not d:
-        if _owner(bs[from_ - 1]) == turn:
-            to[from_ - 1] = 2
-        else:
-            to[from_ - 1] = 1
+        to[from_ - 1] = 1
         if not l_:
-            if _owner(bs[from_ - 9]) == turn:
-                to[from_ - 9] = 2
-            else:
-                to[from_ - 9] = 1
+            to[from_ - 9] = 1
         if not r:
-            if _owner(bs[from_ + 7]) == turn:
-                to[from_ + 7] = 2
-            else:
-                to[from_ + 7] = 1
+            to[from_ + 7] = 1
     return to
 
 

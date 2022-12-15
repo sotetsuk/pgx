@@ -1,6 +1,6 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
-    _is_mate, _effected_positions, _is_check
+    _is_mate, _effected_positions, _is_check, _is_legal_action, int_to_action
 import numpy as np
 import time
 
@@ -135,8 +135,6 @@ def test_rook_move():
     for i in range(64):
         if i == 33 or i == 34 or i == 24 or i == 16:
             assert rm1[i] == 1
-        elif i == 35 or i == 40:
-            assert rm1[i] == 2
         else:
             assert rm1[i] == 0
 
@@ -152,8 +150,6 @@ def test_king_move():
     for i in range(64):
         if i == 45 or i == 44 or i == 35 or i == 27 or i == 28:
             assert km[i] == 1
-        elif i == 29 or i == 37 or i == 43:
-            assert km[i] == 2
         else:
             assert km[i] == 0
 
@@ -305,6 +301,7 @@ def test_is_mate():
 
 def test_step():
     s = init()
+    i = 0
     m = [33 + 64 * 8, 38 + 64 * 5, 41 + 64 * 8, 36 + 64 * 49, 40 + 64 * 46, 31 + 64 * 52, 32 + 64 * 21, 14 + 64 * 5,
          19 + 64 * 48, 55 + 64 * 61, 48 + 64 * 56, 59 + 64 * 8, 25 + 64 * 7, 45 + 64 * 62, 42 + 64 * 63, 61 + 64 * 34,
          59 + 64 * 58, 22 + 64 * 6, 49 + 64 * 8, 60 + 64 * 58, 56 + 64 * 20, 21 + 64 * 34, 57 + 64 * 8, 52 + 64 * 7,
@@ -391,12 +388,12 @@ def test_step():
 
 
 if __name__ == '__main__':
-    #test_move()
-    #test_pawn_move()
-    #test_knight_move()
+    test_move()
+    test_pawn_move()
+    test_knight_move()
     test_bishop_move()
-    #test_rook_move()
-    #test_king_move()
-    #test_legal_action()
-    #test_is_mate()
-    #test_step()
+    test_rook_move()
+    test_king_move()
+    test_legal_action()
+    test_is_mate()
+    test_step()
