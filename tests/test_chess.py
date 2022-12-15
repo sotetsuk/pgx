@@ -301,7 +301,6 @@ def test_is_mate():
 
 def test_step():
     s = init()
-    i = 0
     m = [33 + 64 * 8, 38 + 64 * 5, 41 + 64 * 8, 36 + 64 * 49, 40 + 64 * 46, 31 + 64 * 52, 32 + 64 * 21, 14 + 64 * 5,
          19 + 64 * 48, 55 + 64 * 61, 48 + 64 * 56, 59 + 64 * 8, 25 + 64 * 7, 45 + 64 * 62, 42 + 64 * 63, 61 + 64 * 34,
          59 + 64 * 58, 22 + 64 * 6, 49 + 64 * 8, 60 + 64 * 58, 56 + 64 * 20, 21 + 64 * 34, 57 + 64 * 8, 52 + 64 * 7,
@@ -392,8 +391,8 @@ if __name__ == '__main__':
     test_pawn_move()
     test_knight_move()
     test_bishop_move()
-    test_rook_move()
-    test_king_move()
-    test_legal_action()
-    test_is_mate()
-    test_step()
+    #test_rook_move()
+    #test_king_move()
+    #test_legal_action()
+    #test_is_mate()
+    #test_step()

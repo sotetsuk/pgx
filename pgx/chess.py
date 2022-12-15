@@ -339,25 +339,25 @@ def _dis_direction_array(from_: int, direction: int):
     #    if _is_in_board(to_) and _is_same_line(from_, to_, direction):
     #        array[to_] = i + 1
     if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 7
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 6
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 5
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 4
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 3
+        array[to] = 1
     to += dif
     if _is_in_board(to) and _is_same_line(from_, to, direction):
         array[to] = 2
     to += dif
     if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 1
+        array[to] = 3
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 4
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 5
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 6
+    to += dif
+    if _is_in_board(to) and _is_same_line(from_, to, direction):
+        array[to] = 7
     return array
 
 
@@ -665,7 +665,7 @@ def _knight_moves(
     return to
 
 
-def _knight_effect(from_: int, turn: int):
+def _knight_effect(from_: int):
     to = np.zeros(64, dtype=np.int32)
     # pinされている場合は動けない
     u, d, l_, r = _is_side(from_)
@@ -710,14 +710,12 @@ def _bishop_moves(
     bs_one = np.where(bs == 0, 0, 1)
     if ur_flag:
         if np.all(bs_one * ur_array == 0):
-            # ur_arrayに被る駒が存在しない
             if np.all(ur_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(ur_array[np.nonzero(ur_array)])
+                max_dis = np.max(ur_array)
         else:
-            # ur_arrayの途中に駒が存在する
-            max_dis = 7 - np.max(bs_one * ur_array)
+            max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)]) - 1
         ur_point = from_ + 9 * max_dis
         if (
             _is_in_board(ur_point + 9)
@@ -731,9 +729,9 @@ def _bishop_moves(
             if np.all(ul_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(ul_array[np.nonzero(ul_array)])
+                max_dis = np.max(ul_array)
         else:
-            max_dis = 7 - np.max(bs_one * ul_array)
+            max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)]) - 1
         ul_point = from_ - 7 * max_dis
         if (
             _is_in_board(ul_point - 7)
@@ -747,10 +745,9 @@ def _bishop_moves(
             if np.all(dr_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(dr_array[np.nonzero(dr_array)])
+                max_dis = np.max(dr_array)
         else:
-            # ur_arrayの途中に駒が存在する
-            max_dis = 7 - np.max(bs_one * dr_array)
+            max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)]) - 1
         dr_point = from_ + 7 * max_dis
         if (
             _is_in_board(dr_point + 7)
@@ -764,10 +761,9 @@ def _bishop_moves(
             if np.all(dl_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(dl_array[np.nonzero(dl_array)])
+                max_dis = np.max(dl_array)
         else:
-            # ur_arrayの途中に駒が存在する
-            max_dis = 7 - np.max(bs_one * dl_array)
+            np.min(dl_array[np.nonzero(dl_array * bs_one)]) - 1
         dl_point = from_ - 9 * max_dis
         if (
             _is_in_board(dl_point - 9)
@@ -776,43 +772,10 @@ def _bishop_moves(
         ):
             dl_point -= 9
         np.put(to, np.arange(dl_point, from_, 9), 1)
-    # for i in range(8):
-    #    ur = from_ + 9 * (1 + i)
-    #    ul = from_ - 7 * (1 + i)
-    #    dr = from_ + 7 * (1 + i)
-    #    dl = from_ - 9 * (1 + i)
-    #    if ur_flag and _is_in_board(ur) and _is_same_rising(from_, ur):
-    #        if _owner(bs[ur]) == turn:
-    #            to[ur] = 2
-    #        else:
-    #            to[ur] = 1
-    #    if ul_flag and _is_in_board(ul) and _is_same_declining(from_, ul):
-    #        if _owner(bs[ul]) == turn:
-    #            to[ul] = 2
-    #        else:
-    #            to[ul] = 1
-    #    if dr_flag and _is_in_board(dr) and _is_same_declining(from_, dr):
-    #        if _owner(bs[dr]) == turn:
-    #            to[dr] = 2
-    #        else:
-    #            to[dr] = 1
-    #    if dl_flag and _is_in_board(dl) and _is_same_rising(from_, dl):
-    #        if _owner(bs[dl]) == turn:
-    #            to[dl] = 2
-    #        else:
-    #            to[dl] = 1
-    #    if not _is_in_board(ur) or bs[ur] != 0:
-    #        ur_flag = False
-    #    if not _is_in_board(ul) or bs[ul] != 0:
-    #        ul_flag = False
-    #    if not _is_in_board(dr) or bs[dr] != 0:
-    #        dr_flag = False
-    #    if not _is_in_board(dl) or bs[dl] != 0:
-    #        dl_flag = False
     return to
 
 
-def _bishop_effect(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
+def _bishop_effect(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
     ur_array = _dis_direction_array(from_, 5)
     ul_array = _dis_direction_array(from_, 6)
@@ -824,9 +787,9 @@ def _bishop_effect(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
         if np.all(ur_array == 0):
             max_dis = 0
         else:
-            max_dis = 8 - np.min(ur_array[np.nonzero(ur_array)])
+            max_dis = np.max(ur_array)
     else:
-        max_dis = 7 - np.max(bs_one * ur_array)
+        max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)]) - 1
     ur_point = from_ + 9 * max_dis
     if _is_in_board(ur_point + 9) and _is_same_rising(from_, ur_point + 9):
         ur_point += 9
@@ -835,9 +798,9 @@ def _bishop_effect(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
         if np.all(ul_array == 0):
             max_dis = 0
         else:
-            max_dis = 8 - np.min(ul_array[np.nonzero(ul_array)])
+            max_dis = np.max(ul_array)
     else:
-        max_dis = 7 - np.max(bs_one * ul_array)
+        max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)]) - 1
     ul_point = from_ - 7 * max_dis
     if _is_in_board(ul_point - 7) and _is_same_declining(from_, ul_point - 7):
         ul_point -= 7
@@ -846,10 +809,9 @@ def _bishop_effect(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
         if np.all(dr_array == 0):
             max_dis = 0
         else:
-            max_dis = 8 - np.min(dr_array[np.nonzero(dr_array)])
+            max_dis = np.max(dr_array)
     else:
-        # ur_arrayの途中に駒が存在する
-        max_dis = 7 - np.max(bs_one * dr_array)
+        max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)]) - 1
     dr_point = from_ + 7 * max_dis
     if _is_in_board(dr_point + 7) and _is_same_declining(from_, dr_point + 7):
         dr_point += 7
@@ -858,10 +820,9 @@ def _bishop_effect(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
         if np.all(dl_array == 0):
             max_dis = 0
         else:
-            max_dis = 8 - np.min(dl_array[np.nonzero(dl_array)])
+            max_dis = np.max(dl_array)
     else:
-        # ur_arrayの途中に駒が存在する
-        max_dis = 7 - np.max(bs_one * dl_array)
+        max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)]) - 1
     dl_point = from_ - 9 * max_dis
     if _is_in_board(dl_point - 9) and _is_same_declining(from_, dl_point - 9):
         dl_point -= 9
@@ -885,10 +846,9 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             if np.all(u_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(u_array[np.nonzero(u_array)])
+                max_dis = np.max(u_array)
         else:
-            # ur_arrayの途中に駒が存在する
-            max_dis = 7 - np.max(bs_one * u_array)
+            max_dis = np.min(u_array[np.nonzero(u_array * bs_one)]) - 1
         u_point = from_ + max_dis
         if (
             _is_in_board(u_point + 1)
@@ -902,9 +862,9 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             if np.all(d_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(d_array[np.nonzero(d_array)])
+                max_dis = np.max(d_array)
         else:
-            max_dis = 7 - np.max(bs_one * d_array)
+            max_dis = np.min(d_array[np.nonzero(d_array * bs_one)]) - 1
         d_point = from_ - max_dis
         if (
             _is_in_board(d_point - 1)
@@ -918,10 +878,9 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             if np.all(r_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(r_array[np.nonzero(r_array)])
+                max_dis = np.max(r_array)
         else:
-            # ur_arrayの途中に駒が存在する
-            max_dis = 7 - np.max(bs_one * r_array)
+            max_dis = np.min(r_array[np.nonzero(r_array * bs_one)]) - 1
         r_point = from_ + 8 * max_dis
         if (
             _is_in_board(r_point + 8)
@@ -935,10 +894,9 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             if np.all(l_array == 0):
                 max_dis = 0
             else:
-                max_dis = 8 - np.min(l_array[np.nonzero(l_array)])
+                max_dis = np.max(l_array)
         else:
-            # ur_arrayの途中に駒が存在する
-            max_dis = 7 - np.max(bs_one * l_array)
+            max_dis = np.min(l_array[np.nonzero(l_array * bs_one)]) - 1
         l_point = from_ - 8 * max_dis
         if (
             _is_in_board(l_point - 8)
@@ -947,81 +905,60 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
         ):
             l_point -= 8
         np.put(to, np.arange(l_point, from_, 8), 1)
-    # for i in range(8):
-    #    u = from_ + 1 * (1 + i)
-    #    d = from_ - 1 * (1 + i)
-    #    l_ = from_ - 8 * (1 + i)
-    #    r = from_ + 8 * (1 + i)
-    #    if u_flag and _is_in_board(u) and _is_same_column(from_, u):
-    #        if _owner(bs[u]) == turn:
-    #            to[u] = 2
-    #        else:
-    #            to[u] = 1
-    #    if d_flag and _is_in_board(d) and _is_same_column(from_, d):
-    #        if _owner(bs[d]) == turn:
-    #            to[d] = 2
-    #        else:
-    #            to[d] = 1
-    #    if l_flag and _is_in_board(l_) and _is_same_row(from_, l_):
-    #        if _owner(bs[l_]) == turn:
-    #            to[l_] = 2
-    #        else:
-    #            to[l_] = 1
-    #    if r_flag and _is_in_board(r) and _is_same_row(from_, r):
-    #        if _owner(bs[r]) == turn:
-    #            to[r] = 2
-    #        else:
-    #            to[r] = 1
-    #    if not _is_in_board(u) or bs[u] != 0:
-    #        u_flag = False
-    #    if not _is_in_board(d) or bs[d] != 0:
-    #        d_flag = False
-    #    if not _is_in_board(l_) or bs[l_] != 0:
-    #        l_flag = False
-    #    if not _is_in_board(r) or bs[r] != 0:
-    #        r_flag = False
     return to
 
 
-def _rook_effect(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
+def _rook_effect(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(64, dtype=np.int32)
-    u_flag = True
-    d_flag = True
-    r_flag = True
-    l_flag = True
-    for i in range(8):
-        u = from_ + 1 * (1 + i)
-        d = from_ - 1 * (1 + i)
-        l_ = from_ - 8 * (1 + i)
-        r = from_ + 8 * (1 + i)
-        if u_flag and _is_in_board(u) and _is_same_column(from_, u):
-            if _owner(bs[u]) == turn:
-                to[u] = 2
-            else:
-                to[u] = 1
-        if d_flag and _is_in_board(d) and _is_same_column(from_, d):
-            if _owner(bs[d]) == turn:
-                to[d] = 2
-            else:
-                to[d] = 1
-        if l_flag and _is_in_board(l_) and _is_same_row(from_, l_):
-            if _owner(bs[l_]) == turn:
-                to[l_] = 2
-            else:
-                to[l_] = 1
-        if r_flag and _is_in_board(r) and _is_same_row(from_, r):
-            if _owner(bs[r]) == turn:
-                to[r] = 2
-            else:
-                to[r] = 1
-        if not _is_in_board(u) or bs[u] != 0:
-            u_flag = False
-        if not _is_in_board(d) or bs[d] != 0:
-            d_flag = False
-        if not _is_in_board(l_) or bs[l_] != 0:
-            l_flag = False
-        if not _is_in_board(r) or bs[r] != 0:
-            r_flag = False
+    u_array = _dis_direction_array(from_, 1)
+    d_array = _dis_direction_array(from_, 0)
+    r_array = _dis_direction_array(from_, 3)
+    l_array = _dis_direction_array(from_, 2)
+    bs_one = np.where(bs == 0, 0, 1)
+    if np.all(bs_one * u_array == 0):
+        if np.all(u_array == 0):
+            max_dis = 0
+        else:
+            max_dis = np.max(u_array)
+    else:
+        max_dis = np.min(u_array[np.nonzero(u_array * bs_one)]) - 1
+    u_point = from_ + max_dis
+    if _is_in_board(u_point + 1) and _is_same_column(from_, u_point + 1):
+        u_point += 1
+    np.put(to, np.arange(u_point, from_, -1), 1)
+    if np.all(bs_one * d_array == 0):
+        if np.all(d_array == 0):
+            max_dis = 0
+        else:
+            max_dis = np.max(d_array)
+    else:
+        max_dis = np.min(d_array[np.nonzero(d_array * bs_one)]) - 1
+    d_point = from_ - max_dis
+    if _is_in_board(d_point - 1) and _is_same_column(from_, d_point - 1):
+        d_point -= 1
+    np.put(to, np.arange(d_point, from_, 1), 1)
+    if np.all(bs_one * r_array == 0):
+        if np.all(r_array == 0):
+            max_dis = 0
+        else:
+            max_dis = np.max(r_array)
+    else:
+        max_dis = np.min(r_array[np.nonzero(r_array * bs_one)]) - 1
+    r_point = from_ + 8 * max_dis
+    if _is_in_board(r_point + 8) and _is_same_row(from_, r_point + 8):
+        r_point += 8
+    np.put(to, np.arange(r_point, from_, -8), 1)
+    if np.all(bs_one * l_array == 0):
+        if np.all(l_array == 0):
+            max_dis = 0
+        else:
+            max_dis = np.max(l_array)
+    else:
+        max_dis = np.min(l_array[np.nonzero(l_array * bs_one)]) - 1
+    l_point = from_ - 8 * max_dis
+    if _is_in_board(l_point - 8) and _is_same_row(from_, l_point - 8):
+        l_point -= 8
+    np.put(to, np.arange(l_point, from_, 8), 1)
     return to
 
 
@@ -1034,9 +971,9 @@ def _queen_moves(
     return r_move + b_move
 
 
-def _queen_effect(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
-    r_ef = _rook_effect(bs, from_, turn)
-    b_ef = _bishop_effect(bs, from_, turn)
+def _queen_effect(bs: np.ndarray, from_: int) -> np.ndarray:
+    r_ef = _rook_effect(bs, from_)
+    b_ef = _bishop_effect(bs, from_)
     # r_moveとb_moveは共通項がないので足してよい
     return r_ef + b_ef
 
@@ -1071,7 +1008,7 @@ def _king_moves(bs: np.ndarray, from_: int, turn: int):
     return to
 
 
-def _king_effect(bs: np.ndarray, from_: int, turn: int):
+def _king_effect(from_: int):
     to = np.zeros(64, dtype=np.int32)
     u, d, l_, r = _is_side(from_)
     if not u:
@@ -1123,15 +1060,15 @@ def _piece_effect(bs: np.ndarray, from_: int, piece: int) -> np.ndarray:
     if p == 1:
         return _pawn_effects(from_, turn)
     elif p == 2:
-        return _knight_effect(from_, turn)
+        return _knight_effect(from_)
     elif p == 3:
-        return _bishop_effect(bs, from_, turn)
+        return _bishop_effect(bs, from_)
     elif p == 4:
-        return _rook_effect(bs, from_, turn)
+        return _rook_effect(bs, from_)
     elif p == 5:
-        return _queen_effect(bs, from_, turn)
+        return _queen_effect(bs, from_)
     else:
-        return _king_effect(bs, from_, turn)
+        return _king_effect(from_)
 
 
 def _create_actions(from_: int, to: np.ndarray) -> np.ndarray:
