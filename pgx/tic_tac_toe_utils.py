@@ -1,8 +1,8 @@
+import math
 from dataclasses import dataclass
 from typing import Optional, Union
 
 import svgwrite  # type: ignore
-from svgwrite import cm
 
 from .tic_tac_toe import State
 
@@ -25,19 +25,25 @@ class Visualizer:
     ) -> None:
         self.state = state
         self.color_mode = color_mode
+        self.GRID_SIZE = 50
+        self.BOARD_WIDTH = 3
+        self.BOARD_HEIGHT = 3
 
     def _repr_html_(self) -> str:
         assert self.state is not None
         return self._to_svg_string()
 
-    def save_svg(self, filename="temp.svg") -> None:
-        assert self.state is not None
+    def save_svg(self, filename="temp.svg", state=None) -> None:
         assert filename.endswith(".svg")
-        self._to_dwg().saveas(filename=filename)
+        if state is None:
+            assert self.state is not None
+            state = self.state
+        self._to_dwg_from_states(states=state).saveas(filename=filename)
 
     def show_svg(
         self,
-        state: Union[None, State] = None,
+        states: Union[None, State] = None,
+        scale=1,
         color_mode: Optional[str] = None,
     ) -> None:
         import sys
@@ -47,7 +53,9 @@ class Visualizer:
             from IPython.display import display_svg  # type:ignore
 
             display_svg(
-                self._to_dwg(state=state, color_mode=color_mode).tostring(),
+                self._to_dwg_from_states(
+                    states=states, scale=scale, color_mode=color_mode
+                ).tostring(),
                 raw=True,
             )
         else:
@@ -57,20 +65,24 @@ class Visualizer:
     def set_state(self, state: State) -> None:
         self.state = state
 
-    def _to_dwg(
+    def _to_dwg_from_states(
         self,
         *,
-        state: Union[None, State] = None,
+        states,
+        scale=1,
         color_mode: Optional[str] = None,
-    ) -> svgwrite.Drawing:
-        if state is None:
-            assert self.state is not None
-            state = self.state
-        GRID_SIZE = 2
-        BOARD_WIDTH = 3
-        BOARD_HEIGHT = 3
-        # cm = 20 * GRID_SIZE
-
+    ):
+        try:
+            SIZE = len(states.curr_player)
+            WIDTH = math.ceil(math.sqrt(SIZE - 0.1))
+            if SIZE - (WIDTH - 1) ** 2 >= WIDTH:
+                HEIGHT = WIDTH
+            else:
+                HEIGHT = WIDTH - 1
+        except TypeError:
+            SIZE = 1
+            WIDTH = 1
+            HEIGHT = 1
         if (
             color_mode is None and self.color_mode == "dark"
         ) or color_mode == "dark":
@@ -86,27 +98,70 @@ class Visualizer:
             color_set = VisualizerConfig(
                 "white", "black", "lightgray", "white", "white", "black"
             )
-
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
-                (BOARD_WIDTH + 1) * GRID_SIZE * cm,
-                (BOARD_HEIGHT + 1) * GRID_SIZE * cm,
+                (self.BOARD_WIDTH + 1) * self.GRID_SIZE * WIDTH * scale,
+                (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT * scale,
             ),
         )
 
+        group = dwg.g()
+
         # background
-        dwg.add(
+        group.add(
             dwg.rect(
                 (0, 0),
                 (
-                    (BOARD_WIDTH + 1) * GRID_SIZE * cm,
-                    (BOARD_HEIGHT + 1) * GRID_SIZE * cm,
+                    (self.BOARD_WIDTH + 1) * self.GRID_SIZE * WIDTH,
+                    (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT,
                 ),
                 fill=color_set.background_color,
             )
         )
 
+        if SIZE == 1:
+            g = self._make_dwg_group(dwg, states, color_set)
+            g.translate(
+                self.GRID_SIZE * 1 / 2,
+                self.GRID_SIZE * 1 / 2,
+            )
+            group.add(g)
+            group.scale(scale)
+            dwg.add(group)
+            return dwg
+
+        for i in range(SIZE):
+            x = i % WIDTH
+            y = i // WIDTH
+            _state = State(  # type:ignore
+                curr_player=states.curr_player[i],
+                legal_action_mask=states.legal_action_mask[i],
+                terminated=states.terminated[i],
+                turn=states.turn[i],
+                board=states.board[i],
+            )
+            g = self._make_dwg_group(dwg, _state, color_set)
+            g.translate(
+                self.GRID_SIZE * 1 / 2
+                + (self.BOARD_WIDTH + 1) * self.GRID_SIZE * x,
+                self.GRID_SIZE * 1 / 2
+                + (self.BOARD_WIDTH + 1) * self.GRID_SIZE * y,
+            )
+            group.add(g)
+        group.scale(scale)
+        dwg.add(group)
+        return dwg
+
+    def _make_dwg_group(
+        self,
+        dwg,
+        state: State,
+        color_set: VisualizerConfig,
+    ) -> svgwrite.Drawing:
+        GRID_SIZE = self.GRID_SIZE
+        BOARD_WIDTH = self.BOARD_WIDTH
+        BOARD_HEIGHT = self.BOARD_HEIGHT
         # board
         board_g = dwg.g()
 
@@ -121,27 +176,27 @@ class Visualizer:
         for y in range(1, BOARD_HEIGHT):
             hlines.add(
                 dwg.line(
-                    start=(0 * cm, GRID_SIZE * y * cm),
+                    start=(0, GRID_SIZE * y),
                     end=(
-                        GRID_SIZE * BOARD_WIDTH * cm,
-                        GRID_SIZE * y * cm,
+                        GRID_SIZE * BOARD_WIDTH,
+                        GRID_SIZE * y,
                     ),
-                    stroke_width=GRID_SIZE * 2,
+                    stroke_width=GRID_SIZE * 0.05,
                 )
             )
             hlines.add(
                 dwg.circle(
-                    center=(0 * cm, GRID_SIZE * y * cm),
-                    r=0.75 * GRID_SIZE,
+                    center=(0, GRID_SIZE * y),
+                    r=GRID_SIZE * 0.014,
                 )
             )
             hlines.add(
                 dwg.circle(
                     center=(
-                        GRID_SIZE * BOARD_WIDTH * cm,
-                        GRID_SIZE * y * cm,
+                        GRID_SIZE * BOARD_WIDTH,
+                        GRID_SIZE * y,
                     ),
-                    r=0.75 * GRID_SIZE,
+                    r=GRID_SIZE * 0.014,
                 )
             )
         vlines = board_g.add(
@@ -154,27 +209,27 @@ class Visualizer:
         for x in range(1, BOARD_WIDTH):
             vlines.add(
                 dwg.line(
-                    start=(GRID_SIZE * x * cm, 0 * cm),
+                    start=(GRID_SIZE * x, 0),
                     end=(
-                        GRID_SIZE * x * cm,
-                        GRID_SIZE * BOARD_HEIGHT * cm,
+                        GRID_SIZE * x,
+                        GRID_SIZE * BOARD_HEIGHT,
                     ),
-                    stroke_width=GRID_SIZE * 2,
+                    stroke_width=GRID_SIZE * 0.05,
                 )
             )
             vlines.add(
                 dwg.circle(
-                    center=(GRID_SIZE * x * cm, 0 * cm),
-                    r=0.75 * GRID_SIZE,
+                    center=(GRID_SIZE * x, 0),
+                    r=GRID_SIZE * 0.014,
                 )
             )
             vlines.add(
                 dwg.circle(
                     center=(
-                        GRID_SIZE * x * cm,
-                        GRID_SIZE * BOARD_HEIGHT * cm,
+                        GRID_SIZE * x,
+                        GRID_SIZE * BOARD_HEIGHT,
                     ),
-                    r=0.75 * GRID_SIZE,
+                    r=GRID_SIZE * 0.014,
                 )
             )
 
@@ -185,12 +240,12 @@ class Visualizer:
                 board_g.add(
                     dwg.circle(
                         center=(
-                            (x + 0.5) * GRID_SIZE * cm,
-                            (y + 0.5) * GRID_SIZE * cm,
+                            (x + 0.5) * GRID_SIZE,
+                            (y + 0.5) * GRID_SIZE,
                         ),
-                        r=0.4 * GRID_SIZE * cm,
+                        r=0.4 * GRID_SIZE,
                         stroke=color_set.grid_color,
-                        stroke_width=2 * GRID_SIZE,
+                        stroke_width=0.05 * GRID_SIZE,
                         fill="none",
                     )
                 )
@@ -198,36 +253,32 @@ class Visualizer:
                 board_g.add(
                     dwg.line(
                         start=(
-                            (x + 0.1) * GRID_SIZE * cm,
-                            (y + 0.1) * GRID_SIZE * cm,
+                            (x + 0.1) * GRID_SIZE,
+                            (y + 0.1) * GRID_SIZE,
                         ),
                         end=(
-                            (x + 0.9) * GRID_SIZE * cm,
-                            (y + 0.9) * GRID_SIZE * cm,
+                            (x + 0.9) * GRID_SIZE,
+                            (y + 0.9) * GRID_SIZE,
                         ),
                         stroke=color_set.grid_color,
-                        stroke_width=GRID_SIZE * 2,
+                        stroke_width=0.05 * GRID_SIZE,
                     )
                 )
                 board_g.add(
                     dwg.line(
                         start=(
-                            (x + 0.1) * GRID_SIZE * cm,
-                            (y + 0.9) * GRID_SIZE * cm,
+                            (x + 0.1) * GRID_SIZE,
+                            (y + 0.9) * GRID_SIZE,
                         ),
                         end=(
-                            (x + 0.9) * GRID_SIZE * cm,
-                            (y + 0.1) * GRID_SIZE * cm,
+                            (x + 0.9) * GRID_SIZE,
+                            (y + 0.1) * GRID_SIZE,
                         ),
                         stroke=color_set.grid_color,
-                        stroke_width=GRID_SIZE * 2,
+                        stroke_width=0.05 * GRID_SIZE,
                     )
                 )
-
-        board_g.translate(GRID_SIZE * 19, GRID_SIZE * 19)  # no units allowed
-        dwg.add(board_g)
-
-        return dwg
+        return board_g
 
     def _to_svg_string(self) -> str:
-        return self._to_dwg().tostring()
+        return self._to_dwg_from_states(states=self.state).tostring()
