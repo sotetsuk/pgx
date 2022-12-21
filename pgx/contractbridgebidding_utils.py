@@ -230,9 +230,6 @@ class Visualizer:
         state: ContractBridgeBiddingState,
         color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
-        GRID_SIZE = self.GRID_SIZE
-        BOARD_WIDTH = self.BOARD_WIDTH
-        BOARD_HEIGHT = self.BOARD_HEIGHT
         # board
         board_g = dwg.g()
 
