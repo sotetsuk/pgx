@@ -1,6 +1,6 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
-    _is_mate, _effected_positions, _is_check
+    _is_mate, _effected_positions, _is_check, _is_legal_action, int_to_action
 import numpy as np
 import time
 
@@ -94,8 +94,6 @@ def test_knight_move():
     for i in range(64):
         if i == 19 or i == 24:
             assert km2[i] == 1
-        elif i == 3 or i == 26:
-            assert km2[i] == 2
         else:
             assert km2[i] == 0
 
@@ -115,8 +113,6 @@ def test_bishop_move():
     for i in range(64):
         if i == 41 or i == 25 or i == 18:
             assert bm1[i] == 1
-        elif i == 50:
-            assert bm1[i] == 2
         else:
             assert bm1[i] == 0
 
@@ -139,8 +135,6 @@ def test_rook_move():
     for i in range(64):
         if i == 33 or i == 34 or i == 24 or i == 16:
             assert rm1[i] == 1
-        elif i == 35 or i == 40:
-            assert rm1[i] == 2
         else:
             assert rm1[i] == 0
 
@@ -156,8 +150,6 @@ def test_king_move():
     for i in range(64):
         if i == 45 or i == 44 or i == 35 or i == 27 or i == 28:
             assert km[i] == 1
-        elif i == 29 or i == 37 or i == 43:
-            assert km[i] == 2
         else:
             assert km[i] == 0
 
@@ -276,6 +268,8 @@ def test_legal_action():
         elif i == 8 + 64 * 56 or i == 8 + 64 * 57 or i == 42 + 64 * 56 or i == 42 + 64 * 57 or i == 42 + 64 * 58 or i == 42 + 64 * 60 or i == 42 + 64 * 63:
             assert la[i] == 1
         else:
+            if la[i] == 1:
+                print(i)
             assert la[i] == 0
     bs = _board_status(s4)
     bs[26] = 11
