@@ -1278,7 +1278,27 @@ def _is_legal_action(state: ChessState, action: int, pins: np.ndarray):
     return p_actions[format_action] == 1
 
 
-def _up_pin(
+def _up_pin(bs: np.ndarray, turn: int, king_point: int, array: np.ndarray) -> np.ndarray:
+    new_array = array
+    u_array = _dis_direction_array(king_point, 0)
+    e_turn = (turn + 1) % 2
+    bs_one = np.where(bs == 0, 0, 1)
+    u_one_array = u_array * bs_one
+    if np.count_nonzero(u_one_array) <= 1:
+        return new_array
+    u1 = np.argpartition(u_one_array.flatten(), 1)[1]
+    u2 = np.argpartition(u_one_array.flatten(), 2)[2]
+    p1 = bs[u1]
+    p2 = bs[u2]
+    if _owner(p1) != turn:
+        return array
+    if p2 == 4 + 6 * e_turn or p2 == 5 + 6 * e_turn:
+        new_array[u1] = 1
+    return new_array
+
+
+
+def _up_pin2(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
     new_array = array
