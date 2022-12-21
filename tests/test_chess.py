@@ -1,6 +1,6 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
-    _is_mate, _effected_positions, _is_check, _is_legal_action, int_to_action
+    _is_mate, _is_check, _is_legal_action, int_to_action
 import numpy as np
 import time
 
