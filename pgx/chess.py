@@ -715,14 +715,10 @@ def _bishop_moves(
             else:
                 max_dis = np.max(ur_array)
         else:
-            max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)]) - 1
+            max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)])
+            if _owner(bs[from_ + 9 * max_dis]) == turn:
+                max_dis -= 1
         ur_point = from_ + 9 * max_dis
-        if (
-            _is_in_board(ur_point + 9)
-            and _is_same_rising(from_, ur_point + 9)
-            and _owner(bs[ur_point + 9]) != turn
-        ):
-            ur_point += 9
         np.put(to, np.arange(ur_point, from_, -9), 1)
     if ul_flag:
         if np.all(bs_one * ul_array == 0):
@@ -731,14 +727,10 @@ def _bishop_moves(
             else:
                 max_dis = np.max(ul_array)
         else:
-            max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)]) - 1
+            max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)])
+            if _owner(bs[from_ - 7 * max_dis]) == turn:
+                max_dis -= 1
         ul_point = from_ - 7 * max_dis
-        if (
-            _is_in_board(ul_point - 7)
-            and _is_same_declining(from_, ul_point - 7)
-            and _owner(bs[ul_point - 7]) != turn
-        ):
-            ul_point -= 7
         np.put(to, np.arange(ul_point, from_, 7), 1)
     if dr_flag:
         if np.all(bs_one * dr_array == 0):
@@ -747,14 +739,10 @@ def _bishop_moves(
             else:
                 max_dis = np.max(dr_array)
         else:
-            max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)]) - 1
+            max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)])
+            if _owner(bs[from_ + 7 * max_dis]) == turn:
+                max_dis -= 1
         dr_point = from_ + 7 * max_dis
-        if (
-            _is_in_board(dr_point + 7)
-            and _is_same_declining(from_, dr_point + 7)
-            and _owner(bs[dr_point + 7]) != turn
-        ):
-            dr_point += 7
         np.put(to, np.arange(dr_point, from_, -7), 1)
     if dl_flag:
         if np.all(bs_one * dl_array == 0):
@@ -763,14 +751,10 @@ def _bishop_moves(
             else:
                 max_dis = np.max(dl_array)
         else:
-            max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)]) - 1
+            max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)])
+            if _owner(bs[from_ - 9 * max_dis]) == turn:
+                max_dis -= 1
         dl_point = from_ - 9 * max_dis
-        if (
-            _is_in_board(dl_point - 9)
-            and _is_same_rising(from_, dl_point - 9)
-            and _owner(bs[dl_point - 9]) != turn
-        ):
-            dl_point -= 9
         np.put(to, np.arange(dl_point, from_, 9), 1)
     return to
 
@@ -789,10 +773,8 @@ def _bishop_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(ur_array)
     else:
-        max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)]) - 1
+        max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)])
     ur_point = from_ + 9 * max_dis
-    if _is_in_board(ur_point + 9) and _is_same_rising(from_, ur_point + 9):
-        ur_point += 9
     np.put(to, np.arange(ur_point, from_, -9), 1)
     if np.all(bs_one * ul_array == 0):
         if np.all(ul_array == 0):
@@ -800,10 +782,8 @@ def _bishop_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(ul_array)
     else:
-        max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)]) - 1
+        max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)])
     ul_point = from_ - 7 * max_dis
-    if _is_in_board(ul_point - 7) and _is_same_declining(from_, ul_point - 7):
-        ul_point -= 7
     np.put(to, np.arange(ul_point, from_, 7), 1)
     if np.all(bs_one * dr_array == 0):
         if np.all(dr_array == 0):
@@ -811,10 +791,8 @@ def _bishop_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(dr_array)
     else:
-        max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)]) - 1
+        max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)])
     dr_point = from_ + 7 * max_dis
-    if _is_in_board(dr_point + 7) and _is_same_declining(from_, dr_point + 7):
-        dr_point += 7
     np.put(to, np.arange(dr_point, from_, -7), 1)
     if np.all(bs_one * dl_array == 0):
         if np.all(dl_array == 0):
@@ -822,10 +800,8 @@ def _bishop_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(dl_array)
     else:
-        max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)]) - 1
+        max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)])
     dl_point = from_ - 9 * max_dis
-    if _is_in_board(dl_point - 9) and _is_same_declining(from_, dl_point - 9):
-        dl_point -= 9
     np.put(to, np.arange(dl_point, from_, 9), 1)
     return to
 
@@ -848,14 +824,10 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             else:
                 max_dis = np.max(u_array)
         else:
-            max_dis = np.min(u_array[np.nonzero(u_array * bs_one)]) - 1
+            max_dis = np.min(u_array[np.nonzero(u_array * bs_one)])
+            if _owner(bs[from_ + max_dis]) == turn:
+                max_dis -= 1
         u_point = from_ + max_dis
-        if (
-            _is_in_board(u_point + 1)
-            and _is_same_column(from_, u_point + 1)
-            and _owner(bs[u_point + 1]) != turn
-        ):
-            u_point += 1
         np.put(to, np.arange(u_point, from_, -1), 1)
     if d_flag:
         if np.all(bs_one * d_array == 0):
@@ -864,14 +836,10 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             else:
                 max_dis = np.max(d_array)
         else:
-            max_dis = np.min(d_array[np.nonzero(d_array * bs_one)]) - 1
+            max_dis = np.min(d_array[np.nonzero(d_array * bs_one)])
+            if _owner(bs[from_ - max_dis]) == turn:
+                max_dis -= 1
         d_point = from_ - max_dis
-        if (
-            _is_in_board(d_point - 1)
-            and _is_same_column(from_, d_point - 1)
-            and _owner(bs[d_point - 1]) != turn
-        ):
-            d_point -= 1
         np.put(to, np.arange(d_point, from_, 1), 1)
     if r_flag:
         if np.all(bs_one * r_array == 0):
@@ -880,14 +848,10 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             else:
                 max_dis = np.max(r_array)
         else:
-            max_dis = np.min(r_array[np.nonzero(r_array * bs_one)]) - 1
+            max_dis = np.min(r_array[np.nonzero(r_array * bs_one)])
+            if _owner(bs[from_ + 8 * max_dis]) == turn:
+                max_dis -= 1
         r_point = from_ + 8 * max_dis
-        if (
-            _is_in_board(r_point + 8)
-            and _is_same_row(from_, r_point + 8)
-            and _owner(bs[r_point + 8]) != turn
-        ):
-            r_point += 8
         np.put(to, np.arange(r_point, from_, -8), 1)
     if l_flag:
         if np.all(bs_one * l_array == 0):
@@ -896,14 +860,10 @@ def _rook_moves(bs: np.ndarray, from_: int, turn: int, pin: int) -> np.ndarray:
             else:
                 max_dis = np.max(l_array)
         else:
-            max_dis = np.min(l_array[np.nonzero(l_array * bs_one)]) - 1
+            max_dis = np.min(l_array[np.nonzero(l_array * bs_one)])
+            if _owner(bs[from_ - 8 * max_dis]) == turn:
+                max_dis -= 1
         l_point = from_ - 8 * max_dis
-        if (
-            _is_in_board(l_point - 8)
-            and _is_same_row(from_, l_point - 8)
-            and _owner(bs[l_point - 8]) != turn
-        ):
-            l_point -= 8
         np.put(to, np.arange(l_point, from_, 8), 1)
     return to
 
@@ -921,10 +881,8 @@ def _rook_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(u_array)
     else:
-        max_dis = np.min(u_array[np.nonzero(u_array * bs_one)]) - 1
+        max_dis = np.min(u_array[np.nonzero(u_array * bs_one)])
     u_point = from_ + max_dis
-    if _is_in_board(u_point + 1) and _is_same_column(from_, u_point + 1):
-        u_point += 1
     np.put(to, np.arange(u_point, from_, -1), 1)
     if np.all(bs_one * d_array == 0):
         if np.all(d_array == 0):
@@ -932,10 +890,8 @@ def _rook_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(d_array)
     else:
-        max_dis = np.min(d_array[np.nonzero(d_array * bs_one)]) - 1
+        max_dis = np.min(d_array[np.nonzero(d_array * bs_one)])
     d_point = from_ - max_dis
-    if _is_in_board(d_point - 1) and _is_same_column(from_, d_point - 1):
-        d_point -= 1
     np.put(to, np.arange(d_point, from_, 1), 1)
     if np.all(bs_one * r_array == 0):
         if np.all(r_array == 0):
@@ -943,10 +899,8 @@ def _rook_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(r_array)
     else:
-        max_dis = np.min(r_array[np.nonzero(r_array * bs_one)]) - 1
+        max_dis = np.min(r_array[np.nonzero(r_array * bs_one)])
     r_point = from_ + 8 * max_dis
-    if _is_in_board(r_point + 8) and _is_same_row(from_, r_point + 8):
-        r_point += 8
     np.put(to, np.arange(r_point, from_, -8), 1)
     if np.all(bs_one * l_array == 0):
         if np.all(l_array == 0):
@@ -954,10 +908,8 @@ def _rook_effect(bs: np.ndarray, from_: int) -> np.ndarray:
         else:
             max_dis = np.max(l_array)
     else:
-        max_dis = np.min(l_array[np.nonzero(l_array * bs_one)]) - 1
+        max_dis = np.min(l_array[np.nonzero(l_array * bs_one)])
     l_point = from_ - 8 * max_dis
-    if _is_in_board(l_point - 8) and _is_same_row(from_, l_point - 8):
-        l_point -= 8
     np.put(to, np.arange(l_point, from_, 8), 1)
     return to
 
@@ -1084,34 +1036,32 @@ def _create_actions(from_: int, to: np.ndarray) -> np.ndarray:
     return actions
 
 
+def _is_check(bs: np.ndarray, turn: int, kp: int) -> bool:
+    return _is_check2(bs, turn, kp)[0] != 0
+
+
+def _is_check2(bs: np.ndarray, turn: int, kp: int) -> Tuple[int, np.ndarray]:
+    checking_piece = np.zeros(64, dtype=np.int32)
+    e_color = (turn + 1) % 2
+    pe = _pawn_effects(kp, turn)
+    np.put(checking_piece, np.where(bs * pe == 1 + 6 * e_color), 1)
+    ke = _knight_effect(kp)
+    np.put(checking_piece, np.where(bs * ke == 2 + 6 * e_color), 1)
+    be = _bishop_effect(bs, kp)
+    np.put(checking_piece, np.where(bs * be == 3 + 6 * e_color), 1)
+    re = _rook_effect(bs, kp)
+    np.put(checking_piece, np.where(bs * re == 4 + 6 * e_color), 1)
+    qe = _queen_effect(bs, kp)
+    np.put(checking_piece, np.where(bs * qe == 5 + 6 * e_color), 1)
+    return np.count_nonzero(checking_piece), checking_piece
+
+
 def _effected_positions(bs: np.ndarray, turn: int) -> np.ndarray:
     effects = np.zeros(64, dtype=np.int32)
     for i in range(64):
         piece = bs[i]
-        if _owner(piece) != turn:
-            continue
-        effects += _piece_effect(bs, i, piece)
+        effects += _piece_effect(bs, i, piece) if _owner(piece) == turn else 0
     return effects
-
-
-def _is_check(bs: np.ndarray, turn: int, kp: int) -> bool:
-    effects = _effected_positions(bs, (turn + 1) % 2)
-    return effects[kp] != 0
-
-
-# 王手している駒の位置も返すis_check
-def _is_check2(bs: np.ndarray, turn: int, kp: int) -> Tuple[int, np.ndarray]:
-    num_check = 0
-    checking_piece = np.zeros(64, dtype=np.int32)
-    for i in range(64):
-        piece = bs[i]
-        if _owner(piece) != turn and _owner(piece) != 0:
-            continue
-        moves = _piece_moves(bs, i, piece, np.zeros(64, dtype=np.int32))
-        if moves[kp] == 1:
-            num_check += 1
-            checking_piece[i] = 1
-    return num_check, checking_piece
 
 
 def _can_left_castling(state: ChessState, bs: np.ndarray) -> bool:
@@ -1328,274 +1278,47 @@ def _is_legal_action(state: ChessState, action: int, pins: np.ndarray):
     return p_actions[format_action] == 1
 
 
-def _up_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
+def _direction_to_pin(direction: int) -> int:
+    if direction == 0 or direction == 1:
+        return 1
+    if direction == 2 or direction == 3:
+        return 2
+    if direction == 4 or direction == 5:
+        return 3
+    if direction == 6 or direction == 7:
+        return 4
+    return 0
+
+
+def _direction_pin(
+    bs: np.ndarray,
+    turn: int,
+    king_point: int,
+    direction: int,
+    array: np.ndarray,
 ) -> np.ndarray:
     new_array = array
-    # 上方向のピン
-    u = king_point
-    u_num = 0
-    u_piece = -1
-    u_flag = False
-    # 自分より上は最大7マスしかない
-    for i in range(7):
-        # 探索位置の更新
-        u += 1
-        # 探索が終わっている場合はスルー
-        if u_flag:
-            continue
-        # 盤外や同じ列にない場合は弾く
-        if not _is_in_board(u) or not _is_same_column(king_point, u):
-            continue
-        piece = bs[u]
-        # 駒がない場合は処理をしない
-        if piece == 0:
-            continue
-        # 駒がある場合
-        u_num += 1
-        # 1枚目
-        if u_num == 1:
-            # 自分の駒なら位置を記録
-            if _owner(piece) == turn:
-                u_piece = u
-            # 相手の駒なら関係ないので探索終了
-            else:
-                u_flag = True
-        # 2枚目
-        if u_num == 2:
-            # Rook, Queenによってピン
-            if turn == 0 and (piece == 10 or piece == 11):
-                new_array[u_piece] = 1
-            elif turn == 1 and (piece == 4 or piece == 5):
-                new_array[u_piece] = 1
-            # 一回通ったら探索する必要はない
-            u_flag = True
-    return new_array
-
-
-def _down_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
-    new_array = array
-    d = king_point
-    d_num = 0
-    d_piece = -1
-    d_flag = False
-    for i in range(7):
-        d -= 1
-        if d_flag:
-            continue
-        if not _is_in_board(d) or not _is_same_column(king_point, d):
-            continue
-        piece = bs[d]
-        if piece == 0:
-            continue
-        d_num += 1
-        if d_num == 1:
-            if _owner(piece) == turn:
-                d_piece = d
-            else:
-                d_flag = True
-        if d_num == 2:
-            if turn == 0 and (piece == 10 or piece == 11):
-                new_array[d_piece] = 1
-            elif turn == 1 and (piece == 4 or piece == 5):
-                new_array[d_piece] = 1
-            d_flag = True
-    return new_array
-
-
-def _left_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
-    new_array = array
-    l_ = king_point
-    l_num = 0
-    l_piece = -1
-    l_flag = False
-    for i in range(7):
-        l_ -= 8
-        if l_flag:
-            continue
-        if not _is_in_board(l_) or not _is_same_row(king_point, l_):
-            continue
-        piece = bs[l_]
-        if piece == 0:
-            continue
-        l_num += 1
-        if l_num == 1:
-            if _owner(piece) == turn:
-                l_piece = l_
-            else:
-                l_flag = True
-        if l_num == 2:
-            if turn == 0 and (piece == 10 or piece == 11):
-                new_array[l_piece] = 2
-            elif turn == 1 and (piece == 4 or piece == 5):
-                new_array[l_piece] = 2
-            l_flag = True
-    return new_array
-
-
-def _right_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
-    new_array = array
-    r = king_point
-    r_num = 0
-    r_piece = -1
-    r_flag = False
-    for i in range(7):
-        r += 8
-        if r_flag:
-            continue
-        if not _is_in_board(r) or not _is_same_row(king_point, r):
-            continue
-        piece = bs[r]
-        if piece == 0:
-            continue
-        r_num += 1
-        if r_num == 1:
-            if _owner(piece) == turn:
-                r_piece = r
-            else:
-                r_flag = True
-        if r_num == 2:
-            if turn == 0 and (piece == 10 or piece == 11):
-                new_array[r_piece] = 2
-            elif turn == 1 and (piece == 4 or piece == 5):
-                new_array[r_piece] = 2
-            r_flag = True
-    return new_array
-
-
-def _up_right_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
-    new_array = array
-    ur = king_point
-    ur_num = 0
-    ur_piece = -1
-    ur_flag = False
-    for i in range(7):
-        ur += 9
-        if ur_flag:
-            continue
-        if not _is_in_board(ur) or not _is_same_rising(king_point, ur):
-            continue
-        piece = bs[ur]
-        if piece == 0:
-            continue
-        ur_num += 1
-        if ur_num == 1:
-            if _owner(piece) == turn:
-                ur_piece = ur
-            else:
-                ur_flag = True
-        # 2枚目
-        if ur_num == 2:
-            # Bishop, Queenによってピン
-            if turn == 0 and (piece == 9 or piece == 11):
-                new_array[ur_piece] = 3
-            elif turn == 1 and (piece == 3 or piece == 5):
-                new_array[ur_piece] = 3
-            ur_flag = True
-    return new_array
-
-
-def _down_left_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
-    new_array = array
-    dl = king_point
-    dl_num = 0
-    dl_piece = -1
-    dl_flag = False
-    for i in range(7):
-        dl -= 9
-        if dl_flag:
-            continue
-        if not _is_in_board(dl) or not _is_same_rising(king_point, dl):
-            continue
-        piece = bs[dl]
-        if piece == 0:
-            continue
-        dl_num += 1
-        if dl_num == 1:
-            if _owner(piece) == turn:
-                dl_piece = dl
-            else:
-                dl_flag = True
-        if dl_num == 2:
-            if turn == 0 and (piece == 9 or piece == 11):
-                new_array[dl_piece] = 3
-            elif turn == 1 and (piece == 3 or piece == 5):
-                new_array[dl_piece] = 3
-            dl_flag = True
-    return new_array
-
-
-def _up_left_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
-    new_array = array
-    ul = king_point
-    ul_num = 0
-    ul_piece = -1
-    ul_flag = False
-    for i in range(7):
-        ul -= 7
-        if ul_flag:
-            continue
-        if not _is_in_board(ul) or not _is_same_row(king_point, ul):
-            continue
-        piece = bs[ul]
-        if piece == 0:
-            continue
-        ul_num += 1
-        if ul_num == 1:
-            if _owner(piece) == turn:
-                ul_piece = ul
-            else:
-                ul_flag = True
-        if ul_num == 2:
-            if turn == 0 and (piece == 9 or piece == 11):
-                new_array[ul_piece] = 4
-            elif turn == 1 and (piece == 3 or piece == 5):
-                new_array[ul_piece] = 4
-            ul_flag = True
-    return new_array
-
-
-def _down_right_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
-    new_array = array
-    dr = king_point
-    dr_num = 0
-    dr_piece = -1
-    dr_flag = False
-    for i in range(7):
-        dr += 7
-        if dr_flag:
-            continue
-        if not _is_in_board(dr) or not _is_same_row(king_point, dr):
-            continue
-        piece = bs[dr]
-        if piece == 0:
-            continue
-        dr_num += 1
-        if dr_num == 1:
-            if _owner(piece) == turn:
-                dr_piece = dr
-            else:
-                dr_flag = True
-        if dr_num == 2:
-            if turn == 0 and (piece == 9 or piece == 11):
-                new_array[dr_piece] = 4
-            elif turn == 1 and (piece == 3 or piece == 5):
-                new_array[dr_piece] = 4
-            dr_flag = True
+    dir_array = _dis_direction_array(king_point, direction)
+    e_turn = (turn + 1) % 2
+    bs_one = np.where(bs == 0, 0, 1)
+    dir_one_array = dir_array * bs_one
+    if np.count_nonzero(dir_one_array) <= 1:
+        return new_array
+    dif = _direction_to_dif(direction)
+    dis1 = np.partition(dir_one_array[dir_one_array.nonzero()].flatten(), 0)[0]
+    dis2 = np.partition(dir_one_array[dir_one_array.nonzero()].flatten(), 1)[1]
+    point1 = king_point + dis1 * dif
+    point2 = king_point + dis2 * dif
+    piece1 = bs[point1]
+    piece2 = bs[point2]
+    if _owner(piece1) != turn:
+        return new_array
+    if direction <= 3:
+        if piece2 == 4 + 6 * e_turn or piece2 == 5 + 6 * e_turn:
+            new_array[point1] = _direction_to_pin(direction)
+    else:
+        if piece2 == 3 + 6 * e_turn or piece2 == 5 + 6 * e_turn:
+            new_array[point1] = _direction_to_pin(direction)
     return new_array
 
 
@@ -1603,12 +1326,6 @@ def _pin(state: ChessState, kp: int):
     bs = _board_status(state)
     turn = state.turn
     pins = np.zeros(64, dtype=np.int32)
-    pins = _up_pin(bs, turn, kp, pins)
-    pins = _up_left_pin(bs, turn, kp, pins)
-    pins = _up_right_pin(bs, turn, kp, pins)
-    pins = _left_pin(bs, turn, kp, pins)
-    pins = _right_pin(bs, turn, kp, pins)
-    pins = _down_pin(bs, turn, kp, pins)
-    pins = _down_left_pin(bs, turn, kp, pins)
-    pins = _down_right_pin(bs, turn, kp, pins)
+    for i in range(8):
+        pins = _direction_pin(bs, turn, kp, i, pins)
     return pins

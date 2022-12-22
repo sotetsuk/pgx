@@ -1,6 +1,6 @@
 from pgx.chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
-    _is_mate, _effected_positions, _is_check, _is_legal_action, int_to_action
+    _is_mate, _is_check, _is_legal_action, int_to_action, _pin
 import numpy as np
 import time
 
@@ -152,6 +152,41 @@ def test_king_move():
             assert km[i] == 1
         else:
             assert km[i] == 0
+
+
+def test_pin():
+    b = np.zeros(64, dtype=np.int32)
+    b[28] = 6
+    b[29] = 1
+    b[30] = 11
+    b[37] = 1
+    b[55] = 11
+    b[44] = 1
+    b[60] = 11
+    b[42] = 2
+    b[49] = 11
+    b[27] = 7
+    b[26] = 11
+    b[19] = 1
+    b[10] = 1
+    b[1] = 11
+    b[12] = 9
+    b[18] = 1
+    b[14] = 5
+    b[21] = 1
+    s = ChessState(board=_make_board(b))
+    pin = _pin(s, 28)
+    for i in range(64):
+        if i == 29:
+            assert pin[i] == 1
+        elif i == 37:
+            assert pin[i] == 3
+        elif i == 44:
+            assert pin[i] == 2
+        elif i == 42:
+            assert pin[i] == 4
+        else:
+            assert pin[i] == 0
 
 
 def test_legal_action():
@@ -395,6 +430,7 @@ if __name__ == '__main__':
     test_bishop_move()
     test_rook_move()
     test_king_move()
+    test_pin()
     test_legal_action()
     test_is_mate()
     test_step()
