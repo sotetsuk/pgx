@@ -1290,7 +1290,13 @@ def _direction_to_pin(direction: int) -> int:
     return 0
 
 
-def _direction_pin(bs: np.ndarray, turn: int, king_point: int, direction: int, array: np.ndarray) -> np.ndarray:
+def _direction_pin(
+    bs: np.ndarray,
+    turn: int,
+    king_point: int,
+    direction: int,
+    array: np.ndarray,
+) -> np.ndarray:
     new_array = array
     dir_array = _dis_direction_array(king_point, direction)
     e_turn = (turn + 1) % 2
