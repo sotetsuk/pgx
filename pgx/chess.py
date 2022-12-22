@@ -1278,9 +1278,47 @@ def _is_legal_action(state: ChessState, action: int, pins: np.ndarray):
     return p_actions[format_action] == 1
 
 
+def _direction_to_pin(direction: int) -> int:
+    if direction == 0 or direction == 1:
+        return 1
+    if direction == 2 or direction == 3:
+        return 2
+    if direction == 4 or direction == 5:
+        return 3
+    if direction == 6 or direction == 7:
+        return 4
+    return 0
+
+
+def _direction_pin(bs: np.ndarray, turn: int, king_point: int, direction: int, array: np.ndarray) -> np.ndarray:
+    new_array = array
+    dir_array = _dis_direction_array(king_point, direction)
+    e_turn = (turn + 1) % 2
+    bs_one = np.where(bs == 0, 0, 1)
+    dir_one_array = dir_array * bs_one
+    if np.count_nonzero(dir_one_array) <= 1:
+        return new_array
+    point1 = np.argpartition(dir_one_array.flatten(), 1)[1]
+    point2 = np.argpartition(dir_one_array.flatten(), 2)[2]
+    piece1 = bs[point1]
+    piece2 = bs[point2]
+    if _owner(piece1) != turn:
+        return new_array
+    if direction <= 3:
+        if piece2 == 4 + 6 * e_turn or piece2 == 5 + 6 * e_turn:
+            new_array[point1] = _direction_to_pin(direction)
+    else:
+        if piece2 == 3 + 6 * e_turn or piece2 == 5 + 6 * e_turn:
+            new_array[point1] = _direction_to_pin(direction)
+    return new_array
+
+
+
+
+
 def _up_pin(bs: np.ndarray, turn: int, king_point: int, array: np.ndarray) -> np.ndarray:
     new_array = array
-    u_array = _dis_direction_array(king_point, 0)
+    u_array = _dis_direction_array(king_point, 1)
     e_turn = (turn + 1) % 2
     bs_one = np.where(bs == 0, 0, 1)
     u_one_array = u_array * bs_one
@@ -1291,91 +1329,51 @@ def _up_pin(bs: np.ndarray, turn: int, king_point: int, array: np.ndarray) -> np
     p1 = bs[u1]
     p2 = bs[u2]
     if _owner(p1) != turn:
-        return array
+        return new_array
     if p2 == 4 + 6 * e_turn or p2 == 5 + 6 * e_turn:
         new_array[u1] = 1
     return new_array
 
 
-
-def _up_pin2(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
+def _down_pin(bs: np.ndarray, turn: int, king_point: int, array: np.ndarray) -> np.ndarray:
     new_array = array
-    # 上方向のピン
-    u = king_point
-    u_num = 0
-    u_piece = -1
-    u_flag = False
-    # 自分より上は最大7マスしかない
-    for i in range(7):
-        # 探索位置の更新
-        u += 1
-        # 探索が終わっている場合はスルー
-        if u_flag:
-            continue
-        # 盤外や同じ列にない場合は弾く
-        if not _is_in_board(u) or not _is_same_column(king_point, u):
-            continue
-        piece = bs[u]
-        # 駒がない場合は処理をしない
-        if piece == 0:
-            continue
-        # 駒がある場合
-        u_num += 1
-        # 1枚目
-        if u_num == 1:
-            # 自分の駒なら位置を記録
-            if _owner(piece) == turn:
-                u_piece = u
-            # 相手の駒なら関係ないので探索終了
-            else:
-                u_flag = True
-        # 2枚目
-        if u_num == 2:
-            # Rook, Queenによってピン
-            if turn == 0 and (piece == 10 or piece == 11):
-                new_array[u_piece] = 1
-            elif turn == 1 and (piece == 4 or piece == 5):
-                new_array[u_piece] = 1
-            # 一回通ったら探索する必要はない
-            u_flag = True
+    d_array = _dis_direction_array(king_point, 0)
+    e_turn = (turn + 1) % 2
+    bs_one = np.where(bs == 0, 0, 1)
+    d_one_array = d_array * bs_one
+    if np.count_nonzero(d_one_array) <= 1:
+        return new_array
+    d1 = np.argpartition(d_one_array.flatten(), 1)[1]
+    d2 = np.argpartition(d_one_array.flatten(), 2)[2]
+    p1 = bs[d1]
+    p2 = bs[d2]
+    if _owner(p1) != turn:
+        return new_array
+    if p2 == 4 + 6 * e_turn or p2 == 5 + 6 * e_turn:
+        new_array[d1] = 1
     return new_array
 
 
-def _down_pin(
-    bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
-) -> np.ndarray:
+def _left_pin(bs: np.ndarray, turn: int, king_point: int, array: np.ndarray) -> np.ndarray:
     new_array = array
-    d = king_point
-    d_num = 0
-    d_piece = -1
-    d_flag = False
-    for i in range(7):
-        d -= 1
-        if d_flag:
-            continue
-        if not _is_in_board(d) or not _is_same_column(king_point, d):
-            continue
-        piece = bs[d]
-        if piece == 0:
-            continue
-        d_num += 1
-        if d_num == 1:
-            if _owner(piece) == turn:
-                d_piece = d
-            else:
-                d_flag = True
-        if d_num == 2:
-            if turn == 0 and (piece == 10 or piece == 11):
-                new_array[d_piece] = 1
-            elif turn == 1 and (piece == 4 or piece == 5):
-                new_array[d_piece] = 1
-            d_flag = True
+    l_array = _dis_direction_array(king_point, 2)
+    e_turn = (turn + 1) % 2
+    bs_one = np.where(bs == 0, 0, 1)
+    l_one_array = l_array * bs_one
+    if np.count_nonzero(l_one_array) <= 1:
+        return new_array
+    l1 = np.argpartition(l_one_array.flatten(), 1)[1]
+    l2 = np.argpartition(l_one_array.flatten(), 2)[2]
+    p1 = bs[l1]
+    p2 = bs[l2]
+    if _owner(p1) != turn:
+        return new_array
+    if p2 == 4 + 6 * e_turn or p2 == 5 + 6 * e_turn:
+        new_array[l1] = 2
     return new_array
 
 
-def _left_pin(
+def _left_pin2(
     bs: np.ndarray, turn: int, king_point: int, array: np.ndarray
 ) -> np.ndarray:
     new_array = array
@@ -1581,4 +1579,13 @@ def _pin(state: ChessState, kp: int):
     pins = _down_pin(bs, turn, kp, pins)
     pins = _down_left_pin(bs, turn, kp, pins)
     pins = _down_right_pin(bs, turn, kp, pins)
+    return pins
+
+
+def _pin2(state: ChessState, kp: int):
+    bs = _board_status(state)
+    turn = state.turn
+    pins = np.zeros(64, dtype=np.int32)
+    for i in range(7):
+        pins = _direction_pin(bs, turn, kp, i, pins)
     return pins
