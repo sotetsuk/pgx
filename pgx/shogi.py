@@ -581,140 +581,63 @@ def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
     return s
 
 
+# 方向ごとの大ごまの動きのなかで一番奥の地点を返す
+def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
+    dir_array = _dis_direction_array(from_, 0, direction)
+    if np.all(dir_array * bs_one == 0):
+        if np.all(dir_array == 0):
+            max_dis = 0
+        else:
+            max_dis = np.max(dir_array)
+    else:
+        max_dis = np.min(dir_array[np.nonzero(dir_array * bs_one)])
+    return from_ + _direction_to_dif(direction, 0) * max_dis
+
+
+# 香車の動き
 def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
-    u_array = _dis_direction_array(from_, turn, 0)
     bs_one = np.where(bs == 0, 0, 1)
-    if np.all(u_array * bs_one == 0):
-        if np.all(u_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(u_array)
-    else:
-        max_dis = np.min(u_array[np.nonzero(u_array * bs_one)])
     if turn == 0:
-        u_point = from_ - max_dis
-        np.put(to, np.arange(u_point, from_, 1), 1)
+        direction = 0
     else:
-        d_point = from_ + max_dis
-        np.put(to, np.arange(d_point, from_, -1), 1)
+        direction = 5
+    point = _inner_point(bs_one, from_, direction)
+    np.put(to, np.arange(point, from_, _direction_to_dif(direction, 1)), 1)
     return to
 
 
+# 角の動き
 def _bishop_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
-    ur_array = _dis_direction_array(from_, 0, 2)
-    ul_array = _dis_direction_array(from_, 0, 1)
-    dr_array = _dis_direction_array(from_, 0, 7)
-    dl_array = _dis_direction_array(from_, 0, 6)
     bs_one = np.where(bs == 0, 0, 1)
-    if np.all(bs_one * ur_array == 0):
-        if np.all(ur_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(ur_array)
-    else:
-        max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)])
-    ur_point = from_ - 10 * max_dis
+    ur_point = _inner_point(bs_one, from_, 2)
     np.put(to, np.arange(ur_point, from_, 10), 1)
-    if np.all(bs_one * ul_array == 0):
-        if np.all(ul_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(ul_array)
-    else:
-        max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)])
-    ul_point = from_ + 8 * max_dis
+    ul_point = _inner_point(bs_one, from_, 1)
     np.put(to, np.arange(ul_point, from_, -8), 1)
-    if np.all(bs_one * dr_array == 0):
-        if np.all(dr_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(dr_array)
-    else:
-        max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)])
-    dr_point = from_ - 8 * max_dis
+    dr_point = _inner_point(bs_one, from_, 7)
     np.put(to, np.arange(dr_point, from_, 8), 1)
-    if np.all(bs_one * dl_array == 0):
-        if np.all(dl_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(dl_array)
-    else:
-        max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)])
-    dl_point = from_ + 10 * max_dis
+    dl_point = _inner_point(bs_one, from_, 6)
     np.put(to, np.arange(dl_point, from_, -10), 1)
     return to
-    # for i in range(8):
-    #    ur = point - 10 * (1 + i)
-    #    ul = point + 8 * (1 + i)
-    #    dr = point - 8 * (1 + i)
-    #    dl = point + 10 * (1 + i)
-    #    if _is_in_board(ur) and _is_same_rising(point, ur) and ur_flag:
-    #        array[ur] = 1
-    #    if _is_in_board(ul) and _is_same_declining(point, ul) and ul_flag:
-    #        array[ul] = 1
-    #    if _is_in_board(dr) and _is_same_declining(point, dr) and dr_flag:
-    #        array[dr] = 1
-    #    if _is_in_board(dl) and _is_same_rising(point, dl) and dl_flag:
-    #        array[dl] = 1
-    #    if not _is_in_board(ur) or bs[ur] != 0:
-    #        ur_flag = False
-    #   if not _is_in_board(ul) or bs[ul] != 0:
-    #        ul_flag = False
-    #    if not _is_in_board(dr) or bs[dr] != 0:
-    #        dr_flag = False
-    #    if not _is_in_board(dl) or bs[dl] != 0:
-    #        dl_flag = False
-    # return array
 
 
+# 飛車の動き
 def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
-    u_array = _dis_direction_array(from_, 0, 0)
-    d_array = _dis_direction_array(from_, 0, 5)
-    r_array = _dis_direction_array(from_, 0, 4)
-    l_array = _dis_direction_array(from_, 0, 3)
     bs_one = np.where(bs == 0, 0, 1)
-    if np.all(bs_one * u_array == 0):
-        if np.all(u_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(u_array)
-    else:
-        max_dis = np.min(u_array[np.nonzero(u_array * bs_one)])
-    ur_point = from_ - max_dis
-    np.put(to, np.arange(ur_point, from_, 1), 1)
-    if np.all(bs_one * d_array == 0):
-        if np.all(d_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(d_array)
-    else:
-        max_dis = np.min(d_array[np.nonzero(d_array * bs_one)])
-    ul_point = from_ + max_dis
-    np.put(to, np.arange(ul_point, from_, -1), 1)
-    if np.all(bs_one * r_array == 0):
-        if np.all(r_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(r_array)
-    else:
-        max_dis = np.min(r_array[np.nonzero(r_array * bs_one)])
-    r_point = from_ - 9 * max_dis
+    u_point = _inner_point(bs_one, from_, 0)
+    np.put(to, np.arange(u_point, from_, 1), 1)
+    d_point = _inner_point(bs_one, from_, 5)
+    np.put(to, np.arange(d_point, from_, -1), 1)
+    r_point = _inner_point(bs_one, from_, 4)
     np.put(to, np.arange(r_point, from_, 9), 1)
-    if np.all(bs_one * l_array == 0):
-        if np.all(l_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(l_array)
-    else:
-        max_dis = np.min(l_array[np.nonzero(l_array * bs_one)])
-    l_point = from_ + 9 * max_dis
+    l_point = _inner_point(bs_one, from_, 3)
     np.put(to, np.arange(l_point, from_, -9), 1)
     return to
 
 
+# 馬の動き
 def _horse_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = _bishop_move(bs, from_)
     u, d, l, r = _is_side(from_)
@@ -729,6 +652,7 @@ def _horse_move(bs: np.ndarray, from_: int) -> np.ndarray:
     return to
 
 
+# 龍の動き
 def _dragon_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = _rook_move(bs, from_)
     u, d, l, r = _is_side(from_)
@@ -1058,7 +982,7 @@ def _is_double_pawn(state: ShogiState) -> bool:
     bs = _board_status(state)
     for i in range(9):
         num_pawn = np.count_nonzero(
-            bs[9 * i : 9 * (i + 1)] == 1 + state.turn * 14
+            bs[9 * i: 9 * (i + 1)] == 1 + state.turn * 14
         )
         if num_pawn >= 2:
             is_double_pawn = True
@@ -1069,25 +993,20 @@ def _is_double_pawn(state: ShogiState) -> bool:
 def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
-    for i in range(9):
-        for j in range(9):
-            piece = bs[9 * i + j]
-            if (
-                state.turn == 0
-                and (piece == 1 or piece == 2 or piece == 3)
-                and j == 0
-            ):
-                is_stuck = True
-            if state.turn == 0 and piece == 3 and j == 1:
-                is_stuck = True
-            if (
-                state.turn == 1
-                and (piece == 15 or piece == 16 or piece == 17)
-                and j == 8
-            ):
-                is_stuck = True
-            if state.turn == 1 and piece == 17 and j == 7:
-                is_stuck = True
+    if state.turn == 0:
+        if np.any(np.where(bs == 1)[0] % 9 == 0):
+            is_stuck = True
+        if np.any(np.where(bs == 2)[0] % 9 == 0):
+            is_stuck = True
+        if np.any(np.where(bs == 3)[0] % 9 <= 1):
+            is_stuck = True
+    if state.turn == 1:
+        if np.any(np.where(bs == 15)[0] % 9 == 8):
+            is_stuck = True
+        if np.any(np.where(bs == 16)[0] % 9 == 8):
+            is_stuck = True
+        if np.any(np.where(bs == 17)[0] % 9 >= 7):
+            is_stuck = True
     return is_stuck
 
 
