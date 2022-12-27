@@ -331,6 +331,8 @@ def _is_same_line(from_: int, to: int, direction: int):
         return False
 
 
+# fromからある方向に移動させたときの位置と距離の関係
+# それ以上その方向に動かせないなら全部0
 def _dis_direction_array(from_: int, turn: int, direction: int):
     array = np.zeros(81, dtype=np.int32)
     dif = _direction_to_dif(direction, turn)
@@ -603,6 +605,7 @@ def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     else:
         direction = 5
     point = _inner_point(bs_one, from_, direction)
+    # np.arrangeがjax化できるか怪しい
     np.put(to, np.arange(point, from_, _direction_to_dif(direction, 1)), 1)
     return to
 
@@ -914,31 +917,16 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
     own = _pieces_owner(state)
     for i in range(81):
         piece = bs[i]
-        # 香車の動きを追加
-        if piece == 2 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _lance_move(bs, i, state.turn)),
+        # 手番側以外の駒は無視
+        if _owner(piece) != state.turn:
+            continue
+        pt = piece % 14
+        # 小駒の動きは最初から追加されているので要らない
+        if pt != 2 and pt != 5 and pt != 6 and pt != 13 and pt != 0:
+            continue
+        action_array = _add_action(
+                _create_actions(piece, i, _piece_moves(bs, piece, i)),
                 action_array,
-            )
-        # 角の動きを追加
-        if piece == 5 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _bishop_move(bs, i)), action_array
-            )
-        # 飛車の動きを追加
-        if piece == 6 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _rook_move(bs, i)), action_array
-            )
-        # 馬の動きを追加
-        if piece == 13 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _horse_move(bs, i)), action_array
-            )
-        # 龍の動きを追加
-        if piece == 14 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _dragon_move(bs, i)), action_array
             )
     # 自分の駒がある位置への移動actionを除く
     action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
@@ -1161,12 +1149,9 @@ def _is_mate(state: ShogiState) -> bool:
     if _king_escape(state):
         return False
     king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+    # 玉が逃げる手以外の合法手
     legal_actions = _filter_move_actions(
         8 + 14 * state.turn, king_point, legal_actions
-    )
-    # 玉が逃げる手以外の合法手
-    legal_actions = _filter_action(
-        _create_piece_actions(8 + 14 * state.turn, king_point), legal_actions
     )
     # ピンされている駒の動きものぞく
     pins = _pin(state)
@@ -1174,8 +1159,9 @@ def _is_mate(state: ShogiState) -> bool:
         if pins[i] == 0:
             continue
         action = _create_piece_actions(bs[i], i)
-        # ピンされた方向以外のaction
+        # ピンされた方向のaction
         action = _eliminate_direction(action, pins[i])
+        # ピンされた方向のaction以外を除いた残り
         legal_actions = _filter_action(action, legal_actions)
     # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
     if cn + cf >= 2:
@@ -1184,22 +1170,19 @@ def _is_mate(state: ShogiState) -> bool:
     if cn == 1:
         # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
         point = int(cnp.argmax())
-        for i in range(34):
-            for j in range(81):
-                # 駒打ちは不可
-                if i >= 20:
-                    legal_actions[81 * i + j] = 0
-                else:
-                    # point以外への移動は王手放置
-                    if j != point:
-                        legal_actions[81 * i + j] = 0
+        points = cnp
     # 開き王手
-    if cf == 1:
+    else:
         point = int(cfp.argmax())
         # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
-        between = _between(king_point, point)
-        for i in range(34):
-            for j in range(81):
-                if between[j] != 1 and not (i <= 19 and j == point):
-                    legal_actions[81 * i + j] = 0
+        points = _between(king_point, point)
+    for i in range(34):
+        for j in range(81):
+            if points[j] != 1 and not (i <= 19 and j == point):
+                legal_actions[81 * i + j] = 0
+    #flag = True
+    #for i in range(81):
+    #    if points[i] == 1 and np.any(legal_actions[::81] == 1):
+    #        flag = False
+    #return flag
     return (legal_actions == 0).all()
