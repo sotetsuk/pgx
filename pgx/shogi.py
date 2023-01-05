@@ -990,31 +990,10 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
     own = _pieces_owner(state)
     for i in range(81):
         piece = bs[i]
-        # 香車の動きを追加
-        if piece == 2 + 14 * state.turn:
+        if _owner(piece) == state.turn:
             action_array = _add_action(
-                _create_actions(piece, i, _lance_move(bs, i, state.turn)),
+                _create_actions(piece, i, _piece_moves(bs, piece, i)),
                 action_array,
-            )
-        # 角の動きを追加
-        if piece == 5 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _bishop_move(bs, i)), action_array
-            )
-        # 飛車の動きを追加
-        if piece == 6 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _rook_move(bs, i)), action_array
-            )
-        # 馬の動きを追加
-        if piece == 13 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _horse_move(bs, i)), action_array
-            )
-        # 龍の動きを追加
-        if piece == 14 + 14 * state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _dragon_move(bs, i)), action_array
             )
     # 自分の駒がある位置への移動actionを除く
     action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
@@ -1069,25 +1048,24 @@ def _is_double_pawn(state: ShogiState) -> bool:
 def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
-    for i in range(9):
-        for j in range(9):
-            piece = bs[9 * i + j]
-            if (
-                state.turn == 0
-                and (piece == 1 or piece == 2 or piece == 3)
-                and j == 0
-            ):
-                is_stuck = True
-            if state.turn == 0 and piece == 3 and j == 1:
-                is_stuck = True
-            if (
-                state.turn == 1
-                and (piece == 15 or piece == 16 or piece == 17)
-                and j == 8
-            ):
-                is_stuck = True
-            if state.turn == 1 and piece == 17 and j == 7:
-                is_stuck = True
+    # 先手歩
+    if np.any(np.where(bs == 1)[0] % 9 == 0):
+        is_stuck = True
+    # 先手香車
+    if np.any(np.where(bs == 2)[0] % 9 == 0):
+        is_stuck = True
+    # 先手桂馬
+    if np.any(np.where(bs == 3)[0] % 9 <= 1):
+        is_stuck = True
+    # 後手歩
+    if np.any(np.where(bs == 15)[0] % 9 == 8):
+        is_stuck = True
+    # 後手香車
+    if np.any(np.where(bs == 16)[0] % 9 == 8):
+        is_stuck = True
+    # 後手桂馬
+    if np.any(np.where(bs == 17)[0] % 9 >= 7):
+        is_stuck = True
     return is_stuck
 
 
