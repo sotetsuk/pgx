@@ -596,6 +596,21 @@ def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
     return from_ + _direction_to_dif(direction, 0) * max_dis
 
 
+# fromからtoまでの地点をdifごとに1に置き換える
+# 最大8回
+def _change_between(from_: int, to: int, dif: int):
+    array = np.zeros(81, dtype=np.int32)
+    point = from_
+    flag = from_ != to
+    for i in range(9):
+        point += dif
+        if flag:
+            array[point] = 1
+        if point == to:
+            flag = False
+    return array
+
+
 # 香車の動き
 def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
@@ -605,9 +620,7 @@ def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     else:
         direction = 5
     point = _inner_point(bs_one, from_, direction)
-    # np.arrangeがjax化できるか怪しい
-    np.put(to, np.arange(point, from_, _direction_to_dif(direction, 1)), 1)
-    return to
+    return _change_between(from_, point, _direction_to_dif(0, turn))
 
 
 # 角の動き
@@ -615,13 +628,17 @@ def _bishop_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
     bs_one = np.where(bs == 0, 0, 1)
     ur_point = _inner_point(bs_one, from_, 2)
-    np.put(to, np.arange(ur_point, from_, 10), 1)
+    to += _change_between(from_, ur_point, -10)
+    # np.put(to, np.arange(ur_point, from_, 10), 1)
     ul_point = _inner_point(bs_one, from_, 1)
-    np.put(to, np.arange(ul_point, from_, -8), 1)
+    to += _change_between(from_, ul_point, 8)
+    # np.put(to, np.arange(ul_point, from_, -8), 1)
     dr_point = _inner_point(bs_one, from_, 7)
-    np.put(to, np.arange(dr_point, from_, 8), 1)
+    to += _change_between(from_, dr_point, -8)
+    # np.put(to, np.arange(dr_point, from_, 8), 1)
     dl_point = _inner_point(bs_one, from_, 6)
-    np.put(to, np.arange(dl_point, from_, -10), 1)
+    to += _change_between(from_, dl_point, 10)
+    # np.put(to, np.arange(dl_point, from_, -10), 1)
     return to
 
 
@@ -630,13 +647,17 @@ def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
     bs_one = np.where(bs == 0, 0, 1)
     u_point = _inner_point(bs_one, from_, 0)
-    np.put(to, np.arange(u_point, from_, 1), 1)
+    to += _change_between(from_, u_point, -1)
+    # np.put(to, np.arange(u_point, from_, 1), 1)
     d_point = _inner_point(bs_one, from_, 5)
-    np.put(to, np.arange(d_point, from_, -1), 1)
+    to += _change_between(from_, d_point, 1)
+    # np.put(to, np.arange(d_point, from_, -1), 1)
     r_point = _inner_point(bs_one, from_, 4)
-    np.put(to, np.arange(r_point, from_, 9), 1)
+    to += _change_between(from_, r_point, -9)
+    # np.put(to, np.arange(r_point, from_, 9), 1)
     l_point = _inner_point(bs_one, from_, 3)
-    np.put(to, np.arange(l_point, from_, -9), 1)
+    to += _change_between(from_, l_point, 9)
+    # np.put(to, np.arange(l_point, from_, -9), 1)
     return to
 
 
@@ -925,9 +946,9 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
         if pt != 2 and pt != 5 and pt != 6 and pt != 13 and pt != 0:
             continue
         action_array = _add_action(
-                _create_actions(piece, i, _piece_moves(bs, piece, i)),
-                action_array,
-            )
+            _create_actions(piece, i, _piece_moves(bs, piece, i)),
+            action_array,
+        )
     # 自分の駒がある位置への移動actionを除く
     action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
     # 駒がある地点への駒打ちactionを除く
@@ -970,7 +991,7 @@ def _is_double_pawn(state: ShogiState) -> bool:
     bs = _board_status(state)
     for i in range(9):
         num_pawn = np.count_nonzero(
-            bs[9 * i: 9 * (i + 1)] == 1 + state.turn * 14
+            bs[9 * i : 9 * (i + 1)] == 1 + state.turn * 14
         )
         if num_pawn >= 2:
             is_double_pawn = True
@@ -1129,13 +1150,16 @@ def _king_escape(state: ShogiState) -> bool:
 
 
 def _between(point1: int, point2: int) -> np.ndarray:
-    between = np.zeros(81, dtype=np.int32)
     direction = _point_to_direction(point1, point2, False, 0)
     if direction == -1:
-        return between
-    dif = _direction_to_dif(direction, 0)
-    np.put(between, np.arange(point1 + dif, point2, dif), 1)
-    return between
+        return np.zeros(81, dtype=np.int32)
+    else:
+        bet = _change_between(point1, point2, _direction_to_dif(direction, 0))
+        bet[point2] = 0
+        return bet
+    # dif = _direction_to_dif(direction, 0)
+    # np.put(between, np.arange(point1 + dif, point2, dif), 1)
+    # return between
 
 
 def _is_mate(state: ShogiState) -> bool:
@@ -1180,9 +1204,4 @@ def _is_mate(state: ShogiState) -> bool:
         for j in range(81):
             if points[j] != 1 and not (i <= 19 and j == point):
                 legal_actions[81 * i + j] = 0
-    #flag = True
-    #for i in range(81):
-    #    if points[i] == 1 and np.any(legal_actions[::81] == 1):
-    #        flag = False
-    #return flag
     return (legal_actions == 0).all()
