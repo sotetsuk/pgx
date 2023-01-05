@@ -613,7 +613,6 @@ def _change_between(from_: int, to: int, dif: int):
 
 # 香車の動き
 def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
-    to = np.zeros(81, dtype=np.int32)
     bs_one = np.where(bs == 0, 0, 1)
     if turn == 0:
         direction = 0
