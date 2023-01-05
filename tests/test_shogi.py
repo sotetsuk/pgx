@@ -310,6 +310,8 @@ def test_legal_actions():
     actions2[81 * 4 + 7] = 1
     for i in range(5):
         actions2[81 * 3 + 25 + 9 * i] = 1
+    a3 = actions2 - actions1
+    print(np.where(a3 == -1))
     assert np.all(actions2 == actions1)
     state.turn = 1
     actions1 = _legal_actions(state)
@@ -477,8 +479,6 @@ def test_is_stuck():
     s.board[0][1] = 0
     s.board[3][1] = 1
     assert _is_stuck(s)
-    s.turn = 1
-    assert not _is_stuck(s)
     s.board[2][8] = 0
     s.board[16][8] = 1
     assert _is_stuck(s)

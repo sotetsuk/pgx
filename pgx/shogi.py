@@ -937,17 +937,11 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
     own = _pieces_owner(state)
     for i in range(81):
         piece = bs[i]
-        # 手番側以外の駒は無視
-        if _owner(piece) != state.turn:
-            continue
-        pt = piece % 14
-        # 小駒の動きは最初から追加されているので要らない
-        if pt != 2 and pt != 5 and pt != 6 and pt != 13 and pt != 0:
-            continue
-        action_array = _add_action(
-            _create_actions(piece, i, _piece_moves(bs, piece, i)),
-            action_array,
-        )
+        if _owner(piece) == state.turn:
+            action_array = _add_action(
+                _create_actions(piece, i, _piece_moves(bs, piece, i)),
+                action_array,
+            )
     # 自分の駒がある位置への移動actionを除く
     action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
     # 駒がある地点への駒打ちactionを除く
@@ -1001,20 +995,24 @@ def _is_double_pawn(state: ShogiState) -> bool:
 def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
-    if state.turn == 0:
-        if np.any(np.where(bs == 1)[0] % 9 == 0):
-            is_stuck = True
-        if np.any(np.where(bs == 2)[0] % 9 == 0):
-            is_stuck = True
-        if np.any(np.where(bs == 3)[0] % 9 <= 1):
-            is_stuck = True
-    if state.turn == 1:
-        if np.any(np.where(bs == 15)[0] % 9 == 8):
-            is_stuck = True
-        if np.any(np.where(bs == 16)[0] % 9 == 8):
-            is_stuck = True
-        if np.any(np.where(bs == 17)[0] % 9 >= 7):
-            is_stuck = True
+    # 先手歩
+    if np.any(np.where(bs == 1)[0] % 9 == 0):
+        is_stuck = True
+    # 先手香車
+    if np.any(np.where(bs == 2)[0] % 9 == 0):
+        is_stuck = True
+    # 先手桂馬
+    if np.any(np.where(bs == 3)[0] % 9 <= 1):
+        is_stuck = True
+    # 後手歩
+    if np.any(np.where(bs == 15)[0] % 9 == 8):
+        is_stuck = True
+    # 後手香車
+    if np.any(np.where(bs == 16)[0] % 9 == 8):
+        is_stuck = True
+    # 後手桂馬
+    if np.any(np.where(bs == 17)[0] % 9 >= 7):
+        is_stuck = True
     return is_stuck
 
 
