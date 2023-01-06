@@ -7,7 +7,7 @@
   * 順子か刻子を2つ完成で手牌完成
   * チーポンカンはなし
   * ドラは表示牌がそのままドラ
-  * 中はすべてドラ、各牌ひとつはドラがある
+  * 中はすべて赤ドラ、發は赤ドラなし、各牌ひとつ赤ドラがある
   * フリテンは自分が捨てた牌はあがれないが、他の牌ではあがれる
 
 Pgx実装での違い
@@ -102,7 +102,7 @@ def _init(rng: jax.random.KeyArray):
         0,
         N_PLAYER * 5,
         lambda i, x: x.at[i // 5, wall[i] // 4].add(
-            (wall[i] % 4 == 0) | (wall[i] >= 40)
+            ((wall[i] % 4 == 0) & (wall[i] != 36)) | (wall[i] >= 40)
         ),
         n_red_in_hands,
     )
@@ -273,7 +273,8 @@ def _draw_tile(state: State) -> State:
     curr_player = state.shuffled_players[turn % N_PLAYER]
     tile_id = state.wall[state.draw_ix]
     tile_type = tile_id // 4
-    is_red = (tile_id % 4 == 0) | (tile_id >= 40)
+    # gd=[36,37,38,39], rd=[40,41,42,43]
+    is_red = ((tile_id % 4 == 0) & (tile_id != 36)) | (tile_id >= 40)
     hands = state.hands.at[turn % N_PLAYER, tile_type].add(1)
     n_red_in_hands = state.n_red_in_hands.at[turn % N_PLAYER, tile_type].add(
         is_red
