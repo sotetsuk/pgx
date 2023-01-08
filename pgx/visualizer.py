@@ -1,4 +1,6 @@
+import base64
 import math
+import os
 from dataclasses import dataclass
 from typing import Optional, Union
 
@@ -83,7 +85,7 @@ class Visualizer:
         self,
         *,
         states,
-        scale=1,
+        scale=1.0,
         color_mode: Optional[str] = None,
     ):
         try:
@@ -93,6 +95,7 @@ class Visualizer:
                 HEIGHT = WIDTH
             else:
                 HEIGHT = WIDTH - 1
+            print(f"width={WIDTH},height={HEIGHT}")
         except TypeError:
             SIZE = 1
             WIDTH = 1
@@ -137,14 +140,31 @@ class Visualizer:
             x = i % WIDTH
             y = i // WIDTH
             _state = self._get_nth_state(states, i)
-            g = self._make_dwg_group(dwg, _state, self.color_set)
+            g = self._make_dwg_group(
+                dwg, _state, self.color_set  # type:ignore
+            )
+
             g.translate(
                 self.GRID_SIZE * 1 / 2
                 + (self.BOARD_WIDTH + 1) * self.GRID_SIZE * x,
                 self.GRID_SIZE * 1 / 2
-                + (self.BOARD_WIDTH + 1) * self.GRID_SIZE * y,
+                + (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * y,
             )
             group.add(g)
+            group.add(
+                dwg.rect(
+                    (
+                        (self.BOARD_WIDTH + 1) * self.GRID_SIZE * x,
+                        (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * y,
+                    ),
+                    (
+                        (self.BOARD_WIDTH + 1) * self.GRID_SIZE,
+                        (self.BOARD_HEIGHT + 1) * self.GRID_SIZE,
+                    ),
+                    fill="none",
+                    stroke="gray",
+                )
+            )
         group.scale(scale)
         dwg.add(group)
         return dwg
@@ -197,6 +217,33 @@ class Visualizer:
                 self.color_set = VisualizerConfig(
                     "white", "black", "lightgray", "white", "white", "black"
                 )
+        elif isinstance(_state, SuzumeJongState):
+            self.GRID_SIZE = 50
+            self.BOARD_WIDTH = 15
+            self.BOARD_HEIGHT = 10
+            self._make_dwg_group = self._make_suzumejong_dwg
+            if (
+                _color_mode is None and self.color_mode == "dark"
+            ) or _color_mode == "dark":
+                self.color_set = VisualizerConfig(
+                    "lightgray",
+                    "dimgray",
+                    "#404040",
+                    "gray",
+                    "#202020",
+                    "darkgray",
+                    "whitesmoke",
+                )
+            else:
+                self.color_set = VisualizerConfig(
+                    "white",
+                    "white",
+                    "gray",
+                    "white",
+                    "white",
+                    "silver",
+                    "black",
+                )
 
     def _get_nth_state(self, _states, _i):
         if isinstance(_states, ContractBridgeBiddingState):
@@ -215,6 +262,23 @@ class Visualizer:
                 terminated=_states.terminated[_i],
                 turn=_states.turn[_i],
                 board=_states.board[_i],
+            )
+        elif isinstance(_states, SuzumeJongState):
+            return SuzumeJongState(
+                curr_player=_states.curr_player[_i],
+                legal_action_mask=_states.legal_action_mask[_i],
+                terminated=_states.terminated[_i],
+                turn=_states.turn[_i],
+                rivers=_states.rivers[_i],
+                last_discard=_states.last_discard[_i],
+                hands=_states.hands[_i],
+                n_red_in_hands=_states.n_red_in_hands[_i],
+                is_red_in_river=_states.is_red_in_river[_i],
+                wall=_states.wall[_i],
+                draw_ix=_states.draw_ix[_i],
+                shuffled_players=_states.shuffled_players[_i],
+                dora=_states.dora[_i],
+                scores=_states.scores[_i],
             )
         else:
             assert False
@@ -400,6 +464,219 @@ class Visualizer:
                     font_family="Courier",
                 )
             )
+
+        return board_g
+
+    def _make_suzumejong_dwg(
+        self,
+        dwg,
+        state: SuzumeJongState,
+        color_set: VisualizerConfig,
+    ) -> svgwrite.Drawing:
+        from .suzume_jong import NUM_TILE_TYPES, NUM_TILES, _tile_type_to_str
+
+        BOARD_WIDTH = 15
+        BOARD_HEIGHT = 10
+        GRID_SIZE = 50
+
+        def _set_piece(
+            _x,
+            _y,
+            _type,
+            _is_red,
+            _dwg,
+            _dwg_g,
+            _color_set: VisualizerConfig,
+            grid_size,
+        ):
+            _dwg_g.add(
+                _dwg.rect(
+                    ((_x + 9), (_y + 1)),
+                    (
+                        32,
+                        47,
+                    ),
+                    fill=_color_set.p1_color,  # "#f9f7e8",
+                    stroke="none",
+                )
+            )
+            type_str = _tile_type_to_str(_type)
+            if _is_red and type_str != "g" and type_str != "r":
+                type_str += "r"
+            PATH = {
+                f"{i+1}": f"images/suzume_jong/{i+1}p.svg" for i in range(9)
+            }
+            PATH.update(
+                {
+                    f"{i+1}r": f"images/suzume_jong/{i+1}pr.svg"
+                    for i in range(9)
+                }
+            )
+            PATH["0"] = "images/suzume_jong/b.svg"
+            PATH["g"] = "images/suzume_jong/gd.svg"
+            PATH["r"] = "images/suzume_jong/rd.svg"
+
+            file_path = PATH[type_str]
+            with open(
+                os.path.join(os.path.dirname(__file__), file_path),
+                "rb",
+            ) as f:
+                b64_img = base64.b64encode(f.read())
+            img = _dwg.image(
+                "data:image/svg+xml;base64," + b64_img.decode("ascii"),
+                insert=(_x, _y),
+                size=(grid_size, grid_size),
+            )
+            _dwg_g.add(img)
+
+            return _dwg_g
+
+        # background
+        dwg.add(
+            dwg.rect(
+                (0, 0),
+                (
+                    BOARD_WIDTH * GRID_SIZE,
+                    BOARD_HEIGHT * GRID_SIZE,
+                ),
+                fill=color_set.background_color,
+            )
+        )
+
+        # board
+        # grid
+        board_g = dwg.g()
+        p1_g = dwg.g()
+        p2_g = dwg.g()
+        p3_g = dwg.g()
+
+        # pieces
+        for player_id, pieces_g in zip(
+            state.shuffled_players, [p1_g, p2_g, p3_g]
+        ):
+            pieces_g = dwg.g()
+
+            # border
+            pieces_g.add(
+                dwg.rect(
+                    (245, 360),
+                    (
+                        260,
+                        70,
+                    ),
+                    rx="2px",
+                    ry="2px",
+                    fill=color_set.p2_color,
+                    stroke=color_set.grid_color,
+                    stroke_width="5px",
+                )
+            )
+
+            # hands
+            x = 250
+            y = 370
+            for type, num in zip(
+                range(NUM_TILE_TYPES),
+                state.hands[player_id],
+            ):
+                num_red = state.n_red_in_hands[player_id, type]
+                for _ in range(num):
+                    pieces_g = _set_piece(
+                        x,
+                        y,
+                        type,
+                        num_red > 0,
+                        dwg,
+                        pieces_g,
+                        color_set,
+                        GRID_SIZE,
+                    )
+                    x += 40
+                    num_red -= 1
+
+            # river
+            x = 270
+            y = 220
+            river_count = 0
+            for type, is_red in zip(
+                state.rivers[player_id], state.is_red_in_river[player_id]
+            ):
+                if type >= 0:
+                    pieces_g = _set_piece(
+                        x, y, type, is_red, dwg, pieces_g, color_set, GRID_SIZE
+                    )
+                    x += 40
+                    river_count += 1
+                    if river_count > 4:
+                        river_count = 0
+                        x = 270
+                        y += 60
+
+            if player_id == state.shuffled_players[1]:
+                pieces_g.rotate(
+                    angle=-90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
+                )
+
+            elif player_id == state.shuffled_players[2]:
+                pieces_g.rotate(
+                    angle=90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
+                )
+
+            board_g.add(pieces_g)
+
+        # dora
+        board_g.add(
+            dwg.rect(
+                (BOARD_WIDTH * GRID_SIZE / 2 - 40, 0),
+                (
+                    80,
+                    80,
+                ),
+                rx="5px",
+                ry="5px",
+                fill=color_set.p1_outline,
+            )
+        )
+        board_g.add(
+            dwg.rect(
+                (BOARD_WIDTH * GRID_SIZE / 2 - 34, 6),
+                (
+                    68,
+                    68,
+                ),
+                rx="5px",
+                ry="5px",
+                fill="none",
+                stroke=color_set.p2_outline,
+                stroke_width="3px",
+            )
+        )
+        board_g = _set_piece(
+            BOARD_WIDTH * GRID_SIZE / 2 - 25,
+            15,
+            state.dora,
+            False,
+            dwg,
+            board_g,
+            color_set,
+            GRID_SIZE,
+        )
+
+        # wall
+        wall_type = -1
+        board_g = _set_piece(
+            330, 120, wall_type, False, dwg, board_g, color_set, GRID_SIZE
+        )
+        board_g.add(
+            dwg.text(
+                text=f"× {NUM_TILES - state.draw_ix-1}",
+                insert=(380, 150),
+                fill=color_set.text_color,
+                font_size="20px",
+                font_family="serif",
+            )
+        )
+        board_g.translate(0, 40)
 
         return board_g
 
