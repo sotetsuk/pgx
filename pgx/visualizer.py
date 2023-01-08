@@ -7,6 +7,7 @@ import svgwrite  # type: ignore
 
 from .contractbridgebidding import ContractBridgeBiddingState
 from .suzume_jong import State as SuzumeJongState
+from .tic_tac_toe import State as TictactoeState
 
 TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
 SUITS = ["\u2660", "\u2665", "\u2666", "\u2663", "N"]  # ♠♡♢♣
@@ -32,9 +33,11 @@ class Visualizer:
     ) -> None:
         self.state = state
         self.color_mode = color_mode
+        self.color_set = VisualizerConfig()
         self.GRID_SIZE = 50
         self.BOARD_WIDTH = 14
         self.BOARD_HEIGHT = 12
+        self._make_dwg_group = None
 
     def _repr_html_(self) -> str:
         assert self.state is not None
@@ -95,6 +98,9 @@ class Visualizer:
             WIDTH = 1
             HEIGHT = 1
 
+        self._set_config_by_state(states, color_mode)
+        assert self._make_dwg_group is not None
+
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
@@ -104,8 +110,6 @@ class Visualizer:
         )
         group = dwg.g()
 
-        color_set = self._get_color_set(states, color_mode)
-
         # background
         group.add(
             dwg.rect(
@@ -114,14 +118,12 @@ class Visualizer:
                     (self.BOARD_WIDTH + 1) * self.GRID_SIZE * WIDTH,
                     (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT,
                 ),
-                fill=color_set.background_color,
+                fill=self.color_set.background_color,
             )
         )
 
-        _make_dwg_group = self._get_dwg_func(states)
-
         if SIZE == 1:
-            g = _make_dwg_group(dwg, states, color_set)
+            g = self._make_dwg_group(dwg, states, self.color_set)
             g.translate(
                 self.GRID_SIZE * 1 / 2,
                 self.GRID_SIZE * 1 / 2,
@@ -134,15 +136,8 @@ class Visualizer:
         for i in range(SIZE):
             x = i % WIDTH
             y = i // WIDTH
-            _state = ContractBridgeBiddingState(  # type:ignore
-                turn=states.turn[i],
-                curr_player=states.curr_player[i],
-                hand=states.hand[i],
-                bidding_history=states.bidding_history[i],
-                vul_NS=states.vul_NS[i],
-                vul_EW=states.vul_EW[i],
-            )
-            g = _make_dwg_group(dwg, _state, color_set)
+            _state = self._get_nth_state(states, i)
+            g = self._make_dwg_group(dwg, _state, self.color_set)
             g.translate(
                 self.GRID_SIZE * 1 / 2
                 + (self.BOARD_WIDTH + 1) * self.GRID_SIZE * x,
@@ -154,12 +149,16 @@ class Visualizer:
         dwg.add(group)
         return dwg
 
-    def _get_color_set(self, _state, _color_mode):
+    def _set_config_by_state(self, _state, _color_mode):
         if isinstance(_state, ContractBridgeBiddingState):
+            self.GRID_SIZE = 50
+            self.BOARD_WIDTH = 14
+            self.BOARD_HEIGHT = 12
+            self._make_dwg_group = self._make_bridge_dwg
             if (
                 _color_mode is None and self.color_mode == "dark"
             ) or _color_mode == "dark":
-                return VisualizerConfig(
+                self.color_set = VisualizerConfig(
                     "gray",
                     "black",
                     "black",
@@ -169,7 +168,7 @@ class Visualizer:
                     "white",
                 )
             else:
-                return VisualizerConfig(
+                self.color_set = VisualizerConfig(
                     "white",
                     "black",
                     "lightgray",
@@ -178,12 +177,45 @@ class Visualizer:
                     "gray",
                     "black",
                 )
-        else:
-            return VisualizerConfig()
+        elif isinstance(_state, TictactoeState):
+            self.GRID_SIZE = 50
+            self.BOARD_WIDTH = 3
+            self.BOARD_HEIGHT = 3
+            self._make_dwg_group = self._make_tictactoe_dwg
+            if (
+                _color_mode is None and self.color_mode == "dark"
+            ) or _color_mode == "dark":
+                self.color_set = VisualizerConfig(
+                    "gray",
+                    "black",
+                    "black",
+                    "dimgray",
+                    "#202020",
+                    "gainsboro",
+                )
+            else:
+                self.color_set = VisualizerConfig(
+                    "white", "black", "lightgray", "white", "white", "black"
+                )
 
-    def _get_dwg_func(self, _state):
-        if isinstance(_state, ContractBridgeBiddingState):
-            return self._make_bridge_dwg
+    def _get_nth_state(self, _states, _i):
+        if isinstance(_states, ContractBridgeBiddingState):
+            return ContractBridgeBiddingState(  # type:ignore
+                turn=_states.turn[_i],
+                curr_player=_states.curr_player[_i],
+                hand=_states.hand[_i],
+                bidding_history=_states.bidding_history[_i],
+                vul_NS=_states.vul_NS[_i],
+                vul_EW=_states.vul_EW[_i],
+            )
+        elif isinstance(_states, TictactoeState):
+            return TictactoeState(
+                curr_player=_states.curr_player[_i],
+                legal_action_mask=_states.legal_action_mask[_i],
+                terminated=_states.terminated[_i],
+                turn=_states.turn[_i],
+                board=_states.board[_i],
+            )
         else:
             assert False
 
@@ -369,4 +401,131 @@ class Visualizer:
                 )
             )
 
+        return board_g
+
+    def _make_tictactoe_dwg(
+        self,
+        dwg,
+        state: TictactoeState,
+        color_set: VisualizerConfig,
+    ) -> svgwrite.Drawing:
+        GRID_SIZE = self.GRID_SIZE
+        BOARD_WIDTH = self.BOARD_WIDTH
+        BOARD_HEIGHT = self.BOARD_HEIGHT
+        # board
+        board_g = dwg.g()
+
+        # grid
+        hlines = board_g.add(
+            dwg.g(
+                id="hlines",
+                stroke=color_set.grid_color,
+                fill=color_set.grid_color,
+            )
+        )
+        for y in range(1, BOARD_HEIGHT):
+            hlines.add(
+                dwg.line(
+                    start=(0, GRID_SIZE * y),
+                    end=(
+                        GRID_SIZE * BOARD_WIDTH,
+                        GRID_SIZE * y,
+                    ),
+                    stroke_width=GRID_SIZE * 0.05,
+                )
+            )
+            hlines.add(
+                dwg.circle(
+                    center=(0, GRID_SIZE * y),
+                    r=GRID_SIZE * 0.014,
+                )
+            )
+            hlines.add(
+                dwg.circle(
+                    center=(
+                        GRID_SIZE * BOARD_WIDTH,
+                        GRID_SIZE * y,
+                    ),
+                    r=GRID_SIZE * 0.014,
+                )
+            )
+        vlines = board_g.add(
+            dwg.g(
+                id="vline",
+                stroke=color_set.grid_color,
+                fill=color_set.grid_color,
+            )
+        )
+        for x in range(1, BOARD_WIDTH):
+            vlines.add(
+                dwg.line(
+                    start=(GRID_SIZE * x, 0),
+                    end=(
+                        GRID_SIZE * x,
+                        GRID_SIZE * BOARD_HEIGHT,
+                    ),
+                    stroke_width=GRID_SIZE * 0.05,
+                )
+            )
+            vlines.add(
+                dwg.circle(
+                    center=(GRID_SIZE * x, 0),
+                    r=GRID_SIZE * 0.014,
+                )
+            )
+            vlines.add(
+                dwg.circle(
+                    center=(
+                        GRID_SIZE * x,
+                        GRID_SIZE * BOARD_HEIGHT,
+                    ),
+                    r=GRID_SIZE * 0.014,
+                )
+            )
+
+        for i, mark in enumerate(state.board):
+            x = i % BOARD_WIDTH
+            y = i // BOARD_HEIGHT
+            if mark == 0:  # 先手
+                board_g.add(
+                    dwg.circle(
+                        center=(
+                            (x + 0.5) * GRID_SIZE,
+                            (y + 0.5) * GRID_SIZE,
+                        ),
+                        r=0.4 * GRID_SIZE,
+                        stroke=color_set.grid_color,
+                        stroke_width=0.05 * GRID_SIZE,
+                        fill="none",
+                    )
+                )
+            elif mark == 1:  # 後手
+                board_g.add(
+                    dwg.line(
+                        start=(
+                            (x + 0.1) * GRID_SIZE,
+                            (y + 0.1) * GRID_SIZE,
+                        ),
+                        end=(
+                            (x + 0.9) * GRID_SIZE,
+                            (y + 0.9) * GRID_SIZE,
+                        ),
+                        stroke=color_set.grid_color,
+                        stroke_width=0.05 * GRID_SIZE,
+                    )
+                )
+                board_g.add(
+                    dwg.line(
+                        start=(
+                            (x + 0.1) * GRID_SIZE,
+                            (y + 0.9) * GRID_SIZE,
+                        ),
+                        end=(
+                            (x + 0.9) * GRID_SIZE,
+                            (y + 0.1) * GRID_SIZE,
+                        ),
+                        stroke=color_set.grid_color,
+                        stroke_width=0.05 * GRID_SIZE,
+                    )
+                )
         return board_g
