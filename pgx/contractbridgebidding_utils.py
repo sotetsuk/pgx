@@ -307,7 +307,7 @@ class Visualizer:
                         insert=(x_offset[i] + 10, y_offset[i]),
                         fill=color_set.grid_color,
                         font_size="20px",
-                        font_family="monospace",
+                        font_family="Courier",
                         font_weight="bold",
                     )
                 )
@@ -320,7 +320,7 @@ class Visualizer:
                             insert=(x_offset[i] + 180, y_offset[i]),
                             fill="orangered",
                             font_size="20px",
-                            font_family="monospace",
+                            font_family="Courier",
                             font_weight="bold",
                         )
                     )
@@ -343,7 +343,7 @@ class Visualizer:
                         if 0 < j < 3
                         else color_set.text_color,
                         font_size="24px",
-                        font_family="monospace",
+                        font_family="Courier",
                         font_weight="bold",
                     )
                 )
