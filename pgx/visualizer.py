@@ -8,6 +8,7 @@ import numpy as np
 import svgwrite  # type: ignore
 
 from .contractbridgebidding import ContractBridgeBiddingState
+from .go import GoState
 from .shogi import ShogiState
 from .suzume_jong import State as SuzumeJongState
 from .tic_tac_toe import State as TictactoeState
@@ -96,7 +97,6 @@ class Visualizer:
                 HEIGHT = WIDTH
             else:
                 HEIGHT = WIDTH - 1
-            print(f"width={WIDTH},height={HEIGHT}")
         except TypeError:
             SIZE = 1
             WIDTH = 1
@@ -104,7 +104,6 @@ class Visualizer:
 
         self._set_config_by_state(states, color_mode)
         assert self._make_dwg_group is not None
-
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
@@ -198,25 +197,51 @@ class Visualizer:
                     "gray",
                     "black",
                 )
-        elif isinstance(_state, TictactoeState):
+        elif isinstance(_state, GoState):
             self.GRID_SIZE = 50
-            self.BOARD_WIDTH = 3
-            self.BOARD_HEIGHT = 3
-            self._make_dwg_group = self._make_tictactoe_dwg
+            try:
+                self.BOARD_WIDTH = int(_state.size[0])
+                self.BOARD_HEIGHT = int(_state.size[0])
+            except IndexError:
+                self.BOARD_WIDTH = int(_state.size)
+                self.BOARD_HEIGHT = int(_state.size)
+            self._make_dwg_group = self._make_go_dwg
             if (
                 _color_mode is None and self.color_mode == "dark"
             ) or _color_mode == "dark":
                 self.color_set = VisualizerConfig(
-                    "gray",
-                    "black",
-                    "black",
-                    "dimgray",
-                    "#202020",
-                    "gainsboro",
+                    "black", "gray", "white", "white", "#202020", "white", ""
                 )
             else:
                 self.color_set = VisualizerConfig(
-                    "white", "black", "lightgray", "white", "white", "black"
+                    "black",
+                    "white",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "",
+                )
+        elif isinstance(_state, ShogiState):
+            self.GRID_SIZE = 50
+            self.BOARD_WIDTH = 10
+            self.BOARD_HEIGHT = 9
+            self._make_dwg_group = self._make_shogi_dwg
+            if (
+                _color_mode is None and self.color_mode == "dark"
+            ) or _color_mode == "dark":
+                self.color_set = VisualizerConfig(
+                    "gray", "black", "gray", "gray", "#202020", "gray", ""
+                )
+            else:
+                self.color_set = VisualizerConfig(
+                    "white",
+                    "lightgray",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "",
                 )
         elif isinstance(_state, SuzumeJongState):
             self.GRID_SIZE = 50
@@ -245,26 +270,25 @@ class Visualizer:
                     "silver",
                     "black",
                 )
-        elif isinstance(_state, ShogiState):
+        elif isinstance(_state, TictactoeState):
             self.GRID_SIZE = 50
-            self.BOARD_WIDTH = 10
-            self.BOARD_HEIGHT = 9
-            self._make_dwg_group = self._make_shogi_dwg
+            self.BOARD_WIDTH = 3
+            self.BOARD_HEIGHT = 3
+            self._make_dwg_group = self._make_tictactoe_dwg
             if (
                 _color_mode is None and self.color_mode == "dark"
             ) or _color_mode == "dark":
                 self.color_set = VisualizerConfig(
-                    "gray", "black", "gray", "gray", "#202020", "gray", ""
+                    "gray",
+                    "black",
+                    "black",
+                    "dimgray",
+                    "#202020",
+                    "gainsboro",
                 )
             else:
                 self.color_set = VisualizerConfig(
-                    "white",
-                    "lightgray",
-                    "black",
-                    "black",
-                    "white",
-                    "black",
-                    "",
+                    "white", "black", "lightgray", "white", "white", "black"
                 )
 
     def _get_nth_state(self, _states, _i):
@@ -276,6 +300,12 @@ class Visualizer:
                 bidding_history=_states.bidding_history[_i],
                 vul_NS=_states.vul_NS[_i],
                 vul_EW=_states.vul_EW[_i],
+            )
+        elif isinstance(_states, GoState):
+            return GoState(
+                size=_states.size[_i],  # type:ignore
+                ren_id_board=_states.ren_id_board[_i],
+                turn=_states.turn[_i],
             )
         elif isinstance(_states, ShogiState):
             return ShogiState(
@@ -495,6 +525,106 @@ class Visualizer:
                     font_family="Courier",
                 )
             )
+
+        return board_g
+
+    def _make_go_dwg(
+        self,
+        dwg,
+        state: GoState,
+        color_set: VisualizerConfig,
+    ) -> svgwrite.Drawing:
+        from pgx.go import get_board
+
+        BOARD_SIZE = self.BOARD_WIDTH
+        GRID_SIZE = 50
+
+        # background
+        dwg.add(
+            dwg.rect(
+                (0, 0),
+                (BOARD_SIZE * GRID_SIZE, BOARD_SIZE * GRID_SIZE),
+                # stroke=svgwrite.rgb(10, 10, 16, "%"),
+                fill=color_set.background_color,
+            )
+        )
+
+        # board
+        # grid
+        board_g = dwg.g()
+        hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
+        for y in range(BOARD_SIZE):
+            hlines.add(
+                dwg.line(
+                    start=(0, GRID_SIZE * y),
+                    end=(
+                        GRID_SIZE * (BOARD_SIZE - 1),
+                        GRID_SIZE * y,
+                    ),
+                )
+            )
+        vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
+        for x in range(BOARD_SIZE):
+            vlines.add(
+                dwg.line(
+                    start=(GRID_SIZE * x, 0),
+                    end=(
+                        GRID_SIZE * x,
+                        GRID_SIZE * (BOARD_SIZE - 1),
+                    ),
+                )
+            )
+
+        # hoshi
+        hoshi_g = dwg.g()
+        hosi_pos = []
+        if BOARD_SIZE == 19:
+            hosi_pos = [
+                (4, 4),
+                (4, 10),
+                (4, 16),
+                (10, 4),
+                (10, 10),
+                (10, 16),
+                (16, 4),
+                (16, 10),
+                (16, 16),
+            ]
+        elif BOARD_SIZE == 5:
+            hosi_pos = [(3, 3)]
+
+        for x, y in hosi_pos:
+            hoshi_g.add(
+                dwg.circle(
+                    center=((x - 1) * GRID_SIZE, (y - 1) * GRID_SIZE),
+                    r=GRID_SIZE / 10,
+                    fill=color_set.grid_color,
+                )
+            )
+        board_g.add(hoshi_g)
+
+        # stones
+        board = get_board(state)
+        for xy, stone in enumerate(board):
+            if stone == 2:
+                continue
+            # ndarrayのx,yと違うことに注意
+            stone_y = xy // BOARD_SIZE * GRID_SIZE
+            stone_x = xy % BOARD_SIZE * GRID_SIZE
+
+            color = color_set.p1_color if stone == 0 else color_set.p2_color
+            outline = (
+                color_set.p1_outline if stone == 0 else color_set.p2_outline
+            )
+            board_g.add(
+                dwg.circle(
+                    center=(stone_x, stone_y),
+                    r=GRID_SIZE / 2.2,
+                    stroke=outline,
+                    fill=color,
+                )
+            )
+        board_g.translate(GRID_SIZE / 2, GRID_SIZE / 2)
 
         return board_g
 
