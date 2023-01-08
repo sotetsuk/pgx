@@ -6,66 +6,9 @@ import numpy as np
 import svgwrite  # type: ignore
 
 from .contractbridgebidding import ContractBridgeBiddingState
+from .suzume_jong import State as SuzumeJongState
 
 TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
-TO_CARD_UNI = [
-    "\U0001F0A1",
-    "\U0001F0A2",
-    "\U0001F0A3",
-    "\U0001F0A4",
-    "\U0001F0A5",
-    "\U0001F0A6",
-    "\U0001F0A7",
-    "\U0001F0A8",
-    "\U0001F0A9",
-    "\U0001F0AA",
-    "\U0001F0AB",
-    "\U0001F0AC",
-    "\U0001F0AD",
-    "\U0001F0AE",
-    "\U0001F0B1",
-    "\U0001F0B2",
-    "\U0001F0B3",
-    "\U0001F0B4",
-    "\U0001F0B5",
-    "\U0001F0B6",
-    "\U0001F0B7",
-    "\U0001F0B8",
-    "\U0001F0B9",
-    "\U0001F0BA",
-    "\U0001F0BB",
-    "\U0001F0BC",
-    "\U0001F0BD",
-    "\U0001F0BE",
-    "\U0001F0C1",
-    "\U0001F0C2",
-    "\U0001F0C3",
-    "\U0001F0C4",
-    "\U0001F0C5",
-    "\U0001F0C6",
-    "\U0001F0C7",
-    "\U0001F0C8",
-    "\U0001F0C9",
-    "\U0001F0CA",
-    "\U0001F0CB",
-    "\U0001F0CC",
-    "\U0001F0CD",
-    "\U0001F0CE",
-    "\U0001F0D1",
-    "\U0001F0D2",
-    "\U0001F0D3",
-    "\U0001F0D4",
-    "\U0001F0D5",
-    "\U0001F0D6",
-    "\U0001F0D7",
-    "\U0001F0D8",
-    "\U0001F0D9",
-    "\U0001F0DA",
-    "\U0001F0DB",
-    "\U0001F0DC",
-    "\U0001F0DD",
-    "\U0001F0DE",
-]
 SUITS = ["\u2660", "\u2665", "\u2666", "\u2663", "N"]  # ♠♡♢♣
 ACT = ["P", "X", "XX"]
 
@@ -84,7 +27,7 @@ class VisualizerConfig:
 class Visualizer:
     def __init__(
         self,
-        state: Union[None, ContractBridgeBiddingState] = None,
+        state: Union[None, ContractBridgeBiddingState, SuzumeJongState] = None,
         color_mode: str = "light",
     ) -> None:
         self.state = state
@@ -95,7 +38,7 @@ class Visualizer:
 
     def _repr_html_(self) -> str:
         assert self.state is not None
-        return self._to_svg_string()
+        return self._to_dwg_from_states(states=self.state).tostring()
 
     def save_svg(self, filename="temp.svg", state=None) -> None:
         assert filename.endswith(".svg")
@@ -106,7 +49,9 @@ class Visualizer:
 
     def show_svg(
         self,
-        states: Union[None, ContractBridgeBiddingState] = None,
+        states: Union[
+            None, ContractBridgeBiddingState, SuzumeJongState
+        ] = None,
         scale=1,
         color_mode: Optional[str] = None,
     ) -> None:
@@ -126,7 +71,9 @@ class Visualizer:
             # Not Jupyter
             sys.stdout.write("This function only works in Jupyter Notebook.")
 
-    def set_state(self, state: ContractBridgeBiddingState) -> None:
+    def set_state(
+        self, state: Union[ContractBridgeBiddingState, SuzumeJongState]
+    ) -> None:
         self.state = state
 
     def _to_dwg_from_states(
@@ -147,28 +94,7 @@ class Visualizer:
             SIZE = 1
             WIDTH = 1
             HEIGHT = 1
-        if (
-            color_mode is None and self.color_mode == "dark"
-        ) or color_mode == "dark":
-            color_set = VisualizerConfig(
-                "gray",
-                "black",
-                "black",
-                "dimgray",
-                "#202020",
-                "gainsboro",
-                "white",
-            )
-        else:
-            color_set = VisualizerConfig(
-                "white",
-                "black",
-                "lightgray",
-                "white",
-                "white",
-                "gray",
-                "black",
-            )
+
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
@@ -176,8 +102,9 @@ class Visualizer:
                 (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT * scale,
             ),
         )
-
         group = dwg.g()
+
+        color_set = self._get_color_set(states, color_mode)
 
         # background
         group.add(
@@ -191,8 +118,10 @@ class Visualizer:
             )
         )
 
+        _make_dwg_group = self._get_dwg_func(states)
+
         if SIZE == 1:
-            g = self._make_dwg_group(dwg, states, color_set)
+            g = _make_dwg_group(dwg, states, color_set)
             g.translate(
                 self.GRID_SIZE * 1 / 2,
                 self.GRID_SIZE * 1 / 2,
@@ -213,7 +142,7 @@ class Visualizer:
                 vul_NS=states.vul_NS[i],
                 vul_EW=states.vul_EW[i],
             )
-            g = self._make_dwg_group(dwg, _state, color_set)
+            g = _make_dwg_group(dwg, _state, color_set)
             g.translate(
                 self.GRID_SIZE * 1 / 2
                 + (self.BOARD_WIDTH + 1) * self.GRID_SIZE * x,
@@ -225,7 +154,40 @@ class Visualizer:
         dwg.add(group)
         return dwg
 
-    def _make_dwg_group(
+    def _get_color_set(self, _state, _color_mode):
+        if isinstance(_state, ContractBridgeBiddingState):
+            if (
+                _color_mode is None and self.color_mode == "dark"
+            ) or _color_mode == "dark":
+                return VisualizerConfig(
+                    "gray",
+                    "black",
+                    "black",
+                    "dimgray",
+                    "#202020",
+                    "gainsboro",
+                    "white",
+                )
+            else:
+                return VisualizerConfig(
+                    "white",
+                    "black",
+                    "lightgray",
+                    "white",
+                    "white",
+                    "gray",
+                    "black",
+                )
+        else:
+            return VisualizerConfig()
+
+    def _get_dwg_func(self, _state):
+        if isinstance(_state, ContractBridgeBiddingState):
+            return self._make_bridge_dwg
+        else:
+            assert False
+
+    def _make_bridge_dwg(
         self,
         dwg,
         state: ContractBridgeBiddingState,
@@ -408,6 +370,3 @@ class Visualizer:
             )
 
         return board_g
-
-    def _to_svg_string(self) -> str:
-        return self._to_dwg_from_states(states=self.state).tostring()
