@@ -35,15 +35,25 @@ class VisualizerConfig:
 class Visualizer:
     def __init__(
         self,
-        state: Union[None, ContractBridgeBiddingState, SuzumeJongState] = None,
+        state: Union[
+            None,
+            AnimalShogiState,
+            BackgammonState,
+            ChessState,
+            ContractBridgeBiddingState,
+            GoState,
+            ShogiState,
+            SuzumeJongState,
+            TictactoeState,
+        ] = None,
         color_mode: str = "light",
     ) -> None:
         self.state = state
         self.color_mode = color_mode
         self.color_set = VisualizerConfig()
-        self.GRID_SIZE = 50
-        self.BOARD_WIDTH = 14
-        self.BOARD_HEIGHT = 12
+        self.GRID_SIZE = -1
+        self.BOARD_WIDTH = -1
+        self.BOARD_HEIGHT = -1
         self._make_dwg_group = None
 
     def _repr_html_(self) -> str:
@@ -60,9 +70,17 @@ class Visualizer:
     def show_svg(
         self,
         states: Union[
-            None, ContractBridgeBiddingState, SuzumeJongState
+            None,
+            AnimalShogiState,
+            BackgammonState,
+            ChessState,
+            ContractBridgeBiddingState,
+            GoState,
+            ShogiState,
+            SuzumeJongState,
+            TictactoeState,
         ] = None,
-        scale=1,
+        scale=1.0,
         color_mode: Optional[str] = None,
     ) -> None:
         import sys
@@ -82,7 +100,17 @@ class Visualizer:
             sys.stdout.write("This function only works in Jupyter Notebook.")
 
     def set_state(
-        self, state: Union[ContractBridgeBiddingState, SuzumeJongState]
+        self,
+        state: Union[
+            AnimalShogiState,
+            BackgammonState,
+            ChessState,
+            ContractBridgeBiddingState,
+            GoState,
+            ShogiState,
+            SuzumeJongState,
+            TictactoeState,
+        ],
     ) -> None:
         self.state = state
 
@@ -172,7 +200,7 @@ class Visualizer:
         dwg.add(group)
         return dwg
 
-    def _set_config_by_state(self, _state, _color_mode):
+    def _set_config_by_state(self, _state, _color_mode):  # noqa: C901
         if isinstance(_state, AnimalShogiState):
             self.GRID_SIZE = 60
             self.BOARD_WIDTH = 4
