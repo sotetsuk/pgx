@@ -331,6 +331,8 @@ def _is_same_line(from_: int, to: int, direction: int):
         return False
 
 
+# fromからある方向に移動させたときの位置と距離の関係
+# それ以上その方向に動かせないなら全部0
 def _dis_direction_array(from_: int, turn: int, direction: int):
     array = np.zeros(81, dtype=np.int32)
     dif = _direction_to_dif(direction, turn)
@@ -466,10 +468,7 @@ def _direction_to_from(
         f -= dif
         if _is_in_board(f) and _from == -1 and _piece_type(state, f) != 0:
             _from = f
-    if direction >= 10:
-        return _from, True
-    else:
-        return _from, False
+    return _from, direction >= 10
 
 
 def _direction_to_hand(direction: int) -> int:
@@ -581,140 +580,76 @@ def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
     return s
 
 
-def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
-    to = np.zeros(81, dtype=np.int32)
-    u_array = _dis_direction_array(from_, turn, 0)
-    bs_one = np.where(bs == 0, 0, 1)
-    if np.all(u_array * bs_one == 0):
-        if np.all(u_array == 0):
+# 方向ごとの大ごまの動きのなかで一番奥の地点を返す
+def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
+    dir_array = _dis_direction_array(from_, 0, direction)
+    if np.all(dir_array * bs_one == 0):
+        if np.all(dir_array == 0):
             max_dis = 0
         else:
-            max_dis = np.max(u_array)
+            max_dis = np.max(dir_array)
     else:
-        max_dis = np.min(u_array[np.nonzero(u_array * bs_one)])
+        max_dis = np.min(dir_array[np.nonzero(dir_array * bs_one)])
+    return from_ + _direction_to_dif(direction, 0) * max_dis
+
+
+# fromからtoまでの地点をdifごとに1に置き換える
+# 最大8回
+def _change_between(from_: int, to: int, dif: int):
+    array = np.zeros(81, dtype=np.int32)
+    point = from_
+    flag = from_ != to
+    for i in range(9):
+        point += dif
+        if flag:
+            array[point] = 1
+        if point == to:
+            flag = False
+    return array
+
+
+# 香車の動き
+def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
+    bs_one = np.where(bs == 0, 0, 1)
     if turn == 0:
-        u_point = from_ - max_dis
-        np.put(to, np.arange(u_point, from_, 1), 1)
+        direction = 0
     else:
-        d_point = from_ + max_dis
-        np.put(to, np.arange(d_point, from_, -1), 1)
-    return to
+        direction = 5
+    point = _inner_point(bs_one, from_, direction)
+    return _change_between(from_, point, _direction_to_dif(0, turn))
 
 
+# 角の動き
 def _bishop_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
-    ur_array = _dis_direction_array(from_, 0, 2)
-    ul_array = _dis_direction_array(from_, 0, 1)
-    dr_array = _dis_direction_array(from_, 0, 7)
-    dl_array = _dis_direction_array(from_, 0, 6)
     bs_one = np.where(bs == 0, 0, 1)
-    if np.all(bs_one * ur_array == 0):
-        if np.all(ur_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(ur_array)
-    else:
-        max_dis = np.min(ur_array[np.nonzero(ur_array * bs_one)])
-    ur_point = from_ - 10 * max_dis
-    np.put(to, np.arange(ur_point, from_, 10), 1)
-    if np.all(bs_one * ul_array == 0):
-        if np.all(ul_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(ul_array)
-    else:
-        max_dis = np.min(ul_array[np.nonzero(ul_array * bs_one)])
-    ul_point = from_ + 8 * max_dis
-    np.put(to, np.arange(ul_point, from_, -8), 1)
-    if np.all(bs_one * dr_array == 0):
-        if np.all(dr_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(dr_array)
-    else:
-        max_dis = np.min(dr_array[np.nonzero(dr_array * bs_one)])
-    dr_point = from_ - 8 * max_dis
-    np.put(to, np.arange(dr_point, from_, 8), 1)
-    if np.all(bs_one * dl_array == 0):
-        if np.all(dl_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(dl_array)
-    else:
-        max_dis = np.min(dl_array[np.nonzero(dl_array * bs_one)])
-    dl_point = from_ + 10 * max_dis
-    np.put(to, np.arange(dl_point, from_, -10), 1)
+    ur_point = _inner_point(bs_one, from_, 2)
+    to += _change_between(from_, ur_point, -10)
+    ul_point = _inner_point(bs_one, from_, 1)
+    to += _change_between(from_, ul_point, 8)
+    dr_point = _inner_point(bs_one, from_, 7)
+    to += _change_between(from_, dr_point, -8)
+    dl_point = _inner_point(bs_one, from_, 6)
+    to += _change_between(from_, dl_point, 10)
     return to
-    # for i in range(8):
-    #    ur = point - 10 * (1 + i)
-    #    ul = point + 8 * (1 + i)
-    #    dr = point - 8 * (1 + i)
-    #    dl = point + 10 * (1 + i)
-    #    if _is_in_board(ur) and _is_same_rising(point, ur) and ur_flag:
-    #        array[ur] = 1
-    #    if _is_in_board(ul) and _is_same_declining(point, ul) and ul_flag:
-    #        array[ul] = 1
-    #    if _is_in_board(dr) and _is_same_declining(point, dr) and dr_flag:
-    #        array[dr] = 1
-    #    if _is_in_board(dl) and _is_same_rising(point, dl) and dl_flag:
-    #        array[dl] = 1
-    #    if not _is_in_board(ur) or bs[ur] != 0:
-    #        ur_flag = False
-    #   if not _is_in_board(ul) or bs[ul] != 0:
-    #        ul_flag = False
-    #    if not _is_in_board(dr) or bs[dr] != 0:
-    #        dr_flag = False
-    #    if not _is_in_board(dl) or bs[dl] != 0:
-    #        dl_flag = False
-    # return array
 
 
+# 飛車の動き
 def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = np.zeros(81, dtype=np.int32)
-    u_array = _dis_direction_array(from_, 0, 0)
-    d_array = _dis_direction_array(from_, 0, 5)
-    r_array = _dis_direction_array(from_, 0, 4)
-    l_array = _dis_direction_array(from_, 0, 3)
     bs_one = np.where(bs == 0, 0, 1)
-    if np.all(bs_one * u_array == 0):
-        if np.all(u_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(u_array)
-    else:
-        max_dis = np.min(u_array[np.nonzero(u_array * bs_one)])
-    ur_point = from_ - max_dis
-    np.put(to, np.arange(ur_point, from_, 1), 1)
-    if np.all(bs_one * d_array == 0):
-        if np.all(d_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(d_array)
-    else:
-        max_dis = np.min(d_array[np.nonzero(d_array * bs_one)])
-    ul_point = from_ + max_dis
-    np.put(to, np.arange(ul_point, from_, -1), 1)
-    if np.all(bs_one * r_array == 0):
-        if np.all(r_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(r_array)
-    else:
-        max_dis = np.min(r_array[np.nonzero(r_array * bs_one)])
-    r_point = from_ - 9 * max_dis
-    np.put(to, np.arange(r_point, from_, 9), 1)
-    if np.all(bs_one * l_array == 0):
-        if np.all(l_array == 0):
-            max_dis = 0
-        else:
-            max_dis = np.max(l_array)
-    else:
-        max_dis = np.min(l_array[np.nonzero(l_array * bs_one)])
-    l_point = from_ + 9 * max_dis
-    np.put(to, np.arange(l_point, from_, -9), 1)
+    u_point = _inner_point(bs_one, from_, 0)
+    to += _change_between(from_, u_point, -1)
+    d_point = _inner_point(bs_one, from_, 5)
+    to += _change_between(from_, d_point, 1)
+    r_point = _inner_point(bs_one, from_, 4)
+    to += _change_between(from_, r_point, -9)
+    l_point = _inner_point(bs_one, from_, 3)
+    to += _change_between(from_, l_point, 9)
     return to
 
 
+# 馬の動き
 def _horse_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = _bishop_move(bs, from_)
     u, d, l, r = _is_side(from_)
@@ -729,6 +664,7 @@ def _horse_move(bs: np.ndarray, from_: int) -> np.ndarray:
     return to
 
 
+# 龍の動き
 def _dragon_move(bs: np.ndarray, from_: int) -> np.ndarray:
     to = _rook_move(bs, from_)
     u, d, l, r = _is_side(from_)
@@ -1105,18 +1041,16 @@ def _direction_pin(
     if _owner(piece1) != turn:
         return new_array
     flag = False
-    if direction == 0:
-        if turn == 0 and piece2 == 16:
-            flag = True
-    if direction == 5:
-        if turn == 1 and piece2 == 2:
-            flag = True
-    if direction == 0 or direction == 3 or direction == 4 or direction == 5:
-        if piece2 == 6 + e_turn * 14 or piece2 == 14 + e_turn * 14:
-            flag = True
-    if direction == 1 or direction == 2 or direction == 6 or direction == 7:
-        if piece2 == 5 + e_turn * 14 or piece2 == 13 + e_turn * 14:
-            flag = True
+    if piece2 == 2 + 14 * e_turn and direction == 5 * turn:
+        flag = True
+    if (piece2 == 6 + e_turn * 14 or piece2 == 14 + e_turn * 14) and (
+        direction == 0 or direction == 3 or direction == 4 or direction == 5
+    ):
+        flag = True
+    if (piece2 == 5 + e_turn * 14 or piece2 == 13 + e_turn * 14) and (
+        direction == 1 or direction == 2 or direction == 6 or direction == 7
+    ):
+        flag = True
     if flag:
         new_array[point1] = _direction_to_pin(direction)
     return new_array
@@ -1200,13 +1134,56 @@ def _king_escape(state: ShogiState) -> bool:
 
 
 def _between(point1: int, point2: int) -> np.ndarray:
-    between = np.zeros(81, dtype=np.int32)
     direction = _point_to_direction(point1, point2, False, 0)
     if direction == -1:
-        return between
-    dif = _direction_to_dif(direction, 0)
-    np.put(between, np.arange(point1 + dif, point2, dif), 1)
-    return between
+        return np.zeros(81, dtype=np.int32)
+    else:
+        bet = _change_between(point1, point2, _direction_to_dif(direction, 0))
+        bet[point2] = 0
+        return bet
+
+
+# pinされている駒の非合法手を弾いてlegal_actionを返す
+def _eliminate_pin_actions(
+    bs: np.ndarray, pins: np.ndarray, l_actions: np.ndarray
+):
+    for i in range(81):
+        if pins[i] == 0:
+            continue
+        l_actions = _filter_action(
+            _eliminate_direction(_create_piece_actions(bs[i], i), pins[i]),
+            l_actions,
+        )
+    return l_actions
+
+
+# 玉が逃げる以外の手に王手回避の手があるかをチェック
+# 存在しない場合True
+def _is_avoid_check(
+    cn: int,
+    cnp: np.ndarray,
+    cf: int,
+    cfp: np.ndarray,
+    king_point: int,
+    legal_actions: np.ndarray,
+):
+    if cn + cf >= 2:
+        return True
+    # 密接の王手
+    if cn == 1:
+        # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
+        point = int(cnp.argmax())
+        points = cnp
+    # 開き王手
+    else:
+        point = int(cfp.argmax())
+        # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
+        points = _between(king_point, point)
+    for i in range(34):
+        for j in range(81):
+            if points[j] != 1 and not (i <= 19 and j == point):
+                legal_actions[81 * i + j] = 0
+    return (legal_actions == 0).all()
 
 
 def _is_mate(state: ShogiState) -> bool:
@@ -1220,45 +1197,10 @@ def _is_mate(state: ShogiState) -> bool:
     if _king_escape(state):
         return False
     king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+    # 玉が逃げる手以外の合法手
     legal_actions = _filter_move_actions(
         8 + 14 * state.turn, king_point, legal_actions
     )
-    # 玉が逃げる手以外の合法手
-    legal_actions = _filter_action(
-        _create_piece_actions(8 + 14 * state.turn, king_point), legal_actions
-    )
-    # ピンされている駒の動きものぞく
-    pins = _pin(state)
-    for i in range(81):
-        if pins[i] == 0:
-            continue
-        action = _create_piece_actions(bs[i], i)
-        # ピンされた方向以外のaction
-        action = _eliminate_direction(action, pins[i])
-        legal_actions = _filter_action(action, legal_actions)
-    # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
-    if cn + cf >= 2:
-        return True
-    # 密接の王手
-    if cn == 1:
-        # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
-        point = int(cnp.argmax())
-        for i in range(34):
-            for j in range(81):
-                # 駒打ちは不可
-                if i >= 20:
-                    legal_actions[81 * i + j] = 0
-                else:
-                    # point以外への移動は王手放置
-                    if j != point:
-                        legal_actions[81 * i + j] = 0
-    # 開き王手
-    if cf == 1:
-        point = int(cfp.argmax())
-        # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
-        between = _between(king_point, point)
-        for i in range(34):
-            for j in range(81):
-                if between[j] != 1 and not (i <= 19 and j == point):
-                    legal_actions[81 * i + j] = 0
-    return (legal_actions == 0).all()
+    # ピンされている駒の非合法な動きをのぞく
+    legal_actions = _eliminate_pin_actions(bs, _pin(state), legal_actions)
+    return _is_avoid_check(cn, cnp, cf, cfp, king_point, legal_actions)
