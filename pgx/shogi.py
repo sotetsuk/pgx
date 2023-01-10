@@ -468,10 +468,7 @@ def _direction_to_from(
         f -= dif
         if _is_in_board(f) and _from == -1 and _piece_type(state, f) != 0:
             _from = f
-    if direction >= 10:
-        return _from, True
-    else:
-        return _from, False
+    return _from, direction >= 10
 
 
 def _direction_to_hand(direction: int) -> int:
@@ -628,16 +625,12 @@ def _bishop_move(bs: np.ndarray, from_: int) -> np.ndarray:
     bs_one = np.where(bs == 0, 0, 1)
     ur_point = _inner_point(bs_one, from_, 2)
     to += _change_between(from_, ur_point, -10)
-    # np.put(to, np.arange(ur_point, from_, 10), 1)
     ul_point = _inner_point(bs_one, from_, 1)
     to += _change_between(from_, ul_point, 8)
-    # np.put(to, np.arange(ul_point, from_, -8), 1)
     dr_point = _inner_point(bs_one, from_, 7)
     to += _change_between(from_, dr_point, -8)
-    # np.put(to, np.arange(dr_point, from_, 8), 1)
     dl_point = _inner_point(bs_one, from_, 6)
     to += _change_between(from_, dl_point, 10)
-    # np.put(to, np.arange(dl_point, from_, -10), 1)
     return to
 
 
@@ -647,16 +640,12 @@ def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
     bs_one = np.where(bs == 0, 0, 1)
     u_point = _inner_point(bs_one, from_, 0)
     to += _change_between(from_, u_point, -1)
-    # np.put(to, np.arange(u_point, from_, 1), 1)
     d_point = _inner_point(bs_one, from_, 5)
     to += _change_between(from_, d_point, 1)
-    # np.put(to, np.arange(d_point, from_, -1), 1)
     r_point = _inner_point(bs_one, from_, 4)
     to += _change_between(from_, r_point, -9)
-    # np.put(to, np.arange(r_point, from_, 9), 1)
     l_point = _inner_point(bs_one, from_, 3)
     to += _change_between(from_, l_point, 9)
-    # np.put(to, np.arange(l_point, from_, -9), 1)
     return to
 
 
