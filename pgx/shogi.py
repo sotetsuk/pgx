@@ -1052,18 +1052,16 @@ def _direction_pin(
     if _owner(piece1) != turn:
         return new_array
     flag = False
-    if direction == 0:
-        if turn == 0 and piece2 == 16:
-            flag = True
-    if direction == 5:
-        if turn == 1 and piece2 == 2:
-            flag = True
-    if direction == 0 or direction == 3 or direction == 4 or direction == 5:
-        if piece2 == 6 + e_turn * 14 or piece2 == 14 + e_turn * 14:
-            flag = True
-    if direction == 1 or direction == 2 or direction == 6 or direction == 7:
-        if piece2 == 5 + e_turn * 14 or piece2 == 13 + e_turn * 14:
-            flag = True
+    if piece2 == 2 + 14 * e_turn and direction == 5 * turn:
+        flag = True
+    if (piece2 == 6 + e_turn * 14 or piece2 == 14 + e_turn * 14) and (
+        direction == 0 or direction == 3 or direction == 4 or direction == 5
+    ):
+        flag = True
+    if (piece2 == 5 + e_turn * 14 or piece2 == 13 + e_turn * 14) and (
+        direction == 1 or direction == 2 or direction == 6 or direction == 7
+    ):
+        flag = True
     if flag:
         new_array[point1] = _direction_to_pin(direction)
     return new_array
@@ -1154,37 +1152,32 @@ def _between(point1: int, point2: int) -> np.ndarray:
         bet = _change_between(point1, point2, _direction_to_dif(direction, 0))
         bet[point2] = 0
         return bet
-    # dif = _direction_to_dif(direction, 0)
-    # np.put(between, np.arange(point1 + dif, point2, dif), 1)
-    # return between
 
 
-def _is_mate(state: ShogiState) -> bool:
-    cn, cnp, cf, cfp = _is_check(state)
-    # 王手がかかっていないならFalse
-    if cn + cf == 0:
-        return False
-    legal_actions = _legal_actions(state)
-    bs = _board_status(state)
-    # 玉が逃げる手が合法ならその時点で詰んでない
-    if _king_escape(state):
-        return False
-    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
-    # 玉が逃げる手以外の合法手
-    legal_actions = _filter_move_actions(
-        8 + 14 * state.turn, king_point, legal_actions
-    )
-    # ピンされている駒の動きものぞく
-    pins = _pin(state)
+# pinされている駒の非合法手を弾いてlegal_actionを返す
+def _eliminate_pin_actions(
+    bs: np.ndarray, pins: np.ndarray, l_actions: np.ndarray
+):
     for i in range(81):
         if pins[i] == 0:
             continue
-        action = _create_piece_actions(bs[i], i)
-        # ピンされた方向のaction
-        action = _eliminate_direction(action, pins[i])
-        # ピンされた方向のaction以外を除いた残り
-        legal_actions = _filter_action(action, legal_actions)
-    # 2枚以上の駒で王手をかけられた場合、玉を逃げる以外の合法手は存在しない
+        l_actions = _filter_action(
+            _eliminate_direction(_create_piece_actions(bs[i], i), pins[i]),
+            l_actions,
+        )
+    return l_actions
+
+
+# 玉が逃げる以外の手に王手回避の手があるかをチェック
+# 存在しない場合True
+def _is_avoid_check(
+    cn: int,
+    cnp: np.ndarray,
+    cf: int,
+    cfp: np.ndarray,
+    king_point: int,
+    legal_actions: np.ndarray,
+):
     if cn + cf >= 2:
         return True
     # 密接の王手
@@ -1202,3 +1195,23 @@ def _is_mate(state: ShogiState) -> bool:
             if points[j] != 1 and not (i <= 19 and j == point):
                 legal_actions[81 * i + j] = 0
     return (legal_actions == 0).all()
+
+
+def _is_mate(state: ShogiState) -> bool:
+    cn, cnp, cf, cfp = _is_check(state)
+    # 王手がかかっていないならFalse
+    if cn + cf == 0:
+        return False
+    legal_actions = _legal_actions(state)
+    bs = _board_status(state)
+    # 玉が逃げる手が合法ならその時点で詰んでない
+    if _king_escape(state):
+        return False
+    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+    # 玉が逃げる手以外の合法手
+    legal_actions = _filter_move_actions(
+        8 + 14 * state.turn, king_point, legal_actions
+    )
+    # ピンされている駒の非合法な動きをのぞく
+    legal_actions = _eliminate_pin_actions(bs, _pin(state), legal_actions)
+    return _is_avoid_check(cn, cnp, cf, cfp, king_point, legal_actions)
