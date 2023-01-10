@@ -16,10 +16,6 @@ from .shogi import ShogiState
 from .suzume_jong import State as SuzumeJongState
 from .tic_tac_toe import State as TictactoeState
 
-TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
-SUITS = ["\u2660", "\u2665", "\u2666", "\u2663", "N"]  # ♠♡♢♣
-ACT = ["P", "X", "XX"]
-
 
 @dataclass
 class VisualizerConfig:
@@ -989,6 +985,24 @@ class Visualizer:
         color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         NUM_CARD_TYPE = 13
+        TO_CARD = [
+            "A",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "J",
+            "Q",
+            "K",
+        ]
+        SUITS = ["\u2660", "\u2665", "\u2666", "\u2663", "N"]  # ♠♡♢♣
+        ACT = ["P", "X", "XX"]
+
         # board
         board_g = dwg.g()
 
