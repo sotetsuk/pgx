@@ -2,7 +2,7 @@ import base64
 import math
 import os
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import svgwrite  # type: ignore
@@ -109,6 +109,23 @@ class Visualizer:
         ],
     ) -> None:
         self.state = state
+
+    def show_animation(
+        self,
+        states: List[
+            Union[
+                AnimalShogiState,
+                BackgammonState,
+                ChessState,
+                ContractBridgeBiddingState,
+                GoState,
+                ShogiState,
+                SuzumeJongState,
+                TictactoeState,
+            ]
+        ],
+    ):
+        pass
 
     def _to_dwg_from_states(
         self,
