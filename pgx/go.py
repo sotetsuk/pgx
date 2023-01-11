@@ -134,8 +134,10 @@ def _get_alphazero_features(state: GoState, player_id, observe_all):
     return jnp.vstack([log, color])
 
 
-@partial(jit, static_argnums=(0,))
-def init(size: int, rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, GoState]:
+@partial(jit, static_argnums=(1,))
+def init(
+    rng: jax.random.KeyArray, size: int = 5
+) -> Tuple[jnp.ndarray, GoState]:
     curr_player = jnp.int32(jax.random.bernoulli(rng))
     return curr_player, GoState(  # type:ignore
         size=jnp.int32(size),  # type:ignore
