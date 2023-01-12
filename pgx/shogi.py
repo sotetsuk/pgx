@@ -994,6 +994,7 @@ def _direction_pin(
     if np.count_nonzero(dir_one_array) <= 1:
         return new_array
     dif = _direction_to_dif(direction, 0)
+    # 多分jnpだと通らない
     dis1 = np.partition(dir_one_array[dir_one_array.nonzero()].flatten(), 0)[0]
     dis2 = np.partition(dir_one_array[dir_one_array.nonzero()].flatten(), 1)[1]
     point1 = king_point + dis1 * dif
