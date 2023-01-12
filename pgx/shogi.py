@@ -174,21 +174,14 @@ def _make_board(bs: np.ndarray) -> ShogiState:
 
 def _pawn_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    if turn == 0:
-        array[4][3] = 1
-    else:
-        array[4][5] = 1
+    array[4][4 - _turn_to_reward(turn)] = 1
     return array
 
 
 def _knight_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    if turn == 0:
-        array[3][2] = 1
-        array[5][2] = 1
-    else:
-        array[3][6] = 1
-        array[5][6] = 1
+    array[3][4 - 2 * _turn_to_reward(turn)] = 1
+    array[5][4 - 2 * _turn_to_reward(turn)] = 1
     return array
 
 
@@ -337,29 +330,11 @@ def _dis_direction_array(from_: int, turn: int, direction: int):
     array = np.zeros(81, dtype=np.int32)
     dif = _direction_to_dif(direction, turn)
     to = from_ + dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 1
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 2
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 3
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 4
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 5
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 6
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 7
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 8
+    for i in range(8):
+        dis = 1 + i
+        to = from_ + dif * dis
+        if _is_in_board(to) and _is_same_line(from_, to, direction):
+            array[to] = dis
     return array
 
 
@@ -484,18 +459,26 @@ def _piece_type(state: ShogiState, point: int):
     return state.board[:, point].argmax()
 
 
+def _dlshogi_move_action(direction: int, to: int, state: ShogiState) -> ShogiAction:
+    _from, is_promote = _direction_to_from(direction, to, state)
+    piece = _piece_type(state, _from)
+    captured = _piece_type(state, to)
+    return ShogiAction(False, piece, to, _from, captured, is_promote)
+
+
+def _dlshogi_drop_action(direction: int, to: int, state: ShogiState) -> ShogiAction:
+    piece = _direction_to_hand(direction)
+    return ShogiAction(True, piece, to)
+
+
 def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
     direction, to = _separate_dlaction(action)
     if direction <= 19:
-        # 駒の移動
-        _from, is_promote = _direction_to_from(direction, to, state)
-        piece = _piece_type(state, _from)
-        captured = _piece_type(state, to)
-        return ShogiAction(False, piece, to, _from, captured, is_promote)
+        # 移動のaction
+        return _dlshogi_move_action(direction, to, state)
     else:
         # 駒打ち
-        piece = _direction_to_hand(direction)
-        return ShogiAction(True, piece, to)
+        return _dlshogi_drop_action(direction, to, state)
 
 
 # 手番側でない色を返す
@@ -601,7 +584,7 @@ def _change_between(from_: int, to: int, dif: int):
     flag = from_ != to
     for i in range(9):
         point += dif
-        if flag:
+        if flag and _is_in_board(point):
             array[point] = 1
         if point == to:
             flag = False
@@ -611,10 +594,7 @@ def _change_between(from_: int, to: int, dif: int):
 # 香車の動き
 def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     bs_one = np.where(bs == 0, 0, 1)
-    if turn == 0:
-        direction = 0
-    else:
-        direction = 5
+    direction = 5 * turn
     point = _inner_point(bs_one, from_, direction)
     return _change_between(from_, point, _direction_to_dif(0, turn))
 
@@ -651,34 +631,16 @@ def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
 
 # 馬の動き
 def _horse_move(bs: np.ndarray, from_: int) -> np.ndarray:
-    to = _bishop_move(bs, from_)
-    u, d, l, r = _is_side(from_)
-    if not u:
-        to[from_ - 1] = 1
-    if not d:
-        to[from_ + 1] = 1
-    if not r:
-        to[from_ - 9] = 1
-    if not l:
-        to[from_ + 9] = 1
-    return to
+    # 角の動き＋玉の動き
+    to = _bishop_move(bs, from_) + POINT_MOVES[from_][8]
+    return np.where(to == 0, 0, 1)
 
 
 # 龍の動き
 def _dragon_move(bs: np.ndarray, from_: int) -> np.ndarray:
-    to = _rook_move(bs, from_)
-    u, d, l, r = _is_side(from_)
-    if not u:
-        if not r:
-            to[from_ - 10] = 1
-        if not l:
-            to[from_ + 8] = 1
-    if not d:
-        if not r:
-            to[from_ - 8] = 1
-        if not l:
-            to[from_ + 10] = 1
-    return to
+    # 飛車の動き＋玉の動き
+    to = _rook_move(bs, from_) + POINT_MOVES[from_][8]
+    return np.where(to == 0, 0, 1)
 
 
 # 駒種と位置から到達できる場所を返す
