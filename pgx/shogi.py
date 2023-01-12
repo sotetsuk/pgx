@@ -868,11 +868,18 @@ def _filter_occupied_drop_actions(
     for i in range(81):
         if owner[i] == 2:
             continue
-        np.put(
-            new_array,
-            np.arange(81 * (20 + 7 * turn) + i, 81 * (27 + 7 * turn) + i, 81),
-            0,
-        )
+        if turn == 0:
+            np.put(
+                new_array,
+                np.arange(81 * 20 + i, 81 * 27 + i, 81),
+                0,
+            )
+        else:
+            np.put(
+                new_array,
+                np.arange(81 * 27 + i, 81 * 34 + i, 81),
+                0,
+            )
     return new_array
 
 
@@ -946,24 +953,17 @@ def _is_double_pawn(state: ShogiState) -> bool:
 def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
-    # 先手歩
-    if np.any(np.where(bs == 1)[0] % 9 == 0):
-        is_stuck = True
-    # 先手香車
-    if np.any(np.where(bs == 2)[0] % 9 == 0):
-        is_stuck = True
-    # 先手桂馬
-    if np.any(np.where(bs == 3)[0] % 9 <= 1):
-        is_stuck = True
-    # 後手歩
-    if np.any(np.where(bs == 15)[0] % 9 == 8):
-        is_stuck = True
-    # 後手香車
-    if np.any(np.where(bs == 16)[0] % 9 == 8):
-        is_stuck = True
-    # 後手桂馬
-    if np.any(np.where(bs == 17)[0] % 9 >= 7):
-        is_stuck = True
+    for i in range(81):
+        line = i % 9
+        piece = bs[i]
+        if line == 0 and (piece == 1 or piece == 2 or piece == 3):
+            is_stuck = True
+        if line == 1 and piece == 3:
+            is_stuck = True
+        if line == 8 and (piece == 15 or piece == 16 or piece == 17):
+            is_stuck = True
+        if line == 7 and piece == 17:
+            is_stuck = True
     return is_stuck
 
 
