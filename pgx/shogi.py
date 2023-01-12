@@ -459,14 +459,18 @@ def _piece_type(state: ShogiState, point: int):
     return state.board[:, point].argmax()
 
 
-def _dlshogi_move_action(direction: int, to: int, state: ShogiState) -> ShogiAction:
+def _dlshogi_move_action(
+    direction: int, to: int, state: ShogiState
+) -> ShogiAction:
     _from, is_promote = _direction_to_from(direction, to, state)
     piece = _piece_type(state, _from)
     captured = _piece_type(state, to)
     return ShogiAction(False, piece, to, _from, captured, is_promote)
 
 
-def _dlshogi_drop_action(direction: int, to: int, state: ShogiState) -> ShogiAction:
+def _dlshogi_drop_action(
+    direction: int, to: int, state: ShogiState
+) -> ShogiAction:
     piece = _direction_to_hand(direction)
     return ShogiAction(True, piece, to)
 
@@ -953,17 +957,26 @@ def _is_double_pawn(state: ShogiState) -> bool:
 def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
-    for i in range(81):
-        line = i % 9
-        piece = bs[i]
-        if line == 0 and (piece == 1 or piece == 2 or piece == 3):
-            is_stuck = True
-        if line == 1 and piece == 3:
-            is_stuck = True
-        if line == 8 and (piece == 15 or piece == 16 or piece == 17):
-            is_stuck = True
-        if line == 7 and piece == 17:
-            is_stuck = True
+    line1 = bs[0::9]
+    if np.any(line1 == 1):
+        is_stuck = True
+    if np.any(line1 == 2):
+        is_stuck = True
+    if np.any(line1 == 3):
+        is_stuck = True
+    line2 = bs[1::9]
+    if np.any(line2 == 3):
+        is_stuck = True
+    line8 = bs[7::9]
+    if np.any(line8 == 17):
+        is_stuck = True
+    line9 = bs[8::9]
+    if np.any(line9 == 15):
+        is_stuck = True
+    if np.any(line9 == 16):
+        is_stuck = True
+    if np.any(line9 == 17):
+        is_stuck = True
     return is_stuck
 
 
