@@ -147,7 +147,7 @@ def init(
         available_ren_id=jnp.ones((2, size * size), dtype=jnp.bool_),
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
-        legal_action_mask=jnp.zeros(size * size, dtype=jnp.bool_),
+        legal_action_mask=jnp.ones(size * size, dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
     )
