@@ -167,7 +167,7 @@ class Visualizer:
         button2.on_click(_on_click)
 
         output = widgets.Output()
-        box = widgets.Box([button1, button2])
+        box = widgets.Box([button2, button1])
 
         display(box, output)
         button1.click()
