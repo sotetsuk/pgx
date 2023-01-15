@@ -67,6 +67,7 @@ class Visualizer:
         self,
         states: Union[
             None,
+            list,
             AnimalShogiState,
             BackgammonState,
             ChessState,
@@ -83,14 +84,21 @@ class Visualizer:
 
         if "ipykernel" in sys.modules:
             # Jupyter Notebook
-            from IPython.display import display_svg  # type:ignore
 
-            display_svg(
-                self._to_dwg_from_states(
+            if isinstance(states, list):
+                self._show_states_in_widgets(
                     states=states, scale=scale, color_mode=color_mode
-                ).tostring(),
-                raw=True,
-            )
+                )
+
+            else:
+                from IPython.display import display_svg  # type:ignore
+
+                display_svg(
+                    self._to_dwg_from_states(
+                        states=states, scale=scale, color_mode=color_mode
+                    ).tostring(),
+                    raw=True,
+                )
         else:
             # Not Jupyter
             sys.stdout.write("This function only works in Jupyter Notebook.")
@@ -109,31 +117,6 @@ class Visualizer:
         ],
     ) -> None:
         self.state = state
-
-    def _show_single_state(
-        self,
-        states: Union[
-            None,
-            AnimalShogiState,
-            BackgammonState,
-            ChessState,
-            ContractBridgeBiddingState,
-            GoState,
-            ShogiState,
-            SuzumeJongState,
-            TictactoeState,
-        ] = None,
-        scale=1.0,
-        color_mode: Optional[str] = None,
-    ):
-        from IPython.display import display_svg
-
-        display_svg(
-            self._to_dwg_from_states(
-                states=states, scale=scale, color_mode=color_mode
-            ).tostring(),
-            raw=True,
-        )
 
     def _show_states_in_widgets(
         self,
