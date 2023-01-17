@@ -464,7 +464,7 @@ def _direction_to_hand(direction: int) -> int:
 
 
 def _piece_type(state: ShogiState, point: int) -> int:
-    return state.board[:, point].argmax()
+    return int(state.board[:, point].argmax())
 
 
 # dlshogiのactionの情報をShogiActionの情報に変換
