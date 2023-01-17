@@ -507,7 +507,7 @@ def _is_in_board(point: int) -> bool:
 # 相手の駒を同じ種類の自分の駒に変換する
 def _convert_piece(piece: int) -> int:
     if piece == 0:
-        return -1
+        return 0
     p = (piece + 14) % 28
     if p == 0:
         return 28
@@ -532,7 +532,8 @@ def _piece_to_hand(piece: int) -> int:
 def _owner(piece: int) -> int:
     if piece == 0:
         return 2
-    return (piece - 1) // 14
+    else:
+        return (piece - 1) // 14
 
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
@@ -583,12 +584,11 @@ def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
     if np.all(dir_array * bs_one == 0):
         # 端の時はどこにも行けない
         if np.all(dir_array == 0):
-            max_dis = 0
+            return from_
         else:
-            max_dis = np.max(dir_array)
+            return from_ + _direction_to_dif(direction, 0) * np.max(dir_array)
     else:
         return _nearest_position(from_, direction, bs_one)
-    return from_ + _direction_to_dif(direction, 0) * max_dis
 
 
 # fromからtoまでの地点をdifごとに1に置き換える
@@ -695,6 +695,7 @@ def _is_enemy_zone(turn: int, point: int) -> bool:
         return point % 9 >= 6
 
 
+# 成れるかどうか
 def _can_promote(piece: int, _from: int, to: int) -> bool:
     # pieceが飛車以下でないと成れない
     if piece % 14 > 6 or piece % 14 == 0:
@@ -710,13 +711,13 @@ def _create_actions(piece: int, _from: int, to: np.ndarray) -> np.ndarray:
     for i in range(81):
         if to[i] == 0:
             continue
-        if _can_promote(piece, _from, i):
-            pro_dir = _point_to_direction(_from, i, True, _owner(piece))
-            pro_act = _dlshogi_action(pro_dir, i)
-            actions[pro_act] = 1
         normal_dir = _point_to_direction(_from, i, False, _owner(piece))
         normal_act = _dlshogi_action(normal_dir, i)
         actions[normal_act] = 1
+        pro_dir = _point_to_direction(_from, i, True, _owner(piece))
+        pro_act = _dlshogi_action(pro_dir, i)
+        if _can_promote(piece, _from, i):
+            actions[pro_act] = 1
     return actions
 
 
@@ -797,6 +798,14 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
     return s
 
 
+# 成駒を成る前の駒に変更
+def _degeneration_piece(piece: int) -> int:
+    if piece % 14 >= 9 or piece == 14 or piece == 28:
+        return piece - 8
+    else:
+        return piece
+
+
 # 駒の移動によるlegal_actionsの更新
 def _update_legal_move_actions(
     state: ShogiState, action: ShogiAction
@@ -820,15 +829,14 @@ def _update_legal_move_actions(
     new_player_actions = _add_move_actions(
         new_piece, action.to, new_player_actions
     )
+    # 取った駒を自分の持ち駒に変換
+    # 取っていない場合は0
+    captured = _degeneration_piece(_convert_piece(action.captured))
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
     if action.captured != 0:
         new_enemy_actions = _filter_move_actions(
             action.captured, action.to, new_enemy_actions
         )
-        captured = _convert_piece(action.captured)
-        # 成駒の場合成る前の駒に変換
-        if captured % 14 == 0 or captured % 14 >= 9:
-            captured -= 8
         new_player_actions = _add_drop_actions(captured, new_player_actions)
     if s.turn == 0:
         s.legal_actions_black = new_player_actions
@@ -1143,11 +1151,11 @@ def _king_escape(state: ShogiState) -> bool:
 def _between(point1: int, point2: int) -> np.ndarray:
     direction = _point_to_direction(point1, point2, False, 0)
     if direction == -1:
-        return np.zeros(81, dtype=np.int32)
+        bet = np.zeros(81, dtype=np.int32)
     else:
         bet = _change_between(point1, point2, _direction_to_dif(direction, 0))
-        bet[point2] = 0
-        return bet
+    bet[point2] = 0
+    return bet
 
 
 # pinされている駒の非合法手を弾いてlegal_actionを返す
