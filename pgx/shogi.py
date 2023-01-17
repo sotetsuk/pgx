@@ -337,7 +337,6 @@ def _is_same_line(from_: int, to: int, direction: int) -> bool:
 def _dis_direction_array(from_: int, turn: int, direction: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
     dif = _direction_to_dif(direction, turn)
-    to = from_ + dif
     for i in range(8):
         dis = 1 + i
         to = from_ + dif * dis
@@ -447,7 +446,7 @@ def _direction_to_from(
     dif = _direction_to_dif(direction, state.turn)
     f = to
     _from = -1
-    for i in range(9):
+    for i in range(8):
         f -= dif
         if _is_in_board(f) and _from == -1 and _piece_type(state, f) != 0:
             _from = f
@@ -934,13 +933,11 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
 # 王手判定
 # 密接・遠隔の王手で分ける
 def _is_check(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
-    check_near = 0
-    check_far = 0
-    checking_point_near = np.zeros(81, dtype=np.int32)
-    checking_point_far = np.zeros(81, dtype=np.int32)
+    check = 0
+    checking_point = np.zeros((2, 81), dtype=np.int32)
     # そもそも王がいない場合はFalse
     if np.all(state.board[8 + 14 * state.turn] == 0):
-        return check_near, checking_point_near, check_far, checking_point_far
+        return 0, np.zeros(81, dtype=np.int32), 0, np.zeros(81, dtype=np.int32)
     king_point = int(state.board[8 + 14 * state.turn, :].argmax())
     near_king = _small_piece_moves(8 + 14 * state.turn, king_point)
     bs = _board_status(state)
@@ -951,12 +948,13 @@ def _is_check(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
         if _piece_moves(bs, piece, i)[king_point] == 1:
             # 桂馬の王手も密接としてカウント
             if near_king[i] == 1 or piece % 14 == 3:
-                check_near += 1
-                checking_point_near[i] = 1
+                check += 10
+                checking_point[0][i] = 1
             else:
-                check_far += 1
-                checking_point_far[i] = 1
-    return check_near, checking_point_near, check_far, checking_point_far
+                # 遠隔の王手は9以上ありえない
+                check += 1
+                checking_point[1][i] = 1
+    return check // 10, checking_point[0], check % 10, checking_point[1]
 
 
 # 二歩判定
@@ -1015,20 +1013,14 @@ def _direction_to_pin(direction: int) -> int:
 
 # それぞれの方向について、1番fromに近い駒の位置を返す
 def _nearest_position(from_: int, direction: int, bs_one: np.ndarray) -> int:
-    flag1 = False
+    flag1 = True
     point1 = -1
     dif = _direction_to_dif(direction, 0)
     for i in range(8):
         point = from_ + (1 + i) * dif
-        if (
-            flag1
-            or not _is_in_board(point)
-            or not _is_same_line(from_, point, direction)
-        ):
-            continue
-        if bs_one[point] == 1:
+        if flag1 and _is_in_board(point) and _is_same_line(from_, point, direction) and bs_one[point] == 1:
             point1 = point
-            flag1 = True
+            flag1 = False
     return point1
 
 
