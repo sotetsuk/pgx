@@ -2,7 +2,7 @@ import base64
 import math
 import os
 from dataclasses import dataclass
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 import numpy as np
 import svgwrite  # type: ignore
@@ -67,6 +67,7 @@ class Visualizer:
         self,
         states: Union[
             None,
+            list,
             AnimalShogiState,
             BackgammonState,
             ChessState,
@@ -83,14 +84,21 @@ class Visualizer:
 
         if "ipykernel" in sys.modules:
             # Jupyter Notebook
-            from IPython.display import display_svg  # type:ignore
 
-            display_svg(
-                self._to_dwg_from_states(
+            if isinstance(states, list):
+                self._show_states_in_widgets(
                     states=states, scale=scale, color_mode=color_mode
-                ).tostring(),
-                raw=True,
-            )
+                )
+
+            else:
+                from IPython.display import display_svg  # type:ignore
+
+                display_svg(
+                    self._to_dwg_from_states(
+                        states=states, scale=scale, color_mode=color_mode
+                    ).tostring(),
+                    raw=True,
+                )
         else:
             # Not Jupyter
             sys.stdout.write("This function only works in Jupyter Notebook.")
@@ -109,6 +117,60 @@ class Visualizer:
         ],
     ) -> None:
         self.state = state
+
+    def _show_states_in_widgets(
+        self,
+        states: List[
+            Union[
+                AnimalShogiState,
+                BackgammonState,
+                ChessState,
+                ContractBridgeBiddingState,
+                GoState,
+                ShogiState,
+                SuzumeJongState,
+                TictactoeState,
+            ]
+        ],
+        scale=1.0,
+        color_mode: Optional[str] = None,
+    ):
+        import ipywidgets as widgets  # type:ignore
+        from IPython.display import display, display_svg
+
+        svg_strings = [
+            self._to_dwg_from_states(
+                states=_state, scale=scale, color_mode=color_mode
+            ).tostring()
+            for _state in states
+        ]
+        N = len(svg_strings)
+        self.i = -1
+
+        def _on_click(button: widgets.Button):
+            output.clear_output(True)
+            with output:
+                if button.description == "next":
+                    self.i = (self.i + 1) % N
+                else:
+                    self.i = (self.i - 1) % N
+                print(self.i)
+                display_svg(
+                    svg_strings[self.i],
+                    raw=True,
+                )
+
+        button1 = widgets.Button(description="next")
+        button1.on_click(_on_click)
+
+        button2 = widgets.Button(description="back")
+        button2.on_click(_on_click)
+
+        output = widgets.Output()
+        box = widgets.Box([button2, button1])
+
+        display(box, output)
+        button1.click()
 
     def _to_dwg_from_states(
         self,
@@ -1693,12 +1755,12 @@ class Visualizer:
 
             if player_id == state.shuffled_players[1]:
                 pieces_g.rotate(
-                    angle=-90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
+                    angle=90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
                 )
 
             elif player_id == state.shuffled_players[2]:
                 pieces_g.rotate(
-                    angle=90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
+                    angle=-90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
                 )
 
             board_g.add(pieces_g)
