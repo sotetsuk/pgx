@@ -2,7 +2,7 @@ import base64
 import math
 import os
 from dataclasses import dataclass
-from typing import List, Optional, Union
+from typing import List, Literal, Union
 
 import numpy as np
 import svgwrite  # type: ignore
@@ -29,44 +29,37 @@ class VisualizerConfig:
 
 
 class Visualizer:
+    """PGXのVisualizer.
+
+    color_mode: Literal["light", "dark"]
+        light(ライトモードで表示)/dark(ダークモードで表示)
+    scale: float
+        表示する画像のサイズ, デフォルトは1.0
+    """
+
     def __init__(
         self,
-        state: Union[
-            None,
-            AnimalShogiState,
-            BackgammonState,
-            ChessState,
-            ContractBridgeBiddingState,
-            GoState,
-            ShogiState,
-            SuzumeJongState,
-            TictactoeState,
-        ] = None,
-        color_mode: str = "light",
+        color_mode: Literal["light", "dark"] = "light",
+        scale: float = 1.0,
     ) -> None:
-        self.state = state
         self.color_mode = color_mode
         self.color_set = VisualizerConfig()
+        self.scale = scale
         self.GRID_SIZE = -1
         self.BOARD_WIDTH = -1
         self.BOARD_HEIGHT = -1
         self._make_dwg_group = None
 
+    """
+    notebook で可視化する際に、変数名のみで表示させる場合
     def _repr_html_(self) -> str:
         assert self.state is not None
         return self._to_dwg_from_states(states=self.state).tostring()
+    """
 
-    def save_svg(self, filename="temp.svg", state=None) -> None:
-        assert filename.endswith(".svg")
-        if state is None:
-            assert self.state is not None
-            state = self.state
-        self._to_dwg_from_states(states=state).saveas(filename=filename)
-
-    def show_svg(
+    def save_svg(
         self,
-        states: Union[
-            None,
+        state: Union[
             list,
             AnimalShogiState,
             BackgammonState,
@@ -76,36 +69,16 @@ class Visualizer:
             ShogiState,
             SuzumeJongState,
             TictactoeState,
-        ] = None,
-        scale=1.0,
-        color_mode: Optional[str] = None,
+        ],
+        filename="temp.svg",
     ) -> None:
-        import sys
+        assert filename.endswith(".svg")
+        self._to_dwg_from_states(states=state).saveas(filename=filename)
 
-        if "ipykernel" in sys.modules:
-            # Jupyter Notebook
-
-            if isinstance(states, list):
-                self._show_states_in_widgets(
-                    states=states, scale=scale, color_mode=color_mode
-                )
-
-            else:
-                from IPython.display import display_svg  # type:ignore
-
-                display_svg(
-                    self._to_dwg_from_states(
-                        states=states, scale=scale, color_mode=color_mode
-                    ).tostring(),
-                    raw=True,
-                )
-        else:
-            # Not Jupyter
-            sys.stdout.write("This function only works in Jupyter Notebook.")
-
-    def set_state(
+    def show_svg(
         self,
-        state: Union[
+        states: Union[
+            list,
             AnimalShogiState,
             BackgammonState,
             ChessState,
@@ -116,7 +89,33 @@ class Visualizer:
             TictactoeState,
         ],
     ) -> None:
-        self.state = state
+        """Pgxのstate,batch処理されたstate,stateのリストをnotebook上で可視化する.
+
+        states: Union[list, AnimalShogiState, BackgammonState, ChessState, ContractBridgeBiddingState, GoState, ShogiState, SuzumeJongState, TictactoeState]
+            表示させるstate
+        """
+        import sys
+
+        if "ipykernel" in sys.modules:
+            # Jupyter Notebook
+
+            if isinstance(states, list):
+                self._show_states_in_widgets(
+                    states=states,
+                )
+
+            else:
+                from IPython.display import display_svg  # type:ignore
+
+                display_svg(
+                    self._to_dwg_from_states(
+                        states=states,
+                    ).tostring(),
+                    raw=True,
+                )
+        else:
+            # Not Jupyter
+            sys.stdout.write("This function only works in Jupyter Notebook.")
 
     def _show_states_in_widgets(
         self,
@@ -132,15 +131,13 @@ class Visualizer:
                 TictactoeState,
             ]
         ],
-        scale=1.0,
-        color_mode: Optional[str] = None,
     ):
         import ipywidgets as widgets  # type:ignore
         from IPython.display import display, display_svg
 
         svg_strings = [
             self._to_dwg_from_states(
-                states=_state, scale=scale, color_mode=color_mode
+                states=_state,
             ).tostring()
             for _state in states
         ]
@@ -174,10 +171,7 @@ class Visualizer:
 
     def _to_dwg_from_states(
         self,
-        *,
         states,
-        scale=1.0,
-        color_mode: Optional[str] = None,
     ):
         try:
             SIZE = len(states.turn)
@@ -191,13 +185,15 @@ class Visualizer:
             WIDTH = 1
             HEIGHT = 1
 
-        self._set_config_by_state(states, color_mode)
+        self._set_config_by_state(
+            states,
+        )
         assert self._make_dwg_group is not None
         dwg = svgwrite.Drawing(
             "temp.svg",
             (
-                (self.BOARD_WIDTH + 1) * self.GRID_SIZE * WIDTH * scale,
-                (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT * scale,
+                (self.BOARD_WIDTH + 1) * self.GRID_SIZE * WIDTH * self.scale,
+                (self.BOARD_HEIGHT + 1) * self.GRID_SIZE * HEIGHT * self.scale,
             ),
         )
         group = dwg.g()
@@ -215,13 +211,13 @@ class Visualizer:
         )
 
         if SIZE == 1:
-            g = self._make_dwg_group(dwg, states, self.color_set)
+            g = self._make_dwg_group(dwg, states)
             g.translate(
                 self.GRID_SIZE * 1 / 2,
                 self.GRID_SIZE * 1 / 2,
             )
             group.add(g)
-            group.scale(scale)
+            group.scale(self.scale)
             dwg.add(group)
             return dwg
 
@@ -230,7 +226,8 @@ class Visualizer:
             y = i // WIDTH
             _state = self._get_nth_state(states, i)
             g = self._make_dwg_group(
-                dwg, _state, self.color_set  # type:ignore
+                dwg,
+                _state,  # type:ignore
             )
 
             g.translate(
@@ -254,19 +251,19 @@ class Visualizer:
                     stroke="gray",
                 )
             )
-        group.scale(scale)
+        group.scale(self.scale)
         dwg.add(group)
         return dwg
 
-    def _set_config_by_state(self, _state, _color_mode):  # noqa: C901
+    def _set_config_by_state(self, _state):  # noqa: C901
         if isinstance(_state, AnimalShogiState):
             self.GRID_SIZE = 60
             self.BOARD_WIDTH = 4
             self.BOARD_HEIGHT = 4
             self._make_dwg_group = self._make_animalshogi_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "dimgray",
                     "black",
@@ -292,8 +289,8 @@ class Visualizer:
             self.BOARD_HEIGHT = 14
             self._make_dwg_group = self._make_backgammon_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "gray",
                     "black",
@@ -319,8 +316,8 @@ class Visualizer:
             self.BOARD_HEIGHT = 8
             self._make_dwg_group = self._make_chess_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "none",
                     "none",
@@ -346,8 +343,8 @@ class Visualizer:
             self.BOARD_HEIGHT = 12
             self._make_dwg_group = self._make_bridge_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "gray",
                     "black",
@@ -377,8 +374,8 @@ class Visualizer:
                 self.BOARD_HEIGHT = int(_state.size)
             self._make_dwg_group = self._make_go_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "black", "gray", "white", "white", "#202020", "white", ""
                 )
@@ -398,8 +395,8 @@ class Visualizer:
             self.BOARD_HEIGHT = 9
             self._make_dwg_group = self._make_shogi_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "gray", "black", "gray", "gray", "#202020", "gray", ""
                 )
@@ -419,8 +416,8 @@ class Visualizer:
             self.BOARD_HEIGHT = 10
             self._make_dwg_group = self._make_suzumejong_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "lightgray",
                     "dimgray",
@@ -446,8 +443,8 @@ class Visualizer:
             self.BOARD_HEIGHT = 3
             self._make_dwg_group = self._make_tictactoe_dwg
             if (
-                _color_mode is None and self.color_mode == "dark"
-            ) or _color_mode == "dark":
+                self.color_mode is None and self.color_mode == "dark"
+            ) or self.color_mode == "dark":
                 self.color_set = VisualizerConfig(
                     "gray",
                     "black",
@@ -527,7 +524,6 @@ class Visualizer:
         self,
         dwg,
         state: AnimalShogiState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         BOARD_WIDTH = 3
         BOARD_HEIGHT = 4
@@ -557,14 +553,16 @@ class Visualizer:
                     (BOARD_WIDTH + 2) * GRID_SIZE,
                     (BOARD_HEIGHT + 1) * GRID_SIZE,
                 ),
-                fill=color_set.background_color,
+                fill=self.color_set.background_color,
             )
         )
 
         # board
         # grid
         board_g = dwg.g()
-        hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
+        hlines = board_g.add(
+            dwg.g(id="hlines", stroke=self.color_set.grid_color)
+        )
         for y in range(1, BOARD_HEIGHT):
             hlines.add(
                 dwg.line(
@@ -575,7 +573,9 @@ class Visualizer:
                     ),
                 )
             )
-        vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
+        vlines = board_g.add(
+            dwg.g(id="vline", stroke=self.color_set.grid_color)
+        )
         for x in range(1, BOARD_WIDTH):
             vlines.add(
                 dwg.line(
@@ -594,7 +594,7 @@ class Visualizer:
                     BOARD_HEIGHT * GRID_SIZE,
                 ),
                 fill="none",
-                stroke=color_set.grid_color,
+                stroke=self.color_set.grid_color,
             )
         )
 
@@ -612,14 +612,14 @@ class Visualizer:
                         pieces_g = p1_pieces_g
                         x = 2 - xy // BOARD_HEIGHT  # AnimalShogiStateは右上原点
                         y = xy % BOARD_HEIGHT
-                        fill_color = color_set.p1_color
-                        stroke = color_set.p1_outline
+                        fill_color = self.color_set.p1_color
+                        stroke = self.color_set.p1_outline
                     else:
                         pieces_g = p2_pieces_g
                         x = xy // BOARD_HEIGHT
                         y = 3 - xy % BOARD_HEIGHT
-                        fill_color = color_set.p2_color
-                        stroke = color_set.p2_outline
+                        fill_color = self.color_set.p2_color
+                        stroke = self.color_set.p2_outline
 
                     pieces_g.add(
                         dwg.rect(
@@ -674,7 +674,7 @@ class Visualizer:
                         3.1 * GRID_SIZE,
                         (3.3 + (i % 3) * 0.3) * GRID_SIZE,
                     ),
-                    fill=color_set.p1_outline,
+                    fill=self.color_set.p1_outline,
                     font_size="20px",
                     font_family="Courier",
                 )
@@ -694,7 +694,6 @@ class Visualizer:
         self,
         dwg,
         state: BackgammonState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         BOARD_WIDTH = self.BOARD_WIDTH
         BOARD_HEIGHT = self.BOARD_HEIGHT
@@ -707,7 +706,7 @@ class Visualizer:
                     (BOARD_WIDTH + 6) * GRID_SIZE,
                     (BOARD_HEIGHT + 3) * GRID_SIZE,
                 ),
-                fill=color_set.background_color,
+                fill=self.color_set.background_color,
             )
         )
 
@@ -721,8 +720,8 @@ class Visualizer:
                     13 * GRID_SIZE,
                     14 * GRID_SIZE,
                 ),
-                stroke=color_set.grid_color,
-                fill=color_set.background_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.background_color,
             )
         )
         board_g.add(
@@ -732,8 +731,8 @@ class Visualizer:
                     1 * GRID_SIZE,
                     14 * GRID_SIZE,
                 ),
-                stroke=color_set.grid_color,
-                fill=color_set.background_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.background_color,
             )
         )
 
@@ -755,23 +754,25 @@ class Visualizer:
                 p3 = ((i + 1.5 - 12) * GRID_SIZE, 8 * GRID_SIZE)
 
             fill_color = (
-                color_set.p1_outline if i % 2 == 0 else color_set.p2_outline
+                self.color_set.p1_outline
+                if i % 2 == 0
+                else self.color_set.p2_outline
             )
 
             board_g.add(
                 dwg.polygon(
                     points=[p1, p2, p3],
-                    stroke=color_set.grid_color,
+                    stroke=self.color_set.grid_color,
                     fill=fill_color,
                 )
             )
 
         # pieces
         for i, piece in enumerate(state.board[:24]):
-            fill_color = color_set.p2_color
+            fill_color = self.color_set.p2_color
             if piece < 0:  # 白
                 piece = -piece
-                fill_color = color_set.p1_color
+                fill_color = self.color_set.p1_color
 
             x = (12 - i) + 0.5
             y = 13.5
@@ -792,7 +793,7 @@ class Visualizer:
                     dwg.circle(
                         center=(x * GRID_SIZE, (y + n * diff) * GRID_SIZE),
                         r=0.5 * GRID_SIZE,
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         fill=fill_color,
                         # stroke_width=GRID_SIZE,
                     )
@@ -800,11 +801,11 @@ class Visualizer:
 
         # bar
         for i, piece in enumerate(state.board[24:26]):  # 24:白,25:黒
-            fill_color = color_set.p2_color
+            fill_color = self.color_set.p2_color
             diff = 1
             if i == 0:
                 piece = -piece
-                fill_color = color_set.p1_color
+                fill_color = self.color_set.p1_color
                 diff = -1
             for n in range(piece):
                 board_g.add(
@@ -814,7 +815,7 @@ class Visualizer:
                             (6 + i * 2 + n * diff) * GRID_SIZE,
                         ),
                         r=0.5 * GRID_SIZE,
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         fill=fill_color,
                         # stroke_width=GRID_SIZE,
                     )
@@ -828,16 +829,16 @@ class Visualizer:
                     4 * GRID_SIZE,
                     2 * GRID_SIZE,
                 ),
-                stroke=color_set.grid_color,
-                fill=color_set.background_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.background_color,
             )
         )
         board_g.add(
             dwg.circle(
                 center=(14 * GRID_SIZE, 13 * GRID_SIZE),
                 r=0.5 * GRID_SIZE,
-                stroke=color_set.grid_color,
-                fill=color_set.p1_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.p1_color,
             )
         )
         board_g.add(
@@ -847,7 +848,7 @@ class Visualizer:
                     14.8 * GRID_SIZE,
                     13.3 * GRID_SIZE,
                 ),
-                fill=color_set.grid_color,
+                fill=self.color_set.grid_color,
                 font_size="34px",
                 font_family="serif",
             )
@@ -860,16 +861,16 @@ class Visualizer:
                     4 * GRID_SIZE,
                     2 * GRID_SIZE,
                 ),
-                stroke=color_set.grid_color,
-                fill=color_set.background_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.background_color,
             )
         )
         board_g.add(
             dwg.circle(
                 center=(14 * GRID_SIZE, 1 * GRID_SIZE),
                 r=0.5 * GRID_SIZE,
-                stroke=color_set.grid_color,
-                fill=color_set.p2_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.p2_color,
             )
         )
         board_g.add(
@@ -879,7 +880,7 @@ class Visualizer:
                     14.8 * GRID_SIZE,
                     1.3 * GRID_SIZE,
                 ),
-                fill=color_set.grid_color,
+                fill=self.color_set.grid_color,
                 font_size="34px",
                 font_family="serif",
             )
@@ -891,7 +892,6 @@ class Visualizer:
         self,
         dwg,
         state: ChessState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         def _set_piece(_x, _y, _type, _dwg, _dwg_g, grid_size):
             PATH = {
@@ -950,7 +950,7 @@ class Visualizer:
                     (BOARD_WIDTH + 1.5) * GRID_SIZE,
                     (BOARD_HEIGHT + 1) * GRID_SIZE,
                 ),
-                fill=color_set.background_color,
+                fill=self.color_set.background_color,
             )
         )
 
@@ -959,9 +959,9 @@ class Visualizer:
         board_g = dwg.g()
         for i in range(BOARD_WIDTH * BOARD_HEIGHT):
             if (i // BOARD_HEIGHT) % 2 != i % 2:
-                fill_color = color_set.p1_outline
+                fill_color = self.color_set.p1_outline
             else:
-                fill_color = color_set.p2_outline
+                fill_color = self.color_set.p2_outline
 
             x = i % BOARD_WIDTH
             y = i // BOARD_HEIGHT
@@ -984,13 +984,13 @@ class Visualizer:
                     BOARD_HEIGHT * GRID_SIZE,
                 ),
                 fill="none",
-                stroke=color_set.grid_color,
+                stroke=self.color_set.grid_color,
                 stroke_width="3px",
             )
         )
 
         # dan,suji
-        cord = board_g.add(dwg.g(id="cord", fill=color_set.grid_color))
+        cord = board_g.add(dwg.g(id="cord", fill=self.color_set.grid_color))
         for i in range(BOARD_WIDTH):
             cord.add(
                 dwg.text(
@@ -1044,7 +1044,6 @@ class Visualizer:
         self,
         dwg,
         state: ContractBridgeBiddingState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         NUM_CARD_TYPE = 13
         TO_CARD = [
@@ -1090,7 +1089,7 @@ class Visualizer:
                         rx="5px",
                         ry="5px",
                         fill="none",
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width="2px",
                     )
                 )
@@ -1098,7 +1097,7 @@ class Visualizer:
                     dwg.line(
                         start=(x_offset[i], y_offset[i] + 10),
                         end=(x_offset[i] + area_width, y_offset[i] + 10),
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width="2px",
                     )
                 )
@@ -1106,7 +1105,7 @@ class Visualizer:
                     dwg.line(
                         start=(x_offset[i], y_offset[i] + 38),
                         end=(x_offset[i] + area_width, y_offset[i] + 38),
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width="2px",
                     )
                 )
@@ -1114,7 +1113,7 @@ class Visualizer:
                     dwg.line(
                         start=(x_offset[i], y_offset[i] + 68),
                         end=(x_offset[i] + area_width, y_offset[i] + 68),
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width="2px",
                     )
                 )
@@ -1122,7 +1121,7 @@ class Visualizer:
                     dwg.line(
                         start=(x_offset[i], y_offset[i] + 98),
                         end=(x_offset[i] + area_width, y_offset[i] + 98),
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width="2px",
                     )
                 )
@@ -1130,7 +1129,7 @@ class Visualizer:
                     dwg.line(
                         start=(x_offset[i] + 32, y_offset[i] + 10),
                         end=(x_offset[i] + 32, y_offset[i] + 130),
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width="2px",
                     )
                 )
@@ -1138,7 +1137,7 @@ class Visualizer:
                     dwg.text(
                         text=pos[i],
                         insert=(x_offset[i] + 10, y_offset[i]),
-                        fill=color_set.grid_color,
+                        fill=self.color_set.grid_color,
                         font_size="20px",
                         font_family="Courier",
                         font_weight="bold",
@@ -1174,7 +1173,7 @@ class Visualizer:
                         insert=(x_offset[i] + 10, y_offset[i] + 30 * (j + 1)),
                         fill="orangered"
                         if 0 < j < 3
-                        else color_set.text_color,
+                        else self.color_set.text_color,
                         font_size="24px",
                         font_family="Courier",
                         font_weight="bold",
@@ -1188,7 +1187,7 @@ class Visualizer:
                 rx="5px",
                 ry="5px",
                 fill="none",
-                stroke=color_set.grid_color,
+                stroke=self.color_set.grid_color,
                 stroke_width="5px",
             )
         )
@@ -1205,7 +1204,7 @@ class Visualizer:
             color = (
                 "orangered"
                 if act % 5 == 1 or act % 5 == 2
-                else color_set.text_color
+                else self.color_set.text_color
             )
             board_g.add(
                 dwg.text(
@@ -1220,7 +1219,7 @@ class Visualizer:
             dwg.line(
                 start=(250, 250),
                 end=(460, 250),
-                stroke=color_set.grid_color,
+                stroke=self.color_set.grid_color,
                 stroke_width="2px",
             )
         )
@@ -1234,7 +1233,7 @@ class Visualizer:
                 dwg.text(
                     text=pos[i],
                     insert=(265 + 50 * (i % 4), 240),
-                    fill=color_set.text_color,
+                    fill=self.color_set.text_color,
                     font_size="20px",
                     font_family="Courier",
                 )
@@ -1246,7 +1245,6 @@ class Visualizer:
         self,
         dwg,
         state: GoState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         from pgx.go import get_board
 
@@ -1259,14 +1257,16 @@ class Visualizer:
                 (0, 0),
                 (BOARD_SIZE * GRID_SIZE, BOARD_SIZE * GRID_SIZE),
                 # stroke=svgwrite.rgb(10, 10, 16, "%"),
-                fill=color_set.background_color,
+                fill=self.color_set.background_color,
             )
         )
 
         # board
         # grid
         board_g = dwg.g()
-        hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
+        hlines = board_g.add(
+            dwg.g(id="hlines", stroke=self.color_set.grid_color)
+        )
         for y in range(BOARD_SIZE):
             hlines.add(
                 dwg.line(
@@ -1277,7 +1277,9 @@ class Visualizer:
                     ),
                 )
             )
-        vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
+        vlines = board_g.add(
+            dwg.g(id="vline", stroke=self.color_set.grid_color)
+        )
         for x in range(BOARD_SIZE):
             vlines.add(
                 dwg.line(
@@ -1312,7 +1314,7 @@ class Visualizer:
                 dwg.circle(
                     center=((x - 1) * GRID_SIZE, (y - 1) * GRID_SIZE),
                     r=GRID_SIZE / 10,
-                    fill=color_set.grid_color,
+                    fill=self.color_set.grid_color,
                 )
             )
         board_g.add(hoshi_g)
@@ -1326,9 +1328,15 @@ class Visualizer:
             stone_y = xy // BOARD_SIZE * GRID_SIZE
             stone_x = xy % BOARD_SIZE * GRID_SIZE
 
-            color = color_set.p1_color if stone == 0 else color_set.p2_color
+            color = (
+                self.color_set.p1_color
+                if stone == 0
+                else self.color_set.p2_color
+            )
             outline = (
-                color_set.p1_outline if stone == 0 else color_set.p2_outline
+                self.color_set.p1_outline
+                if stone == 0
+                else self.color_set.p2_outline
             )
             board_g.add(
                 dwg.circle(
@@ -1346,7 +1354,6 @@ class Visualizer:
         self,
         dwg,
         state: ShogiState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         PIECES = [
             "歩",
@@ -1436,14 +1443,16 @@ class Visualizer:
                     (BOARD_WIDTH + 2.5) * GRID_SIZE,
                     (BOARD_HEIGHT + 1) * GRID_SIZE,
                 ),
-                fill=color_set.background_color,
+                fill=self.color_set.background_color,
             )
         )
 
         # board
         # grid
         board_g = dwg.g()
-        hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
+        hlines = board_g.add(
+            dwg.g(id="hlines", stroke=self.color_set.grid_color)
+        )
         for y in range(1, 9):
             hlines.add(
                 dwg.line(
@@ -1455,7 +1464,9 @@ class Visualizer:
                     stroke_width="2px",
                 )
             )
-        vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
+        vlines = board_g.add(
+            dwg.g(id="vline", stroke=self.color_set.grid_color)
+        )
         for x in range(1, 9):
             vlines.add(
                 dwg.line(
@@ -1475,13 +1486,13 @@ class Visualizer:
                     BOARD_HEIGHT * GRID_SIZE,
                 ),
                 fill="none",
-                stroke=color_set.grid_color,
+                stroke=self.color_set.grid_color,
                 stroke_width="4px",
             )
         )
 
         # dan,suji
-        cord = board_g.add(dwg.g(id="cord", fill=color_set.grid_color))
+        cord = board_g.add(dwg.g(id="cord", fill=self.color_set.grid_color))
         for i in range(9):
             cord.add(
                 dwg.text(
@@ -1520,12 +1531,12 @@ class Visualizer:
                         pieces_g = p1_pieces_g
                         x = 8 - xy // BOARD_HEIGHT  # ShogiStateは右上原点
                         y = xy % BOARD_HEIGHT
-                        stroke = color_set.p1_outline
+                        stroke = self.color_set.p1_outline
                     else:
                         pieces_g = p2_pieces_g
                         x = xy // BOARD_HEIGHT
                         y = 8 - xy % BOARD_HEIGHT
-                        stroke = color_set.p2_outline
+                        stroke = self.color_set.p2_outline
 
                     if len(piece_type) > 1:
                         pieces_g.add(
@@ -1577,12 +1588,12 @@ class Visualizer:
             if i == 0:
                 pieces_g = p1_pieces_g
                 hand = p1_hand
-                stroke = color_set.p1_outline
+                stroke = self.color_set.p1_outline
                 offset = len(p1_hand)
             else:
                 pieces_g = p2_pieces_g
                 hand = p2_hand
-                stroke = color_set.p2_outline
+                stroke = self.color_set.p2_outline
                 offset = len(p2_hand)
             for j, txt in enumerate(hand):
                 pieces_g.add(
@@ -1612,7 +1623,6 @@ class Visualizer:
         self,
         dwg,
         state: SuzumeJongState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         from .suzume_jong import NUM_TILE_TYPES, NUM_TILES, _tile_type_to_str
 
@@ -1627,7 +1637,6 @@ class Visualizer:
             _is_red,
             _dwg,
             _dwg_g,
-            _color_set: VisualizerConfig,
             grid_size,
         ):
             _dwg_g.add(
@@ -1637,7 +1646,7 @@ class Visualizer:
                         32,
                         47,
                     ),
-                    fill=_color_set.p1_color,  # "#f9f7e8",
+                    fill=self.color_set.p1_color,  # "#f9f7e8",
                     stroke="none",
                 )
             )
@@ -1680,7 +1689,7 @@ class Visualizer:
                     BOARD_WIDTH * GRID_SIZE,
                     BOARD_HEIGHT * GRID_SIZE,
                 ),
-                fill=color_set.background_color,
+                fill=self.color_set.background_color,
             )
         )
 
@@ -1707,8 +1716,8 @@ class Visualizer:
                     ),
                     rx="2px",
                     ry="2px",
-                    fill=color_set.p2_color,
-                    stroke=color_set.grid_color,
+                    fill=self.color_set.p2_color,
+                    stroke=self.color_set.grid_color,
                     stroke_width="5px",
                 )
             )
@@ -1729,7 +1738,6 @@ class Visualizer:
                         num_red > 0,
                         dwg,
                         pieces_g,
-                        color_set,
                         GRID_SIZE,
                     )
                     x += 40
@@ -1744,7 +1752,13 @@ class Visualizer:
             ):
                 if type >= 0:
                     pieces_g = _set_piece(
-                        x, y, type, is_red, dwg, pieces_g, color_set, GRID_SIZE
+                        x,
+                        y,
+                        type,
+                        is_red,
+                        dwg,
+                        pieces_g,
+                        GRID_SIZE,
                     )
                     x += 40
                     river_count += 1
@@ -1775,7 +1789,7 @@ class Visualizer:
                 ),
                 rx="5px",
                 ry="5px",
-                fill=color_set.p1_outline,
+                fill=self.color_set.p1_outline,
             )
         )
         board_g.add(
@@ -1788,7 +1802,7 @@ class Visualizer:
                 rx="5px",
                 ry="5px",
                 fill="none",
-                stroke=color_set.p2_outline,
+                stroke=self.color_set.p2_outline,
                 stroke_width="3px",
             )
         )
@@ -1799,20 +1813,19 @@ class Visualizer:
             False,
             dwg,
             board_g,
-            color_set,
             GRID_SIZE,
         )
 
         # wall
         wall_type = -1
         board_g = _set_piece(
-            330, 120, wall_type, False, dwg, board_g, color_set, GRID_SIZE
+            330, 120, wall_type, False, dwg, board_g, GRID_SIZE
         )
         board_g.add(
             dwg.text(
                 text=f"× {NUM_TILES - state.draw_ix-1}",
                 insert=(380, 150),
-                fill=color_set.text_color,
+                fill=self.color_set.text_color,
                 font_size="20px",
                 font_family="serif",
             )
@@ -1825,7 +1838,6 @@ class Visualizer:
         self,
         dwg,
         state: TictactoeState,
-        color_set: VisualizerConfig,
     ) -> svgwrite.Drawing:
         GRID_SIZE = self.GRID_SIZE
         BOARD_WIDTH = self.BOARD_WIDTH
@@ -1837,8 +1849,8 @@ class Visualizer:
         hlines = board_g.add(
             dwg.g(
                 id="hlines",
-                stroke=color_set.grid_color,
-                fill=color_set.grid_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.grid_color,
             )
         )
         for y in range(1, BOARD_HEIGHT):
@@ -1870,8 +1882,8 @@ class Visualizer:
         vlines = board_g.add(
             dwg.g(
                 id="vline",
-                stroke=color_set.grid_color,
-                fill=color_set.grid_color,
+                stroke=self.color_set.grid_color,
+                fill=self.color_set.grid_color,
             )
         )
         for x in range(1, BOARD_WIDTH):
@@ -1912,7 +1924,7 @@ class Visualizer:
                             (y + 0.5) * GRID_SIZE,
                         ),
                         r=0.4 * GRID_SIZE,
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width=0.05 * GRID_SIZE,
                         fill="none",
                     )
@@ -1928,7 +1940,7 @@ class Visualizer:
                             (x + 0.9) * GRID_SIZE,
                             (y + 0.9) * GRID_SIZE,
                         ),
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width=0.05 * GRID_SIZE,
                     )
                 )
@@ -1942,7 +1954,7 @@ class Visualizer:
                             (x + 0.9) * GRID_SIZE,
                             (y + 0.1) * GRID_SIZE,
                         ),
-                        stroke=color_set.grid_color,
+                        stroke=self.color_set.grid_color,
                         stroke_width=0.05 * GRID_SIZE,
                     )
                 )
