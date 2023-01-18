@@ -99,6 +99,7 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
         return s, 0, False
 
 
+# turnから報酬計算
 def _turn_to_reward(turn: int) -> int:
     if turn == 0:
         return 1
@@ -106,6 +107,7 @@ def _turn_to_reward(turn: int) -> int:
         return -1
 
 
+# 初期盤面生成
 def _make_init_board() -> np.ndarray:
     array = np.zeros((29, 81), dtype=np.int32)
     for i in range(81):
@@ -164,6 +166,7 @@ def _make_init_board() -> np.ndarray:
     return array
 
 
+# 盤面の情報をStateに変換
 def _make_board(bs: np.ndarray) -> ShogiState:
     board = np.zeros((29, 81), dtype=np.int32)
     for i in range(81):
@@ -174,21 +177,14 @@ def _make_board(bs: np.ndarray) -> ShogiState:
 
 def _pawn_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    if turn == 0:
-        array[4][3] = 1
-    else:
-        array[4][5] = 1
+    array[4][4 - _turn_to_reward(turn)] = 1
     return array
 
 
 def _knight_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    if turn == 0:
-        array[3][2] = 1
-        array[5][2] = 1
-    else:
-        array[3][6] = 1
-        array[5][6] = 1
+    array[3][4 - 2 * _turn_to_reward(turn)] = 1
+    array[5][4 - 2 * _turn_to_reward(turn)] = 1
     return array
 
 
@@ -223,6 +219,7 @@ def _king_move() -> np.ndarray:
     return array
 
 
+# 端判定
 def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
     is_up = point % 9 == 0
     is_down = point % 9 == 8
@@ -243,6 +240,7 @@ def _point_to_location(point: int) -> Tuple[int, int]:
     return point // 9, point % 9
 
 
+# 端にいる駒の動けない地点へのフラグを折る
 def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
     new_array = array
     u, d, l, r = _is_side(point)
@@ -263,6 +261,7 @@ def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
     return new_array
 
 
+# 駒種と位置から到達できる地点をすべて生成
 def _action_board(array: np.ndarray, point: int) -> np.ndarray:
     new_array = array
     y, t = _point_to_location(point)
@@ -270,6 +269,7 @@ def _action_board(array: np.ndarray, point: int) -> np.ndarray:
     return np.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
 
 
+# 大駒・香車以外の位置ごとの移動できる地点を記録
 POINT_MOVES = np.zeros((81, 29, 81), dtype=np.int32)
 for i in range(81):
     POINT_MOVES[i][1] = _action_board(_pawn_move(0), i)
@@ -297,12 +297,12 @@ def _dlshogi_action(direction: int, to: int) -> int:
     return direction * 81 + to
 
 
-# from, toが同じ列にあるかどうか
+# from, toが同じ縦列にあるかどうか
 def _is_same_column(_from: int, to: int) -> bool:
     return _from // 9 == to // 9
 
 
-# from, toが同じ行にあるかどうか
+# from, toが同じ横列にあるかどうか
 def _is_same_row(_from: int, to: int) -> bool:
     return _from % 9 == to % 9
 
@@ -317,7 +317,8 @@ def _is_same_declining(_from: int, to: int) -> bool:
     return _from // 9 + _from % 9 == to // 9 + to % 9
 
 
-def _is_same_line(from_: int, to: int, direction: int):
+# from, からdirectionの方向に行ったときにtoに到達できるか
+def _is_same_line(from_: int, to: int, direction: int) -> bool:
     dir = direction % 10
     if dir == 0 or dir == 5:
         return _is_same_column(from_, to)
@@ -333,33 +334,15 @@ def _is_same_line(from_: int, to: int, direction: int):
 
 # fromからある方向に移動させたときの位置と距離の関係
 # それ以上その方向に動かせないなら全部0
-def _dis_direction_array(from_: int, turn: int, direction: int):
+def _dis_direction_array(from_: int, turn: int, direction: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
     dif = _direction_to_dif(direction, turn)
     to = from_ + dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 1
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 2
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 3
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 4
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 5
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 6
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 7
-    to += dif
-    if _is_in_board(to) and _is_same_line(from_, to, direction):
-        array[to] = 8
+    for i in range(8):
+        dis = 1 + i
+        to = from_ + dif * dis
+        if _is_in_board(to) and _is_same_line(from_, to, direction):
+            array[to] = dis
     return array
 
 
@@ -408,7 +391,7 @@ def _hand_to_direction(piece: int) -> int:
         return 12 + piece
 
 
-# AnimalShogiActionをdlshogiのint型actionに変換
+# ShogiActionをdlshogiのint型actionに変換
 def _action_to_dlaction(action: ShogiAction, turn: int) -> int:
     if action.is_drop:
         return _dlshogi_action(_hand_to_direction(action.piece), action.to)
@@ -480,22 +463,35 @@ def _direction_to_hand(direction: int) -> int:
         return direction - 12
 
 
-def _piece_type(state: ShogiState, point: int):
-    return state.board[:, point].argmax()
+def _piece_type(state: ShogiState, point: int) -> int:
+    return int(state.board[:, point].argmax())
+
+
+# dlshogiのactionの情報をShogiActionの情報に変換
+def _dlshogi_move_action(
+    direction: int, to: int, state: ShogiState
+) -> ShogiAction:
+    _from, is_promote = _direction_to_from(direction, to, state)
+    piece = _piece_type(state, _from)
+    captured = _piece_type(state, to)
+    return ShogiAction(False, piece, to, _from, captured, is_promote)
+
+
+def _dlshogi_drop_action(
+    direction: int, to: int, state: ShogiState
+) -> ShogiAction:
+    piece = _direction_to_hand(direction)
+    return ShogiAction(True, piece, to)
 
 
 def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
     direction, to = _separate_dlaction(action)
     if direction <= 19:
-        # 駒の移動
-        _from, is_promote = _direction_to_from(direction, to, state)
-        piece = _piece_type(state, _from)
-        captured = _piece_type(state, to)
-        return ShogiAction(False, piece, to, _from, captured, is_promote)
+        # 移動のaction
+        return _dlshogi_move_action(direction, to, state)
     else:
         # 駒打ち
-        piece = _direction_to_hand(direction)
-        return ShogiAction(True, piece, to)
+        return _dlshogi_drop_action(direction, to, state)
 
 
 # 手番側でない色を返す
@@ -583,25 +579,28 @@ def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
 # 方向ごとの大ごまの動きのなかで一番奥の地点を返す
 def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
     dir_array = _dis_direction_array(from_, 0, direction)
+    # 途中で駒にぶつからない場合
     if np.all(dir_array * bs_one == 0):
+        # 端の時はどこにも行けない
         if np.all(dir_array == 0):
             max_dis = 0
         else:
             max_dis = np.max(dir_array)
     else:
-        max_dis = np.min(dir_array[np.nonzero(dir_array * bs_one)])
+        return _nearest_position(from_, direction, bs_one)
     return from_ + _direction_to_dif(direction, 0) * max_dis
 
 
 # fromからtoまでの地点をdifごとに1に置き換える
 # 最大8回
-def _change_between(from_: int, to: int, dif: int):
+# fromは0、toは1に
+def _change_between(from_: int, to: int, dif: int) -> np.ndarray:
     array = np.zeros(81, dtype=np.int32)
     point = from_
     flag = from_ != to
-    for i in range(9):
+    for i in range(8):
         point += dif
-        if flag:
+        if flag and _is_in_board(point):
             array[point] = 1
         if point == to:
             flag = False
@@ -611,10 +610,7 @@ def _change_between(from_: int, to: int, dif: int):
 # 香車の動き
 def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
     bs_one = np.where(bs == 0, 0, 1)
-    if turn == 0:
-        direction = 0
-    else:
-        direction = 5
+    direction = 5 * turn
     point = _inner_point(bs_one, from_, direction)
     return _change_between(from_, point, _direction_to_dif(0, turn))
 
@@ -651,34 +647,16 @@ def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
 
 # 馬の動き
 def _horse_move(bs: np.ndarray, from_: int) -> np.ndarray:
-    to = _bishop_move(bs, from_)
-    u, d, l, r = _is_side(from_)
-    if not u:
-        to[from_ - 1] = 1
-    if not d:
-        to[from_ + 1] = 1
-    if not r:
-        to[from_ - 9] = 1
-    if not l:
-        to[from_ + 9] = 1
-    return to
+    # 角の動き＋玉の動き
+    to = _bishop_move(bs, from_) + POINT_MOVES[from_][8]
+    return np.where(to == 0, 0, 1)
 
 
 # 龍の動き
 def _dragon_move(bs: np.ndarray, from_: int) -> np.ndarray:
-    to = _rook_move(bs, from_)
-    u, d, l, r = _is_side(from_)
-    if not u:
-        if not r:
-            to[from_ - 10] = 1
-        if not l:
-            to[from_ + 8] = 1
-    if not d:
-        if not r:
-            to[from_ - 8] = 1
-        if not l:
-            to[from_ + 10] = 1
-    return to
+    # 飛車の動き＋玉の動き
+    to = _rook_move(bs, from_) + POINT_MOVES[from_][8]
+    return np.where(to == 0, 0, 1)
 
 
 # 駒種と位置から到達できる場所を返す
@@ -906,11 +884,18 @@ def _filter_occupied_drop_actions(
     for i in range(81):
         if owner[i] == 2:
             continue
-        np.put(
-            new_array,
-            np.arange(81 * (20 + 7 * turn) + i, 81 * (27 + 7 * turn) + i, 81),
-            0,
-        )
+        if turn == 0:
+            np.put(
+                new_array,
+                np.arange(81 * 20 + i, 81 * 27 + i, 81),
+                0,
+            )
+        else:
+            np.put(
+                new_array,
+                np.arange(81 * 27 + i, 81 * 34 + i, 81),
+                0,
+            )
     return new_array
 
 
@@ -984,27 +969,30 @@ def _is_double_pawn(state: ShogiState) -> bool:
 def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
-    # 先手歩
-    if np.any(np.where(bs == 1)[0] % 9 == 0):
+    line1 = bs[0::9]
+    if np.any(line1 == 1):
         is_stuck = True
-    # 先手香車
-    if np.any(np.where(bs == 2)[0] % 9 == 0):
+    if np.any(line1 == 2):
         is_stuck = True
-    # 先手桂馬
-    if np.any(np.where(bs == 3)[0] % 9 <= 1):
+    if np.any(line1 == 3):
         is_stuck = True
-    # 後手歩
-    if np.any(np.where(bs == 15)[0] % 9 == 8):
+    line2 = bs[1::9]
+    if np.any(line2 == 3):
         is_stuck = True
-    # 後手香車
-    if np.any(np.where(bs == 16)[0] % 9 == 8):
+    line8 = bs[7::9]
+    if np.any(line8 == 17):
         is_stuck = True
-    # 後手桂馬
-    if np.any(np.where(bs == 17)[0] % 9 >= 7):
+    line9 = bs[8::9]
+    if np.any(line9 == 15):
+        is_stuck = True
+    if np.any(line9 == 16):
+        is_stuck = True
+    if np.any(line9 == 17):
         is_stuck = True
     return is_stuck
 
 
+# pinされている方向から縦、横、右斜めうえ、右斜め下の四方向に分類
 def _direction_to_pin(direction: int) -> int:
     if direction == 0 or direction == 5:
         return 1
@@ -1017,6 +1005,26 @@ def _direction_to_pin(direction: int) -> int:
     return 0
 
 
+# それぞれの方向について、1番fromに近い駒の位置を返す
+def _nearest_position(from_: int, direction: int, bs_one: np.ndarray) -> int:
+    flag1 = False
+    point1 = -1
+    dif = _direction_to_dif(direction, 0)
+    for i in range(8):
+        point = from_ + (1 + i) * dif
+        if (
+            flag1
+            or not _is_in_board(point)
+            or not _is_same_line(from_, point, direction)
+        ):
+            continue
+        if bs_one[point] == 1:
+            point1 = point
+            flag1 = True
+    return point1
+
+
+# pinされている駒の位置と方向を記録(1方向のみ)
 def _direction_pin(
     bs: np.ndarray,
     turn: int,
@@ -1025,17 +1033,14 @@ def _direction_pin(
     array: np.ndarray,
 ) -> np.ndarray:
     new_array = array
-    dir_array = _dis_direction_array(king_point, 0, direction)
     e_turn = (turn + 1) % 2
     bs_one = np.where(bs == 0, 0, 1)
-    dir_one_array = dir_array * bs_one
-    if np.count_nonzero(dir_one_array) <= 1:
+    # 玉に一番近い駒の位置
+    point1 = _nearest_position(king_point, direction, bs_one)
+    # 2番目に近い駒の位置
+    point2 = _nearest_position(point1, direction, bs_one)
+    if point1 == -1 or point2 == -1:
         return new_array
-    dif = _direction_to_dif(direction, 0)
-    dis1 = np.partition(dir_one_array[dir_one_array.nonzero()].flatten(), 0)[0]
-    dis2 = np.partition(dir_one_array[dir_one_array.nonzero()].flatten(), 1)[1]
-    point1 = king_point + dis1 * dif
-    point2 = king_point + dis2 * dif
     piece1 = bs[point1]
     piece2 = bs[point2]
     if _owner(piece1) != turn:
@@ -1056,7 +1061,8 @@ def _direction_pin(
     return new_array
 
 
-def _pin(state: ShogiState):
+# pinされている駒の位置と方向を記録
+def _pin(state: ShogiState) -> np.ndarray:
     bs = _board_status(state)
     turn = state.turn
     pins = np.zeros(81, dtype=np.int32)
@@ -1067,7 +1073,7 @@ def _pin(state: ShogiState):
 
 
 # 特定の方向の動きだけを除いたactionを生成する
-def _eliminate_direction(actions: np.ndarray, direction: int):
+def _eliminate_direction(actions: np.ndarray, direction: int) -> np.ndarray:
     new_array = actions
     # 2方向と成・不成の4方向のフラグを折る
     dir1 = 0
@@ -1133,6 +1139,7 @@ def _king_escape(state: ShogiState) -> bool:
     return flag
 
 
+# point同士の間の位置にフラグを立てる
 def _between(point1: int, point2: int) -> np.ndarray:
     direction = _point_to_direction(point1, point2, False, 0)
     if direction == -1:
@@ -1186,6 +1193,7 @@ def _is_avoid_check(
     return (legal_actions == 0).all()
 
 
+# 詰み判定関数
 def _is_mate(state: ShogiState) -> bool:
     cn, cnp, cf, cfp = _is_check(state)
     # 王手がかかっていないならFalse
