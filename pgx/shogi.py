@@ -706,7 +706,9 @@ def _can_promote(piece: int, _from: int, to: int) -> bool:
         )
 
 
-def _create_actions1(piece: int, _from: int, to: int, actions: np.ndarray) -> np.ndarray:
+def _create_actions1(
+    piece: int, _from: int, to: int, actions: np.ndarray
+) -> np.ndarray:
     new_actions = actions
     normal_dir = _point_to_direction(_from, to, False, _owner(piece))
     normal_act = _dlshogi_action(normal_dir, to)
@@ -780,7 +782,7 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
     # 移動の追加
     for i in range(81):
         piece = bs[i]
-        #if piece == 0:
+        # if piece == 0:
         #    continue
         if piece <= 14:
             s.legal_actions_black = _add_move_actions(
@@ -974,7 +976,10 @@ def _is_check_(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
     bs = _board_status(state)
     for i in range(81):
         piece = bs[i]
-        if _owner(piece) == _another_color(state) and _piece_moves(bs, piece, i)[king_point] == 1:
+        if (
+            _owner(piece) == _another_color(state)
+            and _piece_moves(bs, piece, i)[king_point] == 1
+        ):
             # 桂馬の王手も密接としてカウント
             if near_king[i] == 1 or piece % 14 == 3:
                 check += 10
@@ -1047,7 +1052,12 @@ def _nearest_position(from_: int, direction: int, bs_one: np.ndarray) -> int:
     dif = _direction_to_dif(direction, 0)
     for i in range(8):
         point = from_ + (1 + i) * dif
-        if flag1 and _is_in_board(point) and _is_same_line(from_, point, direction) and bs_one[point] == 1:
+        if (
+            flag1
+            and _is_in_board(point)
+            and _is_same_line(from_, point, direction)
+            and bs_one[point] == 1
+        ):
             point1 = point
             flag1 = False
     return point1
@@ -1208,10 +1218,9 @@ def _is_avoid_check(
         point = int(cfp.argmax())
         # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
         points = _between(king_point, point)
-    for i in range(34):
-        for j in range(81):
-            if points[j] != 1 and not (i <= 19 and j == point):
-                legal_actions[81 * i + j] = 0
+    for i in range(81):
+        if points[i] == 0 and point != i:
+            np.put(legal_actions, np.arange(i, 81 * 34 + i, 81), 0)
     return (legal_actions == 0).all()
 
 
@@ -1227,7 +1236,9 @@ def _is_mate(state: ShogiState) -> bool:
 
 
 # 王手の有無にかかわらず詰みを判定する
-def _is_mate_noncheck(cn: int, cnp: np.ndarray, cf: int, cfp: np.ndarray, state: ShogiState):
+def _is_mate_noncheck(
+    cn: int, cnp: np.ndarray, cf: int, cfp: np.ndarray, state: ShogiState
+):
     legal_actions = _legal_actions(state)
     bs = _board_status(state)
     king_point = int(state.board[8 + 14 * state.turn, :].argmax())
@@ -1242,5 +1253,6 @@ def _is_mate_noncheck(cn: int, cnp: np.ndarray, cf: int, cfp: np.ndarray, state:
         return False
     else:
         # 両王手がかかっている場合はTrue, そうでなければis_avoid_check参照
-        return cn + cf >= 2 or _is_avoid_check(cn, cnp, cfp, king_point, legal_actions)
-
+        return cn + cf >= 2 or _is_avoid_check(
+            cn, cnp, cfp, king_point, legal_actions
+        )
