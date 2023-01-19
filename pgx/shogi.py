@@ -706,20 +706,23 @@ def _can_promote(piece: int, _from: int, to: int) -> bool:
         )
 
 
+def _create_actions1(piece: int, _from: int, to: int, actions: np.ndarray) -> np.ndarray:
+    new_actions = actions
+    normal_dir = _point_to_direction(_from, to, False, _owner(piece))
+    normal_act = _dlshogi_action(normal_dir, to)
+    new_actions[normal_act] = 1
+    pro_dir = _point_to_direction(_from, to, True, _owner(piece))
+    pro_act = _dlshogi_action(pro_dir, to)
+    if _can_promote(piece, _from, to):
+        new_actions[pro_act] = 1
+    return new_actions
+
+
 def _create_actions(piece: int, _from: int, to: np.ndarray) -> np.ndarray:
     actions = np.zeros(2754, dtype=np.int32)
     for i in range(81):
-        # ここ消すとかなり遅くなる
-        #if to[i] == 0:
-        #    continue
-        normal_dir = _point_to_direction(_from, i, False, _owner(piece))
-        normal_act = _dlshogi_action(normal_dir, i)
-        if to[i] == 1:
-            actions[normal_act] = 1
-        pro_dir = _point_to_direction(_from, i, True, _owner(piece))
-        pro_act = _dlshogi_action(pro_dir, i)
-        if to[i] == 1 and _can_promote(piece, _from, i):
-            actions[pro_act] = 1
+        if to[i] != 0:
+            actions = _create_actions1(piece, _from, i, actions)
     return actions
 
 
