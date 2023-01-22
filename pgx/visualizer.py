@@ -34,7 +34,7 @@ class Visualizer:
     color_mode: Literal["light", "dark"]
         light(ライトモードで表示)/dark(ダークモードで表示)
     scale: float
-        表示する画像のサイズ, デフォルトは1.0
+        表示する画像のサイズを拡大率で指定, デフォルトは1.0
     """
 
     def __init__(
@@ -60,7 +60,6 @@ class Visualizer:
     def save_svg(
         self,
         state: Union[
-            list,
             AnimalShogiState,
             BackgammonState,
             ChessState,
@@ -457,6 +456,8 @@ class Visualizer:
                 self.color_set = VisualizerConfig(
                     "white", "black", "lightgray", "white", "white", "black"
                 )
+        else:
+            assert False
 
     def _get_nth_state(self, _states, _i):
         if isinstance(_states, AnimalShogiState):
