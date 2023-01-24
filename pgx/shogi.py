@@ -581,11 +581,7 @@ def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
     dir_array = _dis_direction_array(from_, 0, direction)
     # 途中で駒にぶつからない場合
     if np.all(dir_array * bs_one == 0):
-        # 端の時はどこにも行けない
-        if np.all(dir_array == 0):
-            return from_
-        else:
-            return from_ + _direction_to_dif(direction, 0) * np.max(dir_array)
+        return from_ + _direction_to_dif(direction, 0) * np.max(dir_array)
     else:
         return _nearest_position(from_, direction, bs_one)
 
@@ -706,7 +702,7 @@ def _can_promote(piece: int, _from: int, to: int) -> bool:
         )
 
 
-def _create_actions1(
+def _create_one_piece_actions(
     piece: int, _from: int, to: int, actions: np.ndarray
 ) -> np.ndarray:
     new_actions = actions
@@ -724,7 +720,7 @@ def _create_actions(piece: int, _from: int, to: np.ndarray) -> np.ndarray:
     actions = np.zeros(2754, dtype=np.int32)
     for i in range(81):
         if to[i] != 0:
-            actions = _create_actions1(piece, _from, i, actions)
+            actions = _create_one_piece_actions(piece, _from, i, actions)
     return actions
 
 
@@ -782,8 +778,6 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
     # 移動の追加
     for i in range(81):
         piece = bs[i]
-        # if piece == 0:
-        #    continue
         if piece <= 14:
             s.legal_actions_black = _add_move_actions(
                 piece, i, s.legal_actions_black
@@ -941,30 +935,11 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
 # 王手判定
 # 密接・遠隔の王手で分ける
 def _is_check(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
-    check = 0
-    checking_point = np.zeros((2, 81), dtype=np.int32)
-    # そもそも王がいない場合はFalse
+    # そもそも王がいない場合
     if np.all(state.board[8 + 14 * state.turn] == 0):
         return 0, np.zeros(81, dtype=np.int32), 0, np.zeros(81, dtype=np.int32)
     else:
         return _is_check_(state)
-    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
-    near_king = _small_piece_moves(8 + 14 * state.turn, king_point)
-    bs = _board_status(state)
-    for i in range(81):
-        piece = bs[i]
-        if _owner(piece) != _another_color(state):
-            continue
-        if _piece_moves(bs, piece, i)[king_point] == 1:
-            # 桂馬の王手も密接としてカウント
-            if near_king[i] == 1 or piece % 14 == 3:
-                check += 10
-                checking_point[0][i] = 1
-            else:
-                # 遠隔の王手は9以上ありえない
-                check += 1
-                checking_point[1][i] = 1
-    return check // 10, checking_point[0], check % 10, checking_point[1]
 
 
 # 玉がいる前提
