@@ -1,7 +1,8 @@
 import time
 
 import jax
-from _go import (
+
+from pgx.go import (
     _count_ji,
     _get_alphazero_features,
     _get_reward,
