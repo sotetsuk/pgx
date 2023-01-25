@@ -16,16 +16,24 @@ def test_end_by_pass():
     rng = jax.random.PRNGKey(0)
     _, state = init(rng=rng, size=BOARD_SIZE)
 
-    _, state, _ = step(state=state, action=-1, size=BOARD_SIZE)
+    _, state, _ = jax.jit(
+        jax.jit(step, static_argnums=(2,)), static_argnums=(2,)
+    )(state=state, action=-1, size=BOARD_SIZE)
     assert state.passed
     assert not state.terminated
-    _, state, _ = step(state=state, action=0, size=BOARD_SIZE)
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=0, size=BOARD_SIZE
+    )
     assert not state.passed
     assert not state.terminated
-    _, state, _ = step(state=state, action=-1, size=BOARD_SIZE)
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=-1, size=BOARD_SIZE
+    )
     assert state.passed
     assert not state.terminated
-    _, state, _ = step(state=state, action=-1, size=BOARD_SIZE)
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=-1, size=BOARD_SIZE
+    )
     assert state.passed
     assert state.terminated
 
@@ -37,28 +45,72 @@ def test_step():
     rng = jax.random.PRNGKey(0)
     curr_player, state = init(rng=rng, size=BOARD_SIZE)
 
-    _, state, _ = step(state=state, action=12, size=BOARD_SIZE)  # BLACK
-    _, state, _ = step(state=state, action=11, size=BOARD_SIZE)  # WHITE
-    _, state, _ = step(state=state, action=17, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=7, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=8, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=1, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=3, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=16, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=21, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=2, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=10, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=5, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=14, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=15, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=23, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=20, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=-1, size=BOARD_SIZE)  # pass
-    _, state, _ = step(state=state, action=22, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=19, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=21, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=-1, size=BOARD_SIZE)  # pass
-    _, state, reward = step(state=state, action=-1, size=BOARD_SIZE)  # pass
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=12, size=BOARD_SIZE
+    )  # BLACK
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=11, size=BOARD_SIZE
+    )  # WHITE
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=17, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=7, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=8, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=1, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=3, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=16, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=21, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=2, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=10, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=5, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=14, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=15, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=23, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=20, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=-1, size=BOARD_SIZE
+    )  # pass
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=22, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=19, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=21, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=-1, size=BOARD_SIZE
+    )  # pass
+    _, state, reward = jax.jit(step, static_argnums=(2,))(
+        state=state, action=-1, size=BOARD_SIZE
+    )  # pass
 
     expected_board: jnp.ndarray = jnp.array(
         [
@@ -87,14 +139,30 @@ def test_step():
 def test_kou():
     rng = jax.random.PRNGKey(0)
     _, state = init(rng=rng, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=2, size=BOARD_SIZE)  # BLACK
-    _, state, _ = step(state=state, action=17, size=BOARD_SIZE)  # WHITE
-    _, state, _ = step(state=state, action=6, size=BOARD_SIZE)  # BLACK
-    _, state, _ = step(state=state, action=13, size=BOARD_SIZE)  # WHITE
-    _, state, _ = step(state=state, action=8, size=BOARD_SIZE)  # BLACK
-    _, state, _ = step(state=state, action=11, size=BOARD_SIZE)  # WHITE
-    _, state, _ = step(state=state, action=12, size=BOARD_SIZE)  # BLACK
-    _, state, _ = step(state=state, action=7, size=BOARD_SIZE)  # WHITE
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=2, size=BOARD_SIZE
+    )  # BLACK
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=17, size=BOARD_SIZE
+    )  # WHITE
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=6, size=BOARD_SIZE
+    )  # BLACK
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=13, size=BOARD_SIZE
+    )  # WHITE
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=8, size=BOARD_SIZE
+    )  # BLACK
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=11, size=BOARD_SIZE
+    )  # WHITE
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=12, size=BOARD_SIZE
+    )  # BLACK
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=7, size=BOARD_SIZE
+    )  # WHITE
 
     """
     ===========
@@ -112,12 +180,16 @@ def test_kou():
     """
     assert state.kou == 12
 
-    _, state1, reward = step(state=state, action=12, size=BOARD_SIZE)  # BLACK
+    _, state1, reward = jax.jit(step, static_argnums=(2,))(
+        state=state, action=12, size=BOARD_SIZE
+    )  # BLACK
     # ルール違反により黒の負け
     assert state1.terminated
     assert (reward == jnp.array([-1, 1])).all()
 
-    _, state2, _ = step(state=state, action=0, size=BOARD_SIZE)  # BLACK
+    _, state2, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=0, size=BOARD_SIZE
+    )  # BLACK
     # 回避した場合
     assert not state2.terminated
     assert state2.kou == -1
@@ -131,14 +203,30 @@ def test_observe():
     # curr_player: 1
     # player 0 is white, player 1 is black
 
-    _, state, _ = step(state=state, action=0, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=1, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=2, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=3, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=4, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=5, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=6, size=BOARD_SIZE)
-    _, state, _ = step(state=state, action=7, size=BOARD_SIZE)
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=0, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=1, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=2, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=3, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=4, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=5, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=6, size=BOARD_SIZE
+    )
+    _, state, _ = jax.jit(step, static_argnums=(2,))(
+        state=state, action=7, size=BOARD_SIZE
+    )
     # ===========
     # + O + O @
     # O @ O + +
@@ -166,7 +254,7 @@ def test_observe():
          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
     )
     # fmt: on
-    assert (observe(state, 0, False) == expected_obs_p0).all()
+    assert (jax.jit(observe)(state, 0, False) == expected_obs_p0).all()
 
     # fmt: off
     expected_obs_p1 = jnp.array(
@@ -189,7 +277,7 @@ def test_observe():
          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
     )
     # fmt: on
-    assert (observe(state, 1, False) == expected_obs_p1).all()
+    assert (jax.jit(observe)(state, 1, False) == expected_obs_p1).all()
 
 
 def test_random_play():
@@ -206,7 +294,9 @@ def test_random_play():
             key, subkey = jax.random.split(key)
             a = jax.random.choice(subkey, actions[0])
 
-        _, state, _ = step(state=state, action=a, size=BOARD_SIZE)
+        _, state, _ = jax.jit(step, static_argnums=(2,))(
+            state=state, action=a, size=BOARD_SIZE
+        )
 
         if state.turn > 100:
             break
@@ -229,7 +319,9 @@ def test_random_play_19():
             key, subkey = jax.random.split(key)
             a = jax.random.choice(subkey, actions[0])
 
-        _, state, _ = step(state=state, action=a, size=BOARD_SIZE)
+        _, state, _ = jax.jit(step, static_argnums=(2,))(
+            state=state, action=a, size=BOARD_SIZE
+        )
 
         if state.turn > 100:
             break
