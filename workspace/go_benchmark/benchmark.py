@@ -1,3 +1,4 @@
+import sys
 import time
 
 import jax
@@ -58,16 +59,31 @@ def test(func):
     print(f"| `{func.__name__}` | {delta:.1f}ms |")
 
 
-# fmt: off
-functions = [
-    step, _update_state_wo_legal_action, _pass_move, _not_pass_move,
-    _merge_ren, _set_stone_next_to_oppo_ren, _remove_stones,
-    legal_actions, _get_reward, _count_ji, _get_alphazero_features
-]
-# fmt: on
+func_name = sys.argv[1]
+if func_name == "_count_ji":
+    func = _count_ji
+elif func_name == "_get_alphazero_features":
+    func = _get_alphazero_features
+elif func_name == "_get_reward":
+    func = _get_reward
+elif func_name == "_merge_ren":
+    func = _merge_ren
+elif func_name == "_not_pass_move":
+    func = _not_pass_move
+elif func_name == "_pass_move":
+    func = _pass_move
+elif func_name == "_remove_stones":
+    func = _remove_stones
+elif func_name == "_set_stone_next_to_oppo_ren":
+    func = _set_stone_next_to_oppo_ren
+elif func_name == "_update_state_wo_legal_action":
+    func = _update_state_wo_legal_action
+elif func_name == "legal_actions":
+    func = legal_actions
+elif func_name == "step":
+    func = step
+else:
+    print(func_name)
+    assert False
 
-print("| function name | compile time |")
-print("| :--- | ---: |")
-
-for func in functions:
-    test(func=func)
+test(func=func)
