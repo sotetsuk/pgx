@@ -64,7 +64,23 @@ def find_key(key):
     return VALUES[ix]
 
 
+@jax.jit
+@jax.vmap
+def find_key2(key):
+    mask = jnp.where((KEYS == key).all(axis=1),
+                     jnp.ones(HASH_SIZE, dtype=jnp.bool_),
+                     jnp.zeros(HASH_SIZE, dtype=jnp.bool_))
+    ix = jnp.argmax(mask)
+    return VALUES[ix]
+
+
 st = time.time()
-find_key(KEYS[:N])
+find_key2(KEYS[:N])
 et = time.time()
 print(f"{et - st:.5f} sec")
+st = time.time()
+find_key2(KEYS[:N])
+et = time.time()
+print(f"{et - st:.5f} sec")
+results = find_key2(KEYS[:N])
+# print(results[:10])
