@@ -1,5 +1,7 @@
+import sys
 import jax
 import jax.numpy as jnp
+import time
 
 
 @jax.vmap
@@ -45,15 +47,15 @@ def to_board(rng):
 
 
 HASH_SIZE = 2_500_000
-N = 1000
+N = int(sys.argv[1])
 
 rng = jax.random.PRNGKey(0)
 VALUES = jax.random.split(rng, HASH_SIZE)
 BOARDS = to_board(VALUES)
 KEYS = to_key(BOARDS)
-print(VALUES[:10])
-print(BOARDS[:10])
-print(KEYS[:10])
+# print(VALUES[:10])
+# print(BOARDS[:10])
+# print(KEYS[:10])
 
 
 @jax.vmap
@@ -62,5 +64,7 @@ def find_key(key):
     return VALUES[ix]
 
 
-print(find_key(KEYS[:3]))
-print(find_key(KEYS[10-3:10]))
+st = time.time()
+find_key(KEYS[:N])
+et = time.time()
+print(f"{et - st:.5f} sec")
