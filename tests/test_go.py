@@ -8,13 +8,15 @@ BOARD_SIZE = 5
 
 def test_init():
     rng = jax.random.PRNGKey(0)
-    curr_player, _ = init(rng=rng, size=BOARD_SIZE)
+    curr_player, _ = jax.jit(
+        jax.jit(init, static_argnums=(1,)), static_argnums=(1,)
+    )(rng=rng, size=BOARD_SIZE)
     assert curr_player == 1
 
 
 def test_end_by_pass():
     rng = jax.random.PRNGKey(0)
-    _, state = init(rng=rng, size=BOARD_SIZE)
+    _, state = jax.jit(init, static_argnums=(1,))(rng=rng, size=BOARD_SIZE)
 
     _, state, _ = jax.jit(
         jax.jit(step, static_argnums=(2,)), static_argnums=(2,)
@@ -43,7 +45,9 @@ def test_step():
     https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
     """
     rng = jax.random.PRNGKey(0)
-    curr_player, state = init(rng=rng, size=BOARD_SIZE)
+    curr_player, state = jax.jit(init, static_argnums=(1,))(
+        rng=rng, size=BOARD_SIZE
+    )
 
     _, state, _ = jax.jit(step, static_argnums=(2,))(
         state=state, action=12, size=BOARD_SIZE
@@ -138,7 +142,7 @@ def test_step():
 
 def test_kou():
     rng = jax.random.PRNGKey(0)
-    _, state = init(rng=rng, size=BOARD_SIZE)
+    _, state = jax.jit(init, static_argnums=(1,))(rng=rng, size=BOARD_SIZE)
     _, state, _ = jax.jit(step, static_argnums=(2,))(
         state=state, action=2, size=BOARD_SIZE
     )  # BLACK
@@ -199,7 +203,9 @@ def test_observe():
     BOARD_SIZE = 5
 
     rng = jax.random.PRNGKey(0)
-    curr_player, state = init(rng=rng, size=BOARD_SIZE)
+    curr_player, state = jax.jit(init, static_argnums=(1,))(
+        rng=rng, size=BOARD_SIZE
+    )
     # curr_player: 1
     # player 0 is white, player 1 is black
 
@@ -284,7 +290,9 @@ def test_random_play():
     import numpy as np
 
     rng = jax.random.PRNGKey(0)
-    curr_player, state = init(rng=rng, size=BOARD_SIZE)
+    curr_player, state = jax.jit(init, static_argnums=(1,))(
+        rng=rng, size=BOARD_SIZE
+    )
     while not state.terminated:
         actions = np.where(state.legal_action_mask)
         if len(actions[0]) == 0:
@@ -309,7 +317,9 @@ def test_random_play_19():
     BOARD_SIZE = 19
 
     rng = jax.random.PRNGKey(0)
-    curr_player, state = init(rng=rng, size=BOARD_SIZE)
+    curr_player, state = jax.jit(init, static_argnums=(1,))(
+        rng=rng, size=BOARD_SIZE
+    )
     while not state.terminated:
         actions = np.where(state.legal_action_mask)
         if len(actions[0]) == 0:
