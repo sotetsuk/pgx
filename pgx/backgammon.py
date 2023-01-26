@@ -453,13 +453,13 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
 
 
 @jit
-def _distance_to_goal(src: int, turn: jnp.int16) -> int:
+def _distance_to_goal(src: int, turn: jnp.ndarray) -> int:
     return jax.lax.cond(turn == -1, lambda: 24 - src, lambda: src + 1)  # type: ignore
 
 
 @jit
 def _is_to_off_legal(
-    board: jnp.ndarray, turn: jnp.int16, src: int, tgt: int, die: int
+    board: jnp.ndarray, turn: jnp.ndarray, src: int, tgt: int, die: int
 ) -> bool:
     """
     board外への移動についての合法判定
