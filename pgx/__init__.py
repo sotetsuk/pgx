@@ -1,4 +1,9 @@
-from typing import Literal
+from typing import Literal, Union
+
+import pgx.go
+import pgx.minatar.breakout
+import pgx.suzume_jong
+import pgx.tic_tac_toe
 
 EnvId = Literal[
     "tic_tac_toe/v0",
@@ -8,20 +13,31 @@ EnvId = Literal[
 ]
 
 
+State = Union[pgx.tic_tac_toe.State, pgx.suzume_jong.State]
+
+
 def make(env_id: EnvId):
     if env_id == "tic_tac_toe/v0":
-        from pgx.tic_tac_toe import init, observe, step
-
-        return init, step, observe
+        return (
+            pgx.tic_tac_toe.init,
+            pgx.tic_tac_toe.step,
+            pgx.tic_tac_toe.observe,
+        )
     elif env_id == "minatar/breakout/v0":
-        from pgx.minatar.breakout import init, observe, step
-
-        return init, step, observe
+        return (
+            pgx.minatar.breakout.init,
+            pgx.minatar.breakout.step,
+            pgx.minatar.breakout.observe,
+        )
     elif env_id == "suzume_jong/v0":
-        from pgx.suzume_jong import init, observe, step
-
-        return init, step, observe
+        return (
+            pgx.suzume_jong.init,
+            pgx.suzume_jong.step,
+            pgx.suzume_jong.observe,
+        )
     elif env_id == "go/v0":
-        from pgx.go import init, observe, step
-
-        return init, step, observe
+        return (
+            pgx.go.init,
+            pgx.go.step,
+            pgx.go.observe,
+        )
