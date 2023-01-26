@@ -443,8 +443,6 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
     src = [no op., from bar, 0, .., 23]
     """
     src, die, tgt = _decompose_action(action, turn)
-    selu(action)
-    selu(src)
     return jax.lax.cond(
         (0 <= tgt) & (tgt <= 23) & (src >= 0),
         lambda: _is_to_point_legal(board, turn, src, tgt),
@@ -453,7 +451,7 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
 
 @jit
 def _distance_to_goal(src: int, turn: jnp.int16):
-    return jax.lax.cond(turn==-1, lambda: 24 - (turn * src), lambda: (turn * src) + 1)
+    return jax.lax.cond(turn==-1, lambda: 24 - src, lambda: src + 1)
 
 
 @jit
@@ -468,7 +466,8 @@ def _is_to_off_legal(
     """
     board外への移動についての合法判定
     """
-    #selu(die)
+    selu(src)
+    selu(_distance_to_goal(src, turn))
     return jax.lax.cond(
         src < 0,
         lambda: False,

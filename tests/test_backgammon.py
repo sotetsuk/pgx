@@ -132,7 +132,6 @@ def test_change_turn():
 
 def test_step():
     board: jnp.ndarray = make_test_boad()
-    """
     legal_action_mask = _legal_action_mask(board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16))
     state = make_test_state(
         curr_player=jnp.int16(1),
@@ -186,7 +185,6 @@ def test_step():
     assert (
         state.turn == jnp.int16(1)
     )  # このseedでは黒が移動できる場所がないので再度白に戻ってくる.
-    """
     # legal_actionが正しいかtest
     legal_action_mask = _legal_action_mask(board, jnp.int16(-1), jnp.array([4, 5, -1, -1], dtype=jnp.int16))
     state = make_test_state(
@@ -212,7 +210,7 @@ def test_step():
     print(jnp.where(expected_legal_action_mask!=0)[0])
     assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0 
 
-"""
+
 
 def test_observe():
     board: jnp.ndarray = make_test_boad()
@@ -448,4 +446,3 @@ def test_calc_win_score():
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
-"""
