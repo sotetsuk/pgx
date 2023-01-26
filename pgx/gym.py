@@ -1,3 +1,5 @@
+from typing import List
+
 import jax
 import jax.numpy as jnp
 
@@ -15,7 +17,7 @@ class RandomOpponentEnv:
         self.num_envs = num_envs
         _init, _step, observe = pgx.make(env_id)
 
-        def _random_opponent_step(rng, state):
+        def _random_opponent_step(rng, state: pgx.State):
             logits = jnp.log(state.legal_action_mask.astype(jnp.float16))
             action = jax.random.categorical(rng, logits=logits)
             _, state, reward = _step(state, action)
@@ -63,7 +65,7 @@ class RandomOpponentEnv:
         self.observe_fn = jax.vmap(observe)
         self.rng, self.state = self._init(0)
         self.store_states = store_states
-        self.states = []
+        self.states: List[pgx.State] = []
 
     def _init(self, seed: int):
         rng = jax.random.PRNGKey(seed)
