@@ -15,7 +15,7 @@ EnvId = Literal[
 @dataclass
 class State:
     rng: jax.random.KeyArray
-    curr_player: jnp.int8
-    reward: jnp.float32
-    terminated: jnp.bool_
-    legal_action_mask: jnp.bool_
+    curr_player: jnp.ndarray
+    reward: jnp.ndarray
+    terminated: jnp.ndarray
+    legal_action_mask: jnp.ndarray

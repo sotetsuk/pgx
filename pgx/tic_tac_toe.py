@@ -11,17 +11,17 @@ TRUE = jnp.bool_(True)
 
 class State(pgx.core.State):
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
-    curr_player: jnp.int8 = jnp.int8(0)
-    reward: jnp.float32 = jnp.float32([0.0, 0.0])
-    terminated: jnp.bool_ = jnp.bool_(False)
-    legal_action_mask: jnp.bool_ = jnp.ones(9, dtype=jnp.bool_)  # type: ignore
+    curr_player: jnp.ndarray = jnp.int8(0)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = jnp.bool_(False)
+    legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     # 0: 先手, 1: 後手
-    _turn: jnp.int8 = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
     # -1: empty, 0: 先手, 1: 後手
-    _board: jnp.int8 = -jnp.ones(9, jnp.int8)  # type: ignore
+    _board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
