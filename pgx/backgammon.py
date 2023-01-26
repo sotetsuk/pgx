@@ -28,7 +28,7 @@ class BackgammonState:
     # プレイしたサイコロの目の数
     played_dice_num: jnp.ndarray = jnp.int8(0)
 
-    # 白なら-1, 黒なら1
+    # 黒なら-1, 白なら1
     turn: jnp.ndarray = jnp.int8(1)
     """
     合法手
@@ -153,7 +153,7 @@ def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
     terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state.board, state.turn, action)
     played_dice_num: jnp.ndarray = jnp.int8(state.played_dice_num + 1)
-    played_dice: jnp.ndarray = _update_playable_dice(
+    playable_dice: jnp.ndarray = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
     legal_action_mask: jnp.ndarray = _legal_action_mask(
@@ -166,7 +166,7 @@ def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
         board=board,
         turn=state.turn,
         dice=state.dice,
-        playable_dice=played_dice,
+        playable_dice=playable_dice,
         played_dice_num=played_dice_num,
         legal_action_mask=legal_action_mask,
     )
@@ -175,14 +175,14 @@ def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
 @jit
 def _make_init_board() -> jnp.ndarray:
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
-    board = board.at[0].set(2)
-    board = board.at[5].set(-5)
-    board = board.at[7].set(-3)
-    board = board.at[11].set(5)
-    board = board.at[12].set(-5)
-    board = board.at[16].set(3)
-    board = board.at[18].set(5)
-    board = board.at[23].set(-2)
+    board = board.at[0].set(-2)
+    board = board.at[5].set(5)
+    board = board.at[7].set(3)
+    board = board.at[11].set(-5)
+    board = board.at[12].set(5)
+    board = board.at[16].set(-3)
+    board = board.at[18].set(-5)
+    board = board.at[23].set(2)
     return board
 
 
@@ -315,7 +315,7 @@ def _update_playable_dice(
 @jit
 def _home_board(turn: jnp.ndarray) -> jnp.ndarray:
     """
-    白: [18~23], 黒: [0~5]
+    黒: [18~23], 白: [0~5]
     """
     return jax.lax.cond(
         turn == -1, lambda: jnp.arange(18, 24), lambda: jnp.arange(0, 6)
@@ -325,7 +325,7 @@ def _home_board(turn: jnp.ndarray) -> jnp.ndarray:
 @jit
 def _off_idx(turn: jnp.ndarray) -> int:
     """
-    白: 26, 黒: 27
+    黒: 26, 白: 27
     """
     return jax.lax.cond(turn == -1, lambda: 26, lambda: 27)
 
@@ -333,7 +333,7 @@ def _off_idx(turn: jnp.ndarray) -> int:
 @jit
 def _bar_idx(turn: jnp.ndarray) -> int:
     """
-    白: 24, 黒 25
+    黒: 24, 白 25
     """
     return jax.lax.cond(turn == -1, lambda: 24, lambda: 25)
 
