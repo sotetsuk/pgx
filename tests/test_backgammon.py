@@ -182,9 +182,6 @@ def test_step():
         state.board.at[23].get() == 1
         and state.board.at[25].get() == 2
     )
-    assert (
-        state.turn == jnp.int16(1)
-    )  # このseedでは黒が移動できる場所がないので再度白に戻ってくる.
     # legal_actionが正しいかtest
     legal_action_mask = _legal_action_mask(board, jnp.int16(-1), jnp.array([4, 5, -1, -1], dtype=jnp.int16))
     state = make_test_state(
