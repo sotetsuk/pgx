@@ -453,8 +453,8 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
 
 
 @jit
-def _distance_to_goal(src: int, turn: jnp.int16):
-    return jax.lax.cond(turn == -1, lambda: 24 - src, lambda: src + 1)
+def _distance_to_goal(src: int, turn: jnp.int16) -> int:
+    return jax.lax.cond(turn == -1, lambda: 24 - src, lambda: src + 1)  # type: ignore
 
 
 @jit
@@ -471,7 +471,7 @@ def _is_to_off_legal(
         & _is_all_on_homeboad(board, turn)
         & (_rear_distance(board, turn) <= die)
         & (_rear_distance(board, turn) == _distance_to_goal(src, turn)),
-    )
+    )  # type: ignore
 
 
 @jit
