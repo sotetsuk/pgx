@@ -366,7 +366,7 @@ def _is_all_on_homeboad(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
     """
     home_board: jnp.ndarray = _home_board(turn)
     on_home_board: int = jnp.clip(
-        -1 * board[home_board], a_min=0, a_max=15
+        turn * board[home_board], a_min=0, a_max=15
     ).sum()
     off: int = board[_off_idx(turn)] * turn  # type: ignore
     return (15 - off) == on_home_board
@@ -418,7 +418,7 @@ def _calc_tgt(src: int, turn: jnp.ndarray, die) -> jnp.ndarray:
 @jit
 def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
     return jax.lax.cond(
-        (jnp.abs(src + die * -1 * turn - 25 / 2) < 25 / 2),
+        (src + die * -1 * turn>=0) & (src + die * -1 * turn<=23),
         lambda: jnp.int16(src + die * -1 * turn),
         lambda: jnp.int16(_off_idx(turn)),
     )  # type: ignore
@@ -433,6 +433,10 @@ def _decompose_action(action: int, turn: jnp.ndarray) -> Tuple:
     die = action % 6 + 1  # 0~5 -> 1~6
     tgt = _calc_tgt(src, turn, die)
     return src, die, tgt
+
+@jit
+def selu(x, alpha=1.67, lmbda=1.05):
+    call(lambda x: print(f"x: {x}"), x)
 
 
 @jit
@@ -455,19 +459,12 @@ def _distance_to_goal(src: int, turn: jnp.int16):
 
 
 @jit
-def selu(x):
-    call(lambda x: print(f"x: {x}"), x)
-
-
-@jit
 def _is_to_off_legal(
     board: jnp.ndarray, turn: jnp.int16, src: int, tgt: int, die: int
 ) -> bool:
     """
     board外への移動についての合法判定
     """
-    selu(src)
-    selu(_distance_to_goal(src, turn))
     return jax.lax.cond(
         src < 0,
         lambda: False,

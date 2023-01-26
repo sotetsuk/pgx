@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-
+from pgx.visualizer import VisualizerConfig, Visualizer
 from pgx.backgammon import (
     BackgammonState,
     _calc_src,
@@ -57,9 +57,6 @@ def make_test_boad():
 Bar ++++
 Off -------
 """
-
-
-
 
 def make_test_state(
     curr_player: jnp.ndarray,
@@ -443,3 +440,14 @@ def test_calc_win_score():
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
     assert _calc_win_score(single_board, turn) == 1
+
+
+def test_black_off():
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
+    board = board.at[0].set(15)
+    playable_dice = jnp.array([3, 2, -1, -1])
+    legal_action_mask = _legal_action_mask(board, jnp.int16(1), playable_dice)
+    print("3, 2", jnp.where(legal_action_mask!=0)[0])
+    playable_dice = jnp.array([1, 1, -1, -1])
+    legal_action_mask = _legal_action_mask(board, jnp.int16(1), playable_dice)
+    print("1, 1", jnp.where(legal_action_mask!=0)[0])
