@@ -515,8 +515,8 @@ class Visualizer:
                 curr_player=_states.curr_player[_i],
                 legal_action_mask=_states.legal_action_mask[_i],
                 terminated=_states.terminated[_i],
-                turn=_states.turn[_i],
-                board=_states.board[_i],
+                turn=_states._turn[_i],
+                board=_states._board[_i],
             )
         else:
             assert False
@@ -1914,7 +1914,7 @@ class Visualizer:
                 )
             )
 
-        for i, mark in enumerate(state.board):
+        for i, mark in enumerate(state._board):
             x = i % BOARD_WIDTH
             y = i // BOARD_HEIGHT
             if mark == 0:  # 先手

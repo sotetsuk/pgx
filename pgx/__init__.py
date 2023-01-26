@@ -4,7 +4,7 @@ import pgx.suzume_jong
 import pgx.tic_tac_toe
 from pgx.core import EnvId, State
 
-__all__ = [State, EnvId]
+__all__ = ["State", "EnvId"]
 
 
 def make(env_id: EnvId):
