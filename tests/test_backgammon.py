@@ -38,29 +38,6 @@ def make_test_boad():
     board = board.at[25].set(4)
     return board
 
-expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.int8
-    )
-expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 0].set(
-    1
-) # 25(off)->23
-expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 1].set(
-    1
-) # 25(off)->22
-
-expected_legal_action_mask = expected_legal_action_mask.at[6 * (22 + 2) + 0].set(
-    1
-) # 22->21
-expected_legal_action_mask = expected_legal_action_mask.at[6 * (10 + 2) + 0].set(
-    1
-) # 10->9
-expected_legal_action_mask = expected_legal_action_mask.at[6 * (4 + 2) + 0].set(
-    1
-) # 4->3
-expected_legal_action_mask = expected_legal_action_mask.at[6 * (3 + 2) + 0].set(
-    1
-) # 3->2
-
 """
 黒: - 白: +
 12 13 14 15 16 17  18 19 20 21 22 23
@@ -175,8 +152,6 @@ def test_step():
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 1].set(
         1
     ) # 25(off)->22
-    print(jnp.where(state.legal_action_mask!=0))
-    print(jnp.where(expected_legal_action_mask!=0))
     assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0 
 
 
@@ -192,24 +167,20 @@ def test_step():
         and state.board.at[25].get() == 3
     )
     # legal_actionが正しく更新されているかテスト
-    expected_legal_action_mask = expected_legal_action_mask.at[6 * (22 + 2) + 0].set(
-    1
-    ) # 22->21
-    expected_legal_action_mask = expected_legal_action_mask.at[6 * (10 + 2) + 0].set(
+    expected_legal_action_mask: jnp.ndarray = jnp.zeros(
+        6 * 26 + 6, dtype=jnp.int8
+    )
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 0].set(
         1
-    ) # 10->9
-    expected_legal_action_mask = expected_legal_action_mask.at[6 * (4 + 2) + 0].set(
-        1
-    ) # 4->3
-    expected_legal_action_mask = expected_legal_action_mask.at[6 * (3 + 2) + 0].set(
-        1
-    ) # 3->2
-    print(jnp.where(state.legal_action_mask!=0))
-    print(jnp.where(expected_legal_action_mask!=0))
+    ) # 25(off)->23
     assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0
-    # 白がサイコロ1をplay 4->3
-    _, state, _ = step(state=state, action=(4 + 2) * 6 + 0)
+    # 白がサイコロ1をplay 25(off)->23
+    _, state, _ = step(state=state, action=(1) * 6 + 0)
     assert state.played_dice_num == 0
+    assert (
+        state.board.at[23].get() == 1
+        and state.board.at[25].get() == 2
+    )
     assert (
         state.turn == -1 or state.turn == 1 and (state.dice - 3) == 0
     )  # turnが変わっているか

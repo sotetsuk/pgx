@@ -157,7 +157,7 @@ def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
         state.playable_dice, state.played_dice_num, state.dice, action
     )
     legal_action_mask: jnp.ndarray = _legal_action_mask(
-        state.board, state.turn, state.playable_dice
+        board, state.turn, playable_dice
     )
     return BackgammonState(  # type: ignore
         curr_player=curr_player,
