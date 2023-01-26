@@ -1,118 +1,83 @@
-from pgx.animal_shogi import init, JaxAnimalShogiState, _legal_actions, _action_to_dlaction, _turn_to_reward, _another_color, _dlaction_to_action, _is_try, _is_check, _drop, _move, _update_legal_drop_actions, _update_legal_move_actions
-import jax
-import jax.numpy as jnp
+import sys
 import time
-from typing import Tuple
+
+import jax
+
+from pgx.animal_shogi import (
+    _move,
+    _update_legal_move_actions,
+    _effected_positions,
+    _is_check,
+    _is_try,
+    init,
+    _legal_actions,
+    step,
+    _init_legal_actions,
+    _board_status,
+    _dlaction_to_action
+)
+
+rng = jax.random.PRNGKey(0)
+size = 19
+cp, state = init(rng)
 
 
-@jax.jit
-def step(
-    state: JaxAnimalShogiState, action: int
-) -> Tuple[JaxAnimalShogiState, int, bool]:
-    first_time = time.time()
-    s = state
-    reward = 0
-    terminated = False
-    s_time = time.time()
-    legal_actions = _legal_actions(s)
-    e_time = time.time()
-    print("legal_actions:", (e_time - s_time)*1000)
-    _action = _dlaction_to_action(action, s)
-    reward = jax.lax.cond(
-        (_action.from_[0] > 11)
-        | (_action.from_[0] < 0)
-        | (legal_actions[_action_to_dlaction(_action, s.turn[0])] == 0),
-        lambda: _turn_to_reward(_another_color(s)),
-        lambda: reward,
-    )
-    terminated = jax.lax.cond(
-        (_action.from_[0] > 11)
-        | (_action.from_[0] < 0)
-        | (legal_actions[_action_to_dlaction(_action, s.turn[0])] == 0),
-        lambda: True,
-        lambda: terminated,
-    )
-    s_time = time.time()
-    s = jax.lax.cond(
-        terminated,
-        lambda: s,
-        lambda: jax.lax.cond(
-            _action.is_drop[0] == 1,
-            lambda: _drop(_update_legal_drop_actions(s, _action), _action),
-            lambda: _move(_update_legal_move_actions(s, _action), _action),
-        ),
-    )
-    e_time = time.time()
-    print("update_state:", (e_time - s_time)*1000)
-    s_time = time.time()
-    reward = jax.lax.cond(
-        (terminated is False) & _is_try(_action),
-        lambda: _turn_to_reward(s.turn[0]),
-        lambda: reward,
-    )
-    terminated = jax.lax.cond(
-        (terminated is False) & _is_try(_action),
-        lambda: True,
-        lambda: terminated,
-    )
-    turn = jnp.zeros(1, dtype=jnp.int32).at[0].set(_another_color(s))
-    s = JaxAnimalShogiState(
-        turn=turn,
-        board=s.board,
-        hand=s.hand,
-        legal_actions_black=s.legal_actions_black,
-        legal_actions_white=s.legal_actions_white,
-    )  # type: ignore
-    e_time = time.time()
-    print("is_try:", (e_time - s_time)*1000)
-    no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
-    checking_piece = no_checking_piece.at[_action.to[0]].set(1)
-    s_time = time.time()
-    s = jax.lax.cond(
-        (_is_check(s)) & (terminated is False),
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
-            legal_actions_black=s.legal_actions_black,
-            legal_actions_white=s.legal_actions_white,
-            is_check=jnp.array([1]),
-            checking_piece=checking_piece,
-        ),  # type: ignore
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
-            legal_actions_black=s.legal_actions_black,
-            legal_actions_white=s.legal_actions_white,
-            is_check=jnp.array([0]),
-            checking_piece=no_checking_piece,
-        ),  # type: ignore
-    )
-    e_time = time.time()
-    print("is_check:", (e_time - s_time)*1000)
-    finish_time = time.time()
-    print("all:", (finish_time - first_time)*1000)
-    return s, reward, terminated
-
-
-@jax.jit
-def rand_step(rng):
-    rng, subkey = jax.random.split(rng)
-    cp, state = init(rng=rng)
-    legal_actions = _legal_actions(state)
-    legal_actions = jnp.nonzero(legal_actions, size=180, fill_value=-1)[0]
-    rng, subkey = jax.random.split(rng)
-    action = jax.random.choice(subkey, legal_actions)
-    s, r, t = step(state, action)
-    return s
-
-
-N = 100000
-if __name__ == '__main__':
-    s = time.time()
-    vmap_step = jax.jit(jax.vmap(rand_step))
+def test(func):
     rng = jax.random.PRNGKey(0)
-    rngs = jax.random.split(rng, N)
-    states = vmap_step(rngs)
-    print("all:", time.time() - s)
+    cp, state = init(rng)
+    if func.__name__ == "_legal_actions" or func.__name__ == "_is_check" or func.__name__ == "_is_try" or func.__name__ == "_init_legal_actions" or func.__name__ == "_board_status":
+        time_sta = time.perf_counter()
+        jax.jit(func, static_argnums=(1,))(state)
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        print(f"| `{func.__name__}` | {delta:.1f}ms |")
+        return
+    elif func.__name__ == "_effected_positions":
+        time_sta = time.perf_counter()
+        jax.jit(func, static_argnums=(1,))(state, cp)
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        print(f"| `{func.__name__}` | {delta:.1f}ms |")
+        return
+    elif func.__name__ == "step" or func.__name__ == "_move" or func.__name__ == "_update_legal_move_actions":
+        time_sta = time.perf_counter()
+        jax.jit(func, static_argnums=(1,))(state, 5)
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        print(f"| `{func.__name__}` | {delta:.1f}ms |")
+        return
+    elif func.__name__ == "_dlaction_to_action":
+        time_sta = time.perf_counter()
+        jax.jit(func, static_argnums=(1,))(5, state)
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        print(f"| `{func.__name__}` | {delta:.1f}ms |")
+        return
+
+
+func_name = sys.argv[1]
+if func_name == "_legal_actions":
+    func = _legal_actions
+elif func_name == "_move":
+    func = _move
+elif func_name == "_update_legal_move_actions":
+    func = _update_legal_move_actions
+elif func_name == "_effected_positions":
+    func = _effected_positions
+elif func_name == "_is_check":
+    func = _is_check
+elif func_name == "_is_try":
+    func = _is_try
+elif func_name == "_init_legal_actions":
+    func = _init_legal_actions
+elif func_name == "_board_status":
+    func = _board_status
+elif func_name == "_dlaction_to_action":
+    func = _dlaction_to_action
+elif func_name == "step":
+    func = step
+else:
+    print(func_name)
+    assert False
+
+test(func=func)
