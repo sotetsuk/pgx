@@ -3,13 +3,13 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
-import pgx
+import pgx.core
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-class State(pgx.State):
+class State(pgx.core.State):
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     curr_player: jnp.int8 = jnp.int8(0)
     reward: jnp.float32 = jnp.float32([0.0, 0.0])
