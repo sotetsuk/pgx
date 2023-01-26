@@ -7,6 +7,7 @@ from flax import struct
 from jax import jit
 from jax.experimental.host_callback import call
 
+
 @struct.dataclass
 class BackgammonState:
     curr_player: jnp.ndarray = jnp.int16(0)
@@ -203,17 +204,13 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
     """
     rng1, rng2 = jax.random.split(state.rng)
     board: jnp.ndarray = state.board
-    turn: jnp.ndarray = -1 *state.turn  # turnを変える
+    turn: jnp.ndarray = -1 * state.turn  # turnを変える
     curr_player: jnp.ndarray = (state.curr_player + 1) % 2
     terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
-    playable_dice: jnp.ndarray = _set_playable_dice(
-        dice
-    )  # play可能なサイコロを初期化
+    playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
-    legal_action_mask: jnp.ndarray = _legal_action_mask(
-        board, turn, dice
-    )
+    legal_action_mask: jnp.ndarray = _legal_action_mask(board, turn, dice)
     return jax.lax.cond(
         _is_turn_end(state),
         lambda: (
@@ -418,7 +415,7 @@ def _calc_tgt(src: int, turn: jnp.ndarray, die) -> jnp.ndarray:
 @jit
 def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
     return jax.lax.cond(
-        (src + die * -1 * turn>=0) & (src + die * -1 * turn<=23),
+        (src + die * -1 * turn >= 0) & (src + die * -1 * turn <= 23),
         lambda: jnp.int16(src + die * -1 * turn),
         lambda: jnp.int16(_off_idx(turn)),
     )  # type: ignore
@@ -433,6 +430,7 @@ def _decompose_action(action: int, turn: jnp.ndarray) -> Tuple:
     die = action % 6 + 1  # 0~5 -> 1~6
     tgt = _calc_tgt(src, turn, die)
     return src, die, tgt
+
 
 @jit
 def selu(x, alpha=1.67, lmbda=1.05):
@@ -453,9 +451,10 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
         lambda: _is_to_off_legal(board, turn, src, tgt, die),
     )
 
+
 @jit
 def _distance_to_goal(src: int, turn: jnp.int16):
-    return jax.lax.cond(turn==-1, lambda: 24 - src, lambda: src + 1)
+    return jax.lax.cond(turn == -1, lambda: 24 - src, lambda: src + 1)
 
 
 @jit
@@ -471,7 +470,7 @@ def _is_to_off_legal(
         lambda: _exists(board, turn, src)
         & _is_all_on_homeboad(board, turn)
         & (_rear_distance(board, turn) <= die)
-        & (_rear_distance(board, turn)==_distance_to_goal(src, turn))
+        & (_rear_distance(board, turn) == _distance_to_goal(src, turn)),
     )
 
 
@@ -561,6 +560,7 @@ def _legal_action_mask(
         return legal_action_mask | _legal_action_mask_for_single_die(
             board, turn, dice[i]
         )
+
     legal_action_mask = jax.lax.fori_loop(0, 4, _update, legal_action_mask)
     return legal_action_mask
 
@@ -595,4 +595,5 @@ def _legal_action_mask_for_valid_single_dice(
             _is_action_legal(board, turn, action)
         )
         return legal_action_mask
+
     return jax.lax.fori_loop(0, 26, _is_legal, legal_action_mask)
