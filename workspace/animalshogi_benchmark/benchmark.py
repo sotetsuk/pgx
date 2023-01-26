@@ -9,11 +9,14 @@ from typing import Tuple
 def step(
     state: JaxAnimalShogiState, action: int
 ) -> Tuple[JaxAnimalShogiState, int, bool]:
-    s_time = time.time()
+    first_time = time.time()
     s = state
     reward = 0
     terminated = False
+    s_time = time.time()
     legal_actions = _legal_actions(s)
+    e_time = time.time()
+    print("legal_actions:", (e_time - s_time)*1000)
     _action = _dlaction_to_action(action, s)
     reward = jax.lax.cond(
         (_action.from_[0] > 11)
@@ -29,9 +32,7 @@ def step(
         lambda: True,
         lambda: terminated,
     )
-    l1_time = time.time()
-    print("is legal action?")
-    print((l1_time - s_time) * 1000)
+    s_time = time.time()
     s = jax.lax.cond(
         terminated,
         lambda: s,
@@ -41,9 +42,9 @@ def step(
             lambda: _move(_update_legal_move_actions(s, _action), _action),
         ),
     )
-    l2_time = time.time()
-    print("change board")
-    print((l2_time - l1_time) * 1000)
+    e_time = time.time()
+    print("update_state:", (e_time - s_time)*1000)
+    s_time = time.time()
     reward = jax.lax.cond(
         (terminated is False) & _is_try(_action),
         lambda: _turn_to_reward(s.turn[0]),
@@ -62,11 +63,11 @@ def step(
         legal_actions_black=s.legal_actions_black,
         legal_actions_white=s.legal_actions_white,
     )  # type: ignore
-    l3_time = time.time()
-    print("is try?")
-    print((l3_time - l2_time) * 1000)
+    e_time = time.time()
+    print("is_try:", (e_time - s_time)*1000)
     no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
     checking_piece = no_checking_piece.at[_action.to[0]].set(1)
+    s_time = time.time()
     s = jax.lax.cond(
         (_is_check(s)) & (terminated is False),
         lambda: JaxAnimalShogiState(
@@ -88,9 +89,10 @@ def step(
             checking_piece=no_checking_piece,
         ),  # type: ignore
     )
-    l4_time = time.time()
-    print("is check?")
-    print((l4_time - l3_time) * 1000)
+    e_time = time.time()
+    print("is_check:", (e_time - s_time)*1000)
+    finish_time = time.time()
+    print("all:", (finish_time - first_time)*1000)
     return s, reward, terminated
 
 
@@ -98,11 +100,7 @@ def step(
 def rand_step(rng):
     rng, subkey = jax.random.split(rng)
     cp, state = init(rng=rng)
-    legal_actions = jax.lax.cond(
-        cp == 0,
-        lambda: state.legal_actions_black,
-        lambda: state.legal_actions_white
-    )
+    legal_actions = _legal_actions(state)
     legal_actions = jnp.nonzero(legal_actions, size=180, fill_value=-1)[0]
     rng, subkey = jax.random.split(rng)
     action = jax.random.choice(subkey, legal_actions)
@@ -110,9 +108,11 @@ def rand_step(rng):
     return s
 
 
-N = 1000
+N = 100000
 if __name__ == '__main__':
-    vmap_step = jax.vmap(rand_step)
+    s = time.time()
+    vmap_step = jax.jit(jax.vmap(rand_step))
     rng = jax.random.PRNGKey(0)
     rngs = jax.random.split(rng, N)
     states = vmap_step(rngs)
+    print("all:", time.time() - s)
