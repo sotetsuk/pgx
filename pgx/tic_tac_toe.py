@@ -2,6 +2,7 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
+from flax.struct import dataclass
 
 import pgx.core
 
@@ -9,6 +10,7 @@ FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
+@dataclass
 class State(pgx.core.State):
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     curr_player: jnp.ndarray = jnp.int8(0)
