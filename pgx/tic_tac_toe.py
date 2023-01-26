@@ -81,5 +81,13 @@ def _win_check(board, turn) -> jnp.ndarray:
     return won
 
 
-def observe(state: State) -> jnp.ndarray:
-    return jnp.int8(0)
+def observe(state) -> jnp.ndarray:
+    obs = jnp.concatenate(
+        [
+            state.board == -1,
+            state.turn == state.board,
+            (1 - state.turn) == state.board,
+        ],
+        dtype=jnp.float16,
+    )
+    return obs
