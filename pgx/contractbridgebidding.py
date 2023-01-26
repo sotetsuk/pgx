@@ -252,5 +252,132 @@ def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
 
 
 # playerがパートナーか判断
-def _is_partner(player1: np.ndarray, player2: np.ndarray) -> bool:
+def _is_partner(player1: np.ndarray, player2: np.ndarray) -> np.ndarray:
     return (abs(player1 - player2) + 1) % 2
+
+
+# カードと数字の対応
+# 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
+# それぞれのsuitにおいて以下の順で数字が並ぶ
+TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
+
+
+# State => pbn format
+# pbn format example
+# "N:KT9743.AQT43.J.7 J85.9.Q6.KQJ9532 Q2.KJ765.T98.T64 A6.82.AK75432.A8"
+def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
+    pbn = "N:"
+    for i in range(4):  # player
+        hand = np.sort(state.hand[i * 13 : (i + 1) * 13])
+        for j in range(4):  # suit
+            card = [
+                TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13
+            ][::-1]
+            if card != [] and card[-1] == "A":
+                card = card[-1:] + card[:-1]
+            pbn += "".join(card)
+            if j == 3:
+                if i != 3:
+                    pbn += " "
+            else:
+                pbn += "."
+    return pbn
+
+
+# state => key
+# N 0, E 1, S 2, W 3
+def _state_to_key(state: ContractBridgeBiddingState) -> np.ndarray:
+    hand = state.hand
+    key = np.zeros(52, dtype=np.int8)
+    for i in range(52):
+        if i // 13 == 0:
+            key[hand[i]] = 0
+        elif i // 13 == 1:
+            key[hand[i]] = 1
+        elif i // 13 == 2:
+            key[hand[i]] = 2
+        elif i // 13 == 3:
+            key[hand[i]] = 3
+    key = key.reshape(4, 13)
+    return _to_binary(key)
+
+
+# pbn => key
+# output = [np.int32 np.int32 np.int32 np.int32]
+def _pbn_to_key(pbn: str) -> np.ndarray:
+    key = np.zeros(52, dtype=np.int8)
+    hands = pbn[2:]
+    for player, hand in enumerate(list(hands.split())):  # for each player
+        for suit, cards in enumerate(list(hand.split("."))):  # for each suit
+            for card in cards:  # for each card
+                card_num = _card_str_to_int(card) + suit * 13
+                key[card_num] = player
+    key = key.reshape(4, 13)
+    return _to_binary(key)
+
+
+# 4進数表現を10進数に変換
+# 左側が上位桁
+# bases = [16777216  4194304  1048576   262144    65536    16384     4096     1024
+#          256       64       16        4        1]
+def _to_binary(x: np.ndarray) -> np.ndarray:
+    bases = np.array([4**i for i in range(13)], dtype=np.int32)[::-1]
+    return (x * bases).sum(axis=1)  # shape = (1,)
+
+
+# カードの文字列表現をintに変換
+def _card_str_to_int(card: str) -> int:
+    if card == "K":
+        return 12
+    elif card == "Q":
+        return 11
+    elif card == "J":
+        return 10
+    elif card == "T":
+        return 9
+    elif card == "A":
+        return 0
+    else:
+        return int(card) - 1
+
+
+def _key_to_hand(key: np.ndarray) -> np.ndarray:
+    cards = np.array(
+        [int(i) for j in key for i in np.base_repr(j, 4).zfill(13)],
+        dtype=np.int8,
+    )
+    return np.concatenate(
+        [
+            np.where(cards == 0),
+            np.where(cards == 1),
+            np.where(cards == 2),
+            np.where(cards == 3),
+        ],
+        axis=1,
+    ).reshape(-1)
+
+
+if __name__ == "__main__":
+    _, state = init()
+    # state.hand = np.arange(52)
+    print("state hand")
+    print(state.hand)
+    print("\n")
+    print("pbn hand")
+    pbn = _state_to_pbn(state)
+    print(pbn)
+    print("\n")
+    print("state to key")
+    print(_state_to_key(state))
+    print("\n")
+    print("pbn to key")
+    key = _pbn_to_key(pbn)
+    print(key)
+    print("\n")
+    print("key to state hand")
+    hand = _key_to_hand(key)
+    print(hand)
+    print("\n")
+    print("pbn hand")
+    state.hand = hand
+    print(_state_to_pbn(state))
