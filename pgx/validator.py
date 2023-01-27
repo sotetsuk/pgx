@@ -5,55 +5,22 @@ import pgx
 from pgx.utils import act_randomly
 
 
-def validate_init(init_fn):
-    """validate_init checks these items:
-
-    - rng is set non-default value
-
-    - reward is zero array
-    """
-    rng = jax.random.PRNGKey(38292)
-    state = init_fn(rng)
-
-    assert not (
-        state.rng == jax.random.PRNGKey(0)  # default
-    ).all(), f"Non-default rng must be set to state.rng: got {state.rng}"
-
-
-def validate_step(init_fn, step_fn, N=100):
-    """validate_step checks these items:
-
-    - state.curr_player is positive when not terminated
-    - state.curr_player = -1 when terminated
-
-    - rng changes after each step
-    - taking illegal actions terminates the episode with a negative reward
-    - legal_action_mask is empty when terminated
-    - taking actions at terminal states returns the same state (with zero reward)
-    """
-    rng = jax.random.PRNGKey(38201)
-    for _ in range(N):
-        rng, subkey = jax.random.split(rng)
-        state = init_fn(subkey)
-        _validate_state(state)
-
-        while True:
-            rng, subkey = jax.random.split(rng)
-            action = act_randomly(subkey, state)
-            state = step_fn(state, action)
-
-            _validate_state(state)
-            validate_curr_player(state)
-
-            if state.terminated:
-                break
-
-
-def validate_observe(init_fn, step_fn, observe_fn, N=100):
+def validate(init_fn, step_fn, observe_fn, N=100):
     """validate_observe checks these items:
 
-    - Returns different observations when player_ids are different
-    - Returns zero observations when player_id=-1 (curr_player is set 0 when terminated)
+    - init
+      - rng is set non-default value
+      - reward is zero array
+    - step
+      - state.curr_player is positive when not terminated
+      - state.curr_player = -1 when terminated
+      - rng changes after each step
+      - taking illegal actions terminates the episode with a negative reward
+      - legal_action_mask is empty when terminated
+      - taking actions at terminal states returns the same state (with zero reward)
+    - observe
+      - Returns different observations when player_ids are different
+      - Returns zero observations when player_id=-1 (curr_player is set 0 when terminated)
     """
     rng = jax.random.PRNGKey(849020)
     for _ in range(N):
@@ -67,6 +34,7 @@ def validate_observe(init_fn, step_fn, observe_fn, N=100):
             state = step_fn(state, action)
 
             _validate_state(state)
+            _validate_curr_player(state)
             _validate_zero_obs(observe_fn, state)
 
             if state.terminated:
@@ -125,7 +93,7 @@ def validate_illegal_actions(state: pgx.State):
     ...
 
 
-def validate_curr_player(state: pgx.State):
+def _validate_curr_player(state: pgx.State):
     if state.terminated:
         assert (
             state.curr_player == -1
