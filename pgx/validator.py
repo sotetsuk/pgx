@@ -17,7 +17,7 @@ def validate(init_fn, step_fn, observe_fn, N=100):
       - state.curr_player is positive when not terminated
       - state.curr_player = -1 when terminated
       - rng changes after each step
-      - taking illegal actions terminates the episode with a negative reward
+      - (TODO) taking illegal actions terminates the episode with a negative reward
       - legal_action_mask is empty when terminated
       - taking actions at terminal states returns the same state (with zero reward)
     - observe
