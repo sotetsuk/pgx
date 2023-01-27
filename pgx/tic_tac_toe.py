@@ -87,12 +87,7 @@ def _win_check(board, turn) -> jnp.ndarray:
     return won
 
 
-def observe(
-    state: State, player_id: Optional[jnp.ndarray] = None
-) -> jnp.ndarray:
-    player_id = jax.lax.cond(
-        player_id is None, lambda: state.curr_player, lambda: player_id
-    )
+def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     empty_board = state.board == -1
     my_board, opp_obard = jax.lax.cond(
         state.curr_player == player_id,  # flip board if player_id is opposite
