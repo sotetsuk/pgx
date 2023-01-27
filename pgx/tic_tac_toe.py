@@ -38,8 +38,8 @@ def step(state: State, action: jnp.ndarray) -> State:
     won = _win_check(board, state.turn)
     reward = jax.lax.cond(
         won,
-        lambda: jnp.int16([-1, -1]).at[state.curr_player].set(1),
-        lambda: jnp.zeros(2, jnp.int16),
+        lambda: jnp.float32([-1, -1]).at[state.curr_player].set(1),
+        lambda: jnp.zeros(2, jnp.float32),
     )
     terminated = won | jnp.all(board != -1)
     curr_player = jax.lax.cond(
