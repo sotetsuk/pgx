@@ -45,11 +45,17 @@ def step(state: State, action: jnp.ndarray) -> State:
     curr_player = jax.lax.cond(
         terminated, lambda: jnp.int8(-1), lambda: (state.curr_player + 1) % 2
     )
+    legal_action_mask = board < 0
+    legal_action_mask = jax.lax.cond(
+        terminated,
+        lambda: jnp.zeros_like(legal_action_mask),
+        lambda: legal_action_mask,
+    )
     rng, _ = jax.random.split(state.rng)
     state = State(
         rng=rng,
         curr_player=curr_player,
-        legal_action_mask=board < 0,
+        legal_action_mask=legal_action_mask,
         reward=reward,
         terminated=terminated,
         turn=(state.turn + 1) % 2,

@@ -26,8 +26,11 @@ def validate(init_fn, step_fn, observe_fn, N=100):
     for _ in range(N):
         rng, subkey = jax.random.split(rng)
         state = init_fn(subkey)
+
         _validate_state(state)
         _validate_init_reward(state)
+        _validate_curr_player(state)
+        _validate_legal_actions(state)
 
         while True:
             prev_rng = state.rng
@@ -37,8 +40,9 @@ def validate(init_fn, step_fn, observe_fn, N=100):
 
             _validate_state(state)
             _validate_curr_player(state)
-            _validate_zero_obs(observe_fn, state)
+            _validate_obs(observe_fn, state)
             _validate_rng_changes(state, prev_rng)
+            _validate_legal_actions(state)
 
             if state.terminated:
                 break
@@ -71,7 +75,7 @@ def _validate_state(state: pgx.State):
     ), state.legal_action_mask.dtype
 
 
-def _validate_zero_obs(observe_fn, state: pgx.State):
+def _validate_obs(observe_fn, state: pgx.State):
     # basic usage
     obs = observe_fn(state, state.curr_player)
     if state.terminated:
@@ -100,8 +104,13 @@ def _validate_zero_obs(observe_fn, state: pgx.State):
         ).all(), f"Got same obs : \n{obs_default}\n{obs_player_0}"
 
 
-def validate_illegal_actions(state: pgx.State):
-    ...
+def _validate_legal_actions(state: pgx.State):
+    if state.terminated:
+        assert (
+            state.legal_action_mask == jnp.zeros_like(state.legal_action_mask)
+        ).all(), state.legal_action_mask
+    else:
+        ...
 
 
 def _validate_curr_player(state: pgx.State):
