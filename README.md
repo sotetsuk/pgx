@@ -32,12 +32,13 @@ init, step, observe, info = pgx.make(
 models = {0: ..., 1: ...}
 
 def rollout(rng):
-    curr_player, state = init(rng)
+    state = init(rng)
     # TODO: use lax.while_loop
     while not state.terminated:
-        obs = observe(state, curr_player)
+        obs = observe(state)
         action = models[curr_player](obs)
-        curr_player, state, rewards = step(obs, action)
+        state = step(obs, action)
+        print(state.reward)
 
 rollout_vmap = jax.vmap(rollout)
 key = jax.random.PRGNKey(42)
@@ -48,23 +49,37 @@ rollout_vmap(keys)
 ### API Description
 
 ```py
-def init(rng: jnp.ndarray) -> Tuple[jnp.ndarray, State]:
-  return curr_player, state 
+# N: num agents
+# A: action space size
+# M: observation dim
+@dataclass
+class State:
+    rng: jax.random.KeyArray
+    curr_player: jnp.ndarray
+    # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
+    # -1 if terminal
+    reward: jnp.ndarray
+    terminated: jnp.ndarray
+    legal_action_mask: jnp.ndarray
+  
+
+def init(rng: jnp.ndarray) -> State:
+  return state 
 
 # step is deterministic by default
 # if state.is_terminal=True, the behavior is undefined
 def step(state: State, 
          action: jnp.ndarray)
-    -> Tuple[jnp.ndarray, State, jnp.ndarray]:
-  return curr_player, state, rewards  # rewards: (N,) 
+    -> State:
+  return state  # rewards: (N,) 
   # terminated is moved into State class to support auto_reset 
   # truncated is moved into State class along with terminated
   # info is removed as State class can hold additional information
 
 def observe(state: State, 
-            player_id: jnp.ndarray, 
-            observe_all=False) 
+            player_id: Optional[jnp.ndarray] = None) 
     -> jnp.ndarray:
+  # Zero array if state.curr_player is -1
   return obs  # (M,) or (N, M) all=True will ignore player_id
 
 # replace state.rng or shuffle hidden states (e.g., unopened public cards)
@@ -72,20 +87,6 @@ def shuffle(state: State,
             rng: Optional[jnp.ndarray]) 
     -> State:
    return state
-
-# N: num agents
-# A: action space size
-# M: observation dim
-@dataclass
-class State:
-  current_player: jnp.ndarray  # (1,) 
-  # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
-  # -1 if terminal
-  legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
-  terminated: jnp.ndarray  #  (1,)
-  # truncated: jnp.ndarray  #  (1,)
-  # elapsed_steps: jnp.ndarray  #  (1,)
-  ... 
 ```
 
 ### Limitations (for the simplicity)
