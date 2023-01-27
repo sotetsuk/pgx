@@ -52,16 +52,24 @@ def step(state: State, action: jnp.ndarray) -> State:
         lambda: legal_action_mask,
     )
     rng, _ = jax.random.split(state.rng)
-    state = State(
-        rng=rng,
-        curr_player=curr_player,
-        legal_action_mask=legal_action_mask,
-        reward=reward,
-        terminated=terminated,
-        turn=(state.turn + 1) % 2,
-        board=board,
-    )  # type: ignore
+    state = jax.lax.cond(
+        state.terminated,
+        lambda: step_if_terminated(state),
+        lambda: State(
+            rng=rng,
+            curr_player=curr_player,
+            legal_action_mask=legal_action_mask,
+            reward=reward,
+            terminated=terminated,
+            turn=(state.turn + 1) % 2,
+            board=board,
+        ),  # type: ignore
+    )
     return state
+
+
+def step_if_terminated(state: State):
+    return state.replace(reward=jnp.zeros_like(state.reward))
 
 
 def _win_check(board, turn) -> jnp.ndarray:
