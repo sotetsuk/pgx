@@ -1,19 +1,8 @@
 import jax
+import jax.numpy as jnp
 
 import pgx
 from pgx.utils import act_randomly
-
-
-def validate_state(state):
-    """validate_state checks these items:
-
-    - rng is set and different from zero key
-    - curr_player is int8
-    - terminated is bool_
-    - reward is float
-    - legal_action_mask is bool_
-    """
-    ...
 
 
 def validate_init(init_fn):
@@ -45,12 +34,15 @@ def validate_step(init_fn, step_fn, N=100):
     rng = jax.random.PRNGKey(38201)
     for _ in range(N):
         rng, subkey = jax.random.split(rng)
-        state = init_fn(rng)
+        state = init_fn(subkey)
+        _validate_state(state)
+
         while True:
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
             state = step_fn(state, action)
 
+            _validate_state(state)
             validate_curr_player(state)
 
             if state.terminated:
@@ -66,16 +58,32 @@ def validate_observe(init_fn, step_fn, observe_fn, N=100):
     rng = jax.random.PRNGKey(849020)
     for _ in range(N):
         rng, subkey = jax.random.split(rng)
-        state = init_fn(rng)
+        state = init_fn(subkey)
+        _validate_state(state)
+
         while True:
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
             state = step_fn(state, action)
 
+            _validate_state(state)
             _validate_zero_obs(observe_fn, state)
 
             if state.terminated:
                 break
+
+
+def _validate_state(state: pgx.State):
+    """validate_state checks these items:
+
+    - rng is uint32 and different from zero key
+    - curr_player is int8
+    - terminated is bool_
+    - reward is float
+    - legal_action_mask is bool_
+    """
+    assert state.rng.dtype == jnp.uint32, state.rng.dtype
+    assert not (state.rng == jax.random.PRNGKey(0)).all(), state.rng
 
 
 def _validate_zero_obs(observe_fn, state: pgx.State):
