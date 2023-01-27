@@ -1,10 +1,11 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.tic_tac_toe import _win_check, init, step
+from pgx.tic_tac_toe import _win_check, init, observe, step
 
 init = jax.jit(init)
 step = jax.jit(step)
+observe = jax.jit(observe)
 
 
 def test_init():
@@ -170,3 +171,16 @@ def test_win_check():
     board = jnp.int8([-1, 0, -1, -1, 0, -1, -1, 0, -1])
     turn = jnp.int8(0)
     assert _win_check(board, turn)
+
+
+def test_observe():
+    state = init(jax.random.PRNGKey(1))
+    obs = observe(state, state.curr_player)
+    init_obs = jnp.zeros(27).at[:9].set(1)
+    assert (obs == init_obs).all()
+
+    state = step(state, 0)
+    obs = observe(state, 0)
+    assert (obs == init_obs.at[0].set(0).at[18].set(1)).all(), obs
+    obs = observe(state, 1)
+    assert (obs == init_obs.at[0].set(0).at[9].set(1)).all(), obs
