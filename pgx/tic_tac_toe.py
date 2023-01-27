@@ -13,7 +13,7 @@ class State(pgx.core.State):
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = jnp.bool_(False)
+    terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     # 0: 先手, 1: 後手
     turn: jnp.ndarray = jnp.int8(0)
