@@ -1,6 +1,15 @@
 import numpy as np
 
-from pgx.contractbridgebidding import ContractBridgeBiddingState, init, step
+from pgx.contractbridgebidding import (
+    ContractBridgeBiddingState,
+    _key_to_hand,
+    _pbn_to_key,
+    _state_to_key,
+    _state_to_pbn,
+    _to_binary,
+    init,
+    step,
+)
 
 
 def test_init():
@@ -625,3 +634,197 @@ def test_max_action():
         else:
             _, state, _ = step(state, max_action_length_agent(state))
             assert state.terminated
+
+
+def test_to_binary():
+    x = np.arange(52, dtype=np.int8)[::-1].reshape((4, 13)) % 4
+    y = _to_binary(x)
+
+    assert np.all(
+        y == np.array([60003219, 38686286, 20527417, 15000804], dtype=np.int32)
+    )
+
+    x = np.arange(52, dtype=np.int8).reshape((4, 13)) // 13
+    y = _to_binary(x)
+    assert np.all(
+        y == np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    )
+
+    x = np.arange(52, dtype=np.int8)[::-1].reshape((4, 13)) // 13
+    y = _to_binary(x)
+    assert np.all(
+        y == np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    )
+
+
+def test_state_to_pbn():
+    _, state = init()
+    state.hand = np.arange(52, dtype=np.int8)
+    pbn = _state_to_pbn(state)
+    assert (
+        pbn
+        == "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432"
+    )
+    state.hand = np.arange(52, dtype=np.int8)[::-1]
+    pbn = _state_to_pbn(state)
+    assert (
+        pbn
+        == "N:...AKQJT98765432 ..AKQJT98765432. .AKQJT98765432.. AKQJT98765432..."
+    )
+
+    state.hand = np.array(
+        [
+            12,
+            9,
+            8,
+            6,
+            3,
+            2,
+            13,
+            24,
+            22,
+            16,
+            15,
+            36,
+            45,
+            10,
+            7,
+            4,
+            21,
+            37,
+            31,
+            51,
+            50,
+            49,
+            47,
+            43,
+            41,
+            40,
+            11,
+            1,
+            25,
+            23,
+            19,
+            18,
+            17,
+            35,
+            34,
+            33,
+            48,
+            44,
+            42,
+            0,
+            5,
+            20,
+            14,
+            26,
+            38,
+            32,
+            30,
+            29,
+            28,
+            27,
+            39,
+            46,
+        ]
+    )
+    pbn = _state_to_pbn(state)
+    print(pbn)
+    assert (
+        pbn
+        == "N:KT9743.AQT43.J.7 J85.9.Q6.KQJ9532 Q2.KJ765.T98.T64 A6.82.AK75432.A8"
+    )
+
+
+def test_state_to_key():
+    _, state = init()
+    state.hand = np.arange(52, dtype=np.int8)
+    key = _state_to_key(state)
+    assert np.all(
+        key == np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    )
+
+    state.hand = np.arange(52, dtype=np.int8)[::-1]
+    key = _state_to_key(state)
+    assert np.all(
+        key == np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    )
+
+    state.hand = np.array(
+        [
+            12,
+            9,
+            8,
+            6,
+            3,
+            2,
+            13,
+            24,
+            22,
+            16,
+            15,
+            36,
+            45,
+            10,
+            7,
+            4,
+            21,
+            37,
+            31,
+            51,
+            50,
+            49,
+            47,
+            43,
+            41,
+            40,
+            11,
+            1,
+            25,
+            23,
+            19,
+            18,
+            17,
+            35,
+            34,
+            33,
+            48,
+            44,
+            42,
+            0,
+            5,
+            20,
+            14,
+            26,
+            38,
+            32,
+            30,
+            29,
+            28,
+            27,
+            39,
+            46,
+        ]
+    )
+    key = _state_to_key(state)
+    print(key)
+    assert np.all(
+        key
+        == np.array([58835992, 12758306, 67074695, 56200597], dtype=np.int32)
+    )
+
+
+def test_state_to_key_cycle():
+    for _ in range(1000):
+        _, state = init()
+        sorted_hand = np.concatenate(
+            [
+                np.sort(state.hand[:13]),
+                np.sort(state.hand[13:26]),
+                np.sort(state.hand[26:39]),
+                np.sort(state.hand[39:]),
+            ]
+        ).reshape(-1)
+        key = _state_to_key(state)
+        reconst_hand = _key_to_hand(key)
+        assert np.all(sorted_hand == reconst_hand)

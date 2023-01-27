@@ -265,6 +265,7 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 # State => pbn format
 # pbn format example
 # "N:KT9743.AQT43.J.7 J85.9.Q6.KQJ9532 Q2.KJ765.T98.T64 A6.82.AK75432.A8"
+# doc testを書く
 def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
     pbn = "N:"
     for i in range(4):  # player
@@ -286,6 +287,7 @@ def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
 
 # state => key
 # N 0, E 1, S 2, W 3
+# output = [np.int32 np.int32 np.int32 np.int32]
 def _state_to_key(state: ContractBridgeBiddingState) -> np.ndarray:
     hand = state.hand
     key = np.zeros(52, dtype=np.int8)
@@ -381,3 +383,9 @@ if __name__ == "__main__":
     print("pbn hand")
     state.hand = hand
     print(_state_to_pbn(state))
+    x = np.arange(52, dtype=np.int8)[::-1].reshape((4, 13)) % 4
+    print(x)
+    y = _to_binary(x)
+    print(y)
+    x = np.sort(x)
+    print(x)
