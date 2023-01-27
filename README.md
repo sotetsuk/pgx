@@ -21,29 +21,29 @@ Pgx defines the games as AEC games (see PettingZoo paper), in which only one age
 import jax
 import pgx
 
-num_envs = 100
+num_batch = 100
 
-init, step, observe, info = pgx.make(
-  env_id="Go-5x5",
-  max_time_steps=1000,
-  autoreset=False,
-  stochastic_step=False,
-)
+init, step, observe, info = pgx.make(env_id="Go-5x5",)
+init = jax.jit(jax.vmap(init))
+step = jax.jit(jax.vmap(step))
+observe = jax.jit(jax.vmap(observe))
+
 models = {0: ..., 1: ...}
 
-def rollout(rng):
-    state = init(rng)
-    # TODO: use lax.while_loop
-    while not state.terminated:
-        obs = observe(state)
-        action = models[curr_player](obs)
-        state = step(obs, action)
-        print(state.reward)
+rng = jax.random.PRGNKey(999)
+keys = jax.random.split(rng, num_batch)
 
-rollout_vmap = jax.vmap(rollout)
-key = jax.random.PRGNKey(42)
-keys = jax.random.split(key, num_envs)
-rollout_vmap(keys)
+state = init(keys)
+total_reward = jnp.zeros(batch_size, dtype=jnp.float32)
+while not (state.terminated).all():
+    observations = [observe(state, player_id) for player_id in (0, 1)]
+    action = jnp.where(
+        state.curr_player == 0,
+        models[0](observations[0]),
+        models[1](observations[1]),
+    )
+    state = step(obs, action)
+    total_reward += reward
 ```
 
 ### API Description
@@ -67,24 +67,20 @@ def init(rng: jnp.ndarray) -> State:
   return state 
 
 # step is deterministic by default
-# if state.is_terminal=True, the behavior is undefined
+# if state.terminated is True, state.reward is set to zero and the other fields are unchanged
 def step(state: State, 
          action: jnp.ndarray)
     -> State:
   return state  # rewards: (N,) 
-  # terminated is moved into State class to support auto_reset 
-  # truncated is moved into State class along with terminated
-  # info is removed as State class can hold additional information
 
 def observe(state: State, 
-            player_id: Optional[jnp.ndarray] = None) 
+            player_id: jnp.ndarray) 
     -> jnp.ndarray:
   # Zero array if state.curr_player is -1
-  return obs  # (M,) or (N, M) all=True will ignore player_id
+  return obs 
 
 # replace state.rng or shuffle hidden states (e.g., unopened public cards)
-def shuffle(state: State,
-            rng: Optional[jnp.ndarray]) 
+def shuffle(state: State, rng: Optional[jnp.ndarray]) 
     -> State:
    return state
 ```
