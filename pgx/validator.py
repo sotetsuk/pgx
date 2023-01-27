@@ -27,6 +27,7 @@ def validate(init_fn, step_fn, observe_fn, N=100):
         rng, subkey = jax.random.split(rng)
         state = init_fn(subkey)
         _validate_state(state)
+        _validate_init_reward(state)
 
         while True:
             rng, subkey = jax.random.split(rng)
@@ -39,6 +40,10 @@ def validate(init_fn, step_fn, observe_fn, N=100):
 
             if state.terminated:
                 break
+
+
+def _validate_init_reward(state: pgx.State):
+    assert (state.reward == jnp.zeros_like(state.reward)).all()
 
 
 def _validate_state(state: pgx.State):
