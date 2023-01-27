@@ -2,17 +2,21 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-from flax import struct
+from flax.struct import dataclass
+
+import pgx.core
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-@struct.dataclass
-class State:
+@dataclass
+class State(pgx.core.State):
+    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     curr_player: jnp.ndarray = jnp.int8(0)
-    legal_action_mask: jnp.ndarray = jnp.ones(9, jnp.bool_)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = jnp.bool_(False)
+    legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     # 0: 先手, 1: 後手
     turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2

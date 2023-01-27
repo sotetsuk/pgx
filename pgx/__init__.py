@@ -1,19 +1,10 @@
-from typing import Literal, Union
-
 import pgx.go
 import pgx.minatar.breakout
 import pgx.suzume_jong
 import pgx.tic_tac_toe
+from pgx.core import EnvId, State
 
-EnvId = Literal[
-    "tic_tac_toe/v0",
-    "minatar/breakout/v0",
-    "suzume_jong/v0",
-    "go/v0",
-]
-
-
-State = Union[pgx.tic_tac_toe.State, pgx.suzume_jong.State]
+__all__ = ["State", "EnvId"]
 
 
 def make(env_id: EnvId):
