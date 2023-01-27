@@ -85,7 +85,7 @@ def _validate_state(state: pgx.State):
     - legal_action_mask is bool_
     """
     assert state.rng.dtype == jnp.uint32, state.rng.dtype
-    assert not (state.rng == jax.random.PRNGKey(0)).all(), state.rng
+    assert (state.rng != 0).all(), state.rng  # type: ignore
     assert state.curr_player.dtype == jnp.int8, state.curr_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
     assert state.reward.dtype == jnp.float32, state.reward.dtype

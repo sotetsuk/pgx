@@ -69,7 +69,7 @@ def step(state: State, action: jnp.ndarray) -> State:
 
 
 def step_if_terminated(state: State):
-    return state.replace(reward=jnp.zeros_like(state.reward))
+    return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
 
 
 def _win_check(board, turn) -> jnp.ndarray:
