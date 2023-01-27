@@ -94,7 +94,7 @@ def test_step():
 
     action = jnp.int8(7)
     state = step(state, action)
-    assert state.curr_player == 0
+    assert state.curr_player == -1
     assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
