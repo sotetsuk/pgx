@@ -1,3 +1,5 @@
+from typing import Optional
+
 import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
@@ -85,13 +87,24 @@ def _win_check(board, turn) -> jnp.ndarray:
     return won
 
 
-def observe(state: State) -> jnp.ndarray:
+def observe(
+    state: State, player_id: Optional[jnp.ndarray] = None
+) -> jnp.ndarray:
+    player_id = jax.lax.cond(
+        player_id is None, lambda: state.curr_player, lambda: player_id
+    )
+    empty_board = state.board == -1
+    my_board, opp_obard = jax.lax.cond(
+        state.curr_player == player_id,  # flip board if player_id is opposite
+        lambda: (state.turn == state.board, (1 - state.turn) == state.board),
+        lambda: ((1 - state.turn) == state.board, state.turn == state.board),
+    )
     obs = jnp.concatenate(
-        [
-            state.board == -1,
-            state.turn == state.board,
-            (1 - state.turn) == state.board,
-        ],
+        [empty_board, my_board, opp_obard],
         dtype=jnp.float16,
+    )
+    # Zero if player_id is -1
+    obs = jax.lax.cond(
+        player_id == -1, lambda: jnp.zeros_like(obs), lambda: obs
     )
     return obs
