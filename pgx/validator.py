@@ -30,6 +30,7 @@ def validate(init_fn, step_fn, observe_fn, N=100):
         _validate_init_reward(state)
 
         while True:
+            prev_rng = state.rng
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
             state = step_fn(state, action)
@@ -37,9 +38,14 @@ def validate(init_fn, step_fn, observe_fn, N=100):
             _validate_state(state)
             _validate_curr_player(state)
             _validate_zero_obs(observe_fn, state)
+            _validate_rng_changes(state, prev_rng)
 
             if state.terminated:
                 break
+
+
+def _validate_rng_changes(state, prev_rng):
+    assert not (state.rng == prev_rng).all()
 
 
 def _validate_init_reward(state: pgx.State):
