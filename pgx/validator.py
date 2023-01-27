@@ -84,6 +84,12 @@ def _validate_state(state: pgx.State):
     """
     assert state.rng.dtype == jnp.uint32, state.rng.dtype
     assert not (state.rng == jax.random.PRNGKey(0)).all(), state.rng
+    assert state.curr_player.dtype == jnp.int8, state.curr_player.dtype
+    assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
+    assert state.reward.dtype == jnp.float32, state.reward.dtype
+    assert (
+        state.legal_action_mask.dtype == jnp.bool_
+    ), state.legal_action_mask.dtype
 
 
 def _validate_zero_obs(observe_fn, state: pgx.State):
