@@ -4,8 +4,20 @@ import pgx
 from pgx.utils import act_randomly
 
 
+def validate_state(state):
+    """validate_state checks these items:
+
+    - rng is set and different from zero key
+    - curr_player is int8
+    - terminated is bool_
+    - reward is float
+    - legal_action_mask is bool_
+    """
+    ...
+
+
 def validate_init(init_fn):
-    """This function checks these items:
+    """validate_init checks these items:
 
     - rng is set non-default value
 
@@ -20,7 +32,7 @@ def validate_init(init_fn):
 
 
 def validate_step(init_fn, step_fn, N=100):
-    """This function checks these items:
+    """validate_step checks these items:
 
     - state.curr_player is positive when not terminated
     - state.curr_player = -1 when terminated
@@ -46,7 +58,7 @@ def validate_step(init_fn, step_fn, N=100):
 
 
 def validate_observe(init_fn, step_fn, observe_fn, N=100):
-    """This function checks these items:
+    """validate_observe checks these items:
 
     - Returns different observations when player_ids are different
     - Returns zero observations when player_id=-1 (curr_player is set 0 when terminated)
