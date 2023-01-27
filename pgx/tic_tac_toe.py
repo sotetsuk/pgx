@@ -27,8 +27,9 @@ class State(pgx.core.State):
 
 
 def init(rng: jax.random.KeyArray) -> State:
-    curr_player = jnp.int8(jax.random.bernoulli(rng))
-    return State(curr_player=curr_player)  # type:ignore
+    rng, subkey = jax.random.split(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(rng=rng, curr_player=curr_player)  # type:ignore
 
 
 def step(state: State, action: jnp.ndarray) -> State:
