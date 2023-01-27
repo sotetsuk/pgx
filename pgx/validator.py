@@ -1,3 +1,5 @@
+from dataclasses import fields
+
 import jax
 import jax.numpy as jnp
 
@@ -46,6 +48,23 @@ def validate(init_fn, step_fn, observe_fn, N=100):
 
             if state.terminated:
                 break
+
+        _validate_taking_action_after_terminal(state, step_fn)
+
+
+def _validate_taking_action_after_terminal(state: pgx.State, step_fn):
+    prev_state = state
+    if not state.terminated:
+        return
+    action = 0
+    state = step_fn(state, action)
+    assert (state.reward == 0).all()
+    for field in fields(state):
+        if field.name == "reward" or field.name == "rng":
+            continue
+        assert (
+            getattr(state, field.name) == getattr(prev_state, field.name)
+        ).all(), f"{field.name} : \n{getattr(state, field.name)}\n{getattr(prev_state, field.name)}"
 
 
 def _validate_rng_changes(state, prev_rng):
