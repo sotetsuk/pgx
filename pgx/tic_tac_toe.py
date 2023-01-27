@@ -26,34 +26,32 @@ class State(pgx.core.State):
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
-def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
+def init(rng: jax.random.KeyArray) -> State:
     curr_player = jnp.int8(jax.random.bernoulli(rng))
-    return curr_player, State(curr_player=curr_player)  # type:ignore
+    return State(curr_player=curr_player)  # type:ignore
 
 
-def step(
-    state: State, action: jnp.ndarray
-) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
+def step(state: State, action: jnp.ndarray) -> State:
     # TODO(sotetsuk): illegal action check
     # if state.legal_action_mask.at[action]:
     #     ...
     board = state.board.at[action].set(state.turn)
     won = _win_check(board, state.turn)
-    rewards = jax.lax.cond(
+    reward = jax.lax.cond(
         won,
         lambda: jnp.int16([-1, -1]).at[state.curr_player].set(1),
         lambda: jnp.zeros(2, jnp.int16),
     )
     terminated = won | jnp.all(board != -1)
-    curr_player = (state.curr_player + 1) % 2
     state = State(
-        curr_player=curr_player,
+        curr_player=(state.curr_player + 1) % 2,
         legal_action_mask=board < 0,
+        reward=reward,
         terminated=terminated,
         turn=(state.turn + 1) % 2,
         board=board,
     )  # type: ignore
-    return curr_player, state, rewards
+    return state
 
 
 def _win_check(board, turn) -> jnp.ndarray:
@@ -85,7 +83,7 @@ def _win_check(board, turn) -> jnp.ndarray:
     return won
 
 
-def observe(state) -> jnp.ndarray:
+def observe(state: State) -> jnp.ndarray:
     obs = jnp.concatenate(
         [
             state.board == -1,
