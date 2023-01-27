@@ -676,7 +676,7 @@ def test_state_to_pbn():
         12,9,8,6,3,2,13,24,22,16,15,36,45,
         10,7,4,21,37,31,51,50,49,47,43,41,40,
         11,1,25,23,19,18,17,35,34,33,48,44,42,
-        0,5,20,14,26,38,32,30,9,28,27,39,46,
+        0,5,20,14,26,38,32,30,29,28,27,39,46,
         ]
     )
     # fmt: on
@@ -707,7 +707,7 @@ def test_state_to_key():
         12,9,8,6,3,2,13,24,22,16,15,36,45,
         10,7,4,21,37,31,51,50,49,47,43,41,40,
         11,1,25,23,19,18,17,35,34,33,48,44,42,
-        0,5,20,14,26,38,32,30,9,28,27,39,46,
+        0,5,20,14,26,38,32,30,29,28,27,39,46,
         ]
     )
     # fmt: on
@@ -717,6 +717,47 @@ def test_state_to_key():
         key
         == np.array([58835992, 12758306, 67074695, 56200597], dtype=np.int32)
     )
+
+
+def test_key_to_hand():
+    key = np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    hand = _key_to_hand(key)
+    assert np.all(hand == np.arange(52, dtype=np.int8))
+
+    key = np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    hand = _key_to_hand(key)
+    correct_hand = np.arange(52, dtype=np.int8)[::-1]
+    sorted_correct_hand = np.concatenate(
+        [
+            np.sort(correct_hand[:13]),
+            np.sort(correct_hand[13:26]),
+            np.sort(correct_hand[26:39]),
+            np.sort(correct_hand[39:]),
+        ]
+    ).reshape(-1)
+    assert np.all(hand == sorted_correct_hand)
+
+    key = np.array([58835992, 12758306, 67074695, 56200597], dtype=np.int32)
+    hand = _key_to_hand(key)
+    # fmt: off
+    correct_hand = np.array([
+        12,9,8,6,3,2,13,24,22,16,15,36,45,
+        10,7,4,21,37,31,51,50,49,47,43,41,40,
+        11,1,25,23,19,18,17,35,34,33,48,44,42,
+        0,5,20,14,26,38,32,30,29,28,27,39,46,
+        ]
+    )
+    # fmt: on
+    sorted_correct_hand = np.concatenate(
+        [
+            np.sort(correct_hand[:13]),
+            np.sort(correct_hand[13:26]),
+            np.sort(correct_hand[26:39]),
+            np.sort(correct_hand[39:]),
+        ]
+    ).reshape(-1)
+    print(hand)
+    assert np.all(hand == sorted_correct_hand)
 
 
 def test_state_to_key_cycle():
