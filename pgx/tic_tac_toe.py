@@ -42,8 +42,11 @@ def step(state: State, action: jnp.ndarray) -> State:
         lambda: jnp.zeros(2, jnp.int16),
     )
     terminated = won | jnp.all(board != -1)
+    curr_player = jax.lax.cond(
+        terminated, lambda: jnp.int8(-1), lambda: (state.curr_player + 1) % 2
+    )
     state = State(
-        curr_player=(state.curr_player + 1) % 2,
+        curr_player=curr_player,
         legal_action_mask=board < 0,
         reward=reward,
         terminated=terminated,
