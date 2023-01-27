@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
@@ -15,7 +13,7 @@ class State(pgx.core.State):
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = jnp.bool_(False)
+    terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     # 0: 先手, 1: 後手
     turn: jnp.ndarray = jnp.int8(0)
@@ -26,34 +24,52 @@ class State(pgx.core.State):
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
-def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
-    curr_player = jnp.int8(jax.random.bernoulli(rng))
-    return curr_player, State(curr_player=curr_player)  # type:ignore
+def init(rng: jax.random.KeyArray) -> State:
+    rng, subkey = jax.random.split(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(rng=rng, curr_player=curr_player)  # type:ignore
 
 
-def step(
-    state: State, action: jnp.ndarray
-) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
+def step(state: State, action: jnp.ndarray) -> State:
     # TODO(sotetsuk): illegal action check
     # if state.legal_action_mask.at[action]:
     #     ...
     board = state.board.at[action].set(state.turn)
     won = _win_check(board, state.turn)
-    rewards = jax.lax.cond(
+    reward = jax.lax.cond(
         won,
-        lambda: jnp.int16([-1, -1]).at[state.curr_player].set(1),
-        lambda: jnp.zeros(2, jnp.int16),
+        lambda: jnp.float32([-1, -1]).at[state.curr_player].set(1),
+        lambda: jnp.zeros(2, jnp.float32),
     )
     terminated = won | jnp.all(board != -1)
-    curr_player = (state.curr_player + 1) % 2
-    state = State(
-        curr_player=curr_player,
-        legal_action_mask=board < 0,
-        terminated=terminated,
-        turn=(state.turn + 1) % 2,
-        board=board,
-    )  # type: ignore
-    return curr_player, state, rewards
+    curr_player = jax.lax.cond(
+        terminated, lambda: jnp.int8(-1), lambda: (state.curr_player + 1) % 2
+    )
+    legal_action_mask = board < 0
+    legal_action_mask = jax.lax.cond(
+        terminated,
+        lambda: jnp.zeros_like(legal_action_mask),
+        lambda: legal_action_mask,
+    )
+    rng, _ = jax.random.split(state.rng)
+    state = jax.lax.cond(
+        state.terminated,
+        lambda: step_if_terminated(state),
+        lambda: State(
+            rng=rng,
+            curr_player=curr_player,
+            legal_action_mask=legal_action_mask,
+            reward=reward,
+            terminated=terminated,
+            turn=(state.turn + 1) % 2,
+            board=board,
+        ),  # type: ignore
+    )
+    return state
+
+
+def step_if_terminated(state: State):
+    return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
 
 
 def _win_check(board, turn) -> jnp.ndarray:
@@ -85,13 +101,19 @@ def _win_check(board, turn) -> jnp.ndarray:
     return won
 
 
-def observe(state) -> jnp.ndarray:
+def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    empty_board = state.board == -1
+    my_board, opp_obard = jax.lax.cond(
+        state.curr_player == player_id,  # flip board if player_id is opposite
+        lambda: (state.turn == state.board, (1 - state.turn) == state.board),
+        lambda: ((1 - state.turn) == state.board, state.turn == state.board),
+    )
     obs = jnp.concatenate(
-        [
-            state.board == -1,
-            state.turn == state.board,
-            (1 - state.turn) == state.board,
-        ],
+        [empty_board, my_board, opp_obard],
         dtype=jnp.float16,
+    )
+    # Zero if player_id is -1
+    obs = jax.lax.cond(
+        player_id == -1, lambda: jnp.zeros_like(obs), lambda: obs
     )
     return obs

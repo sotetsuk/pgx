@@ -21,71 +21,68 @@ Pgx defines the games as AEC games (see PettingZoo paper), in which only one age
 import jax
 import pgx
 
-num_envs = 100
+num_batch = 100
 
-init, step, observe, info = pgx.make(
-  env_id="Go-5x5",
-  max_time_steps=1000,
-  autoreset=False,
-  stochastic_step=False,
-)
+init, step, observe, info = pgx.make(env_id="Go-5x5",)
+init = jax.jit(jax.vmap(init))
+step = jax.jit(jax.vmap(step))
+observe = jax.jit(jax.vmap(observe))
+
 models = {0: ..., 1: ...}
 
-def rollout(rng):
-    curr_player, state = init(rng)
-    # TODO: use lax.while_loop
-    while not state.terminated:
-        obs = observe(state, curr_player)
-        action = models[curr_player](obs)
-        curr_player, state, rewards = step(obs, action)
+rng = jax.random.PRGNKey(999)
+keys = jax.random.split(rng, num_batch)
 
-rollout_vmap = jax.vmap(rollout)
-key = jax.random.PRGNKey(42)
-keys = jax.random.split(key, num_envs)
-rollout_vmap(keys)
+state = init(keys)
+total_reward = jnp.zeros(batch_size, dtype=jnp.float32)
+while not (state.terminated).all():
+    observations = [observe(state, player_id) for player_id in (0, 1)]
+    action = jnp.where(
+        state.curr_player == 0,
+        models[0](observations[0]),
+        models[1](observations[1]),
+    )
+    state = step(obs, action)
+    total_reward += reward
 ```
 
 ### API Description
 
 ```py
-def init(rng: jnp.ndarray) -> Tuple[jnp.ndarray, State]:
-  return curr_player, state 
-
-# step is deterministic by default
-# if state.is_terminal=True, the behavior is undefined
-def step(state: State, 
-         action: jnp.ndarray)
-    -> Tuple[jnp.ndarray, State, jnp.ndarray]:
-  return curr_player, state, rewards  # rewards: (N,) 
-  # terminated is moved into State class to support auto_reset 
-  # truncated is moved into State class along with terminated
-  # info is removed as State class can hold additional information
-
-def observe(state: State, 
-            player_id: jnp.ndarray, 
-            observe_all=False) 
-    -> jnp.ndarray:
-  return obs  # (M,) or (N, M) all=True will ignore player_id
-
-# replace state.rng or shuffle hidden states (e.g., unopened public cards)
-def shuffle(state: State,
-            rng: Optional[jnp.ndarray]) 
-    -> State:
-   return state
-
 # N: num agents
 # A: action space size
 # M: observation dim
 @dataclass
 class State:
-  current_player: jnp.ndarray  # (1,) 
-  # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
-  # -1 if terminal
-  legal_action_mask: jnp.ndarray  # (A,) one hot mask for current_player
-  terminated: jnp.ndarray  #  (1,)
-  # truncated: jnp.ndarray  #  (1,)
-  # elapsed_steps: jnp.ndarray  #  (1,)
-  ... 
+    rng: jax.random.KeyArray
+    curr_player: jnp.ndarray
+    # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
+    # -1 if terminal
+    reward: jnp.ndarray
+    terminated: jnp.ndarray
+    legal_action_mask: jnp.ndarray
+  
+
+def init(rng: jnp.ndarray) -> State:
+  return state 
+
+# step is deterministic by default
+# if state.terminated is True, state.reward is set to zero and the other fields are unchanged
+def step(state: State, 
+         action: jnp.ndarray)
+    -> State:
+  return state  # rewards: (N,) 
+
+def observe(state: State, 
+            player_id: jnp.ndarray) 
+    -> jnp.ndarray:
+  # Zero array if state.curr_player is -1
+  return obs 
+
+# replace state.rng or shuffle hidden states (e.g., unopened public cards)
+def shuffle(state: State, rng: Optional[jnp.ndarray]) 
+    -> State:
+   return state
 ```
 
 ### Limitations (for the simplicity)
