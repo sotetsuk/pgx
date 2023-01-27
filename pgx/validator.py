@@ -8,7 +8,7 @@ from pgx.utils import act_randomly
 
 
 def validate(init_fn, step_fn, observe_fn, N=100):
-    """validate_observe checks these items:
+    """validate checks these items:
 
     - init
       - rng is set non-default value
@@ -21,8 +21,8 @@ def validate(init_fn, step_fn, observe_fn, N=100):
       - legal_action_mask is empty when terminated
       - taking actions at terminal states returns the same state (with zero reward)
     - observe
-      - Returns different observations when player_ids are different
-      - Returns zero observations when player_id=-1 (curr_player is set 0 when terminated)
+      - Returns different observations when player_ids are different (except the initial state)
+      - Returns zero observations when player_id=-1 (curr_player is set -1 when terminated)
     """
     rng = jax.random.PRNGKey(849020)
     for _ in range(N):
