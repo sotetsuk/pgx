@@ -9,8 +9,10 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Tuple
 
 import jax
-from flax import struct
+from flax.struct import dataclass
 from jax import numpy as jnp
+
+import pgx.core
 
 ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int8)
 init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int8)
@@ -23,9 +25,17 @@ ONE = jnp.array(1, dtype=jnp.int8)
 EIGHT = jnp.array(8, dtype=jnp.int8)
 NINE = jnp.array(9, dtype=jnp.int8)
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
 
-@struct.dataclass
-class MinAtarAsterixState:
+
+@dataclass
+class MinAtarAsterixState(pgx.core.State):
+    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
+    curr_player: jnp.ndarray = jnp.int8(0)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int8) * INF
@@ -40,7 +50,10 @@ class MinAtarAsterixState:
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
-@jax.jit
+def init(rng: jnp.ndarray) -> MinAtarAsterixState:
+    return _init_det(rng)
+
+
 def step(
     state: MinAtarAsterixState,
     action: jnp.ndarray,
@@ -85,17 +98,10 @@ def step(
     )
 
 
-@jax.jit
-def init(rng: jnp.ndarray) -> MinAtarAsterixState:
-    return _init_det()
-
-
-@jax.jit
 def observe(state: MinAtarAsterixState) -> jnp.ndarray:
     return _to_obs(state)
 
 
-@jax.jit
 def _step_det(
     state: MinAtarAsterixState,
     action: jnp.ndarray,
@@ -209,7 +215,6 @@ def _step_det_at_non_terminal(
 
 
 # Spawn a new enemy or treasure at a random location with random direction (if all rows are filled do nothing)
-@jax.jit
 def _spawn_entity(entities, lr, is_gold, slot):
     x = jax.lax.cond(lr == 1, lambda: 0, lambda: 9)
     new_entities = entities
@@ -227,7 +232,6 @@ def _spawn_entity(entities, lr, is_gold, slot):
     return new_entities
 
 
-@jax.jit
 def _update_entities(entities, player_x, player_y, r, terminal, i):
     entities, r, terminal = jax.lax.cond(
         (entities[i, 0] == player_x) & (entities[i, 1] == player_y),
@@ -241,7 +245,6 @@ def _update_entities(entities, player_x, player_y, r, terminal, i):
     return entities, player_x, player_y, r, terminal
 
 
-@jax.jit
 def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
     entities, r, terminal = jax.lax.fori_loop(
         0,
@@ -258,7 +261,6 @@ def _update_entities_by_timer(entities, r, terminal, player_x, player_y):
     return entities, r, terminal
 
 
-@jax.jit
 def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     entities = entities.at[i, 0].add(
         jax.lax.cond(entities[i, 2] == 1, lambda: 1, lambda: -1)
@@ -274,7 +276,6 @@ def __update_entities_by_timer(entities, r, terminal, player_x, player_y, i):
     return entities, r, terminal
 
 
-@jax.jit
 def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
         (spawn_speed > 1) | (move_speed > 1),
@@ -288,7 +289,6 @@ def _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index):
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
-@jax.jit
 def __update_ramp(spawn_speed, move_speed, ramp_index):
     move_speed = jax.lax.cond(
         (move_speed > 1) & (ramp_index % 2),
@@ -305,12 +305,11 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
-@jax.jit
-def _init_det() -> MinAtarAsterixState:
-    return MinAtarAsterixState()
+def _init_det(rng: jnp.ndarray) -> MinAtarAsterixState:
+    rng, subkey = jax.random.split(rng)
+    return MinAtarAsterixState(rng=rng)
 
 
-@jax.jit
 def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.player_y, state.player_x, 0].set(True)
@@ -327,7 +326,6 @@ def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
     return obs
 
 
-@jax.jit
 def _update_obs_by_entity(obs, state, i):
     c = jax.lax.cond(state.entities[i, 3], lambda: 3, lambda: 1)
     obs = obs.at[state.entities[i, 1], state.entities[i, 0], c].set(True)

@@ -1,3 +1,4 @@
+import jax
 import random
 
 from minatar import Environment
@@ -27,7 +28,7 @@ INF = 99
 def test_spawn_entity():
     entities = jnp.ones((8, 4), dtype=jnp.int8) * INF
     entities = entities.at[:, :].set(
-        asterix._spawn_entity(entities, True, True, 1)
+        jax.jit(asterix._spawn_entity)(entities, True, True, 1)
     )
     assert entities[1][0] == 0, entities
     assert entities[1][1] == 2, entities
@@ -49,7 +50,7 @@ def test_step_det():
             r, done = env.act(a)
             lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
             s_next = extract_state(env, state_keys)
-            s_next_pgx, _, _ = asterix._step_det(
+            s_next_pgx, _, _ = jax.jit(asterix._step_det)(
                 minatar2pgx(s, asterix.MinAtarAsterixState),
                 a,
                 lr,
@@ -64,7 +65,7 @@ def test_step_det():
         r, done = env.act(a)
         lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = asterix._step_det(
+        s_next_pgx, _, _ = jax.jit(asterix._step_det)(
             minatar2pgx(s, asterix.MinAtarAsterixState), a, lr, is_gold, slot
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
@@ -73,10 +74,10 @@ def test_step_det():
 def test_init_det():
     env = Environment("asterix", sticky_action_prob=0.0)
     N = 100
-    for _ in range(N):
+    for i in range(N):
         env.reset()
         s = extract_state(env, state_keys)
-        s_pgx = asterix._init_det()
+        s_pgx = jax.jit(asterix._init_det)(jax.random.PRNGKey(i))
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
@@ -91,7 +92,7 @@ def test_observe():
         while not done:
             s = extract_state(env, state_keys)
             s_pgx = minatar2pgx(s, asterix.MinAtarAsterixState)
-            obs_pgx = asterix._to_obs(s_pgx)
+            obs_pgx = jax.jit(asterix._to_obs)(s_pgx)
             assert jnp.allclose(
                 env.state(),
                 obs_pgx,
@@ -102,7 +103,7 @@ def test_observe():
         # check terminal state
         s = extract_state(env, state_keys)
         s_pgx = minatar2pgx(s, asterix.MinAtarAsterixState)
-        obs_pgx = asterix._to_obs(s_pgx)
+        obs_pgx = jax.jit(asterix._to_obs)(s_pgx)
         assert jnp.allclose(
             env.state(),
             obs_pgx,
