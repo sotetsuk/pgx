@@ -4,6 +4,8 @@ import jax
 from flax import struct
 from jax import numpy as jnp
 
+import pgx.core as core
+
 BLACK = 0
 WHITE = 1
 POINT = 2
@@ -61,6 +63,22 @@ class GoState:
 
     # 終局判定
     terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
+
+
+class Go(core.Env):
+
+    def __init__(self, size: int = 5):
+        super().__init__()
+        self.size = size
+
+    def init(self, rng: jnp.ndarray) -> core.State:
+        return init(rng, self.size)[1]
+
+    def step(self, state: core.State, action: jnp.ndarray) -> core.State:
+        return step(state, action, self.size)[1]
+
+    def observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
+        return observe(state, player_id)
 
 
 def observe(state: GoState, player_id, observe_all=False):

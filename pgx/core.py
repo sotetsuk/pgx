@@ -1,5 +1,6 @@
 from typing import Literal
 
+import abc
 import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
@@ -19,3 +20,21 @@ class State:
     reward: jnp.ndarray
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray
+
+
+class Env(abc.ABC):
+
+    def __init__(self):
+        ...
+
+    @abc.abstractmethod
+    def init(self, rng: jnp.ndarray) -> State:
+        ...
+
+    @abc.abstractmethod
+    def step(self, state: State, action: jnp.ndarray) -> State:
+        ...
+
+    @abc.abstractmethod
+    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        ...

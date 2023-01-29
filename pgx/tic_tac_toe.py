@@ -24,6 +24,24 @@ class State(pgx.core.State):
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
+class TicTacToe(pgx.core.Env):
+
+    def __init__(self):
+        super().__init__()
+
+    @classmethod
+    def init(cls, rng: jnp.ndarray) -> State:
+        return init(rng)
+
+    @classmethod
+    def step(cls, state: State, action: jnp.ndarray) -> State:
+        return step(state, action)
+
+    @classmethod
+    def observe(cls, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        return observe(state, player_id)
+
+
 def init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     curr_player = jnp.int8(jax.random.bernoulli(subkey))
