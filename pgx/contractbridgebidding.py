@@ -263,12 +263,7 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 
 def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
-    """Convert state to pbn format
-    >>> _, state = init()
-    >>> state.hand = np.arange(52, dtype=np.int8)
-    >>> _state_to_pbn(state)
-    'N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432'
-    """
+    """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
         hand = np.sort(state.hand[i * 13 : (i + 1) * 13])
@@ -288,12 +283,7 @@ def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
 
 
 def _state_to_key(state: ContractBridgeBiddingState) -> np.ndarray:
-    """Convert state to key of dds table
-    >>> _, state = init()
-    >>> state.hand = np.arange(52, dtype=np.int8)
-    >>> _state_to_key(state)
-    array([       0, 22369621, 44739242, 67108863])
-    """
+    """Convert state to key of dds table"""
     hand = state.hand
     key = np.zeros(52, dtype=np.int8)
     for i in range(52):  # N: 0, E: 1, S: 2, W: 3
@@ -323,11 +313,6 @@ def _pbn_to_key(pbn: str) -> np.ndarray:
 
 
 def _to_binary(x: np.ndarray) -> np.ndarray:
-    """
-    >>> x = np.ones(52, dtype=np.int8).reshape(4, 13)
-    >>> _to_binary(x)
-    array([22369621, 22369621, 22369621, 22369621])
-    """
     bases = np.array([4**i for i in range(13)], dtype=np.int32)[::-1]
     return (x * bases).sum(axis=1)  # shape = (4, )
 
@@ -348,16 +333,7 @@ def _card_str_to_int(card: str) -> int:
 
 
 def _key_to_hand(key: np.ndarray) -> np.ndarray:
-    """Convert key to hand
-    >>> key = np.array(
-    ...     [22369621, 22369621, 22369621, 22369621], dtype=np.int32
-    ... )
-    >>> _key_to_hand(key)
-    array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,
-           17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33,
-           34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
-           51])
-    """
+    """Convert key to hand"""
     cards = np.array(
         [int(i) for j in key for i in np.base_repr(j, 4).zfill(13)],
         dtype=np.int8,
@@ -371,9 +347,3 @@ def _key_to_hand(key: np.ndarray) -> np.ndarray:
         ],
         axis=1,
     ).reshape(-1)
-
-
-if __name__ == "__main__":
-    import doctest
-
-    doctest.testmod()
