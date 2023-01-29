@@ -761,6 +761,7 @@ def test_key_to_hand():
 
 
 def test_state_to_key_cycle():
+    # state => key => st
     for _ in range(1000):
         _, state = init()
         sorted_hand = np.concatenate(
