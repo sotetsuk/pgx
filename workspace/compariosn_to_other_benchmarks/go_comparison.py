@@ -22,7 +22,7 @@ def petting_zoo_random_go():
     petting_zoo_go_env.reset()
     for agent in petting_zoo_go_env.agent_iter():
         observation, reward, termination, truncation, info = petting_zoo_go_env.last()
-        action = None if termination or truncation else petting_zoo_go_env.action_space(agent).sample()  # this is where you would insert your policy
+        action = None if termination or truncation else np.random.choice(np.where(observation["action_mask"]==1)[0])  # this is where you would insert your policy
         petting_zoo_go_env.step(action)
 
 
@@ -44,6 +44,7 @@ def open_spile_random_go():
             # We arbitrarily select the first available action as an example.
             action = legal_actions[0]
             state.apply_action(action)
+
 @jit
 def _init(key):
     return init(key, size=19)
