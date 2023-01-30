@@ -581,10 +581,11 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     oppo_ren_id_board = jnp.where(
         surrounded_stones, -1, _state.ren_id_board[_opponent_color(_state)]
     )
-    liberty = jax.lax.map(
-        lambda l: jnp.where((l > 0) & surrounded_stones, 1, l),
-        _state.liberty[_my_color(_state)],
-    )
+
+    my_lib = _state.liberty[_my_color(_state)]
+    surrounded = jnp.tile(surrounded_stones, (5 * 5, 1))
+    liberty = jnp.where((my_lib > 0) & surrounded, 1, my_lib)
+
     available_ren_id = _state.available_ren_id.at[
         _opponent_color(_state), _rm_ren_id
     ].set(True)
