@@ -6,8 +6,10 @@ import jax.numpy as jnp
 import pgx
 from pgx.utils import act_randomly
 
+import pgx.core as core
 
-def validate(init_fn, step_fn, observe_fn, N=100):
+
+def validate(env: core.Env, num: int = 100):
     """validate checks these items:
 
     - init
@@ -24,10 +26,15 @@ def validate(init_fn, step_fn, observe_fn, N=100):
       - Returns different observations when player_ids are different (except the initial state)
       - Returns zero observations when player_id=-1 (curr_player is set -1 when terminated)
     """
+
+    init = jax.jit(env.init)
+    step = jax.jit(env.step)
+    observe = jax.jit(env.observe)
+
     rng = jax.random.PRNGKey(849020)
-    for _ in range(N):
+    for _ in range(num):
         rng, subkey = jax.random.split(rng)
-        state = init_fn(subkey)
+        state = init(subkey)
 
         _validate_state(state)
         _validate_init_reward(state)
@@ -38,18 +45,18 @@ def validate(init_fn, step_fn, observe_fn, N=100):
             prev_rng = state.rng
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
-            state = step_fn(state, action)
+            state = step(state, action)
 
             _validate_state(state)
             _validate_curr_player(state)
-            _validate_obs(observe_fn, state)
+            _validate_obs(observe, state)
             _validate_rng_changes(state, prev_rng)
             _validate_legal_actions(state)
 
             if state.terminated:
                 break
 
-        _validate_taking_action_after_terminal(state, step_fn)
+        _validate_taking_action_after_terminal(state, step)
 
 
 def _validate_taking_action_after_terminal(state: pgx.State, step_fn):
