@@ -61,9 +61,9 @@ class MinAtarAsterix(core.Env):
         self.sticky_action_prob: float = sticky_action_prob
 
     def init(self, rng: jax.random.KeyArray) -> State:
-        return State(rng=rng)
+        return State(rng=rng)  # type: ignore
 
-    def _step(self, state, action) -> State:
+    def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
         rng, subkey = jax.random.split(state.rng)
         state, _, _ = step(
@@ -71,7 +71,9 @@ class MinAtarAsterix(core.Env):
         )
         return state.replace(rng=rng)  # type: ignore
 
-    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _to_obs(state)
 
@@ -83,7 +85,7 @@ class MinAtarAsterix(core.Env):
 def step(
     state: State,
     action: jnp.ndarray,
-    rng: jnp.ndarray,
+    rng: jax.random.KeyArray,
     sticky_action_prob: float,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int8(action)
@@ -131,9 +133,9 @@ def observe(state: State) -> jnp.ndarray:
 def _step_det(
     state: State,
     action: jnp.ndarray,
-    lr: bool,
-    is_gold: bool,
-    slot: int,
+    lr,
+    is_gold,
+    slot,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
