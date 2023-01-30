@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Tuple
 
 import jax
@@ -506,37 +507,19 @@ def _is_off_board(_pos: jnp.ndarray, size) -> bool:
     )
 
 
-def _kou_occurred(_state: GoState, xy: int) -> bool:
+def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
     size = _state.size
     x = xy // size
     y = xy % size
 
     oppo_color = _opponent_color(_state)
 
-    return jnp.logical_and(
-        jnp.logical_and(
-            jnp.logical_and(
-                jnp.logical_or(
-                    x - 1 < 0,
-                    _state.ren_id_board[oppo_color][_to_xy(x - 1, y, size)]
-                    != -1,
-                ),
-                jnp.logical_or(
-                    x + 1 >= size,
-                    _state.ren_id_board[oppo_color][_to_xy(x + 1, y, size)]
-                    != -1,
-                ),
-            ),
-            jnp.logical_or(
-                y - 1 < 0,
-                _state.ren_id_board[oppo_color][_to_xy(x, y - 1, size)] != -1,
-            ),
-        ),
-        jnp.logical_or(
-            y + 1 >= size,
-            _state.ren_id_board[oppo_color][_to_xy(x, y + 1, size)] != -1,
-        ),
-    )
+    to_xy_batch = jax.vmap(partial(_to_xy, size=size))
+    oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
+    xs = x + NSEW[:, 0]  # x + dx
+    ys = y + NSEW[:, 1]  # y + dy
+    flag = _state.ren_id_board[oppo_color][to_xy_batch(xs, ys)] != -1
+    return (oob | flag).all()
 
 
 def _to_xy(x, y, size) -> int:
