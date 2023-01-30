@@ -477,8 +477,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
 
     _adj_r = _state.adj_ren_id[_opponent_color(_state)]
-    large_ids = jnp.tile(large_id, 5 * 5)
-    _oppo_adj_ren_id = jnp.where(_adj_r[large_ids], _adj_r.at[large_ids].set(False).at[small_id].set(True), _adj_r)
+    _oppo_adj_ren_id = jnp.where(_adj_r[large_id], _adj_r.at[large_id].set(False).at[small_id].set(True), _adj_r)
 
     _adj_ren_id = _adj_ren_id.at[small_id].set(
         jnp.logical_or(_adj_ren_id[small_id], _adj_ren_id[large_id])
@@ -581,8 +580,8 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     )
 
     my_lib = _state.liberty[_my_color(_state)]
-    surrounded = jnp.tile(surrounded_stones, (5 * 5, 1))
-    liberty = jnp.where((my_lib > 0) & surrounded, 1, my_lib)
+    # surrounded = jnp.tile(surrounded_stones, (5 * 5, 1))
+    liberty = jnp.where((my_lib > 0) & surrounded_stones, 1, my_lib)
 
     available_ren_id = _state.available_ren_id.at[
         _opponent_color(_state), _rm_ren_id
