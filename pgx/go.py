@@ -452,14 +452,10 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
 
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
-    return jnp.logical_not(
-        jax.lax.map(
-            lambda xy: _update_state_wo_legal_action(state, xy, size)[
-                0
-            ].terminated,
-            jnp.arange(0, size * size),
-        )
-    )
+    mask = state.ren_id_board == -1
+    mask = mask[0] & mask[1]
+    mask = jax.lax.cond(state.kou == -1, lambda: mask.at[state.kou].set(False), lambda: mask)
+    return mask
 
 
 def get_board(state: GoState) -> jnp.ndarray:
