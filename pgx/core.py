@@ -63,11 +63,11 @@ class Env(abc.ABC):
         state = self.init(jax.random.PRNGKey(0))
         return state.legal_action_mask.shape[0]
 
-    def _step_if_terminated(self, state: State, action: jnp.ndarray) -> State:
+    @staticmethod
+    def _step_if_terminated(state: State, action: jnp.ndarray) -> State:
         return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
 
-    def _step_with_illegal_action(
-        self, state: State, action: jnp.ndarray
-    ) -> State:
+    @staticmethod
+    def _step_with_illegal_action(state: State, action: jnp.ndarray) -> State:
         # TODO: implement me
         return state
