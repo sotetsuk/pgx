@@ -31,7 +31,10 @@ class Env(abc.ABC):
 
     def step(self, state: State, action: jnp.ndarray) -> State:
         # TODO: curr_player周りの挙動
+        #  - set curr_player = -1 if already terminated
         # TODO: legal_action_mask周りの挙動
+        #  - set legal_action_mask = all False if already terminated  # or all True?
+        #  - ends with negative reward if illegal action is taken
         return jax.lax.cond(
             state.terminated,
             lambda: self._step_if_terminated(state, action),
@@ -48,7 +51,7 @@ class Env(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def num_players(self):
+    def num_players(self) -> int:
         ...
 
     @property

@@ -62,9 +62,7 @@ def step(state: State, action: jnp.ndarray) -> State:
         lambda: jnp.zeros(2, jnp.float32),
     )
     terminated = won | jnp.all(board != -1)
-    curr_player = jax.lax.cond(
-        terminated, lambda: jnp.int8(-1), lambda: (state.curr_player + 1) % 2
-    )
+    curr_player = (state.curr_player + 1) % 2
     legal_action_mask = board < 0
     legal_action_mask = jax.lax.cond(
         terminated,
@@ -117,12 +115,7 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         lambda: (state.turn == state.board, (1 - state.turn) == state.board),
         lambda: ((1 - state.turn) == state.board, state.turn == state.board),
     )
-    obs = jnp.concatenate(
+    return jnp.concatenate(
         [empty_board, my_board, opp_obard],
         dtype=jnp.float16,
     )
-    # Zero if player_id is -1
-    obs = jax.lax.cond(
-        player_id == -1, lambda: jnp.zeros_like(obs), lambda: obs
-    )
-    return obs

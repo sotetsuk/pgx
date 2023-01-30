@@ -8,3 +8,7 @@ def make(env_id: EnvId):
         from pgx.tic_tac_toe import TicTacToe
 
         return TicTacToe()
+    elif env_id == "minatar/asterix/v0":
+        from pgx.minatar.asterix import MinAtarAsterix
+
+        return MinAtarAsterix()

@@ -14,14 +14,13 @@ def validate(env: core.Env, num: int = 100):
     - init
       - reward is zero array
     - step
-      - state.curr_player is positive when not terminated
-      - state.curr_player = -1 when terminated
+      - state.curr_player is positive
       - (TODO) taking illegal actions terminates the episode with a negative reward
-      - legal_action_mask is empty when terminated
+      - legal_action_mask is empty when terminated (TODO: or all True?)
       - taking actions at terminal states returns the same state (with zero reward)
     - observe
       - Returns different observations when player_ids are different (except the initial state)
-      - Returns zero observations when player_id=-1 (curr_player is set -1 when terminated)
+    - TODO: reward must be zero when step is called after terminated
     """
 
     init = jax.jit(env.init)
@@ -90,21 +89,6 @@ def _validate_state(state: pgx.State):
 
 
 def _validate_obs(observe_fn, state: pgx.State):
-    # basic usage
-    obs = observe_fn(state, state.curr_player)
-    if state.terminated:
-        assert (obs == 0).all(), f"Got non-zero obs at terminal state : {obs}"
-    else:
-        assert not (
-            obs == 0
-        ).all(), f"Got zero obs at non terminal state : {obs}"
-
-    # when terminal
-    obs = observe_fn(state, -1)
-    assert (
-        obs == 0
-    ).all(), f"player_id = -1 must return zero obs but got : {obs}"
-
     # when player_id is different from state.curr_player
     obs_default = observe_fn(state, player_id=state.curr_player)
     obs_player_0 = observe_fn(state, player_id=0)
@@ -128,11 +112,6 @@ def _validate_legal_actions(state: pgx.State):
 
 
 def _validate_curr_player(state: pgx.State):
-    if state.terminated:
-        assert (
-            state.curr_player == -1
-        ), f"curr_player must be -1 when terminated but got : {state.curr_player}"
-    else:
-        assert (
-            state.curr_player >= 0
-        ), f"curr_player must be positivie before terminated but got : {state.curr_player}"
+    assert (
+        state.curr_player >= 0
+    ), f"curr_player must be positive before terminated but got : {state.curr_player}"
