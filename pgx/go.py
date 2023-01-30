@@ -584,7 +584,6 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     )
 
     my_lib = _state.liberty[_my_color(_state)]
-    # surrounded = jnp.tile(surrounded_stones, (5 * 5, 1))
     liberty = jnp.where((my_lib > 0) & surrounded_stones, 1, my_lib)
 
     available_ren_id = _state.available_ren_id.at[
