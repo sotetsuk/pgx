@@ -44,7 +44,7 @@ def test_step_det():
             r, done = env.act(a)
             s_next = extract_state(env, state_keys)
             s_next_pgx, _, _ = space_invaders._step_det(
-                minatar2pgx(s, space_invaders.MinAtarSpaceInvadersState),
+                minatar2pgx(s, space_invaders.State),
                 a,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
@@ -55,7 +55,7 @@ def test_step_det():
         r, done = env.act(a)
         s_next = extract_state(env, state_keys)
         s_next_pgx, _, _ = space_invaders._step_det(
-            minatar2pgx(s, space_invaders.MinAtarSpaceInvadersState), a
+            minatar2pgx(s, space_invaders.State), a
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
@@ -80,7 +80,7 @@ def test_observe():
         done = False
         while not done:
             s = extract_state(env, state_keys)
-            s_pgx = minatar2pgx(s, space_invaders.MinAtarSpaceInvadersState)
+            s_pgx = minatar2pgx(s, space_invaders.State)
             obs_pgx = space_invaders.observe(s_pgx)
             assert jnp.allclose(
                 env.state(),
@@ -91,7 +91,7 @@ def test_observe():
 
         # check terminal state
         s = extract_state(env, state_keys)
-        s_pgx = minatar2pgx(s, space_invaders.MinAtarSpaceInvadersState)
+        s_pgx = minatar2pgx(s, space_invaders.State)
         obs_pgx = space_invaders.observe(s_pgx)
         assert jnp.allclose(
             env.state(),

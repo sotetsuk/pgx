@@ -4,30 +4,33 @@ import jax
 import jax.numpy as jnp
 
 import pgx
+import pgx.core as core
 from pgx.utils import act_randomly
 
 
-def validate(init_fn, step_fn, observe_fn, N=100):
+def validate(env: core.Env, num: int = 100):
     """validate checks these items:
 
     - init
-      - rng is set non-default value
       - reward is zero array
     - step
-      - state.curr_player is positive when not terminated
-      - state.curr_player = -1 when terminated
-      - rng changes after each step
+      - state.curr_player is positive
       - (TODO) taking illegal actions terminates the episode with a negative reward
-      - legal_action_mask is empty when terminated
+      - legal_action_mask is empty when terminated (TODO: or all True?)
       - taking actions at terminal states returns the same state (with zero reward)
     - observe
       - Returns different observations when player_ids are different (except the initial state)
-      - Returns zero observations when player_id=-1 (curr_player is set -1 when terminated)
+    - TODO: reward must be zero when step is called after terminated
     """
+
+    init = jax.jit(env.init)
+    step = jax.jit(env.step)
+    observe = jax.jit(env.observe)
+
     rng = jax.random.PRNGKey(849020)
-    for _ in range(N):
+    for _ in range(num):
         rng, subkey = jax.random.split(rng)
-        state = init_fn(subkey)
+        state = init(subkey)
 
         _validate_state(state)
         _validate_init_reward(state)
@@ -35,21 +38,19 @@ def validate(init_fn, step_fn, observe_fn, N=100):
         _validate_legal_actions(state)
 
         while True:
-            prev_rng = state.rng
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
-            state = step_fn(state, action)
+            state = step(state, action)
 
             _validate_state(state)
             _validate_curr_player(state)
-            _validate_obs(observe_fn, state)
-            _validate_rng_changes(state, prev_rng)
+            _validate_obs(observe, state)
             _validate_legal_actions(state)
 
             if state.terminated:
                 break
 
-        _validate_taking_action_after_terminal(state, step_fn)
+        _validate_taking_action_after_terminal(state, step)
 
 
 def _validate_taking_action_after_terminal(state: pgx.State, step_fn):
@@ -60,15 +61,11 @@ def _validate_taking_action_after_terminal(state: pgx.State, step_fn):
     state = step_fn(state, action)
     assert (state.reward == 0).all()
     for field in fields(state):
-        if field.name == "reward" or field.name == "rng":
+        if field.name == "reward":
             continue
         assert (
             getattr(state, field.name) == getattr(prev_state, field.name)
         ).all(), f"{field.name} : \n{getattr(state, field.name)}\n{getattr(prev_state, field.name)}"
-
-
-def _validate_rng_changes(state, prev_rng):
-    assert not (state.rng == prev_rng).all()
 
 
 def _validate_init_reward(state: pgx.State):
@@ -78,14 +75,11 @@ def _validate_init_reward(state: pgx.State):
 def _validate_state(state: pgx.State):
     """validate_state checks these items:
 
-    - rng is uint32 and different from zero key
     - curr_player is int8
     - terminated is bool_
     - reward is float
     - legal_action_mask is bool_
     """
-    assert state.rng.dtype == jnp.uint32, state.rng.dtype
-    assert (state.rng != 0).all(), state.rng  # type: ignore
     assert state.curr_player.dtype == jnp.int8, state.curr_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
     assert state.reward.dtype == jnp.float32, state.reward.dtype
@@ -95,21 +89,6 @@ def _validate_state(state: pgx.State):
 
 
 def _validate_obs(observe_fn, state: pgx.State):
-    # basic usage
-    obs = observe_fn(state, state.curr_player)
-    if state.terminated:
-        assert (obs == 0).all(), f"Got non-zero obs at terminal state : {obs}"
-    else:
-        assert not (
-            obs == 0
-        ).all(), f"Got zero obs at non terminal state : {obs}"
-
-    # when terminal
-    obs = observe_fn(state, -1)
-    assert (
-        obs == 0
-    ).all(), f"player_id = -1 must return zero obs but got : {obs}"
-
     # when player_id is different from state.curr_player
     obs_default = observe_fn(state, player_id=state.curr_player)
     obs_player_0 = observe_fn(state, player_id=0)
@@ -133,11 +112,6 @@ def _validate_legal_actions(state: pgx.State):
 
 
 def _validate_curr_player(state: pgx.State):
-    if state.terminated:
-        assert (
-            state.curr_player == -1
-        ), f"curr_player must be -1 when terminated but got : {state.curr_player}"
-    else:
-        assert (
-            state.curr_player >= 0
-        ), f"curr_player must be positivie before terminated but got : {state.curr_player}"
+    assert (
+        state.curr_player >= 0
+    ), f"curr_player must be positive before terminated but got : {state.curr_player}"
