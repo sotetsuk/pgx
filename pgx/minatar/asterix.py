@@ -12,6 +12,8 @@ import jax
 from flax import struct
 from jax import numpy as jnp
 
+import pgx.core as core
+
 ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int8)
 init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int8)
 init_move_interval: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
@@ -23,9 +25,16 @@ ONE = jnp.array(1, dtype=jnp.int8)
 EIGHT = jnp.array(8, dtype=jnp.int8)
 NINE = jnp.array(9, dtype=jnp.int8)
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
+
 
 @struct.dataclass
-class State:
+class State(core.State):
+    curr_player: jnp.ndarray = ZERO
+    reward: jnp.ndarray = jnp.float32(0)
+    terminated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int8) * INF
@@ -36,7 +45,7 @@ class State:
     move_timer: jnp.ndarray = init_move_interval
     ramp_timer: jnp.ndarray = ramp_interval
     ramp_index: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
-    terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
+    terminal: jnp.ndarray = FALSE  # duplicated but necessary for checking the consistency to the original MinAtar
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
@@ -101,7 +110,7 @@ def _step_det(
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int16), True),  # type: ignore
+        lambda: (state.replace(last_action=action), jnp.float32(0), True),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, lr, is_gold, slot),
     )
 
@@ -126,7 +135,7 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
 
     ramping: bool = True
-    r = jnp.array(0, dtype=jnp.int16)
+    r = jnp.float32(0)
 
     # Spawn enemy if timer is up
     entities, spawn_timer = jax.lax.cond(
@@ -188,6 +197,8 @@ def _step_det_at_non_terminal(
     )
 
     next_state = State(
+        terminated=terminal,
+        reward=r,
         player_x=player_x,
         player_y=player_y,
         entities=entities,
