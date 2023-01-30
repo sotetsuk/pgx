@@ -15,9 +15,18 @@ POINT_CHAR = "+"
 
 NSEW = jnp.array([[-1, 0], [1, 0], [0, 1], [0, -1]], dtype=jnp.int32)
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
+
 
 @struct.dataclass
-class State:
+class State(core.State):
+    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
+    curr_player: jnp.ndarray = jnp.int8(0)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.bool_)
+
     # 横幅, マスの数ではない
     size: jnp.ndarray = jnp.int32(19)  # type:ignore
 
@@ -35,9 +44,6 @@ class State:
     # 隣接している敵の連id
     adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.bool_)
 
-    # 設置可能なマスをTrueとしたマスク
-    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.bool_)
-
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
         (8, 19 * 19), 2, dtype=jnp.int32
@@ -45,9 +51,6 @@ class State:
 
     # 経過ターン, 0始まり
     turn: jnp.ndarray = jnp.int32(0)  # type:ignore
-
-    # プレイヤーID
-    curr_player: jnp.ndarray = jnp.int32(0)  # type:ignore
 
     # [0]: 黒の得たアゲハマ, [1]: 白の方
     agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
@@ -61,15 +64,12 @@ class State:
     # コミ
     komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
 
-    # 終局判定
-    terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
-
 
 class Go(core.Env):
 
     def __init__(self, size: int = 5):
         super().__init__()
-        self.size = size
+        self.size: int = size
 
     def init(self, rng: jnp.ndarray) -> core.State:
         return init(rng, self.size)[1]
@@ -149,9 +149,9 @@ def _get_alphazero_features(state: State, player_id, observe_all):
 
 
 def init(
-    rng: jax.random.KeyArray, size: int = 5
+    rng: jnp.ndarray, size: int = 5
 ) -> Tuple[jnp.ndarray, State]:
-    curr_player = jnp.int32(jax.random.bernoulli(rng))
+    curr_player = jnp.int8(jax.random.bernoulli(rng))
     return curr_player, State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.full(
@@ -167,7 +167,7 @@ def init(
 
 
 def step(
-    state: State, action: int, size: int
+    state: State, action: jnp.ndarray, size: int
 ) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
     # update state
     _state, reward = _update_state_wo_legal_action(state, action, size)
@@ -311,7 +311,7 @@ def _update_terminated(_state: State) -> State:
         legal_action_mask=_state.legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
-        curr_player=jnp.int32(-1),  # type:ignore
+        curr_player=jnp.int8(-1),  # type:ignore
         agehama=_state.agehama,
         passed=_state.passed,
         kou=_state.kou,
