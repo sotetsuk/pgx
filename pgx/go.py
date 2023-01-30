@@ -35,6 +35,7 @@ class GoState:
 
     # 設置可能なマスをTrueとしたマスク
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.bool_)
+    _legal_action_mask: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.bool_)
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
@@ -131,7 +132,7 @@ def _get_alphazero_features(state: GoState, player_id, observe_all):
 
 
 def init(
-    rng: jax.random.KeyArray, size: int = 5
+    rng: jax.random.KeyArray, size: int = 19
 ) -> Tuple[jnp.ndarray, GoState]:
     curr_player = jnp.int32(jax.random.bernoulli(rng))
     return curr_player, GoState(  # type:ignore
@@ -143,25 +144,27 @@ def init(
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
         legal_action_mask=jnp.ones(size * size, dtype=jnp.bool_),
+        _legal_action_mask=jnp.ones((2, size * size), dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
     )
 
 
 def step(
-    state: GoState, action: int, size: int
+    state: GoState, action: int, size: int = 19
 ) -> Tuple[jnp.ndarray, GoState, jnp.ndarray]:
     # update state
     _state, reward = _update_state_wo_legal_action(state, action, size)
 
-    # add legal actions
+    #  add legal actions
     _state = GoState(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=legal_actions(_state, size),
+        legal_action_mask=legal_actions(_state),
+        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -182,6 +185,7 @@ def step(
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask,
         game_log=new_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -234,6 +238,7 @@ def _increase_turn(_state: GoState) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn + 1,
         curr_player=_state.curr_player,
@@ -253,6 +258,7 @@ def _change_player(_state: GoState) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=(_state.curr_player + 1) % 2,
@@ -272,6 +278,7 @@ def _set_pass(_state: GoState, _pass: bool) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -291,6 +298,7 @@ def _update_terminated(_state: GoState) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=jnp.int32(-1),  # type:ignore
@@ -338,6 +346,7 @@ def _not_pass_move(
         liberty=state.liberty,
         adj_ren_id=state.adj_ren_id,
         legal_action_mask=state.legal_action_mask,
+        _legal_action_mask=state._legal_action_mask,
         game_log=state.game_log,
         turn=state.turn,
         curr_player=state.curr_player,
@@ -388,6 +397,7 @@ def _check_around_xy(i, state_and_xy):
                     ].set(1),
                     adj_ren_id=state.adj_ren_id,
                     legal_action_mask=state.legal_action_mask,
+                    _legal_action_mask=state._legal_action_mask,
                     game_log=state.game_log,
                     turn=state.turn,
                     curr_player=state.curr_player,
@@ -426,20 +436,24 @@ def _illegal_move(
 
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
-    available_ren_id = _state.available_ren_id[_my_color(_state)]
+    my_color = _my_color(_state)
+    oppo_color = _opponent_color(_state)
+    available_ren_id = _state.available_ren_id[my_color]
     next_ren_id = jnp.argmax(available_ren_id)
     available_ren_id = available_ren_id.at[next_ren_id].set(False)
     return GoState(  # type:ignore
         size=_state.size,
-        ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(
-            next_ren_id
-        ),
-        available_ren_id=_state.available_ren_id.at[_my_color(_state)].set(
+        ren_id_board=_state.ren_id_board.at[my_color, _xy].set(next_ren_id),
+        available_ren_id=_state.available_ren_id.at[my_color].set(
             available_ren_id
         ),
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask.at[my_color, _xy]
+        .set(False)
+        .at[oppo_color, _xy]
+        .set(False),
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -504,6 +518,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
             .at[_opponent_color(_state)]
             .set(_oppo_adj_ren_id),
             legal_action_mask=_state.legal_action_mask,
+            _legal_action_mask=_state._legal_action_mask,
             game_log=_state.game_log,
             turn=_state.turn,
             curr_player=_state.curr_player,
@@ -553,6 +568,7 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
         liberty=liberty,
         adj_ren_id=adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -604,6 +620,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         .at[_my_color(_state), :, _rm_ren_id]
         .set(False),
         legal_action_mask=_state.legal_action_mask,
+        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -614,15 +631,8 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     )
 
 
-def legal_actions(state: GoState, size: int) -> jnp.ndarray:
-    return jnp.logical_not(
-        jax.lax.map(
-            lambda xy: _update_state_wo_legal_action(state, xy, size)[
-                0
-            ].terminated,
-            jnp.arange(0, size * size),
-        )
-    )
+def legal_actions(state: GoState) -> jnp.ndarray:
+    return state._legal_action_mask[_my_color(state)]
 
 
 def get_board(state: GoState) -> jnp.ndarray:
