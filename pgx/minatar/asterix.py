@@ -6,7 +6,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
+from typing import Tuple, Literal
 
 import jax
 from flax import struct
@@ -35,6 +35,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32(0)
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
+    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int8) * INF
@@ -49,11 +50,36 @@ class State(core.State):
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
+class MinAtarAsterix(core.Env):
+
+    def __init__(self, minatar_version: Literal["v0", "v1"] = "v1", sticky_action_prob: float = 0.1):
+        super().__init__()
+        self.minatar_version : Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob : float = sticky_action_prob
+
+    def init(self, rng: jax.random.KeyArray) -> State:
+        return State(rng=rng)
+
+    def _step(self, state, action) -> State:
+        assert isinstance(state, State)
+        rng, subkey = jax.random.split(state.rng)
+        state, _, _ = step(state, action, rng, sticky_action_prob=self.sticky_action_prob)
+        return state.replace(rng=rng)  # type: ignore
+
+    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _to_obs(state)
+
+    @property
+    def num_players(self):
+        return 1
+
+
 def step(
     state: State,
     action: jnp.ndarray,
     rng: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
+    sticky_action_prob: float,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int8(action)
     rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
@@ -91,10 +117,6 @@ def step(
         is_gold=is_gold,
         slot=slot,
     )
-
-
-def init(rng: jnp.ndarray) -> State:
-    return _init_det()
 
 
 def observe(state: State) -> jnp.ndarray:
@@ -304,10 +326,6 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
     ramp_index += 1
     ramp_timer = ramp_interval
     return spawn_speed, move_speed, ramp_timer, ramp_index
-
-
-def _init_det() -> State:
-    return State()
 
 
 def _to_obs(state: State) -> jnp.ndarray:

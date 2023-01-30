@@ -51,7 +51,7 @@ class Env(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def num_players(self):
+    def num_players(self) -> int:
         ...
 
     @property
@@ -67,7 +67,7 @@ class Env(abc.ABC):
 
     @staticmethod
     def _step_if_terminated(state: State, action: jnp.ndarray) -> State:
-        return state.replace(curr_player=jnp.int8(-1), reward=jnp.zeros_like(state.reward))  # type: ignore
+        return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
 
     @staticmethod
     def _step_with_illegal_action(state: State, action: jnp.ndarray) -> State:

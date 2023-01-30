@@ -56,8 +56,8 @@ while not (state.terminated).all():
 class State:
     rng: jax.random.KeyArray
     curr_player: jnp.ndarray
-    # 0 ~ N-1. Different from turn (e.g., white/black in Chess)
-    # -1 if terminal
+    # 0 ~ N-1. Different from turn (e.g., white/black in Chess) 
+    # Behavior is undefined when terminated (set -1 is inconvenient in batch situation)
     reward: jnp.ndarray
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray

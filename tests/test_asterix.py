@@ -27,7 +27,6 @@ INF = 99
 
 _spawn_entity = jax.jit(asterix._spawn_entity)
 _step_det = jax.jit(asterix._step_det)
-_init_det = jax.jit(asterix._init_det)
 _to_obs = jax.jit(asterix._to_obs)
 
 def test_spawn_entity():
@@ -74,16 +73,6 @@ def test_step_det():
             minatar2pgx(s, asterix.State), a, lr, is_gold, slot
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
-
-
-def test_init_det():
-    env = Environment("asterix", sticky_action_prob=0.0)
-    N = 100
-    for _ in range(N):
-        env.reset()
-        s = extract_state(env, state_keys)
-        s_pgx = _init_det()
-        assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
 def test_observe():
