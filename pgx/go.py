@@ -158,7 +158,9 @@ def step(
     _state, reward = _update_state_wo_legal_action(state, action, size)
 
     # add legal actions
-    _state = _state.replace(legal_action_mask=legal_actions(_state, size))  # type:ignore
+    _state = _state.replace(  # type:ignore
+        legal_action_mask=legal_actions(_state, size)
+    )
 
     # update log
     new_log = jnp.roll(_state.game_log, size * size)
@@ -178,7 +180,7 @@ def _update_state_wo_legal_action(
     )
 
     # increase turn
-    _state = _state.replace(turn=_state.turn+1)  # type: ignore
+    _state = _state.replace(turn=_state.turn + 1)  # type: ignore
 
     # change player
     _state = _state.replace(curr_player=(_state.curr_player + 1) % 2)  # type: ignore
@@ -191,11 +193,11 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
         _state.passed,
         # 連続でパスならば終局
         lambda: (
-            _state.replace(terminated=TRUE),
+            _state.replace(terminated=TRUE),  # type: ignore
             _get_reward(_state, _size),
         ),
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: (_state.replace(passed=True), jnp.array([0, 0])),
+        lambda: (_state.replace(passed=True), jnp.array([0, 0])),  # type: ignore
     )
 
 
@@ -228,11 +230,10 @@ def _not_pass_move(
     ) | is_illegal
 
     # コウの確認
-    kou=jax.lax.cond(
-            kou_occurred & state.agehama[_my_color(state)] - agehama_before
-            == 1,
-            lambda: state.kou,
-            lambda: jnp.int32(-1),
+    kou = jax.lax.cond(
+        kou_occurred & state.agehama[_my_color(state)] - agehama_before == 1,
+        lambda: state.kou,
+        lambda: jnp.int32(-1),
     )
 
     state = state.replace(kou=kou)
@@ -266,7 +267,8 @@ def _check_around_xy(i, state_and_xy):
                         _my_color(state),
                         state.ren_id_board[_my_color(state), xy],
                         adj_xy,
-                    ].set(1)),
+                    ].set(1)
+                ),
             ),
         ),
     )
@@ -292,21 +294,21 @@ def _illegal_move(
     _state: GoState,
 ) -> Tuple[GoState, jnp.ndarray]:
     r: jnp.ndarray = jnp.array([1, 1])  # type:ignore
-    return _state.replace(terminated=TRUE), r.at[_state.turn % 2].set(-1)
+    return _state.replace(terminated=TRUE), r.at[_state.turn % 2].set(-1)  # type: ignore
 
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
     available_ren_id = _state.available_ren_id[_my_color(_state)]
     next_ren_id = jnp.argmax(available_ren_id)
     available_ren_id = available_ren_id.at[next_ren_id].set(False)
-    return _state.replace(
+    return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(
             next_ren_id
         ),
         available_ren_id=_state.available_ren_id.at[_my_color(_state)].set(
             available_ren_id
         ),
-    )  # type:ignore
+    )
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
