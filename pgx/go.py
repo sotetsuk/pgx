@@ -13,6 +13,9 @@ POINT_CHAR = "+"
 
 NSEW = jnp.array([[-1, 0], [1, 0], [0, 1], [0, -1]], dtype=jnp.int32)
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
+
 
 @struct.dataclass
 class GoState:
@@ -155,42 +158,12 @@ def step(
     _state, reward = _update_state_wo_legal_action(state, action, size)
 
     # add legal actions
-    _state = GoState(  # type:ignore
-        size=_state.size,
-        ren_id_board=_state.ren_id_board,
-        available_ren_id=_state.available_ren_id,
-        liberty=_state.liberty,
-        adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=legal_actions(_state, size),
-        game_log=_state.game_log,
-        turn=_state.turn,
-        curr_player=_state.curr_player,
-        agehama=_state.agehama,
-        passed=_state.passed,
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=_state.terminated,
-    )
+    _state = _state.replace(legal_action_mask=legal_actions(_state, size))  # type:ignore
 
     # update log
     new_log = jnp.roll(_state.game_log, size * size)
     new_log = new_log.at[0].set(get_board(_state))
-    _state = GoState(  # type:ignore
-        size=_state.size,
-        ren_id_board=_state.ren_id_board,
-        available_ren_id=_state.available_ren_id,
-        liberty=_state.liberty,
-        adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        game_log=new_log,
-        turn=_state.turn,
-        curr_player=_state.curr_player,
-        agehama=_state.agehama,
-        passed=_state.passed,
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=_state.terminated,
-    )
+    _state = _state.replace(game_log=new_log)  # type:ignore
 
     return (_state.curr_player, _state, reward)
 
@@ -205,10 +178,10 @@ def _update_state_wo_legal_action(
     )
 
     # increase turn
-    _state = _increase_turn(_state)
+    _state = _state.replace(turn=_state.turn+1)  # type: ignore
 
     # change player
-    _state = _change_player(_state)
+    _state = _state.replace(curr_player=(_state.curr_player + 1) % 2)  # type: ignore
 
     return _state, _reward
 
@@ -218,94 +191,18 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
         _state.passed,
         # 連続でパスならば終局
         lambda: (
-            _update_terminated(_state),
+            _state.replace(terminated=TRUE),
             _get_reward(_state, _size),
         ),
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: (_set_pass(_state, True), jnp.array([0, 0])),
-    )
-
-
-def _increase_turn(_state: GoState) -> GoState:
-    return GoState(  # type:ignore
-        size=_state.size,
-        ren_id_board=_state.ren_id_board,
-        available_ren_id=_state.available_ren_id,
-        liberty=_state.liberty,
-        adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        game_log=_state.game_log,
-        turn=_state.turn + 1,
-        curr_player=_state.curr_player,
-        agehama=_state.agehama,
-        passed=_state.passed,
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=_state.terminated,
-    )
-
-
-def _change_player(_state: GoState) -> GoState:
-    return GoState(  # type:ignore
-        size=_state.size,
-        ren_id_board=_state.ren_id_board,
-        available_ren_id=_state.available_ren_id,
-        liberty=_state.liberty,
-        adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        game_log=_state.game_log,
-        turn=_state.turn,
-        curr_player=(_state.curr_player + 1) % 2,
-        agehama=_state.agehama,
-        passed=_state.passed,
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=_state.terminated,
-    )
-
-
-def _set_pass(_state: GoState, _pass: bool) -> GoState:
-    return GoState(  # type:ignore
-        size=_state.size,
-        ren_id_board=_state.ren_id_board,
-        available_ren_id=_state.available_ren_id,
-        liberty=_state.liberty,
-        adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        game_log=_state.game_log,
-        turn=_state.turn,
-        curr_player=_state.curr_player,
-        agehama=_state.agehama,
-        passed=_pass,  # type:ignore
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=_state.terminated,
-    )
-
-
-def _update_terminated(_state: GoState) -> GoState:
-    return GoState(  # type:ignore
-        size=_state.size,
-        ren_id_board=_state.ren_id_board,
-        available_ren_id=_state.available_ren_id,
-        liberty=_state.liberty,
-        adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        game_log=_state.game_log,
-        turn=_state.turn,
-        curr_player=jnp.int32(-1),  # type:ignore
-        agehama=_state.agehama,
-        passed=_state.passed,
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=jnp.bool_(True),  # type:ignore
+        lambda: (_state.replace(passed=True), jnp.array([0, 0])),
     )
 
 
 def _not_pass_move(
     _state: GoState, _action: int
 ) -> Tuple[GoState, jnp.ndarray]:
-    state = _set_pass(_state, False)
+    state = _state.replace(passed=False)  # type: ignore
     xy = _action
     agehama_before = state.agehama[_my_color(state)]
     is_illegal = _is_illegal_move(state, xy)  # 既に他の石が置かれている or コウ
@@ -331,27 +228,14 @@ def _not_pass_move(
     ) | is_illegal
 
     # コウの確認
-    state = GoState(  # type:ignore
-        size=state.size,
-        ren_id_board=state.ren_id_board,
-        available_ren_id=state.available_ren_id,
-        liberty=state.liberty,
-        adj_ren_id=state.adj_ren_id,
-        legal_action_mask=state.legal_action_mask,
-        game_log=state.game_log,
-        turn=state.turn,
-        curr_player=state.curr_player,
-        agehama=state.agehama,
-        passed=state.passed,
-        kou=jax.lax.cond(
+    kou=jax.lax.cond(
             kou_occurred & state.agehama[_my_color(state)] - agehama_before
             == 1,
             lambda: state.kou,
             lambda: jnp.int32(-1),
-        ),
-        komi=state.komi,
-        terminated=state.terminated,
     )
+
+    state = state.replace(kou=kou)
 
     return jax.lax.cond(
         is_illegal,
@@ -377,26 +261,12 @@ def _check_around_xy(i, state_and_xy):
             lambda: jax.lax.cond(
                 state.ren_id_board[_opponent_color(state), adj_xy] != -1,
                 lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
-                lambda: GoState(  # type:ignore
-                    size=state.size,
-                    ren_id_board=state.ren_id_board,
-                    available_ren_id=state.available_ren_id,
+                lambda: state.replace(  # type:ignore
                     liberty=state.liberty.at[
                         _my_color(state),
                         state.ren_id_board[_my_color(state), xy],
                         adj_xy,
-                    ].set(1),
-                    adj_ren_id=state.adj_ren_id,
-                    legal_action_mask=state.legal_action_mask,
-                    game_log=state.game_log,
-                    turn=state.turn,
-                    curr_player=state.curr_player,
-                    agehama=state.agehama,
-                    passed=state.passed,
-                    kou=state.kou,
-                    komi=state.komi,
-                    terminated=state.terminated,
-                ),
+                    ].set(1)),
             ),
         ),
     )
@@ -422,33 +292,21 @@ def _illegal_move(
     _state: GoState,
 ) -> Tuple[GoState, jnp.ndarray]:
     r: jnp.ndarray = jnp.array([1, 1])  # type:ignore
-    return _update_terminated(_state), r.at[_state.turn % 2].set(-1)
+    return _state.replace(terminated=TRUE), r.at[_state.turn % 2].set(-1)
 
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
     available_ren_id = _state.available_ren_id[_my_color(_state)]
     next_ren_id = jnp.argmax(available_ren_id)
     available_ren_id = available_ren_id.at[next_ren_id].set(False)
-    return GoState(  # type:ignore
-        size=_state.size,
+    return _state.replace(
         ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(
             next_ren_id
         ),
         available_ren_id=_state.available_ren_id.at[_my_color(_state)].set(
             available_ren_id
         ),
-        liberty=_state.liberty,
-        adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        game_log=_state.game_log,
-        turn=_state.turn,
-        curr_player=_state.curr_player,
-        agehama=_state.agehama,
-        passed=_state.passed,
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=_state.terminated,
-    )
+    )  # type:ignore
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
@@ -490,8 +348,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     return jax.lax.cond(
         new_id == adj_ren_id,
         lambda: _state,
-        lambda: GoState(  # type:ignore
-            size=_state.size,
+        lambda: _state.replace(  # type:ignore
             ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
                 ren_id_board
             ),
@@ -503,15 +360,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
             .set(_adj_ren_id)
             .at[_opponent_color(_state)]
             .set(_oppo_adj_ren_id),
-            legal_action_mask=_state.legal_action_mask,
-            game_log=_state.game_log,
-            turn=_state.turn,
-            curr_player=_state.curr_player,
-            agehama=_state.agehama,
-            passed=_state.passed,
-            kou=_state.kou,
-            komi=_state.komi,
-            terminated=_state.terminated,
         ),
     )
 
@@ -546,21 +394,9 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
         .set(True)
     )
 
-    state = GoState(  # type:ignore
-        size=_state.size,
-        ren_id_board=_state.ren_id_board,
-        available_ren_id=_state.available_ren_id,
+    state = _state.replace(  # type:ignore
         liberty=liberty,
         adj_ren_id=adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        game_log=_state.game_log,
-        turn=_state.turn,
-        curr_player=_state.curr_player,
-        agehama=_state.agehama,
-        passed=_state.passed,
-        kou=_state.kou,
-        komi=_state.komi,
-        terminated=_state.terminated,
     )
 
     return jax.lax.cond(
@@ -589,8 +425,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         _opponent_color(_state), _rm_ren_id
     ].set(True)
 
-    return GoState(  # type:ignore
-        size=_state.size,
+    return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
             oppo_ren_id_board
         ),
@@ -603,14 +438,8 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         .set(False)
         .at[_my_color(_state), :, _rm_ren_id]
         .set(False),
-        legal_action_mask=_state.legal_action_mask,
-        game_log=_state.game_log,
-        turn=_state.turn,
-        curr_player=_state.curr_player,
         agehama=_state.agehama.at[_my_color(_state)].add(agehama),
-        passed=_state.passed,
         kou=jnp.int32(_rm_stone_xy),  # type:ignore
-        terminated=_state.terminated,
     )
 
 
