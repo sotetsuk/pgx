@@ -32,7 +32,9 @@ def test(func):
         jax.jit(func, static_argnums=(1,))(state, 19)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-        print(f"| `{func.__name__}` | {delta:.1f}ms |")
+        exp = jax.make_jaxpr(func, static_argnums=(1,))(state, 19)
+        n_line = len(str(exp).split('\n'))
+        print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
         return
 
     try:
@@ -46,17 +48,23 @@ def test(func):
             jax.jit(func, static_argnums=(1,))(state, 0)
             time_end = time.perf_counter()
             delta = (time_end - time_sta) * 1000
+            exp = jax.make_jaxpr(func, static_argnums=(1,))(state, 0)
+            n_line = len(str(exp).split('\n'))
         except ZeroDivisionError:
             time_sta = time.perf_counter()
             jax.jit(func, static_argnums=(1,))(state, 19)
             time_end = time.perf_counter()
             delta = (time_end - time_sta) * 1000
+            exp = jax.make_jaxpr(func, static_argnums=(1,))(state, 19)
+            n_line = len(str(exp).split('\n'))
         except TypeError:
             time_sta = time.perf_counter()
             jax.jit(func, static_argnums=(2,))(state, 0, 19)
             time_end = time.perf_counter()
             delta = (time_end - time_sta) * 1000
-    print(f"| `{func.__name__}` | {delta:.1f}ms |")
+            exp = jax.make_jaxpr(func, static_argnums=(2,))(state, 0, 19)
+            n_line = len(str(exp).split('\n'))
+    print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
 
 
 func_name = sys.argv[1]
