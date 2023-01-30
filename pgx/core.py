@@ -1,8 +1,8 @@
 import abc
 from typing import Literal
 
-import jax
 import jax.numpy as jnp
+import jax.random
 from flax.struct import dataclass
 
 EnvId = Literal[

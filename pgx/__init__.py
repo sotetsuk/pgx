@@ -5,10 +5,10 @@ __all__ = ["State", "EnvId"]
 
 def make(env_id: EnvId):
     if env_id == "tic_tac_toe/v0":
-        import tic_tac_toe
+        from pgx.tic_tac_toe import TicTacToe
 
-        return tic_tac_toe.TicTacToe()
+        return TicTacToe()
     elif env_id == "go/v0":
-        import go
+        from pgx.go import Go
 
-        return go.Go()
+        return Go()
