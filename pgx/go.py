@@ -247,34 +247,36 @@ def _not_pass_move(
 
 
 def _check_around_xy(i, state, xy):
-    adj_pos = (
-        jnp.array([xy // state.size, xy % state.size], dtype=jnp.int32)
-        + NSEW[i]  # type:ignore
-    )
-    adj_xy = adj_pos[0] * state.size + adj_pos[1]
-    is_off = _is_off_board(adj_pos, state.size)
-    is_my_ren = state.ren_id_board[_my_color(state), adj_xy] != -1
-    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
+    _adj_pos = (
+            jnp.array([xy // state.size, xy % state.size], dtype=jnp.int32)  # type:ignore
+    ) + NSEW
+    adj_xys = _adj_pos[:, 0] * state.size + _adj_pos[:, 1]
+    # adj_pos = _adj_pos[i]
+    # adj_xy = adj_xys[i]
+    is_off = jax.vmap(partial(_is_off_board, size=state.size))(_adj_pos)
+    is_my_ren = state.ren_id_board[_my_color(state), adj_xys] != -1
+    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xys] != -1
+
     replaced_state = state.replace(
         liberty=state.liberty.at[
             _my_color(state),
             state.ren_id_board[_my_color(state), xy],
-            adj_xy,
+            adj_xys[i],
         ].set(1)
     )  # type:ignore
     state = jax.lax.cond(
-        ((~is_off) & (~is_my_ren) & (~is_opp_ren)),
+        ((~is_off[i]) & (~is_my_ren[i]) & (~is_opp_ren[i])),
         lambda: replaced_state,
         lambda: state,
     )
     state = jax.lax.cond(
-        ((~is_off) & (~is_my_ren) & is_opp_ren),
-        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
+        ((~is_off[i]) & (~is_my_ren[i]) & is_opp_ren[i]),
+        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xys[i]),
         lambda: state,
     )
     state = jax.lax.cond(
-        ((~is_off) & is_my_ren),
-        lambda: _merge_ren(state, xy, adj_xy),
+        ((~is_off[i]) & is_my_ren[i]),
+        lambda: _merge_ren(state, xy, adj_xys[i]),
         lambda: state,
     )
     return state
