@@ -10,7 +10,6 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -48,7 +47,7 @@ class TicTacToe(core.Env):
 def init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     curr_player = jnp.int8(jax.random.bernoulli(subkey))
-    return State(rng=rng, curr_player=curr_player)  # type:ignore
+    return State(curr_player=curr_player)  # type:ignore
 
 
 def step(state: State, action: jnp.ndarray) -> State:
@@ -72,9 +71,7 @@ def step(state: State, action: jnp.ndarray) -> State:
         lambda: jnp.zeros_like(legal_action_mask),
         lambda: legal_action_mask,
     )
-    rng, _ = jax.random.split(state.rng)
     return State(
-        rng=rng,
         curr_player=curr_player,
         legal_action_mask=legal_action_mask,
         reward=reward,
