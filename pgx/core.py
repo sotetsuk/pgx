@@ -30,9 +30,17 @@ class Env(abc.ABC):
     def init(self, rng: jax.random.KeyArray) -> State:
         ...
 
-    @abc.abstractmethod
     def step(self, state: State, action: jnp.ndarray) -> State:
+        # TODO: curr_player周りの挙動
         # TODO: legal_action_mask周りの挙動
+        return jax.lax.cond(
+            state.terminated,
+            lambda: self._step_if_terminated(state, action),
+            lambda: self._step(state, action),
+        )
+
+    @abc.abstractmethod
+    def _step(self, state, action) -> State:
         ...
 
     @abc.abstractmethod
@@ -54,3 +62,12 @@ class Env(abc.ABC):
     def num_actions(self) -> int:
         state = self.init(jax.random.PRNGKey(0))
         return state.legal_action_mask.shape[0]
+
+    def _step_if_terminated(self, state: State, action: jnp.ndarray) -> State:
+        return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
+
+    def _step_with_illegal_action(
+        self, state: State, action: jnp.ndarray
+    ) -> State:
+        # TODO: implement me
+        return state

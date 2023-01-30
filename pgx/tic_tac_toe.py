@@ -28,17 +28,16 @@ class TicTacToe(core.Env):
     def __init__(self):
         super().__init__()
 
-    @classmethod
-    def init(cls, rng: jax.random.KeyArray) -> State:
+    def init(self, rng: jax.random.KeyArray) -> State:
         return init(rng)
 
-    @classmethod
-    def step(cls, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return step(state, action)
 
-    @classmethod
-    def observe(cls, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)
 
@@ -74,24 +73,15 @@ def step(state: State, action: jnp.ndarray) -> State:
         lambda: legal_action_mask,
     )
     rng, _ = jax.random.split(state.rng)
-    state = jax.lax.cond(
-        state.terminated,
-        lambda: step_if_terminated(state),
-        lambda: State(
-            rng=rng,
-            curr_player=curr_player,
-            legal_action_mask=legal_action_mask,
-            reward=reward,
-            terminated=terminated,
-            turn=(state.turn + 1) % 2,
-            board=board,
-        ),  # type: ignore
-    )
-    return state
-
-
-def step_if_terminated(state: State):
-    return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
+    return State(
+        rng=rng,
+        curr_player=curr_player,
+        legal_action_mask=legal_action_mask,
+        reward=reward,
+        terminated=terminated,
+        turn=(state.turn + 1) % 2,
+        board=board,
+    )  # type: ignore
 
 
 def _win_check(board, turn) -> jnp.ndarray:
