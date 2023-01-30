@@ -2,15 +2,14 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
-import pgx.core
+import pgx.core as core
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(pgx.core.State):
-    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
+class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -24,10 +23,31 @@ class State(pgx.core.State):
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
+class TicTacToe(core.Env):
+    def __init__(self):
+        super().__init__()
+
+    def init(self, rng: jax.random.KeyArray) -> State:
+        return init(rng)
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        return step(state, action)
+
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return observe(state, player_id)
+
+    def num_players(self) -> int:
+        return 2
+
+
 def init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     curr_player = jnp.int8(jax.random.bernoulli(subkey))
-    return State(rng=rng, curr_player=curr_player)  # type:ignore
+    return State(curr_player=curr_player)  # type:ignore
 
 
 def step(state: State, action: jnp.ndarray) -> State:
@@ -51,25 +71,14 @@ def step(state: State, action: jnp.ndarray) -> State:
         lambda: jnp.zeros_like(legal_action_mask),
         lambda: legal_action_mask,
     )
-    rng, _ = jax.random.split(state.rng)
-    state = jax.lax.cond(
-        state.terminated,
-        lambda: step_if_terminated(state),
-        lambda: State(
-            rng=rng,
-            curr_player=curr_player,
-            legal_action_mask=legal_action_mask,
-            reward=reward,
-            terminated=terminated,
-            turn=(state.turn + 1) % 2,
-            board=board,
-        ),  # type: ignore
-    )
-    return state
-
-
-def step_if_terminated(state: State):
-    return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
+    return State(
+        curr_player=curr_player,
+        legal_action_mask=legal_action_mask,
+        reward=reward,
+        terminated=terminated,
+        turn=(state.turn + 1) % 2,
+        board=board,
+    )  # type: ignore
 
 
 def _win_check(board, turn) -> jnp.ndarray:
