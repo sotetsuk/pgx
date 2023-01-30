@@ -27,7 +27,7 @@ class Env(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def init(self, rng: jnp.ndarray) -> State:
+    def init(self, rng: jax.random.KeyArray) -> State:
         ...
 
     @abc.abstractmethod

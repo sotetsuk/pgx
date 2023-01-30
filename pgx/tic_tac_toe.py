@@ -29,19 +29,21 @@ class TicTacToe(core.Env):
         super().__init__()
 
     @classmethod
-    def init(cls, rng: jnp.ndarray) -> core.State:
+    def init(cls, rng: jax.random.KeyArray) -> core.State:
         return init(rng)
 
     @classmethod
-    def step(cls, state: State, action: jnp.ndarray) -> core.State:
+    def step(cls, state: core.State, action: jnp.ndarray) -> core.State:
+        assert isinstance(state, State)
         return step(state, action)
 
     @classmethod
-    def observe(cls, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(cls, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
+        assert isinstance(state, State)
         return observe(state, player_id)
 
 
-def init(rng: jnp.ndarray) -> State:
+def init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     curr_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(rng=rng, curr_player=curr_player)  # type:ignore
