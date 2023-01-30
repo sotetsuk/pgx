@@ -266,15 +266,21 @@ def _check_around_xy(i, state, xy):
     state = state.replace(
         liberty=state.liberty.at[ixs].set(new_liberty)
     )
+
+    # TODO: batchfy!
     state = jax.lax.cond(
         ((~is_off[i]) & (~is_my_ren[i]) & is_opp_ren[i]),
         lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xys[i]),
         lambda: state,
     )
-    state = jax.lax.cond(
-        ((~is_off[i]) & is_my_ren[i]),
-        lambda: _merge_ren(state, xy, adj_xys[i]),
-        lambda: state,
+
+    jax.lax.fori_loop(
+        0, 4,
+        lambda j, s: jax.lax.cond(
+            ((~is_off[j]) & is_my_ren[j]),
+            lambda: _merge_ren(s, xy, adj_xys[j]),
+            lambda: s),
+        state
     )
     return state
 
