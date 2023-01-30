@@ -215,6 +215,7 @@ def _not_pass_move(
     state = _set_stone(state, xy)
 
     # 周囲の連を調べる
+    # state = _check_around_xy(state, xy)
     state = jax.lax.fori_loop(
         0, 4, lambda i, s: _check_around_xy(i, s, xy), state
     )
@@ -257,17 +258,13 @@ def _check_around_xy(i, state, xy):
     is_my_ren = state.ren_id_board[_my_color(state), adj_xys] != -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xys] != -1
 
-    replaced_state = state.replace(
-        liberty=state.liberty.at[
-            _my_color(state),
-            state.ren_id_board[_my_color(state), xy],
-            adj_xys[i],
-        ].set(1)
-    )  # type:ignore
-    state = jax.lax.cond(
-        ((~is_off[i]) & (~is_my_ren[i]) & (~is_opp_ren[i])),
-        lambda: replaced_state,
-        lambda: state,
+    ixs = (_my_color(state),
+              state.ren_id_board[_my_color(state), xy],
+              adj_xys)
+    prev_liberty = state.liberty[ixs]
+    new_liberty = jnp.where((~is_off) & (~is_my_ren) & (~is_opp_ren), 1, prev_liberty)
+    state = state.replace(
+        liberty=state.liberty.at[ixs].set(new_liberty)
     )
     state = jax.lax.cond(
         ((~is_off[i]) & (~is_my_ren[i]) & is_opp_ren[i]),
