@@ -56,7 +56,7 @@ def test_step_det():
             lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
             s_next = extract_state(env, state_keys)
             s_next_pgx, _, _ = _step_det(
-                minatar2pgx(s, asterix.MinAtarAsterixState),
+                minatar2pgx(s, asterix.State),
                 a,
                 lr,
                 is_gold,
@@ -71,7 +71,7 @@ def test_step_det():
         lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
         s_next = extract_state(env, state_keys)
         s_next_pgx, _, _ = _step_det(
-            minatar2pgx(s, asterix.MinAtarAsterixState), a, lr, is_gold, slot
+            minatar2pgx(s, asterix.State), a, lr, is_gold, slot
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
@@ -96,7 +96,7 @@ def test_observe():
         done = False
         while not done:
             s = extract_state(env, state_keys)
-            s_pgx = minatar2pgx(s, asterix.MinAtarAsterixState)
+            s_pgx = minatar2pgx(s, asterix.State)
             obs_pgx = _to_obs(s_pgx)
             assert jnp.allclose(
                 env.state(),
@@ -107,7 +107,7 @@ def test_observe():
 
         # check terminal state
         s = extract_state(env, state_keys)
-        s_pgx = minatar2pgx(s, asterix.MinAtarAsterixState)
+        s_pgx = minatar2pgx(s, asterix.State)
         obs_pgx = _to_obs(s_pgx)
         assert jnp.allclose(
             env.state(),

@@ -38,7 +38,7 @@ def test_step_det():
             )
             s_next = extract_state(env, state_keys)
             s_next_pgx, _, _ = _step_det(
-                minatar2pgx(s, freeway.MinAtarFreewayState),
+                minatar2pgx(s, freeway.State),
                 a,
                 speeds,
                 directions,
@@ -55,7 +55,7 @@ def test_step_det():
         )
         s_next = extract_state(env, state_keys)
         s_next_pgx, _, _ = _step_det(
-            minatar2pgx(s, freeway.MinAtarFreewayState), a, speeds, directions
+            minatar2pgx(s, freeway.State), a, speeds, directions
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
 
@@ -83,7 +83,7 @@ def test_observe():
         done = False
         while not done:
             s = extract_state(env, state_keys)
-            s_pgx = minatar2pgx(s, freeway.MinAtarFreewayState)
+            s_pgx = minatar2pgx(s, freeway.State)
             obs_pgx = _to_obs(s_pgx)
             assert jnp.allclose(
                 env.state(),
@@ -94,7 +94,7 @@ def test_observe():
 
         # check terminal state
         s = extract_state(env, state_keys)
-        s_pgx = minatar2pgx(s, freeway.MinAtarFreewayState)
+        s_pgx = minatar2pgx(s, freeway.State)
         obs_pgx = _to_obs(s_pgx)
         assert jnp.allclose(
             env.state(),

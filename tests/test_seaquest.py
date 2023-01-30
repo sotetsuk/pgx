@@ -49,7 +49,7 @@ def test_step_det():
             r, done = env.act(a)
             enemy_lr, is_sub, enemy_y, diver_lr, diver_y = env.env.enemy_lr, env.env.is_sub, env.env.enemy_y, env.env.diver_lr, env.env.diver_y
             s_next_pgx, _, _ = _step_det(
-                minatar2pgx(s, seaquest.MinAtarSeaquestState),
+                minatar2pgx(s, seaquest.State),
                 a,
                 enemy_lr,
                 is_sub,
@@ -72,7 +72,7 @@ def test_step_det():
         r, done = env.act(a)
         enemy_lr, is_sub, enemy_y, diver_lr, diver_y = env.env.enemy_lr, env.env.is_sub, env.env.enemy_y, env.env.diver_lr, env.env.diver_y
         s_next_pgx, _, _ = _step_det(
-            minatar2pgx(s, seaquest.MinAtarSeaquestState), a,
+            minatar2pgx(s, seaquest.State), a,
             enemy_lr,
             is_sub,
             enemy_y,
@@ -96,7 +96,7 @@ def test_init_det():
         env.reset()
         s = extract_state(env, state_keys)
         s_pgx = _init_det()
-        s_pgx2 = minatar2pgx(s, seaquest.MinAtarSeaquestState)
+        s_pgx2 = minatar2pgx(s, seaquest.State)
         for field in fields(s_pgx):
             assert jnp.allclose(getattr(s_pgx, field.name), getattr(s_pgx2, field.name))
 
@@ -111,7 +111,7 @@ def test_observe():
         done = False
         while not done:
             s = extract_state(env, state_keys)
-            s_pgx = minatar2pgx(s, seaquest.MinAtarSeaquestState)
+            s_pgx = minatar2pgx(s, seaquest.State)
             obs_pgx = observe(s_pgx)
             assert jnp.allclose(
                 env.state(),
@@ -122,7 +122,7 @@ def test_observe():
 
         # check terminal state
         s = extract_state(env, state_keys)
-        s_pgx = minatar2pgx(s, seaquest.MinAtarSeaquestState)
+        s_pgx = minatar2pgx(s, seaquest.State)
         obs_pgx = observe(s_pgx)
         assert jnp.allclose(
             env.state(),

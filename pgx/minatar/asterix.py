@@ -25,7 +25,7 @@ NINE = jnp.array(9, dtype=jnp.int8)
 
 
 @struct.dataclass
-class MinAtarAsterixState:
+class State:
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int8) * INF
@@ -41,11 +41,11 @@ class MinAtarAsterixState:
 
 
 def step(
-    state: MinAtarAsterixState,
+    state: State,
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
-) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int8(action)
     rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
     # sticky action
@@ -84,21 +84,21 @@ def step(
     )
 
 
-def init(rng: jnp.ndarray) -> MinAtarAsterixState:
+def init(rng: jnp.ndarray) -> State:
     return _init_det()
 
 
-def observe(state: MinAtarAsterixState) -> jnp.ndarray:
+def observe(state: State) -> jnp.ndarray:
     return _to_obs(state)
 
 
 def _step_det(
-    state: MinAtarAsterixState,
+    state: State,
     action: jnp.ndarray,
     lr: bool,
     is_gold: bool,
     slot: int,
-) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
         lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int16), True),  # type: ignore
@@ -107,12 +107,12 @@ def _step_det(
 
 
 def _step_det_at_non_terminal(
-    state: MinAtarAsterixState,
+    state: State,
     action: jnp.ndarray,
     lr: bool,
     is_gold: bool,
     slot: int,
-) -> Tuple[MinAtarAsterixState, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     player_x = state.player_x
     player_y = state.player_y
     entities = state.entities
@@ -187,7 +187,7 @@ def _step_det_at_non_terminal(
         lambda: (spawn_speed, move_speed, ramp_timer, ramp_index),
     )
 
-    next_state = MinAtarAsterixState(
+    next_state = State(
         player_x=player_x,
         player_y=player_y,
         entities=entities,
@@ -295,11 +295,11 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
-def _init_det() -> MinAtarAsterixState:
-    return MinAtarAsterixState()
+def _init_det() -> State:
+    return State()
 
 
-def _to_obs(state: MinAtarAsterixState) -> jnp.ndarray:
+def _to_obs(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.player_y, state.player_x, 0].set(True)
     obs = jax.lax.fori_loop(

@@ -27,7 +27,7 @@ NINE = jnp.array(9, dtype=jnp.int8)
 
 
 @struct.dataclass
-class MinAtarBreakoutState:
+class State:
     ball_y: jnp.ndarray = THREE
     ball_x: jnp.ndarray = ZERO
     ball_dir: jnp.ndarray = TWO
@@ -43,11 +43,11 @@ class MinAtarBreakoutState:
 
 
 def step(
-    state: MinAtarBreakoutState,
+    state: State,
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
-) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int8(action)
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
@@ -57,18 +57,18 @@ def step(
     return _step_det(state, action)
 
 
-def init(rng: jnp.ndarray) -> MinAtarBreakoutState:
+def init(rng: jnp.ndarray) -> State:
     ball_start = jax.random.choice(rng, 2)
     return _init_det(ball_start=ball_start)
 
 
-def observe(state: MinAtarBreakoutState) -> jnp.ndarray:
+def observe(state: State) -> jnp.ndarray:
     return _to_obs(state)
 
 
 def _step_det(
-    state: MinAtarBreakoutState, action: jnp.ndarray
-) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
+    state: State, action: jnp.ndarray
+) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
         lambda: (
@@ -81,8 +81,8 @@ def _step_det(
 
 
 def _step_det_at_non_terminal(
-    state: MinAtarBreakoutState, action: jnp.ndarray
-) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
+    state: State, action: jnp.ndarray
+) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     ball_y = state.ball_y
     ball_x = state.ball_x
     ball_dir = state.ball_dir
@@ -134,7 +134,7 @@ def _step_det_at_non_terminal(
         ~strike_toggle, lambda: jnp.zeros_like(strike), lambda: strike
     )
 
-    state = MinAtarBreakoutState(
+    state = State(
         ball_y=new_y,
         ball_x=new_x,
         ball_dir=ball_dir,
@@ -218,18 +218,18 @@ def update_by_bottom(
     return brick_map, new_y, ball_dir, terminal
 
 
-def _init_det(ball_start: jnp.ndarray) -> MinAtarBreakoutState:
+def _init_det(ball_start: jnp.ndarray) -> State:
     ball_x, ball_dir = jax.lax.switch(
         ball_start,
         [lambda: (ZERO, TWO), lambda: (NINE, THREE)],
     )
     last_x = ball_x
-    return MinAtarBreakoutState(
+    return State(
         ball_x=ball_x, ball_dir=ball_dir, last_x=last_x
     )  # type: ignore
 
 
-def _to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
+def _to_obs(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.ball_y, state.ball_x, 1].set(True)
     obs = obs.at[9, state.pos, 0].set(True)

@@ -31,7 +31,7 @@ FALSE: jnp.ndarray = jnp.bool_(False)
 
 
 @struct.dataclass
-class MinAtarSeaquestState:
+class State:
     oxygen: jnp.ndarray = MAX_OXYGEN
     diver_count: jnp.ndarray = ZERO
     sub_x: jnp.ndarray = jnp.int8(5)
@@ -64,11 +64,11 @@ class MinAtarSeaquestState:
 
 
 def step(
-    state: MinAtarSeaquestState,
+    state: State,
     action: jnp.ndarray,
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
-) -> Tuple[MinAtarSeaquestState, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     rngs = jax.random.split(rng, 6)
     action = jnp.int8(action)
     # sticky action
@@ -90,7 +90,7 @@ def step(
 
 
 def _step_det(
-    state: MinAtarSeaquestState,
+    state: State,
     action: jnp.ndarray,
     enemy_lr,
     is_sub,
@@ -112,7 +112,7 @@ def _step_det(
 
 
 def _step_det_at_non_terminal(
-    state: MinAtarSeaquestState,
+    state: State,
     action: jnp.ndarray,
     enemy_lr,
     is_sub,
@@ -226,7 +226,7 @@ def _step_det_at_non_terminal(
     )
     r += _r
 
-    state = MinAtarSeaquestState(
+    state = State(
         oxygen=oxygen,
         diver_count=diver_count,
         sub_x=sub_x,
@@ -664,11 +664,11 @@ def _spawn_diver(divers, diver_lr, diver_y):
     return divers
 
 
-def init(rng: jnp.ndarray) -> MinAtarSeaquestState:
+def init(rng: jnp.ndarray) -> State:
     return _init_det()
 
 
-def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
+def observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
     obs = obs.at[state.sub_y, state.sub_x, 0].set(1)
     back_x = lax.cond(
@@ -783,5 +783,5 @@ def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
     return obs
 
 
-def _init_det() -> MinAtarSeaquestState:
-    return MinAtarSeaquestState()
+def _init_det() -> State:
+    return State()
