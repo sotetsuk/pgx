@@ -477,7 +477,11 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
 
     _adj_r = _state.adj_ren_id[_opponent_color(_state)]
-    _oppo_adj_ren_id = jnp.where(_adj_r[large_id], _adj_r.at[large_id].set(False).at[small_id].set(True), _adj_r)
+    _oppo_adj_ren_id = jnp.where(
+        _adj_r[large_id],
+        _adj_r.at[large_id].set(False).at[small_id].set(True),
+        _adj_r,
+    )
 
     _adj_ren_id = _adj_ren_id.at[small_id].set(
         jnp.logical_or(_adj_ren_id[small_id], _adj_ren_id[large_id])
