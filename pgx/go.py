@@ -336,12 +336,13 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
 
-    _oppo_adj_ren_id = jax.lax.map(
-        lambda _a: jnp.where(
-            _a[large_id], _a.at[large_id].set(False).at[small_id].set(True), _a
-        ),
-        _state.adj_ren_id.at[_opponent_color(_state)].get(),
+    _adj_r = _state.adj_ren_id[_opponent_color(_state)]
+    _oppo_adj_ren_id = jnp.where(
+        _adj_r[large_id],
+        _adj_r.at[large_id].set(False).at[small_id].set(True),
+        _adj_r,
     )
+
     _adj_ren_id = _adj_ren_id.at[small_id].set(
         jnp.logical_or(_adj_ren_id[small_id], _adj_ren_id[large_id])
     )
@@ -419,10 +420,10 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     oppo_ren_id_board = jnp.where(
         surrounded_stones, -1, _state.ren_id_board[_opponent_color(_state)]
     )
-    liberty = jax.lax.map(
-        lambda l: jnp.where((l > 0) & surrounded_stones, 1, l),
-        _state.liberty[_my_color(_state)],
-    )
+
+    my_lib = _state.liberty[_my_color(_state)]
+    liberty = jnp.where((my_lib > 0) & surrounded_stones, 1, my_lib)
+
     available_ren_id = _state.available_ren_id.at[
         _opponent_color(_state), _rm_ren_id
     ].set(True)
