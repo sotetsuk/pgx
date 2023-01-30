@@ -25,7 +25,6 @@ class State(core.State):
 
 
 class TicTacToe(core.Env):
-
     def __init__(self):
         super().__init__()
 

@@ -1,6 +1,6 @@
+import abc
 from typing import Literal
 
-import abc
 import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
@@ -23,7 +23,6 @@ class State:
 
 
 class Env(abc.ABC):
-
     def __init__(self):
         ...
 

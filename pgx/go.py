@@ -66,7 +66,6 @@ class State(core.State):
 
 
 class Go(core.Env):
-
     def __init__(self, size: int = 5):
         super().__init__()
         self.size: int = size
@@ -77,7 +76,9 @@ class Go(core.Env):
     def step(self, state: core.State, action: jnp.ndarray) -> core.State:
         return step(state, action, self.size)[1]
 
-    def observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         return observe(state, player_id)
 
 
@@ -148,9 +149,7 @@ def _get_alphazero_features(state: State, player_id, observe_all):
     return jnp.vstack([log, color])
 
 
-def init(
-    rng: jnp.ndarray, size: int = 5
-) -> Tuple[jnp.ndarray, State]:
+def init(rng: jnp.ndarray, size: int = 5) -> Tuple[jnp.ndarray, State]:
     curr_player = jnp.int8(jax.random.bernoulli(rng))
     return curr_player, State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
@@ -320,9 +319,7 @@ def _update_terminated(_state: State) -> State:
     )
 
 
-def _not_pass_move(
-    _state: State, _action: int
-) -> Tuple[State, jnp.ndarray]:
+def _not_pass_move(_state: State, _action: int) -> Tuple[State, jnp.ndarray]:
     state = _set_pass(_state, False)
     xy = _action
     agehama_before = state.agehama[_my_color(state)]
