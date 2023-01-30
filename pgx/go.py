@@ -315,9 +315,7 @@ def _not_pass_move(
     state = _set_stone(state, xy)
 
     # 周囲の連を調べる
-    state_and_xy = (state, xy)
-    state_and_xy = jax.lax.fori_loop(0, 4, _check_around_xy, state_and_xy)
-    state = state_and_xy[0]
+    state = jax.lax.fori_loop(0, 4, lambda i, s: _check_around_xy(i, s, xy), state)
 
     # 自殺手
     is_illegal = (
@@ -360,9 +358,7 @@ def _not_pass_move(
     )
 
 
-def _check_around_xy(i, state_and_xy):
-    state = state_and_xy[0]
-    xy = state_and_xy[1]
+def _check_around_xy(i, state, xy):
     adj_pos = (
         jnp.array([xy // state.size, xy % state.size], dtype=jnp.int32)
         + NSEW[i]  # type:ignore
@@ -392,7 +388,7 @@ def _check_around_xy(i, state_and_xy):
         lambda: _merge_ren(state, xy, adj_xy),
         lambda: state
     )
-    return (state, xy)
+    return state
 
 
 def _is_illegal_move(_state: GoState, _xy):
