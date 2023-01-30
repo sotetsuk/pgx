@@ -41,7 +41,6 @@ class MinAtarSpaceInvadersState:
     last_action: jnp.ndarray = jnp.int8(0)
 
 
-@jax.jit
 def step(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
@@ -57,12 +56,10 @@ def step(
     return _step_det(state, action)
 
 
-@jax.jit
 def init(rng: jnp.ndarray) -> MinAtarSpaceInvadersState:
     return _init_det()
 
 
-@jax.jit
 def observe(state: MinAtarSpaceInvadersState) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
     obs = obs.at[9, state.pos, 0].set(1)
@@ -86,7 +83,6 @@ def observe(state: MinAtarSpaceInvadersState) -> jnp.ndarray:
     return obs
 
 
-@jax.jit
 def _step_det(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
@@ -98,7 +94,6 @@ def _step_det(
     )
 
 
-@jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarSpaceInvadersState,
     action: jnp.ndarray,
@@ -201,7 +196,6 @@ def _step_det_at_non_terminal(
     )
 
 
-@jax.jit
 def _resole_action(pos, f_bullet_map, shot_timer, action):
     f_bullet_map = lax.cond(
         (action == 5) & (shot_timer == 0),
@@ -223,7 +217,6 @@ def _resole_action(pos, f_bullet_map, shot_timer, action):
 
 
 # TODO: avoid loop
-@jax.jit
 def _nearest_alien(pos, alien_map):
     search_order = jnp.argsort(jnp.abs(jnp.arange(10, dtype=jnp.int8) - pos))
     ix = lax.while_loop(
@@ -236,7 +229,6 @@ def _nearest_alien(pos, alien_map):
     return (j, ix)
 
 
-@jax.jit
 def _update_alien_by_move_timer(
     alien_map, alien_dir, enemy_move_interval, pos, terminal
 ):
@@ -263,6 +255,5 @@ def _update_alien_by_move_timer(
     return alien_move_timer, alien_map, alien_dir, terminal
 
 
-@jax.jit
 def _init_det() -> MinAtarSpaceInvadersState:
     return MinAtarSpaceInvadersState()

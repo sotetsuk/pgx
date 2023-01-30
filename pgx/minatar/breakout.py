@@ -42,7 +42,6 @@ class MinAtarBreakoutState:
     last_action: jnp.ndarray = ZERO
 
 
-@jax.jit
 def step(
     state: MinAtarBreakoutState,
     action: jnp.ndarray,
@@ -58,18 +57,15 @@ def step(
     return _step_det(state, action)
 
 
-@jax.jit
 def init(rng: jnp.ndarray) -> MinAtarBreakoutState:
     ball_start = jax.random.choice(rng, 2)
     return _init_det(ball_start=ball_start)
 
 
-@jax.jit
 def observe(state: MinAtarBreakoutState) -> jnp.ndarray:
     return _to_obs(state)
 
 
-@jax.jit
 def _step_det(
     state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
@@ -84,7 +80,6 @@ def _step_det(
     )
 
 
-@jax.jit
 def _step_det_at_non_terminal(
     state: MinAtarBreakoutState, action: jnp.ndarray
 ) -> Tuple[MinAtarBreakoutState, jnp.ndarray, jnp.ndarray]:
@@ -154,7 +149,6 @@ def _step_det_at_non_terminal(
     return state, r, terminal
 
 
-@jax.jit
 def apply_action(pos, action):
     pos = jax.lax.cond(
         action == 1, lambda: jax.lax.max(ZERO, pos - ONE), lambda: pos
@@ -165,7 +159,6 @@ def apply_action(pos, action):
     return pos
 
 
-@jax.jit
 def update_ball_pos(ball_x, ball_y, ball_dir):
     return jax.lax.switch(
         ball_dir,
@@ -178,7 +171,6 @@ def update_ball_pos(ball_x, ball_y, ball_dir):
     )
 
 
-@jax.jit
 def update_ball_pos_x(new_x, ball_dir):
     new_x = jax.lax.max(ZERO, new_x)
     new_x = jax.lax.min(NINE, new_x)
@@ -186,13 +178,11 @@ def update_ball_pos_x(new_x, ball_dir):
     return new_x, ball_dir
 
 
-@jax.jit
 def update_ball_pos_y(ball_dir):
     ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir]
     return ZERO, ball_dir
 
 
-@jax.jit
 def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir, strike):
     brick_map = brick_map.at[new_y, new_x].set(False)
     new_y = last_y
@@ -200,7 +190,6 @@ def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir, strike):
     return r + 1, jnp.ones_like(strike), brick_map, new_y, ball_dir
 
 
-@jax.jit
 def update_by_bottom(
     brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
 ):
@@ -229,7 +218,6 @@ def update_by_bottom(
     return brick_map, new_y, ball_dir, terminal
 
 
-@jax.jit
 def _init_det(ball_start: jnp.ndarray) -> MinAtarBreakoutState:
     ball_x, ball_dir = jax.lax.switch(
         ball_start,
@@ -241,7 +229,6 @@ def _init_det(ball_start: jnp.ndarray) -> MinAtarBreakoutState:
     )  # type: ignore
 
 
-@jax.jit
 def _to_obs(state: MinAtarBreakoutState) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.ball_y, state.ball_x, 1].set(True)

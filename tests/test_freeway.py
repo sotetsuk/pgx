@@ -1,4 +1,5 @@
 import random
+import jax
 
 from minatar import Environment
 
@@ -15,6 +16,9 @@ state_keys = [
     "last_action",
 ]
 
+_step_det = jax.jit(freeway._step_det)
+_init_det = jax.jit(freeway._init_det)
+_to_obs = jax.jit(freeway._to_obs)
 
 def test_step_det():
     env = Environment("freeway", sticky_action_prob=0.0)
@@ -33,7 +37,7 @@ def test_step_det():
                 env.env.directions
             )
             s_next = extract_state(env, state_keys)
-            s_next_pgx, _, _ = freeway._step_det(
+            s_next_pgx, _, _ = _step_det(
                 minatar2pgx(s, freeway.MinAtarFreewayState),
                 a,
                 speeds,
@@ -50,7 +54,7 @@ def test_step_det():
             env.env.directions
         )
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = freeway._step_det(
+        s_next_pgx, _, _ = _step_det(
             minatar2pgx(s, freeway.MinAtarFreewayState), a, speeds, directions
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
@@ -65,7 +69,7 @@ def test_init_det():
         # extract random variables
         speeds = jnp.array(env.env.speeds)
         directions = jnp.array(env.env.directions)
-        s_pgx = freeway._init_det(speeds, directions)
+        s_pgx = _init_det(speeds, directions)
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
@@ -80,7 +84,7 @@ def test_observe():
         while not done:
             s = extract_state(env, state_keys)
             s_pgx = minatar2pgx(s, freeway.MinAtarFreewayState)
-            obs_pgx = freeway._to_obs(s_pgx)
+            obs_pgx = _to_obs(s_pgx)
             assert jnp.allclose(
                 env.state(),
                 obs_pgx,
@@ -91,7 +95,7 @@ def test_observe():
         # check terminal state
         s = extract_state(env, state_keys)
         s_pgx = minatar2pgx(s, freeway.MinAtarFreewayState)
-        obs_pgx = freeway._to_obs(s_pgx)
+        obs_pgx = _to_obs(s_pgx)
         assert jnp.allclose(
             env.state(),
             obs_pgx,

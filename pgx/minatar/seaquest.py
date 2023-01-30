@@ -63,7 +63,6 @@ class MinAtarSeaquestState:
     last_action: jnp.ndarray = ZERO
 
 
-@jax.jit
 def step(
     state: MinAtarSeaquestState,
     action: jnp.ndarray,
@@ -90,7 +89,6 @@ def step(
     )
 
 
-@jax.jit
 def _step_det(
     state: MinAtarSeaquestState,
     action: jnp.ndarray,
@@ -666,12 +664,10 @@ def _spawn_diver(divers, diver_lr, diver_y):
     return divers
 
 
-@jax.jit
 def init(rng: jnp.ndarray) -> MinAtarSeaquestState:
     return _init_det()
 
 
-@jax.jit
 def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
     obs = obs.at[state.sub_y, state.sub_x, 0].set(1)
@@ -787,6 +783,5 @@ def observe(state: MinAtarSeaquestState) -> jnp.ndarray:
     return obs
 
 
-@jax.jit
 def _init_det() -> MinAtarSeaquestState:
     return MinAtarSeaquestState()
