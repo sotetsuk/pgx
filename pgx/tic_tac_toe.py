@@ -42,6 +42,9 @@ class TicTacToe(core.Env):
         assert isinstance(state, State)
         return observe(state, player_id)
 
+    def num_players(self) -> int:
+        return 2
+
 
 def init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)

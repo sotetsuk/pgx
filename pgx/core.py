@@ -1,5 +1,5 @@
 import abc
-from typing import Literal
+from typing import Literal, Tuple
 
 import jax.numpy as jnp
 import jax.random
@@ -32,8 +32,25 @@ class Env(abc.ABC):
 
     @abc.abstractmethod
     def step(self, state: State, action: jnp.ndarray) -> State:
+        # TODO: legal_action_mask周りの挙動
         ...
 
     @abc.abstractmethod
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         ...
+
+    @property
+    @abc.abstractmethod
+    def num_players(self):
+        ...
+
+    @property
+    def observation_shape(self) -> Tuple[int, ...]:
+        state = self.init(jax.random.PRNGKey(0))
+        obs = self.observe(state, state.curr_player)
+        return obs.shape
+
+    @property
+    def num_actions(self) -> int:
+        state = self.init(jax.random.PRNGKey(0))
+        return state.legal_action_mask.shape[0]
