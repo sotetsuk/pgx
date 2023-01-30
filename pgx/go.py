@@ -368,37 +368,29 @@ def _check_around_xy(i, state_and_xy):
         + NSEW[i]  # type:ignore
     )
     adj_xy = adj_pos[0] * state.size + adj_pos[1]
-    state = jax.lax.cond(
-        _is_off_board(adj_pos, state.size),
-        lambda: state,  # 盤外
-        lambda: jax.lax.cond(
-            state.ren_id_board[_my_color(state), adj_xy] != -1,
-            lambda: _merge_ren(state, xy, adj_xy),
-            lambda: jax.lax.cond(
-                state.ren_id_board[_opponent_color(state), adj_xy] != -1,
-                lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
-                lambda: GoState(  # type:ignore
-                    size=state.size,
-                    ren_id_board=state.ren_id_board,
-                    available_ren_id=state.available_ren_id,
+    is_off = _is_off_board(adj_pos, state.size)
+    is_my_ren = state.ren_id_board[_my_color(state), adj_xy] != -1
+    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
+    replaced_state = state.replace(
                     liberty=state.liberty.at[
                         _my_color(state),
                         state.ren_id_board[_my_color(state), xy],
                         adj_xy,
-                    ].set(1),
-                    adj_ren_id=state.adj_ren_id,
-                    legal_action_mask=state.legal_action_mask,
-                    game_log=state.game_log,
-                    turn=state.turn,
-                    curr_player=state.curr_player,
-                    agehama=state.agehama,
-                    passed=state.passed,
-                    kou=state.kou,
-                    komi=state.komi,
-                    terminated=state.terminated,
-                ),
-            ),
-        ),
+                    ].set(1))  # type:ignore
+    state = jax.lax.cond(
+        ((~is_off) & (~is_my_ren) & (~is_opp_ren)),
+        lambda: replaced_state,
+        lambda: state,
+    )
+    state = jax.lax.cond(
+        ((~is_off) & (~is_my_ren) & is_opp_ren),
+        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
+        lambda: state
+    )
+    state = jax.lax.cond(
+        ((~is_off) & is_my_ren),
+        lambda: _merge_ren(state, xy, adj_xy),
+        lambda: state
     )
     return (state, xy)
 
