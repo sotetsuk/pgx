@@ -17,7 +17,7 @@ NSEW = jnp.array([[-1, 0], [1, 0], [0, 1], [0, -1]], dtype=jnp.int32)
 
 
 @struct.dataclass
-class GoState:
+class State:
     # 横幅, マスの数ではない
     size: jnp.ndarray = jnp.int32(19)  # type:ignore
 
@@ -81,11 +81,11 @@ class Go(core.Env):
         return observe(state, player_id)
 
 
-def observe(state: GoState, player_id, observe_all=False):
+def observe(state: State, player_id, observe_all=False):
     return _get_alphazero_features(state, player_id, observe_all)
 
 
-def _get_alphazero_features(state: GoState, player_id, observe_all):
+def _get_alphazero_features(state: State, player_id, observe_all):
     """
     17 x (size x size)
     0: player_idの石
@@ -150,9 +150,9 @@ def _get_alphazero_features(state: GoState, player_id, observe_all):
 
 def init(
     rng: jax.random.KeyArray, size: int = 5
-) -> Tuple[jnp.ndarray, GoState]:
+) -> Tuple[jnp.ndarray, State]:
     curr_player = jnp.int32(jax.random.bernoulli(rng))
-    return curr_player, GoState(  # type:ignore
+    return curr_player, State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.full(
             (2, size * size), -1, dtype=jnp.int32
@@ -167,13 +167,13 @@ def init(
 
 
 def step(
-    state: GoState, action: int, size: int
-) -> Tuple[jnp.ndarray, GoState, jnp.ndarray]:
+    state: State, action: int, size: int
+) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
     # update state
     _state, reward = _update_state_wo_legal_action(state, action, size)
 
     # add legal actions
-    _state = GoState(  # type:ignore
+    _state = State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
@@ -193,7 +193,7 @@ def step(
     # update log
     new_log = jnp.roll(_state.game_log, size * size)
     new_log = new_log.at[0].set(get_board(_state))
-    _state = GoState(  # type:ignore
+    _state = State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
@@ -214,8 +214,8 @@ def step(
 
 
 def _update_state_wo_legal_action(
-    _state: GoState, _action: int, _size: int
-) -> Tuple[GoState, jnp.ndarray]:
+    _state: State, _action: int, _size: int
+) -> Tuple[State, jnp.ndarray]:
     _state, _reward = jax.lax.cond(
         _action < 0,
         lambda: _pass_move(_state, _size),
@@ -231,7 +231,7 @@ def _update_state_wo_legal_action(
     return _state, _reward
 
 
-def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
+def _pass_move(_state: State, _size: int) -> Tuple[State, jnp.ndarray]:
     return jax.lax.cond(
         _state.passed,
         # 連続でパスならば終局
@@ -244,8 +244,8 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
     )
 
 
-def _increase_turn(_state: GoState) -> GoState:
-    return GoState(  # type:ignore
+def _increase_turn(_state: State) -> State:
+    return State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
@@ -263,8 +263,8 @@ def _increase_turn(_state: GoState) -> GoState:
     )
 
 
-def _change_player(_state: GoState) -> GoState:
-    return GoState(  # type:ignore
+def _change_player(_state: State) -> State:
+    return State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
@@ -282,8 +282,8 @@ def _change_player(_state: GoState) -> GoState:
     )
 
 
-def _set_pass(_state: GoState, _pass: bool) -> GoState:
-    return GoState(  # type:ignore
+def _set_pass(_state: State, _pass: bool) -> State:
+    return State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
@@ -301,8 +301,8 @@ def _set_pass(_state: GoState, _pass: bool) -> GoState:
     )
 
 
-def _update_terminated(_state: GoState) -> GoState:
-    return GoState(  # type:ignore
+def _update_terminated(_state: State) -> State:
+    return State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
@@ -321,8 +321,8 @@ def _update_terminated(_state: GoState) -> GoState:
 
 
 def _not_pass_move(
-    _state: GoState, _action: int
-) -> Tuple[GoState, jnp.ndarray]:
+    _state: State, _action: int
+) -> Tuple[State, jnp.ndarray]:
     state = _set_pass(_state, False)
     xy = _action
     agehama_before = state.agehama[_my_color(state)]
@@ -349,7 +349,7 @@ def _not_pass_move(
     ) | is_illegal
 
     # コウの確認
-    state = GoState(  # type:ignore
+    state = State(  # type:ignore
         size=state.size,
         ren_id_board=state.ren_id_board,
         available_ren_id=state.available_ren_id,
@@ -395,7 +395,7 @@ def _check_around_xy(i, state_and_xy):
             lambda: jax.lax.cond(
                 state.ren_id_board[_opponent_color(state), adj_xy] != -1,
                 lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
-                lambda: GoState(  # type:ignore
+                lambda: State(  # type:ignore
                     size=state.size,
                     ren_id_board=state.ren_id_board,
                     available_ren_id=state.available_ren_id,
@@ -421,7 +421,7 @@ def _check_around_xy(i, state_and_xy):
     return (state, xy)
 
 
-def _is_illegal_move(_state: GoState, _xy):
+def _is_illegal_move(_state: State, _xy):
     """
     既に石があるorコウ
     """
@@ -437,17 +437,17 @@ def _is_illegal_move(_state: GoState, _xy):
 
 
 def _illegal_move(
-    _state: GoState,
-) -> Tuple[GoState, jnp.ndarray]:
+    _state: State,
+) -> Tuple[State, jnp.ndarray]:
     r: jnp.ndarray = jnp.array([1, 1])  # type:ignore
     return _update_terminated(_state), r.at[_state.turn % 2].set(-1)
 
 
-def _set_stone(_state: GoState, _xy: int) -> GoState:
+def _set_stone(_state: State, _xy: int) -> State:
     available_ren_id = _state.available_ren_id[_my_color(_state)]
     next_ren_id = jnp.argmax(available_ren_id)
     available_ren_id = available_ren_id.at[next_ren_id].set(False)
-    return GoState(  # type:ignore
+    return State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(
             next_ren_id
@@ -469,7 +469,7 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
     )
 
 
-def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
+def _merge_ren(_state: State, _xy: int, _adj_xy: int):
     ren_id_board = _state.ren_id_board.at[_my_color(_state)].get()
 
     new_id = ren_id_board.at[_xy].get()
@@ -508,7 +508,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     return jax.lax.cond(
         new_id == adj_ren_id,
         lambda: _state,
-        lambda: GoState(  # type:ignore
+        lambda: State(  # type:ignore
             size=_state.size,
             ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
                 ren_id_board
@@ -534,7 +534,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     )
 
 
-def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
+def _set_stone_next_to_oppo_ren(_state: State, _xy, _adj_xy):
     oppo_ren_id = _state.ren_id_board.at[
         _opponent_color(_state), _adj_xy
     ].get()
@@ -564,7 +564,7 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
         .set(True)
     )
 
-    state = GoState(  # type:ignore
+    state = State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board,
         available_ren_id=_state.available_ren_id,
@@ -591,7 +591,7 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
     )
 
 
-def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
+def _remove_stones(_state: State, _rm_ren_id, _rm_stone_xy) -> State:
     surrounded_stones = (
         _state.ren_id_board[_opponent_color(_state)] == _rm_ren_id
     )
@@ -607,7 +607,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         _opponent_color(_state), _rm_ren_id
     ].set(True)
 
-    return GoState(  # type:ignore
+    return State(  # type:ignore
         size=_state.size,
         ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
             oppo_ren_id_board
@@ -632,7 +632,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     )
 
 
-def legal_actions(state: GoState, size: int) -> jnp.ndarray:
+def legal_actions(state: State, size: int) -> jnp.ndarray:
     return jnp.logical_not(
         jax.lax.map(
             lambda xy: _update_state_wo_legal_action(state, xy, size)[
@@ -643,14 +643,14 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     )
 
 
-def get_board(state: GoState) -> jnp.ndarray:
+def get_board(state: State) -> jnp.ndarray:
     board = jnp.full_like(state.ren_id_board[BLACK], 2)
     board = jnp.where(state.ren_id_board[BLACK] != -1, 0, board)
     board = jnp.where(state.ren_id_board[WHITE] != -1, 1, board)
     return board  # type:ignore
 
 
-def show(state: GoState) -> None:
+def show(state: State) -> None:
     print("===========")
     for xy in range(state.size * state.size):
         if state.ren_id_board[BLACK][xy] != -1:
@@ -664,18 +664,18 @@ def show(state: GoState) -> None:
             print()
 
 
-def _show_details(state: GoState) -> None:
+def _show_details(state: State) -> None:
     show(state)
     print(state.ren_id_board[BLACK].reshape((5, 5)))
     print(state.ren_id_board[WHITE].reshape((5, 5)))
     print(state.kou)
 
 
-def _my_color(_state: GoState):
+def _my_color(_state: State):
     return jnp.int32(_state.turn % 2)
 
 
-def _opponent_color(_state: GoState):
+def _opponent_color(_state: State):
     return jnp.int32((_state.turn + 1) % 2)
 
 
@@ -688,7 +688,7 @@ def _is_off_board(_pos: jnp.ndarray, size) -> bool:
     )
 
 
-def _kou_occurred(_state: GoState, xy: int) -> bool:
+def _kou_occurred(_state: State, xy: int) -> bool:
     size = _state.size
     x = xy // size
     y = xy % size
@@ -725,7 +725,7 @@ def _to_xy(x, y, size) -> int:
     return x * size + y
 
 
-def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
+def _get_reward(_state: State, _size: int) -> jnp.ndarray:
     b = _count_ji(_state, BLACK, _size) - _state.agehama[WHITE] - _state.komi
     w = _count_ji(_state, WHITE, _size) - _state.agehama[BLACK]
     r = jax.lax.cond(
@@ -735,7 +735,7 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     return r
 
 
-def _count_ji(_state: GoState, _color, _size):
+def _count_ji(_state: State, _color, _size):
     board = get_board(_state)
     return jnp.count_nonzero(_get_ji(board, _color, _size))
 
