@@ -315,7 +315,9 @@ def _not_pass_move(
     state = _set_stone(state, xy)
 
     # 周囲の連を調べる
-    state = jax.lax.fori_loop(0, 4, lambda i, s: _check_around_xy(i, s, xy), state)
+    state = jax.lax.fori_loop(
+        0, 4, lambda i, s: _check_around_xy(i, s, xy), state
+    )
 
     # 自殺手
     is_illegal = (
@@ -368,11 +370,12 @@ def _check_around_xy(i, state, xy):
     is_my_ren = state.ren_id_board[_my_color(state), adj_xy] != -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
     replaced_state = state.replace(
-                    liberty=state.liberty.at[
-                        _my_color(state),
-                        state.ren_id_board[_my_color(state), xy],
-                        adj_xy,
-                    ].set(1))  # type:ignore
+        liberty=state.liberty.at[
+            _my_color(state),
+            state.ren_id_board[_my_color(state), xy],
+            adj_xy,
+        ].set(1)
+    )  # type:ignore
     state = jax.lax.cond(
         ((~is_off) & (~is_my_ren) & (~is_opp_ren)),
         lambda: replaced_state,
@@ -381,12 +384,12 @@ def _check_around_xy(i, state, xy):
     state = jax.lax.cond(
         ((~is_off) & (~is_my_ren) & is_opp_ren),
         lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
-        lambda: state
+        lambda: state,
     )
     state = jax.lax.cond(
         ((~is_off) & is_my_ren),
         lambda: _merge_ren(state, xy, adj_xy),
-        lambda: state
+        lambda: state,
     )
     return state
 
