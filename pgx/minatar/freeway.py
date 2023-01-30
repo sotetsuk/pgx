@@ -158,9 +158,7 @@ def _update_cars(pos, cars):
     return pos, cars
 
 
-def _init_det(
-    speeds: jnp.ndarray, directions: jnp.ndarray
-) -> State:
+def _init_det(speeds: jnp.ndarray, directions: jnp.ndarray) -> State:
     cars = _randomize_cars(speeds, directions, initialize=True)
     return State(cars=cars)  # type: ignore
 

@@ -6,7 +6,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple, Literal
+from typing import Literal, Tuple
 
 import jax
 from flax import struct
@@ -51,11 +51,14 @@ class State(core.State):
 
 
 class MinAtarAsterix(core.Env):
-
-    def __init__(self, minatar_version: Literal["v0", "v1"] = "v1", sticky_action_prob: float = 0.1):
+    def __init__(
+        self,
+        minatar_version: Literal["v0", "v1"] = "v1",
+        sticky_action_prob: float = 0.1,
+    ):
         super().__init__()
-        self.minatar_version : Literal["v0", "v1"] = minatar_version
-        self.sticky_action_prob : float = sticky_action_prob
+        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob: float = sticky_action_prob
 
     def init(self, rng: jax.random.KeyArray) -> State:
         return State(rng=rng)
@@ -63,7 +66,9 @@ class MinAtarAsterix(core.Env):
     def _step(self, state, action) -> State:
         assert isinstance(state, State)
         rng, subkey = jax.random.split(state.rng)
-        state, _, _ = step(state, action, rng, sticky_action_prob=self.sticky_action_prob)
+        state, _, _ = step(
+            state, action, rng, sticky_action_prob=self.sticky_action_prob
+        )
         return state.replace(rng=rng)  # type: ignore
 
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
