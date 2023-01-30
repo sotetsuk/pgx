@@ -601,60 +601,13 @@ def _count_ji_loop(_ji: JI) -> JI:
     # この座標は「既に調べたリスト」へ
     examined_stones = _ji.examined_stones.at[xy].set(True)
 
-    board = board.at[xy - _BOARD_WIDTH].set(
-        jax.lax.cond(
-            board[xy - _BOARD_WIDTH] == POINT,
-            lambda: o_color,
-            lambda: board[xy - _BOARD_WIDTH],
-        )
+    dxy = jnp.int32([-_BOARD_WIDTH, _BOARD_WIDTH, -1, +1])
+    ixs = xy + dxy
+    board = board.at[ixs].set(
+        jnp.where(board[ixs] == POINT, o_color, board[ixs])
     )
-    candidate_xy = candidate_xy.at[xy - _BOARD_WIDTH].set(
-        jnp.logical_and(
-            board[xy - _BOARD_WIDTH] == o_color,
-            examined_stones[xy - _BOARD_WIDTH] is False,
-        )
-    )
-
-    board = board.at[xy + _BOARD_WIDTH].set(
-        jax.lax.cond(
-            board[xy + _BOARD_WIDTH] == POINT,
-            lambda: o_color,
-            lambda: board[xy + _BOARD_WIDTH],
-        )
-    )
-    candidate_xy = candidate_xy.at[xy + _BOARD_WIDTH].set(
-        jnp.logical_and(
-            board[xy + _BOARD_WIDTH] == o_color,
-            examined_stones[xy + _BOARD_WIDTH] is False,
-        )
-    )
-
-    board = board.at[xy - 1].set(
-        jax.lax.cond(
-            board[xy - 1] == POINT,
-            lambda: o_color,
-            lambda: board[xy - 1],
-        )
-    )
-    candidate_xy = candidate_xy.at[xy - 1].set(
-        jnp.logical_and(
-            board[xy - 1] == o_color,
-            examined_stones[xy - 1] is False,
-        )
-    )
-
-    board = board.at[xy + 1].set(
-        jax.lax.cond(
-            board[xy + 1] == POINT,
-            lambda: o_color,
-            lambda: board[xy + 1],
-        )
-    )
-    candidate_xy = candidate_xy.at[xy + 1].set(
-        jnp.logical_and(
-            board[xy + 1] == o_color,
-            examined_stones[xy + 1] is False,
-        )
+    candidate_xy = candidate_xy.at[ixs].set(
+        (board[ixs] == o_color) & (~examined_stones[ixs])
     )
     return JI(
         size, board, candidate_xy, examined_stones, _ji.color
