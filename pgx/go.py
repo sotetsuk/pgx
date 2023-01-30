@@ -1,5 +1,5 @@
-from typing import Tuple
 from functools import partial
+from typing import Tuple
 
 import jax
 from flax import struct
