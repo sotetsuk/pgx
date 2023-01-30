@@ -2,14 +2,14 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
-import pgx.core
+import pgx.core as core
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(pgx.core.State):
+class State(core.State):
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -24,17 +24,17 @@ class State(pgx.core.State):
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)
 
 
-class TicTacToe(pgx.core.Env):
+class TicTacToe(core.Env):
 
     def __init__(self):
         super().__init__()
 
     @classmethod
-    def init(cls, rng: jnp.ndarray) -> State:
+    def init(cls, rng: jnp.ndarray) -> core.State:
         return init(rng)
 
     @classmethod
-    def step(cls, state: State, action: jnp.ndarray) -> State:
+    def step(cls, state: State, action: jnp.ndarray) -> core.State:
         return step(state, action)
 
     @classmethod
@@ -42,7 +42,7 @@ class TicTacToe(pgx.core.Env):
         return observe(state, player_id)
 
 
-def init(rng: jax.random.KeyArray) -> State:
+def init(rng: jnp.ndarray) -> State:
     rng, subkey = jax.random.split(rng)
     curr_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(rng=rng, curr_player=curr_player)  # type:ignore
