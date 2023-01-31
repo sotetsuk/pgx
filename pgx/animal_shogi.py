@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Tuple
 
 import jax
@@ -12,24 +13,24 @@ class JaxAnimalShogiAction:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用
     # 駒打ちかどうか
-    is_drop: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    is_drop: jnp.ndarray = jnp.bool_(False)
     # piece: 動かした(打った)駒の種類
-    piece: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    piece: jnp.ndarray = jnp.int32(0)
     # final: 移動後の座標
-    to: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    to: jnp.ndarray = jnp.int32(0)
     # 移動前の座標
-    from_: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    from_: jnp.ndarray = jnp.int32(0)
     # captured: 取られた駒の種類。駒が取られていない場合は0
-    captured: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    captured: jnp.ndarray = jnp.int32(0)
     # is_promote: 駒を成るかどうかの判定
-    is_promote: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    is_promote: jnp.ndarray = jnp.bool_(False)
 
 
 # 盤面のdataclass
 @struct.dataclass
 class JaxAnimalShogiState:
     # turn 先手番なら0 後手番なら1
-    turn: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    turn: jnp.ndarray = jnp.int32(0)
     # board 盤面の駒。
     # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
     # の順で駒がどの位置にあるかをone_hotで記録
@@ -42,7 +43,7 @@ class JaxAnimalShogiState:
     legal_actions_black: jnp.ndarray = jnp.zeros(180, dtype=jnp.int32)
     legal_actions_white: jnp.ndarray = jnp.zeros(180, dtype=jnp.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
-    is_check: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    is_check: jnp.ndarray = jnp.bool_(False)
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
     checking_piece: jnp.ndarray = jnp.zeros(12, dtype=jnp.int32)
 
@@ -55,7 +56,7 @@ POINT_MOVES = jnp.array(POINT_MOVES)
 
 
 INIT_BOARD = JaxAnimalShogiState(
-    turn=jnp.array([0]),
+    turn=jnp.int32(0),
     board=jnp.array(
         [
             [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0],
@@ -81,7 +82,7 @@ def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
 
 
 def step(
-    state: JaxAnimalShogiState, action: jnp.ndarray
+    state: JaxAnimalShogiState, action
 ) -> Tuple[JaxAnimalShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
     s = state
@@ -94,16 +95,16 @@ def step(
     # actionのfromが盤外に存在すると挙動がおかしくなるのでそれもここではじいておく
     _action = _dlaction_to_action(action, s)
     reward = jax.lax.cond(
-        (_action.from_[0] > 11)
-        | (_action.from_[0] < 0)
-        | (legal_actions[_action_to_dlaction(_action, s.turn[0])] == 0),
+        (_action.from_ > 11)
+        | (_action.from_ < 0)
+        | (legal_actions[_action_to_dlaction(_action, s.turn)] == 0),
         lambda: _turn_to_reward(_another_color(s)),
         lambda: reward,
     )
     terminated = jax.lax.cond(
-        (_action.from_[0] > 11)
-        | (_action.from_[0] < 0)
-        | (legal_actions[_action_to_dlaction(_action, s.turn[0])] == 0),
+        (_action.from_ > 11)
+        | (_action.from_ < 0)
+        | (legal_actions[_action_to_dlaction(_action, s.turn)] == 0),
         lambda: True,
         lambda: terminated,
     )
@@ -112,7 +113,7 @@ def step(
         terminated,
         lambda: s,
         lambda: jax.lax.cond(
-            _action.is_drop[0] == 1,
+            _action.is_drop == 1,
             lambda: _drop(_update_legal_drop_actions(s, _action), _action),
             lambda: _move(_update_legal_move_actions(s, _action), _action),
         ),
@@ -120,7 +121,7 @@ def step(
     # トライルールによる勝利判定
     reward = jax.lax.cond(
         (terminated is False) & _is_try(_action),
-        lambda: _turn_to_reward(s.turn[0]),
+        lambda: _turn_to_reward(s.turn),
         lambda: reward,
     )
     terminated = jax.lax.cond(
@@ -128,7 +129,7 @@ def step(
         lambda: True,
         lambda: terminated,
     )
-    turn = jnp.zeros(1, dtype=jnp.int32).at[0].set(_another_color(s))
+    turn = _another_color(s)
     s = JaxAnimalShogiState(
         turn=turn,
         board=s.board,
@@ -138,7 +139,7 @@ def step(
     )  # type: ignore
     no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
     # 王手をかけている駒は直前に動かした駒であるはず
-    checking_piece = no_checking_piece.at[_action.to[0]].set(1)
+    checking_piece = no_checking_piece.at[_action.to].set(1)
     s = jax.lax.cond(
         (_is_check(s)) & (terminated is False),
         lambda: JaxAnimalShogiState(
@@ -147,7 +148,7 @@ def step(
             hand=s.hand,
             legal_actions_black=s.legal_actions_black,
             legal_actions_white=s.legal_actions_white,
-            is_check=jnp.array([1]),
+            is_check=jnp.bool_(True),
             checking_piece=checking_piece,
         ),  # type: ignore
         lambda: JaxAnimalShogiState(
@@ -156,7 +157,7 @@ def step(
             hand=s.hand,
             legal_actions_black=s.legal_actions_black,
             legal_actions_white=s.legal_actions_white,
-            is_check=jnp.array([0]),
+            is_check=jnp.bool_(False),
             checking_piece=no_checking_piece,
         ),  # type: ignore
     )
@@ -214,15 +215,13 @@ def _hand_to_direction(piece):
 # AnimalShogiActionをdlshogiのint型actionに変換
 def _action_to_dlaction(action: JaxAnimalShogiAction, turn):
     return jax.lax.cond(
-        action.is_drop[0] == 1,
-        lambda: _dlshogi_action(
-            _hand_to_direction(action.piece[0]), action.to[0]
-        ),
+        action.is_drop == 1,
+        lambda: _dlshogi_action(_hand_to_direction(action.piece), action.to),
         lambda: _dlshogi_action(
             _point_to_direction(
-                action.from_[0], action.to[0], action.is_promote[0], turn
+                action.from_, action.to, action.is_promote, turn
             ),  # type: ignore
-            action.to[0],
+            action.to,
         ),
     )
 
@@ -262,16 +261,16 @@ def _dlmoveaction_to_action(
     action: jnp.ndarray, state: JaxAnimalShogiState
 ) -> JaxAnimalShogiAction:
     direction, to = _separate_dlaction(action)
-    _from, is_promote = _direction_to_from(direction, to, state.turn[0])
+    _from, is_promote = _direction_to_from(direction, to, state.turn)
     piece = _piece_type(state, _from)
     captured = _piece_type(state, to)
     return JaxAnimalShogiAction(
-        is_drop=jnp.array([0]),
-        piece=jnp.array([piece]),
-        to=jnp.array([to]),
-        from_=jnp.array([_from]),
-        captured=jnp.array([captured]),
-        is_promote=jnp.array([is_promote]),
+        is_drop=jnp.bool_(False),
+        piece=jnp.int32(piece),
+        to=jnp.int32(to),
+        from_=jnp.int32(_from),
+        captured=jnp.int32(captured),
+        is_promote=jnp.bool_(is_promote),
     )  # type: ignore
 
 
@@ -279,7 +278,7 @@ def _dldropaction_to_action(action) -> JaxAnimalShogiAction:
     direction, to = _separate_dlaction(action)
     piece = _direction_to_hand(direction)
     return JaxAnimalShogiAction(
-        is_drop=jnp.array([1]), piece=jnp.array([piece]), to=jnp.array([to])
+        is_drop=jnp.bool_(True), piece=jnp.int32(piece), to=jnp.int32(to)
     )  # type: ignore
 
 
@@ -296,7 +295,7 @@ def _dlaction_to_action(
 
 # 手番側でない色を返す
 def _another_color(state: JaxAnimalShogiState):
-    return (state.turn[0] + 1) % 2
+    return (state.turn + 1) % 2
 
 
 # 相手の駒を同じ種類の自分の駒に変換する
@@ -320,20 +319,20 @@ def _move(
 ) -> JaxAnimalShogiState:
     board = state.board
     hand = state.hand
-    board = board.at[action.piece[0], action.from_[0]].set(0)
-    board = board.at[0, action.from_[0]].set(1)
-    board = board.at[action.captured[0], action.to[0]].set(0)
+    board = board.at[action.piece, action.from_].set(0)
+    board = board.at[0, action.from_].set(1)
+    board = board.at[action.captured, action.to].set(0)
     board = jax.lax.cond(
-        action.is_promote[0] == 1,
-        lambda: board.at[action.piece[0] + 4, action.to[0]].set(1),
-        lambda: board.at[action.piece[0], action.to[0]].set(1),
+        action.is_promote,
+        lambda: board.at[action.piece + 4, action.to].set(1),
+        lambda: board.at[action.piece, action.to].set(1),
     )
     hand = jax.lax.cond(
-        action.captured[0] == 0,
+        action.captured == 0,
         lambda: hand,
-        lambda: hand.at[
-            _piece_to_hand(_convert_piece(action.captured[0]))
-        ].set(hand[_piece_to_hand(_convert_piece(action.captured[0]))] + 1),
+        lambda: hand.at[_piece_to_hand(_convert_piece(action.captured))].set(
+            hand[_piece_to_hand(_convert_piece(action.captured))] + 1
+        ),
     )
     return JaxAnimalShogiState(
         turn=state.turn,
@@ -352,10 +351,10 @@ def _drop(
 ) -> JaxAnimalShogiState:
     board = state.board
     hand = state.hand
-    n = hand[_piece_to_hand(action.piece[0])]
-    hand = hand.at[_piece_to_hand(action.piece[0])].set(n - 1)
-    board = board.at[action.piece[0], action.to[0]].set(1)
-    board = board.at[0, action.to[0]].set(0)
+    n = hand[_piece_to_hand(action.piece)]
+    hand = hand.at[_piece_to_hand(action.piece)].set(n - 1)
+    board = board.at[action.piece, action.to].set(1)
+    board = board.at[0, action.to].set(0)
     return JaxAnimalShogiState(
         turn=state.turn,
         board=board,
@@ -406,7 +405,7 @@ def _effected_positions(state: JaxAnimalShogiState, turn):
 # 王手の判定(turn側の王に王手がかかっているかを判定)
 def _is_check(state: JaxAnimalShogiState):
     effects = _effected_positions(state, _another_color(state))
-    king_location = state.board[4 + 5 * state.turn[0], :].argmax()
+    king_location = state.board[4 + 5 * state.turn, :].argmax()
     return effects[king_location] != 0
 
 
@@ -418,21 +417,11 @@ def _can_promote(to, piece):
         lambda: True,
         lambda: can_promote,
     )
-    # can_promote = jax.lax.cond(
-    #    piece == 1,
-    #    lambda: jax.lax.cond(to % 4 == 0, lambda: True, lambda: can_promote),
-    #    lambda: can_promote,
-    # )
     can_promote = jax.lax.cond(
         (piece == 6) & (to % 4 == 3),
         lambda: True,
         lambda: can_promote,
     )
-    # can_promote = jax.lax.cond(
-    #    piece == 6,
-    #    lambda: jax.lax.cond(to % 4 == 3, lambda: True, lambda: can_promote),
-    #    lambda: can_promote,
-    # )
     return can_promote
 
 
@@ -440,23 +429,25 @@ def _can_promote(to, piece):
 def _create_piece_actions(_from, piece):
     turn = _owner(piece)
     actions = jnp.zeros(180, dtype=jnp.int32)
-    motion = POINT_MOVES[_from, piece].reshape(12)
-    for i in range(12):
-        normal_dir = _point_to_direction(_from, i, False, turn)
-        normal_act = _dlshogi_action(normal_dir, i)
-        pro_dir = _point_to_direction(_from, i, True, turn)
-        pro_act = _dlshogi_action(pro_dir, i)
-        actions = jax.lax.cond(
-            motion[i] == 0,
-            lambda: actions,
-            lambda: jax.lax.cond(
-                _can_promote(i, piece),
-                lambda: actions.at[pro_act].set(1),
-                lambda: actions,
-            )
-            .at[normal_act]
-            .set(1),
-        )
+    moves = POINT_MOVES[_from, piece].reshape(12)
+
+    to = jnp.arange(12)
+
+    normal_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=False, turn=turn)
+    )
+    pro_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=True, turn=turn)
+    )
+    to_action = jax.vmap(_dlshogi_action)
+    can_promote = jax.vmap(partial(_can_promote, piece=piece))
+
+    normal_act = to_action(normal_dir(to=to), to)
+    pro_act = to_action(pro_dir(to=to), to)
+    promotes = can_promote(to)
+
+    actions = actions.at[normal_act[to]].set(moves[to] != 0)
+    actions = actions.at[pro_act[to]].set((moves[to] != 0) & promotes)
     return actions
 
 
@@ -548,33 +539,33 @@ def _update_legal_move_actions(
 ) -> JaxAnimalShogiState:
     s = state
     player_actions = jax.lax.cond(
-        s.turn[0] == 0,
+        s.turn == 0,
         lambda: s.legal_actions_black,
         lambda: s.legal_actions_white,
     )
     enemy_actions = jax.lax.cond(
-        s.turn[0] == 0,
+        s.turn == 0,
         lambda: s.legal_actions_white,
         lambda: s.legal_actions_black,
     )
     # 元の位置にいたときのフラグを折る
     new_player_actions = _filter_move_actions(
-        action.from_[0], action.piece[0], player_actions
+        action.from_, action.piece, player_actions
     )
     new_enemy_actions = enemy_actions
     # 移動後の位置からの移動のフラグを立てる
     new_player_actions = _add_move_actions(
-        action.to[0], action.piece[0], new_player_actions
+        action.to, action.piece, new_player_actions
     )
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
     new_enemy_actions = jax.lax.cond(
-        action.captured[0] == 0,
+        action.captured == 0,
         lambda: new_enemy_actions,
         lambda: _filter_move_actions(
-            action.to[0], action.captured[0], new_enemy_actions
+            action.to, action.captured, new_enemy_actions
         ),
     )
-    captured = _convert_piece(action.captured[0])
+    captured = _convert_piece(action.captured)
     captured = jax.lax.cond(
         captured % 5 == 0, lambda: captured - 4, lambda: captured
     )
@@ -585,7 +576,7 @@ def _update_legal_move_actions(
         lambda: _add_drop_actions(captured, new_player_actions),
     )
     return jax.lax.cond(
-        s.turn[0] == 0,
+        s.turn == 0,
         lambda: JaxAnimalShogiState(
             turn=s.turn,
             board=s.board,
@@ -613,22 +604,22 @@ def _update_legal_drop_actions(
 ) -> JaxAnimalShogiState:
     s = state
     player_actions = jax.lax.cond(
-        s.turn[0] == 0,
+        s.turn == 0,
         lambda: s.legal_actions_black,
         lambda: s.legal_actions_white,
     )
     # 移動後の位置からの移動のフラグを立てる
     new_player_actions = _add_move_actions(
-        action.to[0], action.piece[0], player_actions
+        action.to, action.piece, player_actions
     )
     # 持ち駒がもうない場合、その駒を打つフラグを折る
     new_player_actions = jax.lax.cond(
-        s.hand[_piece_to_hand(action.piece[0])] == 1,
-        lambda: _filter_drop_actions(action.piece[0], new_player_actions),
+        s.hand[_piece_to_hand(action.piece)] == 1,
+        lambda: _filter_drop_actions(action.piece, new_player_actions),
         lambda: new_player_actions,
     )
     return jax.lax.cond(
-        s.turn[0] == 0,
+        s.turn == 0,
         lambda: JaxAnimalShogiState(
             turn=s.turn,
             board=s.board,
@@ -720,14 +711,14 @@ def _filter_leave_check_actions(turn, king_sq, check_piece, array):
 # boardのlegal_actionsを利用して合法手を生成する
 def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
     s = state
-    turn = s.turn[0]
+    turn = s.turn
     action_array = jax.lax.cond(
         turn == 0, lambda: s.legal_actions_black, lambda: s.legal_actions_white
     )
     king_sq = s.board[4 + 5 * turn].argmax()
     # 王手放置を除く
     action_array = jax.lax.cond(
-        s.is_check[0] == 1,
+        s.is_check,
         lambda: _filter_leave_check_actions(
             turn, king_sq, state.checking_piece, action_array
         ),
@@ -753,12 +744,12 @@ def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
 def _is_try(action: JaxAnimalShogiAction) -> bool:
     flag = False
     flag = jax.lax.cond(
-        (action.piece[0] == 4) & (action.to[0] % 4 == 0),
+        (action.piece == 4) & (action.to % 4 == 0),
         lambda: True,
         lambda: flag,
     )
     flag = jax.lax.cond(
-        (action.piece[0] == 9) & (action.to[0] % 4 == 3),
+        (action.piece == 9) & (action.to % 4 == 3),
         lambda: True,
         lambda: flag,
     )
