@@ -25,7 +25,10 @@ from pgx.animal_shogi import step as jax_step
 import numpy as np
 import jax.numpy as jnp
 import copy
-import random
+import jax
+
+jax_jit = jax.jit(jax_init)
+jax_step = jax.jit(jax_step)
 
 
 TEST_BOARD = AnimalShogiState(
@@ -459,7 +462,8 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
 def test_jax_init():
     np_init = init()
     j_init = convert_jax_state(np_init)
-    j_init2 = jax_init()
+    rng = jax.random.PRNGKey(0)
+    j_init2 = jax_init(rng)
     assert (j_init.board == j_init2.board).all()
     assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
     assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
