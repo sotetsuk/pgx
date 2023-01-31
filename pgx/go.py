@@ -680,8 +680,10 @@ def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
 
     to_xy_batch = jax.vmap(partial(_to_xy, size=size))
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
-    xs = x + NSEW[:, 0]  # x + dx
-    ys = y + NSEW[:, 1]  # y + dy
+    dx = jnp.int32([-1, +1, 0, 0])
+    dy = jnp.int32([0, 0, -1, +1])
+    xs = x + dx
+    ys = y + dy
     flag = _state.ren_id_board[oppo_color][to_xy_batch(xs, ys)] != -1
     return (oob | flag).all()
 
