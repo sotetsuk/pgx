@@ -12,7 +12,8 @@ BLACK_CHAR = "@"
 WHITE_CHAR = "O"
 POINT_CHAR = "+"
 
-NSEW = jnp.array([[-1, 0], [1, 0], [0, 1], [0, -1]], dtype=jnp.int32)
+dx = jnp.int32([-1, +1, 0, 0])
+dy = jnp.int32([0, 0, -1, +1])
 
 
 @struct.dataclass
@@ -364,10 +365,7 @@ def _not_pass_move(
 def _check_around_xy(i, state_and_xy):
     state = state_and_xy[0]
     xy = state_and_xy[1]
-    adj_pos = (
-        jnp.array([xy // state.size, xy % state.size], dtype=jnp.int32)
-        + NSEW[i]  # type:ignore
-    )
+    adj_pos = jnp.array([xy // state.size + dx[i], xy % state.size + dy[i]], dtype=jnp.int32)  # type:ignore
     adj_xy = adj_pos[0] * state.size + adj_pos[1]
     state = jax.lax.cond(
         _is_off_board(adj_pos, state.size),
@@ -680,8 +678,6 @@ def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
 
     to_xy_batch = jax.vmap(partial(_to_xy, size=size))
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
-    dx = jnp.int32([-1, +1, 0, 0])
-    dy = jnp.int32([0, 0, -1, +1])
     xs = x + dx
     ys = y + dy
     flag = _state.ren_id_board[oppo_color][to_xy_batch(xs, ys)] != -1
