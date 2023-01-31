@@ -709,9 +709,7 @@ def _update_legal_drop_actions(
 
 
 # 自分の駒がある位置への移動を除く
-def _filter_my_piece_move_actions(
-    turn: int, owner: jnp.ndarray, array: jnp.ndarray
-) -> jnp.ndarray:
+def _filter_my_piece_move_actions(turn, owner, array) -> jnp.ndarray:
     new_array = array
     ixs = jnp.arange(180)
     new_array = jnp.where(
@@ -721,9 +719,7 @@ def _filter_my_piece_move_actions(
 
 
 # 駒がある地点への駒打ちを除く
-def _filter_occupied_drop_actions(
-    turn: int, owner: jnp.ndarray, array: jnp.ndarray
-) -> jnp.ndarray:
+def _filter_occupied_drop_actions(turn, owner, array) -> jnp.ndarray:
     new_array = array
     for i in range(12):
         for j in range(3):
@@ -736,9 +732,7 @@ def _filter_occupied_drop_actions(
 
 
 # 自殺手を除く
-def _filter_suicide_actions(
-    turn: int, king_sq: int, effects: jnp.ndarray, array: jnp.ndarray
-) -> jnp.ndarray:
+def _filter_suicide_actions(turn, king_sq, effects, array) -> jnp.ndarray:
     new_array = array
     king_moves = POINT_MOVES[4, king_sq].reshape(12)
     for i in range(12):
@@ -755,9 +749,7 @@ def _filter_suicide_actions(
 
 
 # 王手放置を除く
-def _filter_leave_check_actions(
-    turn: int, king_sq: int, check_piece: jnp.ndarray, array: jnp.ndarray
-) -> jnp.ndarray:
+def _filter_leave_check_actions(turn, king_sq, check_piece, array):
     new_array = array
     king_moves = POINT_MOVES[4, king_sq].reshape(12)
     for i in range(12):
