@@ -132,11 +132,6 @@ INIT_BOARD = JaxAnimalShogiState(
 )  # type: ignore
 
 
-def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
-    _ = jnp.int32(jax.random.bernoulli(rng))  # TODO: add to state
-    return _init_legal_actions(INIT_BOARD)
-
-
 def step(
     state: JaxAnimalShogiState, action: jnp.ndarray
 ) -> Tuple[JaxAnimalShogiState, int, bool]:
@@ -551,7 +546,7 @@ def _filter_drop_actions(piece, array):
 
 # stateからblack,white両方のlegal_actionsを生成する
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
-def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
+def _init_legal_actions(state: JaxAnimalShogiState):
     pieces = _board_status(state)
     legal_black = state.legal_actions_black
     legal_white = state.legal_actions_white
@@ -588,15 +583,7 @@ def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
             lambda: legal_white,
             lambda: _add_drop_actions(6 + i, legal_white),
         )
-    return JaxAnimalShogiState(
-        turn=state.turn,
-        board=state.board,
-        hand=state.hand,
-        legal_actions_black=legal_black,
-        legal_actions_white=legal_white,
-        is_check=state.is_check,
-        checking_piece=state.checking_piece,
-    )  # type: ignore
+    return legal_black, legal_white
 
 
 # 駒の移動によるlegal_actionsの更新
@@ -820,3 +807,16 @@ def _is_try(action: JaxAnimalShogiAction) -> bool:
         lambda: flag,
     )
     return flag
+
+
+LEGAL_ACTIONS_BLACK, LEGAL_ACTIONS_WHITE = jax.jit(_init_legal_actions)(
+    INIT_BOARD
+)
+
+
+def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
+    _ = jnp.int32(jax.random.bernoulli(rng))  # TODO: add to state
+    return INIT_BOARD.replace(
+        legal_actions_black=LEGAL_ACTIONS_BLACK,
+        legal_actions_white=LEGAL_ACTIONS_WHITE,
+    )  # type: ignore
