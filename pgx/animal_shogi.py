@@ -218,7 +218,7 @@ def step(
     return s, reward, terminated
 
 
-def _turn_to_reward(turn: int) -> int:
+def _turn_to_reward(turn: jnp.ndarray) -> jnp.ndarray:
     reward = jax.lax.cond(
         turn == 0,
         lambda: 1,
@@ -441,7 +441,9 @@ def _pieces_owner(state: JaxAnimalShogiState) -> jnp.ndarray:
 
 
 # 利きの判定
-def _effected_positions(state: JaxAnimalShogiState, turn: int) -> jnp.ndarray:
+def _effected_positions(
+    state: JaxAnimalShogiState, turn: jnp.ndarray
+) -> jnp.ndarray:
     all_effect = jnp.zeros(12, dtype=jnp.int32)
     board = _board_status(state)
     piece_owner = _pieces_owner(state)
