@@ -1,9 +1,10 @@
+import jax
 from pgx._animal_shogi import (
     AnimalShogiState,
     AnimalShogiAction,
     INIT_BOARD,
-    init,
-    step,
+    init as _init,
+    step as _step,
     _another_color,
     _move,
     _drop,
@@ -20,12 +21,16 @@ from pgx._animal_shogi import (
     _update_legal_drop_actions
 )
 from pgx.animal_shogi import JaxAnimalShogiState
-from pgx.animal_shogi import init as jax_init
-from pgx.animal_shogi import step as jax_step
+from pgx.animal_shogi import init
+from pgx.animal_shogi import step
 import numpy as np
 import jax.numpy as jnp
 import copy
 import random
+
+
+init = jax.jit(init)
+step = jax.jit(step)
 
 
 TEST_BOARD = AnimalShogiState(
@@ -383,37 +388,37 @@ def test_update_legal_actions_drop():
 
 
 def test_step():
-    s = init()
+    s = _init()
     # 詰みによる勝ち判定
     moves = [
         22, 13, 91, 40, 2, 100000
     ]
     for i in range(6):
-        s, r, t = step(s, moves[i])
+        s, r, t = _step(s, moves[i])
         if i == 5:
             assert r == 1
             assert t
         else:
             assert not t
-    s = init()
+    s = _init()
     # トライルールによる勝ち判定(先手)
     moves = [
         26, 33, 1, 10, 0
     ]
     for i in range(5):
-        s, r, t = step(s, moves[i])
+        s, r, t = _step(s, moves[i])
         if i == 4:
             assert r == 1
             assert t
         else:
             assert not t
-    s = init()
+    s = _init()
     # トライルールによる勝ち判定(後手)
     moves = [
         26, 33, 1, 10, 5, 11
     ]
     for i in range(6):
-        s, r, t = step(s, moves[i])
+        s, r, t = _step(s, moves[i])
         if i == 5:
             assert r == -1
             assert t
@@ -456,41 +461,42 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
     )
 
 
-def test_jax_init():
-    np_init = init()
+def test_init():
+    np_init = _init()
     j_init = convert_jax_state(np_init)
-    j_init2 = jax_init()
+    rng = jax.random.PRNGKey(0)
+    j_init2 = init(rng)
     assert (j_init.board == j_init2.board).all()
     assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
     assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
 
 
-def test_jax_step():
-    np_init = init()
+def test_step():
+    np_init = _init()
     j_init = convert_jax_state(np_init)
     np_test = _init_legal_actions(copy.deepcopy(TEST_BOARD))
     j_test = convert_jax_state(np_test)
     np_test2 = _init_legal_actions(copy.deepcopy(TEST_BOARD2))
     j_test2 = convert_jax_state(np_test2)
     for i in range(180):
-        np_stepped = step(np_init, i)
-        jax_stepped = jax_step(j_init, i)
-        assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
-        assert (jax_stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
-        assert (jax_stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
-        assert jax_stepped[1] == np_stepped[1]
-        assert jax_stepped[2] == np_stepped[2]
-        np_stepped_test = step(np_test, i)
-        jax_stepped_test = jax_step(j_test, i)
-        assert (jax_stepped_test[0].board == convert_jax_state(np_stepped_test[0]).board).all()
-        assert (jax_stepped_test[0].legal_actions_black == convert_jax_state(np_stepped_test[0]).legal_actions_black).all()
-        assert (jax_stepped_test[0].legal_actions_white == convert_jax_state(np_stepped_test[0]).legal_actions_white).all()
-        assert jax_stepped_test[1] == np_stepped_test[1]
-        assert jax_stepped_test[2] == np_stepped_test[2]
-        np_stepped_test2 = step(np_test2, i)
-        jax_stepped_test2 = jax_step(j_test2, i)
-        assert (jax_stepped_test2[0].board == convert_jax_state(np_stepped_test2[0]).board).all()
-        assert (jax_stepped_test2[0].legal_actions_black == convert_jax_state(np_stepped_test2[0]).legal_actions_black).all()
-        assert (jax_stepped_test2[0].legal_actions_white == convert_jax_state(np_stepped_test2[0]).legal_actions_white).all()
-        assert jax_stepped_test2[1] == np_stepped_test2[1]
-        assert jax_stepped_test2[2] == np_stepped_test2[2]
+        np_stepped = _step(np_init, i)
+        stepped = step(j_init, i)
+        assert (stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
+        assert (stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
+        assert (stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
+        assert stepped[1] == np_stepped[1]
+        assert stepped[2] == np_stepped[2]
+        np_stepped_test = _step(np_test, i)
+        stepped_test = step(j_test, i)
+        assert (stepped_test[0].board == convert_jax_state(np_stepped_test[0]).board).all()
+        assert (stepped_test[0].legal_actions_black == convert_jax_state(np_stepped_test[0]).legal_actions_black).all()
+        assert (stepped_test[0].legal_actions_white == convert_jax_state(np_stepped_test[0]).legal_actions_white).all()
+        assert stepped_test[1] == np_stepped_test[1]
+        assert stepped_test[2] == np_stepped_test[2]
+        np_stepped_test2 = _step(np_test2, i)
+        stepped_test2 = step(j_test2, i)
+        assert (stepped_test2[0].board == convert_jax_state(np_stepped_test2[0]).board).all()
+        assert (stepped_test2[0].legal_actions_black == convert_jax_state(np_stepped_test2[0]).legal_actions_black).all()
+        assert (stepped_test2[0].legal_actions_white == convert_jax_state(np_stepped_test2[0]).legal_actions_white).all()
+        assert stepped_test2[1] == np_stepped_test2[1]
+        assert stepped_test2[2] == np_stepped_test2[2]

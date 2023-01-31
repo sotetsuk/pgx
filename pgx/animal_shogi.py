@@ -130,16 +130,9 @@ INIT_BOARD = JaxAnimalShogiState(
 )  # type: ignore
 
 
-def init(rng: jax.random.KeyArray) -> Tuple[int, JaxAnimalShogiState]:
-    curr_player = jnp.int32(jax.random.bernoulli(rng))
-    s = _init_legal_actions(INIT_BOARD)
-    return curr_player, JaxAnimalShogiState(
-        turn=jnp.full(1, curr_player, dtype=jnp.int32),
-        board=s.board,
-        hand=s.hand,
-        legal_actions_black=s.legal_actions_black,
-        legal_actions_white=s.legal_actions_white,
-    )  # type: ignore
+def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
+    _ = jnp.int32(jax.random.bernoulli(rng))  # TODO: add to state
+    return _init_legal_actions(INIT_BOARD)
 
 
 def step(
