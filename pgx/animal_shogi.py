@@ -132,7 +132,8 @@ INIT_BOARD = JaxAnimalShogiState(
 )  # type: ignore
 
 
-def init() -> JaxAnimalShogiState:
+def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
+    _ = jnp.int32(jax.random.bernoulli(rng))  # TODO: add to state
     return _init_legal_actions(INIT_BOARD)
 
 
