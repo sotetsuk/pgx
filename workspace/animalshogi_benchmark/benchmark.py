@@ -21,44 +21,46 @@ from pgx.animal_shogi import (
 def test(func):
     rng = jax.random.PRNGKey(0)
     state = init(rng)
-    if func.__name__ == "_legal_actions" or func.__name__ == "_is_check"  or func.__name__ == "_init_legal_actions" or func.__name__ == "_board_status":
+    if func.__name__ == "_legal_actions" or func.__name__ == "_is_check" or func.__name__ == "_init_legal_actions" or func.__name__ == "_board_status":
         time_sta = time.perf_counter()
         jax.jit(func)(state)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(state)
     elif func.__name__ == "init":
         time_sta = time.perf_counter()
         jax.jit(func)(rng)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-    elif func.__name__ == "_effected_positions":
+        exp = jax.make_jaxpr(func)(rng)
+    elif func.__name__ == "step" or func.__name__ == "_effected_positions":
         time_sta = time.perf_counter()
         jax.jit(func)(state, 0)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-    elif func.__name__ == "step":
-        time_sta = time.perf_counter()
-        jax.jit(func)(state, 0)
-        time_end = time.perf_counter()
-        delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(state, 0)
     elif func.__name__ == "_move" or func.__name__ == "_update_legal_move_actions":
         a = _dlaction_to_action(0, state)
         time_sta = time.perf_counter()
         jax.jit(func)(state, a)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(state, a)
     elif func.__name__ == "_is_try":
         a = _dlaction_to_action(0, state)
         time_sta = time.perf_counter()
         jax.jit(func)(a)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(a)
     elif func.__name__ == "_dlaction_to_action":
         time_sta = time.perf_counter()
         jax.jit(func)(5, state)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-    print(f"| `{func.__name__}` | {delta:.1f}ms |")
+        exp = jax.make_jaxpr(func)(5, state)
+    n_line = len(str(exp).split('\n'))
+    print(f"| {n_line} | `{func.__name__}` | {delta:.1f}ms |")
     return
 
 
