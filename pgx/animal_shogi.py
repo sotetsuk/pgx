@@ -1,3 +1,4 @@
+from functools import partial
 from typing import Tuple
 
 import jax
@@ -497,23 +498,25 @@ def _can_promote(to, piece):
 def _create_piece_actions(_from, piece):
     turn = _owner(piece)
     actions = jnp.zeros(180, dtype=jnp.int32)
-    motion = POINT_MOVES[_from, piece].reshape(12)
-    for i in range(12):
-        normal_dir = _point_to_direction(_from, i, False, turn)
-        normal_act = _dlshogi_action(normal_dir, i)
-        pro_dir = _point_to_direction(_from, i, True, turn)
-        pro_act = _dlshogi_action(pro_dir, i)
-        actions = jax.lax.cond(
-            motion[i] == 0,
-            lambda: actions,
-            lambda: jax.lax.cond(
-                _can_promote(i, piece),
-                lambda: actions.at[pro_act].set(1),
-                lambda: actions,
-            )
-            .at[normal_act]
-            .set(1),
-        )
+    moves = POINT_MOVES[_from, piece].reshape(12)
+
+    to = jnp.arange(12)
+
+    normal_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=False, turn=turn)
+    )
+    pro_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=True, turn=turn)
+    )
+    to_action = jax.vmap(_dlshogi_action)
+    can_promote = jax.vmap(partial(_can_promote, piece=piece))
+
+    normal_act = to_action(normal_dir(to=to), to)
+    pro_act = to_action(pro_dir(to=to), to)
+    promotes = can_promote(to)
+
+    actions = actions.at[normal_act[to]].set(moves[to] != 0)
+    actions = actions.at[pro_act[to]].set((moves[to] != 0) & promotes)
     return actions
 
 
