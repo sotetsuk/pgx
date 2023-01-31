@@ -426,7 +426,7 @@ def test_step():
 
 
 def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
-    turn = jnp.array([state.turn])
+    turn = jnp.int32(state.turn)
     board = jnp.zeros((11, 12), dtype=jnp.int32)
     for i in range(11):
         for j in range(12):
@@ -442,9 +442,9 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
             legal_actions_black = legal_actions_black.at[i].set(1)
         if state.legal_actions_white[i] == 1:
             legal_actions_white = legal_actions_white.at[i].set(1)
-    is_check = jnp.zeros(1, dtype=jnp.int32)
+    is_check = jnp.bool_(False)
     if state.is_check:
-        is_check = is_check.at[0].set(1)
+        is_check = state.is_check
     checking_piece = jnp.zeros(12, dtype=jnp.int32)
     for i in range(12):
         if state.checking_piece[i] == 1:

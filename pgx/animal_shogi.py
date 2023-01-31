@@ -112,7 +112,7 @@ for i in range(12):
 
 
 INIT_BOARD = JaxAnimalShogiState(
-    turn=jnp.array([0]),
+    turn=jnp.int32(0),
     board=jnp.array(
         [
             [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0],
@@ -138,7 +138,7 @@ def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
 
 
 def step(
-    state: JaxAnimalShogiState, action: jnp.ndarray
+    state: JaxAnimalShogiState, action: jnp.int32
 ) -> Tuple[JaxAnimalShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
     s = state
@@ -195,7 +195,7 @@ def step(
     )  # type: ignore
     no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
     # 王手をかけている駒は直前に動かした駒であるはず
-    checking_piece = no_checking_piece.at[_action.to[0]].set(1)
+    checking_piece = no_checking_piece.at[_action.to].set(1)
     s = jax.lax.cond(
         (_is_check(s)) & (terminated is False),
         lambda: JaxAnimalShogiState(
@@ -272,9 +272,7 @@ def _hand_to_direction(piece):
 def _action_to_dlaction(action: JaxAnimalShogiAction, turn):
     return jax.lax.cond(
         action.is_drop == 1,
-        lambda: _dlshogi_action(
-            _hand_to_direction(action.piece), action.to
-        ),
+        lambda: _dlshogi_action(_hand_to_direction(action.piece), action.to),
         lambda: _dlshogi_action(
             _point_to_direction(
                 action.from_, action.to, action.is_promote, turn
@@ -323,12 +321,12 @@ def _dlmoveaction_to_action(
     piece = _piece_type(state, _from)
     captured = _piece_type(state, to)
     return JaxAnimalShogiAction(
-        is_drop=False,
-        piece=piece,
-        to=to,
-        from_=_from,
-        captured=captured,
-        is_promote=is_promote,
+        is_drop=jnp.bool_(False),
+        piece=jnp.int32(piece),
+        to=jnp.int32(to),
+        from_=jnp.int32(_from),
+        captured=jnp.int32(captured),
+        is_promote=jnp.bool_(is_promote),
     )  # type: ignore
 
 
@@ -336,7 +334,7 @@ def _dldropaction_to_action(action) -> JaxAnimalShogiAction:
     direction, to = _separate_dlaction(action)
     piece = _direction_to_hand(direction)
     return JaxAnimalShogiAction(
-        is_drop=True, piece=piece, to=to
+        is_drop=jnp.bool_(True), piece=jnp.int32(piece), to=jnp.int32(to)
     )  # type: ignore
 
 
@@ -388,9 +386,9 @@ def _move(
     hand = jax.lax.cond(
         action.captured == 0,
         lambda: hand,
-        lambda: hand.at[
-            _piece_to_hand(_convert_piece(action.captured))
-        ].set(hand[_piece_to_hand(_convert_piece(action.captured))] + 1),
+        lambda: hand.at[_piece_to_hand(_convert_piece(action.captured))].set(
+            hand[_piece_to_hand(_convert_piece(action.captured))] + 1
+        ),
     )
     return JaxAnimalShogiState(
         turn=state.turn,
