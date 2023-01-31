@@ -138,7 +138,7 @@ def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
 
 
 def step(
-    state: JaxAnimalShogiState, action: jnp.int32
+    state: JaxAnimalShogiState, action
 ) -> Tuple[JaxAnimalShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
     s = state
