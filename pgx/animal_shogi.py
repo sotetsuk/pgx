@@ -449,16 +449,12 @@ def _pieces_owner(state: JaxAnimalShogiState):
 
 # 利きの判定
 def _effected_positions(state: JaxAnimalShogiState, turn):
-    all_effect = jnp.zeros(12, dtype=jnp.int32)
-    board = _board_status(state)
-    piece_owner = _pieces_owner(state)
-    for i in range(12):
-        own = piece_owner[i]
-        piece = board[i]
-        effect = POINT_MOVES[i, piece].reshape(12)
-        all_effect = jax.lax.cond(
-            own == turn, lambda: all_effect + effect, lambda: all_effect
-        )
+    pieces = _board_status(state)
+    owners = _pieces_owner(state)
+    ixs = jnp.arange(12)
+    effect = POINT_MOVES[ixs, pieces].reshape(12, 12)  # POINT_MOVES: 12, 11, 3, 4
+    effect = jnp.where(owners == turn, effect, 0)
+    all_effect = effect.sum(axis=0)
     return all_effect
 
 
