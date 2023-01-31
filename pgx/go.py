@@ -682,8 +682,8 @@ def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
     xs = x + dx
     ys = y + dy
-    flag = _state.ren_id_board[oppo_color][to_xy_batch(xs, ys)] != -1
-    return (oob | flag).all()
+    is_occupied = _state.ren_id_board[oppo_color][to_xy_batch(xs, ys)] != -1
+    return (oob | is_occupied).all()
 
 
 def _to_xy(x, y, size) -> int:
