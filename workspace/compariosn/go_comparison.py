@@ -61,7 +61,7 @@ if __name__ == "__main__":
     for i in range(n_games):
         step_nums = p.apply(petting_zoo_random_go)
         if args.print_per_game:
-            print(step_nums)
+            print(i, step_nums)
         total_step_nums += step_nums   
     p.close()
     time_end = time.time()
@@ -75,7 +75,7 @@ if __name__ == "__main__":
     for i in range(n_games):
         step_nums = p.apply(open_spile_random_go)
         if args.print_per_game:
-            print(step_nums)
+            print(i, step_nums)
         total_step_nums += step_nums
     p.close()
     time_end = time.time()
