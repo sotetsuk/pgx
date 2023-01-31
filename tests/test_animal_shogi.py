@@ -25,7 +25,11 @@ from pgx.animal_shogi import step as jax_step
 import numpy as np
 import jax.numpy as jnp
 import copy
-import random
+import jax
+
+
+jax_init = jax.jit(jax_init)
+jax_step = jax.jit(jax_step)
 
 
 TEST_BOARD = AnimalShogiState(
