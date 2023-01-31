@@ -11,24 +11,24 @@ class JaxAnimalShogiAction:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用
     # 駒打ちかどうか
-    is_drop: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    is_drop: jnp.ndarray = jnp.int32(0)
     # piece: 動かした(打った)駒の種類
-    piece: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    piece: jnp.ndarray = jnp.int32(0)
     # final: 移動後の座標
-    to: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    to: jnp.ndarray = jnp.int32(0)
     # 移動前の座標
-    from_: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    from_: jnp.ndarray = jnp.int32(0)
     # captured: 取られた駒の種類。駒が取られていない場合は0
-    captured: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    captured: jnp.ndarray = jnp.int32(0)
     # is_promote: 駒を成るかどうかの判定
-    is_promote: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    is_promote: jnp.ndarray = jnp.int32(0)
 
 
 # 盤面のdataclass
 @struct.dataclass
 class JaxAnimalShogiState:
     # turn 先手番なら0 後手番なら1
-    turn: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    turn: jnp.ndarray = jnp.int32(0)
     # board 盤面の駒。
     # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
     # の順で駒がどの位置にあるかをone_hotで記録
