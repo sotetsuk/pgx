@@ -452,7 +452,9 @@ def _effected_positions(state: JaxAnimalShogiState, turn):
     pieces = _board_status(state)
     owners = _pieces_owner(state)
     ixs = jnp.arange(12)
-    effect = POINT_MOVES[ixs, pieces].reshape(12, 12)  # POINT_MOVES: 12, 11, 3, 4
+    effect = POINT_MOVES[ixs, pieces].reshape(
+        12, 12
+    )  # POINT_MOVES: 12, 11, 3, 4
     effect = jnp.where(owners == turn, effect, 0)
     all_effect = effect.sum(axis=0)
     return all_effect
