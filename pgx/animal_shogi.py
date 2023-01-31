@@ -41,7 +41,7 @@ class JaxAnimalShogiState:
     legal_actions_black: jnp.ndarray = jnp.zeros(180, dtype=jnp.int32)
     legal_actions_white: jnp.ndarray = jnp.zeros(180, dtype=jnp.int32)
     # checked: ターンプレイヤーの王に王手がかかっているかどうか
-    is_check: jnp.ndarray = jnp.zeros(1, dtype=jnp.int32)
+    is_check: jnp.ndarray = jnp.bool_(False)
     # checking_piece: ターンプレイヤーに王手をかけている駒の座標
     checking_piece: jnp.ndarray = jnp.zeros(12, dtype=jnp.int32)
 
