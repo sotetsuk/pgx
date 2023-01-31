@@ -315,44 +315,9 @@ def _not_pass_move(
     state = _set_stone(state, xy)
 
     # 周囲の連を調べる
-    for nsew in NSEW:  # type:ignore
-        adj_pos = (
-            jnp.array([xy // state.size, xy % state.size], dtype=jnp.int32)
-            + nsew
-        )
-        adj_xy = adj_pos[0] * state.size + adj_pos[1]
-        state = jax.lax.cond(
-            _is_off_board(adj_pos, state.size),
-            lambda: state,  # 盤外
-            lambda: jax.lax.cond(
-                state.ren_id_board[_my_color(state), adj_xy] != -1,
-                lambda: _merge_ren(state, xy, adj_xy),
-                lambda: jax.lax.cond(
-                    state.ren_id_board[_opponent_color(state), adj_xy] != -1,
-                    lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
-                    lambda: GoState(  # type:ignore
-                        size=state.size,
-                        ren_id_board=state.ren_id_board,
-                        available_ren_id=state.available_ren_id,
-                        liberty=state.liberty.at[
-                            _my_color(state),
-                            state.ren_id_board[_my_color(state), xy],
-                            adj_xy,
-                        ].set(1),
-                        adj_ren_id=state.adj_ren_id,
-                        legal_action_mask=state.legal_action_mask,
-                        game_log=state.game_log,
-                        turn=state.turn,
-                        curr_player=state.curr_player,
-                        agehama=state.agehama,
-                        passed=state.passed,
-                        kou=state.kou,
-                        komi=state.komi,
-                        terminated=state.terminated,
-                    ),
-                ),
-            ),
-        )
+    state_and_xy = (state, xy)
+    state_and_xy = jax.lax.fori_loop(0, 4, _check_around_xy, state_and_xy)
+    state = state_and_xy[0]
 
     # 自殺手
     is_illegal = (
@@ -393,6 +358,49 @@ def _not_pass_move(
         lambda: _illegal_move(state),
         lambda: (state, jnp.array([0, 0])),
     )
+
+
+def _check_around_xy(i, state_and_xy):
+    state = state_and_xy[0]
+    xy = state_and_xy[1]
+    adj_pos = (
+        jnp.array([xy // state.size, xy % state.size], dtype=jnp.int32)
+        + NSEW[i]  # type:ignore
+    )
+    adj_xy = adj_pos[0] * state.size + adj_pos[1]
+    state = jax.lax.cond(
+        _is_off_board(adj_pos, state.size),
+        lambda: state,  # 盤外
+        lambda: jax.lax.cond(
+            state.ren_id_board[_my_color(state), adj_xy] != -1,
+            lambda: _merge_ren(state, xy, adj_xy),
+            lambda: jax.lax.cond(
+                state.ren_id_board[_opponent_color(state), adj_xy] != -1,
+                lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
+                lambda: GoState(  # type:ignore
+                    size=state.size,
+                    ren_id_board=state.ren_id_board,
+                    available_ren_id=state.available_ren_id,
+                    liberty=state.liberty.at[
+                        _my_color(state),
+                        state.ren_id_board[_my_color(state), xy],
+                        adj_xy,
+                    ].set(1),
+                    adj_ren_id=state.adj_ren_id,
+                    legal_action_mask=state.legal_action_mask,
+                    game_log=state.game_log,
+                    turn=state.turn,
+                    curr_player=state.curr_player,
+                    agehama=state.agehama,
+                    passed=state.passed,
+                    kou=state.kou,
+                    komi=state.komi,
+                    terminated=state.terminated,
+                ),
+            ),
+        ),
+    )
+    return (state, xy)
 
 
 def _is_illegal_move(_state: GoState, _xy):

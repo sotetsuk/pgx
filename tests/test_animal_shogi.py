@@ -27,7 +27,8 @@ import jax.numpy as jnp
 import copy
 import jax
 
-jax_jit = jax.jit(jax_init)
+
+jax_init = jax.jit(jax_init)
 jax_step = jax.jit(jax_step)
 
 
