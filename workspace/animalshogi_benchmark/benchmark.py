@@ -60,7 +60,7 @@ def test(func):
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(5, state)
     n_line = len(str(exp).split('\n'))
-    print(f"| {n_line} | `{func.__name__}` | {delta:.1f}ms |")
+    print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
     return
 
 
