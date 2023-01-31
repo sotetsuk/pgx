@@ -1,5 +1,5 @@
-from typing import Tuple
 from functools import partial
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -504,8 +504,12 @@ def _create_piece_actions(_from, piece):
 
     to = jnp.arange(12)
 
-    normal_dir = jax.vmap(partial(_point_to_direction, _from=_from, promote=False, turn=turn))
-    pro_dir = jax.vmap(partial(_point_to_direction, _from=_from, promote=True, turn=turn))
+    normal_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=False, turn=turn)
+    )
+    pro_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=True, turn=turn)
+    )
     to_action = jax.vmap(_dlshogi_action)
     can_promote = jax.vmap(partial(_can_promote, piece=piece))
 
