@@ -365,7 +365,9 @@ def _not_pass_move(
 def _check_around_xy(i, state_and_xy):
     state = state_and_xy[0]
     xy = state_and_xy[1]
-    adj_pos = jnp.array([xy // state.size + dx[i], xy % state.size + dy[i]], dtype=jnp.int32)  # type:ignore
+    adj_pos = jnp.array(
+        [xy // state.size + dx[i], xy % state.size + dy[i]], dtype=jnp.int32
+    )  # type:ignore
     adj_xy = adj_pos[0] * state.size + adj_pos[1]
     state = jax.lax.cond(
         _is_off_board(adj_pos, state.size),
