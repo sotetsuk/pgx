@@ -624,13 +624,14 @@ def _update_legal_move_actions(
         action.to[0], action.piece[0], new_player_actions
     )
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
-    new_enemy_actions = jax.lax.cond(
-        action.captured[0] == 0,
-        lambda: new_enemy_actions,
-        lambda: _filter_move_actions(
-            action.to[0], action.captured[0], new_enemy_actions
-        ),
-    )
+    #new_enemy_actions = jax.lax.cond(
+    #    action.captured[0] == 0,
+    #    lambda: new_enemy_actions,
+    #    lambda: _filter_move_actions(
+    #        action.to[0], action.captured[0], new_enemy_actions
+    #    ),
+    #)
+    new_enemy_actions = _filter_move_actions(action.to[0], action.captured[0], new_enemy_actions)
     captured = _convert_piece(action.captured[0])
     captured = jax.lax.cond(
         captured % 5 == 0, lambda: captured - 4, lambda: captured
