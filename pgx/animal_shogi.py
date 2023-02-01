@@ -130,36 +130,14 @@ def step(
         lambda: terminated,
     )
     turn = _another_color(s)
-    s = JaxAnimalShogiState(
-        turn=turn,
-        board=s.board,
-        hand=s.hand,
-        legal_actions_black=s.legal_actions_black,
-        legal_actions_white=s.legal_actions_white,
-    )  # type: ignore
+    s = s.replace(turn=turn)
     no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
     # 王手をかけている駒は直前に動かした駒であるはず
     checking_piece = no_checking_piece.at[_action.to].set(1)
     s = jax.lax.cond(
         (_is_check(s)) & (terminated is False),
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
-            legal_actions_black=s.legal_actions_black,
-            legal_actions_white=s.legal_actions_white,
-            is_check=jnp.bool_(True),
-            checking_piece=checking_piece,
-        ),  # type: ignore
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
-            legal_actions_black=s.legal_actions_black,
-            legal_actions_white=s.legal_actions_white,
-            is_check=jnp.bool_(False),
-            checking_piece=no_checking_piece,
-        ),  # type: ignore
+        lambda: s.replace(is_check=TRUE, checking_piece=checking_piece),  # type: ignore
+        lambda: s.replace(is_check=FALSE, checking_piece=no_checking_piece)  # type: ignore
     )
     return s, reward, terminated
 
@@ -259,7 +237,7 @@ def _dlmoveaction_to_action(
     piece = _piece_type(state, _from)
     captured = _piece_type(state, to)
     return JaxAnimalShogiAction(
-        is_drop=jnp.bool_(False),
+        is_drop=FALSE,
         piece=jnp.int32(piece),
         to=jnp.int32(to),
         from_=jnp.int32(_from),
@@ -272,7 +250,7 @@ def _dldropaction_to_action(action) -> JaxAnimalShogiAction:
     direction, to = _separate_dlaction(action)
     piece = _direction_to_hand(direction)
     return JaxAnimalShogiAction(
-        is_drop=jnp.bool_(True), piece=jnp.int32(piece), to=jnp.int32(to)
+        is_drop=TRUE, piece=jnp.int32(piece), to=jnp.int32(to)
     )  # type: ignore
 
 
@@ -328,15 +306,7 @@ def _move(
             hand[_piece_to_hand(_convert_piece(action.captured))] + 1
         ),
     )
-    return JaxAnimalShogiState(
-        turn=state.turn,
-        board=board,
-        hand=hand,
-        legal_actions_black=state.legal_actions_black,
-        legal_actions_white=state.legal_actions_white,
-        is_check=state.is_check,
-        checking_piece=state.checking_piece,
-    )  # type: ignore
+    return state.replace(board=board, hand=hand)  # type: ignore
 
 
 #  駒打ちの処理
@@ -349,15 +319,7 @@ def _drop(
     hand = hand.at[_piece_to_hand(action.piece)].set(n - 1)
     board = board.at[action.piece, action.to].set(1)
     board = board.at[0, action.to].set(0)
-    return JaxAnimalShogiState(
-        turn=state.turn,
-        board=board,
-        hand=hand,
-        legal_actions_black=state.legal_actions_black,
-        legal_actions_white=state.legal_actions_white,
-        is_check=state.is_check,
-        checking_piece=state.checking_piece,
-    )  # type: ignore
+    return state.replace(board=board, hand=hand)  # type: ignore
 
 
 #  ある座標に存在する駒種を返す
@@ -559,24 +521,14 @@ def _update_legal_move_actions(
     )
     return jax.lax.cond(
         s.turn == 0,
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
+        lambda: s.replace(
             legal_actions_black=new_player_actions,
             legal_actions_white=new_enemy_actions,
-            is_check=s.is_check,
-            checking_piece=s.checking_piece,
         ),  # type: ignore
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
+        lambda: s.replace(
             legal_actions_black=new_enemy_actions,
             legal_actions_white=new_player_actions,
-            is_check=s.is_check,
-            checking_piece=s.checking_piece,
-        ),  # type: ignore
+        )  # type: ignore
     )
 
 
@@ -602,24 +554,12 @@ def _update_legal_drop_actions(
     )
     return jax.lax.cond(
         s.turn == 0,
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
-            legal_actions_black=new_player_actions,
-            legal_actions_white=s.legal_actions_white,
-            is_check=s.is_check,
-            checking_piece=s.checking_piece,
+        lambda: s.replace(
+            legal_actions_black=new_player_actions
         ),  # type: ignore
-        lambda: JaxAnimalShogiState(
-            turn=s.turn,
-            board=s.board,
-            hand=s.hand,
-            legal_actions_black=s.legal_actions_black,
-            legal_actions_white=new_player_actions,
-            is_check=s.is_check,
-            checking_piece=s.checking_piece,
-        ),  # type: ignore
+        lambda: s.replace(
+            legal_actions_white=new_player_actions
+        )  # type: ignore
     )
 
 
