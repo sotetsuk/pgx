@@ -1,4 +1,3 @@
-import copy
 from typing import Tuple
 
 import jax
@@ -92,7 +91,7 @@ def step(
     state: JaxAnimalShogiState, action: int
 ) -> Tuple[JaxAnimalShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
-    s = copy.deepcopy(state)
+    s = state
     reward = 0
     terminated = False
     legal_actions = _legal_actions(s)
@@ -334,8 +333,8 @@ def _move(
     state: JaxAnimalShogiState,
     action: JaxAnimalShogiAction,
 ) -> JaxAnimalShogiState:
-    board = copy.deepcopy(state.board)
-    hand = copy.deepcopy(state.hand)
+    board = state.board
+    hand = state.hand
     board = board.at[action.piece, action.from_].set(FALSE)
     board = board.at[0, action.from_].set(TRUE)
     board = board.at[action.captured, action.to].set(FALSE)
@@ -367,8 +366,8 @@ def _move(
 def _drop(
     state: JaxAnimalShogiState, action: JaxAnimalShogiAction
 ) -> JaxAnimalShogiState:
-    board = copy.deepcopy(state.board)
-    hand = copy.deepcopy(state.hand)
+    board = state.board
+    hand = state.hand
     n = hand[_piece_to_hand(action.piece)]
     hand = hand.at[_piece_to_hand(action.piece)].set(n - 1)
     board = board.at[action.piece, action.to].set(TRUE)
@@ -436,7 +435,7 @@ def _point_to_location(point: int) -> Tuple[int, int]:
 # はみ出す部分をカットする
 @jax.jit
 def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     u, d, l, r = _is_side(point)
     for i in range(3):
         new_array = jax.lax.cond(
@@ -457,7 +456,7 @@ def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
 
 @jax.jit
 def _action_board(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     y, t = _point_to_location(point)
     new_array = _cut_outside(new_array, point)
     return jnp.roll(new_array, (y - 1, t - 1), axis=(0, 1))
@@ -622,7 +621,7 @@ def _create_piece_actions(_from: int, piece: int) -> jnp.ndarray:
 def _add_move_actions(
     _from: int, piece: int, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
         new_array = jax.lax.cond(
@@ -636,7 +635,7 @@ def _add_move_actions(
 def _filter_move_actions(
     _from: int, piece: int, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
         new_array = jax.lax.cond(
@@ -648,7 +647,7 @@ def _filter_move_actions(
 # 駒打ちのactionを追加する
 @jax.jit
 def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     direction = _hand_to_direction(piece)
     for i in range(12):
         action = _dlshogi_action(direction, i)
@@ -659,7 +658,7 @@ def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 # 駒打ちのactionを消去する
 @jax.jit
 def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     direction = _hand_to_direction(piece)
     for i in range(12):
         action = _dlshogi_action(direction, i)
@@ -723,7 +722,7 @@ def _init_legal_actions(state: JaxAnimalShogiState) -> JaxAnimalShogiState:
 def _update_legal_move_actions(
     state: JaxAnimalShogiState, action: JaxAnimalShogiAction
 ) -> JaxAnimalShogiState:
-    s = copy.deepcopy(state)
+    s = state
     player_actions = jax.lax.cond(
         s.turn == 0,
         lambda: s.legal_actions_black,
@@ -789,7 +788,7 @@ def _update_legal_move_actions(
 def _update_legal_drop_actions(
     state: JaxAnimalShogiState, action: JaxAnimalShogiAction
 ) -> JaxAnimalShogiState:
-    s = copy.deepcopy(state)
+    s = state
     player_actions = jax.lax.cond(
         s.turn == 0,
         lambda: s.legal_actions_black,
@@ -833,7 +832,7 @@ def _update_legal_drop_actions(
 def _filter_my_piece_move_actions(
     turn: int, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     for i in range(12):
         for j in range(9):
             new_array = jax.lax.cond(
@@ -849,7 +848,7 @@ def _filter_my_piece_move_actions(
 def _filter_occupied_drop_actions(
     turn: int, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     for i in range(12):
         for j in range(3):
             new_array = jax.lax.cond(
@@ -865,7 +864,7 @@ def _filter_occupied_drop_actions(
 def _filter_suicide_actions(
     turn: int, king_sq: int, effects: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     moves = _king_move(king_sq).reshape(12)
     for i in range(12):
         new_array = jax.lax.cond(
@@ -885,7 +884,7 @@ def _filter_suicide_actions(
 def _filter_leave_check_actions(
     turn: int, king_sq: int, check_piece: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = copy.deepcopy(array)
+    new_array = array
     moves = _king_move(king_sq).reshape(12)
     for i in range(12):
         # 王手をかけている駒の位置以外への移動は王手放置
@@ -918,7 +917,7 @@ def _filter_leave_check_actions(
 # boardのlegal_actionsを利用して合法手を生成する
 @jax.jit
 def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
-    s = copy.deepcopy(state)
+    s = state
     turn = s.turn
     action_array = jax.lax.cond(
         turn == 0, lambda: s.legal_actions_black, lambda: s.legal_actions_white
