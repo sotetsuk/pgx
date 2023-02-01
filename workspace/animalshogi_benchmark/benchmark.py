@@ -64,18 +64,12 @@ def test(func):
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(0, 0,  jnp.zeros(12, dtype=jnp.int32), jnp.zeros(180, dtype=jnp.bool_))
-    elif func.__name__ == "_filter_my_piece_move_actions":
+    elif func.__name__ == "_filter_my_piece_move_actions" or func.__name__ == "_filter_occupied_drop_actions":
         time_sta = time.perf_counter()
         jax.jit(func)(0, jnp.zeros(12, dtype=jnp.int32), jnp.zeros(180, dtype=jnp.bool_))
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(0, jnp.zeros(12, dtype=jnp.int32), jnp.zeros(180, dtype=jnp.bool_))
-    elif func.__name__ == "_filter_occupied_drop_actions":
-        time_sta = time.perf_counter()
-        jax.jit(func)(0, 0, jnp.zeros(180, dtype=jnp.bool_))
-        time_end = time.perf_counter()
-        delta = (time_end - time_sta) * 1000
-        exp = jax.make_jaxpr(func)(0, 0, jnp.zeros(180, dtype=jnp.bool_))
     elif func.__name__ == "_action_to_dlaction":
         a = _dlaction_to_action(0, state)
         time_sta = time.perf_counter()
