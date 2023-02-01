@@ -661,18 +661,6 @@ def _filter_suicide_actions(turn, king_sq, effects, array) -> jnp.ndarray:
     flag = (king_moves == 0) | (effects == 0)
     action = action.at[dir(to=to), to].set(jnp.where(flag, action[dir(to=to), to], FALSE))
     return action.flatten()
-    # king_moves = POINT_MOVES[4, king_sq].reshape(12)
-    # for i in range(12):
-    #     array = jax.lax.cond(
-    #         (king_moves[i] == 0) | (effects[i] == 0),
-    #         lambda: array,
-    #         lambda: array.at[
-    #             _dlshogi_action(
-    #                 _point_to_direction(king_sq, i, False, turn), i
-    #             )
-    #         ].set(FALSE),
-    #     )
-    # return array
 
 
 # 王手放置を除く
