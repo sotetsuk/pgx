@@ -442,6 +442,7 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
             legal_actions_black = legal_actions_black.at[i].set(1)
         if state.legal_actions_white[i] == 1:
             legal_actions_white = legal_actions_white.at[i].set(1)
+    legal_action_masks = jnp.stack([legal_actions_black, legal_actions_white])
     is_check = jnp.bool_(False)
     if state.is_check:
         is_check = state.is_check
@@ -453,8 +454,7 @@ def convert_jax_state(state: AnimalShogiState) -> JaxAnimalShogiState:
         turn=turn,
         board=board,
         hand=hand,
-        legal_actions_black=legal_actions_black,
-        legal_actions_white=legal_actions_white,
+        legal_action_masks=legal_action_masks,
         is_check=is_check,
         checking_piece=checking_piece
     )
@@ -466,8 +466,7 @@ def test_jax_init():
     rng = jax.random.PRNGKey(0)
     j_init2 = jax_init(rng)
     assert (j_init.board == j_init2.board).all()
-    assert (j_init.legal_actions_black == j_init2.legal_actions_black).all()
-    assert (j_init.legal_actions_white == j_init2.legal_actions_white).all()
+    assert (j_init.legal_action_masks == j_init2.legal_action_masks).all()
 
 
 def test_jax_step():
@@ -481,21 +480,18 @@ def test_jax_step():
         np_stepped = step(np_init, i)
         jax_stepped = jax_step(j_init, i)
         assert (jax_stepped[0].board == convert_jax_state(np_stepped[0]).board).all()
-        assert (jax_stepped[0].legal_actions_black == convert_jax_state(np_stepped[0]).legal_actions_black).all()
-        assert (jax_stepped[0].legal_actions_white == convert_jax_state(np_stepped[0]).legal_actions_white).all()
+        assert (jax_stepped[0].legal_action_masks == convert_jax_state(np_stepped[0]).legal_action_masks).all()
         assert jax_stepped[1] == np_stepped[1]
         assert jax_stepped[2] == np_stepped[2]
         np_stepped_test = step(np_test, i)
         jax_stepped_test = jax_step(j_test, i)
         assert (jax_stepped_test[0].board == convert_jax_state(np_stepped_test[0]).board).all()
-        assert (jax_stepped_test[0].legal_actions_black == convert_jax_state(np_stepped_test[0]).legal_actions_black).all()
-        assert (jax_stepped_test[0].legal_actions_white == convert_jax_state(np_stepped_test[0]).legal_actions_white).all()
+        assert (jax_stepped_test[0].legal_action_masks == convert_jax_state(np_stepped_test[0]).legal_action_masks).all()
         assert jax_stepped_test[1] == np_stepped_test[1]
         assert jax_stepped_test[2] == np_stepped_test[2]
         np_stepped_test2 = step(np_test2, i)
         jax_stepped_test2 = jax_step(j_test2, i)
         assert (jax_stepped_test2[0].board == convert_jax_state(np_stepped_test2[0]).board).all()
-        assert (jax_stepped_test2[0].legal_actions_black == convert_jax_state(np_stepped_test2[0]).legal_actions_black).all()
-        assert (jax_stepped_test2[0].legal_actions_white == convert_jax_state(np_stepped_test2[0]).legal_actions_white).all()
+        assert (jax_stepped_test2[0].legal_action_masks == convert_jax_state(np_stepped_test2[0]).legal_action_masks).all()
         assert jax_stepped_test2[1] == np_stepped_test2[1]
         assert jax_stepped_test2[2] == np_stepped_test2[2]
