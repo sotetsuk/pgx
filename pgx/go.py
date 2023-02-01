@@ -346,7 +346,9 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     #   o x x x o
     _oppo_adj_ren_id = jax.lax.map(
         lambda row: jnp.where(
-            row[large_id], row.at[large_id].set(False).at[small_id].set(True), row
+            row[large_id],
+            row.at[large_id].set(False).at[small_id].set(True),
+            row,
         ),
         _state.adj_ren_id[_opponent_color(_state)],
     )
