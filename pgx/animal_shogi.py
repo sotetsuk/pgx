@@ -235,18 +235,12 @@ def _separate_dlaction(action):
 # directionからfromがtoからどれだけ離れてるかと成りを含む移動かを得る
 # 手番の情報が必要
 def _direction_to_from(direction, to, turn):
-    dif = 0
-    dif = jax.lax.cond(
-        (direction == 0) | (direction == 8), lambda: -1, lambda: dif
+    to_diff = jnp.int32(
+        # 0  1   2  3   4  5  6   7   8  9
+        [-1, 3, -5, 4, -4, 1, 5, -3, -1, 0, 0, 0, 0, 0, 0]
     )
-    dif = jax.lax.cond(direction == 1, lambda: 3, lambda: dif)
-    dif = jax.lax.cond(direction == 2, lambda: -5, lambda: dif)
-    dif = jax.lax.cond(direction == 3, lambda: 4, lambda: dif)
-    dif = jax.lax.cond(direction == 4, lambda: -4, lambda: dif)
-    dif = jax.lax.cond(direction == 5, lambda: 1, lambda: dif)
-    dif = jax.lax.cond(direction == 6, lambda: 5, lambda: dif)
-    dif = jax.lax.cond(direction == 7, lambda: -3, lambda: dif)
     is_promote = jax.lax.cond(direction >= 8, lambda: 1, lambda: 0)
+    dif = to_diff[direction]
     _from = jax.lax.cond(turn == 0, lambda: to - dif, lambda: to + dif)
     return _from, is_promote
 
