@@ -344,20 +344,18 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     #   x o x o x
     #   x x x o o
     #   o x x x o
-    _oppo_adj_ren_id = jax.lax.map(
-        lambda row: jnp.where(
-            row[large_id],
-            row.at[large_id].set(False).at[small_id].set(True),
-            row,
-        ),
-        _state.adj_ren_id[_opponent_color(_state)],
-    )
-    # _opp_adj_ren_id = _state.adj_ren_id[_opponent_color(_state)]  # (2, 361, 361) => (361, 361)
-    # _oppo_adj_ren_id = jnp.where(
-    #     _opp_adj_ren_id[large_id],
-    #     _opp_adj_ren_id.at[large_id].set(False).at[small_id].set(True),
-    #     _opp_adj_ren_id,
+    # _oppo_adj_ren_id = jax.lax.map(
+    #     lambda row: jnp.where(
+    #         row[large_id],
+    #         row.at[large_id].set(False).at[small_id].set(True),
+    #         row,
+    #     ),
+    #     _state.adj_ren_id[_opponent_color(_state)],
     # )
+    _oppo_adj_ren_id = _state.adj_ren_id[_opponent_color(_state)]  # (2, 361, 361) => (361, 361)
+    mask = _oppo_adj_ren_id[:, large_id]  # (361,)
+    _oppo_adj_ren_id = _oppo_adj_ren_id.at[:, large_id].set(_oppo_adj_ren_id[:, large_id] & (~mask))
+    _oppo_adj_ren_id = _oppo_adj_ren_id.at[:, small_id].set(_oppo_adj_ren_id[:, small_id] | mask)
 
     _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
     _adj_ren_id = _adj_ren_id.at[small_id].set(
