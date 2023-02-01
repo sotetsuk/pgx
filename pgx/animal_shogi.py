@@ -652,19 +652,33 @@ def _filter_occupied_drop_actions(turn, owners, array) -> jnp.ndarray:
 
 # 自殺手を除く
 def _filter_suicide_actions(turn, king_sq, effects, array) -> jnp.ndarray:
-    new_array = array
+    action = array.reshape((15, 12))  # (direction, to)
+    dir = jax.vmap(
+        partial(_point_to_direction, _from=king_sq, promote=False, turn=turn)
+    )
+    to = jnp.arange(12)
+    d = dir(to=to)
     king_moves = POINT_MOVES[4, king_sq].reshape(12)
+    flag = (king_moves == 0) | (effects == 0)
     for i in range(12):
-        new_array = jax.lax.cond(
-            (king_moves[i] == 0) | (effects[i] == 0),
-            lambda: new_array,
-            lambda: new_array.at[
-                _dlshogi_action(
-                    _point_to_direction(king_sq, i, False, turn), i
-                )
-            ].set(FALSE),
+        action = jax.lax.cond(
+            flag[i], lambda: action, lambda: action.at[d[i], i].set(FALSE)
         )
-    return new_array
+    # action = action.at[d].set(jnp.where(flag, FALSE, action[d]))
+    return action.flatten()
+
+    # king_moves = POINT_MOVES[4, king_sq].reshape(12)
+    # for i in range(12):
+    #     array = jax.lax.cond(
+    #         (king_moves[i] == 0) | (effects[i] == 0),
+    #         lambda: array,
+    #         lambda: array.at[
+    #             _dlshogi_action(
+    #                 _point_to_direction(king_sq, i, False, turn), i
+    #             )
+    #         ].set(FALSE),
+    #     )
+    # return array
 
 
 # 王手放置を除く
