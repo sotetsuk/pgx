@@ -380,7 +380,7 @@ def _find_value_from_key(
     >>> VALUES = np.arange(20).reshape(5, 4)
     >>> KEYS = np.arange(20).reshape(5, 4)
     >>> key = np.arange(4, 8)
-    >>> _find_key_2(key, KEYS, VALUES)
+    >>> _find_value_from_key(key, KEYS, VALUES)
     array([4, 5, 6, 7])
     """
     mask = np.where(

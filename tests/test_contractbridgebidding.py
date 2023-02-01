@@ -794,6 +794,6 @@ def test_calcurate_dds_tricks():
         dds_tricks = _calculate_dds_tricks(
             state, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
         )
-        # sample dataから、作成したhash tableを用いて、ddsの結果を計算。
+        # sample dataから、作成したhash tableを用いて、ddsの結果を計算
         # その結果とsample dataが一致しているか確認
         assert np.all(dds_tricks == samples[i][1])
