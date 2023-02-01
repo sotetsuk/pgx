@@ -295,13 +295,13 @@ def test_legal_action():
     _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=5, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
-    _, state, _ = j_step(state=state, action=9, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=13, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=11, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=12, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
-    _, state, _ = j_step(state=state, action=13, size=BOARD_SIZE)  # BLACK
+    _, state, _ = j_step(state=state, action=9, size=BOARD_SIZE)  # BLACK
     assert jnp.all(state.legal_action_mask == expected)
 
     # =====

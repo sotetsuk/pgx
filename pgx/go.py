@@ -36,6 +36,7 @@ class GoState:
     liberty: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.int32)
 
     # 隣接している敵の連id
+    # adj_ren_id[color, my_id, opp_id] = colorのmy_idの連がopp_idと隣接しているか否か
     adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.bool_)
 
     # 設置可能なマスをTrueとしたマスク
@@ -216,7 +217,7 @@ def _not_pass_move(
     state = _set_stone(state, xy)
 
     # legal_actionを更新
-    state = _update_legal_action(state, xy)
+    # state = _update_legal_action(state, xy)
 
     # 周囲の連を調べる
     state = jax.lax.fori_loop(
@@ -334,6 +335,66 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     return _state
 
 
+def _check_if_suicide_point_exist(_state: GoState, _color, _id):
+    # 置いた連の周りの呼吸点が1つの場合、その呼吸点(a)の周り四方を確認する
+    # 四方に含まれる自分の連の呼吸点が全て1つだった場合、点(a)は自殺点
+    liberty_points = _state.liberty[_color, _id] == 1
+    if jnp.count_nonzero(liberty_points) == 1:
+        # その呼吸点の位置(xy)
+        one_liberty_point = jnp.where(liberty_points, size=1)[0][0]
+        # 四方を確認する
+        is_suicide_point = TRUE
+        is_suicide_point = jax.lax.fori_loop(
+            0,
+            4,
+            lambda i, flag: _check_around_one_liberty_point(
+                i, flag, _state, one_liberty_point, _color
+            ),
+            is_suicide_point,
+        )
+        # is_suicide_point = TRUEならばその点は自殺点
+
+
+def _check_around_one_liberty_point(
+    i, is_suicide_point, _state: GoState, _xy, _color
+):
+    x = _xy // _state.size + dx[i]
+    y = _xy % _state.size + dy[i]
+    adj_pos = jnp.array(
+        [x, y],
+        dtype=jnp.int32,
+    )
+    is_off = _is_off_board(adj_pos, _state.size)
+    adj_xy = jax.lax.cond(
+        is_off, lambda: 0, lambda: adj_pos[0] * _state.size + adj_pos[1]
+    )
+
+    # 呼吸点
+    is_suicide_point = jax.lax.cond(
+        (
+            ~is_off & _state.ren_id_board[_color + 1, adj_xy]
+            == -1 & _state.ren_id_board[(_color + 1) % 2, adj_xy]
+            == -1
+        ),
+        lambda: FALSE,
+        lambda: is_suicide_point,
+    )
+
+    # 呼吸点2つ以上の味方連
+    _id = _state.ren_id_board[_color, adj_xy]
+    liberty_points = _state.liberty[_color, _id] == 1
+    is_suicide_point = jax.lax.cond(
+        (
+            ~is_off & _state.ren_id_board[_color + 1, adj_xy]
+            != 1 & jnp.count_nonzero(liberty_points)
+            > 1
+        ),
+        lambda: FALSE,
+        lambda: is_suicide_point,
+    )
+    return is_suicide_point
+
+
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     ren_id_board = _state.ren_id_board.at[_my_color(_state)].get()
 
@@ -357,6 +418,8 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     )
     liberty = liberty.at[large_id, :].set(False)
 
+    # 隣接していた相手の連について
+    # 「large_idとは隣接していない、small_idとは隣接する」と上書き
     _oppo_adj_ren_id = jax.lax.map(
         lambda row: jnp.where(
             row[large_id],
