@@ -222,9 +222,7 @@ def _hand_to_direction(piece: int) -> int:
 def _action_to_dlaction(action: JaxAnimalShogiAction, turn: int) -> int:
     return jax.lax.cond(
         action.is_drop,
-        lambda: _dlshogi_action(
-            _hand_to_direction(action.piece), action.to
-        ),
+        lambda: _dlshogi_action(_hand_to_direction(action.piece), action.to),
         lambda: _dlshogi_action(
             _point_to_direction(
                 action.from_, action.to, action.is_promote, turn
@@ -348,9 +346,9 @@ def _move(
     hand = jax.lax.cond(
         action.captured == 0,
         lambda: hand,
-        lambda: hand.at[
-            _piece_to_hand(_convert_piece(action.captured))
-        ].set(hand[_piece_to_hand(_convert_piece(action.captured))] + 1),
+        lambda: hand.at[_piece_to_hand(_convert_piece(action.captured))].set(
+            hand[_piece_to_hand(_convert_piece(action.captured))] + 1
+        ),
     )
     return JaxAnimalShogiState(
         turn=state.turn,
