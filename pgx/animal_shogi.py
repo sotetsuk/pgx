@@ -849,17 +849,17 @@ def _filter_occupied_drop_actions(
 def _filter_suicide_actions(
     turn: int, king_sq: int, effects: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    moves = _king_move(king_sq).reshape(12)
-    for i in range(12):
-        array = jax.lax.cond(
-            (moves[i] == 0) | (effects[i] == 0),
-            lambda: array,
-            lambda: array.at[
-                _dlshogi_action(
-                    _point_to_direction(king_sq, i, False, turn), i
-                )
-            ].set(0),
-        )
+    # moves = _king_move(king_sq).reshape(12)
+    # for i in range(12):
+    #     array = jax.lax.cond(
+    #         (moves[i] == 0) | (effects[i] == 0),
+    #         lambda: array,
+    #         lambda: array.at[
+    #             _dlshogi_action(
+    #                 _point_to_direction(king_sq, i, False, turn), i
+    #             )
+    #         ].set(0),
+    #     )
     return array
 
 
