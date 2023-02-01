@@ -885,15 +885,15 @@ def _filter_leave_check_actions(
                 lambda: array,
             )
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
-        array = jax.lax.cond(
-            moves[i] == 0,
-            lambda: array,
-            lambda: array.at[
-                _dlshogi_action(
-                    _point_to_direction(king_sq, i, False, turn), i
-                )
-            ].set(1),
-        )
+        # array = jax.lax.cond(
+        #     moves[i] == 0,
+        #     lambda: array,
+        #     lambda: array.at[
+        #         _dlshogi_action(
+        #             _point_to_direction(king_sq, i, False, turn), i
+        #         )
+        #     ].set(1),
+        # )
     return array
 
 
