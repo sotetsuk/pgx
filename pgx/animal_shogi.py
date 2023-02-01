@@ -331,7 +331,8 @@ def _piece_type(state: JaxAnimalShogiState, point):
 
 # ある駒の持ち主を返す
 def _owner(piece):
-    return jax.lax.cond(piece == 0, lambda: 2, lambda: (piece - 1) // 5)
+    # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    return jnp.int32([2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1])[piece]
 
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
