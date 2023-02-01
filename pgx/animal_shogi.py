@@ -731,9 +731,7 @@ def _update_legal_move_actions(
         action.from_, action.piece, player_actions
     )
     # 移動後の位置からの移動のフラグを立てる
-    player_actions = _add_move_actions(
-        action.to, action.piece, player_actions
-    )
+    player_actions = _add_move_actions(action.to, action.piece, player_actions)
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
     enemy_actions = jax.lax.cond(
         action.captured == 0,
@@ -786,9 +784,7 @@ def _update_legal_drop_actions(
         lambda: state.legal_actions_white,
     )
     # 移動後の位置からの移動のフラグを立てる
-    player_actions = _add_move_actions(
-        action.to, action.piece, player_actions
-    )
+    player_actions = _add_move_actions(action.to, action.piece, player_actions)
     # 持ち駒がもうない場合、その駒を打つフラグを折る
     player_actions = jax.lax.cond(
         state.hand[_piece_to_hand(action.piece)] == 1,
@@ -906,7 +902,9 @@ def _filter_leave_check_actions(
 def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
     turn = state.turn
     action_array = jax.lax.cond(
-        turn == 0, lambda: state.legal_actions_black, lambda: state.legal_actions_white
+        turn == 0,
+        lambda: state.legal_actions_black,
+        lambda: state.legal_actions_white,
     )
     king_sq = state.board[4 + 5 * turn].argmax()
     # 王手放置を除く
