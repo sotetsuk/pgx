@@ -191,14 +191,14 @@ def _point_to_direction(
     dis = jax.lax.cond(turn == 1, lambda: -dis, lambda: dis)
     # UP, UP_LEFT, UP_RIGHT, LEFT, RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT, UP_PROMOTE... の順でdirを割り振る
     # PROMOTEの場合は+8する処理を入れるが、どうぶつ将棋ではUP_PROMOTEしか存在しない(はず)
-    direction = jax.lax.cond(dis == -1, lambda: 0, lambda: direction)
-    direction = jax.lax.cond(dis == 3, lambda: 1, lambda: direction)
-    direction = jax.lax.cond(dis == -5, lambda: 2, lambda: direction)
-    direction = jax.lax.cond(dis == 4, lambda: 3, lambda: direction)
-    direction = jax.lax.cond(dis == -4, lambda: 4, lambda: direction)
-    direction = jax.lax.cond(dis == 1, lambda: 5, lambda: direction)
-    direction = jax.lax.cond(dis == 5, lambda: 6, lambda: direction)
-    direction = jax.lax.cond(dis == -3, lambda: 7, lambda: direction)
+    # dir:  0  1  2  3  4  5  6  7
+    # dis: -1  3 -5  4 -4  1  5 -3
+    base = 5
+    to_dir = jnp.int32(
+        # -5 -4 -3  -2 -1   0  1   2  3  4  5
+        [2, 4, 7, -1, 0, -1, 5, -1, 1, 3, 6]
+    )
+    direction = to_dir[base + dis]
     direction = jax.lax.cond(
         promote == 1, lambda: direction + 8, lambda: direction
     )
