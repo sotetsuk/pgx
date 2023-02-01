@@ -72,7 +72,7 @@ if __name__ == "__main__":
     tim = time_end- time_sta
     p.close()
     avarage_steps = sum(list(map(lambda x: x[1], ex.get())))//n_games
-    print("execution time in petting zoo is {}, avarage number of steps is {}".format(tim, avarage_steps))
+    print("n_games: {} n_processes: {} execution time in petting zoo is {}, avarage number of steps is {}".format(n_games, n_processes, tim, avarage_steps))
 
 
     # open spile
@@ -85,4 +85,4 @@ if __name__ == "__main__":
     tim = time_end- time_sta
     p.close()
     avarage_steps = sum(list(map(lambda x: x[1], ex.get())))//n_games
-    print("execution time in open_spile is {}, avarage number of steps is {}".format(tim, avarage_steps))
+    print("n_games: {} n_processes: {} execution time in open_spile is {}, avarage number of steps is {}".format(n_games, n_processes, tim, avarage_steps))
