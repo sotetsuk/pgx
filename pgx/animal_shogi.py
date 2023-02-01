@@ -723,16 +723,7 @@ def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
 
 # トライルールによる勝利判定
 # 王が最奥に動くactionならTrue
-def _is_try(action: JaxAnimalShogiAction) -> bool:
-    flag = False
-    flag = jax.lax.cond(
-        (action.piece == 4) & (action.to % 4 == 0),
-        lambda: True,
-        lambda: flag,
+def _is_try(action: JaxAnimalShogiAction):
+    return ((action.piece == 4) & (action.to % 4 == 0)) | (
+        (action.piece == 9) & (action.to % 4 == 3)
     )
-    flag = jax.lax.cond(
-        (action.piece == 9) & (action.to % 4 == 3),
-        lambda: True,
-        lambda: flag,
-    )
-    return flag
