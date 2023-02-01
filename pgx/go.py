@@ -335,15 +335,29 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     )
     liberty = liberty.at[large_id, :].set(False)
 
-    _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
-
-    _adj_r = _state.adj_ren_id[_opponent_color(_state)]
-    _oppo_adj_ren_id = jnp.where(
-        _adj_r[large_id],
-        _adj_r.at[large_id].set(False).at[small_id].set(True),
-        _adj_r,
+    #       l   s
+    # [ x o x o o ]
+    #   x x o o x
+    #   o x o x x
+    #
+    #       l   s
+    #   x o x o x
+    #   x x x o o
+    #   o x x x o
+    _oppo_adj_ren_id = jax.lax.map(
+        lambda row: jnp.where(
+            row[large_id], row.at[large_id].set(False).at[small_id].set(True), row
+        ),
+        _state.adj_ren_id[_opponent_color(_state)],
     )
+    # _opp_adj_ren_id = _state.adj_ren_id[_opponent_color(_state)]  # (2, 361, 361) => (361, 361)
+    # _oppo_adj_ren_id = jnp.where(
+    #     _opp_adj_ren_id[large_id],
+    #     _opp_adj_ren_id.at[large_id].set(False).at[small_id].set(True),
+    #     _opp_adj_ren_id,
+    # )
 
+    _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
     _adj_ren_id = _adj_ren_id.at[small_id].set(
         jnp.logical_or(_adj_ren_id[small_id], _adj_ren_id[large_id])
     )
@@ -422,7 +436,8 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         surrounded_stones, -1, _state.ren_id_board[_opponent_color(_state)]
     )
 
-    my_lib = _state.liberty[_my_color(_state)]
+    my_lib = _state.liberty[_my_color(_state)]  # (2, 361, 361) => (361, 361)
+    # surrounded_stones (361) => (my_lib > 0) & surrounded_stones (361, 361)
     liberty = jnp.where((my_lib > 0) & surrounded_stones, 1, my_lib)
 
     available_ren_id = _state.available_ren_id.at[
