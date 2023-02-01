@@ -127,12 +127,12 @@ def step(
     )
     # トライルールによる勝利判定
     reward = jax.lax.cond(
-        (terminated is False) & _is_try(_action),
+        ~terminated & _is_try(_action),
         lambda: _turn_to_reward(s.turn),
         lambda: reward,
     )
     terminated = jax.lax.cond(
-        (terminated is False) & _is_try(_action),
+        _is_try(_action),
         lambda: True,
         lambda: terminated,
     )
