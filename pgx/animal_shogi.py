@@ -657,16 +657,10 @@ def _filter_suicide_actions(turn, king_sq, effects, array) -> jnp.ndarray:
         partial(_point_to_direction, _from=king_sq, promote=False, turn=turn)
     )
     to = jnp.arange(12)
-    d = dir(to=to)
     king_moves = POINT_MOVES[4, king_sq].reshape(12)
     flag = (king_moves == 0) | (effects == 0)
-    for i in range(12):
-        action = jax.lax.cond(
-            flag[i], lambda: action, lambda: action.at[d[i], i].set(FALSE)
-        )
-    # action = action.at[d].set(jnp.where(flag, FALSE, action[d]))
+    action = action.at[dir(to=to), to].set(jnp.where(flag, action[d, to], FALSE))
     return action.flatten()
-
     # king_moves = POINT_MOVES[4, king_sq].reshape(12)
     # for i in range(12):
     #     array = jax.lax.cond(
