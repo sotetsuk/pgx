@@ -641,15 +641,13 @@ def _filter_my_piece_move_actions(turn, owner, array) -> jnp.ndarray:
 
 # 駒がある地点への駒打ちを除く
 def _filter_occupied_drop_actions(turn, owner, array) -> jnp.ndarray:
-    new_array = array
     for i in range(12):
-        for j in range(3):
-            new_array = jax.lax.cond(
-                owner[i] == 2,
-                lambda: new_array,
-                lambda: new_array.at[12 * (j + 9 + 3 * turn) + i].set(FALSE),
+        array = jax.lax.cond(
+            owner[i] == 2,
+            lambda: array,
+            lambda: array.at[12 * (jnp.arange(3) + 9 + 3 * turn) + i].set(FALSE),
             )
-    return new_array
+    return array
 
 
 # 自殺手を除く
