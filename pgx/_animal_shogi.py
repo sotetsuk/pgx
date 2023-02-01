@@ -668,7 +668,6 @@ def _filter_leave_check_actions(
     new_array = copy.deepcopy(array)
     moves = _king_move(king_sq).reshape(12)
     for i in range(12):
-        # 王手をかけている駒の位置以外への移動は王手放置
         for j in range(15):
             # 駒打ちのフラグは全て折る
             if j > 8:
@@ -676,7 +675,10 @@ def _filter_leave_check_actions(
             # 王手をかけている駒の場所以外への移動ははじく
             if check_piece[i] == 0:
                 new_array[12 * j + i] = 0
-        # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
+
+    # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
+    for i in range(12):
+        # 王手をかけている駒の位置以外への移動は王手放置
         if moves[i] == 0:
             continue
         direction = _point_to_direction(king_sq, i, False, turn)
