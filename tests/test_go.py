@@ -17,26 +17,19 @@ def test_init():
 
 def test_end_by_pass():
     rng = jax.random.PRNGKey(0)
-<<<<<<< HEAD
-    _, state = jax.jit(init, static_argnums=(1,))(rng=rng, size=BOARD_SIZE)
-    j_step = jax.jit(step, static_argnums=(2,))
-    _, state, _ = jax.jit(j_step, static_argnums=(2,))(
-        state=state, action=-1, size=BOARD_SIZE
-    )
-=======
 
     _, state = j_init(rng=rng, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=-1, size=BOARD_SIZE)
->>>>>>> origin/main
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
     assert state.passed
     assert not state.terminated
     _, state, _ = j_step(state=state, action=0, size=BOARD_SIZE)
     assert not state.passed
     assert not state.terminated
-    _, state, _ = j_step(state=state, action=-1, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
     assert state.passed
     assert not state.terminated
-    _, state, _ = j_step(state=state, action=-1, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
     assert state.passed
     assert state.terminated
 
@@ -46,15 +39,8 @@ def test_step():
     https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
     """
     rng = jax.random.PRNGKey(0)
-<<<<<<< HEAD
-    curr_player, state = jax.jit(init, static_argnums=(1,))(
-        rng=rng, size=BOARD_SIZE
-    )
-    j_step = jax.jit(step, static_argnums=(2,))
-=======
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
 
->>>>>>> origin/main
     _, state, _ = j_step(state=state, action=12, size=BOARD_SIZE)  # BLACK
     _, state, _ = j_step(state=state, action=11, size=BOARD_SIZE)  # WHITE
     _, state, _ = j_step(state=state, action=17, size=BOARD_SIZE)
@@ -71,12 +57,12 @@ def test_step():
     _, state, _ = j_step(state=state, action=15, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=23, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=20, size=BOARD_SIZE)
-    _, state, _ = j_step(state=state, action=-1, size=BOARD_SIZE)  # pass
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)  # pass
     _, state, _ = j_step(state=state, action=22, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=19, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=21, size=BOARD_SIZE)
-    _, state, _ = j_step(state=state, action=-1, size=BOARD_SIZE)  # pass
-    _, state, reward = j_step(state=state, action=-1, size=BOARD_SIZE)  # pass
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)  # pass
+    _, state, reward = j_step(state=state, action=25, size=BOARD_SIZE)  # pass
 
     expected_board: jnp.ndarray = jnp.array(
         [
@@ -104,14 +90,8 @@ def test_step():
 
 def test_kou():
     rng = jax.random.PRNGKey(0)
-<<<<<<< HEAD
-    _, state = jax.jit(init, static_argnums=(1,))(rng=rng, size=BOARD_SIZE)
-    j_step = jax.jit(step, static_argnums=(2,))
-
-=======
 
     _, state = j_init(rng=rng, size=BOARD_SIZE)
->>>>>>> origin/main
     _, state, _ = j_step(state=state, action=2, size=BOARD_SIZE)  # BLACK
     _, state, _ = j_step(state=state, action=17, size=BOARD_SIZE)  # WHITE
     _, state, _ = j_step(state=state, action=6, size=BOARD_SIZE)  # BLACK
@@ -156,11 +136,6 @@ def test_observe():
     # curr_player: 1
     # player 0 is white, player 1 is black
 
-<<<<<<< HEAD
-    j_step = jax.jit(step, static_argnums=(2,))
-
-=======
->>>>>>> origin/main
     _, state, _ = j_step(state=state, action=0, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=1, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=2, size=BOARD_SIZE)
@@ -237,7 +212,7 @@ def test_legal_action():
         False, False, False, False, False,
         False, True, False, True, False,
         True, True, True, True, True,
-        True, True, True, True, True])
+        True, True, True, True, True, True])
     # fmt:on
     _, state = j_init(rng=rng, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=0, size=BOARD_SIZE)  # BLACK
@@ -269,7 +244,7 @@ def test_legal_action():
         False, False, False, False, False,
         True, False, False, False, True,
         True, True, True, True, True,
-        True, True, True, True, True])
+        True, True, True, True, True, True])
     # fmt:on
     # white 8
     _, state = j_init(rng=rng, size=BOARD_SIZE)
@@ -342,13 +317,13 @@ def test_legal_action():
         True, False, False, False, True,
         False, False, False, False, False,
         True, False, False, False, True,
-        True, True, False, True, True])
+        True, True, False, True, True, True])
     expected_w = jnp.array([
         True, True, False, True, True,
         True, False, False, False, True,
         False, False, True, False, False,
         True, False, False, False, True,
-        True, True, False, True, True])
+        True, True, False, True, True, True])
     # fmt:on
     _, state = j_init(rng=rng, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=7, size=BOARD_SIZE)  # BLACK
@@ -384,21 +359,21 @@ def test_legal_action():
         False, False, False, False, False,
         False, False, False, False, False,
         False, False, False, False, False,
-        False, False, False, False, False])
+        False, False, False, False, False, True])
     # white pass
     expected_b = jnp.array([
         True, False, False, False, True,
         False, False, False, True, False,
         False, False, False, False, False,
         False, False, False, False, False,
-        False, False, False, False, False])
+        False, False, False, False, False, True])
     # black 8
     expected_w2 = jnp.array([
         False, False, False, False, False,
         False, True, False, False, False,
         False, True, False, True, False,
         False, True, False, True, False,
-        False, True, True, True, False])
+        False, True, True, True, False, True])
     # fmt:on
     _, state = j_init(rng=rng, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
@@ -445,7 +420,7 @@ def test_legal_action():
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
             a = jax.random.choice(subkey, actions[0])
-        for action in actions[0]:
+        for action in actions[0][:-1]:
             _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
             assert not _state.terminated
 
@@ -454,19 +429,11 @@ def test_legal_action():
 
 def test_random_play_5():
     rng = jax.random.PRNGKey(0)
-<<<<<<< HEAD
-    curr_player, state = jax.jit(init, static_argnums=(1,))(
-        rng=rng, size=BOARD_SIZE
-    )
-    j_step = jax.jit(step, static_argnums=(2,))
-
-=======
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
->>>>>>> origin/main
     while not state.terminated:
         actions = np.where(state.legal_action_mask)
         if len(actions[0]) == 0:
-            a = -1
+            a = 25
         else:
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
@@ -476,26 +443,18 @@ def test_random_play_5():
 
         if state.turn > 100:
             break
-    assert state.turn > 100
+    assert state.passed or state.turn > 100
 
 
 def test_random_play_19():
     BOARD_SIZE = 19
 
     rng = jax.random.PRNGKey(0)
-<<<<<<< HEAD
-    curr_player, state = jax.jit(init, static_argnums=(1,))(
-        rng=rng, size=BOARD_SIZE
-    )
-    j_step = jax.jit(step, static_argnums=(2,))
-
-=======
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
->>>>>>> origin/main
     while not state.terminated:
         actions = np.where(state.legal_action_mask)
         if len(actions[0]) == 0:
-            a = -1
+            a = 19 * 19
         else:
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
@@ -505,4 +464,4 @@ def test_random_play_19():
 
         if state.turn > 100:
             break
-    assert state.turn > 100
+    assert state.passed or state.turn > 100
