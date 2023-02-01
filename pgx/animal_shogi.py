@@ -344,8 +344,7 @@ def _board_status(state: JaxAnimalShogiState):
 # 駒の持ち主の判定
 def _pieces_owner(state: JaxAnimalShogiState):
     _piece_types = _board_status(state)
-    board = jnp.where(_piece_types == 0, 2, (_piece_types - 1) // 5)
-    return board
+    return jax.vmap(_owner)(_piece_types)
 
 
 # 利きの判定
