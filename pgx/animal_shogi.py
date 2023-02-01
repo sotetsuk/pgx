@@ -274,15 +274,16 @@ def _another_color(state: JaxAnimalShogiState):
 # 相手の駒を同じ種類の自分の駒に変換する
 def _convert_piece(piece):
     # 両方の駒でない（＝空白）場合は-1を返す
-    p = jax.lax.cond(piece == 0, lambda: -1, lambda: (piece + 5) % 10)
-    return jax.lax.cond(p == 0, lambda: 10, lambda: p)
+    # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    return jnp.int32([-1, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5])[piece]
 
 
 # 駒から持ち駒への変換
 # 先手ひよこが0、後手ぞうが5
 def _piece_to_hand(piece):
-    p = jax.lax.cond(piece % 5 == 0, lambda: piece - 4, lambda: piece)
-    return jax.lax.cond(p < 6, lambda: p - 1, lambda: p - 3)
+    # piece: 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
+    return jnp.int32([-1, 0, 1, 2, -1, -1, 3, 4, 5, -1, -1])[piece]
 
 
 #  移動の処理
@@ -330,7 +331,8 @@ def _piece_type(state: JaxAnimalShogiState, point):
 
 # ある駒の持ち主を返す
 def _owner(piece):
-    return jax.lax.cond(piece == 0, lambda: 2, lambda: (piece - 1) // 5)
+    # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    return jnp.int32([2, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1])[piece]
 
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
@@ -342,8 +344,7 @@ def _board_status(state: JaxAnimalShogiState):
 # 駒の持ち主の判定
 def _pieces_owner(state: JaxAnimalShogiState):
     _piece_types = _board_status(state)
-    board = jnp.where(_piece_types == 0, 2, (_piece_types - 1) // 5)
-    return board
+    return jax.vmap(_owner)(_piece_types)
 
 
 # 利きの判定
@@ -472,15 +473,10 @@ def _update_legal_move_actions(
     state: JaxAnimalShogiState, action: JaxAnimalShogiAction
 ) -> JaxAnimalShogiState:
     s = state
-    player_actions = jax.lax.cond(
+    player_actions, enemy_actions = jax.lax.cond(
         s.turn == 0,
-        lambda: s.legal_actions_black,
-        lambda: s.legal_actions_white,
-    )
-    enemy_actions = jax.lax.cond(
-        s.turn == 0,
-        lambda: s.legal_actions_white,
-        lambda: s.legal_actions_black,
+        lambda: (s.legal_actions_black, s.legal_actions_white),
+        lambda: (s.legal_actions_white, s.legal_actions_black),
     )
     # 元の位置にいたときのフラグを折る
     new_player_actions = _filter_move_actions(
@@ -509,16 +505,14 @@ def _update_legal_move_actions(
         lambda: new_player_actions,
         lambda: _add_drop_actions(captured, new_player_actions),
     )
-    return jax.lax.cond(
+    legal_actions_black, legal_actions_white = jax.lax.cond(
         s.turn == 0,
-        lambda: s.replace(  # type: ignore
-            legal_actions_black=new_player_actions,
-            legal_actions_white=new_enemy_actions,
-        ),
-        lambda: s.replace(  # type: ignore
-            legal_actions_black=new_enemy_actions,
-            legal_actions_white=new_player_actions,
-        ),
+        lambda: (new_player_actions, new_enemy_actions),
+        lambda: (new_enemy_actions, new_player_actions),
+    )
+    return s.replace(  # type: ignore
+        legal_actions_black=legal_actions_black,
+        legal_actions_white=legal_actions_white,
     )
 
 
