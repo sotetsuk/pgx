@@ -176,9 +176,9 @@ def _update_state_wo_legal_action(
     _state: GoState, _action: int, _size: int
 ) -> Tuple[GoState, jnp.ndarray]:
     _state, _reward = jax.lax.cond(
-        _action < 0,
-        lambda: _pass_move(_state, _size),
+        (0 <= _action) & (_action < _size * _size),
         lambda: _not_pass_move(_state, _action),
+        lambda: _pass_move(_state, _size),
     )
 
     # increase turn
@@ -216,9 +216,9 @@ def _not_pass_move(
     state = _set_stone(state, xy)
 
     # 周囲の連を調べる
-    state_and_xy = (state, xy)
-    state_and_xy = jax.lax.fori_loop(0, 4, _check_around_xy, state_and_xy)
-    state = state_and_xy[0]
+    state = jax.lax.fori_loop(
+        0, 4, lambda i, s: _check_around_xy(i, s, xy), state
+    )
 
     # 自殺手
     is_illegal = (
@@ -247,33 +247,37 @@ def _not_pass_move(
     )
 
 
-def _check_around_xy(i, state_and_xy):
-    state = state_and_xy[0]
-    xy = state_and_xy[1]
+def _check_around_xy(i, state, xy):
     adj_pos = jnp.array(
         [xy // state.size + dx[i], xy % state.size + dy[i]], dtype=jnp.int32
-    )  # type:ignore
-    adj_xy = adj_pos[0] * state.size + adj_pos[1]
-    state = jax.lax.cond(
-        _is_off_board(adj_pos, state.size),
-        lambda: state,  # 盤外
-        lambda: jax.lax.cond(
-            state.ren_id_board[_my_color(state), adj_xy] != -1,
-            lambda: _merge_ren(state, xy, adj_xy),
-            lambda: jax.lax.cond(
-                state.ren_id_board[_opponent_color(state), adj_xy] != -1,
-                lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
-                lambda: state.replace(  # type:ignore
-                    liberty=state.liberty.at[
-                        _my_color(state),
-                        state.ren_id_board[_my_color(state), xy],
-                        adj_xy,
-                    ].set(1)
-                ),
-            ),
-        ),
     )
-    return (state, xy)
+    adj_xy = adj_pos[0] * state.size + adj_pos[1]
+    is_off = _is_off_board(adj_pos, state.size)
+    is_my_ren = state.ren_id_board[_my_color(state), adj_xy] != -1
+    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
+    replaced_state = state.replace(
+        liberty=state.liberty.at[
+            _my_color(state),
+            state.ren_id_board[_my_color(state), xy],
+            adj_xy,
+        ].set(1)
+    )  # type:ignore
+    state = jax.lax.cond(
+        ((~is_off) & (~is_my_ren) & (~is_opp_ren)),
+        lambda: replaced_state,
+        lambda: state,
+    )
+    state = jax.lax.cond(
+        ((~is_off) & (~is_my_ren) & is_opp_ren),
+        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
+        lambda: state,
+    )
+    state = jax.lax.cond(
+        ((~is_off) & is_my_ren),
+        lambda: _merge_ren(state, xy, adj_xy),
+        lambda: state,
+    )
+    return state
 
 
 def _is_illegal_move(_state: GoState, _xy):
