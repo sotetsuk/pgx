@@ -435,31 +435,30 @@ def _point_to_location(point: int) -> Tuple[int, int]:
 # はみ出す部分をカットする
 @jax.jit
 def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = array
+    array = array
     u, d, l, r = _is_side(point)
     for i in range(3):
-        new_array = jax.lax.cond(
-            u, lambda: new_array.at[i, 0].set(FALSE), lambda: new_array
+        array = jax.lax.cond(
+            u, lambda: array.at[i, 0].set(FALSE), lambda: array
         )
-        new_array = jax.lax.cond(
-            d, lambda: new_array.at[i, 2].set(FALSE), lambda: new_array
+        array = jax.lax.cond(
+            d, lambda: array.at[i, 2].set(FALSE), lambda: array
         )
     for i in range(4):
-        new_array = jax.lax.cond(
-            r, lambda: new_array.at[0, i].set(FALSE), lambda: new_array
+        array = jax.lax.cond(
+            r, lambda: array.at[0, i].set(FALSE), lambda: array
         )
-        new_array = jax.lax.cond(
-            l, lambda: new_array.at[2, i].set(FALSE), lambda: new_array
+        array = jax.lax.cond(
+            l, lambda: array.at[2, i].set(FALSE), lambda: array
         )
-    return new_array
+    return array
 
 
 @jax.jit
 def _action_board(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = array
     y, t = _point_to_location(point)
-    new_array = _cut_outside(new_array, point)
-    return jnp.roll(new_array, (y - 1, t - 1), axis=(0, 1))
+    array = _cut_outside(array, point)
+    return jnp.roll(array, (y - 1, t - 1), axis=(0, 1))
 
 
 # 各駒の動き
@@ -621,13 +620,12 @@ def _create_piece_actions(_from: int, piece: int) -> jnp.ndarray:
 def _add_move_actions(
     _from: int, piece: int, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
-        new_array = jax.lax.cond(
-            actions[i] == 1, lambda: new_array.at[i].set(1), lambda: new_array
+        array = jax.lax.cond(
+            actions[i] == 1, lambda: array.at[i].set(1), lambda: array
         )
-    return new_array
+    return array
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
@@ -635,35 +633,32 @@ def _add_move_actions(
 def _filter_move_actions(
     _from: int, piece: int, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
-        new_array = jax.lax.cond(
-            actions[i] == 1, lambda: new_array.at[i].set(0), lambda: new_array
+        array = jax.lax.cond(
+            actions[i] == 1, lambda: array.at[i].set(0), lambda: array
         )
-    return new_array
+    return array
 
 
 # 駒打ちのactionを追加する
 @jax.jit
 def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
-    new_array = array
     direction = _hand_to_direction(piece)
     for i in range(12):
         action = _dlshogi_action(direction, i)
-        new_array = new_array.at[action].set(1)
-    return new_array
+        array = array.at[action].set(1)
+    return array
 
 
 # 駒打ちのactionを消去する
 @jax.jit
 def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
-    new_array = array
     direction = _hand_to_direction(piece)
     for i in range(12):
         action = _dlshogi_action(direction, i)
-        new_array = new_array.at[action].set(0)
-    return new_array
+        array = array.at[action].set(0)
+    return array
 
 
 # stateからblack,white両方のlegal_actionsを生成する
@@ -734,31 +729,30 @@ def _update_legal_move_actions(
         lambda: s.legal_actions_black,
     )
     # 元の位置にいたときのフラグを折る
-    new_player_actions = _filter_move_actions(
+    player_actions = _filter_move_actions(
         action.from_, action.piece, player_actions
     )
-    new_enemy_actions = enemy_actions
     # 移動後の位置からの移動のフラグを立てる
-    new_player_actions = _add_move_actions(
-        action.to, action.piece, new_player_actions
+    player_actions = _add_move_actions(
+        action.to, action.piece, player_actions
     )
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
-    new_enemy_actions = jax.lax.cond(
+    enemy_actions = jax.lax.cond(
         action.captured == 0,
-        lambda: new_enemy_actions,
+        lambda: enemy_actions,
         lambda: _filter_move_actions(
-            action.to, action.captured, new_enemy_actions
+            action.to, action.captured, enemy_actions
         ),
     )
     captured = _convert_piece(action.captured)
     captured = jax.lax.cond(
         captured % 5 == 0, lambda: captured - 4, lambda: captured
     )
-    new_player_actions = jax.lax.cond(
+    player_actions = jax.lax.cond(
         # capturedは何も取っていない場合は-1に変換されているはず
         captured == -1,
-        lambda: new_player_actions,
-        lambda: _add_drop_actions(captured, new_player_actions),
+        lambda: player_actions,
+        lambda: _add_drop_actions(captured, player_actions),
     )
     return jax.lax.cond(
         s.turn == 0,
@@ -766,8 +760,8 @@ def _update_legal_move_actions(
             turn=s.turn,
             board=s.board,
             hand=s.hand,
-            legal_actions_black=new_player_actions,
-            legal_actions_white=new_enemy_actions,
+            legal_actions_black=player_actions,
+            legal_actions_white=enemy_actions,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
         ),  # type: ignore
@@ -775,8 +769,8 @@ def _update_legal_move_actions(
             turn=s.turn,
             board=s.board,
             hand=s.hand,
-            legal_actions_black=new_enemy_actions,
-            legal_actions_white=new_player_actions,
+            legal_actions_black=enemy_actions,
+            legal_actions_white=player_actions,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
         ),  # type: ignore
@@ -795,14 +789,14 @@ def _update_legal_drop_actions(
         lambda: s.legal_actions_white,
     )
     # 移動後の位置からの移動のフラグを立てる
-    new_player_actions = _add_move_actions(
+    player_actions = _add_move_actions(
         action.to, action.piece, player_actions
     )
     # 持ち駒がもうない場合、その駒を打つフラグを折る
-    new_player_actions = jax.lax.cond(
+    player_actions = jax.lax.cond(
         s.hand[_piece_to_hand(action.piece)] == 1,
-        lambda: _filter_drop_actions(action.piece, new_player_actions),
-        lambda: new_player_actions,
+        lambda: _filter_drop_actions(action.piece, player_actions),
+        lambda: player_actions,
     )
     return jax.lax.cond(
         s.turn == 0,
@@ -810,7 +804,7 @@ def _update_legal_drop_actions(
             turn=s.turn,
             board=s.board,
             hand=s.hand,
-            legal_actions_black=new_player_actions,
+            legal_actions_black=player_actions,
             legal_actions_white=s.legal_actions_white,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
@@ -820,7 +814,7 @@ def _update_legal_drop_actions(
             board=s.board,
             hand=s.hand,
             legal_actions_black=s.legal_actions_black,
-            legal_actions_white=new_player_actions,
+            legal_actions_white=player_actions,
             is_check=s.is_check,
             checking_piece=s.checking_piece,
         ),  # type: ignore
@@ -832,15 +826,14 @@ def _update_legal_drop_actions(
 def _filter_my_piece_move_actions(
     turn: int, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
     for i in range(12):
         for j in range(9):
-            new_array = jax.lax.cond(
+            array = jax.lax.cond(
                 owner[i] == turn,
-                lambda: new_array.at[12 * j + i].set(0),
-                lambda: new_array,
+                lambda: array.at[12 * j + i].set(0),
+                lambda: array,
             )
-    return new_array
+    return array
 
 
 # 駒がある地点への駒打ちを除く
@@ -848,15 +841,14 @@ def _filter_my_piece_move_actions(
 def _filter_occupied_drop_actions(
     turn: int, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
     for i in range(12):
         for j in range(3):
-            new_array = jax.lax.cond(
+            array = jax.lax.cond(
                 owner[i] == 2,
-                lambda: new_array,
-                lambda: new_array.at[12 * (j + 9 + 3 * turn) + i].set(0),
+                lambda: array,
+                lambda: array.at[12 * (j + 9 + 3 * turn) + i].set(0),
             )
-    return new_array
+    return array
 
 
 # 自殺手を除く
@@ -864,19 +856,18 @@ def _filter_occupied_drop_actions(
 def _filter_suicide_actions(
     turn: int, king_sq: int, effects: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
     moves = _king_move(king_sq).reshape(12)
     for i in range(12):
-        new_array = jax.lax.cond(
+        array = jax.lax.cond(
             (moves[i] == 0) | (effects[i] == 0),
-            lambda: new_array,
-            lambda: new_array.at[
+            lambda: array,
+            lambda: array.at[
                 _dlshogi_action(
                     _point_to_direction(king_sq, i, False, turn), i
                 )
             ].set(0),
         )
-    return new_array
+    return array
 
 
 # 王手放置を除く
@@ -884,34 +875,33 @@ def _filter_suicide_actions(
 def _filter_leave_check_actions(
     turn: int, king_sq: int, check_piece: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
     moves = _king_move(king_sq).reshape(12)
     for i in range(12):
         # 王手をかけている駒の位置以外への移動は王手放置
         for j in range(15):
             # 駒打ちのフラグは全て折る
-            new_array = jax.lax.cond(
+            array = jax.lax.cond(
                 j > 8,
-                lambda: new_array.at[12 * j + i].set(0),
-                lambda: new_array,
+                lambda: array.at[12 * j + i].set(0),
+                lambda: array,
             )
             # 王手をかけている駒の場所以外への移動ははじく
-            new_array = jax.lax.cond(
+            array = jax.lax.cond(
                 check_piece[i] == 0,
-                lambda: new_array.at[12 * j + i].set(0),
-                lambda: new_array,
+                lambda: array.at[12 * j + i].set(0),
+                lambda: array,
             )
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
-        new_array = jax.lax.cond(
+        array = jax.lax.cond(
             moves[i] == 0,
-            lambda: new_array,
-            lambda: new_array.at[
+            lambda: array,
+            lambda: array.at[
                 _dlshogi_action(
                     _point_to_direction(king_sq, i, False, turn), i
                 )
             ].set(1),
         )
-    return new_array
+    return array
 
 
 # boardのlegal_actionsを利用して合法手を生成する
