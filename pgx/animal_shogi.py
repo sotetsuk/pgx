@@ -195,7 +195,7 @@ def _point_to_direction(
     # dis: -1  3 -5  4 -4  1  5 -3
     base = 5
     to_dir = jnp.int32(
-        # -5 -4 -3  -2 -1   0  1   2  3  4  5
+        # -5 -4 -3 -2 -1 0 1 2 3 4 5
         [2, 4, 7, -1, 0, -1, 5, -1, 1, 3, 6]
     )
     direction = to_dir[base + dis]
