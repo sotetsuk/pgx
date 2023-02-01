@@ -130,7 +130,7 @@ def step(
         lambda: terminated,
     )
     turn = _another_color(s)
-    s = s.replace(turn=turn)
+    s = s.replace(turn=turn)  # type: ignore
     no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
     # 王手をかけている駒は直前に動かした駒であるはず
     checking_piece = no_checking_piece.at[_action.to].set(1)
@@ -521,14 +521,14 @@ def _update_legal_move_actions(
     )
     return jax.lax.cond(
         s.turn == 0,
-        lambda: s.replace(
+        lambda: s.replace(  # type: ignore
             legal_actions_black=new_player_actions,
             legal_actions_white=new_enemy_actions,
-        ),  # type: ignore
-        lambda: s.replace(
+        ),
+        lambda: s.replace(  # type: ignore
             legal_actions_black=new_enemy_actions,
             legal_actions_white=new_player_actions,
-        ),  # type: ignore
+        ),
     )
 
 
@@ -554,12 +554,12 @@ def _update_legal_drop_actions(
     )
     return jax.lax.cond(
         s.turn == 0,
-        lambda: s.replace(
+        lambda: s.replace(  # type: ignore
             legal_actions_black=new_player_actions
-        ),  # type: ignore
-        lambda: s.replace(
+        ),
+        lambda: s.replace(  # type: ignore
             legal_actions_white=new_player_actions
-        ),  # type: ignore
+        ),
     )
 
 
