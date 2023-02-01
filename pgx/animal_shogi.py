@@ -191,14 +191,14 @@ def _point_to_direction(
     dis = jax.lax.cond(turn == 1, lambda: -dis, lambda: dis)
     # UP, UP_LEFT, UP_RIGHT, LEFT, RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT, UP_PROMOTE... の順でdirを割り振る
     # PROMOTEの場合は+8する処理を入れるが、どうぶつ将棋ではUP_PROMOTEしか存在しない(はず)
-    direction = jax.lax.cond(dis == -1, lambda: 0, lambda: direction)
-    direction = jax.lax.cond(dis == 3, lambda: 1, lambda: direction)
-    direction = jax.lax.cond(dis == -5, lambda: 2, lambda: direction)
-    direction = jax.lax.cond(dis == 4, lambda: 3, lambda: direction)
-    direction = jax.lax.cond(dis == -4, lambda: 4, lambda: direction)
-    direction = jax.lax.cond(dis == 1, lambda: 5, lambda: direction)
-    direction = jax.lax.cond(dis == 5, lambda: 6, lambda: direction)
-    direction = jax.lax.cond(dis == -3, lambda: 7, lambda: direction)
+    # dir:  0  1  2  3  4  5  6  7
+    # dis: -1  3 -5  4 -4  1  5 -3
+    base = 5
+    to_dir = jnp.int32(
+        # -5 -4 -3 -2 -1 0 1 2 3 4 5
+        [2, 4, 7, -1, 0, -1, 5, -1, 1, 3, 6]
+    )
+    direction = to_dir[base + dis]
     direction = jax.lax.cond(
         promote == 1, lambda: direction + 8, lambda: direction
     )
@@ -235,18 +235,12 @@ def _separate_dlaction(action):
 # directionからfromがtoからどれだけ離れてるかと成りを含む移動かを得る
 # 手番の情報が必要
 def _direction_to_from(direction, to, turn):
-    dif = 0
-    dif = jax.lax.cond(
-        (direction == 0) | (direction == 8), lambda: -1, lambda: dif
+    to_diff = jnp.int32(
+        # 0  1   2  3   4  5  6   7   8  9
+        [-1, 3, -5, 4, -4, 1, 5, -3, -1, 0, 0, 0, 0, 0, 0]
     )
-    dif = jax.lax.cond(direction == 1, lambda: 3, lambda: dif)
-    dif = jax.lax.cond(direction == 2, lambda: -5, lambda: dif)
-    dif = jax.lax.cond(direction == 3, lambda: 4, lambda: dif)
-    dif = jax.lax.cond(direction == 4, lambda: -4, lambda: dif)
-    dif = jax.lax.cond(direction == 5, lambda: 1, lambda: dif)
-    dif = jax.lax.cond(direction == 6, lambda: 5, lambda: dif)
-    dif = jax.lax.cond(direction == 7, lambda: -3, lambda: dif)
     is_promote = jax.lax.cond(direction >= 8, lambda: 1, lambda: 0)
+    dif = to_diff[direction]
     _from = jax.lax.cond(turn == 0, lambda: to - dif, lambda: to + dif)
     return _from, is_promote
 
@@ -729,16 +723,7 @@ def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
 
 # トライルールによる勝利判定
 # 王が最奥に動くactionならTrue
-def _is_try(action: JaxAnimalShogiAction) -> bool:
-    flag = False
-    flag = jax.lax.cond(
-        (action.piece == 4) & (action.to % 4 == 0),
-        lambda: True,
-        lambda: flag,
+def _is_try(action: JaxAnimalShogiAction):
+    return ((action.piece == 4) & (action.to % 4 == 0)) | (
+        (action.piece == 9) & (action.to % 4 == 3)
     )
-    flag = jax.lax.cond(
-        (action.piece == 9) & (action.to % 4 == 3),
-        lambda: True,
-        lambda: flag,
-    )
-    return flag
