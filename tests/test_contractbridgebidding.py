@@ -1,7 +1,10 @@
+import csv
+
 import numpy as np
 
 from pgx.contractbridgebidding import (
     ContractBridgeBiddingState,
+    _calculate_dds_tricks,
     _key_to_hand,
     _pbn_to_key,
     _state_to_key,
@@ -10,6 +13,7 @@ from pgx.contractbridgebidding import (
     init,
     step,
 )
+from workspace.contractbridge_hash_table import make_hash_table
 
 
 def test_init():
@@ -775,3 +779,23 @@ def test_state_to_key_cycle():
         key = _state_to_key(state)
         reconst_hand = _key_to_hand(key)
         assert np.all(sorted_hand == reconst_hand)
+
+
+def test_calcurate_dds_tricks():
+    HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = make_hash_table(
+        "workspace/contractbridge-ddstable-sample100.csv"
+    )
+    SAMPLES = []
+    with open("workspace/contractbridge-ddstable-sample100.csv", "r") as f:
+        reader = csv.reader(f, delimiter=",")
+        for i in reader:
+            SAMPLES.append([i[0], np.array(i[1:]).astype(np.int8)])
+    for i in range(len(HASH_TABLE_SAMPLE_KEYS)):
+        _, state = init()
+        state.hand = _key_to_hand(HASH_TABLE_SAMPLE_KEYS[i])
+        dds_tricks = _calculate_dds_tricks(
+            state, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+        )
+        # sample dataから、作成したhash tableを用いて、ddsの結果を計算。
+        # その結果とsample dataが一致しているか確認
+        assert np.all(dds_tricks == SAMPLES[i][1])
