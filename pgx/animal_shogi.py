@@ -473,15 +473,10 @@ def _update_legal_move_actions(
     state: JaxAnimalShogiState, action: JaxAnimalShogiAction
 ) -> JaxAnimalShogiState:
     s = state
-    player_actions = jax.lax.cond(
+    player_actions, enemy_actions = jax.lax.cond(
         s.turn == 0,
-        lambda: s.legal_actions_black,
-        lambda: s.legal_actions_white,
-    )
-    enemy_actions = jax.lax.cond(
-        s.turn == 0,
-        lambda: s.legal_actions_white,
-        lambda: s.legal_actions_black,
+        lambda: (s.legal_actions_black, s.legal_actions_white),
+        lambda: (s.legal_actions_white, s.legal_actions_black),
     )
     # 元の位置にいたときのフラグを折る
     new_player_actions = _filter_move_actions(
@@ -510,16 +505,14 @@ def _update_legal_move_actions(
         lambda: new_player_actions,
         lambda: _add_drop_actions(captured, new_player_actions),
     )
-    return jax.lax.cond(
+    legal_actions_black, legal_actions_white = jax.lax.cond(
         s.turn == 0,
-        lambda: s.replace(  # type: ignore
-            legal_actions_black=new_player_actions,
-            legal_actions_white=new_enemy_actions,
-        ),
-        lambda: s.replace(  # type: ignore
-            legal_actions_black=new_enemy_actions,
-            legal_actions_white=new_player_actions,
-        ),
+        lambda: (new_player_actions, new_enemy_actions),
+        lambda: (new_enemy_actions, new_player_actions),
+    )
+    return s.replace(
+        legal_actions_black=legal_actions_black,
+        legal_actions_white=legal_actions_white
     )
 
 
