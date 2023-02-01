@@ -510,10 +510,10 @@ def _update_legal_move_actions(
         lambda: (new_player_actions, new_enemy_actions),
         lambda: (new_enemy_actions, new_player_actions),
     )
-    return s.replace(
+    return s.replace(  # type: ignore
         legal_actions_black=legal_actions_black,
         legal_actions_white=legal_actions_white,
-    )  # type: ignore
+    )
 
 
 # 駒打ちによるlegal_actionsの更新
