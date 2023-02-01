@@ -137,7 +137,7 @@ def step(
     s = jax.lax.cond(
         (_is_check(s)) & (terminated is False),
         lambda: s.replace(is_check=TRUE, checking_piece=checking_piece),  # type: ignore
-        lambda: s.replace(is_check=FALSE, checking_piece=no_checking_piece)  # type: ignore
+        lambda: s.replace(is_check=FALSE, checking_piece=no_checking_piece),  # type: ignore
     )
     return s, reward, terminated
 
@@ -528,7 +528,7 @@ def _update_legal_move_actions(
         lambda: s.replace(
             legal_actions_black=new_enemy_actions,
             legal_actions_white=new_player_actions,
-        )  # type: ignore
+        ),  # type: ignore
     )
 
 
@@ -559,7 +559,7 @@ def _update_legal_drop_actions(
         ),  # type: ignore
         lambda: s.replace(
             legal_actions_white=new_player_actions
-        )  # type: ignore
+        ),  # type: ignore
     )
 
 
