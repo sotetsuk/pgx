@@ -354,7 +354,7 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
 
     # TODO
     # 石を置くことで味方の自殺点が消える場合
-    # 石を置くことで相手の自殺点が消える場合(?)
+    # 石を置くことで相手の自殺点が消える場合
 
     return _state
 
