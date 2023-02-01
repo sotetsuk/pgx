@@ -35,7 +35,6 @@ class GoState:
 
     # 設置可能なマスをTrueとしたマスク
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.bool_)
-    _legal_action_mask: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.bool_)
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
@@ -144,7 +143,6 @@ def init(
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
         legal_action_mask=jnp.ones(size * size, dtype=jnp.bool_),
-        _legal_action_mask=jnp.ones((2, size * size), dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
     )
@@ -164,7 +162,6 @@ def step(
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=legal_actions(_state),
-        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -185,7 +182,6 @@ def step(
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask,
         game_log=new_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -238,7 +234,6 @@ def _increase_turn(_state: GoState) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn + 1,
         curr_player=_state.curr_player,
@@ -258,7 +253,6 @@ def _change_player(_state: GoState) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=(_state.curr_player + 1) % 2,
@@ -278,7 +272,6 @@ def _set_pass(_state: GoState, _pass: bool) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -298,7 +291,6 @@ def _update_terminated(_state: GoState) -> GoState:
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=jnp.int32(-1),  # type:ignore
@@ -346,7 +338,6 @@ def _not_pass_move(
         liberty=state.liberty,
         adj_ren_id=state.adj_ren_id,
         legal_action_mask=state.legal_action_mask,
-        _legal_action_mask=state._legal_action_mask,
         game_log=state.game_log,
         turn=state.turn,
         curr_player=state.curr_player,
@@ -397,7 +388,6 @@ def _check_around_xy(i, state_and_xy):
                     ].set(1),
                     adj_ren_id=state.adj_ren_id,
                     legal_action_mask=state.legal_action_mask,
-                    _legal_action_mask=state._legal_action_mask,
                     game_log=state.game_log,
                     turn=state.turn,
                     curr_player=state.curr_player,
@@ -437,23 +427,76 @@ def _illegal_move(
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
     my_color = _my_color(_state)
-    oppo_color = _opponent_color(_state)
+    # oppo_color = _opponent_color(_state)
     available_ren_id = _state.available_ren_id[my_color]
     next_ren_id = jnp.argmax(available_ren_id)
     available_ren_id = available_ren_id.at[next_ren_id].set(False)
+    ren_id_board = _state.ren_id_board.at[my_color, _xy].set(next_ren_id)
+
+    # 四方を既に囲まれている場所をlegal_actionから取り除く
+    legal_action_mask = jnp.ones_like(
+        _state.legal_action_mask, dtype=jnp.bool_
+    )
+
+    # 外に２列追加
+    size = _state.size
+    board = ren_id_board[my_color] != -1
+    board = jnp.pad(
+        board.reshape((size, size)),
+        2,
+        "constant",
+        constant_values=True,
+    )
+    x = (_xy // size) + 2
+    y = (_xy % size) + 2
+
+    dead_xy = jax.lax.cond(
+        (x < size + 1)
+        & board[x - 1, y + 1]
+        & board[x, y + 2]
+        & board[x + 1, y + 1],
+        lambda: _xy + 1,
+        lambda: _xy,
+    )
+
+    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
+
+    dead_xy = jax.lax.cond(
+        (x < size + 1)
+        & board[x + 1, y + 1]
+        & board[x + 2, y]
+        & board[x + 1, y - 1],
+        lambda: _xy + size,
+        lambda: _xy,
+    )
+
+    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
+
+    dead_xy = jax.lax.cond(
+        (2 < y) & board[x + 1, y - 1] & board[x, y - 2] & board[x - 1, y - 1],
+        lambda: _xy - 1,
+        lambda: _xy,
+    )
+
+    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
+
+    dead_xy = jax.lax.cond(
+        (2 < x) & board[x - 1, y - 1] & board[x - 2, y] & board[x - 1, y + 1],
+        lambda: _xy - size,
+        lambda: _xy,
+    )
+
+    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
+
     return GoState(  # type:ignore
         size=_state.size,
-        ren_id_board=_state.ren_id_board.at[my_color, _xy].set(next_ren_id),
+        ren_id_board=ren_id_board,
         available_ren_id=_state.available_ren_id.at[my_color].set(
             available_ren_id
         ),
         liberty=_state.liberty,
         adj_ren_id=_state.adj_ren_id,
-        legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask.at[my_color, _xy]
-        .set(False)
-        .at[oppo_color, _xy]
-        .set(False),
+        legal_action_mask=legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -518,7 +561,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
             .at[_opponent_color(_state)]
             .set(_oppo_adj_ren_id),
             legal_action_mask=_state.legal_action_mask,
-            _legal_action_mask=_state._legal_action_mask,
             game_log=_state.game_log,
             turn=_state.turn,
             curr_player=_state.curr_player,
@@ -568,7 +610,6 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
         liberty=liberty,
         adj_ren_id=adj_ren_id,
         legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -620,7 +661,6 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         .at[_my_color(_state), :, _rm_ren_id]
         .set(False),
         legal_action_mask=_state.legal_action_mask,
-        _legal_action_mask=_state._legal_action_mask,
         game_log=_state.game_log,
         turn=_state.turn,
         curr_player=_state.curr_player,
@@ -632,7 +672,25 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
 
 def legal_actions(state: GoState) -> jnp.ndarray:
-    return state._legal_action_mask[_my_color(state)]
+    # 既に石が置かれているところを排除
+    board = jnp.ones_like(state.ren_id_board[BLACK], dtype=jnp.bool_)
+    board = jnp.where(state.ren_id_board[BLACK] != -1, False, board)
+    board = jnp.where(state.ren_id_board[WHITE] != -1, False, board)
+
+    # 呼吸点が1つのところを排除
+    # TODO for->fori_loop
+    # TODO if->cond
+
+    # my_color = _my_color(state)
+    # for ren_id in range(jnp.argmax(state.available_ren_id)):
+    #    if jnp.count_nonzero(state.liberty[my_color, ren_id] == 1) == 1:
+    #        board = jnp.where(
+    #            state.liberty[my_color, ren_id] == 1, False, board
+    #        )
+
+    board = jnp.logical_and(board, state.legal_action_mask)
+
+    return board  # type:ignore
 
 
 def get_board(state: GoState) -> jnp.ndarray:
