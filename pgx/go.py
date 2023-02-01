@@ -352,10 +352,16 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     #     ),
     #     _state.adj_ren_id[_opponent_color(_state)],
     # )
-    _oppo_adj_ren_id = _state.adj_ren_id[_opponent_color(_state)]  # (2, 361, 361) => (361, 361)
+    _oppo_adj_ren_id = _state.adj_ren_id[
+        _opponent_color(_state)
+    ]  # (2, 361, 361) => (361, 361)
     mask = _oppo_adj_ren_id[:, large_id]  # (361,)
-    _oppo_adj_ren_id = _oppo_adj_ren_id.at[:, large_id].set(_oppo_adj_ren_id[:, large_id] & (~mask))
-    _oppo_adj_ren_id = _oppo_adj_ren_id.at[:, small_id].set(_oppo_adj_ren_id[:, small_id] | mask)
+    _oppo_adj_ren_id = _oppo_adj_ren_id.at[:, large_id].set(
+        _oppo_adj_ren_id[:, large_id] & (~mask)
+    )
+    _oppo_adj_ren_id = _oppo_adj_ren_id.at[:, small_id].set(
+        _oppo_adj_ren_id[:, small_id] | mask
+    )
 
     _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
     _adj_ren_id = _adj_ren_id.at[small_id].set(
