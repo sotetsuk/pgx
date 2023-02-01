@@ -520,7 +520,7 @@ def _effected_positions(state: JaxAnimalShogiState, turn) -> jnp.ndarray:
 
 
 # 王手の判定(turn側の王に王手がかかっているかを判定)
-def _is_check(state: JaxAnimalShogiState) -> bool:
+def _is_check(state: JaxAnimalShogiState):
     effects = _effected_positions(state, _another_color(state))
     king_location = state.board[4 + 5 * state.turn, :].argmax()
     return effects[king_location] != 0
