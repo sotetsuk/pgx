@@ -39,7 +39,7 @@ class GoState:
     adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.bool_)
 
     # 設置可能なマスをTrueとしたマスク
-    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
@@ -147,7 +147,7 @@ def init(
         available_ren_id=jnp.ones((2, size * size), dtype=jnp.bool_),
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
-        legal_action_mask=jnp.ones(size * size, dtype=jnp.bool_),
+        legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
     )
@@ -176,7 +176,7 @@ def _update_state_wo_legal_action(
     _state: GoState, _action: int, _size: int
 ) -> Tuple[GoState, jnp.ndarray]:
     _state, _reward = jax.lax.cond(
-        (0 <= _action) & (_action < _size * _size),
+        (_action < _size * _size),
         lambda: _not_pass_move(_state, _action),
         lambda: _pass_move(_state, _size),
     )
@@ -451,14 +451,14 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
 
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
-    return jnp.logical_not(
-        jax.lax.map(
-            lambda xy: _update_state_wo_legal_action(state, xy, size)[
-                0
-            ].terminated,
-            jnp.arange(0, size * size),
-        )
+    illegal_action = jax.lax.map(
+        lambda xy: _update_state_wo_legal_action(state, xy, size)[
+            0
+        ].terminated,
+        jnp.arange(0, size * size + 1),
     )
+    legal_action = ~illegal_action
+    return legal_action.at[size * size].set(TRUE)
 
 
 def get_board(state: GoState) -> jnp.ndarray:
