@@ -215,6 +215,9 @@ def _not_pass_move(
     kou_occurred = _kou_occurred(state, xy)
     state = _set_stone(state, xy)
 
+    # legal_actionを更新
+    state = _update_legal_action(state, xy)
+
     # 周囲の連を調べる
     state = jax.lax.fori_loop(
         0, 4, lambda i, s: _check_around_xy(i, s, xy), state
@@ -308,70 +311,27 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
     available_ren_id = _state.available_ren_id[my_color]
     next_ren_id = jnp.argmax(available_ren_id)
     available_ren_id = available_ren_id.at[next_ren_id].set(False)
-    ren_id_board = _state.ren_id_board.at[my_color, _xy].set(next_ren_id)
-
-    # 四方を既に囲まれている場所をlegal_actionから取り除く
-    legal_action_mask = jnp.ones_like(
-        _state.legal_action_mask, dtype=jnp.bool_
-    )
-
-    # 外に２列追加
-    size = _state.size
-    board = ren_id_board[my_color] != -1
-    board = jnp.pad(
-        board.reshape((size, size)),
-        2,
-        "constant",
-        constant_values=True,
-    )
-    x = (_xy // size) + 2
-    y = (_xy % size) + 2
-
-    dead_xy = jax.lax.cond(
-        (x < size + 1)
-        & board[x - 1, y + 1]
-        & board[x, y + 2]
-        & board[x + 1, y + 1],
-        lambda: _xy + 1,
-        lambda: _xy,
-    )
-
-    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
-
-    dead_xy = jax.lax.cond(
-        (x < size + 1)
-        & board[x + 1, y + 1]
-        & board[x + 2, y]
-        & board[x + 1, y - 1],
-        lambda: _xy + size,
-        lambda: _xy,
-    )
-
-    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
-
-    dead_xy = jax.lax.cond(
-        (2 < y) & board[x + 1, y - 1] & board[x, y - 2] & board[x - 1, y - 1],
-        lambda: _xy - 1,
-        lambda: _xy,
-    )
-
-    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
-
-    dead_xy = jax.lax.cond(
-        (2 < x) & board[x - 1, y - 1] & board[x - 2, y] & board[x - 1, y + 1],
-        lambda: _xy - size,
-        lambda: _xy,
-    )
-
-    legal_action_mask = legal_action_mask.at[dead_xy].set(False)
 
     return _state.replace(  # type:ignore
-        ren_id_board=ren_id_board,
+        ren_id_board=_state.ren_id_board.at[my_color, _xy].set(next_ren_id),
         available_ren_id=_state.available_ren_id.at[my_color].set(
             available_ren_id
         ),
-        legal_action_mask=legal_action_mask,
     )
+
+
+def _update_legal_action(_state: GoState, _xy: int) -> GoState:
+    my_color = _my_color(_state)
+    oppo_color = _opponent_color(_state)
+
+    # 置いた連
+    put_ren_id = _state.ren_id_board[my_color, _xy]
+
+    # 置いた連の周りに呼吸点が一つしかない場合
+    if jnp.count_nonzero(_state.liberty[my_color, put_ren_id] == 1) == 1:
+        pass
+
+    return _state
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
@@ -511,7 +471,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     )
 
 
-def legal_actions(state: GoState) -> jnp.ndarray:
+def legal_actions(state: GoState, size) -> jnp.ndarray:
     # 既に石が置かれているところを排除
     # board = jnp.ones_like(state.ren_id_board[BLACK], dtype=jnp.bool_)
     # board = jnp.where(state.ren_id_board[BLACK] != -1, False, board)

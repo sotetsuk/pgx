@@ -19,7 +19,6 @@ def test_end_by_pass():
     rng = jax.random.PRNGKey(0)
 
     _, state = j_init(rng=rng, size=BOARD_SIZE)
-    _, state, _ = j_step(state=state, action=-1, size=BOARD_SIZE)
     _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
     assert state.passed
     assert not state.terminated
