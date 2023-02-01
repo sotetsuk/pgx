@@ -40,7 +40,10 @@ class GoState:
     adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.bool_)
 
     # 設置可能なマスをTrueとしたマスク
-    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(19 * 19 + 1, dtype=jnp.bool_)
+    _legal_action_mask: jnp.ndarray = jnp.ones(
+        (2, 19 * 19 + 1), dtype=jnp.bool_
+    )
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
@@ -149,6 +152,7 @@ def init(
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
         legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
+        _legal_action_mask=jnp.ones((2, size * size + 1), dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
     )
@@ -217,7 +221,7 @@ def _not_pass_move(
     state = _set_stone(state, xy)
 
     # legal_actionを更新
-    # state = _update_legal_action(state, xy)
+    state = _update_legal_action(state, xy)
 
     # 周囲の連を調べる
     state = jax.lax.fori_loop(
@@ -325,12 +329,29 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     my_color = _my_color(_state)
     oppo_color = _opponent_color(_state)
 
+    _state = _state.replace(  # type:ignore
+        _legal_action_mask=_state._legal_action_mask.at[my_color, _xy]
+        .set(FALSE)
+        .at[oppo_color, _xy]
+        .set(FALSE)
+    )
+
     # 置いた連
     put_ren_id = _state.ren_id_board[my_color, _xy]
 
     # 置いた連の周りに呼吸点が一つしかない場合
-    if jnp.count_nonzero(_state.liberty[my_color, put_ren_id] == 1) == 1:
-        pass
+    _state = jax.lax.cond(
+        jnp.count_nonzero(_state.liberty[my_color, put_ren_id] == 1) == 1,
+        lambda: _check_if_suicide_point_exist(_state, my_color, put_ren_id),
+        lambda: _state,
+    )
+
+    # TODO
+    # 石を置くことで相手の自殺点が生じる場合
+
+    # TODO
+    # 石を置くことで味方の自殺点が消える場合
+    # 石を置くことで相手の自殺点が消える場合(?)
 
     return _state
 
@@ -339,20 +360,35 @@ def _check_if_suicide_point_exist(_state: GoState, _color, _id):
     # 置いた連の周りの呼吸点が1つの場合、その呼吸点(a)の周り四方を確認する
     # 四方に含まれる自分の連の呼吸点が全て1つだった場合、点(a)は自殺点
     liberty_points = _state.liberty[_color, _id] == 1
-    if jnp.count_nonzero(liberty_points) == 1:
-        # その呼吸点の位置(xy)
-        one_liberty_point = jnp.where(liberty_points, size=1)[0][0]
+
+    def is_suicide_point(one_liberty_point):
         # 四方を確認する
-        is_suicide_point = TRUE
-        is_suicide_point = jax.lax.fori_loop(
+        _is_suicide_point = TRUE
+        _is_suicide_point = jax.lax.fori_loop(
             0,
             4,
             lambda i, flag: _check_around_one_liberty_point(
                 i, flag, _state, one_liberty_point, _color
             ),
-            is_suicide_point,
+            _is_suicide_point,
         )
         # is_suicide_point = TRUEならばその点は自殺点
+        return _is_suicide_point
+
+    # 呼吸点の位置(xy)
+    one_liberty_point = jnp.where(liberty_points, size=1)[0][0]
+
+    _state = jax.lax.cond(
+        jnp.count_nonzero(liberty_points) == 1
+        and is_suicide_point(one_liberty_point),
+        lambda: _state.replace(  # type:ignore
+            _legal_action_mask=_state._legal_action_mask.at[
+                _color, one_liberty_point
+            ].set(FALSE)
+        ),
+        lambda: _state,
+    )
+    return _state
 
 
 def _check_around_one_liberty_point(
@@ -368,13 +404,13 @@ def _check_around_one_liberty_point(
     adj_xy = jax.lax.cond(
         is_off, lambda: 0, lambda: adj_pos[0] * _state.size + adj_pos[1]
     )
-
+    oppo_color = (_color + 1) % 2
     # 呼吸点
     is_suicide_point = jax.lax.cond(
         (
-            ~is_off & _state.ren_id_board[_color + 1, adj_xy]
-            == -1 & _state.ren_id_board[(_color + 1) % 2, adj_xy]
-            == -1
+            ~is_off
+            & (_state.ren_id_board[_color, adj_xy] == -1)
+            & (_state.ren_id_board[oppo_color, adj_xy] == -1)
         ),
         lambda: FALSE,
         lambda: is_suicide_point,
@@ -385,9 +421,22 @@ def _check_around_one_liberty_point(
     liberty_points = _state.liberty[_color, _id] == 1
     is_suicide_point = jax.lax.cond(
         (
-            ~is_off & _state.ren_id_board[_color + 1, adj_xy]
-            != 1 & jnp.count_nonzero(liberty_points)
-            > 1
+            ~is_off
+            & (_state.ren_id_board[_color, adj_xy] != 1)
+            & (jnp.count_nonzero(liberty_points) > 1)
+        ),
+        lambda: FALSE,
+        lambda: is_suicide_point,
+    )
+
+    # 呼吸点1つの相手連
+    _id = _state.ren_id_board[oppo_color, adj_xy]
+    liberty_points = _state.liberty[oppo_color, _id] == 1
+    is_suicide_point = jax.lax.cond(
+        (
+            ~is_off
+            & (_state.ren_id_board[oppo_color, adj_xy] != 1)
+            & (jnp.count_nonzero(liberty_points) == 1)
         ),
         lambda: FALSE,
         lambda: is_suicide_point,
