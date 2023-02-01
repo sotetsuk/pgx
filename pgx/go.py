@@ -348,6 +348,9 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
 
     # TODO
     # 石を置くことで相手の自殺点が生じる場合
+    # 1. 隣接する、既に存在する相手の連が呼吸点1つになる場合
+
+    # 2. 空点の四方を囲む形になる場合
 
     # TODO
     # 石を置くことで味方の自殺点が消える場合
@@ -379,8 +382,8 @@ def _check_if_suicide_point_exist(_state: GoState, _color, _id):
     one_liberty_point = jnp.where(liberty_points, size=1)[0][0]
 
     _state = jax.lax.cond(
-        jnp.count_nonzero(liberty_points) == 1
-        and is_suicide_point(one_liberty_point),
+        (jnp.count_nonzero(liberty_points) == 1)
+        & is_suicide_point(one_liberty_point),
         lambda: _state.replace(  # type:ignore
             _legal_action_mask=_state._legal_action_mask.at[
                 _color, one_liberty_point
