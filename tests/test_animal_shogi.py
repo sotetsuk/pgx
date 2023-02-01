@@ -23,6 +23,23 @@ import jax.numpy as np
 import jax
 
 
+init = jax.jit(init)
+step = jax.jit(step)
+_another_color = jax.jit(_another_color)
+_move = jax.jit(_move)
+_drop = jax.jit(_drop)
+_piece_type = jax.jit(_piece_type)
+_effected_positions= jax.jit(_effected_positions)
+_is_check = jax.jit(_is_check)
+_create_piece_actions = jax.jit(_create_piece_actions)
+_add_move_actions = jax.jit(_add_move_actions)
+_init_legal_actions = jax.jit(_init_legal_actions)
+_legal_actions = jax.jit(_legal_actions)
+_action_to_dlaction = jax.jit(_action_to_dlaction)
+_dlaction_to_action = jax.jit(_dlaction_to_action)
+_update_legal_move_actions = jax.jit(_update_legal_move_actions)
+_update_legal_drop_actions = jax.jit(_update_legal_drop_actions)
+
 
 TEST_BOARD = AnimalShogiState(
     turn=0,
