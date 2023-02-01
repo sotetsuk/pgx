@@ -5,18 +5,17 @@ import numpy as np
 from pgx.go import get_board, init, observe, step
 
 BOARD_SIZE = 5
+j_init = jax.jit(init, static_argnums=(1,))
+j_step = jax.jit(step, static_argnums=(2,))
 
 
 def test_init():
-    j_init = jax.jit(init, static_argnums=(1,))
     rng = jax.random.PRNGKey(0)
     curr_player, _ = j_init(rng=rng, size=BOARD_SIZE)
     assert curr_player == 1
 
 
 def test_end_by_pass():
-    j_init = jax.jit(init, static_argnums=(1,))
-    j_step = jax.jit(step, static_argnums=(2,))
     rng = jax.random.PRNGKey(0)
 
     _, state = j_init(rng=rng, size=BOARD_SIZE)
@@ -38,9 +37,6 @@ def test_step():
     """
     https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
     """
-
-    j_init = jax.jit(init, static_argnums=(1,))
-    j_step = jax.jit(step, static_argnums=(2,))
     rng = jax.random.PRNGKey(0)
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
 
@@ -92,8 +88,6 @@ def test_step():
 
 
 def test_kou():
-    j_init = jax.jit(init, static_argnums=(1,))
-    j_step = jax.jit(step, static_argnums=(2,))
     rng = jax.random.PRNGKey(0)
 
     _, state = j_init(rng=rng, size=BOARD_SIZE)
@@ -136,10 +130,6 @@ def test_kou():
 
 
 def test_observe():
-    BOARD_SIZE = 5
-    j_init = jax.jit(init, static_argnums=(1,))
-    j_step = jax.jit(step, static_argnums=(2,))
-
     rng = jax.random.PRNGKey(0)
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
     # curr_player: 1
@@ -207,8 +197,6 @@ def test_observe():
 
 
 def test_legal_action():
-    j_init = jax.jit(init, static_argnums=(1,))
-    j_step = jax.jit(step, static_argnums=(2,))
     rng = jax.random.PRNGKey(0)
 
     # =====
@@ -439,10 +427,6 @@ def test_legal_action():
 
 
 def test_random_play_5():
-    BOARD_SIZE = 5
-    j_init = jax.jit(init, static_argnums=(1,))
-    j_step = jax.jit(step, static_argnums=(2,))
-
     rng = jax.random.PRNGKey(0)
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
     while not state.terminated:
@@ -463,8 +447,6 @@ def test_random_play_5():
 
 def test_random_play_19():
     BOARD_SIZE = 19
-    j_init = jax.jit(init, static_argnums=(1,))
-    j_step = jax.jit(step, static_argnums=(2,))
 
     rng = jax.random.PRNGKey(0)
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
