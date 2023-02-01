@@ -347,3 +347,56 @@ def _key_to_hand(key: np.ndarray) -> np.ndarray:
         ],
         axis=1,
     ).reshape(-1)
+
+
+def _value_to_dds_tricks(values: np.ndarray) -> np.ndarray:
+    """Convert values to dds tricks
+    >>> value = np.array([4160, 904605, 4160, 904605])
+    >>> _value_to_dds_tricks(value)
+    array([ 0,  1,  0,  4,  0, 13, 12, 13,  9, 13,  0,  1,  0,  4,  0, 13, 12,
+           13,  9, 13], dtype=int8)
+    """
+    return np.array(
+        [int(i, 16) for j in values for i in np.base_repr(j, 16).zfill(5)],
+        dtype=np.int8,
+    )
+
+
+def _calculate_dds_tricks(
+    state: ContractBridgeBiddingState,
+    hash_keys: np.ndarray,
+    hash_values: np.ndarray,
+) -> np.ndarray:
+    key = _state_to_key(state)
+    return _value_to_dds_tricks(_find_key(key, hash_keys, hash_values))
+
+
+def _find_key(key: np.ndarray, hash_keys: np.ndarray, hash_values: np.ndarray):
+    """Find a value matching key without batch processing
+    >>> VALUES = np.arange(20).reshape(5, 4)
+    >>> KEYS = np.arange(20).reshape(5, 4)
+    >>> key = np.arange(4, 8)
+    >>> _find_key(key, KEYS, VALUES)
+    array([4, 5, 6, 7])
+    """
+    ix = np.argmin(np.abs(hash_keys - key).sum(axis=1))
+    return hash_values[ix]
+
+
+def _find_key_2(
+    key: np.ndarray, hash_keys: np.ndarray, hash_values: np.ndarray
+):
+    """Find a value matching key without batch processing
+    >>> VALUES = np.arange(20).reshape(5, 4)
+    >>> KEYS = np.arange(20).reshape(5, 4)
+    >>> key = np.arange(4, 8)
+    >>> _find_key_2(key, KEYS, VALUES)
+    array([4, 5, 6, 7])
+    """
+    mask = np.where(
+        np.all((hash_keys == key), axis=1),
+        np.ones(1, dtype=np.bool_),
+        np.zeros(1, dtype=np.bool_),
+    )
+    ix = np.argmax(mask)
+    return hash_values[ix]
