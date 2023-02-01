@@ -368,18 +368,7 @@ def _is_check(state: JaxAnimalShogiState):
 
 # 成る動きが合法かどうかの判定
 def _can_promote(to, piece):
-    can_promote = False
-    can_promote = jax.lax.cond(
-        (piece == 1) & (to % 4 == 0),
-        lambda: True,
-        lambda: can_promote,
-    )
-    can_promote = jax.lax.cond(
-        (piece == 6) & (to % 4 == 3),
-        lambda: True,
-        lambda: can_promote,
-    )
-    return can_promote
+    return ((piece == 1) & (to % 4 == 0)) | ((piece == 6) & (to % 4 == 3))
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
