@@ -677,29 +677,26 @@ def _filter_suicide_actions(turn, king_sq, effects, array) -> jnp.ndarray:
 
 # 王手放置を除く
 def _filter_leave_check_actions(turn, king_sq, check_piece, array):
-    new_array = array
+    action = array.reshape((15, 12))  # (direction, to)
     king_moves = POINT_MOVES[4, king_sq].reshape(12)
     for i in range(12):
-        # 王手をかけている駒の位置以外への移動は王手放置
-
-        # 駒打ちのフラグは全て折る
-        new_array = jnp.where((jnp.arange(180) // 12) > 8, FALSE, new_array)
-        # 王手をかけている駒の場所以外への移動ははじく
-        new_array = jnp.where(
-            check_piece[jnp.arange(180) % 12] == 0, FALSE, new_array
-        )
-
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
-        new_array = jax.lax.cond(
+        array = jax.lax.cond(
             king_moves[i] == 0,
-            lambda: new_array,
-            lambda: new_array.at[
+            lambda: array,
+            lambda: array.at[
                 _dlshogi_action(
                     _point_to_direction(king_sq, i, False, turn), i
                 )
             ].set(TRUE),
         )
-    return new_array
+
+    # 駒打ちのフラグは全て折る
+    action = action.at[8:].set(FALSE)
+    # 王手をかけている駒の場所以外への移動ははじく
+    zero_mask = jnp.logical_not(check_piece == 0)  # check_piece (12,)
+    action = action * zero_mask
+    return action.flatten()
 
 
 # boardのlegal_actionsを利用して合法手を生成する
