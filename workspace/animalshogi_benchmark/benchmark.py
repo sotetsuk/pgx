@@ -2,6 +2,7 @@ import sys
 import time
 
 import jax
+import jax.numpy as jnp
 
 from pgx.animal_shogi import (
     _move,
@@ -14,7 +15,11 @@ from pgx.animal_shogi import (
     step,
     _init_legal_actions,
     _board_status,
-    _dlaction_to_action
+    _dlaction_to_action,
+    _action_to_dlaction,
+    _filter_leave_check_actions,
+    _filter_my_piece_move_actions,
+    _filter_occupied_drop_actions
 )
 
 
@@ -53,6 +58,31 @@ def test(func):
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(a)
+    elif func.__name__ == "_filter_leave_check_actions":
+        time_sta = time.perf_counter()
+        jax.jit(func)(0, 0,  jnp.zeros(12, dtype=jnp.int32), jnp.zeros(180, dtype=jnp.bool_))
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(0, 0,  jnp.zeros(12, dtype=jnp.int32), jnp.zeros(180, dtype=jnp.bool_))
+    elif func.__name__ == "_filter_my_piece_move_actions":
+        time_sta = time.perf_counter()
+        jax.jit(func)(0, jnp.zeros(12, dtype=jnp.int32), jnp.zeros(180, dtype=jnp.bool_))
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(0, jnp.zeros(12, dtype=jnp.int32), jnp.zeros(180, dtype=jnp.bool_))
+    elif func.__name__ == "_filter_occupied_drop_actions":
+        time_sta = time.perf_counter()
+        jax.jit(func)(0, 0, jnp.zeros(180, dtype=jnp.bool_))
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(0, 0, jnp.zeros(180, dtype=jnp.bool_))
+    elif func.__name__ == "_action_to_dlaction":
+        a = _dlaction_to_action(0, state)
+        time_sta = time.perf_counter()
+        jax.jit(func)(a, 0)
+        time_end = time.perf_counter()
+        delta = (time_end - time_sta) * 1000
+        exp = jax.make_jaxpr(func)(a, 0)
     elif func.__name__ == "_dlaction_to_action":
         time_sta = time.perf_counter()
         jax.jit(func)(5, state)
@@ -83,6 +113,14 @@ elif func_name == "_board_status":
     func = _board_status
 elif func_name == "_dlaction_to_action":
     func = _dlaction_to_action
+elif func_name == "_action_to_dlaction":
+    func = _action_to_dlaction
+elif func_name == "_filter_leave_check_actions":
+    func = _filter_leave_check_actions
+elif func_name == "_filter_my_piece_move_actions":
+    func = _filter_my_piece_move_actions
+elif func_name == "_filter_occupied_drop_actions":
+    func = _filter_occupied_drop_actions
 elif func_name == "step":
     func = step
 elif func_name == "init":
