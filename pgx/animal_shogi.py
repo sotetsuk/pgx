@@ -659,7 +659,7 @@ def _filter_suicide_actions(turn, king_sq, effects, array) -> jnp.ndarray:
     to = jnp.arange(12)
     king_moves = POINT_MOVES[4, king_sq].reshape(12)
     flag = (king_moves == 0) | (effects == 0)
-    action = action.at[dir(to=to), to].set(jnp.where(flag, action[d, to], FALSE))
+    action = action.at[dir(to=to), to].set(jnp.where(flag, action[dir(to=to), to], FALSE))
     return action.flatten()
     # king_moves = POINT_MOVES[4, king_sq].reshape(12)
     # for i in range(12):
