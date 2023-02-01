@@ -205,6 +205,72 @@ def test_observe():
     assert (jax.jit(observe)(state, 1, False) == expected_obs_p1).all()
 
 
+def test_legal_action():
+    j_init = jax.jit(init, static_argnums=(1,))
+    j_step = jax.jit(step, static_argnums=(2,))
+    rng = jax.random.PRNGKey(0)
+
+    _, state = j_init(rng=rng, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=0, size=BOARD_SIZE)  # BLACK
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
+    _, state, _ = j_step(state=state, action=2, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=4, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=6, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=8, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=10, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=12, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=14, size=BOARD_SIZE)
+    # @ + @ + @
+    # + @ + @ +
+    # @ + @ + @
+    # + + + + +
+    # + + + + +
+    # fmt:off
+    assert jnp.all(state.legal_action_mask == jnp.array([
+        False, False, False, False, False,
+        False, False, False, False, False,
+        False, True, False, True, False,
+        True, True, True, True, True,
+        True, True, True, True, True]))
+    # fmt:on
+
+    _, state = j_init(rng=rng, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
+    _, state, _ = j_step(state=state, action=6, size=BOARD_SIZE)  # WHITE
+    _, state, _ = j_step(state=state, action=2, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=8, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=3, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=5, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=9, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=11, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=12, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=25, size=BOARD_SIZE)
+    _, state, _ = j_step(state=state, action=13, size=BOARD_SIZE)
+    # + @ @ @ +
+    # @ O + O @
+    # + @ @ @ +
+    # + + + + +
+    # + + + + +
+    # fmt:off
+    assert jnp.all(state.legal_action_mask == jnp.array([
+        False, False, False, False, False,
+        False, False, False, False, False,
+        True, False, False, False, True,
+        True, True, True, True, True,
+        True, True, True, True, True]))
+    # fmt:on
+
+
 def test_random_play_5():
     import numpy as np
 
