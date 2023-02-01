@@ -141,7 +141,7 @@ def step(
     checking_piece = no_checking_piece.at[_action.to].set(1)
     state = jax.lax.cond(
         (_is_check(state)) & (terminated is False),
-        lambda: JaxAnimalShogiState.replace(    # type: ignore
+        lambda: JaxAnimalShogiState.replace(  # type: ignore
             is_check=TRUE,
             checking_piece=checking_piece,
         ),
