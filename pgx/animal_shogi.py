@@ -721,7 +721,7 @@ def _update_legal_move_actions(
     )
     return jax.lax.cond(
         state.turn == 0,
-        lambda: JaxAnimalShogiState(  # type: ignoer
+        lambda: JaxAnimalShogiState(  # type: ignore
             legal_actions_black=player_actions,
             legal_actions_white=enemy_actions,
         ),
