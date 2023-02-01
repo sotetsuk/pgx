@@ -412,17 +412,22 @@ def test_legal_action():
     # random
     _, state = j_init(rng=rng, size=BOARD_SIZE)
     for _ in range(100):
-        actions = np.where(state.legal_action_mask)
-        if len(actions[0]) == 0:
+        legal_actions = np.where(state.legal_action_mask)[0]
+        illegal_actions = np.where(~state.legal_action_mask)[0]
+
+        for action in legal_actions[:-1]:
+            _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
+            assert not _state.terminated
+        for action in illegal_actions[:-1]:
+            _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
+            assert _state.terminated
+
+        if len(legal_actions) == 0:
             a = BOARD_SIZE * BOARD_SIZE
         else:
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
-            a = jax.random.choice(subkey, actions[0])
-        for action in actions[0][:-1]:
-            _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
-            assert not _state.terminated
-
+            a = jax.random.choice(subkey, legal_actions)
         _, state, _ = j_step(state=state, action=a, size=BOARD_SIZE)
 
 
@@ -430,13 +435,13 @@ def test_random_play_5():
     rng = jax.random.PRNGKey(0)
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
     while not state.terminated:
-        actions = np.where(state.legal_action_mask)
-        if len(actions[0]) == 0:
+        actions = np.where(state.legal_action_mask)[0]
+        if len(actions) == 0:
             a = 25
         else:
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
-            a = jax.random.choice(subkey, actions[0])
+            a = jax.random.choice(subkey, actions)
 
         _, state, _ = j_step(state=state, action=a, size=BOARD_SIZE)
 
@@ -451,13 +456,13 @@ def test_random_play_19():
     rng = jax.random.PRNGKey(0)
     curr_player, state = j_init(rng=rng, size=BOARD_SIZE)
     while not state.terminated:
-        actions = np.where(state.legal_action_mask)
-        if len(actions[0]) == 0:
+        actions = np.where(state.legal_action_mask)[0]
+        if len(actions) == 0:
             a = 19 * 19
         else:
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
-            a = jax.random.choice(subkey, actions[0])
+            a = jax.random.choice(subkey, actions)
 
         _, state, _ = j_step(state=state, action=a, size=BOARD_SIZE)
 
