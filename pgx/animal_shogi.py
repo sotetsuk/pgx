@@ -512,7 +512,7 @@ def _update_legal_move_actions(
     )
     return s.replace(
         legal_actions_black=legal_actions_black,
-        legal_actions_white=legal_actions_white
+        legal_actions_white=legal_actions_white,
     )
 
 
