@@ -640,14 +640,14 @@ def _filter_my_piece_move_actions(turn, owner, array) -> jnp.ndarray:
 
 
 # 駒がある地点への駒打ちを除く
-def _filter_occupied_drop_actions(turn, owner, array) -> jnp.ndarray:
-    for i in range(12):
-        array = jax.lax.cond(
-            owner[i] == 2,
-            lambda: array,
-            lambda: array.at[12 * (jnp.arange(3) + 9 + 3 * turn) + i].set(FALSE),
-            )
-    return array
+def _filter_occupied_drop_actions(turn, owners, array) -> jnp.ndarray:
+    action = array.reshape((15, 12))  # (direction, to)
+    is_empty = owners == 2  # (12,)
+    dir_ix = 9 + 3 * turn
+    action = action.at[dir_ix].set(jnp.where(is_empty, action[dir_ix], FALSE))
+    action = action.at[dir_ix+1].set(jnp.where(is_empty, action[dir_ix+1], FALSE))
+    action = action.at[dir_ix+2].set(jnp.where(is_empty, action[dir_ix+2], FALSE))
+    return action.flatten()
 
 
 # 自殺手を除く
