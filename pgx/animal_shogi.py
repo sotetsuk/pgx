@@ -8,6 +8,7 @@ from flax import struct
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
+
 # 指し手のdataclass
 @struct.dataclass
 class JaxAnimalShogiAction:
