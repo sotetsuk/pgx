@@ -274,15 +274,16 @@ def _another_color(state: JaxAnimalShogiState):
 # 相手の駒を同じ種類の自分の駒に変換する
 def _convert_piece(piece):
     # 両方の駒でない（＝空白）場合は-1を返す
-    p = jax.lax.cond(piece == 0, lambda: -1, lambda: (piece + 5) % 10)
-    return jax.lax.cond(p == 0, lambda: 10, lambda: p)
+    # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    return jnp.int32([-1, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5])[piece]
 
 
 # 駒から持ち駒への変換
 # 先手ひよこが0、後手ぞうが5
 def _piece_to_hand(piece):
-    p = jax.lax.cond(piece % 5 == 0, lambda: piece - 4, lambda: piece)
-    return jax.lax.cond(p < 6, lambda: p - 1, lambda: p - 3)
+    # piece: 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
+    # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
+    return jnp.int32([-1, 0, 1, 2, -1, -1, 3, 4, 5, -1, -1])[piece]
 
 
 #  移動の処理
