@@ -248,8 +248,8 @@ def _not_pass_move(
 
 
 def _check_around_xy(i, state, xy):
-    adj_pos = (
-        jnp.array([xy // state.size + dx[i], xy % state.size + dy[i]], dtype=jnp.int32)
+    adj_pos = jnp.array(
+        [xy // state.size + dx[i], xy % state.size + dy[i]], dtype=jnp.int32
     )
     adj_xy = adj_pos[0] * state.size + adj_pos[1]
     is_off = _is_off_board(adj_pos, state.size)
