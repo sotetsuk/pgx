@@ -20,7 +20,7 @@ import numpy as np
 
 def petting_zoo_random_go(tup):
     # petting zooのgo環境でrandom gaentを終局まで動かす.
-    id, do_print = tup
+    id, do_print, q = tup
     step_nums = 0
     petting_zoo_go_env = go.env()
     petting_zoo_go_env.reset()
@@ -31,12 +31,13 @@ def petting_zoo_random_go(tup):
         step_nums += 1
     if do_print:
         print(id, step_nums)
+    q.put((id, step_nums))
     return id, step_nums
 
 
 def open_spile_random_go(tup):
     # open spileのgo環境でrandom gaentを終局まで動かす.
-    id, do_print = tup
+    id, do_print, q = tup
     game = pyspiel.load_game("go")
     state = game.new_initial_state()
     step_nums = 0
@@ -48,6 +49,7 @@ def open_spile_random_go(tup):
         step_nums += 1
     if do_print:
         print(id, step_nums)
+    q.put((id, step_nums))
     return id, step_nums
 
 
@@ -64,25 +66,31 @@ if __name__ == "__main__":
     # petting_zoo
     # open spile
     p = Pool(n_processes)
+    manager = multiprocessing.Manager()
+    q = manager.Queue()
     process_list = []
     time_sta = time.time()
-    ex = p.map_async(petting_zoo_random_go, iterable=[(i, args.print_per_game) for i in range(n_games)])
+    ex = p.map_async(petting_zoo_random_go, iterable=[(i, args.print_per_game, q) for i in range(n_games)])
     result = ex.get()
     time_end = time.time()
     tim = time_end- time_sta
     p.close()
+    print(q.get())
     avarage_steps = sum(list(map(lambda x: x[1], ex.get())))//n_games
     print("n_games: {} n_processes: {} execution time in petting zoo is {}, avarage number of steps is {}".format(n_games, n_processes, tim, avarage_steps))
 
 
     # open spile
     p = Pool(n_processes)
+    manager = multiprocessing.Manager()
+    q = manager.Queue()
     process_list = []
     time_sta = time.time()
-    ex = p.map_async(open_spile_random_go, iterable=[(i, args.print_per_game) for i in range(n_games)])
+    ex = p.map_async(open_spile_random_go, iterable=[(i, args.print_per_game, q) for i in range(n_games)])
     result = ex.get()
     time_end = time.time()
     tim = time_end- time_sta
     p.close()
+    print(q.get())
     avarage_steps = sum(list(map(lambda x: x[1], ex.get())))//n_games
     print("n_games: {} n_processes: {} execution time in open_spile is {}, avarage number of steps is {}".format(n_games, n_processes, tim, avarage_steps))
