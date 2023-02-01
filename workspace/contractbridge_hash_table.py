@@ -29,14 +29,21 @@ def to_binary(x) -> np.ndarray:
 
 def make_hash_table(csv_path: str) -> Tuple[np.ndarray, np.ndarray]:
     """make key and value of hash from samples"""
-    SAMPLES = []
+    samples = []
     with open(csv_path, "r") as f:
         reader = csv.reader(f, delimiter=",")
         for i in reader:
-            SAMPLES.append(i)
+            samples.append(i)
     keys = []
     values = []
-    for sample in SAMPLES:
+    for sample in samples:
         keys.append(_pbn_to_key(sample[0]))
         values.append(to_value(sample[1:]))
     return np.array(keys), np.array(values)
+
+
+keys, values = make_hash_table(
+    "workspace/contractbridge-ddstable-sample100.csv"
+)
+print(keys.tolist())
+print(values.tolist())
