@@ -645,8 +645,12 @@ def _filter_occupied_drop_actions(turn, owners, array) -> jnp.ndarray:
     is_empty = owners == 2  # (12,)
     dir_ix = 9 + 3 * turn
     action = action.at[dir_ix].set(jnp.where(is_empty, action[dir_ix], FALSE))
-    action = action.at[dir_ix+1].set(jnp.where(is_empty, action[dir_ix+1], FALSE))
-    action = action.at[dir_ix+2].set(jnp.where(is_empty, action[dir_ix+2], FALSE))
+    action = action.at[dir_ix + 1].set(
+        jnp.where(is_empty, action[dir_ix + 1], FALSE)
+    )
+    action = action.at[dir_ix + 2].set(
+        jnp.where(is_empty, action[dir_ix + 2], FALSE)
+    )
     return action.flatten()
 
 
@@ -659,7 +663,9 @@ def _filter_suicide_actions(turn, king_sq, effects, array) -> jnp.ndarray:
     to = jnp.arange(12)
     king_moves = POINT_MOVES[4, king_sq].reshape(12)
     flag = (king_moves == 0) | (effects == 0)
-    action = action.at[dir(to=to), to].set(jnp.where(flag, action[dir(to=to), to], FALSE))
+    action = action.at[dir(to=to), to].set(
+        jnp.where(flag, action[dir(to=to), to], FALSE)
+    )
     return action.flatten()
 
 
