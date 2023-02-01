@@ -176,9 +176,9 @@ def _update_state_wo_legal_action(
     _state: GoState, _action: int, _size: int
 ) -> Tuple[GoState, jnp.ndarray]:
     _state, _reward = jax.lax.cond(
-        _action < 0,
-        lambda: _pass_move(_state, _size),
+        (0 <= _action) & (_action < _size * _size),
         lambda: _not_pass_move(_state, _action),
+        lambda: _pass_move(_state, _size),
     )
 
     # increase turn
