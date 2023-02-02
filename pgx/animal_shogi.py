@@ -626,13 +626,13 @@ def _filter_occupied_drop_actions(
     x x x x x x x
     """
     actions = array.reshape((15, 12))
-    mask = jnp.tile(owner == 2, reps=(15, 1))  # (15,12)
-    tmp = jnp.where(mask, actions, jnp.zeros_like(actions))  # replace by FALSE
+    mask1 = jnp.tile(owner != 2, reps=(15, 1))  # (15,12)
     idx = jnp.arange(15)
-    mask = jnp.tile(
+    mask2 = jnp.tile(
         (9 + 3 * turn <= idx) & (idx < 12 + 3 * turn), reps=(12, 1)
     ).transpose()  # (15,12)
-    actions = jnp.where(mask, tmp, actions)
+    mask = mask1 & mask2
+    actions = jnp.where(mask, FALSE, actions)
     return actions.flatten()
 
 
