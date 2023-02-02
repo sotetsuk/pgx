@@ -366,10 +366,10 @@ def _effected_positions(state: JaxAnimalShogiState, turn) -> jnp.ndarray:
     pieces = _board_status(state)
     owners = _pieces_owner(state)  # (12,)
     _from = jnp.arange(12)
-    effects = POINT_MOVES[_from, pieces].reshape(12, 12).astype(dtype=jnp.int32)
+    effects = POINT_MOVES[_from, pieces].reshape(12, 12)
     mask = jnp.tile(owners == turn, (12, 1)).transpose()  # (12, 12)
-    effects = jnp.where(mask, effects, 1)  # effects is NOT boolean
-    all_effects = effects.sum(axis=0)  # TODO: effectはintである必要ある？
+    effects = jnp.where(mask, effects, 1)
+    all_effects = effects.sum(axis=0)  # integer
     return all_effects  # (12,)
 
 
