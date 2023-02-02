@@ -616,6 +616,19 @@ def _filter_my_piece_move_actions(
 def _filter_occupied_drop_actions(
     turn, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
+    """
+    owner[i] == 2
+          i
+    x x x x x x x
+    x x x x x x x
+    --- 9 (turn == 0)
+    x x x F x x x
+    x x x F x x x
+    x x x F x x x
+    --- 9 + 3 (turn == 0)
+    x x x x x x x
+    x x x x x x x
+    """
     for i in range(12):
         for j in range(3):
             array = jax.lax.cond(
