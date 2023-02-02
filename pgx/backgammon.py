@@ -404,7 +404,7 @@ def _calc_src(src: int, turn: jnp.ndarray) -> jnp.ndarray:
 @jit
 def _calc_tgt(src: int, turn: jnp.ndarray, die) -> jnp.ndarray:
     """
-    boardのindexに合わせる.
+    boardのindexに合わせる. actionは src*6 + dieの形になっている. targetは黒ならsrcからdie分+白ならdie分-(目的地が逆だから.)
     """
     return jax.lax.cond(
         src >= 24,
