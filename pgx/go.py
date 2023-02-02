@@ -256,11 +256,11 @@ def _not_pass_move(
 
 
 def _check_around_xy(i, state, xy):
-    adj_pos = jnp.array(
-        [xy // state.size + dx[i], xy % state.size + dy[i]], dtype=jnp.int32
-    )
-    adj_xy = adj_pos[0] * state.size + adj_pos[1]
-    is_off = _is_off_board(adj_pos, state.size)
+    x = xy // state.size + dx[i]
+    y = xy % state.size + dy[i]
+
+    adj_xy = x * state.size + y
+    is_off = _is_off_board(x, y, state.size)
     is_my_ren = state.ren_id_board[_my_color(state), adj_xy] != -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
     replaced_state = state.replace(
@@ -399,14 +399,8 @@ def _check_around_one_liberty_point(
 ):
     x = _xy // _state.size + dx[i]
     y = _xy % _state.size + dy[i]
-    adj_pos = jnp.array(
-        [x, y],
-        dtype=jnp.int32,
-    )
-    is_off = _is_off_board(adj_pos, _state.size)
-    adj_xy = jax.lax.cond(
-        is_off, lambda: 0, lambda: adj_pos[0] * _state.size + adj_pos[1]
-    )
+    is_off = _is_off_board(x, y, _state.size)
+    adj_xy = jax.lax.cond(is_off, lambda: 0, lambda: x * _state.size + y)
     oppo_color = (_color + 1) % 2
     # 呼吸点
     is_suicide_point = jax.lax.cond(
@@ -652,13 +646,8 @@ def _opponent_color(_state: GoState):
     return jnp.int32((_state.turn + 1) % 2)
 
 
-def _is_off_board(_pos: jnp.ndarray, size) -> bool:
-    x = _pos[0]
-    y = _pos[1]
-    return jnp.logical_or(
-        jnp.logical_or(x < 0, size <= x),
-        jnp.logical_or(y < 0, size <= y),
-    )
+def _is_off_board(_x, _y, size) -> bool:
+    return (_x < 0) | (size <= _x) | (_y < 0) | (size <= _y)
 
 
 def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
