@@ -669,6 +669,7 @@ def _filter_leave_check_actions(
             jnp.tile(check_piece == 0, reps=(15, 1)), FALSE, array  # (15, 12)
         )
 
+    for i in range(12):
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
         array = jax.lax.cond(
             moves[i] == 0,
