@@ -638,12 +638,12 @@ def _filter_suicide_actions(
     for i in range(12):
         array = jax.lax.cond(
             moves[i] | (effects[i] != 0),
-            lambda: array,
             lambda: array.at[
                 _dlshogi_action(
                     _point_to_direction(king_sq, i, False, turn), i
                 )
             ].set(FALSE),
+            lambda: array,
         )
     return array
 
