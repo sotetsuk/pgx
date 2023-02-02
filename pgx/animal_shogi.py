@@ -479,16 +479,12 @@ def _init_legal_actions(
 def _update_legal_move_actions(
     state: JaxAnimalShogiState, action: JaxAnimalShogiAction
 ) -> JaxAnimalShogiState:
-    player_actions = jax.lax.cond(
-        state.turn == 0,
-        lambda: state.legal_actions_black,
-        lambda: state.legal_actions_white,
+    legal_action_masks = jnp.stack(
+        [state.legal_actions_black, state.legal_actions_white]
     )
-    enemy_actions = jax.lax.cond(
-        state.turn == 0,
-        lambda: state.legal_actions_white,
-        lambda: state.legal_actions_black,
-    )
+    player_actions = legal_action_masks[state.turn]
+    enemy_actions = legal_action_masks[1 - state.turn]
+
     # 元の位置にいたときのフラグを折る
     player_actions = _filter_move_actions(
         action.from_, action.piece, player_actions
@@ -496,33 +492,20 @@ def _update_legal_move_actions(
     # 移動後の位置からの移動のフラグを立てる
     player_actions = _add_move_actions(action.to, action.piece, player_actions)
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
-    enemy_actions = jax.lax.cond(
-        action.captured == 0,
-        lambda: enemy_actions,
-        lambda: _filter_move_actions(
-            action.to, action.captured, enemy_actions
-        ),
+    enemy_actions = _filter_move_actions(
+        action.to, action.captured, enemy_actions
     )
+
     captured = _convert_piece(action.captured)
     captured = jax.lax.cond(
         captured % 5 == 0, lambda: captured - 4, lambda: captured
     )
-    player_actions = jax.lax.cond(
-        # capturedは何も取っていない場合は-1に変換されているはず
-        captured == -1,
-        lambda: player_actions,
-        lambda: _add_drop_actions(captured, player_actions),
-    )
-    return jax.lax.cond(
-        state.turn == 0,
-        lambda: state.replace(  # type: ignore
-            legal_actions_black=player_actions,
-            legal_actions_white=enemy_actions,
-        ),
-        lambda: state.replace(  # type: ignore
-            legal_actions_black=enemy_actions,
-            legal_actions_white=player_actions,
-        ),  # type: ignore
+    player_actions = _add_drop_actions(captured, player_actions)
+
+    legal_action_masks = jnp.stack([player_actions, enemy_actions])
+    return state.replace(  # type: ignore
+        legal_actions_black=legal_action_masks[state.turn],
+        legal_actions_white=legal_action_masks[1 - state.turn],
     )
 
 
