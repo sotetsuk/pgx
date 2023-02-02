@@ -447,10 +447,9 @@ def _filter_move_actions(_from, piece, array: jnp.ndarray) -> jnp.ndarray:
 # 駒打ちのactionを追加する
 def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     direction = _hand_to_direction(piece)
-    to = jnp.arange(12)
-    actions = jax.vmap(partial(_dlshogi_action, direction=direction))(to=to)
-    array = array.at[actions].set(TRUE)
-    return array
+    actions = array.reshape(15, 12)
+    actions = actions.at[direction, :].set(TRUE)
+    return actions.flatten()
 
 
 # 駒打ちのactionを消去する
