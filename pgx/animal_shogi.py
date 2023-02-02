@@ -455,10 +455,9 @@ def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 # 駒打ちのactionを消去する
 def _filter_drop_actions(piece, array: jnp.ndarray) -> jnp.ndarray:
     direction = _hand_to_direction(piece)
-    to = jnp.arange(12)
-    actions = jax.vmap(partial(_dlshogi_action, direction=direction))(to=to)
-    array = array.at[actions].set(FALSE)
-    return array
+    actions = array.reshape(15, 12)
+    actions = actions.at[direction, :].set(FALSE)
+    return actions.flatten()
 
 
 # stateからblack,white両方のlegal_actionsを生成する
