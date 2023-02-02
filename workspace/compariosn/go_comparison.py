@@ -1,9 +1,7 @@
 """
 Petting zooとopen spileの囲碁環境とpgxの囲碁環境の速度比較を行う
 """
-from pettingzoo.classic.go import go
 import random
-import pyspiel
 import numpy as np
 import time
 import argparse
@@ -19,6 +17,7 @@ import numpy as np
 
 
 def petting_zoo_random_go(tup):
+    from pettingzoo.classic.go import go
     # petting zooのgo環境でrandom gaentを終局まで動かす.
     id, do_print, q = tup
     step_nums = 0
@@ -36,6 +35,7 @@ def petting_zoo_random_go(tup):
 
 
 def open_spile_random_go(tup):
+    import pyspiel
     # open spileのgo環境でrandom gaentを終局まで動かす.
     id, do_print, q = tup
     game = pyspiel.load_game("go")
