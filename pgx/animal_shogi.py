@@ -420,8 +420,12 @@ def _create_piece_actions(_from: int, piece: int) -> jnp.ndarray:
     actions = jnp.zeros((15, 12), dtype=jnp.bool_)
     can_move_to = POINT_MOVES[_from, piece].reshape(12)
     to = jnp.arange(12)
-    normal_dir = jax.vmap(partial(_point_to_direction, _from=_from, promote=False, turn=turn))(to=to)
-    promote_dir = jax.vmap(partial(_point_to_direction, _from=_from, promote=True, turn=turn))(to=to)
+    normal_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=False, turn=turn)
+    )(to=to)
+    promote_dir = jax.vmap(
+        partial(_point_to_direction, _from=_from, promote=True, turn=turn)
+    )(to=to)
     can_promote = jax.vmap(partial(_can_promote, piece=piece))(to=to)
     actions = actions.at[normal_dir, to].set(can_move_to)
     actions = actions.at[promote_dir, to].set(can_move_to & can_promote)
