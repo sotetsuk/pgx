@@ -443,7 +443,6 @@ def test_filter_suicide_action():
     filtered_actions = _filter_suicide_actions(0, 6, _effected_positions(state, 1), origin_actions)
     b_actions = np.zeros(180, dtype=np.int32)
     b_actions = b_actions.at[87].set(True)
-    b_actions = b_actions.at[67].set(True)
     b_actions = b_actions.at[21].set(True)
     b_actions = b_actions.at[46].set(True)
     b_actions = b_actions.at[83].set(True)
@@ -451,16 +450,19 @@ def test_filter_suicide_action():
     bs2 = np.array([9, 0, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0], dtype=np.int32)
     board2 = np.zeros((12, 11), dtype=np.int32)
     for i in range(12):
-        board2.at[0, i].set(0)
-        board2.at[bs2[i], i].set(1)
+        board2 = board2.at[0, i].set(0)
+        board2 = board2.at[bs2[i], i].set(1)
     state2 = AnimalShogiState(turn=1, board=board2)
     state2 = _init_legal_actions(state2)
     origin_actions2 = state2.legal_actions_white
     filtered_actions2 = _filter_suicide_actions(1, 0, _effected_positions(state2, 0), origin_actions2)
     assert np.allclose(filtered_actions2, np.zeros(180, dtype=np.int32))
+    state2 = AnimalShogiState(board=board2)
+    state2 = _init_legal_actions(state2)
     origin_actions3 = state2.legal_actions_black
     filtered_actions3 = _filter_suicide_actions(0, 8, _effected_positions(state2, 1), origin_actions3)
     b_actions2 = np.zeros(180, dtype=np.int32)
+    b_actions2 = b_actions2.at[1].set(1)
     b_actions2 = b_actions2.at[69].set(1)
     assert np.allclose(filtered_actions3, b_actions2)
 
@@ -505,3 +507,7 @@ def test_filter_leave_check():
     b_actions2 = b_actions2.at[29].set(True)
     b_actions2 = b_actions2.at[53].set(True)
     assert np.allclose(filtered_actions2, b_actions2)
+
+
+if __name__ == '__main__':
+    test_filter_suicide_action()
