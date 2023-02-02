@@ -590,35 +590,44 @@ def _filter_occupied_drop_actions(
 def _filter_suicide_actions(
     turn, king_sq, effects: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    actions = array.reshape(15, 12)
-    can_king_move_to = POINT_MOVES[king_sq, 4].reshape(12)
-    to = jnp.arange(12)
-    dir = jax.vmap(partial(_point_to_direction, _from=king_sq, promote=False, turn=turn))(to=to)
-    actions = actions.at[dir, to].set(
-        jnp.where(can_king_move_to & effects, FALSE, actions[dir, to])
-    )
-    return actions.flatten()
+    moves = POINT_MOVES[king_sq, 4].reshape(12)
+    for i in range(12):
+        array = jax.lax.cond(
+            (moves[i] == 0) | (effects[i] == 0),
+            lambda: array,
+            lambda: array.at[
+                _dlshogi_action(
+                    _point_to_direction(king_sq, i, False, turn), i
+                )
+            ].set(FALSE),
+        )
+    return array
 
 
 # 王手放置を除く
 def _filter_leave_check_actions(
     turn, king_sq, check_piece: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    actions = array.reshape((15, 12))
+    moves = POINT_MOVES[king_sq, 4].reshape(12)
+    array = array.reshape((15, 12))
 
     # 駒打ちのフラグは全て折る
-    actions = actions.at[8:, :].set(FALSE)
+    array = array.at[8:, :].set(FALSE)
     # 王手をかけている駒の場所以外への移動ははじく
-    actions = jnp.where(
-        jnp.tile(check_piece == 0, reps=(15, 1)), FALSE, actions  # (15, 12)
+    array = jnp.where(
+        jnp.tile(check_piece == 0, reps=(15, 1)), FALSE, array  # (15, 12)
     )
 
-    # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
-    can_king_move_to = POINT_MOVES[king_sq, 4].reshape(12)
-    to = jnp.arange(12)
-    dir = jax.vmap(partial(_point_to_direction, _from=king_sq, promote=False, turn=turn))(to=to)
-    actions = actions.at[dir, to].set(can_king_move_to)
-    return actions.flatten()
+    for i in range(12):
+        # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
+        array = jax.lax.cond(
+            moves[i] == 0,
+            lambda: array,
+            lambda: array.at[
+                _point_to_direction(king_sq, i, False, turn), i
+            ].set(TRUE),
+        )
+    return array.flatten()
 
 
 # boardのlegal_actionsを利用して合法手を生成する
