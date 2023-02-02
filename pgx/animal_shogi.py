@@ -603,9 +603,8 @@ def _filter_my_piece_move_actions(
     """
     actions = array.reshape((15, 12))
     mask = jnp.tile(owner == turn, reps=(15, 1))  # (15,12)
-    tmp = jnp.where(mask, jnp.zeros_like(actions), actions)  # replace by FALSE
-    mask = jnp.tile(jnp.arange(15) < 9, reps=(12, 1)).transpose()  # (15,12)
-    actions = jnp.where(mask, tmp, actions)
+    mask = mask.at[9:].set(FALSE)
+    actions = jnp.where(mask, FALSE, actions)
     return actions.flatten()
 
 
