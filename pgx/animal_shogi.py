@@ -72,7 +72,7 @@ class JaxAnimalShogiState:
     # ヒヨコ: Pawn, キリン: Rook, ゾウ: Bishop, ライオン: King, ニワトリ: Gold　と対応
     board: jnp.ndarray = INIT_BOARD  # (11, 12)
     # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
-    hand: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
+    hand: jnp.ndarray = jnp.zeros(6, dtype=jnp.int8)
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
     # move/dropによって変化させる
     legal_actions_black: jnp.ndarray = LEGAL_ACTION_MASKS[0]
