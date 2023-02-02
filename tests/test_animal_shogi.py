@@ -1,7 +1,6 @@
 from pgx.animal_shogi import (
     JaxAnimalShogiState as AnimalShogiState,
     JaxAnimalShogiAction as AnimalShogiAction,
-    INIT_BOARD,
     init,
     step,
     _another_color,
@@ -82,14 +81,14 @@ TEST_BOARD2 = AnimalShogiState(
 
 
 def test_another_color():
-    b = INIT_BOARD
+    b = AnimalShogiState()
     assert _another_color(b) == 1
     b2 = TEST_BOARD2
     assert _another_color(b2) == 0
 
 
 def test_move():
-    b = INIT_BOARD
+    b = AnimalShogiState()
     m = AnimalShogiAction(False, 1, 5, 6, 6, 0)
     s = _move(b, m)
     assert s.board[0][6] == 1
@@ -137,19 +136,19 @@ def test_drop():
 
 
 def test_piece_type():
-    assert _piece_type(INIT_BOARD, 3) == 2
-    assert _piece_type(INIT_BOARD, 5) == 6
-    assert _piece_type(INIT_BOARD, 9) == 0
+    assert _piece_type(AnimalShogiState(), 3) == 2
+    assert _piece_type(AnimalShogiState(), 5) == 6
+    assert _piece_type(AnimalShogiState(), 9) == 0
 
 
 def test_effected():
-    assert np.all(_effected_positions(INIT_BOARD, 1) == np.array([1, 1, 0, 0, 1, 2, 1, 0, 1, 2, 0, 0]))
+    assert np.all(_effected_positions(AnimalShogiState(), 1) == np.array([1, 1, 0, 0, 1, 2, 1, 0, 1, 2, 0, 0]))
     assert np.all(_effected_positions(TEST_BOARD, 0) == np.array([1, 0, 2, 0, 0, 1, 2, 3, 0, 0, 2, 0]))
     assert np.all(_effected_positions(TEST_BOARD2, 1) == np.array([3, 1, 2, 0, 0, 3, 1, 1, 2, 1, 1, 0]))
 
 
 def test_is_check():
-    assert not _is_check(INIT_BOARD)
+    assert not _is_check(AnimalShogiState())
     assert _is_check(TEST_BOARD)
     assert not _is_check(TEST_BOARD2)
 
@@ -191,7 +190,7 @@ def test_add_actions():
 
 
 def test_create_legal_actions():
-    c_board = _init_legal_actions(INIT_BOARD)
+    c_board = _init_legal_actions()
     array1 = np.zeros(180, dtype=np.int32)
     array2 = np.zeros(180, dtype=np.int32)
     array1 = array1.at[2].set(True)
@@ -217,7 +216,7 @@ def test_create_legal_actions():
 
 
 def test_legal_actions():
-    b1 = _init_legal_actions(INIT_BOARD)
+    b1 = AnimalShogiState()
     b2 = _init_legal_actions(TEST_BOARD)
     b3 = _init_legal_actions(TEST_BOARD2)
     n1 = _legal_actions(b1)
@@ -260,7 +259,7 @@ def test_legal_actions():
 
 
 def test_convert_action_to_int():
-    b = INIT_BOARD
+    b = AnimalShogiState()
     m = AnimalShogiAction(False, 1, 5, 6, 6, False)
     i = _action_to_dlaction(m, b.turn)
     # 6の位置のヒヨコを5に移動させる
@@ -291,7 +290,7 @@ def test_convert_action_to_int():
 
 
 def test_convert_int_to_action():
-    b = INIT_BOARD
+    b = AnimalShogiState()
     m = AnimalShogiAction(False, 1, 5, 6, 6, False)
     i = 5
     assert _dlaction_to_action(i, b) == m
@@ -316,7 +315,7 @@ def test_convert_int_to_action():
 
 def test_update_legal_actions_move():
     m = AnimalShogiAction(False, 1, 5, 6, 6, False)
-    updated1 = _init_legal_actions(INIT_BOARD)
+    updated1 = _init_legal_actions(AnimalShogiState())
     updated1 = _update_legal_move_actions(updated1, m)
     black1 = updated1.legal_actions_black
     white1 = updated1.legal_actions_white
