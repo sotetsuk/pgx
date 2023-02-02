@@ -700,4 +700,5 @@ def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
 # 王が最奥に動くactionならTrue
 def _is_try(action: JaxAnimalShogiAction) -> bool:
     return ((action.piece == 4) & (action.to % 4 == 0)) | (
-        (action.piece == 9) & (action.to % 4 == 3))
+        (action.piece == 9) & (action.to % 4 == 3)
+    )
