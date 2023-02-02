@@ -433,7 +433,7 @@ def test_step():
 
 def test_filter_suicide_action():
     bs = np.array([6, 0, 0, 7, 0, 0, 4, 0, 8, 0, 0, 0], dtype=np.int32)
-    board = np.zeros((12, 11), dtype=np.int32)
+    board = np.zeros((11, 12), dtype=np.int32)
     for i in range(12):
         board = board.at[0, i].set(0)
         board = board.at[bs[i], i].set(1)
@@ -448,7 +448,7 @@ def test_filter_suicide_action():
     b_actions = b_actions.at[83].set(True)
     assert np.allclose(filtered_actions, b_actions)
     bs2 = np.array([9, 0, 1, 0, 0, 0, 0, 0, 4, 0, 0, 0], dtype=np.int32)
-    board2 = np.zeros((12, 11), dtype=np.int32)
+    board2 = np.zeros((11, 12), dtype=np.int32)
     for i in range(12):
         board2 = board2.at[0, i].set(0)
         board2 = board2.at[bs2[i], i].set(1)
@@ -469,7 +469,7 @@ def test_filter_suicide_action():
 
 def test_filter_leave_check():
     bs = np.array([3, 0, 0, 0, 2, 6, 4, 0, 8, 0, 0, 0], dtype=np.int32)
-    board = np.zeros((12, 11), dtype=np.int32)
+    board = np.zeros((11, 12), dtype=np.int32)
     for i in range(12):
         board = board.at[0, i].set(0)
         board = board.at[bs[i], i].set(1)
