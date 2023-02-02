@@ -668,6 +668,8 @@ def _filter_leave_check_actions(
                 lambda: array.at[12 * j + i].set(FALSE),
                 lambda: array,
             )
+
+    for i in range(12):
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
         array = jax.lax.cond(
             moves[i] == 0,
