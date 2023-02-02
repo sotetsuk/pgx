@@ -1,4 +1,5 @@
 from typing import Tuple
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -343,26 +344,20 @@ def _piece_type(state: JaxAnimalShogiState, point: int) -> jnp.ndarray:
 
 
 # ある駒の持ち主を返す
-def _owner(piece) -> int:
+def _owner(piece):
     return jax.lax.cond(piece == 0, lambda: 2, lambda: (piece - 1) // 5)
 
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
 def _board_status(state: JaxAnimalShogiState) -> jnp.ndarray:
-    board = jnp.zeros(12, dtype=jnp.int32)
-    for i in range(12):
-        board = board.at[i].set(_piece_type(state, i))
-    return board
+    return state.board.argmax(axis=0)  # (11,12) => (12,)
 
 
 # 駒の持ち主の判定
 def _pieces_owner(state: JaxAnimalShogiState) -> jnp.ndarray:
-    board = jnp.zeros(12, dtype=jnp.int32)
-    for i in range(12):
-        piece = _piece_type(state, i)
-        board = board.at[i].set(_owner(piece))
-    return board
+    pieces = _board_status(state)  # (12,)
+    return jax.vmap(_owner)(pieces)
 
 
 # 利きの判定
@@ -416,7 +411,7 @@ def _can_promote(to: int, piece: int) -> bool:
 # 駒の種類と位置から生成できるactionのフラグを立てる
 def _create_piece_actions(_from: int, piece: int) -> jnp.ndarray:
     turn = _owner(piece)
-    actions = jnp.zeros(180, dtype=jnp.int32)
+    actions = jnp.zeros(180, dtype=jnp.bool_)
     motion = POINT_MOVES[_from, piece].reshape(12)
     for i in range(12):
         normal_dir = _point_to_direction(_from, i, False, turn)
@@ -440,38 +435,30 @@ def _create_piece_actions(_from: int, piece: int) -> jnp.ndarray:
 # 駒の種類と位置から生成できるactionのフラグを立てる
 def _add_move_actions(_from, piece, array: jnp.ndarray) -> jnp.ndarray:
     actions = _create_piece_actions(_from, piece)
-    for i in range(180):
-        array = jax.lax.cond(
-            actions[i] == 1, lambda: array.at[i].set(TRUE), lambda: array
-        )
-    return array
+    return array | actions
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
 def _filter_move_actions(_from, piece, array: jnp.ndarray) -> jnp.ndarray:
     actions = _create_piece_actions(_from, piece)
-    for i in range(180):
-        array = jax.lax.cond(
-            actions[i] == 1, lambda: array.at[i].set(FALSE), lambda: array
-        )
-    return array
+    return array & ~actions
 
 
 # 駒打ちのactionを追加する
 def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     direction = _hand_to_direction(piece)
-    for i in range(12):
-        action = _dlshogi_action(direction, i)
-        array = array.at[action].set(TRUE)
+    to = jnp.arange(12)
+    actions = jax.vmap(partial(_dlshogi_action, direction=direction))(to=to)
+    array = array.at[actions].set(TRUE)
     return array
 
 
 # 駒打ちのactionを消去する
 def _filter_drop_actions(piece, array: jnp.ndarray) -> jnp.ndarray:
     direction = _hand_to_direction(piece)
-    for i in range(12):
-        action = _dlshogi_action(direction, i)
-        array = array.at[action].set(FALSE)
+    to = jnp.arange(12)
+    actions = jax.vmap(partial(_dlshogi_action, direction=direction))(to=to)
+    array = array.at[actions].set(FALSE)
     return array
 
 
