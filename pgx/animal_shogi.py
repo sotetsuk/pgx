@@ -278,14 +278,14 @@ def _another_color(state: JaxAnimalShogiState) -> jnp.ndarray:
 
 
 # 相手の駒を同じ種類の自分の駒に変換する
-def _convert_piece(piece) -> int:
+def _convert_piece(piece):
     # 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
     return jnp.int32([-1, 6, 7, 8, 9, 10, 1, 2, 3, 4, 5])[piece]
 
 
 # 駒から持ち駒への変換
 # 先手ひよこが0、後手ぞうが5
-def _piece_to_hand(piece) -> int:
+def _piece_to_hand(piece):
     # piece: 空白,先手ヒヨコ,先手キリン,先手ゾウ,先手ライオン,先手ニワトリ,後手ヒヨコ,後手キリン,後手ゾウ,後手ライオン,後手ニワトリ
     # hand 持ち駒。先手ヒヨコ,先手キリン,先手ゾウ,後手ヒヨコ,後手キリン,後手ゾウの6種の値を増減させる
     return jnp.int32([-1, 0, 1, 2, -1, -1, 3, 4, 5, -1, -1])[piece]
@@ -677,7 +677,7 @@ def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
 
 # トライルールによる勝利判定
 # 王が最奥に動くactionならTrue
-def _is_try(action: JaxAnimalShogiAction) -> bool:
+def _is_try(action: JaxAnimalShogiAction):
     return ((action.piece == 4) & (action.to % 4 == 0)) | (
         (action.piece == 9) & (action.to % 4 == 3)
     )
