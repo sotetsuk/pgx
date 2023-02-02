@@ -57,7 +57,7 @@ def _action_board(array, point):
 
 
 #  座標と駒の種類から到達できる座標を列挙
-POINT_MOVES = jnp.zeros((12, 11, 3, 4), dtype=jnp.int8)
+POINT_MOVES = jnp.zeros((12, 11, 3, 4), dtype=jnp.bool_)
 for i in range(12):
     POINT_MOVES = POINT_MOVES.at[i, 1].set(_action_board(BLACK_PAWN_MOVE, i))
     POINT_MOVES = POINT_MOVES.at[i, 2].set(_action_board(ROOK_MOVE, i))
