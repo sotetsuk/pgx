@@ -69,11 +69,10 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
 def step(
     state: BackgammonState, action: int
 ) -> Tuple[BackgammonState, int, bool]:
-    state = _update_by_action(state, action)
     return jax.lax.cond(
-        _is_all_off(state.board, state.turn),
-        lambda: _winning_step(state),
-        lambda: _normal_step(state),
+        _is_turn_end(state),
+        lambda: (_change_turn(state).curr_player, _change_turn(state), 0),
+        lambda: _normal_step(state, action),
     )
 
 
@@ -114,6 +113,18 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
 
 
 @jit
+def _normal_step(
+    state: BackgammonState, action: int
+) -> Tuple[BackgammonState, int, bool]:
+    state = _update_by_action(state, action)
+    return jax.lax.cond(
+        _is_all_off(state.board, state.turn),
+        lambda: _winning_step(state),
+        lambda: _no_winning_step(state),
+    )
+
+
+@jit
 def _winning_step(
     state: BackgammonState,
 ) -> Tuple[jnp.ndarray, BackgammonState, int]:
@@ -126,18 +137,17 @@ def _winning_step(
 
 
 @jit
-def _normal_step(
+def _no_winning_step(
     state: BackgammonState,
 ) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
-    勝利者がいない場合のstep, ターンが回ってきたが, 動かせる場所がない場合(dance)すぐさまターンを変える必要がある.
+    勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
-    state, has_changed = _change_turn(state)
     return jax.lax.cond(
-        has_changed & _is_turn_end(state),
+        _is_turn_end(state),
         lambda: (
-            _change_turn(state)[0].curr_player,
-            _change_turn(state)[0],
+            _change_turn(state).curr_player,
+            _change_turn(state),
             0,
         ),
         lambda: (state.curr_player, state, 0),
@@ -198,9 +208,9 @@ def _is_turn_end(state: BackgammonState) -> bool:
 
 
 @jit
-def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
+def _change_turn(state: BackgammonState) -> Tuple[BackgammonState]:
     """
-    ターンが変わる場合は新しいstateを, そうでない場合は元のstateを返す.
+    ターンを変更して新しい状態を返す.
     """
     rng1, rng2 = jax.random.split(state.rng)
     board: jnp.ndarray = state.board
@@ -211,23 +221,16 @@ def _change_turn(state: BackgammonState) -> Tuple[BackgammonState, bool]:
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, turn, dice)
-    return jax.lax.cond(
-        _is_turn_end(state),
-        lambda: (
-            BackgammonState(  # type: ignore
-                curr_player=curr_player,
-                rng=rng2,
-                board=board,
-                terminated=terminated,
-                turn=turn,
-                dice=dice,
-                playable_dice=playable_dice,
-                played_dice_num=played_dice_num,
-                legal_action_mask=legal_action_mask,
-            ),
-            True,
-        ),
-        lambda: (state, False),
+    return BackgammonState(  # type: ignore
+        curr_player=curr_player,
+        rng=rng2,
+        board=board,
+        terminated=terminated,
+        turn=turn,
+        dice=dice,
+        playable_dice=playable_dice,
+        played_dice_num=played_dice_num,
+        legal_action_mask=legal_action_mask,
     )
 
 
