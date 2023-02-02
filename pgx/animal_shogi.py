@@ -604,11 +604,10 @@ def _filter_my_piece_move_actions(
     x x x x x x x
     """
     actions = array.reshape((15, 12))
-    actions_t = actions.transpose()  # (12,15)
-    mask = jnp.tile(owner == turn, reps=(15, 1)).transpose()  # (12,15)
-    actions_t = jnp.where(mask, jnp.zeros_like(actions_t), actions_t)
+    mask = jnp.tile(owner == turn, reps=(15, 1))  # (15,12)
+    tmp = jnp.where(mask, jnp.zeros_like(actions), actions)  # replace by FALSE
     mask = jnp.tile(jnp.arange(15) < 9, reps=(12, 1)).transpose()  # (15,12)
-    actions = jnp.where(mask, actions_t.transpose(), actions)
+    actions = jnp.where(mask, tmp, actions)
     return actions.flatten()
 
 
