@@ -718,6 +718,20 @@ def _to_xy(x, y, size) -> int:
 
 
 def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
+    # def count_ji(color):
+    #    return (
+    #        _count_ji(_state, color, _size) - _state.agehama[(color + 1) % 2]
+    #    )
+    #
+    # count_ji = jax.vmap(count_ji)
+    # score = count_ji(jnp.array([0, 1]))
+    # r = jax.lax.cond(
+    #    score[0] - _state.komi > score[1],
+    #    lambda: jnp.array([1, -1]),
+    #    lambda: jnp.array([-1, 1]),
+    # )
+    #
+    # return r
     b = _count_ji(_state, BLACK, _size) - _state.agehama[WHITE] - _state.komi
     w = _count_ji(_state, WHITE, _size) - _state.agehama[BLACK]
     r = jax.lax.cond(
