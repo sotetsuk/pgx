@@ -136,7 +136,7 @@ def step(
     state = state.replace(turn=turn)  # type: ignore
     no_checking_piece = jnp.zeros(12, dtype=jnp.int32)
     # 王手をかけている駒は直前に動かした駒であるはず
-    checking_piece = no_checking_piece.at[_action.to].set(1)
+    checking_piece = no_checking_piece.at[_action.to].set(TRUE)
     state = jax.lax.cond(
         (_is_check(state)) & (terminated is False),
         lambda: state.replace(  # type: ignore
@@ -541,11 +541,11 @@ def _create_piece_actions(_from: int, piece: int) -> jnp.ndarray:
             lambda: actions,
             lambda: jax.lax.cond(
                 _can_promote(i, piece),
-                lambda: actions.at[pro_act].set(1),
+                lambda: actions.at[pro_act].set(TRUE),
                 lambda: actions,
             )
             .at[normal_act]
-            .set(1),
+            .set(TRUE),
         )
     return actions
 
@@ -555,7 +555,7 @@ def _add_move_actions(_from, piece, array: jnp.ndarray) -> jnp.ndarray:
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
         array = jax.lax.cond(
-            actions[i] == 1, lambda: array.at[i].set(1), lambda: array
+            actions[i] == 1, lambda: array.at[i].set(TRUE), lambda: array
         )
     return array
 
@@ -565,7 +565,7 @@ def _filter_move_actions(_from, piece, array: jnp.ndarray) -> jnp.ndarray:
     actions = _create_piece_actions(_from, piece)
     for i in range(180):
         array = jax.lax.cond(
-            actions[i] == 1, lambda: array.at[i].set(0), lambda: array
+            actions[i] == 1, lambda: array.at[i].set(FALSE), lambda: array
         )
     return array
 
@@ -575,7 +575,7 @@ def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     direction = _hand_to_direction(piece)
     for i in range(12):
         action = _dlshogi_action(direction, i)
-        array = array.at[action].set(1)
+        array = array.at[action].set(TRUE)
     return array
 
 
@@ -584,7 +584,7 @@ def _filter_drop_actions(piece, array: jnp.ndarray) -> jnp.ndarray:
     direction = _hand_to_direction(piece)
     for i in range(12):
         action = _dlshogi_action(direction, i)
-        array = array.at[action].set(0)
+        array = array.at[action].set(FALSE)
     return array
 
 
@@ -721,7 +721,7 @@ def _filter_my_piece_move_actions(
         for j in range(9):
             array = jax.lax.cond(
                 owner[i] == turn,
-                lambda: array.at[12 * j + i].set(0),
+                lambda: array.at[12 * j + i].set(FALSE),
                 lambda: array,
             )
     return array
@@ -736,7 +736,7 @@ def _filter_occupied_drop_actions(
             array = jax.lax.cond(
                 owner[i] == 2,
                 lambda: array,
-                lambda: array.at[12 * (j + 9 + 3 * turn) + i].set(0),
+                lambda: array.at[12 * (j + 9 + 3 * turn) + i].set(FALSE),
             )
     return array
 
@@ -754,7 +754,7 @@ def _filter_suicide_actions(
                 _dlshogi_action(
                     _point_to_direction(king_sq, i, False, turn), i
                 )
-            ].set(0),
+            ].set(FALSE),
         )
     return array
 
@@ -770,13 +770,13 @@ def _filter_leave_check_actions(
             # 駒打ちのフラグは全て折る
             array = jax.lax.cond(
                 j > 8,
-                lambda: array.at[12 * j + i].set(0),
+                lambda: array.at[12 * j + i].set(FALSE),
                 lambda: array,
             )
             # 王手をかけている駒の場所以外への移動ははじく
             array = jax.lax.cond(
                 check_piece[i] == 0,
-                lambda: array.at[12 * j + i].set(0),
+                lambda: array.at[12 * j + i].set(FALSE),
                 lambda: array,
             )
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
@@ -787,7 +787,7 @@ def _filter_leave_check_actions(
                 _dlshogi_action(
                     _point_to_direction(king_sq, i, False, turn), i
                 )
-            ].set(1),
+            ].set(TRUE),
         )
     return array
 
