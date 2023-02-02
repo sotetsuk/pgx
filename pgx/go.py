@@ -346,18 +346,18 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     # 1. 隣接する、既に存在する相手の連が呼吸点1つになる場合
     # jaxの制約のため、あらかじめ最大サイズを指定しなければならない
     # 現実的には10くらいで十分
-    # max_ren_id_size = 10
-    # adj_ren = jnp.nonzero(
-    #    state.adj_ren_id[my_color, put_ren_id], size=max_ren_id_size
-    # )[0]
-    # state = jax.lax.fori_loop(
-    #    0,
-    #    max_ren_id_size,
-    #    lambda _i, state: _check_if_suicide_point_exist(
-    #        state, oppo_color, adj_ren[_i]
-    #    ),
-    #    state,
-    # )
+    max_ren_id_size = 10
+    adj_ren = jnp.nonzero(
+        state.adj_ren_id[my_color, put_ren_id], size=max_ren_id_size
+    )[0]
+    state = jax.lax.fori_loop(
+        0,
+        max_ren_id_size,
+        lambda _i, state: _check_if_suicide_point_exist(
+            state, oppo_color, adj_ren[_i]
+        ),
+        state,
+    )
 
     # 2. 空点の四方を囲む形になる場合
 
