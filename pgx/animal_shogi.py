@@ -593,14 +593,23 @@ def _update_legal_drop_actions(
 def _filter_my_piece_move_actions(
     turn, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    for i in range(12):
-        for j in range(9):
-            array = jax.lax.cond(
-                owner[i] == turn,
-                lambda: array.at[12 * j + i].set(FALSE),
-                lambda: array,
-            )
-    return array
+    """
+    owner[i] == turn
+          i
+    x x x F x x x
+    x x x F x x x
+    x x x F x x x
+    --- 9
+    x x x x x x x
+    x x x x x x x
+    """
+    actions = array.reshape((15, 12))
+    actions_t = actions.transpose()  # (12,15)
+    mask = jnp.tile(owner == turn, reps=(15, 1)).transpose()  # (12,15)
+    actions_t = jnp.where(mask, jnp.zeros_like(actions_t), actions_t)
+    mask = jnp.tile(jnp.arange(15) < 9, reps=(12, 1)).transpose()  # (15,12)
+    actions = jnp.where(mask, actions_t.transpose(), actions)
+    return actions.flatten()
 
 
 # 駒がある地点への駒打ちを除く
