@@ -616,7 +616,7 @@ def _filter_occupied_drop_actions(
     turn, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
     """
-    owner[i] == 2
+    owner[i] != 2
           i
     x x x x x x x
     x x x x x x x
@@ -628,14 +628,13 @@ def _filter_occupied_drop_actions(
     x x x x x x x
     x x x x x x x
     """
-    for i in range(12):
-        for j in range(3):
-            array = jax.lax.cond(
-                owner[i] == 2,
-                lambda: array,
-                lambda: array.at[12 * (j + 9 + 3 * turn) + i].set(FALSE),
-            )
-    return array
+    actions = array.reshape((15, 12))
+    mask = jnp.tile(owner == 2, reps=(15, 1))  # (15,12)
+    tmp = jnp.where(mask, actions, jnp.zeros_like(actions))  # replace by FALSE
+    idx = jnp.arange(15)
+    mask = jnp.tile((9 + 3 * turn <= idx) & (idx < 12 + 3 * turn), reps=(12, 1)).transpose()  # (15,12)
+    actions = jnp.where(mask, tmp, actions)
+    return actions.flatten()
 
 
 # 自殺手を除く
