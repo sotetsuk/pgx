@@ -12,6 +12,7 @@ from pgx.go import (
     _pass_move,
     _remove_stones,
     _set_stone_next_to_oppo_ren,
+    _update_legal_action,
     _update_state_wo_legal_action,
     init,
     legal_actions,
@@ -33,7 +34,7 @@ def test(func):
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func, static_argnums=(1,))(state, 19)
-        n_line = len(str(exp).split('\n'))
+        n_line = len(str(exp).split("\n"))
         print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
         return
 
@@ -49,21 +50,21 @@ def test(func):
             time_end = time.perf_counter()
             delta = (time_end - time_sta) * 1000
             exp = jax.make_jaxpr(func, static_argnums=(1,))(state, 0)
-            n_line = len(str(exp).split('\n'))
+            n_line = len(str(exp).split("\n"))
         except ZeroDivisionError:
             time_sta = time.perf_counter()
             jax.jit(func, static_argnums=(1,))(state, 19)
             time_end = time.perf_counter()
             delta = (time_end - time_sta) * 1000
             exp = jax.make_jaxpr(func, static_argnums=(1,))(state, 19)
-            n_line = len(str(exp).split('\n'))
+            n_line = len(str(exp).split("\n"))
         except TypeError:
             time_sta = time.perf_counter()
             jax.jit(func, static_argnums=(2,))(state, 0, 19)
             time_end = time.perf_counter()
             delta = (time_end - time_sta) * 1000
             exp = jax.make_jaxpr(func, static_argnums=(2,))(state, 0, 19)
-            n_line = len(str(exp).split('\n'))
+            n_line = len(str(exp).split("\n"))
     print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
 
 
@@ -84,6 +85,8 @@ elif func_name == "_remove_stones":
     func = _remove_stones
 elif func_name == "_set_stone_next_to_oppo_ren":
     func = _set_stone_next_to_oppo_ren
+elif func_name == "_update_legal_action":
+    func = _update_legal_action
 elif func_name == "_update_state_wo_legal_action":
     func = _update_state_wo_legal_action
 elif func_name == "legal_actions":
