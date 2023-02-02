@@ -507,7 +507,3 @@ def test_filter_leave_check():
     b_actions2 = b_actions2.at[29].set(True)
     b_actions2 = b_actions2.at[53].set(True)
     assert np.allclose(filtered_actions2, b_actions2)
-
-
-if __name__ == '__main__':
-    test_filter_suicide_action()
