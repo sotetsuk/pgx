@@ -593,9 +593,7 @@ def _filter_suicide_actions(
     actions = array.reshape(15, 12)
     can_king_move_to = POINT_MOVES[king_sq, 4].reshape(12)
     to = jnp.arange(12)
-    dir = jax.vmap(
-        partial(_point_to_direction, _from=king_sq, promote=False, turn=turn)
-    )(to=to)
+    dir = jax.vmap(partial(_point_to_direction, _from=king_sq, promote=False, turn=turn))(to=to)
     actions = actions.at[dir, to].set(
         jnp.where(can_king_move_to & effects, FALSE, actions[dir, to])
     )
@@ -618,9 +616,7 @@ def _filter_leave_check_actions(
     # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
     can_king_move_to = POINT_MOVES[king_sq, 4].reshape(12)
     to = jnp.arange(12)
-    dir = jax.vmap(
-        partial(_point_to_direction, _from=king_sq, promote=False, turn=turn)
-    )(to=to)
+    dir = jax.vmap(partial(_point_to_direction, _from=king_sq, promote=False, turn=turn))(to=to)
     actions = actions.at[dir, to].set(can_king_move_to)
     return actions.flatten()
 
