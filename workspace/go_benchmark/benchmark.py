@@ -7,6 +7,7 @@ from pgx.go import (
     _count_ji,
     _get_alphazero_features,
     _get_reward,
+    _legal_actions,
     _merge_ren,
     _not_pass_move,
     _pass_move,
@@ -15,7 +16,6 @@ from pgx.go import (
     _update_legal_action,
     _update_state_wo_legal_action,
     init,
-    legal_actions,
     step,
 )
 
@@ -89,8 +89,8 @@ elif func_name == "_update_legal_action":
     func = _update_legal_action
 elif func_name == "_update_state_wo_legal_action":
     func = _update_state_wo_legal_action
-elif func_name == "legal_actions":
-    func = legal_actions
+elif func_name == "_legal_actions":
+    func = _legal_actions
 elif func_name == "step":
     func = step
 else:
