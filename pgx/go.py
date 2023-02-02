@@ -358,18 +358,11 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     )
 
     # 2. 空点の四方を囲む形になる場合
+    # 四方全てが「盤外、呼吸点2つ以上の味方の連、呼吸点1つの相手の連」のいずれかなら自殺点
     x = _xy // size
     y = _xy % size
     _dx = jnp.int32([-1, -2, -1, 0, +1, +2, +1, 0])
     _dy = jnp.int32([-1, 0, +1, +2, +1, 0, -1, -2])
-
-    def is_one_liberty_xy(x, y):
-        ren_id = state.ren_id_board[oppo_color, x * size + y]
-        return _is_one_liberty_ren(state, oppo_color, ren_id)
-
-    def is_two_liberty_xy(x, y):
-        ren_id = state.ren_id_board[my_color, x * size + y]
-        return _is_two_liberty_ren(state, my_color, ren_id)
 
     # ++7++
     # +6+0+
@@ -383,18 +376,30 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
             ~_is_off_board(x + dx[i], y + dy[i], size)
             & (
                 _is_off_board(x + _dx[2 * i], y + _dy[2 * i], size)
-                | is_two_liberty_xy(x + _dx[2 * i], y + _dy[2 * i])
-                | is_one_liberty_xy(x + _dx[2 * i], y + _dy[2 * i])
+                | is_two_liberty_xy(
+                    state, x + _dx[2 * i], y + _dy[2 * i], my_color
+                )
+                | is_one_liberty_xy(
+                    state, x + _dx[2 * i], y + _dy[2 * i], oppo_color
+                )
             )
             & (
                 _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], size)
-                | is_two_liberty_xy(x + _dx[2 * i + 1], y + _dy[2 * i + 1])
-                | is_one_liberty_xy(x + _dx[2 * i + 1], y + _dy[2 * i + 1])
+                | is_two_liberty_xy(
+                    state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], my_color
+                )
+                | is_one_liberty_xy(
+                    state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], oppo_color
+                )
             )
             & (
                 _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], size)
-                | is_two_liberty_xy(x + _dx[2 * i + 2], y + _dy[2 * i + 2])
-                | is_one_liberty_xy(x + _dx[2 * i + 2], y + _dy[2 * i + 2])
+                | is_two_liberty_xy(
+                    state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], my_color
+                )
+                | is_one_liberty_xy(
+                    state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], oppo_color
+                )
             ),
             lambda: state.replace(
                 _legal_action_mask=state._legal_action_mask.at[
@@ -418,6 +423,22 @@ def _is_one_liberty_ren(_state, _color, _ren_id):
 
 def _is_two_liberty_ren(_state, _color, _ren_id):
     return jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) > 1
+
+
+def is_one_liberty_xy(_state, x, y, color):
+    ren_id = _state.ren_id_board[color, x * _state.size + y]
+    return _is_one_liberty_ren(_state, color, ren_id)
+
+
+def is_two_liberty_xy(_state, x, y, color):
+    ren_id = _state.ren_id_board[color, x * _state.size + y]
+    return _is_two_liberty_ren(_state, color, ren_id)
+
+
+def is_point(_state, x, y):
+    return (_state.ren_id_board[0, x * _state.size + y] == -1) & (
+        _state.ren_id_board[1, x * _state.size + y] == -1
+    )
 
 
 def _check_if_suicide_point_exist(_state: GoState, _color, _id):
@@ -444,19 +465,6 @@ def _is_suicide_point(_state, _color, one_liberty_point):
     oppo_color = (_color + 1) % 2
     xy = one_liberty_point
 
-    def is_point(x, y):
-        return (_state.ren_id_board[_color, x * _state.size + y] == -1) & (
-            _state.ren_id_board[oppo_color, x * _state.size + y] == -1
-        )
-
-    def is_one_liberty_xy(x, y):
-        ren_id = _state.ren_id_board[oppo_color, x * _state.size + y]
-        return _is_one_liberty_ren(_state, oppo_color, ren_id)
-
-    def is_two_liberty_xy(x, y):
-        ren_id = _state.ren_id_board[_color, x * _state.size + y]
-        return _is_two_liberty_ren(_state, _color, ren_id)
-
     # 四方を確認する
     _is_suicide_point = TRUE
     _is_suicide_point = jax.lax.fori_loop(
@@ -472,13 +480,21 @@ def _is_suicide_point(_state, _color, one_liberty_point):
                 )
                 & (
                     is_point(
-                        xy // _state.size + dx[i], xy % _state.size + dy[i]
+                        _state,
+                        xy // _state.size + dx[i],
+                        xy % _state.size + dy[i],
                     )
                     | is_two_liberty_xy(
-                        xy // _state.size + dx[i], xy % _state.size + dy[i]
+                        _state,
+                        xy // _state.size + dx[i],
+                        xy % _state.size + dy[i],
+                        _color,
                     )
                     | is_one_liberty_xy(
-                        xy // _state.size + dx[i], xy % _state.size + dy[i]
+                        _state,
+                        xy // _state.size + dx[i],
+                        xy % _state.size + dy[i],
+                        oppo_color,
                     )
                 )
             ),
