@@ -12,8 +12,8 @@ BLACK_CHAR = "@"
 WHITE_CHAR = "O"
 POINT_CHAR = "+"
 
-dx = jnp.int32([-1, +1, 0, 0])
-dy = jnp.int32([0, 0, -1, +1])
+dx = jnp.int32([-1, 0, +1, 0])
+dy = jnp.int32([0, 1, 0, -1])
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -323,7 +323,7 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
 def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     my_color = _my_color(_state)
     oppo_color = _opponent_color(_state)
-
+    size = _state.size
     state = _state.replace(  # type:ignore
         _legal_action_mask=_state._legal_action_mask.at[my_color, _xy]
         .set(FALSE)
@@ -337,7 +337,7 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     put_ren_id = state.ren_id_board[my_color, _xy]
     # 置いた連の周りに呼吸点が一つしかない場合
     state = jax.lax.cond(
-        jnp.count_nonzero(state.liberty[my_color, put_ren_id] == 1) == 1,
+        _is_one_liberty_ren(state, my_color, put_ren_id),
         lambda: _check_if_suicide_point_exist(state, my_color, put_ren_id),
         lambda: state,
     )
@@ -360,12 +360,59 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     )
 
     # 2. 空点の四方を囲む形になる場合
+    x = _xy // size
+    y = _xy % size
+    _dx = jnp.int32([-1, -2, -1, 0, +1, +2, +1, 0])
+    _dy = jnp.int32([-1, 0, +1, +2, +1, 0, -1, -2])
 
+    def is_two_liberty_xy(x, y):
+        ren_id = state.ren_id_board[my_color, x * size + y]
+        return _is_two_liberty_ren(state, my_color, ren_id)
+
+    # ++7++
+    # +6+0+
+    # 5+X+1
+    # +4+2+
+    # ++3++
+    state = jax.lax.fori_loop(
+        0,
+        4,
+        lambda i, state: jax.lax.cond(
+            ~_is_off_board(x + dx[i], y + dy[i], size)
+            & (
+                _is_off_board(x + _dx[2 * i], y + _dy[2 * i], size)
+                | is_two_liberty_xy(x + _dx[2 * i], y + _dy[2 * i])
+            )
+            & (
+                _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], size)
+                | is_two_liberty_xy(x + _dx[2 * i + 1], y + _dy[2 * i + 1])
+            )
+            & (
+                _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], size)
+                | is_two_liberty_xy(x + _dx[2 * i + 2], y + _dy[2 * i + 2])
+            ),
+            lambda: state.replace(
+                _legal_action_mask=state._legal_action_mask.at[
+                    oppo_color, (x + dx[i]) * size + (y + dy[i])
+                ].set(FALSE)
+            ),
+            lambda: state,
+        ),
+        state,
+    )
     # TODO
     # 石を置くことで味方の自殺点が消える場合
     # 石を置くことで相手の自殺点が消える場合
 
     return state
+
+
+def _is_one_liberty_ren(_state, _color, _ren_id):
+    return jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) == 1
+
+
+def _is_two_liberty_ren(_state, _color, _ren_id):
+    return jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) > 1
 
 
 def _check_if_suicide_point_exist(_state: GoState, _color, _id):
@@ -424,12 +471,11 @@ def _check_around_one_liberty_point(
 
     # 呼吸点2つ以上の味方連
     _id = _state.ren_id_board[_color, adj_xy]
-    liberty_points = _state.liberty[_color, _id] == 1
     is_suicide_point = jax.lax.cond(
         (
             ~is_off
             & (_state.ren_id_board[_color, adj_xy] != 1)
-            & (jnp.count_nonzero(liberty_points) > 1)
+            & _is_two_liberty_ren(_state, _color, _id)
         ),
         lambda: FALSE,
         lambda: is_suicide_point,
@@ -437,12 +483,11 @@ def _check_around_one_liberty_point(
 
     # 呼吸点1つの相手連
     _id = _state.ren_id_board[oppo_color, adj_xy]
-    liberty_points = _state.liberty[oppo_color, _id] == 1
     is_suicide_point = jax.lax.cond(
         (
             ~is_off
             & (_state.ren_id_board[oppo_color, adj_xy] != 1)
-            & (jnp.count_nonzero(liberty_points) == 1)
+            & _is_one_liberty_ren(_state, oppo_color, _id)
         ),
         lambda: FALSE,
         lambda: is_suicide_point,
