@@ -633,8 +633,8 @@ def show(state: GoState) -> None:
 
 def _show_details(state: GoState) -> None:
     show(state)
-    print(state.ren_id_board[BLACK].reshape((5, 5)))
-    print(state.ren_id_board[WHITE].reshape((5, 5)))
+    print(state.ren_id_board[BLACK].reshape((state.size, state.size)))
+    print(state.ren_id_board[WHITE].reshape((state.size, state.size)))
     print(state.kou)
 
 
