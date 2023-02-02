@@ -368,14 +368,7 @@ def _effected_positions(state: JaxAnimalShogiState, turn) -> jnp.ndarray:
     effects = POINT_MOVES[_from, pieces].reshape(12, 12)
     mask = jnp.tile(owners == turn, (12, 1)).transpose()  # (12, 12)
     effects = jnp.where(mask, effects, jnp.zeros_like(effects))
-    all_effects = effects.sum(axis=0)
-    # for i in range(12):
-    #     own = piece_owner[i]
-    #     piece = board[i]
-    #     effect = POINT_MOVES[i, piece].reshape(12)
-    #     all_effect = jax.lax.cond(
-    #         own == turn, lambda: all_effect + effect, lambda: all_effect
-    #     )
+    all_effects = effects.sum(axis=0)  # TODO: effectはintである必要ある？
     return all_effects  # (12,)
 
 
