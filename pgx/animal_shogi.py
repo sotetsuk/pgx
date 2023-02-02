@@ -662,7 +662,10 @@ def _filter_leave_check_actions(
     array = array.reshape((15, 12))
     for i in range(12):
         # 王手をかけている駒の位置以外への移動は王手放置
+
+        # 駒打ちのフラグは全て折る
         array = array.at[8:, :].set(FALSE)
+        # 王手をかけている駒の場所以外への移動ははじく
         array = jnp.where(
             jnp.tile(check_piece == 0, reps=(15, 1)), FALSE, array  # (15, 12)
         )
