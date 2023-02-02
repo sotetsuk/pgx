@@ -17,7 +17,10 @@ from pgx.backgammon import (
     init,
     observe,
     step,
-    _distance_to_goal
+    _distance_to_goal,
+    _is_turn_end,
+    _no_winning_step,
+    _normal_step
 )
 
 seed = 1701
@@ -91,12 +94,9 @@ def test_init_roll():
     a = _roll_init_dice(rng)
 
 
-def test_change_turn():
+def test_is_turn_end():
     _, state = init(rng)
-    _turn = state.turn
-    state, has_changed = _change_turn(state)
-    assert state.turn == _turn
-    assert not has_changed
+    assert not _is_turn_end(state)
 
     # 白のdance
     board: jnp.ndarray = make_test_boad()
@@ -109,7 +109,40 @@ def test_change_turn():
         playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
         played_dice_num=jnp.int16(0),
     )
-    state, has_changed = _change_turn(state)
+    assert _is_turn_end(state)
+
+    # playable diceがない場合
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        curr_player=jnp.int16(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int16(1),
+        dice=jnp.array([2, 2], dtype=jnp.int16),
+        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
+        played_dice_num=jnp.int16(2),
+    )
+    assert _is_turn_end(state)
+
+
+def test_change_turn():
+    _, state = init(rng)
+    _turn = state.turn
+    state = _change_turn(state)
+    assert state.turn == -1 * _turn
+
+    # 白のdance
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        curr_player=jnp.int16(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int16(1),
+        dice=jnp.array([2, 2], dtype=jnp.int16),
+        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
+        played_dice_num=jnp.int16(0),
+    )
+    state = _change_turn(state)
     assert state.turn == jnp.int16(-1)
 
     # playable diceがない場合
@@ -123,9 +156,25 @@ def test_change_turn():
         playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
         played_dice_num=jnp.int16(2),
     )
-    state, has_changed = _change_turn(state)
+    state = _change_turn(state)
     assert state.turn == jnp.int16(-1)
 
+
+def test_continual_pass():
+    # 連続パスが可能かテスト
+    # 白のdance
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        curr_player=jnp.int16(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int16(1),
+        dice=jnp.array([2, 2], dtype=jnp.int16),
+        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
+        played_dice_num=jnp.int16(0),
+    )
+    _, state, _ = step(state, 6 * (1) + 0)  # actionによらずターンが変わる.
+    assert state.turn == jnp.int16(-1)  # ターンが変わっていることを確認
 
 def test_step():
     board: jnp.ndarray = make_test_boad()
@@ -200,8 +249,6 @@ def test_step():
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 4].set(
         1
     ) # 19 -> off
-    print(jnp.where(state.legal_action_mask!=0)[0])
-    print(jnp.where(expected_legal_action_mask!=0)[0])
     assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0 
 
 
