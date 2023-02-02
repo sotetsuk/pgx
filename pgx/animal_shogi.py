@@ -659,21 +659,15 @@ def _filter_leave_check_actions(
     turn, king_sq, check_piece: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
     moves = POINT_MOVES[king_sq, 4].reshape(12)
+    array = array.reshape((15, 12))
     for i in range(12):
         # 王手をかけている駒の位置以外への移動は王手放置
-        for j in range(15):
-            # 駒打ちのフラグは全て折る
-            array = jax.lax.cond(
-                j > 8,
-                lambda: array.at[12 * j + i].set(FALSE),
-                lambda: array,
-            )
-            # 王手をかけている駒の場所以外への移動ははじく
-            array = jax.lax.cond(
-                check_piece[i] == 0,
-                lambda: array.at[12 * j + i].set(FALSE),
-                lambda: array,
-            )
+        array = array.at[8:, :].set(FALSE)
+        array = jnp.where(
+            jnp.tile(check_piece == 0, reps=(15, 1)),  # (15, 12)
+            FALSE,
+            array
+        )
         # 玉の移動はそれ以外でも可能だがフラグが折れてしまっているので立て直す
         array = jax.lax.cond(
             moves[i] == 0,
@@ -684,7 +678,7 @@ def _filter_leave_check_actions(
                 )
             ].set(TRUE),
         )
-    return array
+    return array.flatten()
 
 
 # boardのlegal_actionsを利用して合法手を生成する
