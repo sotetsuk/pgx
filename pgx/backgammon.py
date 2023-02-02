@@ -118,7 +118,7 @@ def _winning_step(
     state: BackgammonState,
 ) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
-    勝利者がいる場合のstep
+    勝利者がいる場合のstep.
     """
     reward = _calc_win_score(state.board, state.turn)
     state = state.replace(terminated=jnp.bool_(True))  # type: ignore
