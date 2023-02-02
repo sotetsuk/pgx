@@ -333,9 +333,7 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
 
     # cf. #255
     # (A) 石を置くことで味方の自殺点が生じる場合
-    # 置いた連
     put_ren_id = state.ren_id_board[my_color, _xy]
-    # 置いた連の周りに呼吸点が一つしかない場合
     state = jax.lax.cond(
         _is_one_liberty_ren(state, my_color, put_ren_id),
         lambda: _check_if_suicide_point_exist(state, my_color, put_ren_id),
@@ -636,33 +634,21 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
 
 def legal_actions(state: GoState, size) -> jnp.ndarray:
-    # 既に石が置かれているところを排除
-    # board = jnp.ones_like(state.ren_id_board[BLACK], dtype=jnp.bool_)
-    # board = jnp.where(state.ren_id_board[BLACK] != -1, False, board)
-    # board = jnp.where(state.ren_id_board[WHITE] != -1, False, board)
-
-    # 呼吸点が1つのところを排除
-    # TODO for->fori_loop
-    # TODO if->cond
-
-    # my_color = _my_color(state)
-    # for ren_id in range(jnp.argmax(state.available_ren_id)):
-    #    if jnp.count_nonzero(state.liberty[my_color, ren_id] == 1) == 1:
-    #        board = jnp.where(
-    #            state.liberty[my_color, ren_id] == 1, False, board
-    #        )
-
-    # board = jnp.logical_and(board, state.legal_action_mask)
-
-    # return board  # type:ignore
-    illegal_action = jax.lax.map(
-        lambda xy: _update_state_wo_legal_action(state, xy, size)[
-            0
-        ].terminated,
-        jnp.arange(0, size * size + 1),
+    # illegal_action = jax.lax.map(
+    #    lambda xy: _update_state_wo_legal_action(state, xy, size)[
+    #        0
+    #    ].terminated,
+    #    jnp.arange(0, size * size + 1),
+    # )
+    # legal_action = ~illegal_action
+    # return legal_action.at[size * size].set(TRUE)
+    return jax.lax.cond(
+        state.kou == -1,
+        lambda: state._legal_action_mask[_my_color(state)]
+        .at[state.kou]
+        .set(False),
+        lambda: state._legal_action_mask[_my_color(state)],
     )
-    legal_action = ~illegal_action
-    return legal_action.at[size * size].set(TRUE)
 
 
 def get_board(state: GoState) -> jnp.ndarray:
