@@ -169,8 +169,7 @@ def _dlshogi_action(direction, to) -> int:
 
 
 # fromの座標とtoの座標からdirを生成
-def _point_to_direction(_from, to, promote, turn) -> int:
-    direction = -1
+def _point_to_direction(_from, to, promote, turn):
     dis = to - _from
     # 後手番の動きは反転させる
     dis = jax.lax.cond(turn == 1, lambda: -dis, lambda: dis)
