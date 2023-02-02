@@ -41,9 +41,7 @@ class GoState:
 
     # 設置可能なマスをTrueとしたマスク
     legal_action_mask: jnp.ndarray = jnp.ones(19 * 19 + 1, dtype=jnp.bool_)
-    _legal_action_mask: jnp.ndarray = jnp.ones(
-        (2, 19 * 19 + 1), dtype=jnp.bool_
-    )
+    _legal_action_mask: jnp.ndarray = jnp.ones((2, 19 * 19), dtype=jnp.bool_)
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
@@ -152,7 +150,7 @@ def init(
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
         legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
-        _legal_action_mask=jnp.ones((2, size * size + 1), dtype=jnp.bool_),
+        _legal_action_mask=jnp.ones((2, size * size), dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
     )
@@ -166,7 +164,9 @@ def step(
 
     # add legal actions
     _state = _state.replace(  # type:ignore
-        legal_action_mask=legal_actions(_state, size)
+        legal_action_mask=state.legal_action_mask.at[:-1].set(
+            _legal_actions(_state, size)
+        )
     )
 
     # update log
@@ -615,6 +615,9 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         _opponent_color(_state), _rm_ren_id
     ].set(True)
 
+    _my_legal_action_mask = _state._legal_action_mask[0] | surrounded_stones
+    _oppo_legal_action_mask = _state._legal_action_mask[1] | surrounded_stones
+
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
             oppo_ren_id_board
@@ -630,10 +633,14 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         .set(False),
         agehama=_state.agehama.at[_my_color(_state)].add(agehama),
         kou=jnp.int32(_rm_stone_xy),  # type:ignore
+        _legal_action_mask=_state._legal_action_mask.at[0]
+        .set(_my_legal_action_mask)
+        .at[1]
+        .set(_oppo_legal_action_mask),
     )
 
 
-def legal_actions(state: GoState, size) -> jnp.ndarray:
+def _legal_actions(_state: GoState, size) -> jnp.ndarray:
     # illegal_action = jax.lax.map(
     #    lambda xy: _update_state_wo_legal_action(state, xy, size)[
     #        0
@@ -643,11 +650,11 @@ def legal_actions(state: GoState, size) -> jnp.ndarray:
     # legal_action = ~illegal_action
     # return legal_action.at[size * size].set(TRUE)
     return jax.lax.cond(
-        state.kou == -1,
-        lambda: state._legal_action_mask[_my_color(state)]
-        .at[state.kou]
+        _state.kou == -1,
+        lambda: _state._legal_action_mask[_my_color(_state)]
+        .at[_state.kou]
         .set(False),
-        lambda: state._legal_action_mask[_my_color(state)],
+        lambda: _state._legal_action_mask[_my_color(_state)],
     )
 
 
