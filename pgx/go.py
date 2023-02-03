@@ -300,9 +300,7 @@ def _illegal_move(
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
     return _state.replace(  # type:ignore
-        ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(
-           _xy
-        ),
+        ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(_xy),
     )
 
 
