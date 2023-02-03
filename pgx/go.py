@@ -32,9 +32,6 @@ class GoState:
     # 連周りの情報 0:None 1:呼吸点 2:石
     liberty: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.int32)
 
-    # 隣接している敵の連id
-    adj_ren_id: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.bool_)
-
     # 設置可能なマスをTrueとしたマスク
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
 
@@ -142,7 +139,6 @@ def init(
             (2, size * size), -1, dtype=jnp.int32
         ),  # type:ignore
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
-        adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
         legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
@@ -310,13 +306,11 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     new_id = ren_id_board.at[_xy].get()
     adj_ren_id = ren_id_board.at[_adj_xy].get()
 
-    small_id, large_id = jax.lax.cond(
-        adj_ren_id < new_id,
-        lambda: (adj_ren_id, new_id),
-        lambda: (new_id, adj_ren_id),
-    )
-    # 大きいidの連を消し、小さいidの連と繋げる
+    is_same_color = (new_id >= 0) & (adj_ren_id >= 0)
 
+    # 大きいidの連を消し、小さいidの連と繋げる
+    large_id = jnp.maximum(new_id, adj_ren_id)
+    small_id = jnp.minimum(new_id, adj_ren_id)
     ren_id_board = jnp.where(ren_id_board == large_id, small_id, ren_id_board)
 
     liberty = _state.liberty.at[_my_color(_state)].get()
@@ -327,21 +321,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     )
     liberty = liberty.at[large_id, :].set(False)
 
-    _oppo_adj_ren_id = jax.lax.map(
-        lambda row: jnp.where(
-            row[large_id],
-            row.at[large_id].set(False).at[small_id].set(True),
-            row,
-        ),
-        _state.adj_ren_id[_opponent_color(_state)],  # (361, 361)
-    )
-
-    _adj_ren_id = _state.adj_ren_id.at[_my_color(_state)].get()
-    _adj_ren_id = _adj_ren_id.at[small_id].set(
-        jnp.logical_or(_adj_ren_id[small_id], _adj_ren_id[large_id])
-    )
-    _adj_ren_id = _adj_ren_id.at[large_id, :].set(False)
-
     return jax.lax.cond(
         new_id == adj_ren_id,
         lambda: _state,
@@ -350,10 +329,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
                 ren_id_board
             ),
             liberty=_state.liberty.at[_my_color(_state)].set(liberty),
-            adj_ren_id=_state.adj_ren_id.at[_my_color(_state)]
-            .set(_adj_ren_id)
-            .at[_opponent_color(_state)]
-            .set(_oppo_adj_ren_id),
         ),
     )
 
@@ -373,24 +348,9 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
         ]
         .set(2)
     )
-    adj_ren_id = (
-        _state.adj_ren_id.at[
-            _my_color(_state),
-            _state.ren_id_board[_my_color(_state), _xy],
-            oppo_ren_id,
-        ]
-        .set(True)
-        .at[
-            _opponent_color(_state),
-            oppo_ren_id,
-            _state.ren_id_board[_my_color(_state), _xy],
-        ]
-        .set(True)
-    )
 
     state = _state.replace(  # type:ignore
         liberty=liberty,
-        adj_ren_id=adj_ren_id,
     )
 
     return jax.lax.cond(
@@ -424,10 +384,6 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         .set(liberty)
         .at[_opponent_color(_state), _rm_ren_id, :]
         .set(0),
-        adj_ren_id=_state.adj_ren_id.at[_opponent_color(_state), _rm_ren_id, :]
-        .set(False)
-        .at[_my_color(_state), :, _rm_ren_id]
-        .set(False),
         agehama=_state.agehama.at[_my_color(_state)].add(agehama),
         kou=jnp.int32(_rm_stone_xy),  # type:ignore
     )
