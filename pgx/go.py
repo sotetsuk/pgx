@@ -306,8 +306,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     new_id = ren_id_board.at[_xy].get()
     adj_ren_id = ren_id_board.at[_adj_xy].get()
 
-    is_same_color = (new_id >= 0) & (adj_ren_id >= 0)
-
     # 大きいidの連を消し、小さいidの連と繋げる
     large_id = jnp.maximum(new_id, adj_ren_id)
     small_id = jnp.minimum(new_id, adj_ren_id)
