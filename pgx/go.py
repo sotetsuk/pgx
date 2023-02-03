@@ -458,6 +458,18 @@ def _check_if_suicide_point_exist(_state: GoState, _color, _id):
         ),
         lambda: _state,
     )
+
+    # TODO 本当にこれで良いか？
+    _state = jax.lax.cond(
+        (jnp.count_nonzero(liberty_points) == 1),
+        lambda: _state.replace(  # type:ignore
+            _legal_action_mask=_state._legal_action_mask.at[
+                (_color + 1) % 2, one_liberty_point
+            ].set(TRUE)
+        ),
+        lambda: _state,
+    )
+
     return _state
 
 
@@ -632,6 +644,8 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
     _my_legal_action_mask = _state._legal_action_mask[0] | surrounded_stones
     _oppo_legal_action_mask = _state._legal_action_mask[1] | surrounded_stones
+
+    # TODO 石を取り除いたときに、取り除かれた連に隣接する連の呼吸点を自殺点から外す
 
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
