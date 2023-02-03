@@ -454,14 +454,12 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
 
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
-    illegal_action = jax.lax.map(
-        lambda xy: _update_state_wo_legal_action(state, xy, size)[
-            0
-        ].terminated,
-        jnp.arange(0, size * size + 1),
-    )
-    legal_action = ~illegal_action
-    return legal_action.at[size * size].set(TRUE)
+    def is_illegal_each(xy):
+        return _update_state_wo_legal_action(state, xy, size)[0].terminated
+
+    illegal_action_mask = jax.vmap(is_illegal_each)(jnp.arange(size * size + 1))
+    legal_action_mask = ~illegal_action_mask
+    return legal_action_mask.at[size * size].set(TRUE)
 
 
 def get_board(state: GoState) -> jnp.ndarray:
