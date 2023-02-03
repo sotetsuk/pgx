@@ -8,7 +8,7 @@ from pgx.backgammon import (
     _calc_win_score,
     _change_turn,
     _is_action_legal,
-    _is_all_on_homeboad,
+    _is_all_on_home_board,
     _is_open,
     _legal_action_mask,
     _move,
@@ -321,10 +321,10 @@ def test_is_all_on_home_boad():
     board: jnp.ndarray = make_test_boad()
     # 黒
     turn: jnp.int16 = jnp.int16(-1)
-    assert _is_all_on_homeboad(board, turn)
+    assert _is_all_on_home_board(board, turn)
     # 白
     turn = jnp.int16(1)
-    assert not _is_all_on_homeboad(board, turn)
+    assert not _is_all_on_home_board(board, turn)
 
 
 def test_rear_distance():
