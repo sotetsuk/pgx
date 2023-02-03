@@ -29,9 +29,6 @@ class GoState:
         (2, 19 * 19), -1, dtype=jnp.int32
     )  # type:ignore
 
-    # 連idが使えるか
-    available_ren_id: jnp.ndarray = jnp.ones((2, 19 * 19), dtype=jnp.bool_)
-
     # 連周りの情報 0:None 1:呼吸点 2:石
     liberty: jnp.ndarray = jnp.zeros((2, 19 * 19, 19 * 19), dtype=jnp.int32)
 
@@ -144,7 +141,6 @@ def init(
         ren_id_board=jnp.full(
             (2, size * size), -1, dtype=jnp.int32
         ),  # type:ignore
-        available_ren_id=jnp.ones((2, size * size), dtype=jnp.bool_),
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         adj_ren_id=jnp.zeros((2, size * size, size * size), dtype=jnp.bool_),
         legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
@@ -303,15 +299,9 @@ def _illegal_move(
 
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
-    available_ren_id = _state.available_ren_id[_my_color(_state)]
-    next_ren_id = jnp.argmax(available_ren_id)
-    available_ren_id = available_ren_id.at[next_ren_id].set(False)
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(
-            next_ren_id
-        ),
-        available_ren_id=_state.available_ren_id.at[_my_color(_state)].set(
-            available_ren_id
+           _xy
         ),
     )
 
@@ -361,9 +351,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
             ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
                 ren_id_board
             ),
-            available_ren_id=_state.available_ren_id.at[
-                _my_color(_state), large_id
-            ].set(True),
             liberty=_state.liberty.at[_my_color(_state)].set(liberty),
             adj_ren_id=_state.adj_ren_id.at[_my_color(_state)]
             .set(_adj_ren_id)
@@ -431,15 +418,10 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     # surrounded_stones (361) => (my_lib > 0) & surrounded_stones (361, 361)
     liberty = jnp.where((my_lib > 0) & surrounded_stones, 1, my_lib)
 
-    available_ren_id = _state.available_ren_id.at[
-        _opponent_color(_state), _rm_ren_id
-    ].set(True)
-
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
             oppo_ren_id_board
         ),
-        available_ren_id=available_ren_id,
         liberty=_state.liberty.at[_my_color(_state)]
         .set(liberty)
         .at[_opponent_color(_state), _rm_ren_id, :]
