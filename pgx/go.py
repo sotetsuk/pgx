@@ -24,7 +24,7 @@ class GoState:
     # 横幅, マスの数ではない
     size: jnp.ndarray = jnp.int32(19)  # type:ignore
 
-    # 連
+    # 連の代表点（一番小さいマス目）のマス目の座標
     ren_id_board: jnp.ndarray = jnp.full(
         (2, 19 * 19), -1, dtype=jnp.int32
     )  # type:ignore
