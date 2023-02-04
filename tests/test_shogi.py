@@ -488,11 +488,15 @@ def test_is_double_pawn():
 
 def test_is_stuck():
     s = init()
-    s.board[0,1].set(0)
-    s.board[3,1].set(1)
+    board = s.board
+    board = board.at[0,1].set(0)
+    board = board.at[3,1].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_stuck(s)
-    s.board[2,8].set(0)
-    s.board[16,8].set(1)
+    board = s.board
+    board = board.at[2,8].set(0)
+    board = board.at[16,8].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_stuck(s)
 
 
