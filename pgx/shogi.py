@@ -546,7 +546,7 @@ def _pieces_owner(state: ShogiState) -> np.ndarray:
     board = np.zeros(81, dtype=np.int32)
     for i in range(81):
         piece = _piece_type(state, i)
-        board[i] = _owner(piece)
+        board = board.at[i].set(_owner(piece))
     return board
 
 
@@ -959,11 +959,11 @@ def _is_check_(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
             # 桂馬の王手も密接としてカウント
             if near_king[i] == 1 or piece % 14 == 3:
                 check += 10
-                checking_point[0][i] = 1
+                checking_point = checking_point.at[0,i].set(1)
             else:
                 # 遠隔の王手は9以上ありえない
                 check += 1
-                checking_point[1][i] = 1
+                checking_point = checking_point.at[1,i].set(1)
     return check // 10, checking_point[0], check % 10, checking_point[1]
 
 
