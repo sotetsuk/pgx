@@ -1,9 +1,7 @@
 import sys
 import time
-
 import jax
 import jax.numpy as jnp
-
 from pgx.backgammon import (
     init,
     step,
@@ -19,11 +17,11 @@ from pgx.backgammon import (
     _decompose_action,
     _update_by_action,
     _move,
-    _is_to_off_legal,
-    _is_to_point_legal,
+    _winning_step,
+    _no_winning_step,
+    _normal_step
 )
 action_to_point = (19 + 2) * 6 + 1
-
 def test(func):
     rng = jax.random.PRNGKey(0)
     _, state = init(rng)
@@ -33,7 +31,7 @@ def test(func):
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(rng)
-    elif func.__name__ in ["step", "_update_by_action"]:
+    elif func.__name__ in ["step", "_update_by_action", "_normal_step"]:
         time_sta = time.perf_counter()
         jax.jit(func)(state, action_to_point)
         time_end = time.perf_counter()
@@ -57,7 +55,7 @@ def test(func):
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(state.board, state.turn, action_to_point)
-    elif func.__name__ == "_change_turn":
+    elif func.__name__ in ["_change_turn", "_winning_step", "_no_winning_step"]:
         time_sta = time.perf_counter()
         jax.jit(func)(state)
         time_end = time.perf_counter()
@@ -78,14 +76,17 @@ def test(func):
     n_line = len(str(exp).split('\n'))
     print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
     return
-
-
-
 func_name = sys.argv[1]
 if func_name == "init":
     func = init
 elif func_name == "step":
     func = step
+elif func_name == "_normal_step":
+    func = _normal_step
+elif func_name == "_winning_step":
+    func = _winning_step
+elif func_name == "_no_winning_step":
+    func = _no_winning_step
 elif func_name == "observe":
     func = observe
 elif func_name == "_legal_action_mask":
@@ -109,7 +110,4 @@ elif func_name == "_calc_win_score":
 else:
     print(func_name)
     assert False
-
 test(func=func)
-
-
