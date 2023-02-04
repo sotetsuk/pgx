@@ -292,28 +292,28 @@ def test_legal_actions():
     actions2 = actions2.at[79].set(1)
     # 桂馬のaction
     # 銀のaction
-    actions2 = actions2[25].set(1)
-    actions2 = actions2[61].set(1)
-    actions2 = actions2[81 + 34].set(1)
-    actions2 = actions2[162 + 52].set(1)
+    actions2 = actions2.at[25].set(1)
+    actions2 = actions2.at[61].set(1)
+    actions2 = actions2.at[81 + 34].set(1)
+    actions2 = actions2.at[162 + 52].set(1)
     # 金のaction
     for i in range(2):
-        actions2 = actions2[34 + 18 * i].set(1)
-        actions2 = actions2[81 + 43 + 18 * i].set(1)
-        actions2 = actions2[162 + 25 + 18 * i].set(1)
+        actions2 = actions2.at[34 + 18 * i].set(1)
+        actions2 = actions2.at[81 + 43 + 18 * i].set(1)
+        actions2 = actions2.at[162 + 25 + 18 * i].set(1)
     # 玉のaction
-    actions2 = actions2[43].set(1)
-    actions2 = actions2[81 + 52].set(1)
-    actions2 = actions2[162 + 34].set(1)
+    actions2 = actions2.at[43].set(1)
+    actions2 = actions2.at[81 + 52].set(1)
+    actions2 = actions2.at[162 + 34].set(1)
     # 角のaction
     # 飛のaction
-    actions2 = actions2[81 * 4 + 7].set(1)
+    actions2 = actions2.at[81 * 4 + 7].set(1)
     for i in range(5):
-        actions2 = actions2[81 * 3 + 25 + 9 * i].set(1)
+        actions2 = actions2.at[81 * 3 + 25 + 9 * i].set(1)
     a3 = actions2 - actions1
     print(np.where(a3 == -1))
     assert np.all(actions2 == actions1)
-    state.turn = 1
+    state = state.replace(turn=1)  # type: ignore
     actions1 = _legal_actions(state)
     actions2 = np.zeros(2754, dtype=np.int32)
     # 歩のaction
@@ -386,8 +386,8 @@ def test_legal_actions():
                 continue
             if i == 7 and j == 4:
                 continue
-            actions2 = actions2[81 * 29 + 9 * j + i].set(1)
-            actions2 = actions2[81 * 33 + 9 * j + i].set(1)
+            actions2 = actions2.at[81 * 29 + 9 * j + i].set(1)
+            actions2 = actions2.at[81 * 33 + 9 * j + i].set(1)
     assert np.all(actions1 == actions2)
 
 
