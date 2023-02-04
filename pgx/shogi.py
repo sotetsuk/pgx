@@ -730,7 +730,9 @@ def _create_piece_actions(piece, _from) -> jnp.ndarray:
 
 
 # actionを追加する
-def _add_action(add_array: jnp.ndarray, origin_array: jnp.ndarray) -> jnp.ndarray:
+def _add_action(
+    add_array: jnp.ndarray, origin_array: jnp.ndarray
+) -> jnp.ndarray:
     return jnp.where(add_array == 1, 1, origin_array)
 
 
@@ -943,7 +945,12 @@ def _legal_actions(state: ShogiState) -> jnp.ndarray:
 def _is_check(state: ShogiState) -> Tuple[int, jnp.ndarray, int, jnp.ndarray]:
     # そもそも王がいない場合
     if jnp.all(state.board[8 + 14 * state.turn] == 0):
-        return 0, jnp.zeros(81, dtype=jnp.int32), 0, jnp.zeros(81, dtype=jnp.int32)
+        return (
+            0,
+            jnp.zeros(81, dtype=jnp.int32),
+            0,
+            jnp.zeros(81, dtype=jnp.int32),
+        )
     else:
         return _is_check_(state)
 
