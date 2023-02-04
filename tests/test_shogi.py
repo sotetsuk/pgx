@@ -468,15 +468,21 @@ def test_update_legal_actions():
 
 def test_is_double_pawn():
     s = init()
-    s.board[0,5].set(0)
-    s.board[1,5].set(1)
+    board = s.board
+    board = board.at[0,5].set(0)
+    board = board.at[1,5].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_double_pawn(s)
-    s.turn.set(1)
-    s.board[0,43].set(0)
-    s.board[23,43].set(1)
+    s = s.replace(turn=1)
+    board = s.board
+    board = board.at[0,43].set(0)
+    board = board.at[23,43].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert not _is_double_pawn(s)
-    s.board[0,41].set(0)
-    s.board[15,41].set(1)
+    board = s.board
+    board = board.at[0,41].set(0)
+    board = board.at[15,41].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_double_pawn(s)
 
 
