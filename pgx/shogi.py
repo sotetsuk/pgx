@@ -759,7 +759,7 @@ def _filter_move_actions(
 def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 1)
+    new_array = new_array.at[np.arange(81 * direction, 81 * (direction + 1))].set(1)
     return new_array
 
 
@@ -767,7 +767,7 @@ def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
 def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 0)
+    new_array = new_array.at[np.arange(81 * direction, 81 * (direction + 1))].set(0)
     return new_array
 
 
@@ -882,7 +882,7 @@ def _filter_my_piece_move_actions(
     for i in range(81):
         if owner[i] != turn:
             continue
-        np.put(new_array, np.arange(i, 1620 + i, 81), 0)
+        new_array = new_array.at[np.arange(i, 1620 + i, 81)].set(0)
     return new_array
 
 
@@ -895,17 +895,9 @@ def _filter_occupied_drop_actions(
         if owner[i] == 2:
             continue
         if turn == 0:
-            np.put(
-                new_array,
-                np.arange(81 * 20 + i, 81 * 27 + i, 81),
-                0,
-            )
+            new_array = new_array.at[np.arange(81 * 20 + i, 81 * 27 + i, 81)].set(0)
         else:
-            np.put(
-                new_array,
-                np.arange(81 * 27 + i, 81 * 34 + i, 81),
-                0,
-            )
+            new_array = new_array.at[np.arange(81 * 27 + i, 81 * 34 + i, 81)].set(0)
     return new_array
 
 
@@ -1196,7 +1188,7 @@ def _is_avoid_check(
         points = _between(king_point, point)
     for i in range(81):
         if points[i] == 0 and point != i:
-            np.put(legal_actions, np.arange(i, 81 * 34 + i, 81), 0)
+            legal_actions = legal_actions.at[np.arange(i, 81 * 34 + i, 81)].set(0)
     return (legal_actions == 0).all()
 
 
