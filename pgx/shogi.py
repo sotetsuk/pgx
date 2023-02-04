@@ -84,7 +84,7 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     if _is_stuck(s):
         print("some pieces are stuck")
         return s, _turn_to_reward(_another_color(s)), True
-    s.turn = _another_color(s)
+    s = s.replace(turn=_another_color(s))
     # 相手に合法手がない場合→詰み
     if _is_mate(s):
         # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
@@ -841,12 +841,10 @@ def _update_legal_move_actions(
         )
         new_player_actions = _add_drop_actions(captured, new_player_actions)
     if s.turn == 0:
-        s.legal_actions_black = new_player_actions
-        s.legal_actions_white = new_enemy_actions
+        legal_actions_black, legal_actions_white = new_player_actions, new_enemy_actions
     else:
-        s.legal_actions_black = new_enemy_actions
-        s.legal_actions_white = new_player_actions
-    return s
+        legal_actions_black, legal_actions_white = new_enemy_actions, new_player_actions
+    return s.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
 
 
 # 駒打ちによるlegal_actionsの更新
@@ -868,9 +866,9 @@ def _update_legal_drop_actions(
             action.piece, new_player_actions
         )
     if s.turn == 0:
-        s.legal_actions_black = new_player_actions
+        s = s.replace(legal_actions_black = new_player_actions)  # type: ignore
     else:
-        s.legal_actions_white = new_player_actions
+        s = s.replace(legal_actions_white = new_player_actions)# type: ignore
     return s
 
 
