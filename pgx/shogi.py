@@ -247,17 +247,17 @@ def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
     u2, d2 = _is_second_line(point)
     # (4, 4)での動きを基準にはみ出すところをカットする
     if u:
-        new_array.at[:, 3].set(0)
+        new_array = new_array.at[:, 3].set(0)
     if d:
-        new_array.at[:, 5].set(0)
+        new_array = new_array.at[:, 5].set(0)
     if r:
-        new_array.at[3, :].set(0)
+        new_array = new_array.at[3, :].set(0)
     if l:
-        new_array.at[5, :].set(0)
+        new_array = new_array.at[5, :].set(0)
     if u2:
-        new_array.at[:, 2].set(0)
+        new_array = new_array.at[:, 2].set(0)
     if d2:
-        new_array.at[:, 6].set(0)
+        new_array = new_array.at[:, 6].set(0)
     return new_array
 
 
