@@ -775,26 +775,27 @@ def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
 def _init_legal_actions(state: ShogiState) -> ShogiState:
     bs = _board_status(state)
+    legal_actions_black, legal_actions_white = state.legal_actions_black, state.legal_actions_white
     # 移動の追加
     for i in range(81):
         piece = bs[i]
         if piece <= 14:
             legal_actions_black = _add_move_actions(
-                piece, i, state.legal_actions_black
+                piece, i, legal_actions_black
             )
         else:
             legal_actions_white = _add_move_actions(
-                piece, i, state.legal_actions_white
+                piece, i, legal_actions_white
             )
     # 駒打ちの追加
     for i in range(7):
         if state.hand[i] != 0:
             legal_actions_black = _add_drop_actions(
-                1 + i, state.legal_actions_black
+                1 + i, legal_actions_black
             )
         if state.hand[i + 7] != 0:
             legal_actions_white = _add_drop_actions(
-                15 + i, state.legal_actions_white
+                15 + i, legal_actions_white
             )
     return state.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
 
