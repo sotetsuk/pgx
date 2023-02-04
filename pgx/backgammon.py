@@ -195,7 +195,7 @@ def _is_turn_end(state: BackgammonState) -> bool:
     )  # type: ignore
 
 
-def _change_turn(state: BackgammonState) -> Tuple[BackgammonState]:
+def _change_turn(state: BackgammonState) -> BackgammonState:
     """
     ターンを変更して新しい状態を返す.
     """
@@ -276,7 +276,7 @@ def _update_playable_dice(
     _n = played_dice_num
     die = action % 6
 
-    def _update_for_diff_dice(die: int, playable_dice: np.ndarray):
+    def _update_for_diff_dice(die: int, playable_dice: jnp.ndarray):
         return jax.lax.fori_loop(
             0,
             4,
@@ -365,7 +365,7 @@ def _exists(board: jnp.ndarray, turn: jnp.ndarray, point: int) -> bool:
     return turn * checkers >= 1  # type: ignore
 
 
-def _calc_src(src: int, turn: jnp.ndarray) -> jnp.ndarray:
+def _calc_src(src: int, turn: jnp.ndarray) -> int:
     """
     boardのindexに合わせる.
     """
@@ -374,7 +374,7 @@ def _calc_src(src: int, turn: jnp.ndarray) -> jnp.ndarray:
     )
 
 
-def _calc_tgt(src: int, turn: jnp.ndarray, die) -> jnp.ndarray:
+def _calc_tgt(src: int, turn: jnp.ndarray, die) -> int:
     """
     boardのindexに合わせる. actionは src*6 + dieの形になっている. targetは黒ならsrcからdie分+白ならdie分-(目的地が逆だから.)
     """
@@ -510,7 +510,7 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
-    legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=np.int16)
+    legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16)
 
     def _update(i: int, legal_action_mask: jnp.ndarray) -> jnp.ndarray:
         return legal_action_mask | _legal_action_mask_for_single_die(
@@ -522,28 +522,28 @@ def _legal_action_mask(
 
 
 def _legal_action_mask_for_single_die(
-    board: jnp.ndarray, turn: jnp.ndarray, die: int
+    board: jnp.ndarray, turn: jnp.ndarray, die
 ) -> jnp.ndarray:
     """
     一つのサイコロの目に対するlegal micro action
     """
     return jax.lax.cond(
         die == -1,
-        lambda: jnp.zeros(26 * 6 + 6, dtype=np.int16),
+        lambda: jnp.zeros(26 * 6 + 6, dtype=jnp.int16),
         lambda: _legal_action_mask_for_valid_single_dice(board, turn, die),
     )
 
 
 def _legal_action_mask_for_valid_single_dice(
-    board: jnp.ndarray, turn: jnp.ndarray, die: int
+    board: jnp.ndarray, turn: jnp.ndarray, die
 ) -> jnp.ndarray:
     """
     -1以外のサイコロの目に対して合法判定
     """
-    legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=np.int16)
+    legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16)
 
     def _is_legal(i: int, legal_action_mask: jnp.ndarray):
-        action = i * 6 + die
+        action: int = i * 6 + die
         legal_action_mask = legal_action_mask.at[action].set(
             _is_action_legal(board, turn, action)
         )

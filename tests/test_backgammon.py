@@ -20,11 +20,25 @@ from pgx.backgammon import (
     _distance_to_goal,
     _is_turn_end,
     _no_winning_step,
-    _normal_step
 )
 
 seed = 1701
 rng = jax.random.PRNGKey(seed)
+init = jax.jit(init)
+step = jax.jit(step)
+observe = jax.jit(observe)
+_no_winning_step = jax.jit(_no_winning_step)
+_calc_src = jax.jit(_calc_src)
+_calc_tgt = jax.jit(_calc_tgt)
+_calc_win_score = jax.jit(_calc_win_score)
+_change_turn = jax.jit(_change_turn)
+_is_action_legal = jax.jit(_is_action_legal)
+_is_all_on_home_board = jax.jit(_is_all_on_home_board)
+_is_open = jax.jit(_is_open)
+_legal_action_mask = jax.jit(_legal_action_mask)
+_move = jax.jit(_move)
+_rear_distance = jax.jit(_rear_distance)
+
 
 
 def make_test_boad():
