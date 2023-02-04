@@ -1101,10 +1101,10 @@ def _eliminate_direction(actions: np.ndarray, direction: int) -> np.ndarray:
         dir2 = 4
     pro_dir1 = dir1 + 8
     pro_dir2 = dir2 + 8
-    new_array[dir1 * 81 : (dir1 + 1) * 81] = 0
-    new_array[dir2 * 81 : (dir2 + 1) * 81] = 0
-    new_array[pro_dir1 * 81 : (pro_dir1 + 1) * 81] = 0
-    new_array[pro_dir2 * 81 : (pro_dir2 + 1) * 81] = 0
+    new_array = new_array.at[dir1 * 81 : (dir1 + 1) * 81].set(0)
+    new_array = new_array.at[dir2 * 81 : (dir2 + 1) * 81].set(0)
+    new_array = new_array.at[pro_dir1 * 81 : (pro_dir1 + 1) * 81].set(0)
+    new_array = new_array.at[pro_dir2 * 81 : (pro_dir2 + 1) * 81].set(0)
     return new_array
 
 
