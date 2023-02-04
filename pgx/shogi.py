@@ -1,8 +1,8 @@
 import copy
-from dataclasses import dataclass
+from flax.struct import dataclass
 from typing import Tuple
 
-import numpy as np
+import jax.numpy as np
 
 
 # 指し手のdataclass
@@ -162,7 +162,7 @@ def _make_init_board() -> np.ndarray:
         else:
             # 空白
             p = 0
-        array[p][i] = 1
+        array = array.at[p, i].set(1)
     return array
 
 
@@ -177,45 +177,45 @@ def _make_board(bs: np.ndarray) -> ShogiState:
 
 def _pawn_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    array[4][4 - _turn_to_reward(turn)] = 1
+    array = array.at[4, 4 - _turn_to_reward(turn)].set(1)
     return array
 
 
 def _knight_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    array[3][4 - 2 * _turn_to_reward(turn)] = 1
-    array[5][4 - 2 * _turn_to_reward(turn)] = 1
+    array = array.at[3, 4 - 2 * _turn_to_reward(turn)].set(1)
+    array = array.at[5, 4 - 2 * _turn_to_reward(turn)].set(1)
     return array
 
 
 def _silver_move(turn: int) -> np.ndarray:
     array = _pawn_move(turn)
-    array[3][3] = 1
-    array[3][5] = 1
-    array[5][3] = 1
-    array[5][5] = 1
+    array = array.at[3, 3].set(1)
+    array = array.at[3, 5].set(1)
+    array = array.at[5, 3].set(1)
+    array = array.at[5, 5].set(1)
     return array
 
 
 def _gold_move(turn: int) -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
     if turn == 0:
-        array[3][3] = 1
-        array[5][3] = 1
+        array = array.at[3, 3].set(1)
+        array = array.at[5, 3].set(1)
     else:
-        array[3][5] = 1
-        array[5][5] = 1
-    array[4][3] = 1
-    array[3][4] = 1
-    array[4][5] = 1
-    array[5][4] = 1
+        array = array.at[3, 5].set(1)
+        array = array.at[5, 5].set(1)
+    array = array.at[4, 3].set(1)
+    array = array.at[3, 4].set(1)
+    array = array.at[4, 5].set(1)
+    array = array.at[5, 4].set(1)
     return array
 
 
 def _king_move() -> np.ndarray:
     array = np.zeros((9, 9), dtype=np.int32)
-    array[3:6, 3:6] = 1
-    array[4][4] = 0
+    array = array.at[3:6, 3:6].set(1)
+    array = array.at[4, 4].set(0)
     return array
 
 
@@ -247,17 +247,17 @@ def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
     u2, d2 = _is_second_line(point)
     # (4, 4)での動きを基準にはみ出すところをカットする
     if u:
-        new_array[:, 3] *= 0
+        new_array.at[:, 3].set(0)
     if d:
-        new_array[:, 5] *= 0
+        new_array.at[:, 5].set(0)
     if r:
-        new_array[3, :] *= 0
+        new_array.at[3, :].set(0)
     if l:
-        new_array[5, :] *= 0
+        new_array.at[5, :].set(0)
     if u2:
-        new_array[:, 2] *= 0
+        new_array.at[:, 2].set(0)
     if d2:
-        new_array[:, 6] *= 0
+        new_array.at[:, 6].set(0)
     return new_array
 
 
@@ -272,24 +272,24 @@ def _action_board(array: np.ndarray, point: int) -> np.ndarray:
 # 大駒・香車以外の位置ごとの移動できる地点を記録
 POINT_MOVES = np.zeros((81, 29, 81), dtype=np.int32)
 for i in range(81):
-    POINT_MOVES[i][1] = _action_board(_pawn_move(0), i)
-    POINT_MOVES[i][3] = _action_board(_knight_move(0), i)
-    POINT_MOVES[i][4] = _action_board(_silver_move(0), i)
-    POINT_MOVES[i][7] = _action_board(_gold_move(0), i)
-    POINT_MOVES[i][8] = _action_board(_king_move(), i)
-    POINT_MOVES[i][9] = POINT_MOVES[i][7]
-    POINT_MOVES[i][10] = POINT_MOVES[i][7]
-    POINT_MOVES[i][11] = POINT_MOVES[i][7]
-    POINT_MOVES[i][12] = POINT_MOVES[i][7]
-    POINT_MOVES[i][15] = _action_board(_pawn_move(1), i)
-    POINT_MOVES[i][17] = _action_board(_knight_move(1), i)
-    POINT_MOVES[i][18] = _action_board(_silver_move(1), i)
-    POINT_MOVES[i][21] = _action_board(_gold_move(1), i)
-    POINT_MOVES[i][22] = _action_board(_king_move(), i)
-    POINT_MOVES[i][23] = POINT_MOVES[i][21]
-    POINT_MOVES[i][24] = POINT_MOVES[i][21]
-    POINT_MOVES[i][25] = POINT_MOVES[i][21]
-    POINT_MOVES[i][26] = POINT_MOVES[i][21]
+    POINT_MOVES = POINT_MOVES.at[i, 1].set(_action_board(_pawn_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 3].set(_action_board(_knight_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 4].set(_action_board(_silver_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 7].set(_action_board(_gold_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 8].set(_action_board(_king_move(), i))
+    POINT_MOVES = POINT_MOVES.at[i, 9].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 10].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 11].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 12].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 15].set(_action_board(_pawn_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 17].set(_action_board(_knight_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 18].set(_action_board(_silver_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 21].set(_action_board(_gold_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 22].set(_action_board(_king_move(), i))
+    POINT_MOVES = POINT_MOVES.at[i, 23].set(POINT_MOVES[i][21])
+    POINT_MOVES = POINT_MOVES.at[i, 24].set(POINT_MOVES[i][21])
+    POINT_MOVES = POINT_MOVES.at[i, 25].set(POINT_MOVES[i][21])
+    POINT_MOVES = POINT_MOVES.at[i, 26].set(POINT_MOVES[i][21])
 
 
 # dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
@@ -341,7 +341,7 @@ def _dis_direction_array(from_: int, turn: int, direction: int) -> np.ndarray:
         dis = 1 + i
         to = from_ + dif * dis
         if _is_in_board(to) and _is_same_line(from_, to, direction):
-            array[to] = dis
+            array = array.at[to].set(dis)
     return array
 
 
@@ -555,25 +555,26 @@ def _move(
     state: ShogiState,
     action: ShogiAction,
 ) -> ShogiState:
-    s = state
-    s.board[action.piece][action.from_] = 0
-    s.board[0][action.from_] = 1
-    s.board[action.captured][action.to] = 0
+    board = state.board
+    hand = state.hand
+    board = board.at[action.piece, action.from_].set(0)
+    board = board.at[0, action.from_].set(1)
+    board = board.at[action.captured, action.to].set(0)
     if action.is_promote:
-        s.board[action.piece + 8][action.to] = 1
+        board = board.at[action.piece + 8, action.to].set(1)
     else:
-        s.board[action.piece][action.to] = 1
+        board = board.at[action.piece, action.to].set(1)
     if action.captured != 0:
-        s.hand[_piece_to_hand(_convert_piece(action.captured))] += 1
-    return s
+        hand = hand.at[_piece_to_hand(_convert_piece(action.captured))].add(1)
+    return state.replace(board=board, hand=hand)  # type: ignore
 
 
 def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
-    s = state
-    s.hand[_piece_to_hand(action.piece)] -= 1
-    s.board[action.piece][action.to] = 1
-    s.board[0][action.to] = 0
-    return s
+    board, hand = state.board, state.hand
+    hand = hand.at[_piece_to_hand(action.piece)].add(-1)
+    board = board.at[action.piece, action.to].set(1)
+    board = board.at[0, action.to].set(0)
+    return state.replace(board=board, hand=hand)  # type: ignore
 
 
 # 方向ごとの大ごまの動きのなかで一番奥の地点を返す
@@ -596,7 +597,7 @@ def _change_between(from_: int, to: int, dif: int) -> np.ndarray:
     for i in range(8):
         point += dif
         if flag and _is_in_board(point):
-            array[point] = 1
+            array = array.at[point].set(1)
         if point == to:
             flag = False
     return array
@@ -708,11 +709,11 @@ def _create_one_piece_actions(
     new_actions = actions
     normal_dir = _point_to_direction(_from, to, False, _owner(piece))
     normal_act = _dlshogi_action(normal_dir, to)
-    new_actions[normal_act] = 1
+    new_actions = new_actions.at[normal_act].set(1)
     pro_dir = _point_to_direction(_from, to, True, _owner(piece))
     pro_act = _dlshogi_action(pro_dir, to)
     if _can_promote(piece, _from, to):
-        new_actions[pro_act] = 1
+        new_actions = new_actions.at[pro_act].set(1)
     return new_actions
 
 
@@ -773,30 +774,29 @@ def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
 # stateからblack,white両方のlegal_actionsを生成する
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
 def _init_legal_actions(state: ShogiState) -> ShogiState:
-    s = state
-    bs = _board_status(s)
+    bs = _board_status(state)
     # 移動の追加
     for i in range(81):
         piece = bs[i]
         if piece <= 14:
-            s.legal_actions_black = _add_move_actions(
-                piece, i, s.legal_actions_black
+            legal_actions_black = _add_move_actions(
+                piece, i, state.legal_actions_black
             )
         else:
-            s.legal_actions_white = _add_move_actions(
-                piece, i, s.legal_actions_white
+            legal_actions_white = _add_move_actions(
+                piece, i, state.legal_actions_white
             )
     # 駒打ちの追加
     for i in range(7):
-        if s.hand[i] != 0:
-            s.legal_actions_black = _add_drop_actions(
-                1 + i, s.legal_actions_black
+        if state.hand[i] != 0:
+            legal_actions_black = _add_drop_actions(
+                1 + i, state.legal_actions_black
             )
-        if s.hand[i + 7] != 0:
-            s.legal_actions_white = _add_drop_actions(
-                15 + i, s.legal_actions_white
+        if state.hand[i + 7] != 0:
+            legal_actions_white = _add_drop_actions(
+                15 + i, state.legal_actions_white
             )
-    return s
+    return state.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
 
 
 # 成駒を成る前の駒に変更

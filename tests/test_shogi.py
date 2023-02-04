@@ -4,27 +4,27 @@ from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiActio
     _is_mate
 
 
-import numpy as np
+import jax.numpy as np
 
 
 def make_test_board():
     board = np.zeros((29, 81), dtype=np.int32)
-    board[0] = np.ones(81, dtype=np.int32)
+    board = board.at[0].set(np.ones(81, dtype=np.int32))
     # 55に先手歩配置
-    board[0][40] = 0
-    board[1][40] = 1
+    board = board.at[0, 40].set(0)
+    board = board.at[1, 40].set(1)
     # 28に先手飛車配置
-    board[0][16] = 0
-    board[6][16] = 1
+    board = board.at[0, 16].set(0)
+    board = board.at[6, 16].set(1)
     # 19に先手香車配置
-    board[0][8] = 0
-    board[2][8] = 1
+    board = board.at[0, 8].set(0)
+    board = board.at[2, 8].set(1)
     # 36に後手桂馬配置
-    board[0][23] = 0
-    board[17][23] = 1
+    board = board.at[0, 23].set(0)
+    board = board.at[17, 23].set(1)
     # 59に後手馬配置
-    board[0][44] = 0
-    board[27][44] = 1
+    board = board.at[0, 44].set(0)
+    board = board.at[27, 44].set(1)
     return ShogiState(board=board)
 
 
@@ -111,7 +111,7 @@ def test_move():
     assert b.board[13][20] == 1
     assert b.board[0][70] == 1
     assert b.hand[0] == 1
-    b.turn = 1
+    b = b.replace(turn=1)  # type: ignore
     # 33桂馬（同桂）
     action = 749
     b = _move(b, _dlaction_to_action(action, b))
@@ -124,14 +124,14 @@ def test_move():
 
 def test_drop():
     i = init()
-    i.hand = np.ones(14, dtype=np.int32)
+    i = i.replace(hand=np.ones(14, dtype=np.int32))  # type: ignore
     # 52飛車打ち
     action = 25 * 81 + 37
     b = _drop(i, _dlaction_to_action(action, i))
     assert b.board[0][37] == 0
     assert b.board[6][37] == 1
     assert b.hand[5] == 0
-    b.turn = 1
+    b = b.replace(turn=1)  # type: ignore
     # 98香車打ち
     action = 28 * 81 + 79
     b = _drop(b, _dlaction_to_action(action, b))
@@ -145,43 +145,43 @@ def test_piece_moves():
     array1 = _piece_moves(_board_status(b1), 6, 16)
     array2 = np.zeros(81, dtype=np.int32)
     for i in range(8):
-        array2[9 * i + 7] = 1
-    array2[15] = 1
-    array2[16] = 0
-    array2[17] = 1
+        array2 = array2.at[9 * i + 7].set(1)
+    array2 = array2.at[15].set(1)
+    array2 = array2.at[16].set(0)
+    array2 = array2.at[17].set(1)
     assert np.all(array1 == array2)
     array3 = _piece_moves(_board_status(b1), 5, 70)
     array4 = np.zeros(81, dtype=np.int32)
-    array4[60] = 1
-    array4[62] = 1
-    array4[78] = 1
-    array4[80] = 1
+    array4 = array4.at[60].set(1)
+    array4 = array4.at[62].set(1)
+    array4 = array4.at[78].set(1)
+    array4 = array4.at[80].set(1)
     assert np.all(array3 == array4)
     # 76歩を指して角道を開けたときの挙動確認
     action = 59
     b1 = _move(b1, _dlaction_to_action(action, b1))
     new_array3 = _piece_moves(_board_status(b1), 5, 70)
     for i in range(4):
-        array4[20 + i * 10] = 1
+        array4 = array4.at[20 + i * 10].set(1)
     assert np.all(new_array3 == array4)
     b2 = make_test_board()
     array5 = _piece_moves(_board_status(b2), 1, 40)
     array6 = np.zeros(81, dtype=np.int32)
-    array6[39] = 1
+    array6 = array6.at[39].set(1)
     assert np.all(array5 == array6)
     array7 = _piece_moves(_board_status(b2), 2, 8)
     array8 = np.zeros(81, dtype=np.int32)
     for i in range(8):
-        array8[i] = 1
+        array8 = array8.at[i].set(1)
     assert np.all(array7 == array8)
     array9 = _piece_moves(_board_status(b2), 27, 44)
     array10 = np.zeros(81, dtype=np.int32)
     for i in range(4):
-        array10[34 - 10 * i] = 1
-        array10[52 + 8 * i] = 1
-    array10[43] = 1
-    array10[35] = 1
-    array10[53] = 1
+        array10 = array10.at[34 - 10 * i].set(1)
+        array10 = array10.at[52 + 8 * i].set(1)
+    array10 = array10.at[43].set(1)
+    array10 = array10.at[35].set(1)
+    array10 = array10.at[53].set(1)
     assert np.all(array9 == array10)
 
 
