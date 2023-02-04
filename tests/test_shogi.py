@@ -417,8 +417,10 @@ def test_update_legal_actions():
     assert np.all(s.legal_actions_black == s2.legal_actions_black)
     s3 = init()
     # 17の歩を消す
-    s3.board[1,6].set(0)
-    s3.board[0,6].set(1)
+    board = s3.board
+    board = board.at[1,6].set(0)
+    board = board.at[0,6].set(1)
+    s3.replace(board=board)  # type: ignore
     s3 = _init_legal_actions(s3)
     # 13香車成
     action3 = ShogiAction(False, 2, 2, 8, 15, True)
@@ -456,7 +458,7 @@ def test_update_legal_actions():
     for i in range(81):
         assert s5.legal_actions_black[81 * 20 + i] == 0
     s5 = _drop(s5, action5)
-    s5.turn.set(1)
+    s5 = s5.replace(turn=1)  # type: ignore
     # 54香車（駒打ち）
     action6 = ShogiAction(True, 16, 39)
     s6 = _update_legal_drop_actions(s5, action6)
