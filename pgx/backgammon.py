@@ -360,7 +360,7 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
 
 
 @jit
-def _is_all_on_homeboad(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
+def _is_all_on_home_board(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
     """
     全てのcheckerがhome boardにあれば, bear offできる.
     """
@@ -404,7 +404,7 @@ def _calc_src(src: int, turn: jnp.ndarray) -> jnp.ndarray:
 @jit
 def _calc_tgt(src: int, turn: jnp.ndarray, die) -> jnp.ndarray:
     """
-    boardのindexに合わせる.
+    boardのindexに合わせる. actionは src*6 + dieの形になっている. targetは黒ならsrcからdie分+白ならdie分-(目的地が逆だから.)
     """
     return jax.lax.cond(
         src >= 24,
@@ -471,7 +471,7 @@ def _is_to_off_legal(
         src < 0,
         lambda: False,
         lambda: _exists(board, turn, src)
-        & _is_all_on_homeboad(board, turn)
+        & _is_all_on_home_board(board, turn)
         & (_rear_distance(board, turn) <= die)
         & (_rear_distance(board, turn) == _distance_to_goal(src, turn)),
     )  # type: ignore
