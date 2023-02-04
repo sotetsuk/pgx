@@ -1019,7 +1019,7 @@ def test_is_mate():
     s = _make_board(board)
     s = _init_legal_actions(s)
     assert _is_mate(s)
-    s.replace(hand=s.hand.at[0].set(1))  # type: ignore
+    s = s.replace(hand=s.hand.at[0].set(1))  # type: ignore
     s = _init_legal_actions(s)
     assert not _is_mate(s)
     board1 = np.zeros(81, dtype=np.int32)
