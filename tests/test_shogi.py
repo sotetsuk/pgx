@@ -191,8 +191,8 @@ def test_init_legal_actions():
     array_w = np.zeros(2754, dtype=np.int32)
     # 歩のaction
     for i in range(9):
-        array_b[5 + 9 * i] = 1
-        array_w[3 + 9 * i] = 1
+        array_b = array_b.at[5 + 9 * i].set(1)
+        array_w = array_w.at[3 + 9 * i].set(1)
     # 香車のaction
     #for i in range(2):
     #    array_b[7 - i] = 1
@@ -201,41 +201,41 @@ def test_init_legal_actions():
     #    array_w[73 + i] = 1
     # 桂馬のaction
     for i in range(2):
-        array_b[81 * 8 + 24 + 54 * i] = 1
-        array_b[81 * 9 + 6 + 54 * i] = 1
-        array_w[81 * 8 + 2 + 54 * i] = 1
-        array_w[81 * 9 + 20 + 54 * i] = 1
+        array_b = array_b.at[81 * 8 + 24 + 54 * i].set(1)
+        array_b = array_b.at[81 * 9 + 6 + 54 * i].set(1)
+        array_w = array_w.at[81 * 8 + 2 + 54 * i].set(1)
+        array_w = array_w.at[81 * 9 + 20 + 54 * i].set(1)
     # 銀のaction
     for i in range(2):
-        array_b[25 + 36 * i] = 1
-        array_w[19 + 36 * i] = 1
-        array_b[81 + 34 + 36 * i] = 1
-        array_w[162 + 28 + 36 * i] = 1
-        array_b[162 + 16 + 36 * i] = 1
-        array_w[81 + 10 + 36 * i] = 1
+        array_b = array_b.at[25 + 36 * i].set(1)
+        array_w = array_w.at[19 + 36 * i].set(1)
+        array_b = array_b.at[81 + 34 + 36 * i].set(1)
+        array_w = array_w.at[162 + 28 + 36 * i].set(1)
+        array_b = array_b.at[162 + 16 + 36 * i].set(1)
+        array_w = array_w.at[81 + 10 + 36 * i].set(1)
     # 金のaction
     for i in range(2):
-        array_b[34 + 18 * i] = 1
-        array_w[28 + 18 * i] = 1
-        array_b[81 + 43 + 18 * i] = 1
-        array_w[162 + 37 + 18 * i] = 1
-        array_b[162 + 25 + 18 * i] = 1
-        array_w[81 + 19 + 18 * i] = 1
-        array_b[243 + 44 + 18 * i] = 1
-        array_w[243 + 18 + 18 * i] = 1
-        array_b[324 + 26 + 18 * i] = 1
-        array_w[324 + 36 + 18 * i] = 1
+        array_b = array_b.at[34 + 18 * i].set(1)
+        array_w = array_w.at[28 + 18 * i].set(1)
+        array_b = array_b.at[81 + 43 + 18 * i].set(1)
+        array_w = array_w.at[162 + 37 + 18 * i].set(1)
+        array_b = array_b.at[162 + 25 + 18 * i].set(1)
+        array_w = array_w.at[81 + 19 + 18 * i].set(1)
+        array_b = array_b.at[243 + 44 + 18 * i].set(1)
+        array_w = array_w.at[243 + 18 + 18 * i].set(1)
+        array_b = array_b.at[324 + 26 + 18 * i].set(1)
+        array_w = array_w.at[324 + 36 + 18 * i].set(1)
     # 玉のaction
-    array_b[43] = 1
-    array_w[37] = 1
-    array_b[81 + 52] = 1
-    array_w[81 + 28] = 1
-    array_b[162 + 34] = 1
-    array_w[162 + 46] = 1
-    array_b[243 + 53] = 1
-    array_w[243 + 27] = 1
-    array_b[324 + 35] = 1
-    array_w[324 + 45] = 1
+    array_b = array_b.at[43].set(1)
+    array_w = array_w.at[37].set(1)
+    array_b = array_b.at[81 + 52].set(1)
+    array_w = array_w.at[81 + 28].set(1)
+    array_b = array_b.at[162 + 34].set(1)
+    array_w = array_w.at[162 + 46].set(1)
+    array_b = array_b.at[243 + 53].set(1)
+    array_w = array_w.at[243 + 27].set(1)
+    array_b = array_b.at[324 + 35].set(1)
+    array_w = array_w.at[324 + 45].set(1)
     # 角のaction
     #array_b[81 + 78] = 1
     #array_b[162 + 60] = 1
