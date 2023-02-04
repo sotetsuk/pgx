@@ -170,8 +170,8 @@ def _make_init_board() -> np.ndarray:
 def _make_board(bs: np.ndarray) -> ShogiState:
     board = np.zeros((29, 81), dtype=np.int32)
     for i in range(81):
-        board[0][i] = 0
-        board[bs[i]][i] = 1
+        board = board.at[0, i].set(0)
+        board = board.at[bs[i], i].set(1)
     return ShogiState(board=board)
 
 
@@ -1114,7 +1114,7 @@ def _kingless_effected_positions(
     bs: np.ndarray, king_point: int, turn: int
 ) -> np.ndarray:
     all_effect = np.zeros(81, dtype=np.int32)
-    bs[king_point] = 0
+    bs = bs.at[king_point].set(0)
     for i in range(81):
         if _owner(bs[i]) == turn:
             all_effect += _piece_moves(bs, bs[i], i)
@@ -1147,7 +1147,7 @@ def _between(point1: int, point2: int) -> np.ndarray:
         bet = np.zeros(81, dtype=np.int32)
     else:
         bet = _change_between(point1, point2, _direction_to_dif(direction, 0))
-    bet[point2] = 0
+    bet = bet.at[point2].set(0)
     return bet
 
 
