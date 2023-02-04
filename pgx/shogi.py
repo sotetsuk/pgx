@@ -1062,7 +1062,7 @@ def _direction_pin(
     ):
         flag = True
     if flag:
-        new_array[point1] = _direction_to_pin(direction)
+        new_array = new_array.at[point1].set(_direction_to_pin(direction))
     return new_array
 
 
