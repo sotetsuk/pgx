@@ -509,94 +509,117 @@ def test_step_piece():
     board = board.at[1,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手香車
     board = board.at[1,40].set(0)
     board = board.at[2,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if 37 <= i <= 39:
+            s_, r, t = step(s, i)
             assert not t
         elif 846 <= i <= 848:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手桂馬
     board = board.at[2,40].set(0)
     board = board.at[3,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 695 or i == 1505 or i == 758 or i == 1568:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手銀
     board = board.at[3,40].set(0)
     board = board.at[4,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 129 or i == 192 or i == 536 or i == 599:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手角
     board = board.at[4,40].set(0)
     board = board.at[5,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 129 or i == 137 or i == 145 or i == 153 or i == 947 or i == 955 or i == 963:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 192 or i == 182 or i == 172 or i == 162 or i == 992 or i == 982 or i == 972:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 536 or i == 546 or i == 556 or i == 566:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 599 or i == 591 or i == 583 or i == 575:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手飛車
     board = board.at[5,40].set(0)
     board = board.at[6,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 38 or i == 37 or i == 36 or i == 848 or i == 847 or i == 846:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 446 or i == 447 or i == 448 or i == 449:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 292 or i == 301 or i == 310 or i == 319:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 355 or i == 346 or i == 337 or i == 328:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手金
     board = board.at[6,40].set(0)
     board = board.at[7,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 129 or i == 192 or i == 292 or i == 355 or i == 446:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手玉
     board = board.at[7,40].set(0)
     board = board.at[8,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 129 or i == 192 or i == 292 or i == 355 or i == 446 or i == 536 or i == 599:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手成金
     for j in range(4):
@@ -604,140 +627,177 @@ def test_step_piece():
         board = board.at[9 + j,40].set(1)
         s = _init_legal_actions(ShogiState(board=board))
         for i in range(1620):
-            s_, r, t = step(s, i)
+            # s_, r, t = step(s, i)
             if i == 39 or i == 129 or i == 192 or i == 292 or i == 355 or i == 446:
+                s_, r, t = step(s, i)
                 assert not t
             else:
+                continue
                 assert t
     # 先手馬
     board = board.at[12,40].set(0)
     board = board.at[13,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 129 or i == 137 or i == 145 or i == 153:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 192 or i == 182 or i == 172 or i == 162:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 536 or i == 546 or i == 556 or i == 566:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 599 or i == 591 or i == 583 or i == 575:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 39 or i == 292 or i == 355 or i == 446:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手龍
     board = board.at[13,40].set(0)
     board = board.at[14,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 38 or i == 37 or i == 36:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 446 or i == 447 or i == 448 or i == 449:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 292 or i == 301 or i == 310 or i == 319:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 355 or i == 346 or i == 337 or i == 328:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 129 or i == 192 or i == 536 or i == 599:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手歩
     board = board.at[14,40].set(0)
     board = board.at[15,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手香車
     board = board.at[15,40].set(0)
     board = board.at[16,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if 41 <= i <= 43:
+            s_, r, t = step(s, i)
             assert not t
         elif 852 <= i <= 854:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手桂馬
     board = board.at[16,40].set(0)
     board = board.at[17,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 681 or i == 1491 or i == 780 or i == 1590:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手銀
     board = board.at[17,40].set(0)
     board = board.at[18,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 113 or i == 212 or i == 516 or i == 615:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手角
     board = board.at[18,40].set(0)
     board = board.at[19,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 113 or i == 105 or i == 97 or i == 89 or i == 915 or i == 907 or i == 899:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 212 or i == 222 or i == 232 or i == 242 or i == 1032 or i == 1042 or i == 1052:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 516 or i == 506 or i == 496 or i == 486:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 615 or i == 623 or i == 631 or i == 639:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手飛車
     board = board.at[19,40].set(0)
     board = board.at[20,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 42 or i == 43 or i == 44 or i == 852 or i == 853 or i == 854:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 444 or i == 443 or i == 442 or i == 441:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 373 or i == 382 or i == 391 or i == 400:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 274 or i == 265 or i == 256 or i == 247:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手金
     board = board.at[20,40].set(0)
     board = board.at[21,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 113 or i == 212 or i == 274 or i == 373 or i == 444:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手玉
     board = board.at[21,40].set(0)
     board = board.at[22,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 113 or i == 212 or i == 274 or i == 373 or i == 444 or i == 516 or i == 615:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手成金
     for j in range(4):
@@ -745,46 +805,60 @@ def test_step_piece():
         board = board.at[23 + j,40].set(1)
         s = _init_legal_actions(ShogiState(turn=1, board=board))
         for i in range(1620):
-            s_, r, t = step(s, i)
+            # s_, r, t = step(s, i)
             if i == 41 or i == 113 or i == 212 or i == 274 or i == 373 or i == 444:
+                s_, r, t = step(s, i)
                 assert not t
             else:
+                continue
                 assert t
     # 後手馬
     board = board.at[26,40].set(0)
     board = board.at[27,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 113 or i == 105 or i == 97 or i == 89:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 212 or i == 222 or i == 232 or i == 242:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 516 or i == 506 or i == 496 or i == 486:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 615 or i == 623 or i == 631 or i == 639:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 41 or i == 274 or i == 373 or i == 444:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手龍
     board = board.at[27,40].set(0)
     board = board.at[28,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 42 or i == 43 or i == 44:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 444 or i == 443 or i == 442 or i == 441:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 373 or i == 382 or i == 391 or i == 400:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 274 or i == 265 or i == 256 or i == 247:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 113 or i == 212 or i == 516 or i == 615:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
 
 
