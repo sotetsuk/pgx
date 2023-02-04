@@ -46,7 +46,7 @@ def test_dlaction_to_action():
     i4 = 81 * 26 + 29
     m4 = ShogiAction(True, 7, 29)
     assert m4 == _dlaction_to_action(i4, s)
-    s.turn = 1
+    s = s.replace(turn=1)  # type: ignore
     # 28桂馬成
     i4 = 1474
     m4 = ShogiAction(False, 17, 16, 23, 6, True)
