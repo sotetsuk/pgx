@@ -1130,21 +1130,3 @@ def test_is_mate():
     s3 = _make_board(board3)
     s3 = _init_legal_actions(s3)
     assert _is_mate(s3)
-
-
-if __name__ == '__main__':
-    test_dlaction_to_action()
-    test_action_to_dlaction()
-    test_move()
-    test_drop()
-    test_piece_moves()
-    test_init_legal_actions()
-    test_is_check()
-    test_legal_actions()
-    test_update_legal_actions()
-    test_is_double_pawn()
-    test_is_stuck()
-    test_step()
-    test_between()
-    test_pin()
-    test_is_mate()
