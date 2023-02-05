@@ -74,6 +74,7 @@ for i in range(12):
 b = to_bytes(POINT_MOVES)
 print(b)
 
-legal_action_masks = _init_legal_actions()
+state = _init_legal_actions()
+legal_action_masks = jnp.stack([state.legal_actions_black, state.legal_actions_white])
 b = to_bytes(legal_action_masks)
 print(b)

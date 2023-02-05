@@ -8,7 +8,7 @@ from pgx.backgammon import (
     _calc_win_score,
     _change_turn,
     _is_action_legal,
-    _is_all_on_homeboad,
+    _is_all_on_home_board,
     _is_open,
     _legal_action_mask,
     _move,
@@ -17,11 +17,28 @@ from pgx.backgammon import (
     init,
     observe,
     step,
-    _distance_to_goal
+    _distance_to_goal,
+    _is_turn_end,
+    _no_winning_step,
 )
 
 seed = 1701
 rng = jax.random.PRNGKey(seed)
+init = jax.jit(init)
+step = jax.jit(step)
+observe = jax.jit(observe)
+_no_winning_step = jax.jit(_no_winning_step)
+_calc_src = jax.jit(_calc_src)
+_calc_tgt = jax.jit(_calc_tgt)
+_calc_win_score = jax.jit(_calc_win_score)
+_change_turn = jax.jit(_change_turn)
+_is_action_legal = jax.jit(_is_action_legal)
+_is_all_on_home_board = jax.jit(_is_all_on_home_board)
+_is_open = jax.jit(_is_open)
+_legal_action_mask = jax.jit(_legal_action_mask)
+_move = jax.jit(_move)
+_rear_distance = jax.jit(_rear_distance)
+
 
 
 def make_test_boad():
@@ -91,12 +108,9 @@ def test_init_roll():
     a = _roll_init_dice(rng)
 
 
-def test_change_turn():
+def test_is_turn_end():
     _, state = init(rng)
-    _turn = state.turn
-    state, has_changed = _change_turn(state)
-    assert state.turn == _turn
-    assert not has_changed
+    assert not _is_turn_end(state)
 
     # 白のdance
     board: jnp.ndarray = make_test_boad()
@@ -109,7 +123,40 @@ def test_change_turn():
         playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
         played_dice_num=jnp.int16(0),
     )
-    state, has_changed = _change_turn(state)
+    assert _is_turn_end(state)
+
+    # playable diceがない場合
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        curr_player=jnp.int16(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int16(1),
+        dice=jnp.array([2, 2], dtype=jnp.int16),
+        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
+        played_dice_num=jnp.int16(2),
+    )
+    assert _is_turn_end(state)
+
+
+def test_change_turn():
+    _, state = init(rng)
+    _turn = state.turn
+    state = _change_turn(state)
+    assert state.turn == -1 * _turn
+
+    # 白のdance
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        curr_player=jnp.int16(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int16(1),
+        dice=jnp.array([2, 2], dtype=jnp.int16),
+        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
+        played_dice_num=jnp.int16(0),
+    )
+    state = _change_turn(state)
     assert state.turn == jnp.int16(-1)
 
     # playable diceがない場合
@@ -123,9 +170,25 @@ def test_change_turn():
         playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
         played_dice_num=jnp.int16(2),
     )
-    state, has_changed = _change_turn(state)
+    state = _change_turn(state)
     assert state.turn == jnp.int16(-1)
 
+
+def test_continual_pass():
+    # 連続パスが可能かテスト
+    # 白のdance
+    board: jnp.ndarray = make_test_boad()
+    state = make_test_state(
+        curr_player=jnp.int16(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int16(1),
+        dice=jnp.array([2, 2], dtype=jnp.int16),
+        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
+        played_dice_num=jnp.int16(0),
+    )
+    _, state, _ = step(state, 6 * (1) + 0)  # actionによらずターンが変わる.
+    assert state.turn == jnp.int16(-1)  # ターンが変わっていることを確認
 
 def test_step():
     board: jnp.ndarray = make_test_boad()
@@ -200,8 +263,6 @@ def test_step():
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 4].set(
         1
     ) # 19 -> off
-    print(jnp.where(state.legal_action_mask!=0)[0])
-    print(jnp.where(expected_legal_action_mask!=0)[0])
     assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0 
 
 
@@ -274,10 +335,10 @@ def test_is_all_on_home_boad():
     board: jnp.ndarray = make_test_boad()
     # 黒
     turn: jnp.int16 = jnp.int16(-1)
-    assert _is_all_on_homeboad(board, turn)
+    assert _is_all_on_home_board(board, turn)
     # 白
     turn = jnp.int16(1)
-    assert not _is_all_on_homeboad(board, turn)
+    assert not _is_all_on_home_board(board, turn)
 
 
 def test_rear_distance():
