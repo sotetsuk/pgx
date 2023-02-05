@@ -106,6 +106,7 @@ def _turn_to_reward(turn: int):
     return jnp.int32([1, -1])[turn]
 
 
+# TODO: cache
 # 初期盤面生成
 def _make_init_board() -> jnp.ndarray:
     array = jnp.zeros((29, 81), dtype=jnp.int32)
@@ -342,6 +343,7 @@ def _is_same_line(from_: int, to: int, direction: int):
     )[dir]
 
 
+# TODO: cache
 # fromからある方向に移動させたときの位置と距離の関係
 # それ以上その方向に動かせないなら全部0
 def _dis_direction_array(from_: int, turn: int, direction: int) -> jnp.ndarray:
@@ -355,41 +357,72 @@ def _dis_direction_array(from_: int, turn: int, direction: int) -> jnp.ndarray:
     return array
 
 
+# TODO: cache
 # fromの座標とtoの座標からdirを生成
+@jax.jit
 def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
-    direction = -1
     dis = to - _from
     # 後手番の動きは反転させる
-    if turn == 1:
-        dis = -dis
+    dis *= jnp.int32([1, -1])[turn]
     # UP, UP_LEFT, UP_RIGHT, LEFT, RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT, UP2_LEFT, UP2_RIGHT, UP_PROMOTE...
     # の順でdirを割り振る
     # PROMOTEの場合は+10する処理を入れる
-    if _is_same_column(_from, to) and dis < 0:
-        direction = 0
-    if _is_same_declining(_from, to) and dis > 0:
-        direction = 1
-    if _is_same_rising(_from, to) and dis < 0:
-        direction = 2
-    if _is_same_row(_from, to) and dis > 0:
-        direction = 3
-    if _is_same_row(_from, to) and dis < 0:
-        direction = 4
-    if _is_same_column(_from, to) and dis > 0:
-        direction = 5
-    if _is_same_rising(_from, to) and dis > 0:
-        direction = 6
-    if _is_same_declining(_from, to) and dis < 0:
-        direction = 7
-    if dis == 7 and not _is_same_column(_from, to):
-        direction = 8
-    if dis == -11 and not _is_same_column(_from, to):
-        direction = 9
-    if promote:
-        direction += 10
+    direction = -1
+    direction = jax.lax.cond(
+        _is_same_column(_from, to) & (dis < 0),
+        lambda: 0,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        _is_same_declining(_from, to) & (dis > 0),
+        lambda: 1,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        _is_same_rising(_from, to) & (dis < 0),
+        lambda: 2,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        _is_same_row(_from, to) & (dis > 0),
+        lambda: 3,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        _is_same_row(_from, to) & (dis < 0),
+        lambda: 4,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        _is_same_column(_from, to) & (dis > 0),
+        lambda: 5,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        _is_same_rising(_from, to) & (dis > 0),
+        lambda: 6,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        _is_same_declining(_from, to) & (dis < 0),
+        lambda: 7,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        (dis == 7) & ~_is_same_column(_from, to),
+        lambda: 8,
+        lambda: direction
+    )
+    direction = jax.lax.cond(
+        (dis == -11) & ~_is_same_column(_from, to),
+        lambda: 9,
+        lambda: direction
+    )
+    direction = jax.lax.cond(promote, lambda: direction + 10, lambda: direction)
     return direction
 
 
+# TODO: cache
 # 打った駒の種類をdirに変換
 @jax.jit
 def _hand_to_direction(piece: int) -> int:
@@ -445,6 +478,7 @@ def _direction_to_from(
     return _from, direction >= 10
 
 
+# TODO: cache
 @jax.jit
 def _direction_to_hand(direction: int) -> int:
     return jax.lax.cond(
