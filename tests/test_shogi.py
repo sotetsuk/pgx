@@ -4,27 +4,27 @@ from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiActio
     _is_mate
 
 
-import numpy as np
+import jax.numpy as jnp
 
 
 def make_test_board():
-    board = np.zeros((29, 81), dtype=np.int32)
-    board[0] = np.ones(81, dtype=np.int32)
+    board = jnp.zeros((29, 81), dtype=jnp.int32)
+    board = board.at[0].set(jnp.ones(81, dtype=jnp.int32))
     # 55に先手歩配置
-    board[0][40] = 0
-    board[1][40] = 1
+    board = board.at[0, 40].set(0)
+    board = board.at[1, 40].set(1)
     # 28に先手飛車配置
-    board[0][16] = 0
-    board[6][16] = 1
+    board = board.at[0, 16].set(0)
+    board = board.at[6, 16].set(1)
     # 19に先手香車配置
-    board[0][8] = 0
-    board[2][8] = 1
+    board = board.at[0, 8].set(0)
+    board = board.at[2, 8].set(1)
     # 36に後手桂馬配置
-    board[0][23] = 0
-    board[17][23] = 1
+    board = board.at[0, 23].set(0)
+    board = board.at[17, 23].set(1)
     # 59に後手馬配置
-    board[0][44] = 0
-    board[27][44] = 1
+    board = board.at[0, 44].set(0)
+    board = board.at[27, 44].set(1)
     return ShogiState(board=board)
 
 
@@ -46,7 +46,7 @@ def test_dlaction_to_action():
     i4 = 81 * 26 + 29
     m4 = ShogiAction(True, 7, 29)
     assert m4 == _dlaction_to_action(i4, s)
-    s.turn = 1
+    s = s.replace(turn=1)  # type: ignore
     # 28桂馬成
     i4 = 1474
     m4 = ShogiAction(False, 17, 16, 23, 6, True)
@@ -92,107 +92,107 @@ def test_move():
     #26歩
     action = 14
     b = _move(i, _dlaction_to_action(action, i))
-    assert b.board[0][14] == 0
-    assert b.board[1][15] == 0
-    assert b.board[1][14] == 1
-    assert b.board[0][15] == 1
+    assert b.board[0,14] == 0
+    assert b.board[1,15] == 0
+    assert b.board[1,14] == 1
+    assert b.board[0,15] == 1
     #76歩
     action = 59
     b = _move(b, _dlaction_to_action(action, b))
-    assert b.board[0][59] == 0
-    assert b.board[1][60] == 0
-    assert b.board[1][59] == 1
-    assert b.board[0][60] == 1
+    assert b.board[0,59] == 0
+    assert b.board[1,60] == 0
+    assert b.board[1,59] == 1
+    assert b.board[0,60] == 1
     # 33角成
     action = 992
     b = _move(b, _dlaction_to_action(action, b))
-    assert b.board[15][20] == 0
-    assert b.board[5][70] == 0
-    assert b.board[13][20] == 1
-    assert b.board[0][70] == 1
+    assert b.board[15,20] == 0
+    assert b.board[5,70] == 0
+    assert b.board[13,20] == 1
+    assert b.board[0,70] == 1
     assert b.hand[0] == 1
-    b.turn = 1
+    b = b.replace(turn=1)  # type: ignore
     # 33桂馬（同桂）
     action = 749
     b = _move(b, _dlaction_to_action(action, b))
-    assert b.board[13][20] == 0
-    assert b.board[17][9] == 0
-    assert b.board[17][20] == 1
-    assert b.board[0][9] == 1
+    assert b.board[13,20] == 0
+    assert b.board[17,9] == 0
+    assert b.board[17,20] == 1
+    assert b.board[0,9] == 1
     assert b.hand[11] == 1
 
 
 def test_drop():
     i = init()
-    i.hand = np.ones(14, dtype=np.int32)
+    i = i.replace(hand=jnp.ones(14, dtype=jnp.int32))  # type: ignore
     # 52飛車打ち
     action = 25 * 81 + 37
     b = _drop(i, _dlaction_to_action(action, i))
-    assert b.board[0][37] == 0
-    assert b.board[6][37] == 1
+    assert b.board[0,37] == 0
+    assert b.board[6,37] == 1
     assert b.hand[5] == 0
-    b.turn = 1
+    b = b.replace(turn=1)  # type: ignore
     # 98香車打ち
     action = 28 * 81 + 79
     b = _drop(b, _dlaction_to_action(action, b))
-    assert b.board[0][79] == 0
-    assert b.board[16][79] == 1
+    assert b.board[0,79] == 0
+    assert b.board[16,79] == 1
     assert b.hand[8] == 0
 
 
 def test_piece_moves():
     b1 = init()
     array1 = _piece_moves(_board_status(b1), 6, 16)
-    array2 = np.zeros(81, dtype=np.int32)
+    array2 = jnp.zeros(81, dtype=jnp.int32)
     for i in range(8):
-        array2[9 * i + 7] = 1
-    array2[15] = 1
-    array2[16] = 0
-    array2[17] = 1
-    assert np.all(array1 == array2)
+        array2 = array2.at[9 * i + 7].set(1)
+    array2 = array2.at[15].set(1)
+    array2 = array2.at[16].set(0)
+    array2 = array2.at[17].set(1)
+    assert jnp.all(array1 == array2)
     array3 = _piece_moves(_board_status(b1), 5, 70)
-    array4 = np.zeros(81, dtype=np.int32)
-    array4[60] = 1
-    array4[62] = 1
-    array4[78] = 1
-    array4[80] = 1
-    assert np.all(array3 == array4)
+    array4 = jnp.zeros(81, dtype=jnp.int32)
+    array4 = array4.at[60].set(1)
+    array4 = array4.at[62].set(1)
+    array4 = array4.at[78].set(1)
+    array4 = array4.at[80].set(1)
+    assert jnp.all(array3 == array4)
     # 76歩を指して角道を開けたときの挙動確認
     action = 59
     b1 = _move(b1, _dlaction_to_action(action, b1))
     new_array3 = _piece_moves(_board_status(b1), 5, 70)
     for i in range(4):
-        array4[20 + i * 10] = 1
-    assert np.all(new_array3 == array4)
+        array4 = array4.at[20 + i * 10].set(1)
+    assert jnp.all(new_array3 == array4)
     b2 = make_test_board()
     array5 = _piece_moves(_board_status(b2), 1, 40)
-    array6 = np.zeros(81, dtype=np.int32)
-    array6[39] = 1
-    assert np.all(array5 == array6)
+    array6 = jnp.zeros(81, dtype=jnp.int32)
+    array6 = array6.at[39].set(1)
+    assert jnp.all(array5 == array6)
     array7 = _piece_moves(_board_status(b2), 2, 8)
-    array8 = np.zeros(81, dtype=np.int32)
+    array8 = jnp.zeros(81, dtype=jnp.int32)
     for i in range(8):
-        array8[i] = 1
-    assert np.all(array7 == array8)
+        array8 = array8.at[i].set(1)
+    assert jnp.all(array7 == array8)
     array9 = _piece_moves(_board_status(b2), 27, 44)
-    array10 = np.zeros(81, dtype=np.int32)
+    array10 = jnp.zeros(81, dtype=jnp.int32)
     for i in range(4):
-        array10[34 - 10 * i] = 1
-        array10[52 + 8 * i] = 1
-    array10[43] = 1
-    array10[35] = 1
-    array10[53] = 1
-    assert np.all(array9 == array10)
+        array10 = array10.at[34 - 10 * i].set(1)
+        array10 = array10.at[52 + 8 * i].set(1)
+    array10 = array10.at[43].set(1)
+    array10 = array10.at[35].set(1)
+    array10 = array10.at[53].set(1)
+    assert jnp.all(array9 == array10)
 
 
 def test_init_legal_actions():
     s = init()
-    array_b = np.zeros(2754, dtype=np.int32)
-    array_w = np.zeros(2754, dtype=np.int32)
+    array_b = jnp.zeros(2754, dtype=jnp.int32)
+    array_w = jnp.zeros(2754, dtype=jnp.int32)
     # 歩のaction
     for i in range(9):
-        array_b[5 + 9 * i] = 1
-        array_w[3 + 9 * i] = 1
+        array_b = array_b.at[5 + 9 * i].set(1)
+        array_w = array_w.at[3 + 9 * i].set(1)
     # 香車のaction
     #for i in range(2):
     #    array_b[7 - i] = 1
@@ -201,41 +201,41 @@ def test_init_legal_actions():
     #    array_w[73 + i] = 1
     # 桂馬のaction
     for i in range(2):
-        array_b[81 * 8 + 24 + 54 * i] = 1
-        array_b[81 * 9 + 6 + 54 * i] = 1
-        array_w[81 * 8 + 2 + 54 * i] = 1
-        array_w[81 * 9 + 20 + 54 * i] = 1
+        array_b = array_b.at[81 * 8 + 24 + 54 * i].set(1)
+        array_b = array_b.at[81 * 9 + 6 + 54 * i].set(1)
+        array_w = array_w.at[81 * 8 + 2 + 54 * i].set(1)
+        array_w = array_w.at[81 * 9 + 20 + 54 * i].set(1)
     # 銀のaction
     for i in range(2):
-        array_b[25 + 36 * i] = 1
-        array_w[19 + 36 * i] = 1
-        array_b[81 + 34 + 36 * i] = 1
-        array_w[162 + 28 + 36 * i] = 1
-        array_b[162 + 16 + 36 * i] = 1
-        array_w[81 + 10 + 36 * i] = 1
+        array_b = array_b.at[25 + 36 * i].set(1)
+        array_w = array_w.at[19 + 36 * i].set(1)
+        array_b = array_b.at[81 + 34 + 36 * i].set(1)
+        array_w = array_w.at[162 + 28 + 36 * i].set(1)
+        array_b = array_b.at[162 + 16 + 36 * i].set(1)
+        array_w = array_w.at[81 + 10 + 36 * i].set(1)
     # 金のaction
     for i in range(2):
-        array_b[34 + 18 * i] = 1
-        array_w[28 + 18 * i] = 1
-        array_b[81 + 43 + 18 * i] = 1
-        array_w[162 + 37 + 18 * i] = 1
-        array_b[162 + 25 + 18 * i] = 1
-        array_w[81 + 19 + 18 * i] = 1
-        array_b[243 + 44 + 18 * i] = 1
-        array_w[243 + 18 + 18 * i] = 1
-        array_b[324 + 26 + 18 * i] = 1
-        array_w[324 + 36 + 18 * i] = 1
+        array_b = array_b.at[34 + 18 * i].set(1)
+        array_w = array_w.at[28 + 18 * i].set(1)
+        array_b = array_b.at[81 + 43 + 18 * i].set(1)
+        array_w = array_w.at[162 + 37 + 18 * i].set(1)
+        array_b = array_b.at[162 + 25 + 18 * i].set(1)
+        array_w = array_w.at[81 + 19 + 18 * i].set(1)
+        array_b = array_b.at[243 + 44 + 18 * i].set(1)
+        array_w = array_w.at[243 + 18 + 18 * i].set(1)
+        array_b = array_b.at[324 + 26 + 18 * i].set(1)
+        array_w = array_w.at[324 + 36 + 18 * i].set(1)
     # 玉のaction
-    array_b[43] = 1
-    array_w[37] = 1
-    array_b[81 + 52] = 1
-    array_w[81 + 28] = 1
-    array_b[162 + 34] = 1
-    array_w[162 + 46] = 1
-    array_b[243 + 53] = 1
-    array_w[243 + 27] = 1
-    array_b[324 + 35] = 1
-    array_w[324 + 45] = 1
+    array_b = array_b.at[43].set(1)
+    array_w = array_w.at[37].set(1)
+    array_b = array_b.at[81 + 52].set(1)
+    array_w = array_w.at[81 + 28].set(1)
+    array_b = array_b.at[162 + 34].set(1)
+    array_w = array_w.at[162 + 46].set(1)
+    array_b = array_b.at[243 + 53].set(1)
+    array_w = array_w.at[243 + 27].set(1)
+    array_b = array_b.at[324 + 35].set(1)
+    array_w = array_w.at[324 + 45].set(1)
     # 角のaction
     #array_b[81 + 78] = 1
     #array_b[162 + 60] = 1
@@ -255,27 +255,27 @@ def test_init_legal_actions():
     #for i in range(6):
     #    array_b[81 * 3 + 25 + 9 * i] = 1
     #    array_w[81 * 3 + 55 - 9 * i] = 1
-    assert np.all(array_b == s.legal_actions_black)
-    assert np.all(array_w == s.legal_actions_white)
+    assert jnp.all(array_b == s.legal_actions_black)
+    assert jnp.all(array_w == s.legal_actions_white)
 
 
 def test_is_check():
-    board = np.zeros((29, 81), dtype=np.int32)
-    board[0] = np.ones(81, dtype=np.int32)
-    board[8][44] = 1
-    board[0][44] = 0
-    board[16][36] = 1
-    board[0][36] = 0
-    board[17][33] = 1
-    board[0][33] = 0
-    board[18][52] = 1
-    board[0][52] = 0
-    board[21][53] = 1
-    board[0][53] = 0
-    board[27][4] = 1
-    board[0][4] = 0
-    board[28][8] = 1
-    board[0][8] = 0
+    board = jnp.zeros((29, 81), dtype=jnp.int32)
+    board = board.at[0].set(jnp.ones(81, dtype=jnp.int32))
+    board = board.at[8, 44].set(1)
+    board = board.at[0, 44].set(0)
+    board = board.at[16, 36].set(1)
+    board = board.at[0, 36].set(0)
+    board = board.at[17, 33].set(1)
+    board = board.at[0, 33].set(0)
+    board = board.at[18, 52].set(1)
+    board = board.at[0, 52].set(0)
+    board = board.at[21, 53].set(1)
+    board = board.at[0, 53].set(0)
+    board = board.at[27, 4].set(1)
+    board = board.at[0, 4].set(0)
+    board = board.at[28, 8].set(1)
+    board = board.at[0, 8].set(0)
     s = ShogiState(board=board)
     assert _is_check(s)
 
@@ -283,88 +283,92 @@ def test_is_check():
 def test_legal_actions():
     state = init()
     actions1 = _legal_actions(state)
-    actions2 = np.zeros(2754, dtype=np.int32)
+    actions2 = jnp.zeros(2754, dtype=jnp.int32)
     # 歩のaction
     for i in range(9):
-        actions2[5 + 9 * i] = 1
+        actions2 = actions2.at[5 + 9 * i].set(1)
     # 香車のaction
-    actions2[7] = 1
-    actions2[79] = 1
+    actions2 = actions2.at[7].set(1)
+    actions2 = actions2.at[79].set(1)
     # 桂馬のaction
     # 銀のaction
-    actions2[25] = 1
-    actions2[61] = 1
-    actions2[81 + 34] = 1
-    actions2[162 + 52] = 1
+    actions2 = actions2.at[25].set(1)
+    actions2 = actions2.at[61].set(1)
+    actions2 = actions2.at[81 + 34].set(1)
+    actions2 = actions2.at[162 + 52].set(1)
     # 金のaction
     for i in range(2):
-        actions2[34 + 18 * i] = 1
-        actions2[81 + 43 + 18 * i] = 1
-        actions2[162 + 25 + 18 * i] = 1
+        actions2 = actions2.at[34 + 18 * i].set(1)
+        actions2 = actions2.at[81 + 43 + 18 * i].set(1)
+        actions2 = actions2.at[162 + 25 + 18 * i].set(1)
     # 玉のaction
-    actions2[43] = 1
-    actions2[81 + 52] = 1
-    actions2[162 + 34] = 1
+    actions2 = actions2.at[43].set(1)
+    actions2 = actions2.at[81 + 52].set(1)
+    actions2 = actions2.at[162 + 34].set(1)
     # 角のaction
     # 飛のaction
-    actions2[81 * 4 + 7] = 1
+    actions2 = actions2.at[81 * 4 + 7].set(1)
     for i in range(5):
-        actions2[81 * 3 + 25 + 9 * i] = 1
+        actions2 = actions2.at[81 * 3 + 25 + 9 * i].set(1)
     a3 = actions2 - actions1
-    print(np.where(a3 == -1))
-    assert np.all(actions2 == actions1)
-    state.turn = 1
+    print(jnp.where(a3 == -1))
+    assert jnp.all(actions2 == actions1)
+    state = state.replace(turn=1)  # type: ignore
     actions1 = _legal_actions(state)
-    actions2 = np.zeros(2754, dtype=np.int32)
+    actions2 = jnp.zeros(2754, dtype=jnp.int32)
     # 歩のaction
     for i in range(9):
-        actions2[3 + 9 * i] = 1
+        actions2 = actions2.at[3 + 9 * i].set(1)
     # 香車のaction
-    actions2[1] = 1
-    actions2[73] = 1
+    actions2 = actions2.at[1].set(1)
+    actions2 = actions2.at[73].set(1)
     # 桂馬のaction
     # 銀のaction
-    actions2[19] = 1
-    actions2[55] = 1
-    actions2[81 + 46] = 1
-    actions2[162 + 28] = 1
+    actions2 = actions2.at[19].set(1)
+    actions2 = actions2.at[55].set(1)
+    actions2 = actions2.at[81 + 46].set(1)
+    actions2 = actions2.at[162 + 28].set(1)
     # 金のaction
     for i in range(2):
-        actions2[28 + 18 * i] = 1
-        actions2[81 + 37 - 18 * i] = 1
-        actions2[162 + 55 - 18 * i] = 1
+        actions2 = actions2.at[28 + 18 * i].set(1)
+        actions2 = actions2.at[81 + 37 - 18 * i].set(1)
+        actions2 = actions2.at[162 + 55 - 18 * i].set(1)
     # 玉のaction
-    actions2[37] = 1
-    actions2[81 + 28] = 1
-    actions2[162 + 46] = 1
+    actions2 = actions2.at[37].set(1)
+    actions2 = actions2.at[81 + 28].set(1)
+    actions2 = actions2.at[162 + 46].set(1)
     # 角のaction
     # 飛のaction
-    actions2[81 * 4 + 73] = 1
+    actions2 = actions2.at[81 * 4 + 73].set(1)
     for i in range(5):
-        actions2[81 * 3 + 55 - 9 * i] = 1
-    assert np.all(actions1 == actions2)
-    state.board[16][39] = 1
-    state.board[0][39] = 0
-    state.board[19][43] = 1
-    state.board[0][43] = 0
+        actions2 = actions2.at[81 * 3 + 55 - 9 * i].set(1)
+    assert jnp.all(actions1 == actions2)
+    board = state.board
+    board = board.at[16,39].set(1)
+    board = board.at[0,39].set(0)
+    board = board.at[19,43].set(1)
+    board = board.at[0,43].set(0)
+    state = state.replace(board=board)  # type: ignore
     actions1 = _legal_actions(state)
-    actions2[40] = 1
-    actions2[41] = 1
-    actions2[42] = 1
-    actions2[42 + 810] = 1
-    actions2[81 + 35] = 1
-    actions2[162 + 53] = 1
-    actions2[81 * 6 + 33] = 1
-    actions2[81 * 7 + 51] = 1
-    actions2[81 + 35 + 810] = 1
-    actions2[162 + 53 + 810] = 1
-    actions2[81 * 6 + 33 + 810] = 1
-    actions2[81 * 7 + 51 + 810] = 1
-    actions2[39] = 0
-    assert np.all(actions1 == actions2)
+    actions2 = actions2.at[40].set(1)
+    actions2 = actions2.at[41].set(1)
+    actions2 = actions2.at[42].set(1)
+    actions2 = actions2.at[42 + 810].set(1)
+    actions2 = actions2.at[81 + 35].set(1)
+    actions2 = actions2.at[162 + 53].set(1)
+    actions2 = actions2.at[81 * 6 + 33].set(1)
+    actions2 = actions2.at[81 * 7 + 51].set(1)
+    actions2 = actions2.at[81 + 35 + 810].set(1)
+    actions2 = actions2.at[162 + 53 + 810].set(1)
+    actions2 = actions2.at[81 * 6 + 33 + 810].set(1)
+    actions2 = actions2.at[81 * 7 + 51 + 810].set(1)
+    actions2 = actions2.at[39].set(0)
+    assert jnp.all(actions1 == actions2)
     # 後手の持ち駒に金と桂馬を追加
-    state.legal_actions_white = _add_drop_actions(17, state.legal_actions_white)
-    state.legal_actions_white = _add_drop_actions(21, state.legal_actions_white)
+    legal_actions_white = state.legal_actions_white
+    legal_actions_white = _add_drop_actions(17, legal_actions_white)
+    legal_actions_white = _add_drop_actions(21, legal_actions_white)
+    state = state.replace(legal_actions_white=legal_actions_white)  # type: ignore
     actions1 = _legal_actions(state)
     for i in range(9):
         if i == 0 or i == 2 or i == 6 or i == 8:
@@ -382,9 +386,9 @@ def test_legal_actions():
                 continue
             if i == 7 and j == 4:
                 continue
-            actions2[81 * 29 + 9 * j + i] = 1
-            actions2[81 * 33 + 9 * j + i] = 1
-    assert np.all(actions1 == actions2)
+            actions2 = actions2.at[81 * 29 + 9 * j + i].set(1)
+            actions2 = actions2.at[81 * 33 + 9 * j + i].set(1)
+    assert jnp.all(actions1 == actions2)
 
 
 def test_update_legal_actions():
@@ -410,11 +414,13 @@ def test_update_legal_actions():
     action2 = ShogiAction(False, 6, 43, 16, 0, False)
     s2 = _update_legal_move_actions(s, action2)
     # legal_actionsは更新しない
-    assert np.all(s.legal_actions_black == s2.legal_actions_black)
+    assert jnp.all(s.legal_actions_black == s2.legal_actions_black)
     s3 = init()
     # 17の歩を消す
-    s3.board[1][6] = 0
-    s3.board[0][6] = 1
+    board = s3.board
+    board = board.at[1,6].set(0)
+    board = board.at[0,6].set(1)
+    s3.replace(board=board)  # type: ignore
     s3 = _init_legal_actions(s3)
     # 13香車成
     action3 = ShogiAction(False, 2, 2, 8, 15, True)
@@ -429,7 +435,7 @@ def test_update_legal_actions():
     for i in range(81):
         assert s4.legal_actions_black[81 * 20 + i] == 1
     s4 = _move(s4, action3)
-    s4.turn = 1
+    s4 = s4.replace(turn=1)  # type: ignore
     # 13桂馬
     action4 = ShogiAction(False, 17, 2, 9, 10, False)
     s4 = _update_legal_move_actions(s4, action4)
@@ -443,7 +449,7 @@ def test_update_legal_actions():
     for i in range(81):
         assert s4.legal_actions_white[81 * 28 + i] == 1
     s4 = _move(s4, action4)
-    s4.turn = 0
+    s4 = s4.replace(turn=0)  # type: ignore
     # 12歩（駒打ち）
     action5 = ShogiAction(True, 1, 1)
     s5 = _update_legal_drop_actions(s4, action5)
@@ -452,7 +458,7 @@ def test_update_legal_actions():
     for i in range(81):
         assert s5.legal_actions_black[81 * 20 + i] == 0
     s5 = _drop(s5, action5)
-    s5.turn = 1
+    s5 = s5.replace(turn=1)  # type: ignore
     # 54香車（駒打ち）
     action6 = ShogiAction(True, 16, 39)
     s6 = _update_legal_drop_actions(s5, action6)
@@ -462,328 +468,412 @@ def test_update_legal_actions():
 
 def test_is_double_pawn():
     s = init()
-    s.board[0][5] = 0
-    s.board[1][5] = 1
+    board = s.board
+    board = board.at[0,5].set(0)
+    board = board.at[1,5].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_double_pawn(s)
-    s.turn = 1
-    s.board[0][43] = 0
-    s.board[23][43] = 1
+    s = s.replace(turn=1)
+    board = s.board
+    board = board.at[0,43].set(0)
+    board = board.at[23,43].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert not _is_double_pawn(s)
-    s.board[0][41] = 0
-    s.board[15][41] = 1
+    board = s.board
+    board = board.at[0,41].set(0)
+    board = board.at[15,41].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_double_pawn(s)
 
 
 def test_is_stuck():
     s = init()
-    s.board[0][1] = 0
-    s.board[3][1] = 1
+    board = s.board
+    board = board.at[0,1].set(0)
+    board = board.at[3,1].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_stuck(s)
-    s.board[2][8] = 0
-    s.board[16][8] = 1
+    board = s.board
+    board = board.at[2,8].set(0)
+    board = board.at[16,8].set(1)
+    s = s.replace(board=board)  # type: ignore
     assert _is_stuck(s)
 
 
 # 駒種ごとに実行できるstepの確認
 def test_step_piece():
-    board = np.zeros((29, 81), dtype=np.int32)
-    board[0] = np.ones(81, dtype=np.int32)
+    board = jnp.zeros((29, 81), dtype=jnp.int32)
+    board = board.at[0].set(jnp.ones(81, dtype=jnp.int32))
     # 先手歩
-    board[0][40] = 0
-    board[1][40] = 1
+    board = board.at[0,40].set(0)
+    board = board.at[1,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手香車
-    board[1][40] = 0
-    board[2][40] = 1
+    board = board.at[1,40].set(0)
+    board = board.at[2,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if 37 <= i <= 39:
+            s_, r, t = step(s, i)
             assert not t
         elif 846 <= i <= 848:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手桂馬
-    board[2][40] = 0
-    board[3][40] = 1
+    board = board.at[2,40].set(0)
+    board = board.at[3,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 695 or i == 1505 or i == 758 or i == 1568:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手銀
-    board[3][40] = 0
-    board[4][40] = 1
+    board = board.at[3,40].set(0)
+    board = board.at[4,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 129 or i == 192 or i == 536 or i == 599:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手角
-    board[4][40] = 0
-    board[5][40] = 1
+    board = board.at[4,40].set(0)
+    board = board.at[5,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 129 or i == 137 or i == 145 or i == 153 or i == 947 or i == 955 or i == 963:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 192 or i == 182 or i == 172 or i == 162 or i == 992 or i == 982 or i == 972:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 536 or i == 546 or i == 556 or i == 566:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 599 or i == 591 or i == 583 or i == 575:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手飛車
-    board[5][40] = 0
-    board[6][40] = 1
+    board = board.at[5,40].set(0)
+    board = board.at[6,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 38 or i == 37 or i == 36 or i == 848 or i == 847 or i == 846:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 446 or i == 447 or i == 448 or i == 449:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 292 or i == 301 or i == 310 or i == 319:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 355 or i == 346 or i == 337 or i == 328:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手金
-    board[6][40] = 0
-    board[7][40] = 1
+    board = board.at[6,40].set(0)
+    board = board.at[7,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 129 or i == 192 or i == 292 or i == 355 or i == 446:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手玉
-    board[7][40] = 0
-    board[8][40] = 1
+    board = board.at[7,40].set(0)
+    board = board.at[8,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 129 or i == 192 or i == 292 or i == 355 or i == 446 or i == 536 or i == 599:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手成金
     for j in range(4):
-        board[8 + j][40] = 0
-        board[9 + j][40] = 1
+        board = board.at[8 + j,40].set(0)
+        board = board.at[9 + j,40].set(1)
         s = _init_legal_actions(ShogiState(board=board))
         for i in range(1620):
-            s_, r, t = step(s, i)
+            # s_, r, t = step(s, i)
             if i == 39 or i == 129 or i == 192 or i == 292 or i == 355 or i == 446:
+                s_, r, t = step(s, i)
                 assert not t
             else:
+                continue
                 assert t
     # 先手馬
-    board[12][40] = 0
-    board[13][40] = 1
+    board = board.at[12,40].set(0)
+    board = board.at[13,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 129 or i == 137 or i == 145 or i == 153:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 192 or i == 182 or i == 172 or i == 162:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 536 or i == 546 or i == 556 or i == 566:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 599 or i == 591 or i == 583 or i == 575:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 39 or i == 292 or i == 355 or i == 446:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 先手龍
-    board[13][40] = 0
-    board[14][40] = 1
+    board = board.at[13,40].set(0)
+    board = board.at[14,40].set(1)
     s = _init_legal_actions(ShogiState(board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 39 or i == 38 or i == 37 or i == 36:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 446 or i == 447 or i == 448 or i == 449:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 292 or i == 301 or i == 310 or i == 319:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 355 or i == 346 or i == 337 or i == 328:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 129 or i == 192 or i == 536 or i == 599:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手歩
-    board[14][40] = 0
-    board[15][40] = 1
+    board = board.at[14,40].set(0)
+    board = board.at[15,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手香車
-    board[15][40] = 0
-    board[16][40] = 1
+    board = board.at[15,40].set(0)
+    board = board.at[16,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if 41 <= i <= 43:
+            s_, r, t = step(s, i)
             assert not t
         elif 852 <= i <= 854:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手桂馬
-    board[16][40] = 0
-    board[17][40] = 1
+    board = board.at[16,40].set(0)
+    board = board.at[17,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 681 or i == 1491 or i == 780 or i == 1590:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手銀
-    board[17][40] = 0
-    board[18][40] = 1
+    board = board.at[17,40].set(0)
+    board = board.at[18,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 113 or i == 212 or i == 516 or i == 615:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手角
-    board[18][40] = 0
-    board[19][40] = 1
+    board = board.at[18,40].set(0)
+    board = board.at[19,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 113 or i == 105 or i == 97 or i == 89 or i == 915 or i == 907 or i == 899:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 212 or i == 222 or i == 232 or i == 242 or i == 1032 or i == 1042 or i == 1052:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 516 or i == 506 or i == 496 or i == 486:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 615 or i == 623 or i == 631 or i == 639:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手飛車
-    board[19][40] = 0
-    board[20][40] = 1
+    board = board.at[19,40].set(0)
+    board = board.at[20,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 42 or i == 43 or i == 44 or i == 852 or i == 853 or i == 854:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 444 or i == 443 or i == 442 or i == 441:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 373 or i == 382 or i == 391 or i == 400:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 274 or i == 265 or i == 256 or i == 247:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手金
-    board[20][40] = 0
-    board[21][40] = 1
+    board = board.at[20,40].set(0)
+    board = board.at[21,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 113 or i == 212 or i == 274 or i == 373 or i == 444:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手玉
-    board[21][40] = 0
-    board[22][40] = 1
+    board = board.at[21,40].set(0)
+    board = board.at[22,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 113 or i == 212 or i == 274 or i == 373 or i == 444 or i == 516 or i == 615:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手成金
     for j in range(4):
-        board[22 + j][40] = 0
-        board[23 + j][40] = 1
+        board = board.at[22 + j,40].set(0)
+        board = board.at[23 + j,40].set(1)
         s = _init_legal_actions(ShogiState(turn=1, board=board))
         for i in range(1620):
-            s_, r, t = step(s, i)
+            # s_, r, t = step(s, i)
             if i == 41 or i == 113 or i == 212 or i == 274 or i == 373 or i == 444:
+                s_, r, t = step(s, i)
                 assert not t
             else:
+                continue
                 assert t
     # 後手馬
-    board[26][40] = 0
-    board[27][40] = 1
+    board = board.at[26,40].set(0)
+    board = board.at[27,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 113 or i == 105 or i == 97 or i == 89:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 212 or i == 222 or i == 232 or i == 242:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 516 or i == 506 or i == 496 or i == 486:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 615 or i == 623 or i == 631 or i == 639:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 41 or i == 274 or i == 373 or i == 444:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
     # 後手龍
-    board[27][40] = 0
-    board[28][40] = 1
+    board = board.at[27,40].set(0)
+    board = board.at[28,40].set(1)
     s = _init_legal_actions(ShogiState(turn=1, board=board))
     for i in range(1620):
-        s_, r, t = step(s, i)
+        # s_, r, t = step(s, i)
         if i == 41 or i == 42 or i == 43 or i == 44:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 444 or i == 443 or i == 442 or i == 441:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 373 or i == 382 or i == 391 or i == 400:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 274 or i == 265 or i == 256 or i == 247:
+            s_, r, t = step(s, i)
             assert not t
         elif i == 113 or i == 212 or i == 516 or i == 615:
+            s_, r, t = step(s, i)
             assert not t
         else:
+            continue
             assert t
 
 
 def test_step():
-    board = np.zeros((29, 81), dtype=np.int32)
-    board[0] = np.ones(81, dtype=np.int32)
-    board[0][11] = 0
-    board[7][11] = 1
-    board[0][10] = 0
-    board[1][10] = 1
-    board[0][0] = 0
-    board[22][0] = 1
-    hand = np.zeros(14, dtype=np.int32)
-    hand[0] = 1
-    hand[1] = 1
+    board = jnp.zeros((29, 81), dtype=jnp.int32)
+    board = board.at[0].set(jnp.ones(81, dtype=jnp.int32))
+    board = board.at[0,11].set(0)
+    board = board.at[7,11].set(1)
+    board = board.at[0,10].set(0)
+    board = board.at[1,10].set(1)
+    board = board.at[0,0].set(0)
+    board = board.at[22,0].set(1)
+    hand = jnp.zeros(14, dtype=jnp.int32)
+    hand = hand.at[0].set(1)
+    hand = hand.at[1].set(1)
     s = _init_legal_actions(ShogiState(board=board, hand=hand))
     # 打ち不詰め
     action1 = _action_to_dlaction(ShogiAction(True, 1, 1), 0)
@@ -851,7 +941,7 @@ def test_step():
         else:
             assert r == 0
             assert not t
-    assert np.all(_board_status(s) == np.array([16, 0, 1, 0, 15, 0, 0, 0, 2, 0, 0, 0, 0, 15, 0, 0, 0, 6, 0, 0, 9, 0, 0, 0, 0, 15, 0, 22, 4, 0, 7, 0, 4, 1, 23, 0, 0, 0, 1, 18, 15, 0, 0, 0, 0, 0, 21, 0, 19, 0, 1, 0, 0, 0, 0, 0, 17, 15, 0, 1, 4, 21, 0, 20, 0, 0, 0, 0, 1, 8, 0, 3, 16, 0, 15, 0, 0, 1, 0, 25, 2]))
+    assert jnp.all(_board_status(s) == jnp.array([16, 0, 1, 0, 15, 0, 0, 0, 2, 0, 0, 0, 0, 15, 0, 0, 0, 6, 0, 0, 9, 0, 0, 0, 0, 15, 0, 22, 4, 0, 7, 0, 4, 1, 23, 0, 0, 0, 1, 18, 15, 0, 0, 0, 0, 0, 21, 0, 19, 0, 1, 0, 0, 0, 0, 0, 17, 15, 0, 1, 4, 21, 0, 20, 0, 0, 0, 0, 1, 8, 0, 3, 16, 0, 15, 0, 0, 1, 0, 25, 2]))
     s = init()
     moves = [
         14, 66, 13, 67, 59, 81 + 19, 162 + 60, 21, 162 + 52, 972 + 60, 81 + 60, 81 + 10, 81 + 34, 162 + 20, 23, 81 + 46,
@@ -875,9 +965,9 @@ def test_step():
         else:
             assert r == 0
             assert not t
-    assert np.all(_board_status(s) == np.array([16, 0, 0, 15, 0, 1, 0, 2, 0, 17, 22, 15, 0, 18, 0, 0, 0, 0, 0, 21, 15, 1, 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 4, 1, 0, 0, 0, 0, 15, 0, 0, 1, 0, 0, 0, 0, 0, 21, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 7, 0, 19, 6, 0, 0, 0, 0, 1, 3, 23, 0, 16, 0, 0, 0, 0, 0, 0, 0, 8]))
+    assert jnp.all(_board_status(s) == jnp.array([16, 0, 0, 15, 0, 1, 0, 2, 0, 17, 22, 15, 0, 18, 0, 0, 0, 0, 0, 21, 15, 1, 0, 0, 0, 0, 0, 0, 18, 0, 0, 0, 4, 1, 0, 0, 0, 0, 15, 0, 0, 1, 0, 0, 0, 0, 0, 21, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 7, 0, 19, 6, 0, 0, 0, 0, 1, 3, 23, 0, 16, 0, 0, 0, 0, 0, 0, 0, 8]))
     s = init()
-    s.turn = 1
+    s = s.replace(turn=1)
     moves = [
         21, 41, 66, 40, 67, 43, 68, 42, 810 + 69, 41, 70, 243 + 70, 2187 + 69, 324 + 16, 810 + 70, 81 + 70, 810 + 69,
         567 + 62, 162 + 79, 14, 81 + 71, 162 + 52, 324 + 80, 39, 405 + 79, 13, 2349 + 22, 12, 729 + 33, 810 + 11,
@@ -897,7 +987,7 @@ def test_step():
         else:
             assert r == 0
             assert not t
-    assert np.all(_board_status(s) == np.array(
+    assert jnp.all(_board_status(s) == jnp.array(
         [0, 18, 0, 0, 15, 5, 1, 0, 2, 0, 16, 0, 0, 0, 7, 8, 25, 3, 0, 0, 17, 0, 19, 7, 1, 0, 0, 21, 0, 15, 0, 0, 0, 0,
          0, 0, 22, 0, 21, 0, 0, 0, 26, 0, 0, 0, 0, 15, 0, 0, 0, 0, 0, 0, 18, 0, 15, 0, 0, 0, 0, 0, 0, 17, 0, 0, 0, 0, 0,
          0, 28, 0, 16, 0, 15, 1, 0, 0, 0, 0, 0]))
@@ -929,55 +1019,58 @@ def test_between():
 
 def test_pin():
     s = ShogiState()
-    s.board[8][40] = 1
-    s.board[0][40] = 0
-    s.board[16][38] = 1
-    s.board[0][38] = 0
-    s.board[3][39] = 1
-    s.board[0][39] = 0
-    s.board[19][64] = 1
-    s.board[0][64] = 0
-    s.board[15][56] = 1
-    s.board[0][56] = 0
-    s.board[28][76] = 1
-    s.board[0][76] = 0
-    s.board[1][67] = 1
-    s.board[0][67] = 0
-    s.board[27][80] = 1
-    s.board[0][80] = 0
-    s.board[2][50] = 1
-    s.board[0][50] = 0
+    board = s.board
+    board = board.at[8,40].set(1)
+    board = board.at[0,40].set(0)
+    board = board.at[16,38].set(1)
+    board = board.at[0,38].set(0)
+    board = board.at[3,39].set(1)
+    board = board.at[0,39].set(0)
+    board = board.at[19,64].set(1)
+    board = board.at[0,64].set(0)
+    board = board.at[15,56].set(1)
+    board = board.at[0,56].set(0)
+    board = board.at[28,76].set(1)
+    board = board.at[0,76].set(0)
+    board = board.at[1,67].set(1)
+    board = board.at[0,67].set(0)
+    board = board.at[27,80].set(1)
+    board = board.at[0,80].set(0)
+    board = board.at[2,50].set(1)
+    board = board.at[0,50].set(0)
+    s = s.replace(board=board)  # type: ignore
     pins = _pin(s)
     assert pins[39] == 1
     assert pins[56] == 0
     assert pins[67] == 4
     assert pins[50] == 3
-    s2 = ShogiState(board=np.zeros((29, 81), dtype=np.int32))
-    s2.board[22][40] = 1
-    s2.board[0][40] = 0
-    s2.board[14][38] = 1
-    s2.board[0][38] = 0
-    s2.board[23][39] = 1
-    s2.board[0][39] = 0
-    s2.board[5][64] = 1
-    s2.board[0][64] = 0
-    s2.board[15][56] = 1
-    s2.board[0][56] = 0
-    s2.board[6][76] = 1
-    s2.board[0][76] = 0
-    s2.board[20][67] = 1
-    s2.board[0][67] = 0
-    s2.board[26][58] = 1
-    s2.board[0][58] = 0
-    s2.board[13][80] = 1
-    s2.board[0][80] = 0
-    s2.board[17][50] = 1
-    s2.board[0][50] = 0
-    s2.board[2][44] = 1
-    s2.board[0][44] = 0
-    s2.board[17][42] = 1
-    s2.board[0][42] = 0
-    s2.turn = 1
+    s2 = ShogiState(board=jnp.zeros((29, 81), dtype=jnp.int32))
+    board = s2.board
+    board = board.at[22,40].set(1)
+    board = board.at[0,40].set(0)
+    board = board.at[14,38].set(1)
+    board = board.at[0,38].set(0)
+    board = board.at[23,39].set(1)
+    board = board.at[0,39].set(0)
+    board = board.at[5,64].set(1)
+    board = board.at[0,64].set(0)
+    board = board.at[15,56].set(1)
+    board = board.at[0,56].set(0)
+    board = board.at[6,76].set(1)
+    board = board.at[0,76].set(0)
+    board = board.at[20,67].set(1)
+    board = board.at[0,67].set(0)
+    board = board.at[26,58].set(1)
+    board = board.at[0,58].set(0)
+    board = board.at[13,80].set(1)
+    board = board.at[0,80].set(0)
+    board = board.at[17,50].set(1)
+    board = board.at[0,50].set(0)
+    board = board.at[2,44].set(1)
+    board = board.at[0,44].set(0)
+    board = board.at[17,42].set(1)
+    board = board.at[0,42].set(0)
+    s2 = s2.replace(board=board, turn=1)  # type: ignore
     pins2 = _pin(s2)
     assert pins2[39] == 1
     assert pins2[56] == 2
@@ -988,70 +1081,52 @@ def test_pin():
 
 
 def test_is_mate():
-    board = np.zeros(81, dtype=np.int32)
-    board[30] = 1
-    board[31] = 1
-    board[32] = 1
-    board[48] = 1
-    board[49] = 1
-    board[50] = 1
-    board[40] = 8
-    board[38] = 16
+    board = jnp.zeros(81, dtype=jnp.int32)
+    board = board.at[30].set(1)
+    board = board.at[31].set(1)
+    board = board.at[32].set(1)
+    board = board.at[48].set(1)
+    board = board.at[49].set(1)
+    board = board.at[50].set(1)
+    board = board.at[40].set(8)
+    board = board.at[38].set(16)
     s = _make_board(board)
     s = _init_legal_actions(s)
     assert _is_mate(s)
-    s.hand[0] = 1
+    s = s.replace(hand=s.hand.at[0].set(1))  # type: ignore
     s = _init_legal_actions(s)
     assert not _is_mate(s)
-    board1 = np.zeros(81, dtype=np.int32)
-    board1[8] = 8
-    board1[7] = 1
-    board1[16] = 1
-    board1[26] = 25
-    board1[15] = 17
-    board1[64] = 27
+    board1 = jnp.zeros(81, dtype=jnp.int32)
+    board1 = board1.at[8].set(8)
+    board1 = board1.at[7].set(1)
+    board1 = board1.at[16].set(1)
+    board1 = board1.at[26].set(25)
+    board1 = board1.at[15].set(17)
+    board1 = board1.at[64].set(27)
     s1 = _make_board(board1)
     s1 = _init_legal_actions(s1)
     assert _is_mate(s1)
-    board1[56] = 28
+    board1 = board1.at[56].set(28)
     s1 = _make_board(board1)
     s1 = _init_legal_actions(s1)
     assert not _is_mate(s1)
-    board2 = np.zeros(81, dtype=np.int32)
-    board2[8] = 8
-    board2[7] = 1
-    board2[64] = 27
-    board2[56] = 5
-    board2[48] = 19
+    board2 = jnp.zeros(81, dtype=jnp.int32)
+    board2 = board2.at[8].set(8)
+    board2 = board2.at[7].set(1)
+    board2 = board2.at[64].set(27)
+    board2 = board2.at[56].set(5)
+    board2 = board2.at[48].set(19)
     s2 = _make_board(board2)
     s2 = _init_legal_actions(s2)
     assert not _is_mate(s2)
-    board3 = np.zeros(81, dtype=np.int32)
-    board3[8] = 8
-    board3[7] = 15
-    board3[14] = 17
-    board3[16] = 7
-    board3[17] = 4
-    board3[24] = 19
-    board3[35] = 28
+    board3 = jnp.zeros(81, dtype=jnp.int32)
+    board3 = board3.at[8].set(8)
+    board3 = board3.at[7].set(15)
+    board3 = board3.at[14].set(17)
+    board3 = board3.at[16].set(7)
+    board3 = board3.at[17].set(4)
+    board3 = board3.at[24].set(19)
+    board3 = board3.at[35].set(28)
     s3 = _make_board(board3)
     s3 = _init_legal_actions(s3)
     assert _is_mate(s3)
-
-
-if __name__ == '__main__':
-    test_dlaction_to_action()
-    test_action_to_dlaction()
-    test_move()
-    test_drop()
-    test_piece_moves()
-    test_init_legal_actions()
-    test_is_check()
-    test_legal_actions()
-    test_update_legal_actions()
-    test_is_double_pawn()
-    test_is_stuck()
-    test_step()
-    test_between()
-    test_pin()
-    test_is_mate()

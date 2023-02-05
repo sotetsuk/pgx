@@ -1,8 +1,8 @@
 import copy
-from dataclasses import dataclass
 from typing import Tuple
 
-import numpy as np
+import jax.numpy as jnp
+from flax.struct import dataclass
 
 
 # 指し手のdataclass
@@ -33,18 +33,18 @@ class ShogiState:
     # 空白,先手歩,先手香車,先手桂馬,先手銀,先手角,先手飛車,先手金,先手玉,先手と,先手成香,先手成桂,先手成銀,先手馬,先手龍,
     # 後手歩,後手香車,後手桂馬,後手銀,後手角,後手飛車,後手金,後手玉,後手と,後手成香,後手成桂,後手成銀,後手馬,後手龍
     # の順で駒がどの位置にあるかをone_hotで記録
-    board: np.ndarray = np.zeros((29, 81), dtype=np.int32)
+    board: jnp.ndarray = jnp.zeros((29, 81), dtype=jnp.int32)
     # hand 持ち駒。先手歩,先手香車,先手桂馬,先手銀,先手角,先手飛車,先手金,後手歩,後手香車,後手桂馬,後手銀,後手角,後手飛車,後手金
     # の14種の値を増減させる
-    hand: np.ndarray = np.zeros(14, dtype=np.int32)
+    hand: jnp.ndarray = jnp.zeros(14, dtype=jnp.int32)
     # legal_actions_black/white: 自殺手や王手放置などの手も含めた合法手の一覧
-    legal_actions_black: np.ndarray = np.zeros(2754, dtype=np.int32)
-    legal_actions_white: np.ndarray = np.zeros(2754, dtype=np.int32)
+    legal_actions_black: jnp.ndarray = jnp.zeros(2754, dtype=jnp.int32)
+    legal_actions_white: jnp.ndarray = jnp.zeros(2754, dtype=jnp.int32)
 
 
 def init() -> ShogiState:
     board = _make_init_board()
-    state = ShogiState(board=board, hand=np.zeros(14, dtype=np.int32))
+    state = ShogiState(board=board, hand=jnp.zeros(14, dtype=jnp.int32))  # type: ignore
     return _init_legal_actions(state)
 
 
@@ -84,7 +84,7 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     if _is_stuck(s):
         print("some pieces are stuck")
         return s, _turn_to_reward(_another_color(s)), True
-    s.turn = _another_color(s)
+    s = s.replace(turn=_another_color(s))  # type: ignore
     # 相手に合法手がない場合→詰み
     if _is_mate(s):
         # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
@@ -108,8 +108,8 @@ def _turn_to_reward(turn: int) -> int:
 
 
 # 初期盤面生成
-def _make_init_board() -> np.ndarray:
-    array = np.zeros((29, 81), dtype=np.int32)
+def _make_init_board() -> jnp.ndarray:
+    array = jnp.zeros((29, 81), dtype=jnp.int32)
     for i in range(81):
         if i % 9 == 6:
             # 先手歩
@@ -162,60 +162,60 @@ def _make_init_board() -> np.ndarray:
         else:
             # 空白
             p = 0
-        array[p][i] = 1
+        array = array.at[p, i].set(1)
     return array
 
 
 # 盤面の情報をStateに変換
-def _make_board(bs: np.ndarray) -> ShogiState:
-    board = np.zeros((29, 81), dtype=np.int32)
+def _make_board(bs: jnp.ndarray) -> ShogiState:
+    board = jnp.zeros((29, 81), dtype=jnp.int32)
     for i in range(81):
-        board[0][i] = 0
-        board[bs[i]][i] = 1
-    return ShogiState(board=board)
+        board = board.at[0, i].set(0)
+        board = board.at[bs[i], i].set(1)
+    return ShogiState(board=board)  # type: ignore
 
 
-def _pawn_move(turn: int) -> np.ndarray:
-    array = np.zeros((9, 9), dtype=np.int32)
-    array[4][4 - _turn_to_reward(turn)] = 1
+def _pawn_move(turn: int) -> jnp.ndarray:
+    array = jnp.zeros((9, 9), dtype=jnp.int32)
+    array = array.at[4, 4 - _turn_to_reward(turn)].set(1)
     return array
 
 
-def _knight_move(turn: int) -> np.ndarray:
-    array = np.zeros((9, 9), dtype=np.int32)
-    array[3][4 - 2 * _turn_to_reward(turn)] = 1
-    array[5][4 - 2 * _turn_to_reward(turn)] = 1
+def _knight_move(turn: int) -> jnp.ndarray:
+    array = jnp.zeros((9, 9), dtype=jnp.int32)
+    array = array.at[3, 4 - 2 * _turn_to_reward(turn)].set(1)
+    array = array.at[5, 4 - 2 * _turn_to_reward(turn)].set(1)
     return array
 
 
-def _silver_move(turn: int) -> np.ndarray:
+def _silver_move(turn: int) -> jnp.ndarray:
     array = _pawn_move(turn)
-    array[3][3] = 1
-    array[3][5] = 1
-    array[5][3] = 1
-    array[5][5] = 1
+    array = array.at[3, 3].set(1)
+    array = array.at[3, 5].set(1)
+    array = array.at[5, 3].set(1)
+    array = array.at[5, 5].set(1)
     return array
 
 
-def _gold_move(turn: int) -> np.ndarray:
-    array = np.zeros((9, 9), dtype=np.int32)
+def _gold_move(turn: int) -> jnp.ndarray:
+    array = jnp.zeros((9, 9), dtype=jnp.int32)
     if turn == 0:
-        array[3][3] = 1
-        array[5][3] = 1
+        array = array.at[3, 3].set(1)
+        array = array.at[5, 3].set(1)
     else:
-        array[3][5] = 1
-        array[5][5] = 1
-    array[4][3] = 1
-    array[3][4] = 1
-    array[4][5] = 1
-    array[5][4] = 1
+        array = array.at[3, 5].set(1)
+        array = array.at[5, 5].set(1)
+    array = array.at[4, 3].set(1)
+    array = array.at[3, 4].set(1)
+    array = array.at[4, 5].set(1)
+    array = array.at[5, 4].set(1)
     return array
 
 
-def _king_move() -> np.ndarray:
-    array = np.zeros((9, 9), dtype=np.int32)
-    array[3:6, 3:6] = 1
-    array[4][4] = 0
+def _king_move() -> jnp.ndarray:
+    array = jnp.zeros((9, 9), dtype=jnp.int32)
+    array = array.at[3:6, 3:6].set(1)
+    array = array.at[4, 4].set(0)
     return array
 
 
@@ -241,55 +241,55 @@ def _point_to_location(point: int) -> Tuple[int, int]:
 
 
 # 端にいる駒の動けない地点へのフラグを折る
-def _cut_outside(array: np.ndarray, point: int) -> np.ndarray:
+def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
     new_array = array
     u, d, l, r = _is_side(point)
     u2, d2 = _is_second_line(point)
     # (4, 4)での動きを基準にはみ出すところをカットする
     if u:
-        new_array[:, 3] *= 0
+        new_array = new_array.at[:, 3].set(0)
     if d:
-        new_array[:, 5] *= 0
+        new_array = new_array.at[:, 5].set(0)
     if r:
-        new_array[3, :] *= 0
+        new_array = new_array.at[3, :].set(0)
     if l:
-        new_array[5, :] *= 0
+        new_array = new_array.at[5, :].set(0)
     if u2:
-        new_array[:, 2] *= 0
+        new_array = new_array.at[:, 2].set(0)
     if d2:
-        new_array[:, 6] *= 0
+        new_array = new_array.at[:, 6].set(0)
     return new_array
 
 
 # 駒種と位置から到達できる地点をすべて生成
-def _action_board(array: np.ndarray, point: int) -> np.ndarray:
+def _action_board(array: jnp.ndarray, point: int) -> jnp.ndarray:
     new_array = array
     y, t = _point_to_location(point)
     new_array = _cut_outside(new_array, point)
-    return np.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
+    return jnp.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
 
 
 # 大駒・香車以外の位置ごとの移動できる地点を記録
-POINT_MOVES = np.zeros((81, 29, 81), dtype=np.int32)
+POINT_MOVES = jnp.zeros((81, 29, 81), dtype=jnp.int32)
 for i in range(81):
-    POINT_MOVES[i][1] = _action_board(_pawn_move(0), i)
-    POINT_MOVES[i][3] = _action_board(_knight_move(0), i)
-    POINT_MOVES[i][4] = _action_board(_silver_move(0), i)
-    POINT_MOVES[i][7] = _action_board(_gold_move(0), i)
-    POINT_MOVES[i][8] = _action_board(_king_move(), i)
-    POINT_MOVES[i][9] = POINT_MOVES[i][7]
-    POINT_MOVES[i][10] = POINT_MOVES[i][7]
-    POINT_MOVES[i][11] = POINT_MOVES[i][7]
-    POINT_MOVES[i][12] = POINT_MOVES[i][7]
-    POINT_MOVES[i][15] = _action_board(_pawn_move(1), i)
-    POINT_MOVES[i][17] = _action_board(_knight_move(1), i)
-    POINT_MOVES[i][18] = _action_board(_silver_move(1), i)
-    POINT_MOVES[i][21] = _action_board(_gold_move(1), i)
-    POINT_MOVES[i][22] = _action_board(_king_move(), i)
-    POINT_MOVES[i][23] = POINT_MOVES[i][21]
-    POINT_MOVES[i][24] = POINT_MOVES[i][21]
-    POINT_MOVES[i][25] = POINT_MOVES[i][21]
-    POINT_MOVES[i][26] = POINT_MOVES[i][21]
+    POINT_MOVES = POINT_MOVES.at[i, 1].set(_action_board(_pawn_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 3].set(_action_board(_knight_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 4].set(_action_board(_silver_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 7].set(_action_board(_gold_move(0), i))
+    POINT_MOVES = POINT_MOVES.at[i, 8].set(_action_board(_king_move(), i))
+    POINT_MOVES = POINT_MOVES.at[i, 9].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 10].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 11].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 12].set(POINT_MOVES[i][7])
+    POINT_MOVES = POINT_MOVES.at[i, 15].set(_action_board(_pawn_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 17].set(_action_board(_knight_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 18].set(_action_board(_silver_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 21].set(_action_board(_gold_move(1), i))
+    POINT_MOVES = POINT_MOVES.at[i, 22].set(_action_board(_king_move(), i))
+    POINT_MOVES = POINT_MOVES.at[i, 23].set(POINT_MOVES[i][21])
+    POINT_MOVES = POINT_MOVES.at[i, 24].set(POINT_MOVES[i][21])
+    POINT_MOVES = POINT_MOVES.at[i, 25].set(POINT_MOVES[i][21])
+    POINT_MOVES = POINT_MOVES.at[i, 26].set(POINT_MOVES[i][21])
 
 
 # dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
@@ -334,14 +334,14 @@ def _is_same_line(from_: int, to: int, direction: int) -> bool:
 
 # fromからある方向に移動させたときの位置と距離の関係
 # それ以上その方向に動かせないなら全部0
-def _dis_direction_array(from_: int, turn: int, direction: int) -> np.ndarray:
-    array = np.zeros(81, dtype=np.int32)
+def _dis_direction_array(from_: int, turn: int, direction: int) -> jnp.ndarray:
+    array = jnp.zeros(81, dtype=jnp.int32)
     dif = _direction_to_dif(direction, turn)
     for i in range(8):
         dis = 1 + i
         to = from_ + dif * dis
         if _is_in_board(to) and _is_same_line(from_, to, direction):
-            array[to] = dis
+            array = array.at[to].set(dis)
     return array
 
 
@@ -473,14 +473,14 @@ def _dlshogi_move_action(
     _from, is_promote = _direction_to_from(direction, to, state)
     piece = _piece_type(state, _from)
     captured = _piece_type(state, to)
-    return ShogiAction(False, piece, to, _from, captured, is_promote)
+    return ShogiAction(False, piece, to, _from, captured, is_promote)  # type: ignore
 
 
 def _dlshogi_drop_action(
     direction: int, to: int, state: ShogiState
 ) -> ShogiAction:
     piece = _direction_to_hand(direction)
-    return ShogiAction(True, piece, to)
+    return ShogiAction(True, piece, to)  # type: ignore
 
 
 def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
@@ -528,7 +528,7 @@ def _piece_to_hand(piece: int) -> int:
 
 
 # ある駒の持ち主を返す
-def _owner(piece: int) -> int:
+def _owner(piece):
     if piece == 0:
         return 2
     else:
@@ -537,16 +537,16 @@ def _owner(piece: int) -> int:
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
-def _board_status(state: ShogiState) -> np.ndarray:
+def _board_status(state: ShogiState) -> jnp.ndarray:
     return state.board.argmax(axis=0)
 
 
 # 駒の持ち主の判定
-def _pieces_owner(state: ShogiState) -> np.ndarray:
-    board = np.zeros(81, dtype=np.int32)
+def _pieces_owner(state: ShogiState) -> jnp.ndarray:
+    board = jnp.zeros(81, dtype=jnp.int32)
     for i in range(81):
         piece = _piece_type(state, i)
-        board[i] = _owner(piece)
+        board = board.at[i].set(_owner(piece))
     return board
 
 
@@ -555,33 +555,34 @@ def _move(
     state: ShogiState,
     action: ShogiAction,
 ) -> ShogiState:
-    s = state
-    s.board[action.piece][action.from_] = 0
-    s.board[0][action.from_] = 1
-    s.board[action.captured][action.to] = 0
+    board = state.board
+    hand = state.hand
+    board = board.at[action.piece, action.from_].set(0)
+    board = board.at[0, action.from_].set(1)
+    board = board.at[action.captured, action.to].set(0)
     if action.is_promote:
-        s.board[action.piece + 8][action.to] = 1
+        board = board.at[action.piece + 8, action.to].set(1)
     else:
-        s.board[action.piece][action.to] = 1
+        board = board.at[action.piece, action.to].set(1)
     if action.captured != 0:
-        s.hand[_piece_to_hand(_convert_piece(action.captured))] += 1
-    return s
+        hand = hand.at[_piece_to_hand(_convert_piece(action.captured))].add(1)
+    return state.replace(board=board, hand=hand)  # type: ignore
 
 
 def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
-    s = state
-    s.hand[_piece_to_hand(action.piece)] -= 1
-    s.board[action.piece][action.to] = 1
-    s.board[0][action.to] = 0
-    return s
+    board, hand = state.board, state.hand
+    hand = hand.at[_piece_to_hand(action.piece)].add(-1)
+    board = board.at[action.piece, action.to].set(1)
+    board = board.at[0, action.to].set(0)
+    return state.replace(board=board, hand=hand)  # type: ignore
 
 
 # 方向ごとの大ごまの動きのなかで一番奥の地点を返す
-def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
+def _inner_point(bs_one: jnp.ndarray, from_: int, direction: int):
     dir_array = _dis_direction_array(from_, 0, direction)
     # 途中で駒にぶつからない場合
-    if np.all(dir_array * bs_one == 0):
-        return from_ + _direction_to_dif(direction, 0) * np.max(dir_array)
+    if jnp.all(dir_array * bs_one == 0):
+        return from_ + _direction_to_dif(direction, 0) * jnp.max(dir_array)
     else:
         return _nearest_position(from_, direction, bs_one)
 
@@ -589,31 +590,31 @@ def _inner_point(bs_one: np.ndarray, from_: int, direction: int) -> int:
 # fromからtoまでの地点をdifごとに1に置き換える
 # 最大8回
 # fromは0、toは1に
-def _change_between(from_: int, to: int, dif: int) -> np.ndarray:
-    array = np.zeros(81, dtype=np.int32)
+def _change_between(from_: int, to: int, dif: int) -> jnp.ndarray:
+    array = jnp.zeros(81, dtype=jnp.int32)
     point = from_
     flag = from_ != to
     for i in range(8):
         point += dif
         if flag and _is_in_board(point):
-            array[point] = 1
+            array = array.at[point].set(1)
         if point == to:
             flag = False
     return array
 
 
 # 香車の動き
-def _lance_move(bs: np.ndarray, from_: int, turn: int) -> np.ndarray:
-    bs_one = np.where(bs == 0, 0, 1)
+def _lance_move(bs: jnp.ndarray, from_: int, turn: int) -> jnp.ndarray:
+    bs_one = jnp.where(bs == 0, 0, 1)
     direction = 5 * turn
     point = _inner_point(bs_one, from_, direction)
     return _change_between(from_, point, _direction_to_dif(0, turn))
 
 
 # 角の動き
-def _bishop_move(bs: np.ndarray, from_: int) -> np.ndarray:
-    to = np.zeros(81, dtype=np.int32)
-    bs_one = np.where(bs == 0, 0, 1)
+def _bishop_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
+    to = jnp.zeros(81, dtype=jnp.int32)
+    bs_one = jnp.where(bs == 0, 0, 1)
     ur_point = _inner_point(bs_one, from_, 2)
     to += _change_between(from_, ur_point, -10)
     ul_point = _inner_point(bs_one, from_, 1)
@@ -626,9 +627,9 @@ def _bishop_move(bs: np.ndarray, from_: int) -> np.ndarray:
 
 
 # 飛車の動き
-def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
-    to = np.zeros(81, dtype=np.int32)
-    bs_one = np.where(bs == 0, 0, 1)
+def _rook_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
+    to = jnp.zeros(81, dtype=jnp.int32)
+    bs_one = jnp.where(bs == 0, 0, 1)
     u_point = _inner_point(bs_one, from_, 0)
     to += _change_between(from_, u_point, -1)
     d_point = _inner_point(bs_one, from_, 5)
@@ -641,21 +642,21 @@ def _rook_move(bs: np.ndarray, from_: int) -> np.ndarray:
 
 
 # 馬の動き
-def _horse_move(bs: np.ndarray, from_: int) -> np.ndarray:
+def _horse_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
     # 角の動き＋玉の動き
     to = _bishop_move(bs, from_) + POINT_MOVES[from_][8]
-    return np.where(to == 0, 0, 1)
+    return jnp.where(to == 0, 0, 1)
 
 
 # 龍の動き
-def _dragon_move(bs: np.ndarray, from_: int) -> np.ndarray:
+def _dragon_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
     # 飛車の動き＋玉の動き
     to = _rook_move(bs, from_) + POINT_MOVES[from_][8]
-    return np.where(to == 0, 0, 1)
+    return jnp.where(to == 0, 0, 1)
 
 
 # 駒種と位置から到達できる場所を返す
-def _piece_moves(bs: np.ndarray, piece: int, point: int) -> np.ndarray:
+def _piece_moves(bs: jnp.ndarray, piece, point) -> jnp.ndarray:
     moves = POINT_MOVES[point][piece]
     # 香車の動き
     if piece == 2:
@@ -678,7 +679,7 @@ def _piece_moves(bs: np.ndarray, piece: int, point: int) -> np.ndarray:
 
 
 # 小駒のactionのみを返すpiece_moves
-def _small_piece_moves(piece: int, point: int) -> np.ndarray:
+def _small_piece_moves(piece: int, point: int) -> jnp.ndarray:
     return POINT_MOVES[point][piece]
 
 
@@ -703,100 +704,107 @@ def _can_promote(piece: int, _from: int, to: int) -> bool:
 
 
 def _create_one_piece_actions(
-    piece: int, _from: int, to: int, actions: np.ndarray
-) -> np.ndarray:
+    piece: int, _from: int, to: int, actions: jnp.ndarray
+) -> jnp.ndarray:
     new_actions = actions
     normal_dir = _point_to_direction(_from, to, False, _owner(piece))
     normal_act = _dlshogi_action(normal_dir, to)
-    new_actions[normal_act] = 1
+    new_actions = new_actions.at[normal_act].set(1)
     pro_dir = _point_to_direction(_from, to, True, _owner(piece))
     pro_act = _dlshogi_action(pro_dir, to)
     if _can_promote(piece, _from, to):
-        new_actions[pro_act] = 1
+        new_actions = new_actions.at[pro_act].set(1)
     return new_actions
 
 
-def _create_actions(piece: int, _from: int, to: np.ndarray) -> np.ndarray:
-    actions = np.zeros(2754, dtype=np.int32)
+def _create_actions(piece, _from, to: jnp.ndarray) -> jnp.ndarray:
+    actions = jnp.zeros(2754, dtype=jnp.int32)
     for i in range(81):
         if to[i] != 0:
             actions = _create_one_piece_actions(piece, _from, i, actions)
     return actions
 
 
-def _create_piece_actions(piece: int, _from: int) -> np.ndarray:
+def _create_piece_actions(piece, _from) -> jnp.ndarray:
     return _create_actions(piece, _from, POINT_MOVES[_from][piece])
 
 
 # actionを追加する
-def _add_action(add_array: np.ndarray, origin_array: np.ndarray) -> np.ndarray:
-    return np.where(add_array == 1, 1, origin_array)
+def _add_action(
+    add_array: jnp.ndarray, origin_array: jnp.ndarray
+) -> jnp.ndarray:
+    return jnp.where(add_array == 1, 1, origin_array)
 
 
 # actionを削除する
 def _filter_action(
-    filter_array: np.ndarray, origin_array: np.ndarray
-) -> np.ndarray:
-    return np.where(filter_array == 1, 0, origin_array)
+    filter_array: jnp.ndarray, origin_array: jnp.ndarray
+) -> jnp.ndarray:
+    return jnp.where(filter_array == 1, 0, origin_array)
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
-def _add_move_actions(piece: int, _from: int, array: np.ndarray) -> np.ndarray:
+def _add_move_actions(piece, _from, array: jnp.ndarray) -> jnp.ndarray:
     actions = _create_piece_actions(piece, _from)
-    return np.where(actions == 1, 1, array)
+    return jnp.where(actions == 1, 1, array)
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
 def _filter_move_actions(
-    piece: int, _from: int, array: np.ndarray
-) -> np.ndarray:
+    piece: int, _from: int, array: jnp.ndarray
+) -> jnp.ndarray:
     actions = _create_piece_actions(piece, _from)
-    return np.where(actions == 1, 0, array)
+    return jnp.where(actions == 1, 0, array)
 
 
 # 駒打ちのactionを追加する
-def _add_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
+def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 1)
+    new_array = new_array.at[
+        jnp.arange(81 * direction, 81 * (direction + 1))
+    ].set(1)
     return new_array
 
 
 # 駒打ちのactionのフラグを折る
-def _filter_drop_actions(piece: int, array: np.ndarray) -> np.ndarray:
+def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     new_array = array
     direction = _hand_to_direction(piece)
-    np.put(new_array, np.arange(81 * direction, 81 * (direction + 1)), 0)
+    new_array = new_array.at[
+        jnp.arange(81 * direction, 81 * (direction + 1))
+    ].set(0)
     return new_array
 
 
 # stateからblack,white両方のlegal_actionsを生成する
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
 def _init_legal_actions(state: ShogiState) -> ShogiState:
-    s = state
-    bs = _board_status(s)
+    bs = _board_status(state)
+    legal_actions_black, legal_actions_white = (
+        state.legal_actions_black,
+        state.legal_actions_white,
+    )
     # 移動の追加
     for i in range(81):
         piece = bs[i]
         if piece <= 14:
-            s.legal_actions_black = _add_move_actions(
-                piece, i, s.legal_actions_black
+            legal_actions_black = _add_move_actions(
+                piece, i, legal_actions_black
             )
         else:
-            s.legal_actions_white = _add_move_actions(
-                piece, i, s.legal_actions_white
+            legal_actions_white = _add_move_actions(
+                piece, i, legal_actions_white
             )
     # 駒打ちの追加
     for i in range(7):
-        if s.hand[i] != 0:
-            s.legal_actions_black = _add_drop_actions(
-                1 + i, s.legal_actions_black
+        if state.hand[i] != 0:
+            legal_actions_black = _add_drop_actions(1 + i, legal_actions_black)
+        if state.hand[i + 7] != 0:
+            legal_actions_white = _add_drop_actions(
+                15 + i, legal_actions_white
             )
-        if s.hand[i + 7] != 0:
-            s.legal_actions_white = _add_drop_actions(
-                15 + i, s.legal_actions_white
-            )
-    return s
+    return state.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
 
 
 # 成駒を成る前の駒に変更
@@ -840,12 +848,16 @@ def _update_legal_move_actions(
         )
         new_player_actions = _add_drop_actions(captured, new_player_actions)
     if s.turn == 0:
-        s.legal_actions_black = new_player_actions
-        s.legal_actions_white = new_enemy_actions
+        legal_actions_black, legal_actions_white = (
+            new_player_actions,
+            new_enemy_actions,
+        )
     else:
-        s.legal_actions_black = new_enemy_actions
-        s.legal_actions_white = new_player_actions
-    return s
+        legal_actions_black, legal_actions_white = (
+            new_enemy_actions,
+            new_player_actions,
+        )
+    return s.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
 
 
 # 駒打ちによるlegal_actionsの更新
@@ -867,51 +879,47 @@ def _update_legal_drop_actions(
             action.piece, new_player_actions
         )
     if s.turn == 0:
-        s.legal_actions_black = new_player_actions
+        s = s.replace(legal_actions_black=new_player_actions)  # type: ignore
     else:
-        s.legal_actions_white = new_player_actions
+        s = s.replace(legal_actions_white=new_player_actions)  # type: ignore
     return s
 
 
 # 自分の駒がある位置への移動を除く
 def _filter_my_piece_move_actions(
-    turn: int, owner: np.ndarray, array: np.ndarray
-) -> np.ndarray:
+    turn: int, owner: jnp.ndarray, array: jnp.ndarray
+) -> jnp.ndarray:
     new_array = array
     for i in range(81):
         if owner[i] != turn:
             continue
-        np.put(new_array, np.arange(i, 1620 + i, 81), 0)
+        new_array = new_array.at[jnp.arange(i, 1620 + i, 81)].set(0)
     return new_array
 
 
 # 駒がある地点への駒打ちを除く
 def _filter_occupied_drop_actions(
-    turn: int, owner: np.ndarray, array: np.ndarray
-) -> np.ndarray:
+    turn: int, owner: jnp.ndarray, array: jnp.ndarray
+) -> jnp.ndarray:
     new_array = array
     for i in range(81):
         if owner[i] == 2:
             continue
         if turn == 0:
-            np.put(
-                new_array,
-                np.arange(81 * 20 + i, 81 * 27 + i, 81),
-                0,
-            )
+            new_array = new_array.at[
+                jnp.arange(81 * 20 + i, 81 * 27 + i, 81)
+            ].set(0)
         else:
-            np.put(
-                new_array,
-                np.arange(81 * 27 + i, 81 * 34 + i, 81),
-                0,
-            )
+            new_array = new_array.at[
+                jnp.arange(81 * 27 + i, 81 * 34 + i, 81)
+            ].set(0)
     return new_array
 
 
 # boardのlegal_actionsを利用して合法手を生成する
 # 大駒や香車の利きはboardのlegal_actionsに追加していないので、ここで追加する
 # 自殺手や反則手はここでは除かない
-def _legal_actions(state: ShogiState) -> np.ndarray:
+def _legal_actions(state: ShogiState) -> jnp.ndarray:
     if state.turn == 0:
         action_array = state.legal_actions_black
     else:
@@ -934,18 +942,23 @@ def _legal_actions(state: ShogiState) -> np.ndarray:
 
 # 王手判定
 # 密接・遠隔の王手で分ける
-def _is_check(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
+def _is_check(state: ShogiState) -> Tuple[int, jnp.ndarray, int, jnp.ndarray]:
     # そもそも王がいない場合
-    if np.all(state.board[8 + 14 * state.turn] == 0):
-        return 0, np.zeros(81, dtype=np.int32), 0, np.zeros(81, dtype=np.int32)
+    if jnp.all(state.board[8 + 14 * state.turn] == 0):
+        return (
+            0,
+            jnp.zeros(81, dtype=jnp.int32),
+            0,
+            jnp.zeros(81, dtype=jnp.int32),
+        )
     else:
         return _is_check_(state)
 
 
 # 玉がいる前提
-def _is_check_(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
+def _is_check_(state: ShogiState) -> Tuple[int, jnp.ndarray, int, jnp.ndarray]:
     check = 0
-    checking_point = np.zeros((2, 81), dtype=np.int32)
+    checking_point = jnp.zeros((2, 81), dtype=jnp.int32)
     king_point = int(state.board[8 + 14 * state.turn, :].argmax())
     near_king = _small_piece_moves(8 + 14 * state.turn, king_point)
     bs = _board_status(state)
@@ -958,11 +971,11 @@ def _is_check_(state: ShogiState) -> Tuple[int, np.ndarray, int, np.ndarray]:
             # 桂馬の王手も密接としてカウント
             if near_king[i] == 1 or piece % 14 == 3:
                 check += 10
-                checking_point[0][i] = 1
+                checking_point = checking_point.at[0, i].set(1)
             else:
                 # 遠隔の王手は9以上ありえない
                 check += 1
-                checking_point[1][i] = 1
+                checking_point = checking_point.at[1, i].set(1)
     return check // 10, checking_point[0], check % 10, checking_point[1]
 
 
@@ -972,7 +985,7 @@ def _is_double_pawn(state: ShogiState) -> bool:
     is_double_pawn = False
     bs = _board_status(state)
     for i in range(9):
-        num_pawn = np.count_nonzero(
+        num_pawn = jnp.count_nonzero(
             bs[9 * i : 9 * (i + 1)] == 1 + state.turn * 14
         )
         if num_pawn >= 2:
@@ -985,24 +998,24 @@ def _is_stuck(state: ShogiState) -> bool:
     is_stuck = False
     bs = _board_status(state)
     line1 = bs[0::9]
-    if np.any(line1 == 1):
+    if jnp.any(line1 == 1):
         is_stuck = True
-    if np.any(line1 == 2):
+    if jnp.any(line1 == 2):
         is_stuck = True
-    if np.any(line1 == 3):
+    if jnp.any(line1 == 3):
         is_stuck = True
     line2 = bs[1::9]
-    if np.any(line2 == 3):
+    if jnp.any(line2 == 3):
         is_stuck = True
     line8 = bs[7::9]
-    if np.any(line8 == 17):
+    if jnp.any(line8 == 17):
         is_stuck = True
     line9 = bs[8::9]
-    if np.any(line9 == 15):
+    if jnp.any(line9 == 15):
         is_stuck = True
-    if np.any(line9 == 16):
+    if jnp.any(line9 == 16):
         is_stuck = True
-    if np.any(line9 == 17):
+    if jnp.any(line9 == 17):
         is_stuck = True
     return is_stuck
 
@@ -1021,7 +1034,7 @@ def _direction_to_pin(direction: int) -> int:
 
 
 # それぞれの方向について、1番fromに近い駒の位置を返す
-def _nearest_position(from_: int, direction: int, bs_one: np.ndarray) -> int:
+def _nearest_position(from_: int, direction: int, bs_one: jnp.ndarray) -> int:
     flag1 = True
     point1 = -1
     dif = _direction_to_dif(direction, 0)
@@ -1040,15 +1053,15 @@ def _nearest_position(from_: int, direction: int, bs_one: np.ndarray) -> int:
 
 # pinされている駒の位置と方向を記録(1方向のみ)
 def _direction_pin(
-    bs: np.ndarray,
+    bs: jnp.ndarray,
     turn: int,
     king_point: int,
     direction: int,
-    array: np.ndarray,
-) -> np.ndarray:
+    array: jnp.ndarray,
+) -> jnp.ndarray:
     new_array = array
     e_turn = (turn + 1) % 2
-    bs_one = np.where(bs == 0, 0, 1)
+    bs_one = jnp.where(bs == 0, 0, 1)
     # 玉に一番近い駒の位置
     point1 = _nearest_position(king_point, direction, bs_one)
     # 2番目に近い駒の位置
@@ -1071,15 +1084,15 @@ def _direction_pin(
     ):
         flag = True
     if flag:
-        new_array[point1] = _direction_to_pin(direction)
+        new_array = new_array.at[point1].set(_direction_to_pin(direction))
     return new_array
 
 
 # pinされている駒の位置と方向を記録
-def _pin(state: ShogiState) -> np.ndarray:
+def _pin(state: ShogiState) -> jnp.ndarray:
     bs = _board_status(state)
     turn = state.turn
-    pins = np.zeros(81, dtype=np.int32)
+    pins = jnp.zeros(81, dtype=jnp.int32)
     king_point = int(state.board[8 + 14 * turn, :].argmax())
     for i in range(8):
         pins = _direction_pin(bs, turn, king_point, i, pins)
@@ -1087,7 +1100,7 @@ def _pin(state: ShogiState) -> np.ndarray:
 
 
 # 特定の方向の動きだけを除いたactionを生成する
-def _eliminate_direction(actions: np.ndarray, direction: int) -> np.ndarray:
+def _eliminate_direction(actions: jnp.ndarray, direction) -> jnp.ndarray:
     new_array = actions
     # 2方向と成・不成の4方向のフラグを折る
     dir1 = 0
@@ -1110,20 +1123,20 @@ def _eliminate_direction(actions: np.ndarray, direction: int) -> np.ndarray:
         dir2 = 4
     pro_dir1 = dir1 + 8
     pro_dir2 = dir2 + 8
-    new_array[dir1 * 81 : (dir1 + 1) * 81] = 0
-    new_array[dir2 * 81 : (dir2 + 1) * 81] = 0
-    new_array[pro_dir1 * 81 : (pro_dir1 + 1) * 81] = 0
-    new_array[pro_dir2 * 81 : (pro_dir2 + 1) * 81] = 0
+    new_array = new_array.at[dir1 * 81 : (dir1 + 1) * 81].set(0)
+    new_array = new_array.at[dir2 * 81 : (dir2 + 1) * 81].set(0)
+    new_array = new_array.at[pro_dir1 * 81 : (pro_dir1 + 1) * 81].set(0)
+    new_array = new_array.at[pro_dir2 * 81 : (pro_dir2 + 1) * 81].set(0)
     return new_array
 
 
 # 利きの判定
 # 玉の位置を透過する（玉をいないものとして扱う）ことで香車や角などの利きを玉の奥まで通す
 def _kingless_effected_positions(
-    bs: np.ndarray, king_point: int, turn: int
-) -> np.ndarray:
-    all_effect = np.zeros(81, dtype=np.int32)
-    bs[king_point] = 0
+    bs: jnp.ndarray, king_point: int, turn: int
+) -> jnp.ndarray:
+    all_effect = jnp.zeros(81, dtype=jnp.int32)
+    bs = bs.at[king_point].set(0)
     for i in range(81):
         if _owner(bs[i]) == turn:
             all_effect += _piece_moves(bs, bs[i], i)
@@ -1150,19 +1163,19 @@ def _king_escape(state: ShogiState) -> bool:
 
 
 # point同士の間の位置にフラグを立てる
-def _between(point1: int, point2: int) -> np.ndarray:
+def _between(point1: int, point2: int) -> jnp.ndarray:
     direction = _point_to_direction(point1, point2, False, 0)
     if direction == -1:
-        bet = np.zeros(81, dtype=np.int32)
+        bet = jnp.zeros(81, dtype=jnp.int32)
     else:
         bet = _change_between(point1, point2, _direction_to_dif(direction, 0))
-    bet[point2] = 0
+    bet = bet.at[point2].set(0)
     return bet
 
 
 # pinされている駒の非合法手を弾いてlegal_actionを返す
 def _eliminate_pin_actions(
-    bs: np.ndarray, pins: np.ndarray, l_actions: np.ndarray
+    bs: jnp.ndarray, pins: jnp.ndarray, l_actions: jnp.ndarray
 ):
     for i in range(81):
         if pins[i] != 0:
@@ -1178,10 +1191,10 @@ def _eliminate_pin_actions(
 # 両王手は考えない(事前にはじく)
 def _is_avoid_check(
     cn: int,
-    cnp: np.ndarray,
-    cfp: np.ndarray,
+    cnp: jnp.ndarray,
+    cfp: jnp.ndarray,
     king_point: int,
-    legal_actions: np.ndarray,
+    legal_actions: jnp.ndarray,
 ):
     # 密接の王手
     if cn == 1:
@@ -1195,7 +1208,9 @@ def _is_avoid_check(
         points = _between(king_point, point)
     for i in range(81):
         if points[i] == 0 and point != i:
-            np.put(legal_actions, np.arange(i, 81 * 34 + i, 81), 0)
+            legal_actions = legal_actions.at[
+                jnp.arange(i, 81 * 34 + i, 81)
+            ].set(0)
     return (legal_actions == 0).all()
 
 
@@ -1212,7 +1227,7 @@ def _is_mate(state: ShogiState) -> bool:
 
 # 王手の有無にかかわらず詰みを判定する
 def _is_mate_noncheck(
-    cn: int, cnp: np.ndarray, cf: int, cfp: np.ndarray, state: ShogiState
+    cn: int, cnp: jnp.ndarray, cf: int, cfp: jnp.ndarray, state: ShogiState
 ):
     legal_actions = _legal_actions(state)
     bs = _board_status(state)
