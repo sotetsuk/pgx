@@ -361,9 +361,8 @@ def _dis_direction_array(from_: int, turn: int, direction: int) -> jnp.ndarray:
 # fromの座標とtoの座標からdirを生成
 @jax.jit
 def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
-    dis = to - _from
     # 後手番の動きは反転させる
-    dis *= jnp.int32([1, -1])[turn]
+    dis = (to - _from) * jnp.int32([1, -1])[turn]
     # UP, UP_LEFT, UP_RIGHT, LEFT, RIGHT, DOWN, DOWN_LEFT, DOWN_RIGHT, UP2_LEFT, UP2_RIGHT, UP_PROMOTE...
     # の順でdirを割り振る
     # PROMOTEの場合は+10する処理を入れる
