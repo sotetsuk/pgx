@@ -391,13 +391,15 @@ def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
 
 
 # 打った駒の種類をdirに変換
+@jax.jit
 def _hand_to_direction(piece: int) -> int:
     # 移動のdirはPROMOTE_UP_RIGHT2の19が最大なので20以降に配置
     # 20: 先手歩 21: 先手香車... 33: 後手金　に対応させる
-    if piece <= 14:
-        return 19 + piece
-    else:
-        return 12 + piece
+    return jax.lax.cond(
+        piece <= 14,
+        lambda: 19 + piece,
+        lambda: 12 + piece
+    )
 
 
 # ShogiActionをdlshogiのint型actionに変換
@@ -792,11 +794,13 @@ def _init_legal_actions(state: ShogiState) -> ShogiState:
 
 
 # 成駒を成る前の駒に変更
+@jax.jit
 def _degeneration_piece(piece: int) -> int:
-    if piece % 14 >= 9 or piece == 14 or piece == 28:
-        return piece - 8
-    else:
-        return piece
+    return jax.lax.cond(
+        (piece % 14 >= 9) | (piece == 14) | (piece == 28),
+        lambda: piece - 8,
+        lambda: piece
+    )
 
 
 # 駒の移動によるlegal_actionsの更新
@@ -1003,7 +1007,7 @@ def _direction_to_pin(direction: int):
     assert direction < 8
     return jnp.int32([
        1, 2, 3, 4, 4, 1, 3, 2
-    ])
+    ])[direction]
 
 
 # それぞれの方向について、1番fromに近い駒の位置を返す
