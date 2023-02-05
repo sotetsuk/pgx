@@ -1,6 +1,7 @@
 import copy
 from typing import Tuple
 
+import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
@@ -220,6 +221,7 @@ def _king_move() -> jnp.ndarray:
 
 
 # 端判定
+@jax.jit
 def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
     is_up = point % 9 == 0
     is_down = point % 9 == 8
@@ -229,6 +231,7 @@ def _is_side(point: int) -> Tuple[bool, bool, bool, bool]:
 
 
 # 桂馬用
+@jax.jit
 def _is_second_line(point: int) -> Tuple[bool, bool]:
     u = point % 9 <= 1
     d = point % 9 >= 7
@@ -236,6 +239,7 @@ def _is_second_line(point: int) -> Tuple[bool, bool]:
 
 
 # point(0~80)を座標((0, 0)~(8, 8))に変換
+@jax.jit
 def _point_to_location(point: int) -> Tuple[int, int]:
     return point // 9, point % 9
 
@@ -293,26 +297,31 @@ for i in range(81):
 
 
 # dlshogiのactionはdirection(動きの方向)とto（駒の処理後の座標）に依存
+@jax.jit
 def _dlshogi_action(direction: int, to: int) -> int:
     return direction * 81 + to
 
 
 # from, toが同じ縦列にあるかどうか
+@jax.jit
 def _is_same_column(_from: int, to: int) -> bool:
     return _from // 9 == to // 9
 
 
 # from, toが同じ横列にあるかどうか
+@jax.jit
 def _is_same_row(_from: int, to: int) -> bool:
     return _from % 9 == to % 9
 
 
 # from, toが右肩上がりの斜め方向で同じ筋にあるか
+@jax.jit
 def _is_same_rising(_from: int, to: int) -> bool:
     return _from // 9 - _from % 9 == to // 9 - to % 9
 
 
 # from, toが右肩下がりの斜め方向で同じ筋にあるか
+@jax.jit
 def _is_same_declining(_from: int, to: int) -> bool:
     return _from // 9 + _from % 9 == to // 9 + to % 9
 
@@ -404,6 +413,7 @@ def _action_to_dlaction(action: ShogiAction, turn: int) -> int:
 
 
 # dlshogiのint型actionをdirectionとtoに分解
+@jax.jit
 def _separate_dlaction(action: int) -> Tuple[int, int]:
     # direction, to の順番
     return action // 81, action % 81
@@ -462,8 +472,9 @@ def _direction_to_hand(direction: int) -> int:
         return direction - 12
 
 
-def _piece_type(state: ShogiState, point: int) -> int:
-    return int(state.board[:, point].argmax())
+@jax.jit
+def _piece_type(state: ShogiState, point: int):
+    return state.board[:, point].argmax()
 
 
 # dlshogiのactionの情報をShogiActionの情報に変換
@@ -494,13 +505,15 @@ def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
 
 
 # 手番側でない色を返す
+@jax.jit
 def _another_color(state: ShogiState) -> int:
     return (state.turn + 1) % 2
 
 
 # pointが盤面内かどうか
+@jax.jit
 def _is_in_board(point: int) -> bool:
-    return 0 <= point <= 80
+    return (0 <= point) & (point <= 80)
 
 
 # 相手の駒を同じ種類の自分の駒に変換する
@@ -528,15 +541,14 @@ def _piece_to_hand(piece: int) -> int:
 
 
 # ある駒の持ち主を返す
+@jax.jit
 def _owner(piece):
-    if piece == 0:
-        return 2
-    else:
-        return (piece - 1) // 14
+    return jax.lax.cond(piece == 0, lambda: 2, lambda: (piece - 1) // 14)
 
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
+@jax.jit
 def _board_status(state: ShogiState) -> jnp.ndarray:
     return state.board.argmax(axis=0)
 
