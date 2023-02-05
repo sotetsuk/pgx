@@ -681,7 +681,7 @@ def _is_enemy_zone(turn: int, point: int):
 @jax.jit
 def _can_promote(piece: int, _from: int, to: int) -> bool:
     # pieceが飛車以下でないと成れない
-    can_promote = (piece % 14 <= 6) & (piece % 14 != 0)
+    can_promote = (piece % 14 > 6) | (piece % 14 == 0)
     # _fromとtoのどちらかが敵陣であれば成れる
     can_promote &= _is_enemy_zone(_owner(piece), _from)
     can_promote &= _is_enemy_zone(_owner(piece), to)
