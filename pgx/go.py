@@ -159,7 +159,7 @@ def step(
     # add legal actions
     _state = _state.replace(  # type:ignore
         legal_action_mask=state.legal_action_mask.at[:-1].set(
-            _legal_actions(_state, size)
+            _legal_actions(_state)
         )
     )
 
@@ -215,7 +215,7 @@ def _not_pass_move(
     kou_occurred = _kou_occurred(state, xy)
     state = _set_stone(state, xy)
 
-    # 周囲の連を調べる
+    # 周囲の連を調べ、libertyを更新
     state = jax.lax.fori_loop(
         0, 4, lambda i, s: _check_around_xy(i, s, xy), state
     )
@@ -223,19 +223,18 @@ def _not_pass_move(
     # legal_actionを更新
     state = _update_legal_action(state, xy)
 
-    # 自殺手
+    # 自殺手の判定
     put_ren_id = state.ren_id_board[my_color, xy]
     is_illegal = (
         jnp.count_nonzero(state.liberty[my_color, put_ren_id] == 1) == 0
     ) | is_illegal
 
     # コウの確認
-    kou = jax.lax.cond(
+    state = jax.lax.cond(
         kou_occurred & (state.agehama[my_color] - agehama_before == 1),
-        lambda: state.kou,
-        lambda: jnp.int32(-1),
+        lambda: state,
+        lambda: state.replace(kou=-1),  # type:ignore
     )
-    state = state.replace(kou=kou)  # type:ignore
 
     return jax.lax.cond(
         is_illegal,
@@ -601,6 +600,8 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         ),
         _state,
     )
+
+    # 取り除かれた位置はコウの候補となる
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
             oppo_ren_id_board
@@ -614,7 +615,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     )
 
 
-def _legal_actions(_state: GoState, size) -> jnp.ndarray:
+def _legal_actions(_state: GoState) -> jnp.ndarray:
     # illegal_action = jax.lax.map(
     #    lambda xy: _update_state_wo_legal_action(state, xy, size)[
     #        0
