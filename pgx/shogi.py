@@ -445,13 +445,13 @@ def _direction_to_from(
     return _from, direction >= 10
 
 
+@jax.jit
 def _direction_to_hand(direction: int) -> int:
-    if direction <= 26:
-        # direction:20が先手の歩（pieceの1）に対応
-        return direction - 19
-    else:
-        # direction:27が後手の歩（pieceの15）に対応
-        return direction - 12
+    return jax.lax.cond(
+        direction <= 26,
+        lambda: direction - 19,  # direction:20が先手の歩（pieceの1）に対応
+        lambda: direction - 12,  # direction:27が後手の歩（pieceの15）に対応
+    )
 
 
 @jax.jit
