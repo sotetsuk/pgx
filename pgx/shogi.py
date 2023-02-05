@@ -395,11 +395,7 @@ def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
 def _hand_to_direction(piece: int) -> int:
     # 移動のdirはPROMOTE_UP_RIGHT2の19が最大なので20以降に配置
     # 20: 先手歩 21: 先手香車... 33: 後手金　に対応させる
-    return jax.lax.cond(
-        piece <= 14,
-        lambda: 19 + piece,
-        lambda: 12 + piece
-    )
+    return jax.lax.cond(piece <= 14, lambda: 19 + piece, lambda: 12 + piece)
 
 
 # ShogiActionをdlshogiのint型actionに変換
@@ -681,12 +677,13 @@ def _is_enemy_zone(turn: int, point: int):
 
 
 # 成れるかどうか
-def _can_promote(piece: int, _from: int, to: int) -> bool:
-    if piece % 14 > 6 or piece % 14 == 0:
-        return False
-    else:
-        return _is_enemy_zone(_owner(piece), _from) or _is_enemy_zone(
-            _owner(piece), to)
+@jax.jit
+def _can_promote(piece: int, _from: int, to: int):
+    can_promote = (piece % 14 <= 6) & (piece % 14 != 0)
+    can_promote &= _is_enemy_zone(_owner(piece), _from) | _is_enemy_zone(
+        _owner(piece), to
+    )
+    return can_promote
 
 
 def _create_one_piece_actions(
@@ -799,7 +796,7 @@ def _degeneration_piece(piece: int) -> int:
     return jax.lax.cond(
         (piece % 14 >= 9) | (piece == 14) | (piece == 28),
         lambda: piece - 8,
-        lambda: piece
+        lambda: piece,
     )
 
 
@@ -1005,9 +1002,7 @@ def _is_stuck(state: ShogiState):
 @jax.jit
 def _direction_to_pin(direction: int):
     # assert direction < 8
-    return jnp.int32([
-       1, 2, 3, 4, 4, 1, 3, 2
-    ])[direction]
+    return jnp.int32([1, 2, 3, 4, 4, 1, 3, 2])[direction]
 
 
 # それぞれの方向について、1番fromに近い駒の位置を返す
