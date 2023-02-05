@@ -369,56 +369,40 @@ def _point_to_direction(_from: int, to: int, promote: bool, turn: int) -> int:
     # PROMOTEの場合は+10する処理を入れる
     direction = -1
     direction = jax.lax.cond(
-        _is_same_column(_from, to) & (dis < 0),
-        lambda: 0,
-        lambda: direction
+        _is_same_column(_from, to) & (dis < 0), lambda: 0, lambda: direction
     )
     direction = jax.lax.cond(
-        _is_same_declining(_from, to) & (dis > 0),
-        lambda: 1,
-        lambda: direction
+        _is_same_declining(_from, to) & (dis > 0), lambda: 1, lambda: direction
     )
     direction = jax.lax.cond(
-        _is_same_rising(_from, to) & (dis < 0),
-        lambda: 2,
-        lambda: direction
+        _is_same_rising(_from, to) & (dis < 0), lambda: 2, lambda: direction
     )
     direction = jax.lax.cond(
-        _is_same_row(_from, to) & (dis > 0),
-        lambda: 3,
-        lambda: direction
+        _is_same_row(_from, to) & (dis > 0), lambda: 3, lambda: direction
     )
     direction = jax.lax.cond(
-        _is_same_row(_from, to) & (dis < 0),
-        lambda: 4,
-        lambda: direction
+        _is_same_row(_from, to) & (dis < 0), lambda: 4, lambda: direction
     )
     direction = jax.lax.cond(
-        _is_same_column(_from, to) & (dis > 0),
-        lambda: 5,
-        lambda: direction
+        _is_same_column(_from, to) & (dis > 0), lambda: 5, lambda: direction
     )
     direction = jax.lax.cond(
-        _is_same_rising(_from, to) & (dis > 0),
-        lambda: 6,
-        lambda: direction
+        _is_same_rising(_from, to) & (dis > 0), lambda: 6, lambda: direction
     )
     direction = jax.lax.cond(
-        _is_same_declining(_from, to) & (dis < 0),
-        lambda: 7,
-        lambda: direction
+        _is_same_declining(_from, to) & (dis < 0), lambda: 7, lambda: direction
     )
     direction = jax.lax.cond(
-        (dis == 7) & ~_is_same_column(_from, to),
-        lambda: 8,
-        lambda: direction
+        (dis == 7) & ~_is_same_column(_from, to), lambda: 8, lambda: direction
     )
     direction = jax.lax.cond(
         (dis == -11) & ~_is_same_column(_from, to),
         lambda: 9,
-        lambda: direction
+        lambda: direction,
     )
-    direction = jax.lax.cond(promote, lambda: direction + 10, lambda: direction)
+    direction = jax.lax.cond(
+        promote, lambda: direction + 10, lambda: direction
+    )
     return direction
 
 
@@ -473,7 +457,7 @@ def _direction_to_from(
         _from = jax.lax.cond(
             _is_in_board(f) & (_from == -1) & (_piece_type(state, f) != 0),
             lambda: f,
-            lambda: _from
+            lambda: _from,
         )
     return _from, direction >= 10
 
@@ -517,8 +501,8 @@ def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
     direction, to = _separate_dlaction(action)
     return jax.lax.cond(
         direction <= 19,
-        lambda:_dlshogi_move_action(direction, to, state),
-        lambda:_dlshogi_drop_action(direction, to, state)
+        lambda: _dlshogi_move_action(direction, to, state),
+        lambda: _dlshogi_drop_action(direction, to, state),
     )
 
 
@@ -589,12 +573,14 @@ def _move(
     board = jax.lax.cond(
         action.is_promote,
         lambda: board.at[action.piece + 8, action.to].set(1),
-        lambda: board.at[action.piece, action.to].set(1)
+        lambda: board.at[action.piece, action.to].set(1),
     )
     hand = jax.lax.cond(
         action.captured != 0,
-        lambda: hand.at[_piece_to_hand(_convert_piece(action.captured))].add(1),
-        lambda: hand
+        lambda: hand.at[_piece_to_hand(_convert_piece(action.captured))].add(
+            1
+        ),
+        lambda: hand,
     )
     return state.replace(board=board, hand=hand)  # type: ignore
 
