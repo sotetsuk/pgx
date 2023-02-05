@@ -998,16 +998,12 @@ def _is_stuck(state: ShogiState):
 
 
 # pinされている方向から縦、横、右斜めうえ、右斜め下の四方向に分類
-def _direction_to_pin(direction: int) -> int:
-    if direction == 0 or direction == 5:
-        return 1
-    if direction == 1 or direction == 7:
-        return 2
-    if direction == 2 or direction == 6:
-        return 3
-    if direction == 3 or direction == 4:
-        return 4
-    return 0
+@jax.jit
+def _direction_to_pin(direction: int):
+    assert direction < 8
+    return jnp.int32([
+       1, 2, 3, 4, 4, 1, 3, 2
+    ])
 
 
 # それぞれの方向について、1番fromに近い駒の位置を返す
