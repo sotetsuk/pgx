@@ -247,24 +247,18 @@ def _point_to_location(point: int) -> Tuple[int, int]:
 
 
 # 端にいる駒の動けない地点へのフラグを折る
+@jax.jit
 def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = array
     u, d, l, r = _is_side(point)
     u2, d2 = _is_second_line(point)
     # (4, 4)での動きを基準にはみ出すところをカットする
-    if u:
-        new_array = new_array.at[:, 3].set(0)
-    if d:
-        new_array = new_array.at[:, 5].set(0)
-    if r:
-        new_array = new_array.at[3, :].set(0)
-    if l:
-        new_array = new_array.at[5, :].set(0)
-    if u2:
-        new_array = new_array.at[:, 2].set(0)
-    if d2:
-        new_array = new_array.at[:, 6].set(0)
-    return new_array
+    array = jax.lax.cond(u, array.at[:, 3].set(0), array)
+    array = jax.lax.cond(d, array.at[:, 5].set(0), array)
+    array = jax.lax.cond(r, array.at[3, :].set(0), array)
+    array = jax.lax.cond(l, array.at[5, :].set(0), array)
+    array = jax.lax.cond(u2, array.at[:, 2].set(0), array)
+    array = jax.lax.cond(d2, array.at[:, 6].set(0), array)
+    return array
 
 
 # 駒種と位置から到達できる地点をすべて生成
@@ -329,18 +323,23 @@ def _is_same_declining(_from: int, to: int) -> bool:
 
 
 # from, からdirectionの方向に行ったときにtoに到達できるか
-def _is_same_line(from_: int, to: int, direction: int) -> bool:
+@jax.jit
+def _is_same_line(from_: int, to: int, direction: int):
     dir = direction % 10
-    if dir == 0 or dir == 5:
-        return _is_same_column(from_, to)
-    elif dir == 3 or dir == 4:
-        return _is_same_row(from_, to)
-    elif dir == 2 or dir == 6:
-        return _is_same_rising(from_, to)
-    elif dir == 1 or dir == 7:
-        return _is_same_declining(from_, to)
-    else:
-        return False
+    return jnp.bool_(
+        [
+            _is_same_column(from_, to),  # 0
+            _is_same_declining(from_, to),  # 1
+            _is_same_rising(from_, to),  # 2
+            _is_same_row(from_, to),  # 3
+            _is_same_row(from_, to),  # 4
+            _is_same_column(from_, to),  # 5
+            _is_same_rising(from_, to),  # 6
+            _is_same_declining(from_, to),  # 7
+            False,  # 8
+            False,
+        ]
+    )[dir]
 
 
 # fromからある方向に移動させたときの位置と距離の関係
