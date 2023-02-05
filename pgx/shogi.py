@@ -424,9 +424,7 @@ def _separate_dlaction(action: int) -> Tuple[int, int]:
 @jax.jit
 def _direction_to_dif(direction: int, turn: int):
     direction = direction % 10
-    dif = jnp.int32([
-       -1, 8, -10, 9, -9, 1, 10, -8, 7, -11
-    ])[direction]
+    dif = jnp.int32([-1, 8, -10, 9, -9, 1, 10, -8, 7, -11])[direction]
     return dif * jnp.int32([1, -1])[turn]
 
 
@@ -505,11 +503,7 @@ def _convert_piece(piece: int) -> int:
     return jax.lax.cond(
         piece == 0,
         lambda: 0,
-        lambda: jax.lax.cond(
-            p == 0,
-            lambda: 28,
-            lambda: p
-        )
+        lambda: jax.lax.cond(p == 0, lambda: 28, lambda: p),
     )
 
 
@@ -518,15 +512,9 @@ def _convert_piece(piece: int) -> int:
 @jax.jit
 def _piece_to_hand(piece: int):
     p = jax.lax.cond(
-        piece % 14 == 0 or piece % 14 >= 9,
-        lambda: piece - 8,
-        lambda: piece
+        (piece % 14 == 0) | (piece % 14 >= 9), lambda: piece - 8, lambda: piece
     )
-    return jax.lax.cond(
-        p < 15,
-        lambda: p - 1,
-        lambda: p - 8
-    )
+    return jax.lax.cond(p < 15, lambda: p - 1, lambda: p - 8)
 
 
 # ある駒の持ち主を返す
