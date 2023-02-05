@@ -428,6 +428,7 @@ def _direction_to_dif(direction: int, turn: int):
 
 # directionとto,stateから大駒含めた移動のfromの位置を割り出す
 # 成りの移動かどうかも返す
+@jax.jit
 def _direction_to_from(
     direction: int, to: int, state: ShogiState
 ) -> Tuple[int, bool]:
@@ -436,8 +437,11 @@ def _direction_to_from(
     _from = -1
     for i in range(8):
         f -= dif
-        if _is_in_board(f) and _from == -1 and _piece_type(state, f) != 0:
-            _from = f
+        _from = jax.lax.cond(
+            _is_in_board(f) & (_from == -1) & (_piece_type(state, f) != 0),
+            lambda: f,
+            lambda: _from
+        )
     return _from, direction >= 10
 
 
@@ -456,6 +460,7 @@ def _piece_type(state: ShogiState, point: int):
 
 
 # dlshogiのactionの情報をShogiActionの情報に変換
+@jax.jit
 def _dlshogi_move_action(
     direction: int, to: int, state: ShogiState
 ) -> ShogiAction:
@@ -465,6 +470,7 @@ def _dlshogi_move_action(
     return ShogiAction(False, piece, to, _from, captured, is_promote)  # type: ignore
 
 
+@jax.jit
 def _dlshogi_drop_action(
     direction: int, to: int, state: ShogiState
 ) -> ShogiAction:
@@ -472,14 +478,14 @@ def _dlshogi_drop_action(
     return ShogiAction(True, piece, to)  # type: ignore
 
 
+@jax.jit
 def _dlaction_to_action(action: int, state: ShogiState) -> ShogiAction:
     direction, to = _separate_dlaction(action)
-    if direction <= 19:
-        # 移動のaction
-        return _dlshogi_move_action(direction, to, state)
-    else:
-        # 駒打ち
-        return _dlshogi_drop_action(direction, to, state)
+    return jax.lax.cond(
+        direction <= 19,
+        lambda:_dlshogi_move_action(direction, to, state),
+        lambda:_dlshogi_drop_action(direction, to, state)
+    )
 
 
 # 手番側でない色を返す
@@ -535,6 +541,7 @@ def _pieces_owner(state: ShogiState) -> jnp.ndarray:
     return jax.vmap(_owner)(pieces)
 
 
+@jax.jit
 # 駒の移動の盤面変換
 def _move(
     state: ShogiState,
@@ -545,12 +552,16 @@ def _move(
     board = board.at[action.piece, action.from_].set(0)
     board = board.at[0, action.from_].set(1)
     board = board.at[action.captured, action.to].set(0)
-    if action.is_promote:
-        board = board.at[action.piece + 8, action.to].set(1)
-    else:
-        board = board.at[action.piece, action.to].set(1)
-    if action.captured != 0:
-        hand = hand.at[_piece_to_hand(_convert_piece(action.captured))].add(1)
+    board = jax.lax.cond(
+        action.is_promote,
+        lambda: board.at[action.piece + 8, action.to].set(1),
+        lambda: board.at[action.piece, action.to].set(1)
+    )
+    hand = jax.lax.cond(
+        action.captured != 0,
+        lambda: hand.at[_piece_to_hand(_convert_piece(action.captured))].add(1),
+        lambda: hand
+    )
     return state.replace(board=board, hand=hand)  # type: ignore
 
 
