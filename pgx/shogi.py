@@ -205,7 +205,7 @@ def _gold_move(turn: int) -> jnp.ndarray:
     array = jax.lax.cond(
         turn == 0,
         lambda: array.at[3, 3].set(1).at[5, 3].set(1),
-        lambda: array.at[3, 5].set(1).at[5, 5].set(1)
+        lambda: array.at[3, 5].set(1).at[5, 5].set(1),
     )
     array = array.at[4, 3].set(1)
     array = array.at[3, 4].set(1)
