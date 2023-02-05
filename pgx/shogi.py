@@ -101,11 +101,9 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
 
 
 # turnから報酬計算
-def _turn_to_reward(turn: int) -> int:
-    if turn == 0:
-        return 1
-    else:
-        return -1
+@jax.jit
+def _turn_to_reward(turn: int):
+    return jnp.int32([1, -1])[turn]
 
 
 # 初期盤面生成
@@ -176,12 +174,14 @@ def _make_board(bs: jnp.ndarray) -> ShogiState:
     return ShogiState(board=board)  # type: ignore
 
 
+@jax.jit
 def _pawn_move(turn: int) -> jnp.ndarray:
     array = jnp.zeros((9, 9), dtype=jnp.int32)
     array = array.at[4, 4 - _turn_to_reward(turn)].set(1)
     return array
 
 
+@jax.jit
 def _knight_move(turn: int) -> jnp.ndarray:
     array = jnp.zeros((9, 9), dtype=jnp.int32)
     array = array.at[3, 4 - 2 * _turn_to_reward(turn)].set(1)
@@ -189,6 +189,7 @@ def _knight_move(turn: int) -> jnp.ndarray:
     return array
 
 
+@jax.jit
 def _silver_move(turn: int) -> jnp.ndarray:
     array = _pawn_move(turn)
     array = array.at[3, 3].set(1)
@@ -198,14 +199,14 @@ def _silver_move(turn: int) -> jnp.ndarray:
     return array
 
 
+@jax.jit
 def _gold_move(turn: int) -> jnp.ndarray:
     array = jnp.zeros((9, 9), dtype=jnp.int32)
-    if turn == 0:
-        array = array.at[3, 3].set(1)
-        array = array.at[5, 3].set(1)
-    else:
-        array = array.at[3, 5].set(1)
-        array = array.at[5, 5].set(1)
+    array = jax.lax.cond(
+        turn == 0,
+        lambda: array.at[3, 3].set(1).at[5, 3].set(1),
+        lambda: array.at[3, 5].set(1).at[5, 5].set(1)
+    )
     array = array.at[4, 3].set(1)
     array = array.at[3, 4].set(1)
     array = array.at[4, 5].set(1)
@@ -213,6 +214,7 @@ def _gold_move(turn: int) -> jnp.ndarray:
     return array
 
 
+@jax.jit
 def _king_move() -> jnp.ndarray:
     array = jnp.zeros((9, 9), dtype=jnp.int32)
     array = array.at[3:6, 3:6].set(1)
