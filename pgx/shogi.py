@@ -678,28 +678,26 @@ def _piece_moves(bs: jnp.ndarray, piece, point) -> jnp.ndarray:
 
 
 # 小駒のactionのみを返すpiece_moves
+@jax.jit
 def _small_piece_moves(piece: int, point: int) -> jnp.ndarray:
     return POINT_MOVES[point][piece]
 
 
 # 敵陣かどうか
-def _is_enemy_zone(turn: int, point: int) -> bool:
-    if turn == 0:
-        return point % 9 <= 2
-    else:
-        return point % 9 >= 6
+@jax.jit
+def _is_enemy_zone(turn: int, point: int):
+    return jnp.int32([point % 9 <= 2, point % 9 >= 6])[turn]
 
 
 # 成れるかどうか
+@jax.jit
 def _can_promote(piece: int, _from: int, to: int) -> bool:
     # pieceが飛車以下でないと成れない
-    if piece % 14 > 6 or piece % 14 == 0:
-        return False
+    can_promote = (piece % 14 <= 6) & (piece % 14 != 0)
     # _fromとtoのどちらかが敵陣であれば成れる
-    else:
-        return _is_enemy_zone(_owner(piece), _from) or _is_enemy_zone(
-            _owner(piece), to
-        )
+    can_promote &= _is_enemy_zone(_owner(piece), _from)
+    can_promote &= _is_enemy_zone(_owner(piece), to)
+    return can_promote
 
 
 def _create_one_piece_actions(
