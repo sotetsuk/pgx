@@ -1004,7 +1004,7 @@ def _is_stuck(state: ShogiState):
 # pinされている方向から縦、横、右斜めうえ、右斜め下の四方向に分類
 @jax.jit
 def _direction_to_pin(direction: int):
-    assert direction < 8
+    # assert direction < 8
     return jnp.int32([
        1, 2, 3, 4, 4, 1, 3, 2
     ])[direction]
