@@ -14,6 +14,8 @@ POINT_CHAR = "+"
 
 dx = jnp.int32([-1, 0, +1, 0])
 dy = jnp.int32([0, 1, 0, -1])
+_dx = jnp.int32([-1, -2, -1, 0, +1, +2, +1, 0, -1])
+_dy = jnp.int32([-1, 0, +1, +2, +1, 0, -1, -2, -1])
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -34,9 +36,9 @@ class GoState:
 
     # 設置可能なマスをTrueとしたマスク
     legal_action_mask: jnp.ndarray = jnp.ones(19 * 19 + 1, dtype=jnp.bool_)
-    # [0]:連周りで置けない場所、[1]:連以外で置けない場所
+    # [0]:連周りで置けない場所、[1]:連以外で置けない場所、[2]:相手の石を取れる場所
     _legal_action_mask: jnp.ndarray = jnp.ones(
-        (2, 19 * 19, 2), dtype=jnp.bool_
+        (2, 19 * 19, 3), dtype=jnp.bool_
     )
 
     # 直近8回のログ
@@ -64,6 +66,8 @@ class GoState:
 
     # 終局判定
     terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
+
+    data: jnp.ndarray = jnp.int32(-1)  # type:ignore
 
 
 def observe(state: GoState, player_id, observe_all=False):
@@ -137,6 +141,7 @@ def init(
     rng: jax.random.KeyArray, size: int = 19
 ) -> Tuple[jnp.ndarray, GoState]:
     curr_player = jnp.int32(jax.random.bernoulli(rng))
+    _legal_action_mask = jnp.ones((2, size * size, 3), dtype=jnp.bool_)
     return curr_player, GoState(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.full(
@@ -144,9 +149,12 @@ def init(
         ),  # type:ignore
         liberty=jnp.zeros((2, size * size, size * size), dtype=jnp.int32),
         legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
-        _legal_action_mask=jnp.ones((2, size * size, 2), dtype=jnp.bool_),
+        _legal_action_mask=_legal_action_mask.at[:, :, 2].set(
+            jnp.zeros(size * size, dtype=jnp.bool_)
+        ),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
+        data=-1,  # type:ignore
     )
 
 
@@ -282,12 +290,10 @@ def _is_illegal_move(_state: GoState, _xy):
     """
     my_color = _my_color(_state)
     oppo_color = _opponent_color(_state)
-    return jnp.logical_or(
-        jnp.logical_or(
-            _state.ren_id_board[my_color, _xy] != -1,
-            _state.ren_id_board[oppo_color, _xy] != -1,
-        ),
-        _xy == _state.kou,
+    return (
+        (_state.ren_id_board[my_color, _xy] != -1)
+        | (_state.ren_id_board[oppo_color, _xy] != -1)
+        | (_xy == _state.kou)
     )
 
 
@@ -308,23 +314,27 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     my_color = _my_color(_state)
     oppo_color = _opponent_color(_state)
     size = _state.size
+    state = _state.replace(  # type:ignore
+        _legal_action_mask=_state._legal_action_mask.at[:, _xy, :].set(FALSE)
+    )
 
     # cf. #255
     # (A) 石を置くことで味方の自殺点が生じる場合
-    put_ren_id = _state.ren_id_board[my_color, _xy]
+    put_ren_id = state.ren_id_board[my_color, _xy]
     state = jax.lax.cond(
-        _is_one_liberty_ren(_state, my_color, put_ren_id),
-        lambda: _check_if_suicide_point_exist(_state, my_color, put_ren_id),
-        lambda: _state,
+        _is_one_liberty_ren(state, my_color, put_ren_id),
+        lambda: _check_if_suicide_point_exist(state, my_color, put_ren_id),
+        lambda: state,
     )
 
     # (B) 石を置くことで相手の自殺点が生じる場合
     # 1. 隣接する、既に存在する相手の連が呼吸点1つになる場合
+    max_ren_num = size * size
     adj_stone = state.liberty[my_color, put_ren_id] == 2
     adj_ren_id = jnp.where(~adj_stone, -1, state.ren_id_board[oppo_color])
     state = jax.lax.fori_loop(
         0,
-        size * size,
+        max_ren_num,
         lambda i, state: _check_if_suicide_point_exist(
             state, oppo_color, adj_ren_id[i]
         ),
@@ -332,56 +342,12 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     )
 
     # 2. 空点の四方を囲む形になる場合
-    # 四方全てが「盤外、呼吸点2つ以上の味方の連、呼吸点1つの相手の連」のいずれかなら自殺点
     x = _xy // size
     y = _xy % size
-    _dx = jnp.int32([-1, -2, -1, 0, +1, +2, +1, 0, -1])
-    _dy = jnp.int32([-1, 0, +1, +2, +1, 0, -1, -2, -1])
-
-    # ++7++
-    # +6+0+
-    # 5+X+1
-    # +4+2+
-    # ++3++
     state = jax.lax.fori_loop(
         0,
         4,
-        lambda i, state: jax.lax.cond(
-            ~_is_off_board(x + dx[i], y + dy[i], size)
-            & (
-                _is_off_board(x + _dx[2 * i], y + _dy[2 * i], size)
-                | is_two_liberty_xy(
-                    state, x + _dx[2 * i], y + _dy[2 * i], my_color
-                )
-                | is_one_liberty_xy(
-                    state, x + _dx[2 * i], y + _dy[2 * i], oppo_color
-                )
-            )
-            & (
-                _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], size)
-                | is_two_liberty_xy(
-                    state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], my_color
-                )
-                | is_one_liberty_xy(
-                    state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], oppo_color
-                )
-            )
-            & (
-                _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], size)
-                | is_two_liberty_xy(
-                    state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], my_color
-                )
-                | is_one_liberty_xy(
-                    state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], oppo_color
-                )
-            ),
-            lambda: state.replace(
-                _legal_action_mask=state._legal_action_mask.at[
-                    oppo_color, (x + dx[i]) * size + (y + dy[i]), 1
-                ].set(FALSE)
-            ),
-            lambda: state,
-        ),
+        lambda i, s: _check_atari(i, s, x, y, my_color),
         state,
     )
     # TODO
@@ -391,25 +357,75 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     return state
 
 
+def _check_atari(i, state, x, y, my_color):
+    oppo_color = (my_color + 1) % 2
+
+    return jax.lax.cond(
+        ~_is_off_board(x + dx[i], y + dy[i], state.size)
+        & _is_point(state, x + dx[i], y + dy[i])
+        & (
+            _is_off_board(x + _dx[2 * i], y + _dy[2 * i], state.size)
+            | _is_two_liberty_xy(
+                state, x + _dx[2 * i], y + _dy[2 * i], my_color
+            )
+            | _is_one_liberty_xy(
+                state, x + _dx[2 * i], y + _dy[2 * i], oppo_color
+            )
+        )
+        & (
+            _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], state.size)
+            | _is_two_liberty_xy(
+                state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], my_color
+            )
+            | _is_one_liberty_xy(
+                state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], oppo_color
+            )
+        )
+        & (
+            _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], state.size)
+            | _is_two_liberty_xy(
+                state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], my_color
+            )
+            | _is_one_liberty_xy(
+                state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], oppo_color
+            )
+        ),
+        lambda: state.replace(
+            _legal_action_mask=state._legal_action_mask.at[
+                oppo_color, (x + dx[i]) * state.size + (y + dy[i]), 1
+            ].set(FALSE)
+        ),
+        lambda: state,
+    )
+
+
 def _is_one_liberty_ren(_state, _color, _ren_id):
-    return jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) == 1
+    return jax.lax.cond(
+        _ren_id >= 0,
+        lambda: jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) == 1,
+        lambda: FALSE,
+    )
 
 
 def _is_two_liberty_ren(_state, _color, _ren_id):
-    return jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) > 1
+    return jax.lax.cond(
+        _ren_id >= 0,
+        lambda: jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) > 1,
+        lambda: FALSE,
+    )
 
 
-def is_one_liberty_xy(_state, x, y, color):
+def _is_one_liberty_xy(_state, x, y, color):
     ren_id = _state.ren_id_board[color, x * _state.size + y]
     return _is_one_liberty_ren(_state, color, ren_id)
 
 
-def is_two_liberty_xy(_state, x, y, color):
+def _is_two_liberty_xy(_state, x, y, color):
     ren_id = _state.ren_id_board[color, x * _state.size + y]
     return _is_two_liberty_ren(_state, color, ren_id)
 
 
-def is_point(_state, x, y):
+def _is_point(_state, x, y):
     return (_state.ren_id_board[0, x * _state.size + y] == -1) & (
         _state.ren_id_board[1, x * _state.size + y] == -1
     )
@@ -432,34 +448,27 @@ def _check_if_suicide_point_exist(_state: GoState, _color, _id):
                 _color, one_liberty_xy, 0
             ].set(FALSE)
         ),
-        lambda: _state,
+        lambda: _state.replace(  # type:ignore
+            _legal_action_mask=_state._legal_action_mask.at[_color, :, 0].set(
+                jnp.where(
+                    liberty_points,
+                    TRUE,
+                    _state._legal_action_mask[_color, :, 0],
+                )
+            )
+        ),
     )
 
-    # TODO 呼吸点1の場所には相手は置いて良い、本当にこれで良いか？
+    # 相手は呼吸点1つの所に打ち込める
     _state = jax.lax.cond(
         is_one_liberty,
         lambda: _state.replace(  # type:ignore
             _legal_action_mask=_state._legal_action_mask.at[
-                oppo_color, one_liberty_xy, 0
+                oppo_color, one_liberty_xy, 2
             ].set(TRUE)
         ),
         lambda: _state,
     )
-
-    # TODO 呼吸点2以上の場所には自分は置いて良い、本当にこれで良いか？
-    _my_legal_action_mask = jnp.where(
-        liberty_points, TRUE, _state._legal_action_mask[_color, :, 0]
-    )
-    _state = jax.lax.cond(
-        jnp.count_nonzero(liberty_points) > 1,
-        lambda: _state.replace(  # type:ignore
-            _legal_action_mask=_state._legal_action_mask.at[_color, :, 0].set(
-                _my_legal_action_mask
-            )
-        ),
-        lambda: _state,
-    )
-    # TODO 関数の役割が多くなってきた
 
     return _state
 
@@ -482,18 +491,18 @@ def _is_suicide_point(_state, _color, one_liberty_point):
                     _state.size,
                 )
                 & (
-                    is_point(
+                    _is_point(
                         _state,
                         xy // _state.size + dx[i],
                         xy % _state.size + dy[i],
                     )
-                    | is_two_liberty_xy(
+                    | _is_two_liberty_xy(
                         _state,
                         xy // _state.size + dx[i],
                         xy % _state.size + dy[i],
                         _color,
                     )
-                    | is_one_liberty_xy(
+                    | _is_one_liberty_xy(
                         _state,
                         xy // _state.size + dx[i],
                         xy % _state.size + dy[i],
@@ -580,26 +589,66 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     opp_color = _opponent_color(_state)
     surrounded_stones = _state.ren_id_board[opp_color] == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
+
+    # 石を取り除く
     oppo_ren_id_board = jnp.where(
         surrounded_stones, -1, _state.ren_id_board[opp_color]
+    )
+    # TODO ここもう少し良くしたい
+    # 取り除いた石の場所を、_legal_actionに追加する
+    _my_legal_action_mask_0 = jnp.where(
+        surrounded_stones, TRUE, _state._legal_action_mask[my_color, :, 0]
+    )
+    _oppo_legal_action_mask_0 = jnp.where(
+        surrounded_stones, TRUE, _state._legal_action_mask[opp_color, :, 0]
+    )
+    _my_legal_action_mask_1 = jnp.where(
+        surrounded_stones, TRUE, _state._legal_action_mask[my_color, :, 1]
+    )
+    _oppo_legal_action_mask_1 = jnp.where(
+        surrounded_stones, TRUE, _state._legal_action_mask[opp_color, :, 1]
+    )
+    _my_legal_action_mask_2 = jnp.where(
+        surrounded_stones, TRUE, _state._legal_action_mask[my_color, :, 2]
+    )
+    _oppo_legal_action_mask_2 = jnp.where(
+        surrounded_stones, TRUE, _state._legal_action_mask[opp_color, :, 2]
     )
 
     my_lib = _state.liberty[my_color]  # (2, 361, 361) => (361, 361)
     # surrounded_stones (361) => (my_lib > 0) & surrounded_stones (361, 361)
     liberty = jnp.where((my_lib > 0) & surrounded_stones, 1, my_lib)
 
-    # TODO 取り除かれた連に隣接していた呼吸点1の場所に、相手は置けなくなる
-    # これ以外のケースはないか？
+    # 取り除かれた場所は自由度が上がる
+    max_ren_num = _state.size
     adj_stone = _state.liberty[opp_color, _rm_ren_id] == 2
     adj_ren_id = jnp.where(~adj_stone, -1, _state.ren_id_board[my_color])
     _state = jax.lax.fori_loop(
         0,
-        _state.size * _state.size,
+        max_ren_num,
         lambda i, state: _check_if_suicide_point_exist(
             state, my_color, adj_ren_id[i]
         ),
         _state,
     )
+    # _oppo_legal_action_mask_2 = jax.lax.fori_loop(
+    #     0,
+    #     max_ren_num,
+    #     lambda i, _point: _point
+    #     & ~(_state.liberty[my_color, adj_ren_id[i]] == 1),
+    #     _oppo_legal_action_mask_2,
+    # )
+
+    # adj_stone = state.liberty[my_color, put_ren_id] == 2
+    # adj_ren_id = jnp.where(~adj_stone, -1, state.ren_id_board[oppo_color])
+    # state = jax.lax.fori_loop(
+    #    0,
+    #    max_ren_num,
+    #    lambda i, state: _check_if_suicide_point_exist(
+    #        state, oppo_color, adj_ren_id[i]
+    #    ),
+    #    state,
+    # )
 
     # 取り除かれた位置はコウの候補となる
     return _state.replace(  # type:ignore
@@ -610,27 +659,28 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         .set(liberty)
         .at[opp_color, _rm_ren_id, :]
         .set(0),
+        _legal_action_mask=_state._legal_action_mask.at[my_color, :, 0]
+        .set(_my_legal_action_mask_0)
+        .at[opp_color, :, 0]
+        .set(_oppo_legal_action_mask_0)
+        .at[my_color, :, 1]
+        .set(_my_legal_action_mask_1)
+        .at[opp_color, :, 1]
+        .set(_oppo_legal_action_mask_1)
+        .at[my_color, :, 2]
+        .set(_my_legal_action_mask_2)
+        .at[opp_color, :, 2]
+        .set(_oppo_legal_action_mask_2),
         agehama=_state.agehama.at[my_color].add(agehama),
-        kou=jnp.int32(_rm_stone_xy),  # type:ignore
+        kou=jnp.int32(_rm_stone_xy),
     )
 
 
 def _legal_actions(_state: GoState) -> jnp.ndarray:
-    # illegal_action = jax.lax.map(
-    #    lambda xy: _update_state_wo_legal_action(state, xy, size)[
-    #        0
-    #    ].terminated,
-    #    jnp.arange(0, size * size + 1),
-    # )
-    # legal_action = ~illegal_action
-    # return legal_action.at[size * size].set(TRUE)
-    is_stone = _state.ren_id_board == -1
-    is_stone = is_stone[0] & is_stone[1]
     _legal_action_mask = (
         _state._legal_action_mask[_my_color(_state), :, 0]
         & _state._legal_action_mask[_my_color(_state), :, 1]
-        & is_stone
-    )
+    ) | _state._legal_action_mask[_my_color(_state), :, 2]
     return jax.lax.cond(
         _state.kou == -1,
         lambda: _legal_action_mask,
@@ -710,16 +760,7 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
         lambda: jnp.array([1, -1]),
         lambda: jnp.array([-1, 1]),
     )
-
     return r
-    # b = _count_ji(_state, BLACK, _size) - _state.agehama[WHITE] - _state.komi
-    # w = _count_ji(_state, WHITE, _size) - _state.agehama[BLACK]
-    # r = jax.lax.cond(
-    #    b > w, lambda: jnp.array([1, -1]), lambda: jnp.array([-1, 1])
-    # )
-
-    #
-    # return r
 
 
 def _count_ji(_state: GoState, _color, _size):
