@@ -556,6 +556,7 @@ def _move(
     return state.replace(board=board, hand=hand)  # type: ignore
 
 
+@jax.jit
 def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
     board, hand = state.board, state.hand
     hand = hand.at[_piece_to_hand(action.piece)].add(-1)
@@ -977,29 +978,22 @@ def _is_double_pawn(state: ShogiState) -> bool:
 
 
 # 行き所のない駒判定
-def _is_stuck(state: ShogiState) -> bool:
-    is_stuck = False
+@jax.jit
+def _is_stuck(state: ShogiState):
+    is_stuck = jnp.bool_(False)
     bs = _board_status(state)
     line1 = bs[0::9]
-    if jnp.any(line1 == 1):
-        is_stuck = True
-    if jnp.any(line1 == 2):
-        is_stuck = True
-    if jnp.any(line1 == 3):
-        is_stuck = True
+    is_stuck |= jnp.all(jnp.any(line1 == 1))
+    is_stuck |= jnp.all(jnp.any(line1 == 2))
+    is_stuck |= jnp.all(jnp.any(line1 == 3))
     line2 = bs[1::9]
-    if jnp.any(line2 == 3):
-        is_stuck = True
+    is_stuck |= jnp.all(jnp.any(line2 == 3))
     line8 = bs[7::9]
-    if jnp.any(line8 == 17):
-        is_stuck = True
+    is_stuck |= jnp.all(jnp.any(line8 == 17))
     line9 = bs[8::9]
-    if jnp.any(line9 == 15):
-        is_stuck = True
-    if jnp.any(line9 == 16):
-        is_stuck = True
-    if jnp.any(line9 == 17):
-        is_stuck = True
+    is_stuck |= jnp.all(jnp.any(line9 == 15))
+    is_stuck |= jnp.all(jnp.any(line9 == 16))
+    is_stuck |= jnp.all(jnp.any(line9 == 17))
     return is_stuck
 
 
