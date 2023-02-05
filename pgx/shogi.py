@@ -252,21 +252,21 @@ def _cut_outside(array: jnp.ndarray, point: int) -> jnp.ndarray:
     u, d, l, r = _is_side(point)
     u2, d2 = _is_second_line(point)
     # (4, 4)での動きを基準にはみ出すところをカットする
-    array = jax.lax.cond(u, array.at[:, 3].set(0), array)
-    array = jax.lax.cond(d, array.at[:, 5].set(0), array)
-    array = jax.lax.cond(r, array.at[3, :].set(0), array)
-    array = jax.lax.cond(l, array.at[5, :].set(0), array)
-    array = jax.lax.cond(u2, array.at[:, 2].set(0), array)
-    array = jax.lax.cond(d2, array.at[:, 6].set(0), array)
+    array = jax.lax.cond(u, lambda: array.at[:, 3].set(0), lambda: array)
+    array = jax.lax.cond(d, lambda: array.at[:, 5].set(0), lambda: array)
+    array = jax.lax.cond(r, lambda: array.at[3, :].set(0), lambda: array)
+    array = jax.lax.cond(l, lambda: array.at[5, :].set(0), lambda: array)
+    array = jax.lax.cond(u2, lambda: array.at[:, 2].set(0), lambda: array)
+    array = jax.lax.cond(d2, lambda: array.at[:, 6].set(0), lambda: array)
     return array
 
 
 # 駒種と位置から到達できる地点をすべて生成
+@jax.jit
 def _action_board(array: jnp.ndarray, point: int) -> jnp.ndarray:
-    new_array = array
     y, t = _point_to_location(point)
-    new_array = _cut_outside(new_array, point)
-    return jnp.roll(new_array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
+    array = _cut_outside(array, point)
+    return jnp.roll(array, (y - 4, t - 4), axis=(0, 1)).reshape(81)
 
 
 # 大駒・香車以外の位置ごとの移動できる地点を記録
