@@ -499,27 +499,34 @@ def _is_in_board(point: int) -> bool:
 
 
 # 相手の駒を同じ種類の自分の駒に変換する
+@jax.jit
 def _convert_piece(piece: int) -> int:
-    if piece == 0:
-        return 0
     p = (piece + 14) % 28
-    if p == 0:
-        return 28
-    else:
-        return p
+    return jax.lax.cond(
+        piece == 0,
+        lambda: 0,
+        lambda: jax.lax.cond(
+            p == 0,
+            lambda: 28,
+            lambda: p
+        )
+    )
 
 
 # 駒から持ち駒への変換
 # 先手歩が0、後手金が13
-def _piece_to_hand(piece: int) -> int:
-    if piece % 14 == 0 or piece % 14 >= 9:
-        p = piece - 8
-    else:
-        p = piece
-    if p < 15:
-        return p - 1
-    else:
-        return p - 8
+@jax.jit
+def _piece_to_hand(piece: int):
+    p = jax.lax.cond(
+        piece % 14 == 0 or piece % 14 >= 9,
+        lambda: piece - 8,
+        lambda: piece
+    )
+    return jax.lax.cond(
+        p < 15,
+        lambda: p - 1,
+        lambda: p - 8
+    )
 
 
 # ある駒の持ち主を返す
@@ -536,12 +543,10 @@ def _board_status(state: ShogiState) -> jnp.ndarray:
 
 
 # 駒の持ち主の判定
+@jax.jit
 def _pieces_owner(state: ShogiState) -> jnp.ndarray:
-    board = jnp.zeros(81, dtype=jnp.int32)
-    for i in range(81):
-        piece = _piece_type(state, i)
-        board = board.at[i].set(_owner(piece))
-    return board
+    pieces = state.board.argmax(axis=0)
+    return jax.vmap(_owner)(pieces)
 
 
 # 駒の移動の盤面変換
