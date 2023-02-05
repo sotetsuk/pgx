@@ -337,7 +337,7 @@ def _is_same_line(from_: int, to: int, direction: int):
             _is_same_rising(from_, to),  # 6
             _is_same_declining(from_, to),  # 7
             False,  # 8
-            False,
+            False,  # 9
         ]
     )[dir]
 
@@ -421,32 +421,13 @@ def _separate_dlaction(action: int) -> Tuple[int, int]:
 
 
 # directionからfromがtoからどれだけ離れてるかを返す
-def _direction_to_dif(direction: int, turn: int) -> int:
-    dif = 0
-    if direction % 10 == 0:
-        dif = -1
-    if direction % 10 == 1:
-        dif = 8
-    if direction % 10 == 2:
-        dif = -10
-    if direction % 10 == 3:
-        dif = 9
-    if direction % 10 == 4:
-        dif = -9
-    if direction % 10 == 5:
-        dif = 1
-    if direction % 10 == 6:
-        dif = 10
-    if direction % 10 == 7:
-        dif = -8
-    if direction % 10 == 8:
-        dif = 7
-    if direction % 10 == 9:
-        dif = -11
-    if turn == 0:
-        return dif
-    else:
-        return -dif
+@jax.jit
+def _direction_to_dif(direction: int, turn: int):
+    direction = direction % 10
+    dif = jnp.int32([
+       -1, 8, -10, 9, -9, 1, 10, -8, 7, -11
+    ])[direction]
+    return dif * jnp.int32([1, -1])[turn]
 
 
 # directionとto,stateから大駒含めた移動のfromの位置を割り出す
