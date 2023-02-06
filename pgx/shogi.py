@@ -1118,19 +1118,16 @@ def _direction_pin(
     direction: int,
     array: jnp.ndarray,
 ) -> jnp.ndarray:
-    new_array = array
     e_turn = (turn + 1) % 2
     bs_one = jnp.where(bs == 0, 0, 1)
     # 玉に一番近い駒の位置
     point1 = _nearest_position(king_point, direction, bs_one)
     # 2番目に近い駒の位置
     point2 = _nearest_position(point1, direction, bs_one)
-    if point1 == -1 or point2 == -1:
-        return new_array
     piece1 = bs[point1]
     piece2 = bs[point2]
-    if _owner(piece1) != turn:
-        return new_array
+    arr1 = array
+
     flag = False
     if piece2 == 2 + 14 * e_turn and direction == 5 * turn:
         flag = True
@@ -1143,8 +1140,13 @@ def _direction_pin(
     ):
         flag = True
     if flag:
-        new_array = new_array.at[point1].set(_direction_to_pin(direction))
-    return new_array
+        array = array.at[point1].set(_direction_to_pin(direction))
+
+    return jax.lax.cond(
+        ((point1 == -1) | (point2 == -1)) | (_owner(piece1) != turn),
+        lambda: arr1,
+        lambda: array
+    )
 
 
 # pinされている駒の位置と方向を記録
