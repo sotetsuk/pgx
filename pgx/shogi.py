@@ -1241,6 +1241,7 @@ def _eliminate_pin_actions(
 # 玉が逃げる以外の手に王手回避の手があるかをチェック
 # 存在しない場合True
 # 両王手は考えない(事前にはじく)
+@jax.jit
 def _is_avoid_check(
     cn: int,
     cnp: jnp.ndarray,
@@ -1248,22 +1249,17 @@ def _is_avoid_check(
     king_point: int,
     legal_actions: jnp.ndarray,
 ):
-    # 密接の王手
-    if cn == 1:
-        # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
-        point = int(cnp.argmax())
-        points = cnp
-    # 開き王手
-    else:
-        point = int(cfp.argmax())
-        # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
-        points = _between(king_point, point)
-    for i in range(81):
-        if points[i] == 0 and point != i:
-            legal_actions = legal_actions.at[
-                jnp.arange(i, 81 * 34 + i, 81)
-            ].set(0)
-    return (legal_actions == 0).all()
+    is_close_check = cn == 1  # 密接の王手 (or 開き王手）
+    # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
+    point = jax.lax.cond(is_close_check, lambda: cnp.argmax(), lambda: cfp.argmax())
+    # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
+    points = jax.lax.cond(is_close_check, lambda: cnp, lambda: _between(king_point, point))
+
+    actions = legal_actions.reshape(34, 81)
+    ix = jnp.arange(81)
+    mask = jnp.tile((points == 0) & (point != ix), reps=(34, 1))
+    actions = jnp.where(mask, 0, actions)
+    return (actions == 0).all()
 
 
 # 詰み判定関数
