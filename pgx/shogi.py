@@ -66,32 +66,36 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     legal_actions = _legal_actions(state)
     _action = _dlaction_to_action(action, state)
     # actionのfromが盤外の場合は非合法手なので負け
-    if not _is_in_board(_action.from_):
+    is_oob = ~_is_in_board(_action.from_)
+    is_illegal = legal_actions[action] == 0
+    if is_oob:
         return state, _turn_to_reward(_another_color(state)), True
     # legal_actionsにactionがない場合、そのactionは非合法手
-    if legal_actions[action] == 0:
+    if is_illegal:
         return state, _turn_to_reward(_another_color(state)), True
     # 合法手の場合
     # 駒打ち
-    if _action.is_drop:
-        state = _update_legal_drop_actions(state, _action)
-        state = _drop(state, _action)
-    # 駒の移動
-    else:
-        state = _update_legal_move_actions(state, _action)
-        state = _move(state, _action)
-    # 王手がかかったままの場合、王手放置またｈ自殺手で負け
+    state = jax.lax.cond(
+        _action.is_drop,
+        lambda: _drop(_update_legal_drop_actions(state, _action), _action),
+        lambda: _move(_update_legal_move_actions(state, _action), _action)
+    )
     cn, cnp, cf, cfp = _is_check(state)
-    if cn + cf != 0:
+    is_check = cn + cf != 0
+    # 王手がかかったままの場合、王手放置また自殺手で負け
+    if is_check:
         return state, _turn_to_reward(_another_color(state)), True
     # その他の反則
-    if _is_double_pawn(state):
+    is_double_pawn = _is_double_pawn(state)
+    if is_double_pawn:
         return state, _turn_to_reward(_another_color(state)), True
-    if _is_stuck(state):
+    is_stuck = _is_stuck(state)
+    if is_stuck:
         return state, _turn_to_reward(_another_color(state)), True
     state = state.replace(turn=_another_color(state))  # type: ignore
     # 相手に合法手がない場合→詰み
-    if _is_mate(state):
+    is_mate = _is_mate(state)
+    if is_mate:
         # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
         if _action.is_drop and (_action.piece == 1 or _action.piece == 15):
             return state, _turn_to_reward(state.turn), True
