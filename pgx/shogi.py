@@ -1208,12 +1208,14 @@ def _king_escape(state: ShogiState):
 
 
 # point同士の間の位置にフラグを立てる
+@jax.jit
 def _between(point1: int, point2: int) -> jnp.ndarray:
     direction = _point_to_direction(point1, point2, False, 0)
-    if direction == -1:
-        bet = jnp.zeros(81, dtype=jnp.int32)
-    else:
-        bet = _change_between(point1, point2, _direction_to_dif(direction, 0))
+    bet = jax.lax.cond(
+        direction == -1,
+        lambda: jnp.zeros(81, dtype=jnp.int32),
+        lambda: _change_between(point1, point2, _direction_to_dif(direction, 0))
+    )
     bet = bet.at[point2].set(0)
     return bet
 
