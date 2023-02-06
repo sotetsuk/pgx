@@ -909,7 +909,7 @@ def _filter_my_piece_move_actions(
 ) -> jnp.ndarray:
     actions = array.reshape(34, 81)
     mask = jnp.tile(owner == turn, reps=(34, 1))
-    mask = mask.at[21:].set(False)
+    mask = mask.at[20:].set(False)
     actions = jnp.where(mask, 0, actions)
     return actions.flatten()
 
