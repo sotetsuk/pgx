@@ -1001,26 +1001,43 @@ def _is_check(state: ShogiState) -> Tuple[int, jnp.ndarray, int, jnp.ndarray]:
 
 
 # 玉がいる前提
-def _is_check_(state: ShogiState) -> Tuple[int, jnp.ndarray, int, jnp.ndarray]:
+@jax.jit
+def _is_check_(state: ShogiState):
     check = 0
     checking_point = jnp.zeros((2, 81), dtype=jnp.int32)
-    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+    king_point = state.board[8 + 14 * state.turn, :].argmax()
     near_king = _small_piece_moves(8 + 14 * state.turn, king_point)
-    bs = _board_status(state)
-    for i in range(81):
-        piece = bs[i]
-        if (
-            _owner(piece) == _another_color(state)
-            and _piece_moves(bs, piece, i)[king_point] == 1
-        ):
-            # 桂馬の王手も密接としてカウント
-            if near_king[i] == 1 or piece % 14 == 3:
-                check += 10
-                checking_point = checking_point.at[0, i].set(1)
-            else:
-                # 遠隔の王手は9以上ありえない
-                check += 1
-                checking_point = checking_point.at[1, i].set(1)
+    pieces = _board_status(state)
+
+    def update_check(i, x):
+        check, checking_point = x
+        flag = (_owner(pieces[i]) == _another_color(state)) & (_piece_moves(pieces, pieces[i], i)[king_point] == 1)
+        # 桂馬の王手も密接としてカウント
+        flag2 = (near_king[i] == 1) | (pieces[i] % 14 == 3)
+        check = jax.lax.cond(
+            flag,
+            lambda: jax.lax.cond(
+                flag2,
+                lambda: check + 10,
+                lambda: check + 1  # 遠隔の王手は9以上ありえない
+                ),
+            lambda: check
+        )
+        checking_point = jax.lax.cond(
+            flag,
+            lambda: jax.lax.cond(
+                flag2,
+                lambda: checking_point.at[0, i].set(1),
+                lambda: checking_point.at[1, i].set(1)  # 遠隔の王手は9以上ありえない
+                ),
+            lambda: checking_point
+        )
+        return check, checking_point
+
+    check, checking_point = jax.lax.fori_loop(
+        0, 81, update_check, (check, checking_point)
+    )
+
     return check // 10, checking_point[0], check % 10, checking_point[1]
 
 
