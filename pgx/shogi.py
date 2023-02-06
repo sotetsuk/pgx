@@ -993,17 +993,19 @@ def _legal_actions(state: ShogiState) -> jnp.ndarray:
 
 # 王手判定
 # 密接・遠隔の王手で分ける
+@jax.jit
 def _is_check(state: ShogiState) -> Tuple[int, jnp.ndarray, int, jnp.ndarray]:
-    # そもそも王がいない場合
-    if jnp.all(state.board[8 + 14 * state.turn] == 0):
-        return (
+    return jax.lax.cond(
+        jnp.all(state.board[8 + 14 * state.turn] == 0),
+        # そもそも王がいない場合
+        lambda: (
             0,
             jnp.zeros(81, dtype=jnp.int32),
             0,
             jnp.zeros(81, dtype=jnp.int32),
-        )
-    else:
-        return _is_check_(state)
+        ),
+        lambda: _is_check_(state)
+    )
 
 
 # 玉がいる前提
@@ -1153,7 +1155,7 @@ def _pin(state: ShogiState) -> jnp.ndarray:
     bs = _board_status(state)
     turn = state.turn
     pins = jnp.zeros(81, dtype=jnp.int32)
-    king_point = int(state.board[8 + 14 * turn, :].argmax())
+    king_point = state.board[8 + 14 * turn, :].argmax()
     pins = jax.lax.fori_loop(
         0, 8, lambda i, p: _direction_pin(bs, turn, king_point, i, p), pins
     )
@@ -1271,16 +1273,19 @@ def _is_avoid_check(
 
 # 詰み判定関数
 # 王手がかかっていないならFalse
+@jax.jit
 def _is_mate(state: ShogiState) -> bool:
     cn, cnp, cf, cfp = _is_check(state)
     # 王手がかかっていないならFalse
-    if cn + cf == 0:
-        return False
-    else:
-        return _is_mate_noncheck(cn, cnp, cf, cfp, state)
+    return jax.lax.cond(
+        cn + cf == 0,
+        lambda: FALSE,
+        lambda: _is_mate_noncheck(cn, cnp, cf, cfp, state)
+    )
 
 
 # 王手の有無にかかわらず詰みを判定する
+@jax.jit
 def _is_mate_noncheck(
     cn: int, cnp: jnp.ndarray, cf: int, cfp: jnp.ndarray, state: ShogiState
 ):
