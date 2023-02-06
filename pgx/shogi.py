@@ -915,22 +915,28 @@ def _filter_my_piece_move_actions(
 
 
 # 駒がある地点への駒打ちを除く
+@jax.jit
 def _filter_occupied_drop_actions(
     turn: int, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
-    for i in range(81):
-        if owner[i] == 2:
-            continue
-        if turn == 0:
-            new_array = new_array.at[
-                jnp.arange(81 * 20 + i, 81 * 27 + i, 81)
-            ].set(0)
-        else:
-            new_array = new_array.at[
-                jnp.arange(81 * 27 + i, 81 * 34 + i, 81)
-            ].set(0)
-    return new_array
+    """
+    x x x x x x x x x
+    x x x x x x x x x
+    --- 20
+    x x x x F x x x x
+    x x x x F x x x x
+    --- 27
+    x x x x x x x x x
+    x x x x x x x x x
+    """
+    actions = array.reshape(34, 81)
+    mask1 = jnp.tile(owner != 2, reps=(34, 1))
+    s = jnp.int32([20, 27])[turn]
+    ix = jnp.arange(34)
+    mask2 = jnp.tile((s <= ix) & (ix < s + 7), (81, 1)).transpose()
+    mask = mask1 & mask2
+    actions = jnp.where(mask, 0, actions)
+    return actions.flatten()
 
 
 # boardのlegal_actionsを利用して合法手を生成する
