@@ -307,7 +307,6 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
 def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     my_color = _my_color(_state)
     oppo_color = _opponent_color(_state)
-    size = _state.size
     state = _state.replace(  # type:ignore
         _legal_action_mask=_state._legal_action_mask.at[:, _xy].set(FALSE)
     )
@@ -323,7 +322,7 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
 
     # (B) 石を置くことで相手の自殺点が生じる場合
     # 1. 隣接する、既に存在する相手の連が呼吸点1つになる場合
-    max_ren_num = size * size
+    max_ren_num = _state.size * _state.size
     adj_stone = state.liberty[my_color, put_ren_id] == 2
     adj_ren_id = jnp.where(~adj_stone, -1, state.ren_id_board[oppo_color])
     state = jax.lax.fori_loop(
@@ -336,8 +335,8 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     )
 
     # 2. 空点の四方を囲む形になる場合
-    x = _xy // size
-    y = _xy % size
+    x = _xy // _state.size
+    y = _xy % _state.size
     state = jax.lax.fori_loop(
         0,
         4,
@@ -346,6 +345,44 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     )
 
     return state
+
+
+def __check_atari(i, state, x, y, my_color):
+    oppo_color = (my_color + 1) % 2
+
+    return jax.lax.cond(
+        ~_is_off_board(x + dx[i], y + dy[i], state.size)
+        & _is_point(state, x + dx[i], y + dy[i])
+        & (
+            _is_off_board(x + _dx[2 * i], y + _dy[2 * i], state.size)
+            | _is_two_liberty_xy(
+                state, x + _dx[2 * i], y + _dy[2 * i], my_color
+            )
+            | _is_one_liberty_xy(
+                state, x + _dx[2 * i], y + _dy[2 * i], oppo_color
+            )
+        )
+        & (
+            _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], state.size)
+            | _is_two_liberty_xy(
+                state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], my_color
+            )
+            | _is_one_liberty_xy(
+                state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], oppo_color
+            )
+        )
+        & (
+            _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], state.size)
+            | _is_two_liberty_xy(
+                state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], my_color
+            )
+            | _is_one_liberty_xy(
+                state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], oppo_color
+            )
+        ),
+        lambda: -2,
+        lambda: y,
+    )
 
 
 def _check_atari(i, state, x, y, my_color):
@@ -601,24 +638,27 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     #    ),
     #    _state,
     # )
-    # 試しに取り除かれた場所は、自分：置ける、相手：基本ルールで置けない としてみる
+    # 試しに取り除かれた連に隣接する連の呼吸点は、
+    # 自分：置けるとしてみる
     _my_legal_action = jax.lax.fori_loop(
         0,
         max_ren_num,
-        lambda i, board: board | _state.liberty[my_color, adj_ren_id[i]],
-        _state._legal_action_mask[my_color],
+        lambda i, board: board
+        | (_state.liberty[my_color, adj_ren_id[i]] == 1),
+        _state._legal_action_mask[my_color] | surrounded_stones,
     )
-    _oppo_legal_action = jax.lax.fori_loop(
-        0,
-        max_ren_num,
-        lambda i, board: board & ~_state.liberty[my_color, adj_ren_id[i]],
-        _state._legal_action_mask[opp_color],
-    )
+    # _oppo_legal_action = jax.lax.fori_loop(
+    #    0,
+    #    max_ren_num,
+    #    lambda i, board: board
+    #    & (~(_state.liberty[my_color, adj_ren_id[i]] == 1)),
+    #    _state._legal_action_mask[opp_color] | surrounded_stones,
+    # )
 
     # 取り除かれた位置はコウの候補となる
     return _state.replace(  # type:ignore
         _legal_action_mask=_state._legal_action_mask.at[my_color]
-        .set(_state._legal_action_mask[my_color] | surrounded_stones)
+        .set(_my_legal_action)
         .at[opp_color]
         .set(_state._legal_action_mask[opp_color] | surrounded_stones),
         agehama=_state.agehama.at[my_color].add(agehama),
