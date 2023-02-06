@@ -621,7 +621,7 @@ def _piece_moves(bs: jnp.ndarray, piece, point) -> jnp.ndarray:
 
 
 # 小駒のactionのみを返すpiece_moves
-def _small_piece_moves(piece: int, point: int) -> jnp.ndarray:
+def _small_piece_moves(piece, point) -> jnp.ndarray:
     return POINT_MOVES[point][piece]
 
 
@@ -694,9 +694,7 @@ def _add_move_actions(piece, _from, array: jnp.ndarray) -> jnp.ndarray:
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
-def _filter_move_actions(
-    piece: int, _from: int, array: jnp.ndarray
-) -> jnp.ndarray:
+def _filter_move_actions(piece, _from, array: jnp.ndarray) -> jnp.ndarray:
     actions = _create_piece_actions(piece, _from)
     return jnp.where(actions == 1, 0, array)
 
@@ -1028,9 +1026,9 @@ def _nearest_position(from_: int, direction: int, bs_one: jnp.ndarray):
 # pinされている駒の位置と方向を記録(1方向のみ)
 def _direction_pin(
     bs: jnp.ndarray,
-    turn: int,
-    king_point: int,
-    direction: int,
+    turn,
+    king_point,
+    direction,
     array: jnp.ndarray,
 ) -> jnp.ndarray:
     e_turn = (turn + 1) % 2
@@ -1107,7 +1105,7 @@ def _eliminate_direction(actions: jnp.ndarray, direction) -> jnp.ndarray:
 # 利きの判定
 # 玉の位置を透過する（玉をいないものとして扱う）ことで香車や角などの利きを玉の奥まで通す
 def _kingless_effected_positions(
-    bs: jnp.ndarray, king_point: int, turn: int
+    bs: jnp.ndarray, king_point, turn
 ) -> jnp.ndarray:
     bs = bs.at[king_point].set(0)
     ix = jnp.arange(81)
@@ -1170,10 +1168,10 @@ def _eliminate_pin_actions(
 # 存在しない場合True
 # 両王手は考えない(事前にはじく)
 def _is_avoid_check(
-    cn: int,
-    cnp: jnp.ndarray,
-    cfp: jnp.ndarray,
-    king_point: int,
+    cn,
+    cnp,
+    cfp,
+    king_point,
     legal_actions: jnp.ndarray,
 ):
     is_close_check = cn == 1  # 密接の王手 (or 開き王手）
