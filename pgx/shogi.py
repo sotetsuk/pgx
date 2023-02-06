@@ -1220,16 +1220,21 @@ def _between(point1: int, point2: int) -> jnp.ndarray:
 
 
 # pinされている駒の非合法手を弾いてlegal_actionを返す
+@jax.jit
 def _eliminate_pin_actions(
-    bs: jnp.ndarray, pins: jnp.ndarray, l_actions: jnp.ndarray
+    bs: jnp.ndarray, pins: jnp.ndarray, actions: jnp.ndarray
 ):
-    for i in range(81):
-        if pins[i] != 0:
-            l_actions = _filter_action(
+    actions = jax.lax.fori_loop(
+        0, 81, lambda i, a: jax.lax.cond(
+            pins[i] != 0,
+            lambda: _filter_action(
                 _eliminate_direction(_create_piece_actions(bs[i], i), pins[i]),
-                l_actions,
-            )
-    return l_actions
+                a,
+            ),
+            lambda: a
+        ), actions
+    )
+    return actions
 
 
 # 玉が逃げる以外の手に王手回避の手があるかをチェック
