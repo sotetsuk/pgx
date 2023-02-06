@@ -762,13 +762,12 @@ def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 
 
 # 駒打ちのactionのフラグを折る
+@jax.jit
 def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
-    new_array = array
     direction = _hand_to_direction(piece)
-    new_array = new_array.at[
-        jnp.arange(81 * direction, 81 * (direction + 1))
-    ].set(0)
-    return new_array
+    ix = jnp.arange(2754)
+    array = jnp.where((81 * direction <= ix) & (ix < 81 * (direction + 1)), 0, array)
+    return array
 
 
 # stateからblack,white両方のlegal_actionsを生成する
