@@ -1,3 +1,4 @@
+from functools import partial
 import copy
 from typing import Tuple
 
@@ -1178,14 +1179,17 @@ def _eliminate_direction(actions: jnp.ndarray, direction) -> jnp.ndarray:
 
 # 利きの判定
 # 玉の位置を透過する（玉をいないものとして扱う）ことで香車や角などの利きを玉の奥まで通す
+@jax.jit
 def _kingless_effected_positions(
     bs: jnp.ndarray, king_point: int, turn: int
 ) -> jnp.ndarray:
-    all_effect = jnp.zeros(81, dtype=jnp.int32)
     bs = bs.at[king_point].set(0)
-    for i in range(81):
-        if _owner(bs[i]) == turn:
-            all_effect += _piece_moves(bs, bs[i], i)
+    ix = jnp.arange(81)
+    owners = jax.vmap(_owner)(bs)
+    effects = jax.vmap(partial(_piece_moves, bs=bs))(piece=bs, point=ix)
+    mask = jnp.tile(owners == turn, reps=(81, 1)).transpose()
+    effects = jnp.where(mask, effects, 0)
+    all_effect = effects.sum(axis=0)
     return all_effect
 
 
