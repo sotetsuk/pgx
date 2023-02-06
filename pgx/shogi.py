@@ -864,20 +864,26 @@ def _update_legal_move_actions(
         action.piece, action.from_, player_actions
     )
     # 移動後の位置からの移動のフラグを立てる
-    piece = jax.lax.cond(action.is_promote, lambda: action.piece + 8, lambda: action.piece)
-    player_actions = _add_move_actions(
-        piece, action.to, player_actions
+    piece = jax.lax.cond(
+        action.is_promote, lambda: action.piece + 8, lambda: action.piece
     )
+    player_actions = _add_move_actions(piece, action.to, player_actions)
     # 取った駒を自分の持ち駒に変換
     # 取っていない場合は0
     captured = _degeneration_piece(_convert_piece(action.captured))
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
-    enemy_actions = jax.lax.cond(action.captured != 0,
-                                 lambda: _filter_move_actions(action.captured, action.to, enemy_actions),
-                                 lambda: enemy_actions)
-    player_actions = jax.lax.cond(action.captured != 0,
-                                  lambda: _add_drop_actions(captured, player_actions),
-                                  lambda: player_actions)
+    enemy_actions = jax.lax.cond(
+        action.captured != 0,
+        lambda: _filter_move_actions(
+            action.captured, action.to, enemy_actions
+        ),
+        lambda: enemy_actions,
+    )
+    player_actions = jax.lax.cond(
+        action.captured != 0,
+        lambda: _add_drop_actions(captured, player_actions),
+        lambda: player_actions,
+    )
 
     legal_actions_black, legal_actions_white = jax.lax.cond(
         state.turn == 0,
@@ -895,24 +901,20 @@ def _update_legal_drop_actions(
     player_actions = jax.lax.cond(
         state.turn == 0,
         lambda: state.legal_actions_black,
-        lambda: state.legal_actions_white
+        lambda: state.legal_actions_white,
     )
     # 移動後の位置からの移動のフラグを立てる
-    player_actions = _add_move_actions(
-        action.piece, action.to, player_actions
-    )
+    player_actions = _add_move_actions(action.piece, action.to, player_actions)
     # 持ち駒がもうない場合、その駒を打つフラグを折る
     player_actions = jax.lax.cond(
         state.hand[_piece_to_hand(action.piece)] == 1,
-        lambda: _filter_drop_actions(
-            action.piece, player_actions
-        ),
-        lambda: player_actions
+        lambda: _filter_drop_actions(action.piece, player_actions),
+        lambda: player_actions,
     )
     return jax.lax.cond(
         state.turn == 0,
         lambda: state.replace(legal_actions_black=player_actions),  # type: ignore
-        lambda: state.replace(legal_actions_white=player_actions)  # type: ignore
+        lambda: state.replace(legal_actions_white=player_actions),  # type: ignore
     )
 
 
