@@ -64,8 +64,6 @@ class GoState:
     # 終局判定
     terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
 
-    data: jnp.ndarray = jnp.int32(-1)  # type:ignore
-
 
 def observe(state: GoState, player_id, observe_all=False):
     return _get_alphazero_features(state, player_id, observe_all)
@@ -148,7 +146,6 @@ def init(
         _legal_action_mask=jnp.ones((2, size * size), dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
-        data=-1,  # type:ignore
     )
 
 
@@ -345,35 +342,6 @@ def _update_legal_action(_state: GoState, _xy: int) -> GoState:
     )
 
     return state
-
-
-def __check_atari(i, state, x, y, my_color):
-    oppo_color = (my_color + 1) % 2
-
-    return jax.lax.cond(
-        ~_is_off_board(x + dx[i], y + dy[i], state.size)
-        & _is_point(state, x + dx[i], y + dy[i])
-        & (
-            _is_off_board(x + _dx[2 * i], y + _dy[2 * i], state.size)
-            | _is_one_liberty_xy(
-                state, x + _dx[2 * i], y + _dy[2 * i], oppo_color
-            )
-        )
-        & (
-            _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], state.size)
-            | _is_one_liberty_xy(
-                state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], oppo_color
-            )
-        )
-        & (
-            _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], state.size)
-            | _is_one_liberty_xy(
-                state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], oppo_color
-            )
-        ),
-        lambda: -2,
-        lambda: y,
-    )
 
 
 def _check_atari(i, state, x, y, my_color):
