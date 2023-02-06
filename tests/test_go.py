@@ -412,16 +412,16 @@ def test_legal_action():
     # random
     _, state = j_init(rng=rng, size=BOARD_SIZE)
     for _ in range(100):
-        legal_actions = np.where(state.legal_action_mask)[0]
-        illegal_actions = np.where(~state.legal_action_mask)[0]
+        assert np.where(state.legal_action_mask)[0][-1]
 
-        for action in legal_actions[:-1]:
+        legal_actions = np.where(state.legal_action_mask)[0][:-1]
+        illegal_actions = np.where(~state.legal_action_mask)[0][:-1]
+        for action in legal_actions:
             _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
             assert not _state.terminated
-        for action in illegal_actions[:-1]:
+        for action in illegal_actions:
             _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
             assert _state.terminated
-
         if len(legal_actions) == 0:
             a = BOARD_SIZE * BOARD_SIZE
         else:

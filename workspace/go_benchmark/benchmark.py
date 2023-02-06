@@ -28,7 +28,7 @@ def test(func):
     rng = jax.random.PRNGKey(0)
     size = 19
     _, state = init(rng, size)
-    if func.__name__ == "legal_actions":
+    if func.__name__ == "_legal_actions":
         time_sta = time.perf_counter()
         jax.jit(func, static_argnums=(1,))(state, 19)
         time_end = time.perf_counter()

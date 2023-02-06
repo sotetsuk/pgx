@@ -355,27 +355,18 @@ def __check_atari(i, state, x, y, my_color):
         & _is_point(state, x + dx[i], y + dy[i])
         & (
             _is_off_board(x + _dx[2 * i], y + _dy[2 * i], state.size)
-            | _is_two_liberty_xy(
-                state, x + _dx[2 * i], y + _dy[2 * i], my_color
-            )
             | _is_one_liberty_xy(
                 state, x + _dx[2 * i], y + _dy[2 * i], oppo_color
             )
         )
         & (
             _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], state.size)
-            | _is_two_liberty_xy(
-                state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], my_color
-            )
             | _is_one_liberty_xy(
                 state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], oppo_color
             )
         )
         & (
             _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], state.size)
-            | _is_two_liberty_xy(
-                state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], my_color
-            )
             | _is_one_liberty_xy(
                 state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], oppo_color
             )
@@ -388,13 +379,21 @@ def __check_atari(i, state, x, y, my_color):
 def _check_atari(i, state, x, y, my_color):
     oppo_color = (my_color + 1) % 2
 
+    # 周囲全てが
+    # 1. 盤外
+    # 2. 味方の石(呼吸点の数は問わない)
+    # 3. 呼吸点1つの相手の石
+    # のいずれかなら、相手は中央に置けない
     return jax.lax.cond(
         ~_is_off_board(x + dx[i], y + dy[i], state.size)
         & _is_point(state, x + dx[i], y + dy[i])
         & (
             _is_off_board(x + _dx[2 * i], y + _dy[2 * i], state.size)
-            | _is_two_liberty_xy(
-                state, x + _dx[2 * i], y + _dy[2 * i], my_color
+            | (
+                state.ren_id_board[
+                    my_color, (x + _dx[2 * i]) * state.size + y + _dy[2 * i]
+                ]
+                != -1
             )
             | _is_one_liberty_xy(
                 state, x + _dx[2 * i], y + _dy[2 * i], oppo_color
@@ -402,8 +401,12 @@ def _check_atari(i, state, x, y, my_color):
         )
         & (
             _is_off_board(x + _dx[2 * i + 1], y + _dy[2 * i + 1], state.size)
-            | _is_two_liberty_xy(
-                state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], my_color
+            | (
+                state.ren_id_board[
+                    my_color,
+                    (x + _dx[2 * i + 1]) * state.size + y + _dy[2 * i + 1],
+                ]
+                != -1
             )
             | _is_one_liberty_xy(
                 state, x + _dx[2 * i + 1], y + _dy[2 * i + 1], oppo_color
@@ -411,8 +414,12 @@ def _check_atari(i, state, x, y, my_color):
         )
         & (
             _is_off_board(x + _dx[2 * i + 2], y + _dy[2 * i + 2], state.size)
-            | _is_two_liberty_xy(
-                state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], my_color
+            | (
+                state.ren_id_board[
+                    my_color,
+                    (x + _dx[2 * i + 2]) * state.size + y + _dy[2 * i + 2],
+                ]
+                != -1
             )
             | _is_one_liberty_xy(
                 state, x + _dx[2 * i + 2], y + _dy[2 * i + 2], oppo_color
