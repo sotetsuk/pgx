@@ -903,15 +903,15 @@ def _update_legal_drop_actions(
 
 
 # 自分の駒がある位置への移動を除く
+@jax.jit
 def _filter_my_piece_move_actions(
     turn: int, owner: jnp.ndarray, array: jnp.ndarray
 ) -> jnp.ndarray:
-    new_array = array
-    for i in range(81):
-        if owner[i] != turn:
-            continue
-        new_array = new_array.at[jnp.arange(i, 1620 + i, 81)].set(0)
-    return new_array
+    actions = array.reshape(34, 81)
+    mask = jnp.tile(owner == turn, reps=(34, 1))
+    mask = mask.at[21:].set(False)
+    actions = jnp.where(mask, 0, actions)
+    return actions.flatten()
 
 
 # 駒がある地点への駒打ちを除く
