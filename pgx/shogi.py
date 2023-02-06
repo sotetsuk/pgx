@@ -1050,16 +1050,20 @@ def _is_check_(state: ShogiState):
 
 # 二歩判定
 # 手番側でチェックする
-def _is_double_pawn(state: ShogiState) -> bool:
+@jax.jit
+def _is_double_pawn(state: ShogiState):
     is_double_pawn = False
     bs = _board_status(state)
-    for i in range(9):
+
+    @jax.vmap
+    def is_double_pwn(i):
         num_pawn = jnp.count_nonzero(
             bs[9 * i : 9 * (i + 1)] == 1 + state.turn * 14
         )
-        if num_pawn >= 2:
-            is_double_pawn = True
-    return is_double_pawn
+        return num_pawn >= 2
+
+    ixs = jnp.arange(9)
+    return is_double_pwn(ixs).any()
 
 
 # 行き所のない駒判定
