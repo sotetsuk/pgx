@@ -1148,13 +1148,15 @@ def _direction_pin(
 
 
 # pinされている駒の位置と方向を記録
+@jax.jit
 def _pin(state: ShogiState) -> jnp.ndarray:
     bs = _board_status(state)
     turn = state.turn
     pins = jnp.zeros(81, dtype=jnp.int32)
     king_point = int(state.board[8 + 14 * turn, :].argmax())
-    for i in range(8):
-        pins = _direction_pin(bs, turn, king_point, i, pins)
+    pins = jax.lax.fori_loop(
+        0, 8, lambda i, p: _direction_pin(bs, turn, king_point, i, p), pins
+    )
     return pins
 
 
