@@ -603,18 +603,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         .set(0),
     )
 
-    # 取り除かれた場所は、少なくとも自分は置ける
     max_ren_num = _state.size * _state.size
-    # _state = jax.lax.fori_loop(
-    #    0,
-    #    max_ren_num,
-    #    lambda i, state: _check_if_suicide_point_exist(
-    #        state, my_color, adj_ren_id[i]
-    #    ),
-    #    _state,
-    # )
-    # 試しに取り除かれた連に隣接する連の呼吸点は、
-    # 自分：置けるとしてみる
     _my_legal_action = jax.lax.fori_loop(
         0,
         max_ren_num,
@@ -622,13 +611,6 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
         | (_state.liberty[my_color, adj_ren_id[i]] == 1),
         _state._legal_action_mask[my_color] | surrounded_stones,
     )
-    # _oppo_legal_action = jax.lax.fori_loop(
-    #    0,
-    #    max_ren_num,
-    #    lambda i, board: board
-    #    & (~(_state.liberty[my_color, adj_ren_id[i]] == 1)),
-    #    _state._legal_action_mask[opp_color] | surrounded_stones,
-    # )
 
     # 取り除かれた位置はコウの候補となる
     return _state.replace(  # type:ignore
