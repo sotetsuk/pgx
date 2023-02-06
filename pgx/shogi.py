@@ -1096,8 +1096,7 @@ def _nearest_position(from_: int, direction: int, bs_one: jnp.ndarray):
         return (
             _is_in_board(point)
             & _is_same_line(from_, point, direction)
-            & bs_one[point]
-            == 1
+            & (bs_one[point] == 1)
         )
 
     idxs = jnp.arange(8)
