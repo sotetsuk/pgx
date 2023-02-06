@@ -719,6 +719,7 @@ def _create_piece_actions(piece, _from) -> jnp.ndarray:
 
 
 # actionを追加する
+@jax.jit
 def _add_action(
     add_array: jnp.ndarray, origin_array: jnp.ndarray
 ) -> jnp.ndarray:
@@ -726,6 +727,7 @@ def _add_action(
 
 
 # actionを削除する
+@jax.jit
 def _filter_action(
     filter_array: jnp.ndarray, origin_array: jnp.ndarray
 ) -> jnp.ndarray:
@@ -733,12 +735,14 @@ def _filter_action(
 
 
 # 駒の種類と位置から生成できるactionのフラグを立てる
+@jax.jit
 def _add_move_actions(piece, _from, array: jnp.ndarray) -> jnp.ndarray:
     actions = _create_piece_actions(piece, _from)
     return jnp.where(actions == 1, 1, array)
 
 
 # 駒の種類と位置から生成できるactionのフラグを折る
+@jax.jit
 def _filter_move_actions(
     piece: int, _from: int, array: jnp.ndarray
 ) -> jnp.ndarray:
