@@ -5,6 +5,7 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
+ACTION_SIZE = 2754
 
 # 指し手のdataclass
 @dataclass
@@ -718,28 +719,39 @@ def _can_promote(piece: int, _from: int, to: int):
     return can_promote
 
 
+@jax.jit
 def _create_one_piece_actions(
     piece: int, _from: int, to: int, actions: jnp.ndarray
 ) -> jnp.ndarray:
-    new_actions = actions
     normal_dir = _point_to_direction(_from, to, False, _owner(piece))
     normal_act = _dlshogi_action(normal_dir, to)
-    new_actions = new_actions.at[normal_act].set(1)
+    actions = actions.at[normal_act].set(1)
     pro_dir = _point_to_direction(_from, to, True, _owner(piece))
     pro_act = _dlshogi_action(pro_dir, to)
-    if _can_promote(piece, _from, to):
-        new_actions = new_actions.at[pro_act].set(1)
-    return new_actions
-
-
-def _create_actions(piece, _from, to: jnp.ndarray) -> jnp.ndarray:
-    actions = jnp.zeros(2754, dtype=jnp.int32)
-    for i in range(81):
-        if to[i] != 0:
-            actions = _create_one_piece_actions(piece, _from, i, actions)
+    actions = jax.lax.cond(
+        _can_promote(piece, _from, to),
+        lambda: actions.at[pro_act].set(1),
+        lambda: actions,
+    )
     return actions
 
 
+@jax.jit
+def _create_actions(piece, _from, to: jnp.ndarray) -> jnp.ndarray:
+    actions = jnp.zeros(2754, dtype=jnp.int32)
+
+    def add_action(i, actions):
+        return jax.lax.cond(
+            to[i] != 0,
+            lambda: _create_one_piece_actions(piece, _from, i, actions),
+            lambda: actions,
+        )
+
+    actions = jax.lax.fori_loop(0, 81, add_action, actions)
+    return actions
+
+
+@jax.jit
 def _create_piece_actions(piece, _from) -> jnp.ndarray:
     return _create_actions(piece, _from, POINT_MOVES[_from][piece])
 
@@ -773,13 +785,14 @@ def _filter_move_actions(
 
 
 # 駒打ちのactionを追加する
+@jax.jit
 def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
-    new_array = array
     direction = _hand_to_direction(piece)
-    new_array = new_array.at[
-        jnp.arange(81 * direction, 81 * (direction + 1))
-    ].set(1)
-    return new_array
+    idx = jnp.arange(ACTION_SIZE)
+    array = jnp.where(
+        (81 * direction <= idx) & (idx < 81 * (direction + 1)), 1, array
+    )
+    return array
 
 
 # 駒打ちのactionのフラグを折る
@@ -794,31 +807,53 @@ def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 
 # stateからblack,white両方のlegal_actionsを生成する
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
+@jax.jit
 def _init_legal_actions(state: ShogiState) -> ShogiState:
-    bs = _board_status(state)
-    legal_actions_black, legal_actions_white = (
-        state.legal_actions_black,
-        state.legal_actions_white,
-    )
+    pieces = _board_status(state)
+
     # 移動の追加
-    for i in range(81):
-        piece = bs[i]
-        if piece <= 14:
-            legal_actions_black = _add_move_actions(
-                piece, i, legal_actions_black
-            )
-        else:
-            legal_actions_white = _add_move_actions(
-                piece, i, legal_actions_white
-            )
+    def add_black_moves(i, legal_actions_black):
+        return jax.lax.cond(
+            pieces[i] <= 14,
+            lambda: _add_move_actions(pieces[i], i, legal_actions_black),
+            lambda: legal_actions_black,
+        )
+
+    def add_white_moves(i, legal_actions_white):
+        return jax.lax.cond(
+            pieces[i] > 14,
+            lambda: _add_move_actions(pieces[i], i, legal_actions_white),
+            lambda: legal_actions_white,
+        )
+
+    legal_actions_black = jax.lax.fori_loop(
+        0, 81, add_black_moves, state.legal_actions_black
+    )
+    legal_actions_white = jax.lax.fori_loop(
+        0, 81, add_white_moves, state.legal_actions_white
+    )
+
+    def add_black_drops(i, legal_actions_black):
+        return jax.lax.cond(
+            state.hand[i] != 0,
+            lambda: _add_drop_actions(1 + i, legal_actions_black),
+            lambda: legal_actions_black,
+        )
+
+    def add_white_drops(i, legal_actions_white):
+        return jax.lax.cond(
+            state.hand[i + 7] != 0,
+            lambda: _add_drop_actions(15 + i, legal_actions_white),
+            lambda: legal_actions_white,
+        )
+
     # 駒打ちの追加
-    for i in range(7):
-        if state.hand[i] != 0:
-            legal_actions_black = _add_drop_actions(1 + i, legal_actions_black)
-        if state.hand[i + 7] != 0:
-            legal_actions_white = _add_drop_actions(
-                15 + i, legal_actions_white
-            )
+    legal_actions_black = jax.lax.fori_loop(
+        0, 7, add_black_drops, legal_actions_black
+    )
+    legal_actions_white = jax.lax.fori_loop(
+        0, 7, add_white_drops, legal_actions_white
+    )
     return state.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
 
 
