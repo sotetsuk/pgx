@@ -1194,22 +1194,17 @@ def _kingless_effected_positions(
 
 
 # 玉が移動する手に合法なものがあるかを調べる
-def _king_escape(state: ShogiState) -> bool:
-    king_point = int(state.board[8 + 14 * state.turn, :].argmax())
+@jax.jit
+def _king_escape(state: ShogiState):
+    king_point = state.board[8 + 14 * state.turn, :].argmax()
     bs = _board_status(state)
     effects = _kingless_effected_positions(
         bs, king_point, _another_color(state)
     )
     king_moves = POINT_MOVES[king_point][8]
-    flag = False
-    for i in range(81):
-        if (
-            king_moves[i] == 1
-            and _owner(bs[i]) != state.turn
-            and effects[i] == 0
-        ):
-            flag = True
-    return flag
+    owners = jax.vmap(_owner)(bs)
+    ok = ((king_moves == 1) & (owners != state.turn) & (effects == 0)).any(0)
+    return ok
 
 
 # point同士の間の位置にフラグを立てる
