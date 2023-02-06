@@ -850,48 +850,41 @@ def _degeneration_piece(piece: int) -> int:
 
 
 # 駒の移動によるlegal_actionsの更新
+@jax.jit
 def _update_legal_move_actions(
     state: ShogiState, action: ShogiAction
 ) -> ShogiState:
-    s = state
-    if s.turn == 0:
-        player_actions = s.legal_actions_black
-        enemy_actions = s.legal_actions_white
-    else:
-        player_actions = s.legal_actions_white
-        enemy_actions = s.legal_actions_black
+    player_actions, enemy_actions = jax.lax.cond(
+        state.turn == 0,
+        lambda: (state.legal_actions_black, state.legal_actions_white),
+        lambda: (state.legal_actions_white, state.legal_actions_black),
+    )
     # 元の位置にいたときのフラグを折る
-    new_player_actions = _filter_move_actions(
+    player_actions = _filter_move_actions(
         action.piece, action.from_, player_actions
     )
-    new_enemy_actions = enemy_actions
     # 移動後の位置からの移動のフラグを立てる
-    new_piece = action.piece
-    if action.is_promote:
-        new_piece += 8
-    new_player_actions = _add_move_actions(
-        new_piece, action.to, new_player_actions
+    piece = jax.lax.cond(action.is_promote, lambda: action.piece + 8, lambda: action.piece)
+    player_actions = _add_move_actions(
+        piece, action.to, player_actions
     )
     # 取った駒を自分の持ち駒に変換
     # 取っていない場合は0
     captured = _degeneration_piece(_convert_piece(action.captured))
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
-    if action.captured != 0:
-        new_enemy_actions = _filter_move_actions(
-            action.captured, action.to, new_enemy_actions
-        )
-        new_player_actions = _add_drop_actions(captured, new_player_actions)
-    if s.turn == 0:
-        legal_actions_black, legal_actions_white = (
-            new_player_actions,
-            new_enemy_actions,
-        )
-    else:
-        legal_actions_black, legal_actions_white = (
-            new_enemy_actions,
-            new_player_actions,
-        )
-    return s.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
+    enemy_actions = jax.lax.cond(action.captured != 0,
+                                 lambda: _filter_move_actions(action.captured, action.to, enemy_actions),
+                                 lambda: enemy_actions)
+    player_actions = jax.lax.cond(action.captured != 0,
+                                  lambda: _add_drop_actions(captured, player_actions),
+                                  lambda: player_actions)
+
+    legal_actions_black, legal_actions_white = jax.lax.cond(
+        state.turn == 0,
+        lambda: (player_actions, enemy_actions),
+        lambda: (enemy_actions, player_actions),
+    )
+    return state.replace(legal_actions_black=legal_actions_black, legal_actions_white=legal_actions_white)  # type: ignore
 
 
 # 駒打ちによるlegal_actionsの更新
