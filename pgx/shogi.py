@@ -121,15 +121,6 @@ def _turn_to_reward(turn: int):
     return jnp.int32([1, -1])[turn]
 
 
-# 盤面の情報をStateに変換
-def _make_board(bs: jnp.ndarray) -> ShogiState:
-    board = jnp.zeros((29, 81), dtype=jnp.int32)
-    for i in range(81):
-        board = board.at[0, i].set(0)
-        board = board.at[bs[i], i].set(1)
-    return ShogiState(board=board)  # type: ignore
-
-
 @jax.jit
 def _pawn_move(turn: int) -> jnp.ndarray:
     array = jnp.zeros((9, 9), dtype=jnp.int32)

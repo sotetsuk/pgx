@@ -1,10 +1,19 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, _make_board, \
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, \
     _is_mate
 
 
 import jax.numpy as jnp
+
+
+# 盤面の情報をStateに変換
+def _make_board(bs: jnp.ndarray) -> ShogiState:
+    board = jnp.zeros((29, 81), dtype=jnp.int32)
+    for i in range(81):
+        board = board.at[0, i].set(0)
+        board = board.at[bs[i], i].set(1)
+    return ShogiState(board=board)  # type: ignore
 
 
 def make_test_board():
