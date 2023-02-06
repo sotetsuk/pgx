@@ -1,12 +1,11 @@
-from functools import partial
 import copy
+from functools import partial
 from typing import Tuple
 
 import jax
 import jax.numpy as jnp
 from flax.serialization import from_bytes
 from flax.struct import dataclass
-
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -1004,7 +1003,7 @@ def _is_check(state: ShogiState) -> Tuple[int, jnp.ndarray, int, jnp.ndarray]:
             0,
             jnp.zeros(81, dtype=jnp.int32),
         ),
-        lambda: _is_check_(state)
+        lambda: _is_check_(state),
     )
 
 
@@ -1019,26 +1018,26 @@ def _is_check_(state: ShogiState):
 
     def update_check(i, x):
         check, checking_point = x
-        flag = (_owner(pieces[i]) == _another_color(state)) & (_piece_moves(pieces, pieces[i], i)[king_point] == 1)
+        flag = (_owner(pieces[i]) == _another_color(state)) & (
+            _piece_moves(pieces, pieces[i], i)[king_point] == 1
+        )
         # 桂馬の王手も密接としてカウント
         flag2 = (near_king[i] == 1) | (pieces[i] % 14 == 3)
         check = jax.lax.cond(
             flag,
             lambda: jax.lax.cond(
-                flag2,
-                lambda: check + 10,
-                lambda: check + 1  # 遠隔の王手は9以上ありえない
-                ),
-            lambda: check
+                flag2, lambda: check + 10, lambda: check + 1  # 遠隔の王手は9以上ありえない
+            ),
+            lambda: check,
         )
         checking_point = jax.lax.cond(
             flag,
             lambda: jax.lax.cond(
                 flag2,
                 lambda: checking_point.at[0, i].set(1),
-                lambda: checking_point.at[1, i].set(1)  # 遠隔の王手は9以上ありえない
-                ),
-            lambda: checking_point
+                lambda: checking_point.at[1, i].set(1),  # 遠隔の王手は9以上ありえない
+            ),
+            lambda: checking_point,
         )
         return check, checking_point
 
@@ -1132,20 +1131,28 @@ def _direction_pin(
     arr1 = array
 
     flag = (piece2 == 2 + 14 * e_turn) & (direction == 5 * turn)
-    flag |= (((piece2 == 6 + e_turn * 14) | (piece2 == 14 + e_turn * 14)) &
-        ((direction == 0) | (direction == 3) | (direction == 4) | (direction == 5)))
-    flag |= (((piece2 == 5 + e_turn * 14) | (piece2 == 13 + e_turn * 14)) &
-        ((direction == 1) | (direction == 2) | (direction == 6) | (direction == 7)))
+    flag |= ((piece2 == 6 + e_turn * 14) | (piece2 == 14 + e_turn * 14)) & (
+        (direction == 0)
+        | (direction == 3)
+        | (direction == 4)
+        | (direction == 5)
+    )
+    flag |= ((piece2 == 5 + e_turn * 14) | (piece2 == 13 + e_turn * 14)) & (
+        (direction == 1)
+        | (direction == 2)
+        | (direction == 6)
+        | (direction == 7)
+    )
     arr2 = jax.lax.cond(
         flag,
         lambda: array.at[point1].set(_direction_to_pin(direction)),
-        lambda: array
+        lambda: array,
     )
 
     return jax.lax.cond(
         ((point1 == -1) | (point2 == -1)) | (_owner(piece1) != turn),
         lambda: arr1,
-        lambda: arr2
+        lambda: arr2,
     )
 
 
@@ -1174,8 +1181,8 @@ def _eliminate_direction(actions: jnp.ndarray, direction) -> jnp.ndarray:
             lambda: (0, 5),  # direction == 1, 縦
             lambda: (1, 7),  # direction == 2, 右下がり
             lambda: (2, 6),  # direction == 3, 右上り
-            lambda: (3, 4)   # direction == 4, 横
-        ]
+            lambda: (3, 4),  # direction == 4, 横
+        ],
     )
     pro_dir1 = dir1 + 8
     pro_dir2 = dir2 + 8
@@ -1223,7 +1230,9 @@ def _between(point1: int, point2: int) -> jnp.ndarray:
     bet = jax.lax.cond(
         direction == -1,
         lambda: jnp.zeros(81, dtype=jnp.int32),
-        lambda: _change_between(point1, point2, _direction_to_dif(direction, 0))
+        lambda: _change_between(
+            point1, point2, _direction_to_dif(direction, 0)
+        ),
     )
     bet = bet.at[point2].set(0)
     return bet
@@ -1235,14 +1244,17 @@ def _eliminate_pin_actions(
     bs: jnp.ndarray, pins: jnp.ndarray, actions: jnp.ndarray
 ):
     actions = jax.lax.fori_loop(
-        0, 81, lambda i, a: jax.lax.cond(
+        0,
+        81,
+        lambda i, a: jax.lax.cond(
             pins[i] != 0,
             lambda: _filter_action(
                 _eliminate_direction(_create_piece_actions(bs[i], i), pins[i]),
                 a,
             ),
-            lambda: a
-        ), actions
+            lambda: a,
+        ),
+        actions,
     )
     return actions
 
@@ -1260,9 +1272,13 @@ def _is_avoid_check(
 ):
     is_close_check = cn == 1  # 密接の王手 (or 開き王手）
     # 玉が逃げる手以外の合法手は王手をかけた駒がある座標への移動のみ
-    point = jax.lax.cond(is_close_check, lambda: cnp.argmax(), lambda: cfp.argmax())
+    point = jax.lax.cond(
+        is_close_check, lambda: cnp.argmax(), lambda: cfp.argmax()
+    )
     # pointとking_pointの間。ここに駒を打ったり移動させたりする手は合法
-    points = jax.lax.cond(is_close_check, lambda: cnp, lambda: _between(king_point, point))
+    points = jax.lax.cond(
+        is_close_check, lambda: cnp, lambda: _between(king_point, point)
+    )
 
     actions = legal_actions.reshape(34, 81)
     ix = jnp.arange(81)
@@ -1280,7 +1296,7 @@ def _is_mate(state: ShogiState) -> bool:
     return jax.lax.cond(
         cn + cf == 0,
         lambda: FALSE,
-        lambda: _is_mate_noncheck(cn, cnp, cf, cfp, state)
+        lambda: _is_mate_noncheck(cn, cnp, cf, cfp, state),
     )
 
 
@@ -1303,7 +1319,6 @@ def _is_mate_noncheck(
         # 玉が逃げる手が合法なら詰んでない
         lambda: FALSE,
         # 両王手がかかっている場合はTrue, そうでなければis_avoid_check参照
-        lambda: (cn + cf >= 2) | _is_avoid_check(
-            cn, cnp, cfp, king_point, legal_actions
-        )
+        lambda: (cn + cf >= 2)
+        | _is_avoid_check(cn, cnp, cfp, king_point, legal_actions),
     )
