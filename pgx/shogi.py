@@ -63,53 +63,43 @@ def init() -> ShogiState:
 
 def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
-    s = copy.deepcopy(state)
-    legal_actions = _legal_actions(s)
-    _action = _dlaction_to_action(action, s)
+    legal_actions = _legal_actions(state)
+    _action = _dlaction_to_action(action, state)
     # actionのfromが盤外の場合は非合法手なので負け
     if not _is_in_board(_action.from_):
-        print("an illegal action")
-        return s, _turn_to_reward(_another_color(s)), True
+        return state, _turn_to_reward(_another_color(state)), True
     # legal_actionsにactionがない場合、そのactionは非合法手
     if legal_actions[action] == 0:
-        print("an illegal action2")
-        return s, _turn_to_reward(_another_color(s)), True
+        return state, _turn_to_reward(_another_color(state)), True
     # 合法手の場合
     # 駒打ち
     if _action.is_drop:
-        s = _update_legal_drop_actions(s, _action)
-        s = _drop(s, _action)
-        print("drop: piece =", _action.piece, ", to =", _action.to)
+        state = _update_legal_drop_actions(state, _action)
+        state = _drop(state, _action)
     # 駒の移動
     else:
-        s = _update_legal_move_actions(s, _action)
-        s = _move(s, _action)
-        print("move: piece =", _action.piece, ", to =", _action.to)
+        state = _update_legal_move_actions(state, _action)
+        state = _move(state, _action)
     # 王手がかかったままの場合、王手放置またｈ自殺手で負け
-    cn, cnp, cf, cfp = _is_check(s)
+    cn, cnp, cf, cfp = _is_check(state)
     if cn + cf != 0:
-        print("check is remained")
-        return s, _turn_to_reward(_another_color(s)), True
+        return state, _turn_to_reward(_another_color(state)), True
     # その他の反則
-    if _is_double_pawn(s):
-        print("two pawns in the same file")
-        return s, _turn_to_reward(_another_color(s)), True
-    if _is_stuck(s):
-        print("some pieces are stuck")
-        return s, _turn_to_reward(_another_color(s)), True
-    s = s.replace(turn=_another_color(s))  # type: ignore
+    if _is_double_pawn(state):
+        return state, _turn_to_reward(_another_color(state)), True
+    if _is_stuck(state):
+        return state, _turn_to_reward(_another_color(state)), True
+    state = state.replace(turn=_another_color(state))  # type: ignore
     # 相手に合法手がない場合→詰み
-    if _is_mate(s):
+    if _is_mate(state):
         # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
         if _action.is_drop and (_action.piece == 1 or _action.piece == 15):
-            print("mate by dropped pawn")
-            return s, _turn_to_reward(s.turn), True
+            return state, _turn_to_reward(state.turn), True
         # そうでなければ普通の詰みで勝ち
         else:
-            print("mate")
-            return s, _turn_to_reward(_another_color(s)), True
+            return state, _turn_to_reward(_another_color(state)), True
     else:
-        return s, 0, False
+        return state, 0, False
 
 
 # turnから報酬計算
