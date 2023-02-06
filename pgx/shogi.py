@@ -557,24 +557,27 @@ def _inner_point(bs_one: jnp.ndarray, from_: int, direction: int):
     return jax.lax.cond(
         jnp.all(dir_array * bs_one == 0),
         lambda: from_ + _direction_to_dif(direction, 0) * jnp.max(dir_array),
-        lambda: _nearest_position(from_, direction, bs_one)
+        lambda: _nearest_position(from_, direction, bs_one),
     )
 
 
+# TODO: cache
 # fromからtoまでの地点をdifごとに1に置き換える
 # 最大8回
 # fromは0、toは1に
+@jax.jit
 def _change_between(from_: int, to: int, dif: int) -> jnp.ndarray:
     array = jnp.zeros(81, dtype=jnp.int32)
-    point = from_
-    flag = from_ != to
-    for i in range(8):
-        point += dif
-        if flag and _is_in_board(point):
-            array = array.at[point].set(1)
-        if point == to:
-            flag = False
-    return array
+    ix = jnp.arange(81)
+    return jax.lax.cond(
+        0 < dif,
+        lambda: jnp.where(
+            (from_ < ix) & (ix <= to) & ((ix - from_) % dif == 0), 1, array
+        ),
+        lambda: jnp.where(
+            (ix < from_) & (to <= ix) & ((ix - from_) % dif == 0), 1, array
+        ),
+    )
 
 
 # 香車の動き
@@ -1034,9 +1037,12 @@ def _nearest_position(from_: int, direction: int, bs_one: jnp.ndarray):
 
     @jax.vmap
     def is_ok(point):
-        return (_is_in_board(point)
-        & _is_same_line(from_, point, direction)
-        & bs_one[point] == 1)
+        return (
+            _is_in_board(point)
+            & _is_same_line(from_, point, direction)
+            & bs_one[point]
+            == 1
+        )
 
     idxs = jnp.arange(8)
     points = from_ + (1 + idxs) * dif
