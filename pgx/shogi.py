@@ -645,17 +645,17 @@ def _piece_moves(bs: jnp.ndarray, piece, point) -> jnp.ndarray:
     moves = jax.lax.cond(piece == 2, lambda: _lance_move(bs, point, 0), lambda: moves)
     moves = jax.lax.cond(piece == 16, lambda: _lance_move(bs, point, 1), lambda: moves)
     # 角の動き
-    moves = jax.lax.cond(piece == 5, lambda: _bishop_move(bs, point), lambda: moves)
-    moves = jax.lax.cond(piece == 19, lambda: _bishop_move(bs, point), lambda: moves)
+    is_bishop = (piece == 5) | (piece == 19)
+    moves = jax.lax.cond(is_bishop, lambda: _bishop_move(bs, point), lambda: moves)
     # 飛車の動き
-    moves = jax.lax.cond(piece == 6, lambda: _rook_move(bs, point), lambda: moves)
-    moves = jax.lax.cond(piece == 20, lambda: _rook_move(bs, point), lambda: moves)
+    is_rook = (piece == 6) | (piece == 20)
+    moves = jax.lax.cond(is_rook, lambda: _rook_move(bs, point), lambda: moves)
     # 馬の動き
-    moves = jax.lax.cond(piece == 13, lambda: _horse_move(bs, point), lambda: moves)
-    moves = jax.lax.cond(piece == 27, lambda: _horse_move(bs, point), lambda: moves)
+    is_horse = (piece == 13) | (piece == 27)
+    moves = jax.lax.cond(is_horse, lambda: _horse_move(bs, point), lambda: moves)
     # 龍の動き
-    moves = jax.lax.cond(piece == 14, lambda: _dragon_move(bs, point), lambda: moves)
-    moves = jax.lax.cond(piece == 28, lambda: _dragon_move(bs, point), lambda: moves)
+    is_dragon = (piece == 14) | (piece == 28)
+    moves = jax.lax.cond(is_dragon, lambda: _dragon_move(bs, point), lambda: moves)
     return moves
 
 
