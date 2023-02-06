@@ -1279,7 +1279,6 @@ def _is_mate(state: ShogiState) -> bool:
 
 
 # 王手の有無にかかわらず詰みを判定する
-@jax.jit
 def _is_mate_noncheck(
     cn: int, cnp: jnp.ndarray, cf: int, cfp: jnp.ndarray, state: ShogiState
 ):
