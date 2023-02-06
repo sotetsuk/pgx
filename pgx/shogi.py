@@ -415,16 +415,18 @@ def _hand_to_direction(piece: int) -> int:
 
 
 # ShogiActionをdlshogiのint型actionに変換
-def _action_to_dlaction(action: ShogiAction, turn: int) -> int:
-    if action.is_drop:
-        return _dlshogi_action(_hand_to_direction(action.piece), action.to)
-    else:
-        return _dlshogi_action(
+@jax.jit
+def _action_to_dlaction(action: ShogiAction, turn: int):
+    return jax.lax.cond(
+        action.is_drop,
+        lambda: _dlshogi_action(_hand_to_direction(action.piece), action.to),
+        lambda: _dlshogi_action(
             _point_to_direction(
                 action.from_, action.to, action.is_promote, turn
             ),
             action.to,
-        )
+        ),
+    )
 
 
 # dlshogiのint型actionをdirectionとtoに分解
