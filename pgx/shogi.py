@@ -942,25 +942,34 @@ def _filter_occupied_drop_actions(
 # boardのlegal_actionsを利用して合法手を生成する
 # 大駒や香車の利きはboardのlegal_actionsに追加していないので、ここで追加する
 # 自殺手や反則手はここでは除かない
+@jax.jit
 def _legal_actions(state: ShogiState) -> jnp.ndarray:
-    if state.turn == 0:
-        action_array = state.legal_actions_black
-    else:
-        action_array = state.legal_actions_white
-    bs = _board_status(state)
+    actions = jax.lax.cond(
+        state.turn == 0,
+        lambda: state.legal_actions_black,
+        lambda: state.legal_actions_white,
+
+    )
+    pieces = _board_status(state)
     own = _pieces_owner(state)
-    for i in range(81):
-        piece = bs[i]
-        if _owner(piece) == state.turn:
-            action_array = _add_action(
-                _create_actions(piece, i, _piece_moves(bs, piece, i)),
-                action_array,
-            )
+
+    # TODO: vectorize
+    def add_action(i, actions):
+        return jax.lax.cond(
+            _owner(pieces[i]) == state.turn,
+            lambda: _add_action(
+                _create_actions(pieces[i], i, _piece_moves(pieces, pieces[i], i)),
+                actions,
+            ),
+            lambda: actions
+        )
+
+    actions = jax.lax.fori_loop(0, 81, add_action, actions)
     # 自分の駒がある位置への移動actionを除く
-    action_array = _filter_my_piece_move_actions(state.turn, own, action_array)
+    actions = _filter_my_piece_move_actions(state.turn, own, actions)
     # 駒がある地点への駒打ちactionを除く
-    action_array = _filter_occupied_drop_actions(state.turn, own, action_array)
-    return action_array
+    actions = _filter_occupied_drop_actions(state.turn, own, actions)
+    return actions
 
 
 # 王手判定
