@@ -57,7 +57,7 @@ def test(func_name):
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(_init_legal_actions)(state)
-     elif func_name == "_is_mate":
+    elif func_name == "_is_mate":
         state = init()
         time_sta = time.perf_counter()
         jax.jit(_is_mate)(state)
