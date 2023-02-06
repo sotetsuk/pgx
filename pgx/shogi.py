@@ -293,14 +293,21 @@ def _is_same_line(from_: int, to: int, direction: int):
 # TODO: cache
 # fromからある方向に移動させたときの位置と距離の関係
 # それ以上その方向に動かせないなら全部0
+@jax.jit
 def _dis_direction_array(from_: int, turn: int, direction: int) -> jnp.ndarray:
     array = jnp.zeros(81, dtype=jnp.int32)
     dif = _direction_to_dif(direction, turn)
-    for i in range(8):
+
+    def update_arr(i, array):
         dis = 1 + i
         to = from_ + dif * dis
-        if _is_in_board(to) and _is_same_line(from_, to, direction):
-            array = array.at[to].set(dis)
+        return jax.lax.cond(
+            _is_in_board(to) & _is_same_line(from_, to, direction),
+            lambda: array.at[to].set(dis),
+            lambda: array
+        )
+
+    array = jax.lax.fori_loop(0, 8, update_arr, array)
     return array
 
 
