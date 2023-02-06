@@ -61,49 +61,59 @@ def init() -> ShogiState:
     return _init_legal_actions(state)
 
 
+@jax.jit
 def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     # state, 勝敗判定,終了判定を返す
     legal_actions = _legal_actions(state)
     _action = _dlaction_to_action(action, state)
+
     # actionのfromが盤外の場合は非合法手なので負け
     is_oob = ~_is_in_board(_action.from_)
     is_illegal = legal_actions[action] == 0
-    if is_oob:
-        return state, _turn_to_reward(_another_color(state)), True
-    # legal_actionsにactionがない場合、そのactionは非合法手
-    if is_illegal:
-        return state, _turn_to_reward(_another_color(state)), True
+    state1 = state
+
     # 合法手の場合
-    # 駒打ち
     state = jax.lax.cond(
         _action.is_drop,
         lambda: _drop(_update_legal_drop_actions(state, _action), _action),
         lambda: _move(_update_legal_move_actions(state, _action), _action)
     )
+
+    # 王手がかかったままの場合、王手放置また自殺手で負け
     cn, cnp, cf, cfp = _is_check(state)
     is_check = cn + cf != 0
-    # 王手がかかったままの場合、王手放置また自殺手で負け
-    if is_check:
-        return state, _turn_to_reward(_another_color(state)), True
-    # その他の反則
     is_double_pawn = _is_double_pawn(state)
-    if is_double_pawn:
-        return state, _turn_to_reward(_another_color(state)), True
     is_stuck = _is_stuck(state)
-    if is_stuck:
-        return state, _turn_to_reward(_another_color(state)), True
+    state2 = state
+
     state = state.replace(turn=_another_color(state))  # type: ignore
+
     # 相手に合法手がない場合→詰み
     is_mate = _is_mate(state)
-    if is_mate:
-        # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
-        if _action.is_drop and (_action.piece == 1 or _action.piece == 15):
-            return state, _turn_to_reward(state.turn), True
-        # そうでなければ普通の詰みで勝ち
-        else:
-            return state, _turn_to_reward(_another_color(state)), True
-    else:
-        return state, 0, False
+    state, reward, terminated = jax.lax.cond(
+        is_mate,
+        lambda: jax.lax.cond(
+            (_action.is_drop & ((_action.piece == 1) | (_action.piece == 15))),
+            # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
+            lambda: (state, _turn_to_reward(state.turn), True),
+            # そうでなければ普通の詰みで勝ち
+            lambda: (state, _turn_to_reward(_another_color(state)), True)
+        ),
+        lambda: (state, 0, False)
+    )
+    # 反則負け
+    state, reward, terminated = jax.lax.cond(
+        (is_check | is_double_pawn | is_stuck),
+        lambda: (state2, _turn_to_reward(_another_color(state2)), True),
+        lambda: (state, reward, terminated)
+    )
+    # 反則負け
+    state, reward, terminated = jax.lax.cond(
+        (is_oob | is_illegal),
+        lambda: (state1, _turn_to_reward(_another_color(state1)), True),
+        lambda: (state, reward, terminated)
+    )
+    return state, reward, terminated
 
 
 # turnから報酬計算
