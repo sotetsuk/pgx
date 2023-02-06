@@ -1111,6 +1111,7 @@ def _nearest_position(from_: int, direction: int, bs_one: jnp.ndarray):
 
 
 # pinされている駒の位置と方向を記録(1方向のみ)
+@jax.jit
 def _direction_pin(
     bs: jnp.ndarray,
     turn: int,
@@ -1128,24 +1129,21 @@ def _direction_pin(
     piece2 = bs[point2]
     arr1 = array
 
-    flag = False
-    if piece2 == 2 + 14 * e_turn and direction == 5 * turn:
-        flag = True
-    if (piece2 == 6 + e_turn * 14 or piece2 == 14 + e_turn * 14) and (
-        direction == 0 or direction == 3 or direction == 4 or direction == 5
-    ):
-        flag = True
-    if (piece2 == 5 + e_turn * 14 or piece2 == 13 + e_turn * 14) and (
-        direction == 1 or direction == 2 or direction == 6 or direction == 7
-    ):
-        flag = True
-    if flag:
-        array = array.at[point1].set(_direction_to_pin(direction))
+    flag = (piece2 == 2 + 14 * e_turn) & (direction == 5 * turn)
+    flag |= (((piece2 == 6 + e_turn * 14) | (piece2 == 14 + e_turn * 14)) &
+        ((direction == 0) | (direction == 3) | (direction == 4) | (direction == 5)))
+    flag |= (((piece2 == 5 + e_turn * 14) | (piece2 == 13 + e_turn * 14)) &
+        ((direction == 1) | (direction == 2) | (direction == 6) | (direction == 7)))
+    arr2 = jax.lax.cond(
+        flag,
+        lambda: array.at[point1].set(_direction_to_pin(direction)),
+        lambda: array
+    )
 
     return jax.lax.cond(
         ((point1 == -1) | (point2 == -1)) | (_owner(piece1) != turn),
         lambda: arr1,
-        lambda: array
+        lambda: arr2
     )
 
 
