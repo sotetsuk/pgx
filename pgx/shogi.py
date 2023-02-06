@@ -1153,34 +1153,27 @@ def _pin(state: ShogiState) -> jnp.ndarray:
 
 
 # 特定の方向の動きだけを除いたactionを生成する
+@jax.jit
 def _eliminate_direction(actions: jnp.ndarray, direction) -> jnp.ndarray:
-    new_array = actions
+    actions = actions.reshape(34, 81)
     # 2方向と成・不成の4方向のフラグを折る
-    dir1 = 0
-    dir2 = 0
-    # 縦
-    if direction == 1:
-        dir1 = 0
-        dir2 = 5
-    # 右下がり
-    if direction == 2:
-        dir1 = 1
-        dir2 = 7
-    # 右上がり
-    if direction == 3:
-        dir1 = 2
-        dir2 = 6
-    # 横
-    if direction == 4:
-        dir1 = 3
-        dir2 = 4
+    dir1, dir2 = 0, 0
+    dir1, dir2 = jax.lax.switch(
+        direction - 1,
+        [
+            lambda: (0, 5),  # direction == 1, 縦
+            lambda: (1, 7),  # direction == 2, 右下がり
+            lambda: (2, 6),  # direction == 3, 右上り
+            lambda: (3, 4)   # direction == 4, 横
+        ]
+    )
     pro_dir1 = dir1 + 8
     pro_dir2 = dir2 + 8
-    new_array = new_array.at[dir1 * 81 : (dir1 + 1) * 81].set(0)
-    new_array = new_array.at[dir2 * 81 : (dir2 + 1) * 81].set(0)
-    new_array = new_array.at[pro_dir1 * 81 : (pro_dir1 + 1) * 81].set(0)
-    new_array = new_array.at[pro_dir2 * 81 : (pro_dir2 + 1) * 81].set(0)
-    return new_array
+    actions = actions.at[dir1].set(0)
+    actions = actions.at[dir2].set(0)
+    actions = actions.at[pro_dir1].set(0)
+    actions = actions.at[pro_dir2].set(0)
+    return actions.flatten()
 
 
 # 利きの判定
