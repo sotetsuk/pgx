@@ -1,10 +1,40 @@
 from pgx.shogi import init, _action_to_dlaction, _dlaction_to_action, ShogiAction, ShogiState, _move, _drop, \
     _piece_moves, _is_check, _legal_actions, _add_drop_actions, _init_legal_actions, _update_legal_move_actions, \
-    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, _make_board, \
+    _update_legal_drop_actions, _is_double_pawn, _is_stuck, _board_status, step, _between, _pin, \
     _is_mate
 
 
+import jax
 import jax.numpy as jnp
+
+init = jax.jit(init)
+step = jax.jit(step)
+_action_to_dlaction = jax.jit(_action_to_dlaction)
+_dlaction_to_action = jax.jit(_dlaction_to_action)
+_move = jax.jit(_move)
+_drop = jax.jit(_drop)
+_piece_moves = jax.jit(_piece_moves)
+_is_check = jax.jit(_is_check)
+_legal_actions = jax.jit(_legal_actions)
+_add_drop_actions = jax.jit(_add_drop_actions)
+_init_legal_actions = jax.jit(_init_legal_actions)
+_update_legal_move_actions = jax.jit(_update_legal_move_actions)
+_update_legal_drop_actions = jax.jit(_update_legal_drop_actions)
+_is_double_pawn = jax.jit(_is_double_pawn)
+_is_stuck = jax.jit(_is_stuck)
+_board_status = jax.jit(_board_status)
+_between = jax.jit(_between)
+_pin = jax.jit(_pin)
+_is_mate = jax.jit(_is_mate)
+
+
+# 盤面の情報をStateに変換
+def _make_board(bs: jnp.ndarray) -> ShogiState:
+    board = jnp.zeros((29, 81), dtype=jnp.int32)
+    for i in range(81):
+        board = board.at[0, i].set(0)
+        board = board.at[bs[i], i].set(1)
+    return ShogiState(board=board)  # type: ignore
 
 
 def make_test_board():
