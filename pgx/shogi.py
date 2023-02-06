@@ -76,7 +76,7 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
     state = jax.lax.cond(
         _action.is_drop,
         lambda: _drop(_update_legal_drop_actions(state, _action), _action),
-        lambda: _move(_update_legal_move_actions(state, _action), _action)
+        lambda: _move(_update_legal_move_actions(state, _action), _action),
     )
 
     # 王手がかかったままの場合、王手放置また自殺手で負け
@@ -97,21 +97,21 @@ def step(state: ShogiState, action: int) -> Tuple[ShogiState, int, bool]:
             # actionのis_dropがTrueかつpieceが歩の場合、打ち歩詰めで負け
             lambda: (state, _turn_to_reward(state.turn), True),
             # そうでなければ普通の詰みで勝ち
-            lambda: (state, _turn_to_reward(_another_color(state)), True)
+            lambda: (state, _turn_to_reward(_another_color(state)), True),
         ),
-        lambda: (state, 0, False)
+        lambda: (state, 0, False),
     )
     # 反則負け
     state, reward, terminated = jax.lax.cond(
         (is_check | is_double_pawn | is_stuck),
         lambda: (state2, _turn_to_reward(_another_color(state2)), True),
-        lambda: (state, reward, terminated)
+        lambda: (state, reward, terminated),
     )
     # 反則負け
     state, reward, terminated = jax.lax.cond(
         (is_oob | is_illegal),
         lambda: (state1, _turn_to_reward(_another_color(state1)), True),
-        lambda: (state, reward, terminated)
+        lambda: (state, reward, terminated),
     )
     return state, reward, terminated
 
