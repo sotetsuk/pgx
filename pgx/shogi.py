@@ -304,7 +304,7 @@ def _dis_direction_array(from_: int, turn: int, direction: int) -> jnp.ndarray:
         return jax.lax.cond(
             _is_in_board(to) & _is_same_line(from_, to, direction),
             lambda: array.at[to].set(dis),
-            lambda: array
+            lambda: array,
         )
 
     array = jax.lax.fori_loop(0, 8, update_arr, array)
