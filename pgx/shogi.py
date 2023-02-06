@@ -550,13 +550,15 @@ def _drop(state: ShogiState, action: ShogiAction) -> ShogiState:
 
 
 # 方向ごとの大ごまの動きのなかで一番奥の地点を返す
+@jax.jit
 def _inner_point(bs_one: jnp.ndarray, from_: int, direction: int):
     dir_array = _dis_direction_array(from_, 0, direction)
     # 途中で駒にぶつからない場合
-    if jnp.all(dir_array * bs_one == 0):
-        return from_ + _direction_to_dif(direction, 0) * jnp.max(dir_array)
-    else:
-        return _nearest_position(from_, direction, bs_one)
+    return jax.lax.cond(
+        jnp.all(dir_array * bs_one == 0),
+        lambda: from_ + _direction_to_dif(direction, 0) * jnp.max(dir_array),
+        lambda: _nearest_position(from_, direction, bs_one)
+    )
 
 
 # fromからtoまでの地点をdifごとに1に置き換える
