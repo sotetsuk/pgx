@@ -642,20 +642,30 @@ def _dragon_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
 def _piece_moves(bs: jnp.ndarray, piece, point) -> jnp.ndarray:
     moves = POINT_MOVES[point][piece]
     # 香車の動き
-    moves = jax.lax.cond(piece == 2, lambda: _lance_move(bs, point, 0), lambda: moves)
-    moves = jax.lax.cond(piece == 16, lambda: _lance_move(bs, point, 1), lambda: moves)
+    moves = jax.lax.cond(
+        piece == 2, lambda: _lance_move(bs, point, 0), lambda: moves
+    )
+    moves = jax.lax.cond(
+        piece == 16, lambda: _lance_move(bs, point, 1), lambda: moves
+    )
     # 角の動き
     is_bishop = (piece == 5) | (piece == 19)
-    moves = jax.lax.cond(is_bishop, lambda: _bishop_move(bs, point), lambda: moves)
+    moves = jax.lax.cond(
+        is_bishop, lambda: _bishop_move(bs, point), lambda: moves
+    )
     # 飛車の動き
     is_rook = (piece == 6) | (piece == 20)
     moves = jax.lax.cond(is_rook, lambda: _rook_move(bs, point), lambda: moves)
     # 馬の動き
     is_horse = (piece == 13) | (piece == 27)
-    moves = jax.lax.cond(is_horse, lambda: _horse_move(bs, point), lambda: moves)
+    moves = jax.lax.cond(
+        is_horse, lambda: _horse_move(bs, point), lambda: moves
+    )
     # 龍の動き
     is_dragon = (piece == 14) | (piece == 28)
-    moves = jax.lax.cond(is_dragon, lambda: _dragon_move(bs, point), lambda: moves)
+    moves = jax.lax.cond(
+        is_dragon, lambda: _dragon_move(bs, point), lambda: moves
+    )
     return moves
 
 
@@ -766,7 +776,9 @@ def _add_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
 def _filter_drop_actions(piece: int, array: jnp.ndarray) -> jnp.ndarray:
     direction = _hand_to_direction(piece)
     ix = jnp.arange(2754)
-    array = jnp.where((81 * direction <= ix) & (ix < 81 * (direction + 1)), 0, array)
+    array = jnp.where(
+        (81 * direction <= ix) & (ix < 81 * (direction + 1)), 0, array
+    )
     return array
 
 
@@ -948,7 +960,6 @@ def _legal_actions(state: ShogiState) -> jnp.ndarray:
         state.turn == 0,
         lambda: state.legal_actions_black,
         lambda: state.legal_actions_white,
-
     )
     pieces = _board_status(state)
     own = _pieces_owner(state)
@@ -958,10 +969,12 @@ def _legal_actions(state: ShogiState) -> jnp.ndarray:
         return jax.lax.cond(
             _owner(pieces[i]) == state.turn,
             lambda: _add_action(
-                _create_actions(pieces[i], i, _piece_moves(pieces, pieces[i], i)),
+                _create_actions(
+                    pieces[i], i, _piece_moves(pieces, pieces[i], i)
+                ),
                 actions,
             ),
-            lambda: actions
+            lambda: actions,
         )
 
     actions = jax.lax.fori_loop(0, 81, add_action, actions)
