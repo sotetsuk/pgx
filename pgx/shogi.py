@@ -895,28 +895,32 @@ def _update_legal_move_actions(
 
 
 # 駒打ちによるlegal_actionsの更新
+@jax.jit
 def _update_legal_drop_actions(
     state: ShogiState, action: ShogiAction
 ) -> ShogiState:
-    s = state
-    if s.turn == 0:
-        player_actions = s.legal_actions_black
-    else:
-        player_actions = s.legal_actions_white
+    player_actions = jax.lax.cond(
+        state.turn == 0,
+        lambda: state.legal_actions_black,
+        lambda: state.legal_actions_white
+    )
     # 移動後の位置からの移動のフラグを立てる
-    new_player_actions = _add_move_actions(
+    player_actions = _add_move_actions(
         action.piece, action.to, player_actions
     )
     # 持ち駒がもうない場合、その駒を打つフラグを折る
-    if s.hand[_piece_to_hand(action.piece)] == 1:
-        new_player_actions = _filter_drop_actions(
-            action.piece, new_player_actions
-        )
-    if s.turn == 0:
-        s = s.replace(legal_actions_black=new_player_actions)  # type: ignore
-    else:
-        s = s.replace(legal_actions_white=new_player_actions)  # type: ignore
-    return s
+    player_actions = jax.lax.cond(
+        state.hand[_piece_to_hand(action.piece)] == 1,
+        lambda: _filter_drop_actions(
+            action.piece, player_actions
+        ),
+        lambda: player_actions
+    )
+    return jax.lax.cond(
+        state.turn == 0,
+        lambda: state.replace(legal_actions_black=player_actions),  # type: ignore
+        lambda: state.replace(legal_actions_white=player_actions)  # type: ignore
+    )
 
 
 # 自分の駒がある位置への移動を除く
