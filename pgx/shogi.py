@@ -581,6 +581,7 @@ def _change_between(from_: int, to: int, dif: int) -> jnp.ndarray:
 
 
 # 香車の動き
+@jax.jit
 def _lance_move(bs: jnp.ndarray, from_: int, turn: int) -> jnp.ndarray:
     bs_one = jnp.where(bs == 0, 0, 1)
     direction = 5 * turn
@@ -589,6 +590,7 @@ def _lance_move(bs: jnp.ndarray, from_: int, turn: int) -> jnp.ndarray:
 
 
 # 角の動き
+@jax.jit
 def _bishop_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
     to = jnp.zeros(81, dtype=jnp.int32)
     bs_one = jnp.where(bs == 0, 0, 1)
@@ -604,6 +606,7 @@ def _bishop_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
 
 
 # 飛車の動き
+@jax.jit
 def _rook_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
     to = jnp.zeros(81, dtype=jnp.int32)
     bs_one = jnp.where(bs == 0, 0, 1)
@@ -619,6 +622,7 @@ def _rook_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
 
 
 # 馬の動き
+@jax.jit
 def _horse_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
     # 角の動き＋玉の動き
     to = _bishop_move(bs, from_) + POINT_MOVES[from_][8]
@@ -626,6 +630,7 @@ def _horse_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
 
 
 # 龍の動き
+@jax.jit
 def _dragon_move(bs: jnp.ndarray, from_: int) -> jnp.ndarray:
     # 飛車の動き＋玉の動き
     to = _rook_move(bs, from_) + POINT_MOVES[from_][8]
