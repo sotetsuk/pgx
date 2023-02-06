@@ -1026,21 +1026,22 @@ def _direction_to_pin(direction: int):
 
 
 # それぞれの方向について、1番fromに近い駒の位置を返す
-def _nearest_position(from_: int, direction: int, bs_one: jnp.ndarray) -> int:
-    flag1 = True
-    point1 = -1
+@jax.jit
+def _nearest_position(from_: int, direction: int, bs_one: jnp.ndarray):
     dif = _direction_to_dif(direction, 0)
-    for i in range(8):
-        point = from_ + (1 + i) * dif
-        if (
-            flag1
-            and _is_in_board(point)
-            and _is_same_line(from_, point, direction)
-            and bs_one[point] == 1
-        ):
-            point1 = point
-            flag1 = False
-    return point1
+
+    @jax.vmap
+    def is_ok(point):
+        return (_is_in_board(point)
+        & _is_same_line(from_, point, direction)
+        & bs_one[point] == 1)
+
+    idxs = jnp.arange(8)
+    points = from_ + (1 + idxs) * dif
+    is_oks = is_ok(points)
+
+    min_ix = jnp.argmax(is_oks)
+    return points[min_ix]
 
 
 # pinされている駒の位置と方向を記録(1方向のみ)
