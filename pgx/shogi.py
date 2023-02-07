@@ -33,32 +33,22 @@ import numpy as np
 #  28 後手龍
 
 
-INIT_PIECE_BOARD = jnp.int8(
-    [
-        [16, 17, 18, 22, 23, 22, 18, 17, 16],
-        [0, 20, 0, 0, 0, 0, 0, 19, 0],
-        [15, 15, 15, 15, 15, 15, 15, 15, 15],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [1, 1, 1, 1, 1, 1, 1, 1, 1],
-        [0, 5, 0, 0, 0, 0, 0, 6, 0],
-        [2, 3, 4, 7, 8, 7, 4, 3, 2],
-    ]
-).flatten()
+# fmt: off
+INIT_PIECE_BOARD = jnp.int8([16, 0, 15, 0, 0, 0, 1, 0, 2, 17, 19, 15, 0, 0, 0, 1, 6, 3, 18, 0, 15, 0, 0, 0, 1, 0, 4, 22, 0, 15, 0, 0, 0, 1, 0, 7, 23, 0, 15, 0, 0, 0, 1, 0, 8, 22, 0, 15, 0, 0, 0, 1, 0,  7, 18, 0, 15, 0, 0, 0, 1, 0, 4, 17, 20, 15, 0, 0, 0, 1, 5, 3, 16, 0, 15, 0, 0, 0, 1, 0, 2])
+# fmt: on
 
 
 @dataclass
 class State:
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,)
-    hand: jnp.ndarray = jnp.int8((2, 7))
+    hand: jnp.ndarray = jnp.zeros((2, 7))
 
 
 def init():
     """Initialize Shogi State.
     >>> s = init()
-    >>> s.piece_board.reshape((9, 9))
+    >>> jnp.rot90(s.piece_board.reshape((9, 9)), k=3)
     Array([[16, 17, 18, 22, 23, 22, 18, 17, 16],
            [ 0, 20,  0,  0,  0,  0,  0, 19,  0],
            [15, 15, 15, 15, 15, 15, 15, 15, 15],
@@ -71,6 +61,7 @@ def init():
     """
     return State()
 
+
 def _to_sfen(state: State):
     # 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
     # 成駒なら駒の前に+をつける（と金なら+P）
@@ -80,10 +71,11 @@ def _to_sfen(state: State):
     # 盤面の記入が終わったら手番の記入。b または w
     # 持ち駒は先手の物から記入。先手歩5枚、後手香車と桂馬1枚ずつなら5Pln
     # 最後に手数。ただここは1でいいと思う
-    pb = state.piece_board.reshape((9, 9))
+    pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""
     board_char_dir = np.array(["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"], dtype=str)
     hand_char_dir = np.array(["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"], dtype=str)
+    # 盤面
     for i in range(9):
         space_length = 0
         for j in range(9):
@@ -99,5 +91,24 @@ def _to_sfen(state: State):
             sfen += str(space_length)
         if i != 8:
             sfen += "/"
+        else:
+            sfen += " "
+    # 手番
+    if state.turn == 0:
+        sfen += "b "
+    else:
+        sfen += "w "
+    # 持ち駒
+    if jnp.all(state.hand == 0):
+        sfen += "- 1"
+    else:
+        for i in range(2):
+            for j in range(7):
+                num_piece = state.hand[i][j]
+                if num_piece == 0:
+                    continue
+                if num_piece >= 2:
+                    sfen += str(num_piece)
+                sfen += hand_char_dir[i * 7 + j]
+        sfen += " 1"
     return sfen
-
