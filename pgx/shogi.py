@@ -47,30 +47,30 @@ PAWN = jnp.int8(0)
 LANCE = jnp.int8(1)
 KNIGHT = jnp.int8(2)
 SILVER = jnp.int8(3)
-Bishop = jnp.int8(4)
+BISHOP = jnp.int8(4)
 ROOK = jnp.int8(5)
 GOLD = jnp.int8(6)
-KKING = jnp.int8(7)
+KING = jnp.int8(7)
 PRO_PAWN = jnp.int8(8)
 PRO_LANCE = jnp.int8(9)
 PRO_KNIGHT = jnp.int8(10)
 PRO_SILVER = jnp.int8(11)
-PRO_HORSE = jnp.int8(12)
-PRO_DRAGON = jnp.int8(13)
+HORSE = jnp.int8(12)
+DRAGON = jnp.int8(13)
 OPP_PAWN = jnp.int8(14)
 OPP_LANCE = jnp.int8(15)
 OPP_KNIGHT = jnp.int8(16)
 OPP_SILVER = jnp.int8(17)
-OPP_Bishop = jnp.int8(18)
+OPP_BISHOP = jnp.int8(18)
 OPP_ROOK = jnp.int8(19)
 OPP_GOLD = jnp.int8(20)
-OPP_KKING = jnp.int8(21)
+OPP_KING = jnp.int8(21)
 OPP_PRO_PAWN = jnp.int8(22)
 OPP_PRO_LANCE = jnp.int8(23)
 OPP_PRO_KNIGHT = jnp.int8(24)
 OPP_PRO_SILVER = jnp.int8(25)
-OPP_PRO_HORSE = jnp.int8(26)
-OPP_PRO_DRAGON = jnp.int8(27)
+OPP_HORSE = jnp.int8(26)
+OPP_DRAGON = jnp.int8(27)
 
 
 # fmt: off
@@ -157,7 +157,7 @@ class Action:
 
     # 駒打ちかどうか
     is_drop: jnp.ndarray
-    # piece: 動かした(打った)駒の種類
+    # 動かした(打った)駒の種類/打つ前が成っていなければ成ってない
     piece: jnp.ndarray
     # 移動後の座標
     to: jnp.ndarray
@@ -168,8 +168,8 @@ class Action:
     is_promotion: jnp.ndarray = FALSE
 
     @classmethod
-    def make_move(cls, piece, from_, to):
-        return Action(is_drop=False, piece=piece, from_=from_, to=to)
+    def make_move(cls, piece, from_, to, is_promotion=FALSE):
+        return Action(is_drop=False, piece=piece, from_=from_, to=to, is_promotion=is_promotion)
 
     @classmethod
     def make_drop(cls, piece, to):
@@ -193,6 +193,17 @@ class Action:
         return 81 * direction + self.to
 
 
+def _step(state: State, action: Action) -> State:
+    # apply move/drop action
+    state = jax.lax.cond(
+        action.is_drop, _step_drop, _step_move, *(state, action)
+    )
+    # flip state
+    state = _flip(state)
+    state = state.replace(turn=(state.turn + 1) % 2)
+    return state
+
+
 def _step_move(state: State, action: Action) -> State:
     pb = state.piece_board
     # from_
@@ -206,6 +217,14 @@ def _step_move(state: State, action: Action) -> State:
 
 def _step_drop(state: State, action: Action) -> State:
     return state
+
+
+def _flip(state: State):
+    return state.replace(  # type: ignore
+        piece_board=jnp.rot90(state.piece_board, k=2),
+        hand=state.hand.at[jnp.int8(1, 0)]
+    )
+
 
 def _promote(piece: jnp.ndarray) -> jnp.ndarray:
     return piece + 8
