@@ -1,6 +1,6 @@
 import jax.numpy as jnp
-from flax.struct import dataclass
 import numpy as np
+from flax.struct import dataclass
 
 #   0 空白
 #   1 先手歩
@@ -83,8 +83,44 @@ def _to_sfen(state: State):
     # 最後に手数。ただここは1でいいと思う
     pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""
-    board_char_dir = np.array(["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"], dtype=str)
-    hand_char_dir = np.array(["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"], dtype=str)
+    board_char_dir = np.array(
+        [
+            "",
+            "P",
+            "L",
+            "N",
+            "S",
+            "B",
+            "R",
+            "G",
+            "K",
+            "+P",
+            "+L",
+            "+N",
+            "+S",
+            "+B",
+            "+R",
+            "p",
+            "l",
+            "n",
+            "s",
+            "b",
+            "r",
+            "g",
+            "k",
+            "+p",
+            "+l",
+            "+n",
+            "+s",
+            "+b",
+            "+r",
+        ],
+        dtype=str,
+    )
+    hand_char_dir = np.array(
+        ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"],
+        dtype=str,
+    )
     hand_dir = np.array([5, 4, 6, 3, 2, 1, 0, 12, 11, 13, 10, 9, 8, 7])
     # 盤面
     for i in range(9):
