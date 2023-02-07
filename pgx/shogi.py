@@ -206,13 +206,23 @@ def _step(state: State, action: Action) -> State:
 
 def _step_move(state: State, action: Action) -> State:
     pb = state.piece_board
-    # from_
+    # remove piece from the original position
     pb = pb.at[action.from_].set(EMPTY)
-    # to
+    # capture the opponent if exists
+    captured = pb[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
+    hand = jax.lax.cond(
+        captured == EMPTY,
+        lambda: state.hand,
+        # add captured piece to my hand after
+        #   (1) tuning opp piece into mine (x + 14) % 28, and
+        #   (2) filtering promoted piece x % 8
+        lambda: state.hand.at[((captured + 14) % 28) % 8].add(1)
+    )
+    # promote piece
     piece = jax.lax.cond(action.is_promotion, lambda: _promote(action.piece), lambda: action.piece)
+    # set piece to the target position
     pb = pb.at[action.to].set(piece)
-
-    return state.replace(piece_board=pb)  # type: ignore
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
@@ -220,8 +230,12 @@ def _step_drop(state: State, action: Action) -> State:
 
 
 def _flip(state: State):
+    empty_mask = state.piece_board == EMPTY
+    pb = (state.piece_board * 14) % 28
+    pb = jnp.where(empty_mask, EMPTY, pb)
+    pb = jnp.rot90(pb, k=2)
     return state.replace(  # type: ignore
-        piece_board=jnp.rot90(state.piece_board, k=2),
+        piece_board=pb,
         hand=state.hand.at[jnp.int8(1, 0)]
     )
 
