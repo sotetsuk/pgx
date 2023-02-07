@@ -95,3 +95,9 @@ def test_flip():
     assert s.piece_board[xy2i(8, 4)] == OPP_PAWN
     assert (s.hand[0] == 0).all()
     assert (s.hand[1] == 1).all()
+    s = _flip(s)
+    visualize(s, "tests/assets/shogi/flip_003.svg")
+    assert s.piece_board[xy2i(2, 6)] == PAWN
+    assert s.piece_board[xy2i(8, 4)] == EMPTY
+    assert (s.hand[0] == 1).all()
+    assert (s.hand[1] == 0).all()
