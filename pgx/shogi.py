@@ -140,7 +140,6 @@ class Action:
     # is_promote: 駒を成るかどうかの判定 (false if drop action)
     is_promotion: jnp.ndarray
 
-
     @classmethod
     def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
         direction, to = action // 81, action % 81
@@ -156,8 +155,5 @@ class Action:
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promotion)  # type: ignore
 
     def to_dlshogi_action(self) -> jnp.ndarray:
-        direction = jax.lax.cond(
-            self.is_drop,
-            lambda: ...
-        )
+        direction = jax.lax.cond(self.is_drop, lambda: ...)
         return 81 * direction + self.to
