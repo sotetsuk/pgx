@@ -41,12 +41,13 @@ INIT_PIECE_BOARD = jnp.int8([16, 0, 15, 0, 0, 0, 1, 0, 2, 17, 19, 15, 0, 0, 0, 1
 class State:
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,)
-    hand: jnp.ndarray = jnp.int8((2, 7))
+    hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)
 
 
 def init():
     """Initialize Shogi State.
     >>> s = init()
+    >>> s.piece_board.reshape((9, 9))
     >>> jnp.rot90(s.piece_board.reshape((9, 9)), k=3)
     Array([[16, 17, 18, 22, 23, 22, 18, 17, 16],
            [ 0, 20,  0,  0,  0,  0,  0, 19,  0],
