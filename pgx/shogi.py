@@ -32,6 +32,10 @@ from flax.struct import dataclass
 #  28 後手龍
 
 
+TRUE = jnp.bool_(True)
+FALSE = jnp.bool_(False)
+
+
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([16, 0, 15, 0, 0, 0, 1, 0, 2, 17, 19, 15, 0, 0, 0, 1, 6, 3, 18, 0, 15, 0, 0, 0, 1, 0, 4, 22, 0, 15, 0, 0, 0, 1, 0, 7, 23, 0, 15, 0, 0, 0, 1, 0, 8, 22, 0, 15, 0, 0, 0, 1, 0, 7, 18, 0, 15, 0, 0, 0, 1, 0, 4, 17, 20, 15, 0, 0, 0, 1, 5, 3, 16, 0, 15, 0, 0, 0, 1, 0, 2])
 # fmt: on
@@ -69,3 +73,26 @@ def init():
            [ 2,  3,  4,  7,  8,  7,  4,  3,  2]], dtype=int8)
     """
     return State()
+
+
+# 指し手のdataclass
+@dataclass
+class Action:
+    # 駒打ちかどうか
+    is_drop: jnp.ndarray
+    # piece: 動かした(打った)駒の種類
+    piece: jnp.ndarray
+    # 移動前の座標
+    to: jnp.ndarray
+    # 以下は移動でのみ使用
+    # 移動後の座標
+    from_: jnp.ndarray = jnp.int8(0)
+    # captured: 取られた駒の種類。駒が取られていない場合は0
+    is_capture: jnp.ndarray = FALSE
+    # is_promote: 駒を成るかどうかの判定
+    is_promotion: jnp.ndarray = FALSE
+
+    @classmethod
+    def from_dlaction(cls, action: jnp.ndarray):
+        direction, to = action // 81, action % 81
+        return Action(FALSE, 0, 0)
