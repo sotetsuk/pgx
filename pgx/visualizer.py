@@ -7,12 +7,12 @@ from typing import List, Literal, Union
 import numpy as np
 import svgwrite  # type: ignore
 
-from ._shogi import ShogiState
 from .animal_shogi import JaxAnimalShogiState as AnimalShogiState
 from .backgammon import BackgammonState
 from .chess import ChessState
 from .contractbridgebidding import ContractBridgeBiddingState
 from .go import GoState
+from .shogi import State as ShogiState
 from .suzume_jong import State as SuzumeJongState
 from .tic_tac_toe import State as TictactoeState
 
@@ -1351,7 +1351,7 @@ class Visualizer:
 
         return board_g
 
-    def _make_shogi_dwg(
+    def _make_shogi_dwg(  # noqa: C901
         self,
         dwg,
         state: ShogiState,
@@ -1404,7 +1404,7 @@ class Visualizer:
             """
             ShogiStateのhandを飛、角、金、銀、桂、香、歩の順にする
             """
-            hands = state.hand[::-1]
+            hands = state.hand.flatten()[::-1]
             tmp = hands
             hands = hands.at[0].set(tmp[1])
             hands = hands.at[1].set(tmp[2])
@@ -1520,9 +1520,15 @@ class Visualizer:
         # pieces
         p1_pieces_g = dwg.g()
         p2_pieces_g = dwg.g()
+        one_hot_board = np.zeros((29, 81))
+        board = state.piece_board
+        for i in range(81):
+            piece = board[i]
+            if piece > 0:
+                one_hot_board[piece, i] = 1
         for i, piece_pos, piece_type in zip(
             range(28),
-            state.board[1:29],
+            one_hot_board,
             PIECES,
         ):
             for xy, is_set in enumerate(piece_pos):
