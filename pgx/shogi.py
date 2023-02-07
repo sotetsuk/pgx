@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 from flax.struct import dataclass
+import numpy as np
 
 #   0 空白
 #   1 先手歩
@@ -71,7 +72,7 @@ def init():
     return State()
 
 def _to_sfen(state: State):
-    # 歩：P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
+    # 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
     # 成駒なら駒の前に+をつける（と金なら+P）
     # 先手の駒は大文字、後手の駒は小文字で表現
     # 空白の場合、連続する空白の数を入れて次の駒にシフトする。歩空空空飛ならP3R
@@ -79,5 +80,24 @@ def _to_sfen(state: State):
     # 盤面の記入が終わったら手番の記入。b または w
     # 持ち駒は先手の物から記入。先手歩5枚、後手香車と桂馬1枚ずつなら5Pln
     # 最後に手数。ただここは1でいいと思う
-    pb = state.piece_board
+    pb = state.piece_board.reshape((9, 9))
+    sfen = ""
+    board_char_dir = np.array(["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"], dtype=str)
+    hand_char_dir = np.array(["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"], dtype=str)
+    for i in range(9):
+        space_length = 0
+        for j in range(9):
+            piece = pb[i][j]
+            if piece == 0:
+                space_length += 1
+            elif space_length != 0:
+                sfen += str(space_length)
+                space_length = 0
+            if piece != 0:
+                sfen += board_char_dir[piece]
+        if space_length != 0:
+            sfen += str(space_length)
+        if i != 8:
+            sfen += "/"
+    return sfen
 
