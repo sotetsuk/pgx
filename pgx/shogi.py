@@ -214,8 +214,8 @@ def _step_move(state: State, action: Action) -> State:
         captured == EMPTY,
         lambda: state.hand,
         # add captured piece to my hand after
-        #   (1) tuning opp piece into mine (x + 14) % 28, and
-        #   (2) filtering promoted piece x % 8
+        #   (1) tuning opp piece into mine by (x + 14) % 28, and
+        #   (2) filtering promoted piece by x % 8
         lambda: state.hand.at[((captured + 14) % 28) % 8].add(1)
     )
     # promote piece
