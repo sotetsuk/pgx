@@ -109,7 +109,7 @@ def _player_position(
         position = np.roll(state.shuffled_players, state.dealer)
         return np.where(position == player)[0]
     else:
-        return np.full(-1, 1, dtype=np.int8)
+        return np.full(1, -1, dtype=np.int8)
 
 
 def step(
@@ -224,7 +224,7 @@ def _state_bid(
     state.last_bidder = state.curr_player
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
-    team = _player_to_team(_player_position(state.last_bidder, state))
+    team = _position_to_team(_player_position(state.last_bidder, state))
     # team = 1ならEWチーム
     if team and (state.first_denomination_EW[denomination] == -1):
         state.first_denomination_EW[denomination] = state.last_bidder
@@ -244,7 +244,7 @@ def _bid_to_denomination(bid: int) -> int:
 
 
 # playerのチームを判定　0: NSチーム, 1: EWチーム
-def _player_to_team(position: np.ndarray) -> np.ndarray:
+def _position_to_team(position: np.ndarray) -> np.ndarray:
     return position % 2
 
 

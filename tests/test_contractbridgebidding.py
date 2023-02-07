@@ -57,7 +57,7 @@ def test_step():
     state.curr_player = 3
     state.shuffled_players = np.array([3, 1, 2, 0], dtype=np.int8)
     bidding_history = np.full(319, -1, dtype=np.int8)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[-2:] = 0
     first_denomination_NS = np.full(5, -1, dtype=np.int8)
     first_denomination_EW = np.full(5, -1, dtype=np.int8)
@@ -227,7 +227,7 @@ def test_step():
     assert not state.terminated
     bidding_history[6] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:9] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 0
@@ -257,7 +257,7 @@ def test_step():
     assert not state.terminated
     bidding_history[7] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:9] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 1
@@ -287,7 +287,7 @@ def test_step():
     assert not state.terminated
     bidding_history[8] = 37
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:9] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 0
@@ -317,7 +317,7 @@ def test_step():
     assert not state.terminated
     bidding_history[9] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:9] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 0
@@ -347,7 +347,7 @@ def test_step():
     assert not state.terminated
     bidding_history[10] = 22
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:23] = 0
     legal_action_mask[36] = 1
     legal_action_mask[37] = 0
@@ -378,7 +378,7 @@ def test_step():
     assert not state.terminated
     bidding_history[11] = 23
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:24] = 0
     legal_action_mask[36] = 1
     legal_action_mask[37] = 0
@@ -409,7 +409,7 @@ def test_step():
     assert not state.terminated
     bidding_history[12] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:24] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 0
@@ -440,7 +440,7 @@ def test_step():
     assert not state.terminated
     bidding_history[13] = 25
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:26] = 0
     legal_action_mask[36] = 1
     legal_action_mask[37] = 0
@@ -471,7 +471,7 @@ def test_step():
     assert not state.terminated
     bidding_history[14] = 36
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:26] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 1
@@ -503,7 +503,7 @@ def test_step():
     assert not state.terminated
     bidding_history[15] = 37
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:26] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 0
@@ -535,7 +535,7 @@ def test_step():
     assert not state.terminated
     bidding_history[16] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:26] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 0
@@ -567,7 +567,7 @@ def test_step():
     assert not state.terminated
     bidding_history[17] = 30
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:31] = 0
     legal_action_mask[36] = 1
     legal_action_mask[37] = 0
@@ -599,7 +599,7 @@ def test_step():
     assert not state.terminated
     bidding_history[18] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:31] = 0
     legal_action_mask[36] = 0
     legal_action_mask[37] = 0
@@ -632,7 +632,7 @@ def test_step():
     assert not state.terminated
     bidding_history[19] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:31] = 0
     legal_action_mask[36] = 1
     legal_action_mask[37] = 0
@@ -667,7 +667,7 @@ def test_step():
     assert state.terminated
     bidding_history[20] = 35
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool8)
+    legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[0:31] = 0
     legal_action_mask[36] = 1
     legal_action_mask[37] = 0
@@ -697,15 +697,15 @@ def max_action_length_agent(state: ContractBridgeBiddingState):
 def test_max_action():
     _, state = init()
     state.turn = np.int16(0)
-    state.terminated = np.bool8(0)
+    state.terminated = np.bool_(0)
     state.bidding_history = np.full(319, -1, dtype=np.int8)
-    state.legal_action_mask = np.ones(38, dtype=np.bool8)
+    state.legal_action_mask = np.ones(38, dtype=np.bool_)
     state.legal_action_mask[-2:] = 0
     state.first_denomination_NS = np.full(5, -1, dtype=np.int8)
     state.first_denomination_EW = np.full(5, -1, dtype=np.int8)
-    state.call_x = np.bool8(0)
-    state.call_xx = np.bool8(0)
-    state.pass_num = np.bool8(0)
+    state.call_x = np.bool_(0)
+    state.call_xx = np.bool_(0)
+    state.pass_num = np.bool_(0)
     state.last_bid = np.int8(-1)
     state.last_bidder = np.int8(-1)
 
