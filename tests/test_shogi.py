@@ -45,10 +45,12 @@ def test_step_move():
     piece, from_, to = BISHOP , xy2i(8, 8), xy2i(3, 3)
     assert s.piece_board[from_] == BISHOP
     assert s.piece_board[to] == OPP_PAWN
+    assert s.hand[0, PAWN] == 0
     a = Action.make_move(piece=piece, from_=from_, to=to, is_promotion=True)  # type: ignore
     s = _step_move(s, a)
     assert s.piece_board[from_] == EMPTY
     assert s.piece_board[to] == HORSE
+    assert s.hand[0, PAWN] == 1
 
 
 def test_to_sfen():
