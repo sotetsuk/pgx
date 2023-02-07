@@ -102,12 +102,14 @@ def _shuffle_players() -> np.ndarray:
     return shuffled_players
 
 
-def _player_position(player: int, state: ContractBridgeBiddingState) -> int:
+def _player_position(
+    player: np.ndarray, state: ContractBridgeBiddingState
+) -> np.ndarray:
     if player != -1:
         position = np.roll(state.shuffled_players, state.dealer)
         return np.where(position == player)[0]
     else:
-        return -1
+        return np.full(-1, 1, dtype=np.int8)
 
 
 def step(
@@ -289,7 +291,7 @@ def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
 
 
 # playerがパートナーか判断s
-def _is_partner(position1: np.ndarray, position2: np.ndarray) -> np.ndarray:
+def _is_partner(position1: np.ndarray, position2: np.ndarray) -> int:
     return (abs(position1 - position2) + 1) % 2
 
 
