@@ -235,8 +235,11 @@ def _step_move(state: State, action: Action) -> State:
 
 
 def _step_drop(state: State, action: Action) -> State:
-    pb = state.piece_board
-    return state
+    # add piece to board
+    pb = state.piece_board.at[action.to].set(action.piece)
+    # remove piece from hand
+    hand = state.hand.at[0, action.piece].add(-1)
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
 def _flip(state: State):
