@@ -17,5 +17,5 @@ def test_to_sfen():
          6, 1, 0, 0, 0, 9, 0, 0, 0, 2, 0, 0, 0])
     hand = jnp.int8([[1, 0, 0, 1, 0, 0, 0], [6, 0, 2, 2, 2, 0, 1]])
     s = State(turn=1, piece_board=pb, hand=hand)
-    sfen2 = _to_sfen(s)
+    sfen2 = to_sfen(s)
     assert (sfen2 == "6+P1l/+P8/2g2G3/4pp1Lp/1nk3Pp1/LR3P2P/1P1NP4/3S1G3/4K2RL w SP2bg2s2n6p 1")
