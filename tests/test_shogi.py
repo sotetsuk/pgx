@@ -4,12 +4,7 @@ from pgx.shogi import *
 from pgx.shogi import _step, _step_move, _step_drop
 
 
-SKIP_VISUALIZATION = True
-
-
 def visualize(state, fname="tests/assets/shogi/xxx.svg"):
-    if SKIP_VISUALIZATION:
-        return
     from pgx.visualizer import Visualizer
     v = Visualizer(color_mode="dark")
     v.save_svg(state, fname)
