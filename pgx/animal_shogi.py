@@ -491,15 +491,24 @@ def _update_legal_move_actions(
     # 移動後の位置からの移動のフラグを立てる
     player_actions = _add_move_actions(action.to, action.piece, player_actions)
     # 駒が取られた場合、相手の取られた駒によってできていたactionのフラグを折る
-    enemy_actions = _filter_move_actions(
-        action.to, action.captured, enemy_actions
+    enemy_actions = jax.lax.cond(
+        action.captured == 0,
+        lambda: enemy_actions,
+        lambda: _filter_move_actions(
+            action.to, action.captured, enemy_actions
+        ),
     )
 
     captured = _convert_piece(action.captured)
     captured = jax.lax.cond(
         captured % 5 == 0, lambda: captured - 4, lambda: captured
     )
-    player_actions = _add_drop_actions(captured, player_actions)
+    player_actions = jax.lax.cond(
+        # capturedは何も取っていない場合は-1に変換されているはず
+        captured == -1,
+        lambda: player_actions,
+        lambda: _add_drop_actions(captured, player_actions),
+    )
 
     legal_action_masks = jnp.stack([player_actions, enemy_actions])
     return state.replace(  # type: ignore
