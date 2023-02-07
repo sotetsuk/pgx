@@ -36,7 +36,6 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
-
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
@@ -169,7 +168,13 @@ class Action:
 
     @classmethod
     def make_move(cls, piece, from_, to, is_promotion=FALSE):
-        return Action(is_drop=False, piece=piece, from_=from_, to=to, is_promotion=is_promotion)
+        return Action(
+            is_drop=False,
+            piece=piece,
+            from_=from_,
+            to=to,
+            is_promotion=is_promotion,
+        )
 
     @classmethod
     def make_drop(cls, piece, to):
@@ -216,10 +221,14 @@ def _step_move(state: State, action: Action) -> State:
         # add captured piece to my hand after
         #   (1) tuning opp piece into mine by (x + 14) % 28, and
         #   (2) filtering promoted piece by x % 8
-        lambda: state.hand.at[((captured + 14) % 28) % 8].add(1)
+        lambda: state.hand.at[0, ((captured + 14) % 28) % 8].add(1),
     )
     # promote piece
-    piece = jax.lax.cond(action.is_promotion, lambda: _promote(action.piece), lambda: action.piece)
+    piece = jax.lax.cond(
+        action.is_promotion,
+        lambda: _promote(action.piece),
+        lambda: action.piece,
+    )
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
@@ -235,8 +244,7 @@ def _flip(state: State):
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = jnp.rot90(pb, k=2)
     return state.replace(  # type: ignore
-        piece_board=pb,
-        hand=state.hand.at[jnp.int8(1, 0)]
+        piece_board=pb, hand=state.hand.at[jnp.int8(1, 0)]
     )
 
 

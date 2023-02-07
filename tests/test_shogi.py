@@ -4,6 +4,11 @@ from pgx.shogi import *
 from pgx.shogi import _step, _step_move, _step_drop
 
 
+def visualize(state, fname="tests/assets/shogi/xxx.svg"):
+    from pgx.visualizer import Visualizer
+    v = Visualizer(color_mode="dark")
+    v.save_svg(state, fname)
+
 def xy2i(x, y, white=False):
     """
     >>> xy2i(2, 6)  # 26歩
@@ -31,6 +36,7 @@ def test_step_move():
     s = _step_move(s, a)
     assert s.piece_board[from_] == EMPTY
     assert s.piece_board[to] == PAWN
+    visualize(s, "tests/assets/shogi/step_move_001.svg")
 
     # 76歩
     piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)
@@ -40,17 +46,21 @@ def test_step_move():
     s = _step_move(s, a)
     assert s.piece_board[from_] == EMPTY
     assert s.piece_board[to] == PAWN
+    visualize(s, "tests/assets/shogi/step_move_002.svg")
 
     # 33角成
     piece, from_, to = BISHOP , xy2i(8, 8), xy2i(3, 3)
     assert s.piece_board[from_] == BISHOP
     assert s.piece_board[to] == OPP_PAWN
     assert s.hand[0, PAWN] == 0
+    assert (s.hand[0, PAWN:] == 0).all()
     a = Action.make_move(piece=piece, from_=from_, to=to, is_promotion=True)  # type: ignore
     s = _step_move(s, a)
     assert s.piece_board[from_] == EMPTY
     assert s.piece_board[to] == HORSE
     assert s.hand[0, PAWN] == 1
+    assert (s.hand[0, :PAWN] == 0).all()
+    visualize(s, "tests/assets/shogi/step_move_003.svg")
 
 
 def test_to_sfen():
