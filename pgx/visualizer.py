@@ -1351,7 +1351,7 @@ class Visualizer:
 
         return board_g
 
-    def _make_shogi_dwg(
+    def _make_shogi_dwg(  # noqa: C901
         self,
         dwg,
         state: ShogiState,
