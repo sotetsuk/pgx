@@ -86,16 +86,16 @@ def to_sfen(state: State):
 
     >>> s = init()
     >>> to_sfen(s)
-    "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
+    'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1'
     """
 
     pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""
     # fmt: off
     board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r",]
-    # fmt: on
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     hand_dir = [5, 4, 6, 3, 2, 1, 0, 12, 11, 13, 10, 9, 8, 7]
+    # fmt: on
     # 盤面
     for i in range(9):
         space_length = 0
