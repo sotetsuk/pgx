@@ -235,6 +235,7 @@ def _step_move(state: State, action: Action) -> State:
 
 
 def _step_drop(state: State, action: Action) -> State:
+    pb = state.piece_board
     return state
 
 
