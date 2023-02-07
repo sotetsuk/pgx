@@ -34,7 +34,7 @@ import numpy as np
 
 
 # fmt: off
-INIT_PIECE_BOARD = jnp.int8([16, 0, 15, 0, 0, 0, 1, 0, 2, 17, 19, 15, 0, 0, 0, 1, 6, 3, 18, 0, 15, 0, 0, 0, 1, 0, 4, 22, 0, 15, 0, 0, 0, 1, 0, 7, 23, 0, 15, 0, 0, 0, 1, 0, 8, 22, 0, 15, 0, 0, 0, 1, 0,  7, 18, 0, 15, 0, 0, 0, 1, 0, 4, 17, 20, 15, 0, 0, 0, 1, 5, 3, 16, 0, 15, 0, 0, 0, 1, 0, 2])
+INIT_PIECE_BOARD = jnp.int8([16, 0, 15, 0, 0, 0, 1, 0, 2, 17, 19, 15, 0, 0, 0, 1, 6, 3, 18, 0, 15, 0, 0, 0, 1, 0, 4, 21, 0, 15, 0, 0, 0, 1, 0, 7, 22, 0, 15, 0, 0, 0, 1, 0, 8, 21, 0, 15, 0, 0, 0, 1, 0,  7, 18, 0, 15, 0, 0, 0, 1, 0, 4, 17, 20, 15, 0, 0, 0, 1, 5, 3, 16, 0, 15, 0, 0, 0, 1, 0, 2])
 # fmt: on
 
 
@@ -69,12 +69,13 @@ def _to_sfen(state: State):
     # 空白の場合、連続する空白の数を入れて次の駒にシフトする。歩空空空飛ならP3R
     # 左上から開始して右に見ていく。段が変わるときは/を挿入
     # 盤面の記入が終わったら手番の記入。b または w
-    # 持ち駒は先手の物から記入。先手歩5枚、後手香車と桂馬1枚ずつなら5Pln
+    # 持ち駒は先手の物から記入。順番はRBGSNLPの順
     # 最後に手数。ただここは1でいいと思う
     pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""
     board_char_dir = np.array(["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"], dtype=str)
     hand_char_dir = np.array(["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"], dtype=str)
+    hand_dir = np.array([5, 4, 6, 3, 2, 1, 0, 12, 11, 13, 10, 9, 8, 7])
     # 盤面
     for i in range(9):
         space_length = 0
@@ -104,11 +105,12 @@ def _to_sfen(state: State):
     else:
         for i in range(2):
             for j in range(7):
-                num_piece = state.hand[i][j]
+                piece_type = hand_dir[i * 7 + j]
+                num_piece = state.hand.flatten()[piece_type]
                 if num_piece == 0:
                     continue
                 if num_piece >= 2:
                     sfen += str(num_piece)
-                sfen += hand_char_dir[i * 7 + j]
+                sfen += hand_char_dir[piece_type]
         sfen += " 1"
     return sfen
