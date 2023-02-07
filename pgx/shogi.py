@@ -126,7 +126,7 @@ class Action:
     is_promotion: jnp.ndarray = FALSE
 
     @classmethod
-    def from_dlaction(cls, state: State, action: jnp.ndarray):
+    def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
         direction, to = action // 81, action % 81
         is_drop = direction >= 20
         from_ = ...  # TODO: write me
@@ -139,5 +139,5 @@ class Action:
         is_promotion = (10 <= direction) & (direction < 20)
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promotion)  # type: ignore
 
-    def to_dlaction(self) -> jnp.ndarray:
+    def to_dlshogi_action(self) -> jnp.ndarray:
         ...
