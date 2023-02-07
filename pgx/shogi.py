@@ -205,7 +205,7 @@ def _step(state: State, action: Action) -> State:
     )
     # flip state
     state = _flip(state)
-    state = state.replace(turn=(state.turn + 1) % 2)
+    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
     return state
 
 
@@ -244,7 +244,7 @@ def _flip(state: State):
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = jnp.rot90(pb, k=2)
     return state.replace(  # type: ignore
-        piece_board=pb, hand=state.hand.at[jnp.int8(1, 0)]
+        piece_board=pb, hand=state.hand.at[jnp.int8((1, 0))]
     )
 
 
