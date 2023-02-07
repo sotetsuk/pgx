@@ -196,7 +196,7 @@ def to_sfen(state: State):
     for i in range(9):
         space_length = 0
         for j in range(9):
-            piece = pb[i][j]
+            piece = pb[i, j] + 1
             if piece == 0:
                 space_length += 1
             elif space_length != 0:
