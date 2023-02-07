@@ -1,35 +1,36 @@
+import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
 #   0 空白
-#   1 先手歩
-#   2 先手香車
-#   3 先手桂馬
-#   4 先手銀
-#   5 先手角
-#   6 先手飛車
-#   7 先手金
-#   8 先手玉
-#   9 先手と
-#  10 先手成香
-#  11 先手成桂
-#  12 先手成銀
-#  13 先手馬
-#  14 先手龍
-#  15 後手歩
-#  16 後手香車
-#  17 後手桂馬
-#  18 後手銀
-#  19 後手角
-#  20 後手飛車
-#  21 後手金
-#  22 後手玉
-#  23 後手と
-#  24 後手成香
-#  25 後手成桂
-#  26 後手成銀
-#  27 後手馬
-#  28 後手龍
+#   1 歩
+#   2 香車
+#   3 桂馬
+#   4 銀
+#   5 角
+#   6 飛車
+#   7 金
+#   8 玉
+#   9 と
+#  10 成香
+#  11 成桂
+#  12 成銀
+#  13 馬
+#  14 龍
+#  15 相手歩
+#  16 相手香車
+#  17 相手桂馬
+#  18 相手銀
+#  19 相手角
+#  20 相手飛車
+#  21 相手金
+#  22 相手玉
+#  23 相手と
+#  24 相手成香
+#  25 相手成桂
+#  26 相手成銀
+#  27 相手馬
+#  28 相手龍
 
 
 TRUE = jnp.bool_(True)
@@ -44,8 +45,8 @@ INIT_PIECE_BOARD = jnp.int8([16, 0, 15, 0, 0, 0, 1, 0, 2, 17, 19, 15, 0, 0, 0, 1
 @dataclass
 class State:
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
-    piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,)
-    hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)
+    piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
+    hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
 
 
 def init():
@@ -81,52 +82,33 @@ class Action:
     """
     direction (from github.com/TadaoYamaoka/cshogi)
 
-     0 UP
-     1 UP_LEFT
-     2 UP_RIGHT
-     3 LEFT
-     4 RIGHT
-     5 DOWN
-     6 DOWN_LEFT
-     7 DOWN_RIGHT
-     8 UP2_LEFT
-     9 UP2_RIGHT
-    10 PROMOTE + UP
-    11 PROMOTE + UP_LEFT
-    12 PROMOTE + UP_RIGHT
-    13 PROMOTE + LEFT
-    14 PROMOTE + RIGHT
-    15 PROMOTE + DOWN
-    16 PROMOTE + DOWN_LEFT
-    17 PROMOTE + DOWN_RIGHT
-    18 PROMOTE + UP2_LEFT
-    19 PROMOTE + UP2_RIGHT
-    20 PROMOTE + UP_PROMOTE
-    ---
-    drop:
-    21 歩
-    22 香車
-    23 桂馬
-    24 銀
-    25 角
-    26 飛車
-    27 金
-
-    piece:
-     0 歩
-     1 香車
-     2 桂馬
-     3 銀
-     4 角
-     5 飛車
-     6 金
-     7 玉
-     8 と
-     9 成香
-    10 成桂
-    11 成銀
-    12 馬
-    13 龍
+     0 Up
+     1 Up left
+     2 Up right
+     3 Left
+     4 Right
+     5 Down
+     6 Down left
+     7 Down right
+     8 Up2 left
+     9 Up2 right
+    10 Promote +  Up
+    11 Promote +  Up left
+    12 Promote +  Up right
+    13 Promote +  Left
+    14 Promote +  Right
+    15 Promote +  Down
+    16 Promote +  Down left
+    17 Promote +  Down right
+    18 Promote +  Up2 left
+    19 Promote +  Up2 right
+    20 Drop 歩
+    21 Drop 香車
+    22 Drop 桂馬
+    23 Drop 銀
+    24 Drop 角
+    25 Drop 飛車
+    26 Drop 金
     """
 
     # 駒打ちかどうか
@@ -138,7 +120,7 @@ class Action:
     # ---- Optional (only for moves) ---
     # 移動前の座標
     from_: jnp.ndarray = jnp.int8(0)
-    # captured: 取られた駒の種類。駒が取られていない場合は0
+    # captured: 取られた駒の種類
     is_capture: jnp.ndarray = FALSE
     # is_promote: 駒を成るかどうかの判定
     is_promotion: jnp.ndarray = FALSE
@@ -146,12 +128,16 @@ class Action:
     @classmethod
     def from_dlaction(cls, state: State, action: jnp.ndarray):
         direction, to = action // 81, action % 81
+        is_drop = direction >= 20
         from_ = ...  # TODO: write me
-        piece = ...  # TODO: write me
-        is_drop = direction > 20
+        piece = jax.lax.cond(
+            is_drop,
+            lambda: direction - 20,
+            lambda: state.piece_board[from_],
+        )
         is_capture = state.piece_board[to] != 0
-        is_promtotion = (10 <= direction) & (direction < 21)
-        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promtotion)  # type: ignore
+        is_promotion = (10 <= direction) & (direction < 20)
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promotion)  # type: ignore
 
     def to_dlaction(self) -> jnp.ndarray:
         ...
