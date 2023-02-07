@@ -9,12 +9,24 @@ from pgx.contractbridgebidding import (
     _key_to_hand,
     _load_sample_hash,
     _pbn_to_key,
+    _player_position,
+    _shuffle_players,
     _state_to_key,
     _state_to_pbn,
     _to_binary,
     init,
     step,
 )
+
+
+def test_shuffle_players():
+    for i in range(100):
+        shuffled_players = _shuffle_players()
+        assert np.all(np.unique(shuffled_players) == np.array([0, 1, 2, 3]))
+        assert shuffled_players[0] == 0 or shuffled_players[0] == 1
+        assert shuffled_players[1] == 2 or shuffled_players[1] == 3
+        assert shuffled_players[2] == 0 or shuffled_players[2] == 1
+        assert shuffled_players[3] == 2 or shuffled_players[3] == 3
 
 
 def test_init():
@@ -24,12 +36,14 @@ def test_init():
     assert not state.call_x
     assert not state.call_xx
     assert not state.pass_num
-    assert state.curr_player == state.dealer
+    assert _player_position(state.curr_player, state) == state.dealer
     assert state.legal_action_mask[:-2].all()
     assert not state.legal_action_mask[-2:].all()
 
 
 def test_step():
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -39,9 +53,9 @@ def test_step():
     #  XX  P 7C  P
     #   P  P
     _, state = init()
-    state.dealer[0] = 1
-    state.curr_player[0] = 1
-
+    state.dealer = 1
+    state.curr_player = 3
+    state.shuffled_players = np.array([3, 1, 2, 0], dtype=np.int8)
     bidding_history = np.full(319, -1, dtype=np.int8)
     legal_action_mask = np.ones(38, dtype=np.bool8)
     legal_action_mask[-2:] = 0
@@ -49,18 +63,21 @@ def test_step():
     first_denomination_EW = np.full(5, -1, dtype=np.int8)
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P
 
     assert state.turn == 1
-    assert curr_player == 2
+    assert state.curr_player == 1
+    assert _player_position(curr_player, state) == 2
     assert not state.terminated
     bidding_history[0] = 35
     assert np.all(state.bidding_history == bidding_history)
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
-    assert state.last_bidder == -1
+    assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -68,18 +85,21 @@ def test_step():
     assert state.pass_num == 1
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P
 
     assert state.turn == 2
-    assert curr_player == 3
+    assert state.curr_player == 2
+    assert _player_position(curr_player, state) == 3
     assert not state.terminated
     bidding_history[1] = 35
     assert np.all(state.bidding_history == bidding_history)
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
-    assert state.last_bidder == -1
+    assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -87,18 +107,21 @@ def test_step():
     assert state.pass_num == 2
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
 
     assert state.turn == 3
-    assert curr_player == 0
+    assert state.curr_player == 0
+    assert _player_position(curr_player, state) == 0
     assert not state.terminated
     bidding_history[2] = 35
     assert np.all(state.bidding_history == bidding_history)
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
-    assert state.last_bidder == -1
+    assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -106,6 +129,8 @@ def test_step():
     assert state.pass_num == 3
 
     curr_player, state, rewards = step(state, 0)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -114,7 +139,8 @@ def test_step():
     first_denomination_EW = np.array([-1, -1, -1, -1, -1])
 
     assert state.turn == 4
-    assert curr_player == 1
+    assert state.curr_player == 3
+    assert _player_position(curr_player, state) == 1
     assert not state.terminated
     bidding_history[3] = 0
     assert np.all(state.bidding_history == bidding_history)
@@ -122,7 +148,7 @@ def test_step():
     legal_action_mask[36] = 1
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 0
-    assert state.last_bidder == 0
+    assert _player_position(state.last_bidder, state) == 0
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -130,23 +156,27 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 8)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S
     first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 1, -1])
+    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 5
-    assert curr_player == 2
+    assert state.curr_player == 1
+    assert _player_position(curr_player, state) == 2
     assert not state.terminated
     bidding_history[4] = 8
     assert np.all(state.bidding_history == bidding_history)
     legal_action_mask[0:9] = 0
     legal_action_mask[36] = 1
+
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
-    assert state.last_bidder == 1
+    assert _player_position(state.last_bidder, state) == 1
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -154,15 +184,18 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 36)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  X
     first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 1, -1])
+    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 6
-    assert curr_player == 3
+    assert state.curr_player == 2
+    assert _player_position(curr_player, state) == 3
     assert not state.terminated
     bidding_history[5] = 36
     assert np.all(state.bidding_history == bidding_history)
@@ -171,7 +204,7 @@ def test_step():
     legal_action_mask[37] = 1
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
-    assert state.last_bidder == 1
+    assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -179,15 +212,18 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  X  P
     first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 1, -1])
+    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 7
-    assert curr_player == 0
+    assert state.curr_player == 0
+    assert _player_position(curr_player, state) == 0
     assert not state.terminated
     bidding_history[6] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -197,7 +233,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
-    assert state.last_bidder == 1
+    assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -205,16 +241,19 @@ def test_step():
     assert state.pass_num == 1
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  X  P
     #   P
     first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 1, -1])
+    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 8
-    assert curr_player == 1
+    assert state.curr_player == 3
+    assert _player_position(curr_player, state) == 1
     assert not state.terminated
     bidding_history[7] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -224,7 +263,7 @@ def test_step():
     legal_action_mask[37] = 1
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
-    assert state.last_bidder == 1
+    assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -232,16 +271,19 @@ def test_step():
     assert state.pass_num == 2
 
     curr_player, state, rewards = step(state, 37)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  X  P
     #   P XX
     first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 1, -1])
+    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 9
-    assert curr_player == 2
+    assert state.curr_player == 1
+    assert _player_position(curr_player, state) == 2
     assert not state.terminated
     bidding_history[8] = 37
     assert np.all(state.bidding_history == bidding_history)
@@ -251,7 +293,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
-    assert state.last_bidder == 1
+    assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -259,16 +301,19 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  X  P
     #   P XX  P
     first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 1, -1])
+    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 10
-    assert curr_player == 3
+    assert state.curr_player == 2
+    assert _player_position(curr_player, state) == 3
     assert not state.terminated
     bidding_history[9] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -278,7 +323,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
-    assert state.last_bidder == 1
+    assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -286,16 +331,19 @@ def test_step():
     assert state.pass_num == 1
 
     curr_player, state, rewards = step(state, 22)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  X  P
     #   P XX  P 5H
     first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 11
-    assert curr_player == 0
+    assert state.curr_player == 0
+    assert _player_position(curr_player, state) == 0
     assert not state.terminated
     bidding_history[10] = 22
     assert np.all(state.bidding_history == bidding_history)
@@ -305,7 +353,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 22
-    assert state.last_bidder == 3
+    assert _player_position(state.last_bidder, state) == 3
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -313,6 +361,8 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 23)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -320,10 +370,11 @@ def test_step():
     #   P XX  P 5H
     #  5S
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 12
-    assert curr_player == 1
+    assert state.curr_player == 3
+    assert _player_position(curr_player, state) == 1
     assert not state.terminated
     bidding_history[11] = 23
     assert np.all(state.bidding_history == bidding_history)
@@ -333,7 +384,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 23
-    assert state.last_bidder == 0
+    assert _player_position(state.last_bidder, state) == 0
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -341,6 +392,8 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -348,10 +401,11 @@ def test_step():
     #   P XX  P 5H
     #  5S  P
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 13
-    assert curr_player == 2
+    assert state.curr_player == 1
+    assert _player_position(curr_player, state) == 2
     assert not state.terminated
     bidding_history[12] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -361,7 +415,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 23
-    assert state.last_bidder == 0
+    assert _player_position(state.last_bidder, state) == 0
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -369,6 +423,8 @@ def test_step():
     assert state.pass_num == 1
 
     curr_player, state, rewards = step(state, 25)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -376,10 +432,11 @@ def test_step():
     #   P XX  P 5H
     #  5S  P 6C
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 14
-    assert curr_player == 3
+    assert state.curr_player == 2
+    assert _player_position(curr_player, state) == 3
     assert not state.terminated
     bidding_history[13] = 25
     assert np.all(state.bidding_history == bidding_history)
@@ -389,7 +446,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -397,6 +454,8 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 36)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -404,10 +463,11 @@ def test_step():
     #   P XX  P 5H
     #  5S  P 6C  X
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 15
-    assert curr_player == 0
+    assert state.curr_player == 0
+    assert _player_position(curr_player, state) == 0
     assert not state.terminated
     bidding_history[14] = 36
     assert np.all(state.bidding_history == bidding_history)
@@ -417,7 +477,7 @@ def test_step():
     legal_action_mask[37] = 1
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -425,6 +485,8 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 37)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -433,10 +495,11 @@ def test_step():
     #  5S  P 6C  X
     #  XX
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 16
-    assert curr_player == 1
+    assert state.curr_player == 3
+    assert _player_position(curr_player, state) == 1
     assert not state.terminated
     bidding_history[15] = 37
     assert np.all(state.bidding_history == bidding_history)
@@ -446,7 +509,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert state.call_x
     assert state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -454,6 +517,8 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -462,10 +527,11 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 17
-    assert curr_player == 2
+    assert state.curr_player == 1
+    assert _player_position(curr_player, state) == 2
     assert not state.terminated
     bidding_history[16] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -475,7 +541,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert state.call_x
     assert state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -483,6 +549,8 @@ def test_step():
     assert state.pass_num == 1
 
     curr_player, state, rewards = step(state, 30)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -491,10 +559,11 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 18
-    assert curr_player == 3
+    assert state.curr_player == 2
+    assert _player_position(curr_player, state) == 3
     assert not state.terminated
     bidding_history[17] = 30
     assert np.all(state.bidding_history == bidding_history)
@@ -504,7 +573,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -512,6 +581,8 @@ def test_step():
     assert state.pass_num == 0
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -520,10 +591,11 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 19
-    assert curr_player == 0
+    assert state.curr_player == 0
+    assert _player_position(curr_player, state) == 0
     assert not state.terminated
     bidding_history[18] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -533,7 +605,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -541,6 +613,8 @@ def test_step():
     assert state.pass_num == 1
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -550,10 +624,11 @@ def test_step():
     #  XX  P 7C  P
     #   P
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 20
-    assert curr_player == 1
+    assert state.curr_player == 3
+    assert _player_position(curr_player, state) == 1
     assert not state.terminated
     bidding_history[19] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -563,7 +638,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
@@ -571,6 +646,8 @@ def test_step():
     assert state.pass_num == 2
 
     curr_player, state, rewards = step(state, 35)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
@@ -580,13 +657,13 @@ def test_step():
     #  XX  P 7C  P
     #   P  P
     # Passが3回続いたので終了
-    # state.terminated = True
-    # state.curr_player = -1
+    state.terminated = True
+    state.curr_player = -1
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 3, 1, -1])
+    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 20
-    assert curr_player == -1
+    assert _player_position(curr_player, state) == -1
     assert state.terminated
     bidding_history[20] = 35
     assert np.all(state.bidding_history == bidding_history)
@@ -596,7 +673,7 @@ def test_step():
     legal_action_mask[37] = 0
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
-    assert state.last_bidder == 2
+    assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
     assert np.all(state.first_denomination_NS == first_denomination_NS)
