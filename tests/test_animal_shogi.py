@@ -491,7 +491,7 @@ def test_filter_leave_check():
     b_actions = b_actions.at[87].set(True)
     assert np.allclose(filtered_actions, b_actions)
     bs2 = np.array([9, 7, 0, 0, 6, 3, 0, 0, 0, 0, 0, 0], dtype=np.int32)
-    board2 = np.zeros((12, 11), dtype=np.int32)
+    board2 = np.zeros((11, 12), dtype=np.int32)
     for i in range(12):
         board2 = board2.at[0, i].set(0)
         board2 = board2.at[bs2[i], i].set(1)

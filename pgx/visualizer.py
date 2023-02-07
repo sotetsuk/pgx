@@ -7,12 +7,12 @@ from typing import List, Literal, Union
 import numpy as np
 import svgwrite  # type: ignore
 
+from ._shogi import ShogiState
 from .animal_shogi import JaxAnimalShogiState as AnimalShogiState
 from .backgammon import BackgammonState
 from .chess import ChessState
 from .contractbridgebidding import ContractBridgeBiddingState
 from .go import GoState
-from .shogi import ShogiState
 from .suzume_jong import State as SuzumeJongState
 from .tic_tac_toe import State as TictactoeState
 
@@ -1405,14 +1405,13 @@ class Visualizer:
             ShogiStateのhandを飛、角、金、銀、桂、香、歩の順にする
             """
             hands = state.hand[::-1]
-            hands[0], hands[1], hands[2], hands[7], hands[8], hands[9] = (
-                hands[1],
-                hands[2],
-                hands[0],
-                hands[8],
-                hands[9],
-                hands[7],
-            )
+            tmp = hands
+            hands = hands.at[0].set(tmp[1])
+            hands = hands.at[1].set(tmp[2])
+            hands = hands.at[2].set(tmp[0])
+            hands = hands.at[7].set(tmp[8])
+            hands = hands.at[8].set(tmp[9])
+            hands = hands.at[9].set(tmp[7])
             pieces = PIECES[6::-1]
             pieces[0], pieces[1], pieces[2] = pieces[1], pieces[2], pieces[0]
 
