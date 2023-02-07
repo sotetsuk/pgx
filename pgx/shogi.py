@@ -78,14 +78,65 @@ def init():
 # 指し手のdataclass
 @dataclass
 class Action:
+    """
+    direction (from github.com/TadaoYamaoka/cshogi)
+
+     0 UP
+     1 UP_LEFT
+     2 UP_RIGHT
+     3 LEFT
+     4 RIGHT
+     5 DOWN
+     6 DOWN_LEFT
+     7 DOWN_RIGHT
+     8 UP2_LEFT
+     9 UP2_RIGHT
+    10 PROMOTE + UP
+    11 PROMOTE + UP_LEFT
+    12 PROMOTE + UP_RIGHT
+    13 PROMOTE + LEFT
+    14 PROMOTE + RIGHT
+    15 PROMOTE + DOWN
+    16 PROMOTE + DOWN_LEFT
+    17 PROMOTE + DOWN_RIGHT
+    18 PROMOTE + UP2_LEFT
+    19 PROMOTE + UP2_RIGHT
+    20 PROMOTE + UP_PROMOTE
+    ---
+    drop:
+    21 歩
+    22 香車
+    23 桂馬
+    24 銀
+    25 角
+    26 飛車
+    27 金
+
+    piece:
+     0 歩
+     1 香車
+     2 桂馬
+     3 銀
+     4 角
+     5 飛車
+     6 金
+     7 玉
+     8 と
+     9 成香
+    10 成桂
+    11 成銀
+    12 馬
+    13 龍
+    """
+
     # 駒打ちかどうか
     is_drop: jnp.ndarray
     # piece: 動かした(打った)駒の種類
     piece: jnp.ndarray
-    # 移動前の座標
-    to: jnp.ndarray
-    # 以下は移動でのみ使用
     # 移動後の座標
+    to: jnp.ndarray
+    # ---- Optional (only for moves) ---
+    # 移動前の座標
     from_: jnp.ndarray = jnp.int8(0)
     # captured: 取られた駒の種類。駒が取られていない場合は0
     is_capture: jnp.ndarray = FALSE
@@ -93,6 +144,14 @@ class Action:
     is_promotion: jnp.ndarray = FALSE
 
     @classmethod
-    def from_dlaction(cls, action: jnp.ndarray):
+    def from_dlaction(cls, state: State, action: jnp.ndarray):
         direction, to = action // 81, action % 81
-        return Action(FALSE, 0, 0)
+        from_ = ...  # TODO: write me
+        piece = ...  # TODO: write me
+        is_drop = direction > 20
+        is_capture = state.piece_board[to] != 0
+        is_promtotion = (10 <= direction) & (direction < 21)
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promtotion)  # type: ignore
+
+    def to_dlaction(self) -> jnp.ndarray:
+        ...
