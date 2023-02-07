@@ -158,6 +158,6 @@ class Action:
     def to_dlshogi_action(self) -> jnp.ndarray:
         direction = jax.lax.cond(
             self.is_drop,
-            lambda: self.piece + 20
+            lambda: ...
         )
-        return 81 * self.
+        return 81 * direction + self.to
