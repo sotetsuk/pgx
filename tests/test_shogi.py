@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 
-from pgx.shogi import Piece, State, Action, init, to_sfen, _step_move
+from pgx.shogi import *
+from pgx.shogi import _step_move
 
 
 def xy2i(x, y):
@@ -18,15 +19,16 @@ def test_init():
 
 def test_step_move():
     s = init()
+
     #26歩
-    a = Action(is_drop=False, piece=Piece.Pawn, to=xy2i(2, 6))  # type: ignore
+    piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
+    assert s.piece_board[from_] == PAWN
+    assert s.piece_board[to] == EMPTY
+    a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
     s = _step_move(s, a)
-    # before
-    assert s.piece_board[xy2i(2, 6)] != Piece.Empty
-    assert s.piece_board[xy2i(2, 7)] != Piece.Pawn
-    # after
-    assert s.piece_board[xy2i(2, 6)] == Piece.Pawn
-    assert s.piece_board[xy2i(2, 7)] == Piece.Empty
+    assert s.piece_board[from_] == EMPTY
+    assert s.piece_board[to] == PAWN
+
 
 def test_to_sfen():
     sfen = to_sfen(init())

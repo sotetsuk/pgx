@@ -36,8 +36,41 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
+
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
+
+
+# Pieces
+EMPTY = jnp.int8(-1)
+PAWN = jnp.int8(0)
+LANCE = jnp.int8(1)
+KNIGHT = jnp.int8(2)
+SILVER = jnp.int8(3)
+Bishop = jnp.int8(4)
+ROOK = jnp.int8(5)
+GOLD = jnp.int8(6)
+KKING = jnp.int8(7)
+PRO_PAWN = jnp.int8(8)
+PRO_LANCE = jnp.int8(9)
+PRO_KNIGHT = jnp.int8(10)
+PRO_SILVER = jnp.int8(11)
+PRO_HORSE = jnp.int8(12)
+PRO_DRAGON = jnp.int8(13)
+OPP_PAWN = jnp.int8(14)
+OPP_LANCE = jnp.int8(15)
+OPP_KNIGHT = jnp.int8(16)
+OPP_SILVER = jnp.int8(17)
+OPP_Bishop = jnp.int8(18)
+OPP_ROOK = jnp.int8(19)
+OPP_GOLD = jnp.int8(20)
+OPP_KKING = jnp.int8(21)
+OPP_PRO_PAWN = jnp.int8(22)
+OPP_PRO_LANCE = jnp.int8(23)
+OPP_PRO_KNIGHT = jnp.int8(24)
+OPP_PRO_SILVER = jnp.int8(25)
+OPP_PRO_HORSE = jnp.int8(26)
+OPP_PRO_DRAGON = jnp.int8(27)
 
 
 # fmt: off
@@ -128,12 +161,19 @@ class Action:
     piece: jnp.ndarray
     # 移動後の座標
     to: jnp.ndarray
-    # 移動前の座標 (zero if drop action)
-    from_: jnp.ndarray
-    # captured: 取られた駒の種類 (false if drop action)
-    is_capture: jnp.ndarray
-    # is_promote: 駒を成るかどうかの判定 (false if drop action)
-    is_promotion: jnp.ndarray
+    # --- Optional (only for move action) ---
+    # 移動前の座標
+    from_: jnp.ndarray = jnp.int8(0)
+    # 駒を成るかどうかの判定
+    is_promotion: jnp.ndarray = FALSE
+
+    @classmethod
+    def make_move(cls, piece, from_, to):
+        return Action(is_drop=False, piece=piece, from_=from_, to=to)
+
+    @classmethod
+    def make_drop(cls, piece, to):
+        return Action(is_drop=True, piece=piece, to=to)
 
     @classmethod
     def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
@@ -145,13 +185,30 @@ class Action:
             lambda: direction - 20,
             lambda: state.piece_board[from_],
         )
-        is_capture = state.piece_board[to] != 0
         is_promotion = (10 <= direction) & (direction < 20)
-        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promotion)  # type: ignore
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promtotion=is_promotion)  # type: ignore
 
     def to_dlshogi_action(self) -> jnp.ndarray:
         direction = jax.lax.cond(self.is_drop, lambda: ...)
         return 81 * direction + self.to
+
+
+def _step_move(state: State, action: Action) -> State:
+    pb = state.piece_board
+    # from_
+    pb = pb.at[action.from_].set(EMPTY)
+    # to
+    piece = jax.lax.cond(action.is_promotion, lambda: _promote(action.piece), lambda: action.piece)
+    pb = pb.at[action.to].set(piece)
+
+    return state.replace(piece_board=pb)  # type: ignore
+
+
+def _step_drop(state: State, action: Action) -> State:
+    return state
+
+def _promote(piece: jnp.ndarray) -> jnp.ndarray:
+    return piece + 8
 
 
 def to_sfen(state: State):
