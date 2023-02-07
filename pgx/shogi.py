@@ -1,7 +1,5 @@
-import jax
-from flax.struct import dataclass
-
 import jax.numpy as jnp
+from flax.struct import dataclass
 
 #   0 空白
 #   1 先手歩
@@ -33,18 +31,6 @@ import jax.numpy as jnp
 #  27 後手馬
 #  28 後手龍
 
-"""
- 16 17 18 21 23 22 18 17 16
-  0 20  0  0  0  0  0 19  0
- 15 15 15 15 15 15 15 15 15
-  0  0  0  0  0  0  0  0  0
-  0  0  0  0  0  0  0  0  0
-  0  0  0  0  0  0  0  0  0
-  1  1  1  1  1  1  1  1  1
-  0  6  0  0  0  0  0  5  0
-  2  3  4  7  8  7  4  3  2
-"""
-
 
 INIT_PIECE_BOARD = jnp.int8(
     [
@@ -63,10 +49,23 @@ INIT_PIECE_BOARD = jnp.int8(
 
 @dataclass
 class State:
-    turn: jnp.int8 = jnp.int8(0, dtype=jnp.int8)  # 0 or 1
+    turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,)
-    hand: jnp.ndarray = jnp.int8((2, 7), dtype=jnp.int8)
+    hand: jnp.ndarray = jnp.int8((2, 7))
 
 
 def init():
+    """Initialize Shogi State.
+    >>> s = init()
+    >>> s.piece_board.reshape((9, 9))
+    Array([[16, 17, 18, 22, 23, 22, 18, 17, 16],
+           [ 0, 20,  0,  0,  0,  0,  0, 19,  0],
+           [15, 15, 15, 15, 15, 15, 15, 15, 15],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0,  0],
+           [ 1,  1,  1,  1,  1,  1,  1,  1,  1],
+           [ 0,  5,  0,  0,  0,  0,  0,  6,  0],
+           [ 2,  3,  4,  7,  8,  7,  4,  3,  2]], dtype=int8)
+    """
     return State()
