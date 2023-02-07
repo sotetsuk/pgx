@@ -109,6 +109,22 @@ class Action:
     24 Drop 角
     25 Drop 飛車
     26 Drop 金
+
+    piece:
+     0 歩
+     1 香車
+     2 桂馬
+     3 銀
+     4 角
+     5 飛車
+     6 金
+     7 玉
+     8 と
+     9 成香
+    10 成桂
+    11 成銀
+    12 馬
+    13 龍
     """
 
     # 駒打ちかどうか
@@ -117,13 +133,13 @@ class Action:
     piece: jnp.ndarray
     # 移動後の座標
     to: jnp.ndarray
-    # ---- Optional (only for moves) ---
-    # 移動前の座標
-    from_: jnp.ndarray = jnp.int8(0)
-    # captured: 取られた駒の種類
-    is_capture: jnp.ndarray = FALSE
-    # is_promote: 駒を成るかどうかの判定
-    is_promotion: jnp.ndarray = FALSE
+    # 移動前の座標 (zero if drop action)
+    from_: jnp.ndarray
+    # captured: 取られた駒の種類 (false if drop action)
+    is_capture: jnp.ndarray
+    # is_promote: 駒を成るかどうかの判定 (false if drop action)
+    is_promotion: jnp.ndarray
+
 
     @classmethod
     def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
@@ -140,4 +156,8 @@ class Action:
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promotion)  # type: ignore
 
     def to_dlshogi_action(self) -> jnp.ndarray:
-        ...
+        direction = jax.lax.cond(
+            self.is_drop,
+            lambda: self.piece + 20
+        )
+        return 81 * self.
