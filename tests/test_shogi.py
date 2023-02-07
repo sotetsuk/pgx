@@ -36,9 +36,9 @@ def test_step_move():
     assert s.piece_board[to] == EMPTY
     a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
     s = _step_move(s, a)
+    visualize(s, "tests/assets/shogi/step_move_001.svg")
     assert s.piece_board[from_] == EMPTY
     assert s.piece_board[to] == PAWN
-    visualize(s, "tests/assets/shogi/step_move_001.svg")
 
     # 76歩
     piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)
@@ -46,9 +46,9 @@ def test_step_move():
     assert s.piece_board[to] == EMPTY
     a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
     s = _step_move(s, a)
+    visualize(s, "tests/assets/shogi/step_move_002.svg")
     assert s.piece_board[from_] == EMPTY
     assert s.piece_board[to] == PAWN
-    visualize(s, "tests/assets/shogi/step_move_002.svg")
 
     # 33角成
     piece, from_, to = BISHOP , xy2i(8, 8), xy2i(3, 3)
@@ -58,11 +58,11 @@ def test_step_move():
     assert (s.hand[0, PAWN:] == 0).all()
     a = Action.make_move(piece=piece, from_=from_, to=to, is_promotion=True)  # type: ignore
     s = _step_move(s, a)
+    visualize(s, "tests/assets/shogi/step_move_003.svg")
     assert s.piece_board[from_] == EMPTY
     assert s.piece_board[to] == HORSE
     assert s.hand[0, PAWN] == 1
     assert (s.hand[0, :PAWN] == 0).all()
-    visualize(s, "tests/assets/shogi/step_move_003.svg")
 
 
 def test_step_drop():
