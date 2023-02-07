@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import numpy as np
 from flax.struct import dataclass
 
 #   0 空白
@@ -72,56 +71,31 @@ def init():
     return State()
 
 
-def _to_sfen(state: State):
-    # 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
-    # 成駒なら駒の前に+をつける（と金なら+P）
-    # 先手の駒は大文字、後手の駒は小文字で表現
-    # 空白の場合、連続する空白の数を入れて次の駒にシフトする。歩空空空飛ならP3R
-    # 左上から開始して右に見ていく。段が変わるときは/を挿入
-    # 盤面の記入が終わったら手番の記入。b または w
-    # 持ち駒は先手の物から記入。順番はRBGSNLPの順
-    # 最後に手数。ただここは1でいいと思う
+def to_sfen(state: State):
+    """Convert state into sfen expression.
+
+    - 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
+    - 成駒なら駒の前に+をつける（と金なら+P）
+    - 先手の駒は大文字、後手の駒は小文字で表現
+    - 空白の場合、連続する空白の数を入れて次の駒にシフトする。歩空空空飛ならP3R
+    - 左上から開始して右に見ていく
+    - 段が変わるときは/を挿入
+    - 盤面の記入が終わったら手番（b/w）
+    - 持ち駒は先手の物から順番はRBGSNLPの順
+    - 最後に手数（1で固定）
+
+    >>> s = init()
+    >>> to_sfen(s)
+    "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
+    """
+
     pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""
-    board_char_dir = np.array(
-        [
-            "",
-            "P",
-            "L",
-            "N",
-            "S",
-            "B",
-            "R",
-            "G",
-            "K",
-            "+P",
-            "+L",
-            "+N",
-            "+S",
-            "+B",
-            "+R",
-            "p",
-            "l",
-            "n",
-            "s",
-            "b",
-            "r",
-            "g",
-            "k",
-            "+p",
-            "+l",
-            "+n",
-            "+s",
-            "+b",
-            "+r",
-        ],
-        dtype=str,
-    )
-    hand_char_dir = np.array(
-        ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"],
-        dtype=str,
-    )
-    hand_dir = np.array([5, 4, 6, 3, 2, 1, 0, 12, 11, 13, 10, 9, 8, 7])
+    # fmt: off
+    board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r",]
+    # fmt: on
+    hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
+    hand_dir = [5, 4, 6, 3, 2, 1, 0, 12, 11, 13, 10, 9, 8, 7]
     # 盤面
     for i in range(9):
         space_length = 0
