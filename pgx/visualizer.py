@@ -7,12 +7,12 @@ from typing import List, Literal, Union
 import numpy as np
 import svgwrite  # type: ignore
 
+from ._shogi import ShogiState
 from .animal_shogi import JaxAnimalShogiState as AnimalShogiState
 from .backgammon import BackgammonState
 from .chess import ChessState
 from .contractbridgebidding import ContractBridgeBiddingState
 from .go import GoState
-from .shogi import ShogiState
 from .suzume_jong import State as SuzumeJongState
 from .tic_tac_toe import State as TictactoeState
 

@@ -4,7 +4,7 @@ import time
 import jax
 import jax.numpy as jnp
 
-from pgx.shogi import (
+from pgx._shogi import (
     init, step, _dlaction_to_action,_action_to_dlaction,_piece_moves,_legal_actions, _init_legal_actions, _is_mate, ShogiAction, _board_status
 )
 
