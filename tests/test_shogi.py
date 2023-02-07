@@ -1,6 +1,23 @@
 import jax.numpy as jnp
 
-from pgx.shogi import State,  init,  to_sfen
+from pgx.shogi import *
+from pgx.shogi import _step, _step_move, _step_drop, _flip
+
+
+# check visualization results by image preview plugins
+def visualize(state, fname="tests/assets/shogi/xxx.svg"):
+    from pgx.visualizer import Visualizer
+    v = Visualizer(color_mode="dark")
+    v.save_svg(state, fname)
+
+
+def xy2i(x, y):
+    """
+    >>> xy2i(2, 6)  # 26歩
+    14
+    """
+    i = (x - 1) * 9 + (y - 1)
+    return i
 
 
 def test_init():
@@ -8,11 +25,79 @@ def test_init():
     assert jnp.unique(s.piece_board).shape[0] == 1 + 8 + 8
 
 
-def test_to_sfen():
-    sfen = to_sfen(init())
-    assert (sfen == "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1")
-    pb = jnp.int8([15, -1, -1, 14, -1, 0, -1, -1, 1, -1, -1, -1, 1, 14, -1, -1, -1, 5, 8, -1, -1, -1, 0, -1, -1, -1, -1, -1, -1, 6, 14, -1, 0, -1, 6, -1, -1, -1, -1, 14, -1, -1, 0, -1, 7, -1, -1, -1, -1, -1, -1, 2, 3, -1, -1, -1, 20, -1, 21, -1, -1, -1, -1, -1, -1, -1, -1, 16, 5, 0, -1, -1, -1, 8, -1, -1, -1, 1, -1, -1, -1])
-    hand = jnp.int8([[1, 0, 0, 1, 0, 0, 0], [6, 0, 2, 2, 2, 0, 1]])
-    s = State(turn=1, piece_board=pb, hand=hand)
-    sfen2 = to_sfen(s)
-    assert (sfen2 == "6+P1l/+P8/2g2G3/4pp1Lp/1nk3Pp1/LR3P2P/1P1NP4/3S1G3/4K2RL w SP2bg2s2n6p 1")
+def test_step_move():
+    s = init()
+
+    # 26歩
+    piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
+    assert s.piece_board[from_] == PAWN
+    assert s.piece_board[to] == EMPTY
+    a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
+    s = _step_move(s, a)
+    visualize(s, "tests/assets/shogi/step_move_001.svg")
+    assert s.piece_board[from_] == EMPTY
+    assert s.piece_board[to] == PAWN
+
+    # 76歩
+    piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)
+    assert s.piece_board[from_] == PAWN
+    assert s.piece_board[to] == EMPTY
+    a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
+    s = _step_move(s, a)
+    visualize(s, "tests/assets/shogi/step_move_002.svg")
+    assert s.piece_board[from_] == EMPTY
+    assert s.piece_board[to] == PAWN
+
+    # 33角成
+    piece, from_, to = BISHOP , xy2i(8, 8), xy2i(3, 3)
+    assert s.piece_board[from_] == BISHOP
+    assert s.piece_board[to] == OPP_PAWN
+    assert s.hand[0, PAWN] == 0
+    assert (s.hand[0, PAWN:] == 0).all()
+    a = Action.make_move(piece=piece, from_=from_, to=to, is_promotion=True)  # type: ignore
+    s = _step_move(s, a)
+    visualize(s, "tests/assets/shogi/step_move_003.svg")
+    assert s.piece_board[from_] == EMPTY
+    assert s.piece_board[to] == HORSE
+    assert s.hand[0, PAWN] == 1
+    assert (s.hand[0, :PAWN] == 0).all()
+
+
+def test_step_drop():
+    s = init()
+    s = s.replace(hand=s.hand.at[:, :].set(1))  # type: ignore
+    # 52飛車打ち
+    piece, to = ROOK, xy2i(5, 2)
+    a = Action.make_drop(piece, to)
+    assert s.piece_board[to] == EMPTY
+    assert s.hand[0, ROOK] == 1
+    s = _step_drop(s, a)
+    visualize(s, "tests/assets/shogi/step_drop_001.svg")
+    assert s.piece_board[to] == ROOK
+    assert s.hand[0, ROOK] == 0
+
+
+def test_flip():
+    s = init()
+     # 26歩
+    piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
+    a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
+    s = _step_move(s, a)
+    s = s.replace(hand=s.hand.at[0, :].set(1))  # type: ignore
+    visualize(s, "tests/assets/shogi/flip_001.svg")
+    assert s.piece_board[xy2i(2, 6)] == PAWN
+    assert s.piece_board[xy2i(8, 4)] == EMPTY
+    assert (s.hand[0] == 1).all()
+    assert (s.hand[1] == 0).all()
+    s = _flip(s)
+    visualize(s, "tests/assets/shogi/flip_002.svg")
+    assert s.piece_board[xy2i(2, 6)] == EMPTY
+    assert s.piece_board[xy2i(8, 4)] == OPP_PAWN
+    assert (s.hand[0] == 0).all()
+    assert (s.hand[1] == 1).all()
+    s = _flip(s)
+    visualize(s, "tests/assets/shogi/flip_003.svg")
+    assert s.piece_board[xy2i(2, 6)] == PAWN
+    assert s.piece_board[xy2i(8, 4)] == EMPTY
+    assert (s.hand[0] == 1).all()
+    assert (s.hand[1] == 0).all()

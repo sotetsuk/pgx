@@ -1356,6 +1356,10 @@ class Visualizer:
         dwg,
         state: ShogiState,
     ) -> svgwrite.Drawing:
+        if state.turn == 1:
+            from pgx.shogi import _flip
+
+            state = _flip(state)
         PIECES = [
             "歩",
             "香",

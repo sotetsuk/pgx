@@ -40,6 +40,38 @@ TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
+# Pieces
+EMPTY = jnp.int8(-1)
+PAWN = jnp.int8(0)
+LANCE = jnp.int8(1)
+KNIGHT = jnp.int8(2)
+SILVER = jnp.int8(3)
+BISHOP = jnp.int8(4)
+ROOK = jnp.int8(5)
+GOLD = jnp.int8(6)
+KING = jnp.int8(7)
+PRO_PAWN = jnp.int8(8)
+PRO_LANCE = jnp.int8(9)
+PRO_KNIGHT = jnp.int8(10)
+PRO_SILVER = jnp.int8(11)
+HORSE = jnp.int8(12)
+DRAGON = jnp.int8(13)
+OPP_PAWN = jnp.int8(14)
+OPP_LANCE = jnp.int8(15)
+OPP_KNIGHT = jnp.int8(16)
+OPP_SILVER = jnp.int8(17)
+OPP_BISHOP = jnp.int8(18)
+OPP_ROOK = jnp.int8(19)
+OPP_GOLD = jnp.int8(20)
+OPP_KING = jnp.int8(21)
+OPP_PRO_PAWN = jnp.int8(22)
+OPP_PRO_LANCE = jnp.int8(23)
+OPP_PRO_KNIGHT = jnp.int8(24)
+OPP_PRO_SILVER = jnp.int8(25)
+OPP_HORSE = jnp.int8(26)
+OPP_DRAGON = jnp.int8(27)
+
+
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
                              [16, 18, 14, -1, -1, -1, 0,  5, 2],  # noqa: E241
@@ -124,16 +156,29 @@ class Action:
 
     # 駒打ちかどうか
     is_drop: jnp.ndarray
-    # piece: 動かした(打った)駒の種類
+    # 動かした(打った)駒の種類/打つ前が成っていなければ成ってない
     piece: jnp.ndarray
     # 移動後の座標
     to: jnp.ndarray
-    # 移動前の座標 (zero if drop action)
-    from_: jnp.ndarray
-    # captured: 取られた駒の種類 (false if drop action)
-    is_capture: jnp.ndarray
-    # is_promote: 駒を成るかどうかの判定 (false if drop action)
-    is_promotion: jnp.ndarray
+    # --- Optional (only for move action) ---
+    # 移動前の座標
+    from_: jnp.ndarray = jnp.int8(0)
+    # 駒を成るかどうかの判定
+    is_promotion: jnp.ndarray = FALSE
+
+    @classmethod
+    def make_move(cls, piece, from_, to, is_promotion=FALSE):
+        return Action(
+            is_drop=False,
+            piece=piece,
+            from_=from_,
+            to=to,
+            is_promotion=is_promotion,
+        )
+
+    @classmethod
+    def make_drop(cls, piece, to):
+        return Action(is_drop=True, piece=piece, to=to)
 
     @classmethod
     def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
@@ -145,13 +190,70 @@ class Action:
             lambda: direction - 20,
             lambda: state.piece_board[from_],
         )
-        is_capture = state.piece_board[to] != 0
         is_promotion = (10 <= direction) & (direction < 20)
-        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_capture=is_capture, is_promtotion=is_promotion)  # type: ignore
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promtotion=is_promotion)  # type: ignore
 
     def to_dlshogi_action(self) -> jnp.ndarray:
         direction = jax.lax.cond(self.is_drop, lambda: ...)
         return 81 * direction + self.to
+
+
+def _step(state: State, action: Action) -> State:
+    # apply move/drop action
+    state = jax.lax.cond(
+        action.is_drop, _step_drop, _step_move, *(state, action)
+    )
+    # flip state
+    state = _flip(state)
+    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
+    return state
+
+
+def _step_move(state: State, action: Action) -> State:
+    pb = state.piece_board
+    # remove piece from the original position
+    pb = pb.at[action.from_].set(EMPTY)
+    # capture the opponent if exists
+    captured = pb[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
+    hand = jax.lax.cond(
+        captured == EMPTY,
+        lambda: state.hand,
+        # add captured piece to my hand after
+        #   (1) tuning opp piece into mine by (x + 14) % 28, and
+        #   (2) filtering promoted piece by x % 8
+        lambda: state.hand.at[0, ((captured + 14) % 28) % 8].add(1),
+    )
+    # promote piece
+    piece = jax.lax.cond(
+        action.is_promotion,
+        lambda: _promote(action.piece),
+        lambda: action.piece,
+    )
+    # set piece to the target position
+    pb = pb.at[action.to].set(piece)
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+
+
+def _step_drop(state: State, action: Action) -> State:
+    # add piece to board
+    pb = state.piece_board.at[action.to].set(action.piece)
+    # remove piece from hand
+    hand = state.hand.at[0, action.piece].add(-1)
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+
+
+def _flip(state: State):
+    empty_mask = state.piece_board == EMPTY
+    pb = (state.piece_board + 14) % 28
+    pb = jnp.where(empty_mask, EMPTY, pb)
+    pb = pb[::-1]
+    return state.replace(  # type: ignore
+        piece_board=pb, hand=state.hand[jnp.int8((1, 0))]
+    )
+
+
+def _promote(piece: jnp.ndarray) -> jnp.ndarray:
+    return piece + 8
 
 
 def to_sfen(state: State):
