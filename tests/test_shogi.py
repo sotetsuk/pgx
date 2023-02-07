@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _step, _step_move, _step_drop
+from pgx.shogi import _step, _step_move, _step_drop, _flip
 
 
 # check visualization results by image preview plugins
@@ -11,14 +11,12 @@ def visualize(state, fname="tests/assets/shogi/xxx.svg"):
     v.save_svg(state, fname)
 
 
-def xy2i(x, y, white=False):
+def xy2i(x, y):
     """
     >>> xy2i(2, 6)  # 26歩
     14
     """
     i = (x - 1) * 9 + (y - 1)
-    if white:
-        i = 80 - i
     return i
 
 
@@ -77,3 +75,23 @@ def test_step_drop():
     visualize(s, "tests/assets/shogi/step_drop_001.svg")
     assert s.piece_board[to] == ROOK
     assert s.hand[0, ROOK] == 0
+
+
+def test_flip():
+    s = init()
+     # 26歩
+    piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
+    a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
+    s = _step_move(s, a)
+    s = s.replace(hand=s.hand.at[0, :].set(1))  # type: ignore
+    visualize(s, "tests/assets/shogi/flip_001.svg")
+    assert s.piece_board[xy2i(2, 6)] == PAWN
+    assert s.piece_board[xy2i(8, 4)] == EMPTY
+    assert (s.hand[0] == 1).all()
+    assert (s.hand[1] == 0).all()
+    s = _flip(s)
+    visualize(s, "tests/assets/shogi/flip_002.svg")
+    assert s.piece_board[xy2i(2, 6)] == EMPTY
+    assert s.piece_board[xy2i(8, 4)] == OPP_PAWN
+    assert (s.hand[0] == 0).all()
+    assert (s.hand[1] == 1).all()

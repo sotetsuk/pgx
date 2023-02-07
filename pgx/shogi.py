@@ -244,11 +244,11 @@ def _step_drop(state: State, action: Action) -> State:
 
 def _flip(state: State):
     empty_mask = state.piece_board == EMPTY
-    pb = (state.piece_board * 14) % 28
+    pb = (state.piece_board + 14) % 28
     pb = jnp.where(empty_mask, EMPTY, pb)
-    pb = jnp.rot90(pb, k=2)
+    pb = pb[::-1]
     return state.replace(  # type: ignore
-        piece_board=pb, hand=state.hand.at[jnp.int8((1, 0))]
+        piece_board=pb, hand=state.hand[jnp.int8((1, 0))]
     )
 
 
