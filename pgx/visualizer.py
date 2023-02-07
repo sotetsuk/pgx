@@ -1524,8 +1524,7 @@ class Visualizer:
         board = state.piece_board
         for i in range(81):
             piece = board[i]
-            if piece > 0:
-                one_hot_board[piece, i] = 1
+            one_hot_board[piece, i] = 1
         for i, piece_pos, piece_type in zip(
             range(28),
             one_hot_board,
