@@ -1,12 +1,33 @@
 import jax.numpy as jnp
 
-from pgx.shogi import State,  init,  to_sfen
+from pgx.shogi import Piece, State, Action, init, to_sfen, _step_move
+
+
+def xy2i(x, y):
+    """
+    >>> xy2i(2, 6)  # 26歩
+    14
+    """
+    return (x - 1) * 9 + (y - 1)
 
 
 def test_init():
     s = init()
     assert jnp.unique(s.piece_board).shape[0] == 1 + 8 + 8
 
+
+def test_step_move():
+    s = init()
+    #26歩
+    a = Action(is_drop=False, piece=Piece.Pawn, to=xy2i(2, 6))  # type: ignore
+    # dlshogi_action = 14
+    s = _step_move(s, a)
+    # before
+    assert s.piece_board[xy2i(2, 6)] != Piece.Empty
+    assert s.piece_board[xy2i(2, 7)] != Piece.Pawn
+    # after
+    assert s.piece_board[xy2i(2, 6)] == Piece.Pawn
+    assert s.piece_board[xy2i(2, 7)] == Piece.Empty
 
 def test_to_sfen():
     sfen = to_sfen(init())
