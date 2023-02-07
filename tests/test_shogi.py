@@ -20,7 +20,6 @@ def test_step_move():
     s = init()
     #26歩
     a = Action(is_drop=False, piece=Piece.Pawn, to=xy2i(2, 6))  # type: ignore
-    # dlshogi_action = 14
     s = _step_move(s, a)
     # before
     assert s.piece_board[xy2i(2, 6)] != Piece.Empty
