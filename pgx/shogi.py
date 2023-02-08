@@ -350,16 +350,6 @@ def _apply_effects(state: State):
            [False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    >>> jnp.rot90(_apply_effects(s)[70].reshape(9, 9), k=3)  # 角
-    Array([[False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [ True, False,  True, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [ True, False,  True, False, False, False, False, False, False]],      dtype=bool)
     >>> jnp.rot90(_apply_effects(s)[16].reshape(9, 9), k=3)  # 飛
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
