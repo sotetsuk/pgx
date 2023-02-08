@@ -130,11 +130,12 @@ def _no_winning_step(
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
+    s = _change_turn(state)
     return jax.lax.cond(
         _is_turn_end(state),
         lambda: (
-            _change_turn(state).curr_player,
-            _change_turn(state),
+            s.curr_player,
+            s,
             0,
         ),
         lambda: (state.curr_player, state, 0),
