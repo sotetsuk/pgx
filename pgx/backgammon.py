@@ -96,18 +96,23 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
     """
     playできるサイコロを6次元の0-1ベクトルで返す.
     """
-    indices: jnp.ndarray = jnp.array(
+    dice_indices: jnp.ndarray = jnp.array(
         [0, 1, 2, 3], dtype=jnp.int16
-    )  # サイコロの目は最大4
+    )  # サイコロの数は最大4
 
     def _insert_dice_num(idx: int, playable_dice: jnp.ndarray) -> jnp.ndarray:
         vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int16)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
         ) + (playable_dice[idx] == -1) * vec
-    return jax.vmap(_insert_dice_num)(
-        indices, jnp.tile(playable_dice, (4, 1))
-    ).sum(axis=0).astype(jnp.int16)
+
+    return (
+        jax.vmap(_insert_dice_num)(
+            dice_indices, jnp.tile(playable_dice, (4, 1))
+        )
+        .sum(axis=0)
+        .astype(jnp.int16)
+    )
 
 
 def _normal_step(
@@ -276,19 +281,30 @@ def _update_playable_dice(
     action: int,
 ) -> jnp.ndarray:
     _n = played_dice_num
-    die = action % 6
+    die_array = jnp.array([action % 6] * 4, dtype=jnp.int16)
+    dice_indices: jnp.ndarray = jnp.array(
+        [0, 1, 2, 3], dtype=jnp.int16
+    )  # サイコロの数は最大4
 
-    def _update_for_diff_dice(die: int, playable_dice: jnp.ndarray):
-        return jax.lax.fori_loop(
-            0,
-            4,
-            lambda i, x: (die == x[i]) * x.at[i].set(-1) + (die != x[i]) * x,
-            playable_dice,
+    def _update_for_diff_dice(die: int, idx: int, playable_dice: jnp.ndarray):
+        return (die == playable_dice[idx]) * -1 + (
+            die != playable_dice[idx]
+        ) * playable_dice[idx]
+
+    print(
+        jax.vmap(_update_for_diff_dice)(
+            die_array, dice_indices, jnp.tile(playable_dice, (4, 1))
         )
-
+        .astype(jnp.int16)
+        .shape
+    )
     return (dice[0] == dice[1]) * playable_dice.at[3 - _n].set(-1) + (
         dice[0] != dice[1]
-    ) * _update_for_diff_dice(die, playable_dice)
+    ) * jax.vmap(_update_for_diff_dice)(
+        die_array, dice_indices, jnp.tile(playable_dice, (4, 1))
+    ).astype(
+        jnp.int16
+    )
 
 
 def _home_board(turn: jnp.ndarray) -> jnp.ndarray:
@@ -503,15 +519,15 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
-    legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16)
+    dice_indices: jnp.ndarray = jnp.array([0, 1, 2, 3], dtype=jnp.int16)
 
-    def _update(i: int, legal_action_mask: jnp.ndarray) -> jnp.ndarray:
-        return legal_action_mask | _legal_action_mask_for_single_die(
-            board, turn, dice[i]
-        )
+    def _update(i: int) -> jnp.ndarray:
+        return _legal_action_mask_for_single_die(board, turn, dice[i])
 
-    legal_action_mask = jax.lax.fori_loop(0, 4, _update, legal_action_mask)
-    return legal_action_mask
+    legal_action_masks = jax.vmap(_update)(dice_indices)  # (4 * (26*6 + 6))
+    return jnp.clip(
+        legal_action_masks.sum(axis=0), a_min=0, a_max=1
+    )  # 4つのサイコロに対するlegal_action_maskのsumを取って[0,1]にclipする. or演算と同じ.
 
 
 def _legal_action_mask_for_single_die(
@@ -531,13 +547,21 @@ def _legal_action_mask_for_valid_single_dice(
     """
     -1以外のサイコロの目に対して合法判定
     """
-    legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16)
+    src_indices = jnp.arange(
+        26, dtype=jnp.int16
+    )  # 26パターンのsrcに対してlegal_actionを求める.
 
-    def _is_legal(i: int, legal_action_mask: jnp.ndarray):
+    def _is_legal(i: int):
         action: int = i * 6 + die
+        legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16)
         legal_action_mask = legal_action_mask.at[action].set(
             _is_action_legal(board, turn, action)
         )
         return legal_action_mask
 
-    return jax.lax.fori_loop(0, 26, _is_legal, legal_action_mask)
+    legal_action_masks = jax.vmap(_is_legal)(
+        src_indices
+    )  # (26 * (26 * 6 + 6))
+    return legal_action_masks.sum(
+        axis=0
+    )  # srcが異なれば, actionも異なるので, 重複を気にする必要はない.

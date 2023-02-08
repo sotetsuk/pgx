@@ -219,7 +219,7 @@ def test_step():
     # 白がサイコロ2をplay 25(off)->22
     _, state, _ = step(state=state, action=(1) * 6 + 1)
     assert (
-        state.playable_dice - jnp.array([0, -1, -1, -1])
+        state.playable_dice - jnp.array([0, -1, -1, -1], dtype=jnp.int16)
     ).sum() == 0  # playable diceが正しく更新されているか
     assert state.played_dice_num == 1  # played diceが増えているか.
     assert state.turn == 1  # turnが変わっていないか.
