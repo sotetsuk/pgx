@@ -100,7 +100,9 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
         [0, 1, 2, 3], dtype=jnp.int16
     )  # サイコロの数は最大4
 
-    def _insert_dice_num(idx: int, playable_dice: jnp.ndarray) -> jnp.ndarray:
+    def _insert_dice_num(
+        idx: jnp.ndarray, playable_dice: jnp.ndarray
+    ) -> jnp.ndarray:
         vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int16)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
@@ -286,18 +288,13 @@ def _update_playable_dice(
         [0, 1, 2, 3], dtype=jnp.int16
     )  # サイコロの数は最大4
 
-    def _update_for_diff_dice(die: int, idx: int, playable_dice: jnp.ndarray):
+    def _update_for_diff_dice(
+        die: jnp.ndarray, idx: jnp.ndarray, playable_dice: jnp.ndarray
+    ):
         return (die == playable_dice[idx]) * -1 + (
             die != playable_dice[idx]
         ) * playable_dice[idx]
 
-    print(
-        jax.vmap(_update_for_diff_dice)(
-            die_array, dice_indices, jnp.tile(playable_dice, (4, 1))
-        )
-        .astype(jnp.int16)
-        .shape
-    )
     return (dice[0] == dice[1]) * playable_dice.at[3 - _n].set(-1) + (
         dice[0] != dice[1]
     ) * jax.vmap(_update_for_diff_dice)(
@@ -521,8 +518,8 @@ def _legal_action_mask(
 ) -> jnp.ndarray:
     dice_indices: jnp.ndarray = jnp.array([0, 1, 2, 3], dtype=jnp.int16)
 
-    def _update(i: int) -> jnp.ndarray:
-        return _legal_action_mask_for_single_die(board, turn, dice[i])
+    def _update(idx: jnp.ndarray) -> jnp.ndarray:
+        return _legal_action_mask_for_single_die(board, turn, dice[idx])
 
     legal_action_masks = jax.vmap(_update)(dice_indices)  # (4 * (26*6 + 6))
     return jnp.clip(
@@ -551,8 +548,8 @@ def _legal_action_mask_for_valid_single_dice(
         26, dtype=jnp.int16
     )  # 26パターンのsrcに対してlegal_actionを求める.
 
-    def _is_legal(i: int):
-        action: int = i * 6 + die
+    def _is_legal(idx: jnp.ndarray):
+        action: int = idx * 6 + die
         legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16)
         legal_action_mask = legal_action_mask.at[action].set(
             _is_action_legal(board, turn, action)
