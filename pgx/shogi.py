@@ -87,9 +87,7 @@ BYTES = b'\xc9\x00\x01f\xdd\x01\x93\x93\x0eQQ\xa4bool\xc6\x00\x01f\xce\x00\x00\x
 # fmt: on
 
 # Can <piece,14> reach from <from,81> to <to,81> ignoring pieces on board?
-RAW_EFFECT_BOARDS = from_bytes(
-    jnp.zeros((14, 81, 81), dtype=jnp.bool_), BYTES
-)
+RAW_EFFECT_BOARDS = from_bytes(jnp.zeros((14, 81, 81), dtype=jnp.bool_), BYTES)
 RAW_EFFECT_BOARDS = jnp.array(RAW_EFFECT_BOARDS)
 
 
