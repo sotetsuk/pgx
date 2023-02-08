@@ -322,14 +322,7 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
     def _is_brocked(p, f, t):
         # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
         # True = 途中でbrockされ、到達できない
-        # TODO: filtering by jnp.where at last might be faster?
-        return jax.lax.cond(
-            p >= 0,
-            lambda: (
-                IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)
-            ).any(),
-            lambda: FALSE,
-        )
+        return (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any()
 
     def _is_brocked2(p, f):
         to = jnp.arange(81)
@@ -340,6 +333,8 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
     from_ = jnp.arange(81)
 
     filter_boards = jax.vmap(_is_brocked2)(large_pieces, from_)
+    mask = (large_pieces >= 0).reshape(81, 1)
+    filter_boards = jnp.where(mask, filter_boards, FALSE)
 
     return filter_boards  # (81=from, 81=to)
 
