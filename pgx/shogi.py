@@ -370,6 +370,35 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
+def _legal_moves(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
+    """Filter (84, 84) effects and return legal moves (84, 84)
+
+    >>> s = init()
+    >>> effect_boards = _apply_effects(s)
+    >>> legal_moves = _legal_moves(s, effect_boards)
+    >>> jnp.rot90(legal_moves[8].reshape(9, 9), k=3)  # 香
+    Array([[False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False,  True],
+           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
+    """
+    pb = state.piece_board
+    # filter the destinations where my piece exists
+    is_my_piece = (PAWN <= pb) & (pb < OPP_PAWN)
+    effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
+
+    return effect_boards
+
+
+def _legal_drops():
+    ...
+
+
 def to_sfen(state: State):
     """Convert state into sfen expression.
 
