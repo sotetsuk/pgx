@@ -2,7 +2,6 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 from flax import struct
 
 
@@ -97,11 +96,8 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
     return jax.lax.fori_loop(
         0,
         4,
-        lambda i, x: jax.lax.cond(
-            playable_dice[i] != -1,
-            lambda: x.at[playable_dice[i]].set(1),
-            lambda: x,
-        ),
+        lambda i, x: (playable_dice[i] != -1) * x.at[playable_dice[i]].set(1)
+        + (playable_dice[i] == -1) * x,
         zero_one_dice_vec,
     )
 
@@ -253,18 +249,16 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
-    return jax.lax.cond(diff > 0, lambda: jnp.int16(1), lambda: jnp.int16(-1))
+    return (diff > 0) * jnp.int16(1) + (diff <= 0) * jnp.int16(-1)
 
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
     """
     -1でemptyを表す.
     """
-    return jax.lax.cond(
-        dice[0] == dice[1],
-        lambda: jnp.array([dice[0]] * 4, dtype=np.int16),
-        lambda: jnp.array([dice[0], dice[1], -1, -1], dtype=np.int16),
-    )
+    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int16) + (
+        dice[0] != dice[1]
+    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int16)
 
 
 def _update_playable_dice(
@@ -280,40 +274,34 @@ def _update_playable_dice(
         return jax.lax.fori_loop(
             0,
             4,
-            lambda i, x: jax.lax.cond(
-                die == x[i], lambda: x.at[i].set(-1), lambda: x
-            ),
+            lambda i, x: (die == x[i]) * x.at[i].set(-1) + (die != x[i]) * x,
             playable_dice,
         )
 
-    return jax.lax.cond(
-        dice[0] == dice[1],
-        lambda: playable_dice.at[3 - _n].set(-1),
-        lambda: _update_for_diff_dice(die, playable_dice),
-    )
+    return (dice[0] == dice[1]) * playable_dice.at[3 - _n].set(-1) + (
+        dice[0] != dice[1]
+    ) * _update_for_diff_dice(die, playable_dice)
 
 
 def _home_board(turn: jnp.ndarray) -> jnp.ndarray:
     """
     黒: [18~23], 白: [0~5]
     """
-    return jax.lax.cond(
-        turn == -1, lambda: jnp.arange(18, 24), lambda: jnp.arange(0, 6)
-    )
+    return (turn == -1) * jnp.arange(18, 24) + (turn == 1) * jnp.arange(0, 6)  # type: ignore
 
 
 def _off_idx(turn: jnp.ndarray) -> int:
     """
     黒: 26, 白: 27
     """
-    return jax.lax.cond(turn == -1, lambda: 26, lambda: 27)
+    return (turn == -1) * 26 + (turn == 1) * 27  # type: ignore
 
 
 def _bar_idx(turn: jnp.ndarray) -> int:
     """
     黒: 24, 白 25
     """
-    return jax.lax.cond(turn == -1, lambda: 24, lambda: 25)
+    return (turn == -1) * 24 + (turn == 1) * 25  # type: ignore
 
 
 def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
@@ -325,14 +313,10 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
     exists = jnp.where((b * turn > 0), size=24, fill_value=jnp.nan)[  # type: ignore
         0
     ]
-    return jax.lax.cond(
-        turn == 1,
-        lambda: jnp.int16(
-            jnp.max(jnp.nan_to_num(exists, nan=jnp.int16(-100))) + 1
-        ),
-        lambda: jnp.int16(
-            24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int16(100)))
-        ),
+    return (turn == 1) * jnp.int16(
+        jnp.max(jnp.nan_to_num(exists, nan=jnp.int16(-100))) + 1
+    ) + (turn == -1) * jnp.int16(
+        24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int16(100)))
     )
 
 
@@ -369,29 +353,30 @@ def _calc_src(src: int, turn: jnp.ndarray) -> int:
     """
     boardのindexに合わせる.
     """
-    return jax.lax.cond(
-        src == 1, lambda: jnp.int16(_bar_idx(turn)), lambda: jnp.int16(src - 2)
-    )
+    return (src == 1) * jnp.int16(_bar_idx(turn)) + (src != 1) * jnp.int16(
+        src - 2
+    )  # type: ignore
 
 
 def _calc_tgt(src: int, turn: jnp.ndarray, die) -> int:
     """
     boardのindexに合わせる. actionは src*6 + dieの形になっている. targetは黒ならsrcからdie分+白ならdie分-(目的地が逆だから.)
     """
-    return jax.lax.cond(
-        src >= 24,
-        lambda: jnp.int16(
-            jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
-        ),
-        lambda: jnp.int16(_from_other_than_bar(src, turn, die)),
+    return (src >= 24) * jnp.int16(
+        jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
+    ) + (src < 24) * jnp.int16(
+        _from_other_than_bar(src, turn, die)
     )  # type: ignore
 
 
 def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
-    return jax.lax.cond(
-        (src + die * -1 * turn >= 0) & (src + die * -1 * turn <= 23),
-        lambda: jnp.int16(src + die * -1 * turn),
-        lambda: jnp.int16(_off_idx(turn)),
+    _is_from_board = (src + die * -1 * turn >= 0) & (
+        src + die * -1 * turn <= 23
+    )
+    return _is_from_board * jnp.int16(src + die * -1 * turn) + (
+        (~_is_from_board)
+    ) * jnp.int16(
+        _off_idx(turn)
     )  # type: ignore
 
 
@@ -412,30 +397,30 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
     src = [no op., from bar, 0, .., 23]
     """
     src, die, tgt = _decompose_action(action, turn)
-    return jax.lax.cond(
-        (0 <= tgt) & (tgt <= 23) & (src >= 0),
-        lambda: _is_to_point_legal(board, turn, src, tgt),
-        lambda: _is_to_off_legal(board, turn, src, tgt, die),
-    )
+    _is_to_point = (0 <= tgt) & (tgt <= 23) & (src >= 0)
+    return _is_to_point & _is_to_point_legal(board, turn, src, tgt) | (
+        ~_is_to_point
+    ) & _is_to_off_legal(
+        board, turn, src, tgt, die
+    )  # type: ignore
 
 
 def _distance_to_goal(src: int, turn: jnp.ndarray) -> int:
-    return jax.lax.cond(turn == -1, lambda: 24 - src, lambda: src + 1)  # type: ignore
+    return (turn == -1) * (24 - src) + (turn == 1) * (src + 1)  # type: ignore
 
 
 def _is_to_off_legal(
     board: jnp.ndarray, turn: jnp.ndarray, src: int, tgt: int, die: int
-) -> bool:
+):
     """
     board外への移動についての合法判定
     """
-    return jax.lax.cond(
-        src < 0,
-        lambda: False,
-        lambda: _exists(board, turn, src)
+    return (
+        (src >= 0)
+        & _exists(board, turn, src)
         & _is_all_on_home_board(board, turn)
         & (_rear_distance(board, turn) <= die)
-        & (_rear_distance(board, turn) == _distance_to_goal(src, turn)),
+        & (_rear_distance(board, turn) == _distance_to_goal(src, turn))
     )  # type: ignore
 
 
@@ -445,13 +430,16 @@ def _is_to_point_legal(
     """
     tgtがpointの場合の合法手判定
     """
-    return jax.lax.cond(
-        src >= 24,
-        lambda: (_exists(board, turn, src)) & (_is_open(board, turn, tgt)),
-        lambda: (_exists(board, turn, src))
+    return (
+        (src >= 24)
+        & (_exists(board, turn, src))
         & (_is_open(board, turn, tgt))
-        & (board[_bar_idx(turn)] == 0),
-    )
+    ) | (
+        (src < 24)
+        & (_exists(board, turn, src))
+        & (_is_open(board, turn, tgt))
+        & (board[_bar_idx(turn)] == 0)
+    )  # type: ignore
 
 
 def _move(board: jnp.ndarray, turn: jnp.ndarray, action: int) -> jnp.ndarray:
@@ -477,18 +465,15 @@ def _is_all_off(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 
 
 def _calc_win_score(board: jnp.ndarray, turn: jnp.ndarray) -> int:
-    return jax.lax.cond(
-        _is_gammon(board, turn),
-        lambda: _score(board, turn),
-        lambda: 1,
-    )
-
-
-def _score(board: jnp.ndarray, turn: jnp.ndarray) -> int:
-    return jax.lax.cond(
-        _remains_at_inner(board, turn),
-        lambda: 3,
-        lambda: 2,
+    """
+    通常勝ち: 1点
+    gammon勝ち: 2点
+    backgammon勝ち: 3点
+    """
+    return (
+        1
+        + _is_gammon(board, turn)
+        + (_is_gammon(board, turn) & _remains_at_inner(board, turn))
     )
 
 
@@ -527,11 +512,9 @@ def _legal_action_mask_for_single_die(
     """
     一つのサイコロの目に対するlegal micro action
     """
-    return jax.lax.cond(
-        die == -1,
-        lambda: jnp.zeros(26 * 6 + 6, dtype=jnp.int16),
-        lambda: _legal_action_mask_for_valid_single_dice(board, turn, die),
-    )
+    return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.int16) + (
+        die != -1
+    ) * _legal_action_mask_for_valid_single_dice(board, turn, die)
 
 
 def _legal_action_mask_for_valid_single_dice(
