@@ -1,66 +1,106 @@
-#! python3
+import jax
 import jax.numpy as jnp
 from flax.serialization import to_bytes
 
+from pgx.shogi import *
 
-# 初期盤面生成
-def _make_init_board() -> jnp.ndarray:
-    array = jnp.zeros((29, 81), dtype=jnp.int32)
-    for i in range(81):
-        if i % 9 == 6:
-            # 先手歩
-            p = 1
-        elif i == 8 or i == 80:
-            # 先手香車
-            p = 2
-        elif i == 17 or i == 71:
-            # 先手桂馬
-            p = 3
-        elif i == 26 or i == 62:
-            # 先手銀
-            p = 4
-        elif i == 70:
-            # 先手角
-            p = 5
-        elif i == 16:
-            # 先手飛車
-            p = 6
-        elif i == 35 or i == 53:
-            # 先手金
-            p = 7
-        elif i == 44:
-            # 先手玉
-            p = 8
-        elif i % 9 == 2:
-            # 後手歩
-            p = 15
-        elif i == 72 or i == 0:
-            # 後手香車
-            p = 16
-        elif i == 63 or i == 9:
-            # 後手桂馬
-            p = 17
-        elif i == 54 or i == 18:
-            # 後手銀
-            p = 18
-        elif i == 10:
-            # 後手角
-            p = 19
-        elif i == 64:
-            # 後手飛車
-            p = 20
-        elif i == 45 or i == 27:
-            # 後手金
-            p = 21
-        elif i == 36:
-            # 後手玉
-            p = 22
+
+def can_move_to(piece, from_, to):
+    """Can <piece> move from <from_> to <to>?"""
+    if from_ == to:
+        return False
+    x0, y0 = from_ // 9, from_ % 9
+    x1, y1 = to // 9, to % 9
+    dx = x1 - x0
+    dy = y1 - y0
+    if piece == PAWN:
+        if dx == 0 and dy == -1:
+            return True
         else:
-            # 空白
-            p = 0
-        array = array.at[p, i].set(1)
-    return array
+            return False
+    elif piece == LANCE:
+        if dx == 0 and dy < 0:
+            return True
+        else:
+            return False
+    elif piece == KNIGHT:
+        if dx in (-1, 1) and dy == -2:
+            return True
+        else:
+            return False
+    elif piece == SILVER:
+        if dx in (-1, 0, 1) and dy == -1:
+            return True
+        elif dx in (-1, 1) and dy == 1:
+            return True
+        else:
+            return False
+    elif piece == BISHOP:
+        if dx == dy or dx == -dy:
+            return True
+        else:
+            return False
+    elif piece == ROOK:
+        if dx == 0 or dy == 0:
+            return True
+        else:
+            return False
+    if piece in (GOLD, PRO_PAWN, PRO_LANCE, PRO_KNIGHT, PRO_SILVER):
+        if dx in (-1, 0, 1) and dy in (0, -1):
+            return True
+        elif dx == 0 and dy == 1:
+            return True
+        else:
+            return False
+    elif piece == KING:
+        if abs(dx) <= 1 and abs(dy) <= 1:
+            return True
+        else:
+            return False
+    elif piece == HORSE:
+        if abs(dx) <= 1 and abs(dy) <= 1:
+            return True
+        elif dx == dy or dx == -dy:
+            return True
+        else:
+            return False
+    elif piece == DRAGON:
+        if abs(dx) <= 1 and abs(dy) <= 1:
+            return True
+        if dx == 0 or dy == 0:
+            return True
+        else:
+            return False
+    else:
+        assert False
+
+def show(piece, point):
+    x = ""
+    for i in range(81):
+        if i % 9 == 0:
+            print(x)
+            x = ""
+        if i == point:
+            x += "x "
+        else:
+            x += str(int(can_move_to(piece, point, i))) + " "
+    print(x)
 
 
-init_board = _make_init_board()
-print(f"INIT_BOARD = {to_bytes(init_board)}")
+# for piece in (PAWN, LANCE, KNIGHT, SILVER, BISHOP, ROOK, GOLD, KING, HORSE, DRAGON):
+#     print("===")
+#     show(piece, 40)
+#
+#
+# for piece in (PAWN, LANCE, KNIGHT, SILVER, BISHOP, ROOK, GOLD, KING, HORSE, DRAGON):
+#     print("===")
+#     show(piece, 0)
+
+
+RAW_EFFECT_BOARDS = jnp.zeros((14, 81, 81), dtype=jnp.bool_)
+for piece in range(14):
+    for from_ in range(81):
+        for to in range(81):
+            RAW_EFFECT_BOARDS = RAW_EFFECT_BOARDS.at[piece, from_, to].set(can_move_to(piece, from_, to))
+
+print(f"RAW_EFFECT_BOARDS = {to_bytes(RAW_EFFECT_BOARDS)}")
