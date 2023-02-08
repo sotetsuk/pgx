@@ -64,6 +64,10 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
 def step(
     state: BackgammonState, action: int
 ) -> Tuple[BackgammonState, int, bool]:
+    """
+    step 関数.
+    最初にターンを変更するか判定する.
+    """
     return jax.lax.cond(
         _is_turn_end(state),
         lambda: (_change_turn(state).curr_player, _change_turn(state), 0),
