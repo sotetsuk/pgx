@@ -294,14 +294,14 @@ def _off_idx(turn: jnp.ndarray) -> int:
     """
     黒: 26, 白: 27
     """
-    return (turn == -1) * 26 + (turn == 1) * 27
+    return (turn == -1) * 26 + (turn == 1) * 27  # type: ignore
 
 
 def _bar_idx(turn: jnp.ndarray) -> int:
     """
     黒: 24, 白 25
     """
-    return (turn == -1) * 24 + (turn == 1) * 25
+    return (turn == -1) * 24 + (turn == 1) * 25  # type: ignore
 
 
 def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
@@ -355,7 +355,7 @@ def _calc_src(src: int, turn: jnp.ndarray) -> int:
     """
     return (src == 1) * jnp.int16(_bar_idx(turn)) + (src != 1) * jnp.int16(
         src - 2
-    )
+    )  # type: ignore
 
 
 def _calc_tgt(src: int, turn: jnp.ndarray, die) -> int:
@@ -364,7 +364,9 @@ def _calc_tgt(src: int, turn: jnp.ndarray, die) -> int:
     """
     return (src >= 24) * jnp.int16(
         jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
-    ) + (src < 24) * jnp.int16(_from_other_than_bar(src, turn, die))
+    ) + (src < 24) * jnp.int16(
+        _from_other_than_bar(src, turn, die)
+    )  # type: ignore
 
 
 def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
@@ -373,7 +375,9 @@ def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
     )
     return _is_from_board * jnp.int16(src + die * -1 * turn) + (
         (~_is_from_board)
-    ) * jnp.int16(_off_idx(turn))
+    ) * jnp.int16(
+        _off_idx(turn)
+    )  # type: ignore
 
 
 def _decompose_action(action: int, turn: jnp.ndarray) -> Tuple:
@@ -396,11 +400,13 @@ def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
     _is_to_point = (0 <= tgt) & (tgt <= 23) & (src >= 0)
     return _is_to_point & _is_to_point_legal(board, turn, src, tgt) | (
         ~_is_to_point
-    ) & _is_to_off_legal(board, turn, src, tgt, die)
+    ) & _is_to_off_legal(
+        board, turn, src, tgt, die
+    )  # type: ignore
 
 
 def _distance_to_goal(src: int, turn: jnp.ndarray) -> int:
-    return (turn == -1) * (24 - src) + (turn == 1) * (src + 1)
+    return (turn == -1) * (24 - src) + (turn == 1) * (src + 1)  # type: ignore
 
 
 def _is_to_off_legal(
@@ -415,7 +421,7 @@ def _is_to_off_legal(
         & _is_all_on_home_board(board, turn)
         & (_rear_distance(board, turn) <= die)
         & (_rear_distance(board, turn) == _distance_to_goal(src, turn))
-    )
+    )  # type: ignore
 
 
 def _is_to_point_legal(
@@ -433,7 +439,7 @@ def _is_to_point_legal(
         & (_exists(board, turn, src))
         & (_is_open(board, turn, tgt))
         & (board[_bar_idx(turn)] == 0)
-    )
+    )  # type: ignore
 
 
 def _move(board: jnp.ndarray, turn: jnp.ndarray, action: int) -> jnp.ndarray:
@@ -459,6 +465,11 @@ def _is_all_off(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 
 
 def _calc_win_score(board: jnp.ndarray, turn: jnp.ndarray) -> int:
+    """
+    通常勝ち: 1点
+    gammon勝ち: 2点
+    backgammon勝ち: 3点
+    """
     return (
         1
         + _is_gammon(board, turn)
