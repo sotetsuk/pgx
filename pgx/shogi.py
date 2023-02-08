@@ -302,7 +302,8 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
 def _obtain_effect_filter(state: State) -> jnp.ndarray:
     """
     >>> s = init()
-    >>> jnp.rot90(_obtain_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
+    >>> jnp.rot90(_obtain_effect_filter(s).reshape(9, 9), k=3)
+    # >>> jnp.rot90(_obtain_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
     # >>> _obtain_effect_filter(s)
     """
     # print(IS_ON_THE_WAY.shape)
@@ -322,13 +323,10 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
 
     def _reduce_ix(piece):
         # 香角飛馬龍のみフィルタする
-        # TODO: 馬龍
-        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, -1, -1])[
+        # NOTE: last 14th -1 is sentinel for avoid accessing via -1
+        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1])[
             piece
         ]
-        # return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4])[
-        #     piece
-        # ]
 
     pieces = state.piece_board
     reduced_pieces = jax.vmap(_reduce_ix)(pieces)
@@ -339,6 +337,9 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
     )  # (81=from, 81=to)
     # # mask = (reduced_pieces >= 0).reshape((81, 1))
     # # filter_boards = jnp.where(mask, filter_boards, FALSE)
+    # return pieces == LANCE
+    # return reduced_pieces
+
     return filter_boards
 
 
