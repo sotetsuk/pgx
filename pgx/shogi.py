@@ -298,9 +298,9 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
 def _to_large_piece_ix(piece):
     # Filtering only Lance(0), Bishop(1), Rook(2), Horse(3), and Dragon(4)
     # NOTE: last 14th -1 is sentinel for avoid accessing via -1
-    return jnp.int8(
-        [-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1]
-    )[piece]
+    return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1])[
+        piece
+    ]
 
 
 def _apply_effect_filter(state: State) -> jnp.ndarray:
@@ -323,11 +323,15 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
     from_ = jnp.arange(81)
     to = jnp.arange(81)
 
-    # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
-    # True = 途中でbrockされ、到達できない
-    func1 = lambda p, f, t: (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any()
-    # (piece, from) を固定してtoにバッチで適用
-    func2 = lambda p, f: jax.vmap(partial(func1, p=p, f=f))(t=to)
+    def func1(p, f, t):
+        # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
+        # True = 途中でbrockされ、到達できない
+        return (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any()
+
+    def func2(p, f):
+        # (piece, from) を固定してtoにバッチで適用
+        return jax.vmap(partial(func1, p=p, f=f))(t=to)
+
     # (piece, from) にバッチで適用
     filter_boards = jax.vmap(func2)(large_pieces, from_)  # (81,81)
 
