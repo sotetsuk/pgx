@@ -415,12 +415,14 @@ def _is_to_off_legal(
     """
     board外への移動についての合法判定
     """
+    r = _rear_distance(board, turn)
+    d = _distance_to_goal(src, turn)
     return (
         (src >= 0)
         & _exists(board, turn, src)
         & _is_all_on_home_board(board, turn)
-        & (_rear_distance(board, turn) <= die)
-        & (_rear_distance(board, turn) == _distance_to_goal(src, turn))
+        & (r <= die)
+        & (r == d)
     )  # type: ignore
 
 
@@ -430,15 +432,10 @@ def _is_to_point_legal(
     """
     tgtがpointの場合の合法手判定
     """
-    return (
-        (src >= 24)
-        & (_exists(board, turn, src))
-        & (_is_open(board, turn, tgt))
-    ) | (
-        (src < 24)
-        & (_exists(board, turn, src))
-        & (_is_open(board, turn, tgt))
-        & (board[_bar_idx(turn)] == 0)
+    e = _exists(board, turn, src)
+    o = _is_open(board, turn, tgt)
+    return ((src >= 24) & e & o) | (
+        (src < 24) & e & o & (board[_bar_idx(turn)] == 0)
     )  # type: ignore
 
 
@@ -470,11 +467,8 @@ def _calc_win_score(board: jnp.ndarray, turn: jnp.ndarray) -> int:
     gammon勝ち: 2点
     backgammon勝ち: 3点
     """
-    return (
-        1
-        + _is_gammon(board, turn)
-        + (_is_gammon(board, turn) & _remains_at_inner(board, turn))
-    )
+    g = _is_gammon(board, turn)
+    return 1 + g + (g & _remains_at_inner(board, turn))
 
 
 def _is_gammon(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
