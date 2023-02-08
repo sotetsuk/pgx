@@ -283,20 +283,16 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
     """
     from_ = jnp.arange(81)
     pieces = state.piece_board  # include -1
-    to = jnp.arange(81)
 
     # fix to and apply (pieces, from_) by batch
     @jax.vmap
     def _raw_effect_boards(p, f):
-        # TODO: use jax.where instead of cond after (81, 81) arr is given? which is faster?
-        return jax.lax.cond(
-            (0 <= p) & (p < 14),
-            lambda: RAW_EFFECT_BOARDS[p, f, to],
-            lambda: jnp.zeros(81, dtype=jnp.bool_),
-        )  # return (81,)
+        return RAW_EFFECT_BOARDS[p, f, :]  # (81,)
 
-    # obtain (81=from, 81=to) boards
-    return _raw_effect_boards(pieces, from_)
+    mask = ((0 <= pieces) & (pieces < 14)).reshape(81, 1)
+    raw_effect_boards = _raw_effect_boards(pieces, from_)
+    raw_effect_boards = jnp.where(mask, raw_effect_boards, FALSE)
+    return raw_effect_boards  # (81, 81)
 
 
 def _obtain_effect_filter(state: State) -> jnp.ndarray:
