@@ -295,10 +295,18 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
     return raw_effect_boards  # (81, 81)
 
 
-def _obtain_effect_filter(state: State) -> jnp.ndarray:
+def _to_large_piece_ix(piece):
+    # Filtering only Lance(0), Bishop(1), Rook(2), Horse(3), and Dragon(4)
+    # NOTE: last 14th -1 is sentinel for avoid accessing via -1
+    return jnp.int8(
+        [-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1]
+    )[piece]
+
+
+def _apply_effect_filter(state: State) -> jnp.ndarray:
     """
     >>> s = init()
-    >>> jnp.rot90(_obtain_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
+    >>> jnp.rot90(_apply_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False,  True,  True,  True],
@@ -327,18 +335,11 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
         to = jnp.arange(81)
         return jax.vmap(partial(_is_brocked, p=p, f=f))(t=to)
 
-    def _reduce_ix(piece):
-        # Filtering only Lance, Bishop, Rook, Horse, and Dragon
-        # NOTE: last 14th -1 is sentinel for avoid accessing via -1
-        return jnp.int8(
-            [-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1]
-        )[piece]
-
     pieces = state.piece_board
-    reduced_pieces = jax.vmap(_reduce_ix)(pieces)
+    large_pieces = jax.vmap(_to_large_piece_ix)(pieces)
     from_ = jnp.arange(81)
 
-    filter_boards = jax.vmap(_is_brocked2)(reduced_pieces, from_)
+    filter_boards = jax.vmap(_is_brocked2)(large_pieces, from_)
 
     return filter_boards  # (81=from, 81=to)
 
@@ -378,7 +379,7 @@ def _apply_effects(state: State):
            [False, False, False, False, False, False, False,  True, False]],      dtype=bool)
     """
     raw_effect_boards = _apply_raw_effects(state)
-    effect_filter_boards = _obtain_effect_filter(state)
+    effect_filter_boards = _apply_effect_filter(state)
     return raw_effect_boards & ~effect_filter_boards
 
 
