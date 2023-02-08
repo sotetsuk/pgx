@@ -395,9 +395,9 @@ def _legal_moves(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     return effect_boards
 
 
-
 def _legal_drops():
     ...
+
 
 def to_sfen(state: State):
     """Convert state into sfen expression.
