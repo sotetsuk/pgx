@@ -550,3 +550,4 @@ def _legal_action_mask_for_valid_single_dice(
         return legal_action_mask
 
     return jax.lax.fori_loop(0, 26, _is_legal, legal_action_mask)
+    
