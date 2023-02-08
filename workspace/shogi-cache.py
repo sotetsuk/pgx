@@ -157,11 +157,11 @@ print(f"RAW_EFFECT_BOARDS = {to_bytes(RAW_EFFECT_BOARDS)}")
 # show(HORSE, 70, 10)
 # show(DRAGON, 16, 10)
 
-IS_ON_THE_WAY = jnp.zeros((14, 81, 81, 81), dtype=jnp.bool_)
-for piece in tqdm((LANCE, BISHOP, ROOK, HORSE, DRAGON)):
+IS_ON_THE_WAY = jnp.zeros((5, 81, 81, 81), dtype=jnp.bool_)
+for i, piece in tqdm(enumerate((LANCE, BISHOP, ROOK, HORSE, DRAGON))):
     for from_ in tqdm(range(81), leave=False):
         for to in tqdm(range(81), leave=False):
             for p in range(81):
-                IS_ON_THE_WAY = IS_ON_THE_WAY.at[piece, from_, to, p].set(is_on_the_way(piece, from_, to, p))
+                IS_ON_THE_WAY = IS_ON_THE_WAY.at[i, from_, to, p].set(is_on_the_way(i, from_, to, p))
 
 print(f"IS_ON_THE_WAY = {to_bytes(IS_ON_THE_WAY)}")
