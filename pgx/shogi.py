@@ -318,21 +318,19 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
            [False, False, False, False, False, False, False, False, False]],      dtype=bool)
 
     """
-
-    def _is_brocked(p, f, t):
-        # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
-        # True = 途中でbrockされ、到達できない
-        return (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any()
-
-    def _is_brocked2(p, f):
-        to = jnp.arange(81)
-        return jax.vmap(partial(_is_brocked, p=p, f=f))(t=to)
-
     pieces = state.piece_board
     large_pieces = jax.vmap(_to_large_piece_ix)(pieces)
     from_ = jnp.arange(81)
+    to = jnp.arange(81)
 
-    filter_boards = jax.vmap(_is_brocked2)(large_pieces, from_)
+    # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
+    # True = 途中でbrockされ、到達できない
+    func1 = lambda p, f, t: (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any()
+    # (piece, from) を固定してtoにバッチで適用
+    func2 = lambda p, f: jax.vmap(partial(func1, p=p, f=f))(t=to)
+    # (piece, from) にバッチで適用
+    filter_boards = jax.vmap(func2)(large_pieces, from_)  # (81,81)
+
     mask = (large_pieces >= 0).reshape(81, 1)
     filter_boards = jnp.where(mask, filter_boards, FALSE)
 
