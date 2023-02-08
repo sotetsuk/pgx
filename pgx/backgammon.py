@@ -287,7 +287,7 @@ def _home_board(turn: jnp.ndarray) -> jnp.ndarray:
     """
     黒: [18~23], 白: [0~5]
     """
-    return (turn == -1) * jnp.arange(18, 24) + (turn == 1) * jnp.arange(0, 6)
+    return (turn == -1) * jnp.arange(18, 24) + (turn == 1) * jnp.arange(0, 6)  # type: ignore
 
 
 def _off_idx(turn: jnp.ndarray) -> int:
@@ -411,7 +411,7 @@ def _distance_to_goal(src: int, turn: jnp.ndarray) -> int:
 
 def _is_to_off_legal(
     board: jnp.ndarray, turn: jnp.ndarray, src: int, tgt: int, die: int
-) -> bool:
+):
     """
     board外への移動についての合法判定
     """
