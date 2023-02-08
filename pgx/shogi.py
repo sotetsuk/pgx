@@ -32,6 +32,7 @@ piece_board (81,):
   27 相手龍
 """
 
+from functools import partial
 import jax
 import jax.numpy as jnp
 from flax.serialization import from_bytes
@@ -266,7 +267,7 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
     """Obtain raw effect boards from piece board by batch.
 
     >>> s = init()
-    >>> jnp.rot90(_apply_raw_effects(s).reshape(9, 9), k=3)
+    >>> jnp.rot90(_apply_raw_effects(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False,  True,  True,  True],
@@ -291,9 +292,40 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
             lambda: jnp.zeros(81, dtype=jnp.bool_),
         )  # return (81,)
 
-    # obtain (81 = from_, 81 = to)
-    raw_effect_boards = _raw_effect_boards(pieces, from_)
-    return raw_effect_boards.any(axis=0)
+    # obtain (81=from, 81=to) boards
+    return _raw_effect_boards(pieces, from_)
+
+
+def _obtain_effect_filter(state: State) -> jnp.ndarray:
+    # tmp
+    IS_ON_THE_WAY = jnp.zeros((5, 81, 81, 81), dtype=jnp.bool_)
+
+    def _is_brocked(p, f, t):
+        # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
+        # True = 途中でbrockされ、到達できない
+        return (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any()
+
+    def _is_brocked2(p, f):
+        to = jnp.arange(81)
+        return jax.vmap(partial(_is_brocked, p=p, f=f))(t=to)
+
+    def _reduce_ix(piece):
+        # 香角飛馬龍のみフィルタする
+        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4])[piece]
+
+    pieces = state.piece_board
+    reduced_pieces = jax.vmap(_reduce_ix)(pieces)
+    from_ = jnp.arange(81)
+
+    filter_boards = jax.vmap(_is_brocked2)(reduced_pieces, from_)  # (81=from, 81=to)
+    mask = (reduced_pieces >= 0).reshape((81, 1))
+    filter_boards = jnp.where(mask, FALSE, filter_boards)
+    return filter_boards
+
+def apply_effects(state: State):
+    raw_effect_boards = _apply_raw_effects(state)
+    effect_filter_boards = _obtain_effect_filter(state)
+    return (raw_effect_boards & ~effect_filter_boards).any(axis=0)
 
 
 def to_sfen(state: State):
