@@ -405,7 +405,7 @@ def _legal_drops(state: State) -> jnp.ndarray:
     >>> s = init()
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
-    >>> jax.jit(_legal_drops)(s)[PAWN]
+    >>> _legal_drops(s)[PAWN]
     Array([False, False, False, False, False, False, False, False, False,
            False, False, False,  True,  True,  True,  True, False, False,
            False, False, False, False, False, False, False, False, False,
