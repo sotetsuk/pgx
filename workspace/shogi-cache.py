@@ -163,6 +163,6 @@ for i, piece in tqdm(enumerate((LANCE, BISHOP, ROOK, HORSE, DRAGON))):
     for from_ in tqdm(range(81), leave=False):
         for to in tqdm(range(81), leave=False):
             for p in range(81):
-                IS_ON_THE_WAY = IS_ON_THE_WAY.at[i, from_, to, p].set(is_on_the_way(i, from_, to, p))
+                IS_ON_THE_WAY = IS_ON_THE_WAY.at[i, from_, to, p].set(is_on_the_way(piece, from_, to, p))
 
 print(f"SHOGI_IS_ON_THE_WAY = {to_bytes(IS_ON_THE_WAY)}")
