@@ -106,6 +106,8 @@ def test_init():
 
 def test_init_roll():
     a = _roll_init_dice(rng)
+    assert len(a) == 2
+    assert a[0] != a[1]
 
 
 def test_is_turn_end():

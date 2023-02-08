@@ -4,6 +4,42 @@ import jax
 import jax.numpy as jnp
 from flax import struct
 
+init_dice_pattern: jnp.ndarray = jnp.array(
+    [
+        [0, 1],
+        [0, 2],
+        [0, 3],
+        [0, 4],
+        [0, 5],
+        [1, 0],
+        [1, 2],
+        [1, 3],
+        [1, 4],
+        [1, 5],
+        [2, 0],
+        [2, 1],
+        [2, 3],
+        [2, 4],
+        [2, 5],
+        [3, 0],
+        [3, 1],
+        [3, 2],
+        [3, 4],
+        [3, 5],
+        [4, 0],
+        [4, 1],
+        [4, 2],
+        [4, 3],
+        [4, 5],
+        [5, 0],
+        [5, 1],
+        [5, 2],
+        [5, 3],
+        [5, 4],
+    ],
+    dtype=jnp.int16,
+)
+
 
 @struct.dataclass
 class BackgammonState:
@@ -185,15 +221,39 @@ def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
 
 
 def _make_init_board() -> jnp.ndarray:
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
-    board = board.at[0].set(-2)
-    board = board.at[5].set(5)
-    board = board.at[7].set(3)
-    board = board.at[11].set(-5)
-    board = board.at[12].set(5)
-    board = board.at[16].set(-3)
-    board = board.at[18].set(-5)
-    board = board.at[23].set(2)
+    board: jnp.ndarray = jnp.array(
+        [
+            -2,
+            0,
+            0,
+            0,
+            0,
+            5,
+            0,
+            3,
+            0,
+            0,
+            0,
+            -5,
+            5,
+            0,
+            0,
+            0,
+            -3,
+            0,
+            -5,
+            0,
+            0,
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            0,
+        ],
+        dtype=jnp.int16,
+    )
     return board
 
 
@@ -237,18 +297,7 @@ def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     # 違う目が出るまで振り続ける.
     """
 
-    def _cond_fn(roll: jnp.ndarray):
-        return roll[0] == roll[1]
-
-    def _body_fn(_roll: jnp.ndarray):
-        roll: jnp.ndarray = jax.random.randint(
-            rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int16
-        )
-        return roll[0]
-
-    return jax.lax.while_loop(
-        _cond_fn, _body_fn, jnp.array([0, 0], dtype=jnp.int16)
-    )
+    return jax.random.choice(rng, init_dice_pattern)
 
 
 def _roll_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
