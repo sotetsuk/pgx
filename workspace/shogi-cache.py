@@ -75,6 +75,7 @@ def can_move_to(piece, from_, to):
     else:
         assert False
 
+
 def is_on_the_way(piece, from_, to, point):
     if to == point:
         return False
@@ -132,7 +133,7 @@ for piece in tqdm(range(14)):
         for to in range(81):
             RAW_EFFECT_BOARDS = RAW_EFFECT_BOARDS.at[piece, from_, to].set(can_move_to(piece, from_, to))
 
-print(f"RAW_EFFECT_BOARDS = {to_bytes(RAW_EFFECT_BOARDS)}")
+print(f"SHOGI_RAW_EFFECT_BOARDS = {to_bytes(RAW_EFFECT_BOARDS)}")
 
 
 # test is_on_the_way
@@ -164,4 +165,4 @@ for i, piece in tqdm(enumerate((LANCE, BISHOP, ROOK, HORSE, DRAGON))):
             for p in range(81):
                 IS_ON_THE_WAY = IS_ON_THE_WAY.at[i, from_, to, p].set(is_on_the_way(i, from_, to, p))
 
-print(f"IS_ON_THE_WAY = {to_bytes(IS_ON_THE_WAY)}")
+print(f"SHOGI_IS_ON_THE_WAY = {to_bytes(IS_ON_THE_WAY)}")
