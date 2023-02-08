@@ -314,14 +314,17 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
            [False, False, False, False, False, False, False, False, False]],      dtype=bool)
 
     """
+
     def _is_brocked(p, f, t):
         # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
         # True = 途中でbrockされ、到達できない
         # TODO: filtering by jnp.where at last might be faster?
         return jax.lax.cond(
             p >= 0,
-            lambda: (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any(),
-            lambda: FALSE
+            lambda: (
+                IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)
+            ).any(),
+            lambda: FALSE,
         )
 
     def _is_brocked2(p, f):
@@ -331,17 +334,15 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
     def _reduce_ix(piece):
         # Filtering only Lance, Bishop, Rook, Horse, and Dragon
         # NOTE: last 14th -1 is sentinel for avoid accessing via -1
-        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1])[
-            piece
-        ]
+        return jnp.int8(
+            [-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1]
+        )[piece]
 
     pieces = state.piece_board
     reduced_pieces = jax.vmap(_reduce_ix)(pieces)
     from_ = jnp.arange(81)
 
-    filter_boards = jax.vmap(_is_brocked2)(
-        reduced_pieces, from_
-    )
+    filter_boards = jax.vmap(_is_brocked2)(reduced_pieces, from_)
 
     return filter_boards  # (81=from, 81=to)
 
@@ -349,7 +350,7 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
 def _apply_effects(state: State):
     """
     >>> s = init()
-    >>> jnp.rot90(_apply_effects(s)[8].reshape(9, 9), k=3)   # 香
+    >>> jnp.rot90(_apply_effects(s)[8].reshape(9, 9), k=3)  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
