@@ -96,14 +96,18 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
     """
     playできるサイコロを6次元の0-1ベクトルで返す.
     """
-    zero_one_dice_vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int16)
-    return jax.lax.fori_loop(
-        0,
-        4,
-        lambda i, x: (playable_dice[i] != -1) * x.at[playable_dice[i]].set(1)
-        + (playable_dice[i] == -1) * x,
-        zero_one_dice_vec,
-    )
+    indices: jnp.ndarray = jnp.array(
+        [0, 1, 2, 3], dtype=jnp.int16
+    )  # サイコロの目は最大4
+
+    def _insert_dice_num(idx: int, playable_dice: jnp.ndarray) -> jnp.ndarray:
+        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int16)
+        return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
+            1
+        ) + (playable_dice[idx] == -1) * vec
+    return jax.vmap(_insert_dice_num)(
+        indices, jnp.tile(playable_dice, (4, 1))
+    ).sum(axis=0).astype(jnp.int16)
 
 
 def _normal_step(
