@@ -300,13 +300,21 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
 
 
 def _obtain_effect_filter(state: State) -> jnp.ndarray:
-    # tmp
-    IS_ON_THE_WAY = jnp.zeros((5, 81, 81, 81), dtype=jnp.bool_)
-
+    """
+    >>> s = init()
+    >>> jnp.rot90(_obtain_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
+    # >>> _obtain_effect_filter(s)
+    """
+    # print(IS_ON_THE_WAY.shape)
     def _is_brocked(p, f, t):
         # (piece, from, to) を固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
         # True = 途中でbrockされ、到達できない
-        return (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any()
+        return jax.lax.cond(
+            p >= 0,
+            lambda: (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any(),
+            # lambda: (IS_ON_THE_WAY[p, f, t, :] & (state.piece_board >= 0)).any(),
+            lambda: FALSE
+        )
 
     def _is_brocked2(p, f):
         to = jnp.arange(81)
@@ -314,9 +322,13 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
 
     def _reduce_ix(piece):
         # 香角飛馬龍のみフィルタする
-        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4])[
+        # TODO: 馬龍
+        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, -1, -1])[
             piece
         ]
+        # return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4])[
+        #     piece
+        # ]
 
     pieces = state.piece_board
     reduced_pieces = jax.vmap(_reduce_ix)(pieces)
@@ -325,12 +337,16 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
     filter_boards = jax.vmap(_is_brocked2)(
         reduced_pieces, from_
     )  # (81=from, 81=to)
-    mask = (reduced_pieces >= 0).reshape((81, 1))
-    filter_boards = jnp.where(mask, FALSE, filter_boards)
+    # # mask = (reduced_pieces >= 0).reshape((81, 1))
+    # # filter_boards = jnp.where(mask, filter_boards, FALSE)
     return filter_boards
 
 
-def apply_effects(state: State):
+def _apply_effects(state: State):
+    """
+    >>> s = init()
+    >>> jnp.rot90(_apply_effects(s).any(axis=0).reshape(9, 9), k=3)
+    """
     raw_effect_boards = _apply_raw_effects(state)
     effect_filter_boards = _obtain_effect_filter(state)
     return (raw_effect_boards & ~effect_filter_boards).any(axis=0)
