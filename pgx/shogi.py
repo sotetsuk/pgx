@@ -31,7 +31,6 @@ piece_board (81,):
   26 相手馬
   27 相手龍
 """
-from functools import partial
 
 import jax
 import jax.numpy as jnp
