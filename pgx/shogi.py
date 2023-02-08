@@ -265,7 +265,8 @@ def _promote(piece: jnp.ndarray) -> jnp.ndarray:
 
 
 def _apply_raw_effects(state: State) -> jnp.ndarray:
-    """
+    """Obtain raw effect boards from piece board by batch.
+
     >>> s = init()
     >>> jnp.rot90(_apply_raw_effects(s).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
@@ -282,6 +283,7 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
     pieces = state.piece_board  # include -1
     to = jnp.arange(81)
 
+    # fix to and apply (pieces, from_) by batch
     @jax.vmap
     def _raw_effect_boards(p, f):
         # TODO: use jax.where instead of cond after (81, 81) arr is given? which is faster?
@@ -289,11 +291,10 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
             (0 <= p) & (p < 14),
             lambda: RAW_EFFECT_BOARDS[p, f, to],
             lambda: jnp.zeros(81, dtype=jnp.bool_),
-        )
+        )  # return (81,)
 
-    raw_effect_boards = _raw_effect_boards(
-        pieces, from_
-    )  # (81 = from_, 81 = to)
+    # obtain (81 = from_, 81 = to)
+    raw_effect_boards = _raw_effect_boards(pieces, from_)
     return raw_effect_boards.any(axis=0)
 
 
