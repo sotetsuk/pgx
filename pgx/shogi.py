@@ -33,10 +33,12 @@ piece_board (81,):
 """
 
 from functools import partial
+
 import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
-from pgx.cache import  load_shogi_raw_effect_boards, load_shogi_is_on_the_way
+
+from pgx.cache import load_shogi_is_on_the_way, load_shogi_raw_effect_boards
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -312,16 +314,21 @@ def _obtain_effect_filter(state: State) -> jnp.ndarray:
 
     def _reduce_ix(piece):
         # 香角飛馬龍のみフィルタする
-        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4])[piece]
+        return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4])[
+            piece
+        ]
 
     pieces = state.piece_board
     reduced_pieces = jax.vmap(_reduce_ix)(pieces)
     from_ = jnp.arange(81)
 
-    filter_boards = jax.vmap(_is_brocked2)(reduced_pieces, from_)  # (81=from, 81=to)
+    filter_boards = jax.vmap(_is_brocked2)(
+        reduced_pieces, from_
+    )  # (81=from, 81=to)
     mask = (reduced_pieces >= 0).reshape((81, 1))
     filter_boards = jnp.where(mask, FALSE, filter_boards)
     return filter_boards
+
 
 def apply_effects(state: State):
     raw_effect_boards = _apply_raw_effects(state)
