@@ -392,11 +392,62 @@ def _legal_moves(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     is_my_piece = (PAWN <= pb) & (pb < OPP_PAWN)
     effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
 
+    # TODO: 自殺手
+    # TODO: 王手放置
+    # TODO: 成り駒（成れるか・成らなくてはいけないか）
+
     return effect_boards
 
 
-def _legal_drops():
-    ...
+def _legal_drops(state: State) -> jnp.ndarray:
+    """Return (7, 81) boolean array
+
+    >>> s = init()
+    >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
+    >>> s = s.replace(hand=s.hand.at[0].set(1))
+    >>> _legal_drops(s)[PAWN]
+    Array([False, False, False, False, False, False, False, False, False,
+           False, False, False,  True,  True,  True,  True, False, False,
+           False, False, False, False, False, False, False, False, False,
+           False, False, False, False, False, False, False, False, False,
+           False, False, False, False, False, False, False, False, False,
+           False, False, False, False, False, False, False, False, False,
+           False, False, False, False, False, False, False, False, False,
+           False, False, False, False, False, False, False, False, False,
+           False, False, False, False, False, False, False, False, False],      dtype=bool)
+    """
+    legal_drops = jnp.zeros((7, 81), dtype=jnp.bool_)
+
+    # is the piece in my hand?
+    is_in_my_hand = (state.hand[0] > 0).reshape(7, 1)
+    legal_drops = jnp.where(is_in_my_hand, TRUE, legal_drops)
+
+    # piece exists
+    is_not_empty = state.piece_board != EMPTY
+    legal_drops = jnp.where(is_not_empty, FALSE, legal_drops)
+
+    # get stuck
+    is_line1 = jnp.arange(81) % 9 == 0
+    is_line2 = jnp.arange(81) % 9 == 1
+    is_pawn_or_lance = jnp.arange(7) <= LANCE
+    is_knight = jnp.arange(7) == KNIGHT
+    mask_pawn_lance = is_pawn_or_lance.reshape(7, 1) * is_line1.reshape(1, 81)
+    mask_knight = is_knight.reshape(7, 1) * (is_line1 | is_line2).reshape(
+        1, 81
+    )
+    legal_drops = jnp.where(mask_pawn_lance, FALSE, legal_drops)
+    legal_drops = jnp.where(mask_knight, FALSE, legal_drops)
+
+    # double pawn
+    has_pawn = (state.piece_board == PAWN).reshape(9, 9).any(axis=1)
+    has_pawn = jnp.tile(has_pawn, reps=(9, 1)).transpose().flatten()
+    legal_drops = jnp.where(has_pawn, FALSE, legal_drops)
+
+    # TODO: 打ち歩詰
+    # TODO: 自殺手
+    # TODO: 王手放置
+
+    return legal_drops
 
 
 def to_sfen(state: State):
