@@ -473,7 +473,7 @@ def _legal_moves(
         lambda: jnp.tile(flipped_effecting_mask, reps=(81, 1)),
         lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_)
     )
-    # leave_check_mask |= capturing_mask
+    leave_check_mask |= capturing_mask
 
 
 
