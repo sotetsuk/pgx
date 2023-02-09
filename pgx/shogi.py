@@ -461,6 +461,22 @@ def _legal_moves(
     )
     leave_check_mask |= king_escape_mask
 
+    # Capture the checking piece
+    flipped_state = _flip(state)
+    flipped_opp_effect_boards = _apply_effects(flipped_state)
+    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
+    flipped_effecting_mask = flipped_opp_effect_boards[
+        :, flipped_king_pos
+    ]  # (81,) 王に利いている駒の位置
+    capturing_mask = jax.lax.cond(
+        is_checked,
+        lambda: jnp.tile(flipped_effecting_mask, reps=(81, 1)),
+        lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_)
+    )
+    # leave_check_mask |= capturing_mask
+
+
+
     # filter by leave check mask
     effect_boards = jnp.where(leave_check_mask, effect_boards, FALSE)
 

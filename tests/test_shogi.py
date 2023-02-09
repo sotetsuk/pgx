@@ -156,7 +156,8 @@ def test_legal_moves():
     # King should escape from Lance
     s = init()
     s = s.replace(
-        piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE)
+        piece_board=s.piece_board
+        .at[xy2i(5, 5)].set(OPP_LANCE)
         .at[xy2i(5, 7)].set(EMPTY)
     )
     visualize(s, "tests/assets/shogi/legal_moves_005.svg")
@@ -166,6 +167,20 @@ def test_legal_moves():
     assert legal_moves[xy2i(5, 9), xy2i(6, 8)]  # 王が逃げるのはOK
     assert not legal_moves[xy2i(5, 9), xy2i(5, 8)]  # 自殺手はNG
     assert not legal_moves[xy2i(2, 7), xy2i(2, 6)]  # 王を放置するのはNG
+
+    #
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board
+        .at[xy2i(5, 5)].set(OPP_LANCE)
+        .at[xy2i(5, 7)].set(EMPTY)
+        .at[xy2i(7, 7)].set(EMPTY)
+    )
+    visualize(s, "tests/assets/shogi/legal_moves_006.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert not legal_moves[xy2i(8, 8), xy2i(4, 4)]  # 角が香を取る以外の動きは王手放置でNG
+    assert legal_moves[xy2i(8, 8), xy2i(5, 5)]      # 角が王手をかけている香を取るのはOK
 
 
 def test_legal_drops():
