@@ -103,7 +103,7 @@ def test_flip():
     assert (s.hand[1] == 0).all()
 
 
-def test_legal_moves_promotion():
+def test_legal_moves():
     # promotion
     s = init()
     piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)  # 77歩
