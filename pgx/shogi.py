@@ -489,8 +489,9 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     king_escape_mask &= ~(
         (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
     )  # 味方駒があり、逃げられない
-    king_escape_mask &= ~effect_boards  # 利きがあり逃げられない
+    king_escape_mask &= ~effect_boards.any(axis=0)  # 利きがあり逃げられない
     can_king_escape = king_escape_mask.any()
+    print(f"can_king_escape: {can_king_escape}")
 
     # 反転したボードで処理していることに注意
     flipped_opp_effects = _apply_effects(_flip(state))
@@ -498,6 +499,7 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     can_capture_pawn = (
         flipped_opp_effects[:, flipped_opp_king_head_pos].sum() > 1
     )  # 自分以外の利きがないといけない
+    print(f"can_capture_pawn: {can_capture_pawn}")
 
     legal_drops = jax.lax.cond(
         (can_check_by_pawn_drop & (~can_king_escape) & (~can_capture_pawn)),
