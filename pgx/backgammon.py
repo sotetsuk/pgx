@@ -1,9 +1,9 @@
+from functools import partial
 from typing import Tuple
 
 import jax
 import jax.numpy as jnp
 from flax import struct
-from functools import partial
 
 init_dice_pattern: jnp.ndarray = jnp.array(
     [
@@ -105,7 +105,12 @@ def step(
     step 関数.
     最初にターンを変更するか判定する.
     """
-    return _normal_step(state, action)
+    state = _update_by_action(state, action)
+    return jax.lax.cond(
+        _is_all_off(state.board, state.turn),
+        lambda: _winning_step(state),
+        lambda: _no_winning_step(state),
+    )
 
 
 def observe(state: BackgammonState, curr_player: jnp.ndarray) -> jnp.ndarray:
@@ -147,17 +152,6 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
         )
         .sum(axis=0)
         .astype(jnp.int16)
-    )
-
-
-def _normal_step(
-    state: BackgammonState, action: int
-) -> Tuple[BackgammonState, int, bool]:
-    state = _update_by_action(state, action)
-    return jax.lax.cond(
-        _is_all_off(state.board, state.turn),
-        lambda: _winning_step(state),
-        lambda: _no_winning_step(state),
     )
 
 
@@ -565,7 +559,7 @@ def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
 
-    legal_action_mask: bool = jax.vmap(
+    legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board, turn=turn)
     )(die=dice).any(
         axis=0
@@ -602,7 +596,7 @@ def _legal_action_mask_for_valid_single_dice(
         )
         return legal_action_mask
 
-    legal_action_mask: bool = jax.vmap(_is_legal)(
-        src_indices
-    ).any(axis=0) # (26*6 + 6)
+    legal_action_mask = jax.vmap(_is_legal)(src_indices).any(
+        axis=0
+    )  # (26*6 + 6)
     return legal_action_mask
