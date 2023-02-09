@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _step, _step_move, _step_drop, _flip
+from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_moves
 
 
 # check visualization results by image preview plugins
@@ -101,3 +101,29 @@ def test_flip():
     assert s.piece_board[xy2i(8, 4)] == EMPTY
     assert (s.hand[0] == 1).all()
     assert (s.hand[1] == 0).all()
+
+
+def test_legal_moves_promotion():
+    # promotion
+    s = init()
+    piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)  # 77歩
+    a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
+    s = _step_move(s, a)
+    visualize(s, "tests/assets/shogi/legal_moves_001.svg")
+    # 33角は成れるが、44では成れない
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert legal_moves[xy2i(8, 8), xy2i(3, 3)]  # 33角
+    assert legal_moves[xy2i(8, 8), xy2i(4, 4)]  # 44角
+    assert promotion[xy2i(8, 8), xy2i(3, 3)] == 1  # 33角
+    assert promotion[xy2i(8, 8), xy2i(4, 4)] == 0  # 44角
+
+    # 11への歩は成らないと行けない
+    s = s.replace(hand=s.hand.at[0].set(1))  # type: ignore
+    a = Action.make_drop(piece=PAWN, to=xy2i(1, 2))
+    s = _step_drop(s, a)
+    visualize(s, "tests/assets/shogi/legal_moves_002.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert legal_moves[xy2i(1, 2), xy2i(1, 1)]  # 33角
+    assert promotion[xy2i(1, 2), xy2i(1, 1)] == 2  # 33角
