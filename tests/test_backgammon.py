@@ -106,6 +106,8 @@ def test_init():
 
 def test_init_roll():
     a = _roll_init_dice(rng)
+    assert len(a) == 2
+    assert a[0] != a[1]
 
 
 def test_is_turn_end():
@@ -178,6 +180,7 @@ def test_continual_pass():
     # 連続パスが可能かテスト
     # 白のdance
     board: jnp.ndarray = make_test_boad()
+    legal_action_mask = _legal_action_mask(board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16))
     state = make_test_state(
         curr_player=jnp.int16(1),
         rng=rng,
@@ -186,9 +189,11 @@ def test_continual_pass():
         dice=jnp.array([2, 2], dtype=jnp.int16),
         playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
         played_dice_num=jnp.int16(0),
+        legal_action_mask = legal_action_mask,
     )
     _, state, _ = step(state, 6 * (1) + 0)  # actionによらずターンが変わる.
     assert state.turn == jnp.int16(-1)  # ターンが変わっていることを確認
+
 
 def test_step():
     board: jnp.ndarray = make_test_boad()
@@ -219,7 +224,7 @@ def test_step():
     # 白がサイコロ2をplay 25(off)->22
     _, state, _ = step(state=state, action=(1) * 6 + 1)
     assert (
-        state.playable_dice - jnp.array([0, -1, -1, -1])
+        state.playable_dice - jnp.array([0, -1, -1, -1], dtype=jnp.int16)
     ).sum() == 0  # playable diceが正しく更新されているか
     assert state.played_dice_num == 1  # played diceが増えているか.
     assert state.turn == 1  # turnが変わっていないか.
