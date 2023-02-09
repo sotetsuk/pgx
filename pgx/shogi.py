@@ -442,7 +442,41 @@ def _legal_moves(
     is_pinned = flipped_is_pinned[::-1]  # (81,)
     effect_boards = jnp.where(is_pinned.reshape(81, 1), FALSE, effect_boards)
 
-    # TODO: 王手放置
+    # Filter moves which ignores check
+    #
+    # Legal moves are one of
+    #   - King escapes from the check to non-effected place (including taking the checking piece)
+    #   - Capturing the checking piece by the other pieces
+    #   - Move the other piece between King and checking piece
+    leave_check_mask = jnp.zeros_like(effect_boards, dtype=jnp.bool_)
+
+    # King escapes
+    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
+    king_mask = pb == KING
+    is_checked = (opp_effect_boards & king_mask).any()
+    king_escape_mask = jax.lax.cond(
+        is_checked,
+        lambda: jnp.tile(king_mask, reps=(81, 1)).transpose(),
+        lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_),
+    )
+    leave_check_mask |= king_escape_mask
+
+    # Capture the checking piece
+    flipped_state = _flip(state)
+    flipped_opp_effect_boards = _apply_effects(flipped_state)
+    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
+    flipped_effecting_mask = flipped_opp_effect_boards[
+        :, flipped_king_pos
+    ]  # (81,) 王に利いている駒の位置
+    capturing_mask = jax.lax.cond(
+        is_checked,
+        lambda: jnp.tile(flipped_effecting_mask, reps=(81, 1)),
+        lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_),
+    )
+    leave_check_mask |= capturing_mask
+
+    # filter by leave check mask
+    effect_boards = jnp.where(leave_check_mask, effect_boards, FALSE)
 
     # promotion (80, 80)
     #   0 = cannot promote
