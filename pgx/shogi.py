@@ -404,6 +404,8 @@ def _legal_moves(
     #  A piece is pinned when
     #   - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
     #   - no other pieces exist on the way to king
+    opp_effects = jnp.flip(_apply_effects(_flip(state)))
+
 
 
     # TODO: 王手放置
