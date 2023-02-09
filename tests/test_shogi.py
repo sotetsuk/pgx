@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_moves
+from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_moves, _legal_drops, _rotate
 
 
 # check visualization results by image preview plugins
@@ -127,3 +127,40 @@ def test_legal_moves():
     legal_moves, promotion = _legal_moves(s, effects)
     assert legal_moves[xy2i(1, 2), xy2i(1, 1)]  # 33角
     assert promotion[xy2i(1, 2), xy2i(1, 1)] == 2  # 33角
+
+
+def test_legal_drops():
+    # 打ち歩詰
+    s = init()
+    s = s.replace(hand=s.hand.at[0, PAWN].add(1),
+                  piece_board=s.piece_board.at[xy2i(5, 7)].set(EMPTY).at[xy2i(8, 2)].set(EMPTY))
+    visualize(s, "tests/assets/shogi/legal_drops_001.svg")
+
+    # 避けられるし金でも取れる
+    effects = _apply_effects(s)
+    legal_drops = _legal_drops(s, effects)
+    assert legal_drops[PAWN, xy2i(5, 2)]
+
+    # 片側に避けられるので打ち歩詰でない
+    s = s.replace(piece_board=s.piece_board.at[xy2i(4, 1)].set(OPP_PAWN))  # 金を歩に変える
+    s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(EMPTY))  # 金を除く
+    s = s.replace(piece_board=s.piece_board.at[xy2i(5, 3)].set(GOLD))  # (5, 3)に金を置く
+    visualize(s, "tests/assets/shogi/legal_drops_002.svg")
+    effects = _apply_effects(s)
+    legal_drops = _legal_drops(s, effects)
+    assert legal_drops[PAWN, xy2i(5, 2)]
+
+    # 両側に避けられないので打ち歩詰
+    s = s.replace(piece_board=s.piece_board.at[xy2i(4, 1)].set(OPP_PAWN))  # 両側に歩を置く
+    s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(OPP_PAWN))
+    visualize(s, "tests/assets/shogi/legal_drops_003.svg")
+    effects = _apply_effects(s)
+    legal_drops = _legal_drops(s, effects)
+    assert not legal_drops[PAWN, xy2i(5, 2)]
+
+    # 金で取れるので打ち歩詰でない
+    s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(OPP_GOLD))
+    visualize(s, "tests/assets/shogi/legal_drops_004.svg")
+    effects = _apply_effects(s)
+    legal_drops = _legal_drops(s, effects)
+    assert legal_drops[PAWN, xy2i(5, 2)]
