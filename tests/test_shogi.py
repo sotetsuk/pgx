@@ -182,6 +182,20 @@ def test_legal_moves():
     assert not legal_moves[xy2i(8, 8), xy2i(4, 4)]  # 角が香を取る以外の動きは王手放置でNG
     assert legal_moves[xy2i(8, 8), xy2i(5, 5)]      # 角が王手をかけている香を取るのはOK
 
+    # 合駒
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(1, 9)].set(KING)
+        .at[xy2i(2, 9)].set(GOLD)
+        .at[xy2i(5, 5)].set(OPP_BISHOP)
+    )
+    visualize(s, "tests/assets/shogi/legal_moves_006.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert not legal_moves[xy2i(2, 9), xy2i(3, 9)]  # 王手のままなのでNG
+    assert legal_moves[xy2i(2, 9), xy2i(2, 8)]  # 角の利きを遮るのでOK
+
 
 def test_legal_drops():
     # 打ち歩詰
