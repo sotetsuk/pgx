@@ -486,9 +486,7 @@ def _legal_moves(
     # 両王手の場合、王が避ける以外ない
     is_double_checked = flipped_effecting_mask.sum() > 1
     leave_check_mask = jax.lax.cond(
-        is_double_checked,
-        lambda: king_escape_mask,
-        lambda: leave_check_mask
+        is_double_checked, lambda: king_escape_mask, lambda: leave_check_mask
     )
 
     # 王手がかかってないなら王手放置は考えなくてよい
