@@ -144,12 +144,12 @@ def test_legal_moves():
     assert not legal_moves[xy2i(6, 8), xy2i(5, 8)]
 
     # Gold is pinned
-    # s = init()
-    # s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_DRAGON).at[xy2i(5, 7)].set(GOLD))
-    # visualize(s, "tests/assets/shogi/legal_moves_004.svg")
-    # effects = _apply_effects(s)
-    # legal_moves, promotion = _legal_moves(s, effects)
-    # assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
+    s = init()
+    s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_DRAGON).at[xy2i(5, 7)].set(GOLD))
+    visualize(s, "tests/assets/shogi/legal_moves_004.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
 
 def test_legal_drops():

@@ -404,9 +404,10 @@ def _legal_moves(
     #  A piece is pinned when
     #   - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
     #   - no other pieces exist on the way to king
-    opp_effects = jnp.flip(_apply_effects(_flip(state)))
-
-
+    opp_effect_board = jnp.flip(_apply_effects(_flip(state))).any(axis=0)  # (81,)
+    king_mask = pb == KING
+    mask = king_mask.reshape(81, 1) * opp_effect_board.reshape(1, 81)
+    effect_boards = jnp.where(mask, FALSE, effect_boards)
 
     # TODO: 王手放置
 
