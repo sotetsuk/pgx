@@ -457,7 +457,7 @@ def _legal_moves(
     king_escape_mask = jax.lax.cond(
         is_checked,
         lambda: jnp.tile(king_mask, reps=(81, 1)).transpose(),
-        lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_)
+        lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_),
     )
     leave_check_mask |= king_escape_mask
 
@@ -471,11 +471,9 @@ def _legal_moves(
     capturing_mask = jax.lax.cond(
         is_checked,
         lambda: jnp.tile(flipped_effecting_mask, reps=(81, 1)),
-        lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_)
+        lambda: jnp.ones_like(effect_boards, dtype=jnp.bool_),
     )
     leave_check_mask |= capturing_mask
-
-
 
     # filter by leave check mask
     effect_boards = jnp.where(leave_check_mask, effect_boards, FALSE)
