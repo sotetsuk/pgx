@@ -656,21 +656,21 @@ def to_sfen(state: State):
     return sfen
 
 
-def _cshogi_board_to_state(board):
+def _cshogi_board_to_state(board: cshogi.Board):
     # cshogiのBoardの実装（cshogi/cshogi/_cshogi.pyx）
     # board.turn(): 手番
-    # board.pieces_in_hand(): 相互の持ち駒
+    # board.pieces_in_hand: 相互の持ち駒
     # 歩香桂銀金角飛の順。金の位置がpgxと異なる
-    # board.pieces(): 盤面
-    pb = jnp.array(81, dtype=jnp.int8)
-    hand = jnp.array((2, 7), dtype=jnp.int8)
+    # board.pieces: 盤面
+    pb = jnp.zeros(81, dtype=jnp.int8)
+    hand = jnp.zeros((2, 7), dtype=jnp.int8)
     board_piece_dir = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,25, 26, 27]
     hand_piece_dir = [0, 1, 2, 3, 6, 4, 5]
     pieces = board.pieces
-    pieces_in_hand = board.pieces_in_hand()
+    pieces_in_hand = board.pieces_in_hand
     for i in range(81):
         pb = pb.at[i].set(board_piece_dir[pieces[i]])
     for i in range(2):
         for j in range(7):
             hand = hand.at[i, j].set(pieces_in_hand[i][hand_piece_dir[j]])
-    return State(turn=board.turn(), piece_board=pb, hand=hand)
+    return State(turn=board.turn, piece_board=pb, hand=hand)
