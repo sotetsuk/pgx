@@ -32,6 +32,7 @@ piece_board (81,):
   27 相手龍
 """
 
+from typing import Tuple
 from functools import partial
 
 import jax
@@ -42,7 +43,9 @@ from pgx.cache import load_shogi_is_on_the_way, load_shogi_raw_effect_boards
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
-
+ZERO = jnp.int8(0)
+ONE = jnp.int8(1)
+TWO = jnp.int8(2)
 
 # Pieces
 EMPTY = jnp.int8(-1)
@@ -370,12 +373,12 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _legal_moves(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
-    """Filter (84, 84) effects and return legal moves (84, 84)
+def _legal_moves(state: State, effect_boards: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+    """Filter (84, 84) effects and return legal moves (84, 84) and promotion (84, 84)
 
     >>> s = init()
     >>> effect_boards = _apply_effects(s)
-    >>> legal_moves = _legal_moves(s, effect_boards)
+    >>> legal_moves, _ = _legal_moves(s, effect_boards)
     >>> jnp.rot90(legal_moves[8].reshape(9, 9), k=3)  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -388,15 +391,36 @@ def _legal_moves(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
            [False, False, False, False, False, False, False, False, False]],      dtype=bool)
     """
     pb = state.piece_board
+
     # filter the destinations where my piece exists
     is_my_piece = (PAWN <= pb) & (pb < OPP_PAWN)
     effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
+
+    # promotion (80, 80)
+    #   0 = cannot promote
+    #   1 = can promote (from or to opp area)
+    #   2 = have to promote (get stuck)
+    promotion = effect_boards.astype(jnp.int8)
+    # mask where piece cannot promote
+    in_opp_area = jnp.arange(81) % 9 < 3
+    tgt_in_opp_area = jnp.tile(in_opp_area, reps=(81, 1))
+    src_in_opp_area = tgt_in_opp_area.transpose()
+    mask = src_in_opp_area | tgt_in_opp_area
+    promotion = jnp.where(mask, promotion, ZERO)
+    # mask where piece have to promote
+    is_line1 = jnp.tile(jnp.arange(81) % 9 == 0, reps=(81, 1))
+    is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
+    where_pawn_or_lance = (pb == PAWN) | (pb == LANCE)
+    where_knight = pb == KNIGHT
+    is_stuck = (jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1)
+    is_stuck |= (jnp.tile(where_knight, (81, 1)).transpose() & (is_line1 | is_line2))
+    promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
 
     # TODO: 自殺手
     # TODO: 王手放置
     # TODO: 成り駒（成れるか・成らなくてはいけないか）
 
-    return effect_boards
+    return effect_boards, promotion
 
 
 def _legal_drops(state: State) -> jnp.ndarray:
