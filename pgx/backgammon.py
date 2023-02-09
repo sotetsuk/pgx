@@ -100,10 +100,23 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
 
 def step(
     state: BackgammonState, action: int
-) -> Tuple[BackgammonState, int, bool]:
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
     step 関数.
-    最初にターンを変更するか判定する.
+    terminatedしている場合, 状態をそのまま返す.
+    """
+    return jax.lax.cond(
+        state.terminated,
+        lambda: (state.curr_player, state, 0),
+        lambda: _normal_step(state, action),
+    )
+
+
+def _normal_step(
+    state: BackgammonState, action: int
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
+    """
+    terminated していない場合のstep 関数.
     """
     state = _update_by_action(state, action)
     return jax.lax.cond(
@@ -378,7 +391,6 @@ def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値
     """
     b = board[:24]
-
     exists = jnp.where((b * turn > 0), size=24, fill_value=jnp.nan)[  # type: ignore
         0
     ]
