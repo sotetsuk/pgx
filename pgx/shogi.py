@@ -404,10 +404,36 @@ def _legal_moves(
     #  A piece is pinned when
     #   - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
     #   - no other pieces exist on the way to king
-    opp_effect_board = jnp.flip(_apply_effects(_flip(state))).any(axis=0)  # (81,)
+
+    # king cannot move into the effected area
+    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
     king_mask = pb == KING
-    mask = king_mask.reshape(81, 1) * opp_effect_board.reshape(1, 81)
+    mask = king_mask.reshape(81, 1) * opp_effect_boards.any(axis=0).reshape(1, 81)
     effect_boards = jnp.where(mask, FALSE, effect_boards)
+
+    # pinned piece cannot move
+    flipped_state = _flip(state)
+    flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
+    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
+    flipped_effecting_mask = flipped_opp_raw_effect_boards[:, flipped_king_pos]  # (81,) 王に遮蔽無視して聞いている駒の位置
+
+    @jax.vmap
+    def pinned_piece_mask(p, f):
+        # fにあるpから王までの間にある駒が1枚だけの場合、そこをマスクして返す
+        mask = (IS_ON_THE_WAY[p, f, flipped_king_pos, :] & (flipped_state.piece_board != EMPTY))
+        return jax.lax.cond(mask.sum() == 1, lambda: mask, lambda: jnp.zeros_like(mask))
+
+    from_ = jnp.arange(81)
+    large_piece = _to_large_piece_ix(flipped_state.piece_board)
+    # 利いてないところからの結果は無視する
+    flipped_is_pinned = jnp.where(
+        flipped_effecting_mask.reshape(81,1),
+        pinned_piece_mask(large_piece, from_),
+        FALSE
+    ).any(axis=0)  # (81,)
+    is_pinned = flipped_is_pinned[::-1]
+    effect_boards = jnp.where(is_pinned.reshape(81, 1), FALSE, effect_boards)
+
 
     # TODO: 王手放置
 

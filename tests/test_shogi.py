@@ -133,7 +133,7 @@ def test_legal_moves():
     # King cannot move into opponent pieces' effect
     s = init()
     s = s.replace(
-        piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_DRAGON)
+        piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE)
         .at[xy2i(5, 7)].set(EMPTY)
         .at[xy2i(6, 8)].set(KING)
         .at[xy2i(5, 9)].set(EMPTY)
@@ -145,7 +145,7 @@ def test_legal_moves():
 
     # Gold is pinned
     s = init()
-    s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_DRAGON).at[xy2i(5, 7)].set(GOLD))
+    s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE).at[xy2i(5, 7)].set(GOLD))
     visualize(s, "tests/assets/shogi/legal_moves_004.svg")
     effects = _apply_effects(s)
     legal_moves, promotion = _legal_moves(s, effects)
