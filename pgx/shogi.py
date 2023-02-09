@@ -422,18 +422,18 @@ def _legal_moves(
 
     # TODO: 自殺手
     # TODO: 王手放置
-    # TODO: 成り駒（成れるか・成らなくてはいけないか）
 
     return effect_boards, promotion
 
 
-def _legal_drops(state: State) -> jnp.ndarray:
+def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     """Return (7, 81) boolean array
 
     >>> s = init()
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
-    >>> _legal_drops(s)[PAWN]
+    >>> effect_boards = _apply_effects(s)
+    >>> _legal_drops(s, effect_boards)[PAWN]
     Array([False, False, False, False, False, False, False, False, False,
            False, False, False,  True,  True,  True,  True, False, False,
            False, False, False, False, False, False, False, False, False,
@@ -471,12 +471,41 @@ def _legal_drops(state: State) -> jnp.ndarray:
     has_pawn = jnp.tile(has_pawn, reps=(9, 1)).transpose().flatten()
     legal_drops = jnp.where(has_pawn, FALSE, legal_drops)
 
-    # TODO: 打ち歩詰
-    # TODO: 自殺手
+    # 打ち歩詰
+    #  避け方は次の3通り
+    #  - (1) 頭の歩を王で取る
+    #  - (2) 王が逃げる
+    #  - (3) 頭の歩を王以外の駒で取る
+    #  (1)と(2)はようするに、今王が逃げられるところがあるか（利きがないか）ということでまとめて処理できる
+    pb = state.piece_board
+    opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0]
+    opp_king_head_pos = opp_king_pos + 1  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
+    can_check_by_pawn_drop = opp_king_pos % 9 != 8
+
+    # 王が利きも味方の駒もないところへ逃げられるか
+    king_escape_mask = RAW_EFFECT_BOARDS[KING, opp_king_pos, :]  # (81,)
+    king_escape_mask &= ~((OPP_PAWN <= pb) & (pb <= OPP_DRAGON))  # 味方駒があり、逃げられない
+    king_escape_mask &= ~effect_boards  # 利きがあり逃げられない
+    can_king_escape = king_escape_mask.any()
+
+    # 反転したボードで処理していることに注意
+    flipped_opp_effects = _apply_effects(_flip(state))
+    flipped_opp_king_head_pos = 80 - opp_king_head_pos
+    can_capture_pawn = flipped_opp_effects[:, flipped_opp_king_head_pos].sum() > 1  # 自分以外の利きがないといけない
+
+    legal_drops = jax.lax.cond(
+        (can_check_by_pawn_drop & (~can_king_escape) & (~can_capture_pawn)),
+        lambda: legal_drops.at[PAWN, opp_king_head_pos].set(FALSE),
+        lambda: legal_drops,
+    )
+
     # TODO: 王手放置
 
     return legal_drops
 
+
+def _rotate(board: jnp.ndarray) -> jnp.ndarray:
+    return jnp.rot90(board.reshape(9, 9), k=3)
 
 def to_sfen(state: State):
     """Convert state into sfen expression.
