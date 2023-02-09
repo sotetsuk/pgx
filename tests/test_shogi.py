@@ -190,11 +190,28 @@ def test_legal_moves():
         .at[xy2i(2, 9)].set(GOLD)
         .at[xy2i(5, 5)].set(OPP_BISHOP)
     )
-    visualize(s, "tests/assets/shogi/legal_moves_006.svg")
+    visualize(s, "tests/assets/shogi/legal_moves_007.svg")
     effects = _apply_effects(s)
     legal_moves, promotion = _legal_moves(s, effects)
     assert not legal_moves[xy2i(2, 9), xy2i(3, 9)]  # 王手のままなのでNG
     assert legal_moves[xy2i(2, 9), xy2i(2, 8)]  # 角の利きを遮るのでOK
+
+    # 両王手
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(1, 9)].set(KING)
+        .at[xy2i(5, 9)].set(BISHOP)
+        .at[xy2i(9, 1)].set(OPP_BISHOP)
+        .at[xy2i(1, 1)].set(OPP_ROOK)
+    )
+    visualize(s, "tests/assets/shogi/legal_moves_008.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert legal_moves[xy2i(1, 9), xy2i(2, 9)]  # 王が避けるのはOK
+    assert not legal_moves[xy2i(1, 9), xy2i(1, 8)]  # 王が避けても相手駒が効いているところはNG
+    assert not legal_moves[xy2i(5, 9), xy2i(3, 7)]  # 角の利きを遮るが、両王手なのでNG
+    assert not legal_moves[xy2i(5, 9), xy2i(1, 5)]  # 飛の利きを遮るが、両王手なのでNG
 
 
 def test_legal_drops():

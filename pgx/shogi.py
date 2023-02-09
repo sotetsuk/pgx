@@ -483,6 +483,10 @@ def _legal_moves(
     )  # (81,)
     leave_check_mask |= aigoma_area_boards  # filter target
 
+    # 両王手の場合、王が避ける以外ない
+    is_double_checked = flipped_effecting_mask.sum() > 1
+    # leave_check_mask = king_escape_mask
+
     # 王手がかかってないなら王手放置は考えなくてよい
     is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
     leave_check_mask |= is_not_checked
