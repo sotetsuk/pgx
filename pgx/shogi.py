@@ -398,6 +398,16 @@ def _legal_moves(
     is_my_piece = (PAWN <= pb) & (pb < OPP_PAWN)
     effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
 
+    # Filter suicide action
+    #   - King moves into the effected area
+    #   - Pinned piece moves
+    #  A piece is pinned when
+    #   - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
+    #   - no other pieces exist on the way to king
+
+
+    # TODO: 王手放置
+
     # promotion (80, 80)
     #   0 = cannot promote
     #   1 = can promote (from or to opp area)
@@ -419,9 +429,6 @@ def _legal_moves(
         is_line1 | is_line2
     )
     promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
-
-    # TODO: 自殺手
-    # TODO: 王手放置
 
     return effect_boards, promotion
 
