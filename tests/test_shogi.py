@@ -151,6 +151,19 @@ def test_legal_moves():
     legal_moves, promotion = _legal_moves(s, effects)
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
+    # Leave king check
+
+    # King should escape from Lance
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE)
+        .at[xy2i(5, 7)].set(EMPTY)
+    )
+    visualize(s, "tests/assets/shogi/legal_moves_005.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert not legal_moves[xy2i(2, 7), xy2i(2, 6)]
+
 
 def test_legal_drops():
     # 打ち歩詰
