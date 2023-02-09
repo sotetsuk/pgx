@@ -478,20 +478,26 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     #  - (3) 頭の歩を王以外の駒で取る
     #  (1)と(2)はようするに、今王が逃げられるところがあるか（利きがないか）ということでまとめて処理できる
     pb = state.piece_board
-    opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0]
-    opp_king_head_pos = opp_king_pos + 1  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
+    opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0].item()
+    opp_king_head_pos = (
+        opp_king_pos + 1
+    )  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
     can_check_by_pawn_drop = opp_king_pos % 9 != 8
 
     # 王が利きも味方の駒もないところへ逃げられるか
     king_escape_mask = RAW_EFFECT_BOARDS[KING, opp_king_pos, :]  # (81,)
-    king_escape_mask &= ~((OPP_PAWN <= pb) & (pb <= OPP_DRAGON))  # 味方駒があり、逃げられない
+    king_escape_mask &= ~(
+        (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
+    )  # 味方駒があり、逃げられない
     king_escape_mask &= ~effect_boards  # 利きがあり逃げられない
     can_king_escape = king_escape_mask.any()
 
     # 反転したボードで処理していることに注意
     flipped_opp_effects = _apply_effects(_flip(state))
     flipped_opp_king_head_pos = 80 - opp_king_head_pos
-    can_capture_pawn = flipped_opp_effects[:, flipped_opp_king_head_pos].sum() > 1  # 自分以外の利きがないといけない
+    can_capture_pawn = (
+        flipped_opp_effects[:, flipped_opp_king_head_pos].sum() > 1
+    )  # 自分以外の利きがないといけない
 
     legal_drops = jax.lax.cond(
         (can_check_by_pawn_drop & (~can_king_escape) & (~can_capture_pawn)),
@@ -506,6 +512,7 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
 
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:
     return jnp.rot90(board.reshape(9, 9), k=3)
+
 
 def to_sfen(state: State):
     """Convert state into sfen expression.
