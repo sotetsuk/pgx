@@ -480,15 +480,17 @@ def _legal_moves(
     flipped_aigoma_area_boards = jnp.where(
         flipped_effecting_mask.reshape(81, 1),
         flipped_between_king_mask,
-        jnp.zeros_like(flipped_between_king_mask)
+        jnp.zeros_like(flipped_between_king_mask),
     )
-    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(axis=0)  # (81,)
+    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(
+        axis=0
+    )  # (81,)
     leave_check_mask |= aigoma_area_boards  # filter target
 
     # filter by leave check mask
     effect_boards = jnp.where(leave_check_mask, effect_boards, FALSE)
 
-    # promotion (80, 80)
+    # promotion (81, 81)
     #   0 = cannot promote
     #   1 = can promote (from or to opp area)
     #   2 = have to promote (get stuck)
