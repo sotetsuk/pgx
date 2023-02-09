@@ -3,7 +3,7 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 from flax import struct
-from functional import partial
+from functools import partial
 
 init_dice_pattern: jnp.ndarray = jnp.array(
     [
@@ -105,11 +105,7 @@ def step(
     step 関数.
     最初にターンを変更するか判定する.
     """
-    return jax.lax.cond(
-        _is_turn_end(state),
-        lambda: (_change_turn(state).curr_player, _change_turn(state), 0),
-        lambda: _normal_step(state, action),
-    )
+    return _normal_step(state, action)
 
 
 def observe(state: BackgammonState, curr_player: jnp.ndarray) -> jnp.ndarray:
@@ -182,7 +178,7 @@ def _no_winning_step(
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
-    s = _change_turn(state)
+    s = _change_until_legal(state)
     return jax.lax.cond(
         _is_turn_end(state),
         lambda: (
@@ -192,6 +188,13 @@ def _no_winning_step(
         ),
         lambda: (state.curr_player, state, 0),
     )
+
+
+def _change_until_legal(state: BackgammonState) -> BackgammonState:
+    """
+    行動可能なplayerが出るまでturnを変え続ける.
+    """
+    return jax.lax.while_loop(_is_turn_end, _change_turn, state)
 
 
 def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
