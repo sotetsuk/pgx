@@ -162,7 +162,10 @@ def test_legal_moves():
     visualize(s, "tests/assets/shogi/legal_moves_005.svg")
     effects = _apply_effects(s)
     legal_moves, promotion = _legal_moves(s, effects)
-    assert not legal_moves[xy2i(2, 7), xy2i(2, 6)]
+    assert legal_moves[xy2i(5, 9), xy2i(4, 8)]  # 王が逃げるのはOK
+    assert legal_moves[xy2i(5, 9), xy2i(6, 8)]  # 王が逃げるのはOK
+    assert not legal_moves[xy2i(5, 9), xy2i(5, 8)]  # 自殺手はNG
+    assert not legal_moves[xy2i(2, 7), xy2i(2, 6)]  # 王を放置するのはNG
 
 
 def test_legal_drops():
