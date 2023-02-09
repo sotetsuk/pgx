@@ -49,6 +49,8 @@ def open_spile_make_env(env_name):
         return pyspiel.load_game("backgammon")
     elif env_name == "bridge":
         return pyspiel.load_game("bridge")
+    elif env_name == "chess":
+        return pyspiel.load_game("chess")
     else:
         raise ValueError("no such environment in open spile")
 
