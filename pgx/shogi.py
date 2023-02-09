@@ -433,16 +433,16 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
     >>> effect_boards = _apply_effects(s)
-    >>> _legal_drops(s, effect_boards)[PAWN]
-    Array([False, False, False, False, False, False, False, False, False,
-           False, False, False,  True,  True,  True,  True, False, False,
-           False, False, False, False, False, False, False, False, False,
-           False, False, False, False, False, False, False, False, False,
-           False, False, False, False, False, False, False, False, False,
-           False, False, False, False, False, False, False, False, False,
-           False, False, False, False, False, False, False, False, False,
-           False, False, False, False, False, False, False, False, False,
-           False, False, False, False, False, False, False, False, False],      dtype=bool)
+    >>> _rotate(_legal_drops(s, effect_boards)[PAWN])
+    Array([[False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
     """
     legal_drops = jnp.zeros((7, 81), dtype=jnp.bool_)
 
