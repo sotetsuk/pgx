@@ -654,3 +654,34 @@ def to_sfen(state: State):
                 sfen += hand_char_dir[piece_type]
         sfen += " 1"
     return sfen
+
+
+def _cshogi_board_to_state(board):
+    # cshogiのBoardの実装（cshogi/cshogi/web/static/board.js）
+    # class Board {
+    #   constructor() {
+    #       this.board = new Array(81);
+    #       this.pieces_in_hand =[new Array(7), new Array(7)];
+    #       this.move_number = 0;
+    #       this.lastmove = null;
+    #       this.reset();
+    #   }
+    #   ...
+    # Board.board: 盤面管理。要素数81の配列
+    # 右上の0から始まって下に1, 2,...の順。Stateのpiece_boardと同じ順番
+    # 駒の番号は先手歩～龍が1～14、後手歩～龍が17～30
+    # Board.piece_in_hand: 持ち駒管理。2×7の配列
+    # 歩香桂銀金角飛の順。金の位置がpgxと異なる
+    # Board.move_number: 現在の手数。手番に関する情報がないのでこれで推測する？
+    # 前に一手ごとにboardを半回転させる、みたいなのを見た気がするので、もしかしたら常に手番側から見た盤面として設計されているかも
+    # lastmoveはStateに関係ない
+    pb = jnp.array(81, dtype=jnp.int8)
+    hand = jnp.array((2, 7), dtype=jnp.int8)
+    board_piece_dir = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,25, 26, 27]
+    hand_piece_dir = [0, 1, 2, 3, 6, 4, 5]
+    for i in range(81):
+        pb = pb.at[i].set(board_piece_dir[board.board[i]])
+    for i in range(2):
+        for j in range(7):
+            hand = hand.at[i, j].set(board.hand[hand_piece_dir[i]])
+    return State(piece_board=pb, hand=hand)
