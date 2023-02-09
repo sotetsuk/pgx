@@ -3,6 +3,7 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 from flax import struct
+from functional import partial
 
 init_dice_pattern: jnp.ndarray = jnp.array(
     [
@@ -560,15 +561,13 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
-    dice_indices: jnp.ndarray = jnp.array([0, 1, 2, 3], dtype=jnp.int16)
 
-    def _update(idx: jnp.ndarray) -> jnp.ndarray:
-        return _legal_action_mask_for_single_die(board, turn, dice[idx])
-
-    legal_action_masks = jax.vmap(_update)(dice_indices)  # (4 * (26*6 + 6))
-    return jnp.clip(
-        legal_action_masks.sum(axis=0), a_min=0, a_max=1
-    )  # 4つのサイコロに対するlegal_action_maskのsumを取って[0,1]にclipする. or演算と同じ.
+    legal_action_mask: bool = jax.vmap(
+        partial(_legal_action_mask_for_single_die, board=board, turn=turn)
+    )(die=dice).any(
+        axis=0
+    )  # (26*6 + 6)
+    return legal_action_mask
 
 
 def _legal_action_mask_for_single_die(
@@ -600,9 +599,7 @@ def _legal_action_mask_for_valid_single_dice(
         )
         return legal_action_mask
 
-    legal_action_masks = jax.vmap(_is_legal)(
+    legal_action_mask: bool = jax.vmap(_is_legal)(
         src_indices
-    )  # (26 * (26 * 6 + 6))
-    return legal_action_masks.sum(
-        axis=0
-    )  # srcが異なれば, actionも異なるので, 重複を気にする必要はない.
+    ).any(axis=0) # (26*6 + 6)
+    return legal_action_mask
