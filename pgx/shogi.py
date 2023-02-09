@@ -32,8 +32,8 @@ piece_board (81,):
   27 相手龍
 """
 
-from typing import Tuple
 from functools import partial
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -373,7 +373,9 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _legal_moves(state: State, effect_boards: jnp.ndarray) -> Tuple[jnp.ndarray, jnp.ndarray]:
+def _legal_moves(
+    state: State, effect_boards: jnp.ndarray
+) -> Tuple[jnp.ndarray, jnp.ndarray]:
     """Filter (84, 84) effects and return legal moves (84, 84) and promotion (84, 84)
 
     >>> s = init()
@@ -412,8 +414,10 @@ def _legal_moves(state: State, effect_boards: jnp.ndarray) -> Tuple[jnp.ndarray,
     is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
     where_pawn_or_lance = (pb == PAWN) | (pb == LANCE)
     where_knight = pb == KNIGHT
-    is_stuck = (jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1)
-    is_stuck |= (jnp.tile(where_knight, (81, 1)).transpose() & (is_line1 | is_line2))
+    is_stuck = jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1
+    is_stuck |= jnp.tile(where_knight, (81, 1)).transpose() & (
+        is_line1 | is_line2
+    )
     promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
 
     # TODO: 自殺手
