@@ -104,7 +104,7 @@ def test_flip():
 
 
 def test_legal_moves():
-    # promotion
+    # Promotion
     s = init()
     piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)  # 77歩
     a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
@@ -127,6 +127,29 @@ def test_legal_moves():
     legal_moves, promotion = _legal_moves(s, effects)
     assert legal_moves[xy2i(1, 2), xy2i(1, 1)]  # 33角
     assert promotion[xy2i(1, 2), xy2i(1, 1)] == 2  # 33角
+
+    # Suicide action
+
+    # King cannot move into opponent pieces' effect
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE)
+        .at[xy2i(5, 7)].set(EMPTY)
+        .at[xy2i(6, 8)].set(KING)
+        .at[xy2i(5, 9)].set(EMPTY)
+    )
+    visualize(s, "tests/assets/shogi/legal_moves_003.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert not legal_moves[xy2i(6, 8), xy2i(5, 8)]
+
+    # Gold is pinned
+    s = init()
+    s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE).at[xy2i(5, 7)].set(GOLD))
+    visualize(s, "tests/assets/shogi/legal_moves_004.svg")
+    effects = _apply_effects(s)
+    legal_moves, promotion = _legal_moves(s, effects)
+    assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
 
 def test_legal_drops():
