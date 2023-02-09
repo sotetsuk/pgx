@@ -466,10 +466,6 @@ def _legal_moves(
     capturing_mask = jnp.tile(flipped_effecting_mask, reps=(81, 1))
     leave_check_mask |= capturing_mask
 
-    # 王手がかかってないなら王手放置は考えなくてよい
-    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
-    leave_check_mask |= is_not_checked
-
     # 駒を動かして合駒をする
     @jax.vmap
     def between_king(p, f):
@@ -486,6 +482,10 @@ def _legal_moves(
         axis=0
     )  # (81,)
     leave_check_mask |= aigoma_area_boards  # filter target
+
+    # 王手がかかってないなら王手放置は考えなくてよい
+    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
+    leave_check_mask |= is_not_checked
 
     # filter by leave check mask
     effect_boards = jnp.where(leave_check_mask, effect_boards, FALSE)
