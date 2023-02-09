@@ -101,7 +101,6 @@ if __name__ == "__main__":
     parser.add_argument("n_games", type=int)
     parser.add_argument("--print_per_game", default=False, type=bool)
     args = parser.parse_args()
-
     measure_time(args)
 
     

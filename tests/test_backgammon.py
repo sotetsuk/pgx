@@ -192,6 +192,7 @@ def test_continual_pass():
     _, state, _ = step(state, 6 * (1) + 0)  # actionによらずターンが変わる.
     assert state.turn == jnp.int16(-1)  # ターンが変わっていることを確認
 
+
 def test_step():
     board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16))
