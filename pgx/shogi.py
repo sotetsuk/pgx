@@ -33,7 +33,6 @@ piece_board (81,):
 """
 
 from functools import partial
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -255,6 +254,327 @@ def _step_drop(state: State, action: Action) -> State:
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
+def _legal_actions(state: State):
+    effect_boards = _apply_effects(state)
+    flipped_state = _flip(state)
+    flipped_effect_boards = _apply_effects(flipped_state)
+    # generate legal moves from effects
+    legal_moves = _pseudo_legal_moves(state, effect_boards)
+    legal_moves = _filter_suicide_moves(
+        state, legal_moves, flipped_state, flipped_effect_boards
+    )
+    legal_moves = _filter_ignoring_check_moves(
+        state, legal_moves, flipped_state, flipped_effect_boards
+    )
+    legal_promotion = _legal_promotion(state, legal_moves)
+    # generate legal drops from effects
+    legal_drops = _pseudo_legal_drops(state, effect_boards)
+    legal_drops = _filter_pawn_drop_mate(
+        state, legal_drops, effect_boards, flipped_effect_boards
+    )
+    legal_drops = _filter_ignoring_check_drops(
+        state, legal_drops, flipped_state, flipped_effect_boards
+    )
+    return legal_moves, legal_promotion, legal_drops
+
+
+def _pseudo_legal_moves(
+    state: State, effect_boards: jnp.ndarray
+) -> jnp.ndarray:
+    """Filter (81, 81) effects and return legal moves (81, 81)"""
+
+    # filter the destinations where my piece exists
+    is_my_piece = (PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN)
+    effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
+
+    return effect_boards
+
+
+def _filter_suicide_moves(
+    state: State,
+    legal_moves: jnp.ndarray,
+    flipped_state,
+    flipped_effect_boards,
+) -> jnp.ndarray:
+    """Filter suicide action
+     - King moves into the effected area
+     - Pinned piece moves
+    A piece is pinned when
+     - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
+     - no other pieces exist on the way to king
+    """
+    # king cannot move into the effected area
+    opp_effect_boards = jnp.flip(flipped_effect_boards)  # (81,)
+    king_mask = state.piece_board == KING
+    mask = king_mask.reshape(81, 1) * opp_effect_boards.any(axis=0).reshape(
+        1, 81
+    )
+    legal_moves = jnp.where(mask, FALSE, legal_moves)
+
+    # pinned piece cannot move
+    flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
+    flipped_king_pos = (
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    )
+    flipped_effecting_mask = flipped_opp_raw_effect_boards[
+        :, flipped_king_pos
+    ]  # (81,) 王に遮蔽無視して聞いている駒の位置
+
+    @jax.vmap
+    def pinned_piece_mask(p, f):
+        # fにあるpから王までの間にある駒が1枚だけの場合、そこをマスクして返す
+        mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :] & (
+            flipped_state.piece_board != EMPTY
+        )
+        return jax.lax.cond(
+            mask.sum() == 1, lambda: mask, lambda: jnp.zeros_like(mask)
+        )
+
+    from_ = jnp.arange(81)
+    large_piece = _to_large_piece_ix(flipped_state.piece_board)
+    # 利いてないところからの結果は無視する
+    flipped_is_pinned = jnp.where(
+        flipped_effecting_mask.reshape(81, 1),
+        pinned_piece_mask(large_piece, from_),
+        FALSE,
+    ).any(axis=0)
+    is_pinned = flipped_is_pinned[::-1]  # (81,)
+    legal_moves = jnp.where(is_pinned.reshape(81, 1), FALSE, legal_moves)
+
+    return legal_moves
+
+
+def _filter_ignoring_check_moves(
+    state: State,
+    legal_moves: jnp.ndarray,
+    flipped_state,
+    flipped_effect_boards,
+) -> jnp.ndarray:
+    """Filter moves which ignores check
+
+    Legal moves are one of
+      - King escapes from the check to non-effected place (including taking the checking piece)
+      - Capturing the checking piece by the other pieces
+      - Move the other piece between King and checking piece
+    """
+    leave_check_mask = jnp.zeros_like(legal_moves, dtype=jnp.bool_)
+
+    # King escapes
+    opp_effect_boards = jnp.flip(flipped_effect_boards)  # (81,)
+    king_mask = state.piece_board == KING
+    king_escape_mask = jnp.tile(king_mask, reps=(81, 1)).transpose()
+    leave_check_mask |= king_escape_mask
+
+    # Capture the checking piece
+    flipped_king_pos = (
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    )
+    flipped_effecting_mask = flipped_effect_boards[
+        :, flipped_king_pos
+    ]  # (81,) 王に利いている駒の位置
+    capturing_mask = jnp.tile(flipped_effecting_mask, reps=(81, 1))
+    leave_check_mask |= capturing_mask
+
+    # 駒を動かして合駒をする
+    @jax.vmap
+    def between_king(p, f):
+        return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
+
+    from_ = jnp.arange(81)
+    large_piece = _to_large_piece_ix(flipped_state.piece_board)
+    flipped_between_king_mask = between_king(large_piece, from_)  # (81, 81)
+    # 王手してない駒からのマスクは外す
+    flipped_aigoma_area_boards = jnp.where(
+        flipped_effecting_mask.reshape(81, 1),
+        flipped_between_king_mask,
+        jnp.zeros_like(flipped_between_king_mask),
+    )
+    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(
+        axis=0
+    )  # (81,)
+    leave_check_mask |= aigoma_area_boards  # filter target
+
+    # 両王手の場合、王が避ける以外ない
+    is_double_checked = flipped_effecting_mask.sum() > 1
+    leave_check_mask = jax.lax.cond(
+        is_double_checked, lambda: king_escape_mask, lambda: leave_check_mask
+    )
+
+    # 王手がかかってないなら王手放置は考えなくてよい
+    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
+    leave_check_mask |= is_not_checked
+
+    # filter by leave check mask
+    legal_moves = jnp.where(leave_check_mask, legal_moves, FALSE)
+    return legal_moves
+
+
+def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
+    """Generate legal promotion (81, 81)
+    0 = cannot promote
+    1 = can promote (from or to opp area)
+    2 = have to promote (get stuck)
+    """
+    promotion = legal_moves.astype(jnp.int8)
+    # mask where piece cannot promote
+    in_opp_area = jnp.arange(81) % 9 < 3
+    tgt_in_opp_area = jnp.tile(in_opp_area, reps=(81, 1))
+    src_in_opp_area = tgt_in_opp_area.transpose()
+    mask = src_in_opp_area | tgt_in_opp_area
+    promotion = jnp.where(mask, promotion, ZERO)
+    # mask where piece have to promote
+    is_line1 = jnp.tile(jnp.arange(81) % 9 == 0, reps=(81, 1))
+    is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
+    where_pawn_or_lance = (state.piece_board == PAWN) | (
+        state.piece_board == LANCE
+    )
+    where_knight = state.piece_board == KNIGHT
+    is_stuck = jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1
+    is_stuck |= jnp.tile(where_knight, (81, 1)).transpose() & (
+        is_line1 | is_line2
+    )
+    promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
+    return promotion
+
+
+def _pseudo_legal_drops(
+    state: State, effect_boards: jnp.ndarray
+) -> jnp.ndarray:
+    """Return (7, 81) boolean array
+
+    >>> s = init()
+    >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
+    >>> s = s.replace(hand=s.hand.at[0].set(1))
+    >>> effect_boards = _apply_effects(s)
+    >>> _rotate(_pseudo_legal_drops(s, effect_boards)[PAWN])
+    Array([[False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
+    """
+    legal_drops = jnp.zeros((7, 81), dtype=jnp.bool_)
+
+    # is the piece in my hand?
+    is_in_my_hand = (state.hand[0] > 0).reshape(7, 1)
+    legal_drops = jnp.where(is_in_my_hand, TRUE, legal_drops)
+
+    # piece exists
+    is_not_empty = state.piece_board != EMPTY
+    legal_drops = jnp.where(is_not_empty, FALSE, legal_drops)
+
+    # get stuck
+    is_line1 = jnp.arange(81) % 9 == 0
+    is_line2 = jnp.arange(81) % 9 == 1
+    is_pawn_or_lance = jnp.arange(7) <= LANCE
+    is_knight = jnp.arange(7) == KNIGHT
+    mask_pawn_lance = is_pawn_or_lance.reshape(7, 1) * is_line1.reshape(1, 81)
+    mask_knight = is_knight.reshape(7, 1) * (is_line1 | is_line2).reshape(
+        1, 81
+    )
+    legal_drops = jnp.where(mask_pawn_lance, FALSE, legal_drops)
+    legal_drops = jnp.where(mask_knight, FALSE, legal_drops)
+
+    # double pawn
+    has_pawn = (state.piece_board == PAWN).reshape(9, 9).any(axis=1)
+    has_pawn = jnp.tile(has_pawn, reps=(9, 1)).transpose().flatten()
+    legal_drops = jnp.where(has_pawn, FALSE, legal_drops)
+
+    return legal_drops
+
+
+def _filter_pawn_drop_mate(
+    state: State,
+    legal_drops: jnp.ndarray,
+    effect_boards: jnp.ndarray,
+    flipped_effect_boards,
+) -> jnp.ndarray:
+    """打ち歩詰
+
+    避け方は次の3通り
+    - (1) 頭の歩を王で取る
+    - (2) 王が逃げる
+    - (3) 頭の歩を王以外の駒で取る
+    (1)と(2)はようするに、今王が逃げられるところがあるか（利きがないか）ということでまとめて処理できる
+    """
+
+    pb = state.piece_board
+    opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0].item()
+    opp_king_head_pos = (
+        opp_king_pos + 1
+    )  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
+    can_check_by_pawn_drop = opp_king_pos % 9 != 8
+
+    # 王が利きも味方の駒もないところへ逃げられるか
+    king_escape_mask = RAW_EFFECT_BOARDS[KING, opp_king_pos, :]  # (81,)
+    king_escape_mask &= ~(
+        (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
+    )  # 味方駒があり、逃げられない
+    king_escape_mask &= ~effect_boards.any(axis=0)  # 利きがあり逃げられない
+    can_king_escape = king_escape_mask.any()
+
+    # 反転したボードで処理していることに注意
+    flipped_opp_king_head_pos = 80 - opp_king_head_pos
+    can_capture_pawn = (
+        flipped_effect_boards[:, flipped_opp_king_head_pos].sum() > 1
+    )  # 自分以外の利きがないといけない
+
+    legal_drops = jax.lax.cond(
+        (can_check_by_pawn_drop & (~can_king_escape) & (~can_capture_pawn)),
+        lambda: legal_drops.at[PAWN, opp_king_head_pos].set(FALSE),
+        lambda: legal_drops,
+    )
+    return legal_drops
+
+
+def _filter_ignoring_check_drops(
+    state: State,
+    legal_drops: jnp.ndarray,
+    flipped_state,
+    flipped_effect_boards,
+):
+    # 合駒（王手放置）
+    flipped_king_pos = (
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    )
+    flipped_effecting_mask = flipped_effect_boards[
+        :, flipped_king_pos
+    ]  # (81,) 王に利いている駒の位置
+
+    @jax.vmap
+    def between_king(p, f):
+        return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
+
+    from_ = jnp.arange(81)
+    large_piece = _to_large_piece_ix(flipped_state.piece_board)
+    flipped_between_king_mask = between_king(large_piece, from_)  # (81, 81)
+    # 王手してない駒からのマスクは外す
+    flipped_aigoma_area_boards = jnp.where(
+        flipped_effecting_mask.reshape(81, 1),
+        flipped_between_king_mask,
+        jnp.zeros_like(flipped_between_king_mask),
+    )
+    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(
+        axis=0
+    )  # (81,)
+
+    opp_effect_boards = jnp.flip(flipped_effect_boards)  # (81,)
+    king_mask = state.piece_board == KING
+    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
+
+    legal_drops &= is_not_checked | aigoma_area_boards
+
+    # 両王手の場合、合駒は無駄
+    is_double_checked = flipped_effecting_mask.sum() > 1
+    legal_drops &= ~is_double_checked
+
+    return legal_drops
+
+
 def _flip(state: State):
     empty_mask = state.piece_board == EMPTY
     pb = (state.piece_board + 14) % 28
@@ -373,271 +693,6 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _legal_moves(
-    state: State, effect_boards: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Filter (84, 84) effects and return legal moves (84, 84) and promotion (84, 84)
-
-    >>> s = init()
-    >>> effect_boards = _apply_effects(s)
-    >>> legal_moves, _ = _legal_moves(s, effect_boards)
-    >>> jnp.rot90(legal_moves[8].reshape(9, 9), k=3)  # 香
-    Array([[False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    """
-    pb = state.piece_board
-
-    # filter the destinations where my piece exists
-    is_my_piece = (PAWN <= pb) & (pb < OPP_PAWN)
-    effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
-
-    # Filter suicide action
-    #   - King moves into the effected area
-    #   - Pinned piece moves
-    #  A piece is pinned when
-    #   - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
-    #   - no other pieces exist on the way to king
-
-    # king cannot move into the effected area
-    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
-    king_mask = pb == KING
-    mask = king_mask.reshape(81, 1) * opp_effect_boards.any(axis=0).reshape(
-        1, 81
-    )
-    effect_boards = jnp.where(mask, FALSE, effect_boards)
-
-    # pinned piece cannot move
-    flipped_state = _flip(state)
-    flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
-    flipped_effecting_mask = flipped_opp_raw_effect_boards[
-        :, flipped_king_pos
-    ]  # (81,) 王に遮蔽無視して聞いている駒の位置
-
-    @jax.vmap
-    def pinned_piece_mask(p, f):
-        # fにあるpから王までの間にある駒が1枚だけの場合、そこをマスクして返す
-        mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :] & (
-            flipped_state.piece_board != EMPTY
-        )
-        return jax.lax.cond(
-            mask.sum() == 1, lambda: mask, lambda: jnp.zeros_like(mask)
-        )
-
-    from_ = jnp.arange(81)
-    large_piece = _to_large_piece_ix(flipped_state.piece_board)
-    # 利いてないところからの結果は無視する
-    flipped_is_pinned = jnp.where(
-        flipped_effecting_mask.reshape(81, 1),
-        pinned_piece_mask(large_piece, from_),
-        FALSE,
-    ).any(axis=0)
-    is_pinned = flipped_is_pinned[::-1]  # (81,)
-    effect_boards = jnp.where(is_pinned.reshape(81, 1), FALSE, effect_boards)
-
-    # Filter moves which ignores check
-    #
-    # Legal moves are one of
-    #   - King escapes from the check to non-effected place (including taking the checking piece)
-    #   - Capturing the checking piece by the other pieces
-    #   - Move the other piece between King and checking piece
-    leave_check_mask = jnp.zeros_like(effect_boards, dtype=jnp.bool_)
-
-    # King escapes
-    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
-    king_mask = pb == KING
-    king_escape_mask = jnp.tile(king_mask, reps=(81, 1)).transpose()
-    leave_check_mask |= king_escape_mask
-
-    # Capture the checking piece
-    flipped_state = _flip(state)
-    flipped_opp_effect_boards = _apply_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
-    flipped_effecting_mask = flipped_opp_effect_boards[
-        :, flipped_king_pos
-    ]  # (81,) 王に利いている駒の位置
-    capturing_mask = jnp.tile(flipped_effecting_mask, reps=(81, 1))
-    leave_check_mask |= capturing_mask
-
-    # 駒を動かして合駒をする
-    @jax.vmap
-    def between_king(p, f):
-        return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
-
-    flipped_between_king_mask = between_king(large_piece, from_)  # (81, 81)
-    # 王手してない駒からのマスクは外す
-    flipped_aigoma_area_boards = jnp.where(
-        flipped_effecting_mask.reshape(81, 1),
-        flipped_between_king_mask,
-        jnp.zeros_like(flipped_between_king_mask),
-    )
-    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(
-        axis=0
-    )  # (81,)
-    leave_check_mask |= aigoma_area_boards  # filter target
-
-    # 両王手の場合、王が避ける以外ない
-    is_double_checked = flipped_effecting_mask.sum() > 1
-    leave_check_mask = jax.lax.cond(
-        is_double_checked, lambda: king_escape_mask, lambda: leave_check_mask
-    )
-
-    # 王手がかかってないなら王手放置は考えなくてよい
-    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
-    leave_check_mask |= is_not_checked
-
-    # filter by leave check mask
-    effect_boards = jnp.where(leave_check_mask, effect_boards, FALSE)
-
-    # promotion (81, 81)
-    #   0 = cannot promote
-    #   1 = can promote (from or to opp area)
-    #   2 = have to promote (get stuck)
-    promotion = effect_boards.astype(jnp.int8)
-    # mask where piece cannot promote
-    in_opp_area = jnp.arange(81) % 9 < 3
-    tgt_in_opp_area = jnp.tile(in_opp_area, reps=(81, 1))
-    src_in_opp_area = tgt_in_opp_area.transpose()
-    mask = src_in_opp_area | tgt_in_opp_area
-    promotion = jnp.where(mask, promotion, ZERO)
-    # mask where piece have to promote
-    is_line1 = jnp.tile(jnp.arange(81) % 9 == 0, reps=(81, 1))
-    is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
-    where_pawn_or_lance = (pb == PAWN) | (pb == LANCE)
-    where_knight = pb == KNIGHT
-    is_stuck = jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1
-    is_stuck |= jnp.tile(where_knight, (81, 1)).transpose() & (
-        is_line1 | is_line2
-    )
-    promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
-
-    return effect_boards, promotion
-
-
-def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
-    """Return (7, 81) boolean array
-
-    >>> s = init()
-    >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
-    >>> s = s.replace(hand=s.hand.at[0].set(1))
-    >>> effect_boards = _apply_effects(s)
-    >>> _rotate(_legal_drops(s, effect_boards)[PAWN])
-    Array([[False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False,  True, False],
-           [False, False, False, False, False, False, False,  True, False],
-           [False, False, False, False, False, False, False,  True, False],
-           [False, False, False, False, False, False, False,  True, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    """
-    legal_drops = jnp.zeros((7, 81), dtype=jnp.bool_)
-
-    # is the piece in my hand?
-    is_in_my_hand = (state.hand[0] > 0).reshape(7, 1)
-    legal_drops = jnp.where(is_in_my_hand, TRUE, legal_drops)
-
-    # piece exists
-    is_not_empty = state.piece_board != EMPTY
-    legal_drops = jnp.where(is_not_empty, FALSE, legal_drops)
-
-    # get stuck
-    is_line1 = jnp.arange(81) % 9 == 0
-    is_line2 = jnp.arange(81) % 9 == 1
-    is_pawn_or_lance = jnp.arange(7) <= LANCE
-    is_knight = jnp.arange(7) == KNIGHT
-    mask_pawn_lance = is_pawn_or_lance.reshape(7, 1) * is_line1.reshape(1, 81)
-    mask_knight = is_knight.reshape(7, 1) * (is_line1 | is_line2).reshape(
-        1, 81
-    )
-    legal_drops = jnp.where(mask_pawn_lance, FALSE, legal_drops)
-    legal_drops = jnp.where(mask_knight, FALSE, legal_drops)
-
-    # double pawn
-    has_pawn = (state.piece_board == PAWN).reshape(9, 9).any(axis=1)
-    has_pawn = jnp.tile(has_pawn, reps=(9, 1)).transpose().flatten()
-    legal_drops = jnp.where(has_pawn, FALSE, legal_drops)
-
-    # 打ち歩詰
-    #  避け方は次の3通り
-    #  - (1) 頭の歩を王で取る
-    #  - (2) 王が逃げる
-    #  - (3) 頭の歩を王以外の駒で取る
-    #  (1)と(2)はようするに、今王が逃げられるところがあるか（利きがないか）ということでまとめて処理できる
-    pb = state.piece_board
-    opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0].item()
-    opp_king_head_pos = (
-        opp_king_pos + 1
-    )  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
-    can_check_by_pawn_drop = opp_king_pos % 9 != 8
-
-    # 王が利きも味方の駒もないところへ逃げられるか
-    king_escape_mask = RAW_EFFECT_BOARDS[KING, opp_king_pos, :]  # (81,)
-    king_escape_mask &= ~(
-        (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
-    )  # 味方駒があり、逃げられない
-    king_escape_mask &= ~effect_boards.any(axis=0)  # 利きがあり逃げられない
-    can_king_escape = king_escape_mask.any()
-
-    # 反転したボードで処理していることに注意
-    flipped_opp_effects = _apply_effects(_flip(state))
-    flipped_opp_king_head_pos = 80 - opp_king_head_pos
-    can_capture_pawn = (
-        flipped_opp_effects[:, flipped_opp_king_head_pos].sum() > 1
-    )  # 自分以外の利きがないといけない
-
-    legal_drops = jax.lax.cond(
-        (can_check_by_pawn_drop & (~can_king_escape) & (~can_capture_pawn)),
-        lambda: legal_drops.at[PAWN, opp_king_head_pos].set(FALSE),
-        lambda: legal_drops,
-    )
-
-    # 合駒（王手放置）
-    flipped_state = _flip(state)
-    flipped_opp_effect_boards = _apply_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
-    flipped_effecting_mask = flipped_opp_effect_boards[
-        :, flipped_king_pos
-    ]  # (81,) 王に利いている駒の位置
-
-    @jax.vmap
-    def between_king(p, f):
-        return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
-
-    from_ = jnp.arange(81)
-    large_piece = _to_large_piece_ix(flipped_state.piece_board)
-    flipped_between_king_mask = between_king(large_piece, from_)  # (81, 81)
-    # 王手してない駒からのマスクは外す
-    flipped_aigoma_area_boards = jnp.where(
-        flipped_effecting_mask.reshape(81, 1),
-        flipped_between_king_mask,
-        jnp.zeros_like(flipped_between_king_mask),
-    )
-    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(
-        axis=0
-    )  # (81,)
-
-    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
-    king_mask = pb == KING
-    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
-
-    legal_drops &= is_not_checked | aigoma_area_boards
-
-    # 両王手の場合、合駒は無駄
-    is_double_checked = flipped_effecting_mask.sum() > 1
-    legal_drops &= ~is_double_checked
-
-    return legal_drops
-
-
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
@@ -715,39 +770,9 @@ def _cshogi_board_to_state(board):
     # board.pieces: 盤面
     pb = jnp.zeros(81, dtype=jnp.int8)
     hand = jnp.zeros((2, 7), dtype=jnp.int8)
-    board_piece_dir = [
-        -1,
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        0,
-        0,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21,
-        22,
-        23,
-        24,
-        25,
-        26,
-        27,
-    ]
+    # fmt: off
+    board_piece_dir = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
+    # fmt: on
     hand_piece_dir = [0, 1, 2, 3, 5, 6, 4]
     pieces = board.pieces
     pieces_in_hand = board.pieces_in_hand
