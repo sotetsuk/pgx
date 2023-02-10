@@ -629,7 +629,7 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     king_mask = pb == KING
     is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
 
-    legal_drops &= (is_not_checked | aigoma_area_boards)
+    legal_drops &= is_not_checked | aigoma_area_boards
 
     # 両王手の場合、合駒は無駄
     is_double_checked = flipped_effecting_mask.sum() > 1
