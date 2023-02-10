@@ -33,7 +33,6 @@ piece_board (81,):
 """
 
 from functools import partial
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
