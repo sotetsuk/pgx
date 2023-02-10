@@ -686,6 +686,75 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
+def _to_direction():
+    # step時に dlshogi action から action へ変換する必要がある
+    #
+    #  LEGAL_DIR_TO  # (10, 81, 81) = (dir, to, from)
+    #
+    #  LEGAL_DIR_TO[UP, 18]  # to = 81
+    #
+    #  x x x x t x x
+    #  x x x x o x x
+    #  x x x x o x x
+    #  x x x x o x x
+    #  x x x x o x x
+    #
+    #  legal_from = legal_moves[:, 18]  # to = 18
+    #
+    #  x x o x t x x
+    #  x x x x x x x
+    #  x x o x o x x
+    #  x x x x x x x
+    #  x x x x x x x
+    #
+    # これらをandとって、non_zeroを取ればよい
+
+    # legal_moves から legal_action_mask を作る
+    #
+    # toを固定して、
+    #
+    #  legal_from = legal_moves[:, 18]  # to = 18
+    #
+    #  x x o x t x x
+    #  x x x x x x x
+    #  x x o x o x x
+    #  x x x x x x x
+    #  x x x x x x x
+    #
+    # があたえられたとき、 (10, 81, 81) の
+    #
+    # LEGAL_DIR_TO[UP, 18]  # to = 81
+    #
+    #  x x x x t x x
+    #  x x x x o x x
+    #  x x x x o x x
+    #  x x x x o x x
+    #  x x x x o x x
+    #
+    # と and を取って、anyを取れば、(dir=UP, to=18) がTrueか否かわかる
+
+    LEGAL_FROM_MASK = jnp.zeros((10, 81, 81), dtype=jnp.bool_)  # dir, to, from
+    legal_moves = jnp.zeros((81, 81), dtype=jnp.bool_)
+    dir_ = jnp.arange(10)
+    to = jnp.arange(81)
+
+    # dlshogi action => action
+    d = 0
+    t = 0
+
+    mask1 = LEGAL_FROM_MASK[d, t]  # (81,)
+    mask2 = legal_moves[:, t]  # (81,)
+    from_ = jnp.nonzero(mask1 & mask2, size=1)[0].item()
+
+    # legal_moves => legal_action_mask
+    def func(d, t):
+        mask1 = LEGAL_FROM_MASK[d, t]  # (81,)
+        mask2 = legal_moves[:, t]  # (81,)
+        return (mask1 & mask2).any()
+
+    legal_action_mask = jax.vmap(jax.vmap(partial(func, t=to)))(d=dir_)
+
+
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
