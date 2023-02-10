@@ -284,11 +284,11 @@ def _filter_suicide_moves(
     state: State, legal_moves: jnp.ndarray
 ) -> jnp.ndarray:
     """Filter suicide action
-      - King moves into the effected area
-      - Pinned piece moves
-     A piece is pinned when
-      - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
-      - no other pieces exist on the way to king
+     - King moves into the effected area
+     - Pinned piece moves
+    A piece is pinned when
+     - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
+     - no other pieces exist on the way to king
     """
     # king cannot move into the effected area
     opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
