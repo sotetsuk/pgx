@@ -38,7 +38,11 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
-from pgx.cache import load_shogi_is_on_the_way, load_shogi_raw_effect_boards, load_shogi_legal_from_mask
+from pgx.cache import (
+    load_shogi_is_on_the_way,
+    load_shogi_legal_from_mask,
+    load_shogi_raw_effect_boards,
+)
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -96,12 +100,12 @@ RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 # is <point,81> on the way between two points?
 IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # Give <dir,10> and <to,81>, return the legal <from,81> mask
-# E.g. dir=Up right,
+# E.g. LEGAL_FROM_MASK[Up right, to=19]
 # x x x x x x x
 # x x x x t x x
 # x x x o x x x
 # x x o x x x x
-LEGAL_FROM_MASK = load_shogi_legal_from_mask()  # bool (10, 81, 81) = (dir, to, from)
+LEGAL_FROM_MASK = load_shogi_legal_from_mask()
 
 
 @dataclass
@@ -205,7 +209,20 @@ class Action:
         direction, to = action // 81, action % 81
         is_drop = direction >= 20
 
-        # compute <from> from <dir, to>
+        # Compute <from> from <dir, to>
+        #   LEGAL_DIR_TO[UP, 18]  # to = 81
+        #   x x x x t x x
+        #   x x x x o x x
+        #   x x x x o x x
+        #   x x x x o x x
+        #   x x x x o x x
+        #
+        #   legal_moves[:, 18]  # to = 18
+        #   x x o x t x x
+        #   x x x x x x x
+        #   x x o x o x x
+        #   x x x x x x x
+        #   x x x x x x x
         mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
         legal_moves, _, _ = _legal_actions(state)  # TODO: cache legal moves
         mask2 = legal_moves[:, to]  # (81,)
@@ -751,14 +768,6 @@ def _to_direction():
     legal_moves = jnp.zeros((81, 81), dtype=jnp.bool_)
     dir_ = jnp.arange(10)
     to = jnp.arange(81)
-
-    # dlshogi action => action
-    d = 0
-    t = 0
-
-    mask1 = LEGAL_FROM_MASK[d, t]  # (81,)
-    mask2 = legal_moves[:, t]  # (81,)
-    from_ = jnp.nonzero(mask1 & mask2, size=1)[0].item()
 
     # legal_moves => legal_action_mask
     def func(d, t):
