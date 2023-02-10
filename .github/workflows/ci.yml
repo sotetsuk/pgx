@@ -20,7 +20,7 @@ jobs:
       run: |
         make install-dev
         make test
-  diff:
+  modified:
     runs-on: ubuntu-latest
     if: github.ref != 'refs/heads/main'
     steps:
@@ -36,6 +36,6 @@ jobs:
     - name: test
       run: |
         make install-dev
-        make diff-test
+        make test-modified
 
 
