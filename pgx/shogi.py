@@ -262,7 +262,9 @@ def _legal_actions(state: State):
     # Prepare necessary materials
     flipped_state = _flip(state)
     flipped_effect_boards = _apply_effects(flipped_state)
-    checking_point_board, check_defense_board = _check_info(state, flipped_state, flipped_effect_boards)
+    checking_point_board, check_defense_board = _check_info(
+        state, flipped_state, flipped_effect_boards
+    )
 
     # Filter illegal moves
     legal_moves = _filter_suicide_moves(
@@ -356,7 +358,7 @@ def _filter_ignoring_check_moves(
     state: State,
     legal_moves: jnp.ndarray,
     checking_point_board,
-    check_defense_board
+    check_defense_board,
 ) -> jnp.ndarray:
     """Filter moves which ignores check
 
