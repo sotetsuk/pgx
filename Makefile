@@ -33,4 +33,4 @@ test:
 	python3 -m pytest --doctest-modules --verbose pgx tests
 
 diff-test:
-	python3 -m pytest --doctest-modules --verbose $(git diff --name-only origin/main | grep py)
+	if [[ -n $(git diff --name-only origin/main | grep py) ]]; then python3 -m pytest --doctest-modules --verbose $(git diff --name-only origin/main | grep py); fi
