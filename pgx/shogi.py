@@ -379,7 +379,7 @@ def _filter_ignoring_check_moves(
     flipped_effecting_mask = flipped_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
-    capturing_mask = jnp.tile(flipped_effecting_mask, reps=(81, 1))
+    capturing_mask = jnp.tile(jnp.flip(flipped_effecting_mask), reps=(81, 1))
     leave_check_mask |= capturing_mask
 
     # 駒を動かして合駒をする
