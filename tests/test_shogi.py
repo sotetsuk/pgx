@@ -314,14 +314,14 @@ def test_dlshogi_action():
     action: Action = Action.from_dlshogi_action(s, dlshogi_action)
     assert action.from_ == xy2i(5, 9)
 
-
+    # 歩で香車の利きが隠れている場合
     s = init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
         .at[xy2i(5, 6)].set(PAWN)
     )
-    visualize(s, "tests/assets/shogi/dlshogi_action_001.svg")
+    visualize(s, "tests/assets/shogi/dlshogi_action_002.svg")
     dir_ = 0  # UP
     to = 40   # (5, 5)
     dlshogi_action = jnp.int32(dir_ * 81 + to)
