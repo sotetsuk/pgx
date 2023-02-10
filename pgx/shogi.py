@@ -283,13 +283,13 @@ def _pseudo_legal_moves(
 def _filter_suicide_moves(
     state: State, legal_moves: jnp.ndarray
 ) -> jnp.ndarray:
-    # Filter suicide action
-    #   - King moves into the effected area
-    #   - Pinned piece moves
-    #  A piece is pinned when
-    #   - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
-    #   - no other pieces exist on the way to king
-
+    """Filter suicide action
+      - King moves into the effected area
+      - Pinned piece moves
+     A piece is pinned when
+      - it exists between king and (Lance/Bishop/Rook/Horse/Dragon)
+      - no other pieces exist on the way to king
+    """
     # king cannot move into the effected area
     opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
     king_mask = state.piece_board == KING
@@ -335,12 +335,13 @@ def _filter_suicide_moves(
 def _filter_ignoring_check_moves(
     state: State, legal_moves: jnp.ndarray
 ) -> jnp.ndarray:
-    # Filter moves which ignores check
-    #
-    # Legal moves are one of
-    #   - King escapes from the check to non-effected place (including taking the checking piece)
-    #   - Capturing the checking piece by the other pieces
-    #   - Move the other piece between King and checking piece
+    """Filter moves which ignores check
+
+    Legal moves are one of
+      - King escapes from the check to non-effected place (including taking the checking piece)
+      - Capturing the checking piece by the other pieces
+      - Move the other piece between King and checking piece
+    """
     leave_check_mask = jnp.zeros_like(legal_moves, dtype=jnp.bool_)
 
     # King escapes
@@ -477,6 +478,7 @@ def _filter_pawn_drop_mate(
     state: State, legal_drops: jnp.ndarray, effect_boards: jnp.ndarray
 ) -> jnp.ndarray:
     """打ち歩詰
+
     避け方は次の3通り
     - (1) 頭の歩を王で取る
     - (2) 王が逃げる
