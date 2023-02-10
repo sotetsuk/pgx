@@ -1,4 +1,4 @@
-.PHONY: install-dev clean format check install uninstall test
+.PHONY: install-dev clean format check install uninstall test diff-test
 
 
 install-dev:
@@ -31,3 +31,6 @@ uninstall:
 
 test:
 	python3 -m pytest --doctest-modules --verbose pgx tests
+
+diff-test:
+	git fetch -a && git merge --no-ff origin/main && python3 -m pytest --doctest-modules --verbose $(git diff --name-only origin/main | grep py)
