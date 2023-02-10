@@ -19,7 +19,6 @@ from pgx.backgammon import (
     _move,
     _winning_step,
     _no_winning_step,
-    _normal_step
 )
 action_to_point = (19 + 2) * 6 + 1
 def test(func):
@@ -31,7 +30,7 @@ def test(func):
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(rng)
-    elif func.__name__ in ["step", "_update_by_action", "_normal_step"]:
+    elif func.__name__ in ["step", "_update_by_action"]:
         time_sta = time.perf_counter()
         jax.jit(func)(state, action_to_point)
         time_end = time.perf_counter()
@@ -81,8 +80,6 @@ if func_name == "init":
     func = init
 elif func_name == "step":
     func = step
-elif func_name == "_normal_step":
-    func = _normal_step
 elif func_name == "_winning_step":
     func = _winning_step
 elif func_name == "_no_winning_step":

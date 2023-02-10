@@ -49,6 +49,8 @@ def open_spile_make_env(env_name):
         return pyspiel.load_game("backgammon")
     elif env_name == "bridge":
         return pyspiel.load_game("bridge")
+    elif env_name == "chess":
+        return pyspiel.load_game("chess")
     else:
         raise ValueError("no such environment in open spile")
 
@@ -101,7 +103,6 @@ if __name__ == "__main__":
     parser.add_argument("n_games", type=int)
     parser.add_argument("--print_per_game", default=False, type=bool)
     args = parser.parse_args()
-
     measure_time(args)
 
     
