@@ -147,6 +147,26 @@ def test_legal_moves():
     legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
+    # Gold is not pinned
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board
+        .at[:].set(EMPTY)
+        .at[xy2i(9, 9)].set(KING)
+        .at[xy2i(9, 1)].set(OPP_LANCE)
+        .at[xy2i(9, 8)].set(GOLD)
+    )
+    visualize(s, "tests/assets/shogi/legal_moves_006.svg")
+    legal_moves, _, _ = _legal_actions(s)
+    assert not legal_moves[xy2i(9, 8), xy2i(8, 8)]  # pinned
+    s = s.replace(
+        piece_board=s.piece_board
+        .at[xy2i(9, 5)].set(PAWN)
+    )
+    visualize(s, "tests/assets/shogi/legal_moves_007.svg")
+    legal_moves, _, _ = _legal_actions(s)
+    assert legal_moves[xy2i(9, 8), xy2i(8, 8)]  # not pinned
+
     # Leave king check
 
     # King should escape from Lance
@@ -156,7 +176,7 @@ def test_legal_moves():
         .at[xy2i(5, 5)].set(OPP_LANCE)
         .at[xy2i(5, 7)].set(EMPTY)
     )
-    visualize(s, "tests/assets/shogi/legal_moves_005.svg")
+    visualize(s, "tests/assets/shogi/legal_moves_008.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert legal_moves[xy2i(5, 9), xy2i(4, 8)]  # 王が逃げるのはOK
     assert legal_moves[xy2i(5, 9), xy2i(6, 8)]  # 王が逃げるのはOK
@@ -172,7 +192,7 @@ def test_legal_moves():
         .at[xy2i(1, 1)].set(OPP_LANCE)
         .at[xy2i(6, 1)].set(ROOK)
     )
-    visualize(s, "tests/assets/shogi/legal_moves_006.svg")
+    visualize(s, "tests/assets/shogi/legal_moves_009.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(6, 1), xy2i(2, 1)]  # 飛車が香を取る以外の動きは王手放置でNG
     assert legal_moves[xy2i(6, 1), xy2i(1, 1)]      # 飛車が王手をかけている香を取るのはOK
@@ -185,7 +205,7 @@ def test_legal_moves():
         .at[xy2i(2, 9)].set(GOLD)
         .at[xy2i(5, 5)].set(OPP_BISHOP)
     )
-    visualize(s, "tests/assets/shogi/legal_moves_007.svg")
+    visualize(s, "tests/assets/shogi/legal_moves_010.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(2, 9), xy2i(3, 9)]  # 王手のままなのでNG
     assert legal_moves[xy2i(2, 9), xy2i(2, 8)]  # 角の利きを遮るのでOK
@@ -199,7 +219,7 @@ def test_legal_moves():
         .at[xy2i(9, 1)].set(OPP_BISHOP)
         .at[xy2i(1, 1)].set(OPP_ROOK)
     )
-    visualize(s, "tests/assets/shogi/legal_moves_008.svg")
+    visualize(s, "tests/assets/shogi/legal_moves_011.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert legal_moves[xy2i(1, 9), xy2i(2, 9)]  # 王が避けるのはOK
     assert not legal_moves[xy2i(1, 9), xy2i(1, 8)]  # 王が避けても相手駒が効いているところはNG
