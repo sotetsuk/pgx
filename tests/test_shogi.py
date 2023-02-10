@@ -163,18 +163,19 @@ def test_legal_moves():
     assert not legal_moves[xy2i(5, 9), xy2i(5, 8)]  # 自殺手はNG
     assert not legal_moves[xy2i(2, 7), xy2i(2, 6)]  # 王を放置するのはNG
 
-    #
+    # Checking piece should be captured
     s = init()
     s = s.replace(
         piece_board=s.piece_board
-        .at[xy2i(5, 5)].set(OPP_LANCE)
-        .at[xy2i(5, 7)].set(EMPTY)
-        .at[xy2i(7, 7)].set(EMPTY)
+        .at[:].set(EMPTY)
+        .at[xy2i(1, 9)].set(KING)
+        .at[xy2i(1, 1)].set(OPP_LANCE)
+        .at[xy2i(6, 1)].set(ROOK)
     )
     visualize(s, "tests/assets/shogi/legal_moves_006.svg")
     legal_moves, _, _ = _legal_actions(s)
-    assert not legal_moves[xy2i(8, 8), xy2i(4, 4)]  # 角が香を取る以外の動きは王手放置でNG
-    assert legal_moves[xy2i(8, 8), xy2i(5, 5)]      # 角が王手をかけている香を取るのはOK
+    assert not legal_moves[xy2i(6, 1), xy2i(2, 1)]  # 飛車が香を取る以外の動きは王手放置でNG
+    assert legal_moves[xy2i(6, 1), xy2i(1, 1)]      # 飛車が王手をかけている香を取るのはOK
 
     # 合駒
     s = init()
