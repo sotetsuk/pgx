@@ -257,37 +257,31 @@ def _step_drop(state: State, action: Action) -> State:
 
 def _legal_actions(state: State):
     effect_boards = _apply_effects(state)
-    legal_moves, promotion = _legal_moves(state, effect_boards)
-    legal_drops = _legal_drops(state, effect_boards)
-    return legal_moves, promotion, legal_drops
+    # generate legal moves from effects
+    legal_moves = _pseudo_legal_moves(state, effect_boards)
+    legal_moves = _filter_suicide_moves(state, legal_moves)
+    legal_moves = _filter_ignoring_check_moves(state, legal_moves)
+    legal_promotion = _legal_promotion(state, legal_moves)
+    # generate legal drops from effects
+    legal_drops = _pseudo_legal_drops(state, effect_boards)
+    return legal_moves, legal_promotion, legal_drops
 
 
-def _legal_moves(
+def _pseudo_legal_moves(
     state: State, effect_boards: jnp.ndarray
-) -> Tuple[jnp.ndarray, jnp.ndarray]:
-    """Filter (84, 84) effects and return legal moves (84, 84) and promotion (84, 84)
-
-    >>> s = init()
-    >>> effect_boards = _apply_effects(s)
-    >>> legal_moves, _ = _legal_moves(s, effect_boards)
-    >>> jnp.rot90(legal_moves[8].reshape(9, 9), k=3)  # 香
-    Array([[False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
+) -> jnp.ndarray:
+    """Filter (81, 81) effects and return legal moves (81, 81)
     """
-    pb = state.piece_board
 
     # filter the destinations where my piece exists
-    is_my_piece = (PAWN <= pb) & (pb < OPP_PAWN)
+    is_my_piece = (PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN)
     effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
 
-    # Filter suicide action
+    return effect_boards
+
+
+def _filter_suicide_moves(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
+     # Filter suicide action
     #   - King moves into the effected area
     #   - Pinned piece moves
     #  A piece is pinned when
@@ -296,16 +290,16 @@ def _legal_moves(
 
     # king cannot move into the effected area
     opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
-    king_mask = pb == KING
+    king_mask = state.piece_board == KING
     mask = king_mask.reshape(81, 1) * opp_effect_boards.any(axis=0).reshape(
         1, 81
     )
-    effect_boards = jnp.where(mask, FALSE, effect_boards)
+    legal_moves = jnp.where(mask, FALSE, legal_moves)
 
     # pinned piece cannot move
     flipped_state = _flip(state)
     flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
+    flipped_king_pos = 80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
     flipped_effecting_mask = flipped_opp_raw_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に遮蔽無視して聞いている駒の位置
@@ -329,26 +323,29 @@ def _legal_moves(
         FALSE,
     ).any(axis=0)
     is_pinned = flipped_is_pinned[::-1]  # (81,)
-    effect_boards = jnp.where(is_pinned.reshape(81, 1), FALSE, effect_boards)
+    legal_moves = jnp.where(is_pinned.reshape(81, 1), FALSE, legal_moves)
 
+    return legal_moves
+
+def _filter_ignoring_check_moves(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
     # Filter moves which ignores check
     #
     # Legal moves are one of
     #   - King escapes from the check to non-effected place (including taking the checking piece)
     #   - Capturing the checking piece by the other pieces
     #   - Move the other piece between King and checking piece
-    leave_check_mask = jnp.zeros_like(effect_boards, dtype=jnp.bool_)
+    leave_check_mask = jnp.zeros_like(legal_moves, dtype=jnp.bool_)
 
     # King escapes
     opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
-    king_mask = pb == KING
+    king_mask = state.piece_board == KING
     king_escape_mask = jnp.tile(king_mask, reps=(81, 1)).transpose()
     leave_check_mask |= king_escape_mask
 
     # Capture the checking piece
     flipped_state = _flip(state)
     flipped_opp_effect_boards = _apply_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
+    flipped_king_pos = 80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
     flipped_effecting_mask = flipped_opp_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
@@ -360,6 +357,8 @@ def _legal_moves(
     def between_king(p, f):
         return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
 
+    from_ = jnp.arange(81)
+    large_piece = _to_large_piece_ix(flipped_state.piece_board)
     flipped_between_king_mask = between_king(large_piece, from_)  # (81, 81)
     # 王手してない駒からのマスクは外す
     flipped_aigoma_area_boards = jnp.where(
@@ -383,13 +382,17 @@ def _legal_moves(
     leave_check_mask |= is_not_checked
 
     # filter by leave check mask
-    effect_boards = jnp.where(leave_check_mask, effect_boards, FALSE)
+    legal_moves = jnp.where(leave_check_mask, legal_moves, FALSE)
+    return legal_moves
 
-    # promotion (81, 81)
-    #   0 = cannot promote
-    #   1 = can promote (from or to opp area)
-    #   2 = have to promote (get stuck)
-    promotion = effect_boards.astype(jnp.int8)
+
+def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
+    """Generate legal promotion (81, 81)
+      0 = cannot promote
+      1 = can promote (from or to opp area)
+      2 = have to promote (get stuck)
+    """
+    promotion = legal_moves.astype(jnp.int8)
     # mask where piece cannot promote
     in_opp_area = jnp.arange(81) % 9 < 3
     tgt_in_opp_area = jnp.tile(in_opp_area, reps=(81, 1))
@@ -399,25 +402,24 @@ def _legal_moves(
     # mask where piece have to promote
     is_line1 = jnp.tile(jnp.arange(81) % 9 == 0, reps=(81, 1))
     is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
-    where_pawn_or_lance = (pb == PAWN) | (pb == LANCE)
-    where_knight = pb == KNIGHT
+    where_pawn_or_lance = (state.piece_board == PAWN) | (state.piece_board == LANCE)
+    where_knight = state.piece_board == KNIGHT
     is_stuck = jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1
     is_stuck |= jnp.tile(where_knight, (81, 1)).transpose() & (
         is_line1 | is_line2
     )
     promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
+    return promotion
 
-    return effect_boards, promotion
 
-
-def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
+def _pseudo_legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     """Return (7, 81) boolean array
 
     >>> s = init()
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
     >>> effect_boards = _apply_effects(s)
-    >>> _rotate(_legal_drops(s, effect_boards)[PAWN])
+    >>> _rotate(_pseudo_legal_drops(s, effect_boards)[PAWN])
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
