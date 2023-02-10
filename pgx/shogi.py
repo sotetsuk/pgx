@@ -631,6 +631,10 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
 
     legal_drops &= (is_not_checked | aigoma_area_boards)
 
+    # 両王手の場合、合駒は無駄
+    is_double_checked = flipped_effecting_mask.sum() > 1
+    legal_drops &= ~is_double_checked
+
     return legal_drops
 
 
