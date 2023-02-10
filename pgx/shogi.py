@@ -259,27 +259,30 @@ def _legal_actions(state: State):
     legal_moves = _pseudo_legal_moves(state, effect_boards)
     legal_drops = _pseudo_legal_drops(state, effect_boards)
 
-    #
+    # Prepare necessary materials
     flipped_state = _flip(state)
     flipped_effect_boards = _apply_effects(flipped_state)
-    num_checks, check_defense_board = _check_defense(state, flipped_state, flipped_effect_boards)
+    checking_point_board, check_defense_board = _check_info(state, flipped_state, flipped_effect_boards)
 
-    #
+    # Filter illegal moves
     legal_moves = _filter_suicide_moves(
         state, legal_moves, flipped_state, flipped_effect_boards
     )
     legal_moves = _filter_ignoring_check_moves(
-        state, legal_moves, flipped_state, flipped_effect_boards, num_checks, check_defense_board
+        state, legal_moves, flipped_effect_boards, checking_point_board, check_defense_board
     )
-    legal_promotion = _legal_promotion(state, legal_moves)
 
-    #
+    # Filter illegal drops
     legal_drops = _filter_pawn_drop_mate(
         state, legal_drops, effect_boards, flipped_effect_boards
     )
     legal_drops = _filter_ignoring_check_drops(
-        legal_drops, num_checks, check_defense_board
+        legal_drops, checking_point_board, check_defense_board
     )
+
+    # Generate legal promotion
+    legal_promotion = _legal_promotion(state, legal_moves)
+
     return legal_moves, legal_promotion, legal_drops
 
 
@@ -352,9 +355,8 @@ def _filter_suicide_moves(
 def _filter_ignoring_check_moves(
     state: State,
     legal_moves: jnp.ndarray,
-    flipped_state,
     flipped_effect_boards,
-    num_checks,
+    checking_point_board,
     check_defense_board
 ) -> jnp.ndarray:
     """Filter moves which ignores check
@@ -373,19 +375,14 @@ def _filter_ignoring_check_moves(
     leave_check_mask |= king_escape_mask
 
     # Capture the checking piece
-    flipped_king_pos = (
-        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
-    )
-    flipped_effecting_mask = flipped_effect_boards[
-        :, flipped_king_pos
-    ]  # (81,) 王に利いている駒の位置
-    capturing_mask = jnp.tile(jnp.flip(flipped_effecting_mask), reps=(81, 1))
+    capturing_mask = jnp.tile(checking_point_board, reps=(81, 1))
     leave_check_mask |= capturing_mask
 
     # 駒を動かして合駒をする
     leave_check_mask |= check_defense_board  # filter target
 
     # 両王手の場合、王が避ける以外ない
+    num_checks = checking_point_board.sum()
     is_double_checked = num_checks > 1
     leave_check_mask = jax.lax.cond(
         is_double_checked, lambda: king_escape_mask, lambda: leave_check_mask
@@ -522,7 +519,7 @@ def _filter_pawn_drop_mate(
     return legal_drops
 
 
-def _check_defense(state, flipped_state, flipped_effect_boards):
+def _check_info(state, flipped_state, flipped_effect_boards):
     flipped_king_pos = (
         80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
     )
@@ -547,15 +544,16 @@ def _check_defense(state, flipped_state, flipped_effect_boards):
         axis=0
     )  # (81,)
 
-    num_checks = flipped_effecting_mask.sum()  # scalar
-    return num_checks, aigoma_area_boards
+    return jnp.flip(flipped_effecting_mask), aigoma_area_boards
 
 
 def _filter_ignoring_check_drops(
     legal_drops: jnp.ndarray,
-    num_checks,
+    checking_piece_board,
     check_defense_board,
 ):
+    num_checks = checking_piece_board.sum()
+
     # 合駒（王手放置）
     is_not_checked = num_checks == 0
     legal_drops &= is_not_checked | check_defense_board
