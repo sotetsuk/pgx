@@ -33,4 +33,4 @@ test:
 	python3 -m pytest --doctest-modules --verbose pgx tests
 
 diff-test:
-	git fetch -a && git merge --no-ff origin/main && python3 -m pytest --doctest-modules --verbose $(git diff --name-only origin/main | grep py)
+	python3 -m pytest --doctest-modules --verbose $(git diff --name-only origin/main | grep py)
