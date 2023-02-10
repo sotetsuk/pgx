@@ -626,13 +626,9 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
 
     opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
     king_mask = pb == KING
-    is_checked = (opp_effect_boards & king_mask).any()  # scalar
+    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
 
-    legal_drops = jax.lax.cond(
-        is_checked,
-        lambda: legal_drops & aigoma_area_boards,
-        lambda: legal_drops,
-    )
+    legal_drops &= (is_not_checked | aigoma_area_boards)
 
     return legal_drops
 
