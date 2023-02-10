@@ -201,7 +201,7 @@ class Action:
 
     @classmethod
     def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
-        action = action.astype(dtype=jnp.int8)
+        action = jnp.int8(action)
         direction, to = action // 81, action % 81
         is_drop = direction >= 20
 
