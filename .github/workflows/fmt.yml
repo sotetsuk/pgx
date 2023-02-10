@@ -3,7 +3,7 @@ name: fmt
 on: [push]
 
 jobs:
-  fmt:
+  check:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
