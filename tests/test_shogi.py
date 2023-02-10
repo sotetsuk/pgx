@@ -249,3 +249,34 @@ def test_legal_drops():
     effects = _apply_effects(s)
     legal_drops = _legal_drops(s, effects)
     assert legal_drops[PAWN, xy2i(5, 2)]
+
+    # 合駒
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(1, 9)].set(KING)
+        .at[xy2i(1, 5)].set(OPP_LANCE),
+        hand=s.hand.at[0, GOLD].set(1)
+    )
+    visualize(s, "tests/assets/shogi/legal_drops_005.svg")
+    effects = _apply_effects(s)
+    legal_drops = _legal_drops(s, effects)
+    assert legal_drops[GOLD, xy2i(1, 6)]  # 合駒はOK
+    assert legal_drops[GOLD, xy2i(1, 7)]  # 合駒はOK
+    assert legal_drops[GOLD, xy2i(1, 8)]  # 合駒はOK
+    assert not legal_drops[GOLD, xy2i(2, 6)]  # 合駒になってないのはNG
+
+    # 両王手
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(1, 9)].set(KING)
+        .at[xy2i(9, 1)].set(OPP_BISHOP)
+        .at[xy2i(1, 1)].set(OPP_ROOK),
+        hand=s.hand.at[0].set(1)
+    )
+    visualize(s, "tests/assets/shogi/legal_drops_006.svg")
+    effects = _apply_effects(s)
+    legal_drops = _legal_drops(s, effects)
+    assert not legal_drops[GOLD, xy2i(1, 5)]  # 角の利きを遮るが、両王手なのでNG
+    assert not legal_drops[GOLD, xy2i(5, 5)]  # 飛の利きを遮るが、両王手なのでNG

@@ -600,7 +600,40 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
         lambda: legal_drops,
     )
 
-    # TODO: 王手放置
+    # 合駒（王手放置）
+    flipped_state = _flip(state)
+    flipped_opp_effect_boards = _apply_effects(flipped_state)
+    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
+    flipped_effecting_mask = flipped_opp_effect_boards[
+        :, flipped_king_pos
+    ]  # (81,) 王に利いている駒の位置
+
+    @jax.vmap
+    def between_king(p, f):
+        return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
+
+    from_ = jnp.arange(81)
+    large_piece = _to_large_piece_ix(flipped_state.piece_board)
+    flipped_between_king_mask = between_king(large_piece, from_)  # (81, 81)
+    # 王手してない駒からのマスクは外す
+    flipped_aigoma_area_boards = jnp.where(
+        flipped_effecting_mask.reshape(81, 1),
+        flipped_between_king_mask,
+        jnp.zeros_like(flipped_between_king_mask),
+    )
+    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(
+        axis=0
+    )  # (81,)
+
+    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
+    king_mask = pb == KING
+    is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
+
+    legal_drops &= is_not_checked | aigoma_area_boards
+
+    # 両王手の場合、合駒は無駄
+    is_double_checked = flipped_effecting_mask.sum() > 1
+    legal_drops &= ~is_double_checked
 
     return legal_drops
 
