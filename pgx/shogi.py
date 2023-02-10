@@ -38,7 +38,7 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
-from pgx.cache import load_shogi_is_on_the_way, load_shogi_raw_effect_boards
+from pgx.cache import load_shogi_is_on_the_way, load_shogi_raw_effect_boards, load_shogi_legal_from_mask
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -95,6 +95,13 @@ RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
 IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
+# Give <dir,10> and <to,81>, return the legal <from,81> mask
+# E.g. dir=Up right,
+# x x x x x x x
+# x x x x t x x
+# x x x o x x x
+# x x o x x x x
+LEGAL_FROM_MASK = load_shogi_legal_from_mask()  # bool (10, 81, 81) = (dir, to, from)
 
 
 @dataclass
