@@ -264,6 +264,8 @@ def _legal_actions(state: State):
     legal_promotion = _legal_promotion(state, legal_moves)
     # generate legal drops from effects
     legal_drops = _pseudo_legal_drops(state, effect_boards)
+    legal_drops = _filter_pawn_drop_mate(state, legal_drops, effect_boards)
+    legal_drops = _filter_ignoring_check_drops(state, legal_drops)
     return legal_moves, legal_promotion, legal_drops
 
 
@@ -457,12 +459,18 @@ def _pseudo_legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray
     has_pawn = jnp.tile(has_pawn, reps=(9, 1)).transpose().flatten()
     legal_drops = jnp.where(has_pawn, FALSE, legal_drops)
 
-    # 打ち歩詰
-    #  避け方は次の3通り
-    #  - (1) 頭の歩を王で取る
-    #  - (2) 王が逃げる
-    #  - (3) 頭の歩を王以外の駒で取る
-    #  (1)と(2)はようするに、今王が逃げられるところがあるか（利きがないか）ということでまとめて処理できる
+    return legal_drops
+
+
+def _filter_pawn_drop_mate(state: State, legal_drops: jnp.ndarray, effect_boards: jnp.ndarray) -> jnp.ndarray:
+    """打ち歩詰
+    避け方は次の3通り
+    - (1) 頭の歩を王で取る
+    - (2) 王が逃げる
+    - (3) 頭の歩を王以外の駒で取る
+    (1)と(2)はようするに、今王が逃げられるところがあるか（利きがないか）ということでまとめて処理できる
+    """
+
     pb = state.piece_board
     opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0].item()
     opp_king_head_pos = (
@@ -490,11 +498,14 @@ def _pseudo_legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray
         lambda: legal_drops.at[PAWN, opp_king_head_pos].set(FALSE),
         lambda: legal_drops,
     )
+    return legal_drops
 
+
+def _filter_ignoring_check_drops(state: State, legal_drops: jnp.ndarray):
     # 合駒（王手放置）
     flipped_state = _flip(state)
     flipped_opp_effect_boards = _apply_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(pb == KING, size=1)[0].item()
+    flipped_king_pos = 80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
     flipped_effecting_mask = flipped_opp_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
@@ -517,7 +528,7 @@ def _pseudo_legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray
     )  # (81,)
 
     opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
-    king_mask = pb == KING
+    king_mask = state.piece_board == KING
     is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
 
     legal_drops &= is_not_checked | aigoma_area_boards
