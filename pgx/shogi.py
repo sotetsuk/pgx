@@ -562,7 +562,7 @@ def _filter_ignoring_check_drops(
         axis=0
     )  # (81,)
 
-    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
+    opp_effect_boards = jnp.flip(flipped_effect_boards)  # (81,)
     king_mask = state.piece_board == KING
     is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
 
