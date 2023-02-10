@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_moves, _legal_drops, _rotate
+from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate
 
 
 # check visualization results by image preview plugins
@@ -111,8 +111,7 @@ def test_legal_moves():
     s = _step_move(s, a)
     visualize(s, "tests/assets/shogi/legal_moves_001.svg")
     # 33角は成れるが、44では成れない
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, promotion, _ = _legal_actions(s)
     assert legal_moves[xy2i(8, 8), xy2i(3, 3)]  # 33角
     assert legal_moves[xy2i(8, 8), xy2i(4, 4)]  # 44角
     assert promotion[xy2i(8, 8), xy2i(3, 3)] == 1  # 33角
@@ -123,8 +122,7 @@ def test_legal_moves():
     a = Action.make_drop(piece=PAWN, to=xy2i(1, 2))
     s = _step_drop(s, a)
     visualize(s, "tests/assets/shogi/legal_moves_002.svg")
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, promotion, _ = _legal_actions(s)
     assert legal_moves[xy2i(1, 2), xy2i(1, 1)]  # 33角
     assert promotion[xy2i(1, 2), xy2i(1, 1)] == 2  # 33角
 
@@ -139,16 +137,14 @@ def test_legal_moves():
         .at[xy2i(5, 9)].set(EMPTY)
     )
     visualize(s, "tests/assets/shogi/legal_moves_003.svg")
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(6, 8), xy2i(5, 8)]
 
     # Gold is pinned
     s = init()
     s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE).at[xy2i(5, 7)].set(GOLD))
     visualize(s, "tests/assets/shogi/legal_moves_004.svg")
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
     # Leave king check
@@ -161,8 +157,7 @@ def test_legal_moves():
         .at[xy2i(5, 7)].set(EMPTY)
     )
     visualize(s, "tests/assets/shogi/legal_moves_005.svg")
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, _, _ = _legal_actions(s)
     assert legal_moves[xy2i(5, 9), xy2i(4, 8)]  # 王が逃げるのはOK
     assert legal_moves[xy2i(5, 9), xy2i(6, 8)]  # 王が逃げるのはOK
     assert not legal_moves[xy2i(5, 9), xy2i(5, 8)]  # 自殺手はNG
@@ -177,8 +172,7 @@ def test_legal_moves():
         .at[xy2i(7, 7)].set(EMPTY)
     )
     visualize(s, "tests/assets/shogi/legal_moves_006.svg")
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(8, 8), xy2i(4, 4)]  # 角が香を取る以外の動きは王手放置でNG
     assert legal_moves[xy2i(8, 8), xy2i(5, 5)]      # 角が王手をかけている香を取るのはOK
 
@@ -191,8 +185,7 @@ def test_legal_moves():
         .at[xy2i(5, 5)].set(OPP_BISHOP)
     )
     visualize(s, "tests/assets/shogi/legal_moves_007.svg")
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(2, 9), xy2i(3, 9)]  # 王手のままなのでNG
     assert legal_moves[xy2i(2, 9), xy2i(2, 8)]  # 角の利きを遮るのでOK
 
@@ -206,8 +199,7 @@ def test_legal_moves():
         .at[xy2i(1, 1)].set(OPP_ROOK)
     )
     visualize(s, "tests/assets/shogi/legal_moves_008.svg")
-    effects = _apply_effects(s)
-    legal_moves, promotion = _legal_moves(s, effects)
+    legal_moves, _, _ = _legal_actions(s)
     assert legal_moves[xy2i(1, 9), xy2i(2, 9)]  # 王が避けるのはOK
     assert not legal_moves[xy2i(1, 9), xy2i(1, 8)]  # 王が避けても相手駒が効いているところはNG
     assert not legal_moves[xy2i(5, 9), xy2i(3, 7)]  # 角の利きを遮るが、両王手なのでNG
@@ -222,8 +214,7 @@ def test_legal_drops():
     visualize(s, "tests/assets/shogi/legal_drops_001.svg")
 
     # 避けられるし金でも取れる
-    effects = _apply_effects(s)
-    legal_drops = _legal_drops(s, effects)
+    _, _, legal_drops = _legal_actions(s)
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 片側に避けられるので打ち歩詰でない
@@ -231,23 +222,20 @@ def test_legal_drops():
     s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(EMPTY))  # 金を除く
     s = s.replace(piece_board=s.piece_board.at[xy2i(5, 3)].set(GOLD))  # (5, 3)に金を置く
     visualize(s, "tests/assets/shogi/legal_drops_002.svg")
-    effects = _apply_effects(s)
-    legal_drops = _legal_drops(s, effects)
+    _, _, legal_drops = _legal_actions(s)
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 両側に避けられないので打ち歩詰
     s = s.replace(piece_board=s.piece_board.at[xy2i(4, 1)].set(OPP_PAWN))  # 両側に歩を置く
     s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(OPP_PAWN))
     visualize(s, "tests/assets/shogi/legal_drops_003.svg")
-    effects = _apply_effects(s)
-    legal_drops = _legal_drops(s, effects)
+    _, _, legal_drops = _legal_actions(s)
     assert not legal_drops[PAWN, xy2i(5, 2)]
 
     # 金で取れるので打ち歩詰でない
     s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(OPP_GOLD))
     visualize(s, "tests/assets/shogi/legal_drops_004.svg")
-    effects = _apply_effects(s)
-    legal_drops = _legal_drops(s, effects)
+    _, _, legal_drops = _legal_actions(s)
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 合駒
@@ -259,8 +247,7 @@ def test_legal_drops():
         hand=s.hand.at[0, GOLD].set(1)
     )
     visualize(s, "tests/assets/shogi/legal_drops_005.svg")
-    effects = _apply_effects(s)
-    legal_drops = _legal_drops(s, effects)
+    _, _, legal_drops = _legal_actions(s)
     assert legal_drops[GOLD, xy2i(1, 6)]  # 合駒はOK
     assert legal_drops[GOLD, xy2i(1, 7)]  # 合駒はOK
     assert legal_drops[GOLD, xy2i(1, 8)]  # 合駒はOK
@@ -276,7 +263,6 @@ def test_legal_drops():
         hand=s.hand.at[0].set(1)
     )
     visualize(s, "tests/assets/shogi/legal_drops_006.svg")
-    effects = _apply_effects(s)
-    legal_drops = _legal_drops(s, effects)
+    _, _, legal_drops = _legal_actions(s)
     assert not legal_drops[GOLD, xy2i(1, 5)]  # 角の利きを遮るが、両王手なのでNG
     assert not legal_drops[GOLD, xy2i(5, 5)]  # 飛の利きを遮るが、両王手なのでNG
