@@ -256,15 +256,17 @@ def _step_drop(state: State, action: Action) -> State:
 
 def _legal_actions(state: State):
     effect_boards = _apply_effects(state)
+    flipped_state = _flip(state)
+    flipped_effect_boards = _apply_effects(flipped_state)
     # generate legal moves from effects
     legal_moves = _pseudo_legal_moves(state, effect_boards)
-    legal_moves = _filter_suicide_moves(state, legal_moves)
-    legal_moves = _filter_ignoring_check_moves(state, legal_moves)
+    legal_moves = _filter_suicide_moves(state, legal_moves, flipped_state, flipped_effect_boards)
+    legal_moves = _filter_ignoring_check_moves(state, legal_moves, flipped_state, flipped_effect_boards)
     legal_promotion = _legal_promotion(state, legal_moves)
     # generate legal drops from effects
     legal_drops = _pseudo_legal_drops(state, effect_boards)
-    legal_drops = _filter_pawn_drop_mate(state, legal_drops, effect_boards)
-    legal_drops = _filter_ignoring_check_drops(state, legal_drops)
+    legal_drops = _filter_pawn_drop_mate(state, legal_drops, effect_boards, flipped_effect_boards)
+    legal_drops = _filter_ignoring_check_drops(state, legal_drops, flipped_state, flipped_effect_boards)
     return legal_moves, legal_promotion, legal_drops
 
 
@@ -281,7 +283,7 @@ def _pseudo_legal_moves(
 
 
 def _filter_suicide_moves(
-    state: State, legal_moves: jnp.ndarray
+    state: State, legal_moves: jnp.ndarray, flipped_state, flipped_effect_boards,
 ) -> jnp.ndarray:
     """Filter suicide action
      - King moves into the effected area
@@ -291,7 +293,7 @@ def _filter_suicide_moves(
      - no other pieces exist on the way to king
     """
     # king cannot move into the effected area
-    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
+    opp_effect_boards = jnp.flip(flipped_effect_boards)  # (81,)
     king_mask = state.piece_board == KING
     mask = king_mask.reshape(81, 1) * opp_effect_boards.any(axis=0).reshape(
         1, 81
@@ -299,7 +301,6 @@ def _filter_suicide_moves(
     legal_moves = jnp.where(mask, FALSE, legal_moves)
 
     # pinned piece cannot move
-    flipped_state = _flip(state)
     flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
     flipped_king_pos = (
         80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
@@ -333,7 +334,7 @@ def _filter_suicide_moves(
 
 
 def _filter_ignoring_check_moves(
-    state: State, legal_moves: jnp.ndarray
+    state: State, legal_moves: jnp.ndarray, flipped_state, flipped_effect_boards
 ) -> jnp.ndarray:
     """Filter moves which ignores check
 
@@ -345,18 +346,16 @@ def _filter_ignoring_check_moves(
     leave_check_mask = jnp.zeros_like(legal_moves, dtype=jnp.bool_)
 
     # King escapes
-    opp_effect_boards = jnp.flip(_apply_effects(_flip(state)))  # (81,)
+    opp_effect_boards = jnp.flip(flipped_effect_boards)  # (81,)
     king_mask = state.piece_board == KING
     king_escape_mask = jnp.tile(king_mask, reps=(81, 1)).transpose()
     leave_check_mask |= king_escape_mask
 
     # Capture the checking piece
-    flipped_state = _flip(state)
-    flipped_opp_effect_boards = _apply_effects(flipped_state)
     flipped_king_pos = (
         80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
     )
-    flipped_effecting_mask = flipped_opp_effect_boards[
+    flipped_effecting_mask = flipped_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
     capturing_mask = jnp.tile(flipped_effecting_mask, reps=(81, 1))
@@ -475,7 +474,7 @@ def _pseudo_legal_drops(
 
 
 def _filter_pawn_drop_mate(
-    state: State, legal_drops: jnp.ndarray, effect_boards: jnp.ndarray
+    state: State, legal_drops: jnp.ndarray, effect_boards: jnp.ndarray, flipped_effect_boards
 ) -> jnp.ndarray:
     """打ち歩詰
 
@@ -502,10 +501,9 @@ def _filter_pawn_drop_mate(
     can_king_escape = king_escape_mask.any()
 
     # 反転したボードで処理していることに注意
-    flipped_opp_effects = _apply_effects(_flip(state))
     flipped_opp_king_head_pos = 80 - opp_king_head_pos
     can_capture_pawn = (
-        flipped_opp_effects[:, flipped_opp_king_head_pos].sum() > 1
+        flipped_effect_boards[:, flipped_opp_king_head_pos].sum() > 1
     )  # 自分以外の利きがないといけない
 
     legal_drops = jax.lax.cond(
@@ -516,14 +514,12 @@ def _filter_pawn_drop_mate(
     return legal_drops
 
 
-def _filter_ignoring_check_drops(state: State, legal_drops: jnp.ndarray):
+def _filter_ignoring_check_drops(state: State, legal_drops: jnp.ndarray, flipped_state, flipped_effect_boards):
     # 合駒（王手放置）
-    flipped_state = _flip(state)
-    flipped_opp_effect_boards = _apply_effects(flipped_state)
     flipped_king_pos = (
         80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
     )
-    flipped_effecting_mask = flipped_opp_effect_boards[
+    flipped_effecting_mask = flipped_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
 
