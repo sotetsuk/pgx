@@ -771,7 +771,7 @@ def _cshogi_board_to_state(board):
     pb = jnp.zeros(81, dtype=jnp.int8)
     hand = jnp.zeros((2, 7), dtype=jnp.int8)
     # fmt: off
-    board_piece_dir = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,]
+    board_piece_dir = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
     # fmt: on
     hand_piece_dir = [0, 1, 2, 3, 5, 6, 4]
     pieces = board.pieces
