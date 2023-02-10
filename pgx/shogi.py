@@ -269,7 +269,7 @@ def _legal_actions(state: State):
         state, legal_moves, flipped_state, flipped_effect_boards
     )
     legal_moves = _filter_ignoring_check_moves(
-        state, legal_moves, flipped_effect_boards, checking_point_board, check_defense_board
+        state, legal_moves, checking_point_board, check_defense_board
     )
 
     # Filter illegal drops
@@ -355,7 +355,6 @@ def _filter_suicide_moves(
 def _filter_ignoring_check_moves(
     state: State,
     legal_moves: jnp.ndarray,
-    flipped_effect_boards,
     checking_point_board,
     check_defense_board
 ) -> jnp.ndarray:
@@ -368,8 +367,7 @@ def _filter_ignoring_check_moves(
     """
     leave_check_mask = jnp.zeros_like(legal_moves, dtype=jnp.bool_)
 
-    # King escapes
-    opp_effect_boards = jnp.flip(flipped_effect_boards)  # (81,)
+    # King escapes (i.e., Only King can move)
     king_mask = state.piece_board == KING
     king_escape_mask = jnp.tile(king_mask, reps=(81, 1)).transpose()
     leave_check_mask |= king_escape_mask
