@@ -50,5 +50,5 @@ uninstall:
 test:
 	python3 -m pytest --doctest-modules --verbose pgx tests
 
-diff-test:
-	if [[ -n $(git diff --name-only origin/main | grep py) ]]; then python3 -m pytest --doctest-modules --verbose $(git diff --name-only origin/main | grep py); fi
+test-modified:
+	./test_modified.sh
