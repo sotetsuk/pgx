@@ -3,7 +3,7 @@ name: ci-diif
 on: [push]
 
 jobs:
-  ci:
+  ci-diff:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
