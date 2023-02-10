@@ -260,13 +260,21 @@ def _legal_actions(state: State):
     flipped_effect_boards = _apply_effects(flipped_state)
     # generate legal moves from effects
     legal_moves = _pseudo_legal_moves(state, effect_boards)
-    legal_moves = _filter_suicide_moves(state, legal_moves, flipped_state, flipped_effect_boards)
-    legal_moves = _filter_ignoring_check_moves(state, legal_moves, flipped_state, flipped_effect_boards)
+    legal_moves = _filter_suicide_moves(
+        state, legal_moves, flipped_state, flipped_effect_boards
+    )
+    legal_moves = _filter_ignoring_check_moves(
+        state, legal_moves, flipped_state, flipped_effect_boards
+    )
     legal_promotion = _legal_promotion(state, legal_moves)
     # generate legal drops from effects
     legal_drops = _pseudo_legal_drops(state, effect_boards)
-    legal_drops = _filter_pawn_drop_mate(state, legal_drops, effect_boards, flipped_effect_boards)
-    legal_drops = _filter_ignoring_check_drops(state, legal_drops, flipped_state, flipped_effect_boards)
+    legal_drops = _filter_pawn_drop_mate(
+        state, legal_drops, effect_boards, flipped_effect_boards
+    )
+    legal_drops = _filter_ignoring_check_drops(
+        state, legal_drops, flipped_state, flipped_effect_boards
+    )
     return legal_moves, legal_promotion, legal_drops
 
 
@@ -283,7 +291,10 @@ def _pseudo_legal_moves(
 
 
 def _filter_suicide_moves(
-    state: State, legal_moves: jnp.ndarray, flipped_state, flipped_effect_boards,
+    state: State,
+    legal_moves: jnp.ndarray,
+    flipped_state,
+    flipped_effect_boards,
 ) -> jnp.ndarray:
     """Filter suicide action
      - King moves into the effected area
@@ -334,7 +345,10 @@ def _filter_suicide_moves(
 
 
 def _filter_ignoring_check_moves(
-    state: State, legal_moves: jnp.ndarray, flipped_state, flipped_effect_boards
+    state: State,
+    legal_moves: jnp.ndarray,
+    flipped_state,
+    flipped_effect_boards,
 ) -> jnp.ndarray:
     """Filter moves which ignores check
 
@@ -474,7 +488,10 @@ def _pseudo_legal_drops(
 
 
 def _filter_pawn_drop_mate(
-    state: State, legal_drops: jnp.ndarray, effect_boards: jnp.ndarray, flipped_effect_boards
+    state: State,
+    legal_drops: jnp.ndarray,
+    effect_boards: jnp.ndarray,
+    flipped_effect_boards,
 ) -> jnp.ndarray:
     """打ち歩詰
 
@@ -514,7 +531,12 @@ def _filter_pawn_drop_mate(
     return legal_drops
 
 
-def _filter_ignoring_check_drops(state: State, legal_drops: jnp.ndarray, flipped_state, flipped_effect_boards):
+def _filter_ignoring_check_drops(
+    state: State,
+    legal_drops: jnp.ndarray,
+    flipped_state,
+    flipped_effect_boards,
+):
     # 合駒（王手放置）
     flipped_king_pos = (
         80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
