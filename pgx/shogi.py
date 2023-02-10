@@ -256,24 +256,29 @@ def _step_drop(state: State, action: Action) -> State:
 
 def _legal_actions(state: State):
     effect_boards = _apply_effects(state)
+    legal_moves = _pseudo_legal_moves(state, effect_boards)
+    legal_drops = _pseudo_legal_drops(state, effect_boards)
+
+    #
     flipped_state = _flip(state)
     flipped_effect_boards = _apply_effects(flipped_state)
-    # generate legal moves from effects
-    legal_moves = _pseudo_legal_moves(state, effect_boards)
+    num_checks, check_defense_board = _check_defense(state, flipped_state, flipped_effect_boards)
+
+    #
     legal_moves = _filter_suicide_moves(
         state, legal_moves, flipped_state, flipped_effect_boards
     )
     legal_moves = _filter_ignoring_check_moves(
-        state, legal_moves, flipped_state, flipped_effect_boards
+        state, legal_moves, flipped_state, flipped_effect_boards, num_checks, check_defense_board
     )
     legal_promotion = _legal_promotion(state, legal_moves)
-    # generate legal drops from effects
-    legal_drops = _pseudo_legal_drops(state, effect_boards)
+
+    #
     legal_drops = _filter_pawn_drop_mate(
         state, legal_drops, effect_boards, flipped_effect_boards
     )
     legal_drops = _filter_ignoring_check_drops(
-        state, legal_drops, flipped_state, flipped_effect_boards
+        legal_drops, num_checks, check_defense_board
     )
     return legal_moves, legal_promotion, legal_drops
 
@@ -349,6 +354,8 @@ def _filter_ignoring_check_moves(
     legal_moves: jnp.ndarray,
     flipped_state,
     flipped_effect_boards,
+    num_checks,
+    check_defense_board
 ) -> jnp.ndarray:
     """Filter moves which ignores check
 
@@ -376,32 +383,16 @@ def _filter_ignoring_check_moves(
     leave_check_mask |= capturing_mask
 
     # 駒を動かして合駒をする
-    @jax.vmap
-    def between_king(p, f):
-        return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
-
-    from_ = jnp.arange(81)
-    large_piece = _to_large_piece_ix(flipped_state.piece_board)
-    flipped_between_king_mask = between_king(large_piece, from_)  # (81, 81)
-    # 王手してない駒からのマスクは外す
-    flipped_aigoma_area_boards = jnp.where(
-        flipped_effecting_mask.reshape(81, 1),
-        flipped_between_king_mask,
-        jnp.zeros_like(flipped_between_king_mask),
-    )
-    aigoma_area_boards = jnp.flip(flipped_aigoma_area_boards).any(
-        axis=0
-    )  # (81,)
-    leave_check_mask |= aigoma_area_boards  # filter target
+    leave_check_mask |= check_defense_board  # filter target
 
     # 両王手の場合、王が避ける以外ない
-    is_double_checked = flipped_effecting_mask.sum() > 1
+    is_double_checked = num_checks > 1
     leave_check_mask = jax.lax.cond(
         is_double_checked, lambda: king_escape_mask, lambda: leave_check_mask
     )
 
     # 王手がかかってないなら王手放置は考えなくてよい
-    is_not_checked = flipped_effecting_mask.sum() == 0  # scalar
+    is_not_checked = num_checks == 0  # scalar
     leave_check_mask |= is_not_checked
 
     # filter by leave check mask
@@ -531,13 +522,7 @@ def _filter_pawn_drop_mate(
     return legal_drops
 
 
-def _filter_ignoring_check_drops(
-    state: State,
-    legal_drops: jnp.ndarray,
-    flipped_state,
-    flipped_effect_boards,
-):
-    # 合駒（王手放置）
+def _check_defense(state, flipped_state, flipped_effect_boards):
     flipped_king_pos = (
         80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
     )
@@ -562,12 +547,21 @@ def _filter_ignoring_check_drops(
         axis=0
     )  # (81,)
 
-    is_not_checked = flipped_effecting_mask.sum() == 0  # scalar
+    num_checks = flipped_effecting_mask.sum()  # scalar
+    return num_checks, aigoma_area_boards
 
-    legal_drops &= is_not_checked | aigoma_area_boards
+
+def _filter_ignoring_check_drops(
+    legal_drops: jnp.ndarray,
+    num_checks,
+    check_defense_board,
+):
+    # 合駒（王手放置）
+    is_not_checked = num_checks == 0
+    legal_drops &= is_not_checked | check_defense_board
 
     # 両王手の場合、合駒は無駄
-    is_double_checked = flipped_effecting_mask.sum() > 1
+    is_double_checked = num_checks > 1
     legal_drops &= ~is_double_checked
 
     return legal_drops
