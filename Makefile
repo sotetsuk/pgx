@@ -1,8 +1,26 @@
-.PHONY: install-dev clean format check install uninstall test
+.PHONY: install-dev clean format check install uninstall test diff-test
 
 
 install-dev:
-	python3 -m pip install -r requirements-dev.txt
+	python3 -m pip install \
+		pytest==7.1.2 \
+		matplotlib \
+		ipython \
+		git+https://github.com/sotetsuk/MinAtar.git \
+		jax[cpu] \
+		brax \
+		argdcls \
+		tqdm \
+		tenhou_wall_reproducer \
+		shanten_tools \
+
+install-fmt:
+	python3 -m pip install \
+		black==22.6.0 \
+		blackdoc==0.3.6 \
+		isort==5.10.1 \
+		flake8==5.0.4 \
+		mypy==0.971
 
 clean:
 	rm -rf build
@@ -31,3 +49,6 @@ uninstall:
 
 test:
 	python3 -m pytest --doctest-modules --verbose pgx tests
+
+test-modified:
+	./test_modified.sh
