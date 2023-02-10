@@ -607,6 +607,7 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     flipped_effecting_mask = flipped_opp_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
+
     @jax.vmap
     def between_king(p, f):
         return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
@@ -628,7 +629,7 @@ def _legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
     king_mask = pb == KING
     is_not_checked = ~(opp_effect_boards & king_mask).any()  # scalar
 
-    legal_drops &= (is_not_checked | aigoma_area_boards)
+    legal_drops &= is_not_checked | aigoma_area_boards
 
     return legal_drops
 
