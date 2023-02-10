@@ -1,13 +1,11 @@
 name: ci
 
 on:
-  push:
-    branches:
-      - main
 
 jobs:
-  ci:
+  all:
     runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v2
@@ -22,3 +20,21 @@ jobs:
       run: |
         make install-dev
         make test
+  diff:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: 'x64'
+    - name: install
+      run: |
+        pip3 install --upgrade pip
+        make install
+    - name: test
+      run: |
+        make install-dev
+        make diff-test
+
