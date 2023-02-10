@@ -201,16 +201,23 @@ class Action:
 
     @classmethod
     def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
+        action = action.astype(dtype=jnp.int8)
         direction, to = action // 81, action % 81
         is_drop = direction >= 20
-        from_ = ...  # TODO: write me
+
+        # compute <from> from <dir, to>
+        mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
+        legal_moves, _, _ = _legal_actions(state)  # TODO: cache legal moves
+        mask2 = legal_moves[:, to]  # (81,)
+        from_ = jnp.nonzero(mask1 & mask2, size=1)[0].item()
+
         piece = jax.lax.cond(
             is_drop,
             lambda: direction - 20,
             lambda: state.piece_board[from_],
         )
         is_promotion = (10 <= direction) & (direction < 20)
-        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promtotion=is_promotion)  # type: ignore
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
     def to_dlshogi_action(self) -> jnp.ndarray:
         direction = jax.lax.cond(self.is_drop, lambda: ...)

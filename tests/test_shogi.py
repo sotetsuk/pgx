@@ -287,3 +287,20 @@ def test_legal_drops():
     _, _, legal_drops = _legal_actions(s)
     assert not legal_drops[GOLD, xy2i(1, 5)]  # 角の利きを遮るが、両王手なのでNG
     assert not legal_drops[GOLD, xy2i(5, 5)]  # 飛の利きを遮るが、両王手なのでNG
+
+
+def test_dlshogi_action():
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(5, 9)].set(LANCE)
+    )
+    visualize(s, "tests/assets/shogi/dlshogi_action_001.svg")
+    dir_ = 0  # UP
+    to = 40   # (5, 5)
+    dlshogi_action = jnp.int32(dir_ * 81 + to)
+    action: Action = Action.from_dlshogi_action(s, dlshogi_action)
+    assert not action.is_drop
+    assert action.from_ == xy2i(5, 9)
+    assert action.to == xy2i(5, 5)
+    assert not action.is_promotion
