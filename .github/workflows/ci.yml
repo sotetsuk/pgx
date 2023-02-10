@@ -1,25 +1,8 @@
 name: ci
 
-on:
+on: [push]
 
 jobs:
-  diff:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.8'
-        architecture: 'x64'
-    - name: install
-      run: |
-        pip3 install --upgrade pip
-        make install
-    - name: test
-      run: |
-        make install-dev
-        make diff-test
-
   all:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
@@ -37,4 +20,22 @@ jobs:
       run: |
         make install-dev
         make test
+  diff:
+    runs-on: ubuntu-latest
+    if: github.ref != 'refs/heads/main'
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
+      with:
+        python-version: '3.8'
+        architecture: 'x64'
+    - name: install
+      run: |
+        pip3 install --upgrade pip
+        make install
+    - name: test
+      run: |
+        make install-dev
+        make diff-test
+
 
