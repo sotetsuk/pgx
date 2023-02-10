@@ -756,11 +756,10 @@ def to_sfen(state: State):
 
 
 def _cshogi_board_to_state(board):
-    # cshogiのBoardの実装（cshogi/cshogi/_cshogi.pyx）
-    # board.turn(): 手番
-    # board.pieces_in_hand: 相互の持ち駒
-    # 歩香桂銀金角飛の順。金の位置がpgxと異なる
-    # board.pieces: 盤面
+    """Convert cshogi (github.com/TadaoYamaoka/cshogi) board into Pgx state.
+
+    board.pieces_in_hand: 歩香桂銀[金]角飛 金のindexが違う
+    """
     pb = jnp.zeros(81, dtype=jnp.int8)
     hand = jnp.zeros((2, 7), dtype=jnp.int8)
     # fmt: off
