@@ -302,10 +302,7 @@ def _pseudo_legal_moves(
 
 
 def _filter_suicide_moves(
-    state: State,
-    legal_moves: jnp.ndarray,
-    flipped_effect_boards,
-    is_pinned
+    state: State, legal_moves: jnp.ndarray, flipped_effect_boards, is_pinned
 ) -> jnp.ndarray:
     """Filter suicide action
      - King moves into the effected area
