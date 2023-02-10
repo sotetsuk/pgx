@@ -272,8 +272,7 @@ def _legal_actions(state: State):
 def _pseudo_legal_moves(
     state: State, effect_boards: jnp.ndarray
 ) -> jnp.ndarray:
-    """Filter (81, 81) effects and return legal moves (81, 81)
-    """
+    """Filter (81, 81) effects and return legal moves (81, 81)"""
 
     # filter the destinations where my piece exists
     is_my_piece = (PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN)
@@ -282,8 +281,10 @@ def _pseudo_legal_moves(
     return effect_boards
 
 
-def _filter_suicide_moves(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
-     # Filter suicide action
+def _filter_suicide_moves(
+    state: State, legal_moves: jnp.ndarray
+) -> jnp.ndarray:
+    # Filter suicide action
     #   - King moves into the effected area
     #   - Pinned piece moves
     #  A piece is pinned when
@@ -301,7 +302,9 @@ def _filter_suicide_moves(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray
     # pinned piece cannot move
     flipped_state = _flip(state)
     flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    flipped_king_pos = (
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    )
     flipped_effecting_mask = flipped_opp_raw_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に遮蔽無視して聞いている駒の位置
@@ -329,7 +332,10 @@ def _filter_suicide_moves(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray
 
     return legal_moves
 
-def _filter_ignoring_check_moves(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
+
+def _filter_ignoring_check_moves(
+    state: State, legal_moves: jnp.ndarray
+) -> jnp.ndarray:
     # Filter moves which ignores check
     #
     # Legal moves are one of
@@ -347,7 +353,9 @@ def _filter_ignoring_check_moves(state: State, legal_moves: jnp.ndarray) -> jnp.
     # Capture the checking piece
     flipped_state = _flip(state)
     flipped_opp_effect_boards = _apply_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    flipped_king_pos = (
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    )
     flipped_effecting_mask = flipped_opp_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
@@ -390,9 +398,9 @@ def _filter_ignoring_check_moves(state: State, legal_moves: jnp.ndarray) -> jnp.
 
 def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
     """Generate legal promotion (81, 81)
-      0 = cannot promote
-      1 = can promote (from or to opp area)
-      2 = have to promote (get stuck)
+    0 = cannot promote
+    1 = can promote (from or to opp area)
+    2 = have to promote (get stuck)
     """
     promotion = legal_moves.astype(jnp.int8)
     # mask where piece cannot promote
@@ -404,7 +412,9 @@ def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
     # mask where piece have to promote
     is_line1 = jnp.tile(jnp.arange(81) % 9 == 0, reps=(81, 1))
     is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
-    where_pawn_or_lance = (state.piece_board == PAWN) | (state.piece_board == LANCE)
+    where_pawn_or_lance = (state.piece_board == PAWN) | (
+        state.piece_board == LANCE
+    )
     where_knight = state.piece_board == KNIGHT
     is_stuck = jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1
     is_stuck |= jnp.tile(where_knight, (81, 1)).transpose() & (
@@ -414,7 +424,9 @@ def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
     return promotion
 
 
-def _pseudo_legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray:
+def _pseudo_legal_drops(
+    state: State, effect_boards: jnp.ndarray
+) -> jnp.ndarray:
     """Return (7, 81) boolean array
 
     >>> s = init()
@@ -462,7 +474,9 @@ def _pseudo_legal_drops(state: State, effect_boards: jnp.ndarray) -> jnp.ndarray
     return legal_drops
 
 
-def _filter_pawn_drop_mate(state: State, legal_drops: jnp.ndarray, effect_boards: jnp.ndarray) -> jnp.ndarray:
+def _filter_pawn_drop_mate(
+    state: State, legal_drops: jnp.ndarray, effect_boards: jnp.ndarray
+) -> jnp.ndarray:
     """打ち歩詰
     避け方は次の3通り
     - (1) 頭の歩を王で取る
@@ -505,7 +519,9 @@ def _filter_ignoring_check_drops(state: State, legal_drops: jnp.ndarray):
     # 合駒（王手放置）
     flipped_state = _flip(state)
     flipped_opp_effect_boards = _apply_effects(flipped_state)
-    flipped_king_pos = 80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    flipped_king_pos = (
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+    )
     flipped_effecting_mask = flipped_opp_effect_boards[
         :, flipped_king_pos
     ]  # (81,) 王に利いている駒の位置
