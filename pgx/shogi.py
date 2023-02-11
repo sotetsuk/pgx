@@ -271,8 +271,12 @@ def _step(state: State, action: Action) -> State:
         curr_player=(state.curr_player + 1) % 2, turn=(state.turn + 1) % 2
     )
     legal_actions = _legal_actions(state)
-    state.replace(legal_action_mask=_to_direction(legal_actions))  # type: ignore
-    return state
+    legal_action_mask = _to_direction(legal_actions)
+    state.replace(legal_action_mask=legal_action_mask)  # type: ignore
+    is_empty = legal_action_mask.any()
+    reward = jax.lax.cond(is_empty, lambda: jnp.float32([-1.0, 1.0]), lambda: jnp.float32([0.0, 0.0]))
+    reward = jax.lax.cond(state.curr_player != 0, lambda: reward[::-1], lambda: reward)
+    return state.replace(reward=reward)  # type: ignore
 
 
 def _step_move(state: State, action: Action) -> State:
