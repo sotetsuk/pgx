@@ -33,12 +33,17 @@ piece_board (81,):
 """
 
 from functools import partial
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
-from pgx.cache import load_shogi_is_on_the_way, load_shogi_raw_effect_boards
+from pgx.cache import (
+    load_shogi_is_on_the_way,
+    load_shogi_legal_from_mask,
+    load_shogi_raw_effect_boards,
+)
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -95,6 +100,13 @@ RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
 IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
+# Give <dir,10> and <to,81>, return the legal <from,81> mask
+# E.g. LEGAL_FROM_MASK[Up right, to=19]
+# x x x x x x x
+# x x x x t x x
+# x x x o x x x
+# x x o x x x x
+LEGAL_FROM_MASK = load_shogi_legal_from_mask()
 
 
 @dataclass
@@ -178,8 +190,8 @@ class Action:
     # 駒を成るかどうかの判定
     is_promotion: jnp.ndarray = FALSE
 
-    @classmethod
-    def make_move(cls, piece, from_, to, is_promotion=FALSE):
+    @staticmethod
+    def make_move(piece, from_, to, is_promotion=FALSE):
         return Action(
             is_drop=False,
             piece=piece,
@@ -188,26 +200,43 @@ class Action:
             is_promotion=is_promotion,
         )
 
-    @classmethod
-    def make_drop(cls, piece, to):
+    @staticmethod
+    def make_drop(piece, to):
         return Action(is_drop=True, piece=piece, to=to)
 
-    @classmethod
-    def from_dlshogi_action(cls, state: State, action: jnp.ndarray):
+    @staticmethod
+    def from_dlshogi_action(state: State, action: jnp.ndarray):
+        action = jnp.int8(action)
+        # action = jnp.int32(action)  # NOTE: action (e.g., 2000) is bigger than int8
         direction, to = action // 81, action % 81
         is_drop = direction >= 20
-        from_ = ...  # TODO: write me
+        # Compute <from> from <dir, to>
+        #
+        # LEGAL_FROM_MASK[UP, 18]  # to = 81
+        # x x x x t x x
+        # x x x x o x x
+        # x x x x o x x
+        # x x x x o x x
+        # x x x x o x x
+        #
+        # legal_moves[:, 18]  # to = 18
+        # x x o x t x x
+        # x x x x x x x
+        # x x o x o x x
+        # x x x x x x x
+        # x x x x x x x
+        mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
+        legal_moves, _, _ = _legal_actions(state)  # TODO: cache legal moves
+        mask2 = legal_moves[:, to]  # (81,)
+        from_ = jnp.nonzero(mask1 & mask2, size=1)[0].item()
+
         piece = jax.lax.cond(
             is_drop,
             lambda: direction - 20,
             lambda: state.piece_board[from_],
         )
         is_promotion = (10 <= direction) & (direction < 20)
-        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promtotion=is_promotion)  # type: ignore
-
-    def to_dlshogi_action(self) -> jnp.ndarray:
-        direction = jax.lax.cond(self.is_drop, lambda: ...)
-        return 81 * direction + self.to
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
 def _step(state: State, action: Action) -> State:
@@ -684,6 +713,51 @@ def _apply_effects(state: State):
     raw_effect_boards = _apply_raw_effects(state)
     effect_filter_boards = _apply_effect_filter(state)
     return raw_effect_boards & ~effect_filter_boards
+
+
+def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
+    # legal_moves から legal_action_mask を作る。toを固定して、
+    #
+    # legal_from = legal_moves[:, 18]  # to = 18
+    # x x o x t x x
+    # x x x x x x x
+    # x x o x o x x
+    # x x x x x x x
+    # x x x x x x x
+    #
+    # があたえられたとき、 (10, 81, 81) の
+    #
+    # LEGAL_FROM_MASK[UP, 18]  # to = 81
+    # x x x x t x x
+    # x x x x o x x
+    # x x x x o x x
+    # x x x x o x x
+    # x x x x o x x
+    #
+    # とandを取って、anyを取れば、(dir=UP, to=18)がTrueか否かわかる
+    legal_moves, legal_promotions, legal_drops = legal_actions
+    dir_ = jnp.arange(10)
+
+    def f(d):
+        return (
+            legal_moves & (legal_promotions != 2) & LEGAL_FROM_MASK[d, :]
+        ).any(axis=0)
+
+    def g(d):
+        return (
+            legal_moves & (legal_promotions != 0) & LEGAL_FROM_MASK[d, :]
+        ).any(axis=0)
+
+    legal_action_mask_wo_promotion = jax.vmap(f)(dir_)
+    legal_action_mask_w_promotion = jax.vmap(g)(dir_)
+    legal_action_mask = jnp.concatenate(
+        [
+            legal_action_mask_wo_promotion,
+            legal_action_mask_w_promotion,
+            legal_drops,
+        ]
+    )
+    return legal_action_mask.flatten()
 
 
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:

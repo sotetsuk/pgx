@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate
+from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate, _to_direction
 
 
 # check visualization results by image preview plugins
@@ -287,3 +287,78 @@ def test_legal_drops():
     _, _, legal_drops = _legal_actions(s)
     assert not legal_drops[GOLD, xy2i(1, 5)]  # 角の利きを遮るが、両王手なのでNG
     assert not legal_drops[GOLD, xy2i(5, 5)]  # 飛の利きを遮るが、両王手なのでNG
+
+
+def test_dlshogi_action():
+    # from dlshogi action to Action
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(5, 9)].set(LANCE)
+    )
+    visualize(s, "tests/assets/shogi/dlshogi_action_001.svg")
+    dir_ = 0  # UP
+    to = xy2i(5, 5)
+    dlshogi_action = jnp.int8(dir_ * 81 + to)
+    action: Action = Action.from_dlshogi_action(s, dlshogi_action)
+    assert not action.is_drop
+    assert action.from_ == xy2i(5, 9)
+    assert action.to == xy2i(5, 5)
+    assert not action.is_promotion
+
+    # check int, int32
+    dlshogi_action = jnp.int8(dir_ * 81 + to)  # int
+    action: Action = Action.from_dlshogi_action(s, dlshogi_action)
+    assert action.from_ == xy2i(5, 9)
+    dlshogi_action = dir_ * 81 + to  # int32
+    action: Action = Action.from_dlshogi_action(s, dlshogi_action)
+    assert action.from_ == xy2i(5, 9)
+
+    # 歩で香車の利きが隠れている場合
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(5, 9)].set(LANCE)
+        .at[xy2i(5, 6)].set(PAWN)
+    )
+    visualize(s, "tests/assets/shogi/dlshogi_action_002.svg")
+    dir_ = 0  # UP
+    to = xy2i(5, 5)
+    dlshogi_action = jnp.int32(dir_ * 81 + to)
+    action: Action = Action.from_dlshogi_action(s, dlshogi_action)
+    assert not action.is_drop
+    assert action.from_ != xy2i(5, 9)  # 香ではない
+    assert action.from_ == xy2i(5, 6)  # (5, 5)歩から
+    assert action.to == xy2i(5, 5)
+    assert not action.is_promotion
+
+    # from legal moves to legal action mask
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(5, 9)].set(LANCE)
+    )
+    visualize(s, "tests/assets/shogi/dlshogi_action_003.svg")
+    legal_actions = _legal_actions(s)
+    legal_action_mask = _to_direction(legal_actions)
+    dir_ = 5  # UP
+    assert legal_action_mask.shape == (27 * 81,)
+    assert legal_action_mask.sum() != 0
+    assert legal_action_mask[dir_ * 81 + xy2i(5, 5)]
+    assert legal_action_mask[dir_ * 81 + xy2i(5, 2)]
+    assert not legal_action_mask[dir_ * 81 + xy2i(5, 1)]  # have to promote
+    assert legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 3)]  # can promote
+    assert not legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 4)]  # cannot promote
+
+    # drop
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board
+        .at[xy2i(1, 7)].set(EMPTY),
+        hand=s.hand.at[0, PAWN].set(1)
+    )
+    visualize(s, "tests/assets/shogi/dlshogi_action_004.svg")
+    legal_actions = _legal_actions(s)
+    legal_action_mask = _to_direction(legal_actions)
+    assert legal_action_mask[20 * 81 + xy2i(1, 5)]
+    assert not legal_action_mask[20 * 81 +  xy2i(2, 5)]
