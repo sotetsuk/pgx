@@ -743,7 +743,6 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     legal_moves, legal_promotions, legal_drops = legal_actions
     dir_ = jnp.arange(10)
 
-    # legal_moves => legal_action_mask
     def func(d):
         mask1 = LEGAL_FROM_MASK[d, :]  # (81,)
         mask2 = legal_moves  # (81,)
