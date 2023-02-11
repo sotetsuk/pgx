@@ -350,4 +350,15 @@ def test_dlshogi_action():
     assert legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 3)]  # can promote
     assert not legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 4)]  # cannot promote
 
-    # TODO: drop
+    # drop
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board
+        .at[xy2i(1, 7)].set(EMPTY),
+        hand=s.hand.at[0, PAWN].set(1)
+    )
+    visualize(s, "tests/assets/shogi/dlshogi_action_004.svg")
+    legal_actions = _legal_actions(s)
+    legal_action_mask = _to_direction(legal_actions)
+    assert legal_action_mask[20 * 81 + xy2i(1, 5)]
+    assert not legal_action_mask[20 * 81 +  xy2i(2, 5)]
