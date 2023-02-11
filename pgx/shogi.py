@@ -742,15 +742,23 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     dir_ = jnp.arange(10)
 
     def f(d):
-        return (legal_moves & (legal_promotions != 2) & LEGAL_FROM_MASK[d, :]).any(axis=0)
+        return (
+            legal_moves & (legal_promotions != 2) & LEGAL_FROM_MASK[d, :]
+        ).any(axis=0)
 
     def g(d):
-        return (legal_moves & (legal_promotions != 0) & LEGAL_FROM_MASK[d, :]).any(axis=0)
+        return (
+            legal_moves & (legal_promotions != 0) & LEGAL_FROM_MASK[d, :]
+        ).any(axis=0)
 
     legal_action_mask_wo_promotion = jax.vmap(f)(dir_)
     legal_action_mask_w_promotion = jax.vmap(g)(dir_)
     legal_action_mask = jnp.concatenate(
-        [legal_action_mask_wo_promotion, legal_action_mask_w_promotion, legal_drops]
+        [
+            legal_action_mask_wo_promotion,
+            legal_action_mask_w_promotion,
+            legal_drops,
+        ]
     )
     return legal_action_mask
 
