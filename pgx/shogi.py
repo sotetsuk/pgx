@@ -122,8 +122,15 @@ class State:
 
 
 def init(rng):
+    state = _init()
+    rng, subkey = jax.random.split(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(subkey))
+    return state.replace(curr_player=curr_player)
+
+
+def _init():
     """Initialize Shogi State.
-    >>> s = init()
+    >>> s = _init()
     >>> s.piece_board.reshape((9, 9))
     Array([[15, -1, 14, -1, -1, -1,  0, -1,  1],
            [16, 18, 14, -1, -1, -1,  0,  5,  2],
@@ -145,10 +152,8 @@ def init(rng):
            [-1,  4, -1, -1, -1, -1, -1,  5, -1],
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
-    rng, subkey = jax.random.split(rng)
-    curr_player = jnp.int8(jax.random.bernoulli(subkey))
+    state = State()
     legal_actions = _legal_actions(state)
-    state = State(curr_player=curr_player)
     return state.replace(  # type: ignore
         legal_action_mask=_to_direction(legal_actions)
     )
@@ -483,7 +488,7 @@ def _pseudo_legal_drops(
 ) -> jnp.ndarray:
     """Return (7, 81) boolean array
 
-    >>> s = init()
+    >>> s = _init()
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
     >>> effect_boards = _apply_effects(s)
@@ -635,7 +640,7 @@ def _promote(piece: jnp.ndarray) -> jnp.ndarray:
 def _apply_raw_effects(state: State) -> jnp.ndarray:
     """Obtain raw effect boards from piece board by batch.
 
-    >>> s = init()
+    >>> s = _init()
     >>> jnp.rot90(_apply_raw_effects(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
@@ -671,7 +676,7 @@ def _to_large_piece_ix(piece):
 
 def _apply_effect_filter(state: State) -> jnp.ndarray:
     """
-    >>> s = init()
+    >>> s = _init()
     >>> jnp.rot90(_apply_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
@@ -709,7 +714,7 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
 
 def _apply_effects(state: State):
     """
-    >>> s = init()
+    >>> s = _init()
     >>> jnp.rot90(_apply_effects(s)[8].reshape(9, 9), k=3)  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -798,7 +803,7 @@ def to_sfen(state: State):
     - 持ち駒は先手の物から順番はRBGSNLPの順
     - 最後に手数（1で固定）
 
-    >>> s = init()
+    >>> s = _init()
     >>> to_sfen(s)
     'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1'
     """

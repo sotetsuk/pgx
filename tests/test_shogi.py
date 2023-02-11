@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate, _to_direction
+from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate, _to_direction
 
 
 # check visualization results by image preview plugins
@@ -21,12 +21,12 @@ def xy2i(x, y):
 
 
 def test_init():
-    s = init()
+    s = _init()
     assert jnp.unique(s.piece_board).shape[0] == 1 + 8 + 8
 
 
 def test_step_move():
-    s = init()
+    s = _init()
 
     # 26歩
     piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
@@ -64,7 +64,7 @@ def test_step_move():
 
 
 def test_step_drop():
-    s = init()
+    s = _init()
     s = s.replace(hand=s.hand.at[:, :].set(1))  # type: ignore
     # 52飛車打ち
     piece, to = ROOK, xy2i(5, 2)
@@ -78,7 +78,7 @@ def test_step_drop():
 
 
 def test_flip():
-    s = init()
+    s = _init()
      # 26歩
     piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
     a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
@@ -105,7 +105,7 @@ def test_flip():
 
 def test_legal_moves():
     # Promotion
-    s = init()
+    s = _init()
     piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)  # 77歩
     a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
     s = _step_move(s, a)
@@ -129,7 +129,7 @@ def test_legal_moves():
     # Suicide action
 
     # King cannot move into opponent pieces' effect
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE)
         .at[xy2i(5, 7)].set(EMPTY)
@@ -141,14 +141,14 @@ def test_legal_moves():
     assert not legal_moves[xy2i(6, 8), xy2i(5, 8)]
 
     # Gold is pinned
-    s = init()
+    s = _init()
     s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE).at[xy2i(5, 7)].set(GOLD))
     visualize(s, "tests/assets/shogi/legal_moves_004.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
     # Gold is not pinned
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board
         .at[:].set(EMPTY)
@@ -170,7 +170,7 @@ def test_legal_moves():
     # Leave king check
 
     # King should escape from Lance
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board
         .at[xy2i(5, 5)].set(OPP_LANCE)
@@ -184,7 +184,7 @@ def test_legal_moves():
     assert not legal_moves[xy2i(2, 7), xy2i(2, 6)]  # 王を放置するのはNG
 
     # Checking piece should be captured
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board
         .at[:].set(EMPTY)
@@ -198,7 +198,7 @@ def test_legal_moves():
     assert legal_moves[xy2i(6, 1), xy2i(1, 1)]      # 飛車が王手をかけている香を取るのはOK
 
     # 合駒
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -211,7 +211,7 @@ def test_legal_moves():
     assert legal_moves[xy2i(2, 9), xy2i(2, 8)]  # 角の利きを遮るのでOK
 
     # 両王手
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -229,7 +229,7 @@ def test_legal_moves():
 
 def test_legal_drops():
     # 打ち歩詰
-    s = init()
+    s = _init()
     s = s.replace(hand=s.hand.at[0, PAWN].add(1),
                   piece_board=s.piece_board.at[xy2i(5, 7)].set(EMPTY).at[xy2i(8, 2)].set(EMPTY))
     visualize(s, "tests/assets/shogi/legal_drops_001.svg")
@@ -260,7 +260,7 @@ def test_legal_drops():
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 合駒
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -275,7 +275,7 @@ def test_legal_drops():
     assert not legal_drops[GOLD, xy2i(2, 6)]  # 合駒になってないのはNG
 
     # 両王手
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -291,7 +291,7 @@ def test_legal_drops():
 
 def test_dlshogi_action():
     # from dlshogi action to Action
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
@@ -315,7 +315,7 @@ def test_dlshogi_action():
     assert action.from_ == xy2i(5, 9)
 
     # 歩で香車の利きが隠れている場合
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
@@ -333,7 +333,7 @@ def test_dlshogi_action():
     assert not action.is_promotion
 
     # from legal moves to legal action mask
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
@@ -351,7 +351,7 @@ def test_dlshogi_action():
     assert not legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 4)]  # cannot promote
 
     # drop
-    s = init()
+    s = _init()
     s = s.replace(
         piece_board=s.piece_board
         .at[xy2i(1, 7)].set(EMPTY),
