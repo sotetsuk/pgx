@@ -114,7 +114,9 @@ class State:
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(2187, dtype=jnp.bool_)  # 27 * 81
+    legal_action_mask: jnp.ndarray = jnp.zeros(
+        2187, dtype=jnp.bool_
+    )  # 27 * 81
     # --- Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
@@ -268,8 +270,7 @@ def _step(state: State, action: Action) -> State:
     # flip state
     state = _flip(state)
     state = state.replace(  # type: ignore
-        curr_player=(state.curr_player + 1) % 2,
-        turn=(state.turn + 1) % 2
+        curr_player=(state.curr_player + 1) % 2, turn=(state.turn + 1) % 2
     )
     legal_actions = _legal_actions(state)
     state.replace(legal_action_mask=_to_direction(legal_actions))  # type: ignore
