@@ -111,14 +111,26 @@ LEGAL_FROM_MASK = load_shogi_legal_from_mask()
 
 @dataclass
 class State:
+    curr_player: jnp.ndarray = jnp.int8(0)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
+    # --- Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
 
 
-def init():
+def init(rng):
+    state = _init()
+    rng, subkey = jax.random.split(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(subkey))
+    return state.replace(curr_player=curr_player)
+
+
+def _init():
     """Initialize Shogi State.
-    >>> s = init()
+    >>> s = _init()
     >>> s.piece_board.reshape((9, 9))
     Array([[15, -1, 14, -1, -1, -1,  0, -1,  1],
            [16, 18, 14, -1, -1, -1,  0,  5,  2],
@@ -140,7 +152,11 @@ def init():
            [-1,  4, -1, -1, -1, -1, -1,  5, -1],
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
-    return State()
+    state = State()
+    legal_actions = _legal_actions(state)
+    return state.replace(  # type: ignore
+        legal_action_mask=_to_direction(legal_actions)
+    )
 
 
 # 指し手のdataclass
@@ -239,6 +255,11 @@ class Action:
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
+def step(state: State, action: jnp.ndarray) -> State:
+    # Note: Assume that illegal action is already filtered by Env.step
+    return _step(state, Action.from_dlshogi_action(state, action))
+
+
 def _step(state: State, action: Action) -> State:
     # apply move/drop action
     state = jax.lax.cond(
@@ -246,8 +267,22 @@ def _step(state: State, action: Action) -> State:
     )
     # flip state
     state = _flip(state)
-    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
-    return state
+    state = state.replace(  # type: ignore
+        curr_player=(state.curr_player + 1) % 2, turn=(state.turn + 1) % 2
+    )
+    legal_actions = _legal_actions(state)
+    legal_action_mask = _to_direction(legal_actions)
+    state.replace(legal_action_mask=legal_action_mask)  # type: ignore
+    is_empty = legal_action_mask.any()
+    reward = jax.lax.cond(
+        is_empty,
+        lambda: jnp.float32([-1.0, 1.0]),
+        lambda: jnp.float32([0.0, 0.0]),
+    )
+    reward = jax.lax.cond(
+        state.curr_player != 0, lambda: reward[::-1], lambda: reward
+    )
+    return state.replace(reward=reward)  # type: ignore
 
 
 def _step_move(state: State, action: Action) -> State:
@@ -462,7 +497,7 @@ def _pseudo_legal_drops(
 ) -> jnp.ndarray:
     """Return (7, 81) boolean array
 
-    >>> s = init()
+    >>> s = _init()
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
     >>> effect_boards = _apply_effects(s)
@@ -614,7 +649,7 @@ def _promote(piece: jnp.ndarray) -> jnp.ndarray:
 def _apply_raw_effects(state: State) -> jnp.ndarray:
     """Obtain raw effect boards from piece board by batch.
 
-    >>> s = init()
+    >>> s = _init()
     >>> jnp.rot90(_apply_raw_effects(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
@@ -650,7 +685,7 @@ def _to_large_piece_ix(piece):
 
 def _apply_effect_filter(state: State) -> jnp.ndarray:
     """
-    >>> s = init()
+    >>> s = _init()
     >>> jnp.rot90(_apply_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
@@ -688,7 +723,7 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
 
 def _apply_effects(state: State):
     """
-    >>> s = init()
+    >>> s = _init()
     >>> jnp.rot90(_apply_effects(s)[8].reshape(9, 9), k=3)  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -777,7 +812,7 @@ def to_sfen(state: State):
     - 持ち駒は先手の物から順番はRBGSNLPの順
     - 最後に手数（1で固定）
 
-    >>> s = init()
+    >>> s = _init()
     >>> to_sfen(s)
     'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1'
     """
