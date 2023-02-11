@@ -298,7 +298,7 @@ def test_dlshogi_action():
     )
     visualize(s, "tests/assets/shogi/dlshogi_action_001.svg")
     dir_ = 0  # UP
-    to = 40   # (5, 5)
+    to = xy2i(5, 5)
     dlshogi_action = jnp.int8(dir_ * 81 + to)
     action: Action = Action.from_dlshogi_action(s, dlshogi_action)
     assert not action.is_drop
@@ -323,7 +323,7 @@ def test_dlshogi_action():
     )
     visualize(s, "tests/assets/shogi/dlshogi_action_002.svg")
     dir_ = 0  # UP
-    to = 40   # (5, 5)
+    to = xy2i(5, 5)
     dlshogi_action = jnp.int32(dir_ * 81 + to)
     action: Action = Action.from_dlshogi_action(s, dlshogi_action)
     assert not action.is_drop
@@ -342,11 +342,14 @@ def test_dlshogi_action():
     legal_actions = _legal_actions(s)
     legal_action_mask = _to_direction(legal_actions)
     dir_ = 5  # UP
-    to = 40   # (5,5)
+    to = xy2i(5, 5)
     assert legal_action_mask.shape == (27, 81)
     assert not legal_action_mask[:dir_, to].any()  # Up以外はfalse
     assert legal_action_mask.sum() != 0
-    assert legal_action_mask[dir_, 40]
+    assert legal_action_mask[dir_, xy2i(5, 5)]
+    assert legal_action_mask[dir_, xy2i(5, 2)]
+    assert not legal_action_mask[dir_, xy2i(5, 1)]  # have to promote
+    assert legal_action_mask[dir_ + 10, xy2i(5, 3)]  # can promote
+    assert not legal_action_mask[dir_ + 10, xy2i(5, 4)]  # cannot promote
 
-    # TODO: promotion
     # TODO: drop
