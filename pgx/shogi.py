@@ -111,13 +111,17 @@ LEGAL_FROM_MASK = load_shogi_legal_from_mask()
 
 @dataclass
 class State:
+    curr_player: jnp.ndarray = jnp.int8(0)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.zeros(2187, dtype=jnp.bool_)  # 27 * 81
+    # --- Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
-    legal_action_mask: jnp.ndarray = jnp.zeros(2187, dtype=jnp.bool_)  # 27 * 81
 
 
-def init():
+def init(rng):
     """Initialize Shogi State.
     >>> s = init()
     >>> s.piece_board.reshape((9, 9))
@@ -141,7 +145,13 @@ def init():
            [-1,  4, -1, -1, -1, -1, -1,  5, -1],
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
-    return State()
+    rng, subkey = jax.random.split(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(subkey))
+    legal_actions = _legal_actions(state)
+    state = State(curr_player=curr_player)
+    return state.replace(  # type: ignore
+        legal_action_mask=_to_direction(legal_actions)
+    )
 
 
 # 指し手のdataclass
@@ -252,7 +262,10 @@ def _step(state: State, action: Action) -> State:
     )
     # flip state
     state = _flip(state)
-    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
+    state = state.replace(  # type: ignore
+        curr_player=(state.curr_player + 1) % 2,
+        turn=(state.turn + 1) % 2
+    )
     legal_actions = _legal_actions(state)
     state.replace(legal_action_mask=_to_direction(legal_actions))  # type: ignore
     return state
