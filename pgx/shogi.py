@@ -209,21 +209,21 @@ class Action:
         action = jnp.int8(action)
         direction, to = action // 81, action % 81
         is_drop = direction >= 20
-
         # Compute <from> from <dir, to>
-        #   LEGAL_DIR_TO[UP, 18]  # to = 81
-        #   x x x x t x x
-        #   x x x x o x x
-        #   x x x x o x x
-        #   x x x x o x x
-        #   x x x x o x x
         #
-        #   legal_moves[:, 18]  # to = 18
-        #   x x o x t x x
-        #   x x x x x x x
-        #   x x o x o x x
-        #   x x x x x x x
-        #   x x x x x x x
+        # LEGAL_FROM_MASK[UP, 18]  # to = 81
+        # x x x x t x x
+        # x x x x o x x
+        # x x x x o x x
+        # x x x x o x x
+        # x x x x o x x
+        #
+        # legal_moves[:, 18]  # to = 18
+        # x x o x t x x
+        # x x x x x x x
+        # x x o x o x x
+        # x x x x x x x
+        # x x x x x x x
         mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
         legal_moves, _, _ = _legal_actions(state)  # TODO: cache legal moves
         mask2 = legal_moves[:, to]  # (81,)
@@ -721,25 +721,23 @@ def _apply_effects(state: State):
 def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     # legal_moves から legal_action_mask を作る。toを固定して、
     #
-    #  legal_from = legal_moves[:, 18]  # to = 18
-    #
-    #  x x o x t x x
-    #  x x x x x x x
-    #  x x o x o x x
-    #  x x x x x x x
-    #  x x x x x x x
+    # legal_from = legal_moves[:, 18]  # to = 18
+    # x x o x t x x
+    # x x x x x x x
+    # x x o x o x x
+    # x x x x x x x
+    # x x x x x x x
     #
     # があたえられたとき、 (10, 81, 81) の
     #
     # LEGAL_DIR_TO[UP, 18]  # to = 81
+    # x x x x t x x
+    # x x x x o x x
+    # x x x x o x x
+    # x x x x o x x
+    # x x x x o x x
     #
-    #  x x x x t x x
-    #  x x x x o x x
-    #  x x x x o x x
-    #  x x x x o x x
-    #  x x x x o x x
-    #
-    # と and を取って、anyを取れば、(dir=UP, to=18) がTrueか否かわかる
+    # とandを取って、anyを取れば、(dir=UP, to=18)がTrueか否かわかる
     legal_moves, legal_promotions, legal_drops = legal_actions
     dir_ = jnp.arange(10)
 
