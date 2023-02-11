@@ -719,31 +719,7 @@ def _apply_effects(state: State):
 
 
 def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
-    # step時に dlshogi action から action へ変換する必要がある
-    #
-    #  LEGAL_DIR_TO  # (10, 81, 81) = (dir, to, from)
-    #
-    #  LEGAL_DIR_TO[UP, 18]  # to = 81
-    #
-    #  x x x x t x x
-    #  x x x x o x x
-    #  x x x x o x x
-    #  x x x x o x x
-    #  x x x x o x x
-    #
-    #  legal_from = legal_moves[:, 18]  # to = 18
-    #
-    #  x x o x t x x
-    #  x x x x x x x
-    #  x x o x o x x
-    #  x x x x x x x
-    #  x x x x x x x
-    #
-    # これらをandとって、non_zeroを取ればよい
-
-    # legal_moves から legal_action_mask を作る
-    #
-    # toを固定して、
+    # legal_moves から legal_action_mask を作る。toを固定して、
     #
     #  legal_from = legal_moves[:, 18]  # to = 18
     #
@@ -765,14 +741,12 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     #
     # と and を取って、anyを取れば、(dir=UP, to=18) がTrueか否かわかる
     legal_moves, legal_promotions, legal_drops = legal_actions
-
     dir_ = jnp.arange(10)
-    to = jnp.arange(81)
 
     # legal_moves => legal_action_mask
     def func(d):
-        mask1 = LEGAL_FROM_MASK[d, to]  # (81,)
-        mask2 = legal_moves[:, to]  # (81,)
+        mask1 = LEGAL_FROM_MASK[d, :]  # (81,)
+        mask2 = legal_moves  # (81,)
         return (mask1 & mask2).any(axis=0)
 
     legal_action_mask = jax.vmap(func)(dir_)
