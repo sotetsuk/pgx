@@ -32,6 +32,7 @@ piece_board (81,):
   27 相手龍
 """
 
+from typing import Tuple
 from functools import partial
 
 import jax
@@ -717,7 +718,7 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _to_direction():
+def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     # step時に dlshogi action から action へ変換する必要がある
     #
     #  LEGAL_DIR_TO  # (10, 81, 81) = (dir, to, from)
@@ -763,19 +764,19 @@ def _to_direction():
     #  x x x x o x x
     #
     # と and を取って、anyを取れば、(dir=UP, to=18) がTrueか否かわかる
+    legal_moves, legal_promotions, legal_drops = legal_actions
 
-    LEGAL_FROM_MASK = jnp.zeros((10, 81, 81), dtype=jnp.bool_)  # dir, to, from
-    legal_moves = jnp.zeros((81, 81), dtype=jnp.bool_)
     dir_ = jnp.arange(10)
     to = jnp.arange(81)
 
     # legal_moves => legal_action_mask
-    def func(d, t):
-        mask1 = LEGAL_FROM_MASK[d, t]  # (81,)
-        mask2 = legal_moves[:, t]  # (81,)
-        return (mask1 & mask2).any()
+    def func(d):
+        mask1 = LEGAL_FROM_MASK[d, to]  # (81,)
+        mask2 = legal_moves[:, to]  # (81,)
+        return (mask1 & mask2).any(axis=0)
 
-    legal_action_mask = jax.vmap(jax.vmap(partial(func, t=to)))(d=dir_)
+    legal_action_mask = jax.vmap(func)(dir_)
+    return legal_action_mask
 
 
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:

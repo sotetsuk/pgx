@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate
+from pgx.shogi import _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate, _to_direction
 
 
 # check visualization results by image preview plugins
@@ -331,3 +331,18 @@ def test_dlshogi_action():
     assert action.from_ == xy2i(5, 6)  # (5, 5)歩から
     assert action.to == xy2i(5, 5)
     assert not action.is_promotion
+
+    # from legal moves to legal action mask
+    s = init()
+    s = s.replace(
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(5, 9)].set(LANCE)
+    )
+    visualize(s, "tests/assets/shogi/dlshogi_action_003.svg")
+    legal_actions = _legal_actions(s)
+    legal_action_mask = _to_direction(legal_actions)
+    dir_ = 5  # UP
+    to = 40   # (5,5)
+    assert not legal_action_mask[:dir_, to].any()  # Up以外はfalse
+    assert legal_action_mask.sum() != 0
+    assert legal_action_mask[dir_, 40]
