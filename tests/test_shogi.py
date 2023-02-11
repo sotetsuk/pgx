@@ -347,3 +347,6 @@ def test_dlshogi_action():
     assert not legal_action_mask[:dir_, to].any()  # Up以外はfalse
     assert legal_action_mask.sum() != 0
     assert legal_action_mask[dir_, 40]
+
+    # TODO: promotion
+    # TODO: drop
