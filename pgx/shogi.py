@@ -730,7 +730,7 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     #
     # があたえられたとき、 (10, 81, 81) の
     #
-    # LEGAL_DIR_TO[UP, 18]  # to = 81
+    # LEGAL_FROM_MASK[UP, 18]  # to = 81
     # x x x x t x x
     # x x x x o x x
     # x x x x o x x
@@ -742,9 +742,7 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     dir_ = jnp.arange(10)
 
     def func(d):
-        mask1 = LEGAL_FROM_MASK[d, :]  # (81,)
-        mask2 = legal_moves  # (81,)
-        return (mask1 & mask2).any(axis=0)
+        return (legal_moves & LEGAL_FROM_MASK[d, :]).any(axis=0)
 
     legal_action_mask = jax.vmap(func)(dir_)
     legal_action_mask = jnp.concatenate(
