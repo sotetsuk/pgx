@@ -114,6 +114,7 @@ class State:
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    legal_action_mask: jnp.ndarray = jnp.zeros(2187, dtype=jnp.bool_)  # 27 * 81
 
 
 def init():
@@ -239,6 +240,11 @@ class Action:
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
+def step(state: State, action: jnp.ndarray) -> State:
+    # Note: Assume that illegal action is already filtered by Env.step
+    return _step(state, Action.from_dlshogi_action(state, action))
+
+
 def _step(state: State, action: Action) -> State:
     # apply move/drop action
     state = jax.lax.cond(
@@ -247,6 +253,8 @@ def _step(state: State, action: Action) -> State:
     # flip state
     state = _flip(state)
     state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
+    legal_actions = _legal_actions(state)
+    state.replace(legal_action_mask=_to_direction(legal_actions))  # type: ignore
     return state
 
 
