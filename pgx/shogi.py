@@ -749,6 +749,9 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
         return (mask1 & mask2).any(axis=0)
 
     legal_action_mask = jax.vmap(func)(dir_)
+    legal_action_mask = jnp.concatenate(
+        [legal_action_mask, legal_action_mask, legal_drops]
+    )
     return legal_action_mask
 
 

@@ -343,6 +343,7 @@ def test_dlshogi_action():
     legal_action_mask = _to_direction(legal_actions)
     dir_ = 5  # UP
     to = 40   # (5,5)
+    assert legal_action_mask.shape == (27, 81)
     assert not legal_action_mask[:dir_, to].any()  # Up以外はfalse
     assert legal_action_mask.sum() != 0
     assert legal_action_mask[dir_, 40]
