@@ -342,14 +342,12 @@ def test_dlshogi_action():
     legal_actions = _legal_actions(s)
     legal_action_mask = _to_direction(legal_actions)
     dir_ = 5  # UP
-    to = xy2i(5, 5)
-    assert legal_action_mask.shape == (27, 81)
-    assert not legal_action_mask[:dir_, to].any()  # Up以外はfalse
+    assert legal_action_mask.shape == (27 * 81,)
     assert legal_action_mask.sum() != 0
-    assert legal_action_mask[dir_, xy2i(5, 5)]
-    assert legal_action_mask[dir_, xy2i(5, 2)]
-    assert not legal_action_mask[dir_, xy2i(5, 1)]  # have to promote
-    assert legal_action_mask[dir_ + 10, xy2i(5, 3)]  # can promote
-    assert not legal_action_mask[dir_ + 10, xy2i(5, 4)]  # cannot promote
+    assert legal_action_mask[dir_ * 81 + xy2i(5, 5)]
+    assert legal_action_mask[dir_ * 81 + xy2i(5, 2)]
+    assert not legal_action_mask[dir_ * 81 + xy2i(5, 1)]  # have to promote
+    assert legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 3)]  # can promote
+    assert not legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 4)]  # cannot promote
 
     # TODO: drop

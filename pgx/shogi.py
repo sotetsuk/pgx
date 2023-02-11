@@ -756,7 +756,7 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
             legal_drops,
         ]
     )
-    return legal_action_mask
+    return legal_action_mask.flatten()
 
 
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:
