@@ -206,9 +206,9 @@ class Action:
 
     @staticmethod
     def from_dlshogi_action(state: State, action: jnp.ndarray):
-        action = jnp.int8(action)
-        # action = jnp.int32(action)  # NOTE: action (e.g., 2000) is bigger than int8
-        direction, to = action // 81, action % 81
+        # NOTE: action (e.g., 2000) is bigger than int8
+        action = jnp.int32(action)
+        direction, to = jnp.int8(action // 81), jnp.int8(action % 81)
         is_drop = direction >= 20
         # Compute <from> from <dir, to>
         #
