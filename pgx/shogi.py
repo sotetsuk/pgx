@@ -244,7 +244,7 @@ class Action:
         mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
         legal_moves, _, _ = _legal_actions(state)  # TODO: cache legal moves
         mask2 = legal_moves[:, to]  # (81,)
-        from_ = jnp.nonzero(mask1 & mask2, size=1)[0].item()
+        from_ = jnp.nonzero(mask1 & mask2, size=1)[0][0]
 
         piece = jax.lax.cond(
             is_drop,
@@ -392,7 +392,7 @@ def _filter_suicide_moves(
 def _find_pinned_pieces(state, flipped_state):
     flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
     flipped_king_pos = (
-        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0][0]
     )
     flipped_effecting_mask = flipped_opp_raw_effect_boards[
         :, flipped_king_pos
@@ -558,7 +558,7 @@ def _filter_pawn_drop_mate(
     """
 
     pb = state.piece_board
-    opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0].item()
+    opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0][0]
     opp_king_head_pos = (
         opp_king_pos + 1
     )  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
@@ -588,7 +588,7 @@ def _filter_pawn_drop_mate(
 
 def _check_info(state, flipped_state, flipped_effect_boards):
     flipped_king_pos = (
-        80 - jnp.nonzero(state.piece_board == KING, size=1)[0].item()
+        80 - jnp.nonzero(state.piece_board == KING, size=1)[0][0]
     )
     flipped_effecting_mask = flipped_effect_boards[
         :, flipped_king_pos
