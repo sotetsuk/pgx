@@ -11,6 +11,7 @@ POINT = 2
 BLACK_CHAR = "@"
 WHITE_CHAR = "O"
 POINT_CHAR = "+"
+INVALID_POINT = 999
 
 dx = jnp.int32([-1, +1, 0, 0])
 dy = jnp.int32([0, 0, -1, +1])
@@ -138,15 +139,13 @@ def init(
     return curr_player, GoState(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.full(
-            (2, size * size), -1, dtype=jnp.int32
+            (2, size**2), -1, dtype=jnp.int32
         ),  # type:ignore
-        num_pseudo=jnp.zeros((2, size * size), dtype=jnp.int32),
-        idx_sum=jnp.full((2, size * size), -1, dtype=jnp.int32),  # type:ignore
-        idx_squared_sum=jnp.full(
-            (2, size * size), -1, dtype=jnp.int32
-        ),  # type:ignore
-        legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
-        game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
+        num_pseudo=jnp.zeros((2, size**2), dtype=jnp.int32),
+        idx_sum=jnp.zeros((2, size**2), dtype=jnp.int32),
+        idx_squared_sum=jnp.zeros((2, size**2), dtype=jnp.int32),
+        legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
+        game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
     )
 
@@ -159,11 +158,14 @@ def step(
 
     # add legal actions
     _state = _state.replace(  # type:ignore
-        legal_action_mask=legal_actions(_state, size)
+        legal_action_mask=_state.legal_action_mask.at[:-1]
+        .set(legal_actions(_state, size))
+        .at[-1]
+        .set(TRUE)
     )
 
     # update log
-    new_log = jnp.roll(_state.game_log, size * size)
+    new_log = jnp.roll(_state.game_log, size**2)
     new_log = new_log.at[0].set(get_board(_state))
     _state = _state.replace(game_log=new_log)  # type:ignore
 
@@ -218,6 +220,17 @@ def _not_pass_move(
         0, 4, lambda i, s: _check_around_xy(i, s, xy), state
     )
 
+    # 取り除ける石は取り除く
+    # state = state.replace(
+    #    ren_id_board=_state.ren_id_board.at[_opponent_color(state)].set(
+    #        jnp.where(
+    #            _state.ren_id_board[_opponent_color(state)] == INVALID_POINT,
+    #            -1,
+    #            _state.ren_id_board[_opponent_color(state)],
+    #        )
+    #    ),
+    # )
+
     # 自殺手
     is_illegal = (
         state.num_pseudo[
@@ -266,7 +279,7 @@ def _check_around_xy(i, state: GoState, xy):
         lambda: state,
     )
     state = jax.lax.cond(
-        ((~is_off) & (~is_my_ren) & is_opp_ren),
+        ((~is_off) & is_opp_ren),
         lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
         lambda: state,
     )
@@ -311,10 +324,9 @@ def _is_atari(state: GoState, color, ren_id):
     """
     colorのren_idの連がアタリか判定する
     """
-    return (
-        state.idx_sum[color, ren_id] ** 2
-        == state.idx_squared_sum[color, ren_id]
-    )
+    return (state.idx_sum[color, ren_id] ** 2) == state.idx_squared_sum[
+        color, ren_id
+    ] * state.num_pseudo[color, ren_id]
 
 
 def _single_liberty(state: GoState, color, ren_id):
@@ -349,23 +361,58 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
         _state.idx_squared_sum[_my_color(_state), large_id] - (_xy + 1) ** 2
     )
 
-    # large_idを消す <- 消さなくても良いかも
+    # return _state.replace(  # type:ignore
+    #    ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
+    #        ren_id_board
+    #    ),
+    #    num_pseudo=_state.num_pseudo.at[_my_color(_state), small_id].add(
+    #        _other_num_pseudo
+    #    ),
+    #    idx_sum=_state.idx_sum.at[_my_color(_state), small_id].add(
+    #        _other_idx_sum
+    #    ),
+    #    idx_squared_sum=_state.idx_squared_sum.at[
+    #        _my_color(_state), small_id
+    #    ].add(_other_idx_squared_sum),
+    # )
+
     return jax.lax.cond(
         new_id == adj_ren_id,
-        lambda: _state,
         lambda: _state.replace(  # type:ignore
             ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
                 ren_id_board
             ),
-            num_pseudo=_state.num_pseudo.at[_my_color(_state), small_id].add(
-                _other_num_pseudo
+            num_pseudo=_state.num_pseudo.at[_my_color(_state), small_id].set(
+                _state.num_pseudo[_my_color(_state), small_id] - 1
             ),
-            idx_sum=_state.idx_sum.at[_my_color(_state), small_id].add(
-                _other_idx_sum
+            idx_sum=_state.idx_sum.at[_my_color(_state), small_id].set(
+                _state.idx_sum[_my_color(_state), small_id] - (_xy + 1)
             ),
             idx_squared_sum=_state.idx_squared_sum.at[
                 _my_color(_state), small_id
-            ].add(_other_idx_squared_sum),
+            ].set(
+                _state.idx_squared_sum[_my_color(_state), small_id]
+                - (_xy + 1) ** 2
+            ),
+        ),
+        lambda: _state.replace(  # type:ignore
+            ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
+                ren_id_board
+            ),
+            num_pseudo=_state.num_pseudo.at[_my_color(_state), small_id]
+            .add(_other_num_pseudo)
+            .at[_my_color(_state), large_id]
+            .set(0),
+            idx_sum=_state.idx_sum.at[_my_color(_state), small_id]
+            .add(_other_idx_sum)
+            .at[_my_color(_state), large_id]
+            .set(0),
+            idx_squared_sum=_state.idx_squared_sum.at[
+                _my_color(_state), small_id
+            ]
+            .add(_other_idx_squared_sum)
+            .at[_my_color(_state), large_id]
+            .set(0),
         ),
     )
 
@@ -401,6 +448,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     oppo_color = _opponent_color(_state)
     surrounded_stones = _state.ren_id_board[oppo_color] == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
+    # 一時的に無効化（後で取り除く）
     oppo_ren_id_board = jnp.where(
         surrounded_stones, -1, _state.ren_id_board[oppo_color]
     )
@@ -417,9 +465,9 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[oppo_color].set(oppo_ren_id_board),
         num_pseudo=_state.num_pseudo.at[oppo_color, _rm_ren_id].set(0),
-        idx_sum=_state.idx_sum.at[oppo_color, _rm_ren_id].set(-1),
+        idx_sum=_state.idx_sum.at[oppo_color, _rm_ren_id].set(0),
         idx_squared_sum=_state.idx_squared_sum.at[oppo_color, _rm_ren_id].set(
-            -1
+            0
         ),
         agehama=_state.agehama.at[_my_color(_state)].add(agehama),
         kou=jnp.int32(_rm_stone_xy),  # type:ignore
@@ -460,14 +508,59 @@ def _check_if_adj_is_removed(state, i, xy, s_stones, ren_id):
 
 
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
-    illegal_action = jax.lax.map(
-        lambda xy: _update_state_wo_legal_action(state, xy, size)[
-            0
-        ].terminated,
-        jnp.arange(0, size * size + 1),
+    def is_exception(xy, board):
+        ren_id = state.ren_id_board[_opponent_color(state), xy]
+        exception_xy = _single_liberty(state, _opponent_color(state), ren_id)
+        return jax.lax.cond(
+            (ren_id >= 0) & _is_atari(state, _opponent_color(state), ren_id),
+            lambda: board.at[exception_xy].set(TRUE),
+            lambda: board,
+        )
+
+    exception = jnp.zeros(size**2, dtype=jnp.bool_)
+    exception = jax.lax.fori_loop(0, size**2, is_exception, exception)
+
+    _legal_action_mask = jax.lax.map(
+        lambda xy: _is_legal_action(state, xy),
+        jnp.arange(0, size**2),
     )
-    legal_action = ~illegal_action
-    return legal_action.at[size * size].set(TRUE)
+    _legal_action_mask = _legal_action_mask | exception
+    return jax.lax.cond(
+        (state.kou == -1),
+        lambda: _legal_action_mask,
+        lambda: _legal_action_mask.at[state.kou].set(FALSE),
+    )
+
+
+def _is_legal_action(state: GoState, xy):
+    point = (state.ren_id_board[BLACK, xy] == -1) & (
+        state.ren_id_board[WHITE, xy] == -1
+    )
+
+    def check_around(i, xy, state):
+        # 呼吸点か、呼吸点2つ以上の味方連があればセーフ
+        my_color = _my_color(state)
+        x = xy // state.size + dx[i]
+        y = xy % state.size + dy[i]
+        adj_xy = x * state.size + y
+        is_off = _is_off_board(x, y, state.size)
+        my_ren_id = state.ren_id_board[my_color, adj_xy]
+        return ~is_off & (
+            _is_point(state, x, y)
+            | ((my_ren_id >= 0) & ~_is_atari(state, my_color, my_ren_id))
+        )
+
+    is_legal = point & jax.lax.fori_loop(
+        0, 4, lambda i, legal: legal | check_around(i, xy, state), FALSE
+    )
+
+    return is_legal
+
+
+def _is_point(_state, x, y):
+    return (_state.ren_id_board[0, x * _state.size + y] == -1) & (
+        _state.ren_id_board[1, x * _state.size + y] == -1
+    )
 
 
 def get_board(state: GoState) -> jnp.ndarray:
@@ -536,9 +629,9 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
         )
 
     count_ji = jax.vmap(count_ji)
-    score = count_ji(jnp.array([0, 1]))
+    score = count_ji(jnp.array([BLACK, WHITE]))
     r = jax.lax.cond(
-        score[0] - _state.komi > score[1],
+        score[BLACK] - _state.komi > score[WHITE],
         lambda: jnp.array([1, -1]),
         lambda: jnp.array([-1, 1]),
     )
