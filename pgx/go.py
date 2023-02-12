@@ -208,7 +208,8 @@ def _not_pass_move(
 ) -> Tuple[GoState, jnp.ndarray]:
     state = _state.replace(passed=False)  # type: ignore
     xy = _action
-    agehama_before = state.agehama[_my_color(state)]
+    my_color = _my_color(state)
+    agehama_before = state.agehama[my_color]
     is_illegal = _is_illegal_move(state, xy)  # 既に他の石が置かれている or コウ
 
     # 石を置く
@@ -221,32 +222,28 @@ def _not_pass_move(
     )
 
     # 取り除ける石は取り除く
+    _board = state.ren_id_board[_opponent_color(state)]
     state = state.replace(
         ren_id_board=state.ren_id_board.at[_opponent_color(state)].set(
             jnp.where(
-                state.ren_id_board[_opponent_color(state)] == INVALID_POINT,
+                _board == INVALID_POINT,
                 -1,
-                state.ren_id_board[_opponent_color(state)],
+                _board,
             )
         ),
     )
 
     # 自殺手
     is_illegal = (
-        state.num_pseudo[
-            _my_color(state), state.ren_id_board[_my_color(state), xy]
-        ]
-        == 0
+        state.num_pseudo[my_color, state.ren_id_board[my_color, xy]] == 0
     ) | is_illegal
 
     # コウの確認
-    kou = jax.lax.cond(
-        kou_occurred & state.agehama[_my_color(state)] - agehama_before == 1,
-        lambda: state.kou,
-        lambda: jnp.int32(-1),
+    state = jax.lax.cond(
+        kou_occurred & state.agehama[my_color] - agehama_before == 1,
+        lambda: state,
+        lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
-
-    state = state.replace(kou=kou)
 
     return jax.lax.cond(
         is_illegal,
@@ -256,24 +253,24 @@ def _not_pass_move(
 
 
 def _check_around_xy(i, state: GoState, xy):
-
+    my_color = _my_color(state)
     x = xy // state.size + dx[i]
     y = xy % state.size + dy[i]
     adj_xy = x * state.size + y
 
-    put_ren_id = state.ren_id_board[_my_color(state), xy]
+    put_ren_id = state.ren_id_board[my_color, xy]
 
     is_off = _is_off_board(x, y, state.size) | (
         state.ren_id_board[_opponent_color(state), adj_xy] == INVALID_POINT
     )
-    is_my_ren = state.ren_id_board[_my_color(state), adj_xy] != -1
+    is_my_ren = state.ren_id_board[my_color, adj_xy] != -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
     replaced_state = state.replace(  # type:ignore
-        num_pseudo=state.num_pseudo.at[_my_color(state), put_ren_id].add(1),
-        idx_sum=state.idx_sum.at[_my_color(state), put_ren_id].add(adj_xy + 1),
-        idx_squared_sum=state.idx_squared_sum.at[
-            _my_color(state), put_ren_id
-        ].add((adj_xy + 1) ** 2),
+        num_pseudo=state.num_pseudo.at[my_color, put_ren_id].add(1),
+        idx_sum=state.idx_sum.at[my_color, put_ren_id].add(adj_xy + 1),
+        idx_squared_sum=state.idx_squared_sum.at[my_color, put_ren_id].add(
+            (adj_xy + 1) ** 2
+        ),
     )
     state = jax.lax.cond(
         ((~is_off) & (~is_my_ren) & (~is_opp_ren)),
@@ -312,13 +309,12 @@ def _illegal_move(
 
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
+    my_color = _my_color(_state)
     return _state.replace(  # type:ignore
-        ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(_xy),
-        num_pseudo=_state.num_pseudo.at[_my_color(_state), _xy].set(0),
-        idx_sum=_state.idx_sum.at[_my_color(_state), _xy].set(0),
-        idx_squared_sum=_state.idx_squared_sum.at[_my_color(_state), _xy].set(
-            0
-        ),
+        ren_id_board=_state.ren_id_board.at[my_color, _xy].set(_xy),
+        num_pseudo=_state.num_pseudo.at[my_color, _xy].set(0),
+        idx_sum=_state.idx_sum.at[my_color, _xy].set(0),
+        idx_squared_sum=_state.idx_squared_sum.at[my_color, _xy].set(0),
     )
 
 
@@ -342,7 +338,8 @@ def _single_liberty(state: GoState, color, ren_id):
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
-    my_ren_id_board = _state.ren_id_board[_my_color(_state)]
+    my_color = _my_color(_state)
+    my_ren_id_board = _state.ren_id_board[my_color]
 
     new_id = my_ren_id_board[_xy]
     adj_ren_id = my_ren_id_board[_adj_xy]
@@ -357,63 +354,57 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
         my_ren_id_board == large_id, small_id, my_ren_id_board
     )
 
-    _other_num_pseudo = _state.num_pseudo[_my_color(_state), large_id] - 1
-    _other_idx_sum = _state.idx_sum[_my_color(_state), large_id] - (_xy + 1)
+    _other_num_pseudo = _state.num_pseudo[my_color, large_id] - 1
+    _other_idx_sum = _state.idx_sum[my_color, large_id] - (_xy + 1)
     _other_idx_squared_sum = (
-        _state.idx_squared_sum[_my_color(_state), large_id] - (_xy + 1) ** 2
+        _state.idx_squared_sum[my_color, large_id] - (_xy + 1) ** 2
     )
 
     # return _state.replace(  # type:ignore
-    #    ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
+    #    ren_id_board=_state.ren_id_board.at[my_color].set(
     #        ren_id_board
     #    ),
-    #    num_pseudo=_state.num_pseudo.at[_my_color(_state), small_id].add(
-    #        _other_num_pseudo
+    #    num_pseudo=_state.num_pseudo.at[my_color, small_id].set(
+    #        _state.num_pseudo[my_color, small_id] - 1
     #    ),
-    #    idx_sum=_state.idx_sum.at[_my_color(_state), small_id].add(
-    #        _other_idx_sum
+    #    idx_sum=_state.idx_sum.at[my_color, small_id].set(
+    #        _state.idx_sum[my_color, small_id] - (_xy + 1)
     #    ),
     #    idx_squared_sum=_state.idx_squared_sum.at[
-    #        _my_color(_state), small_id
-    #    ].add(_other_idx_squared_sum),
+    #        my_color, small_id
+    #    ].set(
+    #        _state.idx_squared_sum[my_color, small_id]
+    #        - (_xy + 1) ** 2
+    #    ),
     # )
 
     return jax.lax.cond(
         new_id == adj_ren_id,
         lambda: _state.replace(  # type:ignore
-            ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
-                ren_id_board
+            ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
+            num_pseudo=_state.num_pseudo.at[my_color, small_id].set(
+                _state.num_pseudo[my_color, small_id] - 1
             ),
-            num_pseudo=_state.num_pseudo.at[_my_color(_state), small_id].set(
-                _state.num_pseudo[_my_color(_state), small_id] - 1
+            idx_sum=_state.idx_sum.at[my_color, small_id].set(
+                _state.idx_sum[my_color, small_id] - (_xy + 1)
             ),
-            idx_sum=_state.idx_sum.at[_my_color(_state), small_id].set(
-                _state.idx_sum[_my_color(_state), small_id] - (_xy + 1)
-            ),
-            idx_squared_sum=_state.idx_squared_sum.at[
-                _my_color(_state), small_id
-            ].set(
-                _state.idx_squared_sum[_my_color(_state), small_id]
-                - (_xy + 1) ** 2
+            idx_squared_sum=_state.idx_squared_sum.at[my_color, small_id].set(
+                _state.idx_squared_sum[my_color, small_id] - (_xy + 1) ** 2
             ),
         ),
         lambda: _state.replace(  # type:ignore
-            ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
-                ren_id_board
-            ),
-            num_pseudo=_state.num_pseudo.at[_my_color(_state), small_id]
+            ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
+            num_pseudo=_state.num_pseudo.at[my_color, small_id]
             .add(_other_num_pseudo)
-            .at[_my_color(_state), large_id]
+            .at[my_color, large_id]
             .set(0),
-            idx_sum=_state.idx_sum.at[_my_color(_state), small_id]
+            idx_sum=_state.idx_sum.at[my_color, small_id]
             .add(_other_idx_sum)
-            .at[_my_color(_state), large_id]
+            .at[my_color, large_id]
             .set(0),
-            idx_squared_sum=_state.idx_squared_sum.at[
-                _my_color(_state), small_id
-            ]
+            idx_squared_sum=_state.idx_squared_sum.at[my_color, small_id]
             .add(_other_idx_squared_sum)
-            .at[_my_color(_state), large_id]
+            .at[my_color, large_id]
             .set(0),
         ),
     )
@@ -511,16 +502,18 @@ def _check_if_adj_is_removed(state, i, xy, s_stones, ren_id):
 
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     def is_exception(xy, board):
-        ren_id = state.ren_id_board[_opponent_color(state), xy]
-        exception_xy = _single_liberty(state, _opponent_color(state), ren_id)
+        oppo_color = _opponent_color(state)
+        ren_id = state.ren_id_board[oppo_color, xy]
+        exception_xy = _single_liberty(state, oppo_color, ren_id)
         return jax.lax.cond(
-            (ren_id >= 0) & _is_atari(state, _opponent_color(state), ren_id),
+            (ren_id >= 0) & _is_atari(state, oppo_color, ren_id),
             lambda: board.at[exception_xy].set(TRUE),
             lambda: board,
         )
 
-    exception = jnp.zeros(size**2, dtype=jnp.bool_)
-    exception = jax.lax.fori_loop(0, size**2, is_exception, exception)
+    exception = jax.lax.fori_loop(
+        0, size**2, is_exception, jnp.zeros(size**2, dtype=jnp.bool_)
+    )
 
     _legal_action_mask = jax.lax.map(
         lambda xy: _is_legal_action(state, xy),
