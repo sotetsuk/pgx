@@ -776,12 +776,16 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
 
     def f(t):
         return (
-            legal_moves[:, t] & (legal_promotions[:, t] != 2) & LEGAL_FROM_MASK[dir_, t, :]
+            legal_moves[:, t]
+            & (legal_promotions[:, t] != 2)
+            & LEGAL_FROM_MASK[dir_, t, :]
         ).any(axis=1)
 
     def g(t):
         return (
-                legal_moves[:, t] & (legal_promotions[:, t] != 0) & LEGAL_FROM_MASK[dir_, t, :]
+            legal_moves[:, t]
+            & (legal_promotions[:, t] != 0)
+            & LEGAL_FROM_MASK[dir_, t, :]
         ).any(axis=1)
 
     legal_action_mask_wo_promotion = jax.vmap(f)(to).transpose()
