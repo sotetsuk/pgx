@@ -368,11 +368,8 @@ def test_step():
     # init
     s = _init()
     visualize(s, "tests/assets/shogi/step_001.svg")
-    s = step(s, 268)
+    s = step(s, 3 * 81 + xy2i(3, 8))
     visualize(s, "tests/assets/shogi/step_002.svg")
-    s = step(s, 268)
+    s = step(s, 3 * 81 + xy2i(3, 8))
     visualize(s, "tests/assets/shogi/step_003.svg")
-    legal_actions = _legal_actions(s)
-    legal_action_mask = _to_direction(legal_actions)
-    print(_rotate(s.legal_action_mask.reshape(27, 81)[3].reshape(9, 9)))
-    assert not s.legal_action_mask[268]
+    assert not s.legal_action_mask[3 * 81 + xy2i(3, 8)]
