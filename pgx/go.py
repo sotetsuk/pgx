@@ -324,15 +324,9 @@ def _single_liberty(state: GoState, color, ren_id):
     アタリの点を返す
     アタリでない連に用いても無意味であることに注意
     """
-    return jax.lax.cond(
-        state.idx_sum[color, ren_id] == 0,
-        lambda: 0,
-        lambda: jnp.int32(
-            state.idx_squared_sum[color, ren_id]
-            // state.idx_sum[color, ren_id]
-            - 1
-        ),
-    )
+    return (
+        state.idx_squared_sum[color, ren_id] // state.idx_sum[color, ren_id]
+    ) - 1
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
@@ -352,9 +346,9 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     )
 
     _other_num_pseudo = _state.num_pseudo[_my_color(_state), large_id] - 1
-    _other_idx_sum = _state.idx_sum[_my_color(_state), large_id] - _xy
+    _other_idx_sum = _state.idx_sum[_my_color(_state), large_id] - (_xy + 1)
     _other_idx_squared_sum = (
-        _state.idx_squared_sum[_my_color(_state), large_id] - _xy**2
+        _state.idx_squared_sum[_my_color(_state), large_id] - (_xy + 1) ** 2
     )
 
     # large_idを消す <- 消さなくても良いかも
