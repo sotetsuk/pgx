@@ -494,7 +494,7 @@ class Visualizer:
         elif isinstance(_states, ShogiState):
             return ShogiState(
                 turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],
+                piece_board=_states.piece_board[_i],
                 hand=_states.hand[_i],
             )
         elif isinstance(_states, SuzumeJongState):
