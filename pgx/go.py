@@ -29,7 +29,6 @@ class GoState:
         (2, 19 * 19), -1, dtype=jnp.int32
     )  # type:ignore
 
-    # 連周りの情報 0:None 1:呼吸点 2:石
     num_pseudo: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
     idx_sum: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
     idx_squared_sum: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
@@ -120,7 +119,7 @@ def _get_alphazero_features(state: GoState, player_id, observe_all):
         0,
         8,
         lambda i, boards: boards.at[i].set(
-            jnp.where(boards[i] == (my_color + 1) % 2, 1, 0)
+            jnp.where(boards[i] == ((my_color + 1) % 2), 1, 0)
         ),
         state.game_log,
     )
@@ -142,9 +141,11 @@ def init(
             (2, size * size), -1, dtype=jnp.int32
         ),  # type:ignore
         num_pseudo=jnp.zeros((2, size * size), dtype=jnp.int32),
-        idx_sum=jnp.zeros((2, size * size), dtype=jnp.int32),
-        idx_squared_sum=jnp.zeros((2, size * size), dtype=jnp.int32),
-        atari=jnp.zeros((2, size * size), dtype=jnp.int32),
+        idx_sum=jnp.full((2, size * size), -1, dtype=jnp.int32),  # type:ignore
+        idx_squared_sum=jnp.full(
+            (2, size * size), -1, dtype=jnp.int32
+        ),  # type:ignore
+        atari=jnp.full((2, size * size), -1, dtype=jnp.int32),  # type:ignore
         legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
@@ -221,7 +222,7 @@ def _not_pass_move(
     # 自殺手
     is_illegal = (
         jnp.count_nonzero(
-            state.liberty[
+            state.num_pseudo[
                 _my_color(state), state.ren_id_board[_my_color(state), xy]
             ]
             == 1
@@ -302,6 +303,36 @@ def _illegal_move(
 def _set_stone(_state: GoState, _xy: int) -> GoState:
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[_my_color(_state), _xy].set(_xy),
+        num_pseudo=_state.num_pseudo.at[_my_color(_state), _xy].set(0),
+        idx_sum=_state.idx_sum.at[_my_color(_state), _xy].set(0),
+        idx_squared_sum=_state.idx_squared_sum.at[_my_color(_state), _xy].set(
+            0
+        ),
+    )
+
+
+def _is_atari(state: GoState, color, ren_id):
+    """
+    colorのren_idの連がアタリか判定する
+    """
+    return (
+        state.idx_sum[color, ren_id] ** 2
+        == state.idx_squared_sum[color, ren_id]
+    )
+
+
+def _single_liberty(state: GoState, color, ren_id):
+    """
+    アタリの点を返す
+    アタリでない連に用いても無意味であることに注意
+    """
+    return jax.lax.cond(
+        state.idx_sum[color, ren_id] == 0,
+        lambda: 0,
+        lambda: jnp.int32(
+            state.idx_squared_sum[color, ren_id]
+            // state.idx_sum[color, ren_id]
+        ),
     )
 
 
@@ -321,11 +352,11 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
         my_ren_id_board == large_id, small_id, my_ren_id_board
     )
 
-    _other_num_pseudo = _state.num_pseudo[_my_color(_state), large_id]
-    _other_idx_sum = _state.idx_sum[_my_color(_state), large_id]
-    _other_idx_squared_sum = _state.idx_squared_sum[
-        _my_color(_state), large_id
-    ]
+    _other_num_pseudo = _state.num_pseudo[_my_color(_state), large_id] - 1
+    _other_idx_sum = _state.idx_sum[_my_color(_state), large_id] - _xy
+    _other_idx_squared_sum = (
+        _state.idx_squared_sum[_my_color(_state), large_id] - _xy**2
+    )
 
     # TODO large_idを消す
     return jax.lax.cond(
@@ -349,44 +380,44 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
 
 def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
-    oppo_ren_id = _state.ren_id_board[_opponent_color(_state), _adj_xy]
+    oppo_color = _opponent_color(_state)
+    oppo_ren_id = _state.ren_id_board[oppo_color, _adj_xy]
 
     # x = x.at[idx].add(y)      x[idx] += y みたいな感じで
     # x = x.at[idx].minus(y)    x[idx] -= y は無いのだろうか
     return jax.lax.cond(
-        _state.atari[_opponent_color(_state), oppo_ren_id] == _xy,
+        _is_atari(_state, oppo_color, oppo_ren_id)
+        & (_single_liberty(_state, oppo_color, oppo_ren_id) == _xy),
         lambda: _remove_stones(_state, oppo_ren_id, _adj_xy),
         lambda: _state.replace(  # type:ignore
-            num_pseudo=_state.num_pseudo.at[
-                _opponent_color(_state), oppo_ren_id
-            ].set(_state.num_pseudo[_opponent_color(_state), oppo_ren_id] - 1),
-            idx_sum=_state.idx_sum.at[
-                _opponent_color(_state), oppo_ren_id
-            ].set(_state.idx_sum[_opponent_color(_state), oppo_ren_id] - _xy),
-            idx_squared_sum=_state.idx_squared_sum.at[
-                _opponent_color(_state), oppo_ren_id
-            ].set(
-                _state.idx_squared_sum[_opponent_color(_state), oppo_ren_id]
-                - _xy**2
+            num_pseudo=_state.num_pseudo.at[oppo_color, oppo_ren_id].set(
+                _state.num_pseudo[oppo_color, oppo_ren_id] - 1
             ),
+            idx_sum=_state.idx_sum.at[oppo_color, oppo_ren_id].set(
+                _state.idx_sum[oppo_color, oppo_ren_id] - _xy
+            ),
+            idx_squared_sum=_state.idx_squared_sum.at[
+                oppo_color, oppo_ren_id
+            ].set(_state.idx_squared_sum[oppo_color, oppo_ren_id] - _xy**2),
         ),
     )
 
 
 def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
-    surrounded_stones = (
-        _state.ren_id_board[_opponent_color(_state)] == _rm_ren_id
-    )
+    oppo_color = _opponent_color(_state)
+    surrounded_stones = _state.ren_id_board[oppo_color] == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
     oppo_ren_id_board = jnp.where(
-        surrounded_stones, -1, _state.ren_id_board[_opponent_color(_state)]
+        surrounded_stones, -1, _state.ren_id_board[oppo_color]
     )
 
     # TODO 取り除かれた連に隣接する連の呼吸点を増やす
-
     return _state.replace(  # type:ignore
-        ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
-            oppo_ren_id_board
+        ren_id_board=_state.ren_id_board.at[oppo_color].set(oppo_ren_id_board),
+        num_pseudo=_state.num_pseudo.at[oppo_color, _rm_ren_id].set(0),
+        idx_sum=_state.idx_sum.at[oppo_color, _rm_ren_id].set(-1),
+        idx_squared_sum=_state.idx_squared_sum.at[oppo_color, _rm_ren_id].set(
+            -1
         ),
         agehama=_state.agehama.at[_my_color(_state)].add(agehama),
         kou=jnp.int32(_rm_stone_xy),  # type:ignore
