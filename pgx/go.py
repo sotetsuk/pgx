@@ -33,7 +33,6 @@ class GoState:
     # 最初のマスが0とならないよう、idx_sumとidx_squared_sumはマス目が1始まり
     idx_sum: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
     idx_squared_sum: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
-    atari: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
 
     # 設置可能なマスをTrueとしたマスク
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
@@ -146,7 +145,6 @@ def init(
         idx_squared_sum=jnp.full(
             (2, size * size), -1, dtype=jnp.int32
         ),  # type:ignore
-        atari=jnp.full((2, size * size), -1, dtype=jnp.int32),  # type:ignore
         legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size * size), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
