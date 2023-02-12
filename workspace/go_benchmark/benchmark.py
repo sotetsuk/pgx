@@ -13,7 +13,6 @@ from pgx.go import (
     _pass_move,
     _remove_stones,
     _set_stone_next_to_oppo_ren,
-    _update_legal_action,
     _update_state_wo_legal_action,
     init,
     step,
