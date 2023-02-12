@@ -341,7 +341,7 @@ def test_dlshogi_action():
     visualize(s, "tests/assets/shogi/dlshogi_action_003.svg")
     legal_actions = _legal_actions(s)
     legal_action_mask = _to_direction(legal_actions)
-    dir_ = 5  # UP
+    dir_ = 0  # UP
     assert legal_action_mask.shape == (27 * 81,)
     assert legal_action_mask.sum() != 0
     assert legal_action_mask[dir_ * 81 + xy2i(5, 5)]
@@ -361,4 +361,4 @@ def test_dlshogi_action():
     legal_actions = _legal_actions(s)
     legal_action_mask = _to_direction(legal_actions)
     assert legal_action_mask[20 * 81 + xy2i(1, 5)]
-    assert not legal_action_mask[20 * 81 +  xy2i(2, 5)]
+    assert not legal_action_mask[20 * 81 + xy2i(2, 5)]

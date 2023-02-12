@@ -772,19 +772,20 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     # とandを取って、anyを取れば、(dir=UP, to=18)がTrueか否かわかる
     legal_moves, legal_promotions, legal_drops = legal_actions
     dir_ = jnp.arange(10)
+    to = jnp.arange(81)
 
-    def f(d):
+    def f(t):
         return (
-            legal_moves & (legal_promotions != 2) & LEGAL_FROM_MASK[d, :]
-        ).any(axis=0)
+            legal_moves[:, t] & (legal_promotions[:, t] != 2) & LEGAL_FROM_MASK[dir_, t, :]
+        ).any(axis=1)
 
-    def g(d):
+    def g(t):
         return (
-            legal_moves & (legal_promotions != 0) & LEGAL_FROM_MASK[d, :]
-        ).any(axis=0)
+                legal_moves[:, t] & (legal_promotions[:, t] != 0) & LEGAL_FROM_MASK[dir_, t, :]
+        ).any(axis=1)
 
-    legal_action_mask_wo_promotion = jax.vmap(f)(dir_)
-    legal_action_mask_w_promotion = jax.vmap(g)(dir_)
+    legal_action_mask_wo_promotion = jax.vmap(f)(to).transpose()
+    legal_action_mask_w_promotion = jax.vmap(g)(to).transpose()
     legal_action_mask = jnp.concatenate(
         [
             legal_action_mask_wo_promotion,
