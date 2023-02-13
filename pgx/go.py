@@ -296,21 +296,10 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
     )
 
 
-def _is_one_liberty_ren(_state, _color, _ren_id):
-    return (_ren_id >= 0) & (
-        jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) == 1
-    )
-
-
 def _is_two_liberty_ren(_state, _color, _ren_id):
     return (_ren_id >= 0) & (
         jnp.count_nonzero(_state.liberty[_color, _ren_id] == 1) > 1
     )
-
-
-def _is_one_liberty_xy(_state, x, y, color):
-    ren_id = _state.ren_id_board[color, x * _state.size + y]
-    return _is_one_liberty_ren(_state, color, ren_id)
 
 
 def _is_two_liberty_xy(_state, x, y, color):
@@ -394,8 +383,6 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     opp_color = _opponent_color(_state)
     surrounded_stones = _state.ren_id_board[opp_color] == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
-    adj_stone = _state.liberty[opp_color, _rm_ren_id] == 2
-    adj_ren_id = jnp.where(~adj_stone, -1, _state.ren_id_board[my_color])
 
     # 石を取り除く
     oppo_ren_id_board = jnp.where(
