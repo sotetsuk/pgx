@@ -14,9 +14,6 @@ POINT_CHAR = "+"
 
 dx = jnp.int32([-1, 0, +1, 0])
 dy = jnp.int32([0, 1, 0, -1])
-_dx = jnp.int32([-1, -2, -1, 0, +1, +2, +1, 0, -1])
-_dy = jnp.int32([-1, 0, +1, +2, +1, 0, -1, -2, -1])
-
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
@@ -238,17 +235,18 @@ def _not_pass_move(
 
 
 def _check_around_xy(i, state, xy):
+    my_color = _my_color(state)
     x = xy // state.size + dx[i]
     y = xy % state.size + dy[i]
 
     adj_xy = x * state.size + y
     is_off = _is_off_board(x, y, state.size)
-    is_my_ren = state.ren_id_board[_my_color(state), adj_xy] != -1
+    is_my_ren = state.ren_id_board[my_color, adj_xy] != -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
     replaced_state = state.replace(
         liberty=state.liberty.at[
-            _my_color(state),
-            state.ren_id_board[_my_color(state), xy],
+            my_color,
+            state.ren_id_board[my_color, xy],
             adj_xy,
         ].set(1)
     )  # type:ignore
@@ -314,10 +312,10 @@ def _is_point(_state, x, y):
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
-    ren_id_board = _state.ren_id_board.at[_my_color(_state)].get()
-
-    new_id = ren_id_board.at[_xy].get()
-    adj_ren_id = ren_id_board.at[_adj_xy].get()
+    my_color = _my_color(_state)
+    ren_id_board = _state.ren_id_board[my_color]
+    new_id = ren_id_board[_xy]
+    adj_ren_id = ren_id_board[_adj_xy]
 
     small_id, large_id = jax.lax.cond(
         adj_ren_id < new_id,
@@ -328,35 +326,38 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     ren_id_board = jnp.where(ren_id_board == large_id, small_id, ren_id_board)
 
-    liberty = _state.liberty.at[_my_color(_state)].get()
-    liberty = liberty.at[large_id, _xy].set(0)
-    liberty = liberty.at[small_id, _xy].set(0)
-    liberty = liberty.at[small_id].set(
-        jnp.maximum(liberty[small_id], liberty[large_id])
+    my_liberty = (
+        _state.liberty[my_color]
+        .at[large_id, _xy]
+        .set(0)
+        .at[small_id, _xy]
+        .set(0)
     )
-    liberty = liberty.at[large_id, :].set(False)
+    my_liberty = (
+        my_liberty.at[small_id]
+        .set(jnp.maximum(my_liberty[small_id], my_liberty[large_id]))
+        .at[large_id, :]
+        .set(0)
+    )
 
     return jax.lax.cond(
         new_id == adj_ren_id,
         lambda: _state,
         lambda: _state.replace(  # type:ignore
-            ren_id_board=_state.ren_id_board.at[_my_color(_state)].set(
-                ren_id_board
-            ),
-            liberty=_state.liberty.at[_my_color(_state)].set(liberty),
+            ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
+            liberty=_state.liberty.at[my_color].set(my_liberty),
         ),
     )
 
 
 def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
     my_color = _my_color(_state)
+    opp_color = _opponent_color(_state)
     put_ren_id = _state.ren_id_board[my_color, _xy]
-    oppo_ren_id = _state.ren_id_board.at[
-        _opponent_color(_state), _adj_xy
-    ].get()
+    oppo_ren_id = _state.ren_id_board[opp_color, _adj_xy]
 
     liberty = (
-        _state.liberty.at[_opponent_color(_state), oppo_ren_id, _xy]
+        _state.liberty.at[opp_color, oppo_ren_id, _xy]
         .set(2)
         .at[
             my_color,
@@ -369,10 +370,7 @@ def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
     state = _state.replace(liberty=liberty)  # type:ignore
 
     return jax.lax.cond(
-        jnp.count_nonzero(
-            state.liberty[_opponent_color(state), oppo_ren_id] == 1
-        )
-        == 0,
+        jnp.count_nonzero(state.liberty[opp_color, oppo_ren_id] == 1) == 0,
         lambda: _remove_stones(state, oppo_ren_id, _adj_xy),
         lambda: state,
     )
@@ -392,10 +390,8 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     # surrounded_stones (361) => (my_lib > 0) & surrounded_stones (361, 361)
     liberty = jnp.where((my_lib > 0) & surrounded_stones, 1, my_lib)
     _state = _state.replace(  # type:ignore
-        ren_id_board=_state.ren_id_board.at[_opponent_color(_state)].set(
-            oppo_ren_id_board
-        ),
-        liberty=_state.liberty.at[_my_color(_state)]
+        ren_id_board=_state.ren_id_board.at[opp_color].set(oppo_ren_id_board),
+        liberty=_state.liberty.at[my_color]
         .set(liberty)
         .at[opp_color, _rm_ren_id, :]
         .set(0),
@@ -410,8 +406,9 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
 def _legal_actions(state: GoState, size: int) -> jnp.ndarray:
     def is_exception(xy, board):
-        ren_id = state.ren_id_board[_opponent_color(state), xy]
-        liberty = state.liberty[_opponent_color(state), ren_id, :] == 1
+        opp_color = _opponent_color(state)
+        ren_id = state.ren_id_board[opp_color, xy]
+        liberty = state.liberty[opp_color, ren_id, :] == 1
         exception_xy = jnp.nonzero(liberty, size=1)[0]
         return jax.lax.cond(
             (ren_id >= 0) & (jnp.count_nonzero(liberty) == 1),
@@ -436,7 +433,7 @@ def _legal_actions(state: GoState, size: int) -> jnp.ndarray:
 
 
 def _is_legal_action(state: GoState, xy):
-    point = (state.ren_id_board[BLACK, xy] == -1) & (
+    is_xy_point = (state.ren_id_board[BLACK, xy] == -1) & (
         state.ren_id_board[WHITE, xy] == -1
     )
 
@@ -452,7 +449,7 @@ def _is_legal_action(state: GoState, xy):
             | (_is_two_liberty_xy(state, x, y, my_color))
         )
 
-    is_legal = point & jax.lax.fori_loop(
+    is_legal = is_xy_point & jax.lax.fori_loop(
         0, 4, lambda i, legal: legal | check_around(i, xy, state), FALSE
     )
 
