@@ -282,7 +282,7 @@ def step(state: State, action: jnp.ndarray) -> State:
     return _step(state, Action.from_dlshogi_action(state, action))
 
 
-def observe(state: State) -> jnp.ndarray:
+def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     # TODO: write me
     return jnp.zeros(100)
 
