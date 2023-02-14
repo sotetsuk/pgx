@@ -137,8 +137,7 @@ class Shogi(core.Env):
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        raise NotImplementedError()
-        # return observe(state, player_id)
+        return observe(state, player_id)
 
     def num_players(self) -> int:
         return 2
@@ -281,6 +280,11 @@ class Action:
 def step(state: State, action: jnp.ndarray) -> State:
     # Note: Assume that illegal action is already filtered by Env.step
     return _step(state, Action.from_dlshogi_action(state, action))
+
+
+def observe(state: State) -> jnp.ndarray:
+    # TODO: write me
+    return jnp.zeros(100)
 
 
 def _step(state: State, action: Action) -> State:
