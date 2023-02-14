@@ -3,15 +3,15 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-from flax import struct
-from flax.serialization import from_bytes
+from pgx.flax.struct import dataclass
+from pgx.flax.serialization import from_bytes
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
 # 指し手のdataclass
-@struct.dataclass
+@dataclass
 class JaxAnimalShogiAction:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用

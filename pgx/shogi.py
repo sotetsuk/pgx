@@ -37,7 +37,7 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-from flax.struct import dataclass
+from pgx.flax.struct import dataclass
 
 import pgx.core as core
 from pgx.cache import (

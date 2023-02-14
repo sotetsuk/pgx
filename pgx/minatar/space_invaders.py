@@ -12,7 +12,7 @@ from typing import Tuple
 
 import jax
 import jax.lax as lax
-from flax import struct
+from pgx.flax.struct import dataclass
 from jax import numpy as jnp
 
 SHOT_COOL_DOWN = jnp.int8(5)
@@ -23,7 +23,7 @@ ZERO = jnp.int8(0)
 NINE = jnp.int8(9)
 
 
-@struct.dataclass
+@dataclass
 class State:
     pos: jnp.ndarray = jnp.int8(5)
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)

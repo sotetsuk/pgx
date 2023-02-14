@@ -3,7 +3,7 @@ from typing import Literal, Tuple
 
 import jax
 import jax.numpy as jnp
-from flax.struct import dataclass
+from pgx.flax.struct import dataclass
 
 EnvId = Literal[
     "tic_tac_toe/v0",

@@ -9,7 +9,7 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Literal, Tuple
 
 import jax
-from flax import struct
+from pgx.flax.struct import dataclass
 from jax import numpy as jnp
 
 import pgx.core as core
@@ -29,7 +29,7 @@ FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-@struct.dataclass
+@dataclass
 class State(core.State):
     curr_player: jnp.ndarray = ZERO
     reward: jnp.ndarray = jnp.float32(0)

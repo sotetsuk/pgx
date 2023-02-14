@@ -10,7 +10,7 @@ from typing import Tuple
 
 import jax
 import jax.lax as lax
-from flax import struct
+from pgx.flax.struct import dataclass
 from jax import numpy as jnp
 
 RAMP_INTERVAL: jnp.ndarray = jnp.int8(100)
@@ -30,7 +30,7 @@ TRUE: jnp.ndarray = jnp.bool_(True)
 FALSE: jnp.ndarray = jnp.bool_(False)
 
 
-@struct.dataclass
+@dataclass
 class State:
     oxygen: jnp.ndarray = MAX_OXYGEN
     diver_count: jnp.ndarray = ZERO

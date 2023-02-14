@@ -2,7 +2,7 @@ from functools import partial
 from typing import Tuple
 
 import jax
-from flax import struct
+from pgx.flax.struct import dataclass
 from jax import numpy as jnp
 
 BLACK = 0
@@ -19,7 +19,7 @@ FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-@struct.dataclass
+@dataclass
 class GoState:
     # 横幅, マスの数ではない
     size: jnp.ndarray = jnp.int32(19)  # type:ignore
