@@ -504,7 +504,7 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     is_empty = (state.ren_id_board[BLACK] == -1) & (state.ren_id_board[WHITE] == -1)
 
     my_color = _my_color(state)
-    opp_color = _my_color(state)
+    opp_color = _opponent_color(state)
     my_ren = state.ren_id_board[my_color]
     opp_ren = state.ren_id_board[opp_color]
     # fmt: off
@@ -526,7 +526,9 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
         _kills_opp = kills_opp[neighbors]
         return (on_board & _has_empty).any() | (on_board & _kills_opp).any() | (on_board & _has_liberty).any()
 
-    legal_action_mask = is_empty & is_neighbor_ok(jnp.arange(size ** 2))
+    neighbor_ok = is_neighbor_ok(jnp.arange(size ** 2))
+    legal_action_mask = is_empty & neighbor_ok
+
     return jax.lax.cond(
         (state.kou == -1),
         lambda: legal_action_mask,
