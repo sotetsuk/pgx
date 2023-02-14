@@ -501,17 +501,16 @@ def _check_if_adj_is_removed(state, i, xy, s_stones, ren_id):
 
 
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
+    is_empty = (state.ren_id_board[BLACK] == -1) & (state.ren_id_board[WHITE] == -1)
+
     my_color = _my_color(state)
     opp_color = _my_color(state)
     # fmt: off
     my_in_atari = (state.idx_sum[my_color] ** 2) == state.idx_squared_sum[my_color] * state.num_pseudo[my_color]
     opp_in_atari = (state.idx_sum[opp_color] ** 2) == state.idx_squared_sum[opp_color] * state.num_pseudo[opp_color]
     # fmt: on
-
-    is_empty = (state.ren_id_board[BLACK] == -1) & (state.ren_id_board[WHITE] == -1)
-
-    has_liberty = ~my_in_atari
-    kills_opp = opp_in_atari
+    has_liberty = (state.ren_id_board[my_color] >= 0) & ~my_in_atari
+    kills_opp = (state.ren_id_board[opp_color] >= 0) & opp_in_atari
 
     @jax.vmap
     def is_neighbor_ok(xy):
