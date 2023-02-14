@@ -1,10 +1,9 @@
 name: pypi
 
-on: 
+on:
   push:
-    branches:
-      - main
-      - 'releases/**'
+    tags:
+      - 'v*'
 
 jobs:
   build-n-publish:
