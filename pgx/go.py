@@ -328,8 +328,8 @@ def _count(state: GoState, color, size):
         ys = xy % state.size + dy
         neighbors = xs * state.size + ys
         on_board = (0 <= xs) & (xs < state.size) & (0 <= ys) & (ys < state.size)
-        idx_sum = jnp.arange(1, size ** 2)
-        idx_squared_sum = jnp.arange(1, size ** 2) ** 2
+        idx_sum = jnp.arange(1, size ** 2 + 1)
+        idx_squared_sum = jnp.arange(1, size ** 2 + 1) ** 2
         ONES = jnp.ones(4)
         ZEROS = jnp.zeros(4)
         # fmt off
