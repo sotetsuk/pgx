@@ -501,29 +501,34 @@ def _check_if_adj_is_removed(state, i, xy, s_stones, ren_id):
 
 
 def legal_actions(state: GoState, size: int) -> jnp.ndarray:
-    def is_exception(xy, board):
-        oppo_color = _opponent_color(state)
-        ren_id = state.ren_id_board[oppo_color, xy]
-        exception_xy = _single_liberty(state, oppo_color, ren_id)
-        return jax.lax.cond(
-            (ren_id >= 0) & _is_atari(state, oppo_color, ren_id),
-            lambda: board.at[exception_xy].set(TRUE),
-            lambda: board,
-        )
+    my_color = _my_color(state)
+    opp_color = _my_color(state)
+    # fmt: off
+    my_in_atari = (state.idx_sum[my_color] ** 2) == state.idx_squared_sum[my_color] * state.num_pseudo[my_color]
+    opp_in_atari = (state.idx_sum[opp_color] ** 2) == state.idx_squared_sum[opp_color] * state.num_pseudo[opp_color]
+    # fmt: on
 
-    exception = jax.lax.fori_loop(
-        0, size**2, is_exception, jnp.zeros(size**2, dtype=jnp.bool_)
-    )
+    is_empty = (state.ren_id_board[BLACK] == -1) & (state.ren_id_board[WHITE] == -1)
 
-    _legal_action_mask = jax.lax.map(
-        lambda xy: _is_legal_action(state, xy),
-        jnp.arange(0, size**2),
-    )
-    _legal_action_mask = _legal_action_mask | exception
+    has_liberty = ~my_in_atari
+    kills_opp = opp_in_atari
+
+    @jax.vmap
+    def is_neighbor_ok(xy):
+        xs = xy // state.size + dx
+        ys = xy % state.size + dy
+        neighbors = xs * state.size + ys
+        on_board = (0 <= xs) & (xs < state.size) & (0 <= ys) & (ys < state.size)
+        _has_empty = is_empty[neighbors]
+        _has_liberty = has_liberty[neighbors]
+        _kills_opp = kills_opp[neighbors]
+        return (on_board & _has_empty).any() | (on_board & _kills_opp).any() | (on_board & _has_liberty).any()
+
+    legal_action_mask = is_empty & is_neighbor_ok(jnp.arange(size ** 2))
     return jax.lax.cond(
         (state.kou == -1),
-        lambda: _legal_action_mask,
-        lambda: _legal_action_mask.at[state.kou].set(FALSE),
+        lambda: legal_action_mask,
+        lambda: legal_action_mask.at[state.kou].set(FALSE),
     )
 
 
