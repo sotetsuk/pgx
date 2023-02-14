@@ -9,7 +9,7 @@ def make(env_id: EnvId):
 
         return TicTacToe()
     elif env_id == "shogi/v0":
-        from pgx.tic_tac_toe import Shogi
+        from pgx.shogi import Shogi
 
         return Shogi()
     elif env_id == "minatar/asterix/v0":
