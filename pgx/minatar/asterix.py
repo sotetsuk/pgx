@@ -9,10 +9,10 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Literal, Tuple
 
 import jax
-from pgx.flax.struct import dataclass
 from jax import numpy as jnp
 
 import pgx.core as core
+from pgx.flax.struct import dataclass
 
 ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int8)
 init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int8)

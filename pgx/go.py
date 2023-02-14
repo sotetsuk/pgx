@@ -2,8 +2,9 @@ from functools import partial
 from typing import Tuple
 
 import jax
-from pgx.flax.struct import dataclass
 from jax import numpy as jnp
+
+from pgx.flax.struct import dataclass
 
 BLACK = 0
 WHITE = 1

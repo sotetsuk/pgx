@@ -3,6 +3,7 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
+
 from pgx.flax.struct import dataclass
 
 init_dice_pattern: jnp.ndarray = jnp.array(

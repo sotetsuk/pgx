@@ -10,8 +10,9 @@ from typing import Tuple
 
 import jax
 import jax.lax as lax
-from pgx.flax.struct import dataclass
 from jax import numpy as jnp
+
+from pgx.flax.struct import dataclass
 
 RAMP_INTERVAL: jnp.ndarray = jnp.int8(100)
 MAX_OXYGEN: jnp.ndarray = jnp.int16(200)

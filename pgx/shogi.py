@@ -37,7 +37,6 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-from pgx.flax.struct import dataclass
 
 import pgx.core as core
 from pgx.cache import (
@@ -45,6 +44,7 @@ from pgx.cache import (
     load_shogi_legal_from_mask,
     load_shogi_raw_effect_boards,
 )
+from pgx.flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)

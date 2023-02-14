@@ -11,8 +11,9 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Tuple
 
 import jax
-from pgx.flax.struct import dataclass
 from jax import numpy as jnp
+
+from pgx.flax.struct import dataclass
 
 player_speed = jnp.array(3, dtype=jnp.int8)
 time_limit = jnp.array(2500, dtype=jnp.int16)

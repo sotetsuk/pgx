@@ -3,6 +3,7 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
+
 from pgx.flax.serialization import from_bytes
 from pgx.flax.struct import dataclass
 

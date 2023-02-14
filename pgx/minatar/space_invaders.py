@@ -12,8 +12,9 @@ from typing import Tuple
 
 import jax
 import jax.lax as lax
-from pgx.flax.struct import dataclass
 from jax import numpy as jnp
+
+from pgx.flax.struct import dataclass
 
 SHOT_COOL_DOWN = jnp.int8(5)
 ENEMY_MOVE_INTERVAL = jnp.int8(12)

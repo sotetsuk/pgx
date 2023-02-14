@@ -22,6 +22,7 @@ Pgx実装での違い
 import jax
 import jax.lax as lax
 import jax.numpy as jnp
+
 from pgx.flax.struct import dataclass
 
 NUM_TILES = 44
