@@ -509,7 +509,7 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     opp_ren = state.ren_id_board[opp_color]
     # fmt: off
     my_in_atari = (state.idx_sum[my_color, my_ren] ** 2) == state.idx_squared_sum[my_color, my_ren] * state.num_pseudo[my_color, my_ren]
-    opp_in_atari = (state.idx_sum[opp_color, my_ren] ** 2) == state.idx_squared_sum[opp_color, opp_ren] * state.num_pseudo[opp_color, opp_ren]
+    opp_in_atari = (state.idx_sum[opp_color, opp_ren] ** 2) == state.idx_squared_sum[opp_color, opp_ren] * state.num_pseudo[opp_color, opp_ren]
     # fmt: on
     is_empty = (state.ren_id_board[0] == -1) & (state.ren_id_board[1] == -1)
     has_liberty = (my_ren >= 0) & ~my_in_atari
