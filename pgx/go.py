@@ -536,6 +536,34 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     )
 
 
+def _count(state: GoState, color, size):
+    is_empty = (state.ren_id_board[BLACK] == -1) & (state.ren_id_board[WHITE] == -1)
+    my_ren = state.ren_id_board[color]
+
+    @jax.vmap
+    def _count_neighbor(xy):
+        xs = xy // state.size + dx
+        ys = xy % state.size + dy
+        neighbors = xs * state.size + ys
+        on_board = (0 <= xs) & (xs < state.size) & (0 <= ys) & (ys < state.size)
+        idx_sum = jnp.arange(1, size ** 2 + 1)
+        idx_squared_sum = jnp.arange(1, size ** 2 + 1) ** 2
+        ONES = jnp.ones(4)
+        ZEROS = jnp.zeros(4)
+        # fmt off
+        return (jnp.where(on_board & is_empty[neighbors], ONES, ZEROS).sum(),
+                jnp.where(on_board & is_empty[neighbors], idx_sum[neighbors], ZEROS).sum(),
+                jnp.where(on_board & is_empty[neighbors], idx_squared_sum[neighbors], ZEROS).sum())
+        # fmt on
+
+    num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(jnp.arange(size * size))
+    num_pseudo = jnp.where(my_ren >= 0, num_pseudo, jnp.zeros_like(num_pseudo))
+    idx_sum = jnp.where(my_ren >= 0, idx_sum, jnp.zeros_like(idx_sum))
+    idx_squared_sum = jnp.where(my_ren >= 0, idx_squared_sum, jnp.zeros_like(idx_squared_sum))
+
+    return num_pseudo, idx_sum, idx_squared_sum
+
+
 def _is_point(_state, x, y):
     return (_state.ren_id_board[0, x * _state.size + y] == -1) & (
         _state.ren_id_board[1, x * _state.size + y] == -1
