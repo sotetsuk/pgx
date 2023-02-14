@@ -532,31 +532,6 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     )
 
 
-def _is_legal_action(state: GoState, xy):
-    point = (state.ren_id_board[BLACK, xy] == -1) & (
-        state.ren_id_board[WHITE, xy] == -1
-    )
-
-    def check_around(i, xy, state):
-        # 呼吸点か、呼吸点2つ以上の味方連があればセーフ
-        my_color = _my_color(state)
-        x = xy // state.size + dx[i]
-        y = xy % state.size + dy[i]
-        adj_xy = x * state.size + y
-        is_off = _is_off_board(x, y, state.size)
-        my_ren_id = state.ren_id_board[my_color, adj_xy]
-        return ~is_off & (
-            _is_point(state, x, y)
-            | ((my_ren_id >= 0) & ~_is_atari(state, my_color, my_ren_id))
-        )
-
-    is_legal = point & jax.lax.fori_loop(
-        0, 4, lambda i, legal: legal | check_around(i, xy, state), FALSE
-    )
-
-    return is_legal
-
-
 def _is_point(_state, x, y):
     return (_state.ren_id_board[0, x * _state.size + y] == -1) & (
         _state.ren_id_board[1, x * _state.size + y] == -1
