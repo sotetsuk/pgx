@@ -295,7 +295,6 @@ def _step(state: State, action: Action) -> State:
     )
     legal_actions = _legal_actions(state)
     legal_action_mask = _to_direction(legal_actions)
-    state = state.replace(legal_action_mask=legal_action_mask)  # type: ignore
     terminated = ~legal_action_mask.any()
     reward = jax.lax.cond(
         terminated,
@@ -305,7 +304,9 @@ def _step(state: State, action: Action) -> State:
     reward = jax.lax.cond(
         state.curr_player != 0, lambda: reward[::-1], lambda: reward
     )
-    return state.replace(reward=reward, terminated=terminated)  # type: ignore
+    return state.replace(  # type: ignore
+        reward=reward, terminated=terminated, legal_action_mask=legal_action_mask
+    )
 
 
 def _step_move(state: State, action: Action) -> State:
