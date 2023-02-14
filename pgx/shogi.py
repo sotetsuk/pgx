@@ -39,6 +39,7 @@ import jax
 import jax.numpy as jnp
 from flax.struct import dataclass
 
+import pgx.core as core
 from pgx.cache import (
     load_shogi_is_on_the_way,
     load_shogi_legal_from_mask,
@@ -110,7 +111,7 @@ LEGAL_FROM_MASK = load_shogi_legal_from_mask()
 
 
 @dataclass
-class State:
+class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -119,6 +120,28 @@ class State:
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+
+
+class Shogi(core.Env):
+    def __init__(self):
+        super().__init__()
+
+    def init(self, rng: jax.random.KeyArray) -> State:
+        return init(rng)
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        return step(state, action)
+
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        raise NotImplementedError()
+        # return observe(state, player_id)
+
+    def num_players(self) -> int:
+        return 2
 
 
 def init(rng):
@@ -273,16 +296,16 @@ def _step(state: State, action: Action) -> State:
     legal_actions = _legal_actions(state)
     legal_action_mask = _to_direction(legal_actions)
     state = state.replace(legal_action_mask=legal_action_mask)  # type: ignore
-    is_empty = legal_action_mask.any()
+    terminated = ~legal_action_mask.any()
     reward = jax.lax.cond(
-        is_empty,
+        terminated,
         lambda: jnp.float32([-1.0, 1.0]),
         lambda: jnp.float32([0.0, 0.0]),
     )
     reward = jax.lax.cond(
         state.curr_player != 0, lambda: reward[::-1], lambda: reward
     )
-    return state.replace(reward=reward)  # type: ignore
+    return state.replace(reward=reward, terminated=terminated)  # type: ignore
 
 
 def _step_move(state: State, action: Action) -> State:
