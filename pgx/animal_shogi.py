@@ -59,7 +59,7 @@ LEGAL_ACTION_MASKS = jnp.array(LEGAL_ACTION_MASKS)
 
 
 # 盤面のdataclass
-@struct.dataclass
+@dataclass
 class JaxAnimalShogiState:
     # turn 先手番なら0 後手番なら1
     turn: jnp.ndarray = jnp.int32(0)
