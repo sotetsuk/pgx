@@ -305,7 +305,9 @@ def _step(state: State, action: Action) -> State:
         state.curr_player != 0, lambda: reward[::-1], lambda: reward
     )
     return state.replace(  # type: ignore
-        reward=reward, terminated=terminated, legal_action_mask=legal_action_mask
+        reward=reward,
+        terminated=terminated,
+        legal_action_mask=legal_action_mask,
     )
 
 
