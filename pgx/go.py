@@ -523,7 +523,7 @@ def _count_ji(_state: GoState, _color, _size):
     return jnp.count_nonzero(_get_ji(board, _color, _size))
 
 
-@struct.dataclass
+@dataclass
 class JI:
     size: jnp.ndarray
     board: jnp.ndarray
