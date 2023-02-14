@@ -9,10 +9,10 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Literal, Tuple
 
 import jax
-from flax import struct
 from jax import numpy as jnp
 
 import pgx.core as core
+from pgx.flax.struct import dataclass
 
 ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int8)
 init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int8)
@@ -29,7 +29,7 @@ FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-@struct.dataclass
+@dataclass
 class State(core.State):
     curr_player: jnp.ndarray = ZERO
     reward: jnp.ndarray = jnp.float32(0)

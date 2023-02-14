@@ -3,15 +3,16 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-from flax import struct
-from flax.serialization import from_bytes
+
+from pgx.flax.serialization import from_bytes
+from pgx.flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
 # 指し手のdataclass
-@struct.dataclass
+@dataclass
 class JaxAnimalShogiAction:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用
@@ -59,7 +60,7 @@ LEGAL_ACTION_MASKS = jnp.array(LEGAL_ACTION_MASKS)
 
 
 # 盤面のdataclass
-@struct.dataclass
+@dataclass
 class JaxAnimalShogiState:
     # turn 先手番なら0 後手番なら1
     turn: jnp.ndarray = jnp.int32(0)

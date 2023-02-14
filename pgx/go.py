@@ -2,8 +2,9 @@ from functools import partial
 from typing import Tuple
 
 import jax
-from flax import struct
 from jax import numpy as jnp
+
+from pgx.flax.struct import dataclass
 
 BLACK = 0
 WHITE = 1
@@ -19,7 +20,7 @@ FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-@struct.dataclass
+@dataclass
 class GoState:
     # 横幅, マスの数ではない
     size: jnp.ndarray = jnp.int32(19)  # type:ignore
@@ -523,7 +524,7 @@ def _count_ji(_state: GoState, _color, _size):
     return jnp.count_nonzero(_get_ji(board, _color, _size))
 
 
-@struct.dataclass
+@dataclass
 class JI:
     size: jnp.ndarray
     board: jnp.ndarray

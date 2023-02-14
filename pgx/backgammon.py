@@ -3,7 +3,8 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-from flax import struct
+
+from pgx.flax.struct import dataclass
 
 init_dice_pattern: jnp.ndarray = jnp.array(
     [
@@ -42,7 +43,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 )
 
 
-@struct.dataclass
+@dataclass
 class BackgammonState:
     curr_player: jnp.ndarray = jnp.int16(0)
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
