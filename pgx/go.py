@@ -205,13 +205,16 @@ def _not_pass_move(
 
     kou_occurred = _kou_occurred(state, xy)
 
-    # 周囲の連を調べる
+    # 周囲の連から敵石を除く
     state = jax.lax.fori_loop(
-        0, 4, lambda i, s: _check_around_xy(i, s, xy, size), state
+        0, 4, lambda i, s: _remove_around_xy(i, s, xy, size), state
     )
-
     # 石を置く
     state = _set_stone(state, xy)
+    # 周囲をマージ
+    state = jax.lax.fori_loop(
+        0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state
+    )
 
     # コウの確認
     state = jax.lax.cond(
@@ -227,7 +230,21 @@ def _not_pass_move(
     )
 
 
-def _check_around_xy(i, state: GoState, xy, size):
+def _remove_around_xy(i, state: GoState, xy, size):
+    x = xy // state.size + dx[i]
+    y = xy % state.size + dy[i]
+    adj_xy = x * state.size + y
+
+    is_off = _is_off_board(x, y, state.size)
+    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
+    state = jax.lax.cond(
+        ((~is_off) & is_opp_ren),
+        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy, size),
+        lambda: state,
+    )
+    return state
+
+def _merge_around_xy(i, state: GoState, xy, size):
     my_color = _my_color(state)
     x = xy // state.size + dx[i]
     y = xy % state.size + dy[i]
@@ -235,12 +252,6 @@ def _check_around_xy(i, state: GoState, xy, size):
 
     is_off = _is_off_board(x, y, state.size)
     is_my_ren = state.ren_id_board[my_color, adj_xy] != -1
-    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
-    state = jax.lax.cond(
-        ((~is_off) & is_opp_ren),
-        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy, size),
-        lambda: state,
-    )
     state = jax.lax.cond(
         ((~is_off) & is_my_ren),
         lambda: _merge_ren(state, xy, adj_xy),
