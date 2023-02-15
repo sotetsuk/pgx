@@ -507,9 +507,12 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     opp_color = _opponent_color(state)
     my_ren = state.ren_id_board[my_color]
     opp_ren = state.ren_id_board[opp_color]
+    my_num_pseudo, my_idx_sum, my_idx_squared_sum = _count(state, my_color, size)
+    opp_num_pseudo, opp_idx_sum, opp_idx_squared_sum = _count(state, opp_color, size)
+
     # fmt: off
-    my_in_atari = (state.idx_sum[my_color, my_ren] ** 2) == state.idx_squared_sum[my_color, my_ren] * state.num_pseudo[my_color, my_ren]
-    opp_in_atari = (state.idx_sum[opp_color, opp_ren] ** 2) == state.idx_squared_sum[opp_color, opp_ren] * state.num_pseudo[opp_color, opp_ren]
+    my_in_atari = (my_idx_sum[my_ren] ** 2) == my_idx_squared_sum[my_ren] * my_num_pseudo[my_ren]
+    opp_in_atari = (opp_idx_sum[opp_ren] ** 2) == opp_idx_squared_sum[opp_ren] * opp_num_pseudo[opp_ren]
     # fmt: on
     is_empty = (state.ren_id_board[0] == -1) & (state.ren_id_board[1] == -1)
     has_liberty = (my_ren >= 0) & ~my_in_atari
@@ -539,7 +542,7 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
 def _count(state: GoState, color, size):
     ZERO = jnp.int32(0)
     is_empty = (state.ren_id_board[BLACK] == -1) & (state.ren_id_board[WHITE] == -1)
-    idx_sum = jnp.where(is_empty, jnp.arange(1, size ** 2 + 1), jnp.int32(0))
+    idx_sum = jnp.where(is_empty, jnp.arange(1, size ** 2 + 1), ZERO)
     idx_squared_sum = jnp.where(is_empty, jnp.arange(1, size ** 2 + 1) ** 2, ZERO)
 
     @jax.vmap
@@ -549,18 +552,32 @@ def _count(state: GoState, color, size):
         neighbors = xs * state.size + ys
         on_board = (0 <= xs) & (xs < state.size) & (0 <= ys) & (ys < state.size)
         # fmt off
-        return (jnp.where(on_board, is_empty, ZERO).sum(),
+        return (jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
                 jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
                 jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum())
         # fmt on
 
+    idx = jnp.arange(size ** 2)
     my_ren = state.ren_id_board[color]
-    num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(jnp.arange(size * size))
+
+    num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(idx)
     num_pseudo = jnp.where(my_ren >= 0, num_pseudo, ZERO)
     idx_sum = jnp.where(my_ren >= 0, idx_sum, ZERO)
     idx_squared_sum = jnp.where(my_ren >= 0, idx_squared_sum, ZERO)
 
-    return num_pseudo, idx_sum, idx_squared_sum
+    @jax.vmap
+    def _num_pseudo(x):
+        return jnp.where(my_ren == x, num_pseudo, ZERO).sum()
+
+    @jax.vmap
+    def _idx_sum(x):
+        return jnp.where(my_ren == x, idx_sum, ZERO).sum()
+
+    @jax.vmap
+    def _idx_squared_sum(x):
+        return jnp.where(my_ren == x, idx_squared_sum, ZERO).sum()
+
+    return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
 
 def _is_point(_state, x, y):
