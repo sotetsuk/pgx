@@ -900,54 +900,10 @@ def to_sfen(state: State):
 
 
 def _sfen_to_state(sfen):
-    """ """
-    board_char_dir = [
-        "",
-        "P",
-        "L",
-        "N",
-        "S",
-        "B",
-        "R",
-        "G",
-        "K",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "p",
-        "l",
-        "n",
-        "s",
-        "b",
-        "r",
-        "g",
-        "k",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-    ]
-    hand_char_dir = [
-        "P",
-        "L",
-        "N",
-        "S",
-        "B",
-        "R",
-        "G",
-        "p",
-        "l",
-        "n",
-        "s",
-        "b",
-        "r",
-        "g",
-    ]
+    # fmt: off
+    board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
+    hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
+    # fmt: on
     board, turn, hand, _ = sfen.split()
     board_ranks = board.split("/")
     piece_board = jnp.zeros(81, dtype=jnp.int8)
