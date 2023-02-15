@@ -203,7 +203,6 @@ def _not_pass_move(
     agehama_before = state.agehama[my_color]
     is_illegal = ~state.legal_action_mask[xy]
 
-    # 石を置く
     kou_occurred = _kou_occurred(state, xy)
 
     # 周囲の連を調べる
@@ -211,6 +210,7 @@ def _not_pass_move(
         0, 4, lambda i, s: _check_around_xy(i, s, xy, size), state
     )
 
+    # 石を置く
     state = _set_stone(state, xy)
 
     # コウの確認
@@ -280,12 +280,8 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     new_id = my_ren_id_board[_xy]
     adj_ren_id = my_ren_id_board[_adj_xy]
+    small_id, large_id = jnp.minimum(new_id, adj_ren_id), jnp.maximum(new_id, adj_ren_id)
 
-    small_id, large_id = jax.lax.cond(
-        adj_ren_id < new_id,
-        lambda: (adj_ren_id, new_id),
-        lambda: (new_id, adj_ren_id),
-    )
     # 大きいidの連を消し、小さいidの連と繋げる
     ren_id_board = jnp.where(
         my_ren_id_board == large_id, small_id, my_ren_id_board
@@ -318,7 +314,6 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     oppo_color = _opponent_color(_state)
     surrounded_stones = _state.ren_id_board[oppo_color] == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
-    # 一時的に無効化（後で取り除く）
     oppo_ren_id_board = jnp.where(
         surrounded_stones, -1, _state.ren_id_board[oppo_color]
     )
