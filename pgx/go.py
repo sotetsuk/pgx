@@ -307,7 +307,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
-    ),
+    )
 
 
 def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy, size):
