@@ -289,7 +289,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
     my_color = _my_color(_state)
     my_ren_id_board = _state.ren_id_board[my_color]
 
-    new_id = _xy
+    new_id = my_ren_id_board[_xy]
     adj_ren_id = my_ren_id_board[_adj_xy]
     small_id, large_id = jnp.minimum(new_id, adj_ren_id), jnp.maximum(new_id, adj_ren_id)
 
