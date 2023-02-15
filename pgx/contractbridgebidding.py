@@ -1,3 +1,4 @@
+import copy
 from dataclasses import dataclass
 from typing import Tuple
 
@@ -66,10 +67,9 @@ def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
     vul_NS = np.random.randint(0, 2, 1)
     vul_EW = np.random.randint(0, 2, 1)
     dealer = np.random.randint(0, 4, 1)
+    # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players()
-    # sort so that DEALER comes first
-    shuffled_players = np.roll(shuffled_players, -dealer)
-    curr_player = shuffled_players[0]
+    curr_player = shuffled_players[dealer]
     legal_actions = np.ones(38, dtype=np.bool_)
     # 最初はdable, redoubleできない
     legal_actions[-2:] = 0
@@ -86,19 +86,43 @@ def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
 
 
 def _shuffle_players() -> np.ndarray:
-    # player_id = 0, 1 -> team NS
-    shuffled_NS_players = np.random.permutation(np.arange(2, dtype=np.int8))
-    # player_id = 2, 3 -> team EW
-    shuffled_EW_players = np.random.permutation(np.arange(2, 4, dtype=np.int8))
+    """Randomly arranges player IDs in a list in NESW order.
 
-    shuffled_players = np.concatenate(
-        [shuffled_NS_players, shuffled_EW_players]
-    )
-    # sort by NESW
-    shuffled_players[1], shuffled_players[2] = (
-        shuffled_players[2],
-        shuffled_players[1],
-    )
+    Returns:
+        np.ndarray: A list of 4 player IDs randomly arranged in NESW order.
+
+    Example:
+        >>> np.random.seed(0)
+        >>> _shuffle_players()
+        array([1, 2, 0, 3], dtype=int8)
+        >>> _shuffle_players()
+        array([0, 2, 1, 3], dtype=int8)
+    """
+    # player_id = 0, 1 -> team a
+    team_a_players = np.random.permutation(np.arange(2, dtype=np.int8))
+    # player_id = 2, 3 -> team b
+    team_b_players = np.random.permutation(np.arange(2, 4, dtype=np.int8))
+    # decide which team  is on
+    # Randomly determine NSteam and EWteam
+    # Arrange in order of NESW
+    if np.random.random() >= 0.5:
+        shuffled_players = np.array(
+            [
+                team_a_players[0],
+                team_b_players[0],
+                team_a_players[1],
+                team_b_players[1],
+            ]
+        )
+    else:
+        shuffled_players = np.array(
+            [
+                team_b_players[0],
+                team_a_players[0],
+                team_b_players[1],
+                team_a_players[1],
+            ]
+        )
     return shuffled_players
 
 
@@ -106,8 +130,7 @@ def _player_position(
     player: np.ndarray, state: ContractBridgeBiddingState
 ) -> np.ndarray:
     if player != -1:
-        position = np.roll(state.shuffled_players, state.dealer)
-        return np.where(position == player)[0]
+        return np.where(state.shuffled_players == player)[0]
     else:
         return np.full(1, -1, dtype=np.int8)
 
@@ -141,6 +164,25 @@ def step(
         return _continue_step(state)
 
 
+def duplicate(
+    init_state: ContractBridgeBiddingState,
+) -> ContractBridgeBiddingState:
+    """Make duplicated state where NSplayer and EWplayer are swapped"""
+    duplicated_state = copy.deepcopy(init_state)
+    (
+        duplicated_state.shuffled_players[0],
+        duplicated_state.shuffled_players[1],
+        duplicated_state.shuffled_players[2],
+        duplicated_state.shuffled_players[3],
+    ) = (
+        duplicated_state.shuffled_players[1],
+        duplicated_state.shuffled_players[0],
+        duplicated_state.shuffled_players[3],
+        duplicated_state.shuffled_players[2],
+    )
+    return duplicated_state
+
+
 # ゲームが非合法手検知で終了した場合
 def _illegal_step(
     state: ContractBridgeBiddingState,
@@ -168,7 +210,7 @@ def _continue_step(
     # 次ターンのプレイヤー、ターン数
     # state.curr_player = (state.curr_player + 1) % 4
     state.turn += 1
-    state.curr_player = state.shuffled_players[state.turn % 4]
+    state.curr_player = state.shuffled_players[(state.dealer + state.turn) % 4]
     (
         state.legal_action_mask[36],
         state.legal_action_mask[37],
@@ -291,7 +333,7 @@ def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
 
 
 # playerがパートナーか判断s
-def _is_partner(position1: np.ndarray, position2: np.ndarray) -> int:
+def _is_partner(position1: np.ndarray, position2: np.ndarray) -> np.ndarray:
     return (abs(position1 - position2) + 1) % 2
 
 

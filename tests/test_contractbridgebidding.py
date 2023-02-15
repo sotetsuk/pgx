@@ -6,6 +6,7 @@ import numpy as np
 from pgx.contractbridgebidding import (
     ContractBridgeBiddingState,
     _calculate_dds_tricks,
+    _is_partner,
     _key_to_hand,
     _load_sample_hash,
     _pbn_to_key,
@@ -14,6 +15,7 @@ from pgx.contractbridgebidding import (
     _state_to_key,
     _state_to_pbn,
     _to_binary,
+    duplicate,
     init,
     step,
 )
@@ -22,11 +24,8 @@ from pgx.contractbridgebidding import (
 def test_shuffle_players():
     for i in range(100):
         shuffled_players = _shuffle_players()
-        assert np.all(np.unique(shuffled_players) == np.array([0, 1, 2, 3]))
-        assert shuffled_players[0] == 0 or shuffled_players[0] == 1
-        assert shuffled_players[1] == 2 or shuffled_players[1] == 3
-        assert shuffled_players[2] == 0 or shuffled_players[2] == 1
-        assert shuffled_players[3] == 2 or shuffled_players[3] == 3
+        assert (shuffled_players[0] - shuffled_players[2]) % 2
+        assert (shuffled_players[1] - shuffled_players[3]) % 2
 
 
 def test_init():
@@ -39,6 +38,28 @@ def test_init():
     assert _player_position(state.curr_player, state) == state.dealer
     assert state.legal_action_mask[:-2].all()
     assert not state.legal_action_mask[-2:].all()
+
+
+def test_duplicate():
+    for i in range(1000):
+        _, init_state = init()
+        duplicated_state = duplicate(init_state)
+        assert (
+            init_state.shuffled_players[0]
+            == duplicated_state.shuffled_players[1]
+        )
+        assert (
+            init_state.shuffled_players[1]
+            == duplicated_state.shuffled_players[0]
+        )
+        assert (
+            init_state.shuffled_players[2]
+            == duplicated_state.shuffled_players[3]
+        )
+        assert (
+            init_state.shuffled_players[3]
+            == duplicated_state.shuffled_players[2]
+        )
 
 
 def test_step():
@@ -55,7 +76,7 @@ def test_step():
     _, state = init()
     state.dealer = 1
     state.curr_player = 3
-    state.shuffled_players = np.array([3, 1, 2, 0], dtype=np.int8)
+    state.shuffled_players = np.array([0, 3, 1, 2], dtype=np.int8)
     bidding_history = np.full(319, -1, dtype=np.int8)
     legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[-2:] = 0
