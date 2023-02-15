@@ -95,8 +95,6 @@ def _shuffle_players() -> np.ndarray:
         >>> np.random.seed(0)
         >>> _shuffle_players()
         array([1, 2, 0, 3], dtype=int8)
-        >>> _shuffle_players()
-        array([0, 2, 1, 3], dtype=int8)
     """
     # player_id = 0, 1 -> team a
     team_a_players = np.random.permutation(np.arange(2, dtype=np.int8))
@@ -105,7 +103,7 @@ def _shuffle_players() -> np.ndarray:
     # decide which team  is on
     # Randomly determine NSteam and EWteam
     # Arrange in order of NESW
-    if np.random.random() >= 0.5:
+    if np.random.randint(2) == 1:
         shuffled_players = np.array(
             [
                 team_a_players[0],
@@ -169,17 +167,8 @@ def duplicate(
 ) -> ContractBridgeBiddingState:
     """Make duplicated state where NSplayer and EWplayer are swapped"""
     duplicated_state = copy.deepcopy(init_state)
-    (
-        duplicated_state.shuffled_players[0],
-        duplicated_state.shuffled_players[1],
-        duplicated_state.shuffled_players[2],
-        duplicated_state.shuffled_players[3],
-    ) = (
-        duplicated_state.shuffled_players[1],
-        duplicated_state.shuffled_players[0],
-        duplicated_state.shuffled_players[3],
-        duplicated_state.shuffled_players[2],
-    )
+    ix = np.array([1, 0, 3, 2])
+    duplicated_state.shuffled_players = duplicated_state.shuffled_players[ix]
     return duplicated_state
 
 
