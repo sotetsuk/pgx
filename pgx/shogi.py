@@ -929,9 +929,7 @@ def _sfen_to_state(sfen):
     else:
         s_turn = jnp.int8(1)
     s_hand = jnp.zeros(14, dtype=jnp.int8)
-    if hand == "-":
-        s_hand = jnp.reshape(s_hand, (2, 7))
-    else:
+    if hand != "-":
         num_piece = 1
         for char in hand:
             if char.isdigit():
@@ -942,7 +940,7 @@ def _sfen_to_state(sfen):
     return State(
         turn=s_turn,
         piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten(),
-        hand=s_hand,
+        hand=jnp.reshape(s_hand, (2, 7)),
     )
 
 
