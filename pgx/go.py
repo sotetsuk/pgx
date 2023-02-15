@@ -784,12 +784,27 @@ def _count_ji_loop(_ji: JI) -> JI:
 
     dxy = jnp.int32([-_BOARD_WIDTH, _BOARD_WIDTH, -1, +1])
     ixs = xy + dxy
-    board = board.at[ixs].set(
-        jnp.where(board[ixs] == POINT, o_color, board[ixs])
-    )
-    candidate_xy = candidate_xy.at[ixs].set(
-        (board[ixs] == o_color) & (~examined_stones[ixs])
-    )
+
+    def f(i, x):
+        board, candidate_xy = x
+        board = board.at[ixs[i]].set(
+            jax.lax.cond(
+                board[ixs[i]] == POINT,
+                lambda: o_color,
+                lambda: board[ixs[i]],
+            )
+        )
+        candidate_xy = candidate_xy.at[ixs[i]].set(
+            jnp.logical_and(
+                board[ixs[i]] == o_color,
+                examined_stones[ixs[i]] is False,
+            )
+        )
+
+        return board, candidate_xy
+
+    board, candidate_xy = jax.lax.fori_loop(0, 4, f, (board, candidate_xy))
+
     return JI(
         size, board, candidate_xy, examined_stones, _ji.color
     )  # type:ignore
