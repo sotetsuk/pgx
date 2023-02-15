@@ -900,14 +900,56 @@ def to_sfen(state: State):
 
 
 def _sfen_to_state(sfen):
-    """
-
-    """
-    board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n",
-                      "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"]
-    hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
+    """ """
+    board_char_dir = [
+        "",
+        "P",
+        "L",
+        "N",
+        "S",
+        "B",
+        "R",
+        "G",
+        "K",
+        "+P",
+        "+L",
+        "+N",
+        "+S",
+        "+B",
+        "+R",
+        "p",
+        "l",
+        "n",
+        "s",
+        "b",
+        "r",
+        "g",
+        "k",
+        "+p",
+        "+l",
+        "+n",
+        "+s",
+        "+b",
+        "+r",
+    ]
+    hand_char_dir = [
+        "P",
+        "L",
+        "N",
+        "S",
+        "B",
+        "R",
+        "G",
+        "p",
+        "l",
+        "n",
+        "s",
+        "b",
+        "r",
+        "g",
+    ]
     board, turn, hand, _ = sfen.split()
-    board_ranks = board.split('/')
+    board_ranks = board.split("/")
     piece_board = jnp.zeros(81, dtype=jnp.int8)
     for i in range(9):
         file = board_ranks[i]
@@ -941,7 +983,7 @@ def _sfen_to_state(sfen):
             else:
                 s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
                 num_piece = 1
-    return State(turn=s_turn, piece_board=piece_board, hand = s_hand)
+    return State(turn=s_turn, piece_board=piece_board, hand=s_hand)
 
 
 def _cshogi_board_to_state(board):
