@@ -205,12 +205,13 @@ def _not_pass_move(
 
     # 石を置く
     kou_occurred = _kou_occurred(state, xy)
-    state = _set_stone(state, xy)
 
     # 周囲の連を調べる
     state = jax.lax.fori_loop(
         0, 4, lambda i, s: _check_around_xy(i, s, xy, size), state
     )
+
+    state = _set_stone(state, xy)
 
     # コウの確認
     state = jax.lax.cond(
