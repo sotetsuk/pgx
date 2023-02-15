@@ -22,7 +22,8 @@ Pgx実装での違い
 import jax
 import jax.lax as lax
 import jax.numpy as jnp
-from flax import struct
+
+from pgx.flax.struct import dataclass
 
 NUM_TILES = 44
 NUM_TILE_TYPES = 11
@@ -35,7 +36,7 @@ YAKU_SCORES = jnp.int8([15, 15, 15, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0
 MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 + 2) // 2 * 2
 
 
-@struct.dataclass
+@dataclass
 class State:
     curr_player: jnp.ndarray = jnp.int8(0)
     legal_action_mask: jnp.ndarray = jnp.zeros(9, jnp.bool_)

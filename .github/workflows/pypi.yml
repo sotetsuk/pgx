@@ -1,6 +1,9 @@
 name: pypi
 
-on: [push]
+on:
+  push:
+    tags:
+      - 'v*'
 
 jobs:
   build-n-publish:

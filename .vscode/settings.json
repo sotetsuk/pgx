@@ -5,13 +5,7 @@
     "python.analysis.typeCheckingMode": "basic",
     "[python]": {
         "editor.tabSize": 4,
-        "editor.formatOnSave": true,
-        "editor.formatOnPaste": false,
-        "editor.formatOnType": false,
         "editor.insertSpaces": true,
-        "editor.codeActionsOnSave": {
-          "source.organizeImports": true
-        }
     },
     "python.testing.pytestArgs": [
         "mypkg",

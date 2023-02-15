@@ -12,7 +12,7 @@ from .backgammon import BackgammonState
 from .chess import ChessState
 from .contractbridgebidding import ContractBridgeBiddingState
 from .go import GoState
-from .shogi import ShogiState
+from .shogi import State as ShogiState
 from .suzume_jong import State as SuzumeJongState
 from .tic_tac_toe import State as TictactoeState
 
@@ -494,7 +494,7 @@ class Visualizer:
         elif isinstance(_states, ShogiState):
             return ShogiState(
                 turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],
+                piece_board=_states.piece_board[_i],
                 hand=_states.hand[_i],
             )
         elif isinstance(_states, SuzumeJongState):
@@ -1351,11 +1351,15 @@ class Visualizer:
 
         return board_g
 
-    def _make_shogi_dwg(
+    def _make_shogi_dwg(  # noqa: C901
         self,
         dwg,
         state: ShogiState,
     ) -> svgwrite.Drawing:
+        if state.turn == 1:
+            from pgx.shogi import _flip
+
+            state = _flip(state)
         PIECES = [
             "歩",
             "香",
@@ -1404,15 +1408,14 @@ class Visualizer:
             """
             ShogiStateのhandを飛、角、金、銀、桂、香、歩の順にする
             """
-            hands = state.hand[::-1]
-            hands[0], hands[1], hands[2], hands[7], hands[8], hands[9] = (
-                hands[1],
-                hands[2],
-                hands[0],
-                hands[8],
-                hands[9],
-                hands[7],
-            )
+            hands = state.hand.flatten()[::-1]
+            tmp = hands
+            hands = hands.at[0].set(tmp[1])
+            hands = hands.at[1].set(tmp[2])
+            hands = hands.at[2].set(tmp[0])
+            hands = hands.at[7].set(tmp[8])
+            hands = hands.at[8].set(tmp[9])
+            hands = hands.at[9].set(tmp[7])
             pieces = PIECES[6::-1]
             pieces[0], pieces[1], pieces[2] = pieces[1], pieces[2], pieces[0]
 
@@ -1521,9 +1524,14 @@ class Visualizer:
         # pieces
         p1_pieces_g = dwg.g()
         p2_pieces_g = dwg.g()
+        one_hot_board = np.zeros((29, 81))
+        board = state.piece_board
+        for i in range(81):
+            piece = board[i]
+            one_hot_board[piece, i] = 1
         for i, piece_pos, piece_type in zip(
             range(28),
-            state.board[1:29],
+            one_hot_board,
             PIECES,
         ):
             for xy, is_set in enumerate(piece_pos):

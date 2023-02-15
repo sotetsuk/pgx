@@ -11,8 +11,9 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Tuple
 
 import jax
-from flax import struct
 from jax import numpy as jnp
+
+from pgx.flax.struct import dataclass
 
 player_speed = jnp.array(3, dtype=jnp.int8)
 time_limit = jnp.array(2500, dtype=jnp.int16)
@@ -22,7 +23,7 @@ ONE = jnp.array(1, dtype=jnp.int8)
 NINE = jnp.array(9, dtype=jnp.int8)
 
 
-@struct.dataclass
+@dataclass
 class State:
     cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int8)
     pos: jnp.ndarray = jnp.array(9, dtype=jnp.int8)

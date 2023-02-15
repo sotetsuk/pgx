@@ -1,6 +1,20 @@
+import csv
+from typing import Tuple
+
 import numpy as np
 
-from pgx.contractbridgebidding import ContractBridgeBiddingState, init, step
+from pgx.contractbridgebidding import (
+    ContractBridgeBiddingState,
+    _calculate_dds_tricks,
+    _key_to_hand,
+    _load_sample_hash,
+    _pbn_to_key,
+    _state_to_key,
+    _state_to_pbn,
+    _to_binary,
+    init,
+    step,
+)
 
 
 def test_init():
@@ -625,3 +639,200 @@ def test_max_action():
         else:
             _, state, _ = step(state, max_action_length_agent(state))
             assert state.terminated
+
+
+def test_to_binary():
+    x = np.arange(52, dtype=np.int8)[::-1].reshape((4, 13)) % 4
+    y = _to_binary(x)
+
+    assert np.all(
+        y == np.array([60003219, 38686286, 20527417, 15000804], dtype=np.int32)
+    )
+
+    x = np.arange(52, dtype=np.int8).reshape((4, 13)) // 13
+    y = _to_binary(x)
+    assert np.all(
+        y == np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    )
+
+    x = np.arange(52, dtype=np.int8)[::-1].reshape((4, 13)) // 13
+    y = _to_binary(x)
+    assert np.all(
+        y == np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    )
+
+
+def test_state_to_pbn():
+    _, state = init()
+    state.hand = np.arange(52, dtype=np.int8)
+    pbn = _state_to_pbn(state)
+    assert (
+        pbn
+        == "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432"
+    )
+    state.hand = np.arange(52, dtype=np.int8)[::-1]
+    pbn = _state_to_pbn(state)
+    assert (
+        pbn
+        == "N:...AKQJT98765432 ..AKQJT98765432. .AKQJT98765432.. AKQJT98765432..."
+    )
+    # fmt: off
+    state.hand = np.array([
+        12,9,8,6,3,2,13,24,22,16,15,36,45,
+        10,7,4,21,37,31,51,50,49,47,43,41,40,
+        11,1,25,23,19,18,17,35,34,33,48,44,42,
+        0,5,20,14,26,38,32,30,29,28,27,39,46,
+        ]
+    )
+    # fmt: on
+    pbn = _state_to_pbn(state)
+    print(pbn)
+    assert (
+        pbn
+        == "N:KT9743.AQT43.J.7 J85.9.Q6.KQJ9532 Q2.KJ765.T98.T64 A6.82.AK75432.A8"
+    )
+
+
+def test_state_to_key():
+    _, state = init()
+    state.hand = np.arange(52, dtype=np.int8)
+    key = _state_to_key(state)
+    assert np.all(
+        key == np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    )
+
+    state.hand = np.arange(52, dtype=np.int8)[::-1]
+    key = _state_to_key(state)
+    assert np.all(
+        key == np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    )
+
+    # fmt: off
+    state.hand = np.array([
+        12,9,8,6,3,2,13,24,22,16,15,36,45,
+        10,7,4,21,37,31,51,50,49,47,43,41,40,
+        11,1,25,23,19,18,17,35,34,33,48,44,42,
+        0,5,20,14,26,38,32,30,29,28,27,39,46,
+        ]
+    )
+    # fmt: on
+    key = _state_to_key(state)
+    print(key)
+    assert np.all(
+        key
+        == np.array([58835992, 12758306, 67074695, 56200597], dtype=np.int32)
+    )
+
+
+def test_key_to_hand():
+    key = np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    hand = _key_to_hand(key)
+    assert np.all(hand == np.arange(52, dtype=np.int8))
+
+    key = np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    hand = _key_to_hand(key)
+    correct_hand = np.arange(52, dtype=np.int8)[::-1]
+    sorted_correct_hand = np.concatenate(
+        [
+            np.sort(correct_hand[:13]),
+            np.sort(correct_hand[13:26]),
+            np.sort(correct_hand[26:39]),
+            np.sort(correct_hand[39:]),
+        ]
+    ).reshape(-1)
+    assert np.all(hand == sorted_correct_hand)
+
+    key = np.array([58835992, 12758306, 67074695, 56200597], dtype=np.int32)
+    hand = _key_to_hand(key)
+    # fmt: off
+    correct_hand = np.array([
+        12,9,8,6,3,2,13,24,22,16,15,36,45,
+        10,7,4,21,37,31,51,50,49,47,43,41,40,
+        11,1,25,23,19,18,17,35,34,33,48,44,42,
+        0,5,20,14,26,38,32,30,29,28,27,39,46,
+        ]
+    )
+    # fmt: on
+    sorted_correct_hand = np.concatenate(
+        [
+            np.sort(correct_hand[:13]),
+            np.sort(correct_hand[13:26]),
+            np.sort(correct_hand[26:39]),
+            np.sort(correct_hand[39:]),
+        ]
+    ).reshape(-1)
+    print(hand)
+    assert np.all(hand == sorted_correct_hand)
+
+
+def test_state_to_key_cycle():
+    # state => key => st
+    for _ in range(1000):
+        _, state = init()
+        sorted_hand = np.concatenate(
+            [
+                np.sort(state.hand[:13]),
+                np.sort(state.hand[13:26]),
+                np.sort(state.hand[26:39]),
+                np.sort(state.hand[39:]),
+            ]
+        ).reshape(-1)
+        key = _state_to_key(state)
+        reconst_hand = _key_to_hand(key)
+        assert np.all(sorted_hand == reconst_hand)
+
+
+def test_calcurate_dds_tricks():
+    HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
+    samples = []
+    with open("tests/assets/contractbridge-ddstable-sample100.csv", "r") as f:
+        reader = csv.reader(f, delimiter=",")
+        for i in reader:
+            samples.append([i[0], np.array(i[1:]).astype(np.int8)])
+    for i in range(len(HASH_TABLE_SAMPLE_KEYS)):
+        _, state = init()
+        state.hand = _key_to_hand(HASH_TABLE_SAMPLE_KEYS[i])
+        dds_tricks = _calculate_dds_tricks(
+            state, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+        )
+        # sample dataから、作成したhash tableを用いて、ddsの結果を計算
+        # その結果とsample dataが一致しているか確認
+        assert np.all(dds_tricks == samples[i][1])
+
+
+def to_value(sample: list) -> np.ndarray:
+    """Convert sample to value
+    >>> sample = ['0', '1', '0', '4', '0', '13', '12', '13', '9', '13', '0', '1', '0', '4', '0', '13', '12', '13', '9', '13']
+    >>> to_value(sample)
+    array([  4160, 904605,   4160, 904605])
+    """
+    np_sample = np.array(sample)
+    np_sample = np_sample.astype(np.int8).reshape(4, 5)
+    return to_binary(np_sample)
+
+
+def to_binary(x) -> np.ndarray:
+    """Convert dds information to value
+    >>> np.array([16**i for i in range(5)], dtype=np.int32)[::-1]
+    array([65536,  4096,   256,    16,     1], dtype=int32)
+    >>> x = np.arange(20, dtype=np.int32).reshape(4, 5) % 14
+    >>> to_binary(x)
+    array([  4660, 354185, 703696,  74565])
+    """
+    bases = np.array([16**i for i in range(5)], dtype=np.int32)[::-1]
+    return (x * bases).sum(axis=1)  # shape = (4, )
+
+
+def make_hash_table(csv_path: str) -> Tuple[np.ndarray, np.ndarray]:
+    """make key and value of hash from samples"""
+    samples = []
+    with open(csv_path, "r") as f:
+        reader = csv.reader(f, delimiter=",")
+        for i in reader:
+            samples.append(i)
+    keys = []
+    values = []
+    for sample in samples:
+        keys.append(_pbn_to_key(sample[0]))
+        values.append(to_value(sample[1:]))
+    return np.array(keys), np.array(values)

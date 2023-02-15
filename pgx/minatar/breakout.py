@@ -15,8 +15,9 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Tuple
 
 import jax
-from flax import struct
 from jax import numpy as jnp
+
+from pgx.flax.struct import dataclass
 
 ZERO = jnp.array(0, dtype=jnp.int8)
 ONE = jnp.array(1, dtype=jnp.int8)
@@ -26,7 +27,7 @@ FOUR = jnp.array(4, dtype=jnp.int8)
 NINE = jnp.array(9, dtype=jnp.int8)
 
 
-@struct.dataclass
+@dataclass
 class State:
     ball_y: jnp.ndarray = THREE
     ball_x: jnp.ndarray = ZERO
