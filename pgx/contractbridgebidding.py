@@ -4,6 +4,11 @@ from typing import Tuple
 
 import numpy as np
 
+# カードと数字の対応
+# 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
+# それぞれのsuitにおいて以下の順で数字が並ぶ
+TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
+
 
 @dataclass
 class ContractBridgeBiddingState:
@@ -11,6 +16,8 @@ class ContractBridgeBiddingState:
     turn: np.ndarray = np.array(0, dtype=np.int16)
     # curr_player 現在のプレイヤーid
     curr_player: np.ndarray = np.array(-1, dtype=np.int8)
+    # シャッフルされたプレイヤーの並び
+    shuffled_players: np.ndarray = np.zeros(4, dtype=np.int8)
     # 終端状態
     terminated: np.ndarray = np.array(False, dtype=np.bool_)
     # hand 各プレイヤーの手札
@@ -45,6 +52,7 @@ class ContractBridgeBiddingState:
     legal_action_mask: np.ndarray = np.ones(38, dtype=np.bool_)
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
+    # デノミネーションの順番は C, D, H, S, NT = 0, 1, 2, 3, 4
     first_denomination_NS: np.ndarray = np.full(5, -1, dtype=np.int8)
     # first_denominaton_EW EWチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
@@ -59,11 +67,14 @@ def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
     vul_NS = np.random.randint(0, 2, 1)
     vul_EW = np.random.randint(0, 2, 1)
     dealer = np.random.randint(0, 4, 1)
-    curr_player = copy.deepcopy(dealer)
+    # shuffled players and arrange in order of NESW
+    shuffled_players = _shuffle_players()
+    curr_player = shuffled_players[dealer]
     legal_actions = np.ones(38, dtype=np.bool_)
     # 最初はdable, redoubleできない
     legal_actions[-2:] = 0
     state = ContractBridgeBiddingState(
+        shuffled_players=shuffled_players,
         curr_player=curr_player,
         hand=hand,
         dealer=dealer,
@@ -72,6 +83,54 @@ def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
         legal_action_mask=legal_actions,
     )
     return state.curr_player, state
+
+
+def _shuffle_players() -> np.ndarray:
+    """Randomly arranges player IDs in a list in NESW order.
+
+    Returns:
+        np.ndarray: A list of 4 player IDs randomly arranged in NESW order.
+
+    Example:
+        >>> np.random.seed(0)
+        >>> _shuffle_players()
+        array([1, 2, 0, 3], dtype=int8)
+    """
+    # player_id = 0, 1 -> team a
+    team_a_players = np.random.permutation(np.arange(2, dtype=np.int8))
+    # player_id = 2, 3 -> team b
+    team_b_players = np.random.permutation(np.arange(2, 4, dtype=np.int8))
+    # decide which team  is on
+    # Randomly determine NSteam and EWteam
+    # Arrange in order of NESW
+    if np.random.randint(2) == 1:
+        shuffled_players = np.array(
+            [
+                team_a_players[0],
+                team_b_players[0],
+                team_a_players[1],
+                team_b_players[1],
+            ]
+        )
+    else:
+        shuffled_players = np.array(
+            [
+                team_b_players[0],
+                team_a_players[0],
+                team_b_players[1],
+                team_a_players[1],
+            ]
+        )
+    return shuffled_players
+
+
+def _player_position(
+    player: np.ndarray, state: ContractBridgeBiddingState
+) -> np.ndarray:
+    if player != -1:
+        return np.where(state.shuffled_players == player)[0]
+    else:
+        return np.full(1, -1, dtype=np.int8)
 
 
 def step(
@@ -103,6 +162,16 @@ def step(
         return _continue_step(state)
 
 
+def duplicate(
+    init_state: ContractBridgeBiddingState,
+) -> ContractBridgeBiddingState:
+    """Make duplicated state where NSplayer and EWplayer are swapped"""
+    duplicated_state = copy.deepcopy(init_state)
+    ix = np.array([1, 0, 3, 2])
+    duplicated_state.shuffled_players = duplicated_state.shuffled_players[ix]
+    return duplicated_state
+
+
 # ゲームが非合法手検知で終了した場合
 def _illegal_step(
     state: ContractBridgeBiddingState,
@@ -128,8 +197,9 @@ def _continue_step(
     state: ContractBridgeBiddingState,
 ) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
     # 次ターンのプレイヤー、ターン数
-    state.curr_player = (state.curr_player + 1) % 4
+    # state.curr_player = (state.curr_player + 1) % 4
     state.turn += 1
+    state.curr_player = state.shuffled_players[(state.dealer + state.turn) % 4]
     (
         state.legal_action_mask[36],
         state.legal_action_mask[37],
@@ -185,7 +255,7 @@ def _state_bid(
     state.last_bidder = state.curr_player
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
-    team = _player_to_team(state.last_bidder)
+    team = _position_to_team(_player_position(state.last_bidder, state))
     # team = 1ならEWチーム
     if team and (state.first_denomination_EW[denomination] == -1):
         state.first_denomination_EW[denomination] = state.last_bidder
@@ -205,8 +275,8 @@ def _bid_to_denomination(bid: int) -> int:
 
 
 # playerのチームを判定　0: NSチーム, 1: EWチーム
-def _player_to_team(player: np.ndarray) -> np.ndarray:
-    return player % 2
+def _position_to_team(position: np.ndarray) -> np.ndarray:
+    return position % 2
 
 
 # 次プレイヤーのX, XXが合法手かどうか
@@ -225,8 +295,8 @@ def _is_legal_X(state: ContractBridgeBiddingState) -> bool:
         and (not state.call_xx)
         and (
             not _is_partner(
-                state.last_bidder,
-                state.curr_player,
+                _player_position(state.last_bidder, state),
+                _player_position(state.curr_player, state),
             )
         )
     ):
@@ -241,8 +311,8 @@ def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
         and (not state.call_xx)
         and (
             _is_partner(
-                state.last_bidder,
-                state.curr_player,
+                _player_position(state.last_bidder, state),
+                _player_position(state.curr_player, state),
             )
         )
     ):
@@ -251,15 +321,9 @@ def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
         return False
 
 
-# playerがパートナーか判断
-def _is_partner(player1: np.ndarray, player2: np.ndarray) -> np.ndarray:
-    return (abs(player1 - player2) + 1) % 2
-
-
-# カードと数字の対応
-# 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
-# それぞれのsuitにおいて以下の順で数字が並ぶ
-TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
+# playerがパートナーか判断s
+def _is_partner(position1: np.ndarray, position2: np.ndarray) -> np.ndarray:
+    return (abs(position1 - position2) + 1) % 2
 
 
 def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
