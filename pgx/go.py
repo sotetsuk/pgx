@@ -11,7 +11,6 @@ POINT = 2
 BLACK_CHAR = "@"
 WHITE_CHAR = "O"
 POINT_CHAR = "+"
-INVALID_POINT = jnp.int32(999)
 
 dx = jnp.int32([-1, +1, 0, 0])
 dy = jnp.int32([0, 0, -1, +1])
@@ -29,11 +28,6 @@ class GoState:
     ren_id_board: jnp.ndarray = jnp.full(
         (2, 19 * 19), -1, dtype=jnp.int32
     )  # type:ignore
-
-    num_pseudo: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
-    # 最初のマスが0とならないよう、idx_sumとidx_squared_sumはマス目が1始まり
-    idx_sum: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
-    idx_squared_sum: jnp.ndarray = jnp.zeros((2, 19 * 19), dtype=jnp.int32)
 
     # 設置可能なマスをTrueとしたマスク
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
@@ -141,9 +135,6 @@ def init(
         ren_id_board=jnp.full(
             (2, size**2), -1, dtype=jnp.int32
         ),  # type:ignore
-        num_pseudo=jnp.zeros((2, size**2), dtype=jnp.int32),
-        idx_sum=jnp.zeros((2, size**2), dtype=jnp.int32),
-        idx_squared_sum=jnp.zeros((2, size**2), dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),  # type:ignore
         curr_player=curr_player,  # type:ignore
@@ -177,7 +168,7 @@ def _update_state_wo_legal_action(
 ) -> Tuple[GoState, jnp.ndarray]:
     _state, _reward = jax.lax.cond(
         (_action < _size * _size),
-        lambda: _not_pass_move(_state, _action),
+        lambda: _not_pass_move(_state, _action, _size),
         lambda: _pass_move(_state, _size),
     )
 
@@ -204,39 +195,26 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
 
 
 def _not_pass_move(
-    _state: GoState, _action: int
+    _state: GoState, _action: int, size
 ) -> Tuple[GoState, jnp.ndarray]:
     state = _state.replace(passed=False)  # type: ignore
     xy = _action
     my_color = _my_color(state)
     agehama_before = state.agehama[my_color]
-    is_illegal = _is_illegal_move(state, xy)  # 既に他の石が置かれている or コウ
+    is_illegal = ~state.legal_action_mask[xy]
 
-    # 石を置く
     kou_occurred = _kou_occurred(state, xy)
-    state = _set_stone(state, xy)
 
-    # 周囲の連を調べる
+    # 周囲の連から敵石を除く
     state = jax.lax.fori_loop(
-        0, 4, lambda i, s: _check_around_xy(i, s, xy), state
+        0, 4, lambda i, s: _remove_around_xy(i, s, xy, size), state
     )
-
-    # 取り除ける石は取り除く
-    _board = state.ren_id_board[_opponent_color(state)]
-    state = state.replace(
-        ren_id_board=state.ren_id_board.at[_opponent_color(state)].set(
-            jnp.where(
-                _board == INVALID_POINT,
-                -1,
-                _board,
-            )
-        ),
+    # 石を置く
+    state = _set_stone(state, xy)
+    # 周囲をマージ
+    state = jax.lax.fori_loop(
+        0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state
     )
-
-    # 自殺手
-    is_illegal = (
-        state.num_pseudo[my_color, state.ren_id_board[my_color, xy]] == 0
-    ) | is_illegal
 
     # コウの確認
     state = jax.lax.cond(
@@ -252,36 +230,28 @@ def _not_pass_move(
     )
 
 
-def _check_around_xy(i, state: GoState, xy):
+def _remove_around_xy(i, state: GoState, xy, size):
+    x = xy // state.size + dx[i]
+    y = xy % state.size + dy[i]
+    adj_xy = x * state.size + y
+
+    is_off = _is_off_board(x, y, state.size)
+    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
+    state = jax.lax.cond(
+        ((~is_off) & is_opp_ren),
+        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy, size),
+        lambda: state,
+    )
+    return state
+
+def _merge_around_xy(i, state: GoState, xy, size):
     my_color = _my_color(state)
     x = xy // state.size + dx[i]
     y = xy % state.size + dy[i]
     adj_xy = x * state.size + y
 
-    put_ren_id = state.ren_id_board[my_color, xy]
-
-    is_off = _is_off_board(x, y, state.size) | (
-        state.ren_id_board[_opponent_color(state), adj_xy] == INVALID_POINT
-    )
+    is_off = _is_off_board(x, y, state.size)
     is_my_ren = state.ren_id_board[my_color, adj_xy] != -1
-    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
-    replaced_state = state.replace(  # type:ignore
-        num_pseudo=state.num_pseudo.at[my_color, put_ren_id].add(1),
-        idx_sum=state.idx_sum.at[my_color, put_ren_id].add(adj_xy + 1),
-        idx_squared_sum=state.idx_squared_sum.at[my_color, put_ren_id].add(
-            (adj_xy + 1) ** 2
-        ),
-    )
-    state = jax.lax.cond(
-        ((~is_off) & (~is_my_ren) & (~is_opp_ren)),
-        lambda: replaced_state,
-        lambda: state,
-    )
-    state = jax.lax.cond(
-        ((~is_off) & is_opp_ren),
-        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy),
-        lambda: state,
-    )
     state = jax.lax.cond(
         ((~is_off) & is_my_ren),
         lambda: _merge_ren(state, xy, adj_xy),
@@ -312,29 +282,7 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
     my_color = _my_color(_state)
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[my_color, _xy].set(_xy),
-        num_pseudo=_state.num_pseudo.at[my_color, _xy].set(0),
-        idx_sum=_state.idx_sum.at[my_color, _xy].set(0),
-        idx_squared_sum=_state.idx_squared_sum.at[my_color, _xy].set(0),
     )
-
-
-def _is_atari(state: GoState, color, ren_id):
-    """
-    colorのren_idの連がアタリか判定する
-    """
-    return (state.idx_sum[color, ren_id] ** 2) == state.idx_squared_sum[
-        color, ren_id
-    ] * state.num_pseudo[color, ren_id]
-
-
-def _single_liberty(state: GoState, color, ren_id):
-    """
-    アタリの点を返す
-    アタリでない連に用いても無意味であることに注意
-    """
-    return (
-        state.idx_squared_sum[color, ren_id] // state.idx_sum[color, ren_id]
-    ) - 1
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
@@ -343,97 +291,33 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     new_id = my_ren_id_board[_xy]
     adj_ren_id = my_ren_id_board[_adj_xy]
+    small_id, large_id = jnp.minimum(new_id, adj_ren_id), jnp.maximum(new_id, adj_ren_id)
 
-    small_id, large_id = jax.lax.cond(
-        adj_ren_id < new_id,
-        lambda: (adj_ren_id, new_id),
-        lambda: (new_id, adj_ren_id),
-    )
     # 大きいidの連を消し、小さいidの連と繋げる
     ren_id_board = jnp.where(
         my_ren_id_board == large_id, small_id, my_ren_id_board
     )
 
-    _other_num_pseudo = _state.num_pseudo[my_color, large_id] - 1
-    _other_idx_sum = _state.idx_sum[my_color, large_id] - (_xy + 1)
-    _other_idx_squared_sum = (
-        _state.idx_squared_sum[my_color, large_id] - (_xy + 1) ** 2
-    )
-
-    # return _state.replace(  # type:ignore
-    #    ren_id_board=_state.ren_id_board.at[my_color].set(
-    #        ren_id_board
-    #    ),
-    #    num_pseudo=_state.num_pseudo.at[my_color, small_id].set(
-    #        _state.num_pseudo[my_color, small_id] - 1
-    #    ),
-    #    idx_sum=_state.idx_sum.at[my_color, small_id].set(
-    #        _state.idx_sum[my_color, small_id] - (_xy + 1)
-    #    ),
-    #    idx_squared_sum=_state.idx_squared_sum.at[
-    #        my_color, small_id
-    #    ].set(
-    #        _state.idx_squared_sum[my_color, small_id]
-    #        - (_xy + 1) ** 2
-    #    ),
-    # )
-
-    return jax.lax.cond(
-        new_id == adj_ren_id,
-        lambda: _state.replace(  # type:ignore
-            ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
-            num_pseudo=_state.num_pseudo.at[my_color, small_id].set(
-                _state.num_pseudo[my_color, small_id] - 1
-            ),
-            idx_sum=_state.idx_sum.at[my_color, small_id].set(
-                _state.idx_sum[my_color, small_id] - (_xy + 1)
-            ),
-            idx_squared_sum=_state.idx_squared_sum.at[my_color, small_id].set(
-                _state.idx_squared_sum[my_color, small_id] - (_xy + 1) ** 2
-            ),
-        ),
-        lambda: _state.replace(  # type:ignore
-            ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
-            num_pseudo=_state.num_pseudo.at[my_color, small_id]
-            .add(_other_num_pseudo)
-            .at[my_color, large_id]
-            .set(0),
-            idx_sum=_state.idx_sum.at[my_color, small_id]
-            .add(_other_idx_sum)
-            .at[my_color, large_id]
-            .set(0),
-            idx_squared_sum=_state.idx_squared_sum.at[my_color, small_id]
-            .add(_other_idx_squared_sum)
-            .at[my_color, large_id]
-            .set(0),
-        ),
+    return _state.replace(  # type:ignore
+        ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
     )
 
 
-def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy):
+def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy, size):
     oppo_color = _opponent_color(_state)
     oppo_ren_id = _state.ren_id_board[oppo_color, _adj_xy]
 
-    # x = x.at[idx].add(y)      x[idx] += y みたいな感じで
-    # x = x.at[idx].minus(y)    x[idx] -= y は無いのだろうか
+    num_pseudo, idx_sum, idx_squared_sum = _count(_state, oppo_color, size)
+
+    # fmt off
+    is_atari = ((idx_sum[oppo_ren_id] ** 2) == idx_squared_sum[oppo_ren_id] * num_pseudo[oppo_ren_id])
+    single_liberty = (idx_squared_sum[oppo_ren_id] // idx_sum[oppo_ren_id]) - 1
+    # fmt on
+
     return jax.lax.cond(
-        _is_atari(_state, oppo_color, oppo_ren_id)
-        & (_single_liberty(_state, oppo_color, oppo_ren_id) == _xy),
+        is_atari & (single_liberty == _xy),
         lambda: _remove_stones(_state, oppo_ren_id, _adj_xy),
-        lambda: _state.replace(  # type:ignore
-            num_pseudo=_state.num_pseudo.at[oppo_color, oppo_ren_id].set(
-                _state.num_pseudo[oppo_color, oppo_ren_id] - 1
-            ),
-            idx_sum=_state.idx_sum.at[oppo_color, oppo_ren_id].set(
-                _state.idx_sum[oppo_color, oppo_ren_id] - (_xy + 1)
-            ),
-            idx_squared_sum=_state.idx_squared_sum.at[
-                oppo_color, oppo_ren_id
-            ].set(
-                _state.idx_squared_sum[oppo_color, oppo_ren_id]
-                - (_xy + 1) ** 2
-            ),
-        ),
+        lambda: _state
     )
 
 
@@ -441,62 +325,14 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     oppo_color = _opponent_color(_state)
     surrounded_stones = _state.ren_id_board[oppo_color] == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
-    # 一時的に無効化（後で取り除く）
     oppo_ren_id_board = jnp.where(
-        surrounded_stones, INVALID_POINT, _state.ren_id_board[oppo_color]
-    )
-
-    # 取り除かれた連に隣接する連の呼吸点を増やす
-    # TODO vmap化できそう
-    _state = jax.lax.fori_loop(
-        0,
-        _state.size * _state.size,
-        lambda i, s: _add_adj_liberty(s, i, surrounded_stones),
-        _state,
+        surrounded_stones, -1, _state.ren_id_board[oppo_color]
     )
 
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[oppo_color].set(oppo_ren_id_board),
-        num_pseudo=_state.num_pseudo.at[oppo_color, _rm_ren_id].set(0),
-        idx_sum=_state.idx_sum.at[oppo_color, _rm_ren_id].set(0),
-        idx_squared_sum=_state.idx_squared_sum.at[oppo_color, _rm_ren_id].set(
-            0
-        ),
         agehama=_state.agehama.at[_my_color(_state)].add(agehama),
         kou=jnp.int32(_rm_stone_xy),  # type:ignore
-    )
-
-
-def _add_adj_liberty(state: GoState, xy, s_stones):
-    # 取り除かれた連の場所を呼吸点に追加する
-    my_color = _my_color(state)
-    ren_id = state.ren_id_board[my_color, xy]
-    replaced_state = jax.lax.fori_loop(
-        0,
-        4,
-        lambda i, s: _check_if_adj_is_removed(s, i, xy, s_stones, ren_id),
-        state,
-    )
-    return jax.lax.cond(ren_id != -1, lambda: replaced_state, lambda: state)
-
-
-def _check_if_adj_is_removed(state, i, xy, s_stones, ren_id):
-    my_color = _my_color(state)
-    x = xy // state.size + dx[i]
-    y = xy % state.size + dy[i]
-    adj_xy = x * state.size + y
-    is_off = _is_off_board(x, y, state.size)
-    is_adj_removed = s_stones[adj_xy]
-    return jax.lax.cond(
-        ~is_off & is_adj_removed,
-        lambda: state.replace(  # type:ignore
-            num_pseudo=state.num_pseudo.at[my_color, ren_id].add(1),
-            idx_sum=state.idx_sum.at[my_color, ren_id].add(adj_xy + 1),
-            idx_squared_sum=state.idx_squared_sum.at[my_color, ren_id].add(
-                (adj_xy + 1) ** 2
-            ),
-        ),
-        lambda: state,
     )
 
 
@@ -507,9 +343,12 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     opp_color = _opponent_color(state)
     my_ren = state.ren_id_board[my_color]
     opp_ren = state.ren_id_board[opp_color]
+    my_num_pseudo, my_idx_sum, my_idx_squared_sum = _count(state, my_color, size)
+    opp_num_pseudo, opp_idx_sum, opp_idx_squared_sum = _count(state, opp_color, size)
+
     # fmt: off
-    my_in_atari = (state.idx_sum[my_color, my_ren] ** 2) == state.idx_squared_sum[my_color, my_ren] * state.num_pseudo[my_color, my_ren]
-    opp_in_atari = (state.idx_sum[opp_color, opp_ren] ** 2) == state.idx_squared_sum[opp_color, opp_ren] * state.num_pseudo[opp_color, opp_ren]
+    my_in_atari = (my_idx_sum[my_ren] ** 2) == my_idx_squared_sum[my_ren] * my_num_pseudo[my_ren]
+    opp_in_atari = (opp_idx_sum[opp_ren] ** 2) == opp_idx_squared_sum[opp_ren] * opp_num_pseudo[opp_ren]
     # fmt: on
     is_empty = (state.ren_id_board[0] == -1) & (state.ren_id_board[1] == -1)
     has_liberty = (my_ren >= 0) & ~my_in_atari
@@ -534,6 +373,47 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
         lambda: legal_action_mask,
         lambda: legal_action_mask.at[state.kou].set(FALSE),
     )
+
+
+def _count(state: GoState, color, size):
+    ZERO = jnp.int32(0)
+    is_empty = (state.ren_id_board[BLACK] == -1) & (state.ren_id_board[WHITE] == -1)
+    idx_sum = jnp.where(is_empty, jnp.arange(1, size ** 2 + 1), ZERO)
+    idx_squared_sum = jnp.where(is_empty, jnp.arange(1, size ** 2 + 1) ** 2, ZERO)
+
+    @jax.vmap
+    def _count_neighbor(xy):
+        xs = xy // state.size + dx
+        ys = xy % state.size + dy
+        neighbors = xs * state.size + ys
+        on_board = (0 <= xs) & (xs < state.size) & (0 <= ys) & (ys < state.size)
+        # fmt off
+        return (jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
+                jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
+                jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum())
+        # fmt on
+
+    idx = jnp.arange(size ** 2)
+    my_ren = state.ren_id_board[color]
+
+    num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(idx)
+    num_pseudo = jnp.where(my_ren >= 0, num_pseudo, ZERO)
+    idx_sum = jnp.where(my_ren >= 0, idx_sum, ZERO)
+    idx_squared_sum = jnp.where(my_ren >= 0, idx_squared_sum, ZERO)
+
+    @jax.vmap
+    def _num_pseudo(x):
+        return jnp.where(my_ren == x, num_pseudo, ZERO).sum()
+
+    @jax.vmap
+    def _idx_sum(x):
+        return jnp.where(my_ren == x, idx_sum, ZERO).sum()
+
+    @jax.vmap
+    def _idx_squared_sum(x):
+        return jnp.where(my_ren == x, idx_squared_sum, ZERO).sum()
+
+    return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
 
 def _is_point(_state, x, y):
