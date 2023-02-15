@@ -11,7 +11,6 @@ POINT = 2
 BLACK_CHAR = "@"
 WHITE_CHAR = "O"
 POINT_CHAR = "+"
-INVALID_POINT = jnp.int32(999)
 
 dx = jnp.int32([-1, +1, 0, 0])
 dy = jnp.int32([0, 0, -1, +1])
@@ -213,18 +212,6 @@ def _not_pass_move(
         0, 4, lambda i, s: _check_around_xy(i, s, xy, size), state
     )
 
-    # 取り除ける石は取り除く
-    _board = state.ren_id_board[_opponent_color(state)]
-    state = state.replace(
-        ren_id_board=state.ren_id_board.at[_opponent_color(state)].set(
-            jnp.where(
-                _board == INVALID_POINT,
-                -1,
-                _board,
-            )
-        ),
-    )
-
     # コウの確認
     state = jax.lax.cond(
         kou_occurred & state.agehama[my_color] - agehama_before == 1,
@@ -245,9 +232,7 @@ def _check_around_xy(i, state: GoState, xy, size):
     y = xy % state.size + dy[i]
     adj_xy = x * state.size + y
 
-    is_off = _is_off_board(x, y, state.size) | (
-        state.ren_id_board[_opponent_color(state), adj_xy] == INVALID_POINT
-    )
+    is_off = _is_off_board(x, y, state.size)
     is_my_ren = state.ren_id_board[my_color, adj_xy] != -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
     state = jax.lax.cond(
@@ -334,7 +319,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     agehama = jnp.count_nonzero(surrounded_stones)
     # 一時的に無効化（後で取り除く）
     oppo_ren_id_board = jnp.where(
-        surrounded_stones, INVALID_POINT, _state.ren_id_board[oppo_color]
+        surrounded_stones, -1, _state.ren_id_board[oppo_color]
     )
 
     return _state.replace(  # type:ignore
