@@ -85,6 +85,31 @@ def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
     return state.curr_player, state
 
 
+def init_by_key(key):
+    """Make init state from key"""
+    hand = _key_to_hand(key)
+    np.random.shuffle(hand)
+    vul_NS = np.random.randint(0, 2, 1)
+    vul_EW = np.random.randint(0, 2, 1)
+    dealer = np.random.randint(0, 4, 1)
+    # shuffled players and arrange in order of NESW
+    shuffled_players = _shuffle_players()
+    curr_player = shuffled_players[dealer]
+    legal_actions = np.ones(38, dtype=np.bool_)
+    # 最初はdable, redoubleできない
+    legal_actions[-2:] = 0
+    state = ContractBridgeBiddingState(
+        shuffled_players=shuffled_players,
+        curr_player=curr_player,
+        hand=hand,
+        dealer=dealer,
+        vul_NS=vul_NS,
+        vul_EW=vul_EW,
+        legal_action_mask=legal_actions,
+    )
+    return state.curr_player, state
+
+
 def _shuffle_players() -> np.ndarray:
     """Randomly arranges player IDs in a list in NESW order.
 
@@ -134,7 +159,10 @@ def _player_position(
 
 
 def step(
-    state: ContractBridgeBiddingState, action: int
+    state: ContractBridgeBiddingState,
+    action: int,
+    hash_keys: np.ndarray,
+    hash_values: np.ndarray,
 ) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
     state.bidding_history[state.turn] = action
     # 非合法手判断
@@ -145,7 +173,7 @@ def step(
         state = _state_pass(state)
         # 終了判定
         if _is_terminated(state):
-            return _terminated_step(state)
+            return _terminated_step(state, hash_keys, hash_values)
         else:
             return _continue_step(state)
     # double
@@ -185,10 +213,12 @@ def _illegal_step(
 # ゲームが正常に終了した場合
 def _terminated_step(
     state: ContractBridgeBiddingState,
+    hash_keys: np.ndarray,
+    hash_values: np.ndarray,
 ) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
     state.terminated = np.array(True, dtype=np.bool_)
     state.curr_player = np.array(-1, dtype=np.int8)
-    rewards = _calc_reward()
+    rewards = _reward(state, hash_keys, hash_values)
     return state.curr_player, state, rewards
 
 
@@ -219,9 +249,141 @@ def _is_terminated(state: ContractBridgeBiddingState) -> bool:
         return False
 
 
-# コントラクトから報酬を計算
-def _calc_reward() -> np.ndarray:
-    return np.full(4, 0)
+def _reward(
+    state: ContractBridgeBiddingState,
+    hash_keys: np.ndarray,
+    hash_values: np.ndarray,
+) -> np.ndarray:
+    """Calculate rewards for each player by dds results"""
+    declare_position, denomination, level, vul = _contract(state)
+    dds_tricks = _calculate_dds_tricks(state, hash_keys, hash_values)
+    dds_trick = dds_tricks[declare_position * 5 + denomination]
+    score = _calc_score(
+        denomination, level, vul, state.call_x, state.call_xx, dds_trick
+    )
+    reward = np.array(
+        [
+            score if _is_partner(i, declare_position) else -score
+            for i in np.arange(4)
+        ]
+    )
+    return reward[state.shuffled_players]
+
+
+def _calc_score(
+    denomination: np.ndarray,
+    level: np.ndarray,
+    vul: np.ndarray,
+    call_x: np.ndarray,
+    call_xx: np.ndarray,
+    trick: int,
+) -> np.ndarray:
+    """Calculate score from contract and trick"""
+    # fmt: off
+    _MINOR = 20
+    _MAJOR = 30
+    _NT = 10
+    _MAKE = 50
+    _MAKE_X = 50
+    _MAKE_XX = 50
+
+    _GAME = 250
+    _GAME_VUL = 450
+    _SMALL_SLAM = 500
+    _SMALL_SLAM_VUL = 750
+    _GRAND_SLAM = 500
+    _GRAND_SLAM_VUL = 750
+
+    _OVERTRICK_X = 100
+    _OVERTRICK_X_VUL = 200
+    _OVERTRICK_XX = 200
+    _OVERTRICK_XX_VUL = 400
+
+    _DOWN = np.array([-50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -550, -600, -650])
+    _DOWN_VUL = np.array([-100, -200, -300, -400, -500, -600, -700, -800, -900, -1000, -1100, -1200, -1300])
+    _DOWN_X = np.array([-100, -300, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500])
+    _DOWN_X_VUL = np.array([-200, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500, -3800])
+    _DOWN_XX = np.array([-200, -600, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000])
+    _DOWN_XX_VUL = np.array([-400, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000, -7600])
+    # fmt: on
+    if level + 6 > trick:  # down
+        under_trick = level + 6 - trick
+        if call_xx:
+            return (
+                _DOWN_XX_VUL[under_trick - 1]
+                if vul
+                else _DOWN_XX[under_trick - 1]
+            )
+        elif call_x:
+            return (
+                _DOWN_X_VUL[under_trick - 1]
+                if vul
+                else _DOWN_X[under_trick - 1]
+            )
+        else:
+            return (
+                _DOWN_VUL[under_trick - 1] if vul else _DOWN[under_trick - 1]
+            )
+    else:
+        score = 0
+        over_trick_score_per_trick = 0
+        over_trick = trick - level - 6
+        if denomination <= 1:
+            score += _MINOR * level
+            over_trick_score_per_trick += _MINOR
+        elif 2 <= denomination <= 3:
+            score += _MAJOR * level
+            over_trick_score_per_trick += _MAJOR
+        elif denomination == 4:
+            score += _MAJOR * level + _NT
+            over_trick_score_per_trick += _MAJOR
+
+        if call_xx:
+            score *= 4
+        elif call_x:
+            score *= 2
+
+        if score >= 100:  # game make bonus
+            score += _GAME_VUL if vul else _GAME
+            if level >= 6:  # small slam make bonus
+                score += _SMALL_SLAM_VUL if vul else _SMALL_SLAM
+                if level == 7:  # grand slam make bonus
+                    score += _GRAND_SLAM_VUL if vul else _GRAND_SLAM
+
+        score += _MAKE  # make bonus
+        if call_x or call_xx:
+            score += _MAKE_X
+            if call_xx:
+                score += _MAKE_XX
+                over_trick_score_per_trick = (
+                    _OVERTRICK_XX_VUL if vul else _OVERTRICK_XX
+                )
+            else:
+                over_trick_score_per_trick = (
+                    _OVERTRICK_X_VUL if vul else _OVERTRICK_X
+                )
+
+        score += over_trick_score_per_trick * over_trick
+        return score
+
+
+def _contract(
+    state: ContractBridgeBiddingState,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Return Contract which has position of declare ,denomination, level"""
+    denomination = state.last_bid % 5
+    level = state.last_bid // 5 + 1
+    if _position_to_team(_player_position(state.last_bidder, state)) == 0:
+        declare_position = _player_position(
+            state.first_denomination_NS[denomination], state
+        )
+        vul = state.vul_NS
+    else:
+        declare_position = _player_position(
+            state.first_denomination_EW[denomination], state
+        )
+        vul = state.vul_EW
+    return declare_position, denomination, level, vul
 
 
 # passによるstateの変化
@@ -321,7 +483,7 @@ def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
         return False
 
 
-# playerがパートナーか判断s
+# playerがパートナーか判断
 def _is_partner(position1: np.ndarray, position2: np.ndarray) -> np.ndarray:
     return (abs(position1 - position2) + 1) % 2
 

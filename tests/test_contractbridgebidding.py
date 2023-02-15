@@ -18,6 +18,7 @@ from pgx.contractbridgebidding import (
     duplicate,
     init,
     step,
+    _contract
 )
 
 
@@ -700,6 +701,12 @@ def test_step():
     assert np.all(state.first_denomination_NS == first_denomination_NS)
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 3
+
+    # test _contract()
+    declare_position, denomination, level = _contract(state)
+    assert declare_position == 0
+    assert denomination == 0
+    assert level == 7
 
 
 def max_action_length_agent(state: ContractBridgeBiddingState):
