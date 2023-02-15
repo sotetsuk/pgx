@@ -899,6 +899,49 @@ def to_sfen(state: State):
     return sfen
 
 
+def _sfen_to_state(sfen):
+    # fmt: off
+    board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
+    hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
+    # fmt: on
+    board, turn, hand, _ = sfen.split()
+    board_ranks = board.split("/")
+    piece_board = jnp.zeros(81, dtype=jnp.int8)
+    for i in range(9):
+        file = board_ranks[i]
+        rank = []
+        piece = 0
+        for char in file:
+            if char.isdigit():
+                num_space = int(char)
+                for j in range(num_space):
+                    rank.append(0)
+            elif char == "+":
+                piece += 8
+            else:
+                piece += board_char_dir.index(char)
+                rank.append(piece)
+                piece = 0
+        for j in range(9):
+            piece_board = piece_board.at[9 * i + j].set(rank[j])
+    if turn == "b":
+        s_turn = jnp.int8(0)
+    else:
+        s_turn = jnp.int8(1)
+    s_hand = jnp.zeros(14, dtype=jnp.int8)
+    if hand == "-":
+        s_hand = jnp.reshape(s_hand, (2, 7))
+    else:
+        num_piece = 1
+        for char in hand:
+            if char.isdigit():
+                num_piece = int(char)
+            else:
+                s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
+                num_piece = 1
+    return State(turn=s_turn, piece_board=piece_board, hand=s_hand)
+
+
 def _cshogi_board_to_state(board):
     """Convert cshogi (github.com/TadaoYamaoka/cshogi) board into Pgx state.
 
