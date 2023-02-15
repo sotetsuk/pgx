@@ -901,7 +901,7 @@ def to_sfen(state: State):
 
 def _sfen_to_state(sfen):
     # fmt: off
-    board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
+    board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     # fmt: on
     board, turn, hand, _ = sfen.split()
@@ -915,7 +915,7 @@ def _sfen_to_state(sfen):
             if char.isdigit():
                 num_space = int(char)
                 for j in range(num_space):
-                    rank.append(0)
+                    rank.append(-1)
             elif char == "+":
                 piece += 8
             else:
@@ -939,7 +939,11 @@ def _sfen_to_state(sfen):
             else:
                 s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
                 num_piece = 1
-    return State(turn=s_turn, piece_board=piece_board, hand=s_hand)
+    return State(
+        turn=s_turn,
+        piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten(),
+        hand=s_hand,
+    )
 
 
 def _cshogi_board_to_state(board):
