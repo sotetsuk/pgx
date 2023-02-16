@@ -363,39 +363,23 @@ def _step_move(state: State, action: Action) -> State:
         lambda: action.piece,
     )
 
+    my_effects = state.effects[0]
+    opp_effects = state.effects[1]
+
     # 移動元で塞がれていた利きを復元する
-    state = state.replace(
-        effects=state.effects.at[0].set(
-            state.effects[0] | _apply_effect_filter_at(state, action.from_)
-        )
-    )
-    state = state.replace(
-        effects=state.effects.at[1].set(
-            state.effects[1]
-            | _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))
-        )
-    )
+    my_effects |= _apply_effect_filter_at(state, action.from_)
+    opp_effects |= _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))
     # 移動元からの古い利きを消す
-    state = state.replace(
-        effects=state.effects.at[0, action.from_, :].set(FALSE)
-    )
+    my_effects = my_effects.at[action.from_, :].set(FALSE)
     # TODO: 移動先で駒を取っていたら、取られた駒の利きを消す
     # 移動先から新しい利きを作る
-    state = state.replace(
-        effects=state.effects.at[0, action.to, :].set(_apply_effects_at(state, action.to))
-    )
+    my_effects = my_effects.at[action.to, :].set(_apply_effects_at(state, action.to))
     # 移動先を通るような利きを塞ぐ
-    state = state.replace(
-        effects=state.effects.at[0].set(
-            state.effects[0] & ~_apply_effect_filter_at(state, action.to)
-        )
-    )
-    state = state.replace(
-        effects=state.effects.at[1].set(
-            state.effects[1]
-            & ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
-        )
-    )
+    my_effects &= ~_apply_effect_filter_at(state, action.to)
+    opp_effects &= ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
+
+    state = state.replace(effects=state.effects.at[0].set(my_effects))
+    state = state.replace(effects=state.effects.at[1].set(opp_effects))
 
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
