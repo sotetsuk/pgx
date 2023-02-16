@@ -399,11 +399,15 @@ def test_step():
 
 def test_legal_action_mask():
     s = _init()
+    visualize(s, "tests/assets/shogi/legal_action_mask_001.svg")
     assert not s.legal_action_mask[6 * 81 + xy2i(6, 6)]  # 初期盤面では、角の利きは77の歩でとまっている
-    assert s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩への利き
+    assert s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩の利き
     s = _step(s, Action.make_move(PAWN, xy2i(7, 7), xy2i(7, 6)))  # 76歩
-    assert not s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩への利きが消える
-    assert not s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 75歩への利きが増える
+    visualize(s, "tests/assets/shogi/legal_action_mask_002.svg")
+    s = _step(s, Action.make_move(PAWN, xy2i(2, 7), xy2i(2, 6)))  # 84歩
+    visualize(s, "tests/assets/shogi/legal_action_mask_003.svg")
+    assert s.legal_action_mask[0 * 81 + xy2i(7, 5)]  # 75歩の利きが増えている
+    assert not s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩の利きが消えている
     assert s.legal_action_mask[6 * 81 + xy2i(7, 7)]  # 角の利きが伸びている
     assert s.legal_action_mask[6 * 81 + xy2i(6, 6)]  # 角の利きが伸びている
     assert s.legal_action_mask[6 * 81 + xy2i(4, 4)]  # 角の利きが伸びている
