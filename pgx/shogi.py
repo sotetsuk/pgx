@@ -379,6 +379,7 @@ def _step_move(state: State, action: Action) -> State:
     state = state.replace(
         effects=state.effects.at[0, action.from_, :].set(FALSE)
     )
+    # TODO: 移動先で駒を取っていたら、取られた駒の利きを消す
     # 移動先から新しい利きを作る
     state = state.replace(
         effects=state.effects.at[0, :, action.to].set(_apply_effects_at(state, action.to))
