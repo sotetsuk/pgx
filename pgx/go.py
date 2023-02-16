@@ -524,9 +524,6 @@ def _count_ji_loop(ji, size, opp_color):
     board = ji[0]
     candidate_xy = ji[1].at[xy].set(FALSE)
 
-    def _is_off_board(_x, _y, _size) -> bool:
-        return (_x < 0) | (_size <= _x) | (_y < 0) | (_size <= _y)
-
     def f(i, _ji, xy):
         x = xy // size + dx[i]
         y = xy % size + dy[i]
