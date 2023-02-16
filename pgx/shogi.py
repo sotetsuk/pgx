@@ -363,6 +363,7 @@ def _step_move(state: State, action: Action) -> State:
         lambda: action.piece,
     )
 
+    # 移動元で塞がれていた利きを復元する
     state = state.replace(
         effects=state.effects.at[0].set(
             state.effects[0] | _apply_effect_filter_at(state, action.from_)
@@ -374,6 +375,11 @@ def _step_move(state: State, action: Action) -> State:
             | _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))
         )
     )
+    # 移動先から新しい利きを作る
+    state = state.replace(
+        effects=state.effects.at[0].set(_apply_effects_at(state, action.to))
+    )
+    # 移動先を通るような利きを塞ぐ
     state = state.replace(
         effects=state.effects.at[0].set(
             state.effects[0] & ~_apply_effect_filter_at(state, action.to)
