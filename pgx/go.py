@@ -261,17 +261,6 @@ def _merge_around_xy(i, state: GoState, xy, size):
     return state
 
 
-def _is_illegal_move(_state: GoState, _xy):
-    """
-    既に石があるorコウ
-    """
-    return (
-        (_state.ren_id_board[_my_color(_state), _xy] != -1)
-        | (_state.ren_id_board[_opponent_color(_state), _xy] != -1)
-        | (_xy == _state.kou)
-    )
-
-
 def _illegal_move(
     _state: GoState,
 ) -> Tuple[GoState, jnp.ndarray]:
@@ -435,12 +424,6 @@ def _count(state: GoState, color, size):
         return jnp.where(my_ren == x, idx_squared_sum, ZERO).sum()
 
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
-
-
-def _is_point(_state, x, y):
-    return (_state.ren_id_board[0, x * _state.size + y] == -1) & (
-        _state.ren_id_board[1, x * _state.size + y] == -1
-    )
 
 
 def get_board(state: GoState) -> jnp.ndarray:
