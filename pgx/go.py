@@ -524,35 +524,30 @@ def _count_ji(_state: GoState, _color, _size):
     return jnp.count_nonzero(_get_ji(board, _color, _size))
 
 
-@dataclass
-class JI:
-    board: jnp.ndarray
-    candidate_xy: jnp.ndarray
-
-
 def _get_ji(board: jnp.ndarray, color: int, size: int):
     # oppo_colorに隣り合う空点をoppo_colorに置き換える
     opp_color = (color + 1) % 2
     candidate_xy = board == opp_color
 
-    ji = JI(
+    ji = (
         board,
         candidate_xy,
     )
 
     ji = jax.lax.while_loop(
-        lambda ji: jnp.count_nonzero(ji.candidate_xy) > 0,
+        lambda ji: jnp.count_nonzero(ji[1]) > 0,
         lambda ji: _count_ji_loop(ji, size, opp_color),
         ji,
     )
 
     # 残った空点がcolorの地となる
-    return ji.board == POINT
+    return ji[0] == POINT
 
 
-def _count_ji_loop(ji, size, opp_color) -> JI:
-    xy = jnp.nonzero(ji.candidate_xy, size=1)[0][0]
-    ji = ji.replace(candidate_xy=ji.candidate_xy.at[xy].set(FALSE))
+def _count_ji_loop(ji, size, opp_color):
+    xy = jnp.nonzero(ji[1], size=1)[0][0]
+    board = ji[0]
+    candidate_xy = ji[1].at[xy].set(FALSE)
 
     def _is_off_board(_x, _y, _size) -> bool:
         return (_x < 0) | (_size <= _x) | (_y < 0) | (_size <= _y)
@@ -562,14 +557,18 @@ def _count_ji_loop(ji, size, opp_color) -> JI:
         y = xy % size + dy[i]
         _xy = x * size + y
         is_off = _is_off_board(x, y, size)
+        board = _ji[0]
+        candidate_xy = _ji[1]
 
         return jax.lax.cond(
-            ~is_off & (_ji.board[_xy] == POINT),
-            lambda: _ji.replace(
-                board=_ji.board.at[_xy].set(opp_color),
-                candidate_xy=_ji.candidate_xy.at[_xy].set(TRUE),
+            ~is_off & (board[_xy] == POINT),
+            lambda: (
+                board.at[_xy].set(opp_color),
+                candidate_xy.at[_xy].set(TRUE),
             ),
             lambda: _ji,
         )
 
-    return jax.lax.fori_loop(0, 4, lambda i, ji: f(i, ji, xy), ji)
+    return jax.lax.fori_loop(
+        0, 4, lambda i, ji: f(i, ji, xy), (board, candidate_xy)
+    )
