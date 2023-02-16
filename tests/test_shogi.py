@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate, _to_direction
+from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate, _to_direction, _sfen_to_state
 
 
 # check visualization results by image preview plugins
@@ -373,3 +373,22 @@ def test_step():
     s = step(s, 3 * 81 + xy2i(3, 8))
     visualize(s, "tests/assets/shogi/step_003.svg")
     assert not s.legal_action_mask[3 * 81 + xy2i(3, 8)]
+
+
+# 今やると落ちる
+#def test_legal_action_mask():
+    # 歩以外の持ち駒に対しての二歩判定回避
+    #sfen = "9/9/9/9/9/9/PPPPPPPPP/9/9 b RBGSNLP 1"
+    #legal_action = _to_direction(_legal_actions(_sfen_to_state(sfen)))
+    #legal_action = jnp.where(legal_action, 1, 0)
+    #c_action = jnp.zeros(27 * 81, dtype=jnp.int8)
+    #c_action = c_action.at[1701:2187].set(1)
+    #c_action = c_action.at[jnp.arange(81 * 21 + 6, 81 * 27, 9)].set(1)
+    #c_action = c_action.at[jnp.arange(5, 81, 9)].set(1)
+    #assert (legal_action == c_action).all
+    # 成駒のpromotion判定
+    #sfen = "9/2+B1G1+P2/9/9/9/9/9/9/9 b - 1"
+    #legal_action = _to_direction(_legal_actions(_sfen_to_state(sfen)))
+    #legal_action = jnp.where(legal_action, 1, 0)
+    #assert jnp.all(legal_action[810:] == 0)
+
