@@ -375,9 +375,13 @@ def _step_move(state: State, action: Action) -> State:
             | _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))
         )
     )
+    # 移動元からの古い利きを消す
+    state = state.replace(
+        effects=state.effects.at[0, action.from_, :].set(FALSE)
+    )
     # 移動先から新しい利きを作る
     state = state.replace(
-        effects=state.effects.at[0].set(_apply_effects_at(state, action.to))
+        effects=state.effects.at[0, :, action.to].set(_apply_effects_at(state, action.to))
     )
     # 移動先を通るような利きを塞ぐ
     state = state.replace(
