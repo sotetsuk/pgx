@@ -107,7 +107,17 @@ IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # x x x o x x x
 # x x o x x x x
 LEGAL_FROM_MASK = load_shogi_legal_from_mask()
-
+QUEEN_CACHE = jnp.zeros((81, 81), dtype=jnp.bool_)
+for i in range(81):
+    for j in range(81):
+        x0, y0 = i // 9, i % 9
+        x1, y1 = j // 9, j % 9
+        dx = x1 - x0
+        dy = y1 - y0
+        if dx == 0 and dy == 0:
+            continue
+        if dx == 0 or dy == 0 or abs(dx) == abs(dy):
+            QUEEN_CACHE = QUEEN_CACHE.at[i, j].set(TRUE)
 
 @dataclass
 class State(core.State):
@@ -367,8 +377,9 @@ def _step_move(state: State, action: Action) -> State:
     opp_effects = state.effects[1]
 
     # 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
-    my_effects |= _apply_effect_filter_at(state, action.from_)
-    opp_effects |= _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))
+    queen_effect = QUEEN_CACHE[action.from_, :] & ~_apply_queen_effect_filter_from(state, action.from_)
+    my_effects |= (_apply_effect_filter_at(state, action.from_) & jnp.tile(queen_effect, reps=(81, 1)))
+    opp_effects |= (_apply_effect_filter_at(_flip(state), _roatate_pos(action.from_)) & jnp.tile(queen_effect[::-1], reps=(81, 1)))
     # 移動元からの古い利きを消す
     my_effects = my_effects.at[action.from_, :].set(FALSE)
     # TODO: 移動先で駒を取っていたら、取られた駒の利きを消す
@@ -909,6 +920,39 @@ def _apply_effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
         lambda: filter_boards,
     )
 
+    return filter_boards  # (81=to)
+
+def xy2i(x, y):
+    """
+    >>> xy2i(2, 6)  # 26歩
+    14
+    """
+    i = (x - 1) * 9 + (y - 1)
+    return i
+
+
+def _apply_queen_effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
+    """
+    >>> s = _init()
+    >>> s = s.replace(piece_board=s.piece_board.at[xy2i(7, 7)].set(EMPTY))
+    >>> jnp.rot90(_apply_queen_effect_filter_from(s, xy2i(7, 7)).reshape(9, 9), k=3)
+    Array([[False, False,  True, False, False, False, False, False,  True],
+           [False, False,  True, False, False, False, False,  True, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [ True, False, False, False,  True,  True,  True,  True,  True],
+           [False, False, False, False, False, False, False, False, False],
+           [ True, False, False, False, False, False, False, False, False]],      dtype=bool)
+    """
+    to = jnp.arange(81)
+
+    def func(t):
+        # queenはrookとbishopのor
+        return (IS_ON_THE_WAY[1, from_, t, :] & (state.piece_board >= 0)).any() | (IS_ON_THE_WAY[2, from_, t, :] & (state.piece_board >= 0)).any()
+
+    filter_boards = jax.vmap(func)(to)  # (81, )
     return filter_boards  # (81=to)
 
 

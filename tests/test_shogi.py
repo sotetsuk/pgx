@@ -11,15 +11,6 @@ def visualize(state, fname="tests/assets/shogi/xxx.svg"):
     v.save_svg(state, fname)
 
 
-def xy2i(x, y):
-    """
-    >>> xy2i(2, 6)  # 26歩
-    14
-    """
-    i = (x - 1) * 9 + (y - 1)
-    return i
-
-
 def update_board(state, piece_board, hand=None):
     state = state.replace(piece_board=piece_board)
     if hand is not None:
@@ -409,8 +400,8 @@ def test_legal_action_mask():
     assert not s.effects[0, xy2i(7, 7), xy2i(7, 6)]
     assert not s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩の利きが消えている
     assert s.legal_action_mask[0 * 81 + xy2i(7, 5)]  # 75歩の利きが増えている
-    # print(_rotate(board=s.effects[0, xy2i(8, 8), :]))
     assert s.legal_action_mask[2 * 81 + xy2i(7, 7)]  # 角の利きが伸びている
     assert s.legal_action_mask[2 * 81 + xy2i(6, 6)]  # 角の利きが伸びている
-    assert s.legal_action_mask[2 * 81 + xy2i(4, 4)]  # 角の利きが伸びている
-    assert not s.legal_action_mask[2 * 81 + xy2i(3, 3)]  # 角の利きが相手の33歩で止まる
+    assert s.legal_action_mask[2 * 81 + xy2i(3, 3)]  # 角の利きが伸びている
+    assert not s.legal_action_mask[2 * 81 + xy2i(2, 2)]  # 角の利きが相手の33歩で止まる
+    print(_rotate(board=s.effects[0, xy2i(8, 8), :]))
