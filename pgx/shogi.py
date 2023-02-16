@@ -855,7 +855,7 @@ def _rotate(board: jnp.ndarray) -> jnp.ndarray:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
 
-def to_sfen(state: State):
+def _to_sfen(state: State):
     """Convert state into sfen expression.
 
     - 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
@@ -869,7 +869,7 @@ def to_sfen(state: State):
     - 最後に手数（1で固定）
 
     >>> s = _init()
-    >>> to_sfen(s)
+    >>> _to_sfen(s)
     'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1'
     """
 
@@ -920,7 +920,7 @@ def to_sfen(state: State):
     return sfen
 
 
-def _sfen_to_state(sfen):
+def _from_sfen(sfen):
     # fmt: off
     board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
@@ -967,7 +967,7 @@ def _sfen_to_state(sfen):
     )
 
 
-def _cshogi_board_to_state(board):
+def _from_cshogi(board):
     """Convert cshogi (github.com/TadaoYamaoka/cshogi) board into Pgx state.
 
     board.pieces_in_hand: 歩香桂銀[金]角飛 金のindexが違う
