@@ -11,7 +11,7 @@ from pgx.go import (
     _not_pass_move,
     _pass_move,
     _remove_stones,
-    _set_stone_next_to_oppo_ren,
+    _count,
     _update_state_wo_legal_action,
     init,
     legal_actions,
@@ -82,8 +82,8 @@ elif func_name == "_pass_move":
     func = _pass_move
 elif func_name == "_remove_stones":
     func = _remove_stones
-elif func_name == "_set_stone_next_to_oppo_ren":
-    func = _set_stone_next_to_oppo_ren
+elif func_name == "_count":
+    func = _count
 elif func_name == "_update_state_wo_legal_action":
     func = _update_state_wo_legal_action
 elif func_name == "legal_actions":
