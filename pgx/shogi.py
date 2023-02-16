@@ -191,8 +191,12 @@ def _init():
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
     state = State()
-    state = state.replace(effects=state.effects.at[0].set(_apply_effects(state)))
-    state = state.replace(effects=state.effects.at[1].set(_apply_effects(_flip(state))))
+    state = state.replace(
+        effects=state.effects.at[0].set(_apply_effects(state))
+    )
+    state = state.replace(
+        effects=state.effects.at[1].set(_apply_effects(_flip(state)))
+    )
     legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     return state.replace(  # type: ignore
         legal_action_mask=_to_direction(
@@ -359,14 +363,28 @@ def _step_move(state: State, action: Action) -> State:
         lambda: action.piece,
     )
 
-    state = state.replace(effects=state.effects.at[0]
-                          .set(state.effects[0] | _apply_effect_filter_at(state, action.from_)))
-    state = state.replace(effects=state.effects.at[1]
-                          .set(state.effects[1] | _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))))
-    state = state.replace(effects=state.effects.at[0]
-                          .set(state.effects[0] & ~_apply_effect_filter_at(state, action.to)))
-    state = state.replace(effects=state.effects.at[1]
-                          .set(state.effects[1] & ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))))
+    state = state.replace(
+        effects=state.effects.at[0].set(
+            state.effects[0] | _apply_effect_filter_at(state, action.from_)
+        )
+    )
+    state = state.replace(
+        effects=state.effects.at[1].set(
+            state.effects[1]
+            | _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))
+        )
+    )
+    state = state.replace(
+        effects=state.effects.at[0].set(
+            state.effects[0] & ~_apply_effect_filter_at(state, action.to)
+        )
+    )
+    state = state.replace(
+        effects=state.effects.at[1].set(
+            state.effects[1]
+            & ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
+        )
+    )
 
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
@@ -379,12 +397,21 @@ def _step_drop(state: State, action: Action) -> State:
     # remove piece from hand
     hand = state.hand.at[0, action.piece].add(-1)
     # add new effects by dropped piece
-    state = state.replace(effects=state.effects.at[0].set(_apply_effects_at(state, action.to)))
+    state = state.replace(
+        effects=state.effects.at[0].set(_apply_effects_at(state, action.to))
+    )
     # filter
-    state = state.replace(effects=state.effects.at[0]
-                          .set(state.effects[0] & ~_apply_effect_filter_at(state, action.to)))
-    state = state.replace(effects=state.effects.at[1]
-                          .set(state.effects[1] & ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))))
+    state = state.replace(
+        effects=state.effects.at[0].set(
+            state.effects[0] & ~_apply_effect_filter_at(state, action.to)
+        )
+    )
+    state = state.replace(
+        effects=state.effects.at[1].set(
+            state.effects[1]
+            & ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
+        )
+    )
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
@@ -708,7 +735,9 @@ def _flip(state: State):
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = pb[::-1]
     return state.replace(  # type: ignore
-        piece_board=pb, hand=state.hand[jnp.int8((1, 0))], effects=state.effects[jnp.int8((1, 0))]
+        piece_board=pb,
+        hand=state.hand[jnp.int8((1, 0))],
+        effects=state.effects[jnp.int8((1, 0))],
     )
 
 
@@ -747,6 +776,7 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
     raw_effect_boards = _raw_effect_boards(pieces, from_)
     raw_effect_boards = jnp.where(mask, raw_effect_boards, FALSE)
     return raw_effect_boards  # (81, 81)
+
 
 def _apply_raw_effects_at(state: State, pos: jnp.ndarray) -> jnp.ndarray:
     """Obtain raw effect boards from my piece at pos
@@ -813,10 +843,14 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
     return filter_boards  # (81=from, 81=to)
 
 
-def _apply_effect_filter_at(state: State, blocked_pos: jnp.ndarray) -> jnp.ndarray:
+def _apply_effect_filter_at(
+    state: State, blocked_pos: jnp.ndarray
+) -> jnp.ndarray:
     """
     >>> s = _init()
-    >>> jnp.rot90(_apply_effect_filter_at(s, 10).any(axis=0).reshape(9, 9), k=3)
+    >>> jnp.rot90(
+    ...     _apply_effect_filter_at(s, 10).any(axis=0).reshape(9, 9), k=3
+    ... )
     Array([[False, False, False, False, False, False, False,  True,  True],
            [False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -866,7 +900,9 @@ def _apply_effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     def func(t):
         # toを固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
         # True = 途中でbrockされ、到達できない
-        return (IS_ON_THE_WAY[large_piece, from_, t, :] & (state.piece_board >= 0)).any()
+        return (
+            IS_ON_THE_WAY[large_piece, from_, t, :] & (state.piece_board >= 0)
+        ).any()
 
     # (piece, from) にバッチで適用
     filter_boards = jax.vmap(func)(to)  # (81,81)
