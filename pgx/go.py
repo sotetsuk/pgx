@@ -47,7 +47,7 @@ class GoState:
     agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
 
     # 直前のactionがパスだとTrue
-    passed: jnp.ndarray = jnp.bool_(False)  # type:ignore
+    passed: jnp.ndarray = FALSE  # type:ignore
 
     # コウによる着手禁止点(xy), 無ければ(-1)
     kou: jnp.ndarray = jnp.int32(-1)  # type:ignore
@@ -56,7 +56,7 @@ class GoState:
     komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
 
     # 終局判定
-    terminated: jnp.ndarray = jnp.bool_(False)  # type:ignore
+    terminated: jnp.ndarray = FALSE  # type:ignore
 
 
 def observe(state: GoState, player_id, observe_all=False):
@@ -96,33 +96,24 @@ def _get_alphazero_features(state: GoState, player_id, observe_all):
      [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
      [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]]
     """
+    num_player_log = 8
     my_color = jax.lax.cond(
         player_id == state.curr_player,
         lambda: state.turn % 2,
         lambda: (state.turn + 1) % 2,
     )
 
-    my_log = jax.lax.fori_loop(
-        0,
-        8,
-        lambda i, boards: boards.at[i].set(
-            jnp.where(boards[i] == my_color, 1, 0)
-        ),
-        state.game_log,
-    )
-    oppo_log = jax.lax.fori_loop(
-        0,
-        8,
-        lambda i, boards: boards.at[i].set(
-            jnp.where(boards[i] == ((my_color + 1) % 2), 1, 0)
-        ),
-        state.game_log,
-    )
+    @jax.vmap
+    def _make_log(i):
+        return state.game_log[i % num_player_log] == (
+            (my_color + i // num_player_log) % 2
+        )
+
+    log = _make_log(jnp.arange(num_player_log * 2))
     color = jnp.full_like(
         state.game_log[0], (my_color + 1) % 2
     )  # AlphaZeroでは黒だと1
 
-    log = jnp.concatenate((my_log, oppo_log))
     return jnp.vstack([log, color])
 
 
@@ -190,14 +181,14 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
             _get_reward(_state, _size),
         ),
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: (_state.replace(passed=True), jnp.array([0, 0])),  # type: ignore
+        lambda: (_state.replace(passed=True), jnp.zeros(2, dtype=jnp.int8)),  # type: ignore
     )
 
 
 def _not_pass_move(
     _state: GoState, _action: int, size
 ) -> Tuple[GoState, jnp.ndarray]:
-    state = _state.replace(passed=False)  # type: ignore
+    state = _state.replace(passed=FALSE)  # type: ignore
     xy = _action
     my_color = _my_color(state)
     agehama_before = state.agehama[my_color]
@@ -226,7 +217,7 @@ def _not_pass_move(
     return jax.lax.cond(
         is_illegal,
         lambda: _illegal_move(_set_stone(_state, xy)),  # 石くらいは置いておく
-        lambda: (state, jnp.array([0, 0])),
+        lambda: (state, jnp.zeros(2, dtype=jnp.int8)),
     )
 
 
@@ -264,7 +255,7 @@ def _merge_around_xy(i, state: GoState, xy, size):
 def _illegal_move(
     _state: GoState,
 ) -> Tuple[GoState, jnp.ndarray]:
-    r: jnp.ndarray = jnp.array([1, 1])  # type:ignore
+    r: jnp.ndarray = jnp.ones(2, dtype=jnp.int8)  # type:ignore
     return _state.replace(terminated=TRUE), r.at[_state.turn % 2].set(-1)  # type: ignore
 
 
@@ -495,8 +486,8 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     score = count_ji(jnp.array([BLACK, WHITE]))
     r = jax.lax.cond(
         score[BLACK] - _state.komi > score[WHITE],
-        lambda: jnp.array([1, -1]),
-        lambda: jnp.array([-1, 1]),
+        lambda: jnp.array([1, -1], dtype=jnp.int8),
+        lambda: jnp.array([-1, 1], dtype=jnp.int8),
     )
 
     return r
