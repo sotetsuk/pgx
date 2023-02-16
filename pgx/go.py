@@ -494,12 +494,8 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     return r
 
 
-def _count_ji(_state: GoState, _color, _size):
+def _count_ji(_state: GoState, color: int, size: int):
     board = get_board(_state)
-    return jnp.count_nonzero(_get_ji(board, _color, _size))
-
-
-def _get_ji(board: jnp.ndarray, color: int, size: int):
     # oppo_colorに隣り合う空点をoppo_colorに置き換える
     opp_color = (color + 1) % 2
     candidate_xy = board == opp_color
@@ -516,7 +512,7 @@ def _get_ji(board: jnp.ndarray, color: int, size: int):
     )
 
     # 残った空点がcolorの地となる
-    return ji[0] == POINT
+    return jnp.count_nonzero(ji[0] == POINT)
 
 
 def _count_ji_loop(ji, size, opp_color):
