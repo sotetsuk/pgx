@@ -178,10 +178,10 @@ def _init():
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
     state = State()
-    legal_actions = _legal_actions(state)
+    legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     return state.replace(  # type: ignore
-        legal_action_mask=_to_direction(legal_actions),
-        legal_moves=legal_actions[0],
+        legal_action_mask=_to_direction(legal_moves, legal_promotions, legal_drops),
+        legal_moves=legal_moves,
     )
 
 
@@ -300,8 +300,8 @@ def _step(state: State, action: Action) -> State:
     state = state.replace(  # type: ignore
         curr_player=(state.curr_player + 1) % 2, turn=(state.turn + 1) % 2
     )
-    legal_actions = _legal_actions(state)
-    legal_action_mask = _to_direction(legal_actions)
+    legal_moves, legal_promotions, legal_drops = _legal_actions(state)
+    legal_action_mask = _to_direction(legal_moves, legal_promotions, legal_drops)
     terminated = ~legal_action_mask.any()
     reward = jax.lax.cond(
         terminated,
@@ -315,7 +315,7 @@ def _step(state: State, action: Action) -> State:
         reward=reward,
         terminated=terminated,
         legal_action_mask=legal_action_mask,
-        legal_moves=legal_actions[0],
+        legal_moves=legal_moves,
     )
 
 
@@ -784,7 +784,7 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
+def _to_direction(legal_moves, legal_promotions, legal_drops):
     # legal_moves から legal_action_mask を作る。toを固定して、
     #
     # legal_from = legal_moves[:, 18]  # to = 18
@@ -804,7 +804,6 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     # x x x x o x x
     #
     # とandを取って、anyを取れば、(dir=UP, to=18)がTrueか否かわかる
-    legal_moves, legal_promotions, legal_drops = legal_actions
     dir_ = jnp.arange(10)
     to = jnp.arange(81)
 
