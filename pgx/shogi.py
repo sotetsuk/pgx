@@ -124,6 +124,16 @@ class State(core.State):
     # Must be updated by `_legal_actions` if piece_board or hand is modified w/o `step`
     legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)
 
+    @staticmethod
+    def from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
+        state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
+        legal_moves, legal_promotions, legal_drops = _legal_actions(state)
+        legal_action_mask = _to_direction(
+            legal_moves, legal_promotions, legal_drops
+        )
+        # TODO: terminated, reward, curr_player is not changed
+        return state.replace(legal_action_mask=legal_action_mask, legal_moves=legal_moves)  # type: ignore
+
 
 class Shogi(core.Env):
     def __init__(self):
@@ -950,7 +960,7 @@ def _sfen_to_state(sfen):
             else:
                 s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
                 num_piece = 1
-    return State(
+    return State.from_board(
         turn=s_turn,
         piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten(),
         hand=s_hand,
@@ -975,4 +985,4 @@ def _cshogi_board_to_state(board):
     for i in range(2):
         for j in range(7):
             hand = hand.at[i, j].set(pieces_in_hand[i][hand_piece_dir[j]])
-    return State(turn=board.turn, piece_board=pb, hand=hand)
+    return State.from_board(turn=board.turn, piece_board=pb, hand=hand)
