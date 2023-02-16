@@ -296,6 +296,7 @@ def test_dlshogi_action():
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
     )
+    s = s.replace(legal_moves=_legal_actions(s)[0])
     visualize(s, "tests/assets/shogi/dlshogi_action_001.svg")
     dir_ = 0  # UP
     to = xy2i(5, 5)
@@ -321,6 +322,7 @@ def test_dlshogi_action():
         .at[xy2i(5, 9)].set(LANCE)
         .at[xy2i(5, 6)].set(PAWN)
     )
+    s = s.replace(legal_moves=_legal_actions(s)[0])
     visualize(s, "tests/assets/shogi/dlshogi_action_002.svg")
     dir_ = 0  # UP
     to = xy2i(5, 5)
@@ -338,6 +340,7 @@ def test_dlshogi_action():
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
     )
+    s = s.replace(legal_moves=_legal_actions(s)[0])
     visualize(s, "tests/assets/shogi/dlshogi_action_003.svg")
     legal_actions = _legal_actions(s)
     legal_action_mask = _to_direction(legal_actions)
@@ -357,6 +360,7 @@ def test_dlshogi_action():
         .at[xy2i(1, 7)].set(EMPTY),
         hand=s.hand.at[0, PAWN].set(1)
     )
+    s = s.replace(legal_moves=_legal_actions(s)[0])
     visualize(s, "tests/assets/shogi/dlshogi_action_004.svg")
     legal_actions = _legal_actions(s)
     legal_action_mask = _to_direction(legal_actions)

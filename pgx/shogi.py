@@ -121,7 +121,9 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
-    legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)  # Not necessary. Cached for Action.to_dlshogi+action
+    # Not necessary. Cached only for Action.from_dlshogi_action
+    # Must be updated by `_legal_actions` if piece_board or hand is modified w/o `step`
+    legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)
     # fmt on
 
 
