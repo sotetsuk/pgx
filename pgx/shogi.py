@@ -366,7 +366,7 @@ def _step_move(state: State, action: Action) -> State:
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
 
-    # 移動元で塞がれていた利きを復元する
+    # 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
     my_effects |= _apply_effect_filter_at(state, action.from_)
     opp_effects |= _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_))
     # 移動元からの古い利きを消す
