@@ -33,7 +33,6 @@ piece_board (81,):
 """
 
 from functools import partial
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -120,6 +119,20 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    # Not necessary. Cached only for Action.from_dlshogi_action
+    # Must be updated by `_legal_actions` if piece_board or hand is modified w/o `step`
+    legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)
+
+    @staticmethod
+    def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
+        """Mainly for debugging purpose.
+        terminated, reward, and curr_player are not changed"""
+        state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
+        legal_moves, legal_promotions, legal_drops = _legal_actions(state)
+        legal_action_mask = _to_direction(
+            legal_moves, legal_promotions, legal_drops
+        )
+        return state.replace(legal_action_mask=legal_action_mask, legal_moves=legal_moves)  # type: ignore
 
 
 class Shogi(core.Env):
@@ -175,9 +188,12 @@ def _init():
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
     state = State()
-    legal_actions = _legal_actions(state)
+    legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     return state.replace(  # type: ignore
-        legal_action_mask=_to_direction(legal_actions)
+        legal_action_mask=_to_direction(
+            legal_moves, legal_promotions, legal_drops
+        ),
+        legal_moves=legal_moves,
     )
 
 
@@ -264,8 +280,7 @@ class Action:
         # x x x x x x x
         # x x x x x x x
         mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
-        legal_moves, _, _ = _legal_actions(state)  # TODO: cache legal moves
-        mask2 = legal_moves[:, to]  # (81,)
+        mask2 = state.legal_moves[:, to]  # (81,)
         from_ = jnp.nonzero(mask1 & mask2, size=1)[0][0]
 
         piece = jax.lax.cond(
@@ -297,8 +312,10 @@ def _step(state: State, action: Action) -> State:
     state = state.replace(  # type: ignore
         curr_player=(state.curr_player + 1) % 2, turn=(state.turn + 1) % 2
     )
-    legal_actions = _legal_actions(state)
-    legal_action_mask = _to_direction(legal_actions)
+    legal_moves, legal_promotions, legal_drops = _legal_actions(state)
+    legal_action_mask = _to_direction(
+        legal_moves, legal_promotions, legal_drops
+    )
     terminated = ~legal_action_mask.any()
     reward = jax.lax.cond(
         terminated,
@@ -312,6 +329,7 @@ def _step(state: State, action: Action) -> State:
         reward=reward,
         terminated=terminated,
         legal_action_mask=legal_action_mask,
+        legal_moves=legal_moves,
     )
 
 
@@ -780,7 +798,11 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
+def _to_direction(
+    legal_moves: jnp.ndarray,
+    legal_promotions: jnp.ndarray,
+    legal_drops: jnp.ndarray,
+):
     # legal_moves から legal_action_mask を作る。toを固定して、
     #
     # legal_from = legal_moves[:, 18]  # to = 18
@@ -800,7 +822,6 @@ def _to_direction(legal_actions: Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray]):
     # x x x x o x x
     #
     # とandを取って、anyを取れば、(dir=UP, to=18)がTrueか否かわかる
-    legal_moves, legal_promotions, legal_drops = legal_actions
     dir_ = jnp.arange(10)
     to = jnp.arange(81)
 
@@ -834,7 +855,7 @@ def _rotate(board: jnp.ndarray) -> jnp.ndarray:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
 
-def to_sfen(state: State):
+def _to_sfen(state: State):
     """Convert state into sfen expression.
 
     - 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
@@ -848,7 +869,7 @@ def to_sfen(state: State):
     - 最後に手数（1で固定）
 
     >>> s = _init()
-    >>> to_sfen(s)
+    >>> _to_sfen(s)
     'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1'
     """
 
@@ -899,7 +920,7 @@ def to_sfen(state: State):
     return sfen
 
 
-def _sfen_to_state(sfen):
+def _from_sfen(sfen):
     # fmt: off
     board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
@@ -939,14 +960,14 @@ def _sfen_to_state(sfen):
             else:
                 s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
                 num_piece = 1
-    return State(
+    return State.from_board(
         turn=s_turn,
         piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten(),
         hand=s_hand,
     )
 
 
-def _cshogi_board_to_state(board):
+def _from_cshogi(board):
     """Convert cshogi (github.com/TadaoYamaoka/cshogi) board into Pgx state.
 
     board.pieces_in_hand: 歩香桂銀[金]角飛 金のindexが違う
@@ -964,4 +985,4 @@ def _cshogi_board_to_state(board):
     for i in range(2):
         for j in range(7):
             hand = hand.at[i, j].set(pieces_in_hand[i][hand_piece_dir[j]])
-    return State(turn=board.turn, piece_board=pb, hand=hand)
+    return State.from_board(turn=board.turn, piece_board=pb, hand=hand)
