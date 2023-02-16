@@ -526,119 +526,50 @@ def _count_ji(_state: GoState, _color, _size):
 
 @dataclass
 class JI:
-    size: jnp.ndarray
     board: jnp.ndarray
     candidate_xy: jnp.ndarray
-    examined_stones: jnp.ndarray
-    color: jnp.ndarray
 
 
-def _get_ji(_board: jnp.ndarray, color: int, size: int):
-    BOARD_WIDTH = size
-    # 1. boardの一番外側に1周分追加
-    board = jnp.pad(
-        _board.reshape((BOARD_WIDTH, BOARD_WIDTH)),
-        1,
-        "constant",
-        constant_values=-1,
-    )
-    # こうなる
-    # [[-1 -1 -1 -1 -1 -1 -1]
-    #  [-1  2  2  2  2  2 -1]
-    #  [-1  2  2  2  2  2 -1]
-    #  [-1  2  2  2  2  2 -1]
-    #  [-1  2  2  2  2  2 -1]
-    #  [-1  2  2  2  2  2 -1]
-    #  [-1 -1 -1 -1 -1 -1 -1]]
-    board = board.ravel()
-
-    # 2. oppo_colorに隣り合う空点をoppo_colorに置き換える
-    candidate_xy = board == (color + 1) % 2
-    examined_stones: jnp.ndarray = jnp.zeros_like(board, dtype=bool)
+def _get_ji(board: jnp.ndarray, color: int, size: int):
+    # oppo_colorに隣り合う空点をoppo_colorに置き換える
+    opp_color = (color + 1) % 2
+    candidate_xy = board == opp_color
 
     ji = JI(
-        jnp.array([size], dtype=int),  # type:ignore
         board,
         candidate_xy,
-        examined_stones,
-        jnp.array([color], dtype=int),  # type:ignore
     )
 
     ji = jax.lax.while_loop(
-        lambda ji: jnp.count_nonzero(ji.candidate_xy) != 0, _count_ji_loop, ji
-    )
-    board = ji.board.reshape((BOARD_WIDTH + 2, BOARD_WIDTH + 2))
-
-    # 3. 増やした外側をカットし、残った空点がcolorの地となる
-    return board[1 : BOARD_WIDTH + 1, 1 : BOARD_WIDTH + 1] == POINT
-
-
-def _count_ji_loop(_ji: JI) -> JI:
-    size = _ji.size
-    board = _ji.board
-    xy = jnp.nonzero(_ji.candidate_xy, size=1)[0][0]
-    candidate_xy = _ji.candidate_xy.at[xy].set(False)
-    o_color = (_ji.color[0] + 1) % 2
-    _BOARD_WIDTH = size[0] + 2
-
-    # この座標は「既に調べたリスト」へ
-    examined_stones = _ji.examined_stones.at[xy].set(True)
-
-    board = board.at[xy - _BOARD_WIDTH].set(
-        jax.lax.cond(
-            board[xy - _BOARD_WIDTH] == POINT,
-            lambda: o_color,
-            lambda: board[xy - _BOARD_WIDTH],
-        )
-    )
-    candidate_xy = candidate_xy.at[xy - _BOARD_WIDTH].set(
-        jnp.logical_and(
-            board[xy - _BOARD_WIDTH] == o_color,
-            examined_stones[xy - _BOARD_WIDTH] is False,
-        )
+        lambda ji: jnp.count_nonzero(ji.candidate_xy) > 0,
+        lambda ji: _count_ji_loop(ji, size, opp_color),
+        ji,
     )
 
-    board = board.at[xy + _BOARD_WIDTH].set(
-        jax.lax.cond(
-            board[xy + _BOARD_WIDTH] == POINT,
-            lambda: o_color,
-            lambda: board[xy + _BOARD_WIDTH],
-        )
-    )
-    candidate_xy = candidate_xy.at[xy + _BOARD_WIDTH].set(
-        jnp.logical_and(
-            board[xy + _BOARD_WIDTH] == o_color,
-            examined_stones[xy + _BOARD_WIDTH] is False,
-        )
-    )
+    # 残った空点がcolorの地となる
+    return ji.board == POINT
 
-    board = board.at[xy - 1].set(
-        jax.lax.cond(
-            board[xy - 1] == POINT,
-            lambda: o_color,
-            lambda: board[xy - 1],
-        )
-    )
-    candidate_xy = candidate_xy.at[xy - 1].set(
-        jnp.logical_and(
-            board[xy - 1] == o_color,
-            examined_stones[xy - 1] is False,
-        )
-    )
 
-    board = board.at[xy + 1].set(
-        jax.lax.cond(
-            board[xy + 1] == POINT,
-            lambda: o_color,
-            lambda: board[xy + 1],
+def _count_ji_loop(ji, size, opp_color) -> JI:
+    xy = jnp.nonzero(ji.candidate_xy, size=1)[0][0]
+    ji = ji.replace(candidate_xy=ji.candidate_xy.at[xy].set(FALSE))
+
+    def _is_off_board(_x, _y, _size) -> bool:
+        return (_x < 0) | (_size <= _x) | (_y < 0) | (_size <= _y)
+
+    def f(i, _ji, xy):
+        x = xy // size + dx[i]
+        y = xy % size + dy[i]
+        _xy = x * size + y
+        is_off = _is_off_board(x, y, size)
+
+        return jax.lax.cond(
+            ~is_off & (_ji.board[_xy] == POINT),
+            lambda: _ji.replace(
+                board=_ji.board.at[_xy].set(opp_color),
+                candidate_xy=_ji.candidate_xy.at[_xy].set(TRUE),
+            ),
+            lambda: _ji,
         )
-    )
-    candidate_xy = candidate_xy.at[xy + 1].set(
-        jnp.logical_and(
-            board[xy + 1] == o_color,
-            examined_stones[xy + 1] is False,
-        )
-    )
-    return JI(
-        size, board, candidate_xy, examined_stones, _ji.color
-    )  # type:ignore
+
+    return jax.lax.fori_loop(0, 4, lambda i, ji: f(i, ji, xy), ji)
