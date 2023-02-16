@@ -376,19 +376,26 @@ def test_step():
 
 
 # 今やると落ちる
-#def test_legal_action_mask():
+def test_legal_action_mask():
     # 歩以外の持ち駒に対しての二歩判定回避
-    #sfen = "9/9/9/9/9/9/PPPPPPPPP/9/9 b RBGSNLP 1"
-    #legal_action = _to_direction(_legal_actions(_sfen_to_state(sfen)))
-    #legal_action = jnp.where(legal_action, 1, 0)
-    #c_action = jnp.zeros(27 * 81, dtype=jnp.int8)
-    #c_action = c_action.at[1701:2187].set(1)
-    #c_action = c_action.at[jnp.arange(81 * 21 + 6, 81 * 27, 9)].set(1)
-    #c_action = c_action.at[jnp.arange(5, 81, 9)].set(1)
-    #assert (legal_action == c_action).all
-    # 成駒のpromotion判定
-    #sfen = "9/2+B1G1+P2/9/9/9/9/9/9/9 b - 1"
-    #legal_action = _to_direction(_legal_actions(_sfen_to_state(sfen)))
-    #legal_action = jnp.where(legal_action, 1, 0)
-    #assert jnp.all(legal_action[810:] == 0)
+    sfen = "9/9/9/9/9/9/PPPPPPPPP/9/9 b NLP 1"
+    legal_action = _to_direction(_legal_actions(_sfen_to_state(sfen)))
+    # 歩は二歩になるので打てない
+    assert (legal_action[81*20:81*21] == False).all()
+    # 香車は1列目と6列目（歩がいる）二は打てない
+    # 二列目には打てる
+    assert (legal_action[81*21+1:81*22:9] == True).all()
+    assert (legal_action[81*21:81*22:9] == False).all()
+    assert (legal_action[81*21+5:81*22:9] == False).all()
+    # 桂馬は1.2列目に打てない
+    # 三列目には打てる
+    assert (legal_action[81*22+1:81*23:9] == False).all()
+    assert (legal_action[81*22:81*23:9] == False).all()
+    assert (legal_action[81*21+5:81*22:9] == False).all()
 
+    # 成駒のpromotion判定
+    sfen = "9/2+B1G1+P2/9/9/9/9/9/9/9 b - 1"
+    legal_action = _to_direction(_legal_actions(_sfen_to_state(sfen)))
+    legal_action = jnp.where(legal_action, 1, 0)
+    # promotionは生成されてたらダメ
+    assert jnp.all(legal_action[810:] == 0)
