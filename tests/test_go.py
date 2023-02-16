@@ -412,17 +412,22 @@ def test_legal_action():
     # random
     _, state = j_init(rng=rng, size=BOARD_SIZE)
     for _ in range(100):
-        actions = np.where(state.legal_action_mask)
-        if len(actions[0]) == 0:
+        assert np.where(state.legal_action_mask)[0][-1]
+
+        legal_actions = np.where(state.legal_action_mask)[0][:-1]
+        illegal_actions = np.where(~state.legal_action_mask)[0][:-1]
+        for action in legal_actions:
+            _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
+            assert not _state.terminated
+        for action in illegal_actions:
+            _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
+            assert _state.terminated
+        if len(legal_actions) == 0:
             a = BOARD_SIZE * BOARD_SIZE
         else:
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
-            a = jax.random.choice(subkey, actions[0])
-        for action in actions[0][:-1]:
-            _, _state, _ = j_step(state=state, action=action, size=BOARD_SIZE)
-            assert not _state.terminated
-
+            a = jax.random.choice(subkey, legal_actions)
         _, state, _ = j_step(state=state, action=a, size=BOARD_SIZE)
 
 

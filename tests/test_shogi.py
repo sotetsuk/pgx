@@ -290,11 +290,18 @@ def test_legal_drops():
 
 
 def test_dlshogi_action():
+    def update_board(state, piece_board, hand=None):
+        state = state.replace(piece_board=piece_board)
+        if hand is not None:
+            state = state.replace(hand=hand)
+        state = state.replace(legal_moves=_legal_actions(state)[0])
+        return state
+
     # from dlshogi action to Action
     s = _init()
-    s = s.replace(
-        piece_board=s.piece_board.at[:].set(EMPTY)
-        .at[xy2i(5, 9)].set(LANCE)
+    s = update_board(s,
+        piece_board=s.piece_board.at[:]
+        .set(EMPTY).at[xy2i(5, 9)].set(LANCE)
     )
     visualize(s, "tests/assets/shogi/dlshogi_action_001.svg")
     dir_ = 0  # UP
@@ -316,7 +323,7 @@ def test_dlshogi_action():
 
     # 歩で香車の利きが隠れている場合
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
         .at[xy2i(5, 6)].set(PAWN)
@@ -334,13 +341,13 @@ def test_dlshogi_action():
 
     # from legal moves to legal action mask
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
     )
     visualize(s, "tests/assets/shogi/dlshogi_action_003.svg")
     legal_actions = _legal_actions(s)
-    legal_action_mask = _to_direction(legal_actions)
+    legal_action_mask = _to_direction(*legal_actions)
     dir_ = 0  # UP
     assert legal_action_mask.shape == (27 * 81,)
     assert legal_action_mask.sum() != 0
@@ -352,14 +359,14 @@ def test_dlshogi_action():
 
     # drop
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board
         .at[xy2i(1, 7)].set(EMPTY),
         hand=s.hand.at[0, PAWN].set(1)
     )
     visualize(s, "tests/assets/shogi/dlshogi_action_004.svg")
     legal_actions = _legal_actions(s)
-    legal_action_mask = _to_direction(legal_actions)
+    legal_action_mask = _to_direction(*legal_actions)
     assert legal_action_mask[20 * 81 + xy2i(1, 5)]
     assert not legal_action_mask[20 * 81 + xy2i(2, 5)]
 
