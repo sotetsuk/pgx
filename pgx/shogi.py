@@ -124,13 +124,14 @@ class State(core.State):
     legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)
 
     @staticmethod
-    def from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
+    def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
+        """Mainly for debugging purpose.
+        terminated, reward, and curr_player are not changed"""
         state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
         legal_moves, legal_promotions, legal_drops = _legal_actions(state)
         legal_action_mask = _to_direction(
             legal_moves, legal_promotions, legal_drops
         )
-        # TODO: terminated, reward, curr_player is not changed
         return state.replace(legal_action_mask=legal_action_mask, legal_moves=legal_moves)  # type: ignore
 
 
