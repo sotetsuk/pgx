@@ -406,9 +406,11 @@ def test_legal_action_mask():
     visualize(s, "tests/assets/shogi/legal_action_mask_002.svg")
     s = _step(s, Action.make_move(PAWN, xy2i(2, 7), xy2i(2, 6)))  # 84歩
     visualize(s, "tests/assets/shogi/legal_action_mask_003.svg")
-    assert s.legal_action_mask[0 * 81 + xy2i(7, 5)]  # 75歩の利きが増えている
+    assert not s.effects[0, xy2i(7, 7), xy2i(7, 6)]
     assert not s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩の利きが消えている
-    assert s.legal_action_mask[6 * 81 + xy2i(7, 7)]  # 角の利きが伸びている
-    assert s.legal_action_mask[6 * 81 + xy2i(6, 6)]  # 角の利きが伸びている
-    assert s.legal_action_mask[6 * 81 + xy2i(4, 4)]  # 角の利きが伸びている
-    assert not s.legal_action_mask[6 * 81 + xy2i(3, 3)]  # 角の利きが相手の33歩で止まる
+    assert s.legal_action_mask[0 * 81 + xy2i(7, 5)]  # 75歩の利きが増えている
+    # print(_rotate(board=s.effects[0, xy2i(8, 8), :]))
+    assert s.legal_action_mask[2 * 81 + xy2i(7, 7)]  # 角の利きが伸びている
+    assert s.legal_action_mask[2 * 81 + xy2i(6, 6)]  # 角の利きが伸びている
+    assert s.legal_action_mask[2 * 81 + xy2i(4, 4)]  # 角の利きが伸びている
+    assert not s.legal_action_mask[2 * 81 + xy2i(3, 3)]  # 角の利きが相手の33歩で止まる
