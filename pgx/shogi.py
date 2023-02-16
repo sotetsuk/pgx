@@ -784,7 +784,7 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _to_direction(legal_moves, legal_promotions, legal_drops):
+def _to_direction(legal_moves: jnp.ndarray, legal_promotions: jnp.ndarray, legal_drops: jnp.ndarray):
     # legal_moves から legal_action_mask を作る。toを固定して、
     #
     # legal_from = legal_moves[:, 18]  # to = 18
