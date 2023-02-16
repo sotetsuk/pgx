@@ -180,7 +180,9 @@ def _init():
     state = State()
     legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     return state.replace(  # type: ignore
-        legal_action_mask=_to_direction(legal_moves, legal_promotions, legal_drops),
+        legal_action_mask=_to_direction(
+            legal_moves, legal_promotions, legal_drops
+        ),
         legal_moves=legal_moves,
     )
 
@@ -301,7 +303,9 @@ def _step(state: State, action: Action) -> State:
         curr_player=(state.curr_player + 1) % 2, turn=(state.turn + 1) % 2
     )
     legal_moves, legal_promotions, legal_drops = _legal_actions(state)
-    legal_action_mask = _to_direction(legal_moves, legal_promotions, legal_drops)
+    legal_action_mask = _to_direction(
+        legal_moves, legal_promotions, legal_drops
+    )
     terminated = ~legal_action_mask.any()
     reward = jax.lax.cond(
         terminated,
@@ -784,7 +788,11 @@ def _apply_effects(state: State):
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _to_direction(legal_moves: jnp.ndarray, legal_promotions: jnp.ndarray, legal_drops: jnp.ndarray):
+def _to_direction(
+    legal_moves: jnp.ndarray,
+    legal_promotions: jnp.ndarray,
+    legal_drops: jnp.ndarray,
+):
     # legal_moves から legal_action_mask を作る。toを固定して、
     #
     # legal_from = legal_moves[:, 18]  # to = 18
