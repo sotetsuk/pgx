@@ -117,9 +117,12 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     # --- Shogi specific ---
+    # fmt: off
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)  # Not necessary. Cached for Action.to_dlshogi+action
+    # fmt on
 
 
 class Shogi(core.Env):
@@ -177,7 +180,8 @@ def _init():
     state = State()
     legal_actions = _legal_actions(state)
     return state.replace(  # type: ignore
-        legal_action_mask=_to_direction(legal_actions)
+        legal_action_mask=_to_direction(legal_actions),
+        legal_moves=legal_actions[0]
     )
 
 
@@ -264,8 +268,7 @@ class Action:
         # x x x x x x x
         # x x x x x x x
         mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
-        legal_moves, _, _ = _legal_actions(state)  # TODO: cache legal moves
-        mask2 = legal_moves[:, to]  # (81,)
+        mask2 = state.legal_moves[:, to]  # (81,)
         from_ = jnp.nonzero(mask1 & mask2, size=1)[0][0]
 
         piece = jax.lax.cond(
@@ -312,6 +315,7 @@ def _step(state: State, action: Action) -> State:
         reward=reward,
         terminated=terminated,
         legal_action_mask=legal_action_mask,
+        legal_moves=legal_actions[0]
     )
 
 
