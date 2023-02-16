@@ -485,7 +485,6 @@ def test_counting_ji():
     assert count_ji(state, 0, BOARD_SIZE) == 14
     assert count_ji(state, 1, BOARD_SIZE) == 0
 
-
     # =====
     # + + O + +
     # + O @ O +
@@ -511,6 +510,7 @@ def test_counting_ji():
     _, state, _ = j_step(state=state, action=22, size=BOARD_SIZE)  # WHITE
     assert count_ji(state, 0, BOARD_SIZE) == 1
     assert count_ji(state, 1, BOARD_SIZE) == 12
+
     # =====
     # + @ @ @ +
     # @ O @ + @
