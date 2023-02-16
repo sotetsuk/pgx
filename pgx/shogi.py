@@ -117,14 +117,12 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     # --- Shogi specific ---
-    # fmt: off
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
     # Not necessary. Cached only for Action.from_dlshogi_action
     # Must be updated by `_legal_actions` if piece_board or hand is modified w/o `step`
     legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)
-    # fmt on
 
 
 class Shogi(core.Env):
@@ -183,7 +181,7 @@ def _init():
     legal_actions = _legal_actions(state)
     return state.replace(  # type: ignore
         legal_action_mask=_to_direction(legal_actions),
-        legal_moves=legal_actions[0]
+        legal_moves=legal_actions[0],
     )
 
 
@@ -317,7 +315,7 @@ def _step(state: State, action: Action) -> State:
         reward=reward,
         terminated=terminated,
         legal_action_mask=legal_action_mask,
-        legal_moves=legal_actions[0]
+        legal_moves=legal_actions[0],
     )
 
 
