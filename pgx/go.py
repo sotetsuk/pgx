@@ -518,7 +518,8 @@ def _count_ji(state: GoState, color: int, size: int):
         ).any(axis=1)
 
     def fill_opp(x):
-        mask = is_opp_neighbours(x[0])
+        b, _ = x
+        mask = is_opp_neighbours(b)
         return jnp.where(mask, -1, b), mask.any()
 
     # fmt off
