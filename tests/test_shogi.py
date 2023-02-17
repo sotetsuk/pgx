@@ -456,7 +456,8 @@ def test_legal_action_mask():
 
     # 先手
     visualize(s, "tests/assets/shogi/legal_action_mask_012.svg")
-    assert s.legal_action_mask[2 * 81 + xy2i(2, 2)]   # 金打の前は角の利きが22までは伸びている
+    assert s.legal_action_mask[2 * 81 + xy2i(2, 2)]           # 金打の前は角の利きが22までは伸びている
+    assert not s.legal_action_mask[0 * 81 + xy2i(4, 3)]       # 金打の前は効きがない
     s = _step(s, Action.make_drop(GOLD, xy2i(4, 4)))  # 44金打
 
     # 後手
@@ -471,3 +472,4 @@ def test_legal_action_mask():
     assert s.legal_action_mask[2 * 81 + xy2i(5, 5)]       # 55までは角が進める
     assert not s.legal_action_mask[2 * 81 + xy2i(2, 2)]   # 金打の後は角の利きが止まっている
     assert not s.legal_action_mask[2 * 81 + xy2i(4, 4)]
+    assert s.legal_action_mask[0 * 81 + xy2i(4, 3)]       # 金の利きが増える

@@ -424,7 +424,7 @@ def _step_drop(state: State, action: Action) -> State:
 
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
-    # 新しい利きが増える
+    # [OK] 新しい利きが増える
     my_effects = my_effects.at[action.to, :].set(
         _apply_effects_at(state, action.to)
     )
