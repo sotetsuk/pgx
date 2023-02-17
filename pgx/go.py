@@ -511,7 +511,6 @@ def _count_ji(state: GoState, color: int, size: int):
     board = jnp.where(state.ren_id_board[1 - color] >= 0, -1, board)
     # 0 = empty, 1 = mine, -1 = opponent's
 
-    ixs = jnp.arange(size**2)
     neighbours = _neighbours(size)
 
     def is_opp_neighbours(b):
