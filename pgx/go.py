@@ -494,49 +494,33 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     return r
 
 
-def _count_ji(_state: GoState, color: int, size: int):
-    board = get_board(_state)
-    # oppo_colorに隣り合う空点をoppo_colorに置き換える
-    opp_color = (color + 1) % 2
-    candidate_xy = board == opp_color
+def _neighbours(xy, size):
+    xs = xy // size + dx
+    ys = xy % size + dy
+    on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
+    return jnp.where(on_board, xs * size + ys, -1)
 
-    ji = (
+
+def _count_ji(state: GoState, color: int, size: int):
+    board = jnp.zeros_like(state.ren_id_board[0])
+    board = jnp.where(state.ren_id_board[color] >= 0, 1, board)
+    board = jnp.where(state.ren_id_board[1 - color] >= 0, -1, board)
+    # 0 = empty, 1 = mine, -1 = opponent's
+
+    ixs = jnp.arange(size ** 2)
+    neighbours = jax.vmap(partial(_neighbours, size=size))(ixs)
+
+    def is_opp_neighbours(b):
+        return ((b == 0) & ((b[neighbours.flatten()] == -1).reshape(size ** 2, 4) & (neighbours != -1)).any(axis=1))
+    def has_opp_neighbours(b):
+        return is_opp_neighbours(b).any()
+    def fill_opp(b):
+        return jnp.where(is_opp_neighbours(b), -1, b)
+
+    b = jax.lax.while_loop(
+        has_opp_neighbours,
+        fill_opp,
         board,
-        candidate_xy,
     )
 
-    ji = jax.lax.while_loop(
-        lambda ji: jnp.count_nonzero(ji[1]) > 0,
-        lambda ji: _count_ji_loop(ji, size, opp_color),
-        ji,
-    )
-
-    # 残った空点がcolorの地となる
-    return jnp.count_nonzero(ji[0] == POINT)
-
-
-def _count_ji_loop(ji, size, opp_color):
-    xy = jnp.nonzero(ji[1], size=1)[0][0]
-    board = ji[0]
-    candidate_xy = ji[1].at[xy].set(FALSE)
-
-    def f(i, _ji, xy):
-        x = xy // size + dx[i]
-        y = xy % size + dy[i]
-        _xy = x * size + y
-        is_off = _is_off_board(x, y, size)
-        board = _ji[0]
-        candidate_xy = _ji[1]
-
-        return jax.lax.cond(
-            ~is_off & (board[_xy] == POINT),
-            lambda: (
-                board.at[_xy].set(opp_color),
-                candidate_xy.at[_xy].set(TRUE),
-            ),
-            lambda: _ji,
-        )
-
-    return jax.lax.fori_loop(
-        0, 4, lambda i, ji: f(i, ji, xy), (board, candidate_xy)
-    )
+    return (b == 0).sum()
