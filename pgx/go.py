@@ -495,7 +495,6 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
 
 
 def _neighbours(size):
-
     @jax.vmap
     def f(xy):
         xs = xy // size + dx
@@ -503,7 +502,7 @@ def _neighbours(size):
         on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
         return jnp.where(on_board, xs * size + ys, -1)
 
-    return f(jnp.arange(size ** 2))
+    return f(jnp.arange(size**2))
 
 
 def _count_ji(state: GoState, color: int, size: int):
