@@ -120,6 +120,7 @@ for i in range(81):
         if dx == 0 or dy == 0 or abs(dx) == abs(dy):
             QUEEN_CACHE = QUEEN_CACHE.at[i, j].set(TRUE)
 
+
 @dataclass
 class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
@@ -378,24 +379,34 @@ def _step_move(state: State, action: Action) -> State:
     opp_effects = state.effects[1]
 
     # [OK] 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
-    queen_effect = QUEEN_CACHE[action.from_, :] & ~_apply_queen_effect_filter_from(state, action.from_)
-    my_effects |= (_apply_effect_filter_at(state, action.from_) & jnp.tile(queen_effect, reps=(81, 1)))
+    queen_effect = QUEEN_CACHE[
+        action.from_, :
+    ] & ~_apply_queen_effect_filter_from(state, action.from_)
+    my_effects |= _apply_effect_filter_at(state, action.from_) & jnp.tile(
+        queen_effect, reps=(81, 1)
+    )
     # [OK] 相手も同様
-    opp_effects |= (_apply_effect_filter_at(_flip(state), _roatate_pos(action.from_)) & jnp.tile(queen_effect[::-1], reps=(81, 1)))
+    opp_effects |= _apply_effect_filter_at(
+        _flip(state), _roatate_pos(action.from_)
+    ) & jnp.tile(queen_effect[::-1], reps=(81, 1))
     # [OK] 移動元からの古い利きを消す
     my_effects = my_effects.at[action.from_, :].set(FALSE)
     # [OK] 移動先で駒を取っていたら、取られた駒の利きを消す
     opp_effects = jax.lax.cond(
         captured != EMPTY,
         lambda: opp_effects.at[_roatate_pos(action.to), :].set(FALSE),
-        lambda: opp_effects
+        lambda: opp_effects,
     )
     # [OK] 移動先から新しい利きを作る
-    my_effects = my_effects.at[action.to, :].set(_apply_effects_at(state, action.to))
+    my_effects = my_effects.at[action.to, :].set(
+        _apply_effects_at(state, action.to)
+    )
     # [OK] 移動先を通るような利きを塞ぐ
     my_effects &= ~_apply_effect_filter_at(state, action.to)
     # [OK] 相手も同様
-    opp_effects &= ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
+    opp_effects &= ~_apply_effect_filter_at(
+        _flip(state), _roatate_pos(action.to)
+    )
 
     state = state.replace(effects=state.effects.at[0].set(my_effects))
     state = state.replace(effects=state.effects.at[1].set(opp_effects))
@@ -414,11 +425,15 @@ def _step_drop(state: State, action: Action) -> State:
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
     # 新しい利きが増える
-    my_effects = my_effects.at[action.to, :].set(_apply_effects_at(state, action.to))
-    # 打たれた点を経由する大駒の利きが消える
+    my_effects = my_effects.at[action.to, :].set(
+        _apply_effects_at(state, action.to)
+    )
+    # [OK] 打たれた点を経由する大駒の利きが消える
     my_effects &= ~_apply_effect_filter_at(state, action.to)
-    # 相手も同様
-    opp_effects &= ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
+    # [OK] 相手も同様
+    opp_effects &= ~_apply_effect_filter_at(
+        _flip(state), _roatate_pos(action.to)
+    )
 
     state = state.replace(effects=state.effects.at[0].set(my_effects))
     state = state.replace(effects=state.effects.at[1].set(opp_effects))
@@ -927,6 +942,7 @@ def _apply_effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
 
     return filter_boards  # (81=to)
 
+
 def xy2i(x, y):
     """
     >>> xy2i(2, 6)  # 26歩
@@ -936,11 +952,15 @@ def xy2i(x, y):
     return i
 
 
-def _apply_queen_effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
+def _apply_queen_effect_filter_from(
+    state: State, from_: jnp.ndarray
+) -> jnp.ndarray:
     """
     >>> s = _init()
     >>> s = s.replace(piece_board=s.piece_board.at[xy2i(7, 7)].set(EMPTY))
-    >>> jnp.rot90(_apply_queen_effect_filter_from(s, xy2i(7, 7)).reshape(9, 9), k=3)
+    >>> jnp.rot90(
+    ...     _apply_queen_effect_filter_from(s, xy2i(7, 7)).reshape(9, 9), k=3
+    ... )
     Array([[False, False,  True, False, False, False, False, False,  True],
            [False, False,  True, False, False, False, False,  True, False],
            [False, False, False, False, False, False, False, False, False],
@@ -955,7 +975,11 @@ def _apply_queen_effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.nda
 
     def func(t):
         # queenはrookとbishopのor
-        return (IS_ON_THE_WAY[1, from_, t, :] & (state.piece_board >= 0)).any() | (IS_ON_THE_WAY[2, from_, t, :] & (state.piece_board >= 0)).any()
+        return (
+            IS_ON_THE_WAY[1, from_, t, :] & (state.piece_board >= 0)
+        ).any() | (
+            IS_ON_THE_WAY[2, from_, t, :] & (state.piece_board >= 0)
+        ).any()
 
     filter_boards = jax.vmap(func)(to)  # (81, )
     return filter_boards  # (81=to)
