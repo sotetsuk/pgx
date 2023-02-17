@@ -507,14 +507,15 @@ def _count_ji(state: GoState, color: int, size: int):
     board = jnp.where(state.ren_id_board[1 - color] >= 0, -1, board)
     # 0 = empty, 1 = mine, -1 = opponent's
 
-    neighbours = jax.vmap(partial(_neighbours, size=size))(jnp.arange(size**2))
+    ixs = jnp.arange(size**2)
+    neighbours = jax.vmap(partial(_neighbours, size=size))(ixs)
 
     def is_opp_neighbours(b):
         # 空点かつ、隣接する4箇所のいずれかが敵石の場合True
         return (b == 0) & (
             (b[neighbours.flatten()] == -1).reshape(size**2, 4)
             & (neighbours != -1)
-        ).any(axis=1)  # (size ** 2,)
+        ).any(axis=1)
 
     def fill_opp(x):
         mask = is_opp_neighbours(x[0])
