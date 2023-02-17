@@ -376,22 +376,24 @@ def _step_move(state: State, action: Action) -> State:
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
 
-    # 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
+    # [OK] 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
     queen_effect = QUEEN_CACHE[action.from_, :] & ~_apply_queen_effect_filter_from(state, action.from_)
     my_effects |= (_apply_effect_filter_at(state, action.from_) & jnp.tile(queen_effect, reps=(81, 1)))
+    # 相手も同様
     opp_effects |= (_apply_effect_filter_at(_flip(state), _roatate_pos(action.from_)) & jnp.tile(queen_effect[::-1], reps=(81, 1)))
-    # 移動元からの古い利きを消す
+    # [OK] 移動元からの古い利きを消す
     my_effects = my_effects.at[action.from_, :].set(FALSE)
-    # 移動先で駒を取っていたら、取られた駒の利きを消す
+    # [OK] 移動先で駒を取っていたら、取られた駒の利きを消す
     opp_effects = jax.lax.cond(
         captured != EMPTY,
         lambda: opp_effects.at[_roatate_pos(action.to), :].set(FALSE),
         lambda: opp_effects
     )
-    # 移動先から新しい利きを作る
+    # [OK] 移動先から新しい利きを作る
     my_effects = my_effects.at[action.to, :].set(_apply_effects_at(state, action.to))
     # 移動先を通るような利きを塞ぐ
     my_effects &= ~_apply_effect_filter_at(state, action.to)
+    # 相手も同様
     opp_effects &= ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
 
     state = state.replace(effects=state.effects.at[0].set(my_effects))
