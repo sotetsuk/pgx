@@ -223,11 +223,8 @@ def _not_pass_move(
 
 
 def _remove_around_xy(i, state: GoState, xy, size):
-    x = xy // state.size + dx[i]
-    y = xy % state.size + dy[i]
-    adj_xy = x * state.size + y
-
-    is_off = _is_off_board(x, y, state.size)
+    adj_xy = _neighbour(xy, size)[i]
+    is_off = adj_xy == -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
     state = jax.lax.cond(
         ((~is_off) & is_opp_ren),
@@ -239,11 +236,8 @@ def _remove_around_xy(i, state: GoState, xy, size):
 
 def _merge_around_xy(i, state: GoState, xy, size):
     my_color = _my_color(state)
-    x = xy // state.size + dx[i]
-    y = xy % state.size + dy[i]
-    adj_xy = x * state.size + y
-
-    is_off = _is_off_board(x, y, state.size)
+    adj_xy = _neighbour(xy, size)[i]
+    is_off = adj_xy == -1
     is_my_ren = state.ren_id_board[my_color, adj_xy] != -1
     state = jax.lax.cond(
         ((~is_off) & is_my_ren),
@@ -346,12 +340,8 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
 
     @jax.vmap
     def is_neighbor_ok(xy):
-        xs = xy // state.size + dx
-        ys = xy % state.size + dy
-        neighbors = xs * state.size + ys
-        on_board = (
-            (0 <= xs) & (xs < state.size) & (0 <= ys) & (ys < state.size)
-        )
+        neighbors = _neighbour(xy, size)
+        on_board = neighbors != -1
         _has_empty = is_empty[neighbors]
         _has_liberty = has_liberty[neighbors]
         _kills_opp = kills_opp[neighbors]
@@ -383,12 +373,8 @@ def _count(state: GoState, color, size):
 
     @jax.vmap
     def _count_neighbor(xy):
-        xs = xy // state.size + dx
-        ys = xy % state.size + dy
-        neighbors = xs * state.size + ys
-        on_board = (
-            (0 <= xs) & (xs < state.size) & (0 <= ys) & (ys < state.size)
-        )
+        neighbors = _neighbour(xy, size)
+        on_board = neighbors != -1
         # fmt: off
         return (jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
                 jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
@@ -454,22 +440,13 @@ def _opponent_color(_state: GoState):
     return jnp.int32((_state.turn + 1) % 2)
 
 
-def _is_off_board(_x, _y, _size) -> bool:
-    return (_x < 0) | (_size <= _x) | (_y < 0) | (_size <= _y)
-
-
 def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
     size = _state.size
     x = xy // size
     y = xy % size
-
-    oppo_color = _opponent_color(_state)
-
-    to_xy_batch = jax.vmap(partial(_to_xy, size=size))
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
-    xs = x + dx
-    ys = y + dy
-    is_occupied = _state.ren_id_board[oppo_color][to_xy_batch(xs, ys)] != -1
+    oppo_color = _opponent_color(_state)
+    is_occupied = _state.ren_id_board[oppo_color][_neighbour(xy, size)] != -1
     return (oob | is_occupied).all()
 
 
@@ -494,15 +471,15 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     return r
 
 
-def _neighbours(size):
-    @jax.vmap
-    def f(xy):
+def _neighbour(xy, size):
         xs = xy // size + dx
         ys = xy % size + dy
         on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
         return jnp.where(on_board, xs * size + ys, -1)
 
-    return f(jnp.arange(size**2))
+
+def _neighbours(size):
+    return jax.vmap(partial(_neighbour, size=size))(jnp.arange(size**2))
 
 
 def _count_ji(state: GoState, color: int, size: int):
