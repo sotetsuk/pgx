@@ -414,7 +414,7 @@ def _step_drop(state: State, action: Action) -> State:
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
     # 新しい利きが増える
-    # my_effects = my_effects.at[0].set(_apply_effects_at(state, action.to))
+    my_effects = my_effects.at[action.to, :].set(_apply_effects_at(state, action.to))
     # 打たれた点を経由する大駒の利きが消える
     my_effects &= ~_apply_effect_filter_at(state, action.to)
     # 相手も同様
