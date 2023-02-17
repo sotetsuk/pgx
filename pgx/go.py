@@ -516,16 +516,15 @@ def _count_ji(state: GoState, color: int, size: int):
             & (neighbours != -1)
         ).any(axis=1)
 
-    def has_opp_neighbours(b):
-        return is_opp_neighbours(b).any()
+    def fill_opp(x):
+        b, cnt = x
+        mask = is_opp_neighbours(b)
+        return jnp.where(mask, -1, b), mask.any()
 
-    def fill_opp(b):
-        return jnp.where(is_opp_neighbours(b), -1, b)
-
-    b = jax.lax.while_loop(
-        has_opp_neighbours,
+    b, _ = jax.lax.while_loop(
+        lambda x: x[1],
         fill_opp,
-        board,
+        (board, TRUE),
     )
 
     return (b == 0).sum()
