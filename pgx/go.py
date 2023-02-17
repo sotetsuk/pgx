@@ -213,12 +213,14 @@ def _not_pass_move(
     # fmt: on
     is_killed = (~is_off) & is_opp_ren & is_atari & (single_liberty == xy)
     state = jax.lax.fori_loop(
-        0, 4, lambda i, s: jax.lax.cond(
+        0,
+        4,
+        lambda i, s: jax.lax.cond(
             is_killed[i],
             lambda: _remove_stones(s, oppo_ren_id[i], adj_xy[i]),
             lambda: s,
         ),
-        state
+        state,
     )
 
     # 石を置く
