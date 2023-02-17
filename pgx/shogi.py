@@ -411,23 +411,18 @@ def _step_drop(state: State, action: Action) -> State:
     # remove piece from hand
     hand = state.hand.at[0, action.piece].add(-1)
 
+    my_effects = state.effects[0]
+    opp_effects = state.effects[1]
     # 新しい利きが増える
-    state = state.replace(
-        effects=state.effects.at[0].set(_apply_effects_at(state, action.to))
-    )
+    # my_effects = my_effects.at[0].set(_apply_effects_at(state, action.to))
     # 打たれた点を経由する大駒の利きが消える
-    state = state.replace(
-        effects=state.effects.at[0].set(
-            state.effects[0] & ~_apply_effect_filter_at(state, action.to)
-        )
-    )
+    my_effects &= ~_apply_effect_filter_at(state, action.to)
     # 相手も同様
-    state = state.replace(
-        effects=state.effects.at[1].set(
-            state.effects[1]
-            & ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
-        )
-    )
+    opp_effects &= ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
+
+    state = state.replace(effects=state.effects.at[0].set(my_effects))
+    state = state.replace(effects=state.effects.at[1].set(opp_effects))
+
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
