@@ -468,10 +468,10 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
 
 
 def _neighbour(xy, size):
-        xs = xy // size + dx
-        ys = xy % size + dy
-        on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
-        return jnp.where(on_board, xs * size + ys, -1)
+    xs = xy // size + dx
+    ys = xy % size + dy
+    on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
+    return jnp.where(on_board, xs * size + ys, -1)
 
 
 def _neighbours(size):
