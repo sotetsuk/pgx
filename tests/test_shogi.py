@@ -461,11 +461,13 @@ def test_legal_action_mask():
 
     # 後手
     visualize(s, "tests/assets/shogi/legal_action_mask_013.svg")
+    assert s.legal_action_mask[2 * 81 + xy2i(6, 6)]    # 44で金を取るところまでは角が進める
+    assert not s.legal_action_mask[2 * 81 + xy2i(5, 5)]    # 真ん中までは角はすすめない
     s = _step(s, Action.make_move(PAWN, xy2i(2, 7), xy2i(2, 6)))  # 84歩
 
     # 先手
     visualize(s, "tests/assets/shogi/legal_action_mask_014.svg")
-    print(_rotate(s.effects[0, xy2i(8, 8), :]))
-    assert s.legal_action_mask[2 * 81 + xy2i(4, 4)]       # 44までは角の利きが伸びている
+    # print(_rotate(s.effects[0, xy2i(8, 8), :]))
+    assert s.legal_action_mask[2 * 81 + xy2i(5, 5)]       # 55までは角が進める
     assert not s.legal_action_mask[2 * 81 + xy2i(2, 2)]   # 金打の後は角の利きが止まっている
-    assert not s.legal_action_mask[2 * 81 + xy2i(3, 3)]
+    assert not s.legal_action_mask[2 * 81 + xy2i(4, 4)]
