@@ -6,6 +6,7 @@ import numpy as np
 from pgx.contractbridgebidding import (
     ContractBridgeBiddingState,
     _calculate_dds_tricks,
+    _contract,
     _key_to_hand,
     _load_sample_hash,
     _pbn_to_key,
@@ -16,9 +17,8 @@ from pgx.contractbridgebidding import (
     _to_binary,
     duplicate,
     init,
-    step,
-    _contract,
     init_by_key,
+    step,
 )
 
 

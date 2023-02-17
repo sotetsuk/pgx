@@ -1,6 +1,7 @@
 import copy
 from dataclasses import dataclass
 from typing import Tuple
+
 import numpy as np
 
 # カードと数字の対応
