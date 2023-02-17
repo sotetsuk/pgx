@@ -275,7 +275,7 @@ def _calc_score(
     vul: np.ndarray,
     call_x: np.ndarray,
     call_xx: np.ndarray,
-    trick: int,
+    trick: np.ndarray,
 ) -> np.ndarray:
     """Calculate score from contract and trick"""
     # fmt: off
@@ -324,17 +324,17 @@ def _calc_score(
                 _DOWN_VUL[under_trick - 1] if vul else _DOWN[under_trick - 1]
             )
     else:
-        score = 0
         over_trick_score_per_trick = 0
         over_trick = trick - level - 6
+        score = np.zeros(1, dtype=np.int16)
         if denomination <= 1:
-            score += _MINOR * level
+            score = _MINOR * level
             over_trick_score_per_trick += _MINOR
         elif 2 <= denomination <= 3:
-            score += _MAJOR * level
+            score = _MAJOR * level
             over_trick_score_per_trick += _MAJOR
         elif denomination == 4:
-            score += _MAJOR * level + _NT
+            score = _MAJOR * level + _NT
             over_trick_score_per_trick += _MAJOR
 
         if call_xx:
