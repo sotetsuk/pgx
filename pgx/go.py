@@ -199,22 +199,15 @@ def _not_pass_move(
 
     # 周囲の連から敵石を除く
     adj_xy = _neighbour(xy, size)
-    is_off = adj_xy == -1
-    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
-    #
     oppo_color = _opponent_color(state)
     oppo_ren_id = state.ren_id_board[oppo_color, adj_xy]
-
     num_pseudo, idx_sum, idx_squared_sum = _count(state, oppo_color, size)
-
     # fmt: off
     is_atari = ((idx_sum[oppo_ren_id] ** 2) == idx_squared_sum[oppo_ren_id] * num_pseudo[oppo_ren_id])
     single_liberty = (idx_squared_sum[oppo_ren_id] // idx_sum[oppo_ren_id]) - 1
-    # fmt: on
-    is_killed = (~is_off) & is_opp_ren & is_atari & (single_liberty == xy)
+    is_killed = (adj_xy != -1) & (oppo_ren_id != -1) & is_atari & (single_liberty == xy)
     state = jax.lax.fori_loop(
-        0,
-        4,
+        0, 4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
             lambda: _remove_stones(s, oppo_ren_id[i], adj_xy[i]),
@@ -222,6 +215,7 @@ def _not_pass_move(
         ),
         state,
     )
+    # fmt: on
 
     # 石を置く
     state = _set_stone(state, xy)
