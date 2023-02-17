@@ -494,11 +494,16 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     return r
 
 
-def _neighbours(xy, size):
-    xs = xy // size + dx
-    ys = xy % size + dy
-    on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
-    return jnp.where(on_board, xs * size + ys, -1)
+def _neighbours(size):
+
+    @jax.vmap
+    def f(xy):
+        xs = xy // size + dx
+        ys = xy % size + dy
+        on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
+        return jnp.where(on_board, xs * size + ys, -1)
+
+    return f(jnp.arange(size ** 2))
 
 
 def _count_ji(state: GoState, color: int, size: int):
@@ -508,7 +513,7 @@ def _count_ji(state: GoState, color: int, size: int):
     # 0 = empty, 1 = mine, -1 = opponent's
 
     ixs = jnp.arange(size**2)
-    neighbours = jax.vmap(partial(_neighbours, size=size))(ixs)
+    neighbours = _neighbours(size)
 
     def is_opp_neighbours(b):
         # 空点かつ、隣接する4箇所のいずれかが敵石の場合True
