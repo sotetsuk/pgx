@@ -198,11 +198,32 @@ def _not_pass_move(
     kou_occurred = _kou_occurred(state, xy)
 
     # 周囲の連から敵石を除く
+    adj_xy = _neighbour(xy, size)
+    is_off = adj_xy == -1
+    is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
+    #
+    oppo_color = _opponent_color(state)
+    oppo_ren_id = state.ren_id_board[oppo_color, adj_xy]
+
+    num_pseudo, idx_sum, idx_squared_sum = _count(state, oppo_color, size)
+
+    # fmt: off
+    is_atari = ((idx_sum[oppo_ren_id] ** 2) == idx_squared_sum[oppo_ren_id] * num_pseudo[oppo_ren_id])
+    single_liberty = (idx_squared_sum[oppo_ren_id] // idx_sum[oppo_ren_id]) - 1
+    # fmt: on
+
     state = jax.lax.fori_loop(
-        0, 4, lambda i, s: _remove_around_xy(i, s, xy, size), state
+        0, 4, lambda i, s: jax.lax.cond(
+            (~is_off[i]) & is_opp_ren[i] & is_atari[i] & (single_liberty == xy)[i],
+            lambda: _remove_stones(s, oppo_ren_id[i], adj_xy[i]),
+            lambda: s,
+        ),
+        state
     )
+
     # 石を置く
     state = _set_stone(state, xy)
+
     # 周囲をマージ
     state = jax.lax.fori_loop(
         0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state
