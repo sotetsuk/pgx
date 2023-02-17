@@ -391,7 +391,7 @@ def _step_move(state: State, action: Action) -> State:
     )
     # [OK] 移動先から新しい利きを作る
     my_effects = my_effects.at[action.to, :].set(_apply_effects_at(state, action.to))
-    # 移動先を通るような利きを塞ぐ
+    # [OK] 移動先を通るような利きを塞ぐ
     my_effects &= ~_apply_effect_filter_at(state, action.to)
     # 相手も同様
     opp_effects &= ~_apply_effect_filter_at(_flip(state), _roatate_pos(action.to))
