@@ -408,8 +408,8 @@ def _step_move(state: State, action: Action) -> State:
         _flip(state), _roatate_pos(action.to)
     )
 
-    state = state.replace(effects=state.effects.at[0].set(my_effects))
-    state = state.replace(effects=state.effects.at[1].set(opp_effects))
+    state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
+    state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
 
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
@@ -435,8 +435,8 @@ def _step_drop(state: State, action: Action) -> State:
         _flip(state), _roatate_pos(action.to)
     )
 
-    state = state.replace(effects=state.effects.at[0].set(my_effects))
-    state = state.replace(effects=state.effects.at[1].set(opp_effects))
+    state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
+    state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
 
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
