@@ -507,13 +507,18 @@ def _count_ji(state: GoState, color: int, size: int):
     board = jnp.where(state.ren_id_board[1 - color] >= 0, -1, board)
     # 0 = empty, 1 = mine, -1 = opponent's
 
-    ixs = jnp.arange(size ** 2)
+    ixs = jnp.arange(size**2)
     neighbours = jax.vmap(partial(_neighbours, size=size))(ixs)
 
     def is_opp_neighbours(b):
-        return ((b == 0) & ((b[neighbours.flatten()] == -1).reshape(size ** 2, 4) & (neighbours != -1)).any(axis=1))
+        return (b == 0) & (
+            (b[neighbours.flatten()] == -1).reshape(size**2, 4)
+            & (neighbours != -1)
+        ).any(axis=1)
+
     def has_opp_neighbours(b):
         return is_opp_neighbours(b).any()
+
     def fill_opp(b):
         return jnp.where(is_opp_neighbours(b), -1, b)
 
