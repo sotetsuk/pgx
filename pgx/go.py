@@ -226,12 +226,22 @@ def _remove_around_xy(i, state: GoState, xy, size):
     adj_xy = _neighbour(xy, size)[i]
     is_off = adj_xy == -1
     is_opp_ren = state.ren_id_board[_opponent_color(state), adj_xy] != -1
-    state = jax.lax.cond(
-        ((~is_off) & is_opp_ren),
-        lambda: _set_stone_next_to_oppo_ren(state, xy, adj_xy, size),
+    #
+    oppo_color = _opponent_color(state)
+    oppo_ren_id = state.ren_id_board[oppo_color, adj_xy]
+
+    num_pseudo, idx_sum, idx_squared_sum = _count(state, oppo_color, size)
+
+    # fmt: off
+    is_atari = ((idx_sum[oppo_ren_id] ** 2) == idx_squared_sum[oppo_ren_id] * num_pseudo[oppo_ren_id])
+    single_liberty = (idx_squared_sum[oppo_ren_id] // idx_sum[oppo_ren_id]) - 1
+    # fmt: on
+
+    return jax.lax.cond(
+        (~is_off) & is_opp_ren & is_atari & (single_liberty == xy),
+        lambda: _remove_stones(state, oppo_ren_id, adj_xy),
         lambda: state,
     )
-    return state
 
 
 def _merge_around_xy(i, state: GoState, xy, size):
@@ -278,24 +288,6 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
     return _state.replace(  # type:ignore
         ren_id_board=_state.ren_id_board.at[my_color].set(ren_id_board),
-    )
-
-
-def _set_stone_next_to_oppo_ren(_state: GoState, _xy, _adj_xy, size):
-    oppo_color = _opponent_color(_state)
-    oppo_ren_id = _state.ren_id_board[oppo_color, _adj_xy]
-
-    num_pseudo, idx_sum, idx_squared_sum = _count(_state, oppo_color, size)
-
-    # fmt: off
-    is_atari = ((idx_sum[oppo_ren_id] ** 2) == idx_squared_sum[oppo_ren_id] * num_pseudo[oppo_ren_id])
-    single_liberty = (idx_squared_sum[oppo_ren_id] // idx_sum[oppo_ren_id]) - 1
-    # fmt: on
-
-    return jax.lax.cond(
-        is_atari & (single_liberty == _xy),
-        lambda: _remove_stones(_state, oppo_ren_id, _adj_xy),
-        lambda: _state,
     )
 
 
