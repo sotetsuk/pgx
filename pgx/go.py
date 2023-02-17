@@ -211,10 +211,10 @@ def _not_pass_move(
     is_atari = ((idx_sum[oppo_ren_id] ** 2) == idx_squared_sum[oppo_ren_id] * num_pseudo[oppo_ren_id])
     single_liberty = (idx_squared_sum[oppo_ren_id] // idx_sum[oppo_ren_id]) - 1
     # fmt: on
-
+    is_killed = (~is_off) & is_opp_ren & is_atari & (single_liberty == xy)
     state = jax.lax.fori_loop(
         0, 4, lambda i, s: jax.lax.cond(
-            (~is_off[i]) & is_opp_ren[i] & is_atari[i] & (single_liberty == xy)[i],
+            is_killed[i],
             lambda: _remove_stones(s, oppo_ren_id[i], adj_xy[i]),
             lambda: s,
         ),
