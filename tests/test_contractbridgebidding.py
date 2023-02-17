@@ -6,7 +6,6 @@ import numpy as np
 from pgx.contractbridgebidding import (
     ContractBridgeBiddingState,
     _calculate_dds_tricks,
-    _is_partner,
     _key_to_hand,
     _load_sample_hash,
     _pbn_to_key,
@@ -18,7 +17,8 @@ from pgx.contractbridgebidding import (
     duplicate,
     init,
     step,
-    _contract
+    _contract,
+    init_by_key,
 )
 
 
@@ -74,9 +74,10 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     #   P  P
-    _, state = init()
-    state.dealer = 1
-    state.curr_player = 3
+    HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
+    _, state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1])
+    state.dealer = np.ones(1, dtype=np.int8)
+    state.curr_player = np.full(1, 3, dtype=np.int8)
     state.shuffled_players = np.array([0, 3, 1, 2], dtype=np.int8)
     bidding_history = np.full(319, -1, dtype=np.int8)
     legal_action_mask = np.ones(38, dtype=np.bool_)
@@ -84,7 +85,9 @@ def test_step():
     first_denomination_NS = np.full(5, -1, dtype=np.int8)
     first_denomination_EW = np.full(5, -1, dtype=np.int8)
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -106,7 +109,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -128,7 +133,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 2
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -150,7 +157,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 3
 
-    curr_player, state, rewards = step(state, 0)
+    curr_player, state, rewards = step(
+        state, 0, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -177,7 +186,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 8)
+    curr_player, state, rewards = step(
+        state, 8, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -205,7 +216,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 36)
+    curr_player, state, rewards = step(
+        state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -233,7 +246,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -262,7 +277,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -292,7 +309,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 2
 
-    curr_player, state, rewards = step(state, 37)
+    curr_player, state, rewards = step(
+        state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -322,7 +341,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -352,7 +373,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
 
-    curr_player, state, rewards = step(state, 22)
+    curr_player, state, rewards = step(
+        state, 22, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -382,7 +405,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 23)
+    curr_player, state, rewards = step(
+        state, 23, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -413,7 +438,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -444,7 +471,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
 
-    curr_player, state, rewards = step(state, 25)
+    curr_player, state, rewards = step(
+        state, 25, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -475,7 +504,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 36)
+    curr_player, state, rewards = step(
+        state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -506,7 +537,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 37)
+    curr_player, state, rewards = step(
+        state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -538,7 +571,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -570,7 +605,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
 
-    curr_player, state, rewards = step(state, 30)
+    curr_player, state, rewards = step(
+        state, 30, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -602,7 +639,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -634,7 +673,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -667,7 +708,9 @@ def test_step():
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 2
 
-    curr_player, state, rewards = step(state, 35)
+    curr_player, state, rewards = step(
+        state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
+    )
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -679,8 +722,8 @@ def test_step():
     #  XX  P 7C  P
     #   P  P
     # Passが3回続いたので終了
-    state.terminated = True
-    state.curr_player = -1
+    assert state.terminated == True
+    assert state.curr_player == -1
     first_denomination_NS = np.array([0, -1, -1, 0, -1])
     first_denomination_EW = np.array([-1, -1, 2, 3, -1])
 
@@ -703,7 +746,7 @@ def test_step():
     assert state.pass_num == 3
 
     # test _contract()
-    declare_position, denomination, level = _contract(state)
+    declare_position, denomination, level, vul = _contract(state)
     assert declare_position == 0
     assert denomination == 0
     assert level == 7
@@ -723,6 +766,7 @@ def max_action_length_agent(state: ContractBridgeBiddingState):
 
 
 def test_max_action():
+    HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
     _, state = init()
     state.turn = np.int16(0)
     state.terminated = np.bool_(0)
@@ -739,10 +783,20 @@ def test_max_action():
 
     for i in range(319):
         if i < 318:
-            _, state, _ = step(state, max_action_length_agent(state))
+            _, state, _ = step(
+                state,
+                max_action_length_agent(state),
+                HASH_TABLE_SAMPLE_KEYS,
+                HASH_TABLE_SAMPLE_VALUES,
+            )
             assert not state.terminated
         else:
-            _, state, _ = step(state, max_action_length_agent(state))
+            _, state, _ = step(
+                state,
+                max_action_length_agent(state),
+                HASH_TABLE_SAMPLE_KEYS,
+                HASH_TABLE_SAMPLE_VALUES,
+            )
             assert state.terminated
 
 
@@ -941,3 +995,7 @@ def make_hash_table(csv_path: str) -> Tuple[np.ndarray, np.ndarray]:
         keys.append(_pbn_to_key(sample[0]))
         values.append(to_value(sample[1:]))
     return np.array(keys), np.array(values)
+
+
+if __name__ == "__main__":
+    print(make_hash_table("assets/contractbridge-ddstable-sample100.csv"))
