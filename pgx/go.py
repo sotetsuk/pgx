@@ -450,10 +450,6 @@ def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
     return (oob | is_occupied).all()
 
 
-def _to_xy(x, y, size) -> int:
-    return x * size + y
-
-
 def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     def count_ji(color):
         return (
