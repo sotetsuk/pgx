@@ -187,8 +187,8 @@ def _not_pass_move(
 ) -> Tuple[GoState, jnp.ndarray]:
     state = _state.replace(passed=FALSE)  # type: ignore
     xy = _action
-    my_color = _my_color(state)
-    agehama_before = state.agehama[my_color]
+    my_color_ix = _my_color_ix(state)
+    agehama_before = state.agehama[my_color_ix]
     is_illegal = ~state.legal_action_mask[xy]
 
     kou_occurred = _kou_occurred(state, xy)
@@ -223,7 +223,7 @@ def _not_pass_move(
 
     # コウの確認
     state = jax.lax.cond(
-        kou_occurred & state.agehama[my_color] - agehama_before == 1,
+        kou_occurred & state.agehama[my_color_ix] - agehama_before == 1,
         lambda: state,
         lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
@@ -290,7 +290,7 @@ def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
 
     return _state.replace(  # type:ignore
         ren_id_board=ren_id_board,
-        agehama=_state.agehama.at[_my_color(_state)].add(agehama),
+        agehama=_state.agehama.at[_my_color_ix(_state)].add(agehama),
         kou=jnp.int32(_rm_stone_xy),  # type:ignore
     )
 
@@ -400,10 +400,14 @@ def _show_details(state: GoState) -> None:
 def _my_color(_state: GoState):
     return jnp.int32([1, -1])[_state.turn % 2]
 
+def _my_color_ix(_state: GoState):
+    return _state.turn % 2
 
 def _opponent_color(_state: GoState):
     return jnp.int32([-1, 1])[_state.turn % 2]
 
+def _opponent_color_ix(_state: GoState):
+    return (_state.turn + 1) % 2
 
 def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
     size = _state.size
