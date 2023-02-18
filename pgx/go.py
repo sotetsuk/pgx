@@ -398,7 +398,7 @@ def _count(state: GoState, color, size):
     @jax.vmap
     def _sumup(x):
         mask = my_ren == x  # (361,)
-        mask = jnp.tile(mask, reps=(3,1)).transpose()
+        mask = jnp.tile(mask, reps=(3, 1)).transpose()
         return jnp.where(mask, pseudo_lib_stats, ZERO).sum(axis=0)
 
     pseudo_lib_stats = _sumup(idx)  # (361, 3)
