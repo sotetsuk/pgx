@@ -394,23 +394,15 @@ def _count(state: GoState, color, size):
     my_ren = state.ren_id_board[color]
 
     num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(idx)
-    # num_pseudo = jnp.where(my_ren >= 0, num_pseudo, ZERO)
-    # idx_sum = jnp.where(my_ren >= 0, idx_sum, ZERO)
-    # idx_squared_sum = jnp.where(my_ren >= 0, idx_squared_sum, ZERO)
 
     @jax.vmap
-    def _num_pseudo(x):
-        return jnp.where(my_ren == x, num_pseudo, ZERO).sum()
+    def _sumup(x):
+        mask = my_ren == x
+        return (jnp.where(mask, num_pseudo, ZERO).sum(),
+                jnp.where(mask, idx_sum, ZERO).sum(),
+                jnp.where(mask, idx_squared_sum, ZERO).sum())
 
-    @jax.vmap
-    def _idx_sum(x):
-        return jnp.where(my_ren == x, idx_sum, ZERO).sum()
-
-    @jax.vmap
-    def _idx_squared_sum(x):
-        return jnp.where(my_ren == x, idx_squared_sum, ZERO).sum()
-
-    return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
+    return _sumup(idx)
 
 
 def get_board(state: GoState) -> jnp.ndarray:
