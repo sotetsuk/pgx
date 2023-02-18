@@ -282,11 +282,10 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 
 
 def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
-    oppo_color = _opponent_color(_state)
     surrounded_stones = _state.ren_id_board == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
     ren_id_board = jnp.where(
-        surrounded_stones, -1, _state.ren_id_board
+        surrounded_stones, 0, _state.ren_id_board
     )
 
     return _state.replace(  # type:ignore
