@@ -385,24 +385,26 @@ def _count(state: GoState, color, size):
         neighbors = _neighbour(xy, size)
         on_board = neighbors != -1
         # fmt: off
-        return (jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
-                jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
-                jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum())
+        return jnp.int32([jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
+                          jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
+                          jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum()])  # (3,)
         # fmt: on
 
     idx = jnp.arange(size**2)
     my_ren = state.ren_id_board[color]
 
-    num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(idx)
+    pseudo_lib_stats = _count_neighbor(idx)  # (361, 3)
 
     @jax.vmap
     def _sumup(x):
-        mask = my_ren == x
-        return (jnp.where(mask, num_pseudo, ZERO).sum(),
-                jnp.where(mask, idx_sum, ZERO).sum(),
-                jnp.where(mask, idx_squared_sum, ZERO).sum())
+        mask = my_ren == x  # (361,)
+        mask = jnp.tile(mask, reps=(3,1)).transpose()
+        return jnp.where(mask, pseudo_lib_stats, ZERO).sum(axis=0)
 
-    return _sumup(idx)
+    pseudo_lib_stats = _sumup(idx)  # (361, 3)
+    num_pseudo, idx_sum, idx_squared_sum = pseudo_lib_stats.transpose()
+
+    return num_pseudo, idx_sum, idx_squared_sum
 
 
 def get_board(state: GoState) -> jnp.ndarray:
