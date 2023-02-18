@@ -263,12 +263,12 @@ def _set_stone(_state: GoState, _xy: int) -> GoState:
 
 
 def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
-
-
-    new_id = _state.ren_id_board[_xy]
-    adj_ren_id = _state.ren_id_board[_adj_xy]
+    my_color = _my_color(_state)
+    new_id = jnp.abs(_state.ren_id_board[_xy])
+    adj_ren_id = jnp.abs(_state.ren_id_board[_adj_xy])
     # fmt: off
-    small_id, large_id = jnp.minimum(new_id, adj_ren_id), jnp.maximum(new_id, adj_ren_id)
+    small_id = jnp.minimum(new_id, adj_ren_id) * my_color
+    large_id = jnp.maximum(new_id, adj_ren_id) * my_color
     # fmt: on
 
     # 大きいidの連を消し、小さいidの連と繋げる
