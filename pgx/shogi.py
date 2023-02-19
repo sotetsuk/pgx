@@ -962,7 +962,7 @@ def queen_effects(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     def filter(t):
         # queenはrookとbishopのor
         is_occupied = state.piece_board >= 0
-        bishop_filter= (IS_ON_THE_WAY[1, from_, t, :] & is_occupied).any()
+        bishop_filter = (IS_ON_THE_WAY[1, from_, t, :] & is_occupied).any()
         rook_filter = (IS_ON_THE_WAY[2, from_, t, :] & is_occupied).any()
         return bishop_filter | rook_filter
 
