@@ -372,9 +372,7 @@ def _step_move(state: State, action: Action) -> State:
     opp_effects = state.effects[1]
 
     # [OK] 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
-    queen_effect = QUEEN_MOVES[
-        action.from_, :
-                   ] & ~_apply_queen_effect_filter_from(state, action.from_)
+    queen_effect = queen_effects(state, action.from_)
     my_effects |= _apply_effect_filter_at(state, action.from_) & jnp.tile(
         queen_effect, reps=(81, 1)
     )
@@ -945,37 +943,25 @@ def xy2i(x, y):
     return i
 
 
-def _apply_queen_effect_filter_from(
+def queen_effects(
     state: State, from_: jnp.ndarray
 ) -> jnp.ndarray:
     """
     >>> s = _init()
     >>> s = s.replace(piece_board=s.piece_board.at[xy2i(7, 7)].set(EMPTY))
-    >>> jnp.rot90(
-    ...     _apply_queen_effect_filter_from(s, xy2i(7, 7)).reshape(9, 9), k=3
-    ... )
-    Array([[False, False,  True, False, False, False, False, False,  True],
-           [False, False,  True, False, False, False, False,  True, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [ True, False, False, False,  True,  True,  True,  True,  True],
-           [False, False, False, False, False, False, False, False, False],
-           [ True, False, False, False, False, False, False, False, False]],      dtype=bool)
+    >>> _rotate(queen_effects(s, xy2i(7, 7)).reshape(9, 9))
     """
-    to = jnp.arange(81)
+    queen_moves = QUEEN_MOVES[from_, :]
 
-    def func(t):
+    def filter(t):
         # queenはrookとbishopのor
-        return (
-            IS_ON_THE_WAY[1, from_, t, :] & (state.piece_board >= 0)
-        ).any() | (
-            IS_ON_THE_WAY[2, from_, t, :] & (state.piece_board >= 0)
-        ).any()
+        is_occupied = (state.piece_board >= 0)
+        rook_filter = (IS_ON_THE_WAY[1, from_, t, :] & is_occupied).any()
+        bishop_filter = (IS_ON_THE_WAY[2, from_, t, :] & is_occupied).any()
+        return rook_filter | bishop_filter
 
-    filter_boards = jax.vmap(func)(to)  # (81, )
-    return filter_boards  # (81=to)
+    filter_board = jax.vmap(filter)(jnp.arange(81))  # (81,)
+    return queen_moves & ~filter_board  # (81,)
 
 
 def _apply_effects_at(state: State, pos: jnp.ndarray):
