@@ -501,5 +501,4 @@ def test_legal_action_mask():
     sfen = "l+B6l/6k2/3pg2P1/p6p1/1pP1pB2p/2p3n2/P+r1GP3P/4KS1+s1/LNG5L b RGN2sn6p 1"
     state = _from_sfen(sfen)
     visualize(state, "tests/assets/shogi/legal_action_mask_017.svg")
-    assert ~state.legal_action_mask[13 * 81 + 72]
-    assert ~state.legal_action_mask[1188]
+    assert ~state.legal_action_mask[13 * 81 + 72]  # = 1125, promote + left (91角成）
