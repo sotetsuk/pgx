@@ -789,25 +789,6 @@ def _apply_raw_effects(state: State) -> jnp.ndarray:
     return raw_effect_boards  # (81, 81)
 
 
-def _apply_raw_effects_at(state: State, pos: jnp.ndarray) -> jnp.ndarray:
-    """Obtain raw effect boards from my piece at pos
-
-    >>> s = _init()
-    >>> jnp.rot90(_apply_raw_effects_at(s, 8).reshape(9, 9), k=3)
-    Array([[False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    """
-    piece = state.piece_board[pos]  # include -1
-    return RAW_EFFECT_BOARDS[piece, pos, :]
-
-
 def _to_large_piece_ix(piece):
     # Filtering only Lance(0), Bishop(1), Rook(2), Horse(3), and Dragon(4)
     # NOTE: last 14th -1 is sentinel for avoid accessing via -1
@@ -977,7 +958,7 @@ def _effects(state: State, from_: jnp.ndarray):
            [False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False, False]],      dtype=bool)
     """
-    raw_effect_boards = _apply_raw_effects_at(state, from_)
+    raw_effect_boards = RAW_EFFECT_BOARDS[state.piece_board[from_], from_, :]
     effect_filter_boards = _effect_filter_from(state, from_)
     return raw_effect_boards & ~effect_filter_boards
 
