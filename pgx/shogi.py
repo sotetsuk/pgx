@@ -1152,7 +1152,7 @@ def _from_sfen(sfen):
             else:
                 s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
                 num_piece = 1
-    return State.from_board(
+    return State._from_board(
         turn=s_turn,
         piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten(),
         hand=jnp.reshape(s_hand, (2, 7)),
@@ -1177,4 +1177,4 @@ def _from_cshogi(board):
     for i in range(2):
         for j in range(7):
             hand = hand.at[i, j].set(pieces_in_hand[i][hand_piece_dir[j]])
-    return State.from_board(turn=board.turn, piece_board=pb, hand=hand)
+    return State._from_board(turn=board.turn, piece_board=pb, hand=hand)
