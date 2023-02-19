@@ -367,6 +367,10 @@ def _step_move(state: State, action: Action) -> State:
         lambda: _promote(action.piece),
         lambda: action.piece,
     )
+    # set piece to the target position
+    pb = pb.at[action.to].set(piece)
+    # apply piece moves
+    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
 
     ####################################################################################
     # Update cached effects
@@ -393,9 +397,7 @@ def _step_move(state: State, action: Action) -> State:
     state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
     state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
 
-    # set piece to the target position
-    pb = pb.at[action.to].set(piece)
-    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+    return state
 
 
 def _step_drop(state: State, action: Action) -> State:
