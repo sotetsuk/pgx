@@ -11,6 +11,7 @@ from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union, 
 import numpy as np
 import time
 import cloudpickle
+import argparse
 
 
 class CloudpickleWrapper:
@@ -97,7 +98,7 @@ class SubprocVecEnv(object):
     def __init__(self, states, start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
-        n_envs = len(states)
+        self.n_envs = len(states)
 
         if start_method is None:
             # Fork is not a thread safe method (see issue #217)
@@ -107,7 +108,7 @@ class SubprocVecEnv(object):
             start_method = "forkserver" if forkserver_available else "spawn"
         ctx = mp.get_context(start_method)
 
-        self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)])
+        self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.n_envs)])
         self.processes = []
         for work_remote, remote, state in zip(self.work_remotes, self.remotes, states):
             args = (work_remote, remote, CloudpickleWrapper(state))
@@ -165,21 +166,31 @@ class SubprocVecEnv(object):
         self.closed = True
 
 
-if __name__ == "__main__":
-    n_envs = 20
-    env_name = "go"
-    states = [lambda: open_spile_make_env(env_name).new_initial_state()]
-    env = SubprocVecEnv(states)
-    
-    process_list = []
-    time_sta = time.time()
+def open_spiel_random_play(env):
     legal_actions, terminated = env.reset()
     n_steps = 0
     rng = np.random.default_rng()
     while not terminated.all():
         action = rng.choice(legal_actions, axis=1) # n_envs
         legal_actions, terminated = env.step(action)
+        assert env.n_envs == legal_actions.shape[0]  # 並列化されていることを確認.
         n_steps += 1
+    return n_steps
+
+
+
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("env_name")
+    parser.add_argument("n_envs", type=int)
+    args = parser.parse_args()
+    states = [lambda: open_spile_make_env(args.env_name).new_initial_state() for i in range(args.n_envs)]
+    env = SubprocVecEnv(states)
+    process_list = []
+    time_sta = time.time()
+    n_steps = open_spiel_random_play
     time_end = time.time()
     tim = time_end- time_sta
     env.close()
