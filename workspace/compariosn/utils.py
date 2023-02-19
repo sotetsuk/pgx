@@ -1,7 +1,11 @@
 """
-Code references: https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/base_vec_env.py, https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/subproc_vec_env.py
-Copyright (c) 2019 Antonin Raffin
+Modified from:
 
+https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/base_vec_env.py
+
+Distributed under MIT License:
+
+https://github.com/DLR-RM/stable-baselines3/blob/master/LICENSE
 """
 
 import multiprocessing as mp
