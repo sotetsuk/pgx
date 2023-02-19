@@ -8,27 +8,44 @@ from collections import OrderedDict
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union, Dict, Iterable
 import numpy as np
 import time
+import cloudpickle
+
+
+class CloudpickleWrapper:
+    """
+    Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
+
+    :param var: the variable you wish to wrap for pickling with cloudpickle
+    """
+
+    def __init__(self, var: Any):
+        self.var = var
+
+    def __getstate__(self) -> Any:
+        return cloudpickle.dumps(self.var)
+
+    def __setstate__(self, var: Any) -> None:
+        self.var = cloudpickle.loads(var)
 
 
 def _worker(
-    remote, parent_remote, env_name: str
+    remote, parent_remote, state_wrapper: CloudpickleWrapper
 ) -> None:
     parent_remote.close()
+    state = state_wrapper.var()
     while True:
         try:
             cmd, data = remote.recv()
             if cmd == "step":
-                state, action = data
+                action = data
                 state.apply_action(action)
                 legal_actions = state.legal_actions()
                 terminated = state.is_terminal()
-                remote.send((state, legal_actions, terminated))
+                remote.send((legal_actions, terminated))
             elif cmd == "reset":
-                game = open_spile_make_env(env_name)
-                state = game.new_initial_state()
                 legal_actions = state.legal_actions()
                 terminated = state.is_terminal()
-                remote.send((state, legal_actions, terminated))
+                remote.send((legal_actions, terminated))
             elif cmd == "render":
                 pass
             elif cmd == "close":
@@ -48,7 +65,6 @@ def _worker(
                 raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
         except EOFError:
             break
-
 
 
 
@@ -76,10 +92,10 @@ class SubprocVecEnv(object):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, env_name, n_envs, start_method: Optional[str] = None):
+    def __init__(self, states, start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
-        env_names = [env_name] * n_envs
+        n_envs = len(states)
 
         if start_method is None:
             # Fork is not a thread safe method (see issue #217)
@@ -91,8 +107,8 @@ class SubprocVecEnv(object):
 
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(n_envs)])
         self.processes = []
-        for work_remote, remote, env_name in zip(self.work_remotes, self.remotes, env_names):
-            args = (work_remote, remote, env_name)
+        for work_remote, remote, state in zip(self.work_remotes, self.remotes, states):
+            args = (work_remote, remote, CloudpickleWrapper(state))
             # daemon=True: if the main process crashes, we should not cause things to hang
             process = ctx.Process(target=_worker, args=args, daemon=True)  # pytype:disable=attribute-error
             process.start()
@@ -100,17 +116,17 @@ class SubprocVecEnv(object):
             work_remote.close()
 
 
-    def step_async(self, states, actions: np.ndarray) -> None:
-        for remote, state, action in zip(self.remotes, states, actions):
-            remote.send(("step", (state, action)))
+    def step_async(self, actions: np.ndarray) -> None:
+        for remote, action in zip(self.remotes, actions):
+            remote.send(("step", (action)))
         self.waiting = True
 
 
     def step_wait(self) -> Tuple:
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
-        states, legal_actions, terminated = zip(*results)
-        return states, np.stack(legal_actions), np.stack(terminated)
+        legal_actions, terminated = zip(*results)
+        return np.stack(legal_actions), np.stack(terminated)
 
 
     def seed(self, seed: Optional[int] = None) -> List[Union[None, int]]:
@@ -125,12 +141,12 @@ class SubprocVecEnv(object):
         for remote in self.remotes:
             remote.send(("reset", None))
         results = [remote.recv() for remote in self.remotes]
-        states, legal_actions, terminated = zip(*results)
-        return states, np.stack(legal_actions), np.stack(terminated)
+        legal_actions, terminated = zip(*results)
+        return np.stack(legal_actions), np.stack(terminated)
 
 
-    def step(self, states, actions) -> Tuple:
-        self.step_async(states, actions)
+    def step(self, actions) -> Tuple:
+        self.step_async(actions)
         return self.step_wait()
 
 
@@ -148,18 +164,19 @@ class SubprocVecEnv(object):
 
 
 if __name__ == "__main__":
-    n_envs = 10
+    n_envs = 20
     env_name = "go"
-    env = SubprocVecEnv(env_name, n_envs)
+    states = [lambda: open_spile_make_env(env_name).new_initial_state()]
+    env = SubprocVecEnv(states)
     
     process_list = []
     time_sta = time.time()
-    state, legal_actions, terminated = env.reset()
+    legal_actions, terminated = env.reset()
     n_steps = 0
     rng = np.random.default_rng()
     while not terminated.all():
         action = rng.choice(legal_actions, axis=1) # n_envs
-        state, legal_actions, terminated = env.step(state, action)
+        legal_actions, terminated = env.step(action)
         n_steps += 1
     time_end = time.time()
     tim = time_end- time_sta
