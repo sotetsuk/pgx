@@ -190,7 +190,7 @@ if __name__ == "__main__":
     env = SubprocVecEnv(states)
     process_list = []
     time_sta = time.time()
-    n_steps = open_spiel_random_play
+    n_steps = open_spiel_random_play(env)
     time_end = time.time()
     tim = time_end- time_sta
     env.close()
