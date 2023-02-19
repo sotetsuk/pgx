@@ -948,8 +948,16 @@ def queen_effects(
 ) -> jnp.ndarray:
     """
     >>> s = _init()
-    >>> s = s.replace(piece_board=s.piece_board.at[xy2i(7, 7)].set(EMPTY))
-    >>> _rotate(queen_effects(s, xy2i(7, 7)).reshape(9, 9))
+    >>> _rotate(queen_effects(s, xy2i(5, 5)))
+    Array([[False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False,  True, False,  True, False,  True, False, False],
+           [False, False, False,  True,  True,  True, False, False, False],
+           [ True,  True,  True,  True, False,  True,  True,  True,  True],
+           [False, False, False,  True,  True,  True, False, False, False],
+           [False, False,  True, False,  True, False,  True, False, False],
+           [False, False, False, False, False, False, False, False, False],
+           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
     """
     queen_moves = QUEEN_MOVES[from_, :]
 
