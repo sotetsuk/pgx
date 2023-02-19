@@ -197,10 +197,10 @@ def _init():
     """
     state = State()
     state = state.replace(
-        effects=state.effects.at[0].set(_apply_effects(state))
+        effects=state.effects.at[0].set(_effects_all(state))
     )
     state = state.replace(
-        effects=state.effects.at[1].set(_apply_effects(_flip(state)))
+        effects=state.effects.at[1].set(_effects_all(_flip(state)))
     )
     legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     return state.replace(  # type: ignore
@@ -372,10 +372,10 @@ def _step_move(state: State, action: Action) -> State:
     opp_effects = state.effects[1]
 
     # [OK] 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
-    queen_effect = jnp.tile(queen_effects(state, action.from_), reps=(81,1))
-    my_effects |= _apply_effect_filter_at(state, action.from_) & queen_effect
+    queen_effect = jnp.tile(_queen_effect(state, action.from_), reps=(81, 1))
+    my_effects |= _effect_filter_through(state, action.from_) & queen_effect
     # [OK] 相手も同様
-    opp_effects |= _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_)) & queen_effect[::-1]
+    opp_effects |= _effect_filter_through(_flip(state), _roatate_pos(action.from_)) & queen_effect[::-1]
     # [OK] 移動元からの古い利きを消す
     my_effects = my_effects.at[action.from_, :].set(FALSE)
     # [OK] 移動先で駒を取っていたら、取られた駒の利きを消す
@@ -386,12 +386,12 @@ def _step_move(state: State, action: Action) -> State:
     )
     # [OK] 移動先から新しい利きを作る
     my_effects = my_effects.at[action.to, :].set(
-        _apply_effects_at(state, action.to)
+        _effects(state, action.to)
     )
     # [OK] 移動先を通るような利きを塞ぐ
-    my_effects &= ~_apply_effect_filter_at(state, action.to)
+    my_effects &= ~_effect_filter_through(state, action.to)
     # [OK] 相手も同様
-    opp_effects &= ~_apply_effect_filter_at(
+    opp_effects &= ~_effect_filter_through(
         _flip(state), _roatate_pos(action.to)
     )
 
@@ -413,12 +413,12 @@ def _step_drop(state: State, action: Action) -> State:
     opp_effects = state.effects[1]
     # [OK] 新しい利きが増える
     my_effects = my_effects.at[action.to, :].set(
-        _apply_effects_at(state, action.to)
+        _effects(state, action.to)
     )
     # [OK] 打たれた点を経由する大駒の利きが消える
-    my_effects &= ~_apply_effect_filter_at(state, action.to)
+    my_effects &= ~_effect_filter_through(state, action.to)
     # [OK] 相手も同様
-    opp_effects &= ~_apply_effect_filter_at(
+    opp_effects &= ~_effect_filter_through(
         _flip(state), _roatate_pos(action.to)
     )
 
@@ -610,7 +610,7 @@ def _pseudo_legal_drops(
     >>> s = _init()
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
-    >>> effect_boards = _apply_effects(s)
+    >>> effect_boards = _effects_all(s)
     >>> _rotate(_pseudo_legal_drops(s, effect_boards)[PAWN])
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -818,10 +818,10 @@ def _to_large_piece_ix(piece):
     ]
 
 
-def _apply_effect_filter(state: State) -> jnp.ndarray:
+def _effect_filters_all(state: State) -> jnp.ndarray:
     """
     >>> s = _init()
-    >>> jnp.rot90(_apply_effect_filter(s).any(axis=0).reshape(9, 9), k=3)
+    >>> _rotate(_effect_filters_all(s).any(axis=0))
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False,  True,  True,  True],
@@ -856,14 +856,12 @@ def _apply_effect_filter(state: State) -> jnp.ndarray:
     return filter_boards  # (81=from, 81=to)
 
 
-def _apply_effect_filter_at(
+def _effect_filter_through(
     state: State, blocked_pos: jnp.ndarray
 ) -> jnp.ndarray:
     """
     >>> s = _init()
-    >>> jnp.rot90(
-    ...     _apply_effect_filter_at(s, 10).any(axis=0).reshape(9, 9), k=3
-    ... )
+    >>> _rotate(_effect_filter_through(s, 10).any(axis=0))
     Array([[False, False, False, False, False, False, False,  True,  True],
            [False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -892,10 +890,10 @@ def _apply_effect_filter_at(
     return filter_boards  # (81=from, 81=to)
 
 
-def _apply_effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
+def _effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     """
     >>> s = _init()
-    >>> jnp.rot90(_apply_effect_filter_from(s, 8).reshape(9, 9), k=3)
+    >>> _rotate(_effect_filter_from(s, 8))
     Array([[False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False,  True],
@@ -939,10 +937,10 @@ def xy2i(x, y):
     return i
 
 
-def queen_effects(state: State, from_: jnp.ndarray) -> jnp.ndarray:
+def _queen_effect(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     """
     >>> s = _init()
-    >>> _rotate(queen_effects(s, xy2i(5, 5)))
+    >>> _rotate(_queen_effect(s, xy2i(5, 5)))
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
            [False, False,  True, False,  True, False,  True, False, False],
@@ -966,11 +964,11 @@ def queen_effects(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     return queen_moves & ~filter_board  # (81,)
 
 
-def _apply_effects_at(state: State, pos: jnp.ndarray):
+def _effects(state: State, from_: jnp.ndarray):
     """posに駒が追加されたときに追加されるeffect
 
     >>> s = _init()
-    >>> jnp.rot90(_apply_effects_at(s, 8).reshape(9, 9), k=3)  # 香
+    >>> _rotate(_effects(s, 8))  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -981,15 +979,15 @@ def _apply_effects_at(state: State, pos: jnp.ndarray):
            [False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False, False]],      dtype=bool)
     """
-    raw_effect_boards = _apply_raw_effects_at(state, pos)
-    effect_filter_boards = _apply_effect_filter_from(state, pos)
+    raw_effect_boards = _apply_raw_effects_at(state, from_)
+    effect_filter_boards = _effect_filter_from(state, from_)
     return raw_effect_boards & ~effect_filter_boards
 
 
-def _apply_effects(state: State):
+def _effects_all(state: State):
     """
     >>> s = _init()
-    >>> jnp.rot90(_apply_effects(s)[8].reshape(9, 9), k=3)  # 香
+    >>> _rotate(_effects_all(s)[8])  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -999,7 +997,7 @@ def _apply_effects(state: State):
            [False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    >>> jnp.rot90(_apply_effects(s)[16].reshape(9, 9), k=3)  # 飛
+    >>> _rotate(_effects_all(s)[16])  # 飛
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -1011,7 +1009,7 @@ def _apply_effects(state: State):
            [False, False, False, False, False, False, False,  True, False]],      dtype=bool)
     """
     raw_effect_boards = _apply_raw_effects(state)
-    effect_filter_boards = _apply_effect_filter(state)
+    effect_filter_boards = _effect_filters_all(state)
     return raw_effect_boards & ~effect_filter_boards
 
 
