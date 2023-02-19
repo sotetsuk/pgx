@@ -9,7 +9,7 @@ https://github.com/DLR-RM/stable-baselines3/blob/master/LICENSE
 """
 
 import multiprocessing as mp
-from comparison import open_spile_make_env
+from comparison import open_spile_make_env, petting_zoo_make_env
 from collections import OrderedDict
 from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union, Dict, Iterable
 import numpy as np
@@ -35,8 +35,8 @@ class CloudpickleWrapper:
         self.var = cloudpickle.loads(var)
 
 
-def _worker(
-    remote, parent_remote, state_wrapper: CloudpickleWrapper, env_name: str
+def _open_spiel_worker(
+    remote, parent_remote, state_wrapper: CloudpickleWrapper, env_name: str,
 ) -> None:
     parent_remote.close()
     state = state_wrapper.var()
@@ -57,6 +57,46 @@ def _worker(
                 legal_actions = state.legal_actions()
                 terminated = state.is_terminal()
                 remote.send((legal_actions, terminated))
+            elif cmd == "render":
+                pass
+            elif cmd == "close":
+                remote.close()
+                break
+            elif cmd == "get_spaces":
+                pass
+            elif cmd == "env_method":
+                pass
+            elif cmd == "get_attr":
+                pass
+            elif cmd == "set_attr":
+                pass
+            elif cmd == "is_wrapped":
+                pass
+            else:
+                raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
+        except EOFError:
+            break
+
+def _petting_zoo_worker(
+    remote, parent_remote, state_wrapper: CloudpickleWrapper, env_name: str,
+) -> None:
+    parent_remote.close()
+    state = state_wrapper.var()
+    while True:
+        try:
+            cmd, data = remote.recv()
+            if cmd == "step":
+                action = data
+                state.step(action)
+                observation, reward, terminated, truncation, info = state.last()
+                if terminated:  # auto_reset
+                    state = petting_zoo_make_env(env_name).new_initial_state()
+                    observation, reward, terminated, truncation, info = state.last()
+                remote.send((np.where(observation["action_mask"]==1)[0], terminated))
+
+            elif cmd == "reset":
+                observation, reward, terminated, truncation, info = state.last()
+                remote.send((np.where(observation["action_mask"]==1)[0], terminated))
             elif cmd == "render":
                 pass
             elif cmd == "close":
@@ -103,7 +143,7 @@ class SubprocVecEnv(object):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, states, env_name, start_method: Optional[str] = None):
+    def __init__(self, states, library, env_name, start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
         self.n_envs = len(states)
@@ -116,7 +156,12 @@ class SubprocVecEnv(object):
             forkserver_available = "forkserver" in mp.get_all_start_methods()
             start_method = "forkserver" if forkserver_available else "spawn"
         ctx = mp.get_context(start_method)
-
+        if library == "open_spiel":
+            _worker = _open_spiel_worker
+        elif library == "petting_zoo":
+            _worker = _petting_zoo_worker
+        else:
+            raise ValueError("Wrong library specified")
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.n_envs)])
         self.processes = []
         for work_remote, remote, state, env_name in zip(self.work_remotes, self.remotes, states, env_names):
@@ -175,7 +220,7 @@ class SubprocVecEnv(object):
         self.closed = True
 
 
-def open_spiel_random_play(env, n_steps_lim):
+def random_play(env, n_steps_lim):
     legal_actions, terminated = env.reset()
     n_steps = 0
     rng = np.random.default_rng()
@@ -192,15 +237,16 @@ def open_spiel_random_play(env, n_steps_lim):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
+    parser.add("library")
     parser.add_argument("env_name")
     parser.add_argument("n_envs", type=int)
     parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
     states = [lambda: open_spile_make_env(args.env_name).new_initial_state() for i in range(args.n_envs)]
-    env = SubprocVecEnv(states, args.env_name)
+    env = SubprocVecEnv(states, args.library, args.env_name)
     process_list = []
     time_sta = time.time()
-    n_steps = open_spiel_random_play(env, args.n_steps_lim)
+    n_steps = random_play(env, args.n_steps_lim)
     time_end = time.time()
     tim = time_end- time_sta
     env.close()
