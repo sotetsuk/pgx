@@ -498,7 +498,7 @@ def _filter_suicide_moves(
 
 
 def _find_pinned_pieces(state, flipped_state):
-    flipped_opp_raw_effect_boards = _apply_raw_effects(flipped_state)
+    flipped_opp_raw_effect_boards = _raw_effects_all(flipped_state)
     flipped_king_pos = (
         80 - jnp.nonzero(state.piece_board == KING, size=1)[0][0]
     )
@@ -760,11 +760,11 @@ def _promote(piece: jnp.ndarray) -> jnp.ndarray:
     return piece + 8
 
 
-def _apply_raw_effects(state: State) -> jnp.ndarray:
+def _raw_effects_all(state: State) -> jnp.ndarray:
     """Obtain raw effect boards from piece board by batch.
 
     >>> s = _init()
-    >>> jnp.rot90(_apply_raw_effects(s).any(axis=0).reshape(9, 9), k=3)
+    >>> jnp.rot90(_raw_effects_all(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False,  True,  True,  True],
@@ -987,7 +987,7 @@ def _effects_all(state: State):
            [False,  True,  True,  True,  True,  True,  True, False,  True],
            [False, False, False, False, False, False, False,  True, False]],      dtype=bool)
     """
-    raw_effect_boards = _apply_raw_effects(state)
+    raw_effect_boards = _raw_effects_all(state)
     effect_filter_boards = _effect_filters_all(state)
     return raw_effect_boards & ~effect_filter_boards
 
