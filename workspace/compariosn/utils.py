@@ -1,5 +1,7 @@
 """
-Stable baselineのSubprocEnvと同様の実装方針でopen_spielのgoを並列化する.
+Code references: https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/base_vec_env.py, https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/vec_env/subproc_vec_env.py
+Copyright (c) 2019 Antonin Raffin
+
 """
 
 import multiprocessing as mp
