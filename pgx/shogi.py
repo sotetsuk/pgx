@@ -378,12 +378,8 @@ def _step_move(state: State, action: Action) -> State:
     opp_effects |= _effect_filter_through(_flip(state), _roatate_pos(action.from_)) & queen_effect[::-1]
     # [OK] 移動元からの古い利きを消す
     my_effects = my_effects.at[action.from_, :].set(FALSE)
-    # [OK] 移動先で駒を取っていたら、取られた駒の利きを消す
-    opp_effects = jax.lax.cond(
-        captured != EMPTY,
-        lambda: opp_effects.at[_roatate_pos(action.to), :].set(FALSE),
-        lambda: opp_effects,
-    )
+    # [OK] 移動先で相手の利きを消す（移動先で駒を取っていたら、取られた駒の利きを消す）
+    opp_effects = opp_effects.at[_roatate_pos(action.to), :].set(FALSE)
     # [OK] 移動先から新しい利きを作る
     my_effects = my_effects.at[action.to, :].set(
         _effects(state, action.to)
