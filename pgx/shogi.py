@@ -407,7 +407,11 @@ def _step_drop(state: State, action: Action) -> State:
     pb = state.piece_board.at[action.to].set(action.piece)
     # remove piece from hand
     hand = state.hand.at[0, action.piece].add(-1)
+    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
 
+    ####################################################################################
+    # Update cached effects
+    ####################################################################################
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
     # [OK] 新しい利きが増える
@@ -418,11 +422,11 @@ def _step_drop(state: State, action: Action) -> State:
     opp_effects &= ~_effect_filter_through(
         _flip(state), _roatate_pos(action.to)
     )
-
+    # set updated effects
     state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
     state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
 
-    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+    return state
 
 
 def _legal_actions(state: State):
