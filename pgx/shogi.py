@@ -368,9 +368,12 @@ def _step_move(state: State, action: Action) -> State:
         lambda: action.piece,
     )
 
+    ####################################################################################
+    # Update cached effects
+    # If we compute effects without cache, these updates are not necessary
+    ####################################################################################
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
-
     # [OK] 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
     queen_effect = jnp.tile(_queen_effect(state, action.from_), reps=(81, 1))
     my_effects |= _effect_filter_through(state, action.from_) & queen_effect
@@ -381,16 +384,12 @@ def _step_move(state: State, action: Action) -> State:
     # [OK] 移動先で相手の利きを消す（移動先で駒を取っていたら、取られた駒の利きを消す）
     opp_effects = opp_effects.at[_roatate_pos(action.to), :].set(FALSE)
     # [OK] 移動先から新しい利きを作る
-    my_effects = my_effects.at[action.to, :].set(
-        _effects(state, action.to)
-    )
+    my_effects = my_effects.at[action.to, :].set(_effects(state, action.to))
     # [OK] 移動先を通るような利きを塞ぐ
     my_effects &= ~_effect_filter_through(state, action.to)
     # [OK] 相手も同様
-    opp_effects &= ~_effect_filter_through(
-        _flip(state), _roatate_pos(action.to)
-    )
-
+    opp_effects &= ~_effect_filter_through(_flip(state), _roatate_pos(action.to))
+    # set updated effects
     state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
     state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
 
