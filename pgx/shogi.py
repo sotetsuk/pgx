@@ -42,6 +42,7 @@ from pgx.cache import (
     load_shogi_is_on_the_way,
     load_shogi_legal_from_mask,
     load_shogi_raw_effect_boards,
+    load_shogi_queen_moves
 )
 from pgx.flax.struct import dataclass
 
@@ -103,22 +104,14 @@ RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # Give <dir,10> and <to,81>, return the legal <from,81> mask
 # E.g. LEGAL_FROM_MASK[Up right, to=19]
+# Necessary for computing legal_action_mask
 # x x x x x x x
 # x x x x t x x
 # x x x o x x x
 # x x o x x x x
-LEGAL_FROM_MASK = load_shogi_legal_from_mask()
-QUEEN_CACHE = jnp.zeros((81, 81), dtype=jnp.bool_)
-for i in range(81):
-    for j in range(81):
-        x0, y0 = i // 9, i % 9
-        x1, y1 = j // 9, j % 9
-        dx = x1 - x0
-        dy = y1 - y0
-        if dx == 0 and dy == 0:
-            continue
-        if dx == 0 or dy == 0 or abs(dx) == abs(dy):
-            QUEEN_CACHE = QUEEN_CACHE.at[i, j].set(TRUE)
+LEGAL_FROM_MASK = load_shogi_legal_from_mask()  # (10, 81, 81)
+# Queen piece does not exist in Shogi but necessary for computing legal moves
+QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 
 @dataclass
@@ -379,9 +372,9 @@ def _step_move(state: State, action: Action) -> State:
     opp_effects = state.effects[1]
 
     # [OK] 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
-    queen_effect = QUEEN_CACHE[
+    queen_effect = QUEEN_MOVES[
         action.from_, :
-    ] & ~_apply_queen_effect_filter_from(state, action.from_)
+                   ] & ~_apply_queen_effect_filter_from(state, action.from_)
     my_effects |= _apply_effect_filter_at(state, action.from_) & jnp.tile(
         queen_effect, reps=(81, 1)
     )
