@@ -474,6 +474,8 @@ def test_legal_action_mask():
     assert not s.legal_action_mask[2 * 81 + xy2i(4, 4)]
     assert s.legal_action_mask[0 * 81 + xy2i(4, 3)]       # 金の利きが増える
 
+
+def test_buggy_samples():
     # 歩以外の持ち駒に対しての二歩判定回避
     sfen = "9/9/9/9/9/9/PPPPPPPPP/9/9 b NLP 1"
     state = _from_sfen(sfen)
