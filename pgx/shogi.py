@@ -645,7 +645,9 @@ def _pseudo_legal_drops(
     # double pawn
     has_pawn = (state.piece_board == PAWN).reshape(9, 9).any(axis=1)
     has_pawn = jnp.tile(has_pawn, reps=(9, 1)).transpose().flatten()
-    legal_drops = legal_drops.at[0].set(jnp.where(has_pawn, FALSE, legal_drops[0]))
+    legal_drops = legal_drops.at[0].set(
+        jnp.where(has_pawn, FALSE, legal_drops[0])
+    )
 
     return legal_drops
 
