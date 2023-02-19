@@ -32,7 +32,7 @@ class CloudpickleWrapper:
 
 
 def _worker(
-    remote, parent_remote, state_wrapper: CloudpickleWrapper
+    remote, parent_remote, state_wrapper: CloudpickleWrapper, env_name: str
 ) -> None:
     parent_remote.close()
     state = state_wrapper.var()
@@ -44,7 +44,11 @@ def _worker(
                 state.apply_action(action)
                 legal_actions = state.legal_actions()
                 terminated = state.is_terminal()
+                if terminated:  # auto_reset
+                    state = open_spile_make_env(env_name).new_initial_state()
+                    legal_actions = state.legal_actions()
                 remote.send((legal_actions, terminated))
+
             elif cmd == "reset":
                 legal_actions = state.legal_actions()
                 terminated = state.is_terminal()
@@ -95,10 +99,11 @@ class SubprocVecEnv(object):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, states, start_method: Optional[str] = None):
+    def __init__(self, states, env_name, start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
         self.n_envs = len(states)
+        env_names = [env_name] * self.n_envs
 
         if start_method is None:
             # Fork is not a thread safe method (see issue #217)
@@ -110,8 +115,8 @@ class SubprocVecEnv(object):
 
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.n_envs)])
         self.processes = []
-        for work_remote, remote, state in zip(self.work_remotes, self.remotes, states):
-            args = (work_remote, remote, CloudpickleWrapper(state))
+        for work_remote, remote, state, env_name in zip(self.work_remotes, self.remotes, states, env_names):
+            args = (work_remote, remote, CloudpickleWrapper(state), env_name)
             # daemon=True: if the main process crashes, we should not cause things to hang
             process = ctx.Process(target=_worker, args=args, daemon=True)  # pytype:disable=attribute-error
             process.start()
@@ -166,11 +171,11 @@ class SubprocVecEnv(object):
         self.closed = True
 
 
-def open_spiel_random_play(env):
+def open_spiel_random_play(env, n_steps_lim):
     legal_actions, terminated = env.reset()
     n_steps = 0
     rng = np.random.default_rng()
-    while not terminated.all():
+    while n_steps < n_steps_lim:
         action = rng.choice(legal_actions, axis=1) # n_envs
         legal_actions, terminated = env.step(action)
         assert env.n_envs == legal_actions.shape[0]  # 並列化されていることを確認.
@@ -185,12 +190,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("env_name")
     parser.add_argument("n_envs", type=int)
+    parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
     states = [lambda: open_spile_make_env(args.env_name).new_initial_state() for i in range(args.n_envs)]
-    env = SubprocVecEnv(states)
+    env = SubprocVecEnv(states, args.env_name)
     process_list = []
     time_sta = time.time()
-    n_steps = open_spiel_random_play(env)
+    n_steps = open_spiel_random_play(env, args.n_steps_lim)
     time_end = time.time()
     tim = time_end- time_sta
     env.close()
