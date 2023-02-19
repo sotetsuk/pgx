@@ -962,9 +962,9 @@ def queen_effects(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     def filter(t):
         # queenはrookとbishopのor
         is_occupied = state.piece_board >= 0
-        rook_filter = (IS_ON_THE_WAY[1, from_, t, :] & is_occupied).any()
-        bishop_filter = (IS_ON_THE_WAY[2, from_, t, :] & is_occupied).any()
-        return rook_filter | bishop_filter
+        bishop_filter= (IS_ON_THE_WAY[1, from_, t, :] & is_occupied).any()
+        rook_filter = (IS_ON_THE_WAY[2, from_, t, :] & is_occupied).any()
+        return bishop_filter | rook_filter
 
     filter_board = jax.vmap(filter)(jnp.arange(81))  # (81,)
     return queen_moves & ~filter_board  # (81,)
