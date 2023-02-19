@@ -645,7 +645,9 @@ def _pseudo_legal_drops(
     # double pawn
     has_pawn = (state.piece_board == PAWN).reshape(9, 9).any(axis=1)
     has_pawn = jnp.tile(has_pawn, reps=(9, 1)).transpose().flatten()
-    legal_drops = jnp.where(has_pawn, FALSE, legal_drops)
+    legal_drops = legal_drops.at[0].set(
+        jnp.where(has_pawn, FALSE, legal_drops[0])
+    )
 
     return legal_drops
 
@@ -1144,9 +1146,7 @@ def _from_sfen(sfen):
     else:
         s_turn = jnp.int8(1)
     s_hand = jnp.zeros(14, dtype=jnp.int8)
-    if hand == "-":
-        s_hand = jnp.reshape(s_hand, (2, 7))
-    else:
+    if hand != "-":
         num_piece = 1
         for char in hand:
             if char.isdigit():
@@ -1154,10 +1154,10 @@ def _from_sfen(sfen):
             else:
                 s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
                 num_piece = 1
-    return State.from_board(
+    return State._from_board(
         turn=s_turn,
         piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten(),
-        hand=s_hand,
+        hand=jnp.reshape(s_hand, (2, 7)),
     )
 
 
@@ -1179,4 +1179,4 @@ def _from_cshogi(board):
     for i in range(2):
         for j in range(7):
             hand = hand.at[i, j].set(pieces_in_hand[i][hand_piece_dir[j]])
-    return State.from_board(turn=board.turn, piece_board=pb, hand=hand)
+    return State._from_board(turn=board.turn, piece_board=pb, hand=hand)

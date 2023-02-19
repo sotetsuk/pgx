@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction
+from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction, _from_sfen, _pseudo_legal_drops
 
 
 # check visualization results by image preview plugins
@@ -473,3 +473,34 @@ def test_legal_action_mask():
     assert not s.legal_action_mask[2 * 81 + xy2i(2, 2)]   # 金打の後は角の利きが止まっている
     assert not s.legal_action_mask[2 * 81 + xy2i(4, 4)]
     assert s.legal_action_mask[0 * 81 + xy2i(4, 3)]       # 金の利きが増える
+
+
+def test_buggy_samples():
+    # 歩以外の持ち駒に対しての二歩判定回避
+    sfen = "9/9/9/9/9/9/PPPPPPPPP/9/9 b NLP 1"
+    state = _from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/legal_action_mask_015.svg")
+
+    # 歩は二歩になるので打てない
+    assert (~state.legal_action_mask[20 * 81:21 * 81]).all()
+    # 香車は2列目には打てるが、1列目と7列目（歩がいる）には打てない
+    assert (state.legal_action_mask[21 * 81 + 1:22 * 81:9]).all()
+    assert (~state.legal_action_mask[21 * 81:22 * 81:9]).all()
+    assert (~state.legal_action_mask[21 * 81 + 6:22 * 81:9]).all()
+    # 桂馬は1,2列目に打てないが3列目には打てる
+    assert (~state.legal_action_mask[22 * 81:23 * 81:9]).all()
+    assert (~state.legal_action_mask[22 * 81 + 1:23 * 81:9]).all()
+    assert (state.legal_action_mask[21 * 81 + 2:22 * 81:9]).all()
+
+    # 成駒のpromotion判定
+    sfen = "9/2+B1G1+P2/9/9/9/9/9/9/9 b - 1"
+    state = _from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/legal_action_mask_016.svg")
+    # promotionは生成されてたらダメ
+    assert (~state.legal_action_mask[10 * 81:]).all()
+
+    # 角は成れないはず
+    sfen = "l+B6l/6k2/3pg2P1/p6p1/1pP1pB2p/2p3n2/P+r1GP3P/4KS1+s1/LNG5L b RGN2sn6p 1"
+    state = _from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/legal_action_mask_017.svg")
+    assert ~state.legal_action_mask[13 * 81 + 72]  # = 1125, promote + left (91角成）
