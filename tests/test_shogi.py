@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction, _from_sfen
+from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction, _from_sfen, _pseudo_legal_drops
 
 
 # check visualization results by image preview plugins
@@ -481,10 +481,10 @@ def test_legal_action_mask():
 
     # 歩は二歩になるので打てない
     assert (~state.legal_action_mask[20 * 81:21 * 81]).all()
-    # 香車は2列目には打てるが、1列目と6列目（歩がいる）には打てない
+    # 香車は2列目には打てるが、1列目と7列目（歩がいる）には打てない
     assert (state.legal_action_mask[21 * 81 + 1:22 * 81:9]).all()
     assert (~state.legal_action_mask[21 * 81:22 * 81:9]).all()
-    assert (~state.legal_action_mask[21 * 81 + 5:22 * 81:9]).all()
+    assert (~state.legal_action_mask[21 * 81 + 6:22 * 81:9]).all()
     # 桂馬は1,2列目に打てないが3列目には打てる
     assert (~state.legal_action_mask[22 * 81:23 * 81:9]).all()
     assert (~state.legal_action_mask[22 * 81 + 1:23 * 81:9]).all()
