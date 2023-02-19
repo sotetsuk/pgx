@@ -41,8 +41,8 @@ import pgx.core as core
 from pgx.cache import (
     load_shogi_is_on_the_way,
     load_shogi_legal_from_mask,
+    load_shogi_queen_moves,
     load_shogi_raw_effect_boards,
-    load_shogi_queen_moves
 )
 from pgx.flax.struct import dataclass
 
@@ -943,9 +943,7 @@ def xy2i(x, y):
     return i
 
 
-def queen_effects(
-    state: State, from_: jnp.ndarray
-) -> jnp.ndarray:
+def queen_effects(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     """
     >>> s = _init()
     >>> _rotate(queen_effects(s, xy2i(5, 5)))
@@ -963,7 +961,7 @@ def queen_effects(
 
     def filter(t):
         # queenはrookとbishopのor
-        is_occupied = (state.piece_board >= 0)
+        is_occupied = state.piece_board >= 0
         rook_filter = (IS_ON_THE_WAY[1, from_, t, :] & is_occupied).any()
         bishop_filter = (IS_ON_THE_WAY[2, from_, t, :] & is_occupied).any()
         return rook_filter | bishop_filter
