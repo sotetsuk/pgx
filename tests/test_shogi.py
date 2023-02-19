@@ -496,3 +496,10 @@ def test_legal_action_mask():
     visualize(state, "tests/assets/shogi/legal_action_mask_016.svg")
     # promotionは生成されてたらダメ
     assert (~state.legal_action_mask[10 * 81:]).all()
+
+    # 角は成れないはず
+    sfen = "l+B6l/6k2/3pg2P1/p6p1/1pP1pB2p/2p3n2/P+r1GP3P/4KS1+s1/LNG5L b RGN2sn6p 1"
+    state = _from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/legal_action_mask_017.svg")
+    assert ~state.legal_action_mask[13 * 81 + 72]
+    assert ~state.legal_action_mask[1188]
