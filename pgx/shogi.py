@@ -400,26 +400,28 @@ def _step_move(state: State, action: Action) -> State:
 
 
 def _step_drop(state: State, action: Action) -> State:
-    pb = state.piece_board.at[action.to].set(action.piece)  # add piece to board
-    hand = state.hand.at[0, action.piece].add(-1)  # remove piece from hand
-    state.replace(piece_board=pb, hand=hand)  # type: ignore
+    # add piece to board
+    pb = state.piece_board.at[action.to].set(action.piece)
+    # remove piece from hand
+    hand = state.hand.at[0, action.piece].add(-1)
 
-    ####################################################################################
-    # Update cached effects
-    ####################################################################################
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
-    # 新しい利きが増える
-    my_effects = my_effects.at[action.to, :].set(_effects(state, action.to))
-    # 打たれた点を経由する大駒の利きが消える
+    # [OK] 新しい利きが増える
+    my_effects = my_effects.at[action.to, :].set(
+        _effects(state, action.to)
+    )
+    # [OK] 打たれた点を経由する大駒の利きが消える
     my_effects &= ~_effect_filter_through(state, action.to)
-    # 相手も同様
-    opp_effects &= ~_effect_filter_through(_flip(state), _roatate_pos(action.to))
-    # set updated effects
+    # [OK] 相手も同様
+    opp_effects &= ~_effect_filter_through(
+        _flip(state), _roatate_pos(action.to)
+    )
+
     state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
     state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
 
-    return state
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
 def _legal_actions(state: State):
