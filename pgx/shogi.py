@@ -944,7 +944,7 @@ def _queen_effect(state: State, from_: jnp.ndarray) -> jnp.ndarray:
 
 
 def _effects(state: State, from_: jnp.ndarray):
-    """posに駒が追加されたときに追加されるeffect
+    """fromに現在ある駒からの利き
 
     >>> s = _init()
     >>> _rotate(_effects(s, 8))  # 香
