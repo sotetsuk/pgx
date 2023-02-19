@@ -196,9 +196,7 @@ def _init():
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
     state = State()
-    state = state.replace(
-        effects=state.effects.at[0].set(_effects_all(state))
-    )
+    state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))
     state = state.replace(
         effects=state.effects.at[1].set(_effects_all(_flip(state)))
     )
@@ -375,13 +373,17 @@ def _step_move(state: State, action: Action) -> State:
     ####################################################################################
     # Update cached effects
     ####################################################################################
+    # fmt off
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
     # 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
     queen_effect = jnp.tile(_queen_effect(state, action.from_), reps=(81, 1))
     my_effects |= _effect_filter_through(state, action.from_) & queen_effect
     # 相手も同様
-    opp_effects |= _effect_filter_through(_flip(state), _roatate_pos(action.from_)) & queen_effect[::-1]
+    opp_effects |= (
+        _effect_filter_through(_flip(state), _roatate_pos(action.from_))
+        & queen_effect[::-1]
+    )
     # 移動元からの古い利きを消す
     my_effects = my_effects.at[action.from_, :].set(FALSE)
     # 移動先で相手の利きを消す（移動先で駒を取っていたら、取られた駒の利きを消す）
@@ -391,22 +393,28 @@ def _step_move(state: State, action: Action) -> State:
     # 移動先を通るような利きを塞ぐ
     my_effects &= ~_effect_filter_through(state, action.to)
     # 相手も同様
-    opp_effects &= ~_effect_filter_through(_flip(state), _roatate_pos(action.to))
+    opp_effects &= ~_effect_filter_through(
+        _flip(state), _roatate_pos(action.to)
+    )
     # set updated effects
     state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
     state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
+    # fmt on
 
     return state
 
 
 def _step_drop(state: State, action: Action) -> State:
-    pb = state.piece_board.at[action.to].set(action.piece)  # add piece to board
+    pb = state.piece_board.at[action.to].set(
+        action.piece
+    )  # add piece to board
     hand = state.hand.at[0, action.piece].add(-1)  # remove piece from hand
     state.replace(piece_board=pb, hand=hand)  # type: ignore
 
     ####################################################################################
     # Update cached effects
     ####################################################################################
+    # fmt off
     my_effects = state.effects[0]
     opp_effects = state.effects[1]
     # 新しい利きが増える
@@ -414,10 +422,13 @@ def _step_drop(state: State, action: Action) -> State:
     # 打たれた点を経由する大駒の利きが消える
     my_effects &= ~_effect_filter_through(state, action.to)
     # 相手も同様
-    opp_effects &= ~_effect_filter_through(_flip(state), _roatate_pos(action.to))
+    opp_effects &= ~_effect_filter_through(
+        _flip(state), _roatate_pos(action.to)
+    )
     # set updated effects
     state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
     state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
+    # fmt on
 
     return state
 
