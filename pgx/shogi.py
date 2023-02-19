@@ -372,14 +372,10 @@ def _step_move(state: State, action: Action) -> State:
     opp_effects = state.effects[1]
 
     # [OK] 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
-    queen_effect = queen_effects(state, action.from_)
-    my_effects |= _apply_effect_filter_at(state, action.from_) & jnp.tile(
-        queen_effect, reps=(81, 1)
-    )
+    queen_effect = jnp.tile(queen_effects(state, action.from_), reps=(81,1))
+    my_effects |= _apply_effect_filter_at(state, action.from_) & queen_effect
     # [OK] 相手も同様
-    opp_effects |= _apply_effect_filter_at(
-        _flip(state), _roatate_pos(action.from_)
-    ) & jnp.tile(queen_effect[::-1], reps=(81, 1))
+    opp_effects |= _apply_effect_filter_at(_flip(state), _roatate_pos(action.from_)) & queen_effect[::-1]
     # [OK] 移動元からの古い利きを消す
     my_effects = my_effects.at[action.from_, :].set(FALSE)
     # [OK] 移動先で駒を取っていたら、取られた駒の利きを消す
