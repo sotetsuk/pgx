@@ -482,13 +482,13 @@ def test_legal_action_mask():
     # 歩は二歩になるので打てない
     assert (~state.legal_action_mask[20 * 81:21 * 81]).all()
     # 香車は2列目には打てるが、1列目と6列目（歩がいる）には打てない
-    # assert (state.legal_action_mask[21 * 81 + 1:22 * 81:9]).all()
+    assert (state.legal_action_mask[21 * 81 + 1:22 * 81:9]).all()
     assert (~state.legal_action_mask[21 * 81:22 * 81:9]).all()
     assert (~state.legal_action_mask[21 * 81 + 5:22 * 81:9]).all()
     # 桂馬は1,2列目に打てないが3列目には打てる
     assert (~state.legal_action_mask[22 * 81:23 * 81:9]).all()
     assert (~state.legal_action_mask[22 * 81 + 1:23 * 81:9]).all()
-    # assert (state.legal_action_mask[21 * 81 + 2:22 * 81:9]).all()
+    assert (state.legal_action_mask[21 * 81 + 2:22 * 81:9]).all()
 
     # 成駒のpromotion判定
     sfen = "9/2+B1G1+P2/9/9/9/9/9/9/9 b - 1"
