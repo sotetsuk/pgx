@@ -345,12 +345,14 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
     feat = jnp.vstack(
         [
+            # feature 1
             my_piece_feat.reshape(14, 9, 9),
             my_effect_feat.reshape(14, 9, 9),
             my_effect_sum_feat.reshape(3, 9, 9),
             opp_piece_feat.reshape(14, 9, 9),
             opp_effect_feat.reshape(14, 9, 9),
             opp_effect_sum_feat.reshape(3, 9, 9),
+            # feature 2
             jnp.zeros((57, 9, 9), dtype=jnp.bool_),
         ]
     )
