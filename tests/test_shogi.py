@@ -499,7 +499,7 @@ def test_buggy_samples():
     # promotionは生成されてたらダメ
     _, legal_promotions, _ = _legal_actions(state)
     assert legal_promotions.sum() == 0
-    assert (~state.legal_action_mask[10 * 81:]).all()
+    assert (state.legal_action_mask[10 * 81:]).sum() == 0
 
     # 角は成れないはず
     sfen = "l+B6l/6k2/3pg2P1/p6p1/1pP1pB2p/2p3n2/P+r1GP3P/4KS1+s1/LNG5L b RGN2sn6p 1"
