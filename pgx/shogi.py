@@ -1159,24 +1159,3 @@ def _from_sfen(sfen):
         piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten(),
         hand=jnp.reshape(s_hand, (2, 7)),
     )
-
-
-def _from_cshogi(board):
-    """Convert cshogi (github.com/TadaoYamaoka/cshogi) board into Pgx state.
-
-    board.pieces_in_hand: 歩香桂銀[金]角飛 金のindexが違う
-    """
-    pb = jnp.zeros(81, dtype=jnp.int8)
-    hand = jnp.zeros((2, 7), dtype=jnp.int8)
-    # fmt: off
-    board_piece_dir = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 0, 0, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27]
-    # fmt: on
-    hand_piece_dir = [0, 1, 2, 3, 5, 6, 4]
-    pieces = board.pieces
-    pieces_in_hand = board.pieces_in_hand
-    for i in range(81):
-        pb = pb.at[i].set(board_piece_dir[pieces[i]])
-    for i in range(2):
-        for j in range(7):
-            hand = hand.at[i, j].set(pieces_in_hand[i][hand_piece_dir[j]])
-    return State._from_board(turn=board.turn, piece_board=pb, hand=hand)
