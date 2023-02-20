@@ -90,7 +90,7 @@ def _petting_zoo_worker(
                 state.step(action)
                 observation, reward, terminated, truncation, info = state.last()
                 if terminated:  # auto_reset
-                    state = petting_zoo_make_env(env_name).new_initial_state()
+                    state = petting_zoo_make_env(env_name)
                     observation, reward, terminated, truncation, info = state.last()
                 remote.send((np.where(observation["action_mask"]==1)[0], terminated))
 
@@ -238,7 +238,12 @@ if __name__ == "__main__":
     parser.add_argument("n_envs", type=int)
     parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
-    states = [lambda: open_spile_make_env(args.env_name).new_initial_state() for i in range(args.n_envs)]
+    if args.library == "open_spiel":
+        states = [lambda: open_spile_make_env(args.env_name).new_initial_state() for i in range(args.n_envs)]
+    elif args.library == "petting_zoo":
+        states = [lambda: petting_zoo_make_env(args.env_name) for i in range(args.n_envs)]
+    else:
+        raise ValueError("Wrong library")
     env = SubprocVecEnv(states, args.library, args.env_name)
     process_list = []
     time_sta = time.time()

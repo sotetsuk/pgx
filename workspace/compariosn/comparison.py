@@ -16,7 +16,7 @@ import numpy as np
 
 def petting_zoo_make_env(env_name):
     from pettingzoo.classic.go import go
-    from pettingzoo.classic import chess_v5
+    #from pettingzoo.classic import chess_v5
     if env_name == "go":
         return go.env()
     elif env_name == "chess":
