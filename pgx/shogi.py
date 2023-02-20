@@ -313,9 +313,17 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     state = jax.lax.cond(state.curr_player != player_id, lambda: _flip(state), lambda: state)
     # 駒の場所
     my_pieces = jnp.arange(OPP_PAWN)
-    my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces).reshape((OPP_PAWN, 9, 9))
-    zeros = jnp.zeros((105, 9, 9), dtype=jnp.bool_)
-    feat = jnp.vstack([my_piece_feat, zeros])
+    my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces).reshape((OPP_PAWN, 9, 9))  # (14, 9, 9)
+    # 自分の利き
+    my_effect = state.effects[0]
+    def e(p):
+        mask = state.piece_board == p
+        return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
+
+    my_effect_feat = jax.vmap(e)(my_pieces).reshape((OPP_PAWN, 9, 9))  # (14, 9, 9)
+
+    zeros = jnp.zeros((91, 9, 9), dtype=jnp.bool_)
+    feat = jnp.vstack([my_piece_feat, my_effect_feat, zeros])
     return feat
 
 
