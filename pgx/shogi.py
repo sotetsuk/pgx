@@ -311,24 +311,39 @@ def step(state: State, action: jnp.ndarray) -> State:
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     state = jax.lax.cond(state.curr_player != player_id, lambda: _flip(state), lambda: state)
-    # 駒の場所
-    my_pieces = jnp.arange(OPP_PAWN)
-    my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces).reshape(14, 9, 9)
-    # 自分の利き
-    my_effect = state.effects[0]
-    def e(p):
-        mask = state.piece_board == p
-        return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
 
-    my_effect_feat = jax.vmap(e)(my_pieces).reshape(14, 9, 9)
-    # 利きの枚数
-    my_effect_sum = my_effect.sum(axis=0)
-    def effect_sum(n) -> jnp.ndarray:
-        return my_effect_sum >= n  # type: ignore
-    effect_sum_feat = jax.vmap(effect_sum)(jnp.arange(1, 4)).reshape(3, 9, 9)
+    def piece_and_effect(state):
+        # 駒の場所
+        my_pieces = jnp.arange(OPP_PAWN)
+        my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces)
+        # 自分の利き
+        my_effect = state.effects[0]
+        def e(p):
+            mask = state.piece_board == p
+            return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
 
-    zeros = jnp.zeros((88, 9, 9), dtype=jnp.bool_)
-    feat = jnp.vstack([my_piece_feat, my_effect_feat, effect_sum_feat, zeros])
+        my_effect_feat = jax.vmap(e)(my_pieces)
+        # 利きの枚数
+        my_effect_sum = my_effect.sum(axis=0)
+        def effect_sum(n) -> jnp.ndarray:
+            return my_effect_sum >= n  # type: ignore
+        effect_sum_feat = jax.vmap(effect_sum)(jnp.arange(1, 4))
+        return my_piece_feat, my_effect_feat, effect_sum_feat
+
+    my_piece_feat, my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
+    opp_piece_feat, opp_effect_feat, opp_effect_sum_feat = piece_and_effect(_flip(state))
+    opp_piece_feat = opp_piece_feat[:, ::-1]
+    opp_effect_feat = opp_effect_feat[:, ::-1]
+    opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
+
+    feat = jnp.vstack([
+        my_piece_feat.reshape(14, 9, 9),
+        my_effect_feat.reshape(14, 9, 9),
+        my_effect_sum_feat.reshape(3, 9, 9),
+        opp_piece_feat.reshape(14, 9, 9),
+        opp_effect_feat.reshape(14, 9, 9),
+        opp_effect_sum_feat.reshape(3, 9, 9),
+        jnp.zeros((57, 9, 9), dtype=jnp.bool_)])
     return feat
 
 
