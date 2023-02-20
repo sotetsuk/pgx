@@ -510,6 +510,8 @@ def test_observe():
     s: State = _init()
     obs = observe(s, s.curr_player)
 
+    assert obs.shape == (119, 9, 9)
+
     expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,1.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.],
@@ -611,6 +613,17 @@ def test_observe():
         else:
             assert (~obs[62 + i]).all()
 
-    assert obs.shape == (119, 9, 9)
+    # 王手
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/observe_002.svg")
+    # print(s.legal_action_mask.sum())
+    # print(jnp.nonzero(s.legal_action_mask))
+    # for i in range(81):
+    #     if s.legal_moves[i].sum() > 0:
+    #         print(i)
+    #         print(_rotate(s.legal_moves[i]))
+    obs = observe(s, s.curr_player)
+    assert obs[-1].all()
 
     # TODO: player_id != curr_player
