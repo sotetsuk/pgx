@@ -135,11 +135,13 @@ class State(core.State):
         """Mainly for debugging purpose.
         terminated, reward, and curr_player are not changed"""
         state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
-        # TODO: set effects before computing legal actions
+        # fmt: off
+        state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))
+        state = state.replace(effects=state.effects.at[1].set(_effects_all(_flip(state))))
+        state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         legal_moves, legal_promotions, legal_drops = _legal_actions(state)
-        legal_action_mask = _to_direction(
-            legal_moves, legal_promotions, legal_drops
-        )
+        legal_action_mask = _to_direction(legal_moves, legal_promotions, legal_drops)
+        # fmt: on
         return state.replace(legal_action_mask=legal_action_mask, legal_moves=legal_moves)  # type: ignore
 
 
@@ -1068,6 +1070,8 @@ def _to_sfen(state: State):
     >>> _to_sfen(s)
     'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1'
     """
+    if state.turn % 2 == 1:
+        state = _flip(state)
 
     pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""
