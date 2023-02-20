@@ -136,8 +136,8 @@ class State(core.State):
         terminated, reward, and curr_player are not changed"""
         state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
         # fmt: off
-        state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))
-        state = state.replace(effects=state.effects.at[1].set(_effects_all(_flip(state))))
+        state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))  # type: ignore
+        state = state.replace(effects=state.effects.at[1].set(_effects_all(_flip(state))))  # type: ignore
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         legal_moves, legal_promotions, legal_drops = _legal_actions(state)
         legal_action_mask = _to_direction(legal_moves, legal_promotions, legal_drops)
