@@ -311,7 +311,12 @@ def step(state: State, action: jnp.ndarray) -> State:
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     state = jax.lax.cond(state.curr_player != player_id, lambda: _flip(state), lambda: state)
-    return jnp.zeros((119, 9, 9), dtype=jnp.bool_)
+    # 駒の場所
+    my_pieces = jnp.arange(OPP_PAWN)
+    my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces).reshape((OPP_PAWN, 9, 9))
+    zeros = jnp.zeros((105, 9, 9), dtype=jnp.bool_)
+    feat = jnp.vstack([my_piece_feat, zeros])
+    return feat
 
 
 def _step(state: State, action: Action) -> State:
