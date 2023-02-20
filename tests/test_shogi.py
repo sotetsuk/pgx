@@ -479,7 +479,7 @@ def test_buggy_samples():
     # 歩以外の持ち駒に対しての二歩判定回避
     sfen = "9/9/9/9/9/9/PPPPPPPPP/9/9 b NLP 1"
     state = _from_sfen(sfen)
-    visualize(state, "tests/assets/shogi/legal_action_mask_015.svg")
+    visualize(state, "tests/assets/shogi/buggy_samples_001.svg")
 
     # 歩は二歩になるので打てない
     assert (~state.legal_action_mask[20 * 81:21 * 81]).all()
@@ -495,15 +495,21 @@ def test_buggy_samples():
     # 成駒のpromotion判定
     sfen = "9/2+B1G1+P2/9/9/9/9/9/9/9 b - 1"
     state = _from_sfen(sfen)
-    visualize(state, "tests/assets/shogi/legal_action_mask_016.svg")
+    visualize(state, "tests/assets/shogi/buggy_samples_002.svg")
     # promotionは生成されてたらダメ
     # assert (~state.legal_action_mask[10 * 81:]).all()
 
     # 角は成れないはず
     sfen = "l+B6l/6k2/3pg2P1/p6p1/1pP1pB2p/2p3n2/P+r1GP3P/4KS1+s1/LNG5L b RGN2sn6p 1"
     state = _from_sfen(sfen)
-    visualize(state, "tests/assets/shogi/legal_action_mask_017.svg")
+    visualize(state, "tests/assets/shogi/buggy_samples_003.svg")
     # assert ~state.legal_action_mask[13 * 81 + 72]  # = 1125, promote + left (91角成）
+
+    #
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/buggy_samples_004.svg")
+    assert (jnp.nonzero(s.legal_action_mask)[0] == jnp.int32([43, 52, 68, 196, 222, 295, 789, 1996, 2004, 2012])).all()
 
 
 def test_observe():
