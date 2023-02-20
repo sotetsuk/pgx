@@ -363,8 +363,10 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
 
-    checking_point_board, _ = _check_info(state, _flip(state), state.effects[1])
-    checked = jnp.tile(checking_point_board.any(), reps=(1,9,9))
+    checking_point_board, _ = _check_info(
+        state, _flip(state), state.effects[1]
+    )
+    checked = jnp.tile(checking_point_board.any(), reps=(1, 9, 9))
 
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
@@ -374,9 +376,7 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         opp_effect_feat.reshape(14, 9, 9),
         opp_effect_sum_feat.reshape(3, 9, 9),
     ]
-    feat2 = (
-        my_hand_feat + opp_hand_feat + [checked]
-    )
+    feat2 = my_hand_feat + opp_hand_feat + [checked]
     feat = jnp.vstack(feat1 + feat2)
     return feat
 
