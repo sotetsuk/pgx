@@ -1,35 +1,48 @@
-import supersuit as ss
 from vector_env import SyncVectorEnv
 import argparse
 import time
 import numpy as np
 import collections
+from tianshou.env import DummyVectorEnv
+from tianshou.env.pettingzoo_env import PettingZooEnv
 
-def petting_zoo_make_env(env_name):
+class AutoResetPettingZooEnv(PettingZooEnv):
+    def __init__(self, env):
+        super().__init__(env)
+    
+
+    def step(self, action):
+        obs, reward, term, trunc, info = super().step(action)
+        if term:
+            obs = super().reset()
+        return obs, reward, term, trunc, info
+
+def petting_zoo_make_env(env_name, n_envs):
     from pettingzoo.classic.go import go
-    from pettingzoo.classic import chess_v5
+    #from pettingzoo.classic import chess_v5
+    def get_go_env():
+        return AutoResetPettingZooEnv(go.env())
     if env_name == "go":
-        return go.env()
+        return DummyVectorEnv([get_go_env for _ in range(n_envs)])
     elif env_name == "chess":
         #return chess_v5.env()
         raise ValueError("Chess will be added later")
     else:
         raise ValueError("no such environment in petting zoo")
 
-def petting_zoo_random_play(tup):
+def petting_zoo_random_play(env: DummyVectorEnv, n_steps_lim: int) -> int:
     # petting zooのgo環境でrandom gaentを終局まで動かす.
-    id, do_print, env_name = tup
-    env = petting_zoo_make_env(env_name)
-    step_nums = 0
-    env.reset()
-    for agent in env.agent_iter():
-        observation, reward, termination, truncation, info = env.last()
-        action = None if termination or truncation else np.random.choice(np.where(observation["action_mask"]==1)[0])  # this is where you would insert your policy
-        env.step(action)
-        step_nums += 1
-    if do_print:
-        print(id, step_nums)
-    return id, step_nums
+    step_num = 0
+    rng = np.random.default_rng()
+    observation = env.reset()
+    terminated = np.zeros(len(env._env_fns))
+    while step_num < n_steps_lim:
+        assert len(env._env_fns) == len(observation)  # ensure parallerization
+        legal_action_mask = np.array([observation[i]["mask"] for i in range(len(observation))])
+        action = [rng.choice(np.where(legal_action_mask[i]==1)[0]) for i in range(len(legal_action_mask))]
+        observation, reward, terminated, _, _ = env.step(action)
+        step_num += 1
+    return step_num
 
 
 def open_spile_make_single_env(env_name: str, seed: int):
@@ -68,14 +81,15 @@ def measure_time(args):
         env = open_spiel_make_env(args.env_name, args.n_envs, args.seed)
         random_play_fn = open_spile_random_play
     elif args.library == "petting_zoo":
+        env = petting_zoo_make_env(args.env_name, args.n_envs)
         random_play_fn = petting_zoo_random_play
     else:
         raise ValueError("Incorrect library name")
     time_sta = time.time()
-    random_play_fn(env, args.n_steps_lim)
+    step_num = random_play_fn(env, args.n_steps_lim)
     time_end = time.time()
     tim = time_end- time_sta
-    tim_per_step = tim / args.n_steps_lim * args.n_envs
+    tim_per_step = tim / (step_num * args.n_envs)
     print("library: {} env: {} n_envs: {} n_steps_lim: {} execution time is {} time_per_step is {}".format(args.library, args.env_name, args.n_envs, args.n_steps_lim, tim, tim_per_step))
 
 

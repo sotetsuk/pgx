@@ -148,7 +148,6 @@ class SubprocVecEnv(object):
         self.closed = False
         self.n_envs = len(states)
         env_names = [env_name] * self.n_envs
-
         if start_method is None:
             # Fork is not a thread safe method (see issue #217)
             # but is more user friendly (does not require to wrap the code in
@@ -232,12 +231,9 @@ def random_play(env, n_steps_lim):
     return n_steps
 
 
-
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add("library")
+    parser.add_argument("library")
     parser.add_argument("env_name")
     parser.add_argument("n_envs", type=int)
     parser.add_argument("n_steps_lim", type=int)
@@ -250,5 +246,5 @@ if __name__ == "__main__":
     time_end = time.time()
     tim = time_end- time_sta
     env.close()
-    print(n_steps)
-    print(tim)
+    tim_per_step = tim / args.n_steps_lim * args.n_envs
+    print("library: {} env: {} n_envs: {} n_steps_lim: {} execution time is {} time_per_step is {}".format(args.library, args.env_name, args.n_envs, args.n_steps_lim, tim, tim_per_step))
