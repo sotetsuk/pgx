@@ -508,21 +508,8 @@ def test_buggy_samples():
 
 def test_observe():
     s: State = _init()
-
-
-    def e(p):
-        my_effect = s.effects[0]
-        mask = s.piece_board == p
-        return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
-
-    my_effect = e(0)
-    print(my_effect.shape)
-    print(_rotate(my_effect))
-
-
-
-
     obs = observe(s, s.curr_player)
+
     expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,1.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.],
@@ -534,8 +521,6 @@ def test_observe():
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.]])
     assert (obs[PAWN] == expected).all()  # 0
 
-
-
     expected = jnp.bool_([[0.,0.,0.,0.,0.,1.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.],
@@ -546,6 +531,19 @@ def test_observe():
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.]])
     assert (obs[DRAGON + 1] == expected).all()  # 14
+
+    expected = jnp.bool_([[0.,0.,0.,0.,0.,1.,1.,1.,0.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.]])
+
+    print(obs[28].reshape(9, 9))
+    assert (obs[28] == expected).all()  # 利きの数1以上
 
 
     assert obs.shape == (119, 9, 9)
