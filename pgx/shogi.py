@@ -310,8 +310,8 @@ def step(state: State, action: jnp.ndarray) -> State:
 
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    # TODO: write me
-    return jnp.zeros(100)
+    state = jax.lax.cond(state.curr_player != player_id, lambda: _flip(state), lambda: state)
+    return jnp.zeros((119, 9, 9), dtype=jnp.bool_)
 
 
 def _step(state: State, action: Action) -> State:

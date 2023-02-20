@@ -504,3 +504,12 @@ def test_buggy_samples():
     state = _from_sfen(sfen)
     visualize(state, "tests/assets/shogi/legal_action_mask_017.svg")
     assert ~state.legal_action_mask[13 * 81 + 72]  # = 1125, promote + left (91角成）
+
+
+def test_observe():
+    s: State = _init()
+    obs = observe(s, s.curr_player)
+
+    assert obs.shape == (119, 9, 9)
+
+    # TODO: player_id != curr_player
