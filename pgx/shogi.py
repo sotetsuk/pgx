@@ -312,8 +312,73 @@ def step(state: State, action: jnp.ndarray) -> State:
 
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    # TODO: write me
-    return jnp.zeros(100)
+    state = jax.lax.cond(
+        state.curr_player != player_id, lambda: _flip(state), lambda: state
+    )
+
+    def piece_and_effect(state):
+        # 駒の場所
+        my_pieces = jnp.arange(OPP_PAWN)
+        my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces)
+        # 自分の利き
+        my_effect = state.effects[0]
+
+        def e(p):
+            mask = state.piece_board == p
+            return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
+
+        my_effect_feat = jax.vmap(e)(my_pieces)
+        # 利きの枚数
+        my_effect_sum = my_effect.sum(axis=0)
+
+        def effect_sum(n) -> jnp.ndarray:
+            return my_effect_sum >= n  # type: ignore
+
+        effect_sum_feat = jax.vmap(effect_sum)(jnp.arange(1, 4))
+        return my_piece_feat, my_effect_feat, effect_sum_feat
+
+    my_piece_feat, my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
+    opp_piece_feat, opp_effect_feat, opp_effect_sum_feat = piece_and_effect(
+        _flip(state)
+    )
+    opp_piece_feat = opp_piece_feat[:, ::-1]
+    opp_effect_feat = opp_effect_feat[:, ::-1]
+    opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
+
+    def num_hand(n, hand, p):
+        return jnp.tile(hand[p] >= n, reps=(9, 9))
+
+    def hand_feat(hand):
+        # fmt: off
+        pawn_feat = jax.vmap(partial(num_hand, hand=hand, p=PAWN))(jnp.arange(1, 9))
+        lance_feat = jax.vmap(partial(num_hand, hand=hand, p=LANCE))(jnp.arange(1, 5))
+        knight_feat = jax.vmap(partial(num_hand, hand=hand, p=KNIGHT))(jnp.arange(1, 5))
+        silver_feat = jax.vmap(partial(num_hand, hand=hand, p=SILVER))(jnp.arange(1, 5))
+        gold_feat = jax.vmap(partial(num_hand, hand=hand, p=GOLD))(jnp.arange(1, 5))
+        bishop_feat = jax.vmap(partial(num_hand, hand=hand, p=BISHOP))(jnp.arange(1, 3))
+        rook_feat = jax.vmap(partial(num_hand, hand=hand, p=ROOK))(jnp.arange(1, 3))
+        return [pawn_feat, lance_feat, knight_feat, silver_feat, gold_feat, bishop_feat, rook_feat]
+        # fmt: on
+
+    my_hand_feat = hand_feat(state.hand[0])
+    opp_hand_feat = hand_feat(state.hand[1])
+
+    checking_point_board, _ = _check_info(
+        state, _flip(state), state.effects[1]
+    )
+    checked = jnp.tile(checking_point_board.any(), reps=(1, 9, 9))
+
+    feat1 = [
+        my_piece_feat.reshape(14, 9, 9),
+        my_effect_feat.reshape(14, 9, 9),
+        my_effect_sum_feat.reshape(3, 9, 9),
+        opp_piece_feat.reshape(14, 9, 9),
+        opp_effect_feat.reshape(14, 9, 9),
+        opp_effect_sum_feat.reshape(3, 9, 9),
+    ]
+    feat2 = my_hand_feat + opp_hand_feat + [checked]
+    feat = jnp.vstack(feat1 + feat2)
+    return feat
 
 
 def _step(state: State, action: Action) -> State:
