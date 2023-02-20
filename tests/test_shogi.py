@@ -598,6 +598,18 @@ def test_observe():
                           [0.,1.,1.,1.,0.,0.,0.,0.,0.]])
     assert (obs[59] == expected).all()
 
+    # 駒打ち
+    sfen = "1ns4nl/1r4k2/2p1gp3/1p1pp3p/l8/2P2PP2/1PNPP3P/2G2S3/2S1KG2L b BGS3Prbnl2p 1"
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/observe_001.svg")
+    obs = observe(s, s.curr_player)
+
+    filled = [0, 1, 2, 16, 20, 24, 28, 29, 36, 40, 52, 54]
+    for i in range(56):
+        if i in filled:
+            assert obs[62 + i].all()
+        else:
+            assert (~obs[62 + i]).all()
 
     assert obs.shape == (119, 9, 9)
 

@@ -343,19 +343,32 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     opp_effect_feat = opp_effect_feat[:, ::-1]
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
 
-    feat = jnp.vstack(
-        [
-            # feature 1
+    def num_hand(n, hand, p):
+        return jnp.tile(hand[p] >= n, reps=(9, 9))
+
+    def hand_feat(hand):
+        my_pawn_feat = jax.vmap(partial(num_hand, hand=hand, p=PAWN))(jnp.arange(1, 9))
+        my_lance_feat = jax.vmap(partial(num_hand, hand=hand, p=LANCE))(jnp.arange(1, 5))
+        my_knight_feat = jax.vmap(partial(num_hand, hand=hand, p=KNIGHT))(jnp.arange(1, 5))
+        my_silver_feat = jax.vmap(partial(num_hand, hand=hand, p=SILVER))(jnp.arange(1, 5))
+        my_gold_feat = jax.vmap(partial(num_hand, hand=hand, p=GOLD))(jnp.arange(1, 5))
+        my_bishop_feat = jax.vmap(partial(num_hand, hand=hand, p=BISHOP))(jnp.arange(1, 3))
+        my_rook_feat = jax.vmap(partial(num_hand, hand=hand, p=ROOK))(jnp.arange(1, 3))
+        return [my_pawn_feat, my_lance_feat, my_knight_feat, my_silver_feat, my_gold_feat, my_bishop_feat, my_rook_feat]
+
+    my_hand_feat = hand_feat(state.hand[0])
+    opp_hand_feat = hand_feat(state.hand[1])
+
+    feat1 = [
             my_piece_feat.reshape(14, 9, 9),
             my_effect_feat.reshape(14, 9, 9),
             my_effect_sum_feat.reshape(3, 9, 9),
             opp_piece_feat.reshape(14, 9, 9),
             opp_effect_feat.reshape(14, 9, 9),
             opp_effect_sum_feat.reshape(3, 9, 9),
-            # feature 2
-            jnp.zeros((57, 9, 9), dtype=jnp.bool_),
-        ]
-    )
+    ]
+    feat2 = my_hand_feat + opp_hand_feat + [jnp.zeros((1, 9, 9), dtype=jnp.bool_)]
+    feat = jnp.vstack(feat1 + feat2)
     return feat
 
 
