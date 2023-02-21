@@ -31,10 +31,10 @@ class Env(abc.ABC):
         ...
 
     def step(self, state: State, action: jnp.ndarray) -> State:
-        # TODO: curr_player周りの挙動
-        #  - set curr_player = -1 if already terminated
         # TODO: legal_action_mask周りの挙動
-        #  - set legal_action_mask = all False if already terminated  # or all True?
+        #  - set legal_action_mask = all True
+        #    - Typical usage of legal_action_mask is nomralizing action probability
+        #    - all zero mask will raise zero division error
         #  - ends with negative reward if illegal action is taken
         return jax.lax.cond(
             state.terminated,
