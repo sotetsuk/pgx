@@ -1,3 +1,4 @@
+from functools import partial
 import jax.numpy as jnp
 
 from pgx.shogi import *
@@ -645,3 +646,21 @@ def test_sfen():
     s = _from_sfen(sfen)
     visualize(s, "tests/assets/shogi/sfen_002.svg")
     assert _to_sfen(s) == sfen
+
+
+def test_jit():
+    from pgx.utils import act_randomly
+    from pgx.shogi import init, step, observe
+    init = jax.jit(jax.vmap(partial(init)))
+    step = jax.jit(jax.vmap(partial(step)))
+    observe = jax.jit(jax.vmap(partial(observe)))
+
+    key = jax.random.PRNGKey(0)
+    keys = jax.random.split(key, 2)
+
+    print("warmup starts ...")
+    s = init(keys)
+    o = observe(s, s.curr_player)
+    a = act_randomly(key, s)
+    s = step(s, a)
+    print("warmup ends")
