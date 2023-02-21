@@ -13,7 +13,9 @@ def make(env_id: EnvId):
 
         return Shogi()
     elif env_id == "go/v0":
-        ...
+        from pgx.go import Go
+
+        return Go()
     elif env_id == "minatar/asterix/v0":
         from pgx.minatar.asterix import MinAtarAsterix
 
