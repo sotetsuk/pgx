@@ -11,7 +11,7 @@ from .animal_shogi import JaxAnimalShogiState as AnimalShogiState
 from .backgammon import BackgammonState
 from .chess import ChessState
 from .contractbridgebidding import ContractBridgeBiddingState
-from .go import GoState
+from .go import State as GoState
 from .shogi import State as ShogiState
 from .suzume_jong import State as SuzumeJongState
 from .tic_tac_toe import State as TictactoeState
