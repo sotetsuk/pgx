@@ -1,4 +1,4 @@
-echo "| library | game | Type | n_envs | steps | time | time per step |"
+echo "| library | game | type | n_envs | steps | time | time per step |"
 echo "| :--- | ---: | ---: | ---: | ---: | ---: | ---: |"
 python compare_subproc.py open_spiel go 10 1000
 python compare_subproc.py petting_zoo go 10 1000

@@ -247,7 +247,7 @@ def measure_time(args):
     tim = time_end- time_sta
     env.close()
     tim_per_step = tim / (step_num * args.n_envs)
-    print(f"| `{args.library}` | {args.env_name} | subprocess | {args.n_envs} | {step_num} | {tim} | {tim_per_step}s |")
+    print(f"| `{args.library}` | {args.env_name} | subprocess | {args.n_envs} | {step_num} | {round(tim, 2)} | {round(tim_per_step, 6)}s |")
 
 
 if __name__ == "__main__":
