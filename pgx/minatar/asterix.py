@@ -32,6 +32,7 @@ TRUE = jnp.bool_(True)
 @dataclass
 class State(core.State):
     curr_player: jnp.ndarray = ZERO
+    observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32(0)
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
@@ -60,8 +61,8 @@ class MinAtarAsterix(core.Env):
         self.minatar_version: Literal["v0", "v1"] = minatar_version
         self.sticky_action_prob: float = sticky_action_prob
 
-    def init(self, rng: jax.random.KeyArray) -> State:
-        return State(rng=rng)  # type: ignore
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return State(rng=key)  # type: ignore
 
     def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)

@@ -45,7 +45,6 @@ def validate(env: core.Env, num: int = 100):
 
             _validate_state(state)
             _validate_curr_player(state)
-            _validate_obs(observe, state)
             _validate_legal_actions(state)
 
             if state.terminated:
@@ -80,6 +79,7 @@ def _validate_state(state: pgx.State):
     - terminated is bool_
     - reward is float
     - legal_action_mask is bool_
+    - TODO: observation is bool_ or int8 (can promote to any other types)
     """
     assert state.curr_player.dtype == jnp.int8, state.curr_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
@@ -87,20 +87,6 @@ def _validate_state(state: pgx.State):
     assert (
         state.legal_action_mask.dtype == jnp.bool_
     ), state.legal_action_mask.dtype
-
-
-def _validate_obs(observe_fn, state: pgx.State):
-    # when player_id is different from state.curr_player
-    obs_default = observe_fn(state, player_id=state.curr_player)
-    obs_player_0 = observe_fn(state, player_id=0)
-    if state.curr_player == 0:
-        assert (
-            obs_default == obs_player_0
-        ).all(), f"Got different obs : \n{obs_default}\n{obs_player_0}"
-    else:
-        assert not (
-            obs_default == obs_player_0
-        ).all(), f"Got same obs : \n{obs_default}\n{obs_player_0}"
 
 
 def _validate_legal_actions(state: pgx.State):
