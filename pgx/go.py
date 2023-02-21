@@ -5,6 +5,7 @@ import jax
 from jax import numpy as jnp
 
 from pgx.flax.struct import dataclass
+import pgx.core as core
 
 BLACK = 0
 WHITE = 1
@@ -21,7 +22,13 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class GoState:
+class GoState(core.State):
+    curr_player: jnp.ndarray = jnp.int8(0)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
+
     # 横幅, マスの数ではない
     size: jnp.ndarray = jnp.int32(19)  # type:ignore
 
@@ -30,9 +37,6 @@ class GoState:
         (2, 19 * 19), -1, dtype=jnp.int32
     )  # type:ignore
 
-    # 設置可能なマスをTrueとしたマスク
-    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
-
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
         (8, 19 * 19), 2, dtype=jnp.int32
@@ -40,9 +44,6 @@ class GoState:
 
     # 経過ターン, 0始まり
     turn: jnp.ndarray = jnp.int32(0)  # type:ignore
-
-    # プレイヤーID
-    curr_player: jnp.ndarray = jnp.int32(0)  # type:ignore
 
     # [0]: 黒の得たアゲハマ, [1]: 白の方
     agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
@@ -56,8 +57,27 @@ class GoState:
     # コミ
     komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
 
-    # 終局判定
-    terminated: jnp.ndarray = FALSE  # type:ignore
+
+class Go(core.Env):
+    def __init__(self, size: int=19):
+        super().__init__()
+        self.size=size
+
+    def _init(self, key: jax.random.KeyArray) -> GoState:
+        return partial(init, size=self.size)(key=key)
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> GoState:
+        assert isinstance(state, GoState)
+        return partial(step, size=self.size)(state, action)
+
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, GoState)
+        return observe(state, player_id)
+
+    def num_players(self) -> int:
+        return 2
 
 
 def observe(state: GoState, player_id, observe_all=False):
@@ -119,17 +139,16 @@ def _get_alphazero_features(state: GoState, player_id, observe_all):
 
 
 def init(
-    rng: jax.random.KeyArray, size: int = 5
+    key: jax.random.KeyArray, size: int = 5
 ) -> Tuple[jnp.ndarray, GoState]:
-    curr_player = jnp.int32(jax.random.bernoulli(rng))
-    return curr_player, GoState(  # type:ignore
-        size=jnp.int32(size),  # type:ignore
+    return GoState(  # type:ignore
+        size=jnp.int32(size),
         ren_id_board=jnp.full(
             (2, size**2), -1, dtype=jnp.int32
         ),  # type:ignore
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
-        curr_player=curr_player,  # type:ignore
+        curr_player=jnp.int8(jax.random.bernoulli(key))
     )
 
 
@@ -152,13 +171,13 @@ def step(
     new_log = new_log.at[0].set(get_board(_state))
     _state = _state.replace(game_log=new_log)  # type:ignore
 
-    return (_state.curr_player, _state, reward)
+    return _state
 
 
 def _update_state_wo_legal_action(
     _state: GoState, _action: int, _size: int
 ) -> Tuple[GoState, jnp.ndarray]:
-    _state, _reward = jax.lax.cond(
+    _state = jax.lax.cond(
         (_action < _size * _size),
         lambda: _not_pass_move(_state, _action, _size),
         lambda: _pass_move(_state, _size),
@@ -170,7 +189,7 @@ def _update_state_wo_legal_action(
     # change player
     _state = _state.replace(curr_player=(_state.curr_player + 1) % 2)  # type: ignore
 
-    return _state, _reward
+    return _state
 
 
 def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
@@ -182,7 +201,7 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
             _get_reward(_state, _size),
         ),
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: (_state.replace(passed=True), jnp.zeros(2, dtype=jnp.int8)),  # type: ignore
+        lambda: _state.replace(passed=True, reward=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
     )
 
 
@@ -235,7 +254,7 @@ def _not_pass_move(
     return jax.lax.cond(
         is_illegal,
         lambda: _illegal_move(_set_stone(_state, xy)),  # 石くらいは置いておく
-        lambda: (state, jnp.zeros(2, dtype=jnp.int8)),
+        lambda: state.replace(reward=jnp.zeros(2, dtype=jnp.int8))
     )
 
 

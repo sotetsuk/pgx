@@ -3,11 +3,12 @@ import pgx
 from pgx.utils import act_randomly
 from pgx.tic_tac_toe import TicTacToe
 from pgx.shogi import Shogi
+from pgx.go import Go
 
 
 def test_jit():
     N = 2
-    for Env in [TicTacToe, Shogi]:
+    for Env in [TicTacToe, Shogi, Go]:
         env = Env()
         init = jax.jit(jax.vmap(env.init))
         step = jax.jit(jax.vmap(env.step))
