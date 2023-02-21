@@ -40,8 +40,10 @@ class Env(abc.ABC):
         #  - ends with negative reward if illegal action is taken
         state = jax.lax.cond(
             state.terminated,
-            lambda: self._step_if_terminated(state, action),
-            lambda: self._step(state, action),
+            self._step_if_terminated,
+            self._step,
+            state,
+            action,
         )
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
