@@ -1,15 +1,15 @@
 import jax
 import pgx
 from pgx.utils import act_randomly
-from pgx.tic_tac_toe import TicTacToe
-from pgx.shogi import Shogi
-from pgx.go import Go
+from typing import get_args
+from pgx.validator import validate
 
 
 def test_jit():
     N = 2
-    for Env in [TicTacToe, Shogi, Go]:
-        env = Env()
+    for env_name in get_args(pgx.EnvId):
+        print(f"{env_name} ...")
+        env = pgx.make(env_name)
         init = jax.jit(jax.vmap(env.init))
         step = jax.jit(jax.vmap(env.step))
         key = jax.random.PRNGKey(0)
@@ -24,3 +24,10 @@ def test_jit():
         state: pgx.State = step(state, action)
         assert state.curr_player.shape == (N,)
         assert (state.observation).sum() != 0
+
+
+def test_api():
+    for env_name in get_args(pgx.EnvId):
+        print(f"{env_name} ...")
+        env = pgx.make(env_name)
+        validate(env)
