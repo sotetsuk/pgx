@@ -9,9 +9,8 @@ from pgx.flax.struct import dataclass
 EnvId = Literal[
     "tic_tac_toe/v0",
     "go/v0",
-    "shogi/v0"
-    "suzume_jong/v0",
-     "minatar/breakout/v0",
+    "shogi/v0" "suzume_jong/v0",
+    "minatar/breakout/v0",
 ]
 
 

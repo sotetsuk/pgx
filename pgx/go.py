@@ -4,8 +4,8 @@ from typing import Tuple
 import jax
 from jax import numpy as jnp
 
-from pgx.flax.struct import dataclass
 import pgx.core as core
+from pgx.flax.struct import dataclass
 
 BLACK = 0
 WHITE = 1
@@ -59,9 +59,9 @@ class State(core.State):
 
 
 class Go(core.Env):
-    def __init__(self, size: int=19):
+    def __init__(self, size: int = 19):
         super().__init__()
-        self.size=size
+        self.size = size
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(init, size=self.size)(key=key)
@@ -138,9 +138,7 @@ def _get_alphazero_features(state: State, player_id, observe_all):
     return jnp.vstack([log, color])
 
 
-def init(
-    key: jax.random.KeyArray, size: int = 5
-) -> Tuple[jnp.ndarray, State]:
+def init(key: jax.random.KeyArray, size: int = 5) -> Tuple[jnp.ndarray, State]:
     return State(  # type:ignore
         size=jnp.int32(size),
         ren_id_board=jnp.full(
@@ -148,7 +146,7 @@ def init(
         ),  # type:ignore
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
-        curr_player=jnp.int8(jax.random.bernoulli(key))
+        curr_player=jnp.int8(jax.random.bernoulli(key)),
     )
 
 
@@ -198,7 +196,7 @@ def _pass_move(_state: State, _size: int) -> Tuple[State, jnp.ndarray]:
         # 連続でパスならば終局
         lambda: _state.replace(terminated=TRUE, reward=_get_reward(_state, _size)),  # type: ignore
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: _state.replace(passed=True, reward=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
+        lambda: _state.replace(passed=True, reward=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
     )
 
 
@@ -251,7 +249,7 @@ def _not_pass_move(
     return jax.lax.cond(
         is_illegal,
         lambda: _illegal_move(_set_stone(_state, xy)),  # 石くらいは置いておく
-        lambda: state.replace(reward=jnp.zeros(2, dtype=jnp.float32))
+        lambda: state.replace(reward=jnp.zeros(2, dtype=jnp.float32)),
     )
 
 
