@@ -11,15 +11,15 @@ def test_jit():
         env = Env()
         init = jax.jit(jax.vmap(env.init))
         step = jax.jit(jax.vmap(env.step))
-
         key = jax.random.PRNGKey(0)
         keys = jax.random.split(key, N)
+
         state = init(keys)
-        action = act_randomly(key, state)
-        state: pgx.State = step(state, action)
-
-        print(state.legal_action_mask.shape)
-
         assert state.curr_player.shape == (N,)
+        assert (state.observation).sum() != 0
 
-    assert False
+        action = act_randomly(key, state)
+
+        state: pgx.State = step(state, action)
+        assert state.curr_player.shape == (N,)
+        assert (state.observation).sum() != 0

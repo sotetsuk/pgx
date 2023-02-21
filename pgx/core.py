@@ -17,6 +17,7 @@ EnvId = Literal[
 @dataclass
 class State:
     curr_player: jnp.ndarray
+    observation: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray
@@ -26,9 +27,10 @@ class Env(abc.ABC):
     def __init__(self):
         ...
 
-    @abc.abstractmethod
-    def init(self, rng: jax.random.KeyArray) -> State:
-        ...
+    def init(self, key: jax.random.KeyArray) -> State:
+        state = self._init(key)
+        observation = self.observe(state, state.curr_player)
+        return state.replace(observation=observation)
 
     def step(self, state: State, action: jnp.ndarray) -> State:
         # TODO: legal_action_mask周りの挙動
@@ -36,11 +38,17 @@ class Env(abc.ABC):
         #    - Typical usage of legal_action_mask is nomralizing action probability
         #    - all zero mask will raise zero division error
         #  - ends with negative reward if illegal action is taken
-        return jax.lax.cond(
+        state = jax.lax.cond(
             state.terminated,
             lambda: self._step_if_terminated(state, action),
             lambda: self._step(state, action),
         )
+        observation = self.observe(state, state.curr_player)
+        return state.replace(observation=observation)
+
+    @abc.abstractmethod
+    def _init(self, key: jax.random.KeyArray) -> State:
+        ...
 
     @abc.abstractmethod
     def _step(self, state, action) -> State:
@@ -48,6 +56,7 @@ class Env(abc.ABC):
 
     @abc.abstractmethod
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        """One can develop custom observe function"""
         ...
 
     @property
