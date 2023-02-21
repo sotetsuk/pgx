@@ -48,15 +48,17 @@ class Env(abc.ABC):
 
     @abc.abstractmethod
     def _init(self, key: jax.random.KeyArray) -> State:
+        """Implement game-specific init function here."""
         ...
 
     @abc.abstractmethod
     def _step(self, state, action) -> State:
+        """Implement game-specific step function here."""
         ...
 
     @abc.abstractmethod
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-        """One can develop custom observe function"""
+        """Implement game-specific observe function here."""
         ...
 
     @property
@@ -66,14 +68,16 @@ class Env(abc.ABC):
 
     @property
     def observation_shape(self) -> Tuple[int, ...]:
+        """Return the matrix shape of observation"""
         state = self.init(jax.random.PRNGKey(0))
         obs = self.observe(state, state.curr_player)
         return obs.shape
 
     @property
-    def num_actions(self) -> int:
+    def action_shape(self) -> Tuple[int, ...]:
+        """Return the matrix shape of legal_action_mask"""
         state = self.init(jax.random.PRNGKey(0))
-        return state.legal_action_mask.shape[0]
+        return state.legal_action_mask.shape
 
     @staticmethod
     def _step_if_terminated(state: State, action: jnp.ndarray) -> State:
