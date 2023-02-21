@@ -156,7 +156,7 @@ def step(
     state: GoState, action: int, size: int
 ) -> Tuple[jnp.ndarray, GoState, jnp.ndarray]:
     # update state
-    _state, reward = _update_state_wo_legal_action(state, action, size)
+    _state = _update_state_wo_legal_action(state, action, size)
 
     # add legal actions
     _state = _state.replace(  # type:ignore
@@ -196,10 +196,7 @@ def _pass_move(_state: GoState, _size: int) -> Tuple[GoState, jnp.ndarray]:
     return jax.lax.cond(
         _state.passed,
         # 連続でパスならば終局
-        lambda: (
-            _state.replace(terminated=TRUE),  # type: ignore
-            _get_reward(_state, _size),
-        ),
+        lambda: _state.replace(terminated=TRUE, reward=_get_reward(_state, _size)),  # type: ignore
         # 1回目のパスならばStateにパスを追加してそのまま続行
         lambda: _state.replace(passed=True, reward=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
     )
@@ -254,7 +251,7 @@ def _not_pass_move(
     return jax.lax.cond(
         is_illegal,
         lambda: _illegal_move(_set_stone(_state, xy)),  # 石くらいは置いておく
-        lambda: state.replace(reward=jnp.zeros(2, dtype=jnp.int8))
+        lambda: state.replace(reward=jnp.zeros(2, dtype=jnp.float32))
     )
 
 
@@ -296,8 +293,8 @@ def _merge_around_xy(i, state: GoState, xy, size):
 def _illegal_move(
     _state: GoState,
 ) -> Tuple[GoState, jnp.ndarray]:
-    r: jnp.ndarray = jnp.ones(2, dtype=jnp.int8)  # type:ignore
-    return _state.replace(terminated=TRUE), r.at[_state.turn % 2].set(-1)  # type: ignore
+    r: jnp.ndarray = jnp.ones(2, dtype=jnp.float32)  # type:ignore
+    return _state.replace(terminated=TRUE, reward=r.at[_state.turn % 2].set(-1))  # type: ignore
 
 
 def _set_stone(_state: GoState, _xy: int) -> GoState:
@@ -488,8 +485,8 @@ def _get_reward(_state: GoState, _size: int) -> jnp.ndarray:
     score = count_ji(jnp.array([BLACK, WHITE]))
     r = jax.lax.cond(
         score[BLACK] - _state.komi > score[WHITE],
-        lambda: jnp.array([1, -1], dtype=jnp.int8),
-        lambda: jnp.array([-1, 1], dtype=jnp.int8),
+        lambda: jnp.array([1, -1], dtype=jnp.float32),
+        lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
 
     return r
