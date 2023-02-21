@@ -91,8 +91,10 @@ def _validate_state(state: pgx.State):
 
 def _validate_legal_actions(state: pgx.State):
     if state.terminated:
+        # Agent can take any action at terminal state (but give no effect to the next state)
+        # This is to avoid zero-division error by normalizing action probability by legal actions
         assert (
-            state.legal_action_mask == jnp.zeros_like(state.legal_action_mask)
+            state.legal_action_mask == jnp.ones_like(state.legal_action_mask)
         ).all(), state.legal_action_mask
     else:
         ...

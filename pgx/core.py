@@ -45,6 +45,11 @@ class Env(abc.ABC):
             state,
             action,
         )
+        state = jax.lax.cond(
+            state.terminated,
+            lambda: state.replace(legal_action_mask=jnp.ones_like(state.legal_action_mask)),
+            lambda: state
+        )
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
 
@@ -83,7 +88,9 @@ class Env(abc.ABC):
 
     @staticmethod
     def _step_if_terminated(state: State, action: jnp.ndarray) -> State:
-        return state.replace(reward=jnp.zeros_like(state.reward))  # type: ignore
+        return state.replace(
+            reward=jnp.zeros_like(state.reward),
+        )  # type: ignore
 
     @staticmethod
     def _step_with_illegal_action(state: State, action: jnp.ndarray) -> State:

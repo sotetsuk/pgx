@@ -65,11 +65,6 @@ def step(state: State, action: jnp.ndarray) -> State:
     terminated = won | jnp.all(board != -1)
     curr_player = (state.curr_player + 1) % 2
     legal_action_mask = board < 0
-    legal_action_mask = jax.lax.cond(
-        terminated,
-        lambda: jnp.zeros_like(legal_action_mask),
-        lambda: legal_action_mask,
-    )
     return State(
         curr_player=curr_player,
         legal_action_mask=legal_action_mask,
