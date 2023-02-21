@@ -30,7 +30,7 @@ class Env(abc.ABC):
     def init(self, key: jax.random.KeyArray) -> State:
         state = self._init(key)
         observation = self.observe(state, state.curr_player)
-        return state.replace(observation=observation)
+        return state.replace(observation=observation)  # type: ignore
 
     def step(self, state: State, action: jnp.ndarray) -> State:
         # TODO: legal_action_mask周りの挙動
@@ -44,7 +44,7 @@ class Env(abc.ABC):
             lambda: self._step(state, action),
         )
         observation = self.observe(state, state.curr_player)
-        return state.replace(observation=observation)
+        return state.replace(observation=observation)  # type: ignore
 
     @abc.abstractmethod
     def _init(self, key: jax.random.KeyArray) -> State:
