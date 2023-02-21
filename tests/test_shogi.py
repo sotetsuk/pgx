@@ -497,8 +497,6 @@ def test_buggy_samples():
     state = _from_sfen(sfen)
     visualize(state, "tests/assets/shogi/buggy_samples_002.svg")
     # promotionは生成されてたらダメ
-    _, legal_promotions, _ = _legal_actions(state)
-    assert legal_promotions.sum() == 0
     assert (state.legal_action_mask[10 * 81:]).sum() == 0
 
     # 角は成れないはず
