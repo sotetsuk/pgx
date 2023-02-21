@@ -1,5 +1,4 @@
 from functools import partial
-from typing import Tuple
 
 import jax
 from jax import numpy as jnp
@@ -138,7 +137,7 @@ def _get_alphazero_features(state: State, player_id, observe_all):
     return jnp.vstack([log, color])
 
 
-def init(key: jax.random.KeyArray, size: int = 5) -> Tuple[jnp.ndarray, State]:
+def init(key: jax.random.KeyArray, size: int) -> State:
     return State(  # type:ignore
         size=jnp.int32(size),
         ren_id_board=jnp.full(
@@ -150,9 +149,7 @@ def init(key: jax.random.KeyArray, size: int = 5) -> Tuple[jnp.ndarray, State]:
     )
 
 
-def step(
-    state: State, action: int, size: int
-) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
+def step(state: State, action: int, size: int) -> State:
     # update state
     _state = _update_state_wo_legal_action(state, action, size)
 
@@ -174,7 +171,7 @@ def step(
 
 def _update_state_wo_legal_action(
     _state: State, _action: int, _size: int
-) -> Tuple[State, jnp.ndarray]:
+) -> State:
     _state = jax.lax.cond(
         (_action < _size * _size),
         lambda: _not_pass_move(_state, _action, _size),
@@ -190,7 +187,7 @@ def _update_state_wo_legal_action(
     return _state
 
 
-def _pass_move(_state: State, _size: int) -> Tuple[State, jnp.ndarray]:
+def _pass_move(_state: State, _size: int) -> State:
     return jax.lax.cond(
         _state.passed,
         # 連続でパスならば終局
@@ -200,9 +197,7 @@ def _pass_move(_state: State, _size: int) -> Tuple[State, jnp.ndarray]:
     )
 
 
-def _not_pass_move(
-    _state: State, _action: int, size
-) -> Tuple[State, jnp.ndarray]:
+def _not_pass_move(_state: State, _action: int, size) -> State:
     state = _state.replace(passed=FALSE)  # type: ignore
     xy = _action
     my_color = _my_color(state)
@@ -290,7 +285,7 @@ def _merge_around_xy(i, state: State, xy, size):
 
 def _illegal_move(
     _state: State,
-) -> Tuple[State, jnp.ndarray]:
+) -> State:
     r: jnp.ndarray = jnp.ones(2, dtype=jnp.float32)  # type:ignore
     return _state.replace(terminated=TRUE, reward=r.at[_state.turn % 2].set(-1))  # type: ignore
 
