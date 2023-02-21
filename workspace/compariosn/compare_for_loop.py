@@ -52,7 +52,7 @@ def open_spile_make_single_env(env_name: str, seed: int):
     from open_spiel.python.rl_environment import Environment, ChanceEventSampler
     def gen_env():
         game = pyspiel.load_game(env_name)
-        return Environment(game, chance_event_sampler=ChanceEventSampler(seed=seed))
+        return Environment(game,  chance_event_sampler=ChanceEventSampler(seed=seed))
     return gen_env()
 
 
@@ -66,14 +66,12 @@ def open_spile_random_play(env: SyncVectorEnv, n_steps_lim: int):
     time_step = env.reset()
     rng = np.random.default_rng()
     step_num = 0
-    player_id = 0
     while step_num < n_steps_lim:
-        legal_actions = np.array([ts.observations["legal_actions"][player_id] for ts in time_step])
+        legal_actions = np.array([ts.observations["legal_actions"][ts.observations["current_player"]] for ts in time_step])
         assert len(env.envs) == len(legal_actions)  # ensure parallerization
         action = rng.choice(legal_actions, axis=1)  # same actions so far
         step_outputs = [StepOutput(action=a) for a in action]
         time_step, reward, done, unreset_time_steps = env.step(step_outputs, reset_if_done=True)
-        player_id = (player_id + 1) % 2
         step_num += 1
     return step_num
 

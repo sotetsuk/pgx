@@ -251,5 +251,5 @@ if __name__ == "__main__":
     time_end = time.time()
     tim = time_end- time_sta
     env.close()
-    tim_per_step = tim / args.n_steps_lim * args.n_envs
+    tim_per_step = tim / (n_steps * args.n_envs)
     print("library: {} env: {} n_envs: {} n_steps_lim: {} execution time is {} time_per_step is {}".format(args.library, args.env_name, args.n_envs, args.n_steps_lim, tim, tim_per_step))
