@@ -90,7 +90,7 @@ def measure_time(args):
     time_end = time.time()
     tim = time_end- time_sta
     tim_per_step = tim / (step_num * args.n_envs)
-    print("library: {} env: {} n_envs: {} n_steps_lim: {} execution time is {} time_per_step is {}".format(args.library, args.env_name, args.n_envs, args.n_steps_lim, tim, tim_per_step))
+    print(f"| `{args.library}` | {args.env_name} | forloop | {args.n_envs} | {step_num} | {tim} | {tim_per_step}s |")
 
 
 

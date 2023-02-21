@@ -18,6 +18,48 @@ import cloudpickle
 import argparse
 
 
+def petting_zoo_make_env(env_name, n_envs):
+    from tianshou.env import SubprocVectorEnv
+    from pettingzoo.classic.go import go
+    from tianshou.env.pettingzoo_env import PettingZooEnv
+
+    class AutoResetPettingZooEnv(PettingZooEnv):  # 全体でpetting_zooの関数, classをimportするとopen_spielの速度が落ちる.
+        def __init__(self, env):
+            super().__init__(env)
+        
+        def step(self, action):
+            obs, reward, term, trunc, info = super().step(action)
+            if term:
+                obs = super().reset()
+            return obs, reward, term, trunc, info
+            
+    #from pettingzoo.classic import chess_v5
+    def get_go_env():
+        return AutoResetPettingZooEnv(go.env())
+    if env_name == "go":
+        return SubprocVectorEnv([get_go_env for _ in range(n_envs)])
+    elif env_name == "chess":
+        #return chess_v5.env()
+        raise ValueError("Chess will be added later")
+    else:
+        raise ValueError("no such environment in petting zoo")
+
+
+def petting_zoo_random_play(env, n_steps_lim: int) -> int:
+    # petting zooのgo環境でrandom gaentを終局まで動かす.
+    step_num = 0
+    rng = np.random.default_rng()
+    observation = env.reset()
+    terminated = np.zeros(len(env._env_fns))
+    while step_num < n_steps_lim:
+        assert len(env._env_fns) == len(observation)  # ensure parallerization
+        legal_action_mask = np.array([observation[i]["mask"] for i in range(len(observation))])
+        action = [rng.choice(np.where(legal_action_mask[i]==1)[0]) for i in range(len(legal_action_mask))]  # chose action randomly
+        observation, reward, terminated, _, _ = env.step(action)
+        step_num += 1
+    return step_num
+
+
 class CloudpickleWrapper:
     """
     Uses cloudpickle to serialize contents (otherwise multiprocessing tries to use pickle)
@@ -77,47 +119,6 @@ def _open_spiel_worker(
         except EOFError:
             break
 
-def _petting_zoo_worker(
-    remote, parent_remote, state_wrapper: CloudpickleWrapper, env_name: str,
-) -> None:
-    parent_remote.close()
-    state = state_wrapper.var()
-    while True:
-        try:
-            cmd, data = remote.recv()
-            if cmd == "step":
-                action = data
-                state.step(action)
-                observation, reward, terminated, truncation, info = state.last()
-                if terminated:  # auto_reset
-                    state = petting_zoo_make_env(env_name)
-                    observation, reward, terminated, truncation, info = state.last()
-                remote.send((np.where(observation["action_mask"]==1)[0], terminated))
-
-            elif cmd == "reset":
-                observation, reward, terminated, truncation, info = state.last()
-                remote.send((np.where(observation["action_mask"]==1)[0], terminated))
-            elif cmd == "render":
-                pass
-            elif cmd == "close":
-                remote.close()
-                break
-            elif cmd == "get_spaces":
-                pass
-            elif cmd == "env_method":
-                pass
-            elif cmd == "get_attr":
-                pass
-            elif cmd == "set_attr":
-                pass
-            elif cmd == "is_wrapped":
-                pass
-            else:
-                raise NotImplementedError(f"`{cmd}` is not implemented in the worker")
-        except EOFError:
-            break
-
-
 
 class SubprocVecEnv(object):
     """
@@ -143,7 +144,7 @@ class SubprocVecEnv(object):
            Defaults to 'forkserver' on available platforms, and 'spawn' otherwise.
     """
 
-    def __init__(self, states, library, env_name, start_method: Optional[str] = None):
+    def __init__(self, states, env_name, start_method: Optional[str] = None):
         self.waiting = False
         self.closed = False
         self.n_envs = len(states)
@@ -155,12 +156,8 @@ class SubprocVecEnv(object):
             forkserver_available = "forkserver" in mp.get_all_start_methods()
             start_method = "forkserver" if forkserver_available else "spawn"
         ctx = mp.get_context(start_method)
-        if library == "open_spiel":
-            _worker = _open_spiel_worker
-        elif library == "petting_zoo":
-            _worker = _petting_zoo_worker
-        else:
-            raise ValueError("Wrong library specified")
+        _worker = _open_spiel_worker
+
         self.remotes, self.work_remotes = zip(*[ctx.Pipe() for _ in range(self.n_envs)])
         self.processes = []
         for work_remote, remote, state, env_name in zip(self.work_remotes, self.remotes, states, env_names):
@@ -218,8 +215,12 @@ class SubprocVecEnv(object):
             process.join()
         self.closed = True
 
+def open_spiel_make_env(env_name: str, n_envs: int):
+    states = [lambda: open_spile_make_env(env_name).new_initial_state() for i in range(n_envs)]
+    return SubprocVecEnv(states, env_name)
 
-def random_play(env, n_steps_lim):
+
+def open_spiel_random_play(env, n_steps_lim):
     legal_actions, terminated = env.reset()
     n_steps = 0
     rng = np.random.default_rng()
@@ -231,6 +232,24 @@ def random_play(env, n_steps_lim):
     return n_steps
 
 
+def measure_time(args):
+    if args.library == "open_spiel":
+        env = open_spiel_make_env(args.env_name, args.n_envs)
+        random_play_fn = open_spiel_random_play
+    elif args.library == "petting_zoo":
+        env = petting_zoo_make_env(args.env_name, args.n_envs)
+        random_play_fn = petting_zoo_random_play
+    else:
+        raise ValueError("Incorrect library name")
+    time_sta = time.time()
+    step_num = random_play_fn(env, args.n_steps_lim)
+    time_end = time.time()
+    tim = time_end- time_sta
+    env.close()
+    tim_per_step = tim / (step_num * args.n_envs)
+    print(f"| `{args.library}` | {args.env_name} | subprocess | {args.n_envs} | {step_num} | {tim} | {tim_per_step}s |")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("library")
@@ -238,18 +257,4 @@ if __name__ == "__main__":
     parser.add_argument("n_envs", type=int)
     parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
-    if args.library == "open_spiel":
-        states = [lambda: open_spile_make_env(args.env_name).new_initial_state() for i in range(args.n_envs)]
-    elif args.library == "petting_zoo":
-        states = [lambda: petting_zoo_make_env(args.env_name) for i in range(args.n_envs)]
-    else:
-        raise ValueError("Wrong library")
-    env = SubprocVecEnv(states, args.library, args.env_name)
-    process_list = []
-    time_sta = time.time()
-    n_steps = random_play(env, args.n_steps_lim)
-    time_end = time.time()
-    tim = time_end- time_sta
-    env.close()
-    tim_per_step = tim / (n_steps * args.n_envs)
-    print("library: {} env: {} n_envs: {} n_steps_lim: {} execution time is {} time_per_step is {}".format(args.library, args.env_name, args.n_envs, args.n_steps_lim, tim, tim_per_step))
+    measure_time(args)

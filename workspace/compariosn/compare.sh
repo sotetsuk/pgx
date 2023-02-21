@@ -1,4 +1,6 @@
-python go_comparison.py 1 100
-python go_comparison.py 5 100
-python go_comparison.py 10 100
-python go_comparison.py 20 100
+echo "| library | game | Type | n_envs | steps | time | time per step |"
+echo "| :--- | ---: | ---: | ---: | ---: | ---: | ---: |"
+python compare_subproc.py open_spiel go 10 1000
+python compare_subproc.py petting_zoo go 10 1000
+python compare_for_loop.py open_spiel go 10 1000
+python compare_for_loop.py petting_zoo go 10 1000
