@@ -664,7 +664,7 @@ def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
         is_line1 | is_line2
     )
     promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
-    promotion = jnp.where(jnp.tile(state.piece_board < GOLD, reps=(81, 1)).transpose(), promotion, ZERO)
+    promotion = jnp.where((state.piece_board < GOLD).reshape(81, 1), promotion, ZERO)
     return promotion
 
 
