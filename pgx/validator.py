@@ -18,6 +18,7 @@ def validate(env: core.Env, num: int = 100):
       - (TODO) taking illegal actions terminates the episode with a negative reward
       - legal_action_mask is empty when terminated (TODO: or all True?)
       - taking actions at terminal states returns the same state (with zero reward)
+      - (TODO) player change at the last step before terminal
     - observe
       - Returns different observations when player_ids are different (except the initial state)
     - TODO: reward must be zero when step is called after terminated
