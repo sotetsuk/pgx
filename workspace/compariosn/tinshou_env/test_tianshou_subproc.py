@@ -31,11 +31,11 @@ if __name__ == "__main__":
     time_sta = time.time()
     while step_num < n_steps_lim:
         legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
-        print(len(info[0]["info"]), len(info[0]["info"][0]), len(info[0]["info"][1]))
+        #print(len(info[0]["info"]), len(info[0]["info"][0]), len(info[0]["info"][1]))
         action = [rng.choice(legal_action_mask[i]) for i in range(len(legal_action_mask))]  # chose action randomly
         observation, reward, terminated, _, info = env.step(action)
         new_legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
-        assert sum([((not action[i] in new_legal_action_mask[i]) & (not terminated[i])) | (action[i]==361)| terminated[i] for i in range(len(action))]) == len(action)  # legal actioinが更新されていることを確認. 361はパス.
+        assert sum([((not action[i] in new_legal_action_mask[i]) & (not terminated[i])) | (action[i]==361)| terminated[i] for i in range(n_envs)]) == n_envs  # 実行済みのactionが消えていることを確認. 361はパス.
         step_num += 1
     time_end = time.time()
     tim = time_end - time_sta
