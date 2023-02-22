@@ -32,8 +32,8 @@ piece_board (81,):
   27 相手龍
 """
 
-from typing import Tuple
 from functools import partial
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -170,7 +170,7 @@ class Shogi(core.Env):
 
     @property
     def reward_range(self) -> Tuple[float, float]:
-        return -1., 1.
+        return -1.0, 1.0
 
 
 def init(rng):

@@ -1,4 +1,5 @@
 from typing import Tuple
+
 import jax
 import jax.numpy as jnp
 
@@ -48,7 +49,7 @@ class TicTacToe(core.Env):
 
     @property
     def reward_range(self) -> Tuple[float, float]:
-        return -1., 1.0
+        return -1.0, 1.0
 
 
 def init(rng: jax.random.KeyArray) -> State:

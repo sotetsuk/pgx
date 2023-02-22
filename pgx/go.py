@@ -82,7 +82,7 @@ class Go(core.Env):
 
     @property
     def reward_range(self) -> Tuple[float, float]:
-        return -1., 1.
+        return -1.0, 1.0
 
 
 def observe(state: State, player_id, observe_all=False):

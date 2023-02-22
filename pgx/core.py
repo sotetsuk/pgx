@@ -6,7 +6,6 @@ import jax.numpy as jnp
 
 from pgx.flax.struct import dataclass
 
-
 TRUE = jnp.bool_(True)
 
 
@@ -63,8 +62,10 @@ class Env(abc.ABC):
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
             state.terminated,
-            lambda: state.replace(legal_action_mask=jnp.ones_like(state.legal_action_mask)),
-            lambda: state
+            lambda: state.replace(
+                legal_action_mask=jnp.ones_like(state.legal_action_mask)
+            ),
+            lambda: state,
         )
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
@@ -114,8 +115,14 @@ class Env(abc.ABC):
             reward=jnp.zeros_like(state.reward),
         )  # type: ignore
 
-    def _step_with_illegal_action(self, state: State, loser: jnp.ndarray) -> State:
+    def _step_with_illegal_action(
+        self, state: State, loser: jnp.ndarray
+    ) -> State:
         min_reward = self.reward_range[0]
-        reward = jnp.ones_like(state.reward) * (-1 * min_reward) * (self.num_players - 1)
+        reward = (
+            jnp.ones_like(state.reward)
+            * (-1 * min_reward)
+            * (self.num_players - 1)
+        )
         reward = reward.at[loser].set(min_reward)
         return state.replace(reward=reward, terminated=TRUE)  # type: ignore
