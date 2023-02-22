@@ -66,7 +66,7 @@ class State(core.State):
     # プレイしたサイコロの目の数
     played_dice_num: jnp.ndarray = jnp.int16(0)
     # 黒なら-1, 白なら1
-    turn: jnp.ndarray = jnp.int16(1)
+    turn: jnp.ndarray = jnp.int8(1)
 
 
 class Backgammon(core.Env):
@@ -322,7 +322,7 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
-    return (diff > 0) * jnp.int16(1) + (diff <= 0) * jnp.int16(-1)
+    return (diff > 0) * jnp.int8(1) + (diff <= 0) * jnp.int8(-1)
 
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
