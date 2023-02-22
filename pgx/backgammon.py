@@ -507,7 +507,7 @@ def _is_to_off_legal(
         (src >= 0)
         & _exists(board, turn, src)
         & _is_all_on_home_board(board, turn)
-        & ((d == die) | ((r <= die) & (r==d)))
+        & ((d == die) | ((r <= die) & (r == d)))
     )  # type: ignore
 
 
