@@ -4,10 +4,7 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
 from pgx.flax.struct import dataclass
-
-FALSE = jnp.bool_(False)
 
 init_dice_pattern: jnp.ndarray = jnp.array(
     [
@@ -42,71 +39,53 @@ init_dice_pattern: jnp.ndarray = jnp.array(
         [5, 3],
         [5, 4],
     ],
-    dtype=jnp.int8,
+    dtype=jnp.int16,
 )
 
 
 @dataclass
-class State(core.State):
-    curr_player: jnp.ndarray = jnp.int8(0)
-    observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int16)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
-    )  # micro action = 6*src+die
-    # --- Backgammon specific ---
+class BackgammonState:
+    curr_player: jnp.ndarray = jnp.int16(0)
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
+
     # サイコロを振るたびにrngをsplitして更新する.
-    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
+    rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
+
+    # 終了しているかどうか.
+    terminated: jnp.ndarray = jnp.bool_(False)
+
     # サイコロの出目 0~5: 1~6
-    dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int8)
+    dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)
+
     # プレイできるサイコロの目
-    playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
+
     # プレイしたサイコロの目の数
-    played_dice_num: jnp.ndarray = jnp.int8(0)
+    played_dice_num: jnp.ndarray = jnp.int16(0)
+
     # 黒なら-1, 白なら1
-    turn: jnp.ndarray = jnp.int8(1)
+    turn: jnp.ndarray = jnp.int16(1)
+    """
+    合法手
+    micro action = 6*src+die
+    """
+    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.int16)
 
 
-class Backgammon(core.Env):
-    def _init(self, key: jax.random.KeyArray) -> State:
-        state = init(key)
-        return state
-
-    def _step(self, state: core.State, action) -> State:
-        assert isinstance(state, State)
-        return step(state, action)
-
-    def observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
-        assert isinstance(state, State)
-        return observe(state, player_id)
-
-    @property
-    def num_players(self) -> int:
-        return 2
-
-    @property
-    def reward_range(self) -> Tuple[float, float]:
-        return -1.0, 1.0
-
-
-def init(rng: jax.random.KeyArray) -> State:
+def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
-    curr_player: jnp.ndarray = jnp.int8(jax.random.bernoulli(rng1))
+    curr_player: jnp.ndarray = jnp.int16(jax.random.bernoulli(rng1))
     board: jnp.ndarray = _make_init_board()
     terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
-    played_dice_num: jnp.ndarray = jnp.int8(0)
+    played_dice_num: jnp.ndarray = jnp.int16(0)
     turn: jnp.ndarray = _init_turn(dice)
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, turn, playable_dice
     )
-    state = State(  # type: ignore
+    state = BackgammonState(  # type: ignore
         curr_player=curr_player,
         rng=rng3,
         board=board,
@@ -117,10 +96,26 @@ def init(rng: jax.random.KeyArray) -> State:
         turn=turn,
         legal_action_mask=legal_action_mask,
     )
-    return state
+    return curr_player, state
 
 
-def step(state: State, action: int) -> State:
+def step(
+    state: BackgammonState, action: int
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
+    """
+    step 関数.
+    terminatedしている場合, 状態をそのまま返す.
+    """
+    return jax.lax.cond(
+        state.terminated,
+        lambda: (state.curr_player, state, 0),
+        lambda: _normal_step(state, action),
+    )
+
+
+def _normal_step(
+    state: BackgammonState, action: int
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
     terminated していない場合のstep 関数.
     """
@@ -132,7 +127,7 @@ def step(state: State, action: int) -> State:
     )
 
 
-def observe(state: State, curr_player: jnp.ndarray) -> jnp.ndarray:
+def observe(state: BackgammonState, curr_player: jnp.ndarray) -> jnp.ndarray:
     """
     手番のplayerに対する観測を返す.
     """
@@ -154,13 +149,13 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
     playできるサイコロを6次元の0-1ベクトルで返す.
     """
     dice_indices: jnp.ndarray = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int8
+        [0, 1, 2, 3], dtype=jnp.int16
     )  # サイコロの数は最大4
 
     def _insert_dice_num(
         idx: jnp.ndarray, playable_dice: jnp.ndarray
     ) -> jnp.ndarray:
-        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int8)
+        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int16)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
         ) + (playable_dice[idx] == -1) * vec
@@ -170,44 +165,47 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
             dice_indices, jnp.tile(playable_dice, (4, 1))
         )
         .sum(axis=0)
-        .astype(jnp.int8)
+        .astype(jnp.int16)
     )
 
 
 def _winning_step(
-    state: State,
-) -> State:
+    state: BackgammonState,
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
     勝利者がいる場合のstep.
     """
-    win_score = _calc_win_score(state.board, state.turn)
-    reward = -jnp.ones(2, dtype=jnp.float32) * win_score
-    reward = reward.at[state.curr_player].set(win_score)
+    reward = _calc_win_score(state.board, state.turn)
     state = state.replace(terminated=jnp.bool_(True))  # type: ignore
-    return state.replace(reward=reward)  # type: ignore
+    return state.curr_player, state, reward
 
 
 def _no_winning_step(
-    state: State,
-) -> State:
+    state: BackgammonState,
+) -> Tuple[jnp.ndarray, BackgammonState, int]:
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
-    return _change_until_legal(state)
-
-
-def _change_until_legal(state: State) -> State:
-    """
-    行動可能なplayerが出るまでturnを変え続ける.
-    """
-    return jax.lax.while_loop(
-        _is_turn_end,
-        _change_turn,
-        state.replace(playable_dice=state.playable_dice.astype(jnp.int8)),
+    s = _change_until_legal(state)
+    return jax.lax.cond(
+        _is_turn_end(state),
+        lambda: (
+            s.curr_player,
+            s,
+            0,
+        ),
+        lambda: (state.curr_player, state, 0),
     )
 
 
-def _update_by_action(state: State, action: int) -> State:
+def _change_until_legal(state: BackgammonState) -> BackgammonState:
+    """
+    行動可能なplayerが出るまでturnを変え続ける.
+    """
+    return jax.lax.while_loop(_is_turn_end, _change_turn, state)
+
+
+def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
     """
     行動を受け取って状態をupdate
     """
@@ -215,21 +213,21 @@ def _update_by_action(state: State, action: int) -> State:
     curr_player: jnp.ndarray = state.curr_player
     terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state.board, state.turn, action)
-    played_dice_num: jnp.ndarray = jnp.int8(state.played_dice_num + 1)
+    played_dice_num: jnp.ndarray = jnp.int16(state.played_dice_num + 1)
     playable_dice: jnp.ndarray = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, state.turn, playable_dice
     )
-    return State(  # type: ignore
+    return BackgammonState(  # type: ignore
         curr_player=curr_player,
         rng=rng,
         terminated=terminated,
         board=board,
         turn=state.turn,
         dice=state.dice,
-        playable_dice=playable_dice.astype(jnp.int8),  # TODO: remove cast
+        playable_dice=playable_dice,
         played_dice_num=played_dice_num,
         legal_action_mask=legal_action_mask,
     )
@@ -272,7 +270,7 @@ def _make_init_board() -> jnp.ndarray:
     return board
 
 
-def _is_turn_end(state: State) -> bool:
+def _is_turn_end(state: BackgammonState) -> bool:
     """
     play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
     """
@@ -281,7 +279,7 @@ def _is_turn_end(state: State) -> bool:
     )  # type: ignore
 
 
-def _change_turn(state: State) -> State:
+def _change_turn(state: BackgammonState) -> BackgammonState:
     """
     ターンを変更して新しい状態を返す.
     """
@@ -292,9 +290,9 @@ def _change_turn(state: State) -> State:
     terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
-    played_dice_num: jnp.ndarray = jnp.int8(0)
+    played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, turn, dice)
-    return State(  # type: ignore
+    return BackgammonState(  # type: ignore
         curr_player=curr_player,
         rng=rng2,
         board=board,
@@ -317,7 +315,7 @@ def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
 
 def _roll_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     roll: jnp.ndarray = jax.random.randint(
-        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
+        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int16
     )
     return roll[0]
 
@@ -328,16 +326,16 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
-    return (diff > 0) * jnp.int8(1) + (diff <= 0) * jnp.int8(-1)
+    return (diff > 0) * jnp.int16(1) + (diff <= 0) * jnp.int16(-1)
 
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
     """
     -1でemptyを表す.
     """
-    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int8) + (
+    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int16) + (
         dice[0] != dice[1]
-    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int8)
+    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int16)
 
 
 def _update_playable_dice(
@@ -347,9 +345,9 @@ def _update_playable_dice(
     action: int,
 ) -> jnp.ndarray:
     _n = played_dice_num
-    die_array = jnp.array([action % 6] * 4, dtype=jnp.int8)
+    die_array = jnp.array([action % 6] * 4, dtype=jnp.int16)
     dice_indices: jnp.ndarray = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int8
+        [0, 1, 2, 3], dtype=jnp.int16
     )  # サイコロの数は最大4
 
     def _update_for_diff_dice(
@@ -364,7 +362,7 @@ def _update_playable_dice(
     ) * jax.vmap(_update_for_diff_dice)(
         die_array, dice_indices, jnp.tile(playable_dice, (4, 1))
     ).astype(
-        jnp.int8
+        jnp.int16
     )
 
 
@@ -600,7 +598,7 @@ def _legal_action_mask_for_valid_single_dice(
     -1以外のサイコロの目に対して合法判定
     """
     src_indices = jnp.arange(
-        26, dtype=jnp.int8
+        26, dtype=jnp.int16
     )  # 26パターンのsrcに対してlegal_actionを求める.
 
     def _is_legal(idx: jnp.ndarray):

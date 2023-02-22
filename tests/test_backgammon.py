@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 from pgx.visualizer import VisualizerConfig, Visualizer
 from pgx.backgammon import (
-    State,
+    BackgammonState,
     _calc_src,
     _calc_tgt,
     _calc_win_score,
@@ -87,7 +87,7 @@ def make_test_state(
         6 * 26 + 6, dtype=jnp.int16
     )
 ):
-    return State(
+    return BackgammonState(
         curr_player=curr_player,
         rng=rng,
         board=board,
@@ -100,7 +100,7 @@ def make_test_state(
 
 
 def test_init():
-    state = init(rng)
+    _, state = init(rng)
     assert state.turn == -1 or state.turn == 1
 
 
@@ -111,7 +111,7 @@ def test_init_roll():
 
 
 def test_is_turn_end():
-    state = init(rng)
+    _, state = init(rng)
     assert not _is_turn_end(state)
 
     # 白のdance
@@ -142,7 +142,7 @@ def test_is_turn_end():
 
 
 def test_change_turn():
-    state = init(rng)
+    _, state = init(rng)
     _turn = state.turn
     state = _change_turn(state)
     assert state.turn == -1 * _turn
@@ -191,7 +191,7 @@ def test_continual_pass():
         played_dice_num=jnp.int16(0),
         legal_action_mask = legal_action_mask,
     )
-    state = step(state, 6 * (1) + 0)  # actionによらずターンが変わる.
+    _, state, _ = step(state, 6 * (1) + 0)  # actionによらずターンが変わる.
     assert state.turn == jnp.int16(-1)  # ターンが変わっていることを確認
 
 
@@ -222,7 +222,7 @@ def test_step():
 
 
     # 白がサイコロ2をplay 25(off)->22
-    state = step(state=state, action=(1) * 6 + 1)
+    _, state, _ = step(state=state, action=(1) * 6 + 1)
     assert (
         state.playable_dice - jnp.array([0, -1, -1, -1], dtype=jnp.int16)
     ).sum() == 0  # playable diceが正しく更新されているか
@@ -241,7 +241,7 @@ def test_step():
     ) # 25(off)->23
     assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0
     # 白がサイコロ1をplay 25(off)->23
-    state = step(state=state, action=(1) * 6 + 0)
+    _, state, _ = step(state=state, action=(1) * 6 + 0)
     assert state.played_dice_num == 0
     assert (
         state.board.at[23].get() == 1

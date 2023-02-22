@@ -16,10 +16,6 @@ def make(env_id: EnvId):
         from pgx.go import Go
 
         return Go(size=19)
-    elif env_id == "backgammon/v0":
-        from pgx.backgammon import Backgammon
-
-        return Backgammon()
     elif env_id == "minatar/asterix/v0":
         from pgx.minatar.asterix import MinAtarAsterix
 
