@@ -5,9 +5,9 @@ import gymnasium as gym
 import numpy as np
 import packaging
 
-from tianshou.env.pettingzoo_env import PettingZooEnv
-from tianshou.env.utils import ENV_TYPE, gym_new_venv_step_type
-from tianshou.env.worker import (
+from pettingzoo_env import OpenSpielEnv
+from utils import ENV_TYPE, gym_new_venv_step_type
+from worker import (
     DummyEnvWorker,
     EnvWorker,
     RayEnvWorker,
@@ -41,7 +41,7 @@ def _patch_env_generator(fn: Callable[[], ENV_TYPE]) -> Callable[[], gym.Env]:
         ), "Env generators that are provided to vector environemnts must be callable."
 
         env = fn()
-        if isinstance(env, (gym.Env, PettingZooEnv)):
+        if isinstance(env, (gym.Env, OpenSpielEnv)):
             return env
 
         if not has_old_gym or not isinstance(env, old_gym.Env):
@@ -270,10 +270,9 @@ class BaseVectorEnv(object):
         for i in id:
             self.workers[i].send(None, **kwargs)
         ret_list = [self.workers[i].recv() for i in id]
-
-        assert isinstance(ret_list[0], (tuple, list)) and len(
-            ret_list[0]
-        ) == 2 and isinstance(ret_list[0][1], dict)
+        #assert isinstance(ret_list[0], (tuple, list)) and len(
+        #    ret_list[0]
+        #) == 2 and isinstance(ret_list[0][1], dict)
 
         obs_list = [r[0] for r in ret_list]
 

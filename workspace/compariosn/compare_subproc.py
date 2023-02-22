@@ -55,6 +55,7 @@ def petting_zoo_random_play(env, n_steps_lim: int) -> int:
         assert len(env._env_fns) == len(observation)  # ensure parallerization
         legal_action_mask = np.array([observation[i]["mask"] for i in range(len(observation))])
         action = [rng.choice(np.where(legal_action_mask[i]==1)[0]) for i in range(len(legal_action_mask))]  # chose action randomly
+        print(action)
         observation, reward, terminated, _, _ = env.step(action)
         step_num += 1
     return step_num
