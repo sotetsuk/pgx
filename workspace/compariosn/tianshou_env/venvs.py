@@ -5,9 +5,9 @@ import gymnasium as gym
 import numpy as np
 import packaging
 
-from pettingzoo_env import OpenSpielEnv
-from utils import ENV_TYPE, gym_new_venv_step_type
-from worker import (
+from .pettingzoo_env import OpenSpielEnv
+from .utils import ENV_TYPE, gym_new_venv_step_type
+from .worker import (
     DummyEnvWorker,
     EnvWorker,
     RayEnvWorker,

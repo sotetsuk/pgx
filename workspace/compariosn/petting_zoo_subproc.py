@@ -1,7 +1,9 @@
 from tianshou.env import SubprocVectorEnv
 from pettingzoo.classic.go import go
 from tianshou.env.pettingzoo_env import PettingZooEnv
+import argparse
 import numpy as np
+import time
 
 class AutoResetPettingZooEnv(PettingZooEnv):  # 全体でpetting_zooの関数, classをimportするとopen_spielの速度が落ちる.
     def __init__(self, env):
@@ -14,7 +16,7 @@ class AutoResetPettingZooEnv(PettingZooEnv):  # 全体でpetting_zooの関数, c
         return obs, reward, term, trunc, info
 
 
-def petting_zoo_make_env(env_name, n_envs):
+def make_env(env_name, n_envs):
             
     #from pettingzoo.classic import chess_v5
     def get_go_env():
@@ -28,7 +30,7 @@ def petting_zoo_make_env(env_name, n_envs):
         raise ValueError("no such environment in petting zoo")
 
 
-def petting_zoo_random_play(env, n_steps_lim: int) -> int:
+def random_play(env, n_steps_lim: int) -> int:
     # petting zooのgo環境でrandom gaentを終局まで動かす.
     step_num = 0
     rng = np.random.default_rng()
@@ -41,3 +43,16 @@ def petting_zoo_random_play(env, n_steps_lim: int) -> int:
         observation, reward, terminated, _, _ = env.step(action)
         step_num += 1
     return step_num
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("env_name")
+    parser.add_argument("batch_size", type=int)
+    parser.add_argument("n_steps_lim", type=int)
+    args = parser.parse_args()
+    env = make_env(args.env_name, args.batch_size)
+    time_sta = time.time()
+    step_num = random_play(env, args.n_steps_lim)
+    time_end = time.time()
+    print((args.batch_size*step_num)/(time_end-time_sta))

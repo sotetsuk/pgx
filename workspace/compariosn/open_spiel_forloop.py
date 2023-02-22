@@ -5,7 +5,7 @@ import numpy as np
 import collections
 
 
-def open_spile_make_single_env(env_name: str, seed: int):
+def make_single_env(env_name: str, seed: int):
     import pyspiel
     from open_spiel.python.rl_environment import Environment, ChanceEventSampler
     def gen_env():
@@ -14,11 +14,11 @@ def open_spile_make_single_env(env_name: str, seed: int):
     return gen_env()
 
 
-def open_spiel_make_env(env_name: str, n_envs: int, seed: int) -> SyncVectorEnv:
-    return SyncVectorEnv([open_spile_make_single_env(env_name, seed) for i in range(n_envs)])
+def make_env(env_name: str, n_envs: int, seed: int) -> SyncVectorEnv:
+    return SyncVectorEnv([make_single_env(env_name, seed) for i in range(n_envs)])
 
 
-def open_spile_random_play(env: SyncVectorEnv, n_steps_lim: int):
+def random_play(env: SyncVectorEnv, n_steps_lim: int):
     # random play for  open spiel
     StepOutput = collections.namedtuple("step_output", ["action"])
     time_step = env.reset()
@@ -37,7 +37,12 @@ def open_spile_random_play(env: SyncVectorEnv, n_steps_lim: int):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("env_name")
-    parser.add_argument("n_envs", type=int)
+    parser.add_argument("batch_size", type=int)
     parser.add_argument("n_steps_lim", type=int)
     parser.add_argument("--seed", default=100, type=bool)
     args = parser.parse_args()
+    env = make_env(args.env_name, args.batch_size, args.seed)
+    time_sta = time.time()
+    step_num = random_play(env, args.n_steps_lim)
+    time_end = time.time()
+    print((args.batch_size*step_num)/(time_end-time_sta))

@@ -29,10 +29,16 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int):
         step_num += 1
     return step_num
 
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("env_name")
-    parser.add_argument("n_envs", type=int)
+    parser.add_argument("batch_size", type=int)
     parser.add_argument("n_steps_lim", type=int)
     parser.add_argument("--seed", default=100, type=bool)
     args = parser.parse_args()
+    env = make_env(args.env_name, args.batch_size, args.seed)
+    time_sta = time.time()
+    step_num = random_play(env, args.n_steps_lim)
+    time_end = time.time()
+    print((args.batch_size*step_num)/(time_end-time_sta))
