@@ -42,7 +42,7 @@ _rear_distance = jax.jit(_rear_distance)
 
 
 def make_test_boad():
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     # 黒
     board = board.at[19].set(-5)
     board = board.at[20].set(-1)
@@ -497,19 +497,19 @@ def test_legal_action():
 def test_calc_win_score():
     turn = jnp.int8(-1)
     # 黒のバックギャモン勝ち
-    back_gammon_board = jnp.zeros(28, dtype=jnp.int16)
+    back_gammon_board = jnp.zeros(28, dtype=jnp.int8)
     back_gammon_board = back_gammon_board.at[26].set(-15)
     back_gammon_board = back_gammon_board.at[1].set(15)
     assert _calc_win_score(back_gammon_board, turn) == 3
 
     # 黒のギャモン勝ち
-    gammon_board = jnp.zeros(28, dtype=jnp.int16)
+    gammon_board = jnp.zeros(28, dtype=jnp.int8)
     gammon_board = gammon_board.at[26].set(-15)
     gammon_board = gammon_board.at[7].set(15)
     assert _calc_win_score(gammon_board, turn) == 2
 
     # 黒のシングル勝ち
-    single_board = jnp.zeros(28, dtype=jnp.int16)
+    single_board = jnp.zeros(28, dtype=jnp.int8)
     single_board = single_board.at[26].set(-15)
     single_board = single_board.at[27].set(3)
     single_board = single_board.at[3].set(12)
@@ -517,7 +517,7 @@ def test_calc_win_score():
 
 
 def test_black_off():
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     board = board.at[0].set(15)
     playable_dice = jnp.array([3, 2, -1, -1])
     legal_action_mask = _legal_action_mask(board, jnp.int16(1), playable_dice)
