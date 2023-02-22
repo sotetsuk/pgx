@@ -218,14 +218,14 @@ def test_step():
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 1].set(
         1
     ) # 25(off)->22
-    assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0 
+    assert (expected_legal_action_mask == state.legal_action_mask).all()
 
 
     # 白がサイコロ2をplay 25(off)->22
     _, state, _ = step(state=state, action=(1) * 6 + 1)
     assert (
-        state.playable_dice - jnp.array([0, -1, -1, -1], dtype=jnp.int16)
-    ).sum() == 0  # playable diceが正しく更新されているか
+        state.playable_dice == jnp.array([0, -1, -1, -1], dtype=jnp.int16)
+    ).all()  # playable diceが正しく更新されているか
     assert state.played_dice_num == 1  # played diceが増えているか.
     assert state.turn == 1  # turnが変わっていないか.
     assert (
@@ -239,7 +239,7 @@ def test_step():
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 0].set(
         1
     ) # 25(off)->23
-    assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0
+    assert (expected_legal_action_mask == state.legal_action_mask).all()
     # 白がサイコロ1をplay 25(off)->23
     _, state, _ = step(state=state, action=(1) * 6 + 0)
     assert state.played_dice_num == 0
@@ -268,7 +268,7 @@ def test_step():
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 4].set(
         1
     ) # 19 -> off
-    assert (expected_legal_action_mask - state.legal_action_mask).sum() == 0 
+    assert (expected_legal_action_mask == state.legal_action_mask).all()
 
 
 
@@ -288,7 +288,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (board, jnp.array([1, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int16(1)) - expected_obs).sum() == 0
+    assert (observe(state, jnp.int16(1)) == expected_obs).all()
 
     # curr_playerが黒で, playできるdiceが(2)のみの場合
     state = make_test_state(
@@ -303,7 +303,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (-1 * board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int16(1)) - expected_obs).sum() == 0
+    assert (observe(state, jnp.int16(1)) == expected_obs).all()
 
     state = make_test_state(
         curr_player=jnp.int16(1),
@@ -317,7 +317,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (1 * board, jnp.array([0, 0, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int16(-1)) - expected_obs).sum() == 0
+    assert (observe(state, jnp.int16(-1)) == expected_obs).all()
 
 
 def test_is_open():
@@ -455,7 +455,7 @@ def test_legal_action():
         1
     ) # 20->22
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
-    assert (expected_legal_action_mask - legal_action_mask).sum() == 0
+    assert (expected_legal_action_mask == legal_action_mask).all()
 
     playable_dice = jnp.array([5, 5, 5, 5])
     expected_legal_action_mask = jnp.zeros(6 * 26 + 6)
@@ -465,7 +465,7 @@ def test_legal_action():
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     print(jnp.where(legal_action_mask!=0)[0])
     print(jnp.where(expected_legal_action_mask!=0)[0])
-    assert (expected_legal_action_mask - legal_action_mask).sum() == 0
+    assert (expected_legal_action_mask == legal_action_mask).all()
 
     # 白
     turn = jnp.int16(1)
@@ -477,13 +477,13 @@ def test_legal_action():
         1
     )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
-    assert (expected_legal_action_mask - legal_action_mask).sum() == 0
+    assert (expected_legal_action_mask == legal_action_mask).all()
 
     turn = jnp.int16(1)
     playable_dice = jnp.array([4, 4, 4, 4])
     expected_legal_action_mask = jnp.zeros(6 * 26 + 6)  # dance
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
-    assert (expected_legal_action_mask - legal_action_mask).sum() == 0
+    assert (expected_legal_action_mask == legal_action_mask).all()
 
 
 def test_calc_win_score():
