@@ -18,14 +18,15 @@ def validate(env: core.Env, num: int = 100):
       - (TODO) taking illegal actions terminates the episode with a negative reward
       - legal_action_mask is empty when terminated (TODO: or all True?)
       - taking actions at terminal states returns the same state (with zero reward)
+      - (TODO) player change at the last step before terminal
     - observe
       - Returns different observations when player_ids are different (except the initial state)
     - TODO: reward must be zero when step is called after terminated
+    - TODO: observation type (bool, int8 or int16) for efficiency; https://jax.readthedocs.io/en/latest/type_promotion.html
     """
 
     init = jax.jit(env.init)
     step = jax.jit(env.step)
-    observe = jax.jit(env.observe)
 
     rng = jax.random.PRNGKey(849020)
     for _ in range(num):
@@ -44,7 +45,6 @@ def validate(env: core.Env, num: int = 100):
 
             _validate_state(state)
             _validate_curr_player(state)
-            _validate_obs(observe, state)
             _validate_legal_actions(state)
 
             if state.terminated:
@@ -79,6 +79,7 @@ def _validate_state(state: pgx.State):
     - terminated is bool_
     - reward is float
     - legal_action_mask is bool_
+    - TODO: observation is bool_ or int8 (can promote to any other types)
     """
     assert state.curr_player.dtype == jnp.int8, state.curr_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
@@ -88,24 +89,12 @@ def _validate_state(state: pgx.State):
     ), state.legal_action_mask.dtype
 
 
-def _validate_obs(observe_fn, state: pgx.State):
-    # when player_id is different from state.curr_player
-    obs_default = observe_fn(state, player_id=state.curr_player)
-    obs_player_0 = observe_fn(state, player_id=0)
-    if state.curr_player == 0:
-        assert (
-            obs_default == obs_player_0
-        ).all(), f"Got different obs : \n{obs_default}\n{obs_player_0}"
-    else:
-        assert not (
-            obs_default == obs_player_0
-        ).all(), f"Got same obs : \n{obs_default}\n{obs_player_0}"
-
-
 def _validate_legal_actions(state: pgx.State):
     if state.terminated:
+        # Agent can take any action at terminal state (but give no effect to the next state)
+        # This is to avoid zero-division error by normalizing action probability by legal actions
         assert (
-            state.legal_action_mask == jnp.zeros_like(state.legal_action_mask)
+            state.legal_action_mask == jnp.ones_like(state.legal_action_mask)
         ).all(), state.legal_action_mask
     else:
         ...

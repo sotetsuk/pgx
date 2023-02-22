@@ -33,6 +33,7 @@ piece_board (81,):
 """
 
 from functools import partial
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -120,6 +121,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     # --- Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
@@ -149,8 +151,8 @@ class Shogi(core.Env):
     def __init__(self):
         super().__init__()
 
-    def init(self, rng: jax.random.KeyArray) -> State:
-        return init(rng)
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return init(key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
@@ -162,8 +164,13 @@ class Shogi(core.Env):
         assert isinstance(state, State)
         return observe(state, player_id)
 
+    @property
     def num_players(self) -> int:
         return 2
+
+    @property
+    def reward_range(self) -> Tuple[float, float]:
+        return -1.0, 1.0
 
 
 def init(rng):

@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import jax
 import jax.numpy as jnp
 
@@ -11,6 +13,7 @@ TRUE = jnp.bool_(True)
 @dataclass
 class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
@@ -27,8 +30,8 @@ class TicTacToe(core.Env):
     def __init__(self):
         super().__init__()
 
-    def init(self, rng: jax.random.KeyArray) -> State:
-        return init(rng)
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return init(key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
@@ -40,8 +43,13 @@ class TicTacToe(core.Env):
         assert isinstance(state, State)
         return observe(state, player_id)
 
+    @property
     def num_players(self) -> int:
         return 2
+
+    @property
+    def reward_range(self) -> Tuple[float, float]:
+        return -1.0, 1.0
 
 
 def init(rng: jax.random.KeyArray) -> State:
@@ -64,11 +72,6 @@ def step(state: State, action: jnp.ndarray) -> State:
     terminated = won | jnp.all(board != -1)
     curr_player = (state.curr_player + 1) % 2
     legal_action_mask = board < 0
-    legal_action_mask = jax.lax.cond(
-        terminated,
-        lambda: jnp.zeros_like(legal_action_mask),
-        lambda: legal_action_mask,
-    )
     return State(
         curr_player=curr_player,
         legal_action_mask=legal_action_mask,
@@ -117,5 +120,5 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     )
     return jnp.concatenate(
         [empty_board, my_board, opp_obard],
-        dtype=jnp.float16,
+        dtype=jnp.bool_,
     )
