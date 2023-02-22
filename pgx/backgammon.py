@@ -200,7 +200,11 @@ def _change_until_legal(state: State) -> State:
     """
     行動可能なplayerが出るまでturnを変え続ける.
     """
-    return jax.lax.while_loop(_is_turn_end, _change_turn, state.replace(playable_dice=state.playable_dice.astype(jnp.int8)))
+    return jax.lax.while_loop(
+        _is_turn_end,
+        _change_turn,
+        state.replace(playable_dice=state.playable_dice.astype(jnp.int8)),
+    )
 
 
 def _update_by_action(state: State, action: int) -> State:
