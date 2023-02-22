@@ -159,12 +159,9 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
             1
         ) + (playable_dice[idx] == -1) * vec
 
-    return (
-        jax.vmap(_insert_dice_num)(
-            dice_indices, jnp.tile(playable_dice, (4, 1))
-        )
-        .sum(axis=0, dtype=jnp.int8)
-    )
+    return jax.vmap(_insert_dice_num)(
+        dice_indices, jnp.tile(playable_dice, (4, 1))
+    ).sum(axis=0, dtype=jnp.int8)
 
 
 def _winning_step(
