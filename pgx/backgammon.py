@@ -75,10 +75,14 @@ class Backgammon(core.Env):
         state = init(key)
         return state
 
-    def _step(self, state, action) -> State:
+    def _step(self, state: core.State, action) -> State:
+        assert isinstance(state, State)
         return step(state, action)
 
-    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
         return observe(state, player_id)
 
     @property
