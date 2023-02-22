@@ -448,13 +448,21 @@ def test_legal_action():
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.int16
     )
-    expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 2].set(
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 3].set(
         1
-    ) # 19->21
+    ) # 19->23
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (20 + 2) + 2].set(
         1
-    ) # 20->22
+    ) # 20->23
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * (20 + 2) + 3].set(
+        1
+    ) # 20->off
+    expected_legal_action_mask = expected_legal_action_mask.at[6 * (21 + 2) + 2].set(
+        1
+    ) # 21->off
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
+    print(jnp.where(legal_action_mask!=0)[0])
+    print(jnp.where(expected_legal_action_mask!=0)[0])
     assert (expected_legal_action_mask == legal_action_mask).all()
 
     playable_dice = jnp.array([5, 5, 5, 5])
