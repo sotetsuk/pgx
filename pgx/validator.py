@@ -26,7 +26,6 @@ def validate(env: core.Env, num: int = 100):
 
     init = jax.jit(env.init)
     step = jax.jit(env.step)
-    observe = jax.jit(env.observe)
 
     rng = jax.random.PRNGKey(849020)
     for _ in range(num):

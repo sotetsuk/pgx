@@ -62,7 +62,7 @@ class Env(abc.ABC):
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
             state.terminated,
-            lambda: state.replace(
+            lambda: state.replace(  # type: ignore
                 legal_action_mask=jnp.ones_like(state.legal_action_mask)
             ),
             lambda: state,
@@ -111,9 +111,9 @@ class Env(abc.ABC):
 
     @staticmethod
     def _step_if_terminated(state: State) -> State:
-        return state.replace(
+        return state.replace(  # type: ignore
             reward=jnp.zeros_like(state.reward),
-        )  # type: ignore
+        )
 
     def _step_with_illegal_action(
         self, state: State, loser: jnp.ndarray
