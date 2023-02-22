@@ -1,0 +1,43 @@
+from vector_env import SyncVectorEnv
+import argparse
+import time
+import numpy as np
+import collections
+
+
+def open_spile_make_single_env(env_name: str, seed: int):
+    import pyspiel
+    from open_spiel.python.rl_environment import Environment, ChanceEventSampler
+    def gen_env():
+        game = pyspiel.load_game(env_name)
+        return Environment(game,  chance_event_sampler=ChanceEventSampler(seed=seed))
+    return gen_env()
+
+
+def open_spiel_make_env(env_name: str, n_envs: int, seed: int) -> SyncVectorEnv:
+    return SyncVectorEnv([open_spile_make_single_env(env_name, seed) for i in range(n_envs)])
+
+
+def open_spile_random_play(env: SyncVectorEnv, n_steps_lim: int):
+    # random play for  open spiel
+    StepOutput = collections.namedtuple("step_output", ["action"])
+    time_step = env.reset()
+    rng = np.random.default_rng()
+    step_num = 0
+    while step_num < n_steps_lim:
+        legal_actions = np.array([ts.observations["legal_actions"][ts.observations["current_player"]] for ts in time_step])
+        assert len(env.envs) == len(legal_actions)  # ensure parallerization
+        action = rng.choice(legal_actions, axis=1)  # same actions so far
+        step_outputs = [StepOutput(action=a) for a in action]
+        time_step, reward, done, unreset_time_steps = env.step(step_outputs, reset_if_done=True)
+        step_num += 1
+    return step_num
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("env_name")
+    parser.add_argument("n_envs", type=int)
+    parser.add_argument("n_steps_lim", type=int)
+    parser.add_argument("--seed", default=100, type=bool)
+    args = parser.parse_args()
