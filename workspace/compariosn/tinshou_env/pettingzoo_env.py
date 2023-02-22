@@ -1,3 +1,17 @@
+"""
+opied from TienShou repository:
+
+https://github...
+
+Distributed under ... LICENSE:
+
+https://...
+
+Modified to use OpenSpiel in SubprocVecEnv (see #384 for changes)
+"""
+
+
+
 import warnings
 from abc import ABC
 from typing import Any, Dict, List, Tuple
@@ -18,7 +32,7 @@ if version.parse(pettingzoo.__version__) < version.parse("1.21.0"):
     )
 
 
-class OpenSpielEnv(AECEnv, ABC):  # これをopen_spielように変える.
+class OpenSpielEnv(AECEnv, ABC):
     """The interface for petting zoo environments.
 
     Multi-agent environments must be wrapped as
@@ -39,32 +53,6 @@ class OpenSpielEnv(AECEnv, ABC):  # これをopen_spielように変える.
     def __init__(self, env: Environment):
         super().__init__()
         self.env = env
-        # agent idx list
-        #self.agents = self.env.possible_agents
-        #self.agent_idx = {}
-        #for i, agent_id in enumerate(self.agents):
-        #    self.agent_idx[agent_id] = i
-
-        #self.rewards = [0] * len(self.agents)
-
-        # Get first observation space, assuming all agents have equal space
-        #self.observation_space: Any = self.env.observation_space(self.agents[0])
-
-        # Get first action space, assuming all agents have equal space
-        #self.action_space: Any = self.env.action_space(self.agents[0])
-
-        #assert all(self.env.observation_space(agent) == self.observation_space
-        #           for agent in self.agents), \
-        "Observation spaces for all agents must be identical. Perhaps " \
-        "SuperSuit's pad_observations wrapper can help (useage: " \
-        "`supersuit.aec_wrappers.pad_observations(env)`"
-
-        #assert all(self.env.action_space(agent) == self.action_space
-        #           for agent in self.agents), \
-        "Action spaces for all agents must be identical. Perhaps " \
-        "SuperSuit's pad_action_space wrapper can help (useage: " \
-        "`supersuit.aec_wrappers.pad_action_space(env)`"
-
         self.reset()
 
 
@@ -97,15 +85,7 @@ class OpenSpielEnv(AECEnv, ABC):  # これをopen_spielように変える.
                 'obs': spiel_observation['serialized_state'],
                 'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
             }
-        else:
-            if isinstance(self.action_space, spaces.Discrete):
-                obs = {
-                    'agent_id': spiel_observation['current_player'],
-                    'obs': spiel_observation['serialized_state'],
-                    'mask': [True] * self.env.action_space(spiel_observation['current_player']).n
-                }
-            else:
-                obs = {'agent_id': spiel_observation['current_player'], 'obs': spiel_observation}
+    
         return obs, reward, term, False, {"info": spiel_observation["info_state"]}
 
 
