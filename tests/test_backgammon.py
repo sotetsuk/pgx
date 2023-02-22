@@ -84,7 +84,7 @@ def make_test_state(
     playable_dice: jnp.ndarray,
     played_dice_num: jnp.ndarray,
     legal_action_mask = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.int16
+        6 * 26 + 6, dtype=jnp.bool_
     )
 ):
     return BackgammonState(
@@ -210,13 +210,13 @@ def test_step():
     )
     # legal_actionが正しいかtest
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.int16
+        6 * 26 + 6, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 0].set(
-        1
+        True
     ) # 25(off)->23
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 1].set(
-        1
+        True
     ) # 25(off)->22
     assert (expected_legal_action_mask == state.legal_action_mask).all()
 
@@ -234,10 +234,10 @@ def test_step():
     )
     # legal_actionが正しく更新されているかテスト
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.int16
+        6 * 26 + 6, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (1) + 0].set(
-        1
+        True
     ) # 25(off)->23
     assert (expected_legal_action_mask == state.legal_action_mask).all()
     # 白がサイコロ1をplay 25(off)->23
@@ -260,13 +260,13 @@ def test_step():
         legal_action_mask = legal_action_mask
     )
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.int16
+        6 * 26 + 6, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 5].set(
-        1
+        True
     ) # 19 -> off
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 4].set(
-        1
+        True
     ) # 19 -> off
     assert (expected_legal_action_mask == state.legal_action_mask).all()
 
@@ -446,19 +446,19 @@ def test_legal_action():
     turn = jnp.int16(-1)
     playable_dice = jnp.array([3, 2, -1, -1])
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.int16
+        6 * 26 + 6, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 3].set(
-        1
+        True
     ) # 19->23
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (20 + 2) + 2].set(
-        1
+        True
     ) # 20->23
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (20 + 2) + 3].set(
-        1
+        True
     ) # 20->off
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (21 + 2) + 2].set(
-        1
+        True
     ) # 21->off
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     print(jnp.where(legal_action_mask!=0)[0])
@@ -466,9 +466,9 @@ def test_legal_action():
     assert (expected_legal_action_mask == legal_action_mask).all()
 
     playable_dice = jnp.array([5, 5, 5, 5])
-    expected_legal_action_mask = jnp.zeros(6 * 26 + 6)
+    expected_legal_action_mask = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
     expected_legal_action_mask = expected_legal_action_mask.at[6 * (19 + 2) + 5].set(
-        1
+        True
     )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     print(jnp.where(legal_action_mask!=0)[0])
@@ -479,17 +479,17 @@ def test_legal_action():
     turn = jnp.int16(1)
     playable_dice = jnp.array([4, 1, -1, -1], dtype=jnp.int16)
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.int16
+        6 * 26 + 6, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[6 * 1 + 1].set(
-        1
+        True
     )
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     assert (expected_legal_action_mask == legal_action_mask).all()
 
     turn = jnp.int16(1)
     playable_dice = jnp.array([4, 4, 4, 4])
-    expected_legal_action_mask = jnp.zeros(6 * 26 + 6)  # dance
+    expected_legal_action_mask = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)  # dance
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     assert (expected_legal_action_mask == legal_action_mask).all()
 
