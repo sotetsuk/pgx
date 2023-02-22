@@ -93,7 +93,6 @@ def measure_time(args):
     print(f"| `{args.library}` | {args.env_name} | forloop | {args.n_envs} | {step_num} | {round(tim, 2)} | {round(tim_per_step, 6)}s |")
 
 
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("library")
