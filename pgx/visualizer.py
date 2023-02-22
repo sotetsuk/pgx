@@ -8,7 +8,7 @@ import numpy as np
 import svgwrite  # type: ignore
 
 from .animal_shogi import JaxAnimalShogiState as AnimalShogiState
-from .backgammon import State as BackgammonState
+from .backgammon import BackgammonState
 from .chess import ChessState
 from .contractbridgebidding import ContractBridgeBiddingState
 from .go import State as GoState
