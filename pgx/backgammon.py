@@ -58,7 +58,7 @@ class State(core.State):
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
     # サイコロを振るたびにrngをsplitして更新する.
-    rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
+    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     # サイコロの出目 0~5: 1~6
     dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)
     # プレイできるサイコロの目
