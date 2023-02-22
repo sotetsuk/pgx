@@ -1,11 +1,11 @@
 """
 opied from TienShou repository:
 
-https://github...
+https://github.com/thu-ml/tianshou/blob/master/tianshou/env/pettingzoo_env.py
 
-Distributed under ... LICENSE:
+Distributed under MIT LICENSE:
 
-https://...
+https://github.com/thu-ml/tianshou
 
 Modified to use OpenSpiel in SubprocVecEnv (see #384 for changes)
 """
