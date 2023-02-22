@@ -16,7 +16,7 @@ if version.parse(pettingzoo.__version__) < version.parse("1.21.0"):
     )
 
 
-class PettingZooEnv(AECEnv, ABC):
+class PettingZooEnv(AECEnv, ABC):  # これをopen_spielように変える.
     """The interface for petting zoo environments.
 
     Multi-agent environments must be wrapped as
