@@ -9,3 +9,4 @@ dist/*
 *.egg-info/*
 venv
 pythonenv*
+.DS_Store
