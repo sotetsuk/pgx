@@ -70,7 +70,7 @@ class BackgammonState:
     合法手
     micro action = 6*src+die
     """
-    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.int16)
+    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
 
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
@@ -589,7 +589,7 @@ def _legal_action_mask_for_single_die(
     """
     一つのサイコロの目に対するlegal micro action
     """
-    return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.int16) + (
+    return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.bool_) + (
         die != -1
     ) * _legal_action_mask_for_valid_single_dice(board, turn, die)
 
@@ -606,7 +606,7 @@ def _legal_action_mask_for_valid_single_dice(
 
     def _is_legal(idx: jnp.ndarray):
         action: int = idx * 6 + die
-        legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16)
+        legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_)
         legal_action_mask = legal_action_mask.at[action].set(
             _is_action_legal(board, turn, action)
         )
