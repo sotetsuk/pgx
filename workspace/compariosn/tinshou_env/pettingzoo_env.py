@@ -1,11 +1,11 @@
 """
-opied from TienShou repository:
+Copied from TienShou repository:
 
 https://github.com/thu-ml/tianshou/blob/master/tianshou/env/pettingzoo_env.py
 
 Distributed under MIT LICENSE:
 
-https://github.com/thu-ml/tianshou
+https://github.com/thu-ml/tianshou/blob/master/LICENSE
 
 Modified to use OpenSpiel in SubprocVecEnv (see #384 for changes)
 """
@@ -64,7 +64,7 @@ class OpenSpielEnv(AECEnv, ABC):
             "agent_id": obs["current_player"],
             "obs": obs["serialized_state"],
             "mask": obs["legal_actions"][obs["current_player"]]
-        }  # tinshouのPettingZooEnvの形式に直す.
+        }  # tianshouのPettingZooEnvの形式に直す.
 
         return observation_dict, {"info": obs["info_state"]}
 

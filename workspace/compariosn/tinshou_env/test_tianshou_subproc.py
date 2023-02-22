@@ -37,7 +37,7 @@ if __name__ == "__main__":
         new_legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
         assert sum([((not action[i] in new_legal_action_mask[i]) & (not terminated[i])) | (action[i]==361)| terminated[i] for i in range(n_envs)]) == n_envs  # 実行済みのactionが消えていることを確認. 361はパス.
         new_board_black = [info[i]["info"][0][361: 722] if observation[i]["agent_id"] == 0 else info[i]["info"][0][:361] for i in range(n_envs)]  # 直前の手番のplayerから見たboard
-        assert sum([(sum(new_board_black[i]) > sum(old_board_black[i])) | (action[i]==361) | terminated[i] for i in range(n_envs)])  # 石を置いた場合は増えているかどうか
+        assert sum([(sum(new_board_black[i]) > sum(old_board_black[i])) | (action[i]==361) | terminated[i] for i in range(n_envs)])  # 石を置いた場合は増えているかどうか  361はパス.
         step_num += 1
     time_end = time.time()
     tim = time_end - time_sta
