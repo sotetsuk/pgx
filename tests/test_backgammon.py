@@ -117,7 +117,7 @@ def test_is_turn_end():
     # 白のdance
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(1),
@@ -130,7 +130,7 @@ def test_is_turn_end():
     # playable diceがない場合
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(1),
@@ -150,7 +150,7 @@ def test_change_turn():
     # 白のdance
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(1),
@@ -164,7 +164,7 @@ def test_change_turn():
     # playable diceがない場合
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(1),
@@ -182,7 +182,7 @@ def test_continual_pass():
     board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16))
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(1),
@@ -199,7 +199,7 @@ def test_step():
     board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16))
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(1),
@@ -250,7 +250,7 @@ def test_step():
     # legal_actionが正しいかtest
     legal_action_mask = _legal_action_mask(board, jnp.int16(-1), jnp.array([4, 5, -1, -1], dtype=jnp.int16))
     state = make_test_state(
-        curr_player=jnp.int16(-1),
+        curr_player=jnp.int8(-1),
         rng=rng,
         board=board,
         turn=jnp.int16(-1),
@@ -277,7 +277,7 @@ def test_observe():
 
     # curr_playerが白で, playできるdiceが{1, 2}の場合
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(1),
@@ -292,7 +292,7 @@ def test_observe():
 
     # curr_playerが黒で, playできるdiceが(2)のみの場合
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(-1),
@@ -306,7 +306,7 @@ def test_observe():
     assert (observe(state, jnp.int16(1)) == expected_obs).all()
 
     state = make_test_state(
-        curr_player=jnp.int16(1),
+        curr_player=jnp.int8(1),
         rng=rng,
         board=board,
         turn=jnp.int16(-1),

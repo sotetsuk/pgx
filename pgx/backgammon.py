@@ -45,7 +45,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 
 @dataclass
 class BackgammonState:
-    curr_player: jnp.ndarray = jnp.int16(0)
+    curr_player: jnp.ndarray = jnp.int8(0)
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
 
@@ -75,7 +75,7 @@ class BackgammonState:
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
-    curr_player: jnp.ndarray = jnp.int16(jax.random.bernoulli(rng1))
+    curr_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()
     terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_init_dice(rng2)
