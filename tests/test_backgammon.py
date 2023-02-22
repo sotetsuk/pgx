@@ -288,7 +288,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (board, jnp.array([1, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int16(1)) == expected_obs).all()
+    assert (observe(state, jnp.int8(1)) == expected_obs).all()
 
     # curr_playerが黒で, playできるdiceが(2)のみの場合
     state = make_test_state(
@@ -303,7 +303,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (-1 * board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int16(1)) == expected_obs).all()
+    assert (observe(state, jnp.int8(1)) == expected_obs).all()
 
     state = make_test_state(
         curr_player=jnp.int8(1),
@@ -317,7 +317,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (1 * board, jnp.array([0, 0, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int16(-1)) == expected_obs).all()
+    assert (observe(state, jnp.int8(-1)) == expected_obs).all()
 
 
 def test_is_open():
