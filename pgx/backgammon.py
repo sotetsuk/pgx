@@ -65,7 +65,7 @@ class BackgammonState:
     played_dice_num: jnp.ndarray = jnp.int16(0)
 
     # 黒なら-1, 白なら1
-    turn: jnp.ndarray = jnp.int16(1)
+    turn: jnp.ndarray = jnp.int8(1)
     """
     合法手
     micro action = 6*src+die
