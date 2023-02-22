@@ -496,6 +496,10 @@ def _is_to_off_legal(
 ):
     """
     board外への移動についての合法判定
+    条件は
+    1. srcにcheckerがある
+    2. 自身のcheckeが全てhomeboardにある.
+    3. サイコロの目とgoalへの距離が同じ or srcが最後尾であり, サイコロの目がそれよりも大きい.
     """
     r = _rear_distance(board, turn)
     d = _distance_to_goal(src, turn)
@@ -503,8 +507,7 @@ def _is_to_off_legal(
         (src >= 0)
         & _exists(board, turn, src)
         & _is_all_on_home_board(board, turn)
-        & (r <= die)
-        & (r == d)
+        & ((d == die) | ((r <= die) & (r == d)))
     )  # type: ignore
 
 
