@@ -1,5 +1,6 @@
 from tianshou.env import SubprocVectorEnv
 from pettingzoo.classic.go import go
+from pettingzoo.classic.tictactoe import tictactoe
 from tianshou.env.pettingzoo_env import PettingZooEnv
 import argparse
 import numpy as np
@@ -21,8 +22,12 @@ def make_env(env_name, n_envs):
     #from pettingzoo.classic import chess_v5
     def get_go_env():
         return AutoResetPettingZooEnv(go.env())
+    def get_tictactoe_env():
+        return AutoResetPettingZooEnv(tictactoe.env())
     if env_name == "go":
         return SubprocVectorEnv([get_go_env for _ in range(n_envs)])
+    elif env_name == "tictactoe":
+        return SubprocVectorEnv([get_tictactoe_env for _ in range(n_envs)])
     elif env_name == "chess":
         #return chess_v5.env()
         raise ValueError("Chess will be added later")
