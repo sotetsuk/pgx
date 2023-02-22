@@ -164,8 +164,7 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
         jax.vmap(_insert_dice_num)(
             dice_indices, jnp.tile(playable_dice, (4, 1))
         )
-        .sum(axis=0)
-        .astype(jnp.int8)  # TODO: remove cast
+        .sum(axis=0, dtype=jnp.int8)
     )
 
 
