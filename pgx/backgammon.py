@@ -4,9 +4,8 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
-from pgx.flax.struct import dataclass
 import pgx.core as core
-
+from pgx.flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 
@@ -53,7 +52,9 @@ class State(core.State):
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int16)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)  # micro action = 6*src+die
+    legal_action_mask: jnp.ndarray = jnp.zeros(
+        6 * 26 + 6, dtype=jnp.bool_
+    )  # micro action = 6*src+die
     # --- Backgammon specific ---
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
@@ -70,7 +71,6 @@ class State(core.State):
 
 
 class Backgammon(core.Env):
-
     def _init(self, key: jax.random.KeyArray) -> State:
         state = init(key)
         return state
@@ -87,7 +87,7 @@ class Backgammon(core.Env):
 
     @property
     def reward_range(self) -> Tuple[float, float]:
-        return -1., 1.
+        return -1.0, 1.0
 
 
 def init(rng: jax.random.KeyArray) -> State:
@@ -116,9 +116,7 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def step(
-    state: State, action: int
-) -> State:
+def step(state: State, action: int) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -179,7 +177,7 @@ def _winning_step(
     勝利者がいる場合のstep.
     """
     win_score = _calc_win_score(state.board, state.turn)
-    reward = - jnp.ones(2, dtype=jnp.float32) * win_score
+    reward = -jnp.ones(2, dtype=jnp.float32) * win_score
     reward = reward.at[state.curr_player].set(win_score)
     state = state.replace(terminated=jnp.bool_(True))  # type: ignore
     return state.replace(reward=reward)  # type: ignore
