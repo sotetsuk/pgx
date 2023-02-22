@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 from pgx.visualizer import VisualizerConfig, Visualizer
 from pgx.backgammon import (
-    BackgammonState,
+    State,
     _calc_src,
     _calc_tgt,
     _calc_win_score,
@@ -87,7 +87,7 @@ def make_test_state(
         6 * 26 + 6, dtype=jnp.bool_
     )
 ):
-    return BackgammonState(
+    return State(
         curr_player=curr_player,
         rng=rng,
         board=board,

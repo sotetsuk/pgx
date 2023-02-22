@@ -44,7 +44,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 
 
 @dataclass
-class BackgammonState:
+class State:
     curr_player: jnp.ndarray = jnp.int8(0)
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
@@ -73,7 +73,7 @@ class BackgammonState:
     legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
 
 
-def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
+def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     curr_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()
@@ -85,7 +85,7 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, turn, playable_dice
     )
-    state = BackgammonState(  # type: ignore
+    state = State(  # type: ignore
         curr_player=curr_player,
         rng=rng3,
         board=board,
@@ -100,8 +100,8 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, BackgammonState]:
 
 
 def step(
-    state: BackgammonState, action: int
-) -> Tuple[jnp.ndarray, BackgammonState, int]:
+    state: State, action: int
+) -> Tuple[jnp.ndarray, State, int]:
     """
     step 関数.
     terminatedしている場合, 状態をそのまま返す.
@@ -114,8 +114,8 @@ def step(
 
 
 def _normal_step(
-    state: BackgammonState, action: int
-) -> Tuple[jnp.ndarray, BackgammonState, int]:
+    state: State, action: int
+) -> Tuple[jnp.ndarray, State, int]:
     """
     terminated していない場合のstep 関数.
     """
@@ -127,7 +127,7 @@ def _normal_step(
     )
 
 
-def observe(state: BackgammonState, player_id: jnp.ndarray) -> jnp.ndarray:
+def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """
     手番のplayerに対する観測を返す.
     """
@@ -168,8 +168,8 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
 
 
 def _winning_step(
-    state: BackgammonState,
-) -> Tuple[jnp.ndarray, BackgammonState, int]:
+    state: State,
+) -> Tuple[jnp.ndarray, State, int]:
     """
     勝利者がいる場合のstep.
     """
@@ -179,8 +179,8 @@ def _winning_step(
 
 
 def _no_winning_step(
-    state: BackgammonState,
-) -> Tuple[jnp.ndarray, BackgammonState, int]:
+    state: State,
+) -> Tuple[jnp.ndarray, State, int]:
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
@@ -196,14 +196,14 @@ def _no_winning_step(
     )
 
 
-def _change_until_legal(state: BackgammonState) -> BackgammonState:
+def _change_until_legal(state: State) -> State:
     """
     行動可能なplayerが出るまでturnを変え続ける.
     """
     return jax.lax.while_loop(_is_turn_end, _change_turn, state)
 
 
-def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
+def _update_by_action(state: State, action: int) -> State:
     """
     行動を受け取って状態をupdate
     """
@@ -218,7 +218,7 @@ def _update_by_action(state: BackgammonState, action: int) -> BackgammonState:
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, state.turn, playable_dice
     )
-    return BackgammonState(  # type: ignore
+    return State(  # type: ignore
         curr_player=curr_player,
         rng=rng,
         terminated=terminated,
@@ -268,7 +268,7 @@ def _make_init_board() -> jnp.ndarray:
     return board
 
 
-def _is_turn_end(state: BackgammonState) -> bool:
+def _is_turn_end(state: State) -> bool:
     """
     play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
     """
@@ -277,7 +277,7 @@ def _is_turn_end(state: BackgammonState) -> bool:
     )  # type: ignore
 
 
-def _change_turn(state: BackgammonState) -> BackgammonState:
+def _change_turn(state: State) -> State:
     """
     ターンを変更して新しい状態を返す.
     """
@@ -290,7 +290,7 @@ def _change_turn(state: BackgammonState) -> BackgammonState:
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, turn, dice)
-    return BackgammonState(  # type: ignore
+    return State(  # type: ignore
         curr_player=curr_player,
         rng=rng2,
         board=board,
