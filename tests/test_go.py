@@ -89,6 +89,8 @@ def test_step():
 
 def test_kou():
     env = Go(size=5)
+    env.init = jax.jit(env.init)
+    env.step = jax.jit(env.step)
     key = jax.random.PRNGKey(0)
 
     state: State = env.init(key=key)
@@ -414,17 +416,21 @@ def test_legal_action():
 
     # =====
     # random
-    state = j_init(key=key, size=BOARD_SIZE)
+    env = Go(size=BOARD_SIZE)
+    env.init = jax.jit(env.init)
+    env.step = jax.jit(env.step)
+    key = jax.random.PRNGKey(0)
+    state = env.init(key=key)
     for _ in range(100):
         assert np.where(state.legal_action_mask)[0][-1]
 
         legal_actions = np.where(state.legal_action_mask)[0][:-1]
         illegal_actions = np.where(~state.legal_action_mask)[0][:-1]
         for action in legal_actions:
-            _state = j_step(state=state, action=action, size=BOARD_SIZE)
+            _state = env.step(state=state, action=action)
             assert not _state.terminated
         for action in illegal_actions:
-            _state = j_step(state=state, action=action, size=BOARD_SIZE)
+            _state = env.step(state=state, action=action)
             assert _state.terminated
         if len(legal_actions) == 0:
             a = BOARD_SIZE * BOARD_SIZE
@@ -432,7 +438,7 @@ def test_legal_action():
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
             a = jax.random.choice(subkey, legal_actions)
-        state = j_step(state=state, action=a, size=BOARD_SIZE)
+        state = env.step(state=state, action=a)
 
 
 def test_counting_ji():
