@@ -32,6 +32,7 @@ piece_board (81,):
   27 相手龍
 """
 
+from typing import Tuple
 from functools import partial
 
 import jax
@@ -163,8 +164,13 @@ class Shogi(core.Env):
         assert isinstance(state, State)
         return observe(state, player_id)
 
+    @property
     def num_players(self) -> int:
         return 2
+
+    @property
+    def reward_range(self) -> Tuple[float, float]:
+        return -1., 1.
 
 
 def init(rng):

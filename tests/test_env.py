@@ -9,7 +9,15 @@ def test_jit():
     N = 2
     for env_name in get_args(pgx.EnvId):
         print(f"{env_name} ...")
+
+
         env = pgx.make(env_name)
+
+        print(env.num_players)
+        print(env.reward_range)
+        print(env.observation_shape)
+        print(env.action_shape)
+
         init = jax.jit(jax.vmap(env.init))
         step = jax.jit(jax.vmap(env.step))
         key = jax.random.PRNGKey(0)

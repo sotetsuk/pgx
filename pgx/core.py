@@ -6,9 +6,13 @@ import jax.numpy as jnp
 
 from pgx.flax.struct import dataclass
 
+
+TRUE = jnp.bool_(True)
+
+
 EnvId = Literal[
     "tic_tac_toe/v0",
-    "go/v0",
+    "go-19x19/v0",
     "shogi/v0",
     "minatar/asterix/v0",
 ]
@@ -35,16 +39,28 @@ class Env(abc.ABC):
     def step(self, state: State, action: jnp.ndarray) -> State:
         # TODO: legal_action_mask周りの挙動
         #  - set legal_action_mask = all True
-        #    - Typical usage of legal_action_mask is nomralizing action probability
+        #    - Typical usage of legal_action_mask is normalizing action probability
         #    - all zero mask will raise zero division error
         #  - ends with negative reward if illegal action is taken
+
+        is_illegal = ~state.legal_action_mask[action]
+        curr_player = state.curr_player
+        # If the state is already terminated, environment does not take usual step, but
+        # return the same state with zero-rewards for all players
         state = jax.lax.cond(
             state.terminated,
-            self._step_if_terminated,
-            self._step,
-            state,
-            action,
+            lambda: self._step_if_terminated(state),
+            lambda: self._step(state, action),
         )
+        # Taking illegal action leads to immediate game terminal with negative reward
+        state = jax.lax.cond(
+            is_illegal,
+            lambda: self._step_with_illegal_action(state, curr_player),
+            lambda: state,
+        )
+        # All legal_action_mask elements are TRUE (**not FALSE**) at terminal state
+        # This is to avoid zero-division error when normalizing action probability
+        # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
             state.terminated,
             lambda: state.replace(legal_action_mask=jnp.ones_like(state.legal_action_mask)),
@@ -74,6 +90,12 @@ class Env(abc.ABC):
         ...
 
     @property
+    @abc.abstractmethod
+    def reward_range(self) -> Tuple[float, float]:
+        """Note that min reward must be <= 0."""
+        ...
+
+    @property
     def observation_shape(self) -> Tuple[int, ...]:
         """Return the matrix shape of observation"""
         state = self.init(jax.random.PRNGKey(0))
@@ -87,12 +109,13 @@ class Env(abc.ABC):
         return state.legal_action_mask.shape
 
     @staticmethod
-    def _step_if_terminated(state: State, action: jnp.ndarray) -> State:
+    def _step_if_terminated(state: State) -> State:
         return state.replace(
             reward=jnp.zeros_like(state.reward),
         )  # type: ignore
 
-    @staticmethod
-    def _step_with_illegal_action(state: State, action: jnp.ndarray) -> State:
-        # TODO: implement me
-        return state
+    def _step_with_illegal_action(self, state: State, loser: jnp.ndarray) -> State:
+        min_reward = self.reward_range[0]
+        reward = jnp.ones_like(state.reward) * (-1 * min_reward) * (self.num_players - 1)
+        reward = reward.at[loser].set(min_reward)
+        return state.replace(reward=reward, terminated=TRUE)  # type: ignore

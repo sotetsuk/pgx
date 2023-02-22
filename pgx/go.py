@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Tuple
 
 import jax
 from jax import numpy as jnp
@@ -75,8 +76,13 @@ class Go(core.Env):
         assert isinstance(state, State)
         return observe(state, player_id)
 
+    @property
     def num_players(self) -> int:
         return 2
+
+    @property
+    def reward_range(self) -> Tuple[float, float]:
+        return -1., 1.
 
 
 def observe(state: State, player_id, observe_all=False):

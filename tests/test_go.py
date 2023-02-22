@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import get_board, init, observe, step, _count_ji
+from pgx.go import get_board, init, observe, step, _count_ji, Go, State
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -88,17 +88,19 @@ def test_step():
 
 
 def test_kou():
+    env = Go(size=5)
     key = jax.random.PRNGKey(0)
 
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=2, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=17, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=13, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=8, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=11, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=12, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=7, size=BOARD_SIZE)  # WHITE
+    state: State = env.init(key=key)
+    assert state.curr_player == 1
+    state = env.step(state=state, action=2)  # BLACK
+    state = env.step(state=state, action=17)  # WHITE
+    state = env.step(state=state, action=6)  # BLACK
+    state = env.step(state=state, action=13)  # WHITE
+    state = env.step(state=state, action=8)  # BLACK
+    state = env.step(state=state, action=11)  # WHITE
+    state = env.step(state=state, action=12)  # BLACK
+    state = env.step(state=state, action=7)  # WHITE
 
     """
     ===========
@@ -116,14 +118,16 @@ def test_kou():
     """
     assert state.kou == 12
 
-    state1 = j_step(
-        state=state, action=12, size=BOARD_SIZE
+    loser = state.curr_player
+    state1: State = env.step(
+        state=state, action=12
     )  # BLACK
-    # ルール違反により黒の負け
+    # ルール違反により黒 = player_id=1 の負け
     assert state1.terminated
-    assert (state1.reward == jnp.array([-1, 1])).all()
+    assert state1.reward[loser] == -1.
+    assert state1.reward.sum() == 0.
 
-    state2 = j_step(state=state, action=0, size=BOARD_SIZE)  # BLACK
+    state2: State = env.step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not state2.terminated
     assert state2.kou == -1
