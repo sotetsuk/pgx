@@ -43,7 +43,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
         [5, 3],
         [5, 4],
     ],
-    dtype=jnp.int16,
+    dtype=jnp.int8,
 )
 
 
@@ -60,11 +60,11 @@ class State(core.State):
     # サイコロを振るたびにrngをsplitして更新する.
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     # サイコロの出目 0~5: 1~6
-    dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)
+    dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int8)
     # プレイできるサイコロの目
-    playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
+    playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # プレイしたサイコロの目の数
-    played_dice_num: jnp.ndarray = jnp.int16(0)
+    played_dice_num: jnp.ndarray = jnp.int8(0)
     # 黒なら-1, 白なら1
     turn: jnp.ndarray = jnp.int8(1)
 
