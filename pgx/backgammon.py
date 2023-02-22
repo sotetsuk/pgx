@@ -101,7 +101,7 @@ def init(rng: jax.random.KeyArray) -> State:
     terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
-    played_dice_num: jnp.ndarray = jnp.int16(0)
+    played_dice_num: jnp.ndarray = jnp.int8(0)
     turn: jnp.ndarray = _init_turn(dice)
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, turn, playable_dice
@@ -154,13 +154,13 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
     playできるサイコロを6次元の0-1ベクトルで返す.
     """
     dice_indices: jnp.ndarray = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int16
+        [0, 1, 2, 3], dtype=jnp.int8
     )  # サイコロの数は最大4
 
     def _insert_dice_num(
         idx: jnp.ndarray, playable_dice: jnp.ndarray
     ) -> jnp.ndarray:
-        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int16)
+        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int8)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
         ) + (playable_dice[idx] == -1) * vec
@@ -170,7 +170,7 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
             dice_indices, jnp.tile(playable_dice, (4, 1))
         )
         .sum(axis=0)
-        .astype(jnp.int16)
+        .astype(jnp.int8)
     )
 
 
@@ -200,7 +200,7 @@ def _change_until_legal(state: State) -> State:
     """
     行動可能なplayerが出るまでturnを変え続ける.
     """
-    return jax.lax.while_loop(_is_turn_end, _change_turn, state)
+    return jax.lax.while_loop(_is_turn_end, _change_turn, state.replace(playable_dice=state.playable_dice.astype(jnp.int8)))
 
 
 def _update_by_action(state: State, action: int) -> State:
@@ -211,7 +211,7 @@ def _update_by_action(state: State, action: int) -> State:
     curr_player: jnp.ndarray = state.curr_player
     terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state.board, state.turn, action)
-    played_dice_num: jnp.ndarray = jnp.int16(state.played_dice_num + 1)
+    played_dice_num: jnp.ndarray = jnp.int8(state.played_dice_num + 1)
     playable_dice: jnp.ndarray = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
@@ -225,7 +225,7 @@ def _update_by_action(state: State, action: int) -> State:
         board=board,
         turn=state.turn,
         dice=state.dice,
-        playable_dice=playable_dice,
+        playable_dice=playable_dice.astype(jnp.int8),  # TODO: remove cast
         played_dice_num=played_dice_num,
         legal_action_mask=legal_action_mask,
     )
@@ -288,7 +288,7 @@ def _change_turn(state: State) -> State:
     terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
-    played_dice_num: jnp.ndarray = jnp.int16(0)
+    played_dice_num: jnp.ndarray = jnp.int8(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, turn, dice)
     return State(  # type: ignore
         curr_player=curr_player,
@@ -313,7 +313,7 @@ def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
 
 def _roll_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     roll: jnp.ndarray = jax.random.randint(
-        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int16
+        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int8
     )
     return roll[0]
 
@@ -331,9 +331,9 @@ def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
     """
     -1でemptyを表す.
     """
-    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int16) + (
+    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int8) + (
         dice[0] != dice[1]
-    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int16)
+    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int8)
 
 
 def _update_playable_dice(
@@ -343,9 +343,9 @@ def _update_playable_dice(
     action: int,
 ) -> jnp.ndarray:
     _n = played_dice_num
-    die_array = jnp.array([action % 6] * 4, dtype=jnp.int16)
+    die_array = jnp.array([action % 6] * 4, dtype=jnp.int8)
     dice_indices: jnp.ndarray = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int16
+        [0, 1, 2, 3], dtype=jnp.int8
     )  # サイコロの数は最大4
 
     def _update_for_diff_dice(
@@ -360,7 +360,7 @@ def _update_playable_dice(
     ) * jax.vmap(_update_for_diff_dice)(
         die_array, dice_indices, jnp.tile(playable_dice, (4, 1))
     ).astype(
-        jnp.int16
+        jnp.int8
     )
 
 
@@ -596,7 +596,7 @@ def _legal_action_mask_for_valid_single_dice(
     -1以外のサイコロの目に対して合法判定
     """
     src_indices = jnp.arange(
-        26, dtype=jnp.int16
+        26, dtype=jnp.int8
     )  # 26パターンのsrcに対してlegal_actionを求める.
 
     def _is_legal(idx: jnp.ndarray):
