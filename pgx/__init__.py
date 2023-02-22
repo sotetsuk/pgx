@@ -24,3 +24,5 @@ def make(env_id: EnvId):
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix()
+    else:
+        raise NotImplementedError()
