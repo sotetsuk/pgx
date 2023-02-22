@@ -33,7 +33,7 @@ TRUE = jnp.bool_(True)
 class State(core.State):
     curr_player: jnp.ndarray = ZERO
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32(0)
+    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # 1d array for the same API as other multi-agent games
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
@@ -84,7 +84,7 @@ class MinAtarAsterix(core.Env):
 
     @property
     def reward_range(self) -> Tuple[float, float]:
-        return 0, jnp.inf
+        return 0., jnp.inf
 
 
 def step(
@@ -232,7 +232,7 @@ def _step_det_at_non_terminal(
 
     next_state = State(
         terminated=terminal,
-        reward=r,
+        reward=r[jnp.newaxis],  # 1-d array
         player_x=player_x,
         player_y=player_y,
         entities=entities,

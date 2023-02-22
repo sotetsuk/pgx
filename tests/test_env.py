@@ -10,7 +10,6 @@ def test_jit():
     for env_name in get_args(pgx.EnvId):
         print(f"{env_name} ...")
 
-
         env = pgx.make(env_name)
 
         print(env.num_players)
