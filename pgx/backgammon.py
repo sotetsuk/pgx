@@ -138,7 +138,7 @@ def observe(state: BackgammonState, player_id: jnp.ndarray) -> jnp.ndarray:
         player_id == state.curr_player,
         lambda: jnp.concatenate((turn * board, zero_one_dice_vec), axis=None),  # type: ignore
         lambda: jnp.concatenate(
-            (-turn * board, jnp.zeros(6, dtype=jnp.int16)), axis=None  # type: ignore
+            (-turn * board, jnp.zeros(6, dtype=jnp.int8)), axis=None  # type: ignore
         ),
     )
 
@@ -148,13 +148,13 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
     playできるサイコロを6次元の0-1ベクトルで返す.
     """
     dice_indices: jnp.ndarray = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int16
+        [0, 1, 2, 3], dtype=jnp.int8
     )  # サイコロの数は最大4
 
     def _insert_dice_num(
         idx: jnp.ndarray, playable_dice: jnp.ndarray
     ) -> jnp.ndarray:
-        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int16)
+        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int8)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
         ) + (playable_dice[idx] == -1) * vec
@@ -163,8 +163,7 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
         jax.vmap(_insert_dice_num)(
             dice_indices, jnp.tile(playable_dice, (4, 1))
         )
-        .sum(axis=0)
-        .astype(jnp.int16)
+        .sum(axis=0, dtype=jnp.int8)
     )
 
 
