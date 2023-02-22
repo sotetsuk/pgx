@@ -72,13 +72,11 @@ class State(core.State):
 class Backgammon(core.Env):
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        _, state = init(key)
+        state = init(key)
         return state
 
     def _step(self, state, action) -> State:
-        _, state, r = step(state, action)
-        state = state.replace(reward=r)  # type: ignore
-        return state
+        return step(state, action)
 
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         return observe(state, player_id)
@@ -92,7 +90,7 @@ class Backgammon(core.Env):
         return -1., 1.
 
 
-def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
+def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     curr_player: jnp.ndarray = jnp.int16(jax.random.bernoulli(rng1))
     board: jnp.ndarray = _make_init_board()
@@ -115,26 +113,12 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
         turn=turn,
         legal_action_mask=legal_action_mask,
     )
-    return curr_player, state
+    return state
 
 
 def step(
     state: State, action: int
-) -> Tuple[jnp.ndarray, State, int]:
-    """
-    step 関数.
-    terminatedしている場合, 状態をそのまま返す.
-    """
-    return jax.lax.cond(
-        state.terminated,
-        lambda: (state.curr_player, state, jnp.float32([0., 0.])),
-        lambda: _normal_step(state, action),
-    )
-
-
-def _normal_step(
-    state: State, action: int
-) -> Tuple[jnp.ndarray, State, int]:
+) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -190,7 +174,7 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
 
 def _winning_step(
     state: State,
-) -> Tuple[jnp.ndarray, State, int]:
+) -> State:
     """
     勝利者がいる場合のstep.
     """
@@ -198,25 +182,16 @@ def _winning_step(
     reward = - jnp.ones(2, dtype=jnp.float32) * win_score
     reward = reward.at[state.curr_player].set(win_score)
     state = state.replace(terminated=jnp.bool_(True))  # type: ignore
-    return state.curr_player, state, reward
+    return state.replace(reward=reward)  # type: ignore
 
 
 def _no_winning_step(
     state: State,
-) -> Tuple[jnp.ndarray, State, int]:
+) -> State:
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
-    s = _change_until_legal(state)
-    return jax.lax.cond(
-        _is_turn_end(state),
-        lambda: (
-            s.curr_player,
-            s,
-            jnp.float32([0., 0.]),
-        ),
-        lambda: (state.curr_player, state, jnp.float32([0., 0.])),
-    )
+    return _change_until_legal(state)
 
 
 def _change_until_legal(state: State) -> State:
