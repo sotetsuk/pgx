@@ -58,7 +58,9 @@ def make_env(env_name, n_envs):
         return aec_to_parallel(env)
     
     def get_tictactoe_env():
-        return tictactoe.env()
+        env = tictactoe.env()
+        env.metadata["is_parallelizable"] = True
+        return aec_to_parallel(env)
     if env_name == "go":
         env = ss.pettingzoo_env_to_vec_env_v1(get_go_env())
         envs = AutoResetPettingZooEnv(vec_env_args(env, n_envs))
@@ -67,8 +69,11 @@ def make_env(env_name, n_envs):
         envs.is_vector_env = True
         return envs
     elif env_name == "tictactoe":
-        env = ss.pettingzoo_env_to_vec_env_v1(env)
-        envs = ss.concat_vec_envs_v1(env, n_envs, num_cpus=0)
+        env = ss.pettingzoo_env_to_vec_env_v1(get_tictactoe_env())
+        envs = AutoResetPettingZooEnv(vec_env_args(env, n_envs))
+        envs.single_observation_space = envs.observation_space
+        envs.single_action_space = envs.action_space
+        envs.is_vector_env = True
         return envs
     elif env_name == "chess":
         #return chess_v5.env()
