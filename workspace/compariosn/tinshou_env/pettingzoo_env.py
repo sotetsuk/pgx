@@ -79,12 +79,12 @@ class OpenSpielEnv(AECEnv, ABC):
         reward = time_step.rewards if not term else [0., 0.]  # open_spielのEnvironmentの出力
         spiel_observation = time_step.observations
 
-        if isinstance(spiel_observation, dict) and 'legal_actions' in spiel_observation:
-            obs = {
-                'agent_id': spiel_observation['current_player'],
-                'obs': spiel_observation['serialized_state'],
-                'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
-            }
+    
+        obs = {
+            'agent_id': spiel_observation['current_player'],
+            'obs': spiel_observation['serialized_state'],
+            'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
+        }
     
         return obs, reward, term, False, {"info": spiel_observation["info_state"]}
 
