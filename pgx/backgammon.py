@@ -47,7 +47,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 class BackgammonState:
     curr_player: jnp.ndarray = jnp.int8(0)
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
 
     # サイコロを振るたびにrngをsplitして更新する.
     rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
@@ -264,7 +264,7 @@ def _make_init_board() -> jnp.ndarray:
             0,
             0,
         ],
-        dtype=jnp.int16,
+        dtype=jnp.int8,
     )
     return board
 
@@ -369,7 +369,7 @@ def _home_board(turn: jnp.ndarray) -> jnp.ndarray:
     """
     黒: [18~23], 白: [0~5]
     """
-    return (turn == -1) * jnp.arange(18, 24) + (turn == 1) * jnp.arange(0, 6)  # type: ignore
+    return (turn == -1) * jnp.arange(18, 24, dtype=jnp.int8) + (turn == 1) * jnp.arange(0, 6, dtype=jnp.int8)  # type: ignore
 
 
 def _off_idx(turn: jnp.ndarray) -> int:

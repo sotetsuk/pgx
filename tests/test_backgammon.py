@@ -42,7 +42,7 @@ _rear_distance = jax.jit(_rear_distance)
 
 
 def make_test_boad():
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     # 黒
     board = board.at[19].set(-5)
     board = board.at[20].set(-1)
