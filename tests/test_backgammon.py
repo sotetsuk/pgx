@@ -317,7 +317,7 @@ def test_observe():
     expected_obs = jnp.concatenate(
         (1 * board, jnp.array([0, 0, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int8(-1)) == expected_obs).all()
+    assert (observe(state, jnp.int8(0)) == expected_obs).all()
 
 
 def test_is_open():

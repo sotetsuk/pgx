@@ -127,16 +127,15 @@ def _normal_step(
     )
 
 
-def observe(state: BackgammonState, curr_player: jnp.ndarray) -> jnp.ndarray:
+def observe(state: BackgammonState, player_id: jnp.ndarray) -> jnp.ndarray:
     """
     手番のplayerに対する観測を返す.
     """
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = state.turn
-    _curr_player: jnp.ndarray = state.curr_player
     zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state.playable_dice)
     return jax.lax.cond(
-        curr_player == _curr_player,
+        player_id == state.curr_player,
         lambda: jnp.concatenate((turn * board, zero_one_dice_vec), axis=None),  # type: ignore
         lambda: jnp.concatenate(
             (-turn * board, jnp.zeros(6, dtype=jnp.int8)), axis=None  # type: ignore
