@@ -49,7 +49,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 
 @dataclass
 class State(core.State):
-    curr_player: jnp.ndarray = jnp.int16(0)
+    curr_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int16)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -92,7 +92,7 @@ class Backgammon(core.Env):
 
 def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
-    curr_player: jnp.ndarray = jnp.int16(jax.random.bernoulli(rng1))
+    curr_player: jnp.ndarray = jnp.int8(jax.random.bernoulli(rng1))
     board: jnp.ndarray = _make_init_board()
     terminated: jnp.ndarray = jnp.bool_(False)
     dice: jnp.ndarray = _roll_init_dice(rng2)
