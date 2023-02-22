@@ -250,7 +250,7 @@ def test_step():
     # legal_actionが正しいかtest
     legal_action_mask = _legal_action_mask(board, jnp.int16(-1), jnp.array([4, 5, -1, -1], dtype=jnp.int16))
     state = make_test_state(
-        curr_player=jnp.int8(-1),
+        curr_player=jnp.int8(0),
         rng=rng,
         board=board,
         turn=jnp.int16(-1),
