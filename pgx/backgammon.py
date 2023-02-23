@@ -99,20 +99,6 @@ def step(
     state: State, action: int
 ) -> Tuple[jnp.ndarray, State, int]:
     """
-    step 関数.
-    terminatedしている場合, 状態をそのまま返す.
-    """
-    return jax.lax.cond(
-        state.terminated,
-        lambda: state,
-        lambda: _normal_step(state, action),
-    )
-
-
-def _normal_step(
-    state: State, action: int
-) -> Tuple[jnp.ndarray, State, int]:
-    """
     terminated していない場合のstep 関数.
     """
     state = _update_by_action(state, action)
@@ -183,12 +169,7 @@ def _no_winning_step(
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
-    s = _change_until_legal(state)
-    return jax.lax.cond(
-        _is_turn_end(state),
-        lambda: s,
-        lambda: state
-    )
+    return _change_until_legal(state)
 
 
 def _change_until_legal(state: State) -> State:
