@@ -27,7 +27,7 @@ def make_env(env_name, n_envs):
     if env_name == "go":
         return DummyVectorEnv([get_go_env for _ in range(n_envs)])
     elif env_name == "tictactoe":
-        return DummyVectorEnv([get_tictactoe_env() for _ in range(n_envs)])
+        return DummyVectorEnv([get_tictactoe_env for _ in range(n_envs)])
     elif env_name == "chess":
         #return chess_v5.env()
         raise ValueError("Chess will be added later")
@@ -56,7 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("batch_size", type=int)
     parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
-    assert args.n_steps_lim % args.batch_size
+    assert args.n_steps_lim % args.batch_size == 0
     env = make_env(args.env_name, args.batch_size)
     time_sta = time.time()
     step_num = random_play(env, args.n_steps_lim, args.batch_size)
