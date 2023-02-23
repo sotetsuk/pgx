@@ -297,14 +297,15 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
 
     my_color = _my_color(state)
     opp_color = _opponent_color(state)
-    ren = state.ren_id_board
+    _ren = state.ren_id_board
+    ren = jnp.abs(_ren) - 1
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
 
     # fmt: off
     in_atari = (idx_sum[ren] ** 2) == idx_squared_sum[ren] * num_pseudo[ren]
     # fmt: on
-    has_liberty = (ren * my_color > 0) & ~in_atari
-    kills_opp = (ren * opp_color > 0) & in_atari
+    has_liberty = (_ren * my_color > 0) & ~in_atari
+    kills_opp = (_ren * opp_color > 0) & in_atari
 
     @jax.vmap
     def is_neighbor_ok(xy):
