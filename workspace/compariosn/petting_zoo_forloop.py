@@ -4,6 +4,7 @@ import numpy as np
 import collections
 from tianshou.env import DummyVectorEnv
 from tianshou.env.pettingzoo_env import PettingZooEnv
+from pettingzoo.classic.tictactoe import tictactoe
 
 class AutoResetPettingZooEnv(PettingZooEnv):
     def __init__(self, env):
@@ -22,7 +23,7 @@ def make_env(env_name, n_envs):
     def get_go_env():
         return AutoResetPettingZooEnv(go.env())
     def get_tictactoe_env():
-        return AutoResetPettingZooEnv(go.env())
+        return AutoResetPettingZooEnv(tictactoe.env())
     if env_name == "go":
         return DummyVectorEnv([get_go_env for _ in range(n_envs)])
     elif env_name == "tictactoe":
@@ -55,6 +56,7 @@ if __name__ == "__main__":
     parser.add_argument("batch_size", type=int)
     parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
+    assert args.n_steps_lim % args.batch_size
     env = make_env(args.env_name, args.batch_size)
     time_sta = time.time()
     step_num = random_play(env, args.n_steps_lim, args.batch_size)
