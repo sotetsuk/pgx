@@ -2,10 +2,8 @@ import argparse
 import time
 import numpy as np
 import collections
-import supersuit as ss
-from pettingzoo.utils.env import AECEnv
-from pettingzoo.utils.conversions import aec_to_parallel
-import cloudpickle
+from tianshou.env import DummyVectorEnv
+from tianshou.env.pettingzoo_env import PettingZooEnv
 
 class AutoResetPettingZooEnv(PettingZooEnv):
     def __init__(self, env):
