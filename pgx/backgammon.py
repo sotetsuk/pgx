@@ -92,7 +92,7 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
         turn=turn,
         legal_action_mask=legal_action_mask,
     )
-    return curr_player, state
+    return state
 
 
 def step(
@@ -104,7 +104,7 @@ def step(
     """
     return jax.lax.cond(
         state.terminated,
-        lambda: (state.curr_player, state, 0),
+        lambda: state,
         lambda: _normal_step(state, action),
     )
 
@@ -169,9 +169,12 @@ def _winning_step(
     """
     勝利者がいる場合のstep.
     """
-    reward = _calc_win_score(state.board, state.turn)
+    win_score = _calc_win_score(state.board, state.turn)
+    winner = state.curr_player
+    reward = jnp.ones_like(state.reward)
+    reward = reward.at[winner].set(win_score)
     state = state.replace(terminated=jnp.bool_(True))  # type: ignore
-    return state.curr_player, state, reward
+    return state.replace(reward=reward)
 
 
 def _no_winning_step(
@@ -183,12 +186,8 @@ def _no_winning_step(
     s = _change_until_legal(state)
     return jax.lax.cond(
         _is_turn_end(state),
-        lambda: (
-            s.curr_player,
-            s,
-            0,
-        ),
-        lambda: (state.curr_player, state, 0),
+        lambda: s,
+        lambda: state
     )
 
 
