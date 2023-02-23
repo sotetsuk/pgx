@@ -17,7 +17,7 @@ def make_env(env_name: str, n_envs: int,  seed: int):
     return SubprocVectorEnv([lambda: OpenSpielEnv(make_single_env(env_name, seed)) for _ in range(n_envs)])
 
 
-def random_play(env: SubprocVectorEnv, n_steps_lim: int):
+def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
     step_num = 0
     rng = np.random.default_rng()
     observation, info = env.reset()
@@ -26,7 +26,7 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int):
         legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
         action = [rng.choice(legal_action_mask[i]) for i in range(len(legal_action_mask))]  # chose action randomly
         observation, reward, terminated, _, info = env.step(action)
-        step_num += 1
+        step_num += batch_size
     return step_num
 
 
@@ -39,6 +39,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     env = make_env(args.env_name, args.batch_size, args.seed)
     time_sta = time.time()
-    step_num = random_play(env, args.n_steps_lim)
+    step_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
-    print((args.batch_size*step_num)/(time_end-time_sta))
+    print((step_num)/(time_end-time_sta))

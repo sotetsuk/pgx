@@ -18,7 +18,7 @@ def make_env(env_name: str, n_envs: int, seed: int) -> SyncVectorEnv:
     return SyncVectorEnv([make_single_env(env_name, seed) for i in range(n_envs)])
 
 
-def random_play(env: SyncVectorEnv, n_steps_lim: int):
+def random_play(env: SyncVectorEnv, n_steps_lim: int, batch_size: int):
     # random play for  open spiel
     StepOutput = collections.namedtuple("step_output", ["action"])
     time_step = env.reset()
@@ -30,7 +30,7 @@ def random_play(env: SyncVectorEnv, n_steps_lim: int):
         action = [rng.choice(legal_actions[i]) for i in range(len(legal_actions))]
         step_outputs = [StepOutput(action=a) for a in action]
         time_step, reward, done, unreset_time_steps = env.step(step_outputs, reset_if_done=True)
-        step_num += 1
+        step_num += batch_size
     return step_num
 
 
@@ -43,6 +43,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     env = make_env(args.env_name, args.batch_size, args.seed)
     time_sta = time.time()
-    step_num = random_play(env, args.n_steps_lim)
+    step_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
-    print((args.batch_size*step_num)/(time_end-time_sta))
+    print((step_num)/(time_end-time_sta), time_end-time_sta)

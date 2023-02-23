@@ -82,7 +82,7 @@ def make_env(env_name, n_envs):
         raise ValueError("no such environment in petting zoo")
 
 
-def random_play(env, n_steps_lim: int) -> int: # TODO autoreset
+def random_play(env, n_steps_lim: int, batch_size: int) -> int: # TODO autoreset
     # petting zooのgo環境でrandom gaentを終局まで動かす.
     step_num = 0
     rng = np.random.default_rng()
@@ -92,7 +92,7 @@ def random_play(env, n_steps_lim: int) -> int: # TODO autoreset
         legal_action_mask = np.array([mask for mask in observation["action_mask"]])
         action = [[rng.choice(np.where(legal_action_mask[2*i]==1)[0]), 0] for i in range(len(legal_action_mask)//2)]  # chose action randomly
         observation, rewards, terminations, truncations, infos = env.step(action)
-        step_num += 1
+        step_num += batch_size
     return step_num
 
 
@@ -104,6 +104,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
     env = make_env(args.env_name, args.batch_size)
     time_sta = time.time()
-    step_num = random_play(env, args.n_steps_lim)
+    step_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
-    print((args.batch_size*step_num)/(time_end-time_sta))
+    print((step_num)/(time_end-time_sta))
