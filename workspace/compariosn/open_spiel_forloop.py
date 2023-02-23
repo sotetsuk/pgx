@@ -27,7 +27,7 @@ def random_play(env: SyncVectorEnv, n_steps_lim: int):
     while step_num < n_steps_lim:
         legal_actions = np.array([ts.observations["legal_actions"][ts.observations["current_player"]] for ts in time_step])
         assert len(env.envs) == len(legal_actions)  # ensure parallerization
-        action = rng.choice(legal_actions, axis=1)  # same actions so far
+        action = [rng.choice(legal_actions[i]) for i in range(len(legal_actions))]  # same actions so far
         step_outputs = [StepOutput(action=a) for a in action]
         time_step, reward, done, unreset_time_steps = env.step(step_outputs, reset_if_done=True)
         step_num += 1
