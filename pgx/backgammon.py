@@ -49,7 +49,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 @dataclass
 class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
-    observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     # micro action = 6 * src + die

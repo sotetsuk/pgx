@@ -13,6 +13,7 @@ EnvId = Literal[
     "tic_tac_toe/v0",
     "go-19x19/v0",
     "shogi/v0",
+    "backgammon/v0",
     "minatar/asterix/v0",
 ]
 
