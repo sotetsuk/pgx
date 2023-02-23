@@ -1,4 +1,5 @@
 from functools import partial
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -48,7 +49,7 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 @dataclass
 class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
-    observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     # micro action = 6 * src + die
@@ -66,6 +67,26 @@ class State(core.State):
     played_dice_num: jnp.ndarray = jnp.int16(0)
     # 黒なら-1, 白なら1
     turn: jnp.ndarray = jnp.int8(1)
+
+
+class Backgammon(core.Env):
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return init(key)
+
+    def _step(self, state, action) -> State:
+        return step(state, action)
+
+    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        return observe(state, player_id)
+
+    @property
+    def num_players(self) -> int:
+        return 2
+
+    @property
+    def reward_range(self) -> Tuple[float, float]:
+        return 0., 3.
 
 
 def init(rng: jax.random.KeyArray) -> State:
