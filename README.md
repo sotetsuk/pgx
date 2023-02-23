@@ -55,13 +55,13 @@ while not state.terminated.all():
 
 ## Roadmap
 
-<table style="width:100%">
-  <tr>
-    <th style="width:25%">Game</th>
-    <th style="width:25%">Env</th>
-    <th style="width:25%">Visualization</th>
-    <th style="width:25%">Baseline algo/model</th>
-  </tr>
+<table>
+<tr>
+  <th>Game</th>
+  <th>Environment</th>
+  <th>Visualization</th>
+  <th>Baseline algo/model</th>
+</tr>
 <tr>
  <td>TicTacToe</td>
  <td>:white_check_mark:</td>
