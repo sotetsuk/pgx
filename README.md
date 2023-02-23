@@ -55,24 +55,6 @@ while not state.terminated.all():
 
 ## Roadmap
 
-|Game| Env | Visualization | Baseline algo/model |
-|:---|:---|:---|:---|
-|> |> |> | Toy |
-| Tic-tac-toe | :white_check_mark: | :white_check_mark: |
-| [Animal Shogi](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi) | :white_check_mark: | :white_check_mark: | |
-| [Sparrow Mahjong](https://sugorokuya.jp/p/suzume-jong) |:white_check_mark: ||
-| [MinAtar](https://github.com/kenjyoung/MinAtar)/Asterix|:white_check_mark: | | |
-| [MinAtar](https://github.com/kenjyoung/MinAtar)/Breakout|:white_check_mark: | | |
-| [MinAtar](https://github.com/kenjyoung/MinAtar)/Freeway|:white_check_mark: | | |
-| [MinAtar](https://github.com/kenjyoung/MinAtar)/Seaquest|:white_check_mark: | | |
-| [MinAtar](https://github.com/kenjyoung/MinAtar)/SpaceInvaders|:white_check_mark: | | |
-|Chess| :construction: | :white_check_mark: ||
-|Shogi| :white_check_mark: | :white_check_mark:|:construction:|
-|Go| :white_check_mark: | :white_check_mark: ||
-|Backgammon| :white_check_mark: |:white_check_mark:||
-|Bridge Bidding|:construction|||
-|Mahjong|:construction|||
-
 <table>
 <tr>
 <td>Game</td>
@@ -130,37 +112,37 @@ while not state.terminated.all():
 </tr>
 <tr>
  <td>Chess</td>
+ <td>:construction:</td>
  <td>:white_check_mark:</td>
- <td></td>
  <td></td>
 </tr>
 <tr>
  <td>Shogi</td>
  <td>:white_check_mark:</td>
- <td></td>
- <td></td>
+ <td>:white_check_mark:</td>
+ <td>:construction:</td>
 </tr>
 <tr>
  <td>Go</td>
  <td>:white_check_mark:</td>
- <td></td>
+ <td>:white_check_mark:</td>
  <td></td>
 </tr>
 <tr>
  <td>Backgammon</td>
  <td>:white_check_mark:</td>
- <td></td>
+ <td>:white_check_mark:</td>
  <td></td>
 </tr>
 <tr>
  <td>Bridge Bidding</td>
- <td></td>
- <td></td>
+ <td>:construction:</td>
+ <td>:white_check_mark:</td>
  <td></td>
 </tr>
 <tr>
  <td>Mahjong</td>
- <td></td>
+ <td>:construction:</td>
  <td></td>
  <td></td>
 </tr>
