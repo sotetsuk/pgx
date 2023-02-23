@@ -4,7 +4,10 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
+import pgx.core as core
 from pgx.flax.struct import dataclass
+
+FALSE = jnp.bool_(False)
 
 init_dice_pattern: jnp.ndarray = jnp.array(
     [
@@ -44,33 +47,26 @@ init_dice_pattern: jnp.ndarray = jnp.array(
 
 
 @dataclass
-class State:
+class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    # micro action = 6 * src + die
+    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
+    # --- Backgammon specific ---
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
-
     # サイコロを振るたびにrngをsplitして更新する.
     rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
-
-    # 終了しているかどうか.
-    terminated: jnp.ndarray = jnp.bool_(False)
-
     # サイコロの出目 0~5: 1~6
     dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)
-
     # プレイできるサイコロの目
     playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
-
     # プレイしたサイコロの目の数
     played_dice_num: jnp.ndarray = jnp.int16(0)
-
     # 黒なら-1, 白なら1
     turn: jnp.ndarray = jnp.int8(1)
-    """
-    合法手
-    micro action = 6*src+die
-    """
-    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
 
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
