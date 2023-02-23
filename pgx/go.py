@@ -144,9 +144,7 @@ def _get_alphazero_features(state: State, player_id, observe_all):
 def init(key: jax.random.KeyArray, size: int) -> State:
     return State(  # type:ignore
         size=jnp.int32(size),
-        ren_id_board=jnp.full(
-            (2, size**2), -1, dtype=jnp.int32
-        ),  # type:ignore
+        ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
         curr_player=jnp.int8(jax.random.bernoulli(key)),
