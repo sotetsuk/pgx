@@ -7,6 +7,7 @@ import jax.numpy as jnp
 import pgx.core as core
 from pgx.flax.struct import dataclass
 
+TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 init_dice_pattern: jnp.ndarray = jnp.array(
@@ -96,7 +97,7 @@ def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     curr_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()
-    terminated: jnp.ndarray = jnp.bool_(False)
+    terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
     played_dice_num: jnp.ndarray = jnp.int16(0)
@@ -177,7 +178,7 @@ def _winning_step(
     winner = state.curr_player
     reward = jnp.ones_like(state.reward)
     reward = reward.at[winner].set(win_score)
-    state = state.replace(terminated=jnp.bool_(True))  # type: ignore
+    state = state.replace(terminated=TRUE)  # type: ignore
     return state.replace(reward=reward)  # type: ignore
 
 
@@ -279,7 +280,7 @@ def _change_turn(state: State) -> State:
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = -1 * state.turn  # turnを変える
     curr_player: jnp.ndarray = (state.curr_player + 1) % 2
-    terminated: jnp.ndarray = jnp.bool_(False)
+    terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
