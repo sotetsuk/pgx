@@ -9,6 +9,18 @@ from pgx.flax.struct import dataclass
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
+IDX = jnp.int8(
+    [
+        [0, 1, 2],
+        [3, 4, 5],
+        [6, 7, 8],
+        [0, 3, 6],
+        [1, 4, 7],
+        [2, 5, 8],
+        [0, 4, 8],
+        [2, 4, 6],
+    ]
+)
 
 @dataclass
 class State(core.State):
@@ -17,13 +29,11 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
-    # 0: 先手, 1: 後手
     turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
-    # -1: empty, 0: 先手, 1: 後手
-    board: jnp.ndarray = -jnp.ones(9, jnp.int8)
+    board: jnp.ndarray = -jnp.ones(9, jnp.int8)  # -1 (empty), 0, 1
 
 
 class TicTacToe(core.Env):
@@ -83,32 +93,7 @@ def step(state: State, action: jnp.ndarray) -> State:
 
 
 def _win_check(board, turn) -> jnp.ndarray:
-    # board:
-    #   0 1 2
-    #   3 4 5
-    #   6 7 8
-    won = FALSE
-    for i in range(0, 9, 3):
-        # e.g., [0, 1, 2]
-        won = jax.lax.cond(
-            jnp.all(board[i : i + 3] == turn), lambda: TRUE, lambda: won
-        )
-    for i in range(3):
-        # e.g., [0, 3, 6]
-        won = jax.lax.cond(
-            jnp.all(board[i:9:3] == turn), lambda: TRUE, lambda: won
-        )
-    won = jax.lax.cond(
-        jnp.all(board[jnp.int8([0, 4, 8])] == turn),
-        lambda: TRUE,
-        lambda: won,
-    )
-    won = jax.lax.cond(
-        jnp.all(board[jnp.int8([2, 4, 6])] == turn),
-        lambda: TRUE,
-        lambda: won,
-    )
-    return won
+    return ((board[IDX] == turn).all(axis=1)).any()
 
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
