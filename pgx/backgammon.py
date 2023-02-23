@@ -70,7 +70,6 @@ class State(core.State):
 
 
 class Backgammon(core.Env):
-
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 
@@ -86,7 +85,7 @@ class Backgammon(core.Env):
 
     @property
     def reward_range(self) -> Tuple[float, float]:
-        return 0., 3.
+        return 0.0, 3.0
 
 
 def init(rng: jax.random.KeyArray) -> State:
