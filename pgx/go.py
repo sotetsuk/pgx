@@ -25,6 +25,8 @@ TRUE = jnp.bool_(True)
 class State(core.State):
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
 
     # 横幅, マスの数ではない
@@ -33,9 +35,6 @@ class State(core.State):
     # 連の代表点（一番小さいマス目）のマス目の座標
     ren_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
 
-    # 設置可能なマスをTrueとしたマスク
-    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
-
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
         (8, 19 * 19), 2, dtype=jnp.int32
@@ -43,9 +42,6 @@ class State(core.State):
 
     # 経過ターン, 0始まり
     turn: jnp.ndarray = jnp.int32(0)  # type:ignore
-
-    # プレイヤーID
-    curr_player: jnp.ndarray = jnp.int32(0)  # type:ignore
 
     # [0]: 黒の得たアゲハマ, [1]: 白の方
     agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
@@ -58,9 +54,6 @@ class State(core.State):
 
     # コミ
     komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
-
-    # 終局判定
-    terminated: jnp.ndarray = FALSE  # type:ignore
 
 
 class Go(core.Env):
