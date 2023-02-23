@@ -41,6 +41,7 @@ if __name__ == "__main__":
     parser.add_argument("n_steps_lim", type=int)
     parser.add_argument("--seed", default=100, type=bool)
     args = parser.parse_args()
+    assert args.n_steps_lim % args.batch_size
     env = make_env(args.env_name, args.batch_size, args.seed)
     time_sta = time.time()
     step_num = random_play(env, args.n_steps_lim, args.batch_size)
