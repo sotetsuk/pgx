@@ -154,7 +154,7 @@ def init(key: jax.random.KeyArray, size: int = 5) -> State:
 
 def step(state: State, action: int, size: int) -> State:
     # update state
-    _state, reward = _update_state_wo_legal_action(state, action, size)
+    _state = _update_state_wo_legal_action(state, action, size)
 
     # add legal actions
     _state = _state.replace(  # type:ignore
@@ -172,8 +172,8 @@ def step(state: State, action: int, size: int) -> State:
 
 def _update_state_wo_legal_action(
     _state: State, _action: int, _size: int
-) -> Tuple[State, jnp.ndarray]:
-    _state, _reward = jax.lax.cond(
+) -> State:
+    _state = jax.lax.cond(
         (_action < _size * _size),
         lambda: _not_pass_move(_state, _action, _size),
         lambda: _pass_move(_state, _size),
@@ -185,25 +185,20 @@ def _update_state_wo_legal_action(
     # change player
     _state = _state.replace(curr_player=(_state.curr_player + 1) % 2)  # type: ignore
 
-    return _state, _reward
+    return _state
 
 
 def _pass_move(_state: State, _size: int) -> Tuple[State, jnp.ndarray]:
     return jax.lax.cond(
         _state.passed,
         # 連続でパスならば終局
-        lambda: (
-            _state.replace(terminated=TRUE),  # type: ignore
-            _get_reward(_state, _size),
-        ),
+        lambda: _state.replace(terminated=TRUE, reward=_get_reward(_state, _size)),  # type: ignore
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: (_state.replace(passed=True), jnp.zeros(2, dtype=jnp.int8)),  # type: ignore
+        lambda: _state.replace(passed=True, reward=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
     )
 
 
-def _not_pass_move(
-    _state: State, _action: int, size
-) -> Tuple[State, jnp.ndarray]:
+def _not_pass_move(_state: State, _action: int, size) -> State:
     state = _state.replace(passed=FALSE)  # type: ignore
     xy = _action
     my_color_ix = _my_color_ix(state)
@@ -249,7 +244,7 @@ def _not_pass_move(
     return jax.lax.cond(
         is_illegal,
         lambda: _illegal_move(_set_stone(_state, xy)),  # 石くらいは置いておく
-        lambda: (state, jnp.zeros(2, dtype=jnp.int8)),
+        lambda: state,
     )
 
 
@@ -266,11 +261,9 @@ def _merge_around_xy(i, state: State, xy, size):
     return state
 
 
-def _illegal_move(
-    _state: State,
-) -> Tuple[State, jnp.ndarray]:
-    r: jnp.ndarray = jnp.ones(2, dtype=jnp.int8)  # type:ignore
-    return _state.replace(terminated=TRUE), r.at[_state.turn % 2].set(-1)  # type: ignore
+def _illegal_move(_state: State) -> State:
+    r: jnp.ndarray = jnp.ones(2, dtype=jnp.float32)  # type:ignore
+    return _state.replace(terminated=TRUE, reward=r.at[_state.turn % 2].set(-1.0))  # type: ignore
 
 
 def _set_stone(_state: State, _xy: int) -> State:
@@ -451,8 +444,8 @@ def _get_reward(_state: State, _size: int) -> jnp.ndarray:
     score = count_ji(jnp.array([1, -1]))
     r = jax.lax.cond(
         score[BLACK] - _state.komi > score[WHITE],
-        lambda: jnp.array([1, -1], dtype=jnp.int8),
-        lambda: jnp.array([-1, 1], dtype=jnp.int8),
+        lambda: jnp.array([1, -1], dtype=jnp.float32),
+        lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
 
     return r
