@@ -4,6 +4,8 @@
 
 A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
 
+![go](go.gif)
+
 ## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
 This is to explicitly let users know that state transition is determined ONLY from `state` and `action` and to make it easy to use `jax.jit`.
