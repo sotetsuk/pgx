@@ -57,6 +57,7 @@ while not state.terminated.all():
 
 |Game| Env | Visualization | Baseline algo/model |
 |:---|:---|:---|:---|
+|> |> |> | Toy |
 | Tic-tac-toe | :white_check_mark: | :white_check_mark: |
 | [Animal Shogi](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi) | :white_check_mark: | :white_check_mark: | |
 | [Sparrow Mahjong](https://sugorokuya.jp/p/suzume-jong) |:white_check_mark: ||
