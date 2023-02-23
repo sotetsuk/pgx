@@ -73,10 +73,14 @@ class Backgammon(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 
-    def _step(self, state, action) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
         return step(state, action)
 
-    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
         return observe(state, player_id)
 
     @property
@@ -114,7 +118,7 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def step(state: State, action: int) -> State:
+def step(state: State, action: jnp.ndarray) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -193,7 +197,7 @@ def _change_until_legal(state: State) -> State:
     return jax.lax.while_loop(_is_turn_end, _change_turn, state)
 
 
-def _update_by_action(state: State, action: int) -> State:
+def _update_by_action(state: State, action: jnp.ndarray) -> State:
     """
     行動を受け取って状態をupdate
     """
@@ -330,7 +334,7 @@ def _update_playable_dice(
     playable_dice: jnp.ndarray,
     played_dice_num: jnp.ndarray,
     dice: jnp.ndarray,
-    action: int,
+    action: jnp.ndarray,
 ) -> jnp.ndarray:
     _n = played_dice_num
     die_array = jnp.array([action % 6] * 4, dtype=jnp.int16)
@@ -419,7 +423,7 @@ def _exists(board: jnp.ndarray, turn: jnp.ndarray, point: int) -> bool:
     return turn * checkers >= 1  # type: ignore
 
 
-def _calc_src(src: int, turn: jnp.ndarray) -> int:
+def _calc_src(src: jnp.ndarray, turn: jnp.ndarray) -> int:
     """
     boardのindexに合わせる.
     """
@@ -450,7 +454,7 @@ def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
     )  # type: ignore
 
 
-def _decompose_action(action: int, turn: jnp.ndarray):
+def _decompose_action(action: jnp.ndarray, turn: jnp.ndarray):
     """
     action(int)をsource, die, tagetに分解する.
     """
@@ -460,7 +464,7 @@ def _decompose_action(action: int, turn: jnp.ndarray):
     return src, die, tgt
 
 
-def _is_action_legal(board: jnp.ndarray, turn, action: int) -> bool:
+def _is_action_legal(board: jnp.ndarray, turn, action: jnp.ndarray) -> bool:
     """
     micro actionの合法判定
     action = src * 6 + die
@@ -512,7 +516,9 @@ def _is_to_point_legal(
     )  # type: ignore
 
 
-def _move(board: jnp.ndarray, turn: jnp.ndarray, action: int) -> jnp.ndarray:
+def _move(
+    board: jnp.ndarray, turn: jnp.ndarray, action: jnp.ndarray
+) -> jnp.ndarray:
     """
     micro actionに基づく状態更新
     """
@@ -593,7 +599,7 @@ def _legal_action_mask_for_valid_single_dice(
     )  # 26パターンのsrcに対してlegal_actionを求める.
 
     def _is_legal(idx: jnp.ndarray):
-        action: int = idx * 6 + die
+        action = idx * 6 + die
         legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_)
         legal_action_mask = legal_action_mask.at[action].set(
             _is_action_legal(board, turn, action)
