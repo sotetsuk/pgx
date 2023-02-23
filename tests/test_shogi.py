@@ -1,7 +1,8 @@
+from functools import partial
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _apply_effects, _legal_actions, _rotate, _to_direction
+from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction, _from_sfen, _pseudo_legal_drops, _to_sfen
 
 
 # check visualization results by image preview plugins
@@ -11,13 +12,14 @@ def visualize(state, fname="tests/assets/shogi/xxx.svg"):
     v.save_svg(state, fname)
 
 
-def xy2i(x, y):
-    """
-    >>> xy2i(2, 6)  # 26歩
-    14
-    """
-    i = (x - 1) * 9 + (y - 1)
-    return i
+def update_board(state, piece_board, hand=None):
+    state = state.replace(piece_board=piece_board)
+    if hand is not None:
+        state = state.replace(hand=hand)
+    state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))
+    state = state.replace(effects=state.effects.at[1].set(_effects_all(_flip(state))))
+    state = state.replace(legal_moves=_legal_actions(state)[0])
+    return state
 
 
 def test_init():
@@ -130,7 +132,7 @@ def test_legal_moves():
 
     # King cannot move into opponent pieces' effect
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE)
         .at[xy2i(5, 7)].set(EMPTY)
         .at[xy2i(6, 8)].set(KING)
@@ -142,14 +144,17 @@ def test_legal_moves():
 
     # Gold is pinned
     s = _init()
-    s = s.replace(piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE).at[xy2i(5, 7)].set(GOLD))
+    s = update_board(s,
+                     piece_board=s.piece_board
+                     .at[xy2i(5, 5)].set(OPP_LANCE)
+                     .at[xy2i(5, 7)].set(GOLD))
     visualize(s, "tests/assets/shogi/legal_moves_004.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
     # Gold is not pinned
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board
         .at[:].set(EMPTY)
         .at[xy2i(9, 9)].set(KING)
@@ -159,7 +164,7 @@ def test_legal_moves():
     visualize(s, "tests/assets/shogi/legal_moves_006.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(9, 8), xy2i(8, 8)]  # pinned
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board
         .at[xy2i(9, 5)].set(PAWN)
     )
@@ -171,7 +176,7 @@ def test_legal_moves():
 
     # King should escape from Lance
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board
         .at[xy2i(5, 5)].set(OPP_LANCE)
         .at[xy2i(5, 7)].set(EMPTY)
@@ -185,7 +190,7 @@ def test_legal_moves():
 
     # Checking piece should be captured
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board
         .at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -199,7 +204,7 @@ def test_legal_moves():
 
     # 合駒
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
         .at[xy2i(2, 9)].set(GOLD)
@@ -212,7 +217,7 @@ def test_legal_moves():
 
     # 両王手
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
         .at[xy2i(5, 9)].set(BISHOP)
@@ -230,8 +235,9 @@ def test_legal_moves():
 def test_legal_drops():
     # 打ち歩詰
     s = _init()
-    s = s.replace(hand=s.hand.at[0, PAWN].add(1),
-                  piece_board=s.piece_board.at[xy2i(5, 7)].set(EMPTY).at[xy2i(8, 2)].set(EMPTY))
+    s = update_board(s,
+                hand=s.hand.at[0, PAWN].add(1),
+                piece_board=s.piece_board.at[xy2i(5, 7)].set(EMPTY).at[xy2i(8, 2)].set(EMPTY))
     visualize(s, "tests/assets/shogi/legal_drops_001.svg")
 
     # 避けられるし金でも取れる
@@ -239,29 +245,37 @@ def test_legal_drops():
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 片側に避けられるので打ち歩詰でない
-    s = s.replace(piece_board=s.piece_board.at[xy2i(4, 1)].set(OPP_PAWN))  # 金を歩に変える
-    s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(EMPTY))  # 金を除く
-    s = s.replace(piece_board=s.piece_board.at[xy2i(5, 3)].set(GOLD))  # (5, 3)に金を置く
+    s = update_board(s,
+                 piece_board=s.piece_board
+                 .at[xy2i(4, 1)].set(OPP_PAWN)  # 金を歩に変える
+                 .at[xy2i(6, 1)].set(EMPTY)  # 金を除く
+                 .at[xy2i(5, 3)].set(GOLD)   # (5, 3)に金を置く
+                 )
     visualize(s, "tests/assets/shogi/legal_drops_002.svg")
     _, _, legal_drops = _legal_actions(s)
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 両側に避けられないので打ち歩詰
-    s = s.replace(piece_board=s.piece_board.at[xy2i(4, 1)].set(OPP_PAWN))  # 両側に歩を置く
-    s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(OPP_PAWN))
+    s = update_board(s,
+                     piece_board=s.piece_board
+                     .at[xy2i(4, 1)].set(OPP_PAWN)  # 両側に歩を置く
+                     .at[xy2i(6, 1)].set(OPP_PAWN)
+                     )
     visualize(s, "tests/assets/shogi/legal_drops_003.svg")
     _, _, legal_drops = _legal_actions(s)
     assert not legal_drops[PAWN, xy2i(5, 2)]
 
     # 金で取れるので打ち歩詰でない
-    s = s.replace(piece_board=s.piece_board.at[xy2i(6, 1)].set(OPP_GOLD))
+    s = update_board(s,
+                     piece_board=s.piece_board
+                     .at[xy2i(6, 1)].set(OPP_GOLD))
     visualize(s, "tests/assets/shogi/legal_drops_004.svg")
     _, _, legal_drops = _legal_actions(s)
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 合駒
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
         .at[xy2i(1, 5)].set(OPP_LANCE),
@@ -276,7 +290,7 @@ def test_legal_drops():
 
     # 両王手
     s = _init()
-    s = s.replace(
+    s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
         .at[xy2i(9, 1)].set(OPP_BISHOP)
@@ -290,12 +304,6 @@ def test_legal_drops():
 
 
 def test_dlshogi_action():
-    def update_board(state, piece_board, hand=None):
-        state = state.replace(piece_board=piece_board)
-        if hand is not None:
-            state = state.replace(hand=hand)
-        state = state.replace(legal_moves=_legal_actions(state)[0])
-        return state
 
     # from dlshogi action to Action
     s = _init()
@@ -372,7 +380,6 @@ def test_dlshogi_action():
 
 
 def test_step():
-    # init
     s = _init()
     visualize(s, "tests/assets/shogi/step_001.svg")
     s = step(s, 3 * 81 + xy2i(3, 8))
@@ -380,3 +387,280 @@ def test_step():
     s = step(s, 3 * 81 + xy2i(3, 8))
     visualize(s, "tests/assets/shogi/step_003.svg")
     assert not s.legal_action_mask[3 * 81 + xy2i(3, 8)]
+
+
+def test_legal_action_mask():
+    s = _init()
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_001.svg")
+    assert not s.legal_action_mask[6 * 81 + xy2i(6, 6)]  # 初期盤面では、角の利きは77の歩でとまっている
+    assert s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩の利き
+    s = _step(s, Action.make_move(PAWN, xy2i(7, 7), xy2i(7, 6)))  # 76歩
+
+    # 後手
+    visualize(s, "tests/assets/shogi/legal_action_mask_002.svg")
+    assert s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 後手34歩の利きがある
+    s = _step(s, Action.make_move(PAWN, xy2i(2, 7), xy2i(2, 6)))  # 84歩
+
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_003.svg")
+    assert not s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 76歩の利きが消えている
+    assert s.legal_action_mask[0 * 81 + xy2i(7, 5)]  # 75歩の利きが増えている
+    assert s.legal_action_mask[2 * 81 + xy2i(7, 7)]  # 角の利きが伸びている
+    assert s.legal_action_mask[2 * 81 + xy2i(6, 6)]  # 角の利きが伸びている
+    assert s.legal_action_mask[2 * 81 + xy2i(3, 3)]  # 角の利きが伸びている
+    assert not s.legal_action_mask[2 * 81 + xy2i(2, 2)]  # 角の利きが相手の33歩で止まる
+    s = _step(s, Action.make_move(BISHOP, xy2i(8, 8), xy2i(3, 3)))  # 33角
+
+    # 後手
+    visualize(s, "tests/assets/shogi/legal_action_mask_004.svg")
+    assert not s.legal_action_mask[0 * 81 + xy2i(7, 6)]  # 後手34歩の利きがなくなる
+    s = _step(s, Action.make_move(BISHOP, xy2i(8, 8), xy2i(7, 7)))  # 同角
+
+
+    s = _init()
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_005.svg")
+    s = _step(s, Action.make_move(PAWN, xy2i(7, 7), xy2i(7, 6)))  # 76歩
+
+    # 後手
+    visualize(s, "tests/assets/shogi/legal_action_mask_006.svg")
+    s = _step(s, Action.make_move(PAWN, xy2i(7, 7), xy2i(7, 6)))  # 34歩
+
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_007.svg")
+    assert s.legal_action_mask[2 * 81 + xy2i(6, 6)]  # 後手34歩で角の利きが2までは伸びた
+    assert s.legal_action_mask[2 * 81 + xy2i(2, 2)]  # 後手34歩で角の利きが33までは伸びた
+    s = _step(s, Action.make_move(PAWN, xy2i(6, 7), xy2i(6, 6)))  # 66歩
+
+    # 後手
+    visualize(s, "tests/assets/shogi/legal_action_mask_008.svg")
+    assert s.legal_action_mask[2 * 81 + xy2i(4, 4)]  # 後手角の利きが66までは伸びている
+    assert not s.legal_action_mask[2 * 81 + xy2i(3, 3)]  # 後手角の利きが77までは届かない
+    s = _step(s, Action.make_move(PAWN, xy2i(2, 7), xy2i(2, 6)))  # 84歩
+
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_009.svg")
+    assert not s.legal_action_mask[2 * 81 + xy2i(6, 6)]  # 角の利きが66歩で止まっている
+    assert not s.legal_action_mask[2 * 81 + xy2i(3, 3)]  # 角の利きが33まで止まっている
+
+
+    s = _init()
+    s = s.replace(hand=s.hand.at[0, GOLD].set(1))
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_010.svg")
+    s = _step(s, Action.make_move(PAWN, xy2i(7, 7), xy2i(7, 6)))  # 76歩
+
+    # 後手
+    visualize(s, "tests/assets/shogi/legal_action_mask_011.svg")
+    s = _step(s, Action.make_move(PAWN, xy2i(7, 7), xy2i(7, 6)))  # 34歩
+
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_012.svg")
+    assert s.legal_action_mask[2 * 81 + xy2i(2, 2)]           # 金打の前は角の利きが22までは伸びている
+    assert not s.legal_action_mask[0 * 81 + xy2i(4, 3)]       # 金打の前は効きがない
+    s = _step(s, Action.make_drop(GOLD, xy2i(4, 4)))  # 44金打
+
+    # 後手
+    visualize(s, "tests/assets/shogi/legal_action_mask_013.svg")
+    assert s.legal_action_mask[2 * 81 + xy2i(6, 6)]    # 44で金を取るところまでは角が進める
+    assert not s.legal_action_mask[2 * 81 + xy2i(5, 5)]    # 真ん中までは角はすすめない
+    s = _step(s, Action.make_move(PAWN, xy2i(2, 7), xy2i(2, 6)))  # 84歩
+
+    # 先手
+    visualize(s, "tests/assets/shogi/legal_action_mask_014.svg")
+    # print(_rotate(s.effects[0, xy2i(8, 8), :]))
+    assert s.legal_action_mask[2 * 81 + xy2i(5, 5)]       # 55までは角が進める
+    assert not s.legal_action_mask[2 * 81 + xy2i(2, 2)]   # 金打の後は角の利きが止まっている
+    assert not s.legal_action_mask[2 * 81 + xy2i(4, 4)]
+    assert s.legal_action_mask[0 * 81 + xy2i(4, 3)]       # 金の利きが増える
+
+
+def test_buggy_samples():
+    # 歩以外の持ち駒に対しての二歩判定回避
+    sfen = "9/9/9/9/9/9/PPPPPPPPP/9/9 b NLP 1"
+    state = _from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_samples_001.svg")
+
+    # 歩は二歩になるので打てない
+    assert (~state.legal_action_mask[20 * 81:21 * 81]).all()
+    # 香車は2列目には打てるが、1列目と7列目（歩がいる）には打てない
+    assert (state.legal_action_mask[21 * 81 + 1:22 * 81:9]).all()
+    assert (~state.legal_action_mask[21 * 81:22 * 81:9]).all()
+    assert (~state.legal_action_mask[21 * 81 + 6:22 * 81:9]).all()
+    # 桂馬は1,2列目に打てないが3列目には打てる
+    assert (~state.legal_action_mask[22 * 81:23 * 81:9]).all()
+    assert (~state.legal_action_mask[22 * 81 + 1:23 * 81:9]).all()
+    assert (state.legal_action_mask[21 * 81 + 2:22 * 81:9]).all()
+
+    # 成駒のpromotion判定
+    sfen = "9/2+B1G1+P2/9/9/9/9/9/9/9 b - 1"
+    state = _from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_samples_002.svg")
+    # promotionは生成されてたらダメ
+    assert (state.legal_action_mask[10 * 81:]).sum() == 0
+
+    # 角は成れないはず
+    sfen = "l+B6l/6k2/3pg2P1/p6p1/1pP1pB2p/2p3n2/P+r1GP3P/4KS1+s1/LNG5L b RGN2sn6p 1"
+    state = _from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_samples_003.svg")
+    assert ~state.legal_action_mask[13 * 81 + 72]  # = 1125, promote + left (91角成）
+
+    # #375
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/buggy_samples_004.svg")
+    assert (jnp.nonzero(s.legal_action_mask)[0] == jnp.int32([43, 52, 68, 196, 222, 295, 789, 1996, 2004, 2012])).all()
+
+
+def test_observe():
+    s: State = _init()
+    obs = observe(s, s.curr_player)
+
+    assert obs.shape == (119, 9, 9)
+
+    expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.]])
+    assert (obs[PAWN] == expected).all()  # 0
+
+    expected = jnp.bool_([[0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,1.,0.,0.,0.]])
+    assert (obs[DRAGON + 1] == expected).all()  # 14
+
+    expected = jnp.bool_([[0.,0.,0.,0.,0.,1.,1.,1.,0.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.],
+                          [0.,0.,0.,0.,0.,1.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,1.,1.,1.,1.]])
+    assert (obs[28] == expected).all()  # 利きの数1以上
+
+    expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,1.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,1.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,1.,1.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.]])
+    assert (obs[29] == expected).all()  # 利きの数2以上
+
+    expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,1.,0.],
+                          [0.,0.,0.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,0.,0.,0.,1.,0.,0.]])
+    assert (obs[30] == expected).all()  # 利きの数3以上
+
+    expected = jnp.bool_([[0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.],
+                          [0.,0.,1.,0.,0.,0.,0.,0.,0.]])
+    assert (obs[31] == expected).all()
+
+    expected = jnp.bool_([[0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.],
+                          [0.,0.,0.,1.,0.,0.,0.,0.,0.]])
+    assert (obs[45] == expected).all()
+
+    expected = jnp.bool_([[1.,1.,1.,1.,0.,0.,0.,0.,0.],
+                          [0.,1.,0.,1.,0.,0.,0.,0.,0.],
+                          [1.,1.,1.,1.,0.,0.,0.,0.,0.],
+                          [1.,1.,0.,1.,0.,0.,0.,0.,0.],
+                          [1.,1.,0.,1.,0.,0.,0.,0.,0.],
+                          [1.,1.,0.,1.,0.,0.,0.,0.,0.],
+                          [1.,1.,1.,1.,0.,0.,0.,0.,0.],
+                          [1.,1.,1.,1.,0.,0.,0.,0.,0.],
+                          [0.,1.,1.,1.,0.,0.,0.,0.,0.]])
+    assert (obs[59] == expected).all()
+
+    # 駒打ち
+    sfen = "1ns4nl/1r4k2/2p1gp3/1p1pp3p/l8/2P2PP2/1PNPP3P/2G2S3/2S1KG2L b BGS3Prbnl2p 1"
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/observe_001.svg")
+    obs = observe(s, s.curr_player)
+
+    filled = [0, 1, 2, 16, 20, 24, 28, 29, 36, 40, 52, 54]
+    for i in range(56):
+        if i in filled:
+            assert obs[62 + i].all()
+        else:
+            assert (~obs[62 + i]).all()
+
+    # 王手
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL b b 1"  # 先手番
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/observe_002.svg")
+    obs = observe(s, s.curr_player)
+    assert (~obs[-1]).all()
+
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"  # 後手番
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/observe_003.svg")
+    obs = observe(s, s.curr_player)
+    assert obs[-1].all()
+
+    # TODO: player_id != curr_player
+
+
+def test_sfen():
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL b b 1"
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/sfen_001.svg")
+    assert _to_sfen(s) == sfen
+
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"
+    s = _from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/sfen_002.svg")
+    assert _to_sfen(s) == sfen
+
+
+def test_jit():
+    from pgx.utils import act_randomly
+    from pgx.shogi import init, step, observe
+    init = jax.jit(jax.vmap(partial(init)))
+    step = jax.jit(jax.vmap(partial(step)))
+    observe = jax.jit(jax.vmap(partial(observe)))
+
+    key = jax.random.PRNGKey(0)
+    keys = jax.random.split(key, 2)
+
+    print("warmup starts ...")
+    s = init(keys)
+    o = observe(s, s.curr_player)
+    a = act_randomly(key, s)
+    s = step(s, a)
+    print("warmup ends")

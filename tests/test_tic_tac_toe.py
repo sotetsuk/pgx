@@ -1,22 +1,23 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.tic_tac_toe import _win_check, init, observe, step
+from pgx.tic_tac_toe import _win_check, observe, TicTacToe
 
-init = jax.jit(init)
-step = jax.jit(step)
+env = TicTacToe()
+init = jax.jit(env.init)
+step = jax.jit(env.step)
 observe = jax.jit(observe)
 
 
 def test_init():
-    rng = jax.random.PRNGKey(0)
-    state = init(rng=rng)
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
     assert state.curr_player == 1
 
 
 def test_step():
-    rng = jax.random.PRNGKey(0)
-    state = init(rng=rng)
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
     assert state.curr_player == 1
     assert state.turn == 0
     assert jnp.all(
@@ -99,7 +100,7 @@ def test_step():
     assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
-        == jnp.array([0, 0, 0, 0, 0, 0, 0, 0, 0], jnp.bool_)
+        == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(state.board == jnp.int8([1, 0, -1, -1, 0, -1, -1, 0, 1]))
     assert jnp.all(state.reward == jnp.int16([-1, 1]))  # fmt: ignore
