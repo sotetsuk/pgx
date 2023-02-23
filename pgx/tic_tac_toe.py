@@ -9,18 +9,18 @@ from pgx.flax.struct import dataclass
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
-IDX = jnp.int8(
-    [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-    ]
-)
+# fmt off
+IDX = jnp.int8([
+    [0, 1, 2],
+    [3, 4, 5],
+    [6, 7, 8],
+    [0, 3, 6],
+    [1, 4, 7],
+    [2, 5, 8],
+    [0, 4, 8],
+    [2, 4, 6]
+])
+# fmt on
 
 @dataclass
 class State(core.State):
@@ -69,9 +69,6 @@ def init(rng: jax.random.KeyArray) -> State:
 
 
 def step(state: State, action: jnp.ndarray) -> State:
-    # TODO(sotetsuk): illegal action check
-    # if state.legal_action_mask.at[action]:
-    #     ...
     board = state.board.at[action].set(state.turn)
     won = _win_check(board, state.turn)
     reward = jax.lax.cond(
