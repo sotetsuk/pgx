@@ -196,24 +196,23 @@ def _not_pass_move(
     # 周囲の連から敵石を除く
     adj_xy = _neighbour(xy, size)
     oppo_color = _opponent_color(state)
-    ren_id = state.ren_id_board[adj_xy]
+    _ren_id = state.ren_id_board[adj_xy]
+    ren_id = jnp.abs(_ren_id) - 1
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     # fmt: off
     is_atari = ((idx_sum[ren_id] ** 2) == idx_squared_sum[ren_id] * num_pseudo[ren_id])
-    single_liberty = (idx_squared_sum[ren_id] // idx_sum[ren_id]) - 1
-    is_killed = (adj_xy != -1) & (ren_id * oppo_color > 0) & is_atari & (single_liberty == xy)
+    single_liberty = (idx_squared_sum[ren_id] // idx_sum[ren_id]) -1
+    is_killed = (adj_xy != -1) & (_ren_id * oppo_color > 0) & is_atari & (single_liberty == xy)
     state = jax.lax.fori_loop(
         0, 4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(s, ren_id[i], adj_xy[i]),
+            lambda: _remove_stones(s, _ren_id[i], adj_xy[i]),
             lambda: s,
         ),
         state,
     )
     # fmt: on
-
-    # 石を置く
     state = _set_stone(state, xy)
 
     # 周囲をマージ
@@ -284,9 +283,7 @@ def _merge_ren(_state: GoState, _xy: int, _adj_xy: int):
 def _remove_stones(_state: GoState, _rm_ren_id, _rm_stone_xy) -> GoState:
     surrounded_stones = _state.ren_id_board == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
-    ren_id_board = jnp.where(
-        surrounded_stones, 0, _state.ren_id_board
-    )
+    ren_id_board = jnp.where(surrounded_stones, 0, _state.ren_id_board)
 
     return _state.replace(  # type:ignore
         ren_id_board=ren_id_board,
@@ -301,8 +298,7 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
     my_color = _my_color(state)
     opp_color = _opponent_color(state)
     ren = state.ren_id_board
-    num_pseudo, idx_sum, idx_squared_sum = _count(state, size
-    )
+    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
 
     # fmt: off
     in_atari = (idx_sum[ren] ** 2) == idx_squared_sum[ren] * num_pseudo[ren]
@@ -335,7 +331,8 @@ def legal_actions(state: GoState, size: int) -> jnp.ndarray:
 
 def _count(state: GoState, size):
     ZERO = jnp.int32(0)
-    is_empty = state.ren_id_board == 0
+    ren_id_board = jnp.abs(state.ren_id_board)
+    is_empty = ren_id_board == 0
     idx_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1), ZERO)
     idx_squared_sum = jnp.where(
         is_empty, jnp.arange(1, size**2 + 1) ** 2, ZERO
@@ -356,15 +353,15 @@ def _count(state: GoState, size):
 
     @jax.vmap
     def _num_pseudo(x):
-        return jnp.where(state.ren_id_board == x, num_pseudo, ZERO).sum()
+        return jnp.where(ren_id_board == (x + 1), num_pseudo, ZERO).sum()
 
     @jax.vmap
     def _idx_sum(x):
-        return jnp.where(state.ren_id_board == x, idx_sum, ZERO).sum()
+        return jnp.where(ren_id_board == (x + 1), idx_sum, ZERO).sum()
 
     @jax.vmap
     def _idx_squared_sum(x):
-        return jnp.where(state.ren_id_board == x, idx_squared_sum, ZERO).sum()
+        return jnp.where(ren_id_board == (x + 1), idx_squared_sum, ZERO).sum()
 
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
@@ -400,14 +397,18 @@ def _show_details(state: GoState) -> None:
 def _my_color(_state: GoState):
     return jnp.int32([1, -1])[_state.turn % 2]
 
+
 def _my_color_ix(_state: GoState):
     return _state.turn % 2
+
 
 def _opponent_color(_state: GoState):
     return jnp.int32([-1, 1])[_state.turn % 2]
 
+
 def _opponent_color_ix(_state: GoState):
     return (_state.turn + 1) % 2
+
 
 def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
     size = _state.size
@@ -415,7 +416,9 @@ def _kou_occurred(_state: GoState, xy: int) -> jnp.ndarray:
     y = xy % size
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
     oppo_color = _opponent_color(_state)
-    is_occupied_by_opp = _state.ren_id_board[_neighbour(xy, size)] * oppo_color > 0
+    is_occupied_by_opp = (
+        _state.ren_id_board[_neighbour(xy, size)] * oppo_color > 0
+    )
     return (oob | is_occupied_by_opp).all()
 
 
@@ -450,7 +453,9 @@ def _neighbours(size):
 def _count_ji(state: GoState, color: int, size: int):
     board = jnp.zeros_like(state.ren_id_board)
     board = jnp.where(state.ren_id_board * _my_color(state) > 0, 1, board)
-    board = jnp.where(state.ren_id_board * _opponent_color(state) > 0, -1, board)
+    board = jnp.where(
+        state.ren_id_board * _opponent_color(state) > 0, -1, board
+    )
     # 0 = empty, 1 = mine, -1 = opponent's
 
     neighbours = _neighbours(size)
