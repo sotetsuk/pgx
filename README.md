@@ -73,6 +73,103 @@ while not state.terminated.all():
 |Bridge Bidding|:construction|||
 |Mahjong|:construction|||
 
+<table>
+<tr>
+<td>Game</td>
+<td>Env</td>
+<td>Visualization</td>
+<td>Baseline algo/model</td>
+</tr>
+<tr>
+ <td>TicTacToe</td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+</tr>
+<tr>
+ <td> <a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a> </td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+</tr>
+<tr>
+ <td><a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Asterix</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Breakout</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Freeway</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Seaquest</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/SpaceInvaders</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Chess</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Shogi</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Go</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Backgammon</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Bridge Bidding</td>
+ <td></td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Mahjong</td>
+ <td></td>
+ <td></td>
+ <td></td>
+</tr>
+
+
+
+
+
+</table>
 
 ## LICENSE
 
