@@ -15,74 +15,23 @@ Pgx defines the games as AEC games (see PettingZoo paper), in which only one age
 2. Be simple than be universal
 
 
-### Usage
+### Basic Usage
 
 ```py
 import jax
 import pgx
 
-num_batch = 100
+batch_size = 4096
 
-init, step, observe, info = pgx.make(env_id="Go-5x5",)
-init = jax.jit(jax.vmap(init))
-step = jax.jit(jax.vmap(step))
-observe = jax.jit(jax.vmap(observe))
+env = pgx.make("Go-19x19/v0")
+init = jax.jit(jax.vmap(env.init))  # jittable
+step = jax.jit(jax.vmap(env.step))  # jittable
 
-models = {0: ..., 1: ...}
-
-rng = jax.random.PRGNKey(999)
-keys = jax.random.split(rng, num_batch)
-
+keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
 state = init(keys)
-total_reward = jnp.zeros(batch_size, dtype=jnp.float32)
-while not (state.terminated).all():
-    observations = [observe(state, player_id) for player_id in (0, 1)]
-    action = jnp.where(
-        state.curr_player == 0,
-        models[0](observations[0]),
-        models[1](observations[1]),
-    )
-    state = step(obs, action)
-    total_reward += reward
-```
-
-### API Description
-
-```py
-# N: num agents
-# A: action space size
-# M: observation dim
-@dataclass
-class State:
-    rng: jax.random.KeyArray  # necessary for autoreset
-    curr_player: jnp.ndarray
-    # 0 ~ N-1. Different from turn (e.g., white/black in Chess) 
-    # Behavior is undefined when terminated (set -1 is inconvenient in batch situation)
-    reward: jnp.ndarray
-    terminated: jnp.ndarray
-    legal_action_mask: jnp.ndarray
-  
-
-def init(rng: jnp.ndarray) -> State:
-  return state 
-
-# step is deterministic by default
-# if state.terminated is True, state.reward is set to zero and the other fields are unchanged
-def step(state: State, 
-         action: jnp.ndarray)
-    -> State:
-  return state  # rewards: (N,) 
-
-def observe(state: State, 
-            player_id: jnp.ndarray) 
-    -> jnp.ndarray:
-  # Zero array if state.curr_player is -1
-  return obs 
-
-# replace state.rng or shuffle hidden states (e.g., unopened public cards)
-def shuffle(state: State, rng: Optional[jnp.ndarray]) 
-    -> State:
-   return state
+while not state.terminated.all():
+    action = model(state.current_player, state.observation, state.legal_action_mask)
+    state = step(state, action)
 ```
 
 ### Limitations (for the simplicity)
@@ -92,8 +41,6 @@ def shuffle(state: State, rng: Optional[jnp.ndarray])
     * OpenAI Gym is for single-agent environment. Most of Pgx environments are multi-player games. Just defining opponents is not enough for converting multi-agent environemnts to OpenAI Gym environment. E.g., in the game of go, the next state s' is defined as the state just after placing a stone in AlhaGo paper. However, s' becomes the state after the opponents' play. This changes the definition of V(s').
 * Does **NOT** support PettingZoo API.
     * PettingZoo is *Gym for multi-agent RL*. As far as we know, PettingZoo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
-
-
 
 ### `skip_chance`
 * We prepare skip_chance=True option for some environments. This makes it possible to consider value function for "post-decision states" (See AlgoRL book). However, we do not allow chance agent to choose action like OpenSpiel. This is because the action space of chance agent and usual agent are different. Thus, when the chance player is chosen (`current_player=-1`), `action=-1` must be returned to step function. Use `shuffle` to make `step` stochastic.
@@ -108,18 +55,22 @@ def shuffle(state: State, rng: Optional[jnp.ndarray])
 
 ## Roadmap
 
-|Game|Logic| Jit                                                                                                                      |Visualization|Speed benchmark|Baseline|
-|:---|:---|:-------------------------------------------------------------------------------------------------------------------------|:---|:---|:---|
-| Tic-tac-toe | :white_check_mark: | :white_check_mark: ||||
-| [Animal Shogi](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi) | :white_check_mark: | :white_check_mark:                                                                                                       | :white_check_mark: |||
-| [Sparrow Mahjong](https://sugorokuya.jp/p/suzume-jong) |  |                                                                                                        ||||
-| [MinAtar](https://github.com/kenjyoung/MinAtar)|-| :white_check_mark: Asterix<br> :white_check_mark: Breakdown<br> :white_check_mark: Freeway<br> :white_check_mark: Seaquest<br> :white_check_mark: SpaceInvaders ||||
-|Chess| :white_check_mark: ||:construction:|||
-|Shogi| :white_check_mark: || :white_check_mark: |||
-|Go| :white_check_mark: | :white_check_mark:                                                                                                       |:white_check_mark: |||
-|Backgammon| :construction: ||:construction:|||
-|Bridge Bidding| :construction: |||||
-|Mahjong| :construction: |||||
+|Game| Env | Visualization | Baseline algo/model |
+|:---|:---|:---|:---|
+| Tic-tac-toe | :white_check_mark: | :white_check_mark: |
+| [Animal Shogi](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi) | :white_check_mark: | :white_check_mark: | |
+| [Sparrow Mahjong](https://sugorokuya.jp/p/suzume-jong) |:white_check_mark: ||
+| [MinAtar](https://github.com/kenjyoung/MinAtar)/Asterix|:white_check_mark: | | |
+| [MinAtar](https://github.com/kenjyoung/MinAtar)/Breakout|:white_check_mark: | | |
+| [MinAtar](https://github.com/kenjyoung/MinAtar)/Freeway|:white_check_mark: | | |
+| [MinAtar](https://github.com/kenjyoung/MinAtar)/Seaquest|:white_check_mark: | | |
+| [MinAtar](https://github.com/kenjyoung/MinAtar)/SpaceInvaders|:white_check_mark: | | |
+|Chess| :construction: | :white_check_mark: ||
+|Shogi| :white_check_mark: | :white_check_mark:|:construction:|
+|Go| :white_check_mark: | :white_check_mark: ||
+|Backgammon| :white_check_mark: |:white_check_mark:||
+|Bridge Bidding|:construction|||
+|Mahjong|:construction|||
 
 
 ## LICENSE
