@@ -1,5 +1,4 @@
 from functools import partial
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -69,7 +68,7 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(1)
 
 
-def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
+def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     curr_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()
@@ -95,9 +94,7 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     return state
 
 
-def step(
-    state: State, action: int
-) -> Tuple[jnp.ndarray, State, int]:
+def step(state: State, action: int) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -141,17 +138,14 @@ def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
             1
         ) + (playable_dice[idx] == -1) * vec
 
-    return (
-        jax.vmap(_insert_dice_num)(
-            dice_indices, jnp.tile(playable_dice, (4, 1))
-        )
-        .sum(axis=0, dtype=jnp.int8)
-    )
+    return jax.vmap(_insert_dice_num)(
+        dice_indices, jnp.tile(playable_dice, (4, 1))
+    ).sum(axis=0, dtype=jnp.int8)
 
 
 def _winning_step(
     state: State,
-) -> Tuple[jnp.ndarray, State, int]:
+) -> State:
     """
     勝利者がいる場合のstep.
     """
@@ -160,12 +154,12 @@ def _winning_step(
     reward = jnp.ones_like(state.reward)
     reward = reward.at[winner].set(win_score)
     state = state.replace(terminated=jnp.bool_(True))  # type: ignore
-    return state.replace(reward=reward)
+    return state.replace(reward=reward)  # type: ignore
 
 
 def _no_winning_step(
     state: State,
-) -> Tuple[jnp.ndarray, State, int]:
+) -> State:
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
@@ -436,7 +430,7 @@ def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
     )  # type: ignore
 
 
-def _decompose_action(action: int, turn: jnp.ndarray) -> Tuple:
+def _decompose_action(action: int, turn: jnp.ndarray):
     """
     action(int)をsource, die, tagetに分解する.
     """
