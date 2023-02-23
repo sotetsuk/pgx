@@ -4,7 +4,9 @@
 
 A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
 
-![go](go.gif)
+<div align="center">
+<img src="go.gif" width="75%">
+</div>
 
 ## APIs
 Pgx's basic API consists of *pure functions* following the JAX's design principle.
