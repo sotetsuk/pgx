@@ -187,7 +187,9 @@ def _no_winning_step(state: State, action: jnp.ndarray) -> State:
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
     return jax.lax.cond(
-       ( _is_turn_end(state) | (action//6 == 0)), lambda: _change_turn(state), lambda: state
+        (_is_turn_end(state) | (action // 6 == 0)),
+        lambda: _change_turn(state),
+        lambda: state,
     )
 
 
@@ -195,7 +197,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     """
     行動を受け取って状態をupdate
     """
-    is_no_op = action//6 == 0
+    is_no_op = action // 6 == 0
     rng = state.rng
     curr_player: jnp.ndarray = state.curr_player
     terminated: jnp.ndarray = state.terminated
@@ -207,17 +209,21 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, state.turn, playable_dice
     )
-    return jax.lax.cond(is_no_op, lambda: state, lambda: State(  # type: ignore
-        curr_player=curr_player,
-        rng=rng,
-        terminated=terminated,
-        board=board,
-        turn=state.turn,
-        dice=state.dice,
-        playable_dice=playable_dice,
-        played_dice_num=played_dice_num,
-        legal_action_mask=legal_action_mask,
-    ))  # no-opの時はupdateしない
+    return jax.lax.cond(
+        is_no_op,
+        lambda: state,
+        lambda: State(  # type: ignore
+            curr_player=curr_player,
+            rng=rng,
+            terminated=terminated,
+            board=board,
+            turn=state.turn,
+            dice=state.dice,
+            playable_dice=playable_dice,
+            played_dice_num=played_dice_num,
+            legal_action_mask=legal_action_mask,
+        ),
+    )  # no-opの時はupdateしない
 
 
 def _make_init_board() -> jnp.ndarray:
