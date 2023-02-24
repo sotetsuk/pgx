@@ -120,6 +120,14 @@ def init(rng: jax.random.KeyArray) -> State:
 
 
 def step(state: State, action: jnp.ndarray) -> State:
+    return jax.lax.cond(
+        action // 6 == 0,
+        lambda: _change_turn(state),
+        lambda: _valid_action_step(state, action),
+    )
+
+
+def _valid_action_step(state: State, action: jnp.ndarray) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -182,20 +190,13 @@ def _winning_step(
     return state.replace(reward=reward)  # type: ignore
 
 
-def _no_winning_step(
-    state: State,
-) -> State:
+def _no_winning_step(state: State) -> State:
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
-    return _change_until_legal(state)
-
-
-def _change_until_legal(state: State) -> State:
-    """
-    行動可能なplayerが出るまでturnを変え続ける.
-    """
-    return jax.lax.while_loop(_is_turn_end, _change_turn, state)
+    return jax.lax.cond(
+        _is_turn_end(state), lambda: _change_turn(state), lambda: state
+    )
 
 
 def _update_by_action(state: State, action: jnp.ndarray) -> State:
@@ -267,9 +268,7 @@ def _is_turn_end(state: State) -> bool:
     """
     play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
     """
-    return (state.playable_dice.sum() == -4) | (
-        state.legal_action_mask.sum() == 0
-    )  # type: ignore
+    return state.playable_dice.sum() == -4  # type: ignore
 
 
 def _change_turn(state: State) -> State:
@@ -280,7 +279,7 @@ def _change_turn(state: State) -> State:
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = -1 * state.turn  # turnを変える
     curr_player: jnp.ndarray = (state.curr_player + 1) % 2
-    terminated: jnp.ndarray = FALSE
+    terminated: jnp.ndarray = state.terminated
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
@@ -569,13 +568,17 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
-
+    no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16).at[0].set(1)
     legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board, turn=turn)
     )(die=dice).any(
         axis=0
     )  # (26*6 + 6)
-    return legal_action_mask
+    legal_action_exists = ~(legal_action_mask.sum() == 0)
+    return (
+        legal_action_exists * legal_action_mask
+        + ~legal_action_exists * no_op_mask
+    )  # legal_actionがなければ, np_op maskを返す
 
 
 def _legal_action_mask_for_single_die(

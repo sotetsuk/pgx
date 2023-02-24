@@ -23,7 +23,7 @@ from pgx.backgammon import (
 action_to_point = (19 + 2) * 6 + 1
 def test(func):
     rng = jax.random.PRNGKey(0)
-    _, state = init(rng)
+    state = init(rng)
     if func.__name__ == "init":
         time_sta = time.perf_counter()
         jax.jit(func)(rng)
@@ -62,10 +62,10 @@ def test(func):
         exp = jax.make_jaxpr(func)(state)
     elif func.__name__ == "observe":
         time_sta = time.perf_counter()
-        jax.jit(func)(state, _)
+        jax.jit(func)(state, 0)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-        exp = jax.make_jaxpr(func)(state, _)
+        exp = jax.make_jaxpr(func)(state, 0)
     elif func.__name__ in ["_rear_distance", "_is_all_on_home_board", "_calc_win_score"]:
         time_sta = time.perf_counter()
         jax.jit(func)(state.board, state.turn)
