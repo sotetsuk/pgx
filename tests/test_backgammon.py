@@ -122,7 +122,7 @@ def test_is_turn_end():
         board=board,
         turn=jnp.int8(1),
         dice=jnp.array([2, 2], dtype=jnp.int16),
-        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
+        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
         played_dice_num=jnp.int16(0),
     )
     assert _is_turn_end(state)
@@ -147,20 +147,6 @@ def test_change_turn():
     state = _change_turn(state)
     assert state.turn == -1 * _turn
 
-    # 白のdance
-    board: jnp.ndarray = make_test_boad()
-    state = make_test_state(
-        curr_player=jnp.int8(1),
-        rng=rng,
-        board=board,
-        turn=jnp.int8(1),
-        dice=jnp.array([2, 2], dtype=jnp.int16),
-        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
-    )
-    state = _change_turn(state)
-    assert state.turn == jnp.int8(-1)
-
     # playable diceがない場合
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
@@ -176,9 +162,7 @@ def test_change_turn():
     assert state.turn == jnp.int8(-1)
 
 
-def test_continual_pass():
-    # 連続パスが可能かテスト
-    # 白のdance
+def test_no_op():
     board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16))
     state = make_test_state(
@@ -186,13 +170,13 @@ def test_continual_pass():
         rng=rng,
         board=board,
         turn=jnp.int8(1),
-        dice=jnp.array([2, 2], dtype=jnp.int16),
-        playable_dice=jnp.array([2, 2, 2, 2], dtype=jnp.int16),
+        dice=jnp.array([0, 1], dtype=jnp.int16),
+        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int16),
         played_dice_num=jnp.int16(0),
-        legal_action_mask = legal_action_mask,
+        legal_action_mask = legal_action_mask
     )
-    state = step(state, 6 * (1) + 0)  # actionによらずターンが変わる.
-    assert state.turn == jnp.int8(-1)  # ターンが変わっていることを確認
+    state = step(state, 0)  # execute no-op action
+    assert state.turn == jnp.int8(-1)  # no-opの後はturnが変わっていることを確認.
 
 
 def test_step():
@@ -490,6 +474,7 @@ def test_legal_action():
     turn = jnp.int8(1)
     playable_dice = jnp.array([4, 4, 4, 4])
     expected_legal_action_mask = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)  # dance
+    expected_legal_action_mask = expected_legal_action_mask.at[0:6].set(1)  # no-opのみ
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     assert (expected_legal_action_mask == legal_action_mask).all()
 
