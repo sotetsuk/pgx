@@ -119,10 +119,23 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def step(state: State, action: jnp.ndarray) -> State:
+def step(state: State, action: int) -> Tuple[jnp.ndarray, State, int]:
+    """
+    step 関数.
+    terminatedしている場合, 状態をそのまま返す.
+    """
+    return jax.lax.cond(
+        state.terminated,
+        lambda: state,
+        lambda: _normal_step(state, action),
+    )
+
+
+def _normal_step(state: State, action: int) -> Tuple[jnp.ndarray, State, int]:
     """
     terminated していない場合のstep 関数.
     """
+    # action = action * (~state.terminated) + 1000 * state.terminated  # 終わっている場合は, actionをillegalなものに変更する
     state = _update_by_action(state, action)
     return jax.lax.cond(
         _is_all_off(state.board, state.turn),
@@ -205,13 +218,25 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     rng = state.rng
     curr_player: jnp.ndarray = state.curr_player
     terminated: jnp.ndarray = state.terminated
-    board: jnp.ndarray = _move(state.board, state.turn, action)
-    played_dice_num: jnp.ndarray = jnp.int16(state.played_dice_num + 1)
-    playable_dice: jnp.ndarray = _update_playable_dice(
-        state.playable_dice, state.played_dice_num, state.dice, action
+    board: jnp.ndarray = (
+        _move(state.board, state.turn, action) * (~state.terminated)
+        + state.board * state.terminated
     )
-    legal_action_mask: jnp.ndarray = _legal_action_mask(
-        board, state.turn, playable_dice
+    played_dice_num: jnp.ndarray = (
+        jnp.int16(state.played_dice_num + 1) * (~state.terminated)
+        + state.played_dice_num * state.terminated
+    )
+    playable_dice: jnp.ndarray = (
+        _update_playable_dice(
+            state.playable_dice, state.played_dice_num, state.dice, action
+        )
+        * (~state.terminated)
+        + state.playable_dice * state.terminated
+    )
+    legal_action_mask: jnp.ndarray = (
+        _legal_action_mask(board, state.turn, playable_dice)
+        * (~state.terminated)
+        + state.legal_action_mask * state.terminated
     )
     return State(  # type: ignore
         curr_player=curr_player,
