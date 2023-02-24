@@ -53,7 +53,7 @@ def random_play(env, n_steps_lim: int, batch_size: int) -> int:
     observation = env.reset()
     assert len(env._env_fns) == len(observation)  # ensure parallerization
     while step_num < n_steps_lim:
-        legal_action_mask = np.array([observation[i]["mask"] for i in range(batch_size)])
+        legal_action_mask = [observation[i]["mask"] for i in range(batch_size)]
         action = [rng.choice(np.where(legal_action_mask[i])[0]) for i in range(batch_size)]  # chose action randomly
         observation, reward, terminated, _, _ = env.step(action)
         step_num += batch_size
