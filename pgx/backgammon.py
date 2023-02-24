@@ -267,8 +267,9 @@ def _is_turn_end(state: State) -> bool:
     """
     play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
     """
-    return (state.playable_dice.sum() == -4) | (
-        state.legal_action_mask.sum() == 0
+    return ~state.terminated & (
+        (state.playable_dice.sum() == -4)
+        | (state.legal_action_mask.sum() == 0)
     )  # type: ignore
 
 
