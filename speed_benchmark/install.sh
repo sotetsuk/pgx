@@ -1,3 +1,1 @@
-pip install pettingzoo tianshou
-python3 -m pip install open_spiel
-pip install pygame cloudpickle
+python3 -m pip install pettingzoo open_spiel tianshou pygame cloudpickle chess
