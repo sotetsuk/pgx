@@ -38,7 +38,7 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_steps=(2 ** 12) * 1000):
         state = step(state, action)
     te = time.time()
 
-    return num_steps / (te- ts)
+    return num_steps, te - ts
 
 
 N = (2 ** 12) * 1
@@ -48,12 +48,13 @@ bs_list = [2 ** i for i in range(5, 13)]
 # print("|:---:|" + "|".join([":---:" for bs in bs_list]) + "|")
 d = {}
 for env_id in get_args(pgx.EnvId):
-    s = f"|{env_id}|"
+    # s = f"|{env_id}|"
     for bs in bs_list:
-        n_per_sec = benchmark(env_id, bs, N)
-        s += f"{n_per_sec:.05f}"
-        s += "|"
-        print(json.dumps({"game": "/".join(env_id.split("/")[:-1]) ,"library": "pgx", "total_steps": N, "steps/sec": n_per_sec, "batch_size": bs}))
+        num_steps, sec = benchmark(env_id, bs, N)
+        # s += f"{n_per_sec:.05f}"
+        # s += "|"
+        print(json.dumps({"game": "/".join(env_id.split("/")[:-1]), "library": "pgx",
+              "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
     # print(s)
 
 
