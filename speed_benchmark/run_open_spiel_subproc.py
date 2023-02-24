@@ -117,7 +117,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("env_name")
     parser.add_argument("batch_size", type=int)
-    parser.add_argument("n_steps_lim", type=int)
+    parser.add_argument("n_steps_lim", default=2 ** 10 * 10, type=int)
     parser.add_argument("--seed", default=100, type=bool)
     args = parser.parse_args()
     assert args.n_steps_lim % args.batch_size == 0
@@ -126,4 +126,4 @@ if __name__ == "__main__":
     steps_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
     sec = time_end - time_sta
-    print(json.dumps({"game": args.env_name, "venv": "subproc", "library": "open_spiel", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec}))
+    print(json.dumps({"game": args.env_name, "venv": "subproc", "library": "open_spiel", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))

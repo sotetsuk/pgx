@@ -48,8 +48,9 @@ games = {
     "go": "go-19x19/v0",
 }
 
-N = (2 ** 12) * 1
-bs_list = [2 ** i for i in range(5, 13)]
+
+N = 2 ** 10 * 10
+bs_list = [2 ** i for i in range(1, 11)]
 d = {}
 for game, env_id in games.items():
     for bs in bs_list:
