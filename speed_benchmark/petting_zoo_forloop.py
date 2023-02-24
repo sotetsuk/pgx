@@ -58,7 +58,7 @@ def random_play(env: DummyVectorEnv, n_steps_lim: int, batch_size: int) -> int:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("env_name")
+    parser.add_argument("env_name")  # go, chess, tic_tac_toe
     parser.add_argument("batch_size", type=int)
     parser.add_argument("n_steps_lim", type=int)
     parser.add_argument("--seed", default=0, type=int)
