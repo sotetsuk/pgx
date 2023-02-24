@@ -53,9 +53,10 @@ class OpenSpielEnv(AECEnv, ABC):
             "agent_id": obs["current_player"],
             "obs": obs["serialized_state"],
             "mask": obs["legal_actions"][obs["current_player"]]
-        }  # tianshouのPettingZooEnvの形式に直す.
+        }  # align to tianshou petting zoo format
 
-        return observation_dict, {"info": obs["info_state"]}
+        # return empty dict for significant speed up
+        return observation_dict, {}  # {"info": obs["info_state"]} 
 
 
     def step(self, action: Any, reset_if_done=True) -> Tuple[Dict, List[int], bool, bool, Dict]:
@@ -75,7 +76,8 @@ class OpenSpielEnv(AECEnv, ABC):
             'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
         }
     
-        return obs, reward, term, False, {"info": spiel_observation["info_state"]}
+        # return empty dict for significant speed up
+        return obs, reward, term, False, {}  # {"info": spiel_observation["info_state"]}
 
 
     def close(self) -> None:
