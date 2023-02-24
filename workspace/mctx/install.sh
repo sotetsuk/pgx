@@ -1,1 +1,1 @@
-pip install mctx
+pip install mctx chex haiku
