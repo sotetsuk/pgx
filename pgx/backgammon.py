@@ -120,14 +120,6 @@ def init(rng: jax.random.KeyArray) -> State:
 
 
 def step(state: State, action: jnp.ndarray) -> State:
-    return jax.lax.cond(
-        action // 6 == 0,
-        lambda: _change_turn(state),
-        lambda: _valid_action_step(state, action),
-    )
-
-
-def _valid_action_step(state: State, action: jnp.ndarray) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -135,7 +127,7 @@ def _valid_action_step(state: State, action: jnp.ndarray) -> State:
     return jax.lax.cond(
         _is_all_off(state.board, state.turn),
         lambda: _winning_step(state),
-        lambda: _no_winning_step(state),
+        lambda: _no_winning_step(state, action),
     )
 
 
@@ -190,12 +182,12 @@ def _winning_step(
     return state.replace(reward=reward)  # type: ignore
 
 
-def _no_winning_step(state: State) -> State:
+def _no_winning_step(state: State, action: jnp.ndarray) -> State:
     """
     勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
     """
     return jax.lax.cond(
-        _is_turn_end(state), lambda: _change_turn(state), lambda: state
+       ( _is_turn_end(state) | (action//6 == 0)), lambda: _change_turn(state), lambda: state
     )
 
 
@@ -203,6 +195,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     """
     行動を受け取って状態をupdate
     """
+    is_no_op = action//6 == 0
     rng = state.rng
     curr_player: jnp.ndarray = state.curr_player
     terminated: jnp.ndarray = state.terminated
@@ -214,7 +207,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     legal_action_mask: jnp.ndarray = _legal_action_mask(
         board, state.turn, playable_dice
     )
-    return State(  # type: ignore
+    return jax.lax.cond(is_no_op, lambda: state, lambda: State(  # type: ignore
         curr_player=curr_player,
         rng=rng,
         terminated=terminated,
@@ -224,7 +217,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
         playable_dice=playable_dice,
         played_dice_num=played_dice_num,
         legal_action_mask=legal_action_mask,
-    )
+    ))  # no-opの時はupdateしない
 
 
 def _make_init_board() -> jnp.ndarray:
@@ -568,7 +561,7 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
-    no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.int16).at[0].set(1)
+    no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_).at[0:6].set(1)
     legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board, turn=turn)
     )(die=dice).any(
@@ -587,7 +580,7 @@ def _legal_action_mask_for_single_die(
     """
     一つのサイコロの目に対するlegal micro action
     """
-    return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.int16) + (
+    return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.bool_) + (
         die != -1
     ) * _legal_action_mask_for_valid_single_dice(board, turn, die)
 

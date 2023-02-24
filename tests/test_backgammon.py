@@ -474,7 +474,7 @@ def test_legal_action():
     turn = jnp.int8(1)
     playable_dice = jnp.array([4, 4, 4, 4])
     expected_legal_action_mask = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)  # dance
-    expected_legal_action_mask = expected_legal_action_mask.at[0].set(1)  # no-opのみ
+    expected_legal_action_mask = expected_legal_action_mask.at[0:6].set(1)  # no-opのみ
     legal_action_mask = _legal_action_mask(board, turn, playable_dice)
     assert (expected_legal_action_mask == legal_action_mask).all()
 
