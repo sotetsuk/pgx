@@ -48,7 +48,7 @@ class Env(abc.ABC):
         # If the state is already terminated, environment does not take usual step, but
         # return the same state with zero-rewards for all players
         state = jax.lax.cond(
-            state.terminated,
+            state.terminated | is_illegal,
             lambda: self._step_if_terminated(state),
             lambda: self._step(state, action),
         )
