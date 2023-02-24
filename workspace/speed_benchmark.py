@@ -1,4 +1,5 @@
 import time
+import json
 import jax
 import pgx
 from pgx.utils import act_randomly
@@ -37,20 +38,23 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_steps=(2 ** 12) * 1000):
         state = step(state, action)
     te = time.time()
 
-    return f"{num_steps / (te - ts):.05f}"
+    return num_steps / (te- ts)
 
 
-N = (2 ** 12) * 100
-print(f"Total # of steps: {N}")
+N = (2 ** 12) * 1
+# print(f"Total # of steps: {N}")
 bs_list = [2 ** i for i in range(5, 13)]
-print("| env_id |" + "|".join([str(bs) for bs in bs_list]) + "|")
-print("|:---:|" + "|".join([":---:" for bs in bs_list]) + "|")
+# print("| env_id |" + "|".join([str(bs) for bs in bs_list]) + "|")
+# print("|:---:|" + "|".join([":---:" for bs in bs_list]) + "|")
+d = {}
 for env_id in get_args(pgx.EnvId):
     s = f"|{env_id}|"
-    for bs in tqdm(bs_list, leave=False):
-        s += benchmark(env_id, bs, N)
+    for bs in bs_list:
+        n_per_sec = benchmark(env_id, bs, N)
+        s += f"{n_per_sec:.05f}"
         s += "|"
-    print(s)
+        print(json.dumps({"game": "/".join(env_id.split("/")[:-1]) ,"library": "pgx", "total_steps": N, "steps/sec": n_per_sec, "batch_size": bs}))
+    # print(s)
 
 
 """
