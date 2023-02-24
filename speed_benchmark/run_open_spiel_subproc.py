@@ -1,37 +1,26 @@
-"""
-Copied from TienShou repository:
-
-https://github.com/thu-ml/tianshou/blob/master/tianshou/env/pettingzoo_env.py
-
-Distributed under MIT LICENSE:
-
-https://github.com/thu-ml/tianshou/blob/master/LICENSE
-
-Modified to use OpenSpiel in SubprocVecEnv (see #384 for changes)
-"""
-
-
-
+import json
+from tianshou.env import SubprocVectorEnv
+import numpy as np
+import time
+import argparse
 import warnings
 from abc import ABC
 from typing import Any, Dict, List, Tuple
 
-import pettingzoo
-from gymnasium import spaces
-from packaging import version
+import pyspiel
 from pettingzoo.utils.env import AECEnv
-from pettingzoo.utils.wrappers import BaseWrapper
 from open_spiel.python.rl_environment import Environment, ChanceEventSampler
 
 
-if version.parse(pettingzoo.__version__) < version.parse("1.21.0"):
-    warnings.warn(
-        f"You are using PettingZoo {pettingzoo.__version__}. "
-        f"Future tianshou versions may not support PettingZoo<1.21.0. "
-        f"Consider upgrading your PettingZoo version.", DeprecationWarning
-    )
 
-
+# OpenSpielEnv is modified from TianShou repository (see #384 for changes):
+# This wrapper enables to use TianShou's SubprocVectorEnv for OpenSpiel
+# 
+# https://github.com/thu-ml/tianshou/blob/master/tianshou/env/pettingzoo_env.py
+# 
+# Distributed under MIT LICENSE:
+# 
+# https://github.com/thu-ml/tianshou/blob/master/LICENSE
 class OpenSpielEnv(AECEnv, ABC):
     """The interface for petting zoo environments.
 
@@ -100,3 +89,41 @@ class OpenSpielEnv(AECEnv, ABC):
 
     def render(self) -> Any:
         return self.env.render()
+
+
+def make_single_env(env_name: str, seed: int):
+    def gen_env():
+        game = pyspiel.load_game(env_name)
+        return Environment(game,  chance_event_sampler=ChanceEventSampler(seed=seed))
+    return gen_env()
+
+def make_env(env_name: str, n_envs: int,  seed: int):
+    return SubprocVectorEnv([lambda: OpenSpielEnv(make_single_env(env_name, seed)) for _ in range(n_envs)])
+
+
+def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
+    step_num = 0
+    rng = np.random.default_rng()
+    observation, info = env.reset()
+    while step_num < n_steps_lim:
+        legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
+        action = [rng.choice(legal_action_mask[i]) for i in range(len(legal_action_mask))]  # chose action randomly
+        observation, reward, terminated, _, info = env.step(action)
+        step_num += batch_size
+    return step_num
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("env_name")
+    parser.add_argument("batch_size", type=int)
+    parser.add_argument("n_steps_lim", default=2 ** 10 * 10, type=int)
+    parser.add_argument("--seed", default=100, type=bool)
+    args = parser.parse_args()
+    assert args.n_steps_lim % args.batch_size == 0
+    env = make_env(args.env_name, args.batch_size, args.seed)
+    time_sta = time.time()
+    steps_num = random_play(env, args.n_steps_lim, args.batch_size)
+    time_end = time.time()
+    sec = time_end - time_sta
+    print(json.dumps({"game": args.env_name, "venv": "subproc", "library": "open_spiel", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))
