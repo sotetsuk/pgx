@@ -116,15 +116,15 @@ if __name__ == "__main__":
     rng = jax.random.PRNGKey(0)
     subkeys = jax.random.split(subkey, N)
     state = batched_init(subkeys)
-    state = jax.vmap(partial(set_curr_player, player=0))(state)
+    state = jax.vmap(partial(set_curr_player, player=0))(state)  # 初期agentのplayeridを0に固定
     i = 0
     while not state.terminated.all():
-        if i % 2 == 1:
-            rng, subkey = jax.random.split(rng)
-            action = act_randomly(subkey, state)
-        else:
+        if i % 2 == 0:  # player_id0がmcts agent
             rng, subkey = jax.random.split(rng)
             action = mcts(state, subkey, recurrent_fn, NUMSIMULATIONS)
+        else:
+            rng, subkey = jax.random.split(rng)
+            action = act_randomly(subkey, state)
         state = batched_step(state, action)
         print(i)
         i += 1
