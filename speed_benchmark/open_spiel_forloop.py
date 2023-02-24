@@ -124,4 +124,4 @@ if __name__ == "__main__":
     steps_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
     sec = time_end-time_sta
-    json.dumps({"game": args.env_name, "library": "open_spiel", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec})    
+    json.dumps({"game": args.env_name, "venv": "for-loop", "library": "open_spiel", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec})    

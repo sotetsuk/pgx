@@ -63,14 +63,15 @@ def random_play(env, n_steps_lim: int, batch_size: int) -> int:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("env_name")  # go, chess, tic_tac_toe
+    parser.add_argument("venv")  # for-loop, subproc
     parser.add_argument("batch_size", type=int)
     parser.add_argument("n_steps_lim", type=int)
     parser.add_argument("--seed", default=0, type=int)
     args = parser.parse_args()
     assert args.n_steps_lim % args.batch_size == 0
-    env = make_env(args.env_name, args.batch_size)
+    env = make_env(args.env_name, args.batch_size, args.venv)
     time_sta = time.time()
     steps_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
     sec = time_end - time_sta
-    print(json.dumps({"game": args.env_name, "library": "open_spiel", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec}))
+    print(json.dumps({"game": args.env_name, "venv": args.venv, "library": "open_spiel", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec}))
