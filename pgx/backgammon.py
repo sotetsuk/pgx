@@ -53,7 +53,7 @@ class State(core.State):
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
-    # micro action = 6 * src + die
+    # micro action = 6 * src + die src(no-op, bar, board)
     legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
     # --- Backgammon specific ---
     # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
