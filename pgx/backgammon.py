@@ -119,7 +119,7 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def step(state: State, action: int) -> State:
+def step(state: State, action: jnp.ndarray) -> State:
     """
     step 関数.
     terminatedしている場合, 状態をそのまま返す.
@@ -131,7 +131,7 @@ def step(state: State, action: int) -> State:
     )
 
 
-def _normal_step(state: State, action: int) -> State:
+def _normal_step(state: State, action: jnp.ndarray) -> State:
     """
     terminated していない場合のstep 関数.
     """
