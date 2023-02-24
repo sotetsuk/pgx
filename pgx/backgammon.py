@@ -567,7 +567,7 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 def _legal_action_mask(
     board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
-    no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_).at[0:6].set(1)
+    no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_).at[0:6].set(TRUE)
     legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board, turn=turn)
     )(die=dice).any(
