@@ -1,4 +1,5 @@
 import time
+import sys
 import json
 import jax
 import pgx
@@ -49,7 +50,7 @@ games = {
 }
 
 
-N = 2 ** 10 * 10
+N = int(sys.argv[1])
 bs_list = [2 ** i for i in range(1, 11)]
 d = {}
 for game, env_id in games.items():
