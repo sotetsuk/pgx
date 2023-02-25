@@ -58,7 +58,7 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding: Sta
     discount = -1.0 * jnp.ones_like(reward)  # zero sum gameでは-1
     terminated = state.terminated
     assert value.shape == terminated.shape
-    value = jnp.where(terminated, 0.0, value)
+    value = jnp.where(terminated, 0.0, value)  # 終端状態の場合は0
     assert discount.shape == terminated.shape
     discount = jnp.where(terminated, 0.0, discount)
     recurrent_fn_output = mctx.RecurrentFnOutput(
@@ -102,7 +102,9 @@ def set_curr_player(state, player):
 
 if __name__ == "__main__":
     N = 100
-    NUMSIMULATIONS = 100
+    NUMSIMULATIONS = 200
+    mctx_id = 1
+    random_id = 0
     rng = jax.random.PRNGKey(3)
     rng, subkey = jax.random.split(rng)
     subkeys = jax.random.split(subkey, N)
@@ -119,7 +121,7 @@ if __name__ == "__main__":
     state = jax.vmap(partial(set_curr_player, player=0))(state)  # 初期agentのplayeridを0に固定
     i = 0
     while not state.terminated.all():
-        if i % 2 == 0:  # player_id0がmcts agent
+        if i % 2 == mctx_id:  # player_id0がmcts agent
             rng, subkey = jax.random.split(rng)
             action = mcts(state, subkey, recurrent_fn, NUMSIMULATIONS)
         else:
@@ -129,5 +131,5 @@ if __name__ == "__main__":
         print(i)
         i += 1
     
-    print(f"average return of mcts agent {jax.vmap(partial(_get, idx=0))(state.reward).sum()/N} , average return of random agent {jax.vmap(partial(_get, idx=1))(state.reward).sum()/N}")
+    print(f"average return of mcts agent {jax.vmap(partial(_get, idx=mctx_id))(state.reward).sum()/N} , average return of random agent {jax.vmap(partial(_get, idx=random_id))(state.reward).sum()/N}")
     
