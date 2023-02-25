@@ -435,13 +435,12 @@ def _kou_occurred(_state: State, xy: int) -> jnp.ndarray:
 
 
 def _get_reward(_state: State, _size: int) -> jnp.ndarray:
-    def count_ji(color):
-        return (
-            _count_ji(_state, color, _size) - _state.agehama[(color + 1) % 2]
-        )
+    def count_ji(color_idx):
+        color = jnp.int8([1, -1])[color_idx]
+        return _count_ji(_state, color, _size) - _state.agehama[1 - color_idx]
 
     count_ji = jax.vmap(count_ji)
-    score = count_ji(jnp.array([1, -1]))
+    score = count_ji(jnp.arange(2))
     r = jax.lax.cond(
         score[BLACK] - _state.komi > score[WHITE],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
@@ -485,4 +484,5 @@ def _count_ji(state: State, color: int, size: int):
     # fmt off
     b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, TRUE))
     # fmt on
+
     return (b == 0).sum()
