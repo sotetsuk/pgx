@@ -57,7 +57,7 @@ if __name__ == "__main__":
     parser.add_argument("env_name")  # go, chess, tic_tac_toe
     parser.add_argument("venv")  # for-loop, subproc
     parser.add_argument("batch_size", type=int)
-    parser.add_argument("n_steps_lim", default=2 ** 10 * 10, type=int)
+    parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
     env = make_env(args.env_name, args.batch_size, args.venv)
     time_sta = time.time()
