@@ -2,13 +2,9 @@ import time
 import json
 import argparse
 import numpy as np
-import cshogi
-import cshogi.dlshogi as dlshogi
-from cshogi.gym_shogi.envs import ShogiEnv
 from cshogi.gym_shogi.envs import ShogiVecEnv
 from cshogi._cshogi import _dlshogi_FEATURES1_NUM as FEATURES1_NUM
 from cshogi._cshogi import _dlshogi_FEATURES2_NUM as FEATURES2_NUM
-from cshogi._cshogi import _dlshogi_make_move_label as make_move_label
 
 
 def make_input_features(board):
