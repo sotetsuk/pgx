@@ -51,7 +51,7 @@ class OpenSpielEnv(AECEnv, ABC):
         obs = time_step.observations  # open_spielのEnvironmentの出力
         observation_dict = {
             "agent_id": obs["current_player"],
-            "obs": obs["serialized_state"],
+            "obs": obs["info_state"][obs["current_player"]],
             "mask": obs["legal_actions"][obs["current_player"]]
         }  # align to tianshou petting zoo format
 
@@ -72,7 +72,7 @@ class OpenSpielEnv(AECEnv, ABC):
     
         obs = {
             'agent_id': spiel_observation['current_player'],
-            'obs': spiel_observation['serialized_state'],
+            'obs': spiel_observation['info_state'][spiel_observation["current_player"]],
             'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
         }
     
@@ -108,8 +108,10 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
     rng = np.random.default_rng()
     observation, info = env.reset()
     while step_num < n_steps_lim:
-        legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
-        action = [rng.choice(legal_action_mask[i]) for i in range(len(legal_action_mask))]  # chose action randomly
+        legal_action_mask = [observation[i]["mask"] for i in range(batch_size)]
+        observation = np.stack([observation[i]["obs"] for i in range(batch_size)])
+        # print(observation.shape)
+        action = [rng.choice(legal_action_mask[i]) for i in range(batch_size)]  # chose action randomly
         observation, reward, terminated, _, info = env.step(action)
         step_num += batch_size
     return step_num
