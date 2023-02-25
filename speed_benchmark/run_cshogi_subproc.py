@@ -6,22 +6,34 @@ import argparse
 import warnings
 from abc import ABC
 from typing import Any, Dict, List, Tuple
-
-import pyspiel
 from pettingzoo.utils.env import AECEnv
-from open_spiel.python.rl_environment import Environment, ChanceEventSampler
+import cshogi
+from cshogi.gym_shogi.envs import ShogiEnv
+from cshogi._cshogi import _dlshogi_FEATURES1_NUM as FEATURES1_NUM
+from cshogi._cshogi import _dlshogi_FEATURES2_NUM as FEATURES2_NUM
 
 
+def make_input_features(board):
+    features1 = np.zeros((1, FEATURES1_NUM, 9, 9), dtype=np.float32)
+    features2 = np.zeros((1, FEATURES2_NUM, 9, 9), dtype=np.float32)
+    board._dlshogi_make_input_features(features1, features2)
+    return np.vstack([features1.reshape(FEATURES1_NUM, 81), features2.reshape(FEATURES2_NUM, 81)])
 
-# OpenSpielEnv is modified from TianShou repository (see #384 for changes):
-# This wrapper enables to use TianShou's SubprocVectorEnv for OpenSpiel
-# 
+
+def make_legal_actions(board):
+    moves = [m for m in board.legal_moves]  # note: not int
+    return moves
+
+
+# Shogi is modified from TianShou repository's PettingZooEnv
+# This wrapper enables to use TianShou's SubprocVectorEnv for cshogi's environment
+#
 # https://github.com/thu-ml/tianshou/blob/master/tianshou/env/pettingzoo_env.py
-# 
+#
 # Distributed under MIT LICENSE:
-# 
+#
 # https://github.com/thu-ml/tianshou/blob/master/LICENSE
-class OpenSpielEnv(AECEnv, ABC):
+class Shogi(AECEnv, ABC):
     """The interface for petting zoo environments.
 
     Multi-agent environments must be wrapped as
@@ -39,77 +51,56 @@ class OpenSpielEnv(AECEnv, ABC):
     Further usage can be found at :ref:`marl_example`.
     """
 
-    def __init__(self, env: Environment):
+    def __init__(self):
         super().__init__()
-        self.env = env
-        self.reset()
-
 
     def reset(self, *args: Any, **kwargs: Any) -> Tuple[dict, dict]:
-        time_step = self.env.reset()
+        self.curr_player = np.random.randint(2)
+        self.board = cshogi.Board()
 
-        obs = time_step.observations  # open_spielのEnvironmentの出力
+        obs = make_input_features(self.board)
+        legal_actions = make_legal_actions(self.board)
         observation_dict = {
-            "agent_id": obs["current_player"],
-            "obs": obs["serialized_state"],
-            "mask": obs["legal_actions"][obs["current_player"]]
-        }  # align to tianshou petting zoo format
+            "agent_id": self.curr_player,
+            "obs": obs,
+            "mask": legal_actions
+        }
 
-        # return empty dict for significant speed up
-        return observation_dict, {}  # {"info": obs["info_state"]} 
-
+        return observation_dict, {}
 
     def step(self, action: Any, reset_if_done=True) -> Tuple[Dict, List[int], bool, bool, Dict]:
+        self.curr_player = (self.curr_player + 1) % 2
+        self.board.push(action)
+        done = self.board.is_game_over()
 
-        time_step = self.env.step([action])
-        term = time_step.last()
-        if term:  # AutoReset
-            time_step = self.env.reset()
-        
-        reward = time_step.rewards if not term else [0., 0.]  # open_spielのEnvironmentの出力
-        spiel_observation = time_step.observations
+        if done and reset_if_done:
+            self.curr_player = np.random.randint(2)
+            self.board = cshogi.Board()
+            done = False
 
-    
+        obs = make_input_features(self.board)
+        legal_actions = make_legal_actions(self.board)
         obs = {
-            'agent_id': spiel_observation['current_player'],
-            'obs': spiel_observation['serialized_state'],
-            'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
+            'agent_id': self.curr_player,
+            'obs': obs,
+            'mask': legal_actions
         }
-    
-        # return empty dict for significant speed up
-        return obs, reward, term, False, {}  # {"info": spiel_observation["info_state"]}
+
+        return obs, 0, done, False, {}
 
 
-    def close(self) -> None:
-        self.env.close()
-
-    def seed(self, seed: Any = None) -> None:
-        try:
-            self.env.seed(seed)
-        except (NotImplementedError, AttributeError):
-            self.env.reset(seed=seed)
-
-    def render(self) -> Any:
-        return self.env.render()
-
-
-def make_single_env(env_name: str, seed: int):
-    def gen_env():
-        game = pyspiel.load_game(env_name)
-        return Environment(game,  chance_event_sampler=ChanceEventSampler(seed=seed))
-    return gen_env()
-
-def make_env(env_name: str, n_envs: int,  seed: int):
-    return SubprocVectorEnv([lambda: OpenSpielEnv(make_single_env(env_name, seed)) for _ in range(n_envs)])
+def make_env(n_envs: int):
+    return SubprocVectorEnv([lambda: Shogi() for _ in range(n_envs)])
 
 
 def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
+    assert n_steps_lim % batch_size == 0
     step_num = 0
-    rng = np.random.default_rng()
     observation, info = env.reset()
-    while step_num < n_steps_lim:
-        legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
-        action = [rng.choice(legal_action_mask[i]) for i in range(len(legal_action_mask))]  # chose action randomly
+    for _ in range(n_steps_lim // batch_size):
+        legal_actions = [observation[i]["mask"] for i in range(batch_size)]
+        observation = np.stack([observation[i]["obs"] for i in range(batch_size)])
+        action = [np.random.choice(legal_actions[i]) for i in range(batch_size)]
         observation, reward, terminated, _, info = env.step(action)
         step_num += batch_size
     return step_num
@@ -117,15 +108,14 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("env_name")
     parser.add_argument("batch_size", type=int)
     parser.add_argument("n_steps_lim", default=2 ** 10 * 10, type=int)
     parser.add_argument("--seed", default=100, type=bool)
     args = parser.parse_args()
     assert args.n_steps_lim % args.batch_size == 0
-    env = make_env(args.env_name, args.batch_size, args.seed)
+    env = make_env(args.batch_size)
     time_sta = time.time()
     steps_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
     sec = time_end - time_sta
-    print(json.dumps({"game": args.env_name, "library": "open_spiel", "venv": "subproc", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))
+    print(json.dumps({"game": "shogi", "library": "cshogi", "venv": "subproc", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))
