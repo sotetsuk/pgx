@@ -65,17 +65,17 @@ class OpenSpielEnv(AECEnv, ABC):
         term = time_step.last()
         if term:  # AutoReset
             time_step = self.env.reset()
-        
-        reward = time_step.rewards if not term else [0., 0.]  # open_spielのEnvironmentの出力
-        spiel_observation = time_step.observations
 
-    
+        reward = time_step.rewards if not term else [0., 0.]
+        curr_player = time_step.observations['current_player']
+
+
         obs = {
-            'agent_id': spiel_observation['current_player'],
-            'obs': spiel_observation['info_state'][spiel_observation["current_player"]],
-            'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
+            'agent_id': curr_player,
+            'obs': time_step.observations['info_state'][curr_player],
+            'mask': time_step.observations["legal_actions"][curr_player]
         }
-    
+
         # return empty dict for significant speed up
         return obs, reward, term, False, {}  # {"info": spiel_observation["info_state"]}
 

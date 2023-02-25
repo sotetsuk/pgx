@@ -55,7 +55,6 @@ def random_play(env, n_steps_lim: int, batch_size: int) -> int:
     while step_num < n_steps_lim:
         legal_action_mask = [observation[i]["mask"] for i in range(batch_size)]
         observation = np.stack([observation[i]["obs"] for i in range(batch_size)])
-        # print(observation.shape)
         action = [rng.choice(np.where(legal_action_mask[i])[0]) for i in range(batch_size)]  # chose action randomly
         observation, reward, terminated, _, _ = env.step(action)
         step_num += batch_size
