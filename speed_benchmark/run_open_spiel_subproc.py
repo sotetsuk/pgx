@@ -37,7 +37,7 @@ class OpenSpiel:
         done = self.state.is_terminal()
 
         if done:  # auto reset
-            self.state = self.game.new_initial_state()
+            obs, legal_actions = self.reset()
 
         obs = self.state.observation_tensor(self.state.current_player())
         legal_actions = self.state.legal_actions()
