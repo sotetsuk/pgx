@@ -98,10 +98,10 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
     step_num = 0
     observation, info = env.reset()
     while step_num < n_steps_lim:
-        legal_action_mask = [observation[i]["mask"] for i in range(batch_size)]
+        legal_actions = [observation[i]["mask"] for i in range(batch_size)]
         # observation = np.stack([observation[i]["obs"] for i in range(batch_size)])
         # print(observation.shape)
-        action = [np.random.choice(legal_action_mask[i]) for i in range(batch_size)]
+        action = [np.random.choice(legal_actions[i]) for i in range(batch_size)]
         observation, _, _, _, _ = env.step(action)
         step_num += batch_size
     return step_num
