@@ -212,7 +212,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     return jax.lax.cond(
         is_no_op,
         lambda: state,
-        lambda: State(  # type: ignore
+        lambda: state.replace(  # type: ignore
             curr_player=curr_player,
             rng=rng,
             terminated=terminated,
