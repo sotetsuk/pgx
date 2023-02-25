@@ -49,7 +49,7 @@ class OpenSpielEnv(AECEnv, ABC):
         observation_dict = {
             "agent_id": obs["current_player"],
             "obs": np.array(obs["info_state"][obs["current_player"]]),
-            "mask": obs["legal_actions"][obs["current_player"]]
+            "mask": np.array(obs["legal_actions"][obs["current_player"]])
         }  # align to tianshou petting zoo format
 
         return observation_dict, {}
@@ -66,7 +66,7 @@ class OpenSpielEnv(AECEnv, ABC):
         observation_dict = {
             "agent_id": obs["current_player"],
             "obs": np.array(obs["info_state"][obs["current_player"]]),
-            "mask": obs["legal_actions"][obs["current_player"]]
+            "mask": np.array(obs["legal_actions"][obs["current_player"]])
         }  # align to tianshou petting zoo format
 
         return observation_dict, reward, term, False, {}
