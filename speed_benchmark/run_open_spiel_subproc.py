@@ -51,7 +51,7 @@ class OpenSpielEnv(AECEnv, ABC):
         obs = time_step.observations  # open_spielのEnvironmentの出力
         observation_dict = {
             "agent_id": obs["current_player"],
-            "obs": obs["serialized_state"],
+            "obs": obs["info_state"][obs["current_player"]],
             "mask": obs["legal_actions"][obs["current_player"]]
         }  # align to tianshou petting zoo format
 
@@ -65,17 +65,17 @@ class OpenSpielEnv(AECEnv, ABC):
         term = time_step.last()
         if term:  # AutoReset
             time_step = self.env.reset()
-        
-        reward = time_step.rewards if not term else [0., 0.]  # open_spielのEnvironmentの出力
-        spiel_observation = time_step.observations
 
-    
+        reward = time_step.rewards if not term else [0., 0.]
+        curr_player = time_step.observations['current_player']
+
+
         obs = {
-            'agent_id': spiel_observation['current_player'],
-            'obs': spiel_observation['serialized_state'],
-            'mask': spiel_observation["legal_actions"][spiel_observation["current_player"]]
+            'agent_id': curr_player,
+            'obs': time_step.observations['info_state'][curr_player],
+            'mask': time_step.observations["legal_actions"][curr_player]
         }
-    
+
         # return empty dict for significant speed up
         return obs, reward, term, False, {}  # {"info": spiel_observation["info_state"]}
 
@@ -108,8 +108,10 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
     rng = np.random.default_rng()
     observation, info = env.reset()
     while step_num < n_steps_lim:
-        legal_action_mask = [observation[i]["mask"] for i in range(len(observation))]
-        action = [rng.choice(legal_action_mask[i]) for i in range(len(legal_action_mask))]  # chose action randomly
+        legal_action_mask = [observation[i]["mask"] for i in range(batch_size)]
+        observation = np.stack([observation[i]["obs"] for i in range(batch_size)])
+        # print(observation.shape)
+        action = [rng.choice(legal_action_mask[i]) for i in range(batch_size)]  # chose action randomly
         observation, reward, terminated, _, info = env.step(action)
         step_num += batch_size
     return step_num

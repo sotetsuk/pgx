@@ -104,6 +104,8 @@ def random_play(env: SyncVectorEnv, n_steps_lim: int, batch_size: int):
     step_num = 0
     while step_num < n_steps_lim:
         # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/python/examples/rl_example.py
+        obs = np.stack([ts.observations["info_state"][ts.observations["current_player"]] for ts in time_step])
+        # print(obs.shape)
         actions = [rng.choice(ts.observations["legal_actions"][ts.observations["current_player"]]) for ts in time_step]
         step_outputs = [StepOutput(action=action) for action in actions]
         time_step, reward, done, unreset_time_steps = env.step(step_outputs, reset_if_done=True)

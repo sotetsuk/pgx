@@ -100,6 +100,7 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
     for _ in range(n_steps_lim // batch_size):
         legal_actions = [observation[i]["mask"] for i in range(batch_size)]
         observation = np.stack([observation[i]["obs"] for i in range(batch_size)])
+        # print(observation.shape)
         action = [np.random.choice(legal_actions[i]) for i in range(batch_size)]
         observation, reward, terminated, _, info = env.step(action)
         step_num += batch_size
