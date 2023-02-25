@@ -7,9 +7,9 @@ import pyspiel
 from open_spiel.python.rl_environment import Environment, ChanceEventSampler
 
 
-# SyncVectorEnv is copied from 
+# SyncVectorEnv is copied from
 # https://github.com/deepmind/open_spiel/blob/master/open_spiel/python/vector_env.py
-# 
+#
 # Copyright 2022 DeepMind Technologies Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -84,29 +84,25 @@ class SyncVectorEnv(object):
     return time_steps
 
 
-def make_single_env(env_name: str, seed: int):
-    def gen_env():
-        game = pyspiel.load_game(env_name)
-        return Environment(game,  chance_event_sampler=ChanceEventSampler(seed=seed))
-    return gen_env()
+def make_single_env(env_name: str):
+    game = pyspiel.load_game(env_name)
+    return Environment(game,  chance_event_sampler=ChanceEventSampler())
 
 
-def make_env(env_name: str, n_envs: int, seed: int) -> SyncVectorEnv:
-    return SyncVectorEnv([make_single_env(env_name, seed + i) for i in range(n_envs)])
+def make_env(env_name: str, n_envs: int) -> SyncVectorEnv:
+    return SyncVectorEnv([make_single_env(env_name) for i in range(n_envs)])
 
 
 def random_play(env: SyncVectorEnv, n_steps_lim: int, batch_size: int):
-    # random play for  open spiel
+    assert n_steps_lim % batch_size == 0
     StepOutput = collections.namedtuple("step_output", ["action"])
     time_step = env.reset()
     assert len(env.envs) == len(time_step)  # ensure parallerization
-    rng = np.random.default_rng()
     step_num = 0
     while step_num < n_steps_lim:
-        # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/python/examples/rl_example.py
-        obs = np.stack([ts.observations["info_state"][ts.observations["current_player"]] for ts in time_step])
+        # obs = np.stack([ts.observations["info_state"][ts.observations["current_player"]] for ts in time_step])
         # print(obs.shape)
-        actions = [rng.choice(ts.observations["legal_actions"][ts.observations["current_player"]]) for ts in time_step]
+        actions = [np.random.choice(ts.observations["legal_actions"][ts.observations["current_player"]]) for ts in time_step]
         step_outputs = [StepOutput(action=action) for action in actions]
         time_step, reward, done, unreset_time_steps = env.step(step_outputs, reset_if_done=True)
         step_num += batch_size
@@ -117,11 +113,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("env_name")  # go, chess backgammon tic_tac_toe
     parser.add_argument("batch_size", type=int)
-    parser.add_argument("n_steps_lim", default=2 ** 10 * 10, type=int)
-    parser.add_argument("--seed", default=0, type=int)
+    parser.add_argument("n_steps_lim", type=int)
     args = parser.parse_args()
-    assert args.n_steps_lim % args.batch_size == 0
-    env = make_env(args.env_name, args.batch_size, args.seed)
+    env = make_env(args.env_name, args.batch_size)
     time_sta = time.time()
     steps_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()

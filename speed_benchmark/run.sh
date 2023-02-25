@@ -32,9 +32,9 @@ done
 done
 
 for bs in $BATCH_SIZES; do
-  python3 -O run_cshogi_forloop.py $game $bs $N
+  python3 -O run_cshogi_forloop.py $bs $N
 done
 
 for bs in $BATCH_SIZES; do
-  python3 -O run_cshogi_subproc.py $game $bs $N
+  python3 -O run_cshogi_subproc.py $bs $N
 done
