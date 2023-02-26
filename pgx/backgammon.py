@@ -212,7 +212,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     return jax.lax.cond(
         is_no_op,
         lambda: state,
-        lambda: State(  # type: ignore
+        lambda: state.replace(  # type: ignore
             curr_player=curr_player,
             rng=rng,
             terminated=terminated,
@@ -283,7 +283,7 @@ def _change_turn(state: State) -> State:
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, turn, dice)
-    return State(  # type: ignore
+    return state.replace(  # type: ignore
         curr_player=curr_player,
         rng=rng2,
         board=board,

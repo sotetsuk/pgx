@@ -1,4 +1,6 @@
 import time
+import sys
+import json
 import jax
 import pgx
 from pgx.utils import act_randomly
@@ -37,28 +39,22 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_steps=(2 ** 12) * 1000):
         state = step(state, action)
     te = time.time()
 
-    return f"{num_steps / (te - ts):.05f}"
+    return num_steps, te - ts
 
 
-N = (2 ** 12) * 100
-print(f"Total # of steps: {N}")
-bs_list = [2 ** i for i in range(5, 13)]
-print("| env_id |" + "|".join([str(bs) for bs in bs_list]) + "|")
-print("|:---:|" + "|".join([":---:" for bs in bs_list]) + "|")
-for env_id in get_args(pgx.EnvId):
-    s = f"|{env_id}|"
-    for bs in tqdm(bs_list, leave=False):
-        s += benchmark(env_id, bs, N)
-        s += "|"
-    print(s)
+games = {
+    "tic_tac_toe": "tic_tac_toe/v0",
+    "backgammon": "backgammon/v0",
+    "shogi": "shogi/v0",
+    "go": "go-19x19/v0",
+}
 
 
-"""
-Total # of steps: 409600
-| env_id |32|64|128|256|512|1024|2048|4096|
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-|tic_tac_toe/v0|25193.54921|51203.80125|99197.43688|206175.78196|413948.81221|723250.23824|1664977.36893|3265886.46947|
-|go-19x19/v0|15146.45769|29891.62027|58064.94882|108400.19704|173638.40814|286740.95368|379331.88909|449555.32632|
-|shogi/v0|21047.48879|42130.05279|82988.81210|175415.01266|259940.79393|290410.20642|299800.69880|308552.26434|
-|minatar/asterix/v0|13066.68075|25836.00751|52134.46018|102929.03752|205880.59846|384825.85566|806843.53100|1553951.76960|
-"""
+N = int(sys.argv[1])
+bs_list = [2 ** i for i in range(1, 11)]
+d = {}
+for game, env_id in games.items():
+    for bs in bs_list:
+        num_steps, sec = benchmark(env_id, bs, N)
+        print(json.dumps({"game": game, "library": "pgx",
+              "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
