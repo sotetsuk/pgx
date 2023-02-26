@@ -9,7 +9,7 @@ def _make_backgammon_dwg(
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
     GRID_SIZE = config["GRID_SIZE"]
-    color_set = config["color_set"]
+    color_set = config["COLOR_SET"]
     # background
     dwg.add(
         dwg.rect(

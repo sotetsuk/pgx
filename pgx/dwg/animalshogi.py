@@ -7,9 +7,9 @@ def _make_animalshogi_dwg(
     dwg, state: AnimalShogiState, config: dict
 ) -> svgwrite.Drawing:
     BOARD_WIDTH = 3
-    BOARD_HEIGHT = 4
+    BOARD_HEIGHT = config["BOARD_HEIGHT"]
     GRID_SIZE = config["GRID_SIZE"]
-    color_set = config["color_set"]
+    color_set = config["COLOR_SET"]
     MOVE = {
         "P": [(0, -1)],
         "R": [(1, 0), (0, 1), (-1, 0), (0, -1)],

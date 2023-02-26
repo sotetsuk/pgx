@@ -10,23 +10,11 @@ def _make_bridge_dwg(
     dwg, state: BridgeBiddingState, config
 ) -> svgwrite.Drawing:
     NUM_CARD_TYPE = 13
-    TO_CARD = [
-        "A",
-        "2",
-        "3",
-        "4",
-        "5",
-        "6",
-        "7",
-        "8",
-        "9",
-        "10",
-        "J",
-        "Q",
-        "K",
-    ]
+    # fmt: off
+    TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
     SUITS = ["\u2660", "\u2665", "\u2666", "\u2663", "N"]  # ♠♡♢♣
     ACT = ["P", "X", "XX"]
+    # fmt:on
     color_set = config["COLOR_SET"]
 
     # board
@@ -118,23 +106,34 @@ def _make_bridge_dwg(
                     )
                 )
 
+            # suit
+            board_g.add(
+                dwg.text(
+                    text=SUITS[j],
+                    insert=(x_offset[i] + 10, y_offset[i] + 30 * (j + 1)),
+                    fill="orangered" if 0 < j < 3 else color_set.text_color,
+                    font_size="24px",
+                    font_family="Courier",
+                    font_weight="bold",
+                )
+            )
+
+            # card
             card = [
                 TO_CARD[i % NUM_CARD_TYPE]
                 for i in hand
                 if j * NUM_CARD_TYPE <= i < (j + 1) * NUM_CARD_TYPE
             ][::-1]
-
             if card != [] and card[-1] == "A":
                 card = card[-1:] + card[:-1]
-
-            suit = SUITS[j] + " " + " ".join(card)
+            card_str = " ".join(card)
             board_g.add(
                 dwg.text(
-                    text=suit,
-                    insert=(x_offset[i] + 10, y_offset[i] + 30 * (j + 1)),
+                    text=card_str,
+                    insert=(x_offset[i] + 40, y_offset[i] + 30 * (j + 1)),
                     fill="orangered" if 0 < j < 3 else color_set.text_color,
                     font_size="24px",
-                    font_family="Courier",
+                    font_family="Serif",
                     font_weight="bold",
                 )
             )

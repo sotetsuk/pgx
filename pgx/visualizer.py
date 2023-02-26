@@ -258,7 +258,7 @@ class Visualizer:
     def _set_config_by_state(self, _state):  # noqa: C901
         if isinstance(_state, AnimalShogiState):
             self.config["GRID_SIZE"] = 60
-            self.config["BOARD_WIDTH"] = 3
+            self.config["BOARD_WIDTH"] = 4
             self.config["BOARD_HEIGHT"] = 4
             self._make_dwg_group = _make_animalshogi_dwg
             if (
