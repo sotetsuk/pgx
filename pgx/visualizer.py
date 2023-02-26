@@ -294,8 +294,8 @@ class Visualizer:
                 and self.config["COLOR_MODE"] == "dark"
             ) or self.config["COLOR_MODE"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "gray",
                     "black",
+                    "gray",
                     "black",
                     "dimgray",
                     "#202020",
@@ -304,8 +304,8 @@ class Visualizer:
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
-                    "white",
                     "black",
+                    "white",
                     "lightgray",
                     "white",
                     "white",
