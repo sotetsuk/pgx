@@ -141,14 +141,13 @@ def _get_alphazero_features(state: State, player_id, observe_all):
     return jnp.vstack([log, color])
 
 
-def init(key: jax.random.KeyArray, size: int = 5) -> State:
-    curr_player = jnp.int32(jax.random.bernoulli(key))
+def init(key: jax.random.KeyArray, size: int) -> State:
     return State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-        game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
-        curr_player=curr_player,  # type:ignore
+        game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),  # type:ignore
+        curr_player=jnp.int32(jax.random.bernoulli(key)),  # type:ignore
     )
 
 
@@ -188,7 +187,7 @@ def _update_state_wo_legal_action(
     return _state
 
 
-def _pass_move(_state: State, _size: int) -> Tuple[State, jnp.ndarray]:
+def _pass_move(_state: State, _size: int) -> State:
     return jax.lax.cond(
         _state.passed,
         # 連続でパスならば終局
