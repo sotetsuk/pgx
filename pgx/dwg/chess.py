@@ -1,12 +1,10 @@
 import base64
 import os
 
-import svgwrite
-
 from pgx.chess import ChessState
 
 
-def _make_chess_dwg(dwg, state: ChessState, config) -> svgwrite.Drawing:
+def _make_chess_dwg(dwg, state: ChessState, config):
     def _set_piece(_x, _y, _type, _dwg, _dwg_g, grid_size):
         PATH = {
             "P": "images/chess/bPawn.svg",

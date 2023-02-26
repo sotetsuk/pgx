@@ -1,11 +1,7 @@
-import svgwrite
-
 from pgx.animal_shogi import JaxAnimalShogiState as AnimalShogiState
 
 
-def _make_animalshogi_dwg(
-    dwg, state: AnimalShogiState, config: dict
-) -> svgwrite.Drawing:
+def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
     BOARD_WIDTH = 3
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
     GRID_SIZE = config["GRID_SIZE"]

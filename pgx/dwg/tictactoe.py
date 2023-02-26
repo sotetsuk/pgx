@@ -1,11 +1,7 @@
-import svgwrite
-
 from pgx.tic_tac_toe import State as TictactoeState
 
 
-def _make_tictactoe_dwg(
-    dwg, state: TictactoeState, config
-) -> svgwrite.Drawing:
+def _make_tictactoe_dwg(dwg, state: TictactoeState, config):
     GRID_SIZE = config["GRID_SIZE"]
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]

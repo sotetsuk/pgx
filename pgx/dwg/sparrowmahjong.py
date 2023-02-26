@@ -1,16 +1,12 @@
 import base64
 import os
 
-import svgwrite
-
 from pgx.suzume_jong import NUM_TILE_TYPES, NUM_TILES
 from pgx.suzume_jong import State as SparrowMahjongState
 from pgx.suzume_jong import _tile_type_to_str
 
 
-def _make_sparrowmahjong_dwg(
-    dwg, state: SparrowMahjongState, config
-) -> svgwrite.Drawing:
+def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
 
     BOARD_WIDTH = 15
     BOARD_HEIGHT = 10

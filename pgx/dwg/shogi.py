@@ -1,12 +1,9 @@
 import numpy as np
-import svgwrite
 
 from pgx.shogi import State as ShogiState
 
 
-def _make_shogi_dwg(  # noqa: C901
-    dwg, state: ShogiState, config
-) -> svgwrite.Drawing:
+def _make_shogi_dwg(dwg, state: ShogiState, config):  # noqa: C901
     if state.turn == 1:
         from pgx.shogi import _flip
 

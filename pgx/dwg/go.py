@@ -1,10 +1,8 @@
-import svgwrite
-
 from pgx.go import State as GoState
 from pgx.go import get_board
 
 
-def _make_go_dwg(dwg, state: GoState, config) -> svgwrite.Drawing:
+def _make_go_dwg(dwg, state: GoState, config):
 
     BOARD_SIZE = config["BOARD_WIDTH"]
     GRID_SIZE = 50

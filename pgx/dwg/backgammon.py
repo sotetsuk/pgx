@@ -1,11 +1,7 @@
-import svgwrite
-
 from pgx.backgammon import State as BackgammonState
 
 
-def _make_backgammon_dwg(
-    dwg, state: BackgammonState, config
-) -> svgwrite.Drawing:
+def _make_backgammon_dwg(dwg, state: BackgammonState, config):
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
     GRID_SIZE = config["GRID_SIZE"]
