@@ -26,6 +26,12 @@ class State:
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray
 
+    def _repr_html_(self) -> str:
+        from pgx.visualizer import Visualizer
+
+        v = Visualizer()
+        return v._to_dwg_from_states(states=self).tostring()
+
 
 class Env(abc.ABC):
     def __init__(self):
