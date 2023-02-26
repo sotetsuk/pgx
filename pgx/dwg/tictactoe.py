@@ -82,6 +82,35 @@ def _make_tictactoe_dwg(dwg, state: TictactoeState, config):
         y = i // BOARD_HEIGHT
         if mark == 0:  # 先手
             board_g.add(
+                dwg.line(
+                    start=(
+                        (x + 0.1) * GRID_SIZE,
+                        (y + 0.1) * GRID_SIZE,
+                    ),
+                    end=(
+                        (x + 0.9) * GRID_SIZE,
+                        (y + 0.9) * GRID_SIZE,
+                    ),
+                    stroke=color_set.grid_color,
+                    stroke_width=0.05 * GRID_SIZE,
+                )
+            )
+            board_g.add(
+                dwg.line(
+                    start=(
+                        (x + 0.1) * GRID_SIZE,
+                        (y + 0.9) * GRID_SIZE,
+                    ),
+                    end=(
+                        (x + 0.9) * GRID_SIZE,
+                        (y + 0.1) * GRID_SIZE,
+                    ),
+                    stroke=color_set.grid_color,
+                    stroke_width=0.05 * GRID_SIZE,
+                )
+            )
+        elif mark == 1:  # 後手
+            board_g.add(
                 dwg.circle(
                     center=(
                         (x + 0.5) * GRID_SIZE,
@@ -91,35 +120,6 @@ def _make_tictactoe_dwg(dwg, state: TictactoeState, config):
                     stroke=color_set.grid_color,
                     stroke_width=0.05 * GRID_SIZE,
                     fill="none",
-                )
-            )
-        elif mark == 1:  # 後手
-            board_g.add(
-                dwg.line(
-                    start=(
-                        (x + 0.1) * GRID_SIZE,
-                        (y + 0.1) * GRID_SIZE,
-                    ),
-                    end=(
-                        (x + 0.9) * GRID_SIZE,
-                        (y + 0.9) * GRID_SIZE,
-                    ),
-                    stroke=color_set.grid_color,
-                    stroke_width=0.05 * GRID_SIZE,
-                )
-            )
-            board_g.add(
-                dwg.line(
-                    start=(
-                        (x + 0.1) * GRID_SIZE,
-                        (y + 0.9) * GRID_SIZE,
-                    ),
-                    end=(
-                        (x + 0.9) * GRID_SIZE,
-                        (y + 0.1) * GRID_SIZE,
-                    ),
-                    stroke=color_set.grid_color,
-                    stroke_width=0.05 * GRID_SIZE,
                 )
             )
     return board_g
