@@ -39,6 +39,7 @@ _is_open = jax.jit(_is_open)
 _legal_action_mask = jax.jit(_legal_action_mask)
 _move = jax.jit(_move)
 _rear_distance = jax.jit(_rear_distance)
+_exists = jax.jit(_exists)
 
 
 def make_test_boad():
@@ -360,11 +361,10 @@ def test_exists():
 def test_is_all_on_home_boad():
     board: jnp.ndarray = make_test_boad()
     # 黒
-    turn = jnp.int8(-1)
-    assert _is_all_on_home_board(board, turn)
+    assert _is_all_on_home_board(board)
     # 白
-    turn = jnp.int8(1)
-    assert not _is_all_on_home_board(board, turn)
+    board = flip_board(board)
+    assert not _is_all_on_home_board(board)
 
 
 def test_rear_distance():

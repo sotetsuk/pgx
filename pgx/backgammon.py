@@ -398,15 +398,15 @@ def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
     return 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int16(100)))
 
 
-def _is_all_on_home_board(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
+def _is_all_on_home_board(board: jnp.ndarray) -> bool:
     """
     全てのcheckerがhome boardにあれば, bear offできる.
     """
     home_board: jnp.ndarray = _home_board()
     on_home_board: int = jnp.clip(
-        turn * board[home_board], a_min=0, a_max=15
+        board[home_board], a_min=0, a_max=15
     ).sum()
-    off: int = board[_off_idx()] * turn  # type: ignore
+    off: int = board[_off_idx()]  # type: ignore
     return (15 - off) == on_home_board
 
 
@@ -502,7 +502,7 @@ def _is_to_off_legal(
     return (
         (src >= 0)
         & _exists(board, src)
-        & _is_all_on_home_board(board, turn)
+        & _is_all_on_home_board(board)
         & ((d == die) | ((r <= die) & (r == d)))
     )  # type: ignore
 
