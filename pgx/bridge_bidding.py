@@ -149,9 +149,7 @@ def _shuffle_players() -> np.ndarray:
     return shuffled_players
 
 
-def _player_position(
-    player: np.ndarray, state: State
-) -> np.ndarray:
+def _player_position(player: np.ndarray, state: State) -> np.ndarray:
     if player != -1:
         return np.where(state.shuffled_players == player)[0]
     else:
@@ -428,9 +426,7 @@ def _state_XX(state: State) -> State:
 
 
 # bidによるstateの変化
-def _state_bid(
-    state: State, action: int
-) -> State:
+def _state_bid(state: State, action: int) -> State:
     # 最後のbidとそのプレイヤーを保存
     state.last_bid = np.array(action, dtype=np.int8)
     state.last_bidder = state.curr_player
