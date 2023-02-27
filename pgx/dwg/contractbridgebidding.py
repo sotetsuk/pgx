@@ -1,6 +1,6 @@
 import numpy as np
 
-from pgx.contractbridgebidding import (
+from pgx.bridge_bidding import (
     State as BridgeBiddingState,
 )
 

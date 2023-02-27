@@ -3,7 +3,7 @@ from typing import Tuple
 
 import numpy as np
 
-from pgx.contractbridgebidding import (
+from pgx.bridge_bidding import (
     State,
     _calc_score,
     _calculate_dds_tricks,
