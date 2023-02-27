@@ -66,7 +66,7 @@ class State(core.State):
     playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
     # プレイしたサイコロの目の数
     played_dice_num: jnp.ndarray = jnp.int16(0)
-    # 黒なら-1, 白なら1
+    # 手番0, 手番じゃない1
     turn: jnp.ndarray = jnp.int8(1)
 
 
