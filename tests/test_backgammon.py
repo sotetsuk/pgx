@@ -20,6 +20,7 @@ from pgx.backgammon import (
     _distance_to_goal,
     _is_turn_end,
     _no_winning_step,
+    _exists
 )
 
 seed = 1701
@@ -331,16 +332,29 @@ def test_observe():
 def test_is_open():
     board = make_test_boad()
     # 黒
-    assert _is_open(board, turn, 9)
-    assert _is_open(board, turn, 19)
-    assert _is_open(board, turn, 4)
-    assert not _is_open(board, turn, 10)
+    assert _is_open(board, 9)
+    assert _is_open(board, 19)
+    assert _is_open(board, 4)
+    assert not _is_open(board, 10)
     # 白
-    turn = jnp.int8(1)
-    assert _is_open(board, turn, 9)
-    assert _is_open(board, turn, 8)
-    assert not _is_open(board, turn, 19)
-    assert not _is_open(board, turn, 21)
+    board = flip_board(board)
+    assert _is_open(board, 9)
+    assert _is_open(board, 8)
+    assert not _is_open(board, 2)
+    assert not _is_open(board, 4)
+
+
+def test_exists():
+    board = make_test_boad()
+    # 黒
+    assert _exists(board, 19)
+    assert _exists(board, 20)
+    assert not _exists(board, 4)
+    # 白
+    board = flip_board(board)
+    assert _exists(board, 19)
+    assert _exists(board, 20)
+    assert not _exists(board, 2)
 
 
 def test_is_all_on_home_boad():
