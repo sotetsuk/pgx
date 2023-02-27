@@ -152,7 +152,7 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
             text=f"× {-state.board[26]}",  # 26:白
             insert=(
                 14.8 * GRID_SIZE,
-                13.3 * GRID_SIZE,
+                13.4 * GRID_SIZE,
             ),
             fill=color_set.grid_color,
             font_size="34px",
@@ -184,7 +184,7 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
             text=f"× {state.board[27]}",  # 27:黒
             insert=(
                 14.8 * GRID_SIZE,
-                1.3 * GRID_SIZE,
+                1.4 * GRID_SIZE,
             ),
             fill=color_set.grid_color,
             font_size="34px",

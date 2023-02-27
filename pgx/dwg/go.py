@@ -4,8 +4,8 @@ from pgx.go import get_board
 
 def _make_go_dwg(dwg, state: GoState, config):
 
+    GRID_SIZE = config["GRID_SIZE"]
     BOARD_SIZE = config["BOARD_WIDTH"]
-    GRID_SIZE = 50
     color_set = config["COLOR_SET"]
 
     # background
@@ -22,7 +22,7 @@ def _make_go_dwg(dwg, state: GoState, config):
     # grid
     board_g = dwg.g()
     hlines = board_g.add(dwg.g(id="hlines", stroke=color_set.grid_color))
-    for y in range(BOARD_SIZE):
+    for y in range(1, BOARD_SIZE - 1):
         hlines.add(
             dwg.line(
                 start=(0, GRID_SIZE * y),
@@ -30,10 +30,11 @@ def _make_go_dwg(dwg, state: GoState, config):
                     GRID_SIZE * (BOARD_SIZE - 1),
                     GRID_SIZE * y,
                 ),
+                stroke_width="0.5px",
             )
         )
     vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
-    for x in range(BOARD_SIZE):
+    for x in range(1, BOARD_SIZE - 1):
         vlines.add(
             dwg.line(
                 start=(GRID_SIZE * x, 0),
@@ -41,9 +42,21 @@ def _make_go_dwg(dwg, state: GoState, config):
                     GRID_SIZE * x,
                     GRID_SIZE * (BOARD_SIZE - 1),
                 ),
+                stroke_width="0.5px",
             )
         )
-
+    board_g.add(
+        dwg.rect(
+            (0, 0),
+            (
+                (BOARD_SIZE - 1) * GRID_SIZE,
+                (BOARD_SIZE - 1) * GRID_SIZE,
+            ),
+            fill="none",
+            stroke=color_set.grid_color,
+            stroke_width="2px",
+        )
+    )
     # hoshi
     hoshi_g = dwg.g()
     hosi_pos = []
