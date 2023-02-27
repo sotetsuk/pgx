@@ -22,7 +22,7 @@ class State(core.State):
     # micro action = 6 * src + die
     legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
     # --- Backgammon specific ---
-    # 各point(24) bar(2) off(2)にあるcheckerの数 負の値は白, 正の値は黒
+    # 各point(24) bar(2) off(2)にあるcheckerの数. 黒+, 白-
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     # サイコロを振るたびにrngをsplitして更新する.
     rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
@@ -533,3 +533,13 @@ def _legal_action_mask_for_valid_single_dice(
         axis=0
     )  # (26*6 + 6)
     return legal_action_mask
+
+
+def get_abs_board(state):
+    """
+    visualization用
+    黒ならそのまま, 白なら反転して返す.
+    """
+    board = state.board
+    turn = state.turn
+    return jax.lax.cond(turn==0, lambda: board, lambda: flip_board(board))
