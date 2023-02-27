@@ -225,6 +225,15 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
         ),
     )  # no-opの時はupdateしない
 
+def flip_board(board):
+    """
+    ターンが変わる際にボードを反転させ, -1をかける. そうすることで常に黒視点で考えることができる.
+    """
+    flipped_main_board = jnp.flip(board[:24])
+    flipped_bar = jnp.flip(board[24: 26])
+    flipped_off = jnp.flip(board[26:28])
+    return -1 * jnp.concatenate([flipped_main_board, flipped_bar, flipped_off])
+
 
 def _make_init_board() -> jnp.ndarray:
     board: jnp.ndarray = jnp.array(

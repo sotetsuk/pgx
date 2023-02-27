@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 from pgx.backgammon import (
     State,
+    flip_board,
     _calc_src,
     _calc_tgt,
     _calc_win_score,
@@ -42,36 +43,36 @@ _rear_distance = jax.jit(_rear_distance)
 def make_test_boad():
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     # 黒
-    board = board.at[19].set(-5)
-    board = board.at[20].set(-1)
-    board = board.at[21].set(-2)
-    board = board.at[26].set(-7)
+    board = board.at[19].set(5)
+    board = board.at[20].set(1)
+    board = board.at[21].set(2)
+    board = board.at[26].set(7)
     # 白
-    board = board.at[3].set(2)
-    board = board.at[4].set(1)
-    board = board.at[10].set(5)
-    board = board.at[22].set(3)
-    board = board.at[25].set(4)
+    board = board.at[3].set(-2)
+    board = board.at[4].set(-1)
+    board = board.at[10].set(-5)
+    board = board.at[22].set(-3)
+    board = board.at[25].set(-4)
     return board
 
 
 """
-黒: - 白: +
+黒: + 白: -
 12 13 14 15 16 17  18 19 20 21 22 23
-                       -  -  -  +
-                       -     -  +
-                       -        +
-                       -
-                       -
+                       +  +  +  -
+                       +     +  -
+                       +        -
+                       +
+                       +
  
-    +
-    +
-    +
-    +                     +
-    +                  +  +
+    -
+    -
+    -
+    -                     -
+    -                  -  -
 11 10  9  8  7  6   5  4  3  2  1  0
-Bar ++++
-Off -------
+Bar ----
+Off +++++++
 """
 
 
@@ -95,6 +96,23 @@ def make_test_state(
         played_dice_num=played_dice_num,
         legal_action_mask=legal_action_mask,
     )
+
+
+def make_test_flip_board():
+    test_board = make_test_boad()
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+    board = board.at[19].set(-5)
+    board = board.at[20].set(-1)
+    board = board.at[21].set(-2)
+    board = board.at[26].set(-7)
+    board = board.at[3].set(2)
+    board = board.at[4].set(1)
+    board = board.at[10].set(5)
+    board = board.at[22].set(3)
+    board = board.at[25].set(4)
+    flipped_board = flip_board(test_board)
+    assert  (flip_board == board).all()
+
 
 
 def test_init():
