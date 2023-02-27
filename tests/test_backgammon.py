@@ -100,20 +100,20 @@ def make_test_state(
     )
 
 
-def make_test_flip_board():
+def test_flip_board():
     test_board = make_test_boad()
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
-    board = board.at[19].set(-5)
-    board = board.at[20].set(-1)
-    board = board.at[21].set(-2)
-    board = board.at[26].set(-7)
-    board = board.at[3].set(2)
-    board = board.at[4].set(1)
-    board = board.at[10].set(5)
-    board = board.at[22].set(3)
-    board = board.at[25].set(4)
+    board = board.at[4].set(-5)
+    board = board.at[3].set(-1)
+    board = board.at[2].set(-2)
+    board = board.at[27].set(-7)
+    board = board.at[20].set(2)
+    board = board.at[19].set(1)
+    board = board.at[13].set(5)
+    board = board.at[1].set(3)
+    board = board.at[24].set(4)
     flipped_board = flip_board(test_board)
-    assert  (flip_board == board).all()
+    assert  (flipped_board == board).all()
 
 
 
@@ -163,27 +163,37 @@ def test_change_turn():
     state = init(rng)
     _turn = state.turn
     state = _change_turn(state)
-    assert state.turn == -1 * _turn
+    assert state.turn == (_turn + 1) % 2
 
-    # playable diceがない場合
-    board: jnp.ndarray = make_test_boad()
+    test_board: jnp.ndarray = make_test_boad()
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+    board = board.at[4].set(-5)
+    board = board.at[3].set(-1)
+    board = board.at[2].set(-2)
+    board = board.at[27].set(-7)
+    board = board.at[20].set(2)
+    board = board.at[19].set(1)
+    board = board.at[13].set(5)
+    board = board.at[1].set(3)
+    board = board.at[24].set(4)
     state = make_test_state(
-        curr_player=jnp.int8(1),
+        curr_player=jnp.int8(0),
         rng=rng,
-        board=board,
-        turn=jnp.int8(1),
+        board=test_board,
+        turn=jnp.int8(0),
         dice=jnp.array([2, 2], dtype=jnp.int16),
         playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
         played_dice_num=jnp.int16(2),
     )
     state = _change_turn(state)
-    assert state.turn == jnp.int8(-1)
-
+    print(state.board, board)
+    assert state.turn == jnp.int8(1)  # ターンが変わっている.
+    assert (state.board == board).all()  # 反転している.
 
 def test_no_op():
     board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(
-        board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16)
+        board, jnp.array([0, 1, -1, -1], dtype=jnp.int16)
     )
     state = make_test_state(
         curr_player=jnp.int8(1),
@@ -200,9 +210,11 @@ def test_no_op():
 
 
 def test_step():
+    # 白
     board: jnp.ndarray = make_test_boad()
+    board = flip_board(board)  # 反転
     legal_action_mask = _legal_action_mask(
-        board, jnp.int16(1), jnp.array([0, 1, -1, -1], dtype=jnp.int16)
+        board, jnp.array([0, 1, -1, -1], dtype=jnp.int16)
     )
     state = make_test_state(
         curr_player=jnp.int8(1),
@@ -214,7 +226,6 @@ def test_step():
         played_dice_num=jnp.int16(0),
         legal_action_mask=legal_action_mask,
     )
-    # legal_actionが正しいかtest
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.bool_
     )
@@ -222,23 +233,22 @@ def test_step():
         6 * (1) + 0
     ].set(
         True
-    )  # 25(off)->23
+    )  # 24(bar)->0
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (1) + 1
     ].set(
         True
-    )  # 25(off)->22
-    assert (expected_legal_action_mask == state.legal_action_mask).all()
+    )  # 24(bar)->1
+    assert (expected_legal_action_mask == state.legal_action_mask).all()  # legal_actionが正しいかtest
 
-    # 白がサイコロ2をplay 25(off)->22
+    # 白がサイコロ2をplay 24(bar)->1
     state = step(state=state, action=(1) * 6 + 1)
     assert (
         state.playable_dice == jnp.array([0, -1, -1, -1], dtype=jnp.int16)
     ).all()  # playable diceが正しく更新されているか
     assert state.played_dice_num == 1  # played diceが増えているか.
     assert state.turn == 1  # turnが変わっていないか.
-    assert state.board.at[22].get() == 4 and state.board.at[25].get() == 3
-    # legal_actionが正しく更新されているかテスト
+    assert state.board.at[1].get() == 4 and state.board.at[24].get() == 3
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.bool_
     )
@@ -246,21 +256,24 @@ def test_step():
         6 * (1) + 0
     ].set(
         True
-    )  # 25(off)->23
-    assert (expected_legal_action_mask == state.legal_action_mask).all()
-    # 白がサイコロ1をplay 25(off)->23
+    )  # 24(bar)->0
+    assert (expected_legal_action_mask == state.legal_action_mask).all()  # legal_actionが正しく更新されているか
+    # 白がサイコロ1をplay 24(off)->0
     state = step(state=state, action=(1) * 6 + 0)
     assert state.played_dice_num == 0
-    assert state.board.at[23].get() == 1 and state.board.at[25].get() == 2
-    # legal_actionが正しいかtest
+    assert state.turn == 0  # turn が黒に変わっているか.
+    assert state.board.at[23].get() == -1 and state.board.at[25].get() == -2
+    
+    # 黒
+    board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(
-        board, jnp.int16(-1), jnp.array([4, 5, -1, -1], dtype=jnp.int16)
+        board, jnp.array([4, 5, -1, -1], dtype=jnp.int16)
     )
     state = make_test_state(
         curr_player=jnp.int8(0),
         rng=rng,
         board=board,
-        turn=jnp.int8(-1),
+        turn=jnp.int8(0),
         dice=jnp.array([4, 5], dtype=jnp.int16),
         playable_dice=jnp.array([4, 5, -1, -1], dtype=jnp.int16),
         played_dice_num=jnp.int16(0),
@@ -279,6 +292,7 @@ def test_step():
     ].set(
         True
     )  # 19 -> off
+    print(jnp.where(state.legal_action_mask==1)[0], jnp.where(expected_legal_action_mask==1)[0])
     assert (expected_legal_action_mask == state.legal_action_mask).all()
 
 

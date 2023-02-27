@@ -96,7 +96,7 @@ class Backgammon(core.Env):
 def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     curr_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
-    board: jnp.ndarray = _make_init_board()
+    board: jnp.ndarray = _make_init_board()  # 初期配置は対象なので, turnに関係
     terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
@@ -174,7 +174,7 @@ def _winning_step(
     """
     勝利者がいる場合のstep.
     """
-    win_score = _calc_win_score(state.board, state.turn)
+    win_score = _calc_win_score(state.board)
     winner = state.curr_player
     reward = jnp.ones_like(state.reward)
     reward = reward.at[winner].set(win_score)
@@ -287,8 +287,8 @@ def _change_turn(state: State) -> State:
     ターンを変更して新しい状態を返す.
     """
     rng1, rng2 = jax.random.split(state.rng)
-    board: jnp.ndarray = state.board
-    turn: jnp.ndarray = -1 * state.turn  # turnを変える
+    board: jnp.ndarray = flip_board(state.board)  # boardを反転させて黒視点に変える
+    turn: jnp.ndarray = (state.turn + 1) % 2  # turnを変える
     curr_player: jnp.ndarray = (state.curr_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
