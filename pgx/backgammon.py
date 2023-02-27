@@ -466,7 +466,7 @@ def _decompose_action(action: jnp.ndarray):
     return src, die, tgt
 
 
-def _is_action_legal(board: jnp.ndarray, turn, action: jnp.ndarray) -> bool:
+def _is_action_legal(board: jnp.ndarray, action: jnp.ndarray) -> bool:
     """
     micro actionの合法判定
     action = src * 6 + die
@@ -474,19 +474,22 @@ def _is_action_legal(board: jnp.ndarray, turn, action: jnp.ndarray) -> bool:
     """
     src, die, tgt = _decompose_action(action)
     _is_to_point = (0 <= tgt) & (tgt <= 23) & (src >= 0)
-    return _is_to_point & _is_to_point_legal(board, turn, src, tgt) | (
+    return _is_to_point & _is_to_point_legal(board, src, tgt) | (
         ~_is_to_point
     ) & _is_to_off_legal(
-        board, turn, src, tgt, die
+        board, src, tgt, die
     )  # type: ignore
 
 
-def _distance_to_goal(src: int, turn: jnp.ndarray) -> int:
-    return (turn == -1) * (24 - src) + (turn == 1) * (src + 1)  # type: ignore
+def _distance_to_goal(src: int) -> int:
+    """
+    goal までの距離: 常に黒視点
+    """
+    return (24 - src)  # type: ignore
 
 
 def _is_to_off_legal(
-    board: jnp.ndarray, turn: jnp.ndarray, src: int, tgt: int, die: int
+    board: jnp.ndarray, src: int, tgt: int, die: int
 ):
     """
     board外への移動についての合法判定
@@ -496,7 +499,7 @@ def _is_to_off_legal(
     3. サイコロの目とgoalへの距離が同じ or srcが最後尾であり, サイコロの目がそれよりも大きい.
     """
     r = _rear_distance(board)
-    d = _distance_to_goal(src, turn)
+    d = _distance_to_goal(src)
     return (
         (src >= 0)
         & _exists(board, src)
@@ -506,7 +509,7 @@ def _is_to_off_legal(
 
 
 def _is_to_point_legal(
-    board: jnp.ndarray, turn: jnp.ndarray, src: int, tgt: int
+    board: jnp.ndarray, src: int, tgt: int
 ) -> bool:
     """
     tgtがpointの場合の合法手判定
@@ -608,7 +611,7 @@ def _legal_action_mask_for_valid_single_dice(
         action = idx * 6 + die
         legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_)
         legal_action_mask = legal_action_mask.at[action].set(
-            _is_action_legal(board, turn, action)
+            _is_action_legal(board, action)
         )
         return legal_action_mask
 

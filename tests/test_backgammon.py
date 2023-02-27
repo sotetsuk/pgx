@@ -382,19 +382,12 @@ def test_distance_to_goal():
     # 黒
     turn = jnp.int8(-1)
     src = 23
-    assert _distance_to_goal(src, turn) == 1
+    assert _distance_to_goal(src) == 1
     src = 10
-    assert _distance_to_goal(src, turn) == 14
+    assert _distance_to_goal(src) == 14
     # rear_istanceと同じはずのsrcでテスト
-    assert _rear_distance(board, turn) == _distance_to_goal(19, turn)
-    # 白
-    turn = jnp.int8(1)
-    src = 23
-    assert _distance_to_goal(src, turn) == 24
-    src = 2
-    assert _distance_to_goal(src, turn) == 3
-    # rear_istanceと同じはずのsrcでテスト
-    assert _rear_distance(board, turn) == _distance_to_goal(22, turn)
+    assert _rear_distance(board) == _distance_to_goal(19)
+    # 白もロジックは同様
 
 
 def test_calc_src():
@@ -411,26 +404,25 @@ def test_calc_tgt():
 def test_is_action_legal():
     board: jnp.ndarray = make_test_boad()
     # 黒
-    turn = jnp.int8(-1)
-    assert _is_action_legal(board, turn, (19 + 2) * 6 + 1)  # 19->21
-    assert not _is_action_legal(board, turn, (19 + 2) * 6 + 2)  # 19 -> 22
+    assert _is_action_legal(board, (19 + 2) * 6 + 1)  # 19->21
+    assert not _is_action_legal(board, (19 + 2) * 6 + 2)  # 19 -> 22
     assert not _is_action_legal(
-        board, turn, (19 + 2) * 6 + 2
+        board, (19 + 2) * 6 + 2
     )  # 19 -> 22: 22に白が複数ある.
     assert not _is_action_legal(
-        board, turn, (22 + 2) * 6 + 2
+        board, (22 + 2) * 6 + 2
     )  # 22 -> 25: 22に黒がない
-    assert _is_action_legal(board, turn, (19 + 2) * 6 + 5)  # bear off
+    assert _is_action_legal(board, (19 + 2) * 6 + 5)  # bear off
     assert not _is_action_legal(
-        board, turn, (20 + 2) * 6 + 5
+        board, (20 + 2) * 6 + 5
     )  # 後ろにまだ黒があるためbear offできない.
-    turn = jnp.int8(1)
     # 白
+    board = flip_board(board)
     assert not _is_action_legal(
-        board, turn, (3 + 2) * 6 + 0
-    )  # 3->2: barにcheckerが残っているので動かせない.
-    assert _is_action_legal(board, turn, (1) * 6 + 0)  # bar -> 23
-    assert not _is_action_legal(board, turn, (1) * 6 + 2)  # bar -> 21
+        board, (20 + 2) * 6 + 0
+    )  # 20->21(反転後): barにcheckerが残っているので動かせない.
+    assert _is_action_legal(board, (1) * 6 + 0)  # bar -> 1(反転後)
+    assert not _is_action_legal(board, (1) * 6 + 2)  # bar -> 2(反転後)
 
 
 def test_move():
