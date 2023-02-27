@@ -427,7 +427,7 @@ def _exists(board: jnp.ndarray, point: int) -> bool:
     return checkers >= 1  # type: ignore
 
 
-def _calc_src(src: jnp.ndarray, turn: jnp.ndarray) -> int:
+def _calc_src(src: jnp.ndarray) -> int:
     """
     boardのindexに合わせる.
     """
@@ -436,35 +436,33 @@ def _calc_src(src: jnp.ndarray, turn: jnp.ndarray) -> int:
     )  # type: ignore
 
 
-def _calc_tgt(src: int, turn: jnp.ndarray, die) -> int:
+def _calc_tgt(src: int, die) -> int:
     """
     boardのindexに合わせる. actionは src*6 + dieの形になっている. targetは黒ならsrcからdie分+白ならdie分-(目的地が逆だから.)
     """
-    return (src >= 24) * jnp.int16(
-        jnp.clip(24 * turn, a_min=-1, a_max=24) + die * -1 * turn
-    ) + (src < 24) * jnp.int16(
-        _from_other_than_bar(src, turn, die)
+    return (src >= 24) * (jnp.int16(die)-1) + (src < 24) * jnp.int16(
+        _from_board(src, die)
     )  # type: ignore
 
 
-def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
-    _is_from_board = (src + die * -1 * turn >= 0) & (
-        src + die * -1 * turn <= 23
+def _from_board(src: int, die: int) -> int:
+    _is_to_board = (src + die >= 0) & (
+        src + die <= 23
     )
-    return _is_from_board * jnp.int16(src + die * -1 * turn) + (
-        (~_is_from_board)
+    return _is_to_board * jnp.int16(src + die) + (
+        (~_is_to_board)
     ) * jnp.int16(
         _off_idx()
     )  # type: ignore
 
 
-def _decompose_action(action: jnp.ndarray, turn: jnp.ndarray):
+def _decompose_action(action: jnp.ndarray):
     """
     action(int)をsource, die, tagetに分解する.
     """
-    src = _calc_src(action // 6, turn)  # 0~25
+    src = _calc_src(action // 6)  # 0~25
     die = action % 6 + 1  # 0~5 -> 1~6
-    tgt = _calc_tgt(src, turn, die)
+    tgt = _calc_tgt(src, die)
     return src, die, tgt
 
 
@@ -474,7 +472,7 @@ def _is_action_legal(board: jnp.ndarray, turn, action: jnp.ndarray) -> bool:
     action = src * 6 + die
     src = [no op., from bar, 0, .., 23]
     """
-    src, die, tgt = _decompose_action(action, turn)
+    src, die, tgt = _decompose_action(action)
     _is_to_point = (0 <= tgt) & (tgt <= 23) & (src >= 0)
     return _is_to_point & _is_to_point_legal(board, turn, src, tgt) | (
         ~_is_to_point
@@ -526,7 +524,7 @@ def _move(
     """
     micro actionに基づく状態更新
     """
-    src, _, tgt = _decompose_action(action, turn)
+    src, _, tgt = _decompose_action(action)
     board = board.at[_bar_idx(-1 * turn)].add(
         -1 * turn * (board[tgt] == -1 * turn)
     )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動

@@ -398,15 +398,14 @@ def test_distance_to_goal():
 
 
 def test_calc_src():
-    assert _calc_src(1, jnp.int16(-1)) == 24
-    assert _calc_src(1, jnp.int16(1)) == 25
-    assert _calc_src(2, jnp.int16(1)) == 0
+    assert _calc_src(1) == 24
+    assert _calc_src(2) == 0
 
 
 def test_calc_tgt():
-    assert _calc_tgt(24, jnp.int16(-1), 1) == 0
-    assert _calc_tgt(6, jnp.int16(1), 2) == 4
-    assert _calc_tgt(2, jnp.int16(1), 6) == 27
+    assert _calc_tgt(24, 1) == 0  # bar to board (die is transformed from 0~5 -> 1~ 6)
+    assert _calc_tgt(6, 2) == 8  # board to board
+    assert _calc_tgt(23, 6) == 26  # to off
 
 
 def test_is_action_legal():
