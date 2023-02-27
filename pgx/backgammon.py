@@ -535,11 +535,11 @@ def _legal_action_mask_for_valid_single_dice(
     return legal_action_mask
 
 
-def get_abs_board(state):
+def get_abs_board(state: State) -> jnp.ndarray:
     """
     visualization用
     黒ならそのまま, 白なら反転して返す.
     """
-    board = state.board
-    turn = state.turn
-    return jax.lax.cond(turn==0, lambda: board, lambda: flip_board(board))
+    board: jnp.ndarray = state.board
+    turn: jnp.ndarray = state.turn
+    return jax.lax.cond(turn == 0, lambda: board, lambda: flip_board(board))
