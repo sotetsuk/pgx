@@ -254,20 +254,35 @@ def _reward(
     hash_keys: np.ndarray,
     hash_values: np.ndarray,
 ) -> np.ndarray:
-    """Calculate rewards for each player by dds results"""
-    declare_position, denomination, level, vul = _contract(state)
-    dds_tricks = _calculate_dds_tricks(state, hash_keys, hash_values)
-    dds_trick = dds_tricks[declare_position * 5 + denomination]
-    score = _calc_score(
-        denomination, level, vul, state.call_x, state.call_xx, dds_trick
-    )
-    reward = np.array(
-        [
-            score if _is_partner(i, declare_position) else -score
-            for i in np.arange(4)
-        ]
-    )
-    return reward[state.shuffled_players]
+    """Calculate rewards for each player by dds results
+
+    Returns:
+        np.ndarray: A list of rewards for each player in playerID order
+    """
+    # pass out
+    if state.last_bid == -1 and state.pass_num == 4:
+        return np.zeros(4)
+    else:
+        # Extract contract from state
+        declare_position, denomination, level, vul = _contract(state)
+        # Calculate trick table from hash table
+        dds_tricks = _calculate_dds_tricks(state, hash_keys, hash_values)
+        # Calculate the tricks you could have accomplished with this contraption
+        dds_trick = dds_tricks[declare_position * 5 + denomination]
+        # Clculate score
+        score = _calc_score(
+            denomination, level, vul, state.call_x, state.call_xx, dds_trick
+        )
+        # Make reward array in playerID order
+        reward = np.array(
+            [
+                score
+                if _is_partner(_player_position(i, state), declare_position)
+                else -score
+                for i in np.arange(4)
+            ]
+        )
+        return reward.T
 
 
 def _calc_score(
@@ -278,7 +293,10 @@ def _calc_score(
     call_xx: np.ndarray,
     trick: np.ndarray,
 ) -> np.ndarray:
-    """Calculate score from contract and trick"""
+    """Calculate score from contract and trick
+    Returns:
+        np.ndarray: A score of declarer team
+    """
     # fmt: off
     _MINOR = 20
     _MAJOR = 30
@@ -324,7 +342,7 @@ def _calc_score(
             return (
                 _DOWN_VUL[under_trick - 1] if vul else _DOWN[under_trick - 1]
             )
-    else:
+    else:  # make
         over_trick_score_per_trick = 0
         over_trick = trick - level - 6
         score = np.zeros(1, dtype=np.int16)
