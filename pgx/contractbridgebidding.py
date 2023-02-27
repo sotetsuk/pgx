@@ -125,7 +125,7 @@ def _shuffle_players() -> np.ndarray:
     team_a_players = np.random.permutation(np.arange(2, dtype=np.int8))
     # player_id = 2, 3 -> team b
     team_b_players = np.random.permutation(np.arange(2, 4, dtype=np.int8))
-    # decide which team  is on
+    # decide which team is on
     # Randomly determine NSteam and EWteam
     # Arrange in order of NESW
     if np.random.randint(2) == 1:
@@ -271,8 +271,15 @@ def _reward(
         dds_trick = dds_tricks[declare_position * 5 + denomination]
         # Clculate score
         score = _calc_score(
-            denomination, level, vul, state.call_x, state.call_xx, dds_trick
+            np.int16(denomination.item()),
+            np.int16(level.item()),
+            np.int16(vul.item()),
+            np.int16(state.call_x.item()),
+            np.int16(state.call_xx.item()),
+            np.int16(dds_trick.item()),
         )
+        print(type(score))
+        print(score.shape)
         # Make reward array in playerID order
         reward = np.array(
             [
@@ -282,92 +289,89 @@ def _reward(
                 for i in np.arange(4)
             ]
         )
-        return reward.T
+        return reward
 
 
 def _calc_score(
-    denomination: np.ndarray,
-    level: np.ndarray,
-    vul: np.ndarray,
-    call_x: np.ndarray,
-    call_xx: np.ndarray,
-    trick: np.ndarray,
-) -> np.ndarray:
+    denomination: np.int16,
+    level: np.int16,
+    vul: np.int16,
+    call_x: np.int16,
+    call_xx: np.int16,
+    trick: np.int16,
+) -> np.int16:
     """Calculate score from contract and trick
     Returns:
         np.ndarray: A score of declarer team
     """
     # fmt: off
-    _MINOR = 20
-    _MAJOR = 30
-    _NT = 10
-    _MAKE = 50
-    _MAKE_X = 50
-    _MAKE_XX = 50
+    _MINOR = np.int16(20)
+    _MAJOR = np.int16(30)
+    _NT = np.int16(10)
+    _MAKE = np.int16(50)
+    _MAKE_X = np.int16(50)
+    _MAKE_XX = np.int16(50)
 
-    _GAME = 250
-    _GAME_VUL = 450
-    _SMALL_SLAM = 500
-    _SMALL_SLAM_VUL = 750
-    _GRAND_SLAM = 500
-    _GRAND_SLAM_VUL = 750
+    _GAME = np.int16(250)
+    _GAME_VUL = np.int16(450)
+    _SMALL_SLAM = np.int16(500)
+    _SMALL_SLAM_VUL = np.int16(750)
+    _GRAND_SLAM = np.int16(500)
+    _GRAND_SLAM_VUL = np.int16(750)
 
-    _OVERTRICK_X = 100
-    _OVERTRICK_X_VUL = 200
-    _OVERTRICK_XX = 200
-    _OVERTRICK_XX_VUL = 400
+    _OVERTRICK_X = np.int16(100)
+    _OVERTRICK_X_VUL = np.int16(200)
+    _OVERTRICK_XX = np.int16(200)
+    _OVERTRICK_XX_VUL = np.int16(400)
 
-    _DOWN = np.array([-50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -550, -600, -650])
-    _DOWN_VUL = np.array([-100, -200, -300, -400, -500, -600, -700, -800, -900, -1000, -1100, -1200, -1300])
-    _DOWN_X = np.array([-100, -300, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500])
-    _DOWN_X_VUL = np.array([-200, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500, -3800])
-    _DOWN_XX = np.array([-200, -600, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000])
-    _DOWN_XX_VUL = np.array([-400, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000, -7600])
+    _DOWN = np.array([-50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -550, -600, -650], dtype=np.int16)
+    _DOWN_VUL = np.array([-100, -200, -300, -400, -500, -600, -700, -800, -900, -1000, -1100, -1200, -1300], dtype=np.int16)
+    _DOWN_X = np.array([-100, -300, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500], dtype=np.int16)
+    _DOWN_X_VUL = np.array([-200, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500, -3800], dtype=np.int16)
+    _DOWN_XX = np.array([-200, -600, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000], dtype=np.int16)
+    _DOWN_XX_VUL = np.array([-400, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000, -7600], dtype=np.int16)
     # fmt: on
     if level + 6 > trick:  # down
         under_trick = level + 6 - trick
         if call_xx:
-            return (
+            return np.int16(
                 _DOWN_XX_VUL[under_trick - 1]
                 if vul
                 else _DOWN_XX[under_trick - 1]
             )
         elif call_x:
-            return (
+            return np.int16(
                 _DOWN_X_VUL[under_trick - 1]
                 if vul
                 else _DOWN_X[under_trick - 1]
             )
         else:
-            return (
+            return np.int16(
                 _DOWN_VUL[under_trick - 1] if vul else _DOWN[under_trick - 1]
             )
     else:  # make
-        over_trick_score_per_trick = 0
-        over_trick = trick - level - 6
-        score = np.zeros(1, dtype=np.int16)
+        over_trick_score_per_trick = np.int16(0)
+        over_trick = trick - level - np.int16(6)
+        score = np.int16(0)
         if denomination <= 1:
-            score = _MINOR * level
+            score += np.int16(_MINOR * level)
             over_trick_score_per_trick += _MINOR
         elif 2 <= denomination <= 3:
-            score = _MAJOR * level
+            score += np.int16(_MAJOR * level)
             over_trick_score_per_trick += _MAJOR
         elif denomination == 4:
-            score = _MAJOR * level + _NT
+            score += np.int16(_MAJOR * level + _NT)
             over_trick_score_per_trick += _MAJOR
-
         if call_xx:
-            score *= 4
+            score *= np.int16(4)
         elif call_x:
-            score *= 2
-
+            score *= np.int16(2)
         if score >= 100:  # game make bonus
             score += _GAME_VUL if vul else _GAME
             if level >= 6:  # small slam make bonus
                 score += _SMALL_SLAM_VUL if vul else _SMALL_SLAM
                 if level == 7:  # grand slam make bonus
                     score += _GRAND_SLAM_VUL if vul else _GRAND_SLAM
-
         score += _MAKE  # make bonus
         if call_x or call_xx:
             score += _MAKE_X
@@ -380,7 +384,6 @@ def _calc_score(
                 over_trick_score_per_trick = (
                     _OVERTRICK_X_VUL if vul else _OVERTRICK_X
                 )
-
         score += over_trick_score_per_trick * over_trick
         return score
 

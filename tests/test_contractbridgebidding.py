@@ -766,6 +766,7 @@ def test_step():
     assert np.all(state.first_denomination_NS == first_denomination_NS)
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 3
+    print(rewards)
     assert rewards.shape == (4,)
     assert np.all(rewards == np.array([-600, -600, 600, 600], dtype=np.int16))
     declare_position, denomination, level, vul = _contract(state)
@@ -1112,14 +1113,15 @@ def test_calc_score():
                                 ]
 
                             actural_score = _calc_score(
-                                denomination,
-                                level,
-                                vul,
-                                call_x,
-                                call_xx,
-                                trick,
+                                np.int16(denomination),
+                                np.int16(level),
+                                np.int16(vul),
+                                np.int16(call_x),
+                                np.int16(call_xx),
+                                np.int16(trick),
                             )
                             assert actural_score == expected_score
+                            assert actural_score.shape == ()
 
     # 1NT, 11 tricks
     score = _calc_score(4, 1, 0, 0, 0, 11)
@@ -1136,7 +1138,9 @@ def test_calc_score():
     # 1NTxx, 11 tricks, vul
     assert _calc_score(4, 1, 1, 0, 1, 11) == 2360
     # 2H, 6 tricks, vul
-    assert _calc_score(2, 2, 1, 0, 0, 6) == -200
+    score = _calc_score(2, 2, 1, 0, 0, 6)
+    assert score.shape == ()
+    assert score == -200
     # 6Dxx, 13 tricks
     assert _calc_score(1, 6, 0, 0, 1, 13) == 1580
     # 4Sx, 10 tricks,
