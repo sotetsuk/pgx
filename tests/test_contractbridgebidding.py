@@ -1122,7 +1122,9 @@ def test_calc_score():
                             assert actural_score == expected_score
 
     # 1NT, 11 tricks
-    assert _calc_score(4, 1, 0, 0, 0, 11) == 210
+    score = _calc_score(4, 1, 0, 0, 0, 11)
+    assert score.shape == ()
+    assert score == 210
     # 1NT, 11 tricks, vul
     assert _calc_score(4, 1, 1, 0, 0, 11) == 210
     # 1NTx, 11 tricks
