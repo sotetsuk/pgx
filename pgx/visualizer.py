@@ -230,6 +230,7 @@ class Visualizer:
             g = self._make_dwg_group(
                 dwg,
                 _state,  # type:ignore
+                self.config,
             )
 
             g.translate(
