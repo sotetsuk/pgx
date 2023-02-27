@@ -113,6 +113,7 @@ def test_flip_board():
     board = board.at[1].set(3)
     board = board.at[24].set(4)
     flipped_board = flip_board(test_board)
+    print(flip_board, test_board)
     assert  (flipped_board == board).all()
 
 
@@ -325,7 +326,7 @@ def test_observe():
         played_dice_num=jnp.int16(0),
     )
     expected_obs = jnp.concatenate(
-        (-1 * board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
+        (board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
     )
     assert (observe(state, jnp.int8(1)) == expected_obs).all()
 

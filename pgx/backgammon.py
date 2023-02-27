@@ -134,13 +134,12 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     手番のplayerに対する観測を返す.
     """
     board: jnp.ndarray = state.board
-    turn: jnp.ndarray = state.turn
     zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state.playable_dice)
     return jax.lax.cond(
         player_id == state.curr_player,
-        lambda: jnp.concatenate((turn * board, zero_one_dice_vec), axis=None),  # type: ignore
+        lambda: jnp.concatenate((board, zero_one_dice_vec), axis=None),  # type: ignore
         lambda: jnp.concatenate(
-            (-turn * board, jnp.zeros(6, dtype=jnp.int8)), axis=None  # type: ignore
+            (board, jnp.zeros(6, dtype=jnp.int8)), axis=None  # type: ignore
         ),
     )
 
@@ -226,12 +225,11 @@ def flip_board(board):
     """
     ターンが変わる際にボードを反転させ, -1をかける. そうすることで常に黒視点で考えることができる.
     """
-    flipped_main_board = jnp.flip(board[:24])
-    flipped_bar = jnp.flip(board[24:26])
-    flipped_off = jnp.flip(board[26:28])
-    return -1 * jnp.concatenate(
-        [flipped_main_board, flipped_bar, flipped_off], dtype=jnp.int8
-    )
+    _board = board
+    board = board.at[:24].set(jnp.flip(_board[:24]))
+    board = board.at[24:26].set(jnp.flip(_board[24:26]))
+    board = board.at[26:28].set(jnp.flip(_board[26:28]))
+    return -1 * board
 
 
 def _make_init_board() -> jnp.ndarray:
@@ -328,7 +326,7 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
-    return diff > 0
+    return jnp.int8(diff > 0)
 
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
