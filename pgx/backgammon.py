@@ -229,7 +229,9 @@ def flip_board(board):
     flipped_main_board = jnp.flip(board[:24])
     flipped_bar = jnp.flip(board[24:26])
     flipped_off = jnp.flip(board[26:28])
-    return -1 * jnp.concatenate([flipped_main_board, flipped_bar, flipped_off], dtype=jnp.int8)
+    return -1 * jnp.concatenate(
+        [flipped_main_board, flipped_bar, flipped_off], dtype=jnp.int8
+    )
 
 
 def _make_init_board() -> jnp.ndarray:
