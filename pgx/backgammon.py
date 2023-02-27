@@ -410,21 +410,21 @@ def _is_all_on_home_board(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
     return (15 - off) == on_home_board
 
 
-def _is_open(board: jnp.ndarray, turn: jnp.ndarray, point: int) -> bool:
+def _is_open(board: jnp.ndarray, point: int) -> bool:
     """
     手番のplayerにとって, pointが空いてるかを判定する.
     pointにある相手のcheckerの数が1以下なら自分のcheckerをそのpointにおける.
     """
     checkers = board[point]
-    return turn * checkers >= -1  # type: ignore
+    return checkers >= -1  # type: ignore
 
 
-def _exists(board: jnp.ndarray, turn: jnp.ndarray, point: int) -> bool:
+def _exists(board: jnp.ndarray, point: int) -> bool:
     """
     指定pointに手番のchckerが存在するか.
     """
     checkers = board[point]
-    return turn * checkers >= 1  # type: ignore
+    return checkers >= 1  # type: ignore
 
 
 def _calc_src(src: jnp.ndarray, turn: jnp.ndarray) -> int:
@@ -501,7 +501,7 @@ def _is_to_off_legal(
     d = _distance_to_goal(src, turn)
     return (
         (src >= 0)
-        & _exists(board, turn, src)
+        & _exists(board, src)
         & _is_all_on_home_board(board, turn)
         & ((d == die) | ((r <= die) & (r == d)))
     )  # type: ignore
@@ -513,8 +513,8 @@ def _is_to_point_legal(
     """
     tgtがpointの場合の合法手判定
     """
-    e = _exists(board, turn, src)
-    o = _is_open(board, turn, tgt)
+    e = _exists(board, src)
+    o = _is_open(board, tgt)
     return ((src >= 24) & e & o) | (
         (src < 24) & e & o & (board[_bar_idx()] == 0)
     )  # type: ignore
