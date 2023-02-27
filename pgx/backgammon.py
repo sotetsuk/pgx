@@ -102,9 +102,7 @@ def init(rng: jax.random.KeyArray) -> State:
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
     played_dice_num: jnp.ndarray = jnp.int16(0)
     turn: jnp.ndarray = _init_turn(dice)
-    legal_action_mask: jnp.ndarray = _legal_action_mask(
-        board, playable_dice
-    )
+    legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     state = State(  # type: ignore
         curr_player=curr_player,
         rng=rng3,
@@ -206,9 +204,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     playable_dice: jnp.ndarray = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
-    legal_action_mask: jnp.ndarray = _legal_action_mask(
-        board, playable_dice
-    )
+    legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     return jax.lax.cond(
         is_no_op,
         lambda: state,
@@ -225,14 +221,15 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
         ),
     )  # no-opの時はupdateしない
 
+
 def flip_board(board):
     """
     ターンが変わる際にボードを反転させ, -1をかける. そうすることで常に黒視点で考えることができる.
     """
     flipped_main_board = jnp.flip(board[:24])
-    flipped_bar = jnp.flip(board[24: 26])
+    flipped_bar = jnp.flip(board[24:26])
     flipped_off = jnp.flip(board[26:28])
-    return -1 * jnp.concatenate([flipped_main_board, flipped_bar, flipped_off])
+    return -1 * jnp.concatenate([flipped_main_board, flipped_bar, flipped_off], dtype=jnp.int8)
 
 
 def _make_init_board() -> jnp.ndarray:
@@ -329,7 +326,7 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
-    return (diff > 0)
+    return diff > 0
 
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
@@ -373,7 +370,7 @@ def _home_board() -> jnp.ndarray:
     """
     黒: [18~23], 白: [0~5]: 常に黒視点
     """
-    return jnp.arange(18, 24, dtype=jnp.int8) # type: ignore
+    return jnp.arange(18, 24, dtype=jnp.int8)  # type: ignore
 
 
 def _off_idx() -> int:
@@ -395,9 +392,7 @@ def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
     board上にあるcheckerについて, goal地点とcheckerの距離の最大値: 常に黒視点
     """
     b = board[:24]
-    exists = jnp.where((b > 0), size=24, fill_value=jnp.nan)[  # type: ignore
-        0
-    ]
+    exists = jnp.where((b > 0), size=24, fill_value=jnp.nan)[0]  # type: ignore
     return 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int16(100)))
 
 
@@ -406,9 +401,7 @@ def _is_all_on_home_board(board: jnp.ndarray) -> bool:
     全てのcheckerがhome boardにあれば, bear offできる.
     """
     home_board: jnp.ndarray = _home_board()
-    on_home_board: int = jnp.clip(
-        board[home_board], a_min=0, a_max=15
-    ).sum()
+    on_home_board: int = jnp.clip(board[home_board], a_min=0, a_max=15).sum()
     off: int = board[_off_idx()]  # type: ignore
     return (15 - off) == on_home_board
 
@@ -443,18 +436,14 @@ def _calc_tgt(src: int, die) -> int:
     """
     boardのindexに合わせる. actionは src*6 + dieの形になっている. targetは黒ならsrcからdie分+白ならdie分-(目的地が逆だから.)
     """
-    return (src >= 24) * (jnp.int16(die)-1) + (src < 24) * jnp.int16(
+    return (src >= 24) * (jnp.int16(die) - 1) + (src < 24) * jnp.int16(
         _from_board(src, die)
     )  # type: ignore
 
 
 def _from_board(src: int, die: int) -> int:
-    _is_to_board = (src + die >= 0) & (
-        src + die <= 23
-    )
-    return _is_to_board * jnp.int16(src + die) + (
-        (~_is_to_board)
-    ) * jnp.int16(
+    _is_to_board = (src + die >= 0) & (src + die <= 23)
+    return _is_to_board * jnp.int16(src + die) + ((~_is_to_board)) * jnp.int16(
         _off_idx()
     )  # type: ignore
 
@@ -488,12 +477,10 @@ def _distance_to_goal(src: int) -> int:
     """
     goal までの距離: 常に黒視点
     """
-    return (24 - src)  # type: ignore
+    return 24 - src  # type: ignore
 
 
-def _is_to_off_legal(
-    board: jnp.ndarray, src: int, tgt: int, die: int
-):
+def _is_to_off_legal(board: jnp.ndarray, src: int, tgt: int, die: int):
     """
     board外への移動についての合法判定
     条件は
@@ -511,9 +498,7 @@ def _is_to_off_legal(
     )  # type: ignore
 
 
-def _is_to_point_legal(
-    board: jnp.ndarray, src: int, tgt: int
-) -> bool:
+def _is_to_point_legal(board: jnp.ndarray, src: int, tgt: int) -> bool:
     """
     tgtがpointの場合の合法手判定
     """
@@ -524,20 +509,16 @@ def _is_to_point_legal(
     )  # type: ignore
 
 
-def _move(
-    board: jnp.ndarray, action: jnp.ndarray
-) -> jnp.ndarray:
+def _move(board: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
     """
     micro actionに基づく状態更新: 常に黒視点
     """
     src, _, tgt = _decompose_action(action)
-    board = board.at[_bar_idx()+1].add(
+    board = board.at[_bar_idx() + 1].add(
         -1 * (board[tgt] == -1)
     )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動
     board = board.at[src].add(-1)
-    board = board.at[tgt].add(
-        1 + (board[tgt] == -1)
-    )  # hitした際は符号が変わるので余分に+1
+    board = board.at[tgt].add(1 + (board[tgt] == -1))  # hitした際は符号が変わるので余分に+1
     return board
 
 
@@ -573,9 +554,7 @@ def _remains_at_inner(board: jnp.ndarray) -> bool:
     return jnp.take(board, _home_board()).sum() != 0  # type: ignore
 
 
-def _legal_action_mask(
-    board: jnp.ndarray, dice: jnp.ndarray
-) -> jnp.ndarray:
+def _legal_action_mask(board: jnp.ndarray, dice: jnp.ndarray) -> jnp.ndarray:
     no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_).at[0:6].set(TRUE)
     legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board)
@@ -589,9 +568,7 @@ def _legal_action_mask(
     )  # legal_actionがなければ, np_op maskを返す
 
 
-def _legal_action_mask_for_single_die(
-    board: jnp.ndarray, die
-) -> jnp.ndarray:
+def _legal_action_mask_for_single_die(board: jnp.ndarray, die) -> jnp.ndarray:
     """
     一つのサイコロの目に対するlegal micro action
     """
