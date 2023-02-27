@@ -766,7 +766,6 @@ def test_step():
     assert np.all(state.first_denomination_NS == first_denomination_NS)
     assert np.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 3
-    print(rewards)
     assert rewards.shape == (4,)
     assert np.all(rewards == np.array([-600, -600, 600, 600], dtype=np.int16))
     declare_position, denomination, level, vul = _contract(state)

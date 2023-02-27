@@ -268,18 +268,16 @@ def _reward(
         # Calculate trick table from hash table
         dds_tricks = _calculate_dds_tricks(state, hash_keys, hash_values)
         # Calculate the tricks you could have accomplished with this contraption
-        dds_trick = dds_tricks[declare_position * 5 + denomination]
+        dds_trick = dds_tricks[int(declare_position) * 5 + int(denomination)]
         # Clculate score
         score = _calc_score(
-            np.int16(denomination.item()),
-            np.int16(level.item()),
-            np.int16(vul.item()),
-            np.int16(state.call_x.item()),
-            np.int16(state.call_xx.item()),
-            np.int16(dds_trick.item()),
+            denomination,
+            level,
+            vul,
+            state.call_x,
+            state.call_xx,
+            dds_trick,
         )
-        print(type(score))
-        print(score.shape)
         # Make reward array in playerID order
         reward = np.array(
             [
@@ -293,12 +291,12 @@ def _reward(
 
 
 def _calc_score(
-    denomination: np.int16,
-    level: np.int16,
-    vul: np.int16,
-    call_x: np.int16,
-    call_xx: np.int16,
-    trick: np.int16,
+    denomination: np.ndarray,
+    level: np.ndarray,
+    vul: np.ndarray,
+    call_x: np.ndarray,
+    call_xx: np.ndarray,
+    trick: np.ndarray,
 ) -> np.int16:
     """Calculate score from contract and trick
     Returns:
@@ -334,19 +332,19 @@ def _calc_score(
     if level + 6 > trick:  # down
         under_trick = level + 6 - trick
         if call_xx:
-            return np.int16(
+            return (
                 _DOWN_XX_VUL[under_trick - 1]
                 if vul
                 else _DOWN_XX[under_trick - 1]
             )
         elif call_x:
-            return np.int16(
+            return (
                 _DOWN_X_VUL[under_trick - 1]
                 if vul
                 else _DOWN_X[under_trick - 1]
             )
         else:
-            return np.int16(
+            return (
                 _DOWN_VUL[under_trick - 1] if vul else _DOWN[under_trick - 1]
             )
     else:  # make
