@@ -230,6 +230,7 @@ class Visualizer:
             g = self._make_dwg_group(
                 dwg,
                 _state,  # type:ignore
+                self.config,
             )
 
             g.translate(
@@ -285,7 +286,7 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, BackgammonState):
-            self.config["GRID_SIZE"] = 50
+            self.config["GRID_SIZE"] = 25
             self.config["BOARD_WIDTH"] = 17
             self.config["BOARD_HEIGHT"] = 14
             self._make_dwg_group = _make_backgammon_dwg
@@ -341,7 +342,7 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, BridgeBiddingState):
-            self.config["GRID_SIZE"] = 50
+            self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 14
             self.config["BOARD_HEIGHT"] = 12
             self._make_dwg_group = _make_bridge_dwg
@@ -369,7 +370,7 @@ class Visualizer:
                     "black",
                 )
         elif isinstance(_state, GoState):
-            self.config["GRID_SIZE"] = 50
+            self.config["GRID_SIZE"] = 25
             try:
                 self.config["BOARD_WIDTH"] = int(_state.size[0])
                 self.config["BOARD_HEIGHT"] = int(_state.size[0])
@@ -445,7 +446,7 @@ class Visualizer:
                     "black",
                 )
         elif isinstance(_state, TictactoeState):
-            self.config["GRID_SIZE"] = 50
+            self.config["GRID_SIZE"] = 60
             self.config["BOARD_WIDTH"] = 3
             self.config["BOARD_HEIGHT"] = 3
             self._make_dwg_group = _make_tictactoe_dwg
@@ -495,14 +496,14 @@ class Visualizer:
                 vul_EW=_states.vul_EW[_i],
             )
         elif isinstance(_states, GoState):
-            return GoState(
-                size=_states.size[_i],  # type:ignore
+            return GoState(  # type:ignore
+                size=_states.size[_i],
                 ren_id_board=_states.ren_id_board[_i],
                 turn=_states.turn[_i],
             )
         elif isinstance(_states, ShogiState):
-            return ShogiState(
-                turn=_states.turn[_i],  # type:ignore
+            return ShogiState(  # type:ignore
+                turn=_states.turn[_i],
                 piece_board=_states.piece_board[_i],
                 hand=_states.hand[_i],
             )
