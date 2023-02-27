@@ -66,7 +66,7 @@ class State(core.State):
     playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
     # プレイしたサイコロの目の数
     played_dice_num: jnp.ndarray = jnp.int16(0)
-    # 手番0, 手番じゃない1
+    # 黒0, 白1
     turn: jnp.ndarray = jnp.int8(1)
 
 
@@ -103,7 +103,7 @@ def init(rng: jax.random.KeyArray) -> State:
     played_dice_num: jnp.ndarray = jnp.int16(0)
     turn: jnp.ndarray = _init_turn(dice)
     legal_action_mask: jnp.ndarray = _legal_action_mask(
-        board, turn, playable_dice
+        board, playable_dice
     )
     state = State(  # type: ignore
         curr_player=curr_player,
@@ -125,7 +125,7 @@ def step(state: State, action: jnp.ndarray) -> State:
     """
     state = _update_by_action(state, action)
     return jax.lax.cond(
-        _is_all_off(state.board, state.turn),
+        _is_all_off(state.board),
         lambda: _winning_step(state),
         lambda: _no_winning_step(state, action),
     )
@@ -201,13 +201,13 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     rng = state.rng
     curr_player: jnp.ndarray = state.curr_player
     terminated: jnp.ndarray = state.terminated
-    board: jnp.ndarray = _move(state.board, state.turn, action)
+    board: jnp.ndarray = _move(state.board, action)
     played_dice_num: jnp.ndarray = jnp.int16(state.played_dice_num + 1)
     playable_dice: jnp.ndarray = _update_playable_dice(
         state.playable_dice, state.played_dice_num, state.dice, action
     )
     legal_action_mask: jnp.ndarray = _legal_action_mask(
-        board, state.turn, playable_dice
+        board, playable_dice
     )
     return jax.lax.cond(
         is_no_op,
@@ -236,6 +236,9 @@ def flip_board(board):
 
 
 def _make_init_board() -> jnp.ndarray:
+    """
+    黒基準で初期化
+    """
     board: jnp.ndarray = jnp.array(
         [
             2,
@@ -291,7 +294,7 @@ def _change_turn(state: State) -> State:
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
-    legal_action_mask: jnp.ndarray = _legal_action_mask(board, turn, dice)
+    legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
         curr_player=curr_player,
         rng=rng2,
@@ -326,7 +329,7 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     サイコロの目が大きい方が手番.
     """
     diff = dice[1] - dice[0]
-    return (diff > 0) * jnp.int8(1) + (diff <= 0) * jnp.int8(-1)
+    return (diff > 0)
 
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
@@ -522,47 +525,47 @@ def _is_to_point_legal(
 
 
 def _move(
-    board: jnp.ndarray, turn: jnp.ndarray, action: jnp.ndarray
+    board: jnp.ndarray, action: jnp.ndarray
 ) -> jnp.ndarray:
     """
-    micro actionに基づく状態更新
+    micro actionに基づく状態更新: 常に黒視点
     """
     src, _, tgt = _decompose_action(action)
-    board = board.at[_bar_idx(-1 * turn)].add(
-        -1 * turn * (board[tgt] == -1 * turn)
+    board = board.at[_bar_idx()+1].add(
+        -1 * (board[tgt] == -1)
     )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動
-    board = board.at[src].add(-1 * turn)
+    board = board.at[src].add(-1)
     board = board.at[tgt].add(
-        turn + (board[tgt] == -1 * turn) * turn
+        1 + (board[tgt] == -1)
     )  # hitした際は符号が変わるので余分に+1
     return board
 
 
-def _is_all_off(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
+def _is_all_off(board: jnp.ndarray) -> bool:
     """
-    手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.
+    手番のプレイヤーのチェッカーが全てoffにあれば勝利となる. 常に黒視点
     """
-    return board[_off_idx()] * turn == 15  # type: ignore
+    return board[_off_idx()] == 15  # type: ignore
 
 
-def _calc_win_score(board: jnp.ndarray, turn: jnp.ndarray) -> int:
+def _calc_win_score(board: jnp.ndarray) -> int:
     """
     通常勝ち: 1点
     gammon勝ち: 2点
     backgammon勝ち: 3点
     """
-    g = _is_gammon(board, turn)
-    return 1 + g + (g & _remains_at_inner(board, turn))
+    g = _is_gammon(board)
+    return 1 + g + (g & _remains_at_inner(board))
 
 
-def _is_gammon(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
+def _is_gammon(board: jnp.ndarray) -> bool:
     """
     相手のoffに一つもcheckerがなければgammon勝ち
     """
-    return board[_off_idx()] == 0  # type: ignore
+    return board[_off_idx() + 1] == 0  # type: ignore
 
 
-def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
+def _remains_at_inner(board: jnp.ndarray) -> bool:
     """
     相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
     => backgammon勝ち
@@ -571,11 +574,11 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
 
 
 def _legal_action_mask(
-    board: jnp.ndarray, turn: jnp.ndarray, dice: jnp.ndarray
+    board: jnp.ndarray, dice: jnp.ndarray
 ) -> jnp.ndarray:
     no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_).at[0:6].set(TRUE)
     legal_action_mask = jax.vmap(
-        partial(_legal_action_mask_for_single_die, board=board, turn=turn)
+        partial(_legal_action_mask_for_single_die, board=board)
     )(die=dice).any(
         axis=0
     )  # (26*6 + 6)
@@ -587,18 +590,18 @@ def _legal_action_mask(
 
 
 def _legal_action_mask_for_single_die(
-    board: jnp.ndarray, turn: jnp.ndarray, die
+    board: jnp.ndarray, die
 ) -> jnp.ndarray:
     """
     一つのサイコロの目に対するlegal micro action
     """
     return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.bool_) + (
         die != -1
-    ) * _legal_action_mask_for_valid_single_dice(board, turn, die)
+    ) * _legal_action_mask_for_valid_single_dice(board, die)
 
 
 def _legal_action_mask_for_valid_single_dice(
-    board: jnp.ndarray, turn: jnp.ndarray, die
+    board: jnp.ndarray, die
 ) -> jnp.ndarray:
     """
     -1以外のサイコロの目に対して合法判定
