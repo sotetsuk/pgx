@@ -626,8 +626,8 @@ def _find_value_from_key(
     """
     mask = np.where(
         np.all((hash_keys == key), axis=1),
-        np.ones(1, dtype=np.bool_),
-        np.zeros(1, dtype=np.bool_),
+        np.bool_(1),
+        np.bool_(0),
     )
     ix = np.argmax(mask)
     return hash_values[ix]
