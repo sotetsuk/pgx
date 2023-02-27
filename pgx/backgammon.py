@@ -238,30 +238,30 @@ def flip_board(board):
 def _make_init_board() -> jnp.ndarray:
     board: jnp.ndarray = jnp.array(
         [
-            -2,
+            2,
             0,
-            0,
-            0,
-            0,
-            5,
-            0,
-            3,
             0,
             0,
             0,
             -5,
-            5,
-            0,
-            0,
             0,
             -3,
             0,
+            0,
+            0,
+            5,
             -5,
             0,
             0,
             0,
+            3,
             0,
-            2,
+            5,
+            0,
+            0,
+            0,
+            0,
+            -2,
             0,
             0,
             0,
@@ -366,51 +366,47 @@ def _update_playable_dice(
     )
 
 
-def _home_board(turn: jnp.ndarray) -> jnp.ndarray:
+def _home_board() -> jnp.ndarray:
     """
-    黒: [18~23], 白: [0~5]
+    黒: [18~23], 白: [0~5]: 常に黒視点
     """
-    return (turn == -1) * jnp.arange(18, 24, dtype=jnp.int8) + (turn == 1) * jnp.arange(0, 6, dtype=jnp.int8)  # type: ignore
+    return jnp.arange(18, 24, dtype=jnp.int8) # type: ignore
 
 
-def _off_idx(turn: jnp.ndarray) -> int:
+def _off_idx() -> int:
     """
-    黒: 26, 白: 27
+    黒: 26, 白: 27: 常に黒視点
     """
-    return (turn == -1) * 26 + (turn == 1) * 27  # type: ignore
+    return 26  # type: ignore
 
 
-def _bar_idx(turn: jnp.ndarray) -> int:
+def _bar_idx() -> int:
     """
-    黒: 24, 白 25
+    黒: 24, 白 25: 常に黒視点
     """
-    return (turn == -1) * 24 + (turn == 1) * 25  # type: ignore
+    return 24  # type: ignore
 
 
-def _rear_distance(board: jnp.ndarray, turn: jnp.ndarray) -> jnp.ndarray:
+def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
     """
-    board上にあるcheckerについて, goal地点とcheckerの距離の最大値
+    board上にあるcheckerについて, goal地点とcheckerの距離の最大値: 常に黒視点
     """
     b = board[:24]
-    exists = jnp.where((b * turn > 0), size=24, fill_value=jnp.nan)[  # type: ignore
+    exists = jnp.where((b > 0), size=24, fill_value=jnp.nan)[  # type: ignore
         0
     ]
-    return (turn == 1) * jnp.int16(
-        jnp.max(jnp.nan_to_num(exists, nan=jnp.int16(-100))) + 1
-    ) + (turn == -1) * jnp.int16(
-        24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int16(100)))
-    )
+    return 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int16(100)))
 
 
 def _is_all_on_home_board(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
     """
     全てのcheckerがhome boardにあれば, bear offできる.
     """
-    home_board: jnp.ndarray = _home_board(turn)
+    home_board: jnp.ndarray = _home_board()
     on_home_board: int = jnp.clip(
         turn * board[home_board], a_min=0, a_max=15
     ).sum()
-    off: int = board[_off_idx(turn)] * turn  # type: ignore
+    off: int = board[_off_idx()] * turn  # type: ignore
     return (15 - off) == on_home_board
 
 
@@ -435,7 +431,7 @@ def _calc_src(src: jnp.ndarray, turn: jnp.ndarray) -> int:
     """
     boardのindexに合わせる.
     """
-    return (src == 1) * jnp.int16(_bar_idx(turn)) + (src != 1) * jnp.int16(
+    return (src == 1) * jnp.int16(_bar_idx()) + (src != 1) * jnp.int16(
         src - 2
     )  # type: ignore
 
@@ -458,7 +454,7 @@ def _from_other_than_bar(src: int, turn: jnp.ndarray, die: int) -> int:
     return _is_from_board * jnp.int16(src + die * -1 * turn) + (
         (~_is_from_board)
     ) * jnp.int16(
-        _off_idx(turn)
+        _off_idx()
     )  # type: ignore
 
 
@@ -501,7 +497,7 @@ def _is_to_off_legal(
     2. 自身のcheckeが全てhomeboardにある.
     3. サイコロの目とgoalへの距離が同じ or srcが最後尾であり, サイコロの目がそれよりも大きい.
     """
-    r = _rear_distance(board, turn)
+    r = _rear_distance(board)
     d = _distance_to_goal(src, turn)
     return (
         (src >= 0)
@@ -520,7 +516,7 @@ def _is_to_point_legal(
     e = _exists(board, turn, src)
     o = _is_open(board, turn, tgt)
     return ((src >= 24) & e & o) | (
-        (src < 24) & e & o & (board[_bar_idx(turn)] == 0)
+        (src < 24) & e & o & (board[_bar_idx()] == 0)
     )  # type: ignore
 
 
@@ -545,7 +541,7 @@ def _is_all_off(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
     """
     手番のプレイヤーのチェッカーが全てoffにあれば勝利となる.
     """
-    return board[_off_idx(turn)] * turn == 15  # type: ignore
+    return board[_off_idx()] * turn == 15  # type: ignore
 
 
 def _calc_win_score(board: jnp.ndarray, turn: jnp.ndarray) -> int:
@@ -562,7 +558,7 @@ def _is_gammon(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
     """
     相手のoffに一つもcheckerがなければgammon勝ち
     """
-    return board[_off_idx(-1 * turn)] == 0  # type: ignore
+    return board[_off_idx()] == 0  # type: ignore
 
 
 def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
@@ -570,7 +566,7 @@ def _remains_at_inner(board: jnp.ndarray, turn: jnp.ndarray) -> bool:
     相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
     => backgammon勝ち
     """
-    return jnp.take(board, _home_board(-1 * turn)).sum() != 0  # type: ignore
+    return jnp.take(board, _home_board()).sum() != 0  # type: ignore
 
 
 def _legal_action_mask(

@@ -331,7 +331,6 @@ def test_observe():
 def test_is_open():
     board = make_test_boad()
     # 黒
-    turn = jnp.int8(-1)
     assert _is_open(board, turn, 9)
     assert _is_open(board, turn, 19)
     assert _is_open(board, turn, 4)
@@ -358,10 +357,10 @@ def test_rear_distance():
     board = make_test_boad()
     turn = jnp.int8(-1)
     # 黒
-    assert _rear_distance(board, turn) == 5
+    assert _rear_distance(board) == 5
     # 白
-    turn = jnp.int8(1)
-    assert _rear_distance(board, turn) == 23
+    board = flip_board(board)
+    assert _rear_distance(board) == 23
 
 
 def test_distance_to_goal():
