@@ -11,7 +11,7 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 
 @dataclass
-class ContractBridgeBiddingState:
+class State:
     # turn 現在のターン数
     turn: np.ndarray = np.array(0, dtype=np.int16)
     # curr_player 現在のプレイヤーid
@@ -61,7 +61,7 @@ class ContractBridgeBiddingState:
     pass_num: np.ndarray = np.array(0, dtype=np.int8)
 
 
-def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
+def init() -> Tuple[np.ndarray, State]:
     hand = np.arange(0, 52)
     np.random.shuffle(hand)
     vul_NS = np.random.randint(0, 2, 1)
@@ -73,7 +73,7 @@ def init() -> Tuple[np.ndarray, ContractBridgeBiddingState]:
     legal_actions = np.ones(38, dtype=np.bool_)
     # 最初はdable, redoubleできない
     legal_actions[-2:] = 0
-    state = ContractBridgeBiddingState(
+    state = State(
         shuffled_players=shuffled_players,
         curr_player=curr_player,
         hand=hand,
@@ -98,7 +98,7 @@ def init_by_key(key):
     legal_actions = np.ones(38, dtype=np.bool_)
     # 最初はdable, redoubleできない
     legal_actions[-2:] = 0
-    state = ContractBridgeBiddingState(
+    state = State(
         shuffled_players=shuffled_players,
         curr_player=curr_player,
         hand=hand,
@@ -150,7 +150,7 @@ def _shuffle_players() -> np.ndarray:
 
 
 def _player_position(
-    player: np.ndarray, state: ContractBridgeBiddingState
+    player: np.ndarray, state: State
 ) -> np.ndarray:
     if player != -1:
         return np.where(state.shuffled_players == player)[0]
@@ -159,11 +159,11 @@ def _player_position(
 
 
 def step(
-    state: ContractBridgeBiddingState,
+    state: State,
     action: int,
     hash_keys: np.ndarray,
     hash_values: np.ndarray,
-) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
+) -> Tuple[np.ndarray, State, np.ndarray]:
     state.bidding_history[state.turn] = action
     # 非合法手判断
     if not state.legal_action_mask[action]:
@@ -191,8 +191,8 @@ def step(
 
 
 def duplicate(
-    init_state: ContractBridgeBiddingState,
-) -> ContractBridgeBiddingState:
+    init_state: State,
+) -> State:
     """Make duplicated state where NSplayer and EWplayer are swapped"""
     duplicated_state = copy.deepcopy(init_state)
     ix = np.array([1, 0, 3, 2])
@@ -202,8 +202,8 @@ def duplicate(
 
 # ゲームが非合法手検知で終了した場合
 def _illegal_step(
-    state: ContractBridgeBiddingState,
-) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
+    state: State,
+) -> Tuple[np.ndarray, State, np.ndarray]:
     state.terminated = np.array(True, dtype=np.bool_)
     state.curr_player = np.array(-1, dtype=np.int8)
     illegal_rewards = np.zeros(4)
@@ -212,10 +212,10 @@ def _illegal_step(
 
 # ゲームが正常に終了した場合
 def _terminated_step(
-    state: ContractBridgeBiddingState,
+    state: State,
     hash_keys: np.ndarray,
     hash_values: np.ndarray,
-) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
+) -> Tuple[np.ndarray, State, np.ndarray]:
     state.terminated = np.array(True, dtype=np.bool_)
     state.curr_player = np.array(-1, dtype=np.int8)
     rewards = _reward(state, hash_keys, hash_values)
@@ -224,8 +224,8 @@ def _terminated_step(
 
 # ゲームが継続する場合
 def _continue_step(
-    state: ContractBridgeBiddingState,
-) -> Tuple[np.ndarray, ContractBridgeBiddingState, np.ndarray]:
+    state: State,
+) -> Tuple[np.ndarray, State, np.ndarray]:
     # 次ターンのプレイヤー、ターン数
     # state.curr_player = (state.curr_player + 1) % 4
     state.turn += 1
@@ -240,7 +240,7 @@ def _continue_step(
 
 
 # 終了判定　ビッドされていない場合はパスが４回連続（パスアウト）、それ以外はパスが3回連続
-def _is_terminated(state: ContractBridgeBiddingState) -> bool:
+def _is_terminated(state: State) -> bool:
     if (state.last_bid == -1 and state.pass_num == 4) or (
         state.last_bid != -1 and state.pass_num == 3
     ):
@@ -250,7 +250,7 @@ def _is_terminated(state: ContractBridgeBiddingState) -> bool:
 
 
 def _reward(
-    state: ContractBridgeBiddingState,
+    state: State,
     hash_keys: np.ndarray,
     hash_values: np.ndarray,
 ) -> np.ndarray:
@@ -387,7 +387,7 @@ def _calc_score(
 
 
 def _contract(
-    state: ContractBridgeBiddingState,
+    state: State,
 ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Return Contract which has position of declare ,denomination, level"""
     denomination = state.last_bid % 5
@@ -407,21 +407,21 @@ def _contract(
 
 # passによるstateの変化
 def _state_pass(
-    state: ContractBridgeBiddingState,
-) -> ContractBridgeBiddingState:
+    state: State,
+) -> State:
     state.pass_num += 1
     return state
 
 
 # Xによるstateの変化
-def _state_X(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
+def _state_X(state: State) -> State:
     state.call_x = np.array(True, dtype=np.bool_)
     state.pass_num = np.array(0, dtype=np.int8)
     return state
 
 
 # XXによるstateの変化
-def _state_XX(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
+def _state_XX(state: State) -> State:
     state.call_xx = np.array(True, dtype=np.bool_)
     state.pass_num = np.array(0, dtype=np.int8)
     return state
@@ -429,8 +429,8 @@ def _state_XX(state: ContractBridgeBiddingState) -> ContractBridgeBiddingState:
 
 # bidによるstateの変化
 def _state_bid(
-    state: ContractBridgeBiddingState, action: int
-) -> ContractBridgeBiddingState:
+    state: State, action: int
+) -> State:
     # 最後のbidとそのプレイヤーを保存
     state.last_bid = np.array(action, dtype=np.int8)
     state.last_bidder = state.curr_player
@@ -462,7 +462,7 @@ def _position_to_team(position: np.ndarray) -> np.ndarray:
 
 # 次プレイヤーのX, XXが合法手かどうか
 def _update_legal_action_X_XX(
-    state: ContractBridgeBiddingState,
+    state: State,
 ) -> Tuple[bool, bool]:
     if state.last_bidder != -1:
         return _is_legal_X(state), _is_legal_XX(state)
@@ -470,7 +470,7 @@ def _update_legal_action_X_XX(
         return False, False
 
 
-def _is_legal_X(state: ContractBridgeBiddingState) -> bool:
+def _is_legal_X(state: State) -> bool:
     if (
         (not state.call_x)
         and (not state.call_xx)
@@ -486,7 +486,7 @@ def _is_legal_X(state: ContractBridgeBiddingState) -> bool:
         return False
 
 
-def _is_legal_XX(state: ContractBridgeBiddingState) -> bool:
+def _is_legal_XX(state: State) -> bool:
     if (
         state.call_x
         and (not state.call_xx)
@@ -507,7 +507,7 @@ def _is_partner(position1: np.ndarray, position2: np.ndarray) -> np.ndarray:
     return (abs(position1 - position2) + 1) % 2
 
 
-def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
+def _state_to_pbn(state: State) -> str:
     """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
@@ -527,7 +527,7 @@ def _state_to_pbn(state: ContractBridgeBiddingState) -> str:
     return pbn
 
 
-def _state_to_key(state: ContractBridgeBiddingState) -> np.ndarray:
+def _state_to_key(state: State) -> np.ndarray:
     """Convert state to key of dds table"""
     hand = state.hand
     key = np.zeros(52, dtype=np.int8)
@@ -608,7 +608,7 @@ def _value_to_dds_tricks(values: np.ndarray) -> np.ndarray:
 
 
 def _calculate_dds_tricks(
-    state: ContractBridgeBiddingState,
+    state: State,
     hash_keys: np.ndarray,
     hash_values: np.ndarray,
 ) -> np.ndarray:

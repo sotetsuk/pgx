@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 
 from pgx.contractbridgebidding import (
-    ContractBridgeBiddingState,
+    State,
     _calc_score,
     _calculate_dds_tricks,
     _contract,
@@ -775,7 +775,7 @@ def test_step():
     assert vul == 0
 
 
-def max_action_length_agent(state: ContractBridgeBiddingState):
+def max_action_length_agent(state: State):
     if (state.last_bid == -1 and state.pass_num != 3) or (
         state.last_bid != -1 and state.pass_num != 2
     ):
