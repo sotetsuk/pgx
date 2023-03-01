@@ -6,10 +6,10 @@ import jax
 import time
 v = Visualizer(color_mode="dark")
 
-N = 9
+N = 20
 
-init = jax.jit(jax.vmap(partial(init, size=19)))
-step = jax.jit(jax.vmap(partial(step, size=19)))
+init = jax.jit(jax.vmap(partial(init, size=5)))
+step = jax.jit(jax.vmap(partial(step, size=5)))
 
 rng = jax.random.PRNGKey(0)
 rng, subkey = jax.random.split(rng)
@@ -24,9 +24,9 @@ print("warmup ends")
 
 st = time.time()
 s = init(subkeys)
-for i in range(100):
-    if i % 3 == 0:
-        v.save_svg(s, f"{i:03d}.svg")
+for i in range(1000 + 100):
+    if i >= 1000 and i % 3 == 0:
+        v.save_svg(s, f"{i % 1000:03d}.svg")
     rng, subkey = jax.random.split(rng)
     a = act_randomly(subkey, s)
     # print(a)
