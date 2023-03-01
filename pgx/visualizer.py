@@ -367,7 +367,7 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, OthelloState):
-            self.config["GRID_SIZE"] = 35
+            self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
             self._make_dwg_group = _make_othello_dwg
@@ -499,6 +499,10 @@ class Visualizer:
                 size=_states.size[_i],
                 ren_id_board=_states.ren_id_board[_i],
                 turn=_states.turn[_i],
+            )
+        elif isinstance(_states, OthelloState):
+            return OthelloState(
+                board=_states.board[_i],
             )
         elif isinstance(_states, ShogiState):
             return ShogiState(  # type:ignore
