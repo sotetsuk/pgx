@@ -313,7 +313,7 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, BridgeBiddingState):
-            self.config["GRID_SIZE"] = 30
+            self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 14
             self.config["BOARD_HEIGHT"] = 12
             self._make_dwg_group = _make_bridge_dwg

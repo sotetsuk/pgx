@@ -103,6 +103,5 @@ def _make_othello_dwg(dwg, state: OthelloState, config):
                 fill=color,
             )
         )
-    # board_g.translate(GRID_SIZE / 2, GRID_SIZE / 2)
 
     return board_g
