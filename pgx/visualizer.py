@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import List, Literal, Union
+from typing import Literal
 
 import svgwrite  # type: ignore
 
