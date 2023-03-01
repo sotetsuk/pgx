@@ -127,7 +127,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
                     text=card_str,
                     insert=(x_offset[i] + 40, y_offset[i] + 30 * (j + 1)),
                     fill="orangered" if 0 < j < 3 else color_set.text_color,
-                    font_size="24px",
+                    font_size="20px",
                     font_family="Serif",
                     font_weight="bold",
                 )
