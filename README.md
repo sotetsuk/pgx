@@ -5,7 +5,7 @@
 A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
 
 <div align="center">
-<img src="go.gif" width="40%"><img src="go.gif" width="40%">
+<img src="go.gif" width="40%"><img src="go.gif" width="40%" style="transform:rotate(180deg);">
 </div>
 
 ## APIs
