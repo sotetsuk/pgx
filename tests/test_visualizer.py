@@ -33,7 +33,7 @@ def test_chess():
 
 
 def test_bridge():
-    from pgx.contractbridgebidding import init
+    from pgx.bridge_bidding import init
 
     _, state = init()
     vis.save_svg(state, "tests/temp.svg")
