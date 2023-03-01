@@ -48,6 +48,14 @@ def test_go():
     os.remove("tests/temp.svg")
 
 
+def test_othello():
+    from pgx.othello import State
+
+    state = State()
+    vis.save_svg(state, "tests/temp.svg")
+    os.remove("tests/temp.svg")
+
+
 def test_shogi():
     from pgx.shogi import init
 
