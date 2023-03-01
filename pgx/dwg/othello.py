@@ -29,7 +29,7 @@ def _make_othello_dwg(dwg, state: OthelloState, config):
             ),
             fill="none",
             stroke=color_set.grid_color,
-            stroke_width="12px",
+            stroke_width="16px",
             rx="3px",
             ry="3px",
         )
@@ -83,6 +83,29 @@ def _make_othello_dwg(dwg, state: OthelloState, config):
         )
     board_g.add(hoshi_g)
 
+    # dan,suji
+    cord = board_g.add(dwg.g(id="cord", fill=color_set.background_color))
+    NUM_TO_CHAR = ["a", "b", "c", "d", "e", "f", "g", "h"]
+    for i in range(BOARD_SIZE):
+        cord.add(
+            dwg.text(
+                text=f"{i+1}",
+                insert=(
+                    (-0.2) * GRID_SIZE,
+                    (i + 0.6) * GRID_SIZE,
+                ),
+                font_size="11px",
+                font_family="Serif",
+            )
+        )
+        cord.add(
+            dwg.text(
+                text=f"{NUM_TO_CHAR[i]}",
+                insert=((i + 0.4) * GRID_SIZE, -0.05),
+                font_size="11px",
+                font_family="Serif",
+            )
+        )
     # stones
     board = state.board
     for xy, stone in enumerate(board):
