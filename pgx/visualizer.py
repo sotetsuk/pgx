@@ -9,6 +9,7 @@ from .dwg.backgammon import BackgammonState, _make_backgammon_dwg
 from .dwg.bridge_bidding import BridgeBiddingState, _make_bridge_dwg
 from .dwg.chess import ChessState, _make_chess_dwg
 from .dwg.go import GoState, _make_go_dwg
+from .dwg.othello import OthelloState, _make_othello_dwg
 from .dwg.shogi import ShogiState, _make_shogi_dwg
 from .dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from .dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
@@ -58,16 +59,7 @@ class Visualizer:
 
     def save_svg(
         self,
-        state: Union[
-            AnimalShogiState,
-            BackgammonState,
-            ChessState,
-            BridgeBiddingState,
-            GoState,
-            ShogiState,
-            SparrowMahjongState,
-            TictactoeState,
-        ],
+        state,
         filename="temp.svg",
     ) -> None:
         assert filename.endswith(".svg")
@@ -75,21 +67,11 @@ class Visualizer:
 
     def show_svg(
         self,
-        states: Union[
-            list,
-            AnimalShogiState,
-            BackgammonState,
-            ChessState,
-            BridgeBiddingState,
-            GoState,
-            ShogiState,
-            SparrowMahjongState,
-            TictactoeState,
-        ],
+        states,
     ) -> None:
         """Pgxのstate,batch処理されたstate,stateのリストをnotebook上で可視化する.
 
-        states: Union[list, AnimalShogiState, BackgammonState, ChessState, BridgeBiddingState, GoState, ShogiState, SparrowMahjongState, TictactoeState]
+        states: Union[list, AnimalShogiState, BackgammonState, ChessState, BridgeBiddingState, GoState, OthelloState,ShogiState, SparrowMahjongState, TictactoeState]
             表示させるstate
         """
         import sys
@@ -117,18 +99,7 @@ class Visualizer:
 
     def _show_states_in_widgets(
         self,
-        states: List[
-            Union[
-                AnimalShogiState,
-                BackgammonState,
-                ChessState,
-                BridgeBiddingState,
-                GoState,
-                ShogiState,
-                SparrowMahjongState,
-                TictactoeState,
-            ]
-        ],
+        states,
     ):
         import ipywidgets as widgets  # type:ignore
         from IPython.display import display, display_svg
@@ -384,6 +355,34 @@ class Visualizer:
             ) or self.config["COLOR_MODE"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black", "gray", "white", "white", "#202020", "white", ""
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "white",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "",
+                )
+        elif isinstance(_state, OthelloState):
+            self.config["GRID_SIZE"] = 25
+            self.config["BOARD_WIDTH"] = 8
+            self.config["BOARD_HEIGHT"] = 8
+            self._make_dwg_group = _make_othello_dwg
+            if (
+                self.config["COLOR_MODE"] is None
+                and self.config["COLOR_MODE"] == "dark"
+            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "lightgray",
+                    "white",
+                    "lightgray",
+                    "#202020",
+                    "lightgray",
+                    "",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
