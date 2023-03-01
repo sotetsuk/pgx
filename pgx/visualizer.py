@@ -8,12 +8,12 @@ from .dwg.animalshogi import AnimalShogiState, _make_animalshogi_dwg
 from .dwg.backgammon import BackgammonState, _make_backgammon_dwg
 from .dwg.bridge_bidding import BridgeBiddingState, _make_bridge_dwg
 from .dwg.chess import ChessState, _make_chess_dwg
+from .dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from .dwg.go import GoState, _make_go_dwg
 from .dwg.othello import OthelloState, _make_othello_dwg
 from .dwg.shogi import ShogiState, _make_shogi_dwg
 from .dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from .dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
-from .dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 
 
 @dataclass
