@@ -12,6 +12,7 @@ from .dwg.go import GoState, _make_go_dwg
 from .dwg.shogi import ShogiState, _make_shogi_dwg
 from .dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from .dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
+from .dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 
 
 @dataclass
@@ -313,6 +314,34 @@ class Visualizer:
                     "black",
                     "",
                 )
+        elif isinstance(_state, BridgeBiddingState):
+            self.config["GRID_SIZE"] = 30
+            self.config["BOARD_WIDTH"] = 14
+            self.config["BOARD_HEIGHT"] = 12
+            self._make_dwg_group = _make_bridge_dwg
+            if (
+                self.config["COLOR_MODE"] is None
+                and self.config["COLOR_MODE"] == "dark"
+            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "gray",
+                    "black",
+                    "black",
+                    "dimgray",
+                    "#202020",
+                    "gainsboro",
+                    "white",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "white",
+                    "black",
+                    "lightgray",
+                    "white",
+                    "white",
+                    "gray",
+                    "black",
+                )
         elif isinstance(_state, ChessState):
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 8
@@ -341,33 +370,33 @@ class Visualizer:
                     "black",
                     "",
                 )
-        elif isinstance(_state, BridgeBiddingState):
-            self.config["GRID_SIZE"] = 30
-            self.config["BOARD_WIDTH"] = 14
-            self.config["BOARD_HEIGHT"] = 12
-            self._make_dwg_group = _make_bridge_dwg
+        elif isinstance(_state, ConnectFourState):
+            self.config["GRID_SIZE"] = 25
+            self.config["BOARD_WIDTH"] = 7
+            self.config["BOARD_HEIGHT"] = 7
+            self._make_dwg_group = _make_connect_four_dwg
             if (
                 self.config["COLOR_MODE"] is None
                 and self.config["COLOR_MODE"] == "dark"
             ) or self.config["COLOR_MODE"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "gray",
-                    "black",
-                    "black",
-                    "dimgray",
-                    "#202020",
-                    "gainsboro",
-                    "white",
-                )
-            else:
-                self.config["COLOR_SET"] = ColorSet(
-                    "white",
                     "black",
                     "lightgray",
                     "white",
-                    "white",
-                    "gray",
+                    "lightgray",
+                    "#202020",
+                    "lightgray",
+                    "",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
                     "black",
+                    "white",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "",
                 )
         elif isinstance(_state, GoState):
             self.config["GRID_SIZE"] = 25
