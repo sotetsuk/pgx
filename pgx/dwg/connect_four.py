@@ -4,7 +4,7 @@ from pgx.connect_four import State as ConnectFourState
 def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
 
     GRID_SIZE = config["GRID_SIZE"]
-    BOARD_WIDTH = config["BOARD_WIDTH"] - 1
+    BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
     color_set = config["COLOR_SET"]
 
@@ -21,16 +21,19 @@ def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
     # board
     # grid
     board_g = dwg.g()
-    board_g.add(
-        dwg.rect(
-            (0, 0),
-            (
-                BOARD_WIDTH * GRID_SIZE,
-                (BOARD_HEIGHT - 1) * GRID_SIZE,
-            ),
-            fill=color_set.p1_outline,
+
+    vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
+    for x in range(1, BOARD_WIDTH):
+        vlines.add(
+            dwg.line(
+                start=(GRID_SIZE * x, 0),
+                end=(
+                    GRID_SIZE * x,
+                    GRID_SIZE * (BOARD_HEIGHT - 1),
+                ),
+                stroke_width="0.5px",
+            )
         )
-    )
 
     _width = 6
     board_g.add(
@@ -55,18 +58,7 @@ def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
             stroke=color_set.grid_color,
         )
     )
-    _center = -_width / 2
-    board_g.add(
-        dwg.polygon(
-            points=[
-                (_center, (BOARD_HEIGHT - 0.5) * GRID_SIZE),
-                (_center - 0.5 * GRID_SIZE, BOARD_HEIGHT * GRID_SIZE),
-                (_center + 0.5 * GRID_SIZE, BOARD_HEIGHT * GRID_SIZE),
-            ],
-            fill=color_set.grid_color,
-            stroke=color_set.grid_color,
-        )
-    )
+
     board_g.add(
         dwg.rect(
             (GRID_SIZE * BOARD_WIDTH, 0),
@@ -74,18 +66,6 @@ def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
                 _width,
                 BOARD_HEIGHT * GRID_SIZE,
             ),
-            fill=color_set.grid_color,
-            stroke=color_set.grid_color,
-        )
-    )
-    _center = GRID_SIZE * BOARD_WIDTH + _width / 2
-    board_g.add(
-        dwg.polygon(
-            points=[
-                (_center, (BOARD_HEIGHT - 0.5) * GRID_SIZE),
-                (_center - 0.5 * GRID_SIZE, BOARD_HEIGHT * GRID_SIZE),
-                (_center + 0.5 * GRID_SIZE, BOARD_HEIGHT * GRID_SIZE),
-            ],
             fill=color_set.grid_color,
             stroke=color_set.grid_color,
         )
@@ -102,7 +82,7 @@ def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
         stone_x = xy % BOARD_WIDTH * GRID_SIZE + GRID_SIZE / 2
 
         color = color_set.p1_color if stone == 0 else color_set.p2_color
-        outline = color_set.p2_color if stone == 0 else color_set.p1_color
+        outline = color_set.p1_outline if stone == 0 else color_set.p2_outline
         board_g.add(
             dwg.circle(
                 center=(stone_x, stone_y),
@@ -111,6 +91,5 @@ def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
                 fill=color,
             )
         )
-    board_g.translate(GRID_SIZE / 2, 0)
 
     return board_g

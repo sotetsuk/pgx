@@ -343,7 +343,7 @@ class Visualizer:
                 )
         elif isinstance(_state, ConnectFourState):
             self.config["GRID_SIZE"] = 35
-            self.config["BOARD_WIDTH"] = 8
+            self.config["BOARD_WIDTH"] = 7
             self.config["BOARD_HEIGHT"] = 7
             self._make_dwg_group = _make_connect_four_dwg
             if (
@@ -353,7 +353,7 @@ class Visualizer:
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "lightgray",
-                    "gray",  # bg
+                    "white",
                     "lightgray",
                     "#202020",
                     "lightgray",
@@ -363,7 +363,7 @@ class Visualizer:
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "white",
-                    "lightgray",  # bg
+                    "black",
                     "black",
                     "white",
                     "black",
