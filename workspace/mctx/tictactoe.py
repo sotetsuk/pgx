@@ -55,8 +55,8 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
     subkeys = jax.random.split(subkey, N)
     state = embedding
     state = batched_step(state, action) 
-    reward = -1 * jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
-    value = -1 * jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play, 勝ちの時のみ1
+    reward = -1 * jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1) # 終局までrandom play, 次のplayerなので-1する.
+    value = -1 * jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play, 次のplayerなので-1する.
     prior_logits = jnp.ones(state.legal_action_mask.shape)
     discount = -1.0 * jnp.ones_like(reward)  # zero sum gameでは-1
     terminated = state.terminated
@@ -85,7 +85,7 @@ def mcts(
     """
     rng_key, subkey = jax.random.split(rng_key)
     subkeys = jax.random.split(subkey, N)
-    value = -1 * jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1) # 終局までrandom play
+    value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1) # 終局までrandom play 
     prior_logits = jnp.ones(state.legal_action_mask.shape)
     root = mctx.RootFnOutput(prior_logits=prior_logits, value=value, embedding=state)
     policy_output = uct_mcts_policy(
@@ -97,15 +97,16 @@ def mcts(
         invalid_actions=~state.legal_action_mask,
     )
     action = jnp.argmax(policy_output.action_weights, axis=1)
-    #print(policy_output.search_tree.node_values, policy_output.search_tree.children_values)
+
+    #print(policy_output.search_tree.node_values)
     return action
 
 def set_curr_player(state, player):
     return state.replace(curr_player=player)
 
 if __name__ == "__main__":
-    N = 50
-    NUMSIMULATIONS = 100
+    N = 10
+    NUMSIMULATIONS = 10000
     mctx_id = 0
     random_id = 1
     rng = jax.random.PRNGKey(0)
