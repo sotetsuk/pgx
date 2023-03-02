@@ -1,7 +1,7 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
 
 <div align="center">
-<img src="logo.svg" width="60%">
+<img src="logo.svg" width="40%">
 </div>
 
 A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
