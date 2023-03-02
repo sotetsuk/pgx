@@ -1,6 +1,6 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
 
-# Pgx
+<img src="logo.svg" width="80%">
 
 A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
 
