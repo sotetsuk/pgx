@@ -154,15 +154,14 @@ def mcts(
         num_simulations=num_simulations,
         invalid_actions=~state.legal_action_mask,
     )
-    #print(policy_output.action_weights)
     return policy_output.action, policy_output
 
 def set_curr_player(state, player):
     return state.replace(curr_player=player)
 
 if __name__ == "__main__":
-    N = 10
-    NUMSIMULATIONS = 5000
+    N = 30
+    NUMSIMULATIONS = 10000
     mctx_id = 0
     random_id = 1
     rng = jax.random.PRNGKey(0)
