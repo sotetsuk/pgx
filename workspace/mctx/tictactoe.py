@@ -114,8 +114,8 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
     subkeys = jax.random.split(subkey, N)
     state = embedding
     state = batched_step(state, action) 
-    reward = jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
-    value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
+    reward = 1- jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
+    value = 1- jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
     prior_logits = jnp.ones(state.legal_action_mask.shape)
     discount = jnp.ones_like(reward)
     terminated = state.terminated
@@ -143,7 +143,7 @@ def mcts(
     """
     rng_key, subkey = jax.random.split(rng_key)
     subkeys = jax.random.split(subkey, N)
-    value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1) # 終局までrandom play 
+    value = 1 - jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1) # 終局までrandom play 
     prior_logits = jnp.ones(state.legal_action_mask.shape)
     root = mctx.RootFnOutput(prior_logits=prior_logits, value=value, embedding=state)
     policy_output = uct_mcts_policy(
@@ -161,8 +161,8 @@ def set_curr_player(state, player):
     return state.replace(curr_player=player)
 
 if __name__ == "__main__":
-    N = 2
-    NUMSIMULATIONS = 2
+    N = 10
+    NUMSIMULATIONS = 1000
     mctx_id = 0
     random_id = 1
     rng = jax.random.PRNGKey(0)
@@ -185,8 +185,9 @@ if __name__ == "__main__":
         if i % 2 == mctx_id:  # player_id0がmcts agent
             rng, subkey = jax.random.split(rng)
             action, policy_output = mcts(state, subkey, recurrent_fn, NUMSIMULATIONS)
-            graph = convert_tree_to_graph(policy_output.search_tree)
-            graph.draw(f"tree_graph/graph{str(i)}.png", prog="dot")
+            #v.save_svg(policy_output.search_tree.embeddings, f"vis/tree_{i:03d}.svg")
+            #graph = convert_tree_to_graph(policy_output.search_tree)
+            #graph.draw(f"tree_graph/graph{str(i)}.png", prog="dot")
         else:
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)

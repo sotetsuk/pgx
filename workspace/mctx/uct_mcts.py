@@ -109,6 +109,7 @@ def uct_mcts_policy(
   visit_counts = summary.visit_counts
   q_values = summary.qvalues
   print(q_values/visit_counts)
+  print(visit_counts)
   action = jnp.argmax(q_values/(visit_counts+1), axis=1)
   return mctx.PolicyOutput(
       action=action,
