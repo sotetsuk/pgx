@@ -3,7 +3,6 @@ Monte Carlo tree search.
 """
 
 from functools import partial
-
 import chex
 import jax
 import jax.numpy as jnp
@@ -11,7 +10,9 @@ import mctx
 from pgx.utils import act_randomly
 import pgx
 from pgx.visualizer import Visualizer
+import pygraphviz
 from uct_mcts import uct_mcts_selection, uct_mcts_policy
+from search import search
 v = Visualizer()
 
 env = pgx.make("tic_tac_toe/v0")
@@ -22,6 +23,64 @@ assert env is not None
 batched_init = jax.jit(jax.vmap(env.init))
 batched_step = jax.jit(jax.vmap(env.step))
 
+
+def convert_tree_to_graph(
+    tree: mctx.Tree,
+    action_labels = None,
+    batch_index: int = 0
+):
+  """Converts a search tree into a Graphviz graph.
+  Args:
+    tree: A `Tree` containing a batch of search data.
+    action_labels: Optional labels for edges, defaults to the action index.
+    batch_index: Index of the batch element to plot.
+  Returns:
+    A Graphviz graph representation of `tree`.
+  """
+  chex.assert_rank(tree.node_values, 2)
+  batch_size = tree.node_values.shape[0]
+  if action_labels is None:
+    action_labels = range(tree.num_actions)
+  elif len(action_labels) != tree.num_actions:
+    raise ValueError(
+        f"action_labels {action_labels} has the wrong number of actions "
+        f"({len(action_labels)}). "
+        f"Expecting {tree.num_actions}.")
+
+  def node_to_str(node_i, reward=0, discount=1):
+    return (f"{node_i}\n"
+            f"Reward: {reward:.2f}\n"
+            f"Discount: {discount:.2f}\n"
+            f"Value: {tree.node_values[batch_index, node_i]:.2f}\n"
+            f"Visits: {tree.node_visits[batch_index, node_i]}\n")
+
+  def edge_to_str(node_i, a_i):
+    node_index = jnp.full([batch_size], node_i)
+    probs = jax.nn.softmax(tree.children_prior_logits[batch_index, node_i])
+    return (f"{action_labels[a_i]}\n"
+            f"Q: {tree.qvalues(node_index)[batch_index, a_i]:.2f}\n"
+            f"p: {probs[a_i]:.2f}\n")
+
+  graph = pygraphviz.AGraph(directed=True)
+
+  # Add root
+  graph.add_node(0, label=node_to_str(node_i=0), color="green")
+  # Add all other nodes and connect them up.
+  for node_i in range(tree.num_simulations):
+    for a_i in range(tree.num_actions):
+      # Index of children, or -1 if not expanded
+      children_i = tree.children_index[batch_index, node_i, a_i]
+      if children_i >= 0:
+        graph.add_node(
+            children_i,
+            label=node_to_str(
+                node_i=children_i,
+                reward=tree.children_rewards[batch_index, node_i, a_i],
+                discount=tree.children_discounts[batch_index, node_i, a_i]),
+            color="red")
+        graph.add_edge(node_i, children_i, label=edge_to_str(node_i, a_i))
+
+  return graph
 
 
 def random_play_till_end(state, rng_key) -> jnp.ndarray:
@@ -55,10 +114,10 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
     subkeys = jax.random.split(subkey, N)
     state = embedding
     state = batched_step(state, action) 
-    reward = -1 * jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1) # 終局までrandom play, 次のplayerなので-1する.
-    value = -1 * jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play, 次のplayerなので-1する.
+    reward = jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
+    value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
     prior_logits = jnp.ones(state.legal_action_mask.shape)
-    discount = -1.0 * jnp.ones_like(reward)  # zero sum gameでは-1
+    discount = jnp.ones_like(reward)
     terminated = state.terminated
     assert value.shape == terminated.shape
     value = jnp.where(terminated, 0.0, value)  # 終端状態の場合は0
@@ -71,7 +130,6 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
         value=value,
     )
     return recurrent_fn_output, state
-
 
 def mcts(
     state,
@@ -96,17 +154,15 @@ def mcts(
         num_simulations=num_simulations,
         invalid_actions=~state.legal_action_mask,
     )
-    action = jnp.argmax(policy_output.action_weights, axis=1)
-
-    #print(policy_output.search_tree.node_values)
-    return action
+    #print(policy_output.action_weights)
+    return policy_output.action, policy_output
 
 def set_curr_player(state, player):
     return state.replace(curr_player=player)
 
 if __name__ == "__main__":
-    N = 10
-    NUMSIMULATIONS = 10000
+    N = 2
+    NUMSIMULATIONS = 2
     mctx_id = 0
     random_id = 1
     rng = jax.random.PRNGKey(0)
@@ -128,14 +184,16 @@ if __name__ == "__main__":
     while not state.terminated.all():
         if i % 2 == mctx_id:  # player_id0がmcts agent
             rng, subkey = jax.random.split(rng)
-            action = mcts(state, subkey, recurrent_fn, NUMSIMULATIONS)
+            action, policy_output = mcts(state, subkey, recurrent_fn, NUMSIMULATIONS)
+            graph = convert_tree_to_graph(policy_output.search_tree)
+            graph.draw(f"tree_graph/graph{str(i)}.png", prog="dot")
         else:
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
         state = batched_step(state, action)
         reward = reward + state.reward
         print(i)
-        v.save_svg(state, f"{i:03d}.svg")
+        v.save_svg(state, f"vis/{i:03d}.svg")
         i += 1
     
     print(f"average return of mcts agent {jax.vmap(partial(_get, idx=mctx_id))(reward).sum()/N} , average return of random agent {jax.vmap(partial(_get, idx=random_id))(reward).sum()/N}")

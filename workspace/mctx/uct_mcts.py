@@ -5,6 +5,7 @@ import chex
 from typing import Optional
 import functools
 from mctx import qtransform_by_parent_and_siblings
+from search import search
 
 
 def masked_argmax(
@@ -28,17 +29,18 @@ def uct_mcts_selection(rng_key, tree, node_index, depth, pb_c_init: float = 1.25
     win_rate_of_action_a + UCB
     """
     visit_counts = tree.children_visits[node_index]
-    node_visit = tree.node_visits[node_index]
+    node_visit = tree.node_visits.sum()
     pb_c = pb_c_init
-    policy_score = pb_c * jnp.sqrt(node_visit) / (visit_counts + 1)
+    policy_score = jnp.sqrt(2 * jnp.log(node_visit) / (visit_counts + 1))
 
     value_score = tree.children_values[node_index] / visit_counts  # 勝率
 
 
     to_argmax = value_score + policy_score
+    legal_actions = tree.embeddings.legal_action_mask[node_index]
 
     # Masking the invalid actions at the root.
-    return masked_argmax(to_argmax, tree.root_invalid_actions * (depth == 0))
+    return masked_argmax(to_argmax, ~legal_actions)
 
 
 def uct_mcts_policy(
@@ -89,7 +91,7 @@ def uct_mcts_policy(
   root_action_selection_fn = functools.partial(
       interior_action_selection_fn,
       depth=0)
-  search_tree = mctx.search(
+  search_tree = search(
       params=params,
       rng_key=search_rng_key,
       root=root,
@@ -104,7 +106,10 @@ def uct_mcts_policy(
   # Sampling the proposed action proportionally to the visit counts.
   summary = search_tree.summary()
   action_weights = summary.visit_probs
-  action = jax.random.categorical(rng_key, action_weights)
+  visit_counts = summary.visit_counts
+  q_values = summary.qvalues
+  print(q_values/visit_counts)
+  action = jnp.argmax(q_values/(visit_counts+1), axis=1)
   return mctx.PolicyOutput(
       action=action,
       action_weights=action_weights,
