@@ -114,13 +114,13 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
     subkeys = jax.random.split(subkey, N)
     state = embedding
     state = batched_step(state, action) 
-    reward = 1 - jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
-    value = 1- jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
+    reward =  jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
+    value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
     prior_logits = jnp.ones(state.legal_action_mask.shape)
     discount = jnp.ones_like(reward)
     terminated = state.terminated
     assert value.shape == terminated.shape
-    value = jnp.where(terminated, 1- value, value)  # 終端状態の場合は0
+    value = jnp.where(terminated, 1 - value, value)  # terminated の場合は turnが変わらないので視点を逆転させる.
     assert discount.shape == terminated.shape
     discount = jnp.where(terminated, 0.0, discount)
     recurrent_fn_output = mctx.RecurrentFnOutput(
@@ -143,7 +143,7 @@ def mcts(
     """
     rng_key, subkey = jax.random.split(rng_key)
     subkeys = jax.random.split(subkey, N)
-    value = 1 - jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1) # 終局までrandom play 
+    value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1) # 終局までrandom play 
     prior_logits = jnp.ones(state.legal_action_mask.shape)
     root = mctx.RootFnOutput(prior_logits=prior_logits, value=value, embedding=state)
     policy_output = uct_mcts_policy(
@@ -162,7 +162,7 @@ def set_curr_player(state, player):
 
 if __name__ == "__main__":
     N = 10
-    NUMSIMULATIONS = 5000
+    NUMSIMULATIONS = 3000
     mctx_id = 0
     random_id = 1
     rng = jax.random.PRNGKey(0)

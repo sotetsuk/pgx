@@ -287,7 +287,7 @@ def backward(
     """
     leaf_value = 1 - leaf_value  # 1 for me is 0 for enemy  fixed for simple uct search.
     parent_value = tree.node_values[parent] + leaf_value
-    children_values = tree.node_values[index]
+    children_values = -1 * tree.node_values[index]  # children value is from view of actor, not the one at the state as a result of action
     children_counts = tree.children_visits[parent, action] + 1
 
     tree = tree.replace(
