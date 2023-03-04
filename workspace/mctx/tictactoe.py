@@ -114,13 +114,13 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
     subkeys = jax.random.split(subkey, N)
     state = embedding
     state = batched_step(state, action) 
-    reward = 1- jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
+    reward = 1 - jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
     value = 1- jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
     prior_logits = jnp.ones(state.legal_action_mask.shape)
     discount = jnp.ones_like(reward)
     terminated = state.terminated
     assert value.shape == terminated.shape
-    value = jnp.where(terminated, 0.0, value)  # 終端状態の場合は0
+    value = jnp.where(terminated, 1- value, value)  # 終端状態の場合は0
     assert discount.shape == terminated.shape
     discount = jnp.where(terminated, 0.0, discount)
     recurrent_fn_output = mctx.RecurrentFnOutput(
@@ -162,7 +162,7 @@ def set_curr_player(state, player):
 
 if __name__ == "__main__":
     N = 10
-    NUMSIMULATIONS = 1000
+    NUMSIMULATIONS = 5000
     mctx_id = 0
     random_id = 1
     rng = jax.random.PRNGKey(0)
@@ -196,6 +196,6 @@ if __name__ == "__main__":
         print(i)
         v.save_svg(state, f"vis/{i:03d}.svg")
         i += 1
-    
+    print(reward)
     print(f"average return of mcts agent {jax.vmap(partial(_get, idx=mctx_id))(reward).sum()/N} , average return of random agent {jax.vmap(partial(_get, idx=random_id))(reward).sum()/N}")
     
