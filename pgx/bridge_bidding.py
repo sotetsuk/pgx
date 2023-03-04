@@ -2,6 +2,8 @@ import copy
 from dataclasses import dataclass
 from typing import Tuple
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 
 # カードと数字の対応
