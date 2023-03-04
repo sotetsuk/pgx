@@ -120,7 +120,7 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
     discount = jnp.ones_like(reward)
     terminated = state.terminated
     assert value.shape == terminated.shape
-    value = jnp.where(terminated, 1 - value, value)  # terminated の場合は turnが変わらないので視点を逆転させる.
+    value = jnp.where(terminated, reward, value)  # terminated の場合は turnが変わらないので視点を逆転させる.
     assert discount.shape == terminated.shape
     discount = jnp.where(terminated, 0.0, discount)
     recurrent_fn_output = mctx.RecurrentFnOutput(
@@ -162,7 +162,7 @@ def set_curr_player(state, player):
 
 if __name__ == "__main__":
     N = 10
-    NUMSIMULATIONS = 3000
+    NUMSIMULATIONS = 5000
     mctx_id = 0
     random_id = 1
     rng = jax.random.PRNGKey(0)

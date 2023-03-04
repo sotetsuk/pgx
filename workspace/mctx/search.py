@@ -178,7 +178,8 @@ def simulate(
     depth = state.depth + 1
     is_before_depth_cutoff = depth < max_depth
     is_visited = next_node_index != Tree.UNVISITED
-    is_continuing = jnp.logical_and(is_visited, is_before_depth_cutoff)
+    terminated = tree.embeddings.terminated[next_node_index]  # stateがterminatedなら
+    is_continuing = jnp.logical_and(jnp.logical_and(is_visited, is_before_depth_cutoff), ~terminated)
     return _SimulationState(
         rng_key=rng_key,
         node_index=node_index,
