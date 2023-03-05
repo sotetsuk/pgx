@@ -357,7 +357,7 @@ class Visualizer:
                     "lightgray",
                     "#1e1e1e",
                     "lightgray",
-                    "",
+                    "gray",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -367,7 +367,7 @@ class Visualizer:
                     "black",
                     "white",
                     "black",
-                    "",
+                    "gray",
                 )
         elif isinstance(_state, GoState):
             self.config["GRID_SIZE"] = 25

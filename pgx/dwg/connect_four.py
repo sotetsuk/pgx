@@ -2,7 +2,6 @@ from pgx.connect_four import State as ConnectFourState
 
 
 def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
-
     GRID_SIZE = config["GRID_SIZE"]
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
@@ -22,16 +21,22 @@ def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
     # grid
     board_g = dwg.g()
 
-    vlines = board_g.add(dwg.g(id="vline", stroke=color_set.grid_color))
+    vlines = board_g.add(dwg.g(id="vline", stroke=color_set.text_color))
     for x in range(1, BOARD_WIDTH):
         vlines.add(
             dwg.line(
                 start=(GRID_SIZE * x, 0),
-                end=(
-                    GRID_SIZE * x,
-                    GRID_SIZE * (BOARD_HEIGHT - 1),
-                ),
-                stroke_width="0.5px",
+                end=(GRID_SIZE * x, GRID_SIZE * (BOARD_HEIGHT - 1)),
+                stroke_width="1px",
+            )
+        )
+    hlines = board_g.add(dwg.g(id="vline", stroke=color_set.text_color))
+    for y in range(1, BOARD_HEIGHT):
+        hlines.add(
+            dwg.line(
+                start=(0, GRID_SIZE * y),
+                end=(GRID_SIZE * BOARD_WIDTH, GRID_SIZE * y),
+                stroke_width="0.1px",
             )
         )
 
