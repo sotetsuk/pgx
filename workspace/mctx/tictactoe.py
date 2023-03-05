@@ -13,15 +13,7 @@ from pgx.visualizer import Visualizer
 import pygraphviz
 from uct_mcts import uct_mcts_selection, uct_mcts_policy
 from search import search
-v = Visualizer()
-
-env = pgx.make("tic_tac_toe/v0")
-assert env is not None
-
-# warmup start
-
-batched_init = jax.jit(jax.vmap(env.init))
-batched_step = jax.jit(jax.vmap(env.step))
+import argparse
 
 
 def convert_tree_to_graph(
@@ -83,6 +75,16 @@ def convert_tree_to_graph(
   return graph
 
 
+v = Visualizer()
+
+env = pgx.make("tic_tac_toe/v0")
+assert env is not None
+
+# warmup start
+batched_init = jax.jit(jax.vmap(env.init))
+batched_step = jax.jit(jax.vmap(env.step))
+
+
 def random_play_till_end(state, rng_key) -> jnp.ndarray:
 
     def cond_fn(tup):
@@ -120,7 +122,7 @@ def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
     discount = jnp.ones_like(reward)
     terminated = state.terminated
     assert value.shape == terminated.shape
-    value = jnp.where(terminated, reward, value)  # terminated の場合は turnが変わらないので視点を逆転させる.
+    value = jnp.where(terminated, reward, value)  # terminated の場合は
     assert discount.shape == terminated.shape
     discount = jnp.where(terminated, 0.0, discount)
     recurrent_fn_output = mctx.RecurrentFnOutput(
@@ -160,10 +162,21 @@ def set_curr_player(state, player):
     return state.replace(curr_player=player)
 
 if __name__ == "__main__":
-    N = 30
-    NUMSIMULATIONS = 10000
-    mctx_id = 0
-    random_id = 1
+    parser = argparse.ArgumentParser()
+    parser.add_augment("--batch_size", type=int, default=10)
+    parser.add_augment("--num_simulations", type=int, default=1000)
+    parser.add_augment("--visualize_game", type=bool, default=True)
+    parser.add_augment("--visualize_tree", type=bool, default=False)
+    parser.add_augment("--is_mcts_agent_first", type=bool, default=True)
+    args = parser.parse_args()
+    N = args.batch_size
+    NUMSIMULATIONS = args.num_simulations
+    if args.is_mcts_agent_first:
+        mctx_id = 0
+        random_id = 1
+    else:
+       mcts_id = 1
+       random_id = 0
     rng = jax.random.PRNGKey(0)
     rng, subkey = jax.random.split(rng)
     subkeys = jax.random.split(subkey, N)
@@ -184,17 +197,17 @@ if __name__ == "__main__":
         if i % 2 == mctx_id:  # player_id0がmcts agent
             rng, subkey = jax.random.split(rng)
             action, policy_output = mcts(state, subkey, recurrent_fn, NUMSIMULATIONS)
-            #v.save_svg(policy_output.search_tree.embeddings, f"vis/tree_{i:03d}.svg")
-            #graph = convert_tree_to_graph(policy_output.search_tree)
-            #graph.draw(f"tree_graph/graph{str(i)}.png", prog="dot")
+            if args.visualize_tree:
+                graph = convert_tree_to_graph(policy_output.search_tree)
+                graph.draw(f"tree_graph/graph{str(i)}.png", prog="dot")
         else:
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
         state = batched_step(state, action)
         reward = reward + state.reward
         print(i)
-        v.save_svg(state, f"vis/{i:03d}.svg")
+        if args.visualize_game:
+            v.save_svg(state, f"vis/{i:03d}.svg")
         i += 1
-    print(reward)
     print(f"average return of mcts agent {jax.vmap(partial(_get, idx=mctx_id))(reward).sum()/N} , average return of random agent {jax.vmap(partial(_get, idx=random_id))(reward).sum()/N}")
     

@@ -96,7 +96,6 @@ def search(
       root_action_selection_fn=root_action_selection_fn,
       interior_action_selection_fn=interior_action_selection_fn
   )
-  print(action_selection_fn)
 
   # Do simulation, expansion, and backward steps.
   batch_size = root.value.shape[0]
@@ -285,6 +284,7 @@ def backward(
     leaf_value = reward + tree.children_discounts[parent, action] * leaf_value
     parent_value = (
         tree.node_values[parent] * count + leaf_value) / (count + 1.0)
+    children_values = tree.node_values[index]
     """
     leaf_value = 1 - leaf_value  # 1 for me is 0 for enemy  fixed for simple uct search.
     parent_value = tree.node_values[parent] + leaf_value
