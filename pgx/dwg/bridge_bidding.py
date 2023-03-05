@@ -16,8 +16,8 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     board_g = dwg.g()
 
     # hand
-    x_offset = [240, 490, 240, -10]
-    y_offset = [50, 250, 450, 250]
+    x_offset = [235, 480, 235, -10]
+    y_offset = [10, 190, 370, 190]
     for i in range(4):  # player0,1,2,3
         hand = sorted(state.hand[i * NUM_CARD_TYPE : (i + 1) * NUM_CARD_TYPE])
         assert len(hand) == NUM_CARD_TYPE
@@ -105,9 +105,9 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             board_g.add(
                 dwg.text(
                     text=SUITS[j],
-                    insert=(x_offset[i] + 10, y_offset[i] + 30 * (j + 1)),
+                    insert=(x_offset[i] + 9, y_offset[i] + 30 * (j + 1)),
                     fill="orangered" if 0 < j < 3 else color_set.text_color,
-                    font_size="24px",
+                    font_size="26px",
                     font_family="Courier",
                     font_weight="bold",
                 )
@@ -125,18 +125,23 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             board_g.add(
                 dwg.text(
                     text=card_str,
-                    insert=(x_offset[i] + 40, y_offset[i] + 30 * (j + 1)),
+                    insert=(x_offset[i] + 40, y_offset[i] - 2 + 30 * (j + 1)),
                     fill="orangered" if 0 < j < 3 else color_set.text_color,
-                    font_size="20px",
-                    font_family="Serif",
+                    font_size="15px",
+                    font_family="Courier",
                     font_weight="bold",
                 )
             )
 
+    # history
+    _x = 245
+    _y = 155
+    _w = 210
+    _h = 180
     board_g.add(
         dwg.rect(
-            (250, 220),
-            (210, 180),
+            (_x, _y),
+            (_w, _h),
             rx="5px",
             ry="5px",
             fill="none",
@@ -144,8 +149,6 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             stroke_width="5px",
         )
     )
-
-    # history
     for i, act in enumerate(state.bidding_history):
         if act == -1:
             break
@@ -162,7 +165,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         board_g.add(
             dwg.text(
                 text=act_str,
-                insert=(265 + 50 * (i % 4), 270 + 20 * (i // 4)),
+                insert=(_x + 15 + 50 * (i % 4), _y + 50 + 20 * (i // 4)),
                 fill=color,
                 font_size="20px",
                 font_family="Courier",
@@ -170,13 +173,12 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         )
     board_g.add(
         dwg.line(
-            start=(250, 250),
-            end=(460, 250),
+            start=(_x, _y + 30),
+            end=(_x + _w, _y + 30),
             stroke=color_set.grid_color,
             stroke_width="2px",
         )
     )
-
     # player
     pos = np.array(["N", "E", "S", "W"], dtype=object)
     pos = np.roll(pos, -state.dealer)
@@ -185,10 +187,11 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         board_g.add(
             dwg.text(
                 text=pos[i],
-                insert=(265 + 50 * (i % 4), 240),
+                insert=(_x + 15 + 50 * (i % 4), _y + 20),
                 fill=color_set.text_color,
                 font_size="20px",
                 font_family="Courier",
+                font_weight="bold",
             )
         )
 

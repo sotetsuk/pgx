@@ -103,7 +103,8 @@ class Visualizer:
         states,
     ):
         import ipywidgets as widgets  # type:ignore
-        from IPython.display import display, display_svg
+        from IPython.display import display
+        from IPython.core.display import display_svg
 
         svg_strings = [
             self._to_dwg_from_states(
@@ -287,7 +288,7 @@ class Visualizer:
                 )
         elif isinstance(_state, BridgeBiddingState):
             self.config["GRID_SIZE"] = 50
-            self.config["BOARD_WIDTH"] = 13
+            self.config["BOARD_WIDTH"] = 14
             self.config["BOARD_HEIGHT"] = 10
             self._make_dwg_group = _make_bridge_dwg
             if (
@@ -310,7 +311,7 @@ class Visualizer:
                     "lightgray",
                     "white",
                     "white",
-                    "gray",
+                    "black",
                     "black",
                 )
         elif isinstance(_state, ChessState):
