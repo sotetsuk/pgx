@@ -7,7 +7,6 @@ from pgx.suzume_jong import _tile_type_to_str
 
 
 def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
-
     GRID_SIZE = config["GRID_SIZE"]
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]

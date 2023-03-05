@@ -2,7 +2,6 @@ from pgx.othello import State as OthelloState
 
 
 def _make_othello_dwg(dwg, state: OthelloState, config):
-
     GRID_SIZE = config["GRID_SIZE"]
     BOARD_SIZE = config["BOARD_WIDTH"]
     color_set = config["COLOR_SET"]

@@ -2,7 +2,6 @@ from pgx.connect_four import State as ConnectFourState
 
 
 def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
-
     GRID_SIZE = config["GRID_SIZE"]
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]

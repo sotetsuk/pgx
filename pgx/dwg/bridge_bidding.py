@@ -150,6 +150,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
                 stroke_width="2px",
             )
         )
+
         # v line
         board_g.add(
             dwg.line(
@@ -171,6 +172,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
                 font_weight="bold",
             )
         )
+
         # val
         if (state.vul_NS and i % 2 == 0) or (state.vul_EW and i % 2 == 1):
             board_g.add(
