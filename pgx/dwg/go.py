@@ -3,7 +3,6 @@ from pgx.go import get_board
 
 
 def _make_go_dwg(dwg, state: GoState, config):
-
     GRID_SIZE = config["GRID_SIZE"]
     BOARD_SIZE = config["BOARD_WIDTH"]
     color_set = config["COLOR_SET"]
