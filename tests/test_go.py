@@ -567,6 +567,33 @@ def test_counting_ji():
     assert count_ji(state, 0, BOARD_SIZE) == 10
     assert count_ji(state, 1, BOARD_SIZE) == 0
 
+    # セキ判定
+    # =====
+    # + @ O + +
+    # O @ O + +
+    # O @ O + +
+    # O @ O + +
+    # + @ O + +
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
+    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
+    state = j_step(state=state, action=6, size=BOARD_SIZE)
+    state = j_step(state=state, action=5, size=BOARD_SIZE)
+    state = j_step(state=state, action=11, size=BOARD_SIZE)
+    state = j_step(state=state, action=7, size=BOARD_SIZE)
+    state = j_step(state=state, action=16, size=BOARD_SIZE)
+    state = j_step(state=state, action=10, size=BOARD_SIZE)
+    state = j_step(state=state, action=21, size=BOARD_SIZE)
+    state = j_step(state=state, action=12, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=15, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=17, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=22, size=BOARD_SIZE)
+    assert count_ji(state, 0, BOARD_SIZE) == 0
+    assert count_ji(state, 1, BOARD_SIZE) == 10
+
 
 def test_random_play_5():
     key = jax.random.PRNGKey(0)
@@ -606,3 +633,7 @@ def test_random_play_19():
         if state.turn > 100:
             break
     assert state.passed or state.turn > 100
+
+
+if __name__ == "__main__":
+    test_counting_ji()
