@@ -666,9 +666,6 @@ def test_counting_ji():
     assert count_ji(state, 0, BOARD_SIZE) == 17
     assert count_ji(state, 1, BOARD_SIZE) == 0
 
-
-def test_get_reward():
-    key = jax.random.PRNGKey(0)
     get_reward = jax.jit(_get_reward, static_argnums=(1,))
 
     # =====
@@ -728,7 +725,7 @@ def test_get_reward():
     state = j_step(state=state, action=0, size=BOARD_SIZE)
     state = j_step(state=state, action=5, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
-    #assert jnp.all(get_reward(state, BOARD_SIZE) == jnp.array([-1, 1], dtype=jnp.float32))
+    # assert jnp.all(get_reward(state, BOARD_SIZE) == jnp.array([-1, 1], dtype=jnp.float32))
 
 
 def test_random_play_5():
@@ -769,3 +766,7 @@ def test_random_play_19():
         if state.turn > 100:
             break
     assert state.passed or state.turn > 100
+
+
+if __name__ == "__main__":
+    test_counting_ji()
