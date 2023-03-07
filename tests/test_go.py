@@ -679,7 +679,6 @@ def test_get_reward():
     # + + @ O O
     # Tromp-Taylor rule: Black 15, White 10 → White Win
     # Japanese rule: Black 9, White 2 → Black Win
-
     state = j_init(key=key, size=BOARD_SIZE)
     state = j_step(state=state, action=1, size=BOARD_SIZE)
     state = j_step(state=state, action=3, size=BOARD_SIZE)
@@ -697,7 +696,39 @@ def test_get_reward():
     state = j_step(state=state, action=23, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=24, size=BOARD_SIZE)
-    # assert (get_reward(state, BOARD_SIZE) == jnp.array([-1, 1], dtype=jnp.float32)).all
+    # assert jnp.all(get_reward(state, BOARD_SIZE) == jnp.array([-1, 1], dtype=jnp.float32))
+
+    # =====
+    # + @ @ O +
+    # @ + @ O +
+    # + + @ O O
+    # + + @ O O
+    # + + @ O O
+    # Agehama: Black 1, White 0
+    # Tromp-Taylor rule: Black 15, White 10 → White Win
+    # Japanese rule: Black 9, White 2 → Black Win
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=1, size=BOARD_SIZE)
+    state = j_step(state=state, action=3, size=BOARD_SIZE)
+    state = j_step(state=state, action=2, size=BOARD_SIZE)
+    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = j_step(state=state, action=7, size=BOARD_SIZE)
+    state = j_step(state=state, action=13, size=BOARD_SIZE)
+    state = j_step(state=state, action=12, size=BOARD_SIZE)
+    state = j_step(state=state, action=14, size=BOARD_SIZE)
+    state = j_step(state=state, action=17, size=BOARD_SIZE)
+    state = j_step(state=state, action=18, size=BOARD_SIZE)
+    state = j_step(state=state, action=22, size=BOARD_SIZE)
+    state = j_step(state=state, action=19, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=23, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=24, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=0, size=BOARD_SIZE)
+    state = j_step(state=state, action=5, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    #assert jnp.all(get_reward(state, BOARD_SIZE) == jnp.array([-1, 1], dtype=jnp.float32))
 
 
 def test_random_play_5():

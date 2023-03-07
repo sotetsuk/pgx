@@ -470,11 +470,11 @@ def _kou_occurred(_state: State, xy: int) -> jnp.ndarray:
 
 
 def _get_reward(_state: State, _size: int) -> jnp.ndarray:
+    # NEED FIX: Japanese rule → Tromp-Taylor rule
     def count_ji(color):
         return (
             _count_ji(_state, color, _size) - _state.agehama[(color + 1) % 2]
         )
-
     count_ji = jax.vmap(count_ji)
     score = count_ji(jnp.array([BLACK, WHITE]))
     r = jax.lax.cond(
