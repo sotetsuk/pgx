@@ -671,6 +671,217 @@ def test_counting_point():
     key = jax.random.PRNGKey(0)
     count_point = jax.jit(_count_point, static_argnums=(1,))
     # =====
+    # @ + @ + @
+    # + @ + @ +
+    # @ + @ + @
+    # + + + + +
+    # + + + + +
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=0, size=BOARD_SIZE)  # BLACK
+    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
+    state = j_step(state=state, action=2, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=4, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=6, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=10, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=12, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=14, size=BOARD_SIZE)  # BLACK
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    state = j_step(state=state, action=24, size=BOARD_SIZE)  # WHITE
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([13, 1], dtype=jnp.float32))
+
+    # =====
+    # + @ @ @ +
+    # @ O + O @
+    # + @ @ @ +
+    # + + + + +
+    # + + + + +
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
+    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
+    state = j_step(state=state, action=2, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=3, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=5, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=9, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=11, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=12, size=BOARD_SIZE)
+    state = j_step(state=state, action=6, size=BOARD_SIZE)
+    state = j_step(state=state, action=13, size=BOARD_SIZE)
+    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)  # BLACK
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([22, 2], dtype=jnp.float32))
+
+    # =====
+    # + + O + +
+    # + O @ O +
+    # O @ + @ O
+    # + O @ O +
+    # + + O + +
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=7, size=BOARD_SIZE)  # BLACK
+    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
+    state = j_step(state=state, action=11, size=BOARD_SIZE)
+    state = j_step(state=state, action=6, size=BOARD_SIZE)
+    state = j_step(state=state, action=13, size=BOARD_SIZE)
+    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = j_step(state=state, action=17, size=BOARD_SIZE)
+    state = j_step(state=state, action=10, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=14, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=16, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=18, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=22, size=BOARD_SIZE)  # WHITE
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([5, 20], dtype=jnp.float32))
+
+    # =====
+    # + @ @ @ +
+    # @ O @ + @
+    # @ O @ O @
+    # @ O @ O @
+    # @ O O O @
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
+    state = j_step(state=state, action=6, size=BOARD_SIZE)  # WHITE
+    state = j_step(state=state, action=2, size=BOARD_SIZE)
+    state = j_step(state=state, action=11, size=BOARD_SIZE)
+    state = j_step(state=state, action=3, size=BOARD_SIZE)
+    state = j_step(state=state, action=13, size=BOARD_SIZE)
+    state = j_step(state=state, action=5, size=BOARD_SIZE)
+    state = j_step(state=state, action=16, size=BOARD_SIZE)
+    state = j_step(state=state, action=7, size=BOARD_SIZE)
+    state = j_step(state=state, action=18, size=BOARD_SIZE)
+    state = j_step(state=state, action=9, size=BOARD_SIZE)
+    state = j_step(state=state, action=21, size=BOARD_SIZE)
+    state = j_step(state=state, action=10, size=BOARD_SIZE)
+    state = j_step(state=state, action=22, size=BOARD_SIZE)
+    state = j_step(state=state, action=12, size=BOARD_SIZE)
+    state = j_step(state=state, action=23, size=BOARD_SIZE)
+    state = j_step(state=state, action=14, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=15, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=17, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=19, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=24, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=20, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([16, 8], dtype=jnp.float32))
+    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+
+    # セキ判定
+    # =====
+    # + @ O + +
+    # O @ O + +
+    # O @ O + +
+    # O @ O + +
+    # + @ O + +
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
+    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
+    state = j_step(state=state, action=6, size=BOARD_SIZE)
+    state = j_step(state=state, action=5, size=BOARD_SIZE)
+    state = j_step(state=state, action=11, size=BOARD_SIZE)
+    state = j_step(state=state, action=7, size=BOARD_SIZE)
+    state = j_step(state=state, action=16, size=BOARD_SIZE)
+    state = j_step(state=state, action=10, size=BOARD_SIZE)
+    state = j_step(state=state, action=21, size=BOARD_SIZE)
+    state = j_step(state=state, action=12, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=15, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=17, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=22, size=BOARD_SIZE)
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([5, 18], dtype=jnp.float32))
+
+    # =====
+    # O O O O +
+    # O @ @ @ O
+    # O @ + @ O
+    # O @ @ @ O
+    # + O O O +
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=6, size=BOARD_SIZE)  # BLACK
+    state = j_step(state=state, action=0, size=BOARD_SIZE)  # WHITE
+    state = j_step(state=state, action=7, size=BOARD_SIZE)
+    state = j_step(state=state, action=1, size=BOARD_SIZE)
+    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = j_step(state=state, action=2, size=BOARD_SIZE)
+    state = j_step(state=state, action=11, size=BOARD_SIZE)
+    state = j_step(state=state, action=3, size=BOARD_SIZE)
+    state = j_step(state=state, action=13, size=BOARD_SIZE)
+    state = j_step(state=state, action=5, size=BOARD_SIZE)
+    state = j_step(state=state, action=16, size=BOARD_SIZE)
+    state = j_step(state=state, action=9, size=BOARD_SIZE)
+    state = j_step(state=state, action=17, size=BOARD_SIZE)
+    state = j_step(state=state, action=10, size=BOARD_SIZE)
+    state = j_step(state=state, action=18, size=BOARD_SIZE)
+    state = j_step(state=state, action=14, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=15, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=19, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=21, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=22, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=23, size=BOARD_SIZE)
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([9, 16], dtype=jnp.float32))
+
+    # =====
+    # + + + + +
+    # + + + + +
+    # + + + + +
+    # + + + + +
+    # + + + + +
+    state = j_init(key=key, size=BOARD_SIZE)
+    # 本当は[0, 0]
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 25], dtype=jnp.float32))
+
+    # =====
+    # + + + + +
+    # + @ @ @ +
+    # + @ + @ +
+    # + @ @ @ +
+    # + + + + +
+    state = j_init(key=key, size=BOARD_SIZE)
+    state = j_step(state=state, action=6, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=7, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=11, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=13, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=16, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=17, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = j_step(state=state, action=18, size=BOARD_SIZE)
+    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    # =====
     # + @ @ O +
     # + + @ O +
     # + + @ O O
@@ -768,7 +979,3 @@ def test_random_play_19():
         if state.turn > 100:
             break
     assert state.passed or state.turn > 100
-
-
-if __name__ == "__main__":
-    test_counting_point()
