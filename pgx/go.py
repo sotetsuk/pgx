@@ -471,8 +471,14 @@ def _kou_occurred(_state: State, xy: int) -> jnp.ndarray:
 
 def _count_point(state, size):
     # NEED FIX: Japanese rule → Tromp-Taylor rule
-    return (
-        jnp.array([_count_ji(state, BLACK, size) + jnp.count_nonzero(state.ren_id_board[BLACK] != -1), _count_ji(state, WHITE, size) + jnp.count_nonzero(state.ren_id_board[WHITE] != -1)], dtype=jnp.float32)
+    return jnp.array(
+        [
+            _count_ji(state, BLACK, size)
+            + jnp.count_nonzero(state.ren_id_board[BLACK] != -1),
+            _count_ji(state, WHITE, size)
+            + jnp.count_nonzero(state.ren_id_board[WHITE] != -1),
+        ],
+        dtype=jnp.float32,
     )
 
 
