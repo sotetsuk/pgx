@@ -598,14 +598,13 @@ def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
         [int(i) for j in key for i in np.base_repr(j, 4).zfill(13)],
         dtype=jnp.int8,
     )
-    return np.concatenate(
-        [
-            jnp.where(cards == 0),
-            jnp.where(cards == 1),
-            jnp.where(cards == 2),
-            jnp.where(cards == 3),
-        ],
-        axis=1,
+    return jnp.concatenate(
+        (
+            jnp.where(cards == 0)[0],
+            jnp.where(cards == 1)[0],
+            jnp.where(cards == 2)[0],
+            jnp.where(cards == 3)[0],
+        )
     ).reshape(-1)
 
 
