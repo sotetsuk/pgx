@@ -66,7 +66,7 @@ class State:
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
-    hand = jax.random.shuffle(rng2, hand)
+    hand = jax.random.permutation(rng2, hand)
     vul_NS = jax.random.randint(rng3, (1,), 0, 2)
     vul_EW = jax.random.randint(rng4, (1,), 0, 2)
     dealer = jax.random.randint(rng5, (1,), 0, 4)
@@ -75,8 +75,8 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     curr_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
-    legal_actions = legal_actions.at[36].set(0)
-    legal_actions = legal_actions.at[37].set(0)
+    legal_actions = legal_actions.at[36].set(False)
+    legal_actions = legal_actions.at[37].set(False)
     state = State(
         shuffled_players=shuffled_players,
         curr_player=curr_player,
@@ -103,7 +103,8 @@ def init_by_key(
     curr_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
-    legal_actions[-2:] = 0
+    legal_actions = legal_actions.at[36].set(False)
+    legal_actions = legal_actions.at[37].set(False)
     state = State(
         shuffled_players=shuffled_players,
         curr_player=curr_player,
@@ -125,7 +126,7 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     Example:
         >>> key = jax.random.PRNGKey(0)
         >>> _shuffle_players(key)
-        Array([1, 2, 0, 3], dtype=int8)
+        Array([0, 3, 1, 2], dtype=int8)
     """
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     # player_id = 0, 1 -> team a
@@ -173,7 +174,7 @@ def step(
     hash_keys: jnp.ndarray,
     hash_values: jnp.ndarray,
 ) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
-    state.bidding_history[state.turn] = action
+    state.bidding_history = state.bidding_history.at[state.turn].set(action)
     # 非合法手判断
     if not state.legal_action_mask[action]:
         return _illegal_step(state)
@@ -239,12 +240,11 @@ def _continue_step(
     # state.curr_player = (state.curr_player + 1) % 4
     state.turn += 1
     state.curr_player = state.shuffled_players[(state.dealer + state.turn) % 4]
-    (
-        state.legal_action_mask[36],
-        state.legal_action_mask[37],
-    ) = _update_legal_action_X_XX(
-        state
-    )  # 次のターンにX, XXが合法手か判断
+    # 次のターンにX, XXが合法手か判断
+    x_mask, xx_mask = _update_legal_action_X_XX(state)
+    state.legal_action_mask = state.legal_action_mask.at[36].set(x_mask)
+    state.legal_action_mask = state.legal_action_mask.at[37].set(xx_mask)
+
     return state.curr_player, state, jnp.zeros(4)
 
 
@@ -446,11 +446,19 @@ def _state_bid(state: State, action: int) -> State:
     team = _position_to_team(_player_position(state.last_bidder, state))
     # team = 1ならEWチーム
     if team and (state.first_denomination_EW[denomination] == -1):
-        state.first_denomination_EW[denomination] = state.last_bidder
+        state.first_denomination_EW = state.first_denomination_EW.at[
+            denomination
+        ].set(int(state.last_bidder))
     # team = 0ならNSチーム
     elif not team and (state.first_denomination_NS[denomination] == -1):
-        state.first_denomination_NS[denomination] = state.last_bidder
-    state.legal_action_mask[: action + 1] = 0
+        state.first_denomination_NS = state.first_denomination_NS.at[
+            denomination
+        ].set(int(state.last_bidder))
+    # 小さいbidを非合法手にする
+    mask = jnp.arange(38) < action + 1
+    state.legal_action_mask = jnp.where(
+        mask, jnp.bool_(0), state.legal_action_mask
+    )
     state.call_x = jnp.bool_(False)
     state.call_xx = jnp.bool_(False)
     state.pass_num = jnp.int8(0)
@@ -540,13 +548,13 @@ def _state_to_key(state: State) -> jnp.ndarray:
     key = jnp.zeros(52, dtype=jnp.int8)
     for i in range(52):  # N: 0, E: 1, S: 2, W: 3
         if i // 13 == 0:
-            key[hand[i]] = 0
+            key = key.at[hand[i]].set(0)
         elif i // 13 == 1:
-            key[hand[i]] = 1
+            key = key.at[hand[i]].set(1)
         elif i // 13 == 2:
-            key[hand[i]] = 2
+            key = key.at[hand[i]].set(2)
         elif i // 13 == 3:
-            key[hand[i]] = 3
+            key = key.at[hand[i]].set(3)
     key = key.reshape(4, 13)
     return _to_binary(key)
 
