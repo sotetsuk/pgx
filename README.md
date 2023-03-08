@@ -163,7 +163,7 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
 Combining Pgx with these **JAX-native algorithms/implementations** is interesting direction:
 
 - [Anakin framework](https://arxiv.org/abs/2104.06272): Highly efficient RL framework that works with JAX-native environments on TPUs
-- [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS algorithm implementations, including AlphaZero, MuZero, and Gumbel MuZero
+- [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS implementations, including AlphaZero and MuZero
 
 ## LICENSE
 
