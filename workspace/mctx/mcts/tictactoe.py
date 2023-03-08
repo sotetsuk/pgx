@@ -11,8 +11,7 @@ from pgx.utils import act_randomly
 import pgx
 from pgx.visualizer import Visualizer
 import pygraphviz
-from uct_mcts import uct_mcts_selection, uct_mcts_policy
-from search import search
+from uct_mcts import uct_mcts_policy
 import argparse
 
 
@@ -110,34 +109,34 @@ def _get(x, idx):
     return x[idx]
 
 
-def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
-    """One simulation step in MCTS."""
-    rng_key, subkey = jax.random.split(rng_key)
-    subkeys = jax.random.split(subkey, N)
-    state = embedding
-    state = batched_step(state, action) 
-    reward =  jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
-    value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
-    prior_logits = jnp.ones(state.legal_action_mask.shape)
-    discount = jnp.ones_like(reward)
-    terminated = state.terminated
-    assert value.shape == terminated.shape
-    value = jnp.where(terminated, reward, value)  # terminated の場合は
-    assert discount.shape == terminated.shape
-    discount = jnp.where(terminated, 0.0, discount)
-    recurrent_fn_output = mctx.RecurrentFnOutput(
-        reward=reward,
-        discount=discount,
-        prior_logits=prior_logits,
-        value=value,
-    )
-    return recurrent_fn_output, state
+def _make_rec_fn():
+    def recurrent_fn(params, rng_key: chex.Array, action: chex.Array, embedding):
+        """One simulation step in MCTS."""
+        rng_key, subkey = jax.random.split(rng_key)
+        subkeys = jax.random.split(subkey, N)
+        state = embedding
+        state = batched_step(state, action) 
+        reward =  jnp.clip(jax.vmap(_get)(state.reward, state.curr_player), a_min=0, a_max=1)
+        value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1)  # 終局までrandom play
+        prior_logits = jnp.ones(state.legal_action_mask.shape)
+        discount = jnp.ones_like(reward)
+        terminated = state.terminated
+        assert value.shape == terminated.shape
+        value = jnp.where(terminated, reward, value)  # terminated の場合は
+        assert discount.shape == terminated.shape
+        discount = jnp.where(terminated, 0.0, discount)
+        recurrent_fn_output = mctx.RecurrentFnOutput(
+            reward=reward,
+            discount=discount,
+            prior_logits=prior_logits,
+            value=value,
+        )
+        return recurrent_fn_output, state
+    return recurrent_fn
 
 def mcts(
     state,
     rng_key: chex.Array,
-    rec_fn,
-    num_simulations: int,
 ) -> int:
     """Improve agent policy using MCTS.
     Returns:
@@ -147,13 +146,15 @@ def mcts(
     subkeys = jax.random.split(subkey, N)
     value = jnp.clip(jax.vmap(random_play_return)(state, subkeys), a_min=0, a_max=1) # 終局までrandom play 
     prior_logits = jnp.ones(state.legal_action_mask.shape)
+    print(prior_logits.shape)
     root = mctx.RootFnOutput(prior_logits=prior_logits, value=value, embedding=state)
+    rec_fn = _make_rec_fn()
     policy_output = uct_mcts_policy(
         params=None,
         rng_key=subkey,
         root=root,
         recurrent_fn=rec_fn,
-        num_simulations=num_simulations,
+        num_simulations=NUMSIMULATIONS,
         invalid_actions=~state.legal_action_mask,
     )
     return policy_output.action, policy_output
@@ -196,7 +197,7 @@ if __name__ == "__main__":
     while not state.terminated.all():
         if i % 2 == mctx_id:  # player_id0がmcts agent
             rng, subkey = jax.random.split(rng)
-            action, policy_output = mcts(state, subkey, recurrent_fn, NUMSIMULATIONS)
+            action, policy_output = jax.jit(mcts)(state, subkey)
             if args.visualize_tree:
                 graph = convert_tree_to_graph(policy_output.search_tree)
                 graph.draw(f"tree_graph/graph{str(i)}.png", prog="dot")

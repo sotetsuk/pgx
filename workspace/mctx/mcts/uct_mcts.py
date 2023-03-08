@@ -21,26 +21,26 @@ def masked_argmax(
   return jnp.argmax(to_argmax, axis=-1)
 
 
-def uct_mcts_selection(rng_key, tree, node_index, depth, pb_c_init: float = 1.25, qtransform=qtransform_by_parent_and_siblings):
-    """
-    mctxはmuzero以降のmctsしか想定していない.
-    ここではvanilla-puct-MCTSのaction selectionを実装したい.
-    選択基準は
-    win_rate_of_action_a + UCB
-    """
-    visit_counts = tree.children_visits[node_index]
-    node_visit = tree.node_visits.sum()
-    pb_c = pb_c_init
-    policy_score = jnp.sqrt(2 * jnp.log(node_visit) / (visit_counts + 1))
+def _make_action_selection():
+  def uct_mcts_selection(rng_key, tree, node_index, depth, pb_c_init: float = 1.25, qtransform=qtransform_by_parent_and_siblings):
+      """
+      mctxはmuzero以降のmctsしか想定していない.
+      ここではvanilla-puct-MCTSのaction selectionを実装したい.
+      選択基準は
+      win_rate_of_action_a + UCB
+      """
+      visit_counts = tree.children_visits[node_index]
+      node_visit = tree.node_visits.sum()
+      pb_c = pb_c_init
+      policy_score = jnp.sqrt(2 * jnp.log(node_visit) / (visit_counts + 1))
 
-    value_score = tree.children_values[node_index] / visit_counts  # 勝率
+      value_score = tree.children_values[node_index] / visit_counts  # 勝率
 
 
-    to_argmax = value_score + policy_score
-    legal_actions = tree.embeddings.legal_action_mask[node_index]
-
-    
-    return masked_argmax(to_argmax, ~legal_actions)
+      to_argmax = value_score + policy_score
+      legal_actions = tree.embeddings.legal_action_mask[node_index]
+      return masked_argmax(to_argmax, ~legal_actions)
+  return uct_mcts_selection
 
 
 def uct_mcts_policy(
@@ -58,7 +58,7 @@ def uct_mcts_policy(
   rng_key, dirichlet_rng_key, search_rng_key = jax.random.split(rng_key, 3)
 
   # Running the search.
-  interior_action_selection_fn = uct_mcts_selection
+  interior_action_selection_fn = _make_action_selection()
       
   root_action_selection_fn = functools.partial(
       interior_action_selection_fn,
@@ -78,8 +78,6 @@ def uct_mcts_policy(
   summary = search_tree.summary()
   action_weights = summary.visit_probs
   visit_counts = summary.visit_counts
-  q_values = summary.qvalues
-
   action = jnp.argmax(visit_counts, axis=1)
   return mctx.PolicyOutput(
       action=action,
