@@ -160,7 +160,7 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
 - [google/brax](https://github.com/google/brax): Rigidbody physics simulation
 - [instadeepai/jumanji](https://github.com/instadeepai/jumanji): Industry-driven environments (e.g., Travelling Salesman Problem)
 
-Combining Pgx with these **JAX-native algorithms/implementations** is interesting direction:
+Combining Pgx with these **JAX-native algorithm/implementations** is an interesting direction:
 
 - [Anakin framework](https://arxiv.org/abs/2104.06272): Highly efficient RL framework that works with JAX-native environments on TPUs
 - [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS implementations, including AlphaZero and MuZero
