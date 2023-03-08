@@ -5,6 +5,7 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 import numpy as np
+import core
 
 # カードと数字の対応
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
@@ -13,7 +14,7 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 
 @dataclass
-class State:
+class State(core.State):
     # turn 現在のターン数
     turn: jnp.ndarray = jnp.int16(0)
     # curr_player 現在のプレイヤーid
