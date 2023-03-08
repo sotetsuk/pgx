@@ -163,11 +163,11 @@ def set_curr_player(state, player):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_augment("--batch_size", type=int, default=10)
-    parser.add_augment("--num_simulations", type=int, default=1000)
-    parser.add_augment("--visualize_game", type=bool, default=True)
-    parser.add_augment("--visualize_tree", type=bool, default=False)
-    parser.add_augment("--is_mcts_agent_first", type=bool, default=True)
+    parser.add_argument("--batch_size", type=int, default=10)
+    parser.add_argument("--num_simulations", type=int, default=1000)
+    parser.add_argument("--visualize_game", type=bool, default=True)
+    parser.add_argument("--visualize_tree", type=bool, default=False)
+    parser.add_argument("--is_mcts_agent_first", type=bool, default=True)
     args = parser.parse_args()
     N = args.batch_size
     NUMSIMULATIONS = args.num_simulations
