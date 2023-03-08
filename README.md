@@ -41,6 +41,7 @@ while not state.terminated.all():
     state = step(state, action)  # state.reward (2,)
 ```
 
+<!---
 ### Limitations (for the simplicity)
 * Does **NOT** support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
 * Does **NOT** support Chance player (Nature player) with action selection.
@@ -56,6 +57,7 @@ while not state.terminated.all():
 * supported by `make(env_id="...", auto_reset=True, max_episode_length=64)`
 * `auto_reset` will replace the terminal state by initial state (but `is_terminal=True` is set)
 * `is_truncated=True` is also set to state
+--->
 
 ## Supported games
 
