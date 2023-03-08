@@ -70,13 +70,6 @@ while not state.terminated.all():
   <th>Document</th>
 </tr>
 <tr>
- <td>TicTacToe</td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
- <td></td>
- <td></td>
-</tr>
-<tr>
  <td> <a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a> </td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
@@ -84,9 +77,44 @@ while not state.terminated.all():
  <td></td>
 </tr>
 <tr>
- <td><a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a></td>
+ <td>Backgammon</td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Bridge Bidding</td>
+ <td>:construction:</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Chess</td>
+ <td>:construction:</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Connect Four</td>
+ <td>:construction:</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Go</td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+ <td></td>
+ <td></td>
+</tr>
+<tr>
+ <td>Hex</td>
+ <td></td>
+ <td></td>
  <td></td>
  <td></td>
 </tr>
@@ -126,7 +154,7 @@ while not state.terminated.all():
  <td></td>
 </tr>
 <tr>
- <td>Chess</td>
+ <td>Othello</td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
  <td></td>
@@ -140,22 +168,15 @@ while not state.terminated.all():
  <td></td>
 </tr>
 <tr>
- <td>Go</td>
+ <td><a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
  <td></td>
  <td></td>
 </tr>
 <tr>
- <td>Backgammon</td>
+ <td>TicTacToe</td>
  <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
- <td></td>
- <td></td>
-</tr>
-<tr>
- <td>Bridge Bidding</td>
- <td>:construction:</td>
  <td>:white_check_mark:</td>
  <td></td>
  <td></td>
@@ -167,11 +188,6 @@ while not state.terminated.all():
  <td></td>
  <td></td>
 </tr>
-
-
-
-
-
 </table>
 
 ## LICENSE
