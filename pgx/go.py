@@ -469,14 +469,21 @@ def _kou_occurred(_state: State, xy: int) -> jnp.ndarray:
     return (oob | is_occupied).all()
 
 
-def _get_reward(_state: State, _size: int) -> jnp.ndarray:
-    def count_ji(color):
-        return (
-            _count_ji(_state, color, _size) - _state.agehama[(color + 1) % 2]
-        )
+def _count_point(state, size):
+    # NEED FIX: Japanese rule → Tromp-Taylor rule
+    return jnp.array(
+        [
+            _count_ji(state, BLACK, size)
+            + jnp.count_nonzero(state.ren_id_board[BLACK] != -1),
+            _count_ji(state, WHITE, size)
+            + jnp.count_nonzero(state.ren_id_board[WHITE] != -1),
+        ],
+        dtype=jnp.float32,
+    )
 
-    count_ji = jax.vmap(count_ji)
-    score = count_ji(jnp.array([BLACK, WHITE]))
+
+def _get_reward(_state: State, _size: int) -> jnp.ndarray:
+    score = _count_point(_state, _size)
     r = jax.lax.cond(
         score[BLACK] - _state.komi > score[WHITE],
         lambda: jnp.array([1, -1], dtype=jnp.float32),

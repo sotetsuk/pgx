@@ -16,98 +16,46 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     board_g = dwg.g()
 
     # hand
-    x_offset = [240, 490, 240, -10]
-    y_offset = [50, 250, 450, 250]
+    x_offset = [235, 480, 235, -10]
+    y_offset = [10, 190, 370, 190]
+    area_width = 230
+    area_height = 150
     for i in range(4):  # player0,1,2,3
         hand = sorted(state.hand[i * NUM_CARD_TYPE : (i + 1) * NUM_CARD_TYPE])
         assert len(hand) == NUM_CARD_TYPE
         # player
         pos = np.array(["North", "East", "South", "West"], dtype=object)
         pos[state.dealer] = pos[state.dealer] + "(Dealer)"
-        # suit
+        newline_offset = 0
+        over_offset = 0
+
         for j in range(4):  # spades,hearts,diamonds,clubs
-            area_width = 230
-            area_height = 150
-            board_g.add(
-                dwg.rect(
-                    (x_offset[i], y_offset[i] - 20),
-                    (area_width, area_height),
-                    rx="5px",
-                    ry="5px",
-                    fill="none",
-                    stroke=color_set.grid_color,
-                    stroke_width="2px",
-                )
-            )
+            # h line
             board_g.add(
                 dwg.line(
-                    start=(x_offset[i], y_offset[i] + 10),
-                    end=(x_offset[i] + area_width, y_offset[i] + 10),
+                    start=(
+                        x_offset[i],
+                        y_offset[i] + 10 + 30 * j + newline_offset,
+                    ),
+                    end=(
+                        x_offset[i] + area_width,
+                        y_offset[i] + 10 + 30 * j + newline_offset,
+                    ),
                     stroke=color_set.grid_color,
                     stroke_width="2px",
                 )
             )
-            board_g.add(
-                dwg.line(
-                    start=(x_offset[i], y_offset[i] + 38),
-                    end=(x_offset[i] + area_width, y_offset[i] + 38),
-                    stroke=color_set.grid_color,
-                    stroke_width="2px",
-                )
-            )
-            board_g.add(
-                dwg.line(
-                    start=(x_offset[i], y_offset[i] + 68),
-                    end=(x_offset[i] + area_width, y_offset[i] + 68),
-                    stroke=color_set.grid_color,
-                    stroke_width="2px",
-                )
-            )
-            board_g.add(
-                dwg.line(
-                    start=(x_offset[i], y_offset[i] + 98),
-                    end=(x_offset[i] + area_width, y_offset[i] + 98),
-                    stroke=color_set.grid_color,
-                    stroke_width="2px",
-                )
-            )
-            board_g.add(
-                dwg.line(
-                    start=(x_offset[i] + 32, y_offset[i] + 10),
-                    end=(x_offset[i] + 32, y_offset[i] + 130),
-                    stroke=color_set.grid_color,
-                    stroke_width="2px",
-                )
-            )
-            board_g.add(
-                dwg.text(
-                    text=pos[i],
-                    insert=(x_offset[i] + 10, y_offset[i]),
-                    fill=color_set.grid_color,
-                    font_size="20px",
-                    font_family="Courier",
-                    font_weight="bold",
-                )
-            )
-            if (state.vul_NS and i % 2 == 0) or (state.vul_EW and i % 2 == 1):
-                board_g.add(
-                    dwg.text(
-                        text="Vul.",
-                        insert=(x_offset[i] + 180, y_offset[i]),
-                        fill="orangered",
-                        font_size="20px",
-                        font_family="Courier",
-                        font_weight="bold",
-                    )
-                )
 
             # suit
             board_g.add(
                 dwg.text(
                     text=SUITS[j],
-                    insert=(x_offset[i] + 10, y_offset[i] + 30 * (j + 1)),
+                    insert=(
+                        x_offset[i] + 9,
+                        y_offset[i] + 30 * (j + 1) + newline_offset,
+                    ),
                     fill="orangered" if 0 < j < 3 else color_set.text_color,
-                    font_size="24px",
+                    font_size="26px",
                     font_family="Courier",
                     font_weight="bold",
                 )
@@ -122,21 +70,134 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             if card != [] and card[-1] == "A":
                 card = card[-1:] + card[:-1]
             card_str = " ".join(card)
+            card_num = len(card_str)
+            if card_num > 12 and i % 2 == 1:
+                board_g.add(
+                    dwg.text(
+                        text=card_str[:12],
+                        insert=(
+                            x_offset[i] + 40,
+                            y_offset[i] + 30 * (j + 1) + newline_offset,
+                        ),
+                        fill="orangered"
+                        if 0 < j < 3
+                        else color_set.text_color,
+                        font_size="24px",
+                        font_family="Courier",
+                        font_weight="bold",
+                    )
+                )
+                newline_offset += 30
+                board_g.add(
+                    dwg.text(
+                        text=card_str[12:],
+                        insert=(
+                            x_offset[i] + 40,
+                            y_offset[i] + 30 * (j + 1) + newline_offset,
+                        ),
+                        fill="orangered"
+                        if 0 < j < 3
+                        else color_set.text_color,
+                        font_size="24px",
+                        font_family="Courier",
+                        font_weight="bold",
+                    )
+                )
+            else:
+                if card_num > 12 and i % 2 == 0:
+                    over_offset = (card_num - 12) * 14
+                    # 延長した分横線を埋める
+                    for k in range(4):
+                        board_g.add(
+                            dwg.line(
+                                start=(
+                                    x_offset[i] + area_width,
+                                    y_offset[i] + 10 + 30 * k + newline_offset,
+                                ),
+                                end=(
+                                    x_offset[i] + area_width + over_offset,
+                                    y_offset[i] + 10 + 30 * k + newline_offset,
+                                ),
+                                stroke=color_set.grid_color,
+                                stroke_width="2px",
+                            )
+                        )
+                board_g.add(
+                    dwg.text(
+                        text=card_str,
+                        insert=(
+                            x_offset[i] + 40,
+                            y_offset[i] + 30 * (j + 1) + newline_offset,
+                        ),
+                        fill="orangered"
+                        if 0 < j < 3
+                        else color_set.text_color,
+                        font_size="24px",
+                        font_family="Courier",
+                        font_weight="bold",
+                    )
+                )
+
+        # rect
+        board_g.add(
+            dwg.rect(
+                (x_offset[i], y_offset[i] - 20),
+                (area_width + over_offset, area_height + newline_offset),
+                rx="5px",
+                ry="5px",
+                fill="none",
+                stroke=color_set.grid_color,
+                stroke_width="2px",
+            )
+        )
+
+        # v line
+        board_g.add(
+            dwg.line(
+                start=(x_offset[i] + 32, y_offset[i] + 10),
+                end=(x_offset[i] + 32, y_offset[i] + 130 + newline_offset),
+                stroke=color_set.grid_color,
+                stroke_width="2px",
+            )
+        )
+
+        # pos
+        board_g.add(
+            dwg.text(
+                text=pos[i],
+                insert=(x_offset[i] + 10, y_offset[i]),
+                fill=color_set.grid_color,
+                font_size="20px",
+                font_family="Courier",
+                font_weight="bold",
+            )
+        )
+
+        # val
+        if (state.vul_NS and i % 2 == 0) or (state.vul_EW and i % 2 == 1):
             board_g.add(
                 dwg.text(
-                    text=card_str,
-                    insert=(x_offset[i] + 40, y_offset[i] + 30 * (j + 1)),
-                    fill="orangered" if 0 < j < 3 else color_set.text_color,
-                    font_size="24px",
-                    font_family="Serif",
+                    text="Vul.",
+                    insert=(
+                        x_offset[i] + area_width + over_offset - 50,
+                        y_offset[i],
+                    ),
+                    fill="orangered",
+                    font_size="20px",
+                    font_family="Courier",
                     font_weight="bold",
                 )
             )
 
+    # history
+    _x = 245
+    _y = 155
+    _w = 210
+    _h = 180
     board_g.add(
         dwg.rect(
-            (250, 220),
-            (210, 180),
+            (_x, _y),
+            (_w, _h),
             rx="5px",
             ry="5px",
             fill="none",
@@ -144,8 +205,6 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             stroke_width="5px",
         )
     )
-
-    # history
     for i, act in enumerate(state.bidding_history):
         if act == -1:
             break
@@ -162,7 +221,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         board_g.add(
             dwg.text(
                 text=act_str,
-                insert=(265 + 50 * (i % 4), 270 + 20 * (i // 4)),
+                insert=(_x + 15 + 50 * (i % 4), _y + 50 + 20 * (i // 4)),
                 fill=color,
                 font_size="20px",
                 font_family="Courier",
@@ -170,13 +229,12 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         )
     board_g.add(
         dwg.line(
-            start=(250, 250),
-            end=(460, 250),
+            start=(_x, _y + 30),
+            end=(_x + _w, _y + 30),
             stroke=color_set.grid_color,
             stroke_width="2px",
         )
     )
-
     # player
     pos = np.array(["N", "E", "S", "W"], dtype=object)
     pos = np.roll(pos, -state.dealer)
@@ -185,10 +243,11 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         board_g.add(
             dwg.text(
                 text=pos[i],
-                insert=(265 + 50 * (i % 4), 240),
+                insert=(_x + 15 + 50 * (i % 4), _y + 20),
                 fill=color_set.text_color,
                 font_size="20px",
                 font_family="Courier",
+                font_weight="bold",
             )
         )
 

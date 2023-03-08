@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import List, Literal, Union
+from typing import Literal
 
 import svgwrite  # type: ignore
 
@@ -8,7 +8,9 @@ from .dwg.animalshogi import AnimalShogiState, _make_animalshogi_dwg
 from .dwg.backgammon import BackgammonState, _make_backgammon_dwg
 from .dwg.bridge_bidding import BridgeBiddingState, _make_bridge_dwg
 from .dwg.chess import ChessState, _make_chess_dwg
+from .dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from .dwg.go import GoState, _make_go_dwg
+from .dwg.othello import OthelloState, _make_othello_dwg
 from .dwg.shogi import ShogiState, _make_shogi_dwg
 from .dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from .dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
@@ -58,16 +60,7 @@ class Visualizer:
 
     def save_svg(
         self,
-        state: Union[
-            AnimalShogiState,
-            BackgammonState,
-            ChessState,
-            BridgeBiddingState,
-            GoState,
-            ShogiState,
-            SparrowMahjongState,
-            TictactoeState,
-        ],
+        state,
         filename="temp.svg",
     ) -> None:
         assert filename.endswith(".svg")
@@ -75,21 +68,11 @@ class Visualizer:
 
     def show_svg(
         self,
-        states: Union[
-            list,
-            AnimalShogiState,
-            BackgammonState,
-            ChessState,
-            BridgeBiddingState,
-            GoState,
-            ShogiState,
-            SparrowMahjongState,
-            TictactoeState,
-        ],
+        states,
     ) -> None:
         """Pgxのstate,batch処理されたstate,stateのリストをnotebook上で可視化する.
 
-        states: Union[list, AnimalShogiState, BackgammonState, ChessState, BridgeBiddingState, GoState, ShogiState, SparrowMahjongState, TictactoeState]
+        states: Union[list, AnimalShogiState, BackgammonState, ChessState, BridgeBiddingState, GoState, OthelloState,ShogiState, SparrowMahjongState, TictactoeState]
             表示させるstate
         """
         import sys
@@ -117,21 +100,11 @@ class Visualizer:
 
     def _show_states_in_widgets(
         self,
-        states: List[
-            Union[
-                AnimalShogiState,
-                BackgammonState,
-                ChessState,
-                BridgeBiddingState,
-                GoState,
-                ShogiState,
-                SparrowMahjongState,
-                TictactoeState,
-            ]
-        ],
+        states,
     ):
         import ipywidgets as widgets  # type:ignore
-        from IPython.display import display, display_svg
+        from IPython.core.display import display_svg
+        from IPython.display import display
 
         svg_strings = [
             self._to_dwg_from_states(
@@ -230,6 +203,7 @@ class Visualizer:
             g = self._make_dwg_group(
                 dwg,
                 _state,  # type:ignore
+                self.config,
             )
 
             g.translate(
@@ -270,7 +244,7 @@ class Visualizer:
                     "black",
                     "whitesmoke",
                     "whitesmoke",
-                    "#202020",
+                    "#1e1e1e",
                     "white",
                     "",
                 )
@@ -285,7 +259,7 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, BackgammonState):
-            self.config["GRID_SIZE"] = 50
+            self.config["GRID_SIZE"] = 25
             self.config["BOARD_WIDTH"] = 17
             self.config["BOARD_HEIGHT"] = 14
             self._make_dwg_group = _make_backgammon_dwg
@@ -298,7 +272,7 @@ class Visualizer:
                     "black",
                     "black",
                     "dimgray",
-                    "#202020",
+                    "#1e1e1e",
                     "gainsboro",
                     "",
                 )
@@ -311,6 +285,34 @@ class Visualizer:
                     "white",
                     "black",
                     "",
+                )
+        elif isinstance(_state, BridgeBiddingState):
+            self.config["GRID_SIZE"] = 50
+            self.config["BOARD_WIDTH"] = 14
+            self.config["BOARD_HEIGHT"] = 10
+            self._make_dwg_group = _make_bridge_dwg
+            if (
+                self.config["COLOR_MODE"] is None
+                and self.config["COLOR_MODE"] == "dark"
+            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "gray",
+                    "black",
+                    "black",
+                    "dimgray",
+                    "#1e1e1e",
+                    "gainsboro",
+                    "white",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "white",
+                    "black",
+                    "lightgray",
+                    "white",
+                    "white",
+                    "black",
+                    "black",
                 )
         elif isinstance(_state, ChessState):
             self.config["GRID_SIZE"] = 50
@@ -326,7 +328,7 @@ class Visualizer:
                     "none",
                     "#404040",
                     "gray",
-                    "#202020",
+                    "#1e1e1e",
                     "silver",
                     "",
                 )
@@ -340,36 +342,36 @@ class Visualizer:
                     "black",
                     "",
                 )
-        elif isinstance(_state, BridgeBiddingState):
-            self.config["GRID_SIZE"] = 50
-            self.config["BOARD_WIDTH"] = 14
-            self.config["BOARD_HEIGHT"] = 12
-            self._make_dwg_group = _make_bridge_dwg
+        elif isinstance(_state, ConnectFourState):
+            self.config["GRID_SIZE"] = 35
+            self.config["BOARD_WIDTH"] = 7
+            self.config["BOARD_HEIGHT"] = 7
+            self._make_dwg_group = _make_connect_four_dwg
             if (
                 self.config["COLOR_MODE"] is None
                 and self.config["COLOR_MODE"] == "dark"
             ) or self.config["COLOR_MODE"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "gray",
-                    "black",
-                    "black",
-                    "dimgray",
-                    "#202020",
-                    "gainsboro",
-                    "white",
-                )
-            else:
-                self.config["COLOR_SET"] = ColorSet(
-                    "white",
                     "black",
                     "lightgray",
                     "white",
-                    "white",
+                    "lightgray",
+                    "#1e1e1e",
+                    "lightgray",
                     "gray",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
                     "black",
+                    "white",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "gray",
                 )
         elif isinstance(_state, GoState):
-            self.config["GRID_SIZE"] = 50
+            self.config["GRID_SIZE"] = 25
             try:
                 self.config["BOARD_WIDTH"] = int(_state.size[0])
                 self.config["BOARD_HEIGHT"] = int(_state.size[0])
@@ -382,7 +384,35 @@ class Visualizer:
                 and self.config["COLOR_MODE"] == "dark"
             ) or self.config["COLOR_MODE"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "black", "gray", "white", "white", "#202020", "white", ""
+                    "black", "gray", "white", "white", "#1e1e1e", "white", ""
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "white",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "",
+                )
+        elif isinstance(_state, OthelloState):
+            self.config["GRID_SIZE"] = 30
+            self.config["BOARD_WIDTH"] = 8
+            self.config["BOARD_HEIGHT"] = 8
+            self._make_dwg_group = _make_othello_dwg
+            if (
+                self.config["COLOR_MODE"] is None
+                and self.config["COLOR_MODE"] == "dark"
+            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "lightgray",
+                    "white",
+                    "lightgray",
+                    "#1e1e1e",
+                    "lightgray",
+                    "",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -404,7 +434,7 @@ class Visualizer:
                 and self.config["COLOR_MODE"] == "dark"
             ) or self.config["COLOR_MODE"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "gray", "black", "gray", "gray", "#202020", "gray", ""
+                    "gray", "black", "gray", "gray", "#1e1e1e", "gray", ""
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -430,7 +460,7 @@ class Visualizer:
                     "dimgray",
                     "#404040",
                     "gray",
-                    "#202020",
+                    "#1e1e1e",
                     "darkgray",
                     "whitesmoke",
                 )
@@ -445,7 +475,7 @@ class Visualizer:
                     "black",
                 )
         elif isinstance(_state, TictactoeState):
-            self.config["GRID_SIZE"] = 50
+            self.config["GRID_SIZE"] = 60
             self.config["BOARD_WIDTH"] = 3
             self.config["BOARD_HEIGHT"] = 3
             self._make_dwg_group = _make_tictactoe_dwg
@@ -458,7 +488,7 @@ class Visualizer:
                     "black",
                     "black",
                     "dimgray",
-                    "#202020",
+                    "#1e1e1e",
                     "gainsboro",
                 )
             else:
@@ -495,14 +525,18 @@ class Visualizer:
                 vul_EW=_states.vul_EW[_i],
             )
         elif isinstance(_states, GoState):
-            return GoState(
-                size=_states.size[_i],  # type:ignore
+            return GoState(  # type:ignore
+                size=_states.size[_i],
                 ren_id_board=_states.ren_id_board[_i],
                 turn=_states.turn[_i],
             )
+        elif isinstance(_states, OthelloState):
+            return OthelloState(
+                board=_states.board[_i],
+            )
         elif isinstance(_states, ShogiState):
-            return ShogiState(
-                turn=_states.turn[_i],  # type:ignore
+            return ShogiState(  # type:ignore
+                turn=_states.turn[_i],
                 piece_board=_states.piece_board[_i],
                 hand=_states.hand[_i],
             )

@@ -24,14 +24,6 @@ def test_backgammon():
     os.remove("tests/temp.svg")
 
 
-def test_chess():
-    from pgx.chess import init
-
-    state = init()
-    vis.save_svg(state, "tests/temp.svg")
-    os.remove("tests/temp.svg")
-
-
 def test_bridge():
     from pgx.bridge_bidding import init
 
@@ -40,10 +32,34 @@ def test_bridge():
     os.remove("tests/temp.svg")
 
 
+def test_chess():
+    from pgx.chess import init
+
+    state = init()
+    vis.save_svg(state, "tests/temp.svg")
+    os.remove("tests/temp.svg")
+
+
+def test_connect_four():
+    from pgx.connect_four import State
+
+    state = State()
+    vis.save_svg(state, "tests/temp.svg")
+    os.remove("tests/temp.svg")
+
+
 def test_go():
     from pgx.go import init
 
     state = init(key, size=19)
+    vis.save_svg(state, "tests/temp.svg")
+    os.remove("tests/temp.svg")
+
+
+def test_othello():
+    from pgx.othello import State
+
+    state = State()
     vis.save_svg(state, "tests/temp.svg")
     os.remove("tests/temp.svg")
 
