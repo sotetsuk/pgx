@@ -10,34 +10,28 @@ A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
 <img src="go.gif" width="40%"><img src="go.gif" width="40%" style="transform:rotate(180deg);">
 </div>
 
+## Install
+
+```sh
+$ pip install pgx
+```
+
 ## APIs
-Pgx's basic API consists of *pure functions* following the JAX's design principle.
-This is to explicitly let users know that state transition is determined ONLY from `state` and `action` and to make it easy to use `jax.jit`.
-Pgx defines the games as AEC games (see PettingZoo paper), in which only one agent acts and then turn changes.
-
-
-### Design goal
-1. Be explicit
-2. Be simple than be universal
-
-
-### Basic Usage
 
 ```py
 import jax
 import pgx
 
-batch_size = 4096
+env = pgx.make("go-19x19/v0")
+init = jax.jit(jax.vmap(env.init))  # vectorize nad JIT-compile
+step = jax.jit(jax.vmap(env.step))
 
-env = pgx.make("Go-19x19/v0")
-init = jax.jit(jax.vmap(env.init))  # jittable
-step = jax.jit(jax.vmap(env.step))  # jittable
-
+batch_size = 1024
 keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
-state = init(keys)
+state = init(keys)  # vectorized states
 while not state.terminated.all():
     action = model(state.current_player, state.observation, state.legal_action_mask)
-    state = step(state, action)
+    state = step(state, action)  # state.reward (2,)
 ```
 
 ### Limitations (for the simplicity)
@@ -56,10 +50,7 @@ while not state.terminated.all():
 * `auto_reset` will replace the terminal state by initial state (but `is_terminal=True` is set)
 * `is_truncated=True` is also set to state
 
-### Concerns
-* For efficient computation, current_player must be synchronized? but it seems difficult (or impossible?). It is impossible to synchronize the terminations.
-
-## Roadmap
+## Supported games
 
 <table>
 <tr>
