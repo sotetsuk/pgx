@@ -1,6 +1,8 @@
 import csv
 from typing import Tuple
 
+import jax
+import jax.numpy as jnp
 import numpy as np
 
 from pgx.bridge_bidding import (
@@ -24,14 +26,17 @@ from pgx.bridge_bidding import (
 
 
 def test_shuffle_players():
+    key = jax.random.PRNGKey(0)
     for i in range(100):
-        shuffled_players = _shuffle_players()
+        key, subkey = jax.random.split(key)
+        shuffled_players = _shuffle_players(subkey)
         assert (shuffled_players[0] - shuffled_players[2]) % 2
         assert (shuffled_players[1] - shuffled_players[3]) % 2
 
 
 def test_init():
-    curr_player, state = init()
+    key = jax.random.PRNGKey(0)
+    curr_player, state = init(key)
     assert state.last_bid == -1
     assert state.last_bidder == -1
     assert not state.call_x
@@ -43,8 +48,10 @@ def test_init():
 
 
 def test_duplicate():
+    key = jax.random.PRNGKey(0)
     for i in range(1000):
-        _, init_state = init()
+        key, subkey = jax.random.split(key)
+        _, init_state = init(subkey)
         duplicated_state = duplicate(init_state)
         assert (
             init_state.shuffled_players[0]
@@ -75,18 +82,20 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     #   P  P
+    key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    _, state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1])
-    state.dealer = np.int8(1)
-    state.curr_player = np.full(1, 3, dtype=np.int8)
-    state.shuffled_players = np.array([0, 3, 1, 2], dtype=np.int8)
-    state.vul_NS = np.bool_(0)
-    state.vul_EW = np.bool_(0)
-    bidding_history = np.full(319, -1, dtype=np.int8)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[-2:] = 0
-    first_denomination_NS = np.full(5, -1, dtype=np.int8)
-    first_denomination_EW = np.full(5, -1, dtype=np.int8)
+    _, state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state.dealer = jnp.int8(1)
+    state.curr_player = jnp.full(1, 3, dtype=jnp.int8)
+    state.shuffled_players = jnp.array([0, 3, 1, 2], dtype=jnp.int8)
+    state.vul_NS = jnp.bool_(0)
+    state.vul_EW = jnp.bool_(0)
+    bidding_history = jnp.full(319, -1, dtype=jnp.int8)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
+    first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -101,17 +110,17 @@ def test_step():
     assert state.curr_player == 1
     assert _player_position(curr_player, state) == 2
     assert not state.terminated
-    bidding_history[0] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[0].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == np.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -126,17 +135,17 @@ def test_step():
     assert state.curr_player == 2
     assert _player_position(curr_player, state) == 3
     assert not state.terminated
-    bidding_history[1] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[1].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 2
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -151,17 +160,17 @@ def test_step():
     assert state.curr_player == 0
     assert _player_position(curr_player, state) == 0
     assert not state.terminated
-    bidding_history[2] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[2].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 3
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 0, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -172,26 +181,26 @@ def test_step():
     #  -----------
     #      P  P  P
     #  1C
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, -1, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, -1, -1, -1])
 
     assert state.turn == 4
     assert state.curr_player == 3
     assert _player_position(curr_player, state) == 1
     assert not state.terminated
-    bidding_history[3] = 0
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask[0] = 0
-    legal_action_mask[36] = 1
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[3].set(0)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = legal_action_mask.at[0].set(False)
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 0
     assert _player_position(state.last_bidder, state) == 0
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 8, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -202,26 +211,28 @@ def test_step():
     #  -----------
     #      P  P  P
     #  1C 2S
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 5
     assert state.curr_player == 1
     assert _player_position(curr_player, state) == 2
     assert not state.terminated
-    bidding_history[4] = 8
+    bidding_history = bidding_history.at[4].set(8)
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask[0:9] = 0
-    legal_action_mask[36] = 1
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 9, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
     assert _player_position(state.last_bidder, state) == 1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -232,27 +243,29 @@ def test_step():
     #  -----------
     #      P  P  P
     #  1C 2S  X
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 6
     assert state.curr_player == 2
     assert _player_position(curr_player, state) == 3
     assert not state.terminated
-    bidding_history[5] = 36
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask[0:9] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 1
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[5].set(36)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 9, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(True)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
     assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -263,28 +276,30 @@ def test_step():
     #  -----------
     #      P  P  P
     #  1C 2S  X  P
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 7
     assert state.curr_player == 0
     assert _player_position(curr_player, state) == 0
     assert not state.terminated
-    bidding_history[6] = 35
+    bidding_history = bidding_history.at[6].set(35)
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:9] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 9, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
     assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -296,28 +311,30 @@ def test_step():
     #      P  P  P
     #  1C 2S  X  P
     #   P
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 8
     assert state.curr_player == 3
     assert _player_position(curr_player, state) == 1
     assert not state.terminated
-    bidding_history[7] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:9] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 1
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[7].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 9, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(True)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
     assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 2
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -329,28 +346,30 @@ def test_step():
     #      P  P  P
     #  1C 2S  X  P
     #   P XX
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 9
     assert state.curr_player == 1
     assert _player_position(curr_player, state) == 2
     assert not state.terminated
-    bidding_history[8] = 37
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:9] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[8].set(37)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 9, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
     assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -362,28 +381,30 @@ def test_step():
     #      P  P  P
     #  1C 2S  X  P
     #   P XX  P
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, -1, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
     assert state.turn == 10
     assert state.curr_player == 2
     assert _player_position(curr_player, state) == 3
     assert not state.terminated
-    bidding_history[9] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:9] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[9].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 9, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 8
     assert _player_position(state.last_bidder, state) == 1
     assert state.call_x
     assert state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 22, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -395,28 +416,30 @@ def test_step():
     #      P  P  P
     #  1C 2S  X  P
     #   P XX  P 5H
-    first_denomination_NS = np.array([0, -1, -1, -1, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 11
     assert state.curr_player == 0
     assert _player_position(curr_player, state) == 0
     assert not state.terminated
-    bidding_history[10] = 22
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:23] = 0
-    legal_action_mask[36] = 1
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[10].set(22)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 23, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 22
     assert _player_position(state.last_bidder, state) == 3
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 23, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -429,28 +452,30 @@ def test_step():
     #  1C 2S  X  P
     #   P XX  P 5H
     #  5S
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 12
     assert state.curr_player == 3
     assert _player_position(curr_player, state) == 1
     assert not state.terminated
-    bidding_history[11] = 23
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:24] = 0
-    legal_action_mask[36] = 1
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[11].set(23)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 24, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 23
     assert _player_position(state.last_bidder, state) == 0
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -463,28 +488,30 @@ def test_step():
     #  1C 2S  X  P
     #   P XX  P 5H
     #  5S  P
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 13
     assert state.curr_player == 1
     assert _player_position(curr_player, state) == 2
     assert not state.terminated
-    bidding_history[12] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:24] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[12].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 24, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 23
     assert _player_position(state.last_bidder, state) == 0
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 25, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -497,28 +524,30 @@ def test_step():
     #  1C 2S  X  P
     #   P XX  P 5H
     #  5S  P 6C
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 14
     assert state.curr_player == 2
     assert _player_position(curr_player, state) == 3
     assert not state.terminated
-    bidding_history[13] = 25
+    bidding_history = bidding_history.at[13].set(25)
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:26] = 0
-    legal_action_mask[36] = 1
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 26, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
     assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -531,19 +560,21 @@ def test_step():
     #  1C 2S  X  P
     #   P XX  P 5H
     #  5S  P 6C  X
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 15
     assert state.curr_player == 0
     assert _player_position(curr_player, state) == 0
     assert not state.terminated
-    bidding_history[14] = 36
+    bidding_history = bidding_history.at[14].set(36)
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:26] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 1
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 26, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(True)
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
     assert _player_position(state.last_bidder, state) == 2
@@ -566,28 +597,30 @@ def test_step():
     #   P XX  P 5H
     #  5S  P 6C  X
     #  XX
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 16
     assert state.curr_player == 3
     assert _player_position(curr_player, state) == 1
     assert not state.terminated
-    bidding_history[15] = 37
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:26] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[15].set(37)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 26, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
     assert _player_position(state.last_bidder, state) == 2
     assert state.call_x
     assert state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -601,28 +634,30 @@ def test_step():
     #   P XX  P 5H
     #  5S  P 6C  X
     #  XX  P
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 17
     assert state.curr_player == 1
     assert _player_position(curr_player, state) == 2
     assert not state.terminated
-    bidding_history[16] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:26] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 0
+    bidding_history = bidding_history.at[16].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 26, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 25
     assert _player_position(state.last_bidder, state) == 2
     assert state.call_x
     assert state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 30, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -636,28 +671,30 @@ def test_step():
     #   P XX  P 5H
     #  5S  P 6C  X
     #  XX  P 7C
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 18
     assert state.curr_player == 2
     assert _player_position(curr_player, state) == 3
     assert not state.terminated
-    bidding_history[17] = 30
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:31] = 0
-    legal_action_mask[36] = 1
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[17].set(30)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 31, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
     assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 0
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -671,28 +708,30 @@ def test_step():
     #   P XX  P 5H
     #  5S  P 6C  X
     #  XX  P 7C  P
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 19
     assert state.curr_player == 0
     assert _player_position(curr_player, state) == 0
     assert not state.terminated
-    bidding_history[18] = 35
+    bidding_history = bidding_history.at[18].set(35)
     assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:31] = 0
-    legal_action_mask[36] = 0
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 31, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
     assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -707,28 +746,30 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     #   P
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 20
     assert state.curr_player == 3
     assert _player_position(curr_player, state) == 1
     assert not state.terminated
-    bidding_history[19] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:31] = 0
-    legal_action_mask[36] = 1
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[19].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 31, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
     assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 2
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -746,28 +787,33 @@ def test_step():
     # Passが3回続いたので終了
     assert state.terminated == True
     assert state.curr_player == -1
-    first_denomination_NS = np.array([0, -1, -1, 0, -1])
-    first_denomination_EW = np.array([-1, -1, 2, 3, -1])
+    first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
+    first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 20
     assert _player_position(curr_player, state) == -1
     assert state.terminated
-    bidding_history[20] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[0:31] = 0
-    legal_action_mask[36] = 1
-    legal_action_mask[37] = 0
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[20].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = jnp.where(
+        jnp.arange(38) < 31, False, state.legal_action_mask
+    )
+    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
     assert _player_position(state.last_bidder, state) == 2
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 3
     assert rewards.shape == (4,)
-    assert np.all(rewards == np.array([-600, -600, 600, 600], dtype=np.int16))
+    print(rewards)
+    assert jnp.all(
+        rewards == jnp.array([-600, -600, 600, 600], dtype=jnp.int16)
+    )
     declare_position, denomination, level, vul = _contract(state)
     assert declare_position == 0
     assert denomination == 0
@@ -775,7 +821,7 @@ def test_step():
     assert vul == 0
 
 
-def max_action_length_agent(state: State):
+def max_action_length_agent(state: State) -> int:
     if (state.last_bid == -1 and state.pass_num != 3) or (
         state.last_bid != -1 and state.pass_num != 2
     ):
@@ -785,24 +831,26 @@ def max_action_length_agent(state: State):
     elif state.legal_action_mask[37]:
         return 37
     else:
-        return state.last_bid + 1
+        return int(state.last_bid) + 1
 
 
 def test_max_action():
+    key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    _, state = init()
-    state.turn = np.int16(0)
-    state.terminated = np.bool_(0)
-    state.bidding_history = np.full(319, -1, dtype=np.int8)
-    state.legal_action_mask = np.ones(38, dtype=np.bool_)
-    state.legal_action_mask[-2:] = 0
-    state.first_denomination_NS = np.full(5, -1, dtype=np.int8)
-    state.first_denomination_EW = np.full(5, -1, dtype=np.int8)
-    state.call_x = np.bool_(0)
-    state.call_xx = np.bool_(0)
-    state.pass_num = np.bool_(0)
-    state.last_bid = np.int8(-1)
-    state.last_bidder = np.int8(-1)
+    _, state = init(key)
+    state.turn = jnp.int16(0)
+    state.terminated = jnp.bool_(0)
+    state.bidding_history = jnp.full(319, -1, dtype=jnp.int8)
+    state.legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    state.legal_action_mask = state.legal_action_mask.at[36].set(False)
+    state.legal_action_mask = state.legal_action_mask.at[36].set(False)
+    state.first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
+    state.first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
+    state.call_x = jnp.bool_(0)
+    state.call_xx = jnp.bool_(0)
+    state.pass_num = jnp.bool_(0)
+    state.last_bid = jnp.int8(-1)
+    state.last_bidder = jnp.int8(-1)
 
     for i in range(319):
         if i < 318:
@@ -830,31 +878,34 @@ def test_pass_out():
     #  -----------
     #      P  P  P
     #   P
+    key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    _, state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1])
-    state.dealer = np.int8(1)
-    state.curr_player = np.full(1, 3, dtype=np.int8)
-    state.shuffled_players = np.array([0, 3, 1, 2], dtype=np.int8)
-    state.vul_NS = np.bool_(0)
-    state.vul_EW = np.bool_(0)
-    state.turn = np.int16(0)
-    state.terminated = np.bool_(0)
-    state.bidding_history = np.full(319, -1, dtype=np.int8)
-    state.legal_action_mask = np.ones(38, dtype=np.bool_)
-    state.legal_action_mask[-2:] = 0
-    state.first_denomination_NS = np.full(5, -1, dtype=np.int8)
-    state.first_denomination_EW = np.full(5, -1, dtype=np.int8)
-    state.call_x = np.bool_(0)
-    state.call_xx = np.bool_(0)
-    state.pass_num = np.bool_(0)
-    state.last_bid = np.int8(-1)
-    state.last_bidder = np.int8(-1)
+    _, state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
+    state.dealer = jnp.int8(1)
+    state.curr_player = jnp.full(1, 3, dtype=jnp.int8)
+    state.shuffled_players = jnp.array([0, 3, 1, 2], dtype=jnp.int8)
+    state.vul_NS = jnp.bool_(0)
+    state.vul_EW = jnp.bool_(0)
+    state.turn = jnp.int16(0)
+    state.terminated = jnp.bool_(0)
+    state.bidding_history = jnp.full(319, -1, dtype=jnp.int8)
+    state.legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    state.legal_action_mask = state.legal_action_mask.at[36].set(False)
+    state.legal_action_mask = state.legal_action_mask.at[37].set(False)
+    state.first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
+    state.first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
+    state.call_x = jnp.bool_(0)
+    state.call_xx = jnp.bool_(0)
+    state.pass_num = jnp.bool_(0)
+    state.last_bid = jnp.int8(-1)
+    state.last_bidder = jnp.int8(-1)
 
-    bidding_history = np.full(319, -1, dtype=np.int8)
-    legal_action_mask = np.ones(38, dtype=np.bool_)
-    legal_action_mask[-2:] = 0
-    first_denomination_NS = np.full(5, -1, dtype=np.int8)
-    first_denomination_EW = np.full(5, -1, dtype=np.int8)
+    bidding_history = jnp.full(319, -1, dtype=jnp.int8)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[36].set(False)
+    legal_action_mask = legal_action_mask.at[37].set(False)
+    first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
+    first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -869,17 +920,17 @@ def test_pass_out():
     assert state.curr_player == 1
     assert _player_position(curr_player, state) == 2
     assert not state.terminated
-    bidding_history[0] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[0].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 1
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -894,17 +945,17 @@ def test_pass_out():
     assert state.curr_player == 2
     assert _player_position(curr_player, state) == 3
     assert not state.terminated
-    bidding_history[1] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[1].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 2
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -919,17 +970,17 @@ def test_pass_out():
     assert state.curr_player == 0
     assert _player_position(curr_player, state) == 0
     assert not state.terminated
-    bidding_history[2] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[2].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 3
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
     curr_player, state, rewards = step(
         state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
@@ -944,17 +995,17 @@ def test_pass_out():
     assert state.terminated == True
     assert state.curr_player == -1
     assert state.turn == 3
-    bidding_history[3] = 35
-    assert np.all(state.bidding_history == bidding_history)
-    assert np.all(state.legal_action_mask == legal_action_mask)
+    bidding_history = bidding_history.at[3].set(35)
+    assert jnp.all(state.bidding_history == bidding_history)
+    assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
     assert not state.call_xx
-    assert np.all(state.first_denomination_NS == first_denomination_NS)
-    assert np.all(state.first_denomination_EW == first_denomination_EW)
+    assert jnp.all(state.first_denomination_NS == first_denomination_NS)
+    assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 4
-    assert np.all(rewards == np.zeros(4))
+    assert jnp.all(rewards == jnp.zeros(4))
 
 
 def test_calc_score():
@@ -1112,12 +1163,12 @@ def test_calc_score():
                                 ]
 
                             actural_score = _calc_score(
-                                np.int16(denomination),
-                                np.int16(level),
-                                np.int16(vul),
-                                np.int16(call_x),
-                                np.int16(call_xx),
-                                np.int16(trick),
+                                jnp.int16(denomination),
+                                jnp.int16(level),
+                                jnp.int16(vul),
+                                jnp.int16(call_x),
+                                jnp.int16(call_xx),
+                                jnp.int16(trick),
                             )
                             assert actural_score == expected_score
                             assert actural_score.shape == ()
@@ -1151,42 +1202,44 @@ def test_calc_score():
 
 
 def test_to_binary():
-    x = np.arange(52, dtype=np.int8)[::-1].reshape((4, 13)) % 4
+    x = jnp.arange(52, dtype=jnp.int8)[::-1].reshape((4, 13)) % 4
     y = _to_binary(x)
 
-    assert np.all(
-        y == np.array([60003219, 38686286, 20527417, 15000804], dtype=np.int32)
+    assert jnp.all(
+        y
+        == jnp.array([60003219, 38686286, 20527417, 15000804], dtype=jnp.int32)
     )
 
-    x = np.arange(52, dtype=np.int8).reshape((4, 13)) // 13
+    x = jnp.arange(52, dtype=jnp.int8).reshape((4, 13)) // 13
     y = _to_binary(x)
-    assert np.all(
-        y == np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    assert jnp.all(
+        y == jnp.array([0, 22369621, 44739242, 67108863], dtype=jnp.int32)
     )
 
-    x = np.arange(52, dtype=np.int8)[::-1].reshape((4, 13)) // 13
+    x = jnp.arange(52, dtype=jnp.int8)[::-1].reshape((4, 13)) // 13
     y = _to_binary(x)
-    assert np.all(
-        y == np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    assert jnp.all(
+        y == jnp.array([67108863, 44739242, 22369621, 0], dtype=jnp.int32)
     )
 
 
 def test_state_to_pbn():
-    _, state = init()
-    state.hand = np.arange(52, dtype=np.int8)
+    key = jax.random.PRNGKey(0)
+    _, state = init(key)
+    state.hand = jnp.arange(52, dtype=jnp.int8)
     pbn = _state_to_pbn(state)
     assert (
         pbn
         == "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432"
     )
-    state.hand = np.arange(52, dtype=np.int8)[::-1]
+    state.hand = jnp.arange(52, dtype=jnp.int8)[::-1]
     pbn = _state_to_pbn(state)
     assert (
         pbn
         == "N:...AKQJT98765432 ..AKQJT98765432. .AKQJT98765432.. AKQJT98765432..."
     )
     # fmt: off
-    state.hand = np.array([
+    state.hand = jnp.array([
         12,9,8,6,3,2,13,24,22,16,15,36,45,
         10,7,4,21,37,31,51,50,49,47,43,41,40,
         11,1,25,23,19,18,17,35,34,33,48,44,42,
@@ -1203,21 +1256,23 @@ def test_state_to_pbn():
 
 
 def test_state_to_key():
-    _, state = init()
-    state.hand = np.arange(52, dtype=np.int8)
+    rng = jax.random.PRNGKey(0)
+    _, state = init(rng)
+
+    state.hand = jnp.arange(52, dtype=jnp.int8)
     key = _state_to_key(state)
-    assert np.all(
-        key == np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    assert jnp.all(
+        key == jnp.array([0, 22369621, 44739242, 67108863], dtype=jnp.int32)
     )
 
-    state.hand = np.arange(52, dtype=np.int8)[::-1]
+    state.hand = jnp.arange(52, dtype=jnp.int8)[::-1]
     key = _state_to_key(state)
-    assert np.all(
-        key == np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    assert jnp.all(
+        key == jnp.array([67108863, 44739242, 22369621, 0], dtype=jnp.int32)
     )
 
     # fmt: off
-    state.hand = np.array([
+    state.hand = jnp.array([
         12,9,8,6,3,2,13,24,22,16,15,36,45,
         10,7,4,21,37,31,51,50,49,47,43,41,40,
         11,1,25,23,19,18,17,35,34,33,48,44,42,
@@ -1227,34 +1282,34 @@ def test_state_to_key():
     # fmt: on
     key = _state_to_key(state)
     print(key)
-    assert np.all(
+    assert jnp.all(
         key
-        == np.array([58835992, 12758306, 67074695, 56200597], dtype=np.int32)
+        == jnp.array([58835992, 12758306, 67074695, 56200597], dtype=jnp.int32)
     )
 
 
 def test_key_to_hand():
-    key = np.array([0, 22369621, 44739242, 67108863], dtype=np.int32)
+    key = jnp.array([0, 22369621, 44739242, 67108863], dtype=jnp.int32)
     hand = _key_to_hand(key)
-    assert np.all(hand == np.arange(52, dtype=np.int8))
+    assert jnp.all(hand == jnp.arange(52, dtype=jnp.int8))
 
-    key = np.array([67108863, 44739242, 22369621, 0], dtype=np.int32)
+    key = jnp.array([67108863, 44739242, 22369621, 0], dtype=jnp.int32)
     hand = _key_to_hand(key)
-    correct_hand = np.arange(52, dtype=np.int8)[::-1]
-    sorted_correct_hand = np.concatenate(
+    correct_hand = jnp.arange(52, dtype=jnp.int8)[::-1]
+    sorted_correct_hand = jnp.concatenate(
         [
-            np.sort(correct_hand[:13]),
-            np.sort(correct_hand[13:26]),
-            np.sort(correct_hand[26:39]),
-            np.sort(correct_hand[39:]),
+            jnp.sort(correct_hand[:13]),
+            jnp.sort(correct_hand[13:26]),
+            jnp.sort(correct_hand[26:39]),
+            jnp.sort(correct_hand[39:]),
         ]
     ).reshape(-1)
-    assert np.all(hand == sorted_correct_hand)
+    assert jnp.all(hand == sorted_correct_hand)
 
-    key = np.array([58835992, 12758306, 67074695, 56200597], dtype=np.int32)
+    key = jnp.array([58835992, 12758306, 67074695, 56200597], dtype=jnp.int32)
     hand = _key_to_hand(key)
     # fmt: off
-    correct_hand = np.array([
+    correct_hand = jnp.array([
         12,9,8,6,3,2,13,24,22,16,15,36,45,
         10,7,4,21,37,31,51,50,49,47,43,41,40,
         11,1,25,23,19,18,17,35,34,33,48,44,42,
@@ -1262,33 +1317,35 @@ def test_key_to_hand():
         ]
     )
     # fmt: on
-    sorted_correct_hand = np.concatenate(
+    sorted_correct_hand = jnp.concatenate(
         [
-            np.sort(correct_hand[:13]),
-            np.sort(correct_hand[13:26]),
-            np.sort(correct_hand[26:39]),
-            np.sort(correct_hand[39:]),
+            jnp.sort(correct_hand[:13]),
+            jnp.sort(correct_hand[13:26]),
+            jnp.sort(correct_hand[26:39]),
+            jnp.sort(correct_hand[39:]),
         ]
     ).reshape(-1)
     print(hand)
-    assert np.all(hand == sorted_correct_hand)
+    assert jnp.all(hand == sorted_correct_hand)
 
 
 def test_state_to_key_cycle():
+    rng = jax.random.PRNGKey(0)
     # state => key => st
     for _ in range(1000):
-        _, state = init()
-        sorted_hand = np.concatenate(
+        rng1, rng2 = jax.random.split(rng)
+        _, state = init(rng2)
+        sorted_hand = jnp.concatenate(
             [
-                np.sort(state.hand[:13]),
-                np.sort(state.hand[13:26]),
-                np.sort(state.hand[26:39]),
-                np.sort(state.hand[39:]),
+                jnp.sort(state.hand[:13]),
+                jnp.sort(state.hand[13:26]),
+                jnp.sort(state.hand[26:39]),
+                jnp.sort(state.hand[39:]),
             ]
         ).reshape(-1)
         key = _state_to_key(state)
         reconst_hand = _key_to_hand(key)
-        assert np.all(sorted_hand == reconst_hand)
+        assert jnp.all(sorted_hand == reconst_hand)
 
 
 def test_calcurate_dds_tricks():
@@ -1298,37 +1355,40 @@ def test_calcurate_dds_tricks():
         reader = csv.reader(f, delimiter=",")
         for i in reader:
             samples.append([i[0], np.array(i[1:]).astype(np.int8)])
+    key = jax.random.PRNGKey(0)
     for i in range(len(HASH_TABLE_SAMPLE_KEYS)):
-        _, state = init()
+        key, subkey = jax.random.split(key)
+        _, state = init(subkey)
         state.hand = _key_to_hand(HASH_TABLE_SAMPLE_KEYS[i])
         dds_tricks = _calculate_dds_tricks(
             state, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
         )
         # sample dataから、作成したhash tableを用いて、ddsの結果を計算
         # その結果とsample dataが一致しているか確認
-        assert np.all(dds_tricks == samples[i][1])
+        assert jnp.all(dds_tricks == samples[i][1])
 
 
-def to_value(sample: list) -> np.ndarray:
+def to_value(sample: list) -> jnp.ndarray:
     """Convert sample to value
     >>> sample = ['0', '1', '0', '4', '0', '13', '12', '13', '9', '13', '0', '1', '0', '4', '0', '13', '12', '13', '9', '13']
     >>> to_value(sample)
-    array([  4160, 904605,   4160, 904605])
+    Array([  4160, 904605,   4160, 904605], dtype=int32)
     """
-    np_sample = np.array(sample)
-    np_sample = np_sample.astype(np.int8).reshape(4, 5)
-    return to_binary(np_sample)
+    jnp_sample = jnp.array([int(s) for s in sample], dtype=np.int8).reshape(
+        4, 5
+    )
+    return to_binary(jnp_sample)
 
 
-def to_binary(x) -> np.ndarray:
+def to_binary(x) -> jnp.ndarray:
     """Convert dds information to value
-    >>> np.array([16**i for i in range(5)], dtype=np.int32)[::-1]
-    array([65536,  4096,   256,    16,     1], dtype=int32)
-    >>> x = np.arange(20, dtype=np.int32).reshape(4, 5) % 14
+    >>> jnp.array([16**i for i in range(5)], dtype=jnp.int32)[::-1]
+    Array([65536,  4096,   256,    16,     1], dtype=int32)
+    >>> x = jnp.arange(20, dtype=jnp.int32).reshape(4, 5) % 14
     >>> to_binary(x)
-    array([  4660, 354185, 703696,  74565])
+    Array([  4660, 354185, 703696,  74565], dtype=int32)
     """
-    bases = np.array([16**i for i in range(5)], dtype=np.int32)[::-1]
+    bases = jnp.array([16**i for i in range(5)], dtype=jnp.int32)[::-1]
     return (x * bases).sum(axis=1)  # shape = (4, )
 
 
