@@ -4,16 +4,23 @@
 <img src="logo.svg" width="40%">
 </div>
 
-A collection of GPU/TPU-accelerated game simulators for reinforcement learning.
+A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning
 
 <div align="center">
 <img src="go.gif" width="40%"><img src="go.gif" width="40%" style="transform:rotate(180deg);">
 </div>
 
+## Why Pgx?
+
+- [JAX](https://github.com/google/jax)-native. All `step` functions are *jittable*.
+- Fast in parallel execution.
+- Support variety of board games, including Shogi and Go.
+- Beautiful visualization.
+
 ## Install
 
 ```sh
-$ pip install pgx
+pip install pgx
 ```
 
 ## APIs
@@ -23,7 +30,7 @@ import jax
 import pgx
 
 env = pgx.make("go-19x19/v0")
-init = jax.jit(jax.vmap(env.init))  # vectorize nad JIT-compile
+init = jax.jit(jax.vmap(env.init))  # vectorize and JIT-compile
 step = jax.jit(jax.vmap(env.step))
 
 batch_size = 1024
@@ -145,8 +152,19 @@ while not state.terminated.all():
 </tr>
 </table>
 
+## See also
+
+### JAX-native environments
+
+- [RobertTLange/gymnax](https://github.com/RobertTLange/gymnax): Classic control, bsuite, etc.
+- [google/brax](https://github.com/google/brax): Rigidbody physics simulation
+- [instadeepai/jumanji](https://github.com/instadeepai/jumanji): Industry-driven environments (e.g., Travelling Salesman Problem)
+
+### JAX-native algorithms
+
+- [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS implementations
+- [Podracer architectures for scalable Reinforcement Learning](https://arxiv.org/abs/2104.06272): Pgx is available in *Anakin* framework
+
 ## LICENSE
 
-TDOO
-
-* MinAtar is GPL-3.0 License
+Apache-2.0
