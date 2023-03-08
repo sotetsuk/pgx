@@ -2,6 +2,8 @@ import csv
 from typing import Tuple
 
 import numpy as np
+import jax
+import jax.numpy as jnp
 
 from pgx.bridge_bidding import (
     State,
@@ -24,14 +26,17 @@ from pgx.bridge_bidding import (
 
 
 def test_shuffle_players():
+    key = jax.random.PRNGKey(0)
     for i in range(100):
-        shuffled_players = _shuffle_players()
+        key, subkey = jax.random.split(key)
+        shuffled_players = _shuffle_players(subkey)
         assert (shuffled_players[0] - shuffled_players[2]) % 2
         assert (shuffled_players[1] - shuffled_players[3]) % 2
 
 
 def test_init():
-    curr_player, state = init()
+    key = jax.random.PRNGKey(0)
+    curr_player, state = init(key)
     assert state.last_bid == -1
     assert state.last_bidder == -1
     assert not state.call_x
@@ -43,8 +48,10 @@ def test_init():
 
 
 def test_duplicate():
+    key = jax.random.PRNGKey(0)
     for i in range(1000):
-        _, init_state = init()
+        key, subkey = jax.random.split(key)
+        _, init_state = init(subkey)
         duplicated_state = duplicate(init_state)
         assert (
             init_state.shuffled_players[0]
@@ -75,13 +82,14 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     #   P  P
+    key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    _, state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1])
-    state.dealer = np.ones(1, dtype=np.int8)
-    state.curr_player = np.full(1, 3, dtype=np.int8)
-    state.shuffled_players = np.array([0, 3, 1, 2], dtype=np.int8)
-    state.vul_NS = np.zeros(1, dtype=np.bool_)
-    state.vul_EW = np.zeros(1, dtype=np.bool_)
+    _, state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
+    state.dealer = jnp.int8(1)
+    state.curr_player = jnp.full(1, 3, dtype=jnp.int8)
+    state.shuffled_players = jnp.array([0, 3, 1, 2], dtype=jnp.int8)
+    state.vul_NS = jnp.bool_(0)
+    state.vul_EW = jnp.bool_(0)
     bidding_history = np.full(319, -1, dtype=np.int8)
     legal_action_mask = np.ones(38, dtype=np.bool_)
     legal_action_mask[-2:] = 0

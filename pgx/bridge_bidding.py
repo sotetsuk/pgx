@@ -64,18 +64,19 @@ class State:
 
 
 def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
-    rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
+    rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
-    hand = jax.random.shuffle(rng1, hand)
-    vul_NS = jax.random.randint(rng2, (1,), 0, 2)
-    vul_EW = jax.random.randint(rng3, (1,), 0, 2)
-    dealer = jax.random.randint(rng4, (1,), 0, 4)
+    hand = jax.random.shuffle(rng2, hand)
+    vul_NS = jax.random.randint(rng3, (1,), 0, 2)
+    vul_EW = jax.random.randint(rng4, (1,), 0, 2)
+    dealer = jax.random.randint(rng5, (1,), 0, 4)
     # shuffled players and arrange in order of NESW
-    shuffled_players = _shuffle_players(rng5)
+    shuffled_players = _shuffle_players(rng6)
     curr_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
-    legal_actions[-2:] = 0
+    legal_actions = legal_actions.at[36].set(0)
+    legal_actions = legal_actions.at[37].set(0)
     state = State(
         shuffled_players=shuffled_players,
         curr_player=curr_player,
@@ -88,15 +89,17 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     return state.curr_player, state
 
 
-def init_by_key(key, rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
+def init_by_key(
+    key: jnp.ndarray, rng: jax.random.KeyArray
+) -> Tuple[jnp.ndarray, State]:
     """Make init state from key"""
-    rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
+    rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
     hand = _key_to_hand(key)
-    vul_NS = jax.random.randint(rng1, (1,), 0, 2)
-    vul_EW = jax.random.randint(rng2, (1,), 0, 2)
-    dealer = jax.random.randint(rng3, (1,), 0, 4)
+    vul_NS = jax.random.randint(rng2, (1,), 0, 2)
+    vul_EW = jax.random.randint(rng3, (1,), 0, 2)
+    dealer = jax.random.randint(rng4, (1,), 0, 4)
     # shuffled players and arrange in order of NESW
-    shuffled_players = _shuffle_players(rng4)
+    shuffled_players = _shuffle_players(rng5)
     curr_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
@@ -124,19 +127,19 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
         >>> _shuffle_players(key)
         Array([1, 2, 0, 3], dtype=int8)
     """
-    rng1, rng2, rng3 = jax.random.split(rng, num=3)
+    rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     # player_id = 0, 1 -> team a
     team_a_players = jax.random.permutation(
-        rng1, jnp.arange(2, dtype=jnp.int8)
+        rng2, jnp.arange(2, dtype=jnp.int8)
     )
     # player_id = 2, 3 -> team b
     team_b_players = jax.random.permutation(
-        rng2, jnp.arange(2, 4, dtype=jnp.int8)
+        rng3, jnp.arange(2, 4, dtype=jnp.int8)
     )
     # decide which team is on
     # Randomly determine NSteam and EWteam
     # Arrange in order of NESW
-    if jax.random.randint(rng3, (1,), 1, 2) == 1:
+    if jax.random.randint(rng4, (1,), 1, 2) == 1:
         shuffled_players = jnp.array(
             [
                 team_a_players[0],
