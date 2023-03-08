@@ -146,7 +146,7 @@ while not state.terminated.all():
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>TicTacToe</td>
+ <td>Tic-Tac-Toe</td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
@@ -154,16 +154,16 @@ while not state.terminated.all():
 
 ## See also
 
-### JAX-native environments
+Pgx is intended to complement these **JAX-native environments** with (classic) board game suits:
 
 - [RobertTLange/gymnax](https://github.com/RobertTLange/gymnax): Classic control, bsuite, etc.
 - [google/brax](https://github.com/google/brax): Rigidbody physics simulation
 - [instadeepai/jumanji](https://github.com/instadeepai/jumanji): Industry-driven environments (e.g., Travelling Salesman Problem)
 
-### JAX-native algorithms
+Combining Pgx with these **JAX-native algorithms/implementations** is interesting direction:
 
-- [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS implementations
-- [Podracer architectures for scalable Reinforcement Learning](https://arxiv.org/abs/2104.06272): Pgx is available in *Anakin* framework
+- [Anakin framework](https://arxiv.org/abs/2104.06272): Highly efficient RL framework that works with JAX-native environments on TPUs
+- [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS algorithm implementations, including AlphaZero, MuZero, and Gumbel MuZero
 
 ## LICENSE
 
