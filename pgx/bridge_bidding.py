@@ -178,7 +178,7 @@ def step(
 ) -> State:
     state = state.replace(
         bidding_history=state.bidding_history.at[state.turn].set(action)
-    )
+    )  # type: ignore
     # 非合法手判断
     if not state.legal_action_mask[action]:
         return _illegal_step(state)
@@ -212,7 +212,7 @@ def duplicate(
     ix = jnp.array([1, 0, 3, 2])
     duplicated_state = duplicated_state.replace(
         shuffled_players=duplicated_state.shuffled_players[ix]
-    )
+    )  # type: ignore
     return duplicated_state
 
 
@@ -225,7 +225,7 @@ def _illegal_step(
         terminated=jnp.bool_(True),
         curr_player=jnp.int8(-1),
         reward=illegal_rewards,
-    )
+    )  # type: ignore
 
 
 # ゲームが正常に終了した場合
@@ -239,7 +239,7 @@ def _terminated_step(
     reward = _reward(state, hash_keys, hash_values)
     return state.replace(
         terminated=terminated, curr_player=curr_player, reward=reward
-    )
+    )  # type: ignore
 
 
 # ゲームが継続する場合
@@ -252,7 +252,7 @@ def _continue_step(
             (state.dealer + state.turn + 1) % 4
         ],
         turn=state.turn + 1,
-    )
+    )  # type: ignore
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
     return state.replace(
@@ -261,7 +261,7 @@ def _continue_step(
         .at[37]
         .set(xx_mask),
         reward=jnp.zeros(4, dtype=jnp.int16),
-    )
+    )  # type: ignore
 
 
 # 終了判定　ビッドされていない場合はパスが４回連続（パスアウト）、それ以外はパスが3回連続
@@ -434,17 +434,17 @@ def _contract(
 def _state_pass(
     state: State,
 ) -> State:
-    return state.replace(pass_num=state.pass_num + 1)
+    return state.replace(pass_num=state.pass_num + 1)  # type: ignore
 
 
 # Xによるstateの変化
 def _state_X(state: State) -> State:
-    return state.replace(call_x=jnp.bool_(True), pass_num=jnp.int8(0))
+    return state.replace(call_x=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
 
 
 # XXによるstateの変化
 def _state_XX(state: State) -> State:
-    return state.replace(call_xx=jnp.bool_(True), pass_num=jnp.int8(0))
+    return state.replace(call_xx=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
 
 
 # bidによるstateの変化
@@ -452,7 +452,7 @@ def _state_bid(state: State, action: int) -> State:
     # 最後のbidとそのプレイヤーを保存
     state = state.replace(
         last_bid=jnp.int8(action), last_bidder=state.curr_player
-    )
+    )  # type: ignore
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
     team = _position_to_team(_player_position(state.last_bidder, state))
@@ -462,14 +462,14 @@ def _state_bid(state: State, action: int) -> State:
             first_denomination_EW=state.first_denomination_EW.at[
                 denomination
             ].set(int(state.last_bidder))
-        )
+        )  # type: ignore
     # team = 0ならNSチーム
     elif not team and (state.first_denomination_NS[denomination] == -1):
         state = state.replace(
             first_denomination_NS=state.first_denomination_NS.at[
                 denomination
             ].set(int(state.last_bidder))
-        )
+        )  # type: ignore
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
     return state.replace(
@@ -479,7 +479,7 @@ def _state_bid(state: State, action: int) -> State:
         call_x=jnp.bool_(False),
         call_xx=jnp.bool_(False),
         pass_num=jnp.int8(0),
-    )
+    )  # type: ignore
 
 
 # bidのdenominationを計算
