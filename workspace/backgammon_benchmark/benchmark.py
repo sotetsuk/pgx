@@ -23,14 +23,14 @@ from pgx.backgammon import (
 action_to_point = (19 + 2) * 6 + 1
 def test(func):
     rng = jax.random.PRNGKey(0)
-    _, state = init(rng)
+    state = init(rng)
     if func.__name__ == "init":
         time_sta = time.perf_counter()
         jax.jit(func)(rng)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
         exp = jax.make_jaxpr(func)(rng)
-    elif func.__name__ in ["step", "_update_by_action"]:
+    elif func.__name__ in ["step", "_update_by_action", "_no_winning_step"]:
         time_sta = time.perf_counter()
         jax.jit(func)(state, action_to_point)
         time_end = time.perf_counter()
@@ -38,23 +38,23 @@ def test(func):
         exp = jax.make_jaxpr(func)(state, action_to_point)
     elif func.__name__ == "_legal_action_mask":
         time_sta = time.perf_counter()
-        jax.jit(func)(state.board, state.turn, state.dice)
+        jax.jit(func)(state.board, state.dice)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-        exp = jax.make_jaxpr(func)(state.board, state.turn, state.dice)
+        exp = jax.make_jaxpr(func)(state.board, state.dice)
     elif func.__name__ == "_legal_action_mask_for_valid_single_dice":
         time_sta = time.perf_counter()
-        jax.jit(func)(state.board, state.turn, jnp.int32(4))
+        jax.jit(func)(state.board, jnp.int32(4))
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-        exp = jax.make_jaxpr(func)(state.board, state.turn, jnp.int32(4))
+        exp = jax.make_jaxpr(func)(state.board, jnp.int32(4))
     elif func.__name__ in ["_is_action_legal", "_move"]:
         time_sta = time.perf_counter()
-        jax.jit(func)(state.board, state.turn, action_to_point)
+        jax.jit(func)(state.board, action_to_point)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-        exp = jax.make_jaxpr(func)(state.board, state.turn, action_to_point)
-    elif func.__name__ in ["_change_turn", "_winning_step", "_no_winning_step"]:
+        exp = jax.make_jaxpr(func)(state.board, action_to_point)
+    elif func.__name__ in ["_change_turn", "_winning_step"]:
         time_sta = time.perf_counter()
         jax.jit(func)(state)
         time_end = time.perf_counter()
@@ -62,16 +62,16 @@ def test(func):
         exp = jax.make_jaxpr(func)(state)
     elif func.__name__ == "observe":
         time_sta = time.perf_counter()
-        jax.jit(func)(state, _)
+        jax.jit(func)(state, 0)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-        exp = jax.make_jaxpr(func)(state, _)
+        exp = jax.make_jaxpr(func)(state, 0)
     elif func.__name__ in ["_rear_distance", "_is_all_on_home_board", "_calc_win_score"]:
         time_sta = time.perf_counter()
-        jax.jit(func)(state.board, state.turn)
+        jax.jit(func)(state.board)
         time_end = time.perf_counter()
         delta = (time_end - time_sta) * 1000
-        exp = jax.make_jaxpr(func)(state.board, state.turn)
+        exp = jax.make_jaxpr(func)(state.board)
     n_line = len(str(exp).split('\n'))
     print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
     return

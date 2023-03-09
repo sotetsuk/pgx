@@ -13,6 +13,7 @@ EnvId = Literal[
     "tic_tac_toe/v0",
     "go-19x19/v0",
     "shogi/v0",
+    "backgammon/v0",
     "minatar/asterix/v0",
 ]
 
@@ -24,6 +25,12 @@ class State:
     reward: jnp.ndarray
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray
+
+    def _repr_html_(self) -> str:
+        from pgx.visualizer import Visualizer
+
+        v = Visualizer()
+        return v._to_dwg_from_states(states=self).tostring()
 
 
 class Env(abc.ABC):

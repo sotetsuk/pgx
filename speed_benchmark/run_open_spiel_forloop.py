@@ -1,6 +1,15 @@
+import argparse
+import json
+import collections
+import time
+import numpy as np
+import pyspiel
+from open_spiel.python.rl_environment import Environment, ChanceEventSampler
 
-# Copied from https://github.com/deepmind/open_spiel/blob/master/open_spiel/python/vector_env.py
 
+# SyncVectorEnv is copied from
+# https://github.com/deepmind/open_spiel/blob/master/open_spiel/python/vector_env.py
+#
 # Copyright 2022 DeepMind Technologies Limited
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,9 +23,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""A vectorized RL Environment."""
-
-
 class SyncVectorEnv(object):
   """A vectorized RL Environment.
   This environment is synchronized - games do not execute in parallel. Speedups
@@ -76,3 +82,42 @@ class SyncVectorEnv(object):
         for i in range(len(self.envs))
     ]
     return time_steps
+
+
+def make_single_env(env_name: str):
+    game = pyspiel.load_game(env_name)
+    return Environment(game,  chance_event_sampler=ChanceEventSampler())
+
+
+def make_env(env_name: str, n_envs: int) -> SyncVectorEnv:
+    return SyncVectorEnv([make_single_env(env_name) for i in range(n_envs)])
+
+
+def random_play(env: SyncVectorEnv, n_steps_lim: int, batch_size: int):
+    assert n_steps_lim % batch_size == 0
+    StepOutput = collections.namedtuple("step_output", ["action"])
+    time_step = env.reset()
+    assert len(env.envs) == len(time_step)  # ensure parallerization
+    step_num = 0
+    while step_num < n_steps_lim:
+        # obs = np.stack([ts.observations["info_state"][ts.observations["current_player"]] for ts in time_step])
+        # print(obs.shape)
+        actions = [np.random.choice(ts.observations["legal_actions"][ts.observations["current_player"]]) for ts in time_step]
+        step_outputs = [StepOutput(action=action) for action in actions]
+        time_step, reward, done, unreset_time_steps = env.step(step_outputs, reset_if_done=True)
+        step_num += batch_size
+    return step_num
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("env_name")  # go, chess backgammon tic_tac_toe
+    parser.add_argument("batch_size", type=int)
+    parser.add_argument("n_steps_lim", type=int)
+    args = parser.parse_args()
+    env = make_env(args.env_name, args.batch_size)
+    time_sta = time.time()
+    steps_num = random_play(env, args.n_steps_lim, args.batch_size)
+    time_end = time.time()
+    sec = time_end-time_sta
+    print(json.dumps({"game": args.env_name, "library": "open_spiel", "venv": "for-loop", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))
