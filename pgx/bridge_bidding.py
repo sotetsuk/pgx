@@ -513,6 +513,7 @@ def _is_legal_XX(state: State) -> bool:
 
 
 # playerがパートナーか判断
+@jax.jit
 def _is_partner(position1: jnp.ndarray, position2: jnp.ndarray) -> jnp.ndarray:
     return (abs(position1 - position2) + 1) % 2
 
