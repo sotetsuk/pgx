@@ -147,7 +147,7 @@ def init(key: jax.random.KeyArray, size: int) -> State:
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
-        curr_player=jnp.int8(jax.random.bernoulli(key)),  # type:ignore
+        curr_player=jnp.int8(jax.random.bernoulli(key)),
     )
 
 
