@@ -83,7 +83,7 @@ def init(rng: jax.random.KeyArray) -> State:
     # 最初はdable, redoubleできない
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
-    return State(
+    state = State(  # type: ignore
         shuffled_players=shuffled_players,
         curr_player=curr_player,
         hand=hand,
@@ -92,6 +92,7 @@ def init(rng: jax.random.KeyArray) -> State:
         vul_EW=vul_EW,
         legal_action_mask=legal_actions,
     )
+    return state
 
 
 def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
@@ -108,7 +109,7 @@ def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     # 最初はdable, redoubleできない
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
-    return State(
+    state = State(  # type: ignore
         shuffled_players=shuffled_players,
         curr_player=curr_player,
         hand=hand,
@@ -117,6 +118,7 @@ def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
         vul_EW=vul_EW,
         legal_action_mask=legal_actions,
     )
+    return state
 
 
 def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
