@@ -1,10 +1,12 @@
 import copy
-from dataclasses import dataclass
 from typing import Tuple
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+
+import pgx.core as core
+from pgx.flax.struct import dataclass
 
 # カードと数字の対応
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
@@ -13,11 +15,15 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 
 @dataclass
-class State:
+class State(core.State):
     # turn 現在のターン数
     turn: jnp.ndarray = jnp.int16(0)
     # curr_player 現在のプレイヤーid
     curr_player: jnp.ndarray = jnp.int8(-1)
+    # 各プレイヤーの観測
+    observation: jnp.ndarray = jnp.zeros(52, dtype=jnp.bool_)
+    # 報酬　player_id: 0, 1, 2, 3
+    reward: jnp.ndarray = jnp.int16([0, 0, 0, 0])
     # シャッフルされたプレイヤーの並び
     shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # 終端状態
@@ -63,7 +69,7 @@ class State:
     pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
-def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
+def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
     hand = jax.random.permutation(rng2, hand)
@@ -77,7 +83,7 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
     # 最初はdable, redoubleできない
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
-    state = State(
+    state = State(  # type: ignore
         shuffled_players=shuffled_players,
         curr_player=curr_player,
         hand=hand,
@@ -86,12 +92,10 @@ def init(rng: jax.random.KeyArray) -> Tuple[jnp.ndarray, State]:
         vul_EW=vul_EW,
         legal_action_mask=legal_actions,
     )
-    return state.curr_player, state
+    return state
 
 
-def init_by_key(
-    key: jnp.ndarray, rng: jax.random.KeyArray
-) -> Tuple[jnp.ndarray, State]:
+def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
     hand = _key_to_hand(key)
@@ -105,7 +109,7 @@ def init_by_key(
     # 最初はdable, redoubleできない
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
-    state = State(
+    state = State(  # type: ignore
         shuffled_players=shuffled_players,
         curr_player=curr_player,
         hand=hand,
@@ -114,7 +118,7 @@ def init_by_key(
         vul_EW=vul_EW,
         legal_action_mask=legal_actions,
     )
-    return state.curr_player, state
+    return state
 
 
 def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
@@ -173,8 +177,10 @@ def step(
     action: int,
     hash_keys: jnp.ndarray,
     hash_values: jnp.ndarray,
-) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
-    state.bidding_history = state.bidding_history.at[state.turn].set(action)
+) -> State:
+    # fmt: off
+    state = state.replace(bidding_history=state.bidding_history.at[state.turn].set(action))  # type: ignore
+    # fmt: on
     # 非合法手判断
     if not state.legal_action_mask[action]:
         return _illegal_step(state)
@@ -206,18 +212,20 @@ def duplicate(
     """Make duplicated state where NSplayer and EWplayer are swapped"""
     duplicated_state = copy.deepcopy(init_state)
     ix = jnp.array([1, 0, 3, 2])
-    duplicated_state.shuffled_players = duplicated_state.shuffled_players[ix]
+    # fmt: off
+    duplicated_state = duplicated_state.replace(shuffled_players=duplicated_state.shuffled_players[ix])  # type: ignore
+    # fmt: on
     return duplicated_state
 
 
 # ゲームが非合法手検知で終了した場合
 def _illegal_step(
     state: State,
-) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
-    state.terminated = jnp.bool_(True)
-    state.curr_player = jnp.int8(-1)
+) -> State:
     illegal_rewards = jnp.zeros(4)
-    return state.curr_player, state, illegal_rewards
+    # fmt: off
+    return state.replace(terminated=jnp.bool_(True), curr_player=jnp.int8(-1), reward=illegal_rewards)  # type: ignore
+    # fmt: on
 
 
 # ゲームが正常に終了した場合
@@ -225,27 +233,26 @@ def _terminated_step(
     state: State,
     hash_keys: jnp.ndarray,
     hash_values: jnp.ndarray,
-) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
-    state.terminated = jnp.bool_(True)
-    state.curr_player = jnp.int8(-1)
-    rewards = _reward(state, hash_keys, hash_values)
-    return state.curr_player, state, rewards
+) -> State:
+    terminated = jnp.bool_(True)
+    curr_player = jnp.int8(-1)
+    reward = _reward(state, hash_keys, hash_values)
+    # fmt: off
+    return state.replace(terminated=terminated, curr_player=curr_player, reward=reward)  # type: ignore
+    # fmt: on
 
 
 # ゲームが継続する場合
 def _continue_step(
     state: State,
-) -> Tuple[jnp.ndarray, State, jnp.ndarray]:
+) -> State:
     # 次ターンのプレイヤー、ターン数
-    # state.curr_player = (state.curr_player + 1) % 4
-    state.turn += 1
-    state.curr_player = state.shuffled_players[(state.dealer + state.turn) % 4]
+    # fmt: off
+    state = state.replace(curr_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4], turn=state.turn + 1)  # type: ignore
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
-    state.legal_action_mask = state.legal_action_mask.at[36].set(x_mask)
-    state.legal_action_mask = state.legal_action_mask.at[37].set(xx_mask)
-
-    return state.curr_player, state, jnp.zeros(4)
+    return state.replace(legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask), reward=jnp.zeros(4, dtype=jnp.int16))  # type: ignore
+    # fmt: on
 
 
 # 終了判定　ビッドされていない場合はパスが４回連続（パスアウト）、それ以外はパスが3回連続
@@ -418,51 +425,39 @@ def _contract(
 def _state_pass(
     state: State,
 ) -> State:
-    state.pass_num += 1
-    return state
+    return state.replace(pass_num=state.pass_num + 1)  # type: ignore
 
 
 # Xによるstateの変化
 def _state_X(state: State) -> State:
-    state.call_x = jnp.bool_(True)
-    state.pass_num = jnp.int8(0)
-    return state
+    return state.replace(call_x=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
 
 
 # XXによるstateの変化
 def _state_XX(state: State) -> State:
-    state.call_xx = jnp.bool_(True)
-    state.pass_num = jnp.int8(0)
-    return state
+    return state.replace(call_xx=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
 
 
 # bidによるstateの変化
 def _state_bid(state: State, action: int) -> State:
     # 最後のbidとそのプレイヤーを保存
-    state.last_bid = jnp.int8(action)
-    state.last_bidder = state.curr_player
+    # fmt: off
+    state = state.replace(last_bid=jnp.int8(action), last_bidder=state.curr_player)  # type: ignore
+    # fmt: on
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
     team = _position_to_team(_player_position(state.last_bidder, state))
     # team = 1ならEWチーム
+    # fmt: off
     if team and (state.first_denomination_EW[denomination] == -1):
-        state.first_denomination_EW = state.first_denomination_EW.at[
-            denomination
-        ].set(int(state.last_bidder))
+        state = state.replace(first_denomination_EW=state.first_denomination_EW.at[denomination].set(int(state.last_bidder)))  # type: ignore
     # team = 0ならNSチーム
     elif not team and (state.first_denomination_NS[denomination] == -1):
-        state.first_denomination_NS = state.first_denomination_NS.at[
-            denomination
-        ].set(int(state.last_bidder))
+        state = state.replace(first_denomination_NS=state.first_denomination_NS.at[denomination].set(int(state.last_bidder)))  # type: ignore
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
-    state.legal_action_mask = jnp.where(
-        mask, jnp.bool_(0), state.legal_action_mask
-    )
-    state.call_x = jnp.bool_(False)
-    state.call_xx = jnp.bool_(False)
-    state.pass_num = jnp.int8(0)
-    return state
+    return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), pass_num=jnp.int8(0))  # type: ignore
+    # fmt: on
 
 
 # bidのdenominationを計算
