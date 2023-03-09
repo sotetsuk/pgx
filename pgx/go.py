@@ -437,9 +437,9 @@ def _count_point(state, size):
     # NEED FIX: Japanese rule → Tromp-Taylor rule
     return jnp.array(
         [
-            _count_ji(state, BLACK, size)
+            _count_ji(state, 1, size)
             + jnp.count_nonzero(state.ren_id_board[BLACK] > 0),
-            _count_ji(state, WHITE, size)
+            _count_ji(state, -1, size)
             + jnp.count_nonzero(state.ren_id_board[WHITE] < 0),
         ],
         dtype=jnp.float32,
