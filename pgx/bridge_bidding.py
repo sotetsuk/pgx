@@ -222,7 +222,7 @@ def _illegal_step(
 ) -> State:
     illegal_rewards = jnp.zeros(4)
     # fmt: off
-    return state.replace(terminated=jnp.bool_(True),curr_player=jnp.int8(-1),reward=illegal_rewards)  # type: ignore
+    return state.replace(terminated=jnp.bool_(True), curr_player=jnp.int8(-1), reward=illegal_rewards)  # type: ignore
     # fmt: on
 
 
@@ -246,10 +246,10 @@ def _continue_step(
 ) -> State:
     # 次ターンのプレイヤー、ターン数
     # fmt: off
-    state = state.replace(curr_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4],turn=state.turn + 1,)  # type: ignore
+    state = state.replace(curr_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4], turn=state.turn + 1)  # type: ignore
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
-    return state.replace(legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask),reward=jnp.zeros(4, dtype=jnp.int16),)  # type: ignore
+    return state.replace(legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask), reward=jnp.zeros(4, dtype=jnp.int16))  # type: ignore
     # fmt: on
 
 
@@ -454,7 +454,7 @@ def _state_bid(state: State, action: int) -> State:
         state = state.replace(first_denomination_NS=state.first_denomination_NS.at[denomination].set(int(state.last_bidder)))  # type: ignore
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
-    return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask),call_x=jnp.bool_(False),call_xx=jnp.bool_(False),pass_num=jnp.int8(0),)  # type: ignore
+    return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), pass_num=jnp.int8(0))  # type: ignore
     # fmt: on
 
 
