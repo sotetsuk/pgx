@@ -442,7 +442,7 @@ def _state_XX(state: State) -> State:
 def _state_bid(state: State, action: int) -> State:
     # 最後のbidとそのプレイヤーを保存
     # fmt: off
-    state = state.replace(ast_bid=jnp.int8(action), last_bidder=state.curr_player)  # type: ignore
+    state = state.replace(last_bid=jnp.int8(action), last_bidder=state.curr_player)  # type: ignore
     # fmt: on
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
