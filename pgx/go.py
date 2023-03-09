@@ -37,7 +37,7 @@ class State(core.State):
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
-        (8, 19 * 19), 2, dtype=jnp.int32
+        (8, 19 * 19), 2, dtype=jnp.int8
     )  # type:ignore
 
     # 経過ターン, 0始まり
@@ -146,7 +146,7 @@ def init(key: jax.random.KeyArray, size: int) -> State:
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-        game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
+        game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
         curr_player=jnp.int8(jax.random.bernoulli(key)),
     )
 
