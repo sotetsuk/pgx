@@ -34,8 +34,9 @@ class State:
 
 
 class Env(abc.ABC):
-    def __init__(self):
-        ...
+
+    def __init__(self, * , auto_reset=False):
+        self.auto_reset = auto_reset
 
     def init(self, key: jax.random.KeyArray) -> State:
         state = self._init(key)
@@ -43,14 +44,9 @@ class Env(abc.ABC):
         return state.replace(observation=observation)  # type: ignore
 
     def step(self, state: State, action: jnp.ndarray) -> State:
-        # TODO: legal_action_mask周りの挙動
-        #  - set legal_action_mask = all True
-        #    - Typical usage of legal_action_mask is normalizing action probability
-        #    - all zero mask will raise zero division error
-        #  - ends with negative reward if illegal action is taken
-
         is_illegal = ~state.legal_action_mask[action]
         curr_player = state.curr_player
+
         # If the state is already terminated, environment does not take usual step, but
         # return the same state with zero-rewards for all players
         state = jax.lax.cond(
@@ -58,13 +54,15 @@ class Env(abc.ABC):
             lambda: self._step_if_terminated(state),
             lambda: self._step(state, action),
         )
+
         # Taking illegal action leads to immediate game terminal with negative reward
         state = jax.lax.cond(
             is_illegal,
             lambda: self._step_with_illegal_action(state, curr_player),
             lambda: state,
         )
-        # All legal_action_mask elements are TRUE (**not FALSE**) at terminal state
+
+        # All legal_action_mask elements are **TRUE** at terminal state
         # This is to avoid zero-division error when normalizing action probability
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
@@ -74,6 +72,15 @@ class Env(abc.ABC):
             ),
             lambda: state,
         )
+
+        rng = jax.random.PRNGKey(0)  # TODO: fix
+        # Auto reset
+        state = jax.lax.cond(
+            self.auto_reset & state.terminated,
+            lambda: self.init(rng).replace(terminated=state.terminated, reward=state.reward),  # type: ignore
+            lambda: state
+        )
+
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
 

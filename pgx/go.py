@@ -57,8 +57,8 @@ class State(core.State):
 
 
 class Go(core.Env):
-    def __init__(self, size: int = 19):
-        super().__init__()
+    def __init__(self, *, size: int = 19, auto_reset=False):
+        super().__init__(auto_reset=auto_reset)
         self.size = size
 
     def _init(self, key: jax.random.KeyArray) -> State:
