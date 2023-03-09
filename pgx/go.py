@@ -438,9 +438,9 @@ def _count_point(state, size):
     return jnp.array(
         [
             _count_ji(state, 1, size)
-            + jnp.count_nonzero(state.ren_id_board[BLACK] > 0),
+            + jnp.count_nonzero(state.ren_id_board > 0),
             _count_ji(state, -1, size)
-            + jnp.count_nonzero(state.ren_id_board[WHITE] < 0),
+            + jnp.count_nonzero(state.ren_id_board < 0),
         ],
         dtype=jnp.float32,
     )
