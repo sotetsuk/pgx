@@ -202,7 +202,6 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
     xy = _action
     my_color_ix = _my_color_ix(state)
     agehama_before = state.agehama[my_color_ix]
-    is_illegal = ~state.legal_action_mask[xy]
 
     kou_occurred = _kou_occurred(state, xy)
 
@@ -240,11 +239,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
         lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
 
-    return jax.lax.cond(
-        is_illegal,
-        lambda: _illegal_move(_set_stone(_state, xy)),  # 石くらいは置いておく
-        lambda: state,
-    )
+    return state.replace(reward=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
 
 
 def _merge_around_xy(i, state: State, xy, size):
