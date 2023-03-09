@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State
+from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -467,11 +467,11 @@ def test_counting_ji():
     state = j_step(state=state, action=12, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=14, size=BOARD_SIZE)  # BLACK
-    assert count_ji(state, 0, BOARD_SIZE) == 17
-    assert count_ji(state, 1, BOARD_SIZE) == 0
+    assert count_ji(state, BLACK, BOARD_SIZE) == 17
+    assert count_ji(state, WHITE, BOARD_SIZE) == 0
     state = j_step(state=state, action=24, size=BOARD_SIZE)  # WHITE
-    assert count_ji(state, 0, BOARD_SIZE) == 5
-    assert count_ji(state, 1, BOARD_SIZE) == 0
+    assert count_ji(state, BLACK, BOARD_SIZE) == 5
+    assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
     # =====
     # + @ @ @ +
@@ -497,8 +497,8 @@ def test_counting_ji():
     state = j_step(state=state, action=13, size=BOARD_SIZE)
     state = j_step(state=state, action=8, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)  # BLACK
-    assert count_ji(state, 0, BOARD_SIZE) == 14
-    assert count_ji(state, 1, BOARD_SIZE) == 0
+    assert count_ji(state, BLACK, BOARD_SIZE) == 14
+    assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
     # =====
     # + + O + +
@@ -523,8 +523,8 @@ def test_counting_ji():
     state = j_step(state=state, action=18, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=22, size=BOARD_SIZE)  # WHITE
-    assert count_ji(state, 0, BOARD_SIZE) == 1
-    assert count_ji(state, 1, BOARD_SIZE) == 12
+    assert count_ji(state, BLACK, BOARD_SIZE) == 1
+    assert count_ji(state, WHITE, BOARD_SIZE) == 12
 
     # =====
     # + @ @ @ +
@@ -561,11 +561,11 @@ def test_counting_ji():
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=20, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
-    assert count_ji(state, 0, BOARD_SIZE) == 2
-    assert count_ji(state, 1, BOARD_SIZE) == 0
+    assert count_ji(state, BLACK, BOARD_SIZE) == 2
+    assert count_ji(state, WHITE, BOARD_SIZE) == 0
     state = j_step(state=state, action=8, size=BOARD_SIZE)
-    assert count_ji(state, 0, BOARD_SIZE) == 10
-    assert count_ji(state, 1, BOARD_SIZE) == 0
+    assert count_ji(state, BLACK, BOARD_SIZE) == 10
+    assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
     # セキ判定
     # =====
@@ -591,8 +591,8 @@ def test_counting_ji():
     state = j_step(state=state, action=17, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=22, size=BOARD_SIZE)
-    assert count_ji(state, 0, BOARD_SIZE) == 0
-    assert count_ji(state, 1, BOARD_SIZE) == 10
+    assert count_ji(state, BLACK, BOARD_SIZE) == 0
+    assert count_ji(state, WHITE, BOARD_SIZE) == 10
 
     # =====
     # O O O O +
@@ -627,8 +627,8 @@ def test_counting_ji():
     state = j_step(state=state, action=22, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=23, size=BOARD_SIZE)
-    assert count_ji(state, 0, BOARD_SIZE) == 1
-    assert count_ji(state, 1, BOARD_SIZE) == 3
+    assert count_ji(state, BLACK, BOARD_SIZE) == 1
+    assert count_ji(state, WHITE, BOARD_SIZE) == 3
 
     # =====
     # + + + + +
@@ -663,8 +663,8 @@ def test_counting_ji():
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=18, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
-    assert count_ji(state, 0, BOARD_SIZE) == 17
-    assert count_ji(state, 1, BOARD_SIZE) == 0
+    assert count_ji(state, BLACK, BOARD_SIZE) == 17
+    assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
 
 def test_counting_point():
