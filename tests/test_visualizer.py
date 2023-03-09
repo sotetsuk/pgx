@@ -27,7 +27,7 @@ def test_backgammon():
 def test_bridge():
     from pgx.bridge_bidding import init
 
-    _, state = init(key)
+    state = init(key)
     vis.save_svg(state, "tests/temp.svg")
     os.remove("tests/temp.svg")
 
