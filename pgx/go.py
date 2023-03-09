@@ -7,8 +7,8 @@ from jax import numpy as jnp
 import pgx.core as core
 from pgx.flax.struct import dataclass
 
-BLACK = 0
-WHITE = 1
+BLACK = 1
+WHITE = -1
 POINT = 2
 BLACK_CHAR = "@"
 WHITE_CHAR = "O"
@@ -449,7 +449,7 @@ def _count_point(state, size):
 def _get_reward(_state: State, _size: int) -> jnp.ndarray:
     score = _count_point(_state, _size)
     r = jax.lax.cond(
-        score[BLACK] - _state.komi > score[WHITE],
+        score[0] - _state.komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
         lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
