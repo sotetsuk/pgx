@@ -255,11 +255,6 @@ def _merge_around_xy(i, state: State, xy, size):
     return state
 
 
-def _illegal_move(_state: State) -> State:
-    r: jnp.ndarray = jnp.ones(2, dtype=jnp.float32)  # type:ignore
-    return _state.replace(terminated=TRUE, reward=r.at[_state.turn % 2].set(-1.0))  # type: ignore
-
-
 def _set_stone(_state: State, _xy: int) -> State:
     my_color = _my_color(_state)
     return _state.replace(  # type:ignore
