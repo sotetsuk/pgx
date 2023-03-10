@@ -134,6 +134,40 @@ def test_kou():
     assert not state2.terminated
     assert state2.kou == -1
 
+    # see #468
+    state: State = env.init(key=key)
+    state = env.step(state, action=2)
+    state = env.step(state, action=9)
+    state = env.step(state, action=18)
+    state = env.step(state, action=5)
+    state = env.step(state, action=11)
+    state = env.step(state, action=22)
+    state = env.step(state, action=8)
+    state = env.step(state, action=14)
+    state = env.step(state, action=25)
+    state = env.step(state, action=1)
+    state = env.step(state, action=24)
+    state = env.step(state, action=23)
+    state = env.step(state, action=7)
+    state = env.step(state, action=4)
+    state = env.step(state, action=16)
+    state = env.step(state, action=15)
+    state = env.step(state, action=19)
+    state = env.step(state, action=6)
+    state = env.step(state, action=20)
+    state = env.step(state, action=25)
+    state = env.step(state, action=12)
+    state = env.step(state, action=3)
+    state = env.step(state, action=21)
+    state = env.step(state, action=10)
+    state = env.step(state, action=17)
+    state = env.step(state, action=25)
+    state = env.step(state, action=13)
+    state = env.step(state, action=4)
+    state = env.step(state, action=14)
+    state = env.step(state, action=23)
+    state = env.step(state, action=0)
+    assert state.kou == -1
 
     # see #468
     state: State = env.init(key=key)
