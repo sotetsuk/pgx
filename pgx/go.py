@@ -28,16 +28,16 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
-
-    # 横幅, マスの数ではない
-    size: jnp.ndarray = jnp.int32(19)  # type:ignore
+    # ---
+    size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int8
 
     # 連の代表点（一番小さいマス目）のマス目の座標
+    # NOTE: require at least 19 * 19 > int8, idx_squared_sum can be 361^2 > int16
     ren_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
-        (8, 19 * 19), 2, dtype=jnp.int32
+        (8, 19 * 19), 2, dtype=jnp.int8
     )  # type:ignore
 
     # 経過ターン, 0始まり
@@ -83,11 +83,11 @@ class Go(core.Env):
         return -1.0, 1.0
 
 
-def observe(state: State, player_id, observe_all=False):
-    return _get_alphazero_features(state, player_id, observe_all)
+def observe(state: State, player_id):
+    return _get_alphazero_features(state, player_id)
 
 
-def _get_alphazero_features(state: State, player_id, observe_all):
+def _get_alphazero_features(state: State, player_id):
     """
     17 x (size x size)
     0: player_idの石
@@ -146,7 +146,7 @@ def init(key: jax.random.KeyArray, size: int) -> State:
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-        game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
+        game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
         curr_player=jnp.int8(jax.random.bernoulli(key)),
     )
 

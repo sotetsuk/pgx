@@ -176,7 +176,7 @@ def test_observe():
          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
     )
     # fmt: on
-    assert (jax.jit(observe)(state, 0, False) == expected_obs_p0).all()
+    assert (jax.jit(observe)(state, 0) == expected_obs_p0).all()
 
     # fmt: off
     expected_obs_p1 = jnp.array(
@@ -199,7 +199,7 @@ def test_observe():
          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
     )
     # fmt: on
-    assert (jax.jit(observe)(state, 1, False) == expected_obs_p1).all()
+    assert (jax.jit(observe)(state, 1) == expected_obs_p1).all()
 
 
 def test_legal_action():
