@@ -165,7 +165,7 @@ def test_kou():
     state = env.step(state, action=25)
     state = env.step(state, action=3)
     state = env.step(state, action=20)
-    assert state.kou == -1
+    assert state.kou == 15
 
 
 def test_observe():
