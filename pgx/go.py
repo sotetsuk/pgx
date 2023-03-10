@@ -53,16 +53,17 @@ class State(core.State):
     kou: jnp.ndarray = jnp.int32(-1)  # type:ignore
 
     # コミ
-    komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
+    komi: jnp.ndarray = jnp.float32(7.5)  # type:ignore
 
 
 class Go(core.Env):
-    def __init__(self, size: int = 19):
+    def __init__(self, size: int = 19, komi: float = 7.5):
         super().__init__()
         self.size = size
+        self.komi = komi
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return partial(init, size=self.size)(key=key)
+        return partial(init, size=self.size, komi=self.komi)(key=key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
@@ -141,13 +142,14 @@ def _get_alphazero_features(state: State, player_id):
     return jnp.vstack([log, color])
 
 
-def init(key: jax.random.KeyArray, size: int) -> State:
+def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     return State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
         curr_player=jnp.int8(jax.random.bernoulli(key)),
+        komi=jnp.float32(komi),
     )
 
 

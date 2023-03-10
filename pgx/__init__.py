@@ -15,7 +15,7 @@ def make(env_id: EnvId):
     elif env_id == "go-19x19/v0":
         from pgx.go import Go
 
-        return Go(size=19)
+        return Go(size=19, komi=7.5)
     elif env_id == "backgammon/v0":
         from pgx.backgammon import Backgammon
 
