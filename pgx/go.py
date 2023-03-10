@@ -281,14 +281,16 @@ def _merge_ren(_state: State, _xy: int, _adj_xy: int):
     )
 
 
-def _remove_stones(_state: State, _rm_ren_id, _rm_stone_xy, ko_may_occur) -> State:
+def _remove_stones(
+    _state: State, _rm_ren_id, _rm_stone_xy, ko_may_occur
+) -> State:
     surrounded_stones = _state.ren_id_board == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
     ren_id_board = jnp.where(surrounded_stones, 0, _state.ren_id_board)
     kou = jax.lax.cond(
         ko_may_occur & (agehama == 1),
         lambda: jnp.int32(_rm_stone_xy),
-        lambda: _state.kou
+        lambda: _state.kou,
     )
     return _state.replace(  # type:ignore
         ren_id_board=ren_id_board,
