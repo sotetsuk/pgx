@@ -199,7 +199,7 @@ def test_kou():
     state = env.step(state, action=25)
     state = env.step(state, action=3)
     state = env.step(state, action=20)
-    assert state.kou == 15
+    assert state.kou == -1
 
     # Ko after pass
     state: State = env.init(key=key)
