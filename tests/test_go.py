@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE, legal_actions
+from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE, legal_actions, _count
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -517,6 +517,13 @@ def test_legal_action():
     state = j_step(state=state, action=24, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     state = j_step(state=state, action=20, size=BOARD_SIZE)
+    ren_ix = jnp.abs(state.ren_id_board) - 1
+    num_pseudo, idx_sum, idx_squared_sum = _count(state, 5)
+    single_liberty = (idx_squared_sum[ren_ix] // idx_sum[ren_ix]) - 1
+    print(state.ren_id_board.reshape(5,5))
+    print(idx_sum.reshape(5, 5))
+    print(idx_squared_sum.reshape(5, 5))
+    print(single_liberty.reshape(5, 5))
     assert jnp.all(state.legal_action_mask == expected_w1)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     assert jnp.all(state.legal_action_mask == expected_b)
@@ -591,8 +598,8 @@ def test_legal_action():
     )
     # fmt on
     legal_action_mask = legal_actions(state, 19)
-    assert legal_action_mask[12 * 19 * 19 + 3]  # 231
-    assert legal_action_mask[11 * 19 * 19 + 4]
+    assert legal_action_mask[12 * 19 + 3]  # 231
+    assert legal_action_mask[11 * 19 + 4]
 
 
 def test_counting_ji():
