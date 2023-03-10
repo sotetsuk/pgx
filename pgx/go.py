@@ -53,11 +53,11 @@ class State(core.State):
     kou: jnp.ndarray = jnp.int32(-1)  # type:ignore
 
     # コミ
-    komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
+    komi: jnp.ndarray = jnp.float32(7.5)  # type:ignore
 
 
 class Go(core.Env):
-    def __init__(self, size: int = 19, komi: float = 6.5):
+    def __init__(self, size: int = 19, komi: float = 7.5):
         super().__init__()
         self.size = size
         self.komi = komi
@@ -142,7 +142,7 @@ def _get_alphazero_features(state: State, player_id):
     return jnp.vstack([log, color])
 
 
-def init(key: jax.random.KeyArray, size: int, komi: float = 6.5) -> State:
+def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     return State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
