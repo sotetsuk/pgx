@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
+from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE, legal_actions
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -533,21 +533,66 @@ def test_legal_action():
     for _ in range(100):
         assert np.where(state.legal_action_mask)[0][-1]
 
-        legal_actions = np.where(state.legal_action_mask)[0][:-1]
+        _legal_actions = np.where(state.legal_action_mask)[0][:-1]
         illegal_actions = np.where(~state.legal_action_mask)[0][:-1]
-        for action in legal_actions:
+        for action in _legal_actions:
             _state = env.step(state=state, action=action)
             assert not _state.terminated
         for action in illegal_actions:
             _state = env.step(state=state, action=action)
             assert _state.terminated
-        if len(legal_actions) == 0:
+        if len(_legal_actions) == 0:
             a = BOARD_SIZE * BOARD_SIZE
         else:
             key = jax.random.PRNGKey(0)
             key, subkey = jax.random.split(key)
-            a = jax.random.choice(subkey, legal_actions)
+            a = jax.random.choice(subkey, _legal_actions)
         state = env.step(state=state, action=a)
+
+
+    #  see # 477
+    # fmt off
+    state = State(
+        turn=jnp.int32(406),
+        ren_id_board=jnp.int32(
+            [   0,   -2,   -2,   -2,   -2,   -2,   -2,    8,   -9,   -9,   -9,
+               -9,   13,    0,  -15,  -15,  -15,  -15,  -15,   -2,   -2,   -2,
+               -2,   -2,   -2,    0,    8,   -9,   -9,   30,   30,  -15,  -15,
+              -15,  -15,   30,   30,  -15,   -2,   -2,   -2,   -2,   43,    0,
+               -9,   -9,   -9,   -9,   -9,   30,    0,   52,  -15,   30,   30,
+               30,   30,    0,   59,   -2,   -2,   -2,   -2,    0,   -9,   -9,
+               -9,   -9,   30,  -15,  -15,  -15,    0,   30,   30,    0,   -2,
+               -2,   -2,   -2,    0,    0,   -9,   -9,    0,   -9,   -9,   30,
+              -15,   30,   30,   30,   30,    0,   30,   -2,   -2,   -2,   -2,
+               -2,   -2,    0,   -9,   -9,   -9,   -9,   30,   30,   30,   30,
+                0,   30,   30,   30,   -2,   -2,   -2,   -2,   -2,   -2,   -2,
+                0,    0,  124,   -9,   30,   30,   30,   30,   30,    0,    0,
+               30,   -2,   -2,  136,    0,   -2,   -2,    0, -141, -141, -141,
+                0, -145,   30,   30,   30, -149,   30,   30,   30,  153,  153,
+               -2,   -2,   -2,  158, -141,    0, -141, -141, -141,   30,   30,
+             -149,   30, -149, -149, -149,   30,    0,  153,   -2,   -2,   -2,
+              158, -141, -141, -141, -141, -141, -141,   30, -149, -149, -149,
+              188,    0, -149, -191,  153,   -2,  158,  158,  158,  158, -141,
+             -141,    0, -141,   30,   30, -149, -149, -149, -149, -149, -149,
+                0,   -2,   -2,  158,    0,  158,  158, -141, -141,    0,    0,
+             -221,   30,   30, -149, -149, -149, -149, -149,  229,   -2,  231,
+                0,  233, -141, -141, -141, -141, -141, -141,   30,   30,    0,
+               30, -149, -149,   30,    0,  229,   -2,   -2,  233,  233,  233,
+             -141,  233, -141,    0, -141,   30,   30,   30,   30,   30,   30,
+               30, -266,   -2,   -2,   -2,  233,  233,  233,  233,  233, -141,
+             -141, -141, -141,   30,   30,    0,   30,   30,   30, -266,  286,
+               -2,   -2,  233,  233, -291, -291,  233, -141, -141, -141, -141,
+               30,   30,   30,   30,   30, -266, -266,  286,  286,  286, -291,
+              233, -291,    0, -141, -141,   30,   30,   30,   30,   30,   30,
+             -320,   30,   30,   30,  286,  286, -291, -291, -291, -291,  330,
+             -141, -141, -141,   30,   30,   30,   30,   30,    0, -340,   30,
+               30,    0,  286,  286, -291, -291, -291,  330, -141, -141, -141,
+             -141, -141,   30,   30,    0,   30,   30,   30,   30])
+    )
+    # fmt on
+    legal_action_mask = legal_actions(state, 19)
+    assert legal_action_mask[12 * 19 * 19 + 3]  # 231
+    assert legal_action_mask[11 * 19 * 19 + 4]
 
 
 def test_counting_ji():
