@@ -203,7 +203,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
     my_color_ix = _my_color_ix(state)
     agehama_before = state.agehama[my_color_ix]
 
-    kou_occurred = _kou_occurred(state, xy)
+    ko_may_occur = _kou_occurred(state, xy)
 
     # 周囲の連から敵石を除く
     adj_xy = _neighbour(xy, size)
@@ -219,7 +219,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
         0, 4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(s, ren_id[i], adj_xy[i]),
+            lambda: _remove_stones(s, ren_id[i], adj_xy[i], ko_may_occur),
             lambda: s,
         ),
         state,
@@ -234,7 +234,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
 
     # コウの確認
     state = jax.lax.cond(
-        kou_occurred & state.agehama[my_color_ix] - agehama_before == 1,
+        ko_may_occur & state.agehama[my_color_ix] - agehama_before == 1,
         lambda: state,
         lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
@@ -281,15 +281,19 @@ def _merge_ren(_state: State, _xy: int, _adj_xy: int):
     )
 
 
-def _remove_stones(_state: State, _rm_ren_id, _rm_stone_xy) -> State:
+def _remove_stones(_state: State, _rm_ren_id, _rm_stone_xy, ko_may_occur) -> State:
     surrounded_stones = _state.ren_id_board == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
     ren_id_board = jnp.where(surrounded_stones, 0, _state.ren_id_board)
-
+    kou = jax.lax.cond(
+        ko_may_occur & (agehama == 1),
+        lambda: jnp.int32(_rm_stone_xy),
+        lambda: _state.kou
+    )
     return _state.replace(  # type:ignore
         ren_id_board=ren_id_board,
         agehama=_state.agehama.at[_my_color_ix(_state)].add(agehama),
-        kou=jnp.int32(_rm_stone_xy),  # type:ignore
+        kou=kou,
     )
 
 
