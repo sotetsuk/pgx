@@ -191,9 +191,9 @@ def _pass_move(_state: State, _size: int) -> State:
     return jax.lax.cond(
         _state.passed,
         # 連続でパスならば終局
-        lambda: _state.replace(terminated=TRUE, reward=_get_reward(_state, _size)),  # type: ignore
+        lambda: _state.replace(terminated=TRUE, kou=jnp.int32(-1), reward=_get_reward(_state, _size)),  # type: ignore
         # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: _state.replace(passed=True, reward=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
+        lambda: _state.replace(passed=True, kou=jnp.int32(-1), reward=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
     )
 
 
