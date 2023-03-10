@@ -149,7 +149,7 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
         curr_player=jnp.int8(jax.random.bernoulli(key)),
-        komi=jnp.float32(komi)
+        komi=jnp.float32(komi),
     )
 
 
