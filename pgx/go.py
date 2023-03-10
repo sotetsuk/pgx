@@ -374,7 +374,7 @@ def _count(state: State, size):
 
 
 def get_board(state: State) -> jnp.ndarray:
-    board = jnp.ones_like(state.ren_id_board) * 2
+    board = jnp.ones_like(state.ren_id_board, dtype=jnp.int8) * 2
     board = jnp.where(state.ren_id_board > 0, 0, board)
     board = jnp.where(state.ren_id_board < 0, 1, board)
     return board  # type:ignore
