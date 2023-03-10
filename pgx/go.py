@@ -237,7 +237,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
 
     # コウの確認
     state = jax.lax.cond(
-        kou_may_occur & state.agehama[my_color_ix] - agehama_before == 1,
+        state.agehama[my_color_ix] - agehama_before == 1,
         lambda: state,
         lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
