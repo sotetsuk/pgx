@@ -55,6 +55,8 @@ class State(core.State):
     # コミ
     komi: jnp.ndarray = jnp.float32(7.5)  # type:ignore
 
+    black_player: jnp.ndarray = jnp.int8(0)
+
 
 class Go(core.Env):
     def __init__(self, size: int = 19, komi: float = 7.5):
@@ -143,13 +145,16 @@ def _get_alphazero_features(state: State, player_id):
 
 
 def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
+    black_player = jnp.int8(jax.random.bernoulli(key))
+    curr_player = black_player
     return State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
-        curr_player=jnp.int8(jax.random.bernoulli(key)),
+        curr_player=curr_player,
         komi=jnp.float32(komi),
+        black_player=black_player,
     )
 
 
@@ -446,13 +451,19 @@ def _count_point(state, size):
 
 def _get_reward(_state: State, _size: int) -> jnp.ndarray:
     score = _count_point(_state, _size)
-    r = jax.lax.cond(
+    reward_bw = jax.lax.cond(
         score[0] - _state.komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
         lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
+    black_player = _state.black_player
+    reward = jax.lax.cond(
+        black_player == 0,
+        lambda: reward_bw,
+        lambda: reward_bw[jnp.int8([1, 0])],
+    )
 
-    return r
+    return reward
 
 
 def _neighbour(xy, size):

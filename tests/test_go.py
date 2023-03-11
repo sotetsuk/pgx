@@ -39,6 +39,7 @@ def test_step():
     """
     key = jax.random.PRNGKey(0)
     state = j_init(key=key, size=BOARD_SIZE)
+    assert state.curr_player == 1
 
     state = j_step(state=state, action=12, size=BOARD_SIZE)  # BLACK
     state = j_step(state=state, action=11, size=BOARD_SIZE)  # WHITE
@@ -83,8 +84,8 @@ def test_step():
     assert (get_board(state) == expected_board.ravel()).all()
     assert state.terminated
 
-    # 同点なのでコミの分黒負け
-    assert (state.reward == jnp.array([-1, 1])).all()
+    # 同点なのでコミの分 黒 == player_1 の負け
+    assert (state.reward == jnp.array([1, -1])).all()
 
 
 def test_kou():
