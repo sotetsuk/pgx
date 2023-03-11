@@ -154,7 +154,7 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
         curr_player=curr_player,
         komi=jnp.float32(komi),
-        black_player=black_player
+        black_player=black_player,
     )
 
 
@@ -460,7 +460,7 @@ def _get_reward(_state: State, _size: int) -> jnp.ndarray:
     reward = jax.lax.cond(
         black_player == 0,
         lambda: reward_bw,
-        lambda: reward_bw[jnp.int8([1, 0])]
+        lambda: reward_bw[jnp.int8([1, 0])],
     )
 
     return reward
