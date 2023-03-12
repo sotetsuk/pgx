@@ -85,8 +85,8 @@ def _make_hex_dwg(dwg, state: HexState, config):
         if stone == 0:
             continue
 
-        color = color_set.p1_color if stone == 1 else color_set.p2_color
-        outline = color_set.p1_outline if stone == 1 else color_set.p2_outline
+        color = color_set.p1_color if stone > 0 else color_set.p2_color
+        outline = color_set.p1_outline if stone > 0 else color_set.p2_outline
         board_g.add(
             dwg.circle(
                 center=(four_dig(_x), four_dig(_y)),
