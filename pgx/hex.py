@@ -1,4 +1,5 @@
 import jax.numpy as jnp
+from typing import Tuple
 import jax
 import pgx.core as core
 from pgx.flax.struct import dataclass
@@ -53,3 +54,17 @@ class Hex(core.Env):
     @property
     def reward_range(self) -> Tuple[float, float]:
         return -1.0, 1.0
+
+
+def init(rng: jax.random.KeyArray) -> State:
+    rng, subkey = jax.random.split(rng)
+    curr_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(curr_player=curr_player)  # type:ignore
+
+
+def step(state: State, action: jnp.ndarray) -> State:
+    ...
+
+
+def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    ...
