@@ -33,27 +33,20 @@ def _make_hex_dwg(dwg, state: HexState, config):
             * GRID_SIZE
             * jnp.sqrt(3)
         )
-        # if stone==1:
-        #    color="black"
-        # elif stone==-1:
-        #    color="gray"
-        # else:
-        #    color="white"
+
+        r = GRID_SIZE
         board_g.add(
             dwg.polygon(
-                # fmt:off
                 points=[
-                    (int(_x), int(_y)),
-                    (int(_x + GRID_SIZE * jnp.sqrt(3) / 2), int(_y - GRID_SIZE / 2)),
-                    (int(_x + GRID_SIZE * jnp.sqrt(3)), int(_y)),
-                    (int(_x + GRID_SIZE * jnp.sqrt(3)), int(_y + GRID_SIZE)),
-                    (int(_x + GRID_SIZE * jnp.sqrt(3) / 2), int(_y + GRID_SIZE * 3 / 2)),
-                    (int(_x), int(_y + GRID_SIZE)),
+                    (
+                        four_dig(_x + r * jnp.sin(jnp.pi / 3 * i)),
+                        four_dig(_y + r * jnp.cos(jnp.pi / 3 * i)),
+                    )
+                    for i in range(6)
                 ],
-                # fmt:on
                 fill=color_set.background_color,
-                # fill=color,
                 stroke=color_set.grid_color,
+                stroke_width="0.5px",
             )
         )
         if stone == 0:
@@ -63,14 +56,90 @@ def _make_hex_dwg(dwg, state: HexState, config):
         outline = color_set.p1_outline if stone == 1 else color_set.p2_outline
         board_g.add(
             dwg.circle(
-                center=(
-                    int(_x + GRID_SIZE * jnp.sqrt(3) / 2),
-                    int(_y + GRID_SIZE / 2),
-                ),
+                center=(four_dig(_x), four_dig(_y)),
                 r=GRID_SIZE / 1.5,
                 stroke=outline,
                 fill=color,
             )
         )
 
+    for i in range(BOARD_SIZE):
+        board_g.add(
+            dwg.polygon(
+                # fmt:off
+                points=[
+                    (four_dig((i - 1 / 2) * jnp.sqrt(3) * GRID_SIZE), -four_dig(GRID_SIZE / 2)),
+                    (four_dig(i * jnp.sqrt(3) * GRID_SIZE), -GRID_SIZE),
+                    (four_dig((i - 1) * jnp.sqrt(3) * GRID_SIZE), -GRID_SIZE),
+                ],
+                # fmt:on
+                # stroke=color_set.p1_color,
+                fill=color_set.p1_color,
+            )
+        )
+        offset = jnp.sqrt(3) / 2 * GRID_SIZE * (BOARD_SIZE + 1)
+        board_g.add(
+            dwg.polygon(
+                # fmt:off
+                points=[
+                    (four_dig((i - 1 / 2) * jnp.sqrt(3) * GRID_SIZE + offset), four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE)),
+                    (four_dig(i * jnp.sqrt(3) * GRID_SIZE + offset), four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE / 2)),
+                    (four_dig((i - 1) * jnp.sqrt(3) * GRID_SIZE + offset), four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE / 2)),
+                ],
+                # fmt:on
+                # stroke=color_set.p1_color,
+                fill=color_set.p1_color,
+            )
+        )
+
+    board_g.add(
+        dwg.line(
+            start=(
+                four_dig(-jnp.sqrt(3) * GRID_SIZE),
+                -GRID_SIZE,
+            ),
+            end=(
+                four_dig(
+                    jnp.sqrt(3) / 2 * GRID_SIZE * BOARD_SIZE
+                    - jnp.sqrt(3) * GRID_SIZE
+                ),
+                four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE),
+            ),
+            stroke=color_set.grid_color,
+            stroke_width="0.5px",
+        )
+    )
+    offset = jnp.sqrt(3) * GRID_SIZE * (BOARD_SIZE + 1 / 2)
+    board_g.add(
+        dwg.line(
+            start=(
+                four_dig(-jnp.sqrt(3) * GRID_SIZE + offset),
+                -GRID_SIZE / 2,
+            ),
+            end=(
+                four_dig(
+                    jnp.sqrt(3) / 2 * GRID_SIZE * BOARD_SIZE
+                    - jnp.sqrt(3) * GRID_SIZE
+                    + offset
+                ),
+                four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE / 2),
+            ),
+            stroke=color_set.grid_color,
+            stroke_width="0.5px",
+        )
+    )
+
+    board_g.translate(GRID_SIZE, GRID_SIZE / 2)
+
     return board_g
+
+
+def four_dig(num):
+    """
+    numbers must not have more than 4 decimal digits in the fractional part of their
+    decimal expansion and must be in the range -32,767.9999 to +32,767.9999, inclusive.
+
+    see https://svgwrite.readthedocs.io/en/latest/overview.html
+    """
+    num_str = f"{num:.4f}"
+    return float(num_str)

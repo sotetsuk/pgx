@@ -412,7 +412,7 @@ class Visualizer:
                     "white",
                     "lightgray",
                     "#1e1e1e",
-                    "lightgray",
+                    "gray",
                     "",
                 )
             else:
@@ -422,7 +422,7 @@ class Visualizer:
                     "black",
                     "black",
                     "white",
-                    "black",
+                    "gray",
                     "",
                 )
         elif isinstance(_state, OthelloState):
