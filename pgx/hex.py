@@ -1,5 +1,5 @@
-from typing import Tuple
 from functools import partial
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -81,7 +81,7 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
 
     board = jax.lax.fori_loop(0, 6, merge, board)
     is_win = is_game_end(board, size, state.turn)
-    state = state.replace(
+    state = state.replace(  # type:ignore
         turn=(state.turn + 1) % 2, board=board * -1, terminated=is_win
     )
 
