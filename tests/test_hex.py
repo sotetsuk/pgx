@@ -64,3 +64,21 @@ def test_terminated():
         state = step(state, i + 11)
     state = step(state, 10)
     assert not state.terminated
+
+
+def test_random_play():
+    N = 1000
+    key = jax.random.PRNGKey(0)
+    for i in range(N):
+        done = jnp.bool_(False)
+        key, sub_key = jax.random.split(key)
+        state = init(sub_key)
+        rewards = jnp.int16([0.0, 0.0])
+        while not done:
+            assert jnp.all(rewards == 0), state.board
+            legal_actions = jnp.where(state.legal_action_mask)[0]
+            key, sub_key = jax.random.split(key)
+            action = jax.random.choice(sub_key, legal_actions)
+            state = step(state, jnp.int16(action))
+            done = state.terminated
+            rewards += state.reward
