@@ -80,9 +80,21 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    is_win = is_game_end(board, size, state.turn)
+    won = is_game_end(board, size, state.turn)
+    reward = jax.lax.cond(
+        won,
+        lambda: jnp.float32([-1, -1]).at[state.curr_player].set(1),
+        lambda: jnp.zeros(2, jnp.float32),
+    )
+
+    legal_action_mask = board == 0
     state = state.replace(  # type:ignore
-        turn=(state.turn + 1) % 2, board=board * -1, terminated=is_win
+        curr_player=(state.curr_player + 1) % 2,
+        turn=(state.turn + 1) % 2,
+        board=board * -1,
+        reward=reward,
+        terminated=won,
+        legal_action_mask=legal_action_mask,
     )
 
     return state
