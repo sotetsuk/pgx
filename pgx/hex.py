@@ -1,6 +1,8 @@
-import jax.numpy as jnp
 from typing import Tuple
+
 import jax
+import jax.numpy as jnp
+
 import pgx.core as core
 from pgx.flax.struct import dataclass
 
@@ -27,7 +29,7 @@ class State(core.State):
     #  [110, 111, 112, ...,  119, 120]]
     board: jnp.ndarray = -jnp.zeros(
         11 * 11, jnp.int8
-    )  # -1(oppo), 0(empty), 1(self)
+    )  # <0(oppo), 0(empty), 0<(self)
 
 
 class Hex(core.Env):
@@ -63,8 +65,19 @@ def init(rng: jax.random.KeyArray) -> State:
 
 
 def step(state: State, action: jnp.ndarray) -> State:
-    ...
+    set_place_id = action + 1
+    state = state.replace(board=state.board.at[action].set(set_place_id))
+
+    state = state.replace(turn=(state.turn + 1) % 2, board=state.board * -1)
+
+    return state
 
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     ...
+
+
+def get_abs_board(state):
+    return jax.lax.cond(
+        state.turn == 0, lambda: state.board, lambda: state.board * -1
+    )
