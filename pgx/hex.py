@@ -80,7 +80,10 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    state = state.replace(turn=(state.turn + 1) % 2, board=board * -1)
+    is_win = is_game_end(board, size)
+    state = state.replace(
+        turn=(state.turn + 1) % 2, board=board * -1, terminated=is_win
+    )
 
     return state
 
@@ -101,6 +104,16 @@ def _neighbour(xy, size):
     ys = jnp.array([y - 1, y - 1, y, y, y + 1, y + 1])
     on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
     return jnp.where(on_board, xs * size + ys, -1)
+
+
+def is_game_end(board, size):
+    top = board[:size]
+    bottom = board[-size:]
+
+    def check_same_id_exist(_id):
+        return (_id == bottom).any()
+
+    return jax.vmap(check_same_id_exist)(top).any()
 
 
 def get_abs_board(state):
