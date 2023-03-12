@@ -1,4 +1,5 @@
 from typing import Tuple
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -28,20 +29,21 @@ class State(core.State):
     #  .
     #  [110, 111, 112, ...,  119, 120]]
     board: jnp.ndarray = -jnp.zeros(
-        11 * 11, jnp.int8
+        11 * 11, jnp.int16
     )  # <0(oppo), 0(empty), 0<(self)
 
 
 class Hex(core.Env):
-    def __init__(self):
+    def __init__(self, size: int = 11):
         super().__init__()
+        self.size = size
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return init(key)
+        return partial(init, size=self.size)(rng=key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return step(state, action)
+        return partial(step, size=self.size)(state, action)
 
     def observe(
         self, state: core.State, player_id: jnp.ndarray
@@ -58,23 +60,47 @@ class Hex(core.Env):
         return -1.0, 1.0
 
 
-def init(rng: jax.random.KeyArray) -> State:
+def init(rng: jax.random.KeyArray, size: int) -> State:
     rng, subkey = jax.random.split(rng)
     curr_player = jnp.int8(jax.random.bernoulli(subkey))
-    return State(curr_player=curr_player)  # type:ignore
+    return State(size=size, curr_player=curr_player)  # type:ignore
 
 
-def step(state: State, action: jnp.ndarray) -> State:
+def step(state: State, action: jnp.ndarray, size: int) -> State:
     set_place_id = action + 1
-    state = state.replace(board=state.board.at[action].set(set_place_id))
+    board = state.board.at[action].set(set_place_id)
+    neighbour = _neighbour(action, size)
 
-    state = state.replace(turn=(state.turn + 1) % 2, board=state.board * -1)
+    def merge(i, b):
+        adj_pos = neighbour[i]
+        return jax.lax.cond(
+            (adj_pos >= 0) & (b[adj_pos] > 0),
+            lambda: jnp.where(b == b[adj_pos], set_place_id, b),
+            lambda: b,
+        )
+
+    board = jax.lax.fori_loop(0, 6, merge, board)
+    state = state.replace(turn=(state.turn + 1) % 2, board=board * -1)
 
     return state
 
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     ...
+
+
+def _neighbour(xy, size):
+    """
+        (x,y-1)   (x+1,y-1)
+    (x-1,y)    (x,y)    (x+1,y)
+       (x-1,y+1)   (x,y+1)
+    """
+    x = xy // size
+    y = xy % size
+    xs = jnp.array([x, x + 1, x - 1, x + 1, x - 1, x])
+    ys = jnp.array([y - 1, y - 1, y, y, y + 1, y + 1])
+    on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
+    return jnp.where(on_board, xs * size + ys, -1)
 
 
 def get_abs_board(state):
