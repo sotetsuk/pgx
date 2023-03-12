@@ -1,6 +1,7 @@
 import jax.numpy as jnp
 
 from pgx.hex import State as HexState
+from pgx.hex import get_abs_board
 
 
 def _make_hex_dwg(dwg, state: HexState, config):
@@ -23,7 +24,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
     board_g = dwg.g()
 
     # stones
-    board = state.board
+    board = get_abs_board(state)
     for xy, stone in enumerate(board):
         # ndarrayのx,yと違うことに注意
         # svgではヨコがx
