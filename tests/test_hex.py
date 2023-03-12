@@ -57,3 +57,10 @@ def test_terminated():
     state = step(state, 120)
     state = step(state, 21)
     assert state.terminated
+
+    state = init(key=key)
+    for i in range(10):
+        state = step(state, i)
+        state = step(state, i + 11)
+    state = step(state, 10)
+    assert not state.terminated
