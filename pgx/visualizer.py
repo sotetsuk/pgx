@@ -408,12 +408,12 @@ class Visualizer:
             ) or self.config["COLOR_MODE"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
-                    "lightgray",
                     "white",
-                    "lightgray",
+                    "white",
+                    "black",
                     "#1e1e1e",
-                    "gray",
-                    "",
+                    "white",
+                    "dimgray",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -422,8 +422,8 @@ class Visualizer:
                     "black",
                     "black",
                     "white",
-                    "gray",
-                    "",
+                    "black",
+                    "lightgray",
                 )
         elif isinstance(_state, OthelloState):
             self.config["GRID_SIZE"] = 30

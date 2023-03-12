@@ -34,6 +34,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
             * jnp.sqrt(3)
         )
 
+        # hexagon
         r = GRID_SIZE
         board_g.add(
             dwg.polygon(
@@ -44,7 +45,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
                     )
                     for i in range(6)
                 ],
-                fill=color_set.background_color,
+                fill=color_set.text_color,
                 stroke=color_set.grid_color,
                 stroke_width="0.5px",
             )
@@ -63,7 +64,9 @@ def _make_hex_dwg(dwg, state: HexState, config):
             )
         )
 
+    # 周りの領域
     for i in range(BOARD_SIZE):
+        # 黒三角形
         board_g.add(
             dwg.polygon(
                 # fmt:off
@@ -92,42 +95,57 @@ def _make_hex_dwg(dwg, state: HexState, config):
             )
         )
 
-    board_g.add(
-        dwg.line(
-            start=(
-                four_dig(-jnp.sqrt(3) * GRID_SIZE),
-                -GRID_SIZE,
-            ),
-            end=(
-                four_dig(
-                    jnp.sqrt(3) / 2 * GRID_SIZE * BOARD_SIZE
-                    - jnp.sqrt(3) * GRID_SIZE
-                ),
-                four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE),
-            ),
-            stroke=color_set.grid_color,
-            stroke_width="0.5px",
+        # 白三角形
+        board_g.add(
+            dwg.polygon(
+                points=[
+                    (
+                        four_dig((i / 2 - 1) * jnp.sqrt(3) * GRID_SIZE),
+                        four_dig(i * 3 / 2 * GRID_SIZE - GRID_SIZE),
+                    ),
+                    (
+                        four_dig(((i + 1) / 2 - 1) * jnp.sqrt(3) * GRID_SIZE),
+                        four_dig((i + 1) * 3 / 2 * GRID_SIZE - GRID_SIZE),
+                    ),
+                    (
+                        four_dig(((i + 1) / 2 - 1) * jnp.sqrt(3) * GRID_SIZE),
+                        four_dig((i + 1) * 3 / 2 * GRID_SIZE - 2 * GRID_SIZE),
+                    ),
+                ],
+                fill=color_set.p2_color,
+                stroke=color_set.grid_color,
+                stroke_width="0.5px",
+            )
         )
-    )
-    offset = jnp.sqrt(3) * GRID_SIZE * (BOARD_SIZE + 1 / 2)
-    board_g.add(
-        dwg.line(
-            start=(
-                four_dig(-jnp.sqrt(3) * GRID_SIZE + offset),
-                -GRID_SIZE / 2,
-            ),
-            end=(
-                four_dig(
-                    jnp.sqrt(3) / 2 * GRID_SIZE * BOARD_SIZE
-                    - jnp.sqrt(3) * GRID_SIZE
-                    + offset
-                ),
-                four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE / 2),
-            ),
-            stroke=color_set.grid_color,
-            stroke_width="0.5px",
+        offset = jnp.sqrt(3) * GRID_SIZE * (BOARD_SIZE + 1 / 2)
+        board_g.add(
+            dwg.polygon(
+                points=[
+                    (
+                        four_dig(
+                            (i / 2 - 1) * jnp.sqrt(3) * GRID_SIZE + offset
+                        ),
+                        four_dig(i * 3 / 2 * GRID_SIZE - GRID_SIZE / 2),
+                    ),
+                    (
+                        four_dig(
+                            ((i + 1) / 2 - 1) * jnp.sqrt(3) * GRID_SIZE
+                            + offset
+                        ),
+                        four_dig((i + 1) * 3 / 2 * GRID_SIZE - GRID_SIZE / 2),
+                    ),
+                    (
+                        four_dig(
+                            (i / 2 - 1) * jnp.sqrt(3) * GRID_SIZE + offset
+                        ),
+                        four_dig((i + 1) * 3 / 2 * GRID_SIZE - GRID_SIZE),
+                    ),
+                ],
+                fill=color_set.p2_color,
+                stroke=color_set.grid_color,
+                stroke_width="0.5px",
+            )
         )
-    )
 
     board_g.translate(GRID_SIZE, GRID_SIZE / 2)
 
