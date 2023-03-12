@@ -50,6 +50,38 @@ def _make_hex_dwg(dwg, state: HexState, config):
                 stroke_width="0.5px",
             )
         )
+        # 太線で表示させる場合
+        #
+        # if xy // BOARD_SIZE == 0:
+        #     board_g.add(
+        #         dwg.polyline(
+        #             points=[
+        #                 (
+        #                     four_dig(_x + r * jnp.sin(jnp.pi / 3 * i)),
+        #                     four_dig(_y + r * jnp.cos(jnp.pi / 3 * i)),
+        #                 )
+        #                 for i in range(2, 5)
+        #             ],
+        #             fill=color_set.text_color,
+        #             stroke=color_set.grid_color,
+        #             stroke_width="2px",
+        #         )
+        #     )
+        # elif xy // BOARD_SIZE == 10:
+        #     board_g.add(
+        #         dwg.polyline(
+        #             points=[
+        #                 (
+        #                     four_dig(_x + r * jnp.sin(jnp.pi / 3 * i)),
+        #                     four_dig(_y + r * jnp.cos(jnp.pi / 3 * i)),
+        #                 )
+        #                 for i in range(-1,2)
+        #             ],
+        #             fill=color_set.text_color,
+        #             stroke=color_set.grid_color,
+        #             stroke_width="2px",
+        #         )
+        #     )
         if stone == 0:
             continue
 
@@ -76,7 +108,8 @@ def _make_hex_dwg(dwg, state: HexState, config):
                     (four_dig((i - 1) * jnp.sqrt(3) * GRID_SIZE), -GRID_SIZE),
                 ],
                 # fmt:on
-                # stroke=color_set.p1_color,
+                stroke=color_set.grid_color,
+                stroke_width="0.5px",
                 fill=color_set.p1_color,
             )
         )
@@ -90,7 +123,8 @@ def _make_hex_dwg(dwg, state: HexState, config):
                     (four_dig((i - 1) * jnp.sqrt(3) * GRID_SIZE + offset), four_dig(GRID_SIZE * BOARD_SIZE * 3 / 2 - GRID_SIZE / 2)),
                 ],
                 # fmt:on
-                # stroke=color_set.p1_color,
+                stroke=color_set.grid_color,
+                stroke_width="0.5px",
                 fill=color_set.p1_color,
             )
         )
@@ -146,7 +180,6 @@ def _make_hex_dwg(dwg, state: HexState, config):
                 stroke_width="0.5px",
             )
         )
-
     board_g.translate(GRID_SIZE, GRID_SIZE / 2)
 
     return board_g
