@@ -39,3 +39,21 @@ def test_merge():
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0])
     # fmt:on
     assert jnp.all(state.board == expected)
+
+
+def test_terminated():
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
+    assert not state.terminated
+    for i in range(11):
+        state = step(state, i * 11)
+        state = step(state, i * 11 + 1)
+    assert state.terminated
+
+    state = init(key=key)
+    for i in range(10):
+        state = step(state, i)
+        state = step(state, i + 11)
+    state = step(state, 120)
+    state = step(state, 21)
+    assert state.terminated
