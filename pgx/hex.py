@@ -24,6 +24,6 @@ class State(core.State):
     #  .
     #  .
     #  [110, 111, 112, ...,  119, 120]]
-    board: jnp.ndarray = -jnp.ones(
+    board: jnp.ndarray = -jnp.zeros(
         11 * 11, jnp.int8
     )  # -1(oppo), 0(empty), 1(self)
