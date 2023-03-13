@@ -109,8 +109,8 @@ while not state.terminated.all():
 </tr>
 <tr>
  <td>Hex</td>
- <td></td>
- <td></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td>Mahjong</td>
