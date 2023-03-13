@@ -12,6 +12,9 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 
 ## Why Pgx?
 
+<!--- 
+https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG4czdz#scrollTo=V1QZhRXoGL8K
+--->
 <img align="right" width="250" src="throughput.svg">
 
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
