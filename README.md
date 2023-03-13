@@ -22,9 +22,8 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 
 - **JAX-native**: All `step` functions are *jittable*
 - **Fast** in parallel execution (10x faster than C++/Python implementation)
-- **Variety**: Support various board games, including **Backgammon**, **Shogi**, and **Go**
+- **Various game supports** including **Backgammon**, **Shogi**, and **Go**
 - **Beautiful visualization** in SVG format
-
 
 
 ## Install
