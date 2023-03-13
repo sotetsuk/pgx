@@ -4,7 +4,7 @@
 <img src="logo.svg" width="40%">
 </div>
 
-A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning
+A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
 <img src="go.gif" width="40%"><img src="go.gif" width="40%" style="transform:rotate(180deg);">
@@ -14,10 +14,10 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 
 <img align="right" width="250" src="throughput.svg">
 
-[Brax](https://github.com/google/brax), a JAX-native physics engine, provides extremely high-speed parallel simulation for RL in continuous state space.
-Then, what about RL in discrete state spaces? **Pgx** provides a wide variety of JAX-native game simulators.
+[Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
+Then, what about RL in *discrete* state spaces? **Pgx** provides a wide variety of JAX-native game simulators.
 
-- **[JAX](https://github.com/google/jax)-native**: All `step` functions are *jittable*
+- **JAX-native**: All `step` functions are *jittable*
 - **Fast** in parallel execution (10x faster than C++/Python implementation)
 - Support variety of board games, including **Backgammon**, **Shogi**, and **Go**
 - Beautiful visualization support
