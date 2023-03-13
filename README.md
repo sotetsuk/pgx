@@ -18,12 +18,12 @@ https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG4czdz#scroll
 <img align="right" width="250" src="throughput.svg">
 
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
-Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators.
+Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
 
 - **JAX-native**: All `step` functions are *jittable*
 - **Fast** in parallel execution (10x faster than C++/Python implementation)
-- Support variety of board games, including **Backgammon**, **Shogi**, and **Go**
-- Beautiful visualization support
+- **Variety**: Support various board games, including **Backgammon**, **Shogi**, and **Go**
+- **Beautiful visualization** in SVG format
 
 
 
