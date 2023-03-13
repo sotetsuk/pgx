@@ -12,12 +12,12 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 
 ## Why Pgx?
 
+<img align="right" width="300" src="throughput.svg">
 - [JAX](https://github.com/google/jax)-native. All `step` functions are *jittable*.
 - Fast in parallel execution.
 - Support variety of board games, including Shogi and Go.
 - Beautiful visualization.
 
-<img align="right" width="100" src="throughput.svg">
 
 
 ## Install
