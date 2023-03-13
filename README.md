@@ -17,9 +17,7 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 - Support variety of board games, including Shogi and Go.
 - Beautiful visualization.
 
-<div align="center">
-<img src="throughput.svg" width="40%">
-</div>
+<img align="right" width="100" src="throughput.svg">
 
 
 ## Install
