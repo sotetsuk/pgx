@@ -14,10 +14,10 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 
 <img align="right" width="250" src="throughput.svg">
 
-- [JAX](https://github.com/google/jax)-native. All `step` functions are *jittable*.
+- [JAX](https://github.com/google/jax)-native. All `step` functions are *jittable*
 - Fast in parallel execution (10x faster than C++/Python implementation)
-- Support variety of board games, including Shogi and Go.
-- Beautiful visualization.
+- Support variety of board games, including Backgammon, Shogi, and Go
+- Beautiful visualization support
 
 
 
