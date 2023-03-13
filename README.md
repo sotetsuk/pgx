@@ -4,7 +4,7 @@
 <img src="logo.svg" width="40%">
 </div>
 
-A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning
+A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
 <img src="go.gif" width="40%"><img src="go.gif" width="40%" style="transform:rotate(180deg);">
@@ -12,10 +12,19 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 
 ## Why Pgx?
 
-- [JAX](https://github.com/google/jax)-native. All `step` functions are *jittable*.
-- Fast in parallel execution.
-- Support variety of board games, including Shogi and Go.
-- Beautiful visualization.
+<!--- 
+https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG4czdz#scrollTo=V1QZhRXoGL8K
+--->
+<img align="right" width="250" src="throughput.svg">
+
+[Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
+Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
+
+- **JAX-native**: All `step` functions are *jittable*
+- **Fast** in parallel execution (10x faster than C++/Python implementation)
+- **Various game support** including **Backgammon**, **Shogi**, and **Go**
+- **Beautiful visualization** in SVG format
+
 
 ## Install
 
@@ -99,8 +108,8 @@ while not state.terminated.all():
 </tr>
 <tr>
  <td>Hex</td>
- <td></td>
- <td></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td>Mahjong</td>
