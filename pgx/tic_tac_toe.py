@@ -28,7 +28,7 @@ IDX = jnp.int8(
 @dataclass
 class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
-    curr_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -82,8 +82,8 @@ class TicTacToe(pgx.Env):
 
 def init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
-    curr_player = jnp.int8(jax.random.bernoulli(subkey))
-    return State(curr_player=curr_player)  # type:ignore
+    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(current_player=current_player)  # type:ignore
 
 
 def step(state: State, action: jnp.ndarray) -> State:
@@ -91,11 +91,11 @@ def step(state: State, action: jnp.ndarray) -> State:
     won = _win_check(state.board, state.turn)
     reward = jax.lax.cond(
         won,
-        lambda: jnp.float32([-1, -1]).at[state.curr_player].set(1),
+        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
         lambda: jnp.zeros(2, jnp.float32),
     )
     return state.replace(  # type: ignore
-        curr_player=(state.curr_player + 1) % 2,
+        current_player=(state.current_player + 1) % 2,
         legal_action_mask=state.board < 0,
         reward=reward,
         terminated=won | jnp.all(state.board != -1),
@@ -110,7 +110,7 @@ def _win_check(board, turn) -> jnp.ndarray:
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     empty_board = state.board == -1
     my_board, opp_obard = jax.lax.cond(
-        state.curr_player == player_id,  # flip board if player_id is opposite
+        state.current_player == player_id,  # flip board if player_id is opposite
         lambda: (state.turn == state.board, (1 - state.turn) == state.board),
         lambda: ((1 - state.turn) == state.board, state.turn == state.board),
     )

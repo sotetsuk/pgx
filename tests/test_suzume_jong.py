@@ -29,7 +29,7 @@ def test_is_completed():
 
 
 def test_init():
-    curr_player, state = _init(jax.random.PRNGKey(1))
+    current_player, state = _init(jax.random.PRNGKey(1))
     _validate(state)
     print(_to_str(state))
     assert _to_str(state) == """ dora: r
@@ -39,12 +39,12 @@ def test_init():
 """
 
     for seed in range(1000):
-        curr_player, state = init(jax.random.PRNGKey(seed))
+        current_player, state = init(jax.random.PRNGKey(seed))
         assert jnp.logical_not(state.terminated)
 
 
 def test_step():
-    curr_player, state = _init(jax.random.PRNGKey(1))
+    current_player, state = _init(jax.random.PRNGKey(1))
     _validate(state)
     print(_to_str(state))
     assert _to_str(state) == """ dora: r
@@ -53,7 +53,7 @@ def test_step():
  [0] 5 7 8 9 r*  : _ _ _ _ _ _ _ _ _ _  
 """
 
-    curr_player, state, r = step(state, jnp.int8(1))
+    current_player, state, r = step(state, jnp.int8(1))
     assert not state.terminated
     _validate(state)
     print(_to_str(state))
@@ -73,14 +73,14 @@ def test_random_play():
         print("=================================")
         key = jax.random.PRNGKey(seed)
         key, subkey = jax.random.split(key)
-        curr_player, state = _init(subkey)
+        current_player, state = _init(subkey)
         # _validate(state)
         # print(_to_str(state))
         while not state.terminated:
             legal_actions = jnp.where(state.legal_action_mask)[0]
             key, subkey = jax.random.split(key)
             action = jax.random.choice(subkey, legal_actions)
-            curr_player, state, r = step(state, action)
+            current_player, state, r = step(state, action)
             # _validate(state)
         print(_to_str(state))
         print(r)
@@ -491,8 +491,8 @@ def test_random_play():
 
 
 def test_observe():
-    curr_player, state = _init(jax.random.PRNGKey(1))
-    curr_player, state, r = step(state, jnp.int8(1))
+    current_player, state = _init(jax.random.PRNGKey(1))
+    current_player, state, r = step(state, jnp.int8(1))
     print(_to_str(state))
     obs = observe(state, player_id=jnp.int8(2))
     assert obs.shape[0] == 15
@@ -510,12 +510,12 @@ def test_observe():
     seed = 5
     key = jax.random.PRNGKey(seed)
     key, subkey = jax.random.split(key)
-    curr_player, state = _init(subkey)
+    current_player, state = _init(subkey)
     while not state.terminated:
         legal_actions = jnp.where(state.legal_action_mask)[0]
         key, subkey = jax.random.split(key)
         action = jax.random.choice(subkey, legal_actions)
-        curr_player, state, r = step(state, action)
+        current_player, state, r = step(state, action)
     print(_to_str(state))
     """
     [terminated] dora: 3

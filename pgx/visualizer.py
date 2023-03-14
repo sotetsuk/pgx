@@ -547,7 +547,7 @@ class Visualizer:
         elif isinstance(_states, BridgeBiddingState):
             return BridgeBiddingState(  # type:ignore
                 turn=_states.turn[_i],
-                curr_player=_states.curr_player[_i],
+                current_player=_states.current_player[_i],
                 hand=_states.hand[_i],
                 bidding_history=_states.bidding_history[_i],
                 vul_NS=_states.vul_NS[_i],
@@ -571,7 +571,7 @@ class Visualizer:
             )
         elif isinstance(_states, SparrowMahjongState):
             return SparrowMahjongState(
-                curr_player=_states.curr_player[_i],
+                current_player=_states.current_player[_i],
                 turn=_states.turn[_i],
                 rivers=_states.rivers[_i],
                 hands=_states.hands[_i],
@@ -584,7 +584,7 @@ class Visualizer:
             )
         elif isinstance(_states, TictactoeState):
             return TictactoeState(
-                curr_player=_states.curr_player[_i],
+                current_player=_states.current_player[_i],
                 legal_action_mask=_states.legal_action_mask[_i],
                 terminated=_states.terminated[_i],
                 turn=_states.turn[_i],

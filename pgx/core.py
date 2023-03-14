@@ -28,7 +28,7 @@ EnvId = Literal[
 @dataclass
 class State:
     steps: jnp.ndarray
-    curr_player: jnp.ndarray
+    current_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
@@ -58,12 +58,12 @@ class Env(abc.ABC):
         key, subkey = jax.random.split(key)
         state = self._init(subkey)
         state = state.replace(_rng_key=key)  # type: ignore
-        observation = self.observe(state, state.curr_player)
+        observation = self.observe(state, state.current_player)
         return state.replace(observation=observation)  # type: ignore
 
     def step(self, state: State, action: jnp.ndarray) -> State:
         is_illegal = ~state.legal_action_mask[action]
-        curr_player = state.curr_player
+        current_player = state.current_player
 
         # Auto reset
         state = jax.lax.cond(
@@ -91,7 +91,7 @@ class Env(abc.ABC):
         # Taking illegal action leads to immediate game terminal with negative reward
         state = jax.lax.cond(
             is_illegal,
-            lambda: self._step_with_illegal_action(state, curr_player),
+            lambda: self._step_with_illegal_action(state, current_player),
             lambda: state,
         )
 
@@ -126,7 +126,7 @@ class Env(abc.ABC):
             lambda: state,
         )
 
-        observation = self.observe(state, state.curr_player)
+        observation = self.observe(state, state.current_player)
         return state.replace(observation=observation)  # type: ignore
 
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
@@ -168,7 +168,7 @@ class Env(abc.ABC):
     def observation_shape(self) -> Tuple[int, ...]:
         """Return the matrix shape of observation"""
         state = self.init(jax.random.PRNGKey(0))
-        obs = self._observe(state, state.curr_player)
+        obs = self._observe(state, state.current_player)
         return obs.shape
 
     @property

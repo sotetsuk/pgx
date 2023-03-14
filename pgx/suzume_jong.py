@@ -38,7 +38,7 @@ MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 +
 
 @dataclass
 class State:
-    curr_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int8(0)
     legal_action_mask: jnp.ndarray = jnp.zeros(9, jnp.bool_)
     terminated: jnp.ndarray = jnp.bool_(False)
     turn: jnp.ndarray = jnp.int8(0)  # 0 = dealer
@@ -69,7 +69,7 @@ class State:
 @jax.jit
 def init(rng: jax.random.KeyArray):
     key, subkey = jax.random.split(rng)
-    curr_player, state = _init(subkey)
+    current_player, state = _init(subkey)
 
     def f(x):
         k, _subkey = jax.random.split(x[0])
@@ -77,10 +77,10 @@ def init(rng: jax.random.KeyArray):
         return k, c, s
 
     # avoid tenhou
-    key, curr_player, state = lax.while_loop(
-        lambda x: x[2].terminated, f, (key, curr_player, state)
+    key, current_player, state = lax.while_loop(
+        lambda x: x[2].terminated, f, (key, current_player, state)
     )
-    return curr_player, state
+    return current_player, state
 
 
 @jax.jit
@@ -91,7 +91,7 @@ def _init(rng: jax.random.KeyArray):
     shuffled_players = jax.random.shuffle(key1, shuffled_players)
     wall = jnp.arange(NUM_TILES, dtype=jnp.int8)
     wall = jax.random.shuffle(key2, wall)
-    curr_player = shuffled_players[0]  # dealer
+    current_player = shuffled_players[0]  # dealer
     dora = wall[-1] // 4
     # set hands (hands[0] = dealer's hand)
     hands = jnp.zeros((N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int8)
@@ -113,7 +113,7 @@ def _init(rng: jax.random.KeyArray):
     draw_ix += 1
     legal_action_mask = hands[0] > 0
     state = State(
-        curr_player=curr_player,
+        current_player=current_player,
         legal_action_mask=legal_action_mask,
         hands=hands,
         n_red_in_hands=n_red_in_hands,
@@ -126,13 +126,13 @@ def _init(rng: jax.random.KeyArray):
     # check tenhou
     scores = _hands_to_score(state)
     is_tsumo = _check_tsumo(state, scores)
-    curr_player, state = lax.cond(
+    current_player, state = lax.cond(
         is_tsumo,
         lambda: _step_by_tsumo(state, scores)[:-1],
-        lambda: (curr_player, state),
+        lambda: (current_player, state),
     )
 
-    return curr_player, state
+    return current_player, state
 
 
 @jax.jit
@@ -216,9 +216,9 @@ def _step_by_ron(state: State, scores, winning_players):
     scores = scores.at[0].add(2)
     scores = scores * winning_players
     scores = scores.at[state.turn % N_PLAYER].set(-scores.sum())
-    curr_player = jnp.int8(-1)
+    current_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
-        curr_player=curr_player,
+        current_player=current_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
         scores=scores,
@@ -229,7 +229,7 @@ def _step_by_ron(state: State, scores, winning_players):
         )
         / MAX_SCORE
     )
-    return curr_player, state, r
+    return current_player, state, r
 
 
 @jax.jit
@@ -240,9 +240,9 @@ def _step_by_tsumo(state: State, scores):
     winner_score = loser_score * (N_PLAYER - 1)
     scores = -jnp.ones(N_PLAYER, dtype=jnp.int8) * loser_score
     scores = scores.at[state.turn % N_PLAYER].set(winner_score)
-    curr_player = jnp.int8(-1)
+    current_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
-        curr_player=curr_player,
+        current_player=current_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
         scores=scores,
@@ -253,25 +253,25 @@ def _step_by_tsumo(state: State, scores):
         )
         / MAX_SCORE
     )
-    return curr_player, state, r
+    return current_player, state, r
 
 
 @jax.jit
 def _step_by_tie(state):
-    curr_player = jnp.int8(-1)
+    current_player = jnp.int8(-1)
     state = state.replace(  # type: ignore
-        curr_player=curr_player,
+        current_player=current_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )
     r = jnp.zeros(3, dtype=jnp.float16)
-    return curr_player, state, r
+    return current_player, state, r
 
 
 @jax.jit
 def _draw_tile(state: State) -> State:
     turn = state.turn + 1
-    curr_player = state.shuffled_players[turn % N_PLAYER]
+    current_player = state.shuffled_players[turn % N_PLAYER]
     tile_id = state.wall[state.draw_ix]
     tile_type = tile_id // 4
     # gd=[36,37,38,39], rd=[40,41,42,43]
@@ -284,7 +284,7 @@ def _draw_tile(state: State) -> State:
     legal_action_mask = hands[turn % N_PLAYER] > 0
     state = state.replace(  # type: ignore
         turn=turn,
-        curr_player=curr_player,
+        current_player=current_player,
         hands=hands,
         n_red_in_hands=n_red_in_hands,
         draw_ix=draw_ix,
@@ -297,7 +297,7 @@ def _draw_tile(state: State) -> State:
 @jax.jit
 def _step_non_terminal(state: State):
     r = jnp.zeros(3, dtype=jnp.float16)
-    return state.curr_player, state, r
+    return state.current_player, state, r
 
 
 @jax.jit

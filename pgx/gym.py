@@ -26,7 +26,7 @@ class RandomOpponentEnv:
         def init(rng):
             _, state = _init(rng)
             return jax.lax.cond(
-                state.curr_player != 0,
+                state.current_player != 0,
                 lambda: _random_opponent_step(rng, state)[0],
                 lambda: state,
             )
@@ -34,7 +34,7 @@ class RandomOpponentEnv:
         def env_step_if_not_terminated(rng, state, action):
             _, state, reward = _step(state, action)
             state, opp_reward = jax.lax.cond(
-                (state.curr_player == 1)
+                (state.current_player == 1)
                 & ~state.terminated,  # TODO: support >=3 players
                 lambda: _random_opponent_step(rng, state),
                 lambda: (state, jnp.zeros_like(reward)),

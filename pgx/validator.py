@@ -13,7 +13,7 @@ def validate(env: pgx.Env, num: int = 100):
     - init
       - reward is zero array
     - step
-      - state.curr_player is positive
+      - state.current_player is positive
       - (TODO) taking illegal actions terminates the episode with a negative reward
       - legal_action_mask is empty when terminated (TODO: or all True?)
       - taking actions at terminal states returns the same state (with zero reward)
@@ -36,7 +36,7 @@ def validate(env: pgx.Env, num: int = 100):
         curr_steps = state.steps
         _validate_state(state)
         _validate_init_reward(state)
-        _validate_curr_player(state)
+        _validate_current_player(state)
         _validate_legal_actions(state)
 
         while True:
@@ -49,7 +49,7 @@ def validate(env: pgx.Env, num: int = 100):
             curr_steps += 1
 
             _validate_state(state)
-            _validate_curr_player(state)
+            _validate_current_player(state)
             _validate_legal_actions(state)
 
             if state.terminated:
@@ -80,13 +80,13 @@ def _validate_init_reward(state: pgx.State):
 def _validate_state(state: pgx.State):
     """validate_state checks these items:
 
-    - curr_player is int8
+    - current_player is int8
     - terminated is bool_
     - reward is float
     - legal_action_mask is bool_
     - TODO: observation is bool_ or int8 (can promote to any other types)
     """
-    assert state.curr_player.dtype == jnp.int8, state.curr_player.dtype
+    assert state.current_player.dtype == jnp.int8, state.current_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
     assert state.reward.dtype == jnp.float32, state.reward.dtype
     assert (
@@ -105,7 +105,7 @@ def _validate_legal_actions(state: pgx.State):
         ...
 
 
-def _validate_curr_player(state: pgx.State):
+def _validate_current_player(state: pgx.State):
     assert (
-        state.curr_player >= 0
-    ), f"curr_player must be positive before terminated but got : {state.curr_player}"
+            state.current_player >= 0
+    ), f"current_player must be positive before terminated but got : {state.current_player}"

@@ -13,7 +13,7 @@ j_step = jax.jit(step, static_argnums=(2,))
 def test_init():
     key = jax.random.PRNGKey(0)
     state = j_init(key=key, size=BOARD_SIZE)
-    assert state.curr_player == 1
+    assert state.current_player == 1
 
 
 def test_end_by_pass():
@@ -40,7 +40,7 @@ def test_step():
     """
     key = jax.random.PRNGKey(0)
     state = j_init(key=key, size=BOARD_SIZE)
-    assert state.curr_player == 1
+    assert state.current_player == 1
 
     state = j_step(state=state, action=12, size=BOARD_SIZE)  # BLACK
     state = j_step(state=state, action=11, size=BOARD_SIZE)  # WHITE
@@ -96,7 +96,7 @@ def test_kou():
     key = jax.random.PRNGKey(0)
 
     state: State = env.init(key=key)
-    assert state.curr_player == 1
+    assert state.current_player == 1
     state = env.step(state=state, action=2)  # BLACK
     state = env.step(state=state, action=17)  # WHITE
     state = env.step(state=state, action=6)  # BLACK
@@ -122,7 +122,7 @@ def test_kou():
     """
     assert state.kou == 12
 
-    loser = state.curr_player
+    loser = state.current_player
     state1: State = env.step(
         state=state, action=12
     )  # BLACK
@@ -275,7 +275,7 @@ def test_kou():
 def test_observe():
     key = jax.random.PRNGKey(0)
     state = j_init(key=key, size=BOARD_SIZE)
-    assert state.curr_player == 1
+    assert state.current_player == 1
     # player 0 is white, player 1 is black
 
     state = j_step(state=state, action=0, size=BOARD_SIZE)
@@ -301,7 +301,7 @@ def test_observe():
          [ 0,  0,  0,  0, 0]]
     )
     # fmt: on
-    assert state.curr_player == 1
+    assert state.current_player == 1
     assert state.turn % 2 == 0  # black turn
     obs = jax.jit(partial(observe, size=5, history_length=8))(state, 0)   # white
     assert obs.shape == (5, 5, 17)

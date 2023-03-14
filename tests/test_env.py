@@ -23,13 +23,13 @@ def test_jit():
         keys = jax.random.split(key, N)
 
         state = init(keys)
-        assert state.curr_player.shape == (N,)
+        assert state.current_player.shape == (N,)
         assert (state.observation).sum() != 0
 
         action = act_randomly(key, state)
 
         state: pgx.State = step(state, action)
-        assert state.curr_player.shape == (N,)
+        assert state.current_player.shape == (N,)
         assert (state.observation).sum() != 0
 
 

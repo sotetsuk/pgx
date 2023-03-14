@@ -21,8 +21,8 @@ class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
     # turn 現在のターン数
     turn: jnp.ndarray = jnp.int16(0)
-    # curr_player 現在のプレイヤーid
-    curr_player: jnp.ndarray = jnp.int8(-1)
+    # current_player 現在のプレイヤーid
+    current_player: jnp.ndarray = jnp.int8(-1)
     # 各プレイヤーの観測
     observation: jnp.ndarray = jnp.zeros(52, dtype=jnp.bool_)
     # 報酬　player_id: 0, 1, 2, 3
@@ -84,14 +84,14 @@ def init(rng: jax.random.KeyArray) -> State:
     dealer = jax.random.randint(rng5, (1,), 0, 4)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng6)
-    curr_player = shuffled_players[dealer]
+    current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
     state = State(  # type: ignore
         shuffled_players=shuffled_players,
-        curr_player=curr_player,
+        current_player=current_player,
         hand=hand,
         dealer=dealer,
         vul_NS=vul_NS,
@@ -111,14 +111,14 @@ def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     dealer = jax.random.randint(rng4, (1,), 0, 4)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng5)
-    curr_player = shuffled_players[dealer]
+    current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
     state = State(  # type: ignore
         shuffled_players=shuffled_players,
-        curr_player=curr_player,
+        current_player=current_player,
         hand=hand,
         dealer=dealer,
         vul_NS=vul_NS,
@@ -238,7 +238,7 @@ def _illegal_step(
     """Return state when an illegal move is detected"""
     illegal_rewards = jnp.zeros(4, dtype=jnp.int16)
     # fmt: off
-    return state.replace(terminated=jnp.bool_(True), curr_player=jnp.int8(-1), reward=illegal_rewards)  # type: ignore
+    return state.replace(terminated=jnp.bool_(True), current_player=jnp.int8(-1), reward=illegal_rewards)  # type: ignore
     # fmt: on
 
 
@@ -250,10 +250,10 @@ def _terminated_step(
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
-    curr_player = jnp.int8(-1)
+    current_player = jnp.int8(-1)
     reward = _reward(state, hash_keys, hash_values)
     # fmt: off
-    return state.replace(terminated=terminated, curr_player=curr_player, reward=reward)  # type: ignore
+    return state.replace(terminated=terminated, current_player=current_player, reward=reward)  # type: ignore
     # fmt: on
 
 
@@ -264,7 +264,7 @@ def _continue_step(
     """Return state when the game continues"""
     # fmt: off
     # 次ターンのプレイヤー、ターン数
-    state = state.replace(curr_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4], turn=state.turn + 1)  # type: ignore
+    state = state.replace(current_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4], turn=state.turn + 1)  # type: ignore
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
     return state.replace(legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask), reward=jnp.zeros(4, dtype=jnp.int16))  # type: ignore
@@ -553,7 +553,7 @@ def _state_bid(state: State, action: int) -> State:
     """Change state if bid is taken"""
     # 最後のbidとそのプレイヤーを保存
     # fmt: off
-    state = state.replace(last_bid=jnp.int8(action), last_bidder=state.curr_player)  # type: ignore
+    state = state.replace(last_bid=jnp.int8(action), last_bidder=state.current_player)  # type: ignore
     # fmt: on
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
@@ -607,7 +607,7 @@ def _is_legal_X(state: State) -> bool:
         & (
             _is_partner(
                 _player_position(state.last_bidder, state),
-                _player_position(state.curr_player, state),
+                _player_position(state.current_player, state),
             )
             == 0
         ),
@@ -624,7 +624,7 @@ def _is_legal_XX(state: State) -> bool:
         & (
             _is_partner(
                 _player_position(state.last_bidder, state),
-                _player_position(state.curr_player, state),
+                _player_position(state.current_player, state),
             )
         ),
         lambda: True,
