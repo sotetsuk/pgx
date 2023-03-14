@@ -40,8 +40,10 @@ class State(core.State):
 
 
 class Backgammon(core.Env):
-    def __init__(self, *, auto_reset: bool = False):
-        super().__init__(auto_reset=auto_reset)
+    def __init__(self, *, auto_reset: bool = False,
+                 max_truncation_steps: int = -1,
+                 ):
+        super().__init__(auto_reset=auto_reset, max_truncation_steps=max_truncation_steps)
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
