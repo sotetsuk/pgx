@@ -47,7 +47,7 @@ uninstall:
 	python3 -m pip uninstall pgx -y
 
 test:
-	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py
+	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental
 
 test-modified:
 	./test_modified.sh
