@@ -28,6 +28,7 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
     size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int8
 
@@ -60,9 +61,14 @@ class State(core.State):
 
 class Go(core.Env):
     def __init__(
-        self, size: int = 19, komi: float = 7.5, history_length: int = 8
+        self,
+        *,
+        auto_reset: bool = False,
+        size: int = 19,
+        komi: float = 7.5,
+        history_length: int = 8
     ):
-        super().__init__()
+        super().__init__(auto_reset=auto_reset)
         self.size = size
         self.komi = komi
         self.history_length = history_length

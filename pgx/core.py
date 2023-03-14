@@ -7,6 +7,7 @@ import jax.numpy as jnp
 from pgx.flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
+FALSE = jnp.bool_(False)
 
 
 EnvId = Literal[
@@ -25,6 +26,11 @@ class State:
     reward: jnp.ndarray
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray
+    # NOTE: _rng_key is
+    #   - used for stochastic env and auto reset
+    #   - updated only when actually used
+    #   - supposed NOT to be used by agent
+    _rng_key: jax.random.KeyArray
 
     def _repr_html_(self) -> str:
         from pgx.visualizer import Visualizer
@@ -34,23 +40,29 @@ class State:
 
 
 class Env(abc.ABC):
-    def __init__(self):
-        ...
+    def __init__(self, *, auto_reset: bool = False):
+        self.auto_reset = auto_reset
 
     def init(self, key: jax.random.KeyArray) -> State:
-        state = self._init(key)
+        key, subkey = jax.random.split(key)
+        state = self._init(subkey)
+        state = state.replace(_rng_key=key)  # type: ignore
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
 
     def step(self, state: State, action: jnp.ndarray) -> State:
-        # TODO: legal_action_mask周りの挙動
-        #  - set legal_action_mask = all True
-        #    - Typical usage of legal_action_mask is normalizing action probability
-        #    - all zero mask will raise zero division error
-        #  - ends with negative reward if illegal action is taken
-
         is_illegal = ~state.legal_action_mask[action]
         curr_player = state.curr_player
+
+        # Auto reset
+        state = jax.lax.cond(
+            self.auto_reset,
+            lambda: state.replace(  # type: ignore
+                terminated=FALSE, reward=jnp.zeros_like(state.reward)
+            ),
+            lambda: state,
+        )
+
         # If the state is already terminated, environment does not take usual step, but
         # return the same state with zero-rewards for all players
         state = jax.lax.cond(
@@ -58,13 +70,15 @@ class Env(abc.ABC):
             lambda: self._step_if_terminated(state),
             lambda: self._step(state, action),
         )
+
         # Taking illegal action leads to immediate game terminal with negative reward
         state = jax.lax.cond(
             is_illegal,
             lambda: self._step_with_illegal_action(state, curr_player),
             lambda: state,
         )
-        # All legal_action_mask elements are TRUE (**not FALSE**) at terminal state
+
+        # All legal_action_mask elements are **TRUE** at terminal state
         # This is to avoid zero-division error when normalizing action probability
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
@@ -74,6 +88,14 @@ class Env(abc.ABC):
             ),
             lambda: state,
         )
+
+        # Auto reset
+        state = jax.lax.cond(
+            self.auto_reset & state.terminated,
+            lambda: self.init(state._rng_key).replace(terminated=state.terminated, reward=state.reward),  # type: ignore
+            lambda: state,
+        )
+
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
 

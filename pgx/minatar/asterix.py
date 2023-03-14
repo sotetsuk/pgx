@@ -38,6 +38,8 @@ class State(core.State):
     )  # 1d array for the same API as other multi-agent games
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
@@ -56,10 +58,12 @@ class State(core.State):
 class MinAtarAsterix(core.Env):
     def __init__(
         self,
+        *,
+        auto_reset=False,
         minatar_version: Literal["v0", "v1"] = "v1",
         sticky_action_prob: float = 0.1,
     ):
-        super().__init__()
+        super().__init__(auto_reset=auto_reset)
         self.minatar_version: Literal["v0", "v1"] = minatar_version
         self.sticky_action_prob: float = sticky_action_prob
 

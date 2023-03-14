@@ -28,6 +28,7 @@ class State(core.State):
     shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # 終端状態
     terminated: jnp.ndarray = jnp.bool_(False)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # hand 各プレイヤーの手札
     # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札
     # 各要素にはカードを表す0 ~ 51の整数が格納される

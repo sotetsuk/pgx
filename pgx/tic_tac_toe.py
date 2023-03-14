@@ -32,6 +32,8 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
@@ -40,8 +42,8 @@ class State(core.State):
 
 
 class TicTacToe(core.Env):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *, auto_reset: bool = False):
+        super().__init__(auto_reset=auto_reset)
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)

@@ -21,6 +21,7 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     # micro action = 6 * src + die
     legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # --- Backgammon specific ---
     # 各point(24) bar(2) off(2)にあるcheckerの数. 黒+, 白-
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
@@ -37,6 +38,9 @@ class State(core.State):
 
 
 class Backgammon(core.Env):
+    def __init__(self, *, auto_reset: bool = False):
+        super().__init__(auto_reset=auto_reset)
+
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 

@@ -19,6 +19,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(11 * 11, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # 0(black), 1(white)
     turn: jnp.ndarray = jnp.int8(0)
     # 11x11 board
@@ -34,8 +35,8 @@ class State(core.State):
 
 
 class Hex(core.Env):
-    def __init__(self, size: int = 11):
-        super().__init__()
+    def __init__(self, *, auto_reset: bool = False, size: int = 11):
+        super().__init__(auto_reset=auto_reset)
         self.size = size
 
     def _init(self, key: jax.random.KeyArray) -> State:
