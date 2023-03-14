@@ -1,6 +1,6 @@
-from pgx.core import EnvId, State
+from pgx.core import EnvId, State, Env
 
-__all__ = ["State", "EnvId"]
+__all__ = ["State", "EnvId", "Env"]
 
 
 def make(env_id: EnvId):

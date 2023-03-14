@@ -4,11 +4,10 @@ import jax
 import jax.numpy as jnp
 
 import pgx
-import pgx.core as core
 from pgx.utils import act_randomly
 
 
-def validate(env: core.Env, num: int = 100):
+def validate(env: pgx.Env, num: int = 100):
     """validate checks these items:
 
     - init
