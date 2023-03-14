@@ -8,7 +8,6 @@ import numpy as np
 import pgx.core as core
 from pgx.flax.struct import dataclass
 
-
 FALSE = jnp.bool_(False)
 
 # カードと数字の対応

@@ -63,7 +63,9 @@ class Env(abc.ABC):
         state = jax.lax.cond(
             self.auto_reset,
             lambda: state.replace(  # type: ignore
-                steps=jnp.int32(0), terminated=FALSE, reward=jnp.zeros_like(state.reward)
+                steps=jnp.int32(0),
+                terminated=FALSE,
+                reward=jnp.zeros_like(state.reward),
             ),
             lambda: state,
         )
