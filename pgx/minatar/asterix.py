@@ -175,7 +175,10 @@ def _step_det_at_non_terminal(
     # Spawn enemy if timer is up
     entities, spawn_timer = jax.lax.cond(
         state.spawn_timer == 0,
-        lambda: (_spawn_entity(state.entities, lr, is_gold, slot), state.spawn_speed),
+        lambda: (
+            _spawn_entity(state.entities, lr, is_gold, slot),
+            state.spawn_speed,
+        ),
         lambda: (state.entities, state.spawn_timer),
     )
     state = state.replace(entities=entities, spawn_timer=spawn_timer)  # type: ignore
