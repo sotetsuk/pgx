@@ -11,7 +11,6 @@ install-dev:
 		brax \
 		argdcls \
 		tqdm \
-		tenhou_wall_reproducer \
 		shanten_tools \
 
 install-fmt:
@@ -48,7 +47,7 @@ uninstall:
 	python3 -m pip uninstall pgx -y
 
 test:
-	python3 -m pytest --doctest-modules --verbose pgx tests
+	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental
 
 test-modified:
 	./test_modified.sh
