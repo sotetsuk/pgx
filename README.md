@@ -38,7 +38,7 @@ pip install pgx
 import jax
 import pgx
 
-env = pgx.make("go-19x19/v0")
+env = pgx.make("go-19x19")
 init = jax.jit(jax.vmap(env.init))  # vectorize and JIT-compile
 step = jax.jit(jax.vmap(env.step))
 

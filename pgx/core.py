@@ -1,5 +1,5 @@
 import abc
-from typing import Literal, Tuple
+from typing import Literal, Tuple, get_args
 
 import jax
 import jax.numpy as jnp
@@ -10,12 +10,18 @@ TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
+# Pgx environments are strictly versioned like OpenAI Gym.
+# One can check the version by `Env.version`.
+# We do not explicitly include version in EnvId for three reasons:
+# (1) we do not provide older versions (as with OpenAI Gym),
+# (2) it is tedious to remember or rewrite version numbers, and
+# (3) we do not want to slow down development for fear of inconveniencing users.
 EnvId = Literal[
-    "tic_tac_toe/v0",
-    "go-19x19/v0",
-    "shogi/v0",
-    "backgammon/v0",
-    "minatar/asterix/v0",
+    "tic_tac_toe",
+    "go-19x19",
+    "shogi",
+    "backgammon",
+    "minatar/asterix",
 ]
 
 
@@ -112,7 +118,11 @@ class Env(abc.ABC):
         # Auto reset
         state = jax.lax.cond(
             self.auto_reset & (state.terminated | state.truncated),
-            lambda: self.init(state._rng_key).replace(terminated=state.terminated, truncated=state.truncated, reward=state.reward),  # type: ignore
+            lambda: self.init(state._rng_key).replace(  # type: ignore
+                terminated=state.terminated,
+                truncated=state.truncated,
+                reward=state.reward,
+            ),
             lambda: state,
         )
 
@@ -175,3 +185,31 @@ class Env(abc.ABC):
         )
         reward = reward.at[loser].set(min_reward)
         return state.replace(reward=reward, terminated=TRUE)  # type: ignore
+
+
+def make(env_id: EnvId):
+    if env_id == "tic_tac_toe":
+        from pgx.tic_tac_toe import TicTacToe
+
+        return TicTacToe()
+    elif env_id == "shogi":
+        from pgx.shogi import Shogi
+
+        return Shogi()
+    elif env_id == "go-19x19":
+        from pgx.go import Go
+
+        return Go(size=19, komi=7.5)
+    elif env_id == "backgammon":
+        from pgx.backgammon import Backgammon
+
+        return Backgammon()
+    elif env_id == "minatar/asterix":
+        from pgx.minatar.asterix import MinAtarAsterix
+
+        return MinAtarAsterix()
+    else:
+        available_envs = "\n".join(get_args(EnvId))
+        raise ValueError(
+            f"Wrong env_id is passed. Available ids are: \n{available_envs}"
+        )

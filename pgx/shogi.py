@@ -38,7 +38,7 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
+import pgx
 from pgx.cache import (
     load_shogi_is_on_the_way,
     load_shogi_legal_from_mask,
@@ -116,7 +116,7 @@ QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 
 @dataclass
-class State(core.State):
+class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -150,7 +150,7 @@ class State(core.State):
         return state.replace(legal_action_mask=legal_action_mask, legal_moves=legal_moves)  # type: ignore
 
 
-class Shogi(core.Env):
+class Shogi(pgx.Env):
     def __init__(
         self,
         *,
@@ -164,13 +164,11 @@ class Shogi(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return step(state, action)
 
-    def observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)
 

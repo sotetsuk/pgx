@@ -4,7 +4,7 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
+import pgx
 from pgx.flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -14,7 +14,7 @@ init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 
 
 
 @dataclass
-class State(core.State):
+class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
@@ -39,7 +39,7 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(1)
 
 
-class Backgammon(core.Env):
+class Backgammon(pgx.Env):
     def __init__(
         self,
         *,
@@ -53,13 +53,11 @@ class Backgammon(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return step(state, action)
 
-    def observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)
 

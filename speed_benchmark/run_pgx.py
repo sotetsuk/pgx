@@ -43,10 +43,10 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_steps=(2 ** 12) * 1000):
 
 
 games = {
-    "tic_tac_toe": "tic_tac_toe/v0",
-    "backgammon": "backgammon/v0",
-    "shogi": "shogi/v0",
-    "go": "go-19x19/v0",
+    "tic_tac_toe": "tic_tac_toe",
+    "backgammon": "backgammon",
+    "shogi": "shogi",
+    "go": "go-19x19",
 }
 
 

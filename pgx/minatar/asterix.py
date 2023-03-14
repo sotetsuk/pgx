@@ -11,7 +11,7 @@ from typing import Literal, Tuple
 import jax
 from jax import numpy as jnp
 
-import pgx.core as core
+import pgx
 from pgx.flax.struct import dataclass
 
 ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int8)
@@ -30,7 +30,7 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(core.State):
+class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = ZERO
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
@@ -57,7 +57,7 @@ class State(core.State):
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
-class MinAtarAsterix(core.Env):
+class MinAtarAsterix(pgx.Env):
     def __init__(
         self,
         *,
@@ -75,7 +75,7 @@ class MinAtarAsterix(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return State(rng=key)  # type: ignore
 
-    def _step(self, state: core.State, action) -> State:
+    def _step(self, state: pgx.State, action) -> State:
         assert isinstance(state, State)
         rng, subkey = jax.random.split(state.rng)
         state, _, _ = step(
@@ -83,9 +83,7 @@ class MinAtarAsterix(core.Env):
         )
         return state.replace(rng=rng)  # type: ignore
 
-    def observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _to_obs(state)
 
