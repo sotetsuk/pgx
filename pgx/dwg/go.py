@@ -1,5 +1,6 @@
+import jax.numpy as jnp
+
 from pgx.go import State as GoState
-from pgx.go import get_board
 
 
 def _make_go_dwg(dwg, state: GoState, config):
@@ -85,16 +86,16 @@ def _make_go_dwg(dwg, state: GoState, config):
     board_g.add(hoshi_g)
 
     # stones
-    board = get_board(state)
+    board = jnp.clip(state.ren_id_board, -1, 1)
     for xy, stone in enumerate(board):
-        if stone == 2:
+        if stone == 0:
             continue
         # ndarrayのx,yと違うことに注意
         stone_y = xy // BOARD_SIZE * GRID_SIZE
         stone_x = xy % BOARD_SIZE * GRID_SIZE
 
-        color = color_set.p1_color if stone == 0 else color_set.p2_color
-        outline = color_set.p1_outline if stone == 0 else color_set.p2_outline
+        color = color_set.p1_color if stone == 1 else color_set.p2_color
+        outline = color_set.p1_outline if stone == 1 else color_set.p2_outline
         board_g.add(
             dwg.circle(
                 center=(stone_x, stone_y),
