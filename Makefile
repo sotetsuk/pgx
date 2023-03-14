@@ -11,7 +11,6 @@ install-dev:
 		brax \
 		argdcls \
 		tqdm \
-		tenhou_wall_reproducer \
 		shanten_tools \
 
 install-fmt:
