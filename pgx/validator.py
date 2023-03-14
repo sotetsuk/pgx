@@ -43,7 +43,9 @@ def validate(env: pgx.Env, num: int = 100):
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
             state = step(state, action)
-            assert state.steps == curr_steps + 1, f"{state.steps}, {curr_steps}"
+            assert (
+                state.steps == curr_steps + 1
+            ), f"{state.steps}, {curr_steps}"
             curr_steps += 1
 
             _validate_state(state)

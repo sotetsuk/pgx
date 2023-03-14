@@ -92,7 +92,7 @@ def step(state: State, action: jnp.ndarray) -> State:
         lambda: jnp.float32([-1, -1]).at[state.curr_player].set(1),
         lambda: jnp.zeros(2, jnp.float32),
     )
-    return state.replace(    # type: ignore
+    return state.replace(  # type: ignore
         curr_player=(state.curr_player + 1) % 2,
         legal_action_mask=state.board < 0,
         reward=reward,
