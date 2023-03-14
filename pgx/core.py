@@ -203,5 +203,7 @@ def make(env_id: EnvId):
 
         return MinAtarAsterix()
     else:
-        available_envs = '\n'.join(get_args(EnvId))
-        raise ValueError(f"Wrong env_id is passed. Available ids are: \n{available_envs}")
+        available_envs = "\n".join(get_args(EnvId))
+        raise ValueError(
+            f"Wrong env_id is passed. Available ids are: \n{available_envs}"
+        )
