@@ -202,8 +202,6 @@ def make(env_id: EnvId):
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix()
-    elif env_id == "minatar/breakout":
-        ...
     else:
         available_envs = "\n".join(get_args(EnvId))
         raise ValueError(
