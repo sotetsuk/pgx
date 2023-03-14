@@ -1,4 +1,4 @@
-from pgx.core import EnvId, State, Env
+from pgx.core import Env, EnvId, State
 
 __all__ = ["State", "EnvId", "Env"]
 

@@ -112,7 +112,11 @@ class Env(abc.ABC):
         # Auto reset
         state = jax.lax.cond(
             self.auto_reset & (state.terminated | state.truncated),
-            lambda: self.init(state._rng_key).replace(terminated=state.terminated, truncated=state.truncated, reward=state.reward),  # type: ignore
+            lambda: self.init(state._rng_key).replace(  # type: ignore
+                terminated=state.terminated,
+                truncated=state.truncated,
+                reward=state.reward,
+            ),
             lambda: state,
         )
 

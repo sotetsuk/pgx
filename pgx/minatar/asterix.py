@@ -83,9 +83,7 @@ class MinAtarAsterix(pgx.Env):
         )
         return state.replace(rng=rng)  # type: ignore
 
-    def observe(
-        self, state: pgx.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _to_obs(state)
 

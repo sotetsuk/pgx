@@ -56,9 +56,7 @@ class Hex(pgx.Env):
         assert isinstance(state, State)
         return partial(step, size=self.size)(state, action)
 
-    def observe(
-        self, state: pgx.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)
 
