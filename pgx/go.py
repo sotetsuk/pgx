@@ -4,7 +4,7 @@ from typing import Tuple
 import jax
 from jax import numpy as jnp
 
-import pgx.core as core
+import pgx
 from pgx.flax.struct import dataclass
 
 BLACK = 1
@@ -22,7 +22,7 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(core.State):
+class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -61,7 +61,7 @@ class State(core.State):
     black_player: jnp.ndarray = jnp.int8(0)
 
 
-class Go(core.Env):
+class Go(pgx.Env):
     def __init__(
         self,
         *,
@@ -81,12 +81,12 @@ class Go(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(init, size=self.size, komi=self.komi)(key=key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return partial(step, size=self.size)(state, action)
 
     def observe(
-        self, state: core.State, player_id: jnp.ndarray
+        self, state: pgx.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(
