@@ -183,7 +183,7 @@ def _step_det_at_non_terminal(
         state.entities,
         state.spawn_timer,
     )
-    state = state.replace(entities=entities, spawn_timer=spawn_timer)
+    state = state.replace(entities=entities, spawn_timer=spawn_timer)  # type: ignore
 
     # Resolve player action
     player_x, player_y = jax.lax.switch(
@@ -197,7 +197,7 @@ def _step_det_at_non_terminal(
             lambda: (state.player_x, state.player_y),  # 5
         ],
     )
-    state = state.replace(player_x=player_x, player_y=player_y)
+    state = state.replace(player_x=player_x, player_y=player_y)  # type: ignore
 
     # Update entities
     entities, player_x, player_y, r, terminal = jax.lax.fori_loop(
@@ -210,7 +210,7 @@ def _step_det_at_non_terminal(
         ),
         (state.entities, state.player_x, state.player_y, r, state.terminal),
     )
-    state=state.replace(entities=entities,player_x=player_x,player_y=player_y,terminal=terminal)
+    state=state.replace(entities=entities,player_x=player_x,player_y=player_y,terminal=terminal)  # type: ignore
 
     entities, r, terminal = jax.lax.cond(
         state.move_timer == 0,
@@ -219,14 +219,14 @@ def _step_det_at_non_terminal(
         ),
         lambda: (state.entities, r, state.terminal),
     )
-    state=state.replace(entities=entities,terminal=terminal)
+    state=state.replace(entities=entities,terminal=terminal)  # type: ignore
     move_timer = jax.lax.cond(
         state.move_timer == 0, lambda: state.move_speed, lambda: state.move_timer
     )
-    state=state.replace(move_timer=move_timer)
+    state=state.replace(move_timer=move_timer)  # type: ignore
 
     # Update various timers
-    state=state.replace(move_timer=state.move_timer-1, spawn_timer=state.spawn_timer-1)
+    state=state.replace(move_timer=state.move_timer-1, spawn_timer=state.spawn_timer-1)  # type: ignore
 
     # Ramp difficulty if interval has elapsed
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
@@ -234,9 +234,9 @@ def _step_det_at_non_terminal(
         lambda: _update_ramp(state.spawn_speed, state.move_speed, state.ramp_timer, state.ramp_index),
         lambda: (state.spawn_speed, state.move_speed, state.ramp_timer, state.ramp_index),
     )
-    state=state.replace(spawn_speed=spawn_speed, move_speed=move_speed, ramp_timer=ramp_timer, ramp_index=ramp_index)
+    state=state.replace(spawn_speed=spawn_speed, move_speed=move_speed, ramp_timer=ramp_timer, ramp_index=ramp_index)  # type: ignore
 
-    next_state = state.replace(
+    next_state = state.replace(  # type: ignore
         reward=r[jnp.newaxis],  # 1-d array
         last_action=action
     )  # type: ignore
