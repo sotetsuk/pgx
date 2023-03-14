@@ -38,8 +38,7 @@ class State:
 
 
 class Env(abc.ABC):
-
-    def __init__(self, * , auto_reset=False):
+    def __init__(self, *, auto_reset=False):
         self.auto_reset = auto_reset
 
     def init(self, key: jax.random.KeyArray) -> State:
@@ -83,7 +82,7 @@ class Env(abc.ABC):
         state = jax.lax.cond(
             self.auto_reset & state.terminated,
             lambda: self.init(state._rng_key).replace(terminated=state.terminated, reward=state.reward),  # type: ignore
-            lambda: state
+            lambda: state,
         )
 
         observation = self.observe(state, state.curr_player)
