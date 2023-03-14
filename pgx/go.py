@@ -61,7 +61,12 @@ class State(core.State):
 
 class Go(core.Env):
     def __init__(
-        self, *, auto_reset=False, size: int = 19, komi: float = 7.5, history_length: int = 8
+        self,
+        *,
+        auto_reset=False,
+        size: int = 19,
+        komi: float = 7.5,
+        history_length: int = 8
     ):
         super().__init__(auto_reset=auto_reset)
         self.size = size

@@ -35,9 +35,7 @@ class State(core.State):
 
 
 class Hex(core.Env):
-
-
-    def __init__(self,  *, auto_reset=False, size: int = 11):
+    def __init__(self, *, auto_reset=False, size: int = 11):
         super().__init__(auto_reset=auto_reset)
         self.size = size
 
