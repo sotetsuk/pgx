@@ -59,10 +59,11 @@ class State(core.State):
 
 
 class Go(core.Env):
-    def __init__(self, size: int = 19, komi: float = 7.5):
+    def __init__(self, size: int = 19, komi: float = 7.5, history_length : int = 8):
         super().__init__()
         self.size = size
         self.komi = komi
+        self.history_length = history_length
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(init, size=self.size, komi=self.komi)(key=key)
@@ -75,7 +76,9 @@ class Go(core.Env):
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return partial(observe,
+                       size=self.size,
+                       history_length=self.history_length)(state=state, player_id=player_id)
 
     @property
     def num_players(self) -> int:
@@ -86,62 +89,35 @@ class Go(core.Env):
         return -1.0, 1.0
 
 
-def observe(state: State, player_id):
-    return _get_alphazero_features(state, player_id)
+def observe(state: State, player_id, size, history_length):
+    """Return AlphaZero [Silever+18] feature
 
+    obs = (size, size, history_length * 2 + 1)
+    e.g., (19, 19, 17) if size=19 and history_length=8 (used in AlphaZero)
 
-def _get_alphazero_features(state: State, player_id):
-    """
-    17 x (size x size)
-    0: player_idの石
-    1: player_idの石(1手前)
+    obs[:, :, 0]: stones of `player_id`          @ current board
+    obs[:, :, 1]: stones of `player_id` opponent @ current board
+    obs[:, :, 2]: stones of `player_id`          @ 1-step before
+    obs[:, :, 3]: stones of `player_id` opponent @ 1-step before
     ...
-    7: player_idの石(7手前)
-    8: player_idの相手の石
-    9: player_idの相手の石(1手前)
-    ...
-    15: player_idの石(7手前)
-    16: player_idの色(黒:1, 白:0)
-
-    e.g.
-    size=5, player_id=0, white
-    [[0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]]
+    obs[:, :, -1]: color
     """
-    num_player_log = 8
-    my_color = jax.lax.cond(
+    curr_player_color = _my_color(state)  # -1 or 1
+    my_color, opp_color = jax.lax.cond(
         player_id == state.curr_player,
-        lambda: state.turn % 2,
-        lambda: (state.turn + 1) % 2,
+        lambda: (curr_player_color, -1 * curr_player_color),
+        lambda: (-1 * curr_player_color, curr_player_color),
     )
 
     @jax.vmap
     def _make_log(i):
-        return state.game_log[i % num_player_log] == (
-            (my_color + i // num_player_log) % 2
-        )
+        color = jnp.int8([1, -1])[i % 2] * my_color
+        return state.game_log[i // 2] == color
 
-    log = _make_log(jnp.arange(num_player_log * 2))
-    color = jnp.full_like(
-        state.game_log[0], (my_color + 1) % 2
-    )  # AlphaZeroでは黒だと1
+    log = _make_log(jnp.arange(history_length * 2))
+    color = jnp.full_like(log[0], (my_color + 1) % 2)  # black=1, white=0
 
-    return jnp.vstack([log, color])
+    return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
 def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:

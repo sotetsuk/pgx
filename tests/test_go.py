@@ -1,8 +1,9 @@
+from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
+from pgx.go import init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -66,11 +67,11 @@ def test_step():
 
     expected_board: jnp.ndarray = jnp.array(
         [
-            [2, 1, 1, 0, 2],
-            [1, 2, 1, 0, 2],
-            [2, 1, 0, 2, 0],
-            [1, 1, 0, 2, 0],
-            [1, 1, 1, 0, 2],
+            [ 0, -1, -1, 1, 0],
+            [-1,  0, -1, 1, 0],
+            [ 0, -1,  1, 0, 1],
+            [-1, -1,  1, 0, 1],
+            [-1, -1, -1, 1, 0],
         ]
     )  # type:ignore
     """
@@ -81,7 +82,7 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (get_board(state) == expected_board.ravel()).all()
+    assert (jnp.clip(state.ren_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
     # 同点なのでコミの分 黒 == player_1 の負け
@@ -312,7 +313,9 @@ def test_observe():
          [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
     )
     # fmt: on
-    assert (jax.jit(observe)(state, 0) == expected_obs_p0).all()
+    obs = jax.jit(partial(observe, size=5, history_length=8))(state, 0)
+    assert obs.shape == (5, 5, 17)
+    assert (obs == expected_obs_p0).all()
 
     # fmt: off
     expected_obs_p1 = jnp.array(
@@ -335,7 +338,9 @@ def test_observe():
          [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
     )
     # fmt: on
-    assert (jax.jit(observe)(state, 1) == expected_obs_p1).all()
+    obs = jax.jit(partial(observe, size=5, history_length=8))(state, 1)
+    assert obs.shape == (5, 5, 17)
+    assert (obs == expected_obs_p1).all()
 
 
 def test_legal_action():
