@@ -53,7 +53,7 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
         # Exception in Asterix
         if key == "entities":
             _val = [[INF if x is None else x[j] for j in range(4)] for i, x in enumerate(val)]
-            val = jnp.array(_val, dtype=jnp.int8)
+            val = jnp.array(_val, dtype=jnp.int32)
             d[key] = val
             continue
 
@@ -63,7 +63,7 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
             M = 3 if key.endswith("bullets") else 4
             if key == "e_subs":
                 M = 5
-            v = - jnp.ones((N, M), dtype=jnp.int8)
+            v = - jnp.ones((N, M), dtype=jnp.int32)
             for i, x in enumerate(val):
                 v = v.at[i, :].set(jnp.array(x))
             d[key] = v
@@ -86,14 +86,14 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
             ):
                 val = jnp.array(val, dtype=jnp.bool_)
             else:
-                val = jnp.array(val, dtype=jnp.int8)
+                val = jnp.array(val, dtype=jnp.int32)
             d[key] = val
             continue
 
         if key in ["terminal", "sub_or", "surface"]:
             val = jnp.array(val, dtype=jnp.bool_)
         else:
-            val = jnp.array(val, dtype=jnp.int8)
+            val = jnp.array(val, dtype=jnp.int32)
         d[key] = val
 
     s = state_cls(**d)

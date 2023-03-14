@@ -30,7 +30,7 @@ _step_det = jax.jit(asterix._step_det)
 _to_obs = jax.jit(asterix._to_obs)
 
 def test_spawn_entity():
-    entities = jnp.ones((8, 4), dtype=jnp.int8) * INF
+    entities = jnp.ones((8, 4), dtype=jnp.int32) * INF
     entities = entities.at[:, :].set(
         _spawn_entity(entities, True, True, 1)
     )

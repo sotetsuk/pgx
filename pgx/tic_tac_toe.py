@@ -85,24 +85,20 @@ def init(rng: jax.random.KeyArray) -> State:
 
 
 def step(state: State, action: jnp.ndarray) -> State:
-    board = state.board.at[action].set(state.turn)
-    won = _win_check(board, state.turn)
+    state = state.replace(board=state.board.at[action].set(state.turn))  # type: ignore
+    won = _win_check(state.board, state.turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.curr_player].set(1),
         lambda: jnp.zeros(2, jnp.float32),
     )
-    terminated = won | jnp.all(board != -1)
-    curr_player = (state.curr_player + 1) % 2
-    legal_action_mask = board < 0
-    return State(
-        curr_player=curr_player,
-        legal_action_mask=legal_action_mask,
+    return state.replace(    # type: ignore
+        curr_player=(state.curr_player + 1) % 2,
+        legal_action_mask=state.board < 0,
         reward=reward,
-        terminated=terminated,
+        terminated=won | jnp.all(state.board != -1),
         turn=(state.turn + 1) % 2,
-        board=board,
-    )  # type: ignore
+    )
 
 
 def _win_check(board, turn) -> jnp.ndarray:
