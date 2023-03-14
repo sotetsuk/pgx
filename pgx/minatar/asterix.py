@@ -31,12 +31,14 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = ZERO
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(
         1, dtype=jnp.float32
     )  # 1d array for the same API as other multi-agent games
     terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
@@ -60,10 +62,13 @@ class MinAtarAsterix(core.Env):
         self,
         *,
         auto_reset=False,
+        max_truncation_steps: int = -1,
         minatar_version: Literal["v0", "v1"] = "v1",
         sticky_action_prob: float = 0.1,
     ):
-        super().__init__(auto_reset=auto_reset)
+        super().__init__(
+            auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
+        )
         self.minatar_version: Literal["v0", "v1"] = minatar_version
         self.sticky_action_prob: float = sticky_action_prob
 

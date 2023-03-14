@@ -27,10 +27,12 @@ IDX = jnp.int8(
 
 @dataclass
 class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
@@ -42,8 +44,15 @@ class State(core.State):
 
 
 class TicTacToe(core.Env):
-    def __init__(self, *, auto_reset: bool = False):
-        super().__init__(auto_reset=auto_reset)
+    def __init__(
+        self,
+        *,
+        auto_reset: bool = False,
+        max_truncation_steps: int = -1,
+    ):
+        super().__init__(
+            auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
+        )
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)

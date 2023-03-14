@@ -13,11 +13,13 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
     size: jnp.ndarray = jnp.int8(11)
     curr_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(11 * 11, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(11 * 11, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # 0(black), 1(white)
@@ -35,8 +37,16 @@ class State(core.State):
 
 
 class Hex(core.Env):
-    def __init__(self, *, auto_reset: bool = False, size: int = 11):
-        super().__init__(auto_reset=auto_reset)
+    def __init__(
+        self,
+        *,
+        auto_reset: bool = False,
+        max_truncation_steps: int = -1,
+        size: int = 11
+    ):
+        super().__init__(
+            auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
+        )
         self.size = size
 
     def _init(self, key: jax.random.KeyArray) -> State:

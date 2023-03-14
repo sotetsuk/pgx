@@ -23,9 +23,11 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
@@ -64,11 +66,14 @@ class Go(core.Env):
         self,
         *,
         auto_reset: bool = False,
+        max_truncation_steps: int = -1,
         size: int = 19,
         komi: float = 7.5,
         history_length: int = 8
     ):
-        super().__init__(auto_reset=auto_reset)
+        super().__init__(
+            auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
+        )
         self.size = size
         self.komi = komi
         self.history_length = history_length

@@ -8,6 +8,8 @@ import numpy as np
 import pgx.core as core
 from pgx.flax.struct import dataclass
 
+FALSE = jnp.bool_(False)
+
 # カードと数字の対応
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
 # それぞれのsuitにおいて以下の順で数字が並ぶ
@@ -16,6 +18,7 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 @dataclass
 class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
     # turn 現在のターン数
     turn: jnp.ndarray = jnp.int16(0)
     # curr_player 現在のプレイヤーid
@@ -27,7 +30,8 @@ class State(core.State):
     # シャッフルされたプレイヤーの並び
     shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # 終端状態
-    terminated: jnp.ndarray = jnp.bool_(False)
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # hand 各プレイヤーの手札
     # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札

@@ -21,10 +21,12 @@ EnvId = Literal[
 
 @dataclass
 class State:
+    steps: jnp.ndarray
     curr_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
+    truncated: jnp.ndarray
     legal_action_mask: jnp.ndarray
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
@@ -40,8 +42,11 @@ class State:
 
 
 class Env(abc.ABC):
-    def __init__(self, *, auto_reset: bool = False):
-        self.auto_reset = auto_reset
+    def __init__(
+        self, *, auto_reset: bool = False, max_truncation_steps: int = -1
+    ):
+        self.auto_reset = jnp.bool_(auto_reset)
+        self.max_truncation_steps = jnp.int32(max_truncation_steps)
 
     def init(self, key: jax.random.KeyArray) -> State:
         key, subkey = jax.random.split(key)
@@ -56,17 +61,23 @@ class Env(abc.ABC):
 
         # Auto reset
         state = jax.lax.cond(
-            self.auto_reset,
+            self.auto_reset & (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
-                terminated=FALSE, reward=jnp.zeros_like(state.reward)
+                steps=jnp.int32(0),
+                terminated=FALSE,
+                truncated=FALSE,
+                reward=jnp.zeros_like(state.reward),
             ),
             lambda: state,
         )
 
+        # increment step count
+        state = state.replace(steps=state.steps + 1)  # type: ignore
+
         # If the state is already terminated, environment does not take usual step, but
         # return the same state with zero-rewards for all players
         state = jax.lax.cond(
-            state.terminated,
+            (state.terminated | state.truncated),
             lambda: self._step_if_terminated(state),
             lambda: self._step(state, action),
         )
@@ -78,11 +89,20 @@ class Env(abc.ABC):
             lambda: state,
         )
 
+        # Time limit
+        state = jax.lax.cond(
+            ~state.terminated
+            & (0 <= self.max_truncation_steps)
+            & (self.max_truncation_steps <= state.steps),
+            lambda: state.replace(truncated=TRUE),  # type: ignore
+            lambda: state,
+        )
+
         # All legal_action_mask elements are **TRUE** at terminal state
         # This is to avoid zero-division error when normalizing action probability
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
-            state.terminated,
+            (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
                 legal_action_mask=jnp.ones_like(state.legal_action_mask)
             ),
@@ -91,8 +111,8 @@ class Env(abc.ABC):
 
         # Auto reset
         state = jax.lax.cond(
-            self.auto_reset & state.terminated,
-            lambda: self.init(state._rng_key).replace(terminated=state.terminated, reward=state.reward),  # type: ignore
+            self.auto_reset & (state.terminated | state.truncated),
+            lambda: self.init(state._rng_key).replace(terminated=state.terminated, truncated=state.truncated, reward=state.reward),  # type: ignore
             lambda: state,
         )
 

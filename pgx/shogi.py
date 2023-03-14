@@ -117,9 +117,11 @@ QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 @dataclass
 class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
@@ -149,8 +151,15 @@ class State(core.State):
 
 
 class Shogi(core.Env):
-    def __init__(self, *, auto_reset: bool = False):
-        super().__init__(auto_reset=auto_reset)
+    def __init__(
+        self,
+        *,
+        auto_reset: bool = False,
+        max_truncation_steps: int = -1,
+    ):
+        super().__init__(
+            auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
+        )
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
