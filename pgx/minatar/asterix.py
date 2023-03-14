@@ -88,6 +88,10 @@ class MinAtarAsterix(pgx.Env):
         return _to_obs(state)
 
     @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
     def num_players(self):
         return 1
 

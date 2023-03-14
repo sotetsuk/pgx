@@ -66,6 +66,10 @@ class TicTacToe(pgx.Env):
         return observe(state, player_id)
 
     @property
+    def version(self) -> str:
+        return "beta"
+
+    @property
     def num_players(self) -> int:
         return 2
 
