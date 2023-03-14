@@ -129,6 +129,10 @@ class Env(abc.ABC):
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
 
+    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        obs = self._observe(state, player_id)
+        return jax.lax.stop_gradient(obs)
+
     @abc.abstractmethod
     def _init(self, key: jax.random.KeyArray) -> State:
         """Implement game-specific init function here."""
@@ -140,7 +144,7 @@ class Env(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         """Implement game-specific observe function here."""
         ...
 
@@ -164,7 +168,7 @@ class Env(abc.ABC):
     def observation_shape(self) -> Tuple[int, ...]:
         """Return the matrix shape of observation"""
         state = self.init(jax.random.PRNGKey(0))
-        obs = self.observe(state, state.curr_player)
+        obs = self._observe(state, state.curr_player)
         return obs.shape
 
     @property

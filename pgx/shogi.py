@@ -168,7 +168,7 @@ class Shogi(pgx.Env):
         assert isinstance(state, State)
         return step(state, action)
 
-    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)
 

@@ -71,7 +71,7 @@ if __name__ == "__main__":
         while not done:
             legal_actions = state.legal_actions()
             selected = jnp.array(
-                [act(legal_actions[i], state.observe(i)) for i in range(4)]
+                [act(legal_actions[i], state._observe(i)) for i in range(4)]
             )
             state, reward, done = step(state, selected)
 
