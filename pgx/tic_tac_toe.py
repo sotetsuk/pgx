@@ -110,7 +110,8 @@ def _win_check(board, turn) -> jnp.ndarray:
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     empty_board = state.board == -1
     my_board, opp_obard = jax.lax.cond(
-        state.current_player == player_id,  # flip board if player_id is opposite
+        state.current_player
+        == player_id,  # flip board if player_id is opposite
         lambda: (state.turn == state.board, (1 - state.turn) == state.board),
         lambda: ((1 - state.turn) == state.board, state.turn == state.board),
     )

@@ -107,5 +107,5 @@ def _validate_legal_actions(state: pgx.State):
 
 def _validate_current_player(state: pgx.State):
     assert (
-            state.current_player >= 0
+        state.current_player >= 0
     ), f"current_player must be positive before terminated but got : {state.current_player}"

@@ -410,7 +410,8 @@ def _step(state: State, action: Action) -> State:
     # flip state
     state = _flip(state)
     state = state.replace(  # type: ignore
-        current_player=(state.current_player + 1) % 2, turn=(state.turn + 1) % 2
+        current_player=(state.current_player + 1) % 2,
+        turn=(state.turn + 1) % 2,
     )
     legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     legal_action_mask = _to_direction(
