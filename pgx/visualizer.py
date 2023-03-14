@@ -10,6 +10,7 @@ from .dwg.bridge_bidding import BridgeBiddingState, _make_bridge_dwg
 from .dwg.chess import ChessState, _make_chess_dwg
 from .dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from .dwg.go import GoState, _make_go_dwg
+from .dwg.hex import HexState, _make_hex_dwg
 from .dwg.othello import OthelloState, _make_othello_dwg
 from .dwg.shogi import ShogiState, _make_shogi_dwg
 from .dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
@@ -395,6 +396,34 @@ class Visualizer:
                     "white",
                     "black",
                     "",
+                )
+        elif isinstance(_state, HexState):
+            self.config["GRID_SIZE"] = 30
+            self.config["BOARD_WIDTH"] = int(_state.size * 1.3)
+            self.config["BOARD_HEIGHT"] = int(_state.size * 0.8)
+            self._make_dwg_group = _make_hex_dwg
+            if (
+                self.config["COLOR_MODE"] is None
+                and self.config["COLOR_MODE"] == "dark"
+            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "white",
+                    "white",
+                    "black",
+                    "#1e1e1e",
+                    "white",
+                    "dimgray",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "white",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "lightgray",
                 )
         elif isinstance(_state, OthelloState):
             self.config["GRID_SIZE"] = 30

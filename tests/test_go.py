@@ -1,8 +1,9 @@
+from functools import partial
 import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import get_board, init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
+from pgx.go import init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -39,6 +40,7 @@ def test_step():
     """
     key = jax.random.PRNGKey(0)
     state = j_init(key=key, size=BOARD_SIZE)
+    assert state.curr_player == 1
 
     state = j_step(state=state, action=12, size=BOARD_SIZE)  # BLACK
     state = j_step(state=state, action=11, size=BOARD_SIZE)  # WHITE
@@ -65,11 +67,11 @@ def test_step():
 
     expected_board: jnp.ndarray = jnp.array(
         [
-            [2, 1, 1, 0, 2],
-            [1, 2, 1, 0, 2],
-            [2, 1, 0, 2, 0],
-            [1, 1, 0, 2, 0],
-            [1, 1, 1, 0, 2],
+            [ 0, -1, -1, 1, 0],
+            [-1,  0, -1, 1, 0],
+            [ 0, -1,  1, 0, 1],
+            [-1, -1,  1, 0, 1],
+            [-1, -1, -1, 1, 0],
         ]
     )  # type:ignore
     """
@@ -80,11 +82,11 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (get_board(state) == expected_board.ravel()).all()
+    assert (jnp.clip(state.ren_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
-    # 同点なのでコミの分黒負け
-    assert (state.reward == jnp.array([-1, 1])).all()
+    # 同点なのでコミの分 黒 == player_1 の負け
+    assert (state.reward == jnp.array([1, -1])).all()
 
 
 def test_kou():
@@ -134,6 +136,141 @@ def test_kou():
     assert not state2.terminated
     assert state2.kou == -1
 
+    # see #468
+    state: State = env.init(key=key)
+    state = env.step(state, action=2)
+    state = env.step(state, action=9)
+    state = env.step(state, action=18)
+    state = env.step(state, action=5)
+    state = env.step(state, action=11)
+    state = env.step(state, action=22)
+    state = env.step(state, action=8)
+    state = env.step(state, action=14)
+    state = env.step(state, action=25)
+    state = env.step(state, action=1)
+    state = env.step(state, action=24)
+    state = env.step(state, action=23)
+    state = env.step(state, action=7)
+    state = env.step(state, action=4)
+    state = env.step(state, action=16)
+    state = env.step(state, action=15)
+    state = env.step(state, action=19)
+    state = env.step(state, action=6)
+    state = env.step(state, action=20)
+    state = env.step(state, action=25)
+    state = env.step(state, action=12)
+    state = env.step(state, action=3)
+    state = env.step(state, action=21)
+    state = env.step(state, action=10)
+    state = env.step(state, action=17)
+    state = env.step(state, action=25)
+    state = env.step(state, action=13)
+    state = env.step(state, action=4)
+    state = env.step(state, action=14)
+    state = env.step(state, action=23)
+    state = env.step(state, action=0)
+    assert state.kou == -1
+
+    # see #468
+    state: State = env.init(key=key)
+    state = env.step(state, action=1)
+    state = env.step(state, action=16)
+    state = env.step(state, action=9)
+    state = env.step(state, action=11)
+    state = env.step(state, action=14)
+    state = env.step(state, action=6)
+    state = env.step(state, action=24)
+    state = env.step(state, action=4)
+    state = env.step(state, action=25)
+    state = env.step(state, action=17)
+    state = env.step(state, action=21)
+    state = env.step(state, action=18)
+    state = env.step(state, action=13)
+    state = env.step(state, action=23)
+    state = env.step(state, action=8)
+    state = env.step(state, action=0)
+    state = env.step(state, action=5)
+    state = env.step(state, action=25)
+    state = env.step(state, action=15)
+    state = env.step(state, action=19)
+    state = env.step(state, action=22)
+    state = env.step(state, action=25)
+    state = env.step(state, action=12)
+    state = env.step(state, action=10)
+    state = env.step(state, action=2)
+    state = env.step(state, action=25)
+    state = env.step(state, action=3)
+    state = env.step(state, action=20)
+    assert state.kou == -1
+
+    # Ko after pass
+    state: State = env.init(key=key)
+    state = env.step(state, action=17)
+    state = env.step(state, action=25)
+    state = env.step(state, action=20)
+    state = env.step(state, action=24)
+    state = env.step(state, action=6)
+    state = env.step(state, action=13)
+    state = env.step(state, action=12)
+    state = env.step(state, action=18)
+    state = env.step(state, action=22)
+    state = env.step(state, action=5)
+    state = env.step(state, action=8)
+    state = env.step(state, action=10)
+    state = env.step(state, action=11)
+    state = env.step(state, action=14)
+    state = env.step(state, action=2)
+    state = env.step(state, action=9)
+    state = env.step(state, action=1)
+    state = env.step(state, action=23)
+    state = env.step(state, action=16)
+    state = env.step(state, action=4)
+    state = env.step(state, action=0)
+    state = env.step(state, action=19)
+    state = env.step(state, action=15)
+    state = env.step(state, action=25)
+    state = env.step(state, action=21)
+    state = env.step(state, action=25)
+    state = env.step(state, action=5)
+    state = env.step(state, action=25)
+    state = env.step(state, action=3)
+    state = env.step(state, action=14)
+    state = env.step(state, action=4)
+    state = env.step(state, action=19)
+    state = env.step(state, action=7)
+    state = env.step(state, action=23)
+    state = env.step(state, action=18)
+    state = env.step(state, action=13)
+    state = env.step(state, action=24)
+    state = env.step(state, action=25)  # pass
+    assert state.kou == -1
+
+    # see #479
+    actions = [107, 11, 56, 41, 300, 19, 228, 231, 344, 257, 35, 32, 57, 276, 0, 277, 164, 15, 187, 179, 357, 255, 150, 211, 256,
+     190, 297, 303, 358, 189, 322, 3, 129, 64, 13, 336, 22, 286, 264, 192, 55, 360, 23, 31, 113, 119, 195, 98, 208, 294,
+     240, 241, 149, 280, 118, 296, 245, 99, 335, 226, 29, 287, 84, 248, 225, 351, 202, 20, 137, 274, 232, 85, 36, 141,
+     108, 95, 282, 93, 337, 216, 58, 131, 283, 10, 106, 243, 318, 220, 136, 34, 127, 293, 80, 165, 125, 83, 114, 105,
+     30, 61, 147, 71, 109, 173, 87, 233, 76, 361, 66, 115, 212, 200, 346, 197, 54, 326, 298, 167, 347, 4, 354, 16, 140,
+     144, 68, 178, 24, 204, 285, 203, 316, 307, 146, 37, 201, 268, 176, 133, 25, 227, 310, 291, 132, 352, 123, 184, 343,
+     299, 90, 267, 334, 134, 7, 110, 321, 182, 281, 92, 222, 96, 329, 70, 340, 207, 323, 138, 308, 100, 49, 78, 5, 126,
+     317, 17, 349, 160, 261, 266, 306, 221, 355, 327, 324, 284, 236, 60, 359, 174, 252, 46, 260, 114, 163, 235, 250,
+     206, 239, 2, 166, 328, 128, 104, 341, 224, 74, 198, 304, 295, 101, 88, 360, 325, 199, 38, 263, 270, 151, 331, 230,
+     33, 152, 48, 47, 28, 122, 161, 273, 103, 143, 238, 121, 52, 333, 244, 218, 265, 361, 77, 275, 185, 172, 350, 194,
+     59, 53, 21, 272, 319, 320, 158, 251, 253, 135, 27, 196, 180, 188, 345, 254, 130, 42, 156, 259, 332, 361, 18, 82,
+     86, 191, 249, 51, 45, 348, 217, 63, 302, 292, 155, 313, 205, 6, 237, 279, 229, 258, 234, 262, 40, 73, 142, 219,
+     330, 111, 186, 153, 311, 336, 44, 12, 62, 215, 39, 299, 9, 269, 275, 157, 225, 361, 177, 361, 162, 81, 76, 183,
+     168, 247, 309, 145, 210, 221, 65, 301, 1, 289, 120, 315, 353, 305, 67, 214, 79, 314, 290, 47, 181, 346, 175, 89,
+     312, 43, 231, 329, 102, 91, 208, 139, 236, 348, 66, 26, 8, 94, 169, 271, 339, 58, 69, 80, 349, 170, 23, 159, 347,
+     288, 154, 270, 6, 187, 22, 42, 148, 193, 346, 126, 116, 242, 124, 159, 14, 12, 144, 26, 24, 361, 223, 7, 361, 63,
+     117, 112, 5, 81, 118, 135, 82, 92, 140, 123, 97, 278, 47, 361, 137, 230, 220]
+    env = Go(size=19)
+    env.init = jax.jit(env.init)
+    env.step = jax.jit(env.step)
+    state = env.init(jax.random.PRNGKey(0))
+    for a in actions:
+        state = env.step(state, a)
+    assert state.kou == -1
+    assert state.legal_action_mask[231]
 
 def test_observe():
     key = jax.random.PRNGKey(0)
@@ -156,50 +293,27 @@ def test_observe():
     # + + + + +
     # + + + + +
     # fmt: off
-    expected_obs_p0 = jnp.array(
-        [[0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+    curr_board = jnp.int8(
+        [[ 0, -1,  0, -1, 1],
+         [-1,  1, -1,  0, 0],
+         [ 0,  0,  0,  0, 0],
+         [ 0,  0,  0,  0, 0],
+         [ 0,  0,  0,  0, 0]]
     )
     # fmt: on
-    assert (jax.jit(observe)(state, 0, False) == expected_obs_p0).all()
+    assert state.curr_player == 1
+    assert state.turn % 2 == 0  # black turn
+    obs = jax.jit(partial(observe, size=5, history_length=8))(state, 0)   # white
+    assert obs.shape == (5, 5, 17)
+    assert (obs[:, :, 0] == (curr_board == -1)).all()
+    assert (obs[:, :, 1] == (curr_board == 1)).all()
+    assert (obs[:, :, -1] == 0).all()
 
-    # fmt: off
-    expected_obs_p1 = jnp.array(
-        [[0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
-    )
-    # fmt: on
-    assert (jax.jit(observe)(state, 1, False) == expected_obs_p1).all()
+    obs = jax.jit(partial(observe, size=5, history_length=8))(state, 1)  # black
+    assert obs.shape == (5, 5, 17)
+    assert (obs[:, :, 0] == (curr_board == 1)).all()
+    assert (obs[:, :, 1] == (curr_board == -1)).all()
+    assert (obs[:, :, -1] == 1).all()
 
 
 def test_legal_action():
