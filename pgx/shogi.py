@@ -122,6 +122,7 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # --- Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする

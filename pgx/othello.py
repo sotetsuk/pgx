@@ -1,3 +1,4 @@
+import jax
 import jax.numpy as jnp
 
 import pgx.core as core
@@ -14,6 +15,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
     turn: jnp.ndarray = jnp.int8(0)
     # 8x8 board
