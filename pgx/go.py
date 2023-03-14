@@ -28,16 +28,16 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
-
-    # 横幅, マスの数ではない
-    size: jnp.ndarray = jnp.int32(19)  # type:ignore
+    # ---
+    size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int8
 
     # 連の代表点（一番小さいマス目）のマス目の座標
+    # NOTE: require at least 19 * 19 > int8, idx_squared_sum can be 361^2 > int16
     ren_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
 
     # 直近8回のログ
     game_log: jnp.ndarray = jnp.full(
-        (8, 19 * 19), 2, dtype=jnp.int32
+        (8, 19 * 19), 2, dtype=jnp.int8
     )  # type:ignore
 
     # 経過ターン, 0始まり
@@ -53,16 +53,22 @@ class State(core.State):
     kou: jnp.ndarray = jnp.int32(-1)  # type:ignore
 
     # コミ
-    komi: jnp.ndarray = jnp.float32(6.5)  # type:ignore
+    komi: jnp.ndarray = jnp.float32(7.5)  # type:ignore
+
+    black_player: jnp.ndarray = jnp.int8(0)
 
 
 class Go(core.Env):
-    def __init__(self, *, size: int = 19, auto_reset=False):
-        super().__init__(auto_reset=auto_reset)
+    def __init__(
+        self, size: int = 19, komi: float = 7.5, history_length: int = 8
+    ):
+        super().__init__()
         self.size = size
+        self.komi = komi
+        self.history_length = history_length
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return partial(init, size=self.size)(key=key)
+        return partial(init, size=self.size, komi=self.komi)(key=key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
@@ -72,7 +78,9 @@ class Go(core.Env):
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return partial(
+            observe, size=self.size, history_length=self.history_length
+        )(state=state, player_id=player_id)
 
     @property
     def num_players(self) -> int:
@@ -83,75 +91,71 @@ class Go(core.Env):
         return -1.0, 1.0
 
 
-def observe(state: State, player_id, observe_all=False):
-    return _get_alphazero_features(state, player_id, observe_all)
+def observe(state: State, player_id, size, history_length):
+    """Return AlphaGoZero [Silver+17] feature
 
+        obs = (size, size, history_length * 2 + 1)
+        e.g., (19, 19, 17) if size=19 and history_length=8 (used in AlphaZero)
 
-def _get_alphazero_features(state: State, player_id, observe_all):
+        obs[:, :, 0]: stones of `player_id`          @ current board
+        obs[:, :, 1]: stones of `player_id` opponent @ current board
+        obs[:, :, 2]: stones of `player_id`          @ 1-step before
+        obs[:, :, 3]: stones of `player_id` opponent @ 1-step before
+        ...
+        obs[:, :, -1]: color of `player_id`
+
+        NOTE: For the final dimension, there are two possible options:
+
+          - Use the color of current player to play
+          - Use the color of `player_id`
+
+        This ambiguity happens because `observe` function is available even if state.current_player != player_id.
+        In the AlphaGoZero paper, the final dimension C is explained as:
+
+          > The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black
+    is to play or 0 if white is to play.
+
+        however, it also describes as
+
+          > the colour feature C is necessary because the komi is not observable.
+
+        So, we use player_id's color to let the agent komi information.
+        As long as it's called when state.current_player == player_id, this doesn't matter.
     """
-    17 x (size x size)
-    0: player_idの石
-    1: player_idの石(1手前)
-    ...
-    7: player_idの石(7手前)
-    8: player_idの相手の石
-    9: player_idの相手の石(1手前)
-    ...
-    15: player_idの石(7手前)
-    16: player_idの色(黒:1, 白:0)
-
-    e.g.
-    size=5, player_id=0, white
-    [[0 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
-     [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]]
-    """
-    num_player_log = 8
-    my_color = jax.lax.cond(
+    curr_player_color = _my_color(state)  # -1 or 1
+    my_color, opp_color = jax.lax.cond(
         player_id == state.curr_player,
-        lambda: state.turn % 2,
-        lambda: (state.turn + 1) % 2,
+        lambda: (curr_player_color, -1 * curr_player_color),
+        lambda: (-1 * curr_player_color, curr_player_color),
     )
 
     @jax.vmap
     def _make_log(i):
-        return state.game_log[i % num_player_log] == (
-            (my_color + i // num_player_log) % 2
-        )
+        color = jnp.int8([1, -1])[i % 2] * my_color
+        return state.game_log[i // 2] == color
 
-    log = _make_log(jnp.arange(num_player_log * 2))
-    color = jnp.full_like(
-        state.game_log[0], (my_color + 1) % 2
-    )  # AlphaZeroでは黒だと1
+    log = _make_log(jnp.arange(history_length * 2))
+    color = jnp.full_like(log[0], my_color == 1)  # black=1, white=0
 
-    return jnp.vstack([log, color])
+    return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def init(key: jax.random.KeyArray, size: int) -> State:
+def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
+    black_player = jnp.int8(jax.random.bernoulli(key))
+    curr_player = black_player
     return State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-        game_log=jnp.full((8, size**2), 2, dtype=jnp.int32),
-        curr_player=jnp.int8(jax.random.bernoulli(key)),
+        game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
+        curr_player=curr_player,
+        komi=jnp.float32(komi),
+        black_player=black_player,
     )
 
 
 def step(state: State, action: int, size: int) -> State:
+    state = state.replace(kou=jnp.int32(-1))  # type: ignore
     # update state
     _state = _update_state_wo_legal_action(state, action, size)
 
@@ -165,7 +169,9 @@ def step(state: State, action: int, size: int) -> State:
 
     # update log
     new_log = jnp.roll(_state.game_log, size**2)
-    new_log = new_log.at[0].set(get_board(_state))
+    new_log = new_log.at[0].set(
+        jnp.clip(_state.ren_id_board, -1, 1).astype(jnp.int8)
+    )
     return _state.replace(game_log=new_log)  # type:ignore
 
 
@@ -203,7 +209,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
     my_color_ix = _my_color_ix(state)
     agehama_before = state.agehama[my_color_ix]
 
-    kou_occurred = _kou_occurred(state, xy)
+    kou_may_occur = _kou_may_occur(state, xy)
 
     # 周囲の連から敵石を除く
     adj_xy = _neighbour(xy, size)
@@ -219,7 +225,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
         0, 4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(s, ren_id[i], adj_xy[i]),
+            lambda: _remove_stones(s, ren_id[i], adj_xy[i], kou_may_occur),
             lambda: s,
         ),
         state,
@@ -234,7 +240,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
 
     # コウの確認
     state = jax.lax.cond(
-        kou_occurred & state.agehama[my_color_ix] - agehama_before == 1,
+        state.agehama[my_color_ix] - agehama_before == 1,
         lambda: state,
         lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
@@ -281,15 +287,21 @@ def _merge_ren(_state: State, _xy: int, _adj_xy: int):
     )
 
 
-def _remove_stones(_state: State, _rm_ren_id, _rm_stone_xy) -> State:
+def _remove_stones(
+    _state: State, _rm_ren_id, _rm_stone_xy, kou_may_occur
+) -> State:
     surrounded_stones = _state.ren_id_board == _rm_ren_id
     agehama = jnp.count_nonzero(surrounded_stones)
     ren_id_board = jnp.where(surrounded_stones, 0, _state.ren_id_board)
-
+    kou = jax.lax.cond(
+        kou_may_occur & (agehama == 1),
+        lambda: jnp.int32(_rm_stone_xy),
+        lambda: _state.kou,
+    )
     return _state.replace(  # type:ignore
         ren_id_board=ren_id_board,
         agehama=_state.agehama.at[_my_color_ix(_state)].add(agehama),
-        kou=jnp.int32(_rm_stone_xy),  # type:ignore
+        kou=kou,
     )
 
 
@@ -367,13 +379,6 @@ def _count(state: State, size):
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
 
-def get_board(state: State) -> jnp.ndarray:
-    board = jnp.ones_like(state.ren_id_board) * 2
-    board = jnp.where(state.ren_id_board > 0, 0, board)
-    board = jnp.where(state.ren_id_board < 0, 1, board)
-    return board  # type:ignore
-
-
 def show(state: State) -> None:
     print("===========")
     for xy in range(state.size * state.size):
@@ -410,7 +415,7 @@ def _opponent_color_ix(_state: State):
     return (_state.turn + 1) % 2
 
 
-def _kou_occurred(_state: State, xy: int) -> jnp.ndarray:
+def _kou_may_occur(_state: State, xy: int) -> jnp.ndarray:
     size = _state.size
     x = xy // size
     y = xy % size
@@ -437,13 +442,19 @@ def _count_point(state, size):
 
 def _get_reward(_state: State, _size: int) -> jnp.ndarray:
     score = _count_point(_state, _size)
-    r = jax.lax.cond(
+    reward_bw = jax.lax.cond(
         score[0] - _state.komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
         lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
+    black_player = _state.black_player
+    reward = jax.lax.cond(
+        black_player == 0,
+        lambda: reward_bw,
+        lambda: reward_bw[jnp.int8([1, 0])],
+    )
 
-    return r
+    return reward
 
 
 def _neighbour(xy, size):
