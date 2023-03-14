@@ -7,6 +7,7 @@ import jax.numpy as jnp
 from pgx.flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
+FALSE = jnp.bool_(False)
 
 
 EnvId = Literal[
@@ -52,6 +53,13 @@ class Env(abc.ABC):
     def step(self, state: State, action: jnp.ndarray) -> State:
         is_illegal = ~state.legal_action_mask[action]
         curr_player = state.curr_player
+
+        # Auto reset
+        state = jax.lax.cond(
+            self.auto_reset,
+            lambda: state.replace(terminated=FALSE, reward=jnp.zeros_like(state.reward)),
+            lambda: state
+        )
 
         # If the state is already terminated, environment does not take usual step, but
         # return the same state with zero-rewards for all players
