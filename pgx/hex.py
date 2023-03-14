@@ -19,6 +19,7 @@ class State(core.State):
     observation: jnp.ndarray = jnp.zeros(11 * 11, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(11 * 11, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # 0(black), 1(white)

@@ -38,6 +38,7 @@ class State(core.State):
         1, dtype=jnp.float32
     )  # 1d array for the same API as other multi-agent games
     terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
