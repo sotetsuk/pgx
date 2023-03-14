@@ -1,4 +1,4 @@
-from pgx.go import init, step
+from pgx.go import Go
 from functools import partial
 from pgx.utils import act_randomly
 from pgx.visualizer import Visualizer
@@ -8,8 +8,9 @@ v = Visualizer(color_mode="dark")
 
 N = 20
 
-init = jax.jit(jax.vmap(partial(init, size=5)))
-step = jax.jit(jax.vmap(partial(step, size=5)))
+env = Go(auto_reset=True, size=5)
+init = jax.jit(jax.vmap(env.init))
+step = jax.jit(jax.vmap(env.step))
 
 rng = jax.random.PRNGKey(0)
 rng, subkey = jax.random.split(rng)
@@ -29,7 +30,6 @@ for i in range(1000 + 100):
         v.save_svg(s, f"{i % 1000:03d}.svg")
     rng, subkey = jax.random.split(rng)
     a = act_randomly(subkey, s)
-    # print(a)
     s = step(s, a)
 et = time.time()
 print(et - st)
