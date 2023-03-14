@@ -70,13 +70,14 @@ class State(core.State):
     pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
+@jax.jit
 def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
     hand = jax.random.permutation(rng2, hand)
-    vul_NS = jax.random.randint(rng3, (1,), 0, 2)
-    vul_EW = jax.random.randint(rng4, (1,), 0, 2)
-    dealer = jax.random.randint(rng5, (1,), 0, 4)
+    vul_NS = jax.random.randint(rng3, (1,), 0, 2)[0]
+    vul_EW = jax.random.randint(rng4, (1,), 0, 2)[0]
+    dealer = jax.random.randint(rng5, (1,), 0, 4)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng6)
     curr_player = shuffled_players[dealer]
@@ -96,13 +97,14 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
+@jax.jit
 def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
     hand = _key_to_hand(key)
-    vul_NS = jax.random.randint(rng2, (1,), 0, 2)
-    vul_EW = jax.random.randint(rng3, (1,), 0, 2)
-    dealer = jax.random.randint(rng4, (1,), 0, 4)
+    vul_NS = jax.random.randint(rng2, (1,), 0, 2)[0]
+    vul_EW = jax.random.randint(rng3, (1,), 0, 2)[0]
+    dealer = jax.random.randint(rng4, (1,), 0, 4)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng5)
     curr_player = shuffled_players[dealer]
@@ -122,6 +124,7 @@ def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     return state
 
 
+@jax.jit
 def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     """Randomly arranges player IDs in a list in NESW order.
 
@@ -145,34 +148,39 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     # decide which team is on
     # Randomly determine NSteam and EWteam
     # Arrange in order of NESW
-    if jax.random.randint(rng4, (1,), 1, 2) == 1:
-        shuffled_players = jnp.array(
+    return jax.lax.cond(
+        jax.random.randint(rng4, (1,), 1, 2)[0] == 1,
+        lambda: jnp.array(
             [
                 team_a_players[0],
                 team_b_players[0],
                 team_a_players[1],
                 team_b_players[1],
             ]
-        )
-    else:
-        shuffled_players = jnp.array(
+        ),
+        lambda: jnp.array(
             [
                 team_b_players[0],
                 team_a_players[0],
                 team_b_players[1],
                 team_a_players[1],
             ]
-        )
-    return shuffled_players
+        ),
+    )
 
 
+@jax.jit
 def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
-    if player != -1:
-        return jnp.where(state.shuffled_players == player)[0]
-    else:
-        return jnp.full(1, -1, dtype=np.int8)
+    return jax.lax.cond(
+        player != -1,
+        lambda: jnp.int8(
+            jnp.argmax(state.shuffled_players == player)
+        ),  # playerと同じ要素のstate.shuffle_playersのindexを返す
+        lambda: jnp.int8(-1),
+    )
 
 
+@jax.jit
 def step(
     state: State,
     action: int,
@@ -182,31 +190,31 @@ def step(
     # fmt: off
     state = state.replace(bidding_history=state.bidding_history.at[state.turn].set(action))  # type: ignore
     # fmt: on
-    # 非合法手判断
-    if not state.legal_action_mask[action]:
-        return _illegal_step(state)
-    # pass
-    elif action == 35:
-        state = _state_pass(state)
-        # 終了判定
-        if _is_terminated(state):
-            return _terminated_step(state, hash_keys, hash_values)
-        else:
-            return _continue_step(state)
-    # double
-    elif action == 36:
-        state = _state_X(state)
-        return _continue_step(state)
-    # redouble
-    elif action == 37:
-        state = _state_XX(state)
-        return _continue_step(state)
-    # bid
-    else:
-        state = _state_bid(state, action)
-        return _continue_step(state)
+    return jax.lax.cond(
+        state.legal_action_mask[action] == 0,  # 非合法手判断
+        lambda: _illegal_step(state),
+        lambda: jax.lax.cond(
+            action >= 35,
+            lambda: jax.lax.switch(
+                action - 35,
+                [
+                    lambda: jax.lax.cond(
+                        _is_terminated(_state_pass(state)),
+                        lambda: _terminated_step(
+                            _state_pass(state), hash_keys, hash_values
+                        ),
+                        lambda: _continue_step(_state_pass(state)),
+                    ),
+                    lambda: _continue_step(_state_X(state)),
+                    lambda: _continue_step(_state_XX(state)),
+                ],
+            ),
+            lambda: _continue_step(_state_bid(state, action)),
+        ),
+    )
 
 
+@jax.jit
 def duplicate(
     init_state: State,
 ) -> State:
@@ -219,22 +227,24 @@ def duplicate(
     return duplicated_state
 
 
-# ゲームが非合法手検知で終了した場合
+@jax.jit
 def _illegal_step(
     state: State,
 ) -> State:
-    illegal_rewards = jnp.zeros(4)
+    """Return state when an illegal move is detected"""
+    illegal_rewards = jnp.zeros(4, dtype=jnp.int16)
     # fmt: off
     return state.replace(terminated=jnp.bool_(True), curr_player=jnp.int8(-1), reward=illegal_rewards)  # type: ignore
     # fmt: on
 
 
-# ゲームが正常に終了した場合
+@jax.jit
 def _terminated_step(
     state: State,
     hash_keys: jnp.ndarray,
     hash_values: jnp.ndarray,
 ) -> State:
+    """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
     curr_player = jnp.int8(-1)
     reward = _reward(state, hash_keys, hash_values)
@@ -243,12 +253,13 @@ def _terminated_step(
     # fmt: on
 
 
-# ゲームが継続する場合
+@jax.jit
 def _continue_step(
     state: State,
 ) -> State:
-    # 次ターンのプレイヤー、ターン数
+    """Return state when the game continues"""
     # fmt: off
+    # 次ターンのプレイヤー、ターン数
     state = state.replace(curr_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4], turn=state.turn + 1)  # type: ignore
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
@@ -256,17 +267,39 @@ def _continue_step(
     # fmt: on
 
 
-# 終了判定　ビッドされていない場合はパスが４回連続（パスアウト）、それ以外はパスが3回連続
+@jax.jit
 def _is_terminated(state: State) -> bool:
-    if (state.last_bid == -1 and state.pass_num == 4) or (
-        state.last_bid != -1 and state.pass_num == 3
-    ):
-        return True
-    else:
-        return False
+    """Check if the game is finished
+    Four consecutive passes if not bid (pass out), otherwise three consecutive passes
+    """
+    return jax.lax.cond(
+        ((state.last_bid == -1) & (state.pass_num == 4))
+        | ((state.last_bid != -1) & (state.pass_num == 3)),
+        lambda: True,
+        lambda: False,
+    )
 
 
+@jax.jit
 def _reward(
+    state: State,
+    hash_keys: jnp.ndarray,
+    hash_values: jnp.ndarray,
+) -> jnp.ndarray:
+    """Return reward
+    If pass out, 0 reward for everyone; if bid, calculate and return reward
+    """
+    return jax.lax.cond(
+        (state.last_bid == -1) & (state.pass_num == 4),
+        lambda: jnp.zeros(4, dtype=jnp.int16),  # pass out
+        lambda: _make_reward(  # caluculate reward
+            state, hash_keys, hash_values
+        ),
+    )
+
+
+@jax.jit
+def _make_reward(
     state: State,
     hash_keys: jnp.ndarray,
     hash_values: jnp.ndarray,
@@ -276,37 +309,33 @@ def _reward(
     Returns:
         np.ndarray: A list of rewards for each player in playerID order
     """
-    # pass out
-    if state.last_bid == -1 and state.pass_num == 4:
-        return jnp.zeros(4)
-    else:
-        # Extract contract from state
-        declare_position, denomination, level, vul = _contract(state)
-        # Calculate trick table from hash table
-        dds_tricks = _calculate_dds_tricks(state, hash_keys, hash_values)
-        # Calculate the tricks you could have accomplished with this contraption
-        dds_trick = dds_tricks[int(declare_position) * 5 + int(denomination)]
-        # Clculate score
-        score = _calc_score(
-            denomination,
-            level,
-            vul,
-            state.call_x,
-            state.call_xx,
-            dds_trick,
-        )
-        # Make reward array in playerID order
-        reward = jnp.array(
-            [
-                score
-                if _is_partner(_player_position(i, state), declare_position)
-                else -score
-                for i in np.arange(4)
-            ]
-        )
-        return reward
+    # Extract contract from state
+    declare_position, denomination, level, vul = _contract(state)
+    # Calculate trick table from hash table
+    dds_tricks = _calculate_dds_tricks(state, hash_keys, hash_values)
+    # Calculate the tricks you could have accomplished with this contraption
+    dds_trick = dds_tricks[declare_position * 5 + denomination]
+    # Clculate score
+    score = _calc_score(
+        denomination,
+        level,
+        vul,
+        state.call_x,
+        state.call_xx,
+        dds_trick,
+    )
+    # Make reward array in playerID order
+    player_positions = jax.vmap(lambda i: _player_position(i, state))(
+        jnp.arange(4)
+    )
+    partners = jax.vmap(lambda pos: _is_partner(pos, declare_position))(
+        player_positions
+    )
+
+    return jnp.where(partners, score, -score)
 
 
+@jax.jit
 def _calc_score(
     denomination: jnp.ndarray,
     level: jnp.ndarray,
@@ -316,6 +345,69 @@ def _calc_score(
     trick: jnp.ndarray,
 ) -> jnp.ndarray:
     """Calculate score from contract and trick
+    Returns:
+        np.ndarray: A score of declarer team
+    """
+    return jax.lax.cond(
+        level + 6 > trick,
+        lambda: _down_score(level, vul, call_x, call_xx, trick),
+        lambda: _make_score(denomination, level, vul, call_x, call_xx, trick),
+    )
+
+
+@jax.jit
+def _down_score(
+    level: jnp.ndarray,
+    vul: jnp.ndarray,
+    call_x: jnp.ndarray,
+    call_xx: jnp.ndarray,
+    trick: jnp.ndarray,
+) -> jnp.ndarray:
+    """Calculate down score from contract and trick
+    Returns:
+        np.ndarray: A score of declarer team
+    """
+    # fmt: off
+    _DOWN = jnp.array([-50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -550, -600, -650], dtype=jnp.int16)
+    _DOWN_VUL = jnp.array([-100, -200, -300, -400, -500, -600, -700, -800, -900, -1000, -1100, -1200, -1300], dtype=jnp.int16)
+    _DOWN_X = jnp.array([-100, -300, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500], dtype=jnp.int16)
+    _DOWN_X_VUL = jnp.array([-200, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500, -3800], dtype=jnp.int16)
+    _DOWN_XX = jnp.array([-200, -600, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000], dtype=jnp.int16)
+    _DOWN_XX_VUL = jnp.array([-400, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000, -7600], dtype=jnp.int16)
+    # fmt: on
+    under_trick = level + 6 - trick
+    down = jax.lax.cond(
+        vul,
+        lambda: _DOWN_VUL[under_trick - 1],
+        lambda: _DOWN[under_trick - 1],
+    )
+    down_x = jax.lax.cond(
+        vul,
+        lambda: _DOWN_X_VUL[under_trick - 1],
+        lambda: _DOWN_X[under_trick - 1],
+    )
+    down_xx = jax.lax.cond(
+        vul,
+        lambda: _DOWN_XX_VUL[under_trick - 1],
+        lambda: _DOWN_XX[under_trick - 1],
+    )
+    return jax.lax.cond(
+        call_xx,
+        lambda: down_xx,
+        lambda: jax.lax.cond(call_x, lambda: down_x, lambda: down),
+    )
+
+
+@jax.jit
+def _make_score(
+    denomination: jnp.ndarray,
+    level: jnp.ndarray,
+    vul: jnp.ndarray,
+    call_x: jnp.ndarray,
+    call_xx: jnp.ndarray,
+    trick: jnp.ndarray,
+) -> jnp.ndarray:
+    """Calculate make score from contract and trick
     Returns:
         np.ndarray: A score of declarer team
     """
@@ -338,109 +430,123 @@ def _calc_score(
     _OVERTRICK_X_VUL = jnp.int16(200)
     _OVERTRICK_XX = jnp.int16(200)
     _OVERTRICK_XX_VUL = jnp.int16(400)
-
-    _DOWN = jnp.array([-50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -550, -600, -650], dtype=jnp.int16)
-    _DOWN_VUL = jnp.array([-100, -200, -300, -400, -500, -600, -700, -800, -900, -1000, -1100, -1200, -1300], dtype=jnp.int16)
-    _DOWN_X = jnp.array([-100, -300, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500], dtype=jnp.int16)
-    _DOWN_X_VUL = jnp.array([-200, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500, -3800], dtype=jnp.int16)
-    _DOWN_XX = jnp.array([-200, -600, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000], dtype=jnp.int16)
-    _DOWN_XX_VUL = jnp.array([-400, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000, -7600], dtype=jnp.int16)
     # fmt: on
-    if level + 6 > trick:  # down
-        under_trick = level + 6 - trick
-        if call_xx:
-            return (
-                _DOWN_XX_VUL[under_trick - 1]
-                if vul
-                else _DOWN_XX[under_trick - 1]
-            )
-        elif call_x:
-            return (
-                _DOWN_X_VUL[under_trick - 1]
-                if vul
-                else _DOWN_X[under_trick - 1]
-            )
-        else:
-            return (
-                _DOWN_VUL[under_trick - 1] if vul else _DOWN[under_trick - 1]
-            )
-    else:  # make
-        over_trick_score_per_trick = jnp.int16(0)
-        over_trick = trick - level - jnp.int16(6)
-        score = jnp.int16(0)
-        if denomination <= 1:
-            score += jnp.int16(_MINOR * level)
-            over_trick_score_per_trick += _MINOR
-        elif 2 <= denomination <= 3:
-            score += jnp.int16(_MAJOR * level)
-            over_trick_score_per_trick += _MAJOR
-        elif denomination == 4:
-            score += jnp.int16(_MAJOR * level + _NT)
-            over_trick_score_per_trick += _MAJOR
-        if call_xx:
-            score *= jnp.int16(4)
-        elif call_x:
-            score *= jnp.int16(2)
-        if score >= 100:  # game make bonus
-            score += _GAME_VUL if vul else _GAME
-            if level >= 6:  # small slam make bonus
-                score += _SMALL_SLAM_VUL if vul else _SMALL_SLAM
-                if level == 7:  # grand slam make bonus
-                    score += _GRAND_SLAM_VUL if vul else _GRAND_SLAM
-        score += _MAKE  # make bonus
-        if call_x or call_xx:
-            score += _MAKE_X
-            if call_xx:
-                score += _MAKE_XX
-                over_trick_score_per_trick = (
-                    _OVERTRICK_XX_VUL if vul else _OVERTRICK_XX
-                )
-            else:
-                over_trick_score_per_trick = (
-                    _OVERTRICK_X_VUL if vul else _OVERTRICK_X
-                )
-        score += over_trick_score_per_trick * over_trick
-        return score
+    over_trick_score_per_trick = jnp.int16(0)
+    over_trick = trick - level - jnp.int16(6)
+    score = jnp.int16(0)
+    score, over_trick_score_per_trick = jax.lax.switch(
+        denomination,
+        [
+            lambda: (
+                score + jnp.int16(_MINOR * level),
+                over_trick_score_per_trick + _MINOR,
+            ),
+            lambda: (
+                score + jnp.int16(_MINOR * level),
+                over_trick_score_per_trick + _MINOR,
+            ),
+            lambda: (
+                score + jnp.int16(_MAJOR * level),
+                over_trick_score_per_trick + _MAJOR,
+            ),
+            lambda: (
+                score + jnp.int16(_MAJOR * level),
+                over_trick_score_per_trick + _MAJOR,
+            ),
+            lambda: (
+                score + jnp.int16(_MAJOR * level + _NT),
+                over_trick_score_per_trick + _MAJOR,
+            ),
+        ],
+    )
+    score = jax.lax.cond(
+        call_xx,
+        lambda: score * jnp.int16(4),
+        lambda: jax.lax.cond(
+            call_x, lambda: score * jnp.int16(2), lambda: score
+        ),
+    )
+    game_bonus = jax.lax.cond(vul, lambda: _GAME_VUL, lambda: _GAME)
+    small_slam_bonus = jax.lax.cond(
+        vul, lambda: _SMALL_SLAM_VUL, lambda: _SMALL_SLAM
+    )
+    grand_slam_bonus = jax.lax.cond(
+        vul, lambda: _GRAND_SLAM_VUL, lambda: _GRAND_SLAM
+    )
+
+    score = jax.lax.cond(
+        score >= 100, lambda: score + game_bonus, lambda: score
+    )
+    score = jax.lax.cond(
+        level >= 6, lambda: score + small_slam_bonus, lambda: score
+    )
+    score = jax.lax.cond(
+        level == 7, lambda: score + grand_slam_bonus, lambda: score
+    )
+    score += _MAKE  # make bonus
+
+    overtrick_x = jax.lax.cond(
+        vul, lambda: _OVERTRICK_X_VUL, lambda: _OVERTRICK_X
+    )
+    overtrick_xx = jax.lax.cond(
+        vul, lambda: _OVERTRICK_XX_VUL, lambda: _OVERTRICK_XX
+    )
+    score, over_trick_score_per_trick = jax.lax.cond(
+        call_x | call_xx,
+        lambda: jax.lax.cond(
+            call_xx,
+            lambda: (score + _MAKE_X + _MAKE_XX, overtrick_xx),
+            lambda: (score + _MAKE_X, overtrick_x),
+        ),
+        lambda: (score, over_trick_score_per_trick),
+    )
+    return score + over_trick_score_per_trick * over_trick
 
 
+@jax.jit
 def _contract(
     state: State,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """Return Contract which has position of declare ,denomination, level"""
     denomination = state.last_bid % 5
     level = state.last_bid // 5 + 1
-    if _position_to_team(_player_position(state.last_bidder, state)) == 0:
-        declare_position = _player_position(
-            state.first_denomination_NS[denomination], state
-        )
-        vul = state.vul_NS
-    else:
-        declare_position = _player_position(
-            state.first_denomination_EW[denomination], state
-        )
-        vul = state.vul_EW
+    declare_position, vul = jax.lax.cond(
+        _position_to_team(_player_position(state.last_bidder, state)) == 0,
+        lambda: (
+            _player_position(state.first_denomination_NS[denomination], state),
+            state.vul_NS,
+        ),
+        lambda: (
+            _player_position(state.first_denomination_EW[denomination], state),
+            state.vul_EW,
+        ),
+    )
     return declare_position, denomination, level, vul
 
 
-# passによるstateの変化
+@jax.jit
 def _state_pass(
     state: State,
 ) -> State:
+    """Change state if pass is taken"""
     return state.replace(pass_num=state.pass_num + 1)  # type: ignore
 
 
-# Xによるstateの変化
+@jax.jit
 def _state_X(state: State) -> State:
+    """Change state if double(X) is taken"""
     return state.replace(call_x=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
 
 
-# XXによるstateの変化
+@jax.jit
 def _state_XX(state: State) -> State:
+    """Change state if double(XX) is taken"""
     return state.replace(call_xx=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
 
 
-# bidによるstateの変化
+@jax.jit
 def _state_bid(state: State, action: int) -> State:
+    """Change state if bid is taken"""
     # 最後のbidとそのプレイヤーを保存
     # fmt: off
     state = state.replace(last_bid=jnp.int8(action), last_bidder=state.curr_player)  # type: ignore
@@ -448,73 +554,83 @@ def _state_bid(state: State, action: int) -> State:
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
     team = _position_to_team(_player_position(state.last_bidder, state))
-    # team = 1ならEWチーム
     # fmt: off
-    if team and (state.first_denomination_EW[denomination] == -1):
-        state = state.replace(first_denomination_EW=state.first_denomination_EW.at[denomination].set(int(state.last_bidder)))  # type: ignore
+    # team = 1ならEWチーム
+    state = jax.lax.cond(team & (state.first_denomination_EW[denomination] == -1),
+                         lambda: state.replace(first_denomination_EW=state.first_denomination_EW.at[denomination].set(state.last_bidder.astype(jnp.int8))),  # type: ignore
+                         lambda: state)  # type: ignore
     # team = 0ならNSチーム
-    elif not team and (state.first_denomination_NS[denomination] == -1):
-        state = state.replace(first_denomination_NS=state.first_denomination_NS.at[denomination].set(int(state.last_bidder)))  # type: ignore
+    state = jax.lax.cond((team == 0) & (state.first_denomination_NS[denomination] == -1),
+                         lambda: state.replace(first_denomination_NS=state.first_denomination_NS.at[denomination].set(state.last_bidder.astype(jnp.int8))),  # type: ignore
+                         lambda: state)  # type: ignore
+    # fmt: on
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
     return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), pass_num=jnp.int8(0))  # type: ignore
-    # fmt: on
 
 
-# bidのdenominationを計算
+@jax.jit
 def _bid_to_denomination(bid: int) -> int:
+    """Calcularete denomination of bid"""
     return bid % 5
 
 
-# playerのチームを判定　0: NSチーム, 1: EWチーム
+@jax.jit
 def _position_to_team(position: jnp.ndarray) -> jnp.ndarray:
+    """Determine which team from the position
+    0: NS team, 1: EW team
+    """
     return position % 2
 
 
-# 次プレイヤーのX, XXが合法手かどうか
+@jax.jit
 def _update_legal_action_X_XX(
     state: State,
 ) -> Tuple[bool, bool]:
-    if state.last_bidder != -1:
-        return _is_legal_X(state), _is_legal_XX(state)
-    else:
-        return False, False
+    """Determine if X or XX is a legal move for the next player"""
+    return jax.lax.cond(
+        state.last_bidder != -1,
+        lambda: (_is_legal_X(state), _is_legal_XX(state)),
+        lambda: (False, False),
+    )
 
 
+@jax.jit
 def _is_legal_X(state: State) -> bool:
-    if (
-        (not state.call_x)
-        and (not state.call_xx)
-        and (
-            not _is_partner(
-                _player_position(state.last_bidder, state),
-                _player_position(state.curr_player, state),
-            )
-        )
-    ):
-        return True
-    else:
-        return False
-
-
-def _is_legal_XX(state: State) -> bool:
-    if (
-        state.call_x
-        and (not state.call_xx)
-        and (
+    return jax.lax.cond(
+        (state.call_x == 0)
+        & (state.call_xx == 0)
+        & (
             _is_partner(
                 _player_position(state.last_bidder, state),
                 _player_position(state.curr_player, state),
             )
-        )
-    ):
-        return True
-    else:
-        return False
+            == 0
+        ),
+        lambda: True,
+        lambda: False,
+    )
 
 
-# playerがパートナーか判断
+@jax.jit
+def _is_legal_XX(state: State) -> bool:
+    return jax.lax.cond(
+        state.call_x
+        & (state.call_xx == 0)
+        & (
+            _is_partner(
+                _player_position(state.last_bidder, state),
+                _player_position(state.curr_player, state),
+            )
+        ),
+        lambda: True,
+        lambda: False,
+    )
+
+
+@jax.jit
 def _is_partner(position1: jnp.ndarray, position2: jnp.ndarray) -> jnp.ndarray:
+    """Determine if positon1 and position2 belong to the same team"""
     return (abs(position1 - position2) + 1) % 2
 
 
@@ -538,19 +654,13 @@ def _state_to_pbn(state: State) -> str:
     return pbn
 
 
+# @jax.jit
 def _state_to_key(state: State) -> jnp.ndarray:
     """Convert state to key of dds table"""
     hand = state.hand
     key = jnp.zeros(52, dtype=jnp.int8)
     for i in range(52):  # N: 0, E: 1, S: 2, W: 3
-        if i // 13 == 0:
-            key = key.at[hand[i]].set(0)
-        elif i // 13 == 1:
-            key = key.at[hand[i]].set(1)
-        elif i // 13 == 2:
-            key = key.at[hand[i]].set(2)
-        elif i // 13 == 3:
-            key = key.at[hand[i]].set(3)
+        key = key.at[hand[i]].set(i // 13)
     key = key.reshape(4, 13)
     return _to_binary(key)
 
@@ -568,6 +678,7 @@ def _pbn_to_key(pbn: str) -> jnp.ndarray:
     return _to_binary(key)
 
 
+@jax.jit
 def _to_binary(x: jnp.ndarray) -> jnp.ndarray:
     bases = jnp.array([4**i for i in range(13)], dtype=jnp.int32)[::-1]
     return (x * bases).sum(axis=1)  # shape = (4, )
@@ -588,35 +699,47 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
+@jax.jit
 def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
     """Convert key to hand"""
-    cards = jnp.array(
-        [int(i) for j in key for i in np.base_repr(j, 4).zfill(13)],
-        dtype=jnp.int8,
-    )
-    return jnp.concatenate(
-        (
-            jnp.where(cards == 0)[0],
-            jnp.where(cards == 1)[0],
-            jnp.where(cards == 2)[0],
-            jnp.where(cards == 3)[0],
-        )
-    ).reshape(-1)
+
+    def _convert_quat(j):
+        shifts = jnp.arange(24, -1, step=-2)
+        quat_digits = (j >> shifts) & 0b11
+        return quat_digits
+
+    cards = jax.vmap(_convert_quat)(key).flatten()
+    hand = jnp.zeros((4, 13), dtype=jnp.int8)
+    for i in range(4):
+        count = 0
+        for j in range(52):
+            hand, count = jax.lax.cond(
+                cards[j] == i,
+                lambda: (hand.at[i, count].set(j), count + 1),
+                lambda: (hand, count),
+            )
+    return hand.flatten()
 
 
-def _value_to_dds_tricks(values: jnp.ndarray) -> jnp.ndarray:
+@jax.jit
+def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
     """Convert values to dds tricks
     >>> value = jnp.array([4160, 904605, 4160, 904605])
     >>> _value_to_dds_tricks(value)
     Array([ 0,  1,  0,  4,  0, 13, 12, 13,  9, 13,  0,  1,  0,  4,  0, 13, 12,
            13,  9, 13], dtype=int8)
     """
-    return jnp.array(
-        [int(i, 16) for j in values for i in np.base_repr(j, 16).zfill(5)],
-        dtype=jnp.int8,
-    )
+
+    def _convert_hex(j):
+        shifts = jnp.arange(16, -1, step=-4)
+        hex_digits = (j >> shifts) & 0xF
+        return hex_digits
+
+    hex_digits = jax.vmap(_convert_hex)(value).flatten()
+    return jnp.array(hex_digits, dtype=jnp.int8)
 
 
+@jax.jit
 def _calculate_dds_tricks(
     state: State,
     hash_keys: jnp.ndarray,
@@ -628,15 +751,16 @@ def _calculate_dds_tricks(
     )
 
 
+@jax.jit
 def _find_value_from_key(
     key: jnp.ndarray, hash_keys: jnp.ndarray, hash_values: jnp.ndarray
 ):
     """Find a value matching key without batch processing
-    >>> VALUES = np.arange(20).reshape(5, 4)
-    >>> KEYS = np.arange(20).reshape(5, 4)
-    >>> key = np.arange(4, 8)
+    >>> VALUES = jnp.arange(20).reshape(5, 4)
+    >>> KEYS = jnp.arange(20).reshape(5, 4)
+    >>> key = jnp.arange(4, 8)
     >>> _find_value_from_key(key, KEYS, VALUES)
-    array([4, 5, 6, 7])
+    Array([4, 5, 6, 7], dtype=int32)
     """
     mask = jnp.where(
         jnp.all((hash_keys == key), axis=1),
