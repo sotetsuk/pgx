@@ -59,7 +59,9 @@ class State(core.State):
 
 
 class Go(core.Env):
-    def __init__(self, size: int = 19, komi: float = 7.5, history_length : int = 8):
+    def __init__(
+        self, size: int = 19, komi: float = 7.5, history_length: int = 8
+    ):
         super().__init__()
         self.size = size
         self.komi = komi
@@ -76,9 +78,9 @@ class Go(core.Env):
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return partial(observe,
-                       size=self.size,
-                       history_length=self.history_length)(state=state, player_id=player_id)
+        return partial(
+            observe, size=self.size, history_length=self.history_length
+        )(state=state, player_id=player_id)
 
     @property
     def num_players(self) -> int:
@@ -92,33 +94,33 @@ class Go(core.Env):
 def observe(state: State, player_id, size, history_length):
     """Return AlphaGoZero [Silver+17] feature
 
-    obs = (size, size, history_length * 2 + 1)
-    e.g., (19, 19, 17) if size=19 and history_length=8 (used in AlphaZero)
+        obs = (size, size, history_length * 2 + 1)
+        e.g., (19, 19, 17) if size=19 and history_length=8 (used in AlphaZero)
 
-    obs[:, :, 0]: stones of `player_id`          @ current board
-    obs[:, :, 1]: stones of `player_id` opponent @ current board
-    obs[:, :, 2]: stones of `player_id`          @ 1-step before
-    obs[:, :, 3]: stones of `player_id` opponent @ 1-step before
-    ...
-    obs[:, :, -1]: color of `player_id`
+        obs[:, :, 0]: stones of `player_id`          @ current board
+        obs[:, :, 1]: stones of `player_id` opponent @ current board
+        obs[:, :, 2]: stones of `player_id`          @ 1-step before
+        obs[:, :, 3]: stones of `player_id` opponent @ 1-step before
+        ...
+        obs[:, :, -1]: color of `player_id`
 
-    NOTE: For the final dimension, there are two possible options:
+        NOTE: For the final dimension, there are two possible options:
 
-      - Use the color of current player to play
-      - Use the color of `player_id`
+          - Use the color of current player to play
+          - Use the color of `player_id`
 
-    This ambiguity happens because `observe` function is available even if state.current_player != player_id.
-    In the AlphaGoZero paper, the final dimension C is explained as:
+        This ambiguity happens because `observe` function is available even if state.current_player != player_id.
+        In the AlphaGoZero paper, the final dimension C is explained as:
 
-      > The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black
-is to play or 0 if white is to play.
+          > The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black
+    is to play or 0 if white is to play.
 
-    however, it also describes as
+        however, it also describes as
 
-      > the colour feature C is necessary because the komi is not observable.
+          > the colour feature C is necessary because the komi is not observable.
 
-    So, we use player_id's color to let the agent komi information.
-    As long as it's called when state.current_player == player_id, this doesn't matter.
+        So, we use player_id's color to let the agent komi information.
+        As long as it's called when state.current_player == player_id, this doesn't matter.
     """
     curr_player_color = _my_color(state)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
@@ -167,7 +169,9 @@ def step(state: State, action: int, size: int) -> State:
 
     # update log
     new_log = jnp.roll(_state.game_log, size**2)
-    new_log = new_log.at[0].set(jnp.clip(_state.ren_id_board, -1, 1).astype(jnp.int8))
+    new_log = new_log.at[0].set(
+        jnp.clip(_state.ren_id_board, -1, 1).astype(jnp.int8)
+    )
     return _state.replace(game_log=new_log)  # type:ignore
 
 
