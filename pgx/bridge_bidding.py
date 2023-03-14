@@ -553,7 +553,6 @@ def _state_bid(state: State, action: int) -> State:
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
     team = _position_to_team(_player_position(state.last_bidder, state))
-    # team = 1ならEWチーム
     # fmt: off
     # team = 1ならEWチーム
     state = jax.lax.cond(team & (state.first_denomination_EW[denomination] == -1),
@@ -563,6 +562,7 @@ def _state_bid(state: State, action: int) -> State:
     state = jax.lax.cond((team == 0) & (state.first_denomination_NS[denomination] == -1),
                          lambda: state.replace(first_denomination_NS=state.first_denomination_NS.at[denomination].set(state.last_bidder.astype(jnp.int8))),  # type: ignore
                          lambda: state)  # type: ignore
+    # fmt: on
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
     return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), pass_num=jnp.int8(0))  # type: ignore
