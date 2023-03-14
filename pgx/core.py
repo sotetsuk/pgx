@@ -146,6 +146,11 @@ class Env(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def version(self) -> str:
+        ...
+
+    @property
+    @abc.abstractmethod
     def num_players(self) -> int:
         ...
 
