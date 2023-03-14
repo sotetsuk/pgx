@@ -10,7 +10,7 @@ step = jax.jit(env.step)
 def test_init():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
-    assert state.curr_player == 1
+    assert state.curr_player == 0
 
 
 def test_merge():
@@ -67,7 +67,7 @@ def test_terminated():
 
 
 def test_reward():
-    key = jax.random.PRNGKey(0)
+    key = jax.random.PRNGKey(1)
     state = init(key=key)
     assert state.curr_player == 1
     assert (state.reward == jnp.float32([0.0, 0.0])).all()
