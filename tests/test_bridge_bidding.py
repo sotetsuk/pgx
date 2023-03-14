@@ -18,6 +18,7 @@ from pgx.bridge_bidding import (
     _state_to_key,
     _state_to_pbn,
     _to_binary,
+    _value_to_dds_tricks,
     duplicate,
     init,
     init_by_key,
@@ -87,7 +88,7 @@ def test_step():
     state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
         dealer=jnp.int8(1),
-        curr_player=jnp.full(1, 3, dtype=jnp.int8),
+        curr_player=jnp.int8(3),
         shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
         vul_NS=jnp.bool_(0),
         vul_EW=jnp.bool_(0),
@@ -829,7 +830,7 @@ def test_pass_out():
     state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
     state = state.replace(
         dealer=jnp.int8(1),
-        curr_player=jnp.full(1, 3, dtype=jnp.int8),
+        curr_player=jnp.int8(3),
         shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
         vul_NS=jnp.bool_(0),
         vul_EW=jnp.bool_(0),
@@ -1295,6 +1296,20 @@ def test_calcurate_dds_tricks():
         # sample dataから、作成したhash tableを用いて、ddsの結果を計算
         # その結果とsample dataが一致しているか確認
         assert jnp.all(dds_tricks == samples[i][1])
+
+
+def test_value_to_dds_tricks():
+    value = jnp.array([4160, 904605, 4160, 904605])
+    # fmt: off
+    assert jnp.all(
+        _value_to_dds_tricks(value)
+        == jnp.array(
+            [ 0,  1,  0,  4,  0, 13, 12, 13,  9, 13,  0,  1,  0,  4,  0, 13, 12,
+           13,  9, 13],
+            dtype=jnp.int8,
+        )
+    )
+    # fmt: on
 
 
 def to_value(sample: list) -> jnp.ndarray:
