@@ -597,14 +597,14 @@ def _update_legal_action_X_XX(
 @jax.jit
 def _is_legal_X(state: State) -> bool:
     return jax.lax.cond(
-        (state.call_x == False)
-        & (state.call_xx == False)
+        (state.call_x == 0)
+        & (state.call_xx == 0)
         & (
             _is_partner(
                 _player_position(state.last_bidder, state),
                 _player_position(state.curr_player, state),
             )
-            == False
+            == 0
         ),
         lambda: True,
         lambda: False,
@@ -615,7 +615,7 @@ def _is_legal_X(state: State) -> bool:
 def _is_legal_XX(state: State) -> bool:
     return jax.lax.cond(
         state.call_x
-        & (state.call_xx == False)
+        & (state.call_xx == 0)
         & (
             _is_partner(
                 _player_position(state.last_bidder, state),
