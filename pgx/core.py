@@ -25,9 +25,10 @@ class State:
     reward: jnp.ndarray
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray
-    # Used for stochastic env and auto reset
-    # Updated only when used by environment
-    # Do NOT assume to be used by agent
+    # NOTE: _rng_key is
+    #   - used for stochastic env and auto reset
+    #   - updated only when actually used
+    #   - supposed NOT to be used by agent
     _rng_key: jax.random.KeyArray
 
     def _repr_html_(self) -> str:
