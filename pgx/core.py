@@ -57,7 +57,7 @@ class Env(abc.ABC):
         # Auto reset
         state = jax.lax.cond(
             self.auto_reset,
-            lambda: state.replace(
+            lambda: state.replace(  # type: ignore
                 terminated=FALSE, reward=jnp.zeros_like(state.reward)
             ),
             lambda: state,
