@@ -190,7 +190,7 @@ def step(
     state = state.replace(bidding_history=state.bidding_history.at[state.turn].set(action))  # type: ignore
     # fmt: on
     return jax.lax.cond(
-        state.legal_action_mask[action] == False,  # 非合法手判断
+        state.legal_action_mask[action] == 0,  # 非合法手判断
         lambda: _illegal_step(state),
         lambda: jax.lax.cond(
             action >= 35,
