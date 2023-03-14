@@ -59,7 +59,7 @@ class Env(abc.ABC):
         is_illegal = ~state.legal_action_mask[action]
         curr_player = state.curr_player
 
-        # increment steps
+        # increment step count
         state = state.replace(steps=state.steps + 1)  # type: ignore
 
         # Auto reset
