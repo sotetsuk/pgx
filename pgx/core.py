@@ -59,12 +59,9 @@ class Env(abc.ABC):
         is_illegal = ~state.legal_action_mask[action]
         curr_player = state.curr_player
 
-        # increment step count
-        state = state.replace(steps=state.steps + 1)  # type: ignore
-
         # Auto reset
         state = jax.lax.cond(
-            self.auto_reset,
+            self.auto_reset & (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
                 steps=jnp.int32(0),
                 terminated=FALSE,
@@ -73,6 +70,9 @@ class Env(abc.ABC):
             ),
             lambda: state,
         )
+
+        # increment step count
+        state = state.replace(steps=state.steps + 1)  # type: ignore
 
         # If the state is already terminated, environment does not take usual step, but
         # return the same state with zero-rewards for all players
@@ -112,7 +112,7 @@ class Env(abc.ABC):
         # Auto reset
         state = jax.lax.cond(
             self.auto_reset & (state.terminated | state.truncated),
-            lambda: self.init(state._rng_key).replace(terminated=state.terminated, reward=state.reward),  # type: ignore
+            lambda: self.init(state._rng_key).replace(terminated=state.terminated, truncated=state.truncated, reward=state.reward),  # type: ignore
             lambda: state,
         )
 
