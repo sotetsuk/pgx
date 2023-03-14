@@ -4,7 +4,7 @@ from typing import Tuple
 import jax
 from jax import numpy as jnp
 
-import pgx
+import pgx.core as core
 from pgx.flax.struct import dataclass
 
 BLACK = 1
@@ -22,7 +22,7 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(pgx.State):
+class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     curr_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -61,7 +61,7 @@ class State(pgx.State):
     black_player: jnp.ndarray = jnp.int8(0)
 
 
-class Go(pgx.Env):
+class Go(core.Env):
     def __init__(
         self,
         *,
@@ -81,11 +81,13 @@ class Go(pgx.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(init, size=self.size, komi=self.komi)(key=key)
 
-    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return partial(step, size=self.size)(state, action)
 
-    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(
             observe, size=self.size, history_length=self.history_length
@@ -450,9 +452,9 @@ def _count_point(state, size):
 
 
 def _get_reward(_state: State, _size: int) -> jnp.ndarray:
-    spgx = _count_point(_state, _size)
+    score = _count_point(_state, _size)
     reward_bw = jax.lax.cond(
-        spgx[0] - _state.komi > spgx[1],
+        score[0] - _state.komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
         lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
