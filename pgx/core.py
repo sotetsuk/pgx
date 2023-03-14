@@ -25,6 +25,10 @@ class State:
     reward: jnp.ndarray
     terminated: jnp.ndarray
     legal_action_mask: jnp.ndarray
+    # Used for stochastic env and auto reset
+    # Updated only when used by environment
+    # Do NOT assume to be used by agent
+    _rng_key: jax.random.KeyArray
 
     def _repr_html_(self) -> str:
         from pgx.visualizer import Visualizer
@@ -39,7 +43,9 @@ class Env(abc.ABC):
         self.auto_reset = auto_reset
 
     def init(self, key: jax.random.KeyArray) -> State:
-        state = self._init(key)
+        key, subkey = jax.random.split(key)
+        state = self._init(subkey)
+        state = state.replace(_rng_key=key)  # type: ignore
         observation = self.observe(state, state.curr_player)
         return state.replace(observation=observation)  # type: ignore
 
@@ -73,11 +79,10 @@ class Env(abc.ABC):
             lambda: state,
         )
 
-        rng = jax.random.PRNGKey(0)  # TODO: fix
         # Auto reset
         state = jax.lax.cond(
             self.auto_reset & state.terminated,
-            lambda: self.init(rng).replace(terminated=state.terminated, reward=state.reward),  # type: ignore
+            lambda: self.init(state._rng_key).replace(terminated=state.terminated, reward=state.reward),  # type: ignore
             lambda: state
         )
 
