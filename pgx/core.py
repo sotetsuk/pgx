@@ -10,6 +10,12 @@ TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
+# Pgx environments are strictly versioned like OpenAI Gym.
+# One can check the version by `Env.version`.
+# We do not explicitly include version in EnvId for three reasons:
+# (1) we do not provide older versions (as with OpenAI Gym),
+# (2) it is tedious to remember or rewrite version numbers, and
+# (3) we do not want to slow down development for fear of inconveniencing users.
 EnvId = Literal[
     "tic_tac_toe",
     "go-19x19",
