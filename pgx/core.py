@@ -42,8 +42,9 @@ class State:
 
 
 class Env(abc.ABC):
-    def __init__(self, *, auto_reset: bool = False):
-        self.auto_reset = auto_reset
+    def __init__(self, *, auto_reset: bool = False, max_truncation_steps: int = -1):
+        self.auto_reset = jnp.bool_(auto_reset)
+        self.max_truncation_steps = jnp.int32(max_truncation_steps)
 
     def init(self, key: jax.random.KeyArray) -> State:
         key, subkey = jax.random.split(key)
@@ -83,6 +84,13 @@ class Env(abc.ABC):
             is_illegal,
             lambda: self._step_with_illegal_action(state, curr_player),
             lambda: state,
+        )
+
+        # Time limit
+        state = jax.lax.cond(
+            ~state.terminated & (0 <= self.max_truncation_steps) & (self.max_truncation_steps <= state.steps),
+            lambda: state.replace(truncated=TRUE),  # type: ignore
+            lambda: state
         )
 
         # All legal_action_mask elements are **TRUE** at terminal state
