@@ -173,7 +173,7 @@ def step(state: State, action: int, size: int) -> State:
 
     # update log
     new_log = jnp.roll(_state.game_log, size**2)
-    new_log = new_log.at[0].set(get_board(_state))
+    new_log = new_log.at[0].set(jnp.clip(_state.ren_id_board, -1, 1).astype(jnp.int8))
     return _state.replace(game_log=new_log)  # type:ignore
 
 
@@ -379,13 +379,6 @@ def _count(state: State, size):
         return jnp.where(ren_id_board == (x + 1), idx_squared_sum, ZERO).sum()
 
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
-
-
-def get_board(state: State) -> jnp.ndarray:
-    board = jnp.ones_like(state.ren_id_board, dtype=jnp.int8) * 2
-    board = jnp.where(state.ren_id_board > 0, 0, board)
-    board = jnp.where(state.ren_id_board < 0, 1, board)
-    return board  # type:ignore
 
 
 def show(state: State) -> None:
