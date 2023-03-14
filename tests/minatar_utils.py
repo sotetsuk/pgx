@@ -69,9 +69,9 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
             d[key] = v
             continue
 
-        # Cast to int16
+        # Cast to int32
         if key in ["terminate_timer", "oxygen"]:
-            val = jnp.array(val, dtype=jnp.int16)
+            val = jnp.array(val, dtype=jnp.int32)
             d[key] = val
             continue
 
