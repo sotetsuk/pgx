@@ -12,13 +12,13 @@ observe = jax.jit(observe)
 def test_init():
     key = jax.random.PRNGKey(1)
     state = init(key=key)
-    assert state.curr_player == 1
+    assert state.current_player == 1
 
 
 def test_step():
     key = jax.random.PRNGKey(1)
     state = init(key=key)
-    assert state.curr_player == 1
+    assert state.current_player == 1
     assert state.turn == 0
     assert jnp.all(
         state.legal_action_mask
@@ -34,7 +34,7 @@ def test_step():
 
     action = jnp.int8(4)
     state = step(state, action)
-    assert state.curr_player == 0
+    assert state.current_player == 0
     assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
@@ -51,7 +51,7 @@ def test_step():
 
     action = jnp.int8(0)
     state = step(state, action)
-    assert state.curr_player == 1
+    assert state.current_player == 1
     assert state.turn == 0
     assert jnp.all(
         state.legal_action_mask
@@ -66,7 +66,7 @@ def test_step():
 
     action = jnp.int8(1)
     state = step(state, action)
-    assert state.curr_player == 0
+    assert state.current_player == 0
     assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
@@ -81,7 +81,7 @@ def test_step():
 
     action = jnp.int8(8)
     state = step(state, action)
-    assert state.curr_player == 1
+    assert state.current_player == 1
     assert state.turn == 0
     assert jnp.all(
         state.legal_action_mask
@@ -96,7 +96,7 @@ def test_step():
 
     action = jnp.int8(7)
     state = step(state, action)
-    assert state.curr_player == 0
+    assert state.current_player == 0
     assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
@@ -176,7 +176,7 @@ def test_win_check():
 
 def test_observe():
     state = init(jax.random.PRNGKey(1))
-    obs = observe(state, state.curr_player)
+    obs = observe(state, state.current_player)
     init_obs = jnp.zeros(27).at[:9].set(1)
     assert (obs == init_obs).all()
 

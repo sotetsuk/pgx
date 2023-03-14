@@ -55,13 +55,13 @@ class Shogi(AECEnv, ABC):
         super().__init__()
 
     def reset(self, *args: Any, **kwargs: Any) -> Tuple[dict, dict]:
-        self.curr_player = np.random.randint(2)
+        self.current_player = np.random.randint(2)
         self.board = cshogi.Board()
 
         obs = make_input_features(self.board)
         legal_actions = make_legal_actions(self.board)
         observation_dict = {
-            "agent_id": self.curr_player,
+            "agent_id": self.current_player,
             "obs": obs,
             "mask": legal_actions
         }
@@ -69,19 +69,19 @@ class Shogi(AECEnv, ABC):
         return observation_dict, {}
 
     def step(self, action: Any, reset_if_done=True) -> Tuple[Dict, List[int], bool, bool, Dict]:
-        self.curr_player = (self.curr_player + 1) % 2
+        self.current_player = (self.current_player + 1) % 2
         self.board.push(action)
         done = self.board.is_game_over()
 
         if done and reset_if_done:
-            self.curr_player = np.random.randint(2)
+            self.current_player = np.random.randint(2)
             self.board = cshogi.Board()
             done = False
 
         obs = make_input_features(self.board)
         legal_actions = make_legal_actions(self.board)
         obs = {
-            'agent_id': self.curr_player,
+            'agent_id': self.current_player,
             'obs': obs,
             'mask': legal_actions
         }

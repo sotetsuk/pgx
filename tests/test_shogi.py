@@ -515,7 +515,7 @@ def test_buggy_samples():
 
 def test_observe():
     s: State = _init()
-    obs = observe(s, s.curr_player)
+    obs = observe(s, s.current_player)
 
     assert obs.shape == (119, 9, 9)
 
@@ -611,7 +611,7 @@ def test_observe():
     sfen = "1ns4nl/1r4k2/2p1gp3/1p1pp3p/l8/2P2PP2/1PNPP3P/2G2S3/2S1KG2L b BGS3Prbnl2p 1"
     s = _from_sfen(sfen)
     visualize(s, "tests/assets/shogi/observe_001.svg")
-    obs = observe(s, s.curr_player)
+    obs = observe(s, s.current_player)
 
     filled = [0, 1, 2, 16, 20, 24, 28, 29, 36, 40, 52, 54]
     for i in range(56):
@@ -624,16 +624,16 @@ def test_observe():
     sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL b b 1"  # 先手番
     s = _from_sfen(sfen)
     visualize(s, "tests/assets/shogi/observe_002.svg")
-    obs = observe(s, s.curr_player)
+    obs = observe(s, s.current_player)
     assert (~obs[-1]).all()
 
     sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"  # 後手番
     s = _from_sfen(sfen)
     visualize(s, "tests/assets/shogi/observe_003.svg")
-    obs = observe(s, s.curr_player)
+    obs = observe(s, s.current_player)
     assert obs[-1].all()
 
-    # TODO: player_id != curr_player
+    # TODO: player_id != current_player
 
 
 def test_sfen():
@@ -660,7 +660,7 @@ def test_jit():
 
     print("warmup starts ...")
     s = init(keys)
-    o = observe(s, s.curr_player)
+    o = observe(s, s.current_player)
     a = act_randomly(key, s)
     s = step(s, a)
     print("warmup ends")

@@ -118,7 +118,7 @@ QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 @dataclass
 class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
-    curr_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -138,7 +138,7 @@ class State(pgx.State):
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
         """Mainly for debugging purpose.
-        terminated, reward, and curr_player are not changed"""
+        terminated, reward, and current_player are not changed"""
         state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
         # fmt: off
         state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))  # type: ignore
@@ -190,8 +190,8 @@ class Shogi(pgx.Env):
 def init(rng):
     state = _init()
     rng, subkey = jax.random.split(rng)
-    curr_player = jnp.int8(jax.random.bernoulli(subkey))
-    return state.replace(curr_player=curr_player)
+    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    return state.replace(current_player=current_player)
 
 
 def _init():
@@ -334,7 +334,7 @@ def step(state: State, action: jnp.ndarray) -> State:
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     state = jax.lax.cond(
-        state.curr_player != player_id, lambda: _flip(state), lambda: state
+        state.current_player != player_id, lambda: _flip(state), lambda: state
     )
 
     def piece_and_effect(state):
@@ -410,7 +410,8 @@ def _step(state: State, action: Action) -> State:
     # flip state
     state = _flip(state)
     state = state.replace(  # type: ignore
-        curr_player=(state.curr_player + 1) % 2, turn=(state.turn + 1) % 2
+        current_player=(state.current_player + 1) % 2,
+        turn=(state.turn + 1) % 2,
     )
     legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     legal_action_mask = _to_direction(
@@ -423,7 +424,7 @@ def _step(state: State, action: Action) -> State:
         lambda: jnp.float32([0.0, 0.0]),
     )
     reward = jax.lax.cond(
-        state.curr_player != 0, lambda: reward[::-1], lambda: reward
+        state.current_player != 0, lambda: reward[::-1], lambda: reward
     )
     return state.replace(  # type: ignore
         reward=reward,

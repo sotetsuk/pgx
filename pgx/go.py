@@ -24,7 +24,7 @@ TRUE = jnp.bool_(True)
 @dataclass
 class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
-    curr_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -137,11 +137,11 @@ def observe(state: State, player_id, size, history_length):
         So, we use player_id's color to let the agent komi information.
         As long as it's called when state.current_player == player_id, this doesn't matter.
     """
-    curr_player_color = _my_color(state)  # -1 or 1
+    current_player_color = _my_color(state)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
-        player_id == state.curr_player,
-        lambda: (curr_player_color, -1 * curr_player_color),
-        lambda: (-1 * curr_player_color, curr_player_color),
+        player_id == state.current_player,
+        lambda: (current_player_color, -1 * current_player_color),
+        lambda: (-1 * current_player_color, current_player_color),
     )
 
     @jax.vmap
@@ -157,13 +157,13 @@ def observe(state: State, player_id, size, history_length):
 
 def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     black_player = jnp.int8(jax.random.bernoulli(key))
-    curr_player = black_player
+    current_player = black_player
     return State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
         ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
-        curr_player=curr_player,
+        current_player=current_player,
         komi=jnp.float32(komi),
         black_player=black_player,
     )
@@ -203,7 +203,7 @@ def _update_state_wo_legal_action(
     _state = _state.replace(turn=_state.turn + 1)  # type: ignore
 
     # change player
-    _state = _state.replace(curr_player=(_state.curr_player + 1) % 2)  # type: ignore
+    _state = _state.replace(current_player=(_state.current_player + 1) % 2)  # type: ignore
 
     return _state
 

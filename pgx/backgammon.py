@@ -16,7 +16,7 @@ init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 
 @dataclass
 class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
-    curr_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -78,7 +78,7 @@ class Backgammon(pgx.Env):
 
 def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
-    curr_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
+    current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()  # 初期配置は対象なので, turnに関係
     terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_init_dice(rng2)
@@ -87,7 +87,7 @@ def init(rng: jax.random.KeyArray) -> State:
     turn: jnp.ndarray = _init_turn(dice)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     state = State(  # type: ignore
-        curr_player=curr_player,
+        current_player=current_player,
         rng=rng3,
         board=board,
         terminated=terminated,
@@ -119,7 +119,7 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     board: jnp.ndarray = state.board
     zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state.playable_dice)
     return jax.lax.cond(
-        player_id == state.curr_player,
+        player_id == state.current_player,
         lambda: jnp.concatenate((board, zero_one_dice_vec), axis=None),  # type: ignore
         lambda: jnp.concatenate(
             (board, jnp.zeros(6, dtype=jnp.int8)), axis=None  # type: ignore
@@ -155,7 +155,7 @@ def _winning_step(
     勝利者がいる場合のstep.
     """
     win_score = _calc_win_score(state.board)
-    winner = state.curr_player
+    winner = state.current_player
     reward = jnp.ones_like(state.reward)
     reward = reward.at[winner].set(win_score)
     state = state.replace(terminated=TRUE)  # type: ignore
@@ -179,7 +179,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     """
     is_no_op = action // 6 == 0
     rng = state.rng
-    curr_player: jnp.ndarray = state.curr_player
+    current_player: jnp.ndarray = state.current_player
     terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state.board, action)
     played_dice_num: jnp.ndarray = jnp.int16(state.played_dice_num + 1)
@@ -191,7 +191,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
         is_no_op,
         lambda: state,
         lambda: state.replace(  # type: ignore
-            curr_player=curr_player,
+            current_player=current_player,
             rng=rng,
             terminated=terminated,
             board=board,
@@ -237,14 +237,14 @@ def _change_turn(state: State) -> State:
     rng1, rng2 = jax.random.split(state.rng)
     board: jnp.ndarray = flip_board(state.board)  # boardを反転させて黒視点に変える
     turn: jnp.ndarray = (state.turn + 1) % 2  # turnを変える
-    curr_player: jnp.ndarray = (state.curr_player + 1) % 2
+    current_player: jnp.ndarray = (state.current_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
     playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
     played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
-        curr_player=curr_player,
+        current_player=current_player,
         rng=rng2,
         board=board,
         terminated=terminated,

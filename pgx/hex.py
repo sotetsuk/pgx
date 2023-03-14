@@ -15,7 +15,7 @@ TRUE = jnp.bool_(True)
 class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
     size: jnp.ndarray = jnp.int8(11)
-    curr_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(11 * 11, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -77,8 +77,8 @@ class Hex(pgx.Env):
 
 def init(rng: jax.random.KeyArray, size: int) -> State:
     rng, subkey = jax.random.split(rng)
-    curr_player = jnp.int8(jax.random.bernoulli(subkey))
-    return State(size=size, curr_player=curr_player)  # type:ignore
+    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(size=size, current_player=current_player)  # type:ignore
 
 
 def step(state: State, action: jnp.ndarray, size: int) -> State:
@@ -98,13 +98,13 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
     won = is_game_end(board, size, state.turn)
     reward = jax.lax.cond(
         won,
-        lambda: jnp.float32([-1, -1]).at[state.curr_player].set(1),
+        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
         lambda: jnp.zeros(2, jnp.float32),
     )
 
     legal_action_mask = board == 0
     state = state.replace(  # type:ignore
-        curr_player=(state.curr_player + 1) % 2,
+        current_player=(state.current_player + 1) % 2,
         turn=(state.turn + 1) % 2,
         board=board * -1,
         reward=reward,
