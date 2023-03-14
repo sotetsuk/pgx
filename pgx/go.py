@@ -90,7 +90,7 @@ class Go(core.Env):
 
 
 def observe(state: State, player_id, size, history_length):
-    """Return AlphaZero [Silever+18] feature
+    """Return AlphaGoZero [Silver+17] feature
 
     obs = (size, size, history_length * 2 + 1)
     e.g., (19, 19, 17) if size=19 and history_length=8 (used in AlphaZero)
@@ -100,7 +100,25 @@ def observe(state: State, player_id, size, history_length):
     obs[:, :, 2]: stones of `player_id`          @ 1-step before
     obs[:, :, 3]: stones of `player_id` opponent @ 1-step before
     ...
-    obs[:, :, -1]: color
+    obs[:, :, -1]: color of `player_id`
+
+    NOTE: For the final dimension, there are two possible options:
+
+      - Use the color of current player to play
+      - Use the color of `player_id`
+
+    This ambiguity happens because `observe` function is available even if state.current_player != player_id.
+    In the AlphaGoZero paper, the final dimension C is explained as:
+
+      > The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black
+is to play or 0 if white is to play.
+
+    however, it also describes as
+
+      > the colour feature C is necessary because the komi is not observable.
+
+    So, we use player_id's color to let the agent komi information.
+    As long as it's called when state.current_player == player_id, this doesn't matter.
     """
     curr_player_color = _my_color(state)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
@@ -115,7 +133,7 @@ def observe(state: State, player_id, size, history_length):
         return state.game_log[i // 2] == color
 
     log = _make_log(jnp.arange(history_length * 2))
-    color = jnp.full_like(log[0], (my_color + 1) % 2)  # black=1, white=0
+    color = jnp.full_like(log[0], my_color == 1)  # black=1, white=0
 
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
