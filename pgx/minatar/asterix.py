@@ -32,7 +32,7 @@ TRUE = jnp.bool_(True)
 @dataclass
 class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
-    curr_player: jnp.ndarray = ZERO
+    curr_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(
         1, dtype=jnp.float32
@@ -175,15 +175,8 @@ def _step_det_at_non_terminal(
     # Spawn enemy if timer is up
     entities, spawn_timer = jax.lax.cond(
         state.spawn_timer == 0,
-        lambda _entities, _spawn_timer: (
-            state.entities.at[:, :].set(
-                _spawn_entity(state.entities, lr, is_gold, slot)
-            ),
-            state.spawn_speed,
-        ),
-        lambda _entities, _spawn_timer: (_entities, _spawn_timer),
-        state.entities,
-        state.spawn_timer,
+        lambda: (_spawn_entity(state.entities, lr, is_gold, slot), state.spawn_speed),
+        lambda: (state.entities, state.spawn_timer),
     )
     state = state.replace(entities=entities, spawn_timer=spawn_timer)  # type: ignore
 
