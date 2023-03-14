@@ -71,7 +71,9 @@ class Go(core.Env):
         komi: float = 7.5,
         history_length: int = 8
     ):
-        super().__init__(auto_reset=auto_reset, max_truncation_steps=max_truncation_steps)
+        super().__init__(
+            auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
+        )
         self.size = size
         self.komi = komi
         self.history_length = history_length
