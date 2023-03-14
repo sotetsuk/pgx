@@ -21,10 +21,12 @@ EnvId = Literal[
 
 @dataclass
 class State:
+    steps: jnp.ndarray
     curr_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
+    truncated: jnp.ndarray
     legal_action_mask: jnp.ndarray
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
@@ -54,11 +56,14 @@ class Env(abc.ABC):
         is_illegal = ~state.legal_action_mask[action]
         curr_player = state.curr_player
 
+        # increment steps
+        state = state.replace(steps=state.steps + 1)  # type: ignore
+
         # Auto reset
         state = jax.lax.cond(
             self.auto_reset,
             lambda: state.replace(  # type: ignore
-                terminated=FALSE, reward=jnp.zeros_like(state.reward)
+                steps=jnp.int32(0), terminated=FALSE, reward=jnp.zeros_like(state.reward)
             ),
             lambda: state,
         )
