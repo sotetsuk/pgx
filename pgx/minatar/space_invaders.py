@@ -16,30 +16,30 @@ from jax import numpy as jnp
 
 from pgx.flax.struct import dataclass
 
-SHOT_COOL_DOWN = jnp.int8(5)
-ENEMY_MOVE_INTERVAL = jnp.int8(12)
-ENEMY_SHOT_INTERVAL = jnp.int8(10)
+SHOT_COOL_DOWN = jnp.int32(5)
+ENEMY_MOVE_INTERVAL = jnp.int32(12)
+ENEMY_SHOT_INTERVAL = jnp.int32(10)
 
-ZERO = jnp.int8(0)
-NINE = jnp.int8(9)
+ZERO = jnp.int32(0)
+NINE = jnp.int32(9)
 
 
 @dataclass
 class State:
-    pos: jnp.ndarray = jnp.int8(5)
+    pos: jnp.ndarray = jnp.int32(5)
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     e_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     alien_map: jnp.ndarray = (
         jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(True)
     )
-    alien_dir: jnp.ndarray = jnp.int8(-1)
+    alien_dir: jnp.ndarray = jnp.int32(-1)
     enemy_move_interval: jnp.ndarray = ENEMY_MOVE_INTERVAL
     alien_move_timer: jnp.ndarray = ENEMY_MOVE_INTERVAL
     alien_shot_timer: jnp.ndarray = ENEMY_SHOT_INTERVAL
-    ramp_index: jnp.ndarray = jnp.int8(0)
-    shot_timer: jnp.ndarray = jnp.int8(0)
+    ramp_index: jnp.ndarray = jnp.int32(0)
+    shot_timer: jnp.ndarray = jnp.int32(0)
     terminal: jnp.ndarray = jnp.bool_(False)
-    last_action: jnp.ndarray = jnp.int8(0)
+    last_action: jnp.ndarray = jnp.int32(0)
 
 
 def step(
@@ -48,7 +48,7 @@ def step(
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    action = jnp.int8(action)
+    action = jnp.int32(action)
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
@@ -219,7 +219,7 @@ def _resole_action(pos, f_bullet_map, shot_timer, action):
 
 # TODO: avoid loop
 def _nearest_alien(pos, alien_map):
-    search_order = jnp.argsort(jnp.abs(jnp.arange(10, dtype=jnp.int8) - pos))
+    search_order = jnp.argsort(jnp.abs(jnp.arange(10, dtype=jnp.int32) - pos))
     ix = lax.while_loop(
         lambda i: jnp.sum(alien_map[:, search_order[i]]) <= 0,
         lambda i: i + 1,
@@ -234,7 +234,7 @@ def _update_alien_by_move_timer(
     alien_map, alien_dir, enemy_move_interval, pos, terminal
 ):
     alien_move_timer = lax.min(
-        jnp.sum(alien_map, dtype=jnp.int8), enemy_move_interval
+        jnp.sum(alien_map, dtype=jnp.int32), enemy_move_interval
     )
     cond = ((jnp.sum(alien_map[:, 0]) > 0) & (alien_dir < 0)) | (
         (jnp.sum(alien_map[:, 9]) > 0) & (alien_dir > 0)

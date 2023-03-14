@@ -29,12 +29,12 @@ observe = jax.jit(space_invaders.observe)
 
 
 def test_neareset_alien():
-    pos: jnp.ndarray = jnp.int8(3)
+    pos: jnp.ndarray = jnp.int32(3)
     alien_map: jnp.ndarray = (
         jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(True)
     )
     alien_map = alien_map.at[3, 3].set(False)
-    assert _nearest_alien(pos, alien_map) == (jnp.int8(2), jnp.int8(3))
+    assert _nearest_alien(pos, alien_map) == (jnp.int32(2), jnp.int32(3))
 
 def test_step_det():
     env = Environment("space_invaders", sticky_action_prob=0.0)

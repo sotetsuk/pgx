@@ -14,19 +14,19 @@ from jax import numpy as jnp
 
 from pgx.flax.struct import dataclass
 
-RAMP_INTERVAL: jnp.ndarray = jnp.int8(100)
-MAX_OXYGEN: jnp.ndarray = jnp.int16(200)
-INIT_SPAWN_SPEED: jnp.ndarray = jnp.int8(20)
-DIVER_SPAWN_SPEED: jnp.ndarray = jnp.int8(30)
-INIT_MOVE_INTERVAL: jnp.ndarray = jnp.int8(5)
-SHOT_COOL_DOWN: jnp.ndarray = jnp.int8(5)
-ENEMY_SHOT_INTERVAL: jnp.ndarray = jnp.int8(10)
-ENEMY_MOVE_INTERVAL: jnp.ndarray = jnp.int8(5)
-DIVER_MOVE_INTERVAL: jnp.ndarray = jnp.int8(5)
+RAMP_INTERVAL: jnp.ndarray = jnp.int32(100)
+MAX_OXYGEN: jnp.ndarray = jnp.int32(200)
+INIT_SPAWN_SPEED: jnp.ndarray = jnp.int32(20)
+DIVER_SPAWN_SPEED: jnp.ndarray = jnp.int32(30)
+INIT_MOVE_INTERVAL: jnp.ndarray = jnp.int32(5)
+SHOT_COOL_DOWN: jnp.ndarray = jnp.int32(5)
+ENEMY_SHOT_INTERVAL: jnp.ndarray = jnp.int32(10)
+ENEMY_MOVE_INTERVAL: jnp.ndarray = jnp.int32(5)
+DIVER_MOVE_INTERVAL: jnp.ndarray = jnp.int32(5)
 
 
-ZERO: jnp.ndarray = jnp.int8(0)
-NINE: jnp.ndarray = jnp.int8(9)
+ZERO: jnp.ndarray = jnp.int32(0)
+NINE: jnp.ndarray = jnp.int32(9)
 TRUE: jnp.ndarray = jnp.bool_(True)
 FALSE: jnp.ndarray = jnp.bool_(False)
 
@@ -35,29 +35,29 @@ FALSE: jnp.ndarray = jnp.bool_(False)
 class State:
     oxygen: jnp.ndarray = MAX_OXYGEN
     diver_count: jnp.ndarray = ZERO
-    sub_x: jnp.ndarray = jnp.int8(5)
+    sub_x: jnp.ndarray = jnp.int32(5)
     sub_y: jnp.ndarray = ZERO
     sub_or: jnp.ndarray = FALSE
     f_bullets: jnp.ndarray = -jnp.ones(
-        (5, 3), dtype=jnp.int8
+        (5, 3), dtype=jnp.int32
     )  # <= 2  TODO: confirm
     e_bullets: jnp.ndarray = -jnp.ones(
-        (25, 3), dtype=jnp.int8
+        (25, 3), dtype=jnp.int32
     )  # <= 1 per each sub  TODO: confirm
     e_fish: jnp.ndarray = -jnp.ones(
-        (25, 4), dtype=jnp.int8
+        (25, 4), dtype=jnp.int32
     )  # <= 19  TODO: confirm
     e_subs: jnp.ndarray = -jnp.ones(
-        (25, 5), dtype=jnp.int8
+        (25, 5), dtype=jnp.int32
     )  # <= 19  TODO: confirm
     divers: jnp.ndarray = -jnp.ones(
-        (5, 4), dtype=jnp.int8
+        (5, 4), dtype=jnp.int32
     )  # <= 2  TODO: confirm
     e_spawn_speed: jnp.ndarray = INIT_SPAWN_SPEED
     e_spawn_timer: jnp.ndarray = INIT_SPAWN_SPEED
     d_spawn_timer: jnp.ndarray = DIVER_SPAWN_SPEED
     move_speed: jnp.ndarray = INIT_MOVE_INTERVAL
-    ramp_index: jnp.ndarray = ZERO  # TODO: require int16?
+    ramp_index: jnp.ndarray = ZERO  # TODO: require int32?
     shot_timer: jnp.ndarray = ZERO
     surface: jnp.ndarray = TRUE
     terminal: jnp.ndarray = FALSE
@@ -71,7 +71,7 @@ def step(
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     rngs = jax.random.split(rng, 6)
-    action = jnp.int8(action)
+    action = jnp.int32(action)
     # sticky action
     action = jax.lax.cond(
         jax.random.uniform(rngs[0]) < sticky_action_prob,
@@ -103,7 +103,7 @@ def _step_det(
         state.terminal,
         lambda: (
             state.replace(last_action=action),  # type: ignore
-            jnp.int16(0),
+            jnp.int32(0),
             state.terminal,
         ),
         lambda: _step_det_at_non_terminal(
@@ -142,7 +142,7 @@ def _step_det_at_non_terminal(
     surface = state.surface
     terminal = state.terminal
 
-    r = jnp.int16(0)
+    r = jnp.int32(0)
 
     # Spawn enemy if timer is up
     e_subs, e_fish = lax.cond(
@@ -217,7 +217,7 @@ def _step_det_at_non_terminal(
             diver_count, oxygen, e_spawn_speed, move_speed, ramping, ramp_index
         ),
         lambda: (
-            jnp.int16(0),
+            jnp.int32(0),
             oxygen,
             diver_count,
             move_speed,
@@ -261,7 +261,7 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
         (action == 5) & (shot_timer == 0),
         lambda: (
             f_bullets.at[find_ix(f_bullets)].set(
-                jnp.int8([sub_x, sub_y, sub_or])
+                jnp.int32([sub_x, sub_y, sub_or])
             ),
             SHOT_COOL_DOWN,
         ),
@@ -281,7 +281,7 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
         action == 2, lambda: lax.max(ZERO, sub_y - 1), lambda: sub_y
     )
     sub_y = lax.cond(
-        action == 4, lambda: lax.min(jnp.int8(8), sub_y + 1), lambda: sub_y
+        action == 4, lambda: lax.min(jnp.int32(8), sub_y + 1), lambda: sub_y
     )
     return f_bullets, shot_timer, sub_x, sub_y, sub_or
 
@@ -434,7 +434,7 @@ def _update_enemy_subs(
         _e_bullets = lax.cond(
             timer_zero,
             lambda: _e_bullets.at[find_ix(_e_bullets)].set(
-                jnp.int8(
+                jnp.int32(
                     [
                         lax.cond(
                             _e_subs[j, 2],
@@ -595,7 +595,7 @@ def _surface(
     diver_count, r = lax.cond(
         diver_count == 6,
         lambda: (ZERO, oxygen * 10 // MAX_OXYGEN),
-        lambda: (diver_count, jnp.int16(0)),
+        lambda: (diver_count, jnp.int32(0)),
     )
     oxygen = MAX_OXYGEN
     diver_count -= 1
@@ -633,7 +633,7 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
             is_sub,
             lambda: (
                 e_subs.at[find_ix(e_subs)].set(
-                    jnp.int8(
+                    jnp.int32(
                         [
                             x,
                             enemy_y,
@@ -648,7 +648,7 @@ def _spawn_enemy(e_subs, e_fish, move_speed, enemy_lr, is_sub, enemy_y):
             lambda: (
                 e_subs,
                 e_fish.at[find_ix(e_fish)].set(
-                    jnp.int8([x, enemy_y, enemy_lr, move_speed])
+                    jnp.int32([x, enemy_y, enemy_lr, move_speed])
                 ),
             ),
         ),
@@ -660,7 +660,7 @@ def _spawn_diver(divers, diver_lr, diver_y):
     x = lax.cond(diver_lr, lambda: ZERO, lambda: NINE)
     ix = find_ix(divers)
     divers = divers.at[ix].set(
-        jnp.array([x, diver_y, diver_lr, DIVER_MOVE_INTERVAL], dtype=jnp.int8)
+        jnp.array([x, diver_y, diver_lr, DIVER_MOVE_INTERVAL], dtype=jnp.int32)
     )
     return divers
 
@@ -679,17 +679,17 @@ def observe(state: State) -> jnp.ndarray:
     oxygen_guage = state.oxygen * 10 // MAX_OXYGEN
     # hotfix to align to original minatar
     oxygen_guage = lax.cond(
-        state.oxygen < 0, lambda: jnp.int16(9), lambda: oxygen_guage
+        state.oxygen < 0, lambda: jnp.int32(9), lambda: oxygen_guage
     )
     obs = lax.fori_loop(
-        jnp.int16(0),
+        jnp.int32(0),
         oxygen_guage,
         lambda i, _obs: _obs.at[9, i, 7].set(1),
         obs,
     )
     obs = lax.fori_loop(
         9 - state.diver_count,
-        jnp.int8(9),
+        jnp.int32(9),
         lambda i, _obs: _obs.at[9, i, 8].set(1),
         obs,
     )
@@ -741,7 +741,7 @@ def observe(state: State) -> jnp.ndarray:
 
     def set_e_subs(_obs, sub):
         _obs = _obs.at[sub[1], sub[0], 6].set(1)
-        back_x = sub[0] + jnp.array([1, -1], dtype=jnp.int8)[sub[2]]
+        back_x = sub[0] + jnp.array([1, -1], dtype=jnp.int32)[sub[2]]
         _obs = lax.cond(
             (0 <= back_x) & (back_x <= 9),
             lambda: _obs.at[sub[1], back_x, 3].set(1),
@@ -762,7 +762,7 @@ def observe(state: State) -> jnp.ndarray:
 
     def set_divers(_obs, diver):
         _obs = _obs.at[diver[1], diver[0], 9].set(1)
-        back_x = diver[0] + jnp.array([1, -1], dtype=jnp.int8)[diver[2]]
+        back_x = diver[0] + jnp.array([1, -1], dtype=jnp.int32)[diver[2]]
         _obs = lax.cond(
             (back_x >= 0) & (back_x <= 9),
             lambda: _obs.at[diver[1], back_x, 3].set(1),

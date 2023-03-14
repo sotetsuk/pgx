@@ -15,22 +15,22 @@ from jax import numpy as jnp
 
 from pgx.flax.struct import dataclass
 
-player_speed = jnp.array(3, dtype=jnp.int8)
-time_limit = jnp.array(2500, dtype=jnp.int16)
+player_speed = jnp.array(3, dtype=jnp.int32)
+time_limit = jnp.array(2500, dtype=jnp.int32)
 
-ZERO = jnp.array(0, dtype=jnp.int8)
-ONE = jnp.array(1, dtype=jnp.int8)
-NINE = jnp.array(9, dtype=jnp.int8)
+ZERO = jnp.array(0, dtype=jnp.int32)
+ONE = jnp.array(1, dtype=jnp.int32)
+NINE = jnp.array(9, dtype=jnp.int32)
 
 
 @dataclass
 class State:
-    cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int8)
-    pos: jnp.ndarray = jnp.array(9, dtype=jnp.int8)
-    move_timer: jnp.ndarray = jnp.array(player_speed, dtype=jnp.int8)
-    terminate_timer: jnp.ndarray = jnp.array(time_limit, dtype=jnp.int16)
+    cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int32)
+    pos: jnp.ndarray = jnp.array(9, dtype=jnp.int32)
+    move_timer: jnp.ndarray = jnp.array(player_speed, dtype=jnp.int32)
+    terminate_timer: jnp.ndarray = jnp.array(time_limit, dtype=jnp.int32)
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
-    last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
+    last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
 
 def step(
@@ -39,7 +39,7 @@ def step(
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    action = jnp.int8(action)
+    action = jnp.int32(action)
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
@@ -66,7 +66,7 @@ def _step_det(
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int16), True),  # type: ignore
+        lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int32), True),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, speeds, directions),
     )
 
@@ -85,7 +85,7 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
     last_action = action
 
-    r = jnp.array(0, dtype=jnp.int16)
+    r = jnp.array(0, dtype=jnp.int32)
 
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),
@@ -189,9 +189,9 @@ def _randomize_cars(
 
 def _random_speed_directions(rng):
     _, rng1, rng2 = jax.random.split(rng, 3)
-    speeds = jax.random.randint(rng1, [8], 1, 6, dtype=jnp.int8)
+    speeds = jax.random.randint(rng1, [8], 1, 6, dtype=jnp.int32)
     directions = jax.random.choice(
-        rng2, jnp.array([-1, 1], dtype=jnp.int8), [8]
+        rng2, jnp.array([-1, 1], dtype=jnp.int32), [8]
     )
     return speeds, directions
 

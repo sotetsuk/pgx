@@ -14,16 +14,16 @@ from jax import numpy as jnp
 import pgx
 from pgx.flax.struct import dataclass
 
-ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int8)
-init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int8)
-init_move_interval: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
-shot_cool_down: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
-INF: jnp.ndarray = jnp.array(99, dtype=jnp.int8)
+ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int32)
+init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int32)
+init_move_interval: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
+shot_cool_down: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
+INF: jnp.ndarray = jnp.array(99, dtype=jnp.int32)
 
-ZERO = jnp.array(0, dtype=jnp.int8)
-ONE = jnp.array(1, dtype=jnp.int8)
-EIGHT = jnp.array(8, dtype=jnp.int8)
-NINE = jnp.array(9, dtype=jnp.int8)
+ZERO = jnp.array(0, dtype=jnp.int32)
+ONE = jnp.array(1, dtype=jnp.int32)
+EIGHT = jnp.array(8, dtype=jnp.int32)
+NINE = jnp.array(9, dtype=jnp.int32)
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -32,7 +32,7 @@ TRUE = jnp.bool_(True)
 @dataclass
 class State(pgx.State):
     steps: jnp.ndarray = jnp.int32(0)
-    curr_player: jnp.ndarray = ZERO
+    curr_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(
         1, dtype=jnp.float32
@@ -43,18 +43,18 @@ class State(pgx.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
-    player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
-    player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int8)
-    entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int8) * INF
-    shot_timer: jnp.ndarray = jnp.ones(0, dtype=jnp.int8)
+    player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
+    player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
+    entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int32) * INF
+    shot_timer: jnp.ndarray = jnp.ones(0, dtype=jnp.int32)
     spawn_speed: jnp.ndarray = init_spawn_speed
     spawn_timer: jnp.ndarray = init_spawn_speed
     move_speed: jnp.ndarray = init_move_interval
     move_timer: jnp.ndarray = init_move_interval
     ramp_timer: jnp.ndarray = ramp_interval
-    ramp_index: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
+    ramp_index: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
     terminal: jnp.ndarray = FALSE  # duplicated but necessary for checking the consistency to the original MinAtar
-    last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
+    last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
 
 class MinAtarAsterix(pgx.Env):
@@ -106,7 +106,7 @@ def step(
     rng: jax.random.KeyArray,
     sticky_action_prob: float,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    action = jnp.int8(action)
+    action = jnp.int32(action)
     rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
     # sticky action
     action = jax.lax.cond(
@@ -169,45 +169,45 @@ def _step_det_at_non_terminal(
     is_gold: bool,
     slot: int,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    player_x = state.player_x
-    player_y = state.player_y
-    entities = state.entities
-    shot_timer = state.shot_timer
-    spawn_speed = state.spawn_speed
-    spawn_timer = state.spawn_timer
-    move_speed = state.move_speed
-    move_timer = state.move_timer
-    ramp_timer = state.ramp_timer
-    ramp_index = state.ramp_index
-    terminal = state.terminal
-
     ramping: bool = True
     r = jnp.float32(0)
 
     # Spawn enemy if timer is up
     entities, spawn_timer = jax.lax.cond(
-        spawn_timer == 0,
-        lambda _entities, _spawn_timer: (
-            entities.at[:, :].set(_spawn_entity(entities, lr, is_gold, slot)),
-            spawn_speed,
+        state.spawn_timer == 0,
+        lambda: (
+            _spawn_entity(state.entities, lr, is_gold, slot),
+            state.spawn_speed,
         ),
-        lambda _entities, _spawn_timer: (_entities, _spawn_timer),
-        entities,
-        spawn_timer,
+        lambda: (state.entities, state.spawn_timer),
     )
+    state = state.replace(entities=entities, spawn_timer=spawn_timer)  # type: ignore
 
     # Resolve player action
     player_x, player_y = jax.lax.switch(
         action,
         [
-            lambda: (player_x, player_y),  # 0
-            lambda: (jax.lax.max(ZERO, player_x - 1), player_y),  # 1
-            lambda: (player_x, jax.lax.max(ONE, player_y - 1)),  # 2
-            lambda: (jax.lax.min(NINE, player_x + 1), player_y),  # 3
-            lambda: (player_x, jax.lax.min(EIGHT, player_y + 1)),  # 4
-            lambda: (player_x, player_y),  # 5
+            lambda: (state.player_x, state.player_y),  # 0
+            lambda: (
+                jax.lax.max(ZERO, state.player_x - 1),
+                state.player_y,
+            ),  # 1
+            lambda: (
+                state.player_x,
+                jax.lax.max(ONE, state.player_y - 1),
+            ),  # 2
+            lambda: (
+                jax.lax.min(NINE, state.player_x + 1),
+                state.player_y,
+            ),  # 3
+            lambda: (
+                state.player_x,
+                jax.lax.min(EIGHT, state.player_y + 1),
+            ),  # 4
+            lambda: (state.player_x, state.player_y),  # 5
         ],
     )
+    state = state.replace(player_x=player_x, player_y=player_y)  # type: ignore
 
     # Update entities
     entities, player_x, player_y, r, terminal = jax.lax.fori_loop(
@@ -218,46 +218,48 @@ def _step_det_at_non_terminal(
             lambda: x,
             lambda: _update_entities(x[0], x[1], x[2], x[3], x[4], i),
         ),
-        (entities, player_x, player_y, r, terminal),
+        (state.entities, state.player_x, state.player_y, r, state.terminal),
     )
+    state = state.replace(entities=entities, player_x=player_x, player_y=player_y, terminal=terminal)  # type: ignore
 
     entities, r, terminal = jax.lax.cond(
-        move_timer == 0,
+        state.move_timer == 0,
         lambda: _update_entities_by_timer(
             entities, r, terminal, player_x, player_y
         ),
-        lambda: (entities, r, terminal),
+        lambda: (state.entities, r, state.terminal),
     )
+    state = state.replace(entities=entities, terminal=terminal)  # type: ignore
     move_timer = jax.lax.cond(
-        move_timer == 0, lambda: move_speed, lambda: move_timer
+        state.move_timer == 0,
+        lambda: state.move_speed,
+        lambda: state.move_timer,
     )
+    state = state.replace(move_timer=move_timer)  # type: ignore
 
     # Update various timers
-    spawn_timer -= 1
-    move_timer -= 1
+    state = state.replace(move_timer=state.move_timer - 1, spawn_timer=state.spawn_timer - 1)  # type: ignore
 
     # Ramp difficulty if interval has elapsed
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
         ramping,
-        lambda: _update_ramp(spawn_speed, move_speed, ramp_timer, ramp_index),
-        lambda: (spawn_speed, move_speed, ramp_timer, ramp_index),
+        lambda: _update_ramp(
+            state.spawn_speed,
+            state.move_speed,
+            state.ramp_timer,
+            state.ramp_index,
+        ),
+        lambda: (
+            state.spawn_speed,
+            state.move_speed,
+            state.ramp_timer,
+            state.ramp_index,
+        ),
     )
+    state = state.replace(spawn_speed=spawn_speed, move_speed=move_speed, ramp_timer=ramp_timer, ramp_index=ramp_index)  # type: ignore
 
-    next_state = State(
-        terminated=terminal,
-        reward=r[jnp.newaxis],  # 1-d array
-        player_x=player_x,
-        player_y=player_y,
-        entities=entities,
-        shot_timer=shot_timer,
-        spawn_speed=spawn_speed,
-        spawn_timer=spawn_timer,
-        move_speed=move_speed,
-        move_timer=move_timer,
-        ramp_timer=ramp_timer,
-        ramp_index=ramp_index,
-        terminal=terminal,
-        last_action=action,
+    next_state = state.replace(  # type: ignore
+        reward=r[jnp.newaxis], last_action=action  # 1-d array
     )  # type: ignore
     return next_state, r, terminal
 

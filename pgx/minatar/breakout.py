@@ -19,12 +19,12 @@ from jax import numpy as jnp
 
 from pgx.flax.struct import dataclass
 
-ZERO = jnp.array(0, dtype=jnp.int8)
-ONE = jnp.array(1, dtype=jnp.int8)
-TWO = jnp.array(2, dtype=jnp.int8)
-THREE = jnp.array(3, dtype=jnp.int8)
-FOUR = jnp.array(4, dtype=jnp.int8)
-NINE = jnp.array(9, dtype=jnp.int8)
+ZERO = jnp.array(0, dtype=jnp.int32)
+ONE = jnp.array(1, dtype=jnp.int32)
+TWO = jnp.array(2, dtype=jnp.int32)
+THREE = jnp.array(3, dtype=jnp.int32)
+FOUR = jnp.array(4, dtype=jnp.int32)
+NINE = jnp.array(9, dtype=jnp.int32)
 
 
 @dataclass
@@ -49,7 +49,7 @@ def step(
     rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    action = jnp.int8(action)
+    action = jnp.int32(action)
     action = jax.lax.cond(
         jax.random.uniform(rng) < sticky_action_prob,
         lambda: state.last_action,
@@ -175,19 +175,19 @@ def update_ball_pos(ball_x, ball_y, ball_dir):
 def update_ball_pos_x(new_x, ball_dir):
     new_x = jax.lax.max(ZERO, new_x)
     new_x = jax.lax.min(NINE, new_x)
-    ball_dir = jnp.array([1, 0, 3, 2], dtype=jnp.int8)[ball_dir]
+    ball_dir = jnp.array([1, 0, 3, 2], dtype=jnp.int32)[ball_dir]
     return new_x, ball_dir
 
 
 def update_ball_pos_y(ball_dir):
-    ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir]
+    ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int32)[ball_dir]
     return ZERO, ball_dir
 
 
 def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir, strike):
     brick_map = brick_map.at[new_y, new_x].set(False)
     new_y = last_y
-    ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir]
+    ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int32)[ball_dir]
     return r + 1, jnp.ones_like(strike), brick_map, new_y, ball_dir
 
 
@@ -203,14 +203,14 @@ def update_by_bottom(
         ball_x == pos,
         lambda: (
             last_y,
-            jnp.array([3, 2, 1, 0], dtype=jnp.int8)[ball_dir],
+            jnp.array([3, 2, 1, 0], dtype=jnp.int32)[ball_dir],
             terminal,
         ),
         lambda: jax.lax.cond(
             new_x == pos,
             lambda: (
                 last_y,
-                jnp.array([2, 3, 0, 1], dtype=jnp.int8)[ball_dir],
+                jnp.array([2, 3, 0, 1], dtype=jnp.int32)[ball_dir],
                 terminal,
             ),
             lambda: (new_y, ball_dir, jnp.array(True, dtype=jnp.bool_)),

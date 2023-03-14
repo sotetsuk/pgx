@@ -32,6 +32,8 @@ def validate(env: pgx.Env, num: int = 100):
         rng, subkey = jax.random.split(rng)
         state = init(subkey)
 
+        assert state.steps == 0
+        curr_steps = state.steps
         _validate_state(state)
         _validate_init_reward(state)
         _validate_curr_player(state)
@@ -41,6 +43,10 @@ def validate(env: pgx.Env, num: int = 100):
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
             state = step(state, action)
+            assert (
+                state.steps == curr_steps + 1
+            ), f"{state.steps}, {curr_steps}"
+            curr_steps += 1
 
             _validate_state(state)
             _validate_curr_player(state)
@@ -60,7 +66,7 @@ def _validate_taking_action_after_terminal(state: pgx.State, step_fn):
     state = step_fn(state, action)
     assert (state.reward == 0).all()
     for field in fields(state):
-        if field.name == "reward":
+        if field.name in ["reward", "steps"]:
             continue
         assert (
             getattr(state, field.name) == getattr(prev_state, field.name)
