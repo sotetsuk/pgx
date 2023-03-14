@@ -42,7 +42,7 @@ class State(core.State):
 
 
 class TicTacToe(core.Env):
-    def __init__(self, *, auto_reset=False):
+    def __init__(self, *, auto_reset: bool = False):
         super().__init__(auto_reset=auto_reset)
 
     def _init(self, key: jax.random.KeyArray) -> State:

@@ -63,7 +63,7 @@ class MinAtarAsterix(core.Env):
         minatar_version: Literal["v0", "v1"] = "v1",
         sticky_action_prob: float = 0.1,
     ):
-        super().__init__()
+        super().__init__(auto_reset=auto_reset)
         self.minatar_version: Literal["v0", "v1"] = minatar_version
         self.sticky_action_prob: float = sticky_action_prob
 

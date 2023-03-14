@@ -63,7 +63,7 @@ class Go(core.Env):
     def __init__(
         self,
         *,
-        auto_reset=False,
+        auto_reset: bool = False,
         size: int = 19,
         komi: float = 7.5,
         history_length: int = 8

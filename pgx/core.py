@@ -39,7 +39,7 @@ class State:
 
 
 class Env(abc.ABC):
-    def __init__(self, *, auto_reset=False):
+    def __init__(self, *, auto_reset: bool = False):
         self.auto_reset = auto_reset
 
     def init(self, key: jax.random.KeyArray) -> State:
