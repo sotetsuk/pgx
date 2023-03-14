@@ -92,6 +92,10 @@ class Go(pgx.Env):
         )(state=state, player_id=player_id)
 
     @property
+    def version(self) -> str:
+        return "beta"
+
+    @property
     def num_players(self) -> int:
         return 2
 
