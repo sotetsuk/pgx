@@ -70,10 +70,6 @@ class Hex(pgx.Env):
     def num_players(self) -> int:
         return 2
 
-    @property
-    def illegal_action_penalty(self) -> Tuple[float, float]:
-        return -1.0, 1.0
-
 
 def init(rng: jax.random.KeyArray, size: int) -> State:
     rng, subkey = jax.random.split(rng)
