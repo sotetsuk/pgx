@@ -20,9 +20,9 @@ def get_sizes(state):
 
 def visualize_minatar(state, savefile=None):
     # Modified from https://github.com/kenjyoung/MinAtar
-    import matplotlib.colors as colors
-    import matplotlib.pyplot as plt
-    import seaborn as sns
+    import matplotlib.colors as colors  # type: ignore
+    import matplotlib.pyplot as plt  # type: ignore
+    import seaborn as sns  # type: ignore
 
     obs = state.observation
     n_channels = obs.shape[-1]

@@ -91,8 +91,7 @@ class MinAtarAsterix(pgx.Env):
         state, _, _ = step(
             state, action, rng, sticky_action_prob=self.sticky_action_prob
         )
-        state = state.replace(terminated=state.terminal)
-        return state.replace(rng=rng)  # type: ignore
+        return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
 
     def _observe(
         self, state: pgx.State, player_id: jnp.ndarray
