@@ -62,6 +62,7 @@ LEGAL_ACTION_MASKS = jnp.array(LEGAL_ACTION_MASKS)
 # 盤面のdataclass
 @dataclass
 class JaxAnimalShogiState:
+    current_player: jnp.ndarray = jnp.int32(0)
     # turn 先手番なら0 後手番なら1
     turn: jnp.ndarray = jnp.int32(0)
     # board 盤面の駒。
