@@ -27,7 +27,7 @@ class State(pgx.State):
     # require at least 19 * 19 > int8, idx_squared_sum can be 361^2 > int16
     chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
     board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int8)
-    turn: jnp.ndarray = jnp.int32(0)
+    turn: jnp.ndarray = jnp.int8(0)  # 0 = black's turn, 1 = white's turn
     num_captured_stones: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)  # [0]=black, [1]=white
     passed: jnp.ndarray = FALSE  # TRUE if last action is pass
     ko: jnp.ndarray = jnp.int32(-1)  # by SSK
@@ -178,7 +178,7 @@ def _update_state_wo_legal_action(state: State, action, size) -> State:
         lambda: _not_pass_move(state, action, size),
         lambda: _pass_move(state, size),
     )
-    state = state.replace(turn=state.turn + 1)  # type: ignore
+    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
     state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
     return state
 
@@ -380,15 +380,15 @@ def _count(state: State, size):
 
 
 def _my_color(state: State):
-    return jnp.int32([1, -1])[state.turn % 2]
+    return jnp.int32([1, -1])[state.turn]
 
 
 def _my_color_ix(state: State):
-    return state.turn % 2
+    return state.turn
 
 
 def _opponent_color(state: State):
-    return jnp.int32([-1, 1])[state.turn % 2]
+    return jnp.int32([-1, 1])[state.turn]
 
 
 def _opponent_color_ix(state: State):
