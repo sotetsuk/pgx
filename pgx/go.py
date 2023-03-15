@@ -83,7 +83,14 @@ class Go(pgx.Env):
 
     def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return partial(step, size=self.size)(state, action)
+        state = partial(step, size=self.size)(state, action)
+        # terminates if size * size * 2 (722 if size=19) steps are elapsed
+        state = jax.lax.cond(
+            (0 <= self.max_termination_steps) & (self.max_termination_steps <= state.steps),
+            lambda: state.replace(terminated=TRUE, reward=partial(_get_reward)(size=self.size)(state)),
+            lambda: state
+        )
+        return state
 
     def _observe(
         self, state: pgx.State, player_id: jnp.ndarray
