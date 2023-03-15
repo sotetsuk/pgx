@@ -32,31 +32,16 @@ class State(pgx.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
     size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int8
-
-    # 連の代表点（一番小さいマス目）のマス目の座標
-    # NOTE: require at least 19 * 19 > int8, idx_squared_sum can be 361^2 > int16
+    # ids of representative stone id (smallest) in the connected stones
+    # positive for black, negative for white, and zero for empty.
+    # require at least 19 * 19 > int8, idx_squared_sum can be 361^2 > int16
     chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
-
-    # 直近8回のログ
-    board_history: jnp.ndarray = jnp.full(
-        (8, 19 * 19), 2, dtype=jnp.int8
-    )  # type:ignore
-
-    # 経過ターン, 0始まり
-    turn: jnp.ndarray = jnp.int32(0)  # type:ignore
-
-    # [0]: 黒の得たアゲハマ, [1]: 白の方
+    board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int8)
+    turn: jnp.ndarray = jnp.int32(0)
     num_captured_stones: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
-
-    # 直前のactionがパスだとTrue
-    passed: jnp.ndarray = FALSE  # type:ignore
-
-    # コウによる着手禁止点(xy), 無ければ(-1)
-    kou: jnp.ndarray = jnp.int32(-1)  # type:ignore
-
-    # コミ
-    komi: jnp.ndarray = jnp.float32(7.5)  # type:ignore
-
+    passed: jnp.ndarray = FALSE  # TRUE if last action is pass
+    kou: jnp.ndarray = jnp.int32(-1)  # by SSK
+    komi: jnp.ndarray = jnp.float32(7.5)
     black_player: jnp.ndarray = jnp.int8(0)
 
 
@@ -167,9 +152,9 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     current_player = black_player
     return State(  # type:ignore
         size=jnp.int32(size),  # type:ignore
-        ren_id_board=jnp.zeros(size**2, dtype=jnp.int32),
+        chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-        game_log=jnp.full((8, size**2), 2, dtype=jnp.int8),
+        board_history=jnp.full((8, size**2), 2, dtype=jnp.int8),
         current_player=current_player,
         komi=jnp.float32(komi),
         black_player=black_player,
@@ -194,7 +179,7 @@ def step(state: State, action: int, size: int) -> State:
     new_log = new_log.at[0].set(
         jnp.clip(_state.chain_id_board, -1, 1).astype(jnp.int8)
     )
-    return _state.replace(game_log=new_log)  # type:ignore
+    return _state.replace(board_history=new_log)  # type:ignore
 
 
 def _update_state_wo_legal_action(
@@ -229,7 +214,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
     state = _state.replace(passed=FALSE)  # type: ignore
     xy = _action
     my_color_ix = _my_color_ix(state)
-    agehama_before = state.num_captured_stones[my_color_ix]
+    num_captured_stones_before = state.num_captured_stones[my_color_ix]
 
     kou_may_occur = _kou_may_occur(state, xy)
 
@@ -262,7 +247,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
 
     # コウの確認
     state = jax.lax.cond(
-        state.num_captured_stones[my_color_ix] - agehama_before == 1,
+        state.num_captured_stones[my_color_ix] - num_captured_stones_before == 1,
         lambda: state,
         lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
@@ -286,7 +271,7 @@ def _merge_around_xy(i, state: State, xy, size):
 def _set_stone(_state: State, _xy: int) -> State:
     my_color = _my_color(_state)
     return _state.replace(  # type:ignore
-        ren_id_board=_state.chain_id_board.at[_xy].set((_xy + 1) * my_color),
+        chain_id_board=_state.chain_id_board.at[_xy].set((_xy + 1) * my_color),
     )
 
 
@@ -300,12 +285,12 @@ def _merge_ren(_state: State, _xy: int, _adj_xy: int):
     # fmt: on
 
     # 大きいidの連を消し、小さいidの連と繋げる
-    ren_id_board = jnp.where(
+    chain_id_board = jnp.where(
         _state.chain_id_board == large_id, small_id, _state.chain_id_board
     )
 
     return _state.replace(  # type:ignore
-        ren_id_board=ren_id_board,
+        chain_id_board=chain_id_board,
     )
 
 
@@ -313,16 +298,16 @@ def _remove_stones(
     _state: State, _rm_ren_id, _rm_stone_xy, kou_may_occur
 ) -> State:
     surrounded_stones = _state.chain_id_board == _rm_ren_id
-    agehama = jnp.count_nonzero(surrounded_stones)
-    ren_id_board = jnp.where(surrounded_stones, 0, _state.chain_id_board)
+    num_captured_stones = jnp.count_nonzero(surrounded_stones)
+    chain_id_board = jnp.where(surrounded_stones, 0, _state.chain_id_board)
     kou = jax.lax.cond(
-        kou_may_occur & (agehama == 1),
+        kou_may_occur & (num_captured_stones == 1),
         lambda: jnp.int32(_rm_stone_xy),
         lambda: _state.kou,
     )
     return _state.replace(  # type:ignore
-        ren_id_board=ren_id_board,
-        agehama=_state.num_captured_stones.at[_my_color_ix(_state)].add(agehama),
+        chain_id_board=chain_id_board,
+        num_captured_stones=_state.num_captured_stones.at[_my_color_ix(_state)].add(num_captured_stones),
         kou=kou,
     )
 
@@ -366,8 +351,8 @@ def legal_actions(state: State, size: int) -> jnp.ndarray:
 
 def _count(state: State, size):
     ZERO = jnp.int32(0)
-    ren_id_board = jnp.abs(state.chain_id_board)
-    is_empty = ren_id_board == 0
+    chain_id_board = jnp.abs(state.chain_id_board)
+    is_empty = chain_id_board == 0
     idx_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1), ZERO)
     idx_squared_sum = jnp.where(
         is_empty, jnp.arange(1, size**2 + 1) ** 2, ZERO
@@ -388,15 +373,15 @@ def _count(state: State, size):
 
     @jax.vmap
     def _num_pseudo(x):
-        return jnp.where(ren_id_board == (x + 1), num_pseudo, ZERO).sum()
+        return jnp.where(chain_id_board == (x + 1), num_pseudo, ZERO).sum()
 
     @jax.vmap
     def _idx_sum(x):
-        return jnp.where(ren_id_board == (x + 1), idx_sum, ZERO).sum()
+        return jnp.where(chain_id_board == (x + 1), idx_sum, ZERO).sum()
 
     @jax.vmap
     def _idx_squared_sum(x):
-        return jnp.where(ren_id_board == (x + 1), idx_squared_sum, ZERO).sum()
+        return jnp.where(chain_id_board == (x + 1), idx_squared_sum, ZERO).sum()
 
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
