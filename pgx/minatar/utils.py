@@ -1,8 +1,5 @@
 import jax.numpy as jnp
 import math
-import matplotlib.pyplot  as plt
-import matplotlib.colors as colors
-import seaborn as sns
 
 
 def get_sizes(state):
@@ -22,6 +19,9 @@ def get_sizes(state):
 
 def visualize_minatar(state, savefile=None):
     # Modified from https://github.com/kenjyoung/MinAtar
+    import matplotlib.pyplot  as plt
+    import matplotlib.colors as colors
+    import seaborn as sns
 
     obs = state.observation
     n_channels = obs.shape[-1]
