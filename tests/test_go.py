@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
+from pgx.go import init, observe, step, _count_ji, _count_point, Go, State
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -82,14 +82,14 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (jnp.clip(state.ren_id_board, -1, 1) == expected_board.ravel()).all()
+    assert (jnp.clip(state.chain_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
     # 同点なのでコミの分 黒 == player_1 の負け
     assert (state.reward == jnp.array([1, -1])).all()
 
 
-def test_kou():
+def test_ko():
     env = Go(size=5)
     env.init = jax.jit(env.init)
     env.step = jax.jit(env.step)
@@ -120,7 +120,7 @@ def test_kou():
     + + O + +
     + + + + +
     """
-    assert state.kou == 12
+    assert state.ko == 12
 
     loser = state.current_player
     state1: State = env.step(
@@ -134,7 +134,7 @@ def test_kou():
     state2: State = env.step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not state2.terminated
-    assert state2.kou == -1
+    assert state2.ko == -1
 
     # see #468
     state: State = env.init(key=key)
@@ -169,7 +169,7 @@ def test_kou():
     state = env.step(state, action=14)
     state = env.step(state, action=23)
     state = env.step(state, action=0)
-    assert state.kou == -1
+    assert state.ko == -1
 
     # see #468
     state: State = env.init(key=key)
@@ -201,7 +201,7 @@ def test_kou():
     state = env.step(state, action=25)
     state = env.step(state, action=3)
     state = env.step(state, action=20)
-    assert state.kou == -1
+    assert state.ko == -1
 
     # Ko after pass
     state: State = env.init(key=key)
@@ -243,7 +243,7 @@ def test_kou():
     state = env.step(state, action=13)
     state = env.step(state, action=24)
     state = env.step(state, action=25)  # pass
-    assert state.kou == -1
+    assert state.ko == -1
 
     # see #479
     actions = [107, 11, 56, 41, 300, 19, 228, 231, 344, 257, 35, 32, 57, 276, 0, 277, 164, 15, 187, 179, 357, 255, 150, 211, 256,
@@ -269,7 +269,7 @@ def test_kou():
     state = env.init(jax.random.PRNGKey(0))
     for a in actions:
         state = env.step(state, a)
-    assert state.kou == -1
+    assert state.ko == -1
     assert state.legal_action_mask[231]
 
 def test_observe():
@@ -561,6 +561,7 @@ def test_legal_action():
 def test_counting_ji():
     key = jax.random.PRNGKey(0)
     count_ji = jax.jit(_count_ji, static_argnums=(2,))
+    BLACK, WHITE = 1, -1
 
     # =====
     # @ + @ + @

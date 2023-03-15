@@ -7,7 +7,7 @@ from pgx.go import (
     _count_ji,
     _get_alphazero_features,
     _get_reward,
-    _merge_ren,
+    _merge_chain,
     _not_pass_move,
     _pass_move,
     _remove_stones,
@@ -75,7 +75,7 @@ elif func_name == "_get_alphazero_features":
 elif func_name == "_get_reward":
     func = _get_reward
 elif func_name == "_merge_ren":
-    func = _merge_ren
+    func = _merge_chain
 elif func_name == "_not_pass_move":
     func = _not_pass_move
 elif func_name == "_pass_move":
