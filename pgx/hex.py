@@ -59,7 +59,7 @@ class Hex(pgx.Env):
         self, state: pgx.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return partial(observe, size=self.size)(state, player_id)
 
     @property
     def version(self) -> str:
@@ -110,17 +110,17 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
     return state
 
 
-def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
     board = jax.lax.cond(
         player_id == state.current_player,
-        lambda: state.board,
-        lambda: state.board * -1,
+        lambda: state.board.reshape((size, size)),
+        lambda: (state.board * -1).reshape((size, size)),
     )
 
     def make(color):
         return board * color > 0
 
-    return jax.vmap(make)(jnp.int8([1, -1]))
+    return jnp.stack(jax.vmap(make)(jnp.int8([1, -1])), 2)
 
 
 def _neighbour(xy, size):
