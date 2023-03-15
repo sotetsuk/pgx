@@ -196,8 +196,7 @@ def _pass_move(state: State, size) -> State:
 def _not_pass_move(state: State, action, size) -> State:
     state = state.replace(passed=FALSE)  # type: ignore
     xy = action
-    my_color_ix = _my_color_ix(state)
-    num_captured_stones_before = state.num_captured_stones[my_color_ix]
+    num_captured_stones_before = state.num_captured_stones[state.turn]
 
     ko_may_occur = _ko_may_occur(state, xy)
 
@@ -235,12 +234,13 @@ def _not_pass_move(state: State, action, size) -> State:
     )
 
     # Check Ko
+    # fmt: off
     state = jax.lax.cond(
-        state.num_captured_stones[my_color_ix] - num_captured_stones_before
-        == 1,
+        state.num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
         lambda: state.replace(ko=jnp.int32(-1)),  # type:ignore
     )
+    # fmt: on
 
     return state.replace(reward=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
 
@@ -258,21 +258,19 @@ def _merge_around_xy(i, state: State, xy, size):
     return state
 
 
-def _set_stone(state: State, xy: int) -> State:
+def _set_stone(state: State, xy) -> State:
     my_color = _my_color(state)
     return state.replace(  # type:ignore
         chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
     )
 
 
-def _merge_ren(state: State, xy: int, adj_xy: int):
+def _merge_ren(state: State, xy, adj_xy):
     my_color = _my_color(state)
     new_id = jnp.abs(state.chain_id_board[xy])
     adj_chain_id = jnp.abs(state.chain_id_board[adj_xy])
-    # fmt: off
     small_id = jnp.minimum(new_id, adj_chain_id) * my_color
     large_id = jnp.maximum(new_id, adj_chain_id) * my_color
-    # fmt: on
 
     # 大きいidの連を消し、小さいidの連と繋げる
     chain_id_board = jnp.where(
@@ -295,9 +293,7 @@ def _remove_stones(
     )
     return state.replace(  # type:ignore
         chain_id_board=chain_id_board,
-        num_captured_stones=state.num_captured_stones.at[
-            _my_color_ix(state)
-        ].add(num_captured_stones),
+        num_captured_stones=state.num_captured_stones.at[state.turn].add(num_captured_stones),
         ko=ko,
     )
 
@@ -383,16 +379,8 @@ def _my_color(state: State):
     return jnp.int32([1, -1])[state.turn]
 
 
-def _my_color_ix(state: State):
-    return state.turn
-
-
 def _opponent_color(state: State):
     return jnp.int32([-1, 1])[state.turn]
-
-
-def _opponent_color_ix(state: State):
-    return (state.turn + 1) % 2
 
 
 def _ko_may_occur(state: State, xy: int) -> jnp.ndarray:
