@@ -156,7 +156,11 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
 def step(state: State, action: int, size: int) -> State:
     state = state.replace(ko=jnp.int32(-1))  # type: ignore
     # update state
-    state = _update_state_wo_legal_action(state, action, size)
+    state = jax.lax.cond(
+        (action < size * size),
+        lambda: _not_pass_move(state, action, size),
+        lambda: _pass_move(state, size),
+    )
 
     # add legal action mask
     state = state.replace(  # type:ignore
@@ -171,15 +175,23 @@ def step(state: State, action: int, size: int) -> State:
     board_history = board_history.at[0].set(
         jnp.clip(state.chain_id_board, -1, 1).astype(jnp.int8)
     )
-    return state.replace(board_history=board_history)  # type:ignore
+    state = state.replace(board_history=board_history)  # type:ignore
 
-
-def _update_state_wo_legal_action(state: State, action, size) -> State:
+    # check PSK up to 8-steps before
+    # fmt off
+    is_psk = (jnp.abs(board_history[0] - board_history[1:]).sum(axis=1) == 0).any()
+    loser = state.current_player
     state = jax.lax.cond(
-        (action < size * size),
-        lambda: _not_pass_move(state, action, size),
-        lambda: _pass_move(state, size),
+        is_psk,
+        lambda: state.replace(  # type: ignore
+            terminated=TRUE,
+            reward=jnp.ones_like(state.reward).at[loser].set(-1.0),
+        ),
+        lambda: state,
     )
+    # fmt on
+
+    # increment turns
     state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
     state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
     return state
