@@ -146,7 +146,7 @@ class Visualizer:
         states,
     ):
         try:
-            SIZE = len(states.turn)
+            SIZE = len(states.current_player)
             WIDTH = math.ceil(math.sqrt(SIZE - 0.1))
             if SIZE - (WIDTH - 1) ** 2 >= WIDTH:
                 HEIGHT = WIDTH
@@ -556,7 +556,7 @@ class Visualizer:
         elif isinstance(_states, GoState):
             return GoState(  # type:ignore
                 size=_states.size[_i],
-                ren_id_board=_states.chain_id_board[_i],
+                chain_id_board=_states.chain_id_board[_i],
                 turn=_states.turn[_i],
             )
         elif isinstance(_states, OthelloState):
