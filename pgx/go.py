@@ -258,17 +258,17 @@ def _merge_around_xy(i, state: State, xy, size):
     return state
 
 
-def _set_stone(_state: State, _xy: int) -> State:
-    my_color = _my_color(_state)
-    return _state.replace(  # type:ignore
-        chain_id_board=_state.chain_id_board.at[_xy].set((_xy + 1) * my_color),
+def _set_stone(state: State, xy: int) -> State:
+    my_color = _my_color(state)
+    return state.replace(  # type:ignore
+        chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
     )
 
 
-def _merge_ren(_state: State, _xy: int, _adj_xy: int):
-    my_color = _my_color(_state)
-    new_id = jnp.abs(_state.chain_id_board[_xy])
-    adj_ren_id = jnp.abs(_state.chain_id_board[_adj_xy])
+def _merge_ren(state: State, xy: int, adj_xy: int):
+    my_color = _my_color(state)
+    new_id = jnp.abs(state.chain_id_board[xy])
+    adj_ren_id = jnp.abs(state.chain_id_board[adj_xy])
     # fmt: off
     small_id = jnp.minimum(new_id, adj_ren_id) * my_color
     large_id = jnp.maximum(new_id, adj_ren_id) * my_color
@@ -276,29 +276,27 @@ def _merge_ren(_state: State, _xy: int, _adj_xy: int):
 
     # 大きいidの連を消し、小さいidの連と繋げる
     chain_id_board = jnp.where(
-        _state.chain_id_board == large_id, small_id, _state.chain_id_board
+        state.chain_id_board == large_id, small_id, state.chain_id_board
     )
 
-    return _state.replace(  # type:ignore
-        chain_id_board=chain_id_board,
-    )
+    return state.replace(chain_id_board=chain_id_board)  # type: ignore
 
 
 def _remove_stones(
-    _state: State, _rm_ren_id, _rm_stone_xy, ko_may_occur
+    state: State, rm_ren_id, rm_stone_xy, ko_may_occur
 ) -> State:
-    surrounded_stones = _state.chain_id_board == _rm_ren_id
+    surrounded_stones = state.chain_id_board == rm_ren_id
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
-    chain_id_board = jnp.where(surrounded_stones, 0, _state.chain_id_board)
+    chain_id_board = jnp.where(surrounded_stones, 0, state.chain_id_board)
     ko = jax.lax.cond(
         ko_may_occur & (num_captured_stones == 1),
-        lambda: jnp.int32(_rm_stone_xy),
-        lambda: _state.ko,
+        lambda: jnp.int32(rm_stone_xy),
+        lambda: state.ko,
     )
-    return _state.replace(  # type:ignore
+    return state.replace(  # type:ignore
         chain_id_board=chain_id_board,
-        num_captured_stones=_state.num_captured_stones.at[
-            _my_color_ix(_state)
+        num_captured_stones=state.num_captured_stones.at[
+            _my_color_ix(state)
         ].add(num_captured_stones),
         ko=ko,
     )
@@ -381,30 +379,30 @@ def _count(state: State, size):
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
 
-def _my_color(_state: State):
-    return jnp.int32([1, -1])[_state.turn % 2]
+def _my_color(state: State):
+    return jnp.int32([1, -1])[state.turn % 2]
 
 
-def _my_color_ix(_state: State):
-    return _state.turn % 2
+def _my_color_ix(state: State):
+    return state.turn % 2
 
 
-def _opponent_color(_state: State):
-    return jnp.int32([-1, 1])[_state.turn % 2]
+def _opponent_color(state: State):
+    return jnp.int32([-1, 1])[state.turn % 2]
 
 
-def _opponent_color_ix(_state: State):
-    return (_state.turn + 1) % 2
+def _opponent_color_ix(state: State):
+    return (state.turn + 1) % 2
 
 
-def _ko_may_occur(_state: State, xy: int) -> jnp.ndarray:
-    size = _state.size
+def _ko_may_occur(state: State, xy: int) -> jnp.ndarray:
+    size = state.size
     x = xy // size
     y = xy % size
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
-    oppo_color = _opponent_color(_state)
+    oppo_color = _opponent_color(state)
     is_occupied_by_opp = (
-        _state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
+        state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     )
     return (oob | is_occupied_by_opp).all()
 
@@ -421,20 +419,18 @@ def _count_point(state, size):
     )
 
 
-def _get_reward(_state: State, size: int) -> jnp.ndarray:
-    score = _count_point(_state, size)
+def _get_reward(state: State, size: int) -> jnp.ndarray:
+    score = _count_point(state, size)
     reward_bw = jax.lax.cond(
-        score[0] - _state.komi > score[1],
+        score[0] - state.komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
         lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
-    black_player = _state.black_player
     reward = jax.lax.cond(
-        black_player == 0,
+        state.black_player == 0,
         lambda: reward_bw,
         lambda: reward_bw[jnp.int8([1, 0])],
     )
-
     return reward
 
 
