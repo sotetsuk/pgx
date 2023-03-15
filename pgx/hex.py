@@ -99,8 +99,8 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
 
     legal_action_mask = board == 0
     state = state.replace(  # type:ignore
-        current_player=(state.current_player + 1) % 2,
-        turn=(state.turn + 1) % 2,
+        current_player=1 - state.current_player,
+        turn=1 - state.turn,
         board=board * -1,
         reward=reward,
         terminated=won,
