@@ -175,7 +175,7 @@ def step(state: State, action: int, size: int) -> State:
     )
 
     # update log
-    new_log = jnp.roll(_state.board_history, size ** 2)
+    new_log = jnp.roll(_state.board_history, size**2)
     new_log = new_log.at[0].set(
         jnp.clip(_state.chain_id_board, -1, 1).astype(jnp.int8)
     )
@@ -247,7 +247,8 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
 
     # コウの確認
     state = jax.lax.cond(
-        state.num_captured_stones[my_color_ix] - num_captured_stones_before == 1,
+        state.num_captured_stones[my_color_ix] - num_captured_stones_before
+        == 1,
         lambda: state,
         lambda: state.replace(ko=jnp.int32(-1)),  # type:ignore
     )
@@ -307,7 +308,9 @@ def _remove_stones(
     )
     return _state.replace(  # type:ignore
         chain_id_board=chain_id_board,
-        num_captured_stones=_state.num_captured_stones.at[_my_color_ix(_state)].add(num_captured_stones),
+        num_captured_stones=_state.num_captured_stones.at[
+            _my_color_ix(_state)
+        ].add(num_captured_stones),
         ko=ko,
     )
 
@@ -381,7 +384,9 @@ def _count(state: State, size):
 
     @jax.vmap
     def _idx_squared_sum(x):
-        return jnp.where(chain_id_board == (x + 1), idx_squared_sum, ZERO).sum()
+        return jnp.where(
+            chain_id_board == (x + 1), idx_squared_sum, ZERO
+        ).sum()
 
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
@@ -429,7 +434,7 @@ def _ko_may_occur(_state: State, xy: int) -> jnp.ndarray:
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
     oppo_color = _opponent_color(_state)
     is_occupied_by_opp = (
-            _state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
+        _state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     )
     return (oob | is_occupied_by_opp).all()
 
