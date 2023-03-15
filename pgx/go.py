@@ -87,7 +87,7 @@ class Go(pgx.Env):
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         state = jax.lax.cond(
             (0 <= self.max_termination_steps) & (self.max_termination_steps <= state.steps),
-            lambda: state.replace(terminated=TRUE, reward=partial(_get_reward)(size=self.size)(state)),
+            lambda: state.replace(terminated=TRUE, reward=partial(_get_reward, size=self.size)(state)),
             lambda: state
         )
         return state
@@ -458,8 +458,8 @@ def _count_point(state, size):
     )
 
 
-def _get_reward(_state: State, _size: int) -> jnp.ndarray:
-    score = _count_point(_state, _size)
+def _get_reward(_state: State, size: int) -> jnp.ndarray:
+    score = _count_point(_state, size)
     reward_bw = jax.lax.cond(
         score[0] - _state.komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
