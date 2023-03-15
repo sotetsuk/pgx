@@ -38,7 +38,7 @@ class State(pgx.State):
     chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
 
     # 直近8回のログ
-    game_log: jnp.ndarray = jnp.full(
+    board_history: jnp.ndarray = jnp.full(
         (8, 19 * 19), 2, dtype=jnp.int8
     )  # type:ignore
 
@@ -154,7 +154,7 @@ def observe(state: State, player_id, size, history_length):
     @jax.vmap
     def _make_log(i):
         color = jnp.int8([1, -1])[i % 2] * my_color
-        return state.game_log[i // 2] == color
+        return state.board_history[i // 2] == color
 
     log = _make_log(jnp.arange(history_length * 2))
     color = jnp.full_like(log[0], my_color == 1)  # black=1, white=0
@@ -190,7 +190,7 @@ def step(state: State, action: int, size: int) -> State:
     )
 
     # update log
-    new_log = jnp.roll(_state.game_log, size**2)
+    new_log = jnp.roll(_state.board_history, size ** 2)
     new_log = new_log.at[0].set(
         jnp.clip(_state.chain_id_board, -1, 1).astype(jnp.int8)
     )
