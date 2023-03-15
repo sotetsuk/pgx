@@ -35,14 +35,19 @@ def visualize_minatar(state, savefile=None):
     size, w, h = get_sizes(state)
     fig, ax = plt.subplots(h, w)
     n_channels = obs.shape[-1]
-    for j in range(size):
-        numerical_state = jnp.amax(obs[j] * jnp.reshape(jnp.arange(n_channels) + 1, (1, 1, -1)), 2) + 0.5
-        if h == 1:
-            ax[j].imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
-            ax[j].set_axis_off()
-        else:
-            ax[j // w, j % w].imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
-            ax[j // w, j % w].set_axis_off()
+    if size == 1:
+        numerical_state = jnp.amax(obs * jnp.reshape(jnp.arange(n_channels) + 1, (1, 1, -1)), 2) + 0.5
+        ax.imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
+        ax.set_axis_off()
+    else:
+        for j in range(size):
+            numerical_state = jnp.amax(obs[j] * jnp.reshape(jnp.arange(n_channels) + 1, (1, 1, -1)), 2) + 0.5
+            if h == 1:
+                ax[j].imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
+                ax[j].set_axis_off()
+            else:
+                ax[j // w, j % w].imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
+                ax[j // w, j % w].set_axis_off()
 
     if savefile is None:
         from io import StringIO
