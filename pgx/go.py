@@ -195,31 +195,30 @@ def _update_state_wo_legal_action(
     return state
 
 
-def _pass_move(_state: State, _size: int) -> State:
+def _pass_move(state: State, size) -> State:
     return jax.lax.cond(
-        _state.passed,
-        # 連続でパスならば終局
-        lambda: _state.replace(terminated=TRUE, reward=_get_reward(_state, _size)),  # type: ignore
-        # 1回目のパスならばStateにパスを追加してそのまま続行
-        lambda: _state.replace(passed=True, reward=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
+        state.passed,
+        # consecutive passes results in the game end
+        lambda: state.replace(terminated=TRUE, reward=_get_reward(state, size)),  # type: ignore
+        # One pass continues the game
+        lambda: state.replace(passed=TRUE, reward=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
     )
 
 
-def _not_pass_move(_state: State, _action: int, size) -> State:
-    state = _state.replace(passed=FALSE)  # type: ignore
-    xy = _action
+def _not_pass_move(state: State, action, size) -> State:
+    state = state.replace(passed=FALSE)  # type: ignore
+    xy = action
     my_color_ix = _my_color_ix(state)
     num_captured_stones_before = state.num_captured_stones[my_color_ix]
 
     ko_may_occur = _ko_may_occur(state, xy)
 
-    # 周囲の連から敵石を除く
+    # Remove killed stones
     adj_xy = _neighbour(xy, size)
     oppo_color = _opponent_color(state)
     ren_id = state.chain_id_board[adj_xy]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     ren_ix = jnp.abs(ren_id) - 1
-    # fmt: off
     is_atari = ((idx_sum[ren_ix] ** 2) == idx_squared_sum[ren_ix] * num_pseudo[ren_ix])
     single_liberty = (idx_squared_sum[ren_ix] // idx_sum[ren_ix]) - 1
     is_killed = (adj_xy != -1) & (ren_id * oppo_color > 0) & is_atari & (single_liberty == xy)
@@ -232,15 +231,14 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
         ),
         state,
     )
-    # fmt: on
     state = _set_stone(state, xy)
 
-    # 周囲をマージ
+    # Merge neighbours
     state = jax.lax.fori_loop(
         0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state
     )
 
-    # コウの確認
+    # Check Ko
     state = jax.lax.cond(
         state.num_captured_stones[my_color_ix] - num_captured_stones_before
         == 1,
