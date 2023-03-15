@@ -59,16 +59,22 @@ def test_win_check():
     key = jax.random.PRNGKey(0)
     key, sub_key = jax.random.split(key)
     state = init(sub_key)
-    for _ in range(6):
+    assert state.current_player == 0
+
+    for _ in range(3):
         state = step(state, 0)
         state = step(state, 1)
+    state = step(state, 0)
     assert state.terminated
+    assert (state.reward == jnp.array([1.0, -1.0])).all()
 
     state = init(sub_key)
-    for i in range(4):
+    for i in range(3):
         state = step(state, i)
         state = step(state, i)
+    state = step(state, 3)
     assert state.terminated
+    assert (state.reward == jnp.array([1.0, -1.0])).all()
 
     state = init(sub_key)
     for i in [1, 2, 2, 3, 3, 4, 3, 4, 4, 6, 4]:
@@ -82,6 +88,7 @@ def test_win_check():
     .@OOO.O
     """
     assert state.terminated
+    assert (state.reward == jnp.array([1.0, -1.0])).all()
 
 
 def test_random_play():

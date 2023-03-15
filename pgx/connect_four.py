@@ -105,6 +105,11 @@ def step(state: State, action: jnp.ndarray) -> State:
     blank_row = state.blank_row.at[action].set(row - 1)
     board = board.at[_to_idx(row, action)].set(state.turn)
     won = _win_check(board, state.turn)
+    reward = jax.lax.cond(
+        won,
+        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
+        lambda: jnp.zeros(2, jnp.float32),
+    )
     return state.replace(  # type: ignore
         current_player=1 - state.current_player,
         legal_action_mask=blank_row >= 0,
@@ -112,6 +117,7 @@ def step(state: State, action: jnp.ndarray) -> State:
         board=board,
         blank_row=blank_row,
         terminated=won | jnp.all(blank_row == -1),
+        reward=reward,
     )
 
 
