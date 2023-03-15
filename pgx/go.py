@@ -28,7 +28,9 @@ class State(pgx.State):
     chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
     board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int8)
     turn: jnp.ndarray = jnp.int8(0)  # 0 = black's turn, 1 = white's turn
-    num_captured_stones: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)  # [0]=black, [1]=white
+    num_captured_stones: jnp.ndarray = jnp.zeros(
+        2, dtype=jnp.int32
+    )  # [0]=black, [1]=white
     passed: jnp.ndarray = FALSE  # TRUE if last action is pass
     ko: jnp.ndarray = jnp.int32(-1)  # by SSK
     komi: jnp.ndarray = jnp.float32(7.5)
@@ -293,7 +295,9 @@ def _remove_stones(
     )
     return state.replace(  # type:ignore
         chain_id_board=chain_id_board,
-        num_captured_stones=state.num_captured_stones.at[state.turn].add(num_captured_stones),
+        num_captured_stones=state.num_captured_stones.at[state.turn].add(
+            num_captured_stones
+        ),
         ko=ko,
     )
 
