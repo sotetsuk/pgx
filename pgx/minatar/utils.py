@@ -1,5 +1,6 @@
-import jax.numpy as jnp
 import math
+
+import jax.numpy as jnp
 
 
 def get_sizes(state):
@@ -19,8 +20,8 @@ def get_sizes(state):
 
 def visualize_minatar(state, savefile=None):
     # Modified from https://github.com/kenjyoung/MinAtar
-    import matplotlib.pyplot  as plt
     import matplotlib.colors as colors
+    import matplotlib.pyplot as plt
     import seaborn as sns
 
     obs = state.observation
@@ -36,26 +37,43 @@ def visualize_minatar(state, savefile=None):
     fig, ax = plt.subplots(h, w)
     n_channels = obs.shape[-1]
     if size == 1:
-        numerical_state = jnp.amax(obs * jnp.reshape(jnp.arange(n_channels) + 1, (1, 1, -1)), 2) + 0.5
-        ax.imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
+        numerical_state = (
+            jnp.amax(
+                obs * jnp.reshape(jnp.arange(n_channels) + 1, (1, 1, -1)), 2
+            )
+            + 0.5
+        )
+        ax.imshow(numerical_state, cmap=cmap, norm=norm, interpolation="none")
         ax.set_axis_off()
     else:
         for j in range(size):
-            numerical_state = jnp.amax(obs[j] * jnp.reshape(jnp.arange(n_channels) + 1, (1, 1, -1)), 2) + 0.5
+            numerical_state = (
+                jnp.amax(
+                    obs[j]
+                    * jnp.reshape(jnp.arange(n_channels) + 1, (1, 1, -1)),
+                    2,
+                )
+                + 0.5
+            )
             if h == 1:
-                ax[j].imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
+                ax[j].imshow(
+                    numerical_state, cmap=cmap, norm=norm, interpolation="none"
+                )
                 ax[j].set_axis_off()
             else:
-                ax[j // w, j % w].imshow(numerical_state, cmap=cmap, norm=norm, interpolation='none')
+                ax[j // w, j % w].imshow(
+                    numerical_state, cmap=cmap, norm=norm, interpolation="none"
+                )
                 ax[j // w, j % w].set_axis_off()
 
     if savefile is None:
         from io import StringIO
+
         sio = StringIO()
-        plt.savefig(sio, format="svg", bbox_inches='tight')
+        plt.savefig(sio, format="svg", bbox_inches="tight")
         plt.close(fig)
         return sio.getvalue()
     else:
-        plt.savefig(savefile, format="svg", bbox_inches='tight')
+        plt.savefig(savefile, format="svg", bbox_inches="tight")
         plt.close(fig)
         return None

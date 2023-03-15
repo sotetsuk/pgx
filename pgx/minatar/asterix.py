@@ -58,10 +58,12 @@ class State(pgx.State):
 
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
+
         return visualize_minatar(self)
 
     def save_svg(self, filename) -> None:
         from pgx.minatar.utils import visualize_minatar
+
         visualize_minatar(self, filename)
 
 

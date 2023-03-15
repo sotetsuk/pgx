@@ -32,7 +32,9 @@ def validate(env: pgx.Env, num: int = 100):
     for _ in range(num):
         rng, subkey = jax.random.split(rng)
         state = init(subkey)
-        assert state.legal_action_mask.sum() != 0, "legal_action_mask at init state cannot be zero."
+        assert (
+            state.legal_action_mask.sum() != 0
+        ), "legal_action_mask at init state cannot be zero."
 
         assert state.steps == 0
         curr_steps = state.steps
