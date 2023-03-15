@@ -305,6 +305,7 @@ def _remove_stones(
 
 
 def legal_actions(state: State, size: int) -> jnp.ndarray:
+    """Logic is highly inspired by OpenSpiel's Go implementation"""
     is_empty = state.chain_id_board == 0
 
     my_color = _my_color(state)
