@@ -111,7 +111,16 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
 
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    ...
+    board = jax.lax.cond(
+        player_id == state.current_player,
+        lambda: state.board,
+        lambda: state.board * -1,
+    )
+
+    def make(color):
+        return board * color > 0
+
+    return jax.vmap(make)(jnp.int8([1, -1]))
 
 
 def _neighbour(xy, size):
