@@ -53,3 +53,45 @@ def test_legal_action():
         state = step(state, 6)
 
     assert (state.legal_action_mask == jnp.array([0, 0, 1, 1, 1, 1, 0])).all()
+
+
+def test_win_check():
+    key = jax.random.PRNGKey(0)
+    key, sub_key = jax.random.split(key)
+    state = init(sub_key)
+    for _ in range(6):
+        state = step(state, 0)
+        state = step(state, 1)
+    assert state.terminated
+
+    state = init(sub_key)
+    for i in range(4):
+        state = step(state, i)
+        state = step(state, i)
+    assert state.terminated
+
+    state = init(sub_key)
+    for i in [1, 2, 2, 3, 3, 4, 3, 4, 4, 6, 4]:
+        state = step(state, i)
+    """
+    .......
+    .......
+    ....@..
+    ...@@..
+    ..@@O..
+    .@OOO.O
+    """
+    assert state.terminated
+
+
+def test_random_play():
+    key = jax.random.PRNGKey(0)
+    done = jnp.bool_(False)
+    key, sub_key = jax.random.split(key)
+    state = init(sub_key)
+    while not done:
+        legal_actions = jnp.where(state.legal_action_mask)[0]
+        key, sub_key = jax.random.split(key)
+        action = jax.random.choice(sub_key, legal_actions)
+        state = step(state, action)
+        done = state.terminated
