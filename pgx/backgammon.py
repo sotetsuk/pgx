@@ -1,5 +1,4 @@
 from functools import partial
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -70,10 +69,6 @@ class Backgammon(pgx.Env):
     @property
     def num_players(self) -> int:
         return 2
-
-    @property
-    def reward_range(self) -> Tuple[float, float]:
-        return 0.0, 3.0
 
 
 def init(rng: jax.random.KeyArray) -> State:
