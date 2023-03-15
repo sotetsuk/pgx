@@ -182,18 +182,7 @@ def step(state: State, action: int, size: int) -> State:
     state = state.replace(board_history=board_history)  # type:ignore
 
     # check PSK up to 8-steps before
-    # fmt: off
-    is_psk = ~state.passed & (jnp.abs(board_history[0] - board_history[1:]).sum(axis=1) == 0).any()
-    winner = state.current_player
-    state = jax.lax.cond(
-        is_psk,
-        lambda: state.replace(  # type: ignore
-            terminated=TRUE,
-            reward=jnp.float32([-1, -1]).at[winner].set(1.0),
-        ),
-        lambda: state,
-    )
-    # fmt: on
+    state = _check_PSK(state)
     return state
 
 
@@ -476,6 +465,22 @@ def _count_ji(state: State, color: int, size: int):
     # fmt on
 
     return (b == 0).sum()
+
+
+def _check_PSK(state):
+    # fmt: off
+    is_psk = ~state.passed & (jnp.abs(state.board_history[0] - state.board_history[1:]).sum(axis=1) == 0).any()
+    winner = state.current_player
+    state = jax.lax.cond(
+        is_psk,
+        lambda: state.replace(  # type: ignore
+            terminated=TRUE,
+            reward=jnp.float32([-1, -1]).at[winner].set(1.0),
+        ),
+        lambda: state,
+    )
+    # fmt: on
+    return state
 
 
 # only for debug
