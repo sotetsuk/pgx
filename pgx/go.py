@@ -86,9 +86,13 @@ class Go(pgx.Env):
         state = partial(step, size=self.size)(state, action)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         state = jax.lax.cond(
-            (0 <= self.max_termination_steps) & (self.max_termination_steps <= state.steps),
-            lambda: state.replace(terminated=TRUE, reward=partial(_get_reward, size=self.size)(state)),
-            lambda: state
+            (0 <= self.max_termination_steps)
+            & (self.max_termination_steps <= state.steps),
+            lambda: state.replace(
+                terminated=TRUE,
+                reward=partial(_get_reward, size=self.size)(state),
+            ),
+            lambda: state,
         )
         return state
 
