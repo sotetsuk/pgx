@@ -46,7 +46,7 @@ class State(pgx.State):
     turn: jnp.ndarray = jnp.int32(0)  # type:ignore
 
     # [0]: 黒の得たアゲハマ, [1]: 白の方
-    agehama: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
+    num_captured_stones: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
 
     # 直前のactionがパスだとTrue
     passed: jnp.ndarray = FALSE  # type:ignore
@@ -229,7 +229,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
     state = _state.replace(passed=FALSE)  # type: ignore
     xy = _action
     my_color_ix = _my_color_ix(state)
-    agehama_before = state.agehama[my_color_ix]
+    agehama_before = state.num_captured_stones[my_color_ix]
 
     kou_may_occur = _kou_may_occur(state, xy)
 
@@ -262,7 +262,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
 
     # コウの確認
     state = jax.lax.cond(
-        state.agehama[my_color_ix] - agehama_before == 1,
+        state.num_captured_stones[my_color_ix] - agehama_before == 1,
         lambda: state,
         lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
     )
@@ -322,7 +322,7 @@ def _remove_stones(
     )
     return _state.replace(  # type:ignore
         ren_id_board=ren_id_board,
-        agehama=_state.agehama.at[_my_color_ix(_state)].add(agehama),
+        agehama=_state.num_captured_stones.at[_my_color_ix(_state)].add(agehama),
         kou=kou,
     )
 
