@@ -39,7 +39,7 @@ class State(pgx.State):
     )  # 1d array for the same API as other multi-agent games
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(6, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
     rng: jax.random.KeyArray = jax.random.PRNGKey(0)
@@ -55,6 +55,16 @@ class State(pgx.State):
     ramp_index: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
     terminal: jnp.ndarray = FALSE  # duplicated but necessary for checking the consistency to the original MinAtar
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
+
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
+
+        return visualize_minatar(self)
+
+    def save_svg(self, filename) -> None:
+        from pgx.minatar.utils import visualize_minatar
+
+        visualize_minatar(self, filename)
 
 
 class MinAtarAsterix(pgx.Env):
@@ -81,7 +91,7 @@ class MinAtarAsterix(pgx.Env):
         state, _, _ = step(
             state, action, rng, sticky_action_prob=self.sticky_action_prob
         )
-        return state.replace(rng=rng)  # type: ignore
+        return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
 
     def _observe(
         self, state: pgx.State, player_id: jnp.ndarray
@@ -256,10 +266,10 @@ def _step_det_at_non_terminal(
     )
     state = state.replace(spawn_speed=spawn_speed, move_speed=move_speed, ramp_timer=ramp_timer, ramp_index=ramp_index)  # type: ignore
 
-    next_state = state.replace(  # type: ignore
+    state = state.replace(  # type: ignore
         reward=r[jnp.newaxis], last_action=action  # 1-d array
     )  # type: ignore
-    return next_state, r, terminal
+    return state, r, terminal
 
 
 # Spawn a new enemy or treasure at a random location with random direction (if all rows are filled do nothing)
