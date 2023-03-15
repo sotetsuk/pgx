@@ -91,7 +91,7 @@ class Go(pgx.Env):
 
 
 def observe(state: State, player_id, size, history_length):
-    """Return AlphaGoZero [Silver+17] feature
+    """Return AlphaGo Zero [Silver+17] feature
 
         obs = (size, size, history_length * 2 + 1)
         e.g., (19, 19, 17) if size=19 and history_length=8 (used in AlphaZero)
@@ -109,7 +109,7 @@ def observe(state: State, player_id, size, history_length):
           - Use the color of `player_id`
 
         This ambiguity happens because `observe` function is available even if state.current_player != player_id.
-        In the AlphaGoZero paper, the final dimension C is explained as:
+        In the AlphaGo Zero paper, the final dimension C is explained as:
 
           > The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black
     is to play or 0 if white is to play.
@@ -468,6 +468,32 @@ def _count_ji(state: State, color: int, size: int):
 
 
 def _check_PSK(state):
+    """On PSK implementations.
+
+    Tromp-Taylor rule employ PSK. However, implementing strict PSK is inefficient because
+
+    - Simulator has to store all previous board (or hash) history, and
+    - Agent also has to remember all previous board to avoid losing by PSK
+
+    As PSK rarely happens, as far as our best knowledge, it is usual to compromise in PSK implementations.
+    For example,
+
+    - OpenSpiel employs SSK (instead of PSK) for computing legal actions, and if PSK action happened, the game ends with tie.
+      - Pros: Detect all PSK actions
+      - Cons: Agent cannot know why the game ends with tie (if the same board is too old)
+    - PettingZoo employs SSK for legal actions, and ignores even if PSK action happened.
+      - Pros: Simple
+      - Cons: PSK is totally ignored
+
+    Note that the strict rule is "PSK for legal actions, and PSK action leads to immediate lose."
+    So, we also compromise at this point, our approach is
+
+    - Pgx employs SSK for legal actions, PSK is approximated by up to 8-steps before board, and approximate PSK action leads to immediate lose
+      - Pros: Agent may be able to avoid PSK (as it observes board history up to 8-steps in AlphaGo Zero feature)
+      - Cons: Ignoring the old same boards
+
+    Anyway, we believe it's effect is very small as PSK rarely happens, especially in 19x19 board.
+    """
     # fmt: off
     is_psk = ~state.passed & (jnp.abs(state.board_history[0] - state.board_history[1:]).sum(axis=1) == 0).any()
     winner = state.current_player
