@@ -535,14 +535,17 @@ def test_legal_action():
     env.step = jax.jit(env.step)
     key = jax.random.PRNGKey(0)
     state = env.init(key=key)
-    for _ in range(100):
+    for _ in range(50):  # 5 * 5 * 2 = 50
         assert np.where(state.legal_action_mask)[0][-1]
 
         legal_actions = np.where(state.legal_action_mask)[0][:-1]
         illegal_actions = np.where(~state.legal_action_mask)[0][:-1]
         for action in legal_actions:
             _state = env.step(state=state, action=action)
-            assert not _state.terminated
+            if _state.steps < 50:
+                assert not _state.terminated
+            else:
+                assert _state.terminated
         for action in illegal_actions:
             _state = env.step(state=state, action=action)
             assert _state.terminated

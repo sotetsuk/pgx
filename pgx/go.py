@@ -76,13 +76,25 @@ class Go(pgx.Env):
         self.size = size
         self.komi = komi
         self.history_length = history_length
+        self.max_termination_steps = self.size * self.size * 2
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(init, size=self.size, komi=self.komi)(key=key)
 
     def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return partial(step, size=self.size)(state, action)
+        state = partial(step, size=self.size)(state, action)
+        # terminates if size * size * 2 (722 if size=19) steps are elapsed
+        state = jax.lax.cond(
+            (0 <= self.max_termination_steps)
+            & (self.max_termination_steps <= state.steps),
+            lambda: state.replace(  # type: ignore
+                terminated=TRUE,
+                reward=partial(_get_reward, size=self.size)(state),
+            ),
+            lambda: state,
+        )
+        return state  # type: ignore
 
     def _observe(
         self, state: pgx.State, player_id: jnp.ndarray
@@ -450,8 +462,8 @@ def _count_point(state, size):
     )
 
 
-def _get_reward(_state: State, _size: int) -> jnp.ndarray:
-    score = _count_point(_state, _size)
+def _get_reward(_state: State, size: int) -> jnp.ndarray:
+    score = _count_point(_state, size)
     reward_bw = jax.lax.cond(
         score[0] - _state.komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
