@@ -658,7 +658,7 @@ def _state_to_pbn(state: State) -> str:
     return pbn
 
 
-# @jax.jit
+@jax.jit
 def _state_to_key(state: State) -> jnp.ndarray:
     """Convert state to key of dds table"""
     hand = state.hand
