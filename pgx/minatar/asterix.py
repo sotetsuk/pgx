@@ -56,6 +56,14 @@ class State(pgx.State):
     terminal: jnp.ndarray = FALSE  # duplicated but necessary for checking the consistency to the original MinAtar
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
+        return visualize_minatar(self)
+
+    def save_svg(self, filename) -> None:
+        from pgx.minatar.utils import visualize_minatar
+        visualize_minatar(self, filename)
+
 
 class MinAtarAsterix(pgx.Env):
     def __init__(
