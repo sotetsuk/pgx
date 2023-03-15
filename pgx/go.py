@@ -94,7 +94,7 @@ class Go(pgx.Env):
             ),
             lambda: state,
         )
-        return state
+        return state  # type: ignore
 
     def _observe(
         self, state: pgx.State, player_id: jnp.ndarray
