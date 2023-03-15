@@ -433,7 +433,6 @@ def _ko_may_occur(_state: State, xy: int) -> jnp.ndarray:
 
 
 def _count_point(state, size):
-    # NEED FIX: Japanese rule → Tromp-Taylor rule
     return jnp.array(
         [
             _count_ji(state, 1, size)
