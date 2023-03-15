@@ -1,5 +1,4 @@
 from functools import partial
-from typing import Tuple
 
 import jax
 from jax import numpy as jnp
