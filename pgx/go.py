@@ -77,6 +77,7 @@ class Go(pgx.Env):
         self.size = size
         self.komi = komi
         self.history_length = history_length
+        self.max_termination_steps = self.size * self.size * 2
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(init, size=self.size, komi=self.komi)(key=key)
