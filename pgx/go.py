@@ -249,10 +249,10 @@ def _merge_around_xy(i, state: State, xy, size):
     my_color = _my_color(state)
     adj_xy = _neighbour(xy, size)[i]
     is_off = adj_xy == -1
-    is_my_ren = state.chain_id_board[adj_xy] * my_color > 0
+    is_my_chain = state.chain_id_board[adj_xy] * my_color > 0
     state = jax.lax.cond(
-        ((~is_off) & is_my_ren),
-        lambda: _merge_ren(state, xy, adj_xy),
+        ((~is_off) & is_my_chain),
+        lambda: _merge_chain(state, xy, adj_xy),
         lambda: state,
     )
     return state
@@ -265,7 +265,7 @@ def _set_stone(state: State, xy) -> State:
     )
 
 
-def _merge_ren(state: State, xy, adj_xy):
+def _merge_chain(state: State, xy, adj_xy):
     my_color = _my_color(state)
     new_id = jnp.abs(state.chain_id_board[xy])
     adj_chain_id = jnp.abs(state.chain_id_board[adj_xy])
