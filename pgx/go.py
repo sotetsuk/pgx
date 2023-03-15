@@ -207,9 +207,9 @@ def _not_pass_move(state: State, action, size) -> State:
     chain_id = state.chain_id_board[adj_xy]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(chain_id) - 1
-    is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[
+    is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[
         chain_ix
-    ]
+    ] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
     is_killed = (
         (adj_xy != -1)
