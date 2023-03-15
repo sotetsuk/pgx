@@ -178,13 +178,8 @@ def step(state: State, action: int, size: int) -> State:
     state = state.replace(board_history=board_history)  # type:ignore
 
     # check PSK up to 8-steps before
-    # fmt off
-    is_psk = (
-        ~state.passed
-        & (
-            jnp.abs(board_history[0] - board_history[1:]).sum(axis=1) == 0
-        ).any()
-    )
+    # fmt: off
+    is_psk = ~state.passed & (jnp.abs(board_history[0] - board_history[1:]).sum(axis=1) == 0).any()
     loser = state.current_player
     state = jax.lax.cond(
         is_psk,
@@ -194,7 +189,7 @@ def step(state: State, action: int, size: int) -> State:
         ),
         lambda: state,
     )
-    # fmt on
+    # fmt: on
 
     # increment turns
     state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
