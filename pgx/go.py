@@ -28,7 +28,7 @@ class State(pgx.State):
     chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
     board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int8)
     turn: jnp.ndarray = jnp.int32(0)
-    num_captured_stones: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
+    num_captured_stones: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)  # [0]=black, [1]=white
     passed: jnp.ndarray = FALSE  # TRUE if last action is pass
     ko: jnp.ndarray = jnp.int32(-1)  # by SSK
     komi: jnp.ndarray = jnp.float32(7.5)
