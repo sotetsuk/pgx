@@ -137,11 +137,11 @@ def observe(state: State, player_id, size, history_length):
     )
 
     @jax.vmap
-    def _make_log(i):
+    def _make(i):
         color = jnp.int8([1, -1])[i % 2] * my_color
         return state.board_history[i // 2] == color
 
-    log = _make_log(jnp.arange(history_length * 2))
+    log = _make(jnp.arange(history_length * 2))
     color = jnp.full_like(log[0], my_color == 1)  # black=1, white=0
 
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
