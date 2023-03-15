@@ -22,6 +22,7 @@ class ChessAction:
 # 盤面のdataclass
 @dataclass
 class ChessState:
+    current_player = 0
     # turn 先手番なら0 後手番なら1
     turn: int = 0
     # board 盤面の駒。
