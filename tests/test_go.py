@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import init, observe, step, _count_ji, _count_point, Go, State, BLACK, WHITE
+from pgx.go import init, observe, step, _count_ji, _count_point, Go, State
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -561,6 +561,7 @@ def test_legal_action():
 def test_counting_ji():
     key = jax.random.PRNGKey(0)
     count_ji = jax.jit(_count_ji, static_argnums=(2,))
+    BLACK, WHITE = 1, -1
 
     # =====
     # @ + @ + @

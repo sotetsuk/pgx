@@ -6,13 +6,6 @@ from jax import numpy as jnp
 import pgx
 from pgx.flax.struct import dataclass
 
-BLACK = 1
-WHITE = -1
-POINT = 2
-
-dx = jnp.int32([-1, +1, 0, 0])
-dy = jnp.int32([0, 0, -1, +1])
-
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
@@ -27,7 +20,7 @@ class State(pgx.State):
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
-    # ---
+    # --- Go specific ---
     size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int8
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
@@ -179,9 +172,7 @@ def step(state: State, action: int, size: int) -> State:
     return state.replace(board_history=board_history)  # type:ignore
 
 
-def _update_state_wo_legal_action(
-    state: State, action, size
-) -> State:
+def _update_state_wo_legal_action(state: State, action, size) -> State:
     state = jax.lax.cond(
         (action < size * size),
         lambda: _not_pass_move(state, action, size),
@@ -216,11 +207,19 @@ def _not_pass_move(state: State, action, size) -> State:
     ren_id = state.chain_id_board[adj_xy]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     ren_ix = jnp.abs(ren_id) - 1
-    is_atari = ((idx_sum[ren_ix] ** 2) == idx_squared_sum[ren_ix] * num_pseudo[ren_ix])
+    is_atari = (idx_sum[ren_ix] ** 2) == idx_squared_sum[ren_ix] * num_pseudo[
+        ren_ix
+    ]
     single_liberty = (idx_squared_sum[ren_ix] // idx_sum[ren_ix]) - 1
-    is_killed = (adj_xy != -1) & (ren_id * oppo_color > 0) & is_atari & (single_liberty == xy)
+    is_killed = (
+        (adj_xy != -1)
+        & (ren_id * oppo_color > 0)
+        & is_atari
+        & (single_liberty == xy)
+    )
     state = jax.lax.fori_loop(
-        0, 4,
+        0,
+        4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
             lambda: _remove_stones(s, ren_id[i], adj_xy[i], ko_may_occur),
@@ -439,6 +438,8 @@ def _get_reward(_state: State, size: int) -> jnp.ndarray:
 
 
 def _neighbour(xy, size):
+    dx = jnp.int32([-1, +1, 0, 0])
+    dy = jnp.int32([0, 0, -1, +1])
     xs = xy // size + dx
     ys = xy % size + dy
     on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
