@@ -82,7 +82,7 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (jnp.clip(state.ren_id_board, -1, 1) == expected_board.ravel()).all()
+    assert (jnp.clip(state.chain_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
     # 同点なのでコミの分 黒 == player_1 の負け

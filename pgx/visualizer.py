@@ -556,7 +556,7 @@ class Visualizer:
         elif isinstance(_states, GoState):
             return GoState(  # type:ignore
                 size=_states.size[_i],
-                ren_id_board=_states.ren_id_board[_i],
+                ren_id_board=_states.chain_id_board[_i],
                 turn=_states.turn[_i],
             )
         elif isinstance(_states, OthelloState):
