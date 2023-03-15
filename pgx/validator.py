@@ -12,6 +12,7 @@ def validate(env: pgx.Env, num: int = 100):
 
     - init
       - reward is zero array
+      - legal_action_mask is not empty
     - step
       - state.current_player is positive
       - (TODO) taking illegal actions terminates the episode with a negative reward
@@ -31,6 +32,7 @@ def validate(env: pgx.Env, num: int = 100):
     for _ in range(num):
         rng, subkey = jax.random.split(rng)
         state = init(subkey)
+        assert state.legal_action_mask.sum() != 0, "legal_action_mask at init state cannot be zero."
 
         assert state.steps == 0
         curr_steps = state.steps
