@@ -71,10 +71,6 @@ class Backgammon(pgx.Env):
     def num_players(self) -> int:
         return 2
 
-    @property
-    def reward_range(self) -> Tuple[float, float]:
-        return 0.0, 3.0
-
 
 def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)

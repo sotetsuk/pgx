@@ -101,10 +101,6 @@ class Go(pgx.Env):
     def num_players(self) -> int:
         return 2
 
-    @property
-    def reward_range(self) -> Tuple[float, float]:
-        return -1.0, 1.0
-
 
 def observe(state: State, player_id, size, history_length):
     """Return AlphaGoZero [Silver+17] feature

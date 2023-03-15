@@ -75,10 +75,6 @@ class TicTacToe(pgx.Env):
     def num_players(self) -> int:
         return 2
 
-    @property
-    def reward_range(self) -> Tuple[float, float]:
-        return -1.0, 1.0
-
 
 def init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)

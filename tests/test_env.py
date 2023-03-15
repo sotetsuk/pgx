@@ -13,7 +13,7 @@ def test_jit():
         env = pgx.make(env_name)
 
         print(env.num_players)
-        print(env.reward_range)
+        print(env.illegal_action_penalty)
         print(env.observation_shape)
         print(env.action_shape)
 

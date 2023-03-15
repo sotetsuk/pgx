@@ -71,7 +71,7 @@ class Hex(pgx.Env):
         return 2
 
     @property
-    def reward_range(self) -> Tuple[float, float]:
+    def illegal_action_penalty(self) -> Tuple[float, float]:
         return -1.0, 1.0
 
 
