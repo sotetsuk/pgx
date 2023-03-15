@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import init, observe, step, _count_ji, _count_point, Go, State
+from pgx.go import init, observe, step, _count_ji, _count_point, Go, State, show
 
 BOARD_SIZE = 5
 j_init = jax.jit(init, static_argnums=(1,))
@@ -1057,6 +1057,58 @@ def test_counting_point():
     state = j_step(state=state, action=5, size=BOARD_SIZE)
     state = j_step(state=state, action=25, size=BOARD_SIZE)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
+
+
+def test_PSK():
+    env = Go(size=5)
+    env.init = jax.jit(env.init)
+    env.step = jax.jit(env.step)
+    state = env.init(jax.random.PRNGKey(0))
+    state = env.step(state, 20)  # BLACK
+    state = env.step(state, 17)  # WHITE
+    state = env.step(state, 6)  # BLACK
+    state = env.step(state, 9)  # WHITE
+    state = env.step(state, 11)  # BLACK
+    state = env.step(state, 1)  # WHITE
+    state = env.step(state, 25)  # BLACK
+    state = env.step(state, 4)  # WHITE
+    state = env.step(state, 24)  # BLACK
+    state = env.step(state, 19)  # WHITE
+    state = env.step(state, 16)  # BLACK
+    state = env.step(state, 18)  # WHITE
+    state = env.step(state, 5)  # BLACK
+    state = env.step(state, 0)  # WHITE
+    state = env.step(state, 3)  # BLACK
+    state = env.step(state, 21)  # WHITE
+    state = env.step(state, 12)  # BLACK
+    state = env.step(state, 13)  # WHITE
+    state = env.step(state, 7)  # BLACK
+    state = env.step(state, 8)  # WHITE
+    state = env.step(state, 22)  # BLACK
+    state = env.step(state, 25)  # WHITE
+    state = env.step(state, 21)  # BLACK
+    state = env.step(state, 23)  # WHITE
+    state = env.step(state, 10)  # BLACK
+    #  O O + @ O
+    #  @ @ @ O O
+    #  @ @ @ O +
+    #  + @ O O O
+    #  @ @ @ O +
+    state = env.step(state, 2)  # WHITE
+    state = env.step(state, 3)  # BLACK
+    state = env.step(state, 0)  # WHITE
+    assert not state.terminated
+    state = env.step(state, 25)  # BLACK
+    assert not state.terminated
+    state = env.step(state, 1)  # WHITE
+    #  O O + @ O
+    #  @ @ @ O O
+    #  @ @ @ O +
+    #  + @ O O O
+    #  @ @ @ O +
+    assert state.terminated
+    assert state.black_player == 1
+    assert (state.reward == jnp.float32([-1, 1])).all()  # black wins
 
 
 def test_random_play_5():
