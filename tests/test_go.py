@@ -89,7 +89,7 @@ def test_step():
     assert (state.reward == jnp.array([1, -1])).all()
 
 
-def test_kou():
+def test_ko():
     env = Go(size=5)
     env.init = jax.jit(env.init)
     env.step = jax.jit(env.step)
