@@ -120,7 +120,7 @@ def test_kou():
     + + O + +
     + + + + +
     """
-    assert state.kou == 12
+    assert state.ko == 12
 
     loser = state.current_player
     state1: State = env.step(
@@ -134,7 +134,7 @@ def test_kou():
     state2: State = env.step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not state2.terminated
-    assert state2.kou == -1
+    assert state2.ko == -1
 
     # see #468
     state: State = env.init(key=key)
@@ -169,7 +169,7 @@ def test_kou():
     state = env.step(state, action=14)
     state = env.step(state, action=23)
     state = env.step(state, action=0)
-    assert state.kou == -1
+    assert state.ko == -1
 
     # see #468
     state: State = env.init(key=key)
@@ -201,7 +201,7 @@ def test_kou():
     state = env.step(state, action=25)
     state = env.step(state, action=3)
     state = env.step(state, action=20)
-    assert state.kou == -1
+    assert state.ko == -1
 
     # Ko after pass
     state: State = env.init(key=key)
@@ -243,7 +243,7 @@ def test_kou():
     state = env.step(state, action=13)
     state = env.step(state, action=24)
     state = env.step(state, action=25)  # pass
-    assert state.kou == -1
+    assert state.ko == -1
 
     # see #479
     actions = [107, 11, 56, 41, 300, 19, 228, 231, 344, 257, 35, 32, 57, 276, 0, 277, 164, 15, 187, 179, 357, 255, 150, 211, 256,
@@ -269,7 +269,7 @@ def test_kou():
     state = env.init(jax.random.PRNGKey(0))
     for a in actions:
         state = env.step(state, a)
-    assert state.kou == -1
+    assert state.ko == -1
     assert state.legal_action_mask[231]
 
 def test_observe():

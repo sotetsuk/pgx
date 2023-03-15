@@ -40,7 +40,7 @@ class State(pgx.State):
     turn: jnp.ndarray = jnp.int32(0)
     num_captured_stones: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)
     passed: jnp.ndarray = FALSE  # TRUE if last action is pass
-    kou: jnp.ndarray = jnp.int32(-1)  # by SSK
+    ko: jnp.ndarray = jnp.int32(-1)  # by SSK
     komi: jnp.ndarray = jnp.float32(7.5)
     black_player: jnp.ndarray = jnp.int8(0)
 
@@ -162,7 +162,7 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
 
 
 def step(state: State, action: int, size: int) -> State:
-    state = state.replace(kou=jnp.int32(-1))  # type: ignore
+    state = state.replace(ko=jnp.int32(-1))  # type: ignore
     # update state
     _state = _update_state_wo_legal_action(state, action, size)
 
@@ -216,7 +216,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
     my_color_ix = _my_color_ix(state)
     num_captured_stones_before = state.num_captured_stones[my_color_ix]
 
-    kou_may_occur = _kou_may_occur(state, xy)
+    ko_may_occur = _ko_may_occur(state, xy)
 
     # 周囲の連から敵石を除く
     adj_xy = _neighbour(xy, size)
@@ -232,7 +232,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
         0, 4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(s, ren_id[i], adj_xy[i], kou_may_occur),
+            lambda: _remove_stones(s, ren_id[i], adj_xy[i], ko_may_occur),
             lambda: s,
         ),
         state,
@@ -249,7 +249,7 @@ def _not_pass_move(_state: State, _action: int, size) -> State:
     state = jax.lax.cond(
         state.num_captured_stones[my_color_ix] - num_captured_stones_before == 1,
         lambda: state,
-        lambda: state.replace(kou=jnp.int32(-1)),  # type:ignore
+        lambda: state.replace(ko=jnp.int32(-1)),  # type:ignore
     )
 
     return state.replace(reward=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
@@ -295,20 +295,20 @@ def _merge_ren(_state: State, _xy: int, _adj_xy: int):
 
 
 def _remove_stones(
-    _state: State, _rm_ren_id, _rm_stone_xy, kou_may_occur
+    _state: State, _rm_ren_id, _rm_stone_xy, ko_may_occur
 ) -> State:
     surrounded_stones = _state.chain_id_board == _rm_ren_id
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
     chain_id_board = jnp.where(surrounded_stones, 0, _state.chain_id_board)
-    kou = jax.lax.cond(
-        kou_may_occur & (num_captured_stones == 1),
+    ko = jax.lax.cond(
+        ko_may_occur & (num_captured_stones == 1),
         lambda: jnp.int32(_rm_stone_xy),
-        lambda: _state.kou,
+        lambda: _state.ko,
     )
     return _state.replace(  # type:ignore
         chain_id_board=chain_id_board,
         num_captured_stones=_state.num_captured_stones.at[_my_color_ix(_state)].add(num_captured_stones),
-        kou=kou,
+        ko=ko,
     )
 
 
@@ -343,9 +343,9 @@ def legal_actions(state: State, size: int) -> jnp.ndarray:
     legal_action_mask = is_empty & neighbor_ok
 
     return jax.lax.cond(
-        (state.kou == -1),
+        (state.ko == -1),
         lambda: legal_action_mask,
-        lambda: legal_action_mask.at[state.kou].set(FALSE),
+        lambda: legal_action_mask.at[state.ko].set(FALSE),
     )
 
 
@@ -403,7 +403,7 @@ def show(state: State) -> None:
 def _show_details(state: State) -> None:
     show(state)
     print(state.chain_id_board.reshape((5, 5)))
-    print(state.kou)
+    print(state.ko)
 
 
 def _my_color(_state: State):
@@ -422,7 +422,7 @@ def _opponent_color_ix(_state: State):
     return (_state.turn + 1) % 2
 
 
-def _kou_may_occur(_state: State, xy: int) -> jnp.ndarray:
+def _ko_may_occur(_state: State, xy: int) -> jnp.ndarray:
     size = _state.size
     x = xy // size
     y = xy % size
