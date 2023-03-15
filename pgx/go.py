@@ -162,6 +162,10 @@ def step(state: State, action: int, size: int) -> State:
         lambda: _pass_move(state, size),
     )
 
+    # increment turns
+    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
+    state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
+
     # add legal action mask
     state = state.replace(  # type:ignore
         legal_action_mask=state.legal_action_mask.at[:-1]
@@ -180,20 +184,16 @@ def step(state: State, action: int, size: int) -> State:
     # check PSK up to 8-steps before
     # fmt: off
     is_psk = ~state.passed & (jnp.abs(board_history[0] - board_history[1:]).sum(axis=1) == 0).any()
-    loser = state.current_player
+    winner = state.current_player
     state = jax.lax.cond(
         is_psk,
         lambda: state.replace(  # type: ignore
             terminated=TRUE,
-            reward=jnp.ones_like(state.reward).at[loser].set(-1.0),
+            reward=jnp.float32([-1, -1]).at[winner].set(1.0),
         ),
         lambda: state,
     )
     # fmt: on
-
-    # increment turns
-    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
-    state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
     return state
 
 
