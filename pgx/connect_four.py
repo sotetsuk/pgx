@@ -56,7 +56,7 @@ class ConnectFour(pgx.Env):
 
     @property
     def version(self) -> str:
-        return "beta"
+        return "alpha"
 
     @property
     def num_players(self) -> int:
@@ -64,7 +64,9 @@ class ConnectFour(pgx.Env):
 
 
 def init(rng: jax.random.KeyArray) -> State:
-    ...
+    rng, subkey = jax.random.split(rng)
+    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(current_player=current_player)  # type:ignore
 
 
 def step(state: State, action: jnp.ndarray) -> State:
