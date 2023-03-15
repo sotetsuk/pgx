@@ -146,7 +146,7 @@ class Visualizer:
         states,
     ):
         try:
-            SIZE = len(states.turn)
+            SIZE = len(states.current_player)
             WIDTH = math.ceil(math.sqrt(SIZE - 0.1))
             if SIZE - (WIDTH - 1) ** 2 >= WIDTH:
                 HEIGHT = WIDTH
