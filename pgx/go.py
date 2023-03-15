@@ -164,40 +164,35 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
 def step(state: State, action: int, size: int) -> State:
     state = state.replace(ko=jnp.int32(-1))  # type: ignore
     # update state
-    _state = _update_state_wo_legal_action(state, action, size)
+    state = _update_state_wo_legal_action(state, action, size)
 
-    # add legal actions
-    _state = _state.replace(  # type:ignore
-        legal_action_mask=_state.legal_action_mask.at[:-1]
-        .set(legal_actions(_state, size))
+    # add legal action mask
+    state = state.replace(  # type:ignore
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(legal_actions(state, size))
         .at[-1]
         .set(TRUE)
     )
 
-    # update log
-    new_log = jnp.roll(_state.board_history, size**2)
-    new_log = new_log.at[0].set(
-        jnp.clip(_state.chain_id_board, -1, 1).astype(jnp.int8)
+    # update board history
+    board_history = jnp.roll(state.board_history, size**2)
+    board_history = board_history.at[0].set(
+        jnp.clip(state.chain_id_board, -1, 1).astype(jnp.int8)
     )
-    return _state.replace(board_history=new_log)  # type:ignore
+    return state.replace(board_history=board_history)  # type:ignore
 
 
 def _update_state_wo_legal_action(
-    _state: State, _action: int, _size: int
+    state: State, action, size
 ) -> State:
-    _state = jax.lax.cond(
-        (_action < _size * _size),
-        lambda: _not_pass_move(_state, _action, _size),
-        lambda: _pass_move(_state, _size),
+    state = jax.lax.cond(
+        (action < size * size),
+        lambda: _not_pass_move(state, action, size),
+        lambda: _pass_move(state, size),
     )
-
-    # increase turn
-    _state = _state.replace(turn=_state.turn + 1)  # type: ignore
-
-    # change player
-    _state = _state.replace(current_player=(_state.current_player + 1) % 2)  # type: ignore
-
-    return _state
+    state = state.replace(turn=state.turn + 1)  # type: ignore
+    state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
+    return state
 
 
 def _pass_move(_state: State, _size: int) -> State:
