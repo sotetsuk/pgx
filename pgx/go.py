@@ -481,7 +481,7 @@ def _count_ji(state: State, color: int, size: int):
     neighbours = _neighbours(size)
 
     def is_opp_neighbours(b):
-        # 空点かつ、隣接する4箇所のいずれかが敵石の場合True
+        # True if empty and any of neighbours is opponent
         return (b == 0) & (
             (b[neighbours.flatten()] == -1).reshape(size**2, 4)
             & (neighbours != -1)
