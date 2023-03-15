@@ -88,7 +88,7 @@ class Go(pgx.Env):
         state = jax.lax.cond(
             (0 <= self.max_termination_steps)
             & (self.max_termination_steps <= state.steps),
-            lambda: state.replace(
+            lambda: state.replace(  # type: ignore
                 terminated=TRUE,
                 reward=partial(_get_reward, size=self.size)(state),
             ),
