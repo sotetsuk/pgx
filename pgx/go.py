@@ -204,16 +204,16 @@ def _not_pass_move(state: State, action, size) -> State:
     # Remove killed stones
     adj_xy = _neighbour(xy, size)
     oppo_color = _opponent_color(state)
-    ren_id = state.chain_id_board[adj_xy]
+    chain_id = state.chain_id_board[adj_xy]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
-    ren_ix = jnp.abs(ren_id) - 1
-    is_atari = (idx_sum[ren_ix] ** 2) == idx_squared_sum[ren_ix] * num_pseudo[
-        ren_ix
+    chain_ix = jnp.abs(chain_id) - 1
+    is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[
+        chain_ix
     ]
-    single_liberty = (idx_squared_sum[ren_ix] // idx_sum[ren_ix]) - 1
+    single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
     is_killed = (
         (adj_xy != -1)
-        & (ren_id * oppo_color > 0)
+        & (chain_id * oppo_color > 0)
         & is_atari
         & (single_liberty == xy)
     )
@@ -222,7 +222,7 @@ def _not_pass_move(state: State, action, size) -> State:
         4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(s, ren_id[i], adj_xy[i], ko_may_occur),
+            lambda: _remove_stones(s, chain_id[i], adj_xy[i], ko_may_occur),
             lambda: s,
         ),
         state,
@@ -268,10 +268,10 @@ def _set_stone(state: State, xy: int) -> State:
 def _merge_ren(state: State, xy: int, adj_xy: int):
     my_color = _my_color(state)
     new_id = jnp.abs(state.chain_id_board[xy])
-    adj_ren_id = jnp.abs(state.chain_id_board[adj_xy])
+    adj_chain_id = jnp.abs(state.chain_id_board[adj_xy])
     # fmt: off
-    small_id = jnp.minimum(new_id, adj_ren_id) * my_color
-    large_id = jnp.maximum(new_id, adj_ren_id) * my_color
+    small_id = jnp.minimum(new_id, adj_chain_id) * my_color
+    large_id = jnp.maximum(new_id, adj_chain_id) * my_color
     # fmt: on
 
     # 大きいidの連を消し、小さいidの連と繋げる
@@ -283,9 +283,9 @@ def _merge_ren(state: State, xy: int, adj_xy: int):
 
 
 def _remove_stones(
-    state: State, rm_ren_id, rm_stone_xy, ko_may_occur
+    state: State, rm_chain_id, rm_stone_xy, ko_may_occur
 ) -> State:
-    surrounded_stones = state.chain_id_board == rm_ren_id
+    surrounded_stones = state.chain_id_board == rm_chain_id
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
     chain_id_board = jnp.where(surrounded_stones, 0, state.chain_id_board)
     ko = jax.lax.cond(
@@ -310,9 +310,9 @@ def legal_actions(state: State, size: int) -> jnp.ndarray:
     opp_color = _opponent_color(state)
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
 
-    ren_ix = jnp.abs(state.chain_id_board) - 1
+    chain_ix = jnp.abs(state.chain_id_board) - 1
     # fmt: off
-    in_atari = (idx_sum[ren_ix] ** 2) == idx_squared_sum[ren_ix] * num_pseudo[ren_ix]
+    in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     # fmt: on
     has_liberty = (state.chain_id_board * my_color > 0) & ~in_atari
     kills_opp = (state.chain_id_board * opp_color > 0) & in_atari
