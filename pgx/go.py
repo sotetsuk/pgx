@@ -151,7 +151,7 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     black_player = jnp.int8(jax.random.bernoulli(key))
     current_player = black_player
     return State(  # type:ignore
-        size=jnp.int32(size),  # type:ignore
+        size=jnp.int32(size),
         chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         board_history=jnp.full((8, size**2), 2, dtype=jnp.int8),
