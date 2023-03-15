@@ -9,9 +9,6 @@ from pgx.flax.struct import dataclass
 BLACK = 1
 WHITE = -1
 POINT = 2
-BLACK_CHAR = "@"
-WHITE_CHAR = "O"
-POINT_CHAR = "+"
 
 dx = jnp.int32([-1, +1, 0, 0])
 dy = jnp.int32([0, 0, -1, +1])
@@ -384,26 +381,6 @@ def _count(state: State, size):
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
 
-def show(state: State) -> None:
-    print("===========")
-    for xy in range(state.size * state.size):
-        if state.chain_id_board[xy] > 0:
-            print(" " + BLACK_CHAR, end="")
-        elif state.chain_id_board[xy] < 0:
-            print(" " + WHITE_CHAR, end="")
-        else:
-            print(" " + POINT_CHAR, end="")
-
-        if xy % state.size == state.size - 1:
-            print()
-
-
-def _show_details(state: State) -> None:
-    show(state)
-    print(state.chain_id_board.reshape((5, 5)))
-    print(state.ko)
-
-
 def _my_color(_state: State):
     return jnp.int32([1, -1])[_state.turn % 2]
 
@@ -497,3 +474,21 @@ def _count_ji(state: State, color: int, size: int):
     # fmt on
 
     return (b == 0).sum()
+
+
+# only for debug
+def show(state: State) -> None:
+    BLACK_CHAR = "@"
+    WHITE_CHAR = "O"
+    POINT_CHAR = "+"
+    print("===========")
+    for xy in range(state.size * state.size):
+        if state.chain_id_board[xy] > 0:
+            print(" " + BLACK_CHAR, end="")
+        elif state.chain_id_board[xy] < 0:
+            print(" " + WHITE_CHAR, end="")
+        else:
+            print(" " + POINT_CHAR, end="")
+
+        if xy % state.size == state.size - 1:
+            print()
