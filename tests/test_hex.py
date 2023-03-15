@@ -1,10 +1,11 @@
 import jax
 import jax.numpy as jnp
-from pgx.hex import Hex, init
+from pgx.hex import Hex
 
 env = Hex()
 init = jax.jit(env.init)
 step = jax.jit(env.step)
+observe = jax.jit(env.observe)
 
 
 def test_init():
@@ -85,6 +86,28 @@ def test_reward():
     state = step(state, 120)
     state = step(state, 21)
     assert (state.reward == jnp.float32([1.0, -1.0])).all()
+
+
+def test_observe():
+    """
+    @ O . . .
+     . . . . .
+      . . . . .
+    """
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
+    assert state.current_player == 0
+    assert (jnp.zeros((11, 11, 2)) == observe(state, 0)).all()
+    state = step(state, 0)
+    state = step(state, 1)
+    assert (
+        jnp.zeros((11, 11, 2)).at[0, 0, 0].set(1).at[0, 1, 1].set(1)
+        == observe(state, 0)
+    ).all()
+    assert (
+        jnp.zeros((11, 11, 2)).at[0, 1, 0].set(1).at[0, 0, 1].set(1)
+        == observe(state, 1)
+    ).all()
 
 
 def test_random_play():
