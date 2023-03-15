@@ -97,10 +97,6 @@ class MinAtarAsterix(pgx.Env):
     def num_players(self):
         return 1
 
-    @property
-    def reward_range(self) -> Tuple[float, float]:
-        return 0.0, jnp.inf
-
 
 def step(
     state: State,

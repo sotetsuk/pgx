@@ -159,10 +159,9 @@ class Env(abc.ABC):
         ...
 
     @property
-    @abc.abstractmethod
-    def reward_range(self) -> Tuple[float, float]:
-        """Note that min reward must be <= 0."""
-        ...
+    def illegal_action_penalty(self) -> float:
+        """Negative reward given when illegal action is selected."""
+        return -1.0
 
     @property
     def observation_shape(self) -> Tuple[int, ...]:
@@ -186,13 +185,13 @@ class Env(abc.ABC):
     def _step_with_illegal_action(
         self, state: State, loser: jnp.ndarray
     ) -> State:
-        min_reward = self.reward_range[0]
+        penalty = self.illegal_action_penalty
         reward = (
             jnp.ones_like(state.reward)
-            * (-1 * min_reward)
+            * (-1 * penalty)
             * (self.num_players - 1)
         )
-        reward = reward.at[loser].set(min_reward)
+        reward = reward.at[loser].set(penalty)
         return state.replace(reward=reward, terminated=TRUE)  # type: ignore
 
 

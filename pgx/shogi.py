@@ -33,7 +33,6 @@ piece_board (81,):
 """
 
 from functools import partial
-from typing import Tuple
 
 import jax
 import jax.numpy as jnp
@@ -181,10 +180,6 @@ class Shogi(pgx.Env):
     @property
     def num_players(self) -> int:
         return 2
-
-    @property
-    def reward_range(self) -> Tuple[float, float]:
-        return -1.0, 1.0
 
 
 def init(rng):
