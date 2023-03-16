@@ -176,11 +176,6 @@ class Env(abc.ABC):
         ...
 
     @property
-    def illegal_action_penalty(self) -> float:
-        """Negative reward given when illegal action is selected."""
-        return -1.0
-
-    @property
     def observation_shape(self) -> Tuple[int, ...]:
         """Return the matrix shape of observation"""
         state = self.init(jax.random.PRNGKey(0))
@@ -193,10 +188,15 @@ class Env(abc.ABC):
         state = self.init(jax.random.PRNGKey(0))
         return state.legal_action_mask.shape
 
+    @property
+    def _illegal_action_penalty(self) -> float:
+        """Negative reward given when illegal action is selected."""
+        return -1.0
+
     def _step_with_illegal_action(
         self, state: State, loser: jnp.ndarray
     ) -> State:
-        penalty = self.illegal_action_penalty
+        penalty = self._illegal_action_penalty
         reward = (
             jnp.ones_like(state.reward)
             * (-1 * penalty)
