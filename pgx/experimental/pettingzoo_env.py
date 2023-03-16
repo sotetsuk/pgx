@@ -24,46 +24,6 @@ def pettingzoo_env(
     return env
 
 
-def get_agents_spaces(env_id: pgx.EnvId):
-    if env_id == "tic_tac_toe":
-        agents = ["player_0", "player_1"]
-        action_spaces = {i: spaces.Discrete(9) for i in agents}
-        observation_spaces = {
-            i: spaces.Dict(
-                {
-                    "observation": spaces.Box(
-                        low=0, high=1, shape=(27,), dtype=np.int8
-                    ),
-                    "action_mask": spaces.Box(
-                        low=0, high=1, shape=(9,), dtype=np.int8
-                    ),
-                }
-            )
-            for i in agents
-        }
-        return agents, action_spaces, observation_spaces
-    elif env_id == "go-19x19":
-        agents = ["player_0", "player_1"]
-        size = 19
-        action_spaces = {i: spaces.Discrete(size * size + 1) for i in agents}
-        observation_spaces = {
-            i: spaces.Dict(
-                {
-                    "observation": spaces.Box(
-                        low=0, high=1, shape=(size, size, 17), dtype=np.int8
-                    ),
-                    "action_mask": spaces.Box(
-                        low=0, high=1, shape=(size * size + 1,), dtype=np.int8
-                    ),
-                }
-            )
-            for i in agents
-        }
-        return agents, action_spaces, observation_spaces
-    else:
-        assert False
-
-
 class PettingZooEnv(AECEnv):
     metadata = {
         "render_modes": ["svg"],
@@ -150,3 +110,43 @@ class PettingZooEnv(AECEnv):
 
     def close(self):
         ...
+
+
+def get_agents_spaces(env_id: pgx.EnvId):
+    if env_id == "tic_tac_toe":
+        agents = ["player_0", "player_1"]
+        action_spaces = {i: spaces.Discrete(9) for i in agents}
+        observation_spaces = {
+            i: spaces.Dict(
+                {
+                    "observation": spaces.Box(
+                        low=0, high=1, shape=(27,), dtype=np.int8
+                    ),
+                    "action_mask": spaces.Box(
+                        low=0, high=1, shape=(9,), dtype=np.int8
+                    ),
+                }
+            )
+            for i in agents
+        }
+        return agents, action_spaces, observation_spaces
+    elif env_id == "go-19x19":
+        agents = ["player_0", "player_1"]
+        size = 19
+        action_spaces = {i: spaces.Discrete(size * size + 1) for i in agents}
+        observation_spaces = {
+            i: spaces.Dict(
+                {
+                    "observation": spaces.Box(
+                        low=0, high=1, shape=(size, size, 17), dtype=np.int8
+                    ),
+                    "action_mask": spaces.Box(
+                        low=0, high=1, shape=(size * size + 1,), dtype=np.int8
+                    ),
+                }
+            )
+            for i in agents
+        }
+        return agents, action_spaces, observation_spaces
+    else:
+        assert False
