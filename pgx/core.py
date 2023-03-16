@@ -31,6 +31,7 @@ FALSE = jnp.bool_(False)
 # (2) it is tedious to remember or rewrite version numbers, and
 # (3) we do not want to slow down development for fear of inconveniencing users.
 EnvId = Literal[
+    "hex",
     "tic_tac_toe",
     "go-19x19",
     "shogi",
@@ -235,6 +236,10 @@ def make(env_id: EnvId):
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix()
+    elif env_id == "hex":
+        from pgx.hex import Hex
+
+        return Hex()
     else:
         available_envs = "\n".join(get_args(EnvId))
         raise ValueError(

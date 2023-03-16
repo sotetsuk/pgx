@@ -45,7 +45,7 @@ class State(pgx.State):
     #  .
     #  [110, 111, 112, ...,  119, 120]]
     board: jnp.ndarray = -jnp.zeros(
-        11 * 11, jnp.int16
+        11 * 11, jnp.int32
     )  # <0(oppo), 0(empty), 0<(self)
 
 
