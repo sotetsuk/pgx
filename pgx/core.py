@@ -91,15 +91,12 @@ class Env(abc.ABC):
             lambda: state,
         )
 
-        # increment step count
-        state = state.replace(steps=state.steps + 1)  # type: ignore
-
-        # If the state is already terminated, environment does not take usual step, but
-        # return the same state with zero-rewards for all players
+        # If the state is already terminated or truncated, environment does not take usual step,
+        # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
             (state.terminated | state.truncated),
-            lambda: self._step_if_terminated(state),
-            lambda: self._step(state, action),
+            lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
+            lambda: self._step(state.replace(steps=state.steps + 1), action),  # type: ignore
         )
 
         # Taking illegal action leads to immediate game terminal with negative reward
@@ -194,12 +191,6 @@ class Env(abc.ABC):
         """Return the matrix shape of legal_action_mask"""
         state = self.init(jax.random.PRNGKey(0))
         return state.legal_action_mask.shape
-
-    @staticmethod
-    def _step_if_terminated(state: State) -> State:
-        return state.replace(  # type: ignore
-            reward=jnp.zeros_like(state.reward),
-        )
 
     def _step_with_illegal_action(
         self, state: State, loser: jnp.ndarray
