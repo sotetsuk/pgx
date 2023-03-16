@@ -71,14 +71,10 @@ class MinAtarAsterix(pgx.Env):
     def __init__(
         self,
         *,
-        auto_reset=False,
-        max_truncation_steps: int = -1,
         minatar_version: Literal["v0", "v1"] = "v1",
         sticky_action_prob: float = 0.1,
     ):
-        super().__init__(
-            auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
-        )
+        super().__init__()
         self.minatar_version: Literal["v0", "v1"] = minatar_version
         self.sticky_action_prob: float = sticky_action_prob
 
