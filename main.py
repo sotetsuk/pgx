@@ -1,7 +1,6 @@
 # %%
 
 import sys
-import time
 import jax
 import jax.numpy as jnp
 import pgx
@@ -62,7 +61,7 @@ class PettingZooEnv(AECEnv):
         self.pgx_env: pgx.Env = pgx.make(env_id)
         self.pgx_env.init = jax.jit(self.pgx_env.init)
         self.pgx_env.step = jax.jit(self.pgx_env.step)
-        self._state = self.pgx_env.init(jax.random.PRNGKey(0))
+        self._state: pgx.State = self.pgx_env.init(jax.random.PRNGKey(0))
 
         self.agents, self.action_spaces, self.observation_spaces = get_agents_spaces(env_id)
         self.possible_agents = self.agents[:]
@@ -70,11 +69,9 @@ class PettingZooEnv(AECEnv):
         self.rewards = {i: 0 for i in self.agents}
         self.terminations = {i: False for i in self.agents}
         self.truncations = {i: False for i in self.agents}
-        # self.infos = {i: {"legal_moves": list(range(0, 9))} for i in self.agents}  
-        self.infos = {a: {} for a in self.agents}
+        self.infos = {i: {} for i in self.agents}
 
-        self._agent_selector = agent_selector(self.agents)
-        self.agent_selection = self._agent_selector.reset()
+        self.agent_selection = f"player_{self._state.current_player}"
         self.render_mode = render_mode
 
     def observe(self, agent):
@@ -99,12 +96,12 @@ class PettingZooEnv(AECEnv):
 
         self._state = self.pgx_env.step(self._state, jnp.int32(action))
 
-        next_agent = self._agent_selector.next()  # TODO: fix me
+        next_agent = f"player_{self._state.current_player}"
 
         if self._state.terminated:
             for i in range(self.pgx_env.num_players):
                 self.rewards[f"player_{i}"] = float(self._state.reward[i])
-            self.terminations = {a: True for a in self.agents}
+            self.terminations = {i: True for i in self.agents}
 
         # Switch selection to next agents
         self._cumulative_rewards[self.agent_selection] = 0
@@ -115,10 +112,9 @@ class PettingZooEnv(AECEnv):
             self.render()
 
     def reset(self, seed=None, options=None):
-        if seed is not None:
-            key = jax.random.PRNGKey(seed)
-        else:
-            key = jax.random.PRNGKey(0)  # TODO: fix me
+        if seed is None:
+            seed = np.random.randint(9999)  # TODO: fix me
+        key = jax.random.PRNGKey(seed)
         self._state = self.pgx_env.init(key)
 
         self.agents = self.possible_agents[:]
@@ -127,10 +123,7 @@ class PettingZooEnv(AECEnv):
         self.terminations = {i: False for i in self.agents}
         self.truncations = {i: False for i in self.agents}
         self.infos = {i: {} for i in self.agents}
-        # selects the first agent
-        self._agent_selector.reinit(self.agents)
-        self._agent_selector.reset()
-        self.agent_selection = self._agent_selector.reset()
+        self.agent_selection = f"player_{self._state.current_player}"
 
     def render(self):
         if "ipykernel" not in sys.modules:
@@ -148,10 +141,16 @@ env = wrappers.OrderEnforcingWrapper(env)
 api_test(env, num_cycles=1000, verbose_progress=True)
 
 # %%
-
 env = PettingZooEnv("tic_tac_toe", render_mode="svg")
-# %%
+cnt = 0
 env.reset()
-# %%
-env.step(5)
+for agent in env.agent_iter():
+    cnt += 1
+    print(agent)
+    obs, reward, terminated, truncated, info = env.last()
+    a = np.random.choice(np.nonzero(obs["action_mask"])[0])
+    if terminated or truncated:
+        a = None
+    print(cnt, a, reward, terminated, truncated, info)
+    env.step(a)
 # %%
