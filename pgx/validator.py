@@ -18,7 +18,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx
-from pgx.utils import act_randomly
+from pgx.experimental.utils import act_randomly
 
 
 def validate(env: pgx.Env, num: int = 100):

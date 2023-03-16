@@ -1,6 +1,6 @@
 import jax
 import pgx
-from pgx.utils import act_randomly
+from pgx.experimental.utils import act_randomly
 from typing import get_args
 from pgx.validator import validate
 

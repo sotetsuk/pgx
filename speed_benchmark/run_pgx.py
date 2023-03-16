@@ -3,7 +3,7 @@ import sys
 import json
 import jax
 import pgx
-from pgx.utils import act_randomly
+from pgx.experimental.utils import act_randomly
 from tqdm import tqdm
 from typing import get_args
 
