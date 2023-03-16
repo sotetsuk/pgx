@@ -1,6 +1,6 @@
 from pgx.go import Go
 from functools import partial
-from pgx.utils import act_randomly
+from pgx.experimental.utils import act_randomly
 from pgx.visualizer import Visualizer
 import jax
 import time

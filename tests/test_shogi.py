@@ -649,7 +649,7 @@ def test_sfen():
 
 
 def test_jit():
-    from pgx.utils import act_randomly
+    from pgx.experimental.utils import act_randomly
     from pgx.shogi import init, step, observe
     init = jax.jit(jax.vmap(partial(init)))
     step = jax.jit(jax.vmap(partial(step)))
