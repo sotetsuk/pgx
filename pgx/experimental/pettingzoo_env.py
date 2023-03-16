@@ -1,16 +1,20 @@
 import sys
-import jax
-import jax.numpy as jnp
-import pgx
-import numpy as np
-from gymnasium import spaces
-from pettingzoo import AECEnv
-from IPython.display import display_svg  # type:ignore
-from pettingzoo.utils import wrappers
 from typing import Literal, Optional
 
+import jax
+import jax.numpy as jnp
+import numpy as np
+from gymnasium import spaces
+from IPython.display import display_svg  # type:ignore
+from pettingzoo import AECEnv
+from pettingzoo.utils import wrappers
 
-def pettingzoo_env(env_id: pgx.EnvId, render_mode=Optional[Literal["svg"]]) -> AECEnv:
+import pgx
+
+
+def pettingzoo_env(
+    env_id: pgx.EnvId, render_mode=Optional[Literal["svg"]]
+) -> AECEnv:
     env = PettingZooEnv(env_id, render_mode=render_mode)
     env = wrappers.TerminateIllegalWrapper(env, illegal_reward=-1)
     env = wrappers.AssertOutOfBoundsWrapper(env)
@@ -28,7 +32,9 @@ def get_agents_spaces(env_id: pgx.EnvId):
                     "observation": spaces.Box(
                         low=0, high=1, shape=(27,), dtype=np.int8
                     ),
-                    "action_mask": spaces.Box(low=0, high=1, shape=(9,), dtype=np.int8),
+                    "action_mask": spaces.Box(
+                        low=0, high=1, shape=(9,), dtype=np.int8
+                    ),
                 }
             )
             for i in agents
@@ -44,7 +50,9 @@ def get_agents_spaces(env_id: pgx.EnvId):
                     "observation": spaces.Box(
                         low=0, high=1, shape=(size, size, 17), dtype=np.int8
                     ),
-                    "action_mask": spaces.Box(low=0, high=1, shape=(size * size + 1,), dtype=np.int8),
+                    "action_mask": spaces.Box(
+                        low=0, high=1, shape=(size * size + 1,), dtype=np.int8
+                    ),
                 }
             )
             for i in agents
@@ -66,7 +74,11 @@ class PettingZooEnv(AECEnv):
         self.pgx_env.step = jax.jit(self.pgx_env.step)
         self._state: pgx.State = self.pgx_env.init(jax.random.PRNGKey(0))
 
-        self.agents, self.action_spaces, self.observation_spaces = get_agents_spaces(env_id)
+        (
+            self.agents,
+            self.action_spaces,
+            self.observation_spaces,
+        ) = get_agents_spaces(env_id)
         self.possible_agents = self.agents[:]
 
         self.rewards = {i: 0 for i in self.agents}
@@ -81,7 +93,7 @@ class PettingZooEnv(AECEnv):
         # TODO: use agent
         return {
             "observation": np.array(self._state.observation),
-            "action_mask": np.array(self._state.legal_action_mask)
+            "action_mask": np.array(self._state.legal_action_mask),
         }
 
     def observation_space(self, agent):
