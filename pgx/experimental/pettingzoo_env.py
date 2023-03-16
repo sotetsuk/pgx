@@ -1,11 +1,14 @@
 # Modified from https://github.com/Farama-Foundation/PettingZoo
 
+import importlib
 import sys
 from typing import Literal, Optional
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+
+importlib.set_lazy_imports()
 from gymnasium import spaces  # type: ignore
 from IPython.display import display_svg  # type:ignore
 from pettingzoo import AECEnv  # type: ignore
