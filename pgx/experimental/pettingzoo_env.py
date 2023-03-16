@@ -1,19 +1,15 @@
 # Modified from https://github.com/Farama-Foundation/PettingZoo
 
-import importlib
 import sys
 from typing import Literal, Optional
 
 import jax
 import jax.numpy as jnp
 import numpy as np
+from gymnasium import spaces  # type: ignore
 from IPython.display import display_svg  # type:ignore
-
-gymnasium = importlib.import_module("gymnasium")
-spaces = gymnasium.spaces
-pettingzoo = importlib.import_module("pettingzoo")
-AECEnv = pettingzoo.AECEnv
-wrappers = pettingzoo.utils.wrappers
+from pettingzoo import AECEnv  # type: ignore
+from pettingzoo.utils import wrappers  # type: ignore
 
 import pgx
 
