@@ -7,12 +7,13 @@ from typing import Literal, Optional
 import jax
 import jax.numpy as jnp
 import numpy as np
-
-importlib.set_lazy_imports()
-from gymnasium import spaces  # type: ignore
 from IPython.display import display_svg  # type:ignore
-from pettingzoo import AECEnv  # type: ignore
-from pettingzoo.utils import wrappers  # type: ignore
+
+gymnasium = importlib.import_module("gymnasium")
+spaces = gymnasium.spaces
+pettingzoo = importlib.import_module("pettingzoo")
+AECEnv = pettingzoo.AECEnv
+wrappers = pettingzoo.utils.wrappers
 
 import pgx
 
