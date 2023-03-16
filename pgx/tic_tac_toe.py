@@ -66,6 +66,10 @@ class TicTacToe(pgx.Env):
         return observe(state, player_id)
 
     @property
+    def name(self) -> str:
+        return "Tic-tac-toe"
+
+    @property
     def version(self) -> str:
         return "beta"
 

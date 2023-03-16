@@ -45,11 +45,12 @@ class Go(pgx.Env):
         max_truncation_steps: int = -1,
         size: int = 19,
         komi: float = 7.5,
-        history_length: int = 8
+        history_length: int = 8,
     ):
         super().__init__(
             auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
         )
+        assert isinstance(size, int)
         self.size = size
         self.komi = komi
         self.history_length = history_length
@@ -80,6 +81,10 @@ class Go(pgx.Env):
         return partial(
             observe, size=self.size, history_length=self.history_length
         )(state=state, player_id=player_id)
+
+    @property
+    def name(self) -> str:
+        return f"Go ({int(self.size)}x{int(self.size)})"
 
     @property
     def version(self) -> str:

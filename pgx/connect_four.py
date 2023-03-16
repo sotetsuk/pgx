@@ -84,6 +84,10 @@ class ConnectFour(pgx.Env):
         return observe(state, player_id)
 
     @property
+    def name(self) -> str:
+        return "Connect Four"
+
+    @property
     def version(self) -> str:
         return "alpha"
 

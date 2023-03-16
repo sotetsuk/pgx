@@ -150,6 +150,11 @@ class Env(abc.ABC):
 
     @property
     @abc.abstractmethod
+    def name(self) -> str:
+        ...
+
+    @property
+    @abc.abstractmethod
     def version(self) -> str:
         ...
 

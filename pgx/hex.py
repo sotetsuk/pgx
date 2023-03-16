@@ -41,11 +41,12 @@ class Hex(pgx.Env):
         *,
         auto_reset: bool = False,
         max_truncation_steps: int = -1,
-        size: int = 11
+        size: int = 11,
     ):
         super().__init__(
             auto_reset=auto_reset, max_truncation_steps=max_truncation_steps
         )
+        assert isinstance(size, int)
         self.size = size
 
     def _init(self, key: jax.random.KeyArray) -> State:
@@ -60,6 +61,10 @@ class Hex(pgx.Env):
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(observe, size=self.size)(state, player_id)
+
+    @property
+    def name(self) -> str:
+        return f"Hex ({self.size}x{self.size})"
 
     @property
     def version(self) -> str:
