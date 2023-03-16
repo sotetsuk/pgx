@@ -1,3 +1,5 @@
+# Modified from https://github.com/Farama-Foundation/PettingZoo
+
 import sys
 from typing import Literal, Optional
 
