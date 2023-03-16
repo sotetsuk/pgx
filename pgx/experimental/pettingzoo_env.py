@@ -8,8 +8,8 @@ import jax.numpy as jnp
 import numpy as np
 from gymnasium import spaces
 from IPython.display import display_svg  # type:ignore
-from pettingzoo import AECEnv
-from pettingzoo.utils import wrappers
+from pettingzoo import AECEnv  # type: ignore
+from pettingzoo.utils import wrappers  # type: ignore
 
 import pgx
 
@@ -72,9 +72,9 @@ class PettingZooEnv(AECEnv):
     def __init__(self, env_id: pgx.EnvId, render_mode=None):
         super().__init__()
         self.pgx_env: pgx.Env = pgx.make(env_id)
-        self.pgx_env.init = jax.jit(self.pgx_env.init)
-        self.pgx_env.step = jax.jit(self.pgx_env.step)
-        self._state: pgx.State = self.pgx_env.init(jax.random.PRNGKey(0))
+        self.pgx_env.init = jax.jit(self.pgx_env.init)  # type: ignore
+        self.pgx_env.step = jax.jit(self.pgx_env.step)  # type: ignore
+        self._state: pgx.State = self.pgx_env.init(jax.random.PRNGKey(0))  # type: ignore
 
         (
             self.agents,
@@ -86,7 +86,7 @@ class PettingZooEnv(AECEnv):
         self.rewards = {i: 0 for i in self.agents}
         self.terminations = {i: False for i in self.agents}
         self.truncations = {i: False for i in self.agents}
-        self.infos = {i: {} for i in self.agents}
+        self.infos = {i: {} for i in self.agents}  # type: ignore
 
         self.agent_selection = f"player_{self._state.current_player}"
         self.render_mode = render_mode
