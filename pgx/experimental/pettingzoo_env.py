@@ -6,7 +6,7 @@ from typing import Literal, Optional
 import jax
 import jax.numpy as jnp
 import numpy as np
-from gymnasium import spaces
+from gymnasium import spaces  # type: ignore
 from IPython.display import display_svg  # type:ignore
 from pettingzoo import AECEnv  # type: ignore
 from pettingzoo.utils import wrappers  # type: ignore
