@@ -100,6 +100,10 @@ class MinAtarAsterix(pgx.Env):
         return _to_obs(state)
 
     @property
+    def name(self) -> str:
+        return "MinAtar/Asterix"
+
+    @property
     def version(self) -> str:
         return "alpha"
 
