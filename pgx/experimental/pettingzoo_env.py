@@ -71,10 +71,12 @@ class PettingZooEnv(AECEnv):
 
     def __init__(self, env_id: pgx.EnvId, render_mode=None):
         super().__init__()
-        self.pgx_env: pgx.Env = pgx.make(env_id)
-        self.pgx_env.init = jax.jit(self.pgx_env.init)  # type: ignore
-        self.pgx_env.step = jax.jit(self.pgx_env.step)  # type: ignore
-        self._state: pgx.State = self.pgx_env.init(jax.random.PRNGKey(0))  # type: ignore
+
+        pgx_env: pgx.Env = pgx.make(env_id)
+        self._num_players = pgx_env.num_players
+        self._init_fn = jax.jit(pgx_env.init)
+        self._step_fn = jax.jit(pgx_env.step)
+        self._state: pgx.State = self._init_fn(jax.random.PRNGKey(0))
 
         (
             self.agents,
@@ -111,12 +113,12 @@ class PettingZooEnv(AECEnv):
         ):
             return self._was_dead_step(action)  # type: ignore
 
-        self._state = self.pgx_env.step(self._state, jnp.int32(action))
+        self._state = self._step_fn(self._state, jnp.int32(action))
 
         next_agent = f"player_{self._state.current_player}"
 
         if self._state.terminated:
-            for i in range(self.pgx_env.num_players):
+            for i in range(self._num_players):
                 self.rewards[f"player_{i}"] = float(self._state.reward[i])
             self.terminations = {i: True for i in self.agents}
 
@@ -131,7 +133,7 @@ class PettingZooEnv(AECEnv):
         if seed is None:
             seed = np.random.randint(9999)  # TODO: fix me
         key = jax.random.PRNGKey(seed)
-        self._state = self.pgx_env.init(key)
+        self._state = self._init_fn(key)
 
         self.agents = self.possible_agents[:]
         self.rewards = {i: 0 for i in self.agents}
