@@ -67,7 +67,9 @@ class Visualizer:
         scale: Optional[float] = None,
     ) -> None:
         color_theme = (
-            color_theme if color_theme is not None else global_config.color_theme
+            color_theme
+            if color_theme is not None
+            else global_config.color_theme
         )
         scale = scale if scale is not None else global_config.scale
 
