@@ -1,13 +1,13 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
 
 <div align="center">
-<img src="logo.svg" width="40%">
+<img src="fig/logo.svg" width="40%">
 </div>
 
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
-<img src="go.gif" width="40%"><img src="go.gif" width="40%" style="transform:rotate(180deg);">
+<img src="fig/go.gif" width="40%"><img src="fig/go.gif" width="40%" style="transform:rotate(180deg);">
 </div>
 
 ## Why Pgx?
@@ -15,13 +15,13 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 <!--- 
 https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG4czdz#scrollTo=V1QZhRXoGL8K
 --->
-<img align="right" width="250" src="throughput.svg">
+<img align="right" width="250" src="fig/throughput.svg">
 
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
 Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
 
-- **JAX-native**: All `step` functions are *jittable*
-- **Fast** in parallel execution (10x faster than C++/Python implementation)
+- **JAX-native.** All `step` functions are *jittable*
+- **Super fast** in parallel execution (much faster than C++/Python implementation)
 - **Various game support** including **Backgammon**, **Shogi**, and **Go**
 - **Beautiful visualization** in SVG format
 
@@ -70,6 +70,7 @@ while not state.terminated.all():
 
 ## Supported games
 
+<div align="center">
 <table>
 <tr>
   <th>Game</th>
@@ -82,72 +83,72 @@ while not state.terminated.all():
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Backgammon</td>
+ <td><a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Bridge Bidding</td>
+ <td><a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a></td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Chess</td>
+ <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Connect Four</td>
+ <td><a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a></td>
+ <td>:construction:</td>
+ <td></td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://en.wikipedia.org/wiki/Othello">Othello</a></td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Go</td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td>Hex</td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td>Mahjong</td>
- <td>:construction:</td>
- <td></td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Asterix</td>
- <td>:white_check_mark:</td>
- <td></td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Breakout</td>
- <td>:white_check_mark:</td>
- <td></td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Freeway</td>
- <td>:white_check_mark:</td>
- <td></td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Seaquest</td>
- <td>:white_check_mark:</td>
- <td></td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/SpaceInvaders</td>
- <td>:white_check_mark:</td>
- <td></td>
-</tr>
-<tr>
- <td>Othello</td>
- <td>:construction:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td>Shogi</td>
+ <td><a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
@@ -157,11 +158,12 @@ while not state.terminated.all():
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Tic-Tac-Toe</td>
+ <td><a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 </table>
+</div>
 
 ## See also
 
@@ -171,7 +173,7 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
 - [google/brax](https://github.com/google/brax): Rigidbody physics simulation
 - [instadeepai/jumanji](https://github.com/instadeepai/jumanji): Industry-driven environments (e.g., Travelling Salesman Problem)
 
-Combining Pgx with these **JAX-native algorithm/implementations** is an interesting direction:
+Combining Pgx with these **JAX-native algorithms/implementations** is an interesting direction:
 
 - [Anakin framework](https://arxiv.org/abs/2104.06272): Highly efficient RL framework that works with JAX-native environments on TPUs
 - [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS implementations, including AlphaZero and MuZero
