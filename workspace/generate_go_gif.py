@@ -1,6 +1,7 @@
 from pgx.go import Go
 from functools import partial
 from pgx.experimental.utils import act_randomly
+from pgx.experimental.wrappers import auto_reset
 from pgx.visualizer import Visualizer
 import jax
 import time
@@ -8,9 +9,9 @@ v = Visualizer(color_mode="dark")
 
 N = 20
 
-env = Go(auto_reset=True, size=5)
+env = Go(size=5)
 init = jax.jit(jax.vmap(env.init))
-step = jax.jit(jax.vmap(env.step))
+step = jax.jit(jax.vmap(auto_reset(env.step, env.init)))
 
 rng = jax.random.PRNGKey(0)
 rng, subkey = jax.random.split(rng)

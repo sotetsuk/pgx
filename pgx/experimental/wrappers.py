@@ -27,6 +27,7 @@ import jax.numpy as jnp
 
 import pgx
 
+TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
