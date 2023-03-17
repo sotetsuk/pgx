@@ -35,8 +35,8 @@ ColorTheme = Literal["light", "dark"]
 
 @dataclass
 class Config:
-    color_mode: ColorTheme = "light",
-    scale: float = 1.0,
+    color_mode: ColorTheme = "light"
+    scale: float = 1.0
 
 
 global_config = Config()
