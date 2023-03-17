@@ -201,26 +201,6 @@ class Env(abc.ABC):
 
 
 def make(env_id: EnvId):
-    """
-    # "animal_shogi",
-    "backgammon",
-    # "bridge_bidding",
-    # "connect_four",
-    "go-9x9",
-    "go-19x19",
-    "hex",
-    # "mahjong",
-    "minatar/asterix",
-    # "minatar/breakout",
-    # "minatar/freeway",
-    # "minatar/seaquest",
-    # "minatar/space_invaders",
-    # "othello",
-    "shogi",
-    # "sparrow_mahjong",
-    "tic_tac_toe",
-    """
-
     if env_id == "backgammon":
         from pgx.backgammon import Backgammon
 
