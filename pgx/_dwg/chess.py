@@ -1,7 +1,7 @@
 import base64
 import os
 
-from pgx.chess import ChessState
+from pgx._chess import ChessState
 
 
 def _make_chess_dwg(dwg, state: ChessState, config):

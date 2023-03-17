@@ -25,7 +25,7 @@ def test_backgammon():
 
 
 def test_bridge():
-    from pgx.bridge_bidding import init
+    from pgx._bridge_bidding import init
 
     state = init(key)
     vis.save_svg(state, "tests/temp.svg")
@@ -33,7 +33,7 @@ def test_bridge():
 
 
 def test_chess():
-    from pgx.chess import init
+    from pgx._chess import init
 
     state = init()
     vis.save_svg(state, "tests/temp.svg")
@@ -57,7 +57,7 @@ def test_go():
 
 
 def test_othello():
-    from pgx.othello import State
+    from pgx._othello import State
 
     state = State()
     vis.save_svg(state, "tests/temp.svg")
