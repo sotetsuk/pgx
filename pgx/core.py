@@ -56,7 +56,7 @@ class State:
     _rng_key: jax.random.KeyArray
 
     def _repr_html_(self) -> str:
-        from pgx.visualizer import Visualizer
+        from pgx._visualizer import Visualizer
 
         v = Visualizer()
         return v.get_dwg(states=self).tostring()
@@ -72,7 +72,7 @@ class State:
         color_theme: Default(None) is "light"
         scale: change image size. Default(None) is 1.0
         """
-        from pgx.visualizer import Visualizer
+        from pgx._visualizer import Visualizer
 
         v = Visualizer(color_theme=color_theme, scale=scale)
         return v.save_svg(self, filename)

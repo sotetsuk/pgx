@@ -4,7 +4,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.gym as gym
-from pgx.visualizer import Visualizer
+from pgx._visualizer import Visualizer
 
 viz = Visualizer(color_theme="dark", scale=0.5)
 

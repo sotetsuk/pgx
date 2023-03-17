@@ -2,7 +2,7 @@ from pgx.go import Go
 from functools import partial
 from pgx.experimental.utils import act_randomly
 from pgx.experimental.wrappers import auto_reset
-from pgx.visualizer import global_config
+from pgx._visualizer import global_config
 import jax
 import time
 
