@@ -1,5 +1,7 @@
-from typing import Union, List
+from typing import List, Union
+
 import pgx
+
 
 def show_state_seq(
     states: Union[pgx.State, List[pgx.State]],
@@ -26,6 +28,7 @@ def show_state_seq(
     else:
         # Not Jupyter
         sys.stdout.write("This function only works in Jupyter Notebook.")
+
 
 def _show_states_in_widgets(
     states: List[pgx.State],
