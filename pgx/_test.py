@@ -21,7 +21,7 @@ import pgx
 from pgx.experimental.utils import act_randomly
 
 
-def test_api(env: pgx.Env, num: int = 100):
+def api_test(env: pgx.Env, num: int = 100):
     """validate checks these items:
 
     - init
