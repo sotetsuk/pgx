@@ -2,7 +2,6 @@ import jax
 import pgx
 from pgx.experimental.utils import act_randomly
 from typing import get_args
-from pgx._test import test_api
 
 
 def test_jit():
@@ -32,7 +31,8 @@ def test_jit():
         assert (state.observation).sum() != 0
 
 
-def test_api():
+def test_env():
+    from pgx._test import test_api
     for env_name in get_args(pgx.EnvId):
         print(f"{env_name} ...")
         env = pgx.make(env_name)
