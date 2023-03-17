@@ -59,7 +59,7 @@ class State:
         from pgx.visualizer import Visualizer
 
         v = Visualizer()
-        return v._to_dwg_from_states(states=self).tostring()
+        return v.get_dwg(states=self).tostring()
 
     def save_svg(
         self,

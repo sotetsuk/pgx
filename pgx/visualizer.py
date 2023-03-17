@@ -96,7 +96,7 @@ class Visualizer:
         filename="temp.svg",
     ) -> None:
         assert filename.endswith(".svg")
-        self._to_dwg_from_states(states=state).saveas(filename=filename)
+        self.get_dwg(states=state).saveas(filename=filename)
 
     def show_svg(
         self,
@@ -121,7 +121,7 @@ class Visualizer:
                 from IPython.display import display_svg  # type:ignore
 
                 display_svg(
-                    self._to_dwg_from_states(
+                    self.get_dwg(
                         states=states,
                     ).tostring(),
                     raw=True,
@@ -139,7 +139,7 @@ class Visualizer:
         from IPython.display import display
 
         svg_strings = [
-            self._to_dwg_from_states(
+            self.get_dwg(
                 states=_state,
             ).tostring()
             for _state in states
@@ -172,7 +172,7 @@ class Visualizer:
         display(box, output)
         button1.click()
 
-    def _to_dwg_from_states(
+    def get_dwg(
         self,
         states,
     ):
