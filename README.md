@@ -83,44 +83,44 @@ while not state.terminated.all():
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Backgammon</td>
+ <td><a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Bridge Bidding</td>
+ <td><a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a></td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Chess</td>
+ <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Connect Four</td>
+ <td><a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Go</td>
+ <td><a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Hex</td>
+ <td><a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Mahjong</td>
+ <td><a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a></td>
  <td>:construction:</td>
  <td></td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Asterix</td>
  <td>:white_check_mark:</td>
- <td></td>
+ <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Breakout</td>
@@ -143,12 +143,12 @@ while not state.terminated.all():
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Othello</td>
+ <td><a href="https://en.wikipedia.org/wiki/Othello">Othello</a></td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Shogi</td>
+ <td><a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
@@ -158,7 +158,7 @@ while not state.terminated.all():
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Tic-Tac-Toe</td>
+ <td><a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
