@@ -24,19 +24,32 @@ TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
-# Pgx environments are strictly versioned like OpenAI Gym.
-# One can check the version by `Env.version`.
+# Pgx environments are versioned like OpenAI Gym or Brax.
+# OpenAI Gym forces user to specify version (e.g., `MountainCar-v0`); while Brax does not (e.g., `ant`)
+# We follow the way of Brax. One can check the environment version by `Env.version`.
 # We do not explicitly include version in EnvId for three reasons:
-# (1) we do not provide older versions (as with OpenAI Gym),
-# (2) it is tedious to remember or rewrite version numbers, and
-# (3) we do not want to slow down development for fear of inconveniencing users.
+# (1) In game domain, performance measure is not the score in environment but
+#     the comparison to other agents (i.e., environment version is less important),
+# (2) we do not provide older versions (as with OpenAI Gym), and
+# (3) it is tedious to remember and write version numbers.
 EnvId = Literal[
-    "hex",
-    "tic_tac_toe",
-    "go-19x19",
-    "shogi",
+    # "animal_shogi",
     "backgammon",
+    # "bridge_bidding",
+    # "connect_four",
+    "go-9x9",
+    "go-19x19",
+    "hex",
+    # "mahjong",
     "minatar/asterix",
+    # "minatar/breakout",
+    # "minatar/freeway",
+    # "minatar/seaquest",
+    # "minatar/space_invaders",
+    # "othello",
+    "shogi",
+    # "sparrow_mahjong",
+    "tic_tac_toe",
 ]
 
 
@@ -188,30 +201,34 @@ class Env(abc.ABC):
 
 
 def make(env_id: EnvId):
-    if env_id == "tic_tac_toe":
-        from pgx.tic_tac_toe import TicTacToe
+    if env_id == "backgammon":
+        from pgx.backgammon import Backgammon
 
-        return TicTacToe()
-    elif env_id == "shogi":
-        from pgx.shogi import Shogi
+        return Backgammon()
+    elif env_id == "go-9x9":
+        from pgx.go import Go
 
-        return Shogi()
+        return Go(size=9, komi=7.5)
     elif env_id == "go-19x19":
         from pgx.go import Go
 
         return Go(size=19, komi=7.5)
-    elif env_id == "backgammon":
-        from pgx.backgammon import Backgammon
-
-        return Backgammon()
-    elif env_id == "minatar/asterix":
-        from pgx.minatar.asterix import MinAtarAsterix
-
-        return MinAtarAsterix()
     elif env_id == "hex":
         from pgx.hex import Hex
 
         return Hex()
+    elif env_id == "minatar/asterix":
+        from pgx.minatar.asterix import MinAtarAsterix
+
+        return MinAtarAsterix()
+    elif env_id == "shogi":
+        from pgx.shogi import Shogi
+
+        return Shogi()
+    elif env_id == "tic_tac_toe":
+        from pgx.tic_tac_toe import TicTacToe
+
+        return TicTacToe()
     else:
         available_envs = "\n".join(get_args(EnvId))
         raise ValueError(
