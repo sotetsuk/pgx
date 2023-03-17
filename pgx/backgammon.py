@@ -84,8 +84,8 @@ class Backgammon(pgx.Env):
         return 2
 
     @property
-    def _illegal_action_penalty(self) -> int:
-        return -3
+    def _illegal_action_penalty(self) -> float:
+        return -3.0
 
 
 def init(rng: jax.random.KeyArray) -> State:
