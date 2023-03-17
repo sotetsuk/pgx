@@ -2,11 +2,11 @@ from pgx.go import Go
 from functools import partial
 from pgx.experimental.utils import act_randomly
 from pgx.experimental.wrappers import auto_reset
-from pgx.visualizer import Visualizer
+from pgx.visualizer import global_config
 import jax
 import time
-v = Visualizer(color_mode="dark")
 
+global_config.color_theme = "dark"
 N = 20
 
 env = Go(size=5)

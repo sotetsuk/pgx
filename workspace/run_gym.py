@@ -6,7 +6,7 @@ import jax.numpy as jnp
 import pgx.gym as gym
 from pgx.visualizer import Visualizer
 
-viz = Visualizer(color_mode="dark", scale=0.5)
+viz = Visualizer(color_theme="dark", scale=0.5)
 
 rng = jax.random.PRNGKey(0)
 envs = gym.RandomOpponentEnv("tic_tac_toe/v0", 10, False, store_states=True)
