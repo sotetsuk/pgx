@@ -201,30 +201,54 @@ class Env(abc.ABC):
 
 
 def make(env_id: EnvId):
-    if env_id == "tic_tac_toe":
-        from pgx.tic_tac_toe import TicTacToe
+    """
+    # "animal_shogi",
+    "backgammon",
+    # "bridge_bidding",
+    # "connect_four",
+    "go-9x9",
+    "go-19x19",
+    "hex",
+    # "mahjong",
+    "minatar/asterix",
+    # "minatar/breakout",
+    # "minatar/freeway",
+    # "minatar/seaquest",
+    # "minatar/space_invaders",
+    # "othello",
+    "shogi",
+    # "sparrow_mahjong",
+    "tic_tac_toe",
+    """
 
-        return TicTacToe()
-    elif env_id == "shogi":
-        from pgx.shogi import Shogi
+    if env_id == "backgammon":
+        from pgx.backgammon import Backgammon
 
-        return Shogi()
+        return Backgammon()
+    elif env_id == "go-9x9":
+        from pgx.go import Go
+
+        return Go(size=9, komi=7.5)
     elif env_id == "go-19x19":
         from pgx.go import Go
 
         return Go(size=19, komi=7.5)
-    elif env_id == "backgammon":
-        from pgx.backgammon import Backgammon
-
-        return Backgammon()
-    elif env_id == "minatar/asterix":
-        from pgx.minatar.asterix import MinAtarAsterix
-
-        return MinAtarAsterix()
     elif env_id == "hex":
         from pgx.hex import Hex
 
         return Hex()
+    elif env_id == "minatar/asterix":
+        from pgx.minatar.asterix import MinAtarAsterix
+
+        return MinAtarAsterix()
+    elif env_id == "shogi":
+        from pgx.shogi import Shogi
+
+        return Shogi()
+    elif env_id == "tic_tac_toe":
+        from pgx.tic_tac_toe import TicTacToe
+
+        return TicTacToe()
     else:
         available_envs = "\n".join(get_args(EnvId))
         raise ValueError(
