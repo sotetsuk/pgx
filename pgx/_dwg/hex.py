@@ -55,7 +55,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
         #
         # if xy // BOARD_SIZE == 0:
         #     board_g.add(
-        #         dwg.polyline(
+        #         _dwg.polyline(
         #             points=[
         #                 (
         #                     four_dig(_x + r * jnp.sin(jnp.pi / 3 * i)),
@@ -70,7 +70,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
         #     )
         # elif xy // BOARD_SIZE == 10:
         #     board_g.add(
-        #         dwg.polyline(
+        #         _dwg.polyline(
         #             points=[
         #                 (
         #                     four_dig(_x + r * jnp.sin(jnp.pi / 3 * i)),
