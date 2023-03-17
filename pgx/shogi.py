@@ -53,7 +53,7 @@ import jax.numpy as jnp
 
 import pgx
 from pgx._flax.struct import dataclass
-from pgx.cache import (
+from pgx._cache import (
     load_shogi_is_on_the_way,
     load_shogi_legal_from_mask,
     load_shogi_queen_moves,
