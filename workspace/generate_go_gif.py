@@ -1,12 +1,9 @@
 from pgx.go import Go
-from functools import partial
 from pgx.experimental.utils import act_randomly
 from pgx.experimental.wrappers import auto_reset
-from pgx._visualizer import global_config
 import jax
 import time
 
-global_config.color_theme = "dark"
 N = 20
 
 env = Go(size=5)
@@ -28,7 +25,7 @@ st = time.time()
 s = init(subkeys)
 for i in range(1000 + 100):
     if i >= 1000 and i % 3 == 0:
-        s.save_svg(f"{i % 1000:03d}.svg")
+        s.save_svg(f"{i % 1000:03d}.svg", color_theme="dark")
     rng, subkey = jax.random.split(rng)
     a = act_randomly(subkey, s)
     s = step(s, a)

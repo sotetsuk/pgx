@@ -51,7 +51,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-import pgx
+import pgx.core as core
 from pgx._cache import (
     load_shogi_is_on_the_way,
     load_shogi_legal_from_mask,
@@ -129,7 +129,7 @@ QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 
 @dataclass
-class State(pgx.State):
+class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -163,19 +163,19 @@ class State(pgx.State):
         return state.replace(legal_action_mask=legal_action_mask, legal_moves=legal_moves)  # type: ignore
 
 
-class Shogi(pgx.Env):
+class Shogi(core.Env):
     def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 
-    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return step(state, action)
 
     def _observe(
-        self, state: pgx.State, player_id: jnp.ndarray
+        self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)

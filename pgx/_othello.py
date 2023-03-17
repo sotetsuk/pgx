@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -23,7 +23,7 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(pgx.State):
+class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
