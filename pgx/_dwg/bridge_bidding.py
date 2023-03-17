@@ -1,6 +1,6 @@
 import numpy as np
 
-from pgx.bridge_bidding import State as BridgeBiddingState
+from pgx._bridge_bidding import State as BridgeBiddingState
 
 
 def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):

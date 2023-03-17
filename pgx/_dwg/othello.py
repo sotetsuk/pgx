@@ -1,4 +1,4 @@
-from pgx.othello import State as OthelloState
+from pgx._othello import State as OthelloState
 
 
 def _make_othello_dwg(dwg, state: OthelloState, config):
