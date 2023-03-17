@@ -68,6 +68,10 @@ class State:
         color_mode: Optional[Literal["light", "dark"]] = None,
         scale: Optional[float] = None,
     ) -> None:
+        """
+        color_mode: Default(None) is "light"
+        scale: change image size. Default(None) is 1.0
+        """
         from pgx.visualizer import Visualizer
 
         v = Visualizer(color_mode=color_mode, scale=scale)

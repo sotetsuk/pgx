@@ -54,12 +54,10 @@ class ColorSet:
 
 
 class Visualizer:
-    """PGXのVisualizer.
+    """The Pgx Visualizer
 
-    color_mode: Literal["light", "dark"]
-        light(ライトモードで表示)/dark(ダークモードで表示)
-    scale: float
-        表示する画像のサイズを拡大率で指定, デフォルトは1.0
+    color_mode: Default(None) is "light"
+    scale: change image size. Default(None) is 1.0
     """
 
     def __init__(
