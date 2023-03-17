@@ -118,27 +118,27 @@ while not state.terminated.all():
  <td></td>
 </tr>
 <tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Asterix</td>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Breakout</td>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Freeway</td>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Seaquest</td>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/SpaceInvaders</td>
+ <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
