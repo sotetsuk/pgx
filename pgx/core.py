@@ -47,7 +47,7 @@ class State:
     observation: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
-    truncated: jnp.ndarray
+    truncated: jnp.ndarray  # so far, not used as all Pgx environments are finite horizon
     legal_action_mask: jnp.ndarray
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
