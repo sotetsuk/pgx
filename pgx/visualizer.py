@@ -14,7 +14,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 import svgwrite  # type: ignore
 
@@ -29,6 +29,17 @@ from .dwg.othello import OthelloState, _make_othello_dwg
 from .dwg.shogi import ShogiState, _make_shogi_dwg
 from .dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from .dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
+
+
+ColorTheme = Literal["light", "dark"]
+
+@dataclass
+class Config:
+    color_mode: ColorTheme = "light",
+    scale: float = 1.0,
+
+
+global_config = Config()
 
 
 @dataclass
@@ -53,9 +64,13 @@ class Visualizer:
 
     def __init__(
         self,
-        color_mode: Literal["light", "dark"] = "light",
-        scale: float = 1.0,
+        *,
+        color_mode: Optional[ColorTheme] = None,
+        scale: Optional[float] = None,
     ) -> None:
+        color_mode = color_mode if color_mode is not None else global_config.color_mode
+        scale = scale if scale is not None else global_config.scale
+
         self.config = {
             "GRID_SIZE": -1,
             "BOARD_WIDTH": -1,
