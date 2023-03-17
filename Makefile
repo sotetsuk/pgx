@@ -28,16 +28,16 @@ clean:
 	find . -name "*pycache*" | xargs rm -rf
 
 format:
-	black pgx --exclude=pgx/flax
-	blackdoc pgx --exclude=pgx/flax
-	isort pgx --skip-glob=pgx/flax
+	black pgx --exclude=pgx/_flax
+	blackdoc pgx --exclude=pgx/_flax
+	isort pgx --skip-glob=pgx/_flax
 
 check:
-	black pgx --check --diff --exclude=pgx/flax
-	blackdoc pgx --check --exclude=pgx/flax
-	flake8 --config pyproject.toml --ignore E203,E501,W503,E741 pgx --exclude=pgx/flax
-	mypy --config pyproject.toml pgx --exclude=pgx/flax/* 
-	isort pgx --check --diff --skip-glob=pgx/flax
+	black pgx --check --diff --exclude=pgx/_flax
+	blackdoc pgx --check --exclude=pgx/_flax
+	flake8 --config pyproject.toml --ignore E203,E501,W503,E741 pgx --exclude=pgx/_flax
+	mypy --config pyproject.toml pgx --exclude=pgx/_flax/* 
+	isort pgx --check --diff --skip-glob=pgx/_flax
 
 install:
 	python3 -m pip install --upgrade pip setuptools

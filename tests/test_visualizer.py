@@ -2,7 +2,7 @@ import os
 
 import jax
 
-from pgx.visualizer import Visualizer
+from pgx._visualizer import Visualizer
 
 key = jax.random.PRNGKey(0)
 vis = Visualizer()
