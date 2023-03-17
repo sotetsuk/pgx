@@ -2,7 +2,7 @@ import jax
 import pgx
 from pgx.experimental.utils import act_randomly
 from typing import get_args
-from pgx._test import validate
+from pgx._test import test_api
 
 
 def test_jit():
@@ -36,4 +36,4 @@ def test_api():
     for env_name in get_args(pgx.EnvId):
         print(f"{env_name} ...")
         env = pgx.make(env_name)
-        validate(env)
+        test_api(env)
