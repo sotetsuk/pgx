@@ -43,9 +43,7 @@ global_config = Config()
 
 
 def set_visualization_config(
-        *,
-        color_theme: ColorTheme = "light",
-        scale: float = 1.0
+    *, color_theme: ColorTheme = "light", scale: float = 1.0
 ):
     global_config.color_theme = color_theme
     global_config.scale = scale
