@@ -17,7 +17,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-import pgx
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -27,7 +27,7 @@ init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 
 
 
 @dataclass
-class State(pgx.State):
+class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
@@ -52,7 +52,7 @@ class State(pgx.State):
     turn: jnp.ndarray = jnp.int8(1)
 
 
-class Backgammon(pgx.Env):
+class Backgammon(core.Env):
     def __init__(
         self,
     ):
@@ -61,12 +61,12 @@ class Backgammon(pgx.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 
-    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return step(state, action)
 
     def _observe(
-        self, state: pgx.State, player_id: jnp.ndarray
+        self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)

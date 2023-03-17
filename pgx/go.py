@@ -17,7 +17,7 @@ from functools import partial
 import jax
 from jax import numpy as jnp
 
-import pgx
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -25,7 +25,7 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(pgx.State):
+class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -51,7 +51,7 @@ class State(pgx.State):
     black_player: jnp.ndarray = jnp.int8(0)
 
 
-class Go(pgx.Env):
+class Go(core.Env):
     def __init__(
         self,
         *,
@@ -69,7 +69,7 @@ class Go(pgx.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(init, size=self.size, komi=self.komi)(key=key)
 
-    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         state = partial(step, size=self.size)(state, action)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
@@ -85,7 +85,7 @@ class Go(pgx.Env):
         return state  # type: ignore
 
     def _observe(
-        self, state: pgx.State, player_id: jnp.ndarray
+        self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(

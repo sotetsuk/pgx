@@ -11,7 +11,7 @@ from typing import Literal, Optional, Tuple
 import jax
 from jax import numpy as jnp
 
-import pgx
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int32)
@@ -30,7 +30,7 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(pgx.State):
+class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
@@ -73,7 +73,7 @@ class State(pgx.State):
         visualize_minatar(self, filename)
 
 
-class MinAtarAsterix(pgx.Env):
+class MinAtarAsterix(core.Env):
     def __init__(
         self,
         *,
@@ -87,7 +87,7 @@ class MinAtarAsterix(pgx.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return State(rng=key)  # type: ignore
 
-    def _step(self, state: pgx.State, action) -> State:
+    def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
         rng, subkey = jax.random.split(state.rng)
         state, _, _ = step(
@@ -96,7 +96,7 @@ class MinAtarAsterix(pgx.Env):
         return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
 
     def _observe(
-        self, state: pgx.State, player_id: jnp.ndarray
+        self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _to_obs(state)

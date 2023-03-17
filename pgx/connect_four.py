@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -51,7 +51,7 @@ IDX = make_win_cache()
 
 
 @dataclass
-class State(pgx.State):
+class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
@@ -73,7 +73,7 @@ class State(pgx.State):
     blank_row: jnp.ndarray = jnp.full(7, 5)
 
 
-class ConnectFour(pgx.Env):
+class ConnectFour(core.Env):
     def __init__(
         self,
     ):
@@ -82,12 +82,12 @@ class ConnectFour(pgx.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return init(key)
 
-    def _step(self, state: pgx.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return step(state, action)
 
     def _observe(
-        self, state: pgx.State, player_id: jnp.ndarray
+        self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return observe(state, player_id)
