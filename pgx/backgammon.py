@@ -164,8 +164,10 @@ def _winning_step(
     """
     win_score = _calc_win_score(state.board)
     winner = state.current_player
+    loser = 1- winner
     reward = jnp.ones_like(state.reward)
     reward = reward.at[winner].set(win_score)
+    reward = reward.at[loser].set(- win_score)
     state = state.replace(terminated=TRUE)  # type: ignore
     return state.replace(reward=reward)  # type: ignore
 
