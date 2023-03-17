@@ -70,6 +70,7 @@ while not state.terminated.all():
 
 ## Supported games
 
+<div align="center">
 <table>
 <tr>
   <th>Game</th>
@@ -162,6 +163,7 @@ while not state.terminated.all():
  <td>:white_check_mark:</td>
 </tr>
 </table>
+</div>
 
 ## See also
 
