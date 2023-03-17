@@ -1,13 +1,13 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
 
 <div align="center">
-<img src="logo.svg" width="40%">
+<img src="fig/logo.svg" width="40%">
 </div>
 
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
-<img src="go.gif" width="40%"><img src="go.gif" width="40%" style="transform:rotate(180deg);">
+<img src="fig/go.gif" width="40%"><img src="fig/go.gif" width="40%" style="transform:rotate(180deg);">
 </div>
 
 ## Why Pgx?
@@ -15,7 +15,7 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 <!--- 
 https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG4czdz#scrollTo=V1QZhRXoGL8K
 --->
-<img align="right" width="250" src="throughput.svg">
+<img align="right" width="250" src="fig/throughput.svg">
 
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
 Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
@@ -98,7 +98,7 @@ while not state.terminated.all():
 </tr>
 <tr>
  <td>Connect Four</td>
- <td>:construction:</td>
+ <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
@@ -124,22 +124,22 @@ while not state.terminated.all():
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Breakout</td>
  <td>:white_check_mark:</td>
- <td></td>
+ <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Freeway</td>
  <td>:white_check_mark:</td>
- <td></td>
+ <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/Seaquest</td>
  <td>:white_check_mark:</td>
- <td></td>
+ <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar</a>/SpaceInvaders</td>
  <td>:white_check_mark:</td>
- <td></td>
+ <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td>Othello</td>
