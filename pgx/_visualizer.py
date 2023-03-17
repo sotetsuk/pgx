@@ -356,8 +356,12 @@ class Visualizer:
                 )
         elif isinstance(_state, HexState):
             self.config["GRID_SIZE"] = 30
-            self.config["BOARD_WIDTH"] = int(_state.size * 1.3)
-            self.config["BOARD_HEIGHT"] = int(_state.size * 0.8)
+            try:
+                self.config["BOARD_WIDTH"] = int(_state.size[0] * 1.3)
+                self.config["BOARD_HEIGHT"] = int(_state.size[0] * 0.8)
+            except IndexError:
+                self.config["BOARD_WIDTH"] = int(_state.size * 1.3)
+                self.config["BOARD_HEIGHT"] = int(_state.size * 0.8)
             self._make_dwg_group = _make_hex_dwg
             if (
                 self.config["COLOR_THEME"] is None
@@ -515,6 +519,10 @@ class Visualizer:
                 size=_states.size[_i],
                 chain_id_board=_states.chain_id_board[_i],
                 turn=_states.turn[_i],
+            )
+        elif isinstance(_states, HexState):
+            return HexState(
+                board=_states.board[_i],
             )
         elif isinstance(_states, OthelloState):
             return OthelloState(
