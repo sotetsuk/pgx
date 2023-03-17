@@ -1,10 +1,10 @@
 from typing import List, Union
 
-import pgx
+from pgx.core import State
 
 
 def show_state_seq(
-    states: Union[pgx.State, List[pgx.State]],
+    states: Union[State, List[State]],
 ) -> None:
     """Visualize list of states on notebook."""
     import sys
@@ -18,7 +18,7 @@ def show_state_seq(
             )
 
         else:
-            assert isinstance(states, pgx.State)
+            assert isinstance(states, State)
             from IPython.display import display_svg  # type:ignore
 
             display_svg(
@@ -31,7 +31,7 @@ def show_state_seq(
 
 
 def _show_states_in_widgets(
-    states: List[pgx.State],
+    states: List[State],
 ):
     import ipywidgets as widgets  # type:ignore
     from IPython.core.display import display_svg

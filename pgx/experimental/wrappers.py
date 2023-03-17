@@ -25,7 +25,7 @@ Third, personally, I feel `env = wrapper(env)` style is not easy to follow what 
 import jax
 import jax.numpy as jnp
 
-import pgx
+from pgx.core import State
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -53,14 +53,9 @@ def auto_reset(step_fn, init_fn):
     2. Performance:
     Might harm the performance as it always generates new state.
     Memory usage might be doubled. Need to check.
-
-    Usage:
-
-    >>> env = pgx.make("tic-tac-toe")
-    >>> step = auto_reset(env.step, env.init)
     """
 
-    def wrapped_step_fn(state: pgx.State, action):
+    def wrapped_step_fn(state: State, action):
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
@@ -95,7 +90,7 @@ def time_limit(step_fn, max_truncation_steps: int = -1):
     Thus, this wrapper is useless.
     """
 
-    def wrapped_step_fn(state: pgx.State, action):
+    def wrapped_step_fn(state: State, action):
         state = step_fn(state, action)
         state = jax.lax.cond(
             ~state.terminated

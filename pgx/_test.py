@@ -17,11 +17,11 @@ from dataclasses import fields
 import jax
 import jax.numpy as jnp
 
-import pgx
+from pgx.core import Env, State
 from pgx.experimental.utils import act_randomly
 
 
-def api_test(env: pgx.Env, num: int = 100):
+def api_test(env: Env, num: int = 100):
     """validate checks these items:
 
     - init
@@ -76,7 +76,7 @@ def api_test(env: pgx.Env, num: int = 100):
         _validate_taking_action_after_terminal(state, step)
 
 
-def _validate_taking_action_after_terminal(state: pgx.State, step_fn):
+def _validate_taking_action_after_terminal(state: State, step_fn):
     prev_state = state
     if not state.terminated:
         return
@@ -91,11 +91,11 @@ def _validate_taking_action_after_terminal(state: pgx.State, step_fn):
         ).all(), f"{field.name} : \n{getattr(state, field.name)}\n{getattr(prev_state, field.name)}"
 
 
-def _validate_init_reward(state: pgx.State):
+def _validate_init_reward(state: State):
     assert (state.reward == jnp.zeros_like(state.reward)).all()
 
 
-def _validate_state(state: pgx.State):
+def _validate_state(state: State):
     """validate_state checks these items:
 
     - current_player is int8
@@ -112,7 +112,7 @@ def _validate_state(state: pgx.State):
     ), state.legal_action_mask.dtype
 
 
-def _validate_legal_actions(state: pgx.State):
+def _validate_legal_actions(state: State):
     if state.terminated:
         # Agent can take any action at terminal state (but give no effect to the next state)
         # This is to avoid zero-division error by normalizing action probability by legal actions
@@ -123,7 +123,7 @@ def _validate_legal_actions(state: pgx.State):
         ...
 
 
-def _validate_current_player(state: pgx.State):
+def _validate_current_player(state: State):
     assert (
         state.current_player >= 0
     ), f"current_player must be positive before terminated but got : {state.current_player}"
