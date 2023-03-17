@@ -8,7 +8,7 @@ from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _effects_all,
 # check visualization results by image preview plugins
 def visualize(state, fname="tests/assets/shogi/xxx.svg"):
     from pgx.visualizer import Visualizer
-    v = Visualizer(color_mode="dark")
+    v = Visualizer(color_theme="dark")
     v.save_svg(state, fname)
 
 

@@ -65,16 +65,16 @@ class State:
         self,
         filename,
         *,
-        color_mode: Optional[Literal["light", "dark"]] = None,
+        color_theme: Optional[Literal["light", "dark"]] = None,
         scale: Optional[float] = None,
     ) -> None:
         """
-        color_mode: Default(None) is "light"
+        color_theme: Default(None) is "light"
         scale: change image size. Default(None) is 1.0
         """
         from pgx.visualizer import Visualizer
 
-        v = Visualizer(color_mode=color_mode, scale=scale)
+        v = Visualizer(color_theme=color_theme, scale=scale)
         return v.save_svg(self, filename)
 
 
