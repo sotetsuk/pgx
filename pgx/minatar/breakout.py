@@ -17,7 +17,7 @@ from typing import Tuple
 import jax
 from jax import numpy as jnp
 
-from pgx.flax.struct import dataclass
+from pgx._flax.struct import dataclass
 
 ZERO = jnp.array(0, dtype=jnp.int32)
 ONE = jnp.array(1, dtype=jnp.int32)

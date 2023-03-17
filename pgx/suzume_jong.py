@@ -37,7 +37,7 @@ import jax
 import jax.lax as lax
 import jax.numpy as jnp
 
-from pgx.flax.struct import dataclass
+from pgx._flax.struct import dataclass
 
 NUM_TILES = 44
 NUM_TILE_TYPES = 11

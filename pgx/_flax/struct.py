@@ -44,7 +44,7 @@ def dataclass(clz: _T) -> _T:
   The `dataclass` decorator makes it easy to define custom classes that can be
   passed safely to Jax. For example::
 
-    from flax import struct
+    from _flax import struct
 
     @struct.dataclass
     class Model:
@@ -95,7 +95,7 @@ def dataclass(clz: _T) -> _T:
   Returns:
     The new class.
   """
-  # check if already a flax dataclass
+  # check if already a _flax dataclass
   if '_flax_dataclass' in clz.__dict__:
     return clz
 
@@ -175,12 +175,12 @@ TNode = TypeVar('TNode', bound='PyTreeNode')
 class PyTreeNode:
   """Base class for dataclasses that should act like a JAX pytree node.
 
-  See ``flax.struct.dataclass`` for the ``jax.tree_util`` behavior.
+  See ``_flax.struct.dataclass`` for the ``jax.tree_util`` behavior.
   This base class additionally avoids type checking errors when using PyType.
 
   Example::
 
-    from flax import struct
+    from _flax import struct
 
     class Model(struct.PyTreeNode):
       params: Any

@@ -264,7 +264,7 @@ class _MsgpackExtType(enum.IntEnum):
 
 def _msgpack_ext_pack(x):
   """Messagepack encoders for custom types."""
-  # TODO(flax-dev): Array here only work when they are fully addressable.
+  # TODO(_flax-dev): Array here only work when they are fully addressable.
   # If they are not fully addressable, use the GDA path for checkpointing.
   if isinstance(x, (np.ndarray, jax.Array)):
     return msgpack.ExtType(_MsgpackExtType.ndarray, _ndarray_to_bytes(x))
@@ -416,7 +416,7 @@ def from_bytes(target, encoded_bytes: bytes):
     target: template object with state-dict registrations that matches
       the structure being deserialized from `encoded_bytes`.
     encoded_bytes: msgpack serialized object structurally isomorphic to
-      `target`.  Typically a flax model or optimizer.
+      `target`.  Typically a _flax model or optimizer.
 
   Returns:
     A new object structurally isomorphic to `target` containing the updated
@@ -431,7 +431,7 @@ def to_bytes(target) -> bytes:
 
   Args:
     target: template object with state-dict registrations to be
-      serialized to msgpack format.  Typically a flax model or optimizer.
+      serialized to msgpack format.  Typically a _flax model or optimizer.
 
   Returns:
     Bytes of msgpack-encoded state-dict of `target` object.

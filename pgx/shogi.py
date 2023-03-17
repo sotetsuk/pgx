@@ -58,7 +58,7 @@ from pgx.cache import (
     load_shogi_queen_moves,
     load_shogi_raw_effect_boards,
 )
-from pgx.flax.struct import dataclass
+from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)

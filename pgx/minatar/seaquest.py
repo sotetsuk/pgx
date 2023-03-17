@@ -12,7 +12,7 @@ import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
-from pgx.flax.struct import dataclass
+from pgx._flax.struct import dataclass
 
 RAMP_INTERVAL: jnp.ndarray = jnp.int32(100)
 MAX_OXYGEN: jnp.ndarray = jnp.int32(200)

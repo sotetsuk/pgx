@@ -13,7 +13,7 @@ from typing import Tuple
 import jax
 from jax import numpy as jnp
 
-from pgx.flax.struct import dataclass
+from pgx._flax.struct import dataclass
 
 player_speed = jnp.array(3, dtype=jnp.int32)
 time_limit = jnp.array(2500, dtype=jnp.int32)

@@ -14,7 +14,7 @@ import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
-from pgx.flax.struct import dataclass
+from pgx._flax.struct import dataclass
 
 SHOT_COOL_DOWN = jnp.int32(5)
 ENEMY_MOVE_INTERVAL = jnp.int32(12)
