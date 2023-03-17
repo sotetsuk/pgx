@@ -20,8 +20,8 @@ https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG4czdz#scroll
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
 Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
 
-- **JAX-native**: All `step` functions are *jittable*
-- **Fast** in parallel execution (10x faster than C++/Python implementation)
+- **JAX-native.** All `step` functions are *jittable*
+- **Super fast** in parallel execution (much faster than C++/Python implementation)
 - **Various game support** including **Backgammon**, **Shogi**, and **Go**
 - **Beautiful visualization** in SVG format
 
@@ -173,7 +173,7 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
 - [google/brax](https://github.com/google/brax): Rigidbody physics simulation
 - [instadeepai/jumanji](https://github.com/instadeepai/jumanji): Industry-driven environments (e.g., Travelling Salesman Problem)
 
-Combining Pgx with these **JAX-native algorithm/implementations** is an interesting direction:
+Combining Pgx with these **JAX-native algorithms/implementations** is an interesting direction:
 
 - [Anakin framework](https://arxiv.org/abs/2104.06272): Highly efficient RL framework that works with JAX-native environments on TPUs
 - [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS implementations, including AlphaZero and MuZero
