@@ -11,11 +11,11 @@ from IPython.display import display_svg  # type:ignore
 from pettingzoo import AECEnv  # type: ignore
 from pettingzoo.utils import wrappers  # type: ignore
 
-import pgx
+from pgx.core import EnvId, Env, make, State
 
 
 def pettingzoo_env(
-    env_id: pgx.EnvId, render_mode=Optional[Literal["svg"]]
+    env_id: EnvId, render_mode=Optional[Literal["svg"]]
 ) -> AECEnv:
     env = PettingZooEnv(env_id, render_mode=render_mode)
     env = wrappers.TerminateIllegalWrapper(env, illegal_reward=-1)
@@ -29,14 +29,14 @@ class PettingZooEnv(AECEnv):
         "render_modes": ["svg"],
     }
 
-    def __init__(self, env_id: pgx.EnvId, render_mode=None):
+    def __init__(self, env_id: EnvId, render_mode=None):
         super().__init__()
 
-        pgx_env: pgx.Env = pgx.make(env_id)
+        pgx_env: Env = make(env_id)
         self._num_players = pgx_env.num_players
         self._init_fn = jax.jit(pgx_env.init)
         self._step_fn = jax.jit(pgx_env.step)
-        self._state: pgx.State = self._init_fn(jax.random.PRNGKey(0))
+        self._state: State = self._init_fn(jax.random.PRNGKey(0))
 
         (
             self.agents,
@@ -112,7 +112,7 @@ class PettingZooEnv(AECEnv):
         ...
 
 
-def get_agents_spaces(env_id: pgx.EnvId):
+def get_agents_spaces(env_id: EnvId):
     if env_id == "tic_tac_toe":
         agents = ["player_0", "player_1"]
         action_spaces = {i: spaces.Discrete(9) for i in agents}
