@@ -47,7 +47,7 @@ class State:
     observation: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
-    truncated: jnp.ndarray
+    truncated: jnp.ndarray  # so far, not used as all Pgx environments are finite horizon
     legal_action_mask: jnp.ndarray
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
@@ -63,11 +63,8 @@ class State:
 
 
 class Env(abc.ABC):
-    def __init__(
-        self, *, auto_reset: bool = False, max_truncation_steps: int = -1
-    ):
-        self.auto_reset = jnp.bool_(auto_reset)
-        self.max_truncation_steps = jnp.int32(max_truncation_steps)
+    def __init__(self):
+        ...
 
     def init(self, key: jax.random.KeyArray) -> State:
         key, subkey = jax.random.split(key)
@@ -79,18 +76,6 @@ class Env(abc.ABC):
     def step(self, state: State, action: jnp.ndarray) -> State:
         is_illegal = ~state.legal_action_mask[action]
         current_player = state.current_player
-
-        # Auto reset
-        state = jax.lax.cond(
-            self.auto_reset & (state.terminated | state.truncated),
-            lambda: state.replace(  # type: ignore
-                steps=jnp.int32(0),
-                terminated=FALSE,
-                truncated=FALSE,
-                reward=jnp.zeros_like(state.reward),
-            ),
-            lambda: state,
-        )
 
         # If the state is already terminated or truncated, environment does not take usual step,
         # but return the same state with zero-rewards for all players
@@ -107,15 +92,6 @@ class Env(abc.ABC):
             lambda: state,
         )
 
-        # Time limit
-        state = jax.lax.cond(
-            ~state.terminated
-            & (0 <= self.max_truncation_steps)
-            & (self.max_truncation_steps <= state.steps),
-            lambda: state.replace(truncated=TRUE),  # type: ignore
-            lambda: state,
-        )
-
         # All legal_action_mask elements are **TRUE** at terminal state
         # This is to avoid zero-division error when normalizing action probability
         # Taking any action at terminal state does not give any effect to the state
@@ -123,17 +99,6 @@ class Env(abc.ABC):
             (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
                 legal_action_mask=jnp.ones_like(state.legal_action_mask)
-            ),
-            lambda: state,
-        )
-
-        # Auto reset
-        state = jax.lax.cond(
-            self.auto_reset & (state.terminated | state.truncated),
-            lambda: self.init(state._rng_key).replace(  # type: ignore
-                terminated=state.terminated,
-                truncated=state.truncated,
-                reward=state.reward,
             ),
             lambda: state,
         )
