@@ -32,8 +32,7 @@ def test_jit():
 
 
 def test_env():
-    from pgx._test import api_test
     for env_name in get_args(pgx.EnvId):
         print(f"{env_name} ...")
         env = pgx.make(env_name)
-        api_test(env)
+        pgx.api_test(env)
