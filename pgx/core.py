@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Literal, Tuple, get_args
+from typing import Literal, Optional, Tuple, get_args
 
 import jax
 import jax.numpy as jnp
@@ -59,7 +59,23 @@ class State:
         from pgx.visualizer import Visualizer
 
         v = Visualizer()
-        return v._to_dwg_from_states(states=self).tostring()
+        return v.get_dwg(states=self).tostring()
+
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
+        """
+        color_theme: Default(None) is "light"
+        scale: change image size. Default(None) is 1.0
+        """
+        from pgx.visualizer import Visualizer
+
+        v = Visualizer(color_theme=color_theme, scale=scale)
+        return v.save_svg(self, filename)
 
 
 class Env(abc.ABC):

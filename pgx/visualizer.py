@@ -14,7 +14,7 @@
 
 import math
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, Optional
 
 import svgwrite  # type: ignore
 
@@ -30,6 +30,17 @@ from .dwg.shogi import ShogiState, _make_shogi_dwg
 from .dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from .dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
 
+ColorTheme = Literal["light", "dark"]
+
+
+@dataclass
+class Config:
+    color_theme: ColorTheme = "light"
+    scale: float = 1.0
+
+
+global_config = Config()
+
 
 @dataclass
 class ColorSet:
@@ -43,24 +54,30 @@ class ColorSet:
 
 
 class Visualizer:
-    """PGXのVisualizer.
+    """The Pgx Visualizer
 
-    color_mode: Literal["light", "dark"]
-        light(ライトモードで表示)/dark(ダークモードで表示)
-    scale: float
-        表示する画像のサイズを拡大率で指定, デフォルトは1.0
+    color_theme: Default(None) is "light"
+    scale: change image size. Default(None) is 1.0
     """
 
     def __init__(
         self,
-        color_mode: Literal["light", "dark"] = "light",
-        scale: float = 1.0,
+        *,
+        color_theme: Optional[ColorTheme] = None,
+        scale: Optional[float] = None,
     ) -> None:
+        color_theme = (
+            color_theme
+            if color_theme is not None
+            else global_config.color_theme
+        )
+        scale = scale if scale is not None else global_config.scale
+
         self.config = {
             "GRID_SIZE": -1,
             "BOARD_WIDTH": -1,
             "BOARD_HEIGHT": -1,
-            "COLOR_MODE": color_mode,
+            "COLOR_THEME": color_theme,
             "COLOR_SET": ColorSet(),
             "SCALE": scale,
         }
@@ -79,83 +96,9 @@ class Visualizer:
         filename="temp.svg",
     ) -> None:
         assert filename.endswith(".svg")
-        self._to_dwg_from_states(states=state).saveas(filename=filename)
+        self.get_dwg(states=state).saveas(filename=filename)
 
-    def show_svg(
-        self,
-        states,
-    ) -> None:
-        """Pgxのstate,batch処理されたstate,stateのリストをnotebook上で可視化する.
-
-        states: Union[list, AnimalShogiState, BackgammonState, ChessState, BridgeBiddingState, GoState, OthelloState,ShogiState, SparrowMahjongState, TictactoeState]
-            表示させるstate
-        """
-        import sys
-
-        if "ipykernel" in sys.modules:
-            # Jupyter Notebook
-
-            if isinstance(states, list):
-                self._show_states_in_widgets(
-                    states=states,
-                )
-
-            else:
-                from IPython.display import display_svg  # type:ignore
-
-                display_svg(
-                    self._to_dwg_from_states(
-                        states=states,
-                    ).tostring(),
-                    raw=True,
-                )
-        else:
-            # Not Jupyter
-            sys.stdout.write("This function only works in Jupyter Notebook.")
-
-    def _show_states_in_widgets(
-        self,
-        states,
-    ):
-        import ipywidgets as widgets  # type:ignore
-        from IPython.core.display import display_svg
-        from IPython.display import display
-
-        svg_strings = [
-            self._to_dwg_from_states(
-                states=_state,
-            ).tostring()
-            for _state in states
-        ]
-        N = len(svg_strings)
-        self.i = -1
-
-        def _on_click(button: widgets.Button):
-            output.clear_output(True)
-            with output:
-                if button.description == "next":
-                    self.i = (self.i + 1) % N
-                else:
-                    self.i = (self.i - 1) % N
-                print(self.i)
-                display_svg(
-                    svg_strings[self.i],
-                    raw=True,
-                )
-
-        button1 = widgets.Button(description="next")
-        button1.on_click(_on_click)
-
-        button2 = widgets.Button(description="back")
-        button2.on_click(_on_click)
-
-        output = widgets.Output()
-        box = widgets.Box([button2, button1])
-
-        display(box, output)
-        button1.click()
-
-    def _to_dwg_from_states(
+    def get_dwg(
         self,
         states,
     ):
@@ -251,9 +194,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 4
             self._make_dwg_group = _make_animalshogi_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "dimgray",
                     "black",
@@ -279,9 +222,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 14
             self._make_dwg_group = _make_backgammon_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "gray",
                     "black",
@@ -307,9 +250,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 10
             self._make_dwg_group = _make_bridge_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "gray",
                     "black",
@@ -335,9 +278,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 8
             self._make_dwg_group = _make_chess_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "none",
                     "none",
@@ -363,9 +306,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 7
             self._make_dwg_group = _make_connect_four_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "lightgray",
@@ -395,9 +338,9 @@ class Visualizer:
                 self.config["BOARD_HEIGHT"] = int(_state.size)
             self._make_dwg_group = _make_go_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black", "gray", "white", "white", "#1e1e1e", "white", ""
                 )
@@ -417,9 +360,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = int(_state.size * 0.8)
             self._make_dwg_group = _make_hex_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "white",
@@ -445,9 +388,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 8
             self._make_dwg_group = _make_othello_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "lightgray",
@@ -473,9 +416,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 9
             self._make_dwg_group = _make_shogi_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "gray", "black", "gray", "gray", "#1e1e1e", "gray", ""
                 )
@@ -495,9 +438,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 10
             self._make_dwg_group = _make_sparrowmahjong_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "lightgray",
                     "dimgray",
@@ -523,9 +466,9 @@ class Visualizer:
             self.config["BOARD_HEIGHT"] = 3
             self._make_dwg_group = _make_tictactoe_dwg
             if (
-                self.config["COLOR_MODE"] is None
-                and self.config["COLOR_MODE"] == "dark"
-            ) or self.config["COLOR_MODE"] == "dark":
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "gray",
                     "black",

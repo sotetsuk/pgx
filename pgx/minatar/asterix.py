@@ -6,7 +6,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Literal, Tuple
+from typing import Literal, Optional, Tuple
 
 import jax
 from jax import numpy as jnp
@@ -61,7 +61,13 @@ class State(pgx.State):
 
         return visualize_minatar(self)
 
-    def save_svg(self, filename) -> None:
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
         from pgx.minatar.utils import visualize_minatar
 
         visualize_minatar(self, filename)
