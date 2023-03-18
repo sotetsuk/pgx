@@ -177,6 +177,7 @@ Combining Pgx with these **JAX-native algorithms/implementations** is an interes
 
 - [Anakin framework](https://arxiv.org/abs/2104.06272): Highly efficient RL framework that works with JAX-native environments on TPUs
 - [deepmind/mctx](https://github.com/deepmind/mctx): JAX-native MCTS implementations, including AlphaZero and MuZero
+- [deepmind/rlax](https://github.com/deepmind/rlax): JAX-native RL components
 - [google/evojax](https://github.com/google/evojax): Hardware-Accelerated neuroevolution
 - [RobertTLange/evosax](https://github.com/RobertTLange/evosax): JAX-native evolution strategy (ES) implementations
 - [adaptive-intelligent-robotics/QDax](https://github.com/adaptive-intelligent-robotics/QDax): JAX-native Quality-Diversity (QD) algorithms
