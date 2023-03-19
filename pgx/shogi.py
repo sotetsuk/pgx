@@ -178,7 +178,7 @@ class Shogi(core.Env):
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return _observe(state, player_id)
 
     @property
     def name(self) -> str:
@@ -338,7 +338,7 @@ def step(state: State, action: jnp.ndarray) -> State:
     return _step(state, Action.from_dlshogi_action(state, action))
 
 
-def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     state = jax.lax.cond(
         state.current_player != player_id, lambda: _flip(state), lambda: state
     )
