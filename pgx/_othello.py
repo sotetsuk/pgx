@@ -123,8 +123,19 @@ def _step(state, action):
     opp = board < 0
     pos = jnp.zeros(64, dtype=jnp.bool_).at[action].set(TRUE)
 
-    shifts = jnp.array([1, -1, 8, -8])
-    masks = jnp.array([LR_MASK, LR_MASK, UD_MASK, UD_MASK])
+    shifts = jnp.array([1, -1, 8, -8, 7, -7, 9, -9])
+    masks = jnp.array(
+        [
+            LR_MASK,
+            LR_MASK,
+            UD_MASK,
+            UD_MASK,
+            SIDE_MASK,
+            SIDE_MASK,
+            SIDE_MASK,
+            SIDE_MASK,
+        ]
+    )
 
     def _shift(i, rev):
         tmp = check_line(pos, opp, shifts[i], masks[i])
@@ -134,13 +145,13 @@ def _step(state, action):
             lambda: rev,
         )
 
-    rev = jax.lax.fori_loop(0, 4, _shift, jnp.zeros(64, dtype=jnp.bool_))
+    rev = jax.lax.fori_loop(0, 8, _shift, jnp.zeros(64, dtype=jnp.bool_))
 
     # TODO
     my ^= pos | rev
     opp ^= rev
 
-    return state.replace(board=jnp.where(jnp.int8(opp), -1, jnp.int8(my)))
+    return state.replace(board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)))
 
 
 def check_line(pos, opp, shift, mask):
