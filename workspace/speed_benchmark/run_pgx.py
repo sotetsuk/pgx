@@ -4,13 +4,14 @@ import json
 import jax
 import pgx
 from pgx.experimental.utils import act_randomly
-from tqdm import tqdm
-from typing import get_args
+from pgx.experimental.wrappers import auto_reset
 
 
-# TODO: autoreset
-def benchmark(env_id: pgx.EnvId, batch_size, num_steps=(2 ** 12) * 1000):
-    assert num_steps % batch_size == 0
+act_randomly = jax.jit(act_randomly)
+
+
+def benchmark(env_id: pgx.EnvId, batch_size):
+    num_steps = batch_size * 1_000
     num_batch_step = num_steps // batch_size
 
     env = pgx.make(env_id)
@@ -18,7 +19,7 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_steps=(2 ** 12) * 1000):
 
     # warmup start
     init = jax.jit(jax.vmap(env.init))
-    step = jax.jit(jax.vmap(env.step))
+    step = jax.jit(jax.vmap(auto_reset(env.step, env.init)))
     key = jax.random.PRNGKey(0)
     key, subkey = jax.random.split(key)
     keys = jax.random.split(subkey, batch_size)
@@ -50,11 +51,10 @@ games = {
 }
 
 
-N = int(sys.argv[1])
 bs_list = [2 ** i for i in range(1, 11)]
 d = {}
 for game, env_id in games.items():
     for bs in bs_list:
-        num_steps, sec = benchmark(env_id, bs, N)
+        num_steps, sec = benchmark(env_id, bs)
         print(json.dumps({"game": game, "library": "pgx",
               "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
