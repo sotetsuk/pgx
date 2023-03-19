@@ -85,15 +85,15 @@ def _make_othello_dwg(dwg, state: OthelloState, config):
     # stones
     board = state.board
     for xy, stone in enumerate(board):
-        if stone == -1:
+        if stone == 0:
             continue
         # ndarrayのx,yと違うことに注意
         # svgではヨコがx
         stone_y = xy // BOARD_SIZE * GRID_SIZE + GRID_SIZE / 2
         stone_x = xy % BOARD_SIZE * GRID_SIZE + GRID_SIZE / 2
 
-        color = color_set.p1_color if stone == 0 else color_set.p2_color
-        outline = color_set.p1_outline if stone == 0 else color_set.p2_outline
+        color = color_set.p1_color if stone == 1 else color_set.p2_color
+        outline = color_set.p1_outline if stone == 1 else color_set.p2_outline
         board_g.add(
             dwg.circle(
                 center=(stone_x, stone_y),
