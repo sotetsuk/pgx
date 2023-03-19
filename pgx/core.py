@@ -36,7 +36,7 @@ EnvId = Literal[
     # "animal_shogi",
     "backgammon",
     # "bridge_bidding",
-    # "connect_four",
+    "connect_four",
     "go-9x9",
     "go-19x19",
     "hex",
