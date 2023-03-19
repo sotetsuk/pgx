@@ -12,13 +12,13 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple, Literal, Optional
+from typing import Literal, Optional, Tuple
 
 import jax
 from jax import numpy as jnp
 
-from pgx._flax.struct import dataclass
 import pgx.core as core
+from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -134,9 +134,7 @@ def _init(rng: jnp.ndarray) -> State:
     return _init_det(ball_start=ball_start)
 
 
-def _step_det(
-    state: State, action: jnp.ndarray
-):
+def _step_det(state: State, action: jnp.ndarray):
     return jax.lax.cond(
         state.terminal,
         lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
@@ -144,9 +142,7 @@ def _step_det(
     )
 
 
-def _step_det_at_non_terminal(
-    state: State, action: jnp.ndarray
-):
+def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
     ball_y = state.ball_y
     ball_x = state.ball_x
     ball_dir = state.ball_dir
@@ -209,7 +205,7 @@ def _step_det_at_non_terminal(
         last_y=last_y,
         terminal=terminal,
         last_action=action,
-        reward=r[jnp.newaxis]
+        reward=r[jnp.newaxis],
     )  # type: ignore
     return state
 
