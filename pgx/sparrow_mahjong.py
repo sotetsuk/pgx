@@ -136,15 +136,15 @@ class SparrowMahjong(core.Env):
             last_discard=last_discard,
         )
 
-        scores = _hands_to_score(state)
-        winning_players = _check_ron(state, scores)
+        scores = _hands_to_score(state)  # type: ignore
+        winning_players = _check_ron(state, scores)  # type: ignore
         return lax.cond(
             jnp.any(winning_players),
-            lambda: _step_by_ron(state, scores, winning_players),
+            lambda: _step_by_ron(state, scores, winning_players),  # type: ignore
             lambda: lax.cond(
-                jnp.bool_(NUM_TILES - 1 <= state.draw_ix),
+                jnp.bool_(NUM_TILES - 1 <= state.draw_ix),  # type: ignore
                 lambda: _step_by_tie(state),
-                lambda: _step_non_tied(state, scores),
+                lambda: _step_non_tied(state, scores),  # type: ignore
             ),
         )
 
@@ -306,7 +306,7 @@ def _step_by_ron(state: State, scores, winning_players):
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)
+    return state.replace(reward=r)  # type: ignore
 
 
 def _step_by_tsumo(state: State, scores):
@@ -329,7 +329,7 @@ def _step_by_tsumo(state: State, scores):
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)
+    return state.replace(reward=r)  # type: ignore
 
 
 def _step_by_tie(state):
@@ -339,7 +339,7 @@ def _step_by_tie(state):
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )
-    return state.replace(reward=jnp.zeros(3, dtype=jnp.float32))
+    return state.replace(reward=jnp.zeros(3, dtype=jnp.float32))  # type: ignore
 
 
 def _draw_tile(state: State) -> State:
