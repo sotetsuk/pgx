@@ -8,13 +8,17 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
+from typing import Literal, Optional
 
 import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
+import pgx.core as core
 from pgx._flax.struct import dataclass
+
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
 
 SHOT_COOL_DOWN = jnp.int32(5)
 ENEMY_MOVE_INTERVAL = jnp.int32(12)
@@ -25,12 +29,23 @@ NINE = jnp.int32(9)
 
 
 @dataclass
-class State:
+class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
+    current_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.zeros(
+        1, dtype=jnp.float32
+    )  # 1d array for the same API as other multi-agent games
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     pos: jnp.ndarray = jnp.int32(5)
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     e_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     alien_map: jnp.ndarray = (
-        jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(True)
+        jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(TRUE)
     )
     alien_dir: jnp.ndarray = jnp.int32(-1)
     enemy_move_interval: jnp.ndarray = ENEMY_MOVE_INTERVAL
@@ -38,32 +53,85 @@ class State:
     alien_shot_timer: jnp.ndarray = ENEMY_SHOT_INTERVAL
     ramp_index: jnp.ndarray = jnp.int32(0)
     shot_timer: jnp.ndarray = jnp.int32(0)
-    terminal: jnp.ndarray = jnp.bool_(False)
+    terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = jnp.int32(0)
 
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
 
-def step(
+        return visualize_minatar(self)
+
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
+        from pgx.minatar.utils import visualize_minatar
+
+        visualize_minatar(self, filename)
+
+
+class MinAtarSpaceInvaders(core.Env):
+    def __init__(
+        self,
+        *,
+        minatar_version: Literal["v0", "v1"] = "v1",
+        sticky_action_prob: float = 0.1,
+    ):
+        super().__init__()
+        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob: float = sticky_action_prob
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return _init_det()
+
+    def _step(self, state: core.State, action) -> State:
+        assert isinstance(state, State)
+        state = _step(
+            state, action, sticky_action_prob=self.sticky_action_prob
+        )
+        return state.replace(terminated=state.terminal)  # type: ignore
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state)
+
+    @property
+    def name(self) -> str:
+        return "MinAtar/SpaceInvaders"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self):
+        return 1
+
+
+def _step(
     state: State,
     action: jnp.ndarray,
-    rng: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+    sticky_action_prob,
+):
     action = jnp.int32(action)
+    key, subkey = jax.random.split(state._rng_key)
+    state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
-        jax.random.uniform(rng) < sticky_action_prob,
+        jax.random.uniform(subkey) < sticky_action_prob,
         lambda: state.last_action,
         lambda: action,
     )
     return _step_det(state, action)
 
 
-def init(rng: jnp.ndarray) -> State:
-    return _init_det()
-
-
-def observe(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
-    obs = obs.at[9, state.pos, 0].set(1)
+    obs = obs.at[9, state.pos, 0].set(TRUE)
     obs = obs.at[:, :, 1].set(state.alien_map)
     obs = obs.at[:, :, 2].set(
         lax.cond(
@@ -87,10 +155,10 @@ def observe(state: State) -> jnp.ndarray:
 def _step_det(
     state: State,
     action: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     return lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.int16(0), state.terminal),  # type: ignore
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action),
     )
 
@@ -98,8 +166,8 @@ def _step_det(
 def _step_det_at_non_terminal(
     state: State,
     action: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    r = jnp.int16(0)
+):
+    r = jnp.float32(0)
 
     pos = state.pos
     f_bullet_map = state.f_bullet_map
@@ -121,19 +189,15 @@ def _step_det_at_non_terminal(
 
     # Update Friendly Bullets
     f_bullet_map = jnp.roll(f_bullet_map, -1, axis=0)
-    f_bullet_map = f_bullet_map.at[9, :].set(0)
+    f_bullet_map = f_bullet_map.at[9, :].set(FALSE)
 
     # Update Enemy Bullets
     e_bullet_map = jnp.roll(e_bullet_map, 1, axis=0)
-    e_bullet_map = e_bullet_map.at[0, :].set(0)
-    terminal = lax.cond(
-        e_bullet_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
-    )
+    e_bullet_map = e_bullet_map.at[0, :].set(FALSE)
+    terminal = lax.cond(e_bullet_map[9, pos], lambda: TRUE, lambda: terminal)
 
     # Update aliens
-    terminal = lax.cond(
-        alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
-    )
+    terminal = lax.cond(alien_map[9, pos], lambda: TRUE, lambda: terminal)
     alien_move_timer, alien_map, alien_dir, terminal = lax.cond(
         alien_move_timer == 0,
         lambda: _update_alien_by_move_timer(
@@ -147,13 +211,13 @@ def _step_det_at_non_terminal(
     )
     e_bullet_map = lax.cond(
         timer_zero,
-        lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(1),
+        lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(TRUE),
         lambda: e_bullet_map,
     )
 
     kill_locations = alien_map & (alien_map == f_bullet_map)
 
-    r += jnp.sum(kill_locations, dtype=jnp.int16)
+    r += jnp.sum(kill_locations, dtype=jnp.float32)
     alien_map = alien_map & (~kill_locations)
     f_bullet_map = f_bullet_map & (~kill_locations)
 
@@ -174,33 +238,32 @@ def _step_det_at_non_terminal(
         lambda: ramp_index,
     )
     alien_map = lax.cond(
-        is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(1), lambda: alien_map
+        is_enemy_zero,
+        lambda: alien_map.at[0:4, 2:8].set(TRUE),
+        lambda: alien_map,
     )
 
-    return (
-        State(
-            pos=pos,
-            f_bullet_map=f_bullet_map,
-            e_bullet_map=e_bullet_map,
-            alien_map=alien_map,
-            alien_dir=alien_dir,
-            enemy_move_interval=enemy_move_interval,
-            alien_move_timer=alien_move_timer,
-            alien_shot_timer=alien_shot_timer,
-            ramp_index=ramp_index,
-            shot_timer=shot_timer,
-            terminal=terminal,
-            last_action=action,
-        ),  # type: ignore
-        r,
-        terminal,
+    return state.replace(  # type: ignore
+        pos=pos,
+        f_bullet_map=f_bullet_map,
+        e_bullet_map=e_bullet_map,
+        alien_map=alien_map,
+        alien_dir=alien_dir,
+        enemy_move_interval=enemy_move_interval,
+        alien_move_timer=alien_move_timer,
+        alien_shot_timer=alien_shot_timer,
+        ramp_index=ramp_index,
+        shot_timer=shot_timer,
+        terminal=terminal,
+        last_action=action,
+        reward=r[jnp.newaxis],
     )
 
 
 def _resole_action(pos, f_bullet_map, shot_timer, action):
     f_bullet_map = lax.cond(
         (action == 5) & (shot_timer == 0),
-        lambda: f_bullet_map.at[9, pos].set(1),
+        lambda: f_bullet_map.at[9, pos].set(TRUE),
         lambda: f_bullet_map,
     )
     shot_timer = lax.cond(
@@ -217,7 +280,6 @@ def _resole_action(pos, f_bullet_map, shot_timer, action):
     return pos, f_bullet_map, shot_timer
 
 
-# TODO: avoid loop
 def _nearest_alien(pos, alien_map):
     search_order = jnp.argsort(jnp.abs(jnp.arange(10, dtype=jnp.int32) - pos))
     ix = lax.while_loop(
