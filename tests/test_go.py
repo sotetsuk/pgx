@@ -3,33 +3,35 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import init, observe, step, _count_ji, _count_point, Go, State, show
+from pgx.go import _count_ji, _count_point, Go, State, _show
 
 BOARD_SIZE = 5
-j_init = jax.jit(init, static_argnums=(1,))
-j_step = jax.jit(step, static_argnums=(2,))
+env = Go(size=BOARD_SIZE)
+init = jax.jit(env.init)
+step = jax.jit(env.step)
+observe = jax.jit(env.observe)
 
 
 def test_init():
     key = jax.random.PRNGKey(0)
-    state = j_init(key=key, size=BOARD_SIZE)
+    state = init(key=key)
     assert state.current_player == 1
 
 
 def test_end_by_pass():
     key = jax.random.PRNGKey(0)
 
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=25)
     assert state.passed
     assert not state.terminated
-    state = j_step(state=state, action=0, size=BOARD_SIZE)
+    state = step(state=state, action=0)
     assert not state.passed
     assert not state.terminated
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = step(state=state, action=25)
     assert state.passed
     assert not state.terminated
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = step(state=state, action=25)
     assert state.passed
     assert state.terminated
 
@@ -39,31 +41,31 @@ def test_step():
     https://www.cosumi.net/replay/?b=You&w=COSUMI&k=0&r=0&bs=5&gr=ccbccdcbdbbadabdbecaacabecaddeaettceedbetttt
     """
     key = jax.random.PRNGKey(0)
-    state = j_init(key=key, size=BOARD_SIZE)
+    state = init(key=key)
     assert state.current_player == 1
 
-    state = j_step(state=state, action=12, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=11, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
-    state = j_step(state=state, action=20, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # pass
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # pass
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # pass
+    state = step(state=state, action=12)  # BLACK
+    state = step(state=state, action=11)  # WHITE
+    state = step(state=state, action=17)
+    state = step(state=state, action=7)
+    state = step(state=state, action=8)
+    state = step(state=state, action=1)
+    state = step(state=state, action=3)
+    state = step(state=state, action=16)
+    state = step(state=state, action=21)
+    state = step(state=state, action=2)
+    state = step(state=state, action=10)
+    state = step(state=state, action=5)
+    state = step(state=state, action=14)
+    state = step(state=state, action=15)
+    state = step(state=state, action=23)
+    state = step(state=state, action=20)
+    state = step(state=state, action=25)  # pass
+    state = step(state=state, action=22)
+    state = step(state=state, action=19)
+    state = step(state=state, action=21)
+    state = step(state=state, action=25)  # pass
+    state = step(state=state, action=25)  # pass
 
     expected_board: jnp.ndarray = jnp.array(
         [
@@ -90,21 +92,18 @@ def test_step():
 
 
 def test_ko():
-    env = Go(size=5)
-    env.init = jax.jit(env.init)
-    env.step = jax.jit(env.step)
     key = jax.random.PRNGKey(0)
 
-    state: State = env.init(key=key)
+    state: State = init(key=key)
     assert state.current_player == 1
-    state = env.step(state=state, action=2)  # BLACK
-    state = env.step(state=state, action=17)  # WHITE
-    state = env.step(state=state, action=6)  # BLACK
-    state = env.step(state=state, action=13)  # WHITE
-    state = env.step(state=state, action=8)  # BLACK
-    state = env.step(state=state, action=11)  # WHITE
-    state = env.step(state=state, action=12)  # BLACK
-    state = env.step(state=state, action=7)  # WHITE
+    state = step(state=state, action=2)  # BLACK
+    state = step(state=state, action=17)  # WHITE
+    state = step(state=state, action=6)  # BLACK
+    state = step(state=state, action=13)  # WHITE
+    state = step(state=state, action=8)  # BLACK
+    state = step(state=state, action=11)  # WHITE
+    state = step(state=state, action=12)  # BLACK
+    state = step(state=state, action=7)  # WHITE
 
     """
     ===========
@@ -123,7 +122,7 @@ def test_ko():
     assert state.ko == 12
 
     loser = state.current_player
-    state1: State = env.step(
+    state1: State = step(
         state=state, action=12
     )  # BLACK
     # ルール違反により黒 = player_id=1 の負け
@@ -131,118 +130,118 @@ def test_ko():
     assert state1.reward[loser] == -1.
     assert state1.reward.sum() == 0.
 
-    state2: State = env.step(state=state, action=0)  # BLACK
+    state2: State = step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not state2.terminated
     assert state2.ko == -1
 
     # see #468
-    state: State = env.init(key=key)
-    state = env.step(state, action=2)
-    state = env.step(state, action=9)
-    state = env.step(state, action=18)
-    state = env.step(state, action=5)
-    state = env.step(state, action=11)
-    state = env.step(state, action=22)
-    state = env.step(state, action=8)
-    state = env.step(state, action=14)
-    state = env.step(state, action=25)
-    state = env.step(state, action=1)
-    state = env.step(state, action=24)
-    state = env.step(state, action=23)
-    state = env.step(state, action=7)
-    state = env.step(state, action=4)
-    state = env.step(state, action=16)
-    state = env.step(state, action=15)
-    state = env.step(state, action=19)
-    state = env.step(state, action=6)
-    state = env.step(state, action=20)
-    state = env.step(state, action=25)
-    state = env.step(state, action=12)
-    state = env.step(state, action=3)
-    state = env.step(state, action=21)
-    state = env.step(state, action=10)
-    state = env.step(state, action=17)
-    state = env.step(state, action=25)
-    state = env.step(state, action=13)
-    state = env.step(state, action=4)
-    state = env.step(state, action=14)
-    state = env.step(state, action=23)
-    state = env.step(state, action=0)
+    state: State = init(key=key)
+    state = step(state, action=2)
+    state = step(state, action=9)
+    state = step(state, action=18)
+    state = step(state, action=5)
+    state = step(state, action=11)
+    state = step(state, action=22)
+    state = step(state, action=8)
+    state = step(state, action=14)
+    state = step(state, action=25)
+    state = step(state, action=1)
+    state = step(state, action=24)
+    state = step(state, action=23)
+    state = step(state, action=7)
+    state = step(state, action=4)
+    state = step(state, action=16)
+    state = step(state, action=15)
+    state = step(state, action=19)
+    state = step(state, action=6)
+    state = step(state, action=20)
+    state = step(state, action=25)
+    state = step(state, action=12)
+    state = step(state, action=3)
+    state = step(state, action=21)
+    state = step(state, action=10)
+    state = step(state, action=17)
+    state = step(state, action=25)
+    state = step(state, action=13)
+    state = step(state, action=4)
+    state = step(state, action=14)
+    state = step(state, action=23)
+    state = step(state, action=0)
     assert state.ko == -1
 
     # see #468
-    state: State = env.init(key=key)
-    state = env.step(state, action=1)
-    state = env.step(state, action=16)
-    state = env.step(state, action=9)
-    state = env.step(state, action=11)
-    state = env.step(state, action=14)
-    state = env.step(state, action=6)
-    state = env.step(state, action=24)
-    state = env.step(state, action=4)
-    state = env.step(state, action=25)
-    state = env.step(state, action=17)
-    state = env.step(state, action=21)
-    state = env.step(state, action=18)
-    state = env.step(state, action=13)
-    state = env.step(state, action=23)
-    state = env.step(state, action=8)
-    state = env.step(state, action=0)
-    state = env.step(state, action=5)
-    state = env.step(state, action=25)
-    state = env.step(state, action=15)
-    state = env.step(state, action=19)
-    state = env.step(state, action=22)
-    state = env.step(state, action=25)
-    state = env.step(state, action=12)
-    state = env.step(state, action=10)
-    state = env.step(state, action=2)
-    state = env.step(state, action=25)
-    state = env.step(state, action=3)
-    state = env.step(state, action=20)
+    state: State = init(key=key)
+    state = step(state, action=1)
+    state = step(state, action=16)
+    state = step(state, action=9)
+    state = step(state, action=11)
+    state = step(state, action=14)
+    state = step(state, action=6)
+    state = step(state, action=24)
+    state = step(state, action=4)
+    state = step(state, action=25)
+    state = step(state, action=17)
+    state = step(state, action=21)
+    state = step(state, action=18)
+    state = step(state, action=13)
+    state = step(state, action=23)
+    state = step(state, action=8)
+    state = step(state, action=0)
+    state = step(state, action=5)
+    state = step(state, action=25)
+    state = step(state, action=15)
+    state = step(state, action=19)
+    state = step(state, action=22)
+    state = step(state, action=25)
+    state = step(state, action=12)
+    state = step(state, action=10)
+    state = step(state, action=2)
+    state = step(state, action=25)
+    state = step(state, action=3)
+    state = step(state, action=20)
     assert state.ko == -1
 
     # Ko after pass
-    state: State = env.init(key=key)
-    state = env.step(state, action=17)
-    state = env.step(state, action=25)
-    state = env.step(state, action=20)
-    state = env.step(state, action=24)
-    state = env.step(state, action=6)
-    state = env.step(state, action=13)
-    state = env.step(state, action=12)
-    state = env.step(state, action=18)
-    state = env.step(state, action=22)
-    state = env.step(state, action=5)
-    state = env.step(state, action=8)
-    state = env.step(state, action=10)
-    state = env.step(state, action=11)
-    state = env.step(state, action=14)
-    state = env.step(state, action=2)
-    state = env.step(state, action=9)
-    state = env.step(state, action=1)
-    state = env.step(state, action=23)
-    state = env.step(state, action=16)
-    state = env.step(state, action=4)
-    state = env.step(state, action=0)
-    state = env.step(state, action=19)
-    state = env.step(state, action=15)
-    state = env.step(state, action=25)
-    state = env.step(state, action=21)
-    state = env.step(state, action=25)
-    state = env.step(state, action=5)
-    state = env.step(state, action=25)
-    state = env.step(state, action=3)
-    state = env.step(state, action=14)
-    state = env.step(state, action=4)
-    state = env.step(state, action=19)
-    state = env.step(state, action=7)
-    state = env.step(state, action=23)
-    state = env.step(state, action=18)
-    state = env.step(state, action=13)
-    state = env.step(state, action=24)
-    state = env.step(state, action=25)  # pass
+    state: State = init(key=key)
+    state = step(state, action=17)
+    state = step(state, action=25)
+    state = step(state, action=20)
+    state = step(state, action=24)
+    state = step(state, action=6)
+    state = step(state, action=13)
+    state = step(state, action=12)
+    state = step(state, action=18)
+    state = step(state, action=22)
+    state = step(state, action=5)
+    state = step(state, action=8)
+    state = step(state, action=10)
+    state = step(state, action=11)
+    state = step(state, action=14)
+    state = step(state, action=2)
+    state = step(state, action=9)
+    state = step(state, action=1)
+    state = step(state, action=23)
+    state = step(state, action=16)
+    state = step(state, action=4)
+    state = step(state, action=0)
+    state = step(state, action=19)
+    state = step(state, action=15)
+    state = step(state, action=25)
+    state = step(state, action=21)
+    state = step(state, action=25)
+    state = step(state, action=5)
+    state = step(state, action=25)
+    state = step(state, action=3)
+    state = step(state, action=14)
+    state = step(state, action=4)
+    state = step(state, action=19)
+    state = step(state, action=7)
+    state = step(state, action=23)
+    state = step(state, action=18)
+    state = step(state, action=13)
+    state = step(state, action=24)
+    state = step(state, action=25)  # pass
     assert state.ko == -1
 
     # see #479
@@ -274,18 +273,18 @@ def test_ko():
 
 def test_observe():
     key = jax.random.PRNGKey(0)
-    state = j_init(key=key, size=BOARD_SIZE)
+    state = init(key=key)
     assert state.current_player == 1
     # player 0 is white, player 1 is black
 
-    state = j_step(state=state, action=0, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=4, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
+    state = step(state=state, action=0)
+    state = step(state=state, action=1)
+    state = step(state=state, action=2)
+    state = step(state=state, action=3)
+    state = step(state=state, action=4)
+    state = step(state=state, action=5)
+    state = step(state=state, action=6)
+    state = step(state=state, action=7)
     # ===========
     # + O + O @
     # O @ O + +
@@ -303,13 +302,13 @@ def test_observe():
     # fmt: on
     assert state.current_player == 1
     assert state.turn % 2 == 0  # black turn
-    obs = jax.jit(partial(observe, size=5, history_length=8))(state, 0)   # white
+    obs = observe(state, 0)   # white
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == -1)).all()
     assert (obs[:, :, 1] == (curr_board == 1)).all()
     assert (obs[:, :, -1] == 0).all()
 
-    obs = jax.jit(partial(observe, size=5, history_length=8))(state, 1)  # black
+    obs = observe(state, 1)  # black
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == 1)).all()
     assert (obs[:, :, 1] == (curr_board == -1)).all()
@@ -333,22 +332,22 @@ def test_legal_action():
         True, True, True, True, True,
         True, True, True, True, True, True])
     # fmt:on
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=0, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=4, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=0)  # BLACK
+    state = step(state=state, action=25)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=25)
+    state = step(state=state, action=4)
+    state = step(state=state, action=25)
+    state = step(state=state, action=6)
+    state = step(state=state, action=25)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)
+    state = step(state=state, action=10)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=25)
+    state = step(state=state, action=14)  # BLACK
     assert jnp.all(state.legal_action_mask == expected)
 
     # =====
@@ -366,62 +365,62 @@ def test_legal_action():
         True, True, True, True, True, True])
     # fmt:on
     # white 8
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=25)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=25)
+    state = step(state=state, action=3)
+    state = step(state=state, action=25)
+    state = step(state=state, action=5)
+    state = step(state=state, action=25)
+    state = step(state=state, action=9)
+    state = step(state=state, action=25)
+    state = step(state=state, action=11)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=6)
+    state = step(state=state, action=13)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)  # BLACK
     assert jnp.all(state.legal_action_mask == expected)
 
     # black 13
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=6)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=8)
+    state = step(state=state, action=3)
+    state = step(state=state, action=25)
+    state = step(state=state, action=5)
+    state = step(state=state, action=25)
+    state = step(state=state, action=9)
+    state = step(state=state, action=25)
+    state = step(state=state, action=11)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=25)
+    state = step(state=state, action=13)  # BLACK
     assert jnp.all(state.legal_action_mask == expected)
 
     # black 9
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=6)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=8)
+    state = step(state=state, action=3)
+    state = step(state=state, action=25)
+    state = step(state=state, action=5)
+    state = step(state=state, action=25)
+    state = step(state=state, action=9)
+    state = step(state=state, action=25)
+    state = step(state=state, action=11)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=25)
+    state = step(state=state, action=13)  # BLACK
     assert jnp.all(state.legal_action_mask == expected)
 
     # =====
@@ -444,25 +443,25 @@ def test_legal_action():
         True, False, False, False, True,
         True, True, False, True, True, True])
     # fmt:on
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)  # WHITE
+    state = init(key=key)
+    state = step(state=state, action=7)  # BLACK
+    state = step(state=state, action=2)  # WHITE
+    state = step(state=state, action=11)
+    state = step(state=state, action=6)
+    state = step(state=state, action=13)
+    state = step(state=state, action=8)
+    state = step(state=state, action=17)
+    state = step(state=state, action=10)
+    state = step(state=state, action=25)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=16)
+    state = step(state=state, action=25)
+    state = step(state=state, action=18)
+    state = step(state=state, action=25)
+    state = step(state=state, action=22)  # WHITE
     assert jnp.all(state.legal_action_mask == expected_b)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # BLACK
+    state = step(state=state, action=25)  # BLACK
     assert jnp.all(state.legal_action_mask == expected_w)
 
     # =====
@@ -494,38 +493,38 @@ def test_legal_action():
         False, True, False, True, False,
         False, True, True, True, False, True])
     # fmt:on
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=24, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=20, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=6)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=11)
+    state = step(state=state, action=3)
+    state = step(state=state, action=13)
+    state = step(state=state, action=5)
+    state = step(state=state, action=16)
+    state = step(state=state, action=7)
+    state = step(state=state, action=18)
+    state = step(state=state, action=9)
+    state = step(state=state, action=21)
+    state = step(state=state, action=10)
+    state = step(state=state, action=22)
+    state = step(state=state, action=12)
+    state = step(state=state, action=23)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=15)
+    state = step(state=state, action=25)
+    state = step(state=state, action=17)
+    state = step(state=state, action=25)
+    state = step(state=state, action=19)
+    state = step(state=state, action=25)
+    state = step(state=state, action=24)
+    state = step(state=state, action=25)
+    state = step(state=state, action=20)
     assert jnp.all(state.legal_action_mask == expected_w1)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = step(state=state, action=25)
     assert jnp.all(state.legal_action_mask == expected_b)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = step(state=state, action=8)
     assert jnp.all(state.legal_action_mask == expected_w2)
 
     # =====
@@ -569,25 +568,25 @@ def test_counting_ji():
     # @ + @ + @
     # + + + + +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=0, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=4, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=0)  # BLACK
+    state = step(state=state, action=25)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=25)
+    state = step(state=state, action=4)
+    state = step(state=state, action=25)
+    state = step(state=state, action=6)
+    state = step(state=state, action=25)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)
+    state = step(state=state, action=10)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=25)
+    state = step(state=state, action=14)  # BLACK
     assert count_ji(state, BLACK, BOARD_SIZE) == 17
     assert count_ji(state, WHITE, BOARD_SIZE) == 0
-    state = j_step(state=state, action=24, size=BOARD_SIZE)  # WHITE
+    state = step(state=state, action=24)  # WHITE
     assert count_ji(state, BLACK, BOARD_SIZE) == 5
     assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
@@ -597,24 +596,24 @@ def test_counting_ji():
     # + @ @ @ +
     # + + + + +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=25)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=25)
+    state = step(state=state, action=3)
+    state = step(state=state, action=25)
+    state = step(state=state, action=5)
+    state = step(state=state, action=25)
+    state = step(state=state, action=9)
+    state = step(state=state, action=25)
+    state = step(state=state, action=11)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=6)
+    state = step(state=state, action=13)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)  # BLACK
     assert count_ji(state, BLACK, BOARD_SIZE) == 14
     assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
@@ -624,23 +623,23 @@ def test_counting_ji():
     # O @ + @ O
     # + O @ O +
     # + + O + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)  # WHITE
+    state = init(key=key)
+    state = step(state=state, action=7)  # BLACK
+    state = step(state=state, action=2)  # WHITE
+    state = step(state=state, action=11)
+    state = step(state=state, action=6)
+    state = step(state=state, action=13)
+    state = step(state=state, action=8)
+    state = step(state=state, action=17)
+    state = step(state=state, action=10)
+    state = step(state=state, action=25)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=16)
+    state = step(state=state, action=25)
+    state = step(state=state, action=18)
+    state = step(state=state, action=25)
+    state = step(state=state, action=22)  # WHITE
     assert count_ji(state, BLACK, BOARD_SIZE) == 1
     assert count_ji(state, WHITE, BOARD_SIZE) == 12
 
@@ -650,38 +649,38 @@ def test_counting_ji():
     # @ O @ O @
     # @ O @ O @
     # @ O O O @
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=24, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=20, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=6)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=11)
+    state = step(state=state, action=3)
+    state = step(state=state, action=13)
+    state = step(state=state, action=5)
+    state = step(state=state, action=16)
+    state = step(state=state, action=7)
+    state = step(state=state, action=18)
+    state = step(state=state, action=9)
+    state = step(state=state, action=21)
+    state = step(state=state, action=10)
+    state = step(state=state, action=22)
+    state = step(state=state, action=12)
+    state = step(state=state, action=23)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=15)
+    state = step(state=state, action=25)
+    state = step(state=state, action=17)
+    state = step(state=state, action=25)
+    state = step(state=state, action=19)
+    state = step(state=state, action=25)
+    state = step(state=state, action=24)
+    state = step(state=state, action=25)
+    state = step(state=state, action=20)
+    state = step(state=state, action=25)
     assert count_ji(state, BLACK, BOARD_SIZE) == 2
     assert count_ji(state, WHITE, BOARD_SIZE) == 0
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = step(state=state, action=8)
     assert count_ji(state, BLACK, BOARD_SIZE) == 10
     assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
@@ -692,23 +691,23 @@ def test_counting_ji():
     # O @ O + +
     # O @ O + +
     # + @ O + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=2)  # WHITE
+    state = step(state=state, action=6)
+    state = step(state=state, action=5)
+    state = step(state=state, action=11)
+    state = step(state=state, action=7)
+    state = step(state=state, action=16)
+    state = step(state=state, action=10)
+    state = step(state=state, action=21)
+    state = step(state=state, action=12)
+    state = step(state=state, action=25)
+    state = step(state=state, action=15)
+    state = step(state=state, action=25)
+    state = step(state=state, action=17)
+    state = step(state=state, action=25)
+    state = step(state=state, action=22)
     assert count_ji(state, BLACK, BOARD_SIZE) == 0
     assert count_ji(state, WHITE, BOARD_SIZE) == 10
 
@@ -718,33 +717,33 @@ def test_counting_ji():
     # O @ + @ O
     # O @ @ @ O
     # + O O O +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=0, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=6)  # BLACK
+    state = step(state=state, action=0)  # WHITE
+    state = step(state=state, action=7)
+    state = step(state=state, action=1)
+    state = step(state=state, action=8)
+    state = step(state=state, action=2)
+    state = step(state=state, action=11)
+    state = step(state=state, action=3)
+    state = step(state=state, action=13)
+    state = step(state=state, action=5)
+    state = step(state=state, action=16)
+    state = step(state=state, action=9)
+    state = step(state=state, action=17)
+    state = step(state=state, action=10)
+    state = step(state=state, action=18)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=15)
+    state = step(state=state, action=25)
+    state = step(state=state, action=19)
+    state = step(state=state, action=25)
+    state = step(state=state, action=21)
+    state = step(state=state, action=25)
+    state = step(state=state, action=22)
+    state = step(state=state, action=25)
+    state = step(state=state, action=23)
     assert count_ji(state, BLACK, BOARD_SIZE) == 1
     assert count_ji(state, WHITE, BOARD_SIZE) == 3
 
@@ -754,7 +753,7 @@ def test_counting_ji():
     # + + + + +
     # + + + + +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
+    state = init(key=key)
     #assert count_ji(state, 0, BOARD_SIZE) == 0
     #assert count_ji(state, 1, BOARD_SIZE) == 0
 
@@ -764,23 +763,23 @@ def test_counting_ji():
     # + @ + @ +
     # + @ @ @ +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=6)
+    state = step(state=state, action=25)
+    state = step(state=state, action=7)
+    state = step(state=state, action=25)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)
+    state = step(state=state, action=11)
+    state = step(state=state, action=25)
+    state = step(state=state, action=13)
+    state = step(state=state, action=25)
+    state = step(state=state, action=16)
+    state = step(state=state, action=25)
+    state = step(state=state, action=17)
+    state = step(state=state, action=25)
+    state = step(state=state, action=18)
+    state = step(state=state, action=25)
     assert count_ji(state, BLACK, BOARD_SIZE) == 17
     assert count_ji(state, WHITE, BOARD_SIZE) == 0
 
@@ -794,24 +793,24 @@ def test_counting_point():
     # @ + @ + @
     # + + + + +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=0, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=4, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=0)  # BLACK
+    state = step(state=state, action=25)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=25)
+    state = step(state=state, action=4)
+    state = step(state=state, action=25)
+    state = step(state=state, action=6)
+    state = step(state=state, action=25)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)
+    state = step(state=state, action=10)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=25)
+    state = step(state=state, action=14)  # BLACK
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
-    state = j_step(state=state, action=24, size=BOARD_SIZE)  # WHITE
+    state = step(state=state, action=24)  # WHITE
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([13, 1], dtype=jnp.float32))
 
     # =====
@@ -820,24 +819,24 @@ def test_counting_point():
     # + @ @ @ +
     # + + + + +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)  # BLACK
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=25)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=25)
+    state = step(state=state, action=3)
+    state = step(state=state, action=25)
+    state = step(state=state, action=5)
+    state = step(state=state, action=25)
+    state = step(state=state, action=9)
+    state = step(state=state, action=25)
+    state = step(state=state, action=11)
+    state = step(state=state, action=25)
+    state = step(state=state, action=12)
+    state = step(state=state, action=6)
+    state = step(state=state, action=13)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)  # BLACK
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([22, 2], dtype=jnp.float32))
 
     # =====
@@ -846,23 +845,23 @@ def test_counting_point():
     # O @ + @ O
     # + O @ O +
     # + + O + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)  # WHITE
+    state = init(key=key)
+    state = step(state=state, action=7)  # BLACK
+    state = step(state=state, action=2)  # WHITE
+    state = step(state=state, action=11)
+    state = step(state=state, action=6)
+    state = step(state=state, action=13)
+    state = step(state=state, action=8)
+    state = step(state=state, action=17)
+    state = step(state=state, action=10)
+    state = step(state=state, action=25)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=16)
+    state = step(state=state, action=25)
+    state = step(state=state, action=18)
+    state = step(state=state, action=25)
+    state = step(state=state, action=22)  # WHITE
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([5, 20], dtype=jnp.float32))
 
     # =====
@@ -871,37 +870,37 @@ def test_counting_point():
     # @ O @ O @
     # @ O @ O @
     # @ O O O @
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=24, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=20, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=6)  # WHITE
+    state = step(state=state, action=2)
+    state = step(state=state, action=11)
+    state = step(state=state, action=3)
+    state = step(state=state, action=13)
+    state = step(state=state, action=5)
+    state = step(state=state, action=16)
+    state = step(state=state, action=7)
+    state = step(state=state, action=18)
+    state = step(state=state, action=9)
+    state = step(state=state, action=21)
+    state = step(state=state, action=10)
+    state = step(state=state, action=22)
+    state = step(state=state, action=12)
+    state = step(state=state, action=23)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=15)
+    state = step(state=state, action=25)
+    state = step(state=state, action=17)
+    state = step(state=state, action=25)
+    state = step(state=state, action=19)
+    state = step(state=state, action=25)
+    state = step(state=state, action=24)
+    state = step(state=state, action=25)
+    state = step(state=state, action=20)
+    state = step(state=state, action=25)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([16, 8], dtype=jnp.float32))
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
+    state = step(state=state, action=8)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
 
     # セキ判定
@@ -911,23 +910,23 @@ def test_counting_point():
     # O @ O + +
     # O @ O + +
     # + @ O + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=2, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=1)  # BLACK
+    state = step(state=state, action=2)  # WHITE
+    state = step(state=state, action=6)
+    state = step(state=state, action=5)
+    state = step(state=state, action=11)
+    state = step(state=state, action=7)
+    state = step(state=state, action=16)
+    state = step(state=state, action=10)
+    state = step(state=state, action=21)
+    state = step(state=state, action=12)
+    state = step(state=state, action=25)
+    state = step(state=state, action=15)
+    state = step(state=state, action=25)
+    state = step(state=state, action=17)
+    state = step(state=state, action=25)
+    state = step(state=state, action=22)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([5, 18], dtype=jnp.float32))
 
     # =====
@@ -936,33 +935,33 @@ def test_counting_point():
     # O @ + @ O
     # O @ @ @ O
     # + O O O +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)  # BLACK
-    state = j_step(state=state, action=0, size=BOARD_SIZE)  # WHITE
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=9, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=10, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=15, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=21, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=6)  # BLACK
+    state = step(state=state, action=0)  # WHITE
+    state = step(state=state, action=7)
+    state = step(state=state, action=1)
+    state = step(state=state, action=8)
+    state = step(state=state, action=2)
+    state = step(state=state, action=11)
+    state = step(state=state, action=3)
+    state = step(state=state, action=13)
+    state = step(state=state, action=5)
+    state = step(state=state, action=16)
+    state = step(state=state, action=9)
+    state = step(state=state, action=17)
+    state = step(state=state, action=10)
+    state = step(state=state, action=18)
+    state = step(state=state, action=14)
+    state = step(state=state, action=25)
+    state = step(state=state, action=15)
+    state = step(state=state, action=25)
+    state = step(state=state, action=19)
+    state = step(state=state, action=25)
+    state = step(state=state, action=21)
+    state = step(state=state, action=25)
+    state = step(state=state, action=22)
+    state = step(state=state, action=25)
+    state = step(state=state, action=23)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([9, 16], dtype=jnp.float32))
 
     # =====
@@ -971,7 +970,7 @@ def test_counting_point():
     # + + + + +
     # + + + + +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
+    state = init(key=key)
     # 本当は[0, 0]
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 25], dtype=jnp.float32))
 
@@ -981,23 +980,23 @@ def test_counting_point():
     # + @ + @ +
     # + @ @ @ +
     # + + + + +
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=6, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=11, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=16, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=6)
+    state = step(state=state, action=25)
+    state = step(state=state, action=7)
+    state = step(state=state, action=25)
+    state = step(state=state, action=8)
+    state = step(state=state, action=25)
+    state = step(state=state, action=11)
+    state = step(state=state, action=25)
+    state = step(state=state, action=13)
+    state = step(state=state, action=25)
+    state = step(state=state, action=16)
+    state = step(state=state, action=25)
+    state = step(state=state, action=17)
+    state = step(state=state, action=25)
+    state = step(state=state, action=18)
+    state = step(state=state, action=25)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
     # =====
     # + @ @ O +
@@ -1007,23 +1006,23 @@ def test_counting_point():
     # + + @ O O
     # Tromp-Taylor rule: Black 15, White 10 → White Win
     # Japanese rule: Black 9, White 2 → Black Win
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=24, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=1)
+    state = step(state=state, action=3)
+    state = step(state=state, action=2)
+    state = step(state=state, action=8)
+    state = step(state=state, action=7)
+    state = step(state=state, action=13)
+    state = step(state=state, action=12)
+    state = step(state=state, action=14)
+    state = step(state=state, action=17)
+    state = step(state=state, action=18)
+    state = step(state=state, action=22)
+    state = step(state=state, action=19)
+    state = step(state=state, action=25)
+    state = step(state=state, action=23)
+    state = step(state=state, action=25)
+    state = step(state=state, action=24)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
 
     # =====
@@ -1035,27 +1034,27 @@ def test_counting_point():
     # Agehama: Black 1, White 0
     # Tromp-Taylor rule: Black 15, White 10 → White Win
     # Japanese rule: Black 9, White 2 → Black Win
-    state = j_init(key=key, size=BOARD_SIZE)
-    state = j_step(state=state, action=1, size=BOARD_SIZE)
-    state = j_step(state=state, action=3, size=BOARD_SIZE)
-    state = j_step(state=state, action=2, size=BOARD_SIZE)
-    state = j_step(state=state, action=8, size=BOARD_SIZE)
-    state = j_step(state=state, action=7, size=BOARD_SIZE)
-    state = j_step(state=state, action=13, size=BOARD_SIZE)
-    state = j_step(state=state, action=12, size=BOARD_SIZE)
-    state = j_step(state=state, action=14, size=BOARD_SIZE)
-    state = j_step(state=state, action=17, size=BOARD_SIZE)
-    state = j_step(state=state, action=18, size=BOARD_SIZE)
-    state = j_step(state=state, action=22, size=BOARD_SIZE)
-    state = j_step(state=state, action=19, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=23, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=24, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
-    state = j_step(state=state, action=0, size=BOARD_SIZE)
-    state = j_step(state=state, action=5, size=BOARD_SIZE)
-    state = j_step(state=state, action=25, size=BOARD_SIZE)
+    state = init(key=key)
+    state = step(state=state, action=1)
+    state = step(state=state, action=3)
+    state = step(state=state, action=2)
+    state = step(state=state, action=8)
+    state = step(state=state, action=7)
+    state = step(state=state, action=13)
+    state = step(state=state, action=12)
+    state = step(state=state, action=14)
+    state = step(state=state, action=17)
+    state = step(state=state, action=18)
+    state = step(state=state, action=22)
+    state = step(state=state, action=19)
+    state = step(state=state, action=25)
+    state = step(state=state, action=23)
+    state = step(state=state, action=25)
+    state = step(state=state, action=24)
+    state = step(state=state, action=25)
+    state = step(state=state, action=0)
+    state = step(state=state, action=5)
+    state = step(state=state, action=25)
     assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
 
 
@@ -1113,7 +1112,7 @@ def test_PSK():
 
 def test_random_play_5():
     key = jax.random.PRNGKey(0)
-    state = j_init(key=key, size=BOARD_SIZE)
+    state = init(key=key)
     while not state.terminated:
         actions = np.where(state.legal_action_mask)
         if len(actions[0]) == 0:
@@ -1123,29 +1122,9 @@ def test_random_play_5():
             key, subkey = jax.random.split(key)
             a = jax.random.choice(subkey, actions[0])
 
-        state = j_step(state=state, action=a, size=BOARD_SIZE)
+        state = step(state=state, action=a)
 
         if state.turn > 100:
             break
     assert state.passed or state.turn > 100
 
-
-def test_random_play_19():
-    BOARD_SIZE = 19
-
-    key = jax.random.PRNGKey(0)
-    state = j_init(key=key, size=BOARD_SIZE)
-    while not state.terminated:
-        actions = np.where(state.legal_action_mask)
-        if len(actions[0]) == 0:
-            a = 19 * 19
-        else:
-            key = jax.random.PRNGKey(0)
-            key, subkey = jax.random.split(key)
-            a = jax.random.choice(subkey, actions[0])
-
-        state = j_step(state=state, action=a, size=BOARD_SIZE)
-
-        if state.turn > 100:
-            break
-    assert state.passed or state.turn > 100

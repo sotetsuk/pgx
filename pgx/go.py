@@ -67,11 +67,11 @@ class Go(core.Env):
         self.max_termination_steps = self.size * self.size * 2
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return partial(init, size=self.size, komi=self.komi)(key=key)
+        return partial(_init, size=self.size, komi=self.komi)(key=key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        state = partial(step, size=self.size)(state, action)
+        state = partial(_step, size=self.size)(state, action)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         state = jax.lax.cond(
             (0 <= self.max_termination_steps)
@@ -89,7 +89,7 @@ class Go(core.Env):
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(
-            observe, size=self.size, history_length=self.history_length
+            _observe, size=self.size, history_length=self.history_length
         )(state=state, player_id=player_id)
 
     @property
@@ -105,7 +105,7 @@ class Go(core.Env):
         return 2
 
 
-def observe(state: State, player_id, size, history_length):
+def _observe(state: State, player_id, size, history_length):
     """Return AlphaGo Zero [Silver+17] feature
 
         obs = (size, size, history_length * 2 + 1)
@@ -154,7 +154,7 @@ def observe(state: State, player_id, size, history_length):
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
+def _init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     black_player = jnp.int8(jax.random.bernoulli(key))
     current_player = black_player
     return State(  # type:ignore
@@ -168,7 +168,7 @@ def init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     )
 
 
-def step(state: State, action: int, size: int) -> State:
+def _step(state: State, action: int, size: int) -> State:
     state = state.replace(ko=jnp.int32(-1))  # type: ignore
     # update state
     state = jax.lax.cond(
@@ -525,7 +525,7 @@ def _check_PSK(state):
 
 
 # only for debug
-def show(state: State) -> None:
+def _show(state: State) -> None:
     BLACK_CHAR = "@"
     WHITE_CHAR = "O"
     POINT_CHAR = "+"
