@@ -8,7 +8,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
+from typing import Tuple, Optional, Literal
 
 import jax
 import jax.lax as lax
@@ -56,16 +56,73 @@ class State(core.State):
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = jnp.int32(0)
 
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
+
+        return visualize_minatar(self)
+
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
+        from pgx.minatar.utils import visualize_minatar
+
+        visualize_minatar(self, filename)
+
+
+class MinAtarSpaceInvaders(core.Env):
+    def __init__(
+        self,
+        *,
+        minatar_version: Literal["v0", "v1"] = "v1",
+        sticky_action_prob: float = 0.1,
+    ):
+        super().__init__()
+        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob: float = sticky_action_prob
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return _init_det()
+
+    def _step(self, state: core.State, action) -> State:
+        assert isinstance(state, State)
+        state = _step(
+            state, action, sticky_action_prob=self.sticky_action_prob
+        )
+        return state.replace(terminated=state.terminal)  # type: ignore
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state)
+
+    @property
+    def name(self) -> str:
+        return "MinAtar/SpaceInvaders"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self):
+        return 1
+
 
 def _step(
     state: State,
     action: jnp.ndarray,
-    rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int32(action)
+    key, subkey = jax.random.split(state._rng_key)
+    state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
-        jax.random.uniform(rng) < sticky_action_prob,
+        jax.random.uniform(subkey) < sticky_action_prob,
         lambda: state.last_action,
         lambda: action,
     )
