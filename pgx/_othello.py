@@ -44,3 +44,66 @@ class State(core.State):
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
     board: jnp.ndarray = -jnp.ones(64, jnp.int8)  # -1 (empty), 0, 1
+
+
+def _step(my, opp, pos):
+    pass
+
+
+def line_left(position, opponent):
+    mask = opponent & 0x7E7E7E7E7E7E7E7E
+    result = mask & (position >> 1)
+    result |= opponent & (result >> 1)
+    result |= opponent & (result >> 1)
+    result |= opponent & (result >> 1)
+    result |= opponent & (result >> 1)
+    result |= opponent & (result >> 1)
+    return result
+
+
+def line_right(position, opponent):
+    mask = opponent & 0x7E7E7E7E7E7E7E7E
+    result = mask & (position << 1)
+    result |= opponent & (result << 1)
+    result |= opponent & (result << 1)
+    result |= opponent & (result << 1)
+    result |= opponent & (result << 1)
+    result |= opponent & (result << 1)
+    return result
+
+
+def line_up(position, opponent):
+    mask = opponent & 0x00FFFFFFFFFFFF00
+    result = mask & (position >> 8)
+    result |= opponent & (result >> 8)
+    result |= opponent & (result >> 8)
+    result |= opponent & (result >> 8)
+    result |= opponent & (result >> 8)
+    result |= opponent & (result >> 8)
+    return result
+
+
+def line_down(position, opponent):
+    mask = opponent & 0x00FFFFFFFFFFFF00
+    result = mask & (position << 8)
+    result |= opponent & (result << 8)
+    result |= opponent & (result << 8)
+    result |= opponent & (result << 8)
+    result |= opponent & (result << 8)
+    result |= opponent & (result << 8)
+    return result
+
+
+my = 0b00000000_00000000_00000000_00000000_00001000_00000000_00000000_00000000
+op = 0b00000000_00000000_00000000_00011000_00010000_00000000_00000000_00000000
+pos = 0b00000000_00000000_00000000_00000100_00000000_00000000_00000000_00000000
+
+rev = line_left(pos, op)
+rev = rev | line_right(pos, op)
+rev = rev | line_up(pos, op)
+rev = rev | line_down(pos, op)
+
+my ^= pos | rev
+op ^= rev
+print(f"{my:064b}")
+print(f"{op:064b}")
