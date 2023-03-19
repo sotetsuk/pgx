@@ -1,9 +1,9 @@
 from pgx.backgammon import State as BackgammonState
-from pgx.backgammon import get_abs_board
+from pgx.backgammon import _get_abs_board
 
 
 def _make_backgammon_dwg(dwg, state: BackgammonState, config):
-    board = get_abs_board(state)
+    board = _get_abs_board(state)
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
     GRID_SIZE = config["GRID_SIZE"]
