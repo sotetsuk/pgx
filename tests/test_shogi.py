@@ -6,6 +6,7 @@ from pgx.shogi import _step, _step_move, _step_drop, _flip, _effects_all, _legal
 
 env = Shogi()
 init = jax.jit(env.init)
+step = jax.jit(env.step)
 observe = jax.jit(env.observe)
 
 

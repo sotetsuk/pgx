@@ -172,7 +172,8 @@ class Shogi(core.Env):
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return step(state, action)
+        # Note: Assume that illegal action is already filtered by Env.step
+        return _step(state, Action.from_dlshogi_action(state, action))
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
@@ -331,11 +332,6 @@ class Action:
         )
         is_promotion = (10 <= direction) & (direction < 20)
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
-
-
-def step(state: State, action: jnp.ndarray) -> State:
-    # Note: Assume that illegal action is already filtered by Env.step
-    return _step(state, Action.from_dlshogi_action(state, action))
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
