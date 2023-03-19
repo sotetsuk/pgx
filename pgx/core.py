@@ -42,7 +42,7 @@ EnvId = Literal[
     "hex",
     # "mahjong",
     "minatar/asterix",
-    # "minatar/breakout",
+    "minatar/breakout",
     # "minatar/freeway",
     # "minatar/seaquest",
     # "minatar/space_invaders",
@@ -229,6 +229,10 @@ def make(env_id: EnvId):
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix()
+    elif env_id == "minatar/breakout":
+        from pgx.minatar.breakout import MinAtarBreakout
+
+        return MinAtarBreakout()
     elif env_id == "shogi":
         from pgx.shogi import Shogi
 

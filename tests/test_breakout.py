@@ -21,7 +21,7 @@ state_keys = {
 }
 _step_det = jax.jit(breakout._step_det)
 _init_det = jax.jit(breakout._init_det)
-observe = jax.jit(breakout.observe)
+observe = jax.jit(breakout._observe)
 
 def test_step_det():
     env = Environment("breakout", sticky_action_prob=0.0)
@@ -36,7 +36,7 @@ def test_step_det():
             a = random.randrange(num_actions)
             r, done = env.act(a)
             s_next = extract_state(env, state_keys)
-            s_next_pgx, _, _ = _step_det(
+            s_next_pgx = _step_det(
                 minatar2pgx(s, breakout.State), a
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
@@ -46,7 +46,7 @@ def test_step_det():
         a = random.randrange(num_actions)
         r, done = env.act(a)
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = _step_det(
+        s_next_pgx = _step_det(
             minatar2pgx(s, breakout.State), a
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
@@ -90,3 +90,9 @@ def test_observe():
             env.state(),
             obs_pgx,
         )
+
+
+def test_api():
+    import pgx
+    env = pgx.make("minatar/breakout")
+    pgx.api_test(env)
