@@ -26,7 +26,7 @@ TRUE = jnp.bool_(True)
 class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
-    observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros(63, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -43,4 +43,112 @@ class State(core.State):
     #  [40, 41, 42, 43, 44, 45, 46, 47],
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
-    board: jnp.ndarray = -jnp.ones(64, jnp.int8)  # -1 (empty), 0, 1
+    board: jnp.ndarray = jnp.zeros(64, jnp.int8)  # -1(opp), 0(empty), 1(self)
+
+
+class ConnectFour(core.Env):
+    def __init__(
+        self,
+    ):
+        super().__init__()
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return _init(key)
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        return _step(state, action)
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state, player_id)
+
+    @property
+    def name(self) -> str:
+        return "Connect Four"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self) -> int:
+        return 2
+
+
+def _init(rng: jax.random.KeyArray) -> State:
+    rng, subkey = jax.random.split(rng)
+    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(current_player=current_player)  # type:ignore
+
+
+def _step(state, action):
+    board = state.board
+    my = board > 0
+    opp = board < 0
+    pos = jnp.zeros(64, dtype=jnp.bool_).at[action].set(TRUE)
+
+    rev = jnp.zeros(64, dtype=jnp.bool_)
+    tmp = line_left(pos, opp)
+    rev = jax.lax.cond(
+        (jnp.roll(tmp, 1) & my).any(), lambda: rev | tmp, lambda: rev
+    )
+    tmp = line_right(pos, opp)
+    rev = jax.lax.cond(
+        (jnp.roll(tmp, -1) & my).any(), lambda: rev | tmp, lambda: rev
+    )
+    # TODO
+    my ^= pos | rev
+    opp ^= rev
+
+    return state.replace(board=jnp.where(jnp.int8(opp), -1, jnp.int8(my)))
+
+
+def line_left(pos, opp):
+    # fmt: off
+    mask = opp & jnp.array([
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+    ], dtype=jnp.bool_)
+    # fmt: on
+    result = mask & jnp.roll(pos, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
+    return result
+
+
+def line_right(pos, opp):
+    # fmt: off
+    mask = opp & jnp.array([
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+    ], dtype=jnp.bool_)
+    # fmt: on
+    result = mask & jnp.roll(pos, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
+    return result
+
+
+def _observe(state, player_id) -> jnp.ndarray:
+    ...
