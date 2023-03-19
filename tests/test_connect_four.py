@@ -133,7 +133,3 @@ def test_observe():
          [False, True,  False, False, False, False, False]]
     )).all()
     assert obs[:, :, 1].sum() == 0
-
-
-
-
