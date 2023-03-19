@@ -142,4 +142,14 @@ def _win_check(board, turn) -> jnp.ndarray:
 
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    ...
+    turns = jnp.int8([state.turn, 1 - state.turn])
+    turns = jax.lax.cond(
+        player_id == state.current_player,
+        lambda: turns,
+        lambda: jnp.flip(turns),
+    )
+
+    def make(turn):
+        return state.board.reshape(6, 7) == turn
+
+    return jnp.stack(jax.vmap(make)(turns), -1)

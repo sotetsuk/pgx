@@ -5,7 +5,7 @@ from pgx.connect_four import ConnectFour
 env = ConnectFour()
 init = jax.jit(env.init)
 step = jax.jit(env.step)
-
+observe = jax.jit(env.observe)
 
 def test_init():
     key = jax.random.PRNGKey(1)
@@ -102,3 +102,34 @@ def test_random_play():
         action = jax.random.choice(sub_key, legal_actions)
         state = step(state, action)
         done = state.terminated
+
+
+def test_observe():
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    obs = observe(state, state.current_player)
+    assert obs.shape == (6, 7, 2)
+
+    state = step(state, 1)
+    obs = observe(state, state.current_player)
+    assert obs[:, :, 1].sum() == 1
+    assert (obs[:, :, 1] == jnp.bool_(
+        [[False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, True,  False, False, False, False, False]]
+    )).all()
+    assert obs[:, :, 0].sum() == 0
+    obs = observe(state, state.current_player - 1)
+    assert obs[:, :, 0].sum() == 1
+    assert (obs[:, :, 0] == jnp.bool_(
+        [[False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, False, False, False, False, False, False],
+         [False, True,  False, False, False, False, False]]
+    )).all()
+    assert obs[:, :, 1].sum() == 0
