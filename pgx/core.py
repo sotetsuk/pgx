@@ -203,6 +203,7 @@ class Env(abc.ABC):
 def available_games() -> Tuple[EnvId, ...]:
     return get_args(EnvId)
 
+
 def make(env_id: EnvId):
     if env_id == "backgammon":
         from pgx.backgammon import Backgammon

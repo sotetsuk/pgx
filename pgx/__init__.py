@@ -1,6 +1,6 @@
 from pgx._test import api_test
 from pgx._visualizer import set_visualization_config
-from pgx.core import Env, EnvId, State, make, available_games
+from pgx.core import Env, EnvId, State, available_games, make
 
 __all__ = [
     "State",
@@ -9,5 +9,5 @@ __all__ = [
     "make",
     "api_test",
     "set_visualization_config",
-    "available_games"
+    "available_games",
 ]
