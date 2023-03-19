@@ -76,6 +76,7 @@ class ConnectFour(core.Env):
     def num_players(self) -> int:
         return 2
 
+
 def _make_win_cache():
     idx = []
     # 縦
