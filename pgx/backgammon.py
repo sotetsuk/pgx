@@ -249,7 +249,7 @@ def _change_turn(state: State) -> State:
     ターンを変更して新しい状態を返す.
     """
     rng1, rng2 = jax.random.split(state.rng)
-    board: jnp.ndarray = flip_board(state.board)  # boardを反転させて黒視点に変える
+    board: jnp.ndarray = _flip_board(state.board)  # boardを反転させて黒視点に変える
     turn: jnp.ndarray = (state.turn + 1) % 2  # turnを変える
     current_player: jnp.ndarray = (state.current_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
@@ -573,4 +573,4 @@ def _get_abs_board(state: State) -> jnp.ndarray:
     """
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = state.turn
-    return jax.lax.cond(turn == 0, lambda: board, lambda: flip_board(board))
+    return jax.lax.cond(turn == 0, lambda: board, lambda: _flip_board(board))
