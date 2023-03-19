@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Suzume-Jong
+"""Sparrow Mahjong
 
 すずめ雀のルール
   * 2-6人
