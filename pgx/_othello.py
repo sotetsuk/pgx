@@ -46,73 +46,94 @@ class State(core.State):
     board: jnp.ndarray = -jnp.ones(64, jnp.int8)  # -1 (empty), 0, 1
 
 
-def step():
-    ...
+def step(board, action):
+    my = board > 0
+    opp = board < 0
+    pos = jnp.zeros(64, dtype=jnp.bool_).at[action].set(TRUE)
+
+    rev = jnp.zeros(64, dtype=jnp.bool_)
+    tmp = line_left(pos, opp)
+    rev = jax.lax.cond(
+        (jnp.roll(tmp, 1) & my).any(), lambda: rev | tmp, lambda: rev
+    )
+    tmp = line_right(pos, opp)
+    rev = jax.lax.cond(
+        (jnp.roll(tmp, -1) & my).any(), lambda: rev | tmp, lambda: rev
+    )
+    my ^= pos | rev
+    opp ^= rev
+
+    return jnp.where(jnp.int8(opp), -1, jnp.int8(my))
 
 
-def line_left(position, opponent):
-    mask = opponent & 0x7E7E7E7E7E7E7E7E
-    result = mask & (position >> 1)
-    result |= opponent & (result >> 1)
-    result |= opponent & (result >> 1)
-    result |= opponent & (result >> 1)
-    result |= opponent & (result >> 1)
-    result |= opponent & (result >> 1)
+def line_left(pos, opp):
+    # fmt: off
+    mask = opp & jnp.array([
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+    ], dtype=jnp.bool_)
+    # fmt: on
+    result = mask & jnp.roll(pos, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
+    result |= opp & jnp.roll(result, 1)
     return result
 
 
-def line_right(position, opponent):
-    mask = opponent & 0x7E7E7E7E7E7E7E7E
-    result = mask & (position << 1)
-    result |= opponent & (result << 1)
-    result |= opponent & (result << 1)
-    result |= opponent & (result << 1)
-    result |= opponent & (result << 1)
-    result |= opponent & (result << 1)
+def line_right(pos, opp):
+    # fmt: off
+    mask = opp & jnp.array([
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+        0, 1, 1, 1, 1, 1, 1, 0,
+    ], dtype=jnp.bool_)
+    # fmt: on
+    result = mask & jnp.roll(pos, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
+    result |= opp & jnp.roll(result, -1)
     return result
 
 
-def line_up(position, opponent):
-    mask = opponent & 0x00FFFFFFFFFFFF00
-    result = mask & (position >> 8)
-    result |= opponent & (result >> 8)
-    result |= opponent & (result >> 8)
-    result |= opponent & (result >> 8)
-    result |= opponent & (result >> 8)
-    result |= opponent & (result >> 8)
-    return result
-
-
-def line_down(position, opponent):
-    mask = opponent & 0x00FFFFFFFFFFFF00
-    result = mask & (position << 8)
-    result |= opponent & (result << 8)
-    result |= opponent & (result << 8)
-    result |= opponent & (result << 8)
-    result |= opponent & (result << 8)
-    result |= opponent & (result << 8)
-    return result
-
-
-my = 0b00000000_00000000_00000000_00010000_00001000_00000000_00000000_00000000
-op = 0b00000000_00000000_00000000_00001000_00010000_00000000_00000000_00000000
-pos = 0b00000000_00000000_00000000_00000100_00000000_00000000_00000000_00000000
-
-rev = 0
-tmp = line_left(pos, op)
-if (tmp >> 1) & my != 0:
-    rev |= tmp
-tmp = line_right(pos, op)
-if (tmp << 1) & my != 0:
-    rev |= tmp
-tmp = line_up(pos, op)
-if (tmp >> 8) & my != 0:
-    rev |= tmp
-tmp = line_down(pos, op)
-if (tmp << 8) & my != 0:
-    rev |= tmp
-
-my ^= pos | rev
-op ^= rev
-print(f"{my:064b}")
-print(f"{op:064b}")
+# fmt: off
+board = jnp.array([
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 1, -1, 0, 0, 0,
+        0, 0, 0, -1, 1, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ], dtype=jnp.int8)
+"""
+pos = jnp.array([
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 1, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+    ], dtype=jnp.bool_)
+"""
+# fmt:on
+action = 29
+board = jax.jit(step)(board, action)
+print(board.reshape((8, 8)))
