@@ -60,17 +60,17 @@ class Hex(core.Env):
         self.size = size
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return partial(init, size=self.size)(rng=key)
+        return partial(_init, size=self.size)(rng=key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return partial(step, size=self.size)(state, action)
+        return partial(_step, size=self.size)(state, action)
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return partial(observe, size=self.size)(state, player_id)
+        return partial(_observe, size=self.size)(state, player_id)
 
     @property
     def name(self) -> str:
@@ -85,13 +85,13 @@ class Hex(core.Env):
         return 2
 
 
-def init(rng: jax.random.KeyArray, size: int) -> State:
+def _init(rng: jax.random.KeyArray, size: int) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(size=size, current_player=current_player)  # type:ignore
 
 
-def step(state: State, action: jnp.ndarray, size: int) -> State:
+def _step(state: State, action: jnp.ndarray, size: int) -> State:
     set_place_id = action + 1
     board = state.board.at[action].set(set_place_id)
     neighbour = _neighbour(action, size)
@@ -105,7 +105,7 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    won = is_game_end(board, size, state.turn)
+    won = _is_game_end(board, size, state.turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -125,7 +125,7 @@ def step(state: State, action: jnp.ndarray, size: int) -> State:
     return state
 
 
-def observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
+def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
     board = jax.lax.cond(
         player_id == state.current_player,
         lambda: state.board.reshape((size, size)),
@@ -152,7 +152,7 @@ def _neighbour(xy, size):
     return jnp.where(on_board, xs * size + ys, -1)
 
 
-def is_game_end(board, size, turn):
+def _is_game_end(board, size, turn):
     top, bottom = jax.lax.cond(
         turn == 0,
         lambda: (board[:size], board[-size:]),
@@ -165,7 +165,7 @@ def is_game_end(board, size, turn):
     return jax.vmap(check_same_id_exist)(top).any()
 
 
-def get_abs_board(state):
+def _get_abs_board(state):
     return jax.lax.cond(
         state.turn == 0, lambda: state.board, lambda: state.board * -1
     )
