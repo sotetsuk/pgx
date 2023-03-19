@@ -1,6 +1,11 @@
 import jax
 import jax.numpy as jnp
-from pgx.sparrow_mahjong import _is_completed, init, _to_str, _validate, step, _to_base5, _hand_to_score, observe, _init
+from pgx.sparrow_mahjong import _is_completed, _to_str, _validate, _to_base5, _hand_to_score, _init, SparrowMahjong
+
+env = SparrowMahjong()
+init = jax.jit(env.init)
+step = jax.jit(env.step)
+observe = jax.jit(env.observe)
 
 
 def test_to_base5():
@@ -29,7 +34,7 @@ def test_is_completed():
 
 
 def test_init():
-    current_player, state = _init(jax.random.PRNGKey(1))
+    state = _init(jax.random.PRNGKey(1))
     _validate(state)
     print(_to_str(state))
     assert _to_str(state) == """ dora: r
@@ -39,12 +44,12 @@ def test_init():
 """
 
     for seed in range(1000):
-        current_player, state = init(jax.random.PRNGKey(seed))
+        state = init(jax.random.PRNGKey(seed))
         assert jnp.logical_not(state.terminated)
 
 
 def test_step():
-    current_player, state = _init(jax.random.PRNGKey(1))
+    state = _init(jax.random.PRNGKey(1))
     _validate(state)
     print(_to_str(state))
     assert _to_str(state) == """ dora: r
@@ -53,7 +58,7 @@ def test_step():
  [0] 5 7 8 9 r*  : _ _ _ _ _ _ _ _ _ _  
 """
 
-    current_player, state, r = step(state, jnp.int8(1))
+    state = step(state, jnp.int32(1))
     assert not state.terminated
     _validate(state)
     print(_to_str(state))
@@ -73,17 +78,17 @@ def test_random_play():
         print("=================================")
         key = jax.random.PRNGKey(seed)
         key, subkey = jax.random.split(key)
-        current_player, state = _init(subkey)
+        state = _init(subkey)
         # _validate(state)
         # print(_to_str(state))
         while not state.terminated:
             legal_actions = jnp.where(state.legal_action_mask)[0]
             key, subkey = jax.random.split(key)
             action = jax.random.choice(subkey, legal_actions)
-            current_player, state, r = step(state, action)
+            state = step(state, action)
             # _validate(state)
         print(_to_str(state))
-        print(r)
+        print(state.reward)
         results += _to_str(state)
 
     expected = """[terminated] dora: 5
@@ -491,8 +496,8 @@ def test_random_play():
 
 
 def test_observe():
-    current_player, state = _init(jax.random.PRNGKey(1))
-    current_player, state, r = step(state, jnp.int8(1))
+    state = _init(jax.random.PRNGKey(1))
+    state = step(state, jnp.int32(1))
     print(_to_str(state))
     obs = observe(state, player_id=jnp.int8(2))
     assert obs.shape[0] == 15
@@ -510,12 +515,12 @@ def test_observe():
     seed = 5
     key = jax.random.PRNGKey(seed)
     key, subkey = jax.random.split(key)
-    current_player, state = _init(subkey)
+    state = _init(subkey)
     while not state.terminated:
         legal_actions = jnp.where(state.legal_action_mask)[0]
         key, subkey = jax.random.split(key)
         action = jax.random.choice(subkey, legal_actions)
-        current_player, state, r = step(state, action)
+        state = step(state, action)
     print(_to_str(state))
     """
     [terminated] dora: 3
