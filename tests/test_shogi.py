@@ -2,7 +2,10 @@ from functools import partial
 import jax.numpy as jnp
 
 from pgx.shogi import *
-from pgx.shogi import _init, _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction, _from_sfen, _pseudo_legal_drops, _to_sfen
+from pgx.shogi import _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction, _from_sfen, _pseudo_legal_drops, _to_sfen
+
+env = Shogi()
+init = jax.jit(env.init)
 
 
 # check visualization results by image preview plugins
@@ -23,12 +26,14 @@ def update_board(state, piece_board, hand=None):
 
 
 def test_init():
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     assert jnp.unique(s.piece_board).shape[0] == 1 + 8 + 8
 
 
 def test_step_move():
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
 
     # 26歩
     piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
@@ -66,7 +71,8 @@ def test_step_move():
 
 
 def test_step_drop():
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = s.replace(hand=s.hand.at[:, :].set(1))  # type: ignore
     # 52飛車打ち
     piece, to = ROOK, xy2i(5, 2)
@@ -80,7 +86,8 @@ def test_step_drop():
 
 
 def test_flip():
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
      # 26歩
     piece, from_, to = PAWN, xy2i(2, 7), xy2i(2, 6)
     a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
@@ -107,7 +114,8 @@ def test_flip():
 
 def test_legal_moves():
     # Promotion
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     piece, from_, to = PAWN, xy2i(7, 7), xy2i(7, 6)  # 77歩
     a = Action.make_move(piece=piece, from_=from_, to=to)  # type: ignore
     s = _step_move(s, a)
@@ -131,7 +139,8 @@ def test_legal_moves():
     # Suicide action
 
     # King cannot move into opponent pieces' effect
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[xy2i(5, 5)].set(OPP_LANCE)
         .at[xy2i(5, 7)].set(EMPTY)
@@ -143,7 +152,8 @@ def test_legal_moves():
     assert not legal_moves[xy2i(6, 8), xy2i(5, 8)]
 
     # Gold is pinned
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
                      piece_board=s.piece_board
                      .at[xy2i(5, 5)].set(OPP_LANCE)
@@ -153,7 +163,8 @@ def test_legal_moves():
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
     # Gold is not pinned
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board
         .at[:].set(EMPTY)
@@ -175,7 +186,8 @@ def test_legal_moves():
     # Leave king check
 
     # King should escape from Lance
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board
         .at[xy2i(5, 5)].set(OPP_LANCE)
@@ -189,7 +201,8 @@ def test_legal_moves():
     assert not legal_moves[xy2i(2, 7), xy2i(2, 6)]  # 王を放置するのはNG
 
     # Checking piece should be captured
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board
         .at[:].set(EMPTY)
@@ -203,7 +216,8 @@ def test_legal_moves():
     assert legal_moves[xy2i(6, 1), xy2i(1, 1)]      # 飛車が王手をかけている香を取るのはOK
 
     # 合駒
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -216,7 +230,8 @@ def test_legal_moves():
     assert legal_moves[xy2i(2, 9), xy2i(2, 8)]  # 角の利きを遮るのでOK
 
     # 両王手
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -234,7 +249,8 @@ def test_legal_moves():
 
 def test_legal_drops():
     # 打ち歩詰
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
                 hand=s.hand.at[0, PAWN].add(1),
                 piece_board=s.piece_board.at[xy2i(5, 7)].set(EMPTY).at[xy2i(8, 2)].set(EMPTY))
@@ -274,7 +290,8 @@ def test_legal_drops():
     assert legal_drops[PAWN, xy2i(5, 2)]
 
     # 合駒
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -289,7 +306,8 @@ def test_legal_drops():
     assert not legal_drops[GOLD, xy2i(2, 6)]  # 合駒になってないのはNG
 
     # 両王手
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(1, 9)].set(KING)
@@ -306,7 +324,8 @@ def test_legal_drops():
 def test_dlshogi_action():
 
     # from dlshogi action to Action
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[:]
         .set(EMPTY).at[xy2i(5, 9)].set(LANCE)
@@ -330,7 +349,8 @@ def test_dlshogi_action():
     assert action.from_ == xy2i(5, 9)
 
     # 歩で香車の利きが隠れている場合
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
@@ -348,7 +368,8 @@ def test_dlshogi_action():
     assert not action.is_promotion
 
     # from legal moves to legal action mask
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board.at[:].set(EMPTY)
         .at[xy2i(5, 9)].set(LANCE)
@@ -366,7 +387,8 @@ def test_dlshogi_action():
     assert not legal_action_mask[(dir_ + 10) * 81 + xy2i(5, 4)]  # cannot promote
 
     # drop
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = update_board(s,
         piece_board=s.piece_board
         .at[xy2i(1, 7)].set(EMPTY),
@@ -380,7 +402,8 @@ def test_dlshogi_action():
 
 
 def test_step():
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     visualize(s, "tests/assets/shogi/step_001.svg")
     s = step(s, 3 * 81 + xy2i(3, 8))
     visualize(s, "tests/assets/shogi/step_002.svg")
@@ -390,7 +413,8 @@ def test_step():
 
 
 def test_legal_action_mask():
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     # 先手
     visualize(s, "tests/assets/shogi/legal_action_mask_001.svg")
     assert not s.legal_action_mask[6 * 81 + xy2i(6, 6)]  # 初期盤面では、角の利きは77の歩でとまっている
@@ -418,7 +442,8 @@ def test_legal_action_mask():
     s = _step(s, Action.make_move(BISHOP, xy2i(8, 8), xy2i(7, 7)))  # 同角
 
 
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     # 先手
     visualize(s, "tests/assets/shogi/legal_action_mask_005.svg")
     s = _step(s, Action.make_move(PAWN, xy2i(7, 7), xy2i(7, 6)))  # 76歩
@@ -445,7 +470,8 @@ def test_legal_action_mask():
     assert not s.legal_action_mask[2 * 81 + xy2i(3, 3)]  # 角の利きが33まで止まっている
 
 
-    s = _init()
+    key = jax.random.PRNGKey(0)
+    s = init(key)
     s = s.replace(hand=s.hand.at[0, GOLD].set(1))
     # 先手
     visualize(s, "tests/assets/shogi/legal_action_mask_010.svg")
@@ -514,7 +540,8 @@ def test_buggy_samples():
 
 
 def test_observe():
-    s: State = _init()
+    key = jax.random.PRNGKey(0)
+    s: State = init(key)
     obs = observe(s, s.current_player)
 
     assert obs.shape == (119, 9, 9)
@@ -646,21 +673,3 @@ def test_sfen():
     s = _from_sfen(sfen)
     visualize(s, "tests/assets/shogi/sfen_002.svg")
     assert _to_sfen(s) == sfen
-
-
-def test_jit():
-    from pgx.experimental.utils import act_randomly
-    from pgx.shogi import init, step, observe
-    init = jax.jit(jax.vmap(partial(init)))
-    step = jax.jit(jax.vmap(partial(step)))
-    observe = jax.jit(jax.vmap(partial(observe)))
-
-    key = jax.random.PRNGKey(0)
-    keys = jax.random.split(key, 2)
-
-    print("warmup starts ...")
-    s = init(keys)
-    o = observe(s, s.current_player)
-    a = act_randomly(key, s)
-    s = step(s, a)
-    print("warmup ends")
