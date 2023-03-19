@@ -37,8 +37,11 @@ import jax
 import jax.lax as lax
 import jax.numpy as jnp
 
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
+TRUE = jnp.bool_(True)
+FALSE = jnp.bool_(False)
 NUM_TILES = 44
 NUM_TILE_TYPES = 11
 N_PLAYER = 3
@@ -51,10 +54,16 @@ MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 +
 
 
 @dataclass
-class State:
+class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
-    legal_action_mask: jnp.ndarray = jnp.zeros(9, jnp.bool_)
-    terminated: jnp.ndarray = jnp.bool_(False)
+    observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.zeros(9, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # --- SparrowMahjong specific ---
     turn: jnp.ndarray = jnp.int32(0)  # 0 = dealer
     rivers: jnp.ndarray = -jnp.ones(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.int32
