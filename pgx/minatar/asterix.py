@@ -42,7 +42,6 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
-    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int32) * INF
@@ -85,15 +84,14 @@ class MinAtarAsterix(core.Env):
         self.sticky_action_prob: float = sticky_action_prob
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return State(rng=key)  # type: ignore
+        return State(_rng_key=key)  # type: ignore
 
     def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
-        rng, subkey = jax.random.split(state.rng)
         state = _step(
-            state, action, rng, sticky_action_prob=self.sticky_action_prob
+            state, action, sticky_action_prob=self.sticky_action_prob
         )
-        return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
+        return state.replace(terminated=state.terminal)  # type: ignore
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
@@ -117,11 +115,12 @@ class MinAtarAsterix(core.Env):
 def _step(
     state: State,
     action: jnp.ndarray,
-    rng: jax.random.KeyArray,
     sticky_action_prob: float,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int32(action)
-    rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
+    rng_key, rng0, rng1, rng2, rng3 = jax.random.split(state._rng_key, 5)
+    state = state.replace(_rng_key=rng_key)  # type: ignore
+
     # sticky action
     action = jax.lax.cond(
         jax.random.uniform(rng0) < sticky_action_prob,
