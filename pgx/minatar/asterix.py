@@ -171,7 +171,7 @@ def _step_det(
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.float32(0), True),  # type: ignore
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, lr, is_gold, slot),
     )
 
@@ -275,7 +275,7 @@ def _step_det_at_non_terminal(
     state = state.replace(  # type: ignore
         reward=r[jnp.newaxis], last_action=action  # 1-d array
     )  # type: ignore
-    return state, r, terminal
+    return state
 
 
 # Spawn a new enemy or treasure at a random location with random direction (if all rows are filled do nothing)

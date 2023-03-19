@@ -54,7 +54,7 @@ def test_step_det():
             r, done = env.act(a)
             lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
             s_next = extract_state(env, state_keys)
-            s_next_pgx, _, _ = _step_det(
+            s_next_pgx = _step_det(
                 minatar2pgx(s, asterix.State),
                 a,
                 lr,
@@ -69,7 +69,7 @@ def test_step_det():
         r, done = env.act(a)
         lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = _step_det(
+        s_next_pgx = _step_det(
             minatar2pgx(s, asterix.State), a, lr, is_gold, slot
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
