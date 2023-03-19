@@ -62,17 +62,17 @@ class TicTacToe(core.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return init(key)
+        return _init(key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return step(state, action)
+        return _step(state, action)
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return _observe(state, player_id)
 
     @property
     def name(self) -> str:
@@ -87,13 +87,13 @@ class TicTacToe(core.Env):
         return 2
 
 
-def init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(current_player=current_player)  # type:ignore
 
 
-def step(state: State, action: jnp.ndarray) -> State:
+def _step(state: State, action: jnp.ndarray) -> State:
     state = state.replace(board=state.board.at[action].set(state.turn))  # type: ignore
     won = _win_check(state.board, state.turn)
     reward = jax.lax.cond(
@@ -114,7 +114,7 @@ def _win_check(board, turn) -> jnp.ndarray:
     return ((board[IDX] == turn).all(axis=1)).any()
 
 
-def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     empty_board = state.board == -1
     my_board, opp_obard = jax.lax.cond(
         state.current_player
