@@ -59,17 +59,17 @@ class Backgammon(core.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return init(key)
+        return _init(key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return step(state, action)
+        return _step(state, action)
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return _observe(state, player_id)
 
     @property
     def name(self) -> str:
@@ -88,7 +88,7 @@ class Backgammon(core.Env):
         return -3.0
 
 
-def init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()  # 初期配置は対象なので, turnに関係
@@ -112,7 +112,7 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def step(state: State, action: jnp.ndarray) -> State:
+def _step(state: State, action: jnp.ndarray) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -124,7 +124,7 @@ def step(state: State, action: jnp.ndarray) -> State:
     )
 
 
-def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """
     手番のplayerに対する観測を返す.
     """

@@ -14,20 +14,19 @@ from pgx.backgammon import (
     _move,
     _rear_distance,
     _roll_init_dice,
-    init,
-    observe,
-    step,
     _distance_to_goal,
     _is_turn_end,
     _no_winning_step,
-    _exists
+    _exists,
+    Backgammon
 )
 
 seed = 1701
 rng = jax.random.PRNGKey(seed)
-init = jax.jit(init)
-step = jax.jit(step)
-observe = jax.jit(observe)
+env = Backgammon()
+init = jax.jit(env.init)
+step = jax.jit(env.step)
+observe = jax.jit(env.observe)
 _no_winning_step = jax.jit(_no_winning_step)
 _calc_src = jax.jit(_calc_src)
 _calc_tgt = jax.jit(_calc_tgt)
