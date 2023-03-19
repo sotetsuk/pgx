@@ -8,23 +8,37 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
+from typing import Literal, Optional
 
 import jax
 from jax import numpy as jnp
 
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 player_speed = jnp.array(3, dtype=jnp.int32)
 time_limit = jnp.array(2500, dtype=jnp.int32)
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
 ZERO = jnp.array(0, dtype=jnp.int32)
 ONE = jnp.array(1, dtype=jnp.int32)
 NINE = jnp.array(9, dtype=jnp.int32)
 
 
 @dataclass
-class State:
+class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
+    current_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.zeros(
+        1, dtype=jnp.float32
+    )  # 1d array for the same API as other multi-agent games
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int32)
     pos: jnp.ndarray = jnp.array(9, dtype=jnp.int32)
     move_timer: jnp.ndarray = jnp.array(player_speed, dtype=jnp.int32)
@@ -32,30 +46,83 @@ class State:
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
 
-def step(
+        return visualize_minatar(self)
+
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
+        from pgx.minatar.utils import visualize_minatar
+
+        visualize_minatar(self, filename)
+
+
+class MinAtarFreeway(core.Env):
+    def __init__(
+        self,
+        *,
+        minatar_version: Literal["v0", "v1"] = "v1",
+        sticky_action_prob: float = 0.1,
+    ):
+        super().__init__()
+        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob: float = sticky_action_prob
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return _init(key)  # type: ignore
+
+    def _step(self, state: core.State, action) -> State:
+        assert isinstance(state, State)
+        state = _step(
+            state, action, sticky_action_prob=self.sticky_action_prob
+        )
+        return state.replace(terminated=state.terminal)  # type: ignore
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state)
+
+    @property
+    def name(self) -> str:
+        return "MinAtar/Freeway"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self):
+        return 1
+
+
+def _step(
     state: State,
     action: jnp.ndarray,
-    rng: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+    sticky_action_prob,
+):
     action = jnp.int32(action)
+    key, subkey0, subkey1 = jax.random.split(state._rng_key, 3)
+    state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
-        jax.random.uniform(rng) < sticky_action_prob,
+        jax.random.uniform(subkey0) < sticky_action_prob,
         lambda: state.last_action,
         lambda: action,
     )
-    speeds, directions = _random_speed_directions(rng)
+    speeds, directions = _random_speed_directions(subkey1)
     return _step_det(state, action, speeds=speeds, directions=directions)
 
 
-def init(rng: jnp.ndarray) -> State:
+def _init(rng: jnp.ndarray) -> State:
     speeds, directions = _random_speed_directions(rng)
     return _init_det(speeds=speeds, directions=directions)
-
-
-def observe(state: State) -> jnp.ndarray:
-    return _to_obs(state)
 
 
 def _step_det(
@@ -63,10 +130,10 @@ def _step_det(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int32), True),  # type: ignore
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, speeds, directions),
     )
 
@@ -76,7 +143,7 @@ def _step_det_at_non_terminal(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
 
     cars = state.cars
     pos = state.pos
@@ -85,7 +152,7 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
     last_action = action
 
-    r = jnp.array(0, dtype=jnp.int32)
+    r = jnp.array(0, dtype=jnp.float32)
 
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),
@@ -118,16 +185,17 @@ def _step_det_at_non_terminal(
     terminate_timer -= ONE
     terminal = terminate_timer < 0
 
-    next_state = State(
-        cars,
-        pos,
-        move_timer,
-        terminate_timer,
-        terminal,
-        last_action,
-    )  # type: ignore
+    next_state = state.replace(  # type: ignore
+        cars=cars,
+        pos=pos,
+        move_timer=move_timer,
+        terminate_timer=terminate_timer,
+        terminal=terminal,
+        last_action=last_action,
+        reward=r[jnp.newaxis],
+    )
 
-    return next_state, r, terminal
+    return next_state
 
 
 def _update_cars(pos, cars):
@@ -188,7 +256,7 @@ def _randomize_cars(
 
 
 def _random_speed_directions(rng):
-    _, rng1, rng2 = jax.random.split(rng, 3)
+    rng1, rng2 = jax.random.split(rng, 2)
     speeds = jax.random.randint(rng1, [8], 1, 6, dtype=jnp.int32)
     directions = jax.random.choice(
         rng2, jnp.array([-1, 1], dtype=jnp.int32), [8]
@@ -196,20 +264,20 @@ def _random_speed_directions(rng):
     return speeds, directions
 
 
-def _to_obs(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
-    obs = obs.at[state.pos, 4, 0].set(1)
+    obs = obs.at[state.pos, 4, 0].set(TRUE)
 
     def _update_obs(i, _obs):
         car = state.cars[i]
-        _obs = _obs.at[car[1], car[0], 1].set(1)
+        _obs = _obs.at[car[1], car[0], 1].set(TRUE)
         back_x = jax.lax.cond(
             car[3] > 0, lambda: car[0] - 1, lambda: car[0] + 1
         )
         back_x = jax.lax.cond(back_x < 0, lambda: NINE, lambda: back_x)
         back_x = jax.lax.cond(back_x > 9, lambda: ZERO, lambda: back_x)
         trail = jax.lax.abs(car[3]) + 1
-        _obs = _obs.at[car[1], back_x, trail].set(1)
+        _obs = _obs.at[car[1], back_x, trail].set(TRUE)
         return _obs
 
     obs = jax.lax.fori_loop(0, 8, _update_obs, obs)

@@ -18,7 +18,7 @@ state_keys = [
 
 _step_det = jax.jit(freeway._step_det)
 _init_det = jax.jit(freeway._init_det)
-_to_obs = jax.jit(freeway._to_obs)
+_to_obs = jax.jit(freeway._observe)
 
 def test_step_det():
     env = Environment("freeway", sticky_action_prob=0.0)
@@ -37,7 +37,7 @@ def test_step_det():
                 env.env.directions
             )
             s_next = extract_state(env, state_keys)
-            s_next_pgx, _, _ = _step_det(
+            s_next_pgx = _step_det(
                 minatar2pgx(s, freeway.State),
                 a,
                 speeds,
@@ -54,7 +54,7 @@ def test_step_det():
             env.env.directions
         )
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = _step_det(
+        s_next_pgx = _step_det(
             minatar2pgx(s, freeway.State), a, speeds, directions
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
@@ -100,3 +100,9 @@ def test_observe():
             env.state(),
             obs_pgx,
         )
+
+
+def test_api():
+    import pgx
+    env = pgx.make("minatar/freeway")
+    pgx.api_test(env)
