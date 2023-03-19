@@ -200,6 +200,9 @@ class Env(abc.ABC):
         return state.replace(reward=reward, terminated=TRUE)  # type: ignore
 
 
+def available_games() -> Tuple[EnvId, ...]:
+    return get_args(EnvId)
+
 def make(env_id: EnvId):
     if env_id == "backgammon":
         from pgx.backgammon import Backgammon
@@ -230,7 +233,7 @@ def make(env_id: EnvId):
 
         return TicTacToe()
     else:
-        available_envs = "\n".join(get_args(EnvId))
+        available_envs = "\n".join(available_games())
         raise ValueError(
             f"Wrong env_id is passed. Available ids are: \n{available_envs}"
         )
