@@ -106,8 +106,8 @@ class MinAtarFreeway(core.Env):
 def _step(
     state: State,
     action: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+    sticky_action_prob,
+):
     action = jnp.int32(action)
     key, subkey0, subkey1 = jax.random.split(state._rng_key, 3)
     state = state.replace(_rng_key=key)  # type: ignore
