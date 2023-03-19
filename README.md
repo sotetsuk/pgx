@@ -145,7 +145,7 @@ Use `pgx.available_games()` to see the list of currently available games.
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td><a href="https://en.wikipedia.org/wiki/Othello">Othello</a></td>
+ <td><a href="https://en.wikipedia.org/wiki/Reversi">Othello</a></td>
  <td>:construction:</td>
  <td>:white_check_mark:</td>
 </tr>
