@@ -168,7 +168,10 @@ class Shogi(core.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return init(key)
+        state = _init_board()
+        rng, subkey = jax.random.split(key)
+        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        return state.replace(current_player=current_player)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
@@ -192,13 +195,6 @@ class Shogi(core.Env):
     @property
     def num_players(self) -> int:
         return 2
-
-
-def init(rng):
-    state = _init_board()
-    rng, subkey = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(subkey))
-    return state.replace(current_player=current_player)
 
 
 def _init_board():
