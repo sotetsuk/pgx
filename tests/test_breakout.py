@@ -21,7 +21,7 @@ state_keys = {
 }
 _step_det = jax.jit(breakout._step_det)
 _init_det = jax.jit(breakout._init_det)
-observe = jax.jit(breakout.observe)
+observe = jax.jit(breakout._observe)
 
 def test_step_det():
     env = Environment("breakout", sticky_action_prob=0.0)

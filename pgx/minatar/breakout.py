@@ -43,7 +43,7 @@ class State:
     last_action: jnp.ndarray = ZERO
 
 
-def step(
+def _step(
     state: State,
     action: jnp.ndarray,
     rng: jnp.ndarray,
@@ -58,13 +58,9 @@ def step(
     return _step_det(state, action)
 
 
-def init(rng: jnp.ndarray) -> State:
+def _init(rng: jnp.ndarray) -> State:
     ball_start = jax.random.choice(rng, 2)
     return _init_det(ball_start=ball_start)
-
-
-def observe(state: State) -> jnp.ndarray:
-    return _to_obs(state)
 
 
 def _step_det(
@@ -94,16 +90,16 @@ def _step_det_at_non_terminal(
 
     r = jnp.array(0, dtype=jnp.int16)
 
-    pos = apply_action(pos, action)
+    pos = _apply_action(pos, action)
 
     # Update ball position
     last_x = ball_x
     last_y = ball_y
-    new_x, new_y = update_ball_pos(ball_x, ball_y, ball_dir)
+    new_x, new_y = _update_ball_pos(ball_x, ball_y, ball_dir)
 
     new_x, ball_dir = jax.lax.cond(
         (new_x < 0) | (new_x > 9),
-        lambda: update_ball_pos_x(new_x, ball_dir),
+        lambda: _update_ball_pos_x(new_x, ball_dir),
         lambda: (new_x, ball_dir),
     )
 
@@ -112,20 +108,20 @@ def _step_det_at_non_terminal(
     is_bottom = new_y == 9
     new_y, ball_dir = jax.lax.cond(
         is_new_y_negative,
-        lambda: update_ball_pos_y(ball_dir),
+        lambda: _update_ball_pos_y(ball_dir),
         lambda: (new_y, ball_dir),
     )
     strike_toggle = ~is_new_y_negative & is_strike
     r, strike, brick_map, new_y, ball_dir = jax.lax.cond(
         ~is_new_y_negative & is_strike & ~strike,
-        lambda: update_by_strike(
+        lambda: _update_by_strike(
             r, brick_map, new_x, new_y, last_y, ball_dir, strike
         ),
         lambda: (r, strike, brick_map, new_y, ball_dir),
     )
     brick_map, new_y, ball_dir, terminal = jax.lax.cond(
         ~is_new_y_negative & ~is_strike & is_bottom,
-        lambda: update_by_bottom(
+        lambda: _update_by_bottom(
             brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
         ),
         lambda: (brick_map, new_y, ball_dir, terminal),
@@ -150,7 +146,7 @@ def _step_det_at_non_terminal(
     return state, r, terminal
 
 
-def apply_action(pos, action):
+def _apply_action(pos, action):
     pos = jax.lax.cond(
         action == 1, lambda: jax.lax.max(ZERO, pos - ONE), lambda: pos
     )
@@ -160,7 +156,7 @@ def apply_action(pos, action):
     return pos
 
 
-def update_ball_pos(ball_x, ball_y, ball_dir):
+def _update_ball_pos(ball_x, ball_y, ball_dir):
     return jax.lax.switch(
         ball_dir,
         [
@@ -172,26 +168,26 @@ def update_ball_pos(ball_x, ball_y, ball_dir):
     )
 
 
-def update_ball_pos_x(new_x, ball_dir):
+def _update_ball_pos_x(new_x, ball_dir):
     new_x = jax.lax.max(ZERO, new_x)
     new_x = jax.lax.min(NINE, new_x)
     ball_dir = jnp.array([1, 0, 3, 2], dtype=jnp.int32)[ball_dir]
     return new_x, ball_dir
 
 
-def update_ball_pos_y(ball_dir):
+def _update_ball_pos_y(ball_dir):
     ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int32)[ball_dir]
     return ZERO, ball_dir
 
 
-def update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir, strike):
+def _update_by_strike(r, brick_map, new_x, new_y, last_y, ball_dir, strike):
     brick_map = brick_map.at[new_y, new_x].set(False)
     new_y = last_y
     ball_dir = jnp.array([3, 2, 1, 0], dtype=jnp.int32)[ball_dir]
     return r + 1, jnp.ones_like(strike), brick_map, new_y, ball_dir
 
 
-def update_by_bottom(
+def _update_by_bottom(
     brick_map, ball_x, new_x, new_y, pos, ball_dir, last_y, terminal
 ):
     brick_map = jax.lax.cond(
@@ -230,7 +226,7 @@ def _init_det(ball_start: jnp.ndarray) -> State:
     )  # type: ignore
 
 
-def _to_obs(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.ball_y, state.ball_x, 1].set(True)
     obs = obs.at[9, state.pos, 0].set(True)
