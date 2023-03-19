@@ -177,7 +177,7 @@ def _step_det_at_non_terminal(
     lr: bool,
     is_gold: bool,
     slot: int,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+) -> State:
     ramping: bool = True
     r = jnp.float32(0)
 
