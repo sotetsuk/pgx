@@ -229,6 +229,10 @@ def make(env_id: EnvId):
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix()
+    elif env_id == "minatar/breakout":
+        from pgx.minatar.breakout import MinAtarBreakout
+
+        return MinAtarBreakout()
     elif env_id == "shogi":
         from pgx.shogi import Shogi
 

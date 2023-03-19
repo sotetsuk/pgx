@@ -12,7 +12,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple, Literal
+from typing import Tuple, Literal, Optional
 
 import jax
 from jax import numpy as jnp
@@ -56,6 +56,23 @@ class State(core.State):
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = ZERO
 
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
+
+        return visualize_minatar(self)
+
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
+        from pgx.minatar.utils import visualize_minatar
+
+        visualize_minatar(self, filename)
+
+
 class MinAtarBreakout(core.Env):
     def __init__(
         self,
@@ -75,7 +92,7 @@ class MinAtarBreakout(core.Env):
         state, _, _ = _step(
             state, action, sticky_action_prob=self.sticky_action_prob
         )
-        return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
+        return state.replace(terminated=state.terminal)  # type: ignore
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
@@ -185,7 +202,7 @@ def _step_det_at_non_terminal(
         ~strike_toggle, lambda: jnp.zeros_like(strike), lambda: strike
     )
 
-    state = State(
+    state = state.replace(
         ball_y=new_y,
         ball_x=new_x,
         ball_dir=ball_dir,
