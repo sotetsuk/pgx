@@ -14,6 +14,7 @@ import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -28,7 +29,18 @@ NINE = jnp.int32(9)
 
 
 @dataclass
-class State:
+class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
+    current_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.zeros(
+        1, dtype=jnp.float32
+    )  # 1d array for the same API as other multi-agent games
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     pos: jnp.ndarray = jnp.int32(5)
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     e_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
@@ -86,10 +98,10 @@ def _observe(state: State) -> jnp.ndarray:
 def _step_det(
     state: State,
     action: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     return lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.int16(0), state.terminal),  # type: ignore
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action),
     )
 
@@ -97,8 +109,8 @@ def _step_det(
 def _step_det_at_non_terminal(
     state: State,
     action: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    r = jnp.int16(0)
+):
+    r = jnp.float32(0)
 
     pos = state.pos
     f_bullet_map = state.f_bullet_map
@@ -152,7 +164,7 @@ def _step_det_at_non_terminal(
 
     kill_locations = alien_map & (alien_map == f_bullet_map)
 
-    r += jnp.sum(kill_locations, dtype=jnp.int16)
+    r += jnp.sum(kill_locations, dtype=jnp.float32)
     alien_map = alien_map & (~kill_locations)
     f_bullet_map = f_bullet_map & (~kill_locations)
 
@@ -176,8 +188,7 @@ def _step_det_at_non_terminal(
         is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(TRUE), lambda: alien_map
     )
 
-    return (
-        State(
+    return state.replace(  # type: ignore
             pos=pos,
             f_bullet_map=f_bullet_map,
             e_bullet_map=e_bullet_map,
@@ -190,9 +201,7 @@ def _step_det_at_non_terminal(
             shot_timer=shot_timer,
             terminal=terminal,
             last_action=action,
-        ),  # type: ignore
-        r,
-        terminal,
+            reward=r[jnp.newaxis]
     )
 
 
@@ -216,7 +225,6 @@ def _resole_action(pos, f_bullet_map, shot_timer, action):
     return pos, f_bullet_map, shot_timer
 
 
-# TODO: avoid loop
 def _nearest_alien(pos, alien_map):
     search_order = jnp.argsort(jnp.abs(jnp.arange(10, dtype=jnp.int32) - pos))
     ix = lax.while_loop(

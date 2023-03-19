@@ -49,7 +49,7 @@ def test_step_det():
             a = random.randrange(num_actions)
             r, done = env.act(a)
             s_next = extract_state(env, state_keys)
-            s_next_pgx, _, _ = _step_det(
+            s_next_pgx = _step_det(
                 minatar2pgx(s, space_invaders.State),
                 a,
             )
@@ -60,7 +60,7 @@ def test_step_det():
         a = random.randrange(num_actions)
         r, done = env.act(a)
         s_next = extract_state(env, state_keys)
-        s_next_pgx, _, _ = _step_det(
+        s_next_pgx = _step_det(
             minatar2pgx(s, space_invaders.State), a
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
