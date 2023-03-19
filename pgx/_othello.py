@@ -47,7 +47,7 @@ SIDE_MASK = LR_MASK & UD_MASK
 class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
-    observation: jnp.ndarray = jnp.zeros(63, dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros(64, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -88,7 +88,7 @@ class Othello(core.Env):
 
     @property
     def name(self) -> str:
-        return "Connect Four"
+        return "Othello"
 
     @property
     def version(self) -> str:
