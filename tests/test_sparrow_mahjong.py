@@ -4,27 +4,27 @@ from pgx.sparrow_mahjong import _is_completed, init, _to_str, _validate, step, _
 
 
 def test_to_base5():
-    hand = jnp.int8([0,0,0,0,0,0,0,0,0,3,3])
+    hand = jnp.int32([0,0,0,0,0,0,0,0,0,3,3])
     assert _to_base5(hand) == 18
-    hand = jnp.int8([4,1,1,0,0,0,0,0,0,0,0])
+    hand = jnp.int32([4,1,1,0,0,0,0,0,0,0,0])
     assert _to_base5(hand) == 41406250
 
 
 def test_to_hand_to_score():
-    hand = jnp.int8([0,0,0,0,0,0,0,0,0,3,3])
+    hand = jnp.int32([0,0,0,0,0,0,0,0,0,3,3])
     assert _hand_to_score(hand) == (4, 15)
-    hand = jnp.int8([4,1,1,0,0,0,0,0,0,0,0])
+    hand = jnp.int32([4,1,1,0,0,0,0,0,0,0,0])
     assert _hand_to_score(hand) == (3, 0)
 
 
 def test_is_completed():
-    hand = jnp.int8([0,0,1,1,1,0,0,0,0,3,0])
+    hand = jnp.int32([0,0,1,1,1,0,0,0,0,3,0])
     assert _is_completed(hand)
-    hand = jnp.int8([0,0,1,1,1,0,0,0,0,2,1])
+    hand = jnp.int32([0,0,1,1,1,0,0,0,0,2,1])
     assert not _is_completed(hand)
-    hand = jnp.int8([0,0,1,0,1,0,0,0,0,3,0])
+    hand = jnp.int32([0,0,1,0,1,0,0,0,0,3,0])
     assert not _is_completed(hand)
-    hand = jnp.int8([0,0,1,2,1,0,0,0,0,3,0])
+    hand = jnp.int32([0,0,1,2,1,0,0,0,0,3,0])
     assert not _is_completed(hand)
 
 
