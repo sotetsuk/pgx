@@ -16,6 +16,9 @@ from jax import numpy as jnp
 
 from pgx._flax.struct import dataclass
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
+
 SHOT_COOL_DOWN = jnp.int32(5)
 ENEMY_MOVE_INTERVAL = jnp.int32(12)
 ENEMY_SHOT_INTERVAL = jnp.int32(10)
@@ -30,7 +33,7 @@ class State:
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     e_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
     alien_map: jnp.ndarray = (
-        jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(True)
+        jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(TRUE)
     )
     alien_dir: jnp.ndarray = jnp.int32(-1)
     enemy_move_interval: jnp.ndarray = ENEMY_MOVE_INTERVAL
@@ -38,7 +41,7 @@ class State:
     alien_shot_timer: jnp.ndarray = ENEMY_SHOT_INTERVAL
     ramp_index: jnp.ndarray = jnp.int32(0)
     shot_timer: jnp.ndarray = jnp.int32(0)
-    terminal: jnp.ndarray = jnp.bool_(False)
+    terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = jnp.int32(0)
 
 
@@ -59,7 +62,7 @@ def _step(
 
 def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
-    obs = obs.at[9, state.pos, 0].set(1)
+    obs = obs.at[9, state.pos, 0].set(TRUE)
     obs = obs.at[:, :, 1].set(state.alien_map)
     obs = obs.at[:, :, 2].set(
         lax.cond(
@@ -117,18 +120,18 @@ def _step_det_at_non_terminal(
 
     # Update Friendly Bullets
     f_bullet_map = jnp.roll(f_bullet_map, -1, axis=0)
-    f_bullet_map = f_bullet_map.at[9, :].set(0)
+    f_bullet_map = f_bullet_map.at[9, :].set(FALSE)
 
     # Update Enemy Bullets
     e_bullet_map = jnp.roll(e_bullet_map, 1, axis=0)
-    e_bullet_map = e_bullet_map.at[0, :].set(0)
+    e_bullet_map = e_bullet_map.at[0, :].set(FALSE)
     terminal = lax.cond(
-        e_bullet_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
+        e_bullet_map[9, pos], lambda: TRUE, lambda: terminal
     )
 
     # Update aliens
     terminal = lax.cond(
-        alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
+        alien_map[9, pos], lambda: TRUE, lambda: terminal
     )
     alien_move_timer, alien_map, alien_dir, terminal = lax.cond(
         alien_move_timer == 0,
@@ -143,7 +146,7 @@ def _step_det_at_non_terminal(
     )
     e_bullet_map = lax.cond(
         timer_zero,
-        lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(1),
+        lambda: e_bullet_map.at[_nearest_alien(pos, alien_map)].set(TRUE),
         lambda: e_bullet_map,
     )
 
@@ -170,7 +173,7 @@ def _step_det_at_non_terminal(
         lambda: ramp_index,
     )
     alien_map = lax.cond(
-        is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(1), lambda: alien_map
+        is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(TRUE), lambda: alien_map
     )
 
     return (
@@ -196,7 +199,7 @@ def _step_det_at_non_terminal(
 def _resole_action(pos, f_bullet_map, shot_timer, action):
     f_bullet_map = lax.cond(
         (action == 5) & (shot_timer == 0),
-        lambda: f_bullet_map.at[9, pos].set(1),
+        lambda: f_bullet_map.at[9, pos].set(TRUE),
         lambda: f_bullet_map,
     )
     shot_timer = lax.cond(
