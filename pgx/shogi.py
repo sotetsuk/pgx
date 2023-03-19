@@ -168,17 +168,21 @@ class Shogi(core.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return init(key)
+        state = _init_board()
+        rng, subkey = jax.random.split(key)
+        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        return state.replace(current_player=current_player)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return step(state, action)
+        # Note: Assume that illegal action is already filtered by Env.step
+        return _step(state, Action.from_dlshogi_action(state, action))
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return _observe(state, player_id)
 
     @property
     def name(self) -> str:
@@ -193,16 +197,9 @@ class Shogi(core.Env):
         return 2
 
 
-def init(rng):
-    state = _init()
-    rng, subkey = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(subkey))
-    return state.replace(current_player=current_player)
-
-
-def _init():
+def _init_board():
     """Initialize Shogi State.
-    >>> s = _init()
+    >>> s = _init_board()
     >>> s.piece_board.reshape((9, 9))
     Array([[15, -1, 14, -1, -1, -1,  0, -1,  1],
            [16, 18, 14, -1, -1, -1,  0,  5,  2],
@@ -333,12 +330,7 @@ class Action:
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
-def step(state: State, action: jnp.ndarray) -> State:
-    # Note: Assume that illegal action is already filtered by Env.step
-    return _step(state, Action.from_dlshogi_action(state, action))
-
-
-def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     state = jax.lax.cond(
         state.current_player != player_id, lambda: _flip(state), lambda: state
     )
@@ -703,7 +695,7 @@ def _pseudo_legal_drops(
 ) -> jnp.ndarray:
     """Return (7, 81) boolean array
 
-    >>> s = _init()
+    >>> s = _init_board()
     >>> s = s.replace(piece_board=s.piece_board.at[15].set(EMPTY))
     >>> s = s.replace(hand=s.hand.at[0].set(1))
     >>> effect_boards = _effects_all(s)
@@ -863,7 +855,7 @@ def _promote(piece: jnp.ndarray) -> jnp.ndarray:
 def _raw_effects_all(state: State) -> jnp.ndarray:
     """Obtain raw effect boards from piece board by batch.
 
-    >>> s = _init()
+    >>> s = _init_board()
     >>> jnp.rot90(_raw_effects_all(s).any(axis=0).reshape(9, 9), k=3)
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
@@ -899,7 +891,7 @@ def _to_large_piece_ix(piece):
 
 def _effect_filters_all(state: State) -> jnp.ndarray:
     """
-    >>> s = _init()
+    >>> s = _init_board()
     >>> _rotate(_effect_filters_all(s).any(axis=0))
     Array([[ True, False, False, False, False, False, False,  True,  True],
            [ True, False, False, False, False, False, False,  True,  True],
@@ -939,7 +931,7 @@ def _effect_filter_through(
     state: State, blocked_pos: jnp.ndarray
 ) -> jnp.ndarray:
     """
-    >>> s = _init()
+    >>> s = _init_board()
     >>> _rotate(_effect_filter_through(s, 10).any(axis=0))
     Array([[False, False, False, False, False, False, False,  True,  True],
            [False, False, False, False, False, False, False, False, False],
@@ -971,7 +963,7 @@ def _effect_filter_through(
 
 def _effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     """
-    >>> s = _init()
+    >>> s = _init_board()
     >>> _rotate(_effect_filter_from(s, 8))
     Array([[False, False, False, False, False, False, False, False,  True],
            [False, False, False, False, False, False, False, False,  True],
@@ -1018,7 +1010,7 @@ def xy2i(x, y):
 
 def _queen_effect(state: State, from_: jnp.ndarray) -> jnp.ndarray:
     """
-    >>> s = _init()
+    >>> s = _init_board()
     >>> _rotate(_queen_effect(s, xy2i(5, 5)))
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -1046,7 +1038,7 @@ def _queen_effect(state: State, from_: jnp.ndarray) -> jnp.ndarray:
 def _effects(state: State, from_: jnp.ndarray):
     """fromに現在ある駒からの利き
 
-    >>> s = _init()
+    >>> s = _init_board()
     >>> _rotate(_effects(s, 8))  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -1065,7 +1057,7 @@ def _effects(state: State, from_: jnp.ndarray):
 
 def _effects_all(state: State):
     """
-    >>> s = _init()
+    >>> s = _init_board()
     >>> _rotate(_effects_all(s)[8])  # 香
     Array([[False, False, False, False, False, False, False, False, False],
            [False, False, False, False, False, False, False, False, False],
@@ -1162,7 +1154,7 @@ def _to_sfen(state: State):
     - 持ち駒は先手の物から順番はRBGSNLPの順
     - 最後に手数（1で固定）
 
-    >>> s = _init()
+    >>> s = _init_board()
     >>> _to_sfen(s)
     'lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1'
     """
