@@ -27,7 +27,7 @@ INF = 99
 
 _spawn_entity = jax.jit(asterix._spawn_entity)
 _step_det = jax.jit(asterix._step_det)
-_to_obs = jax.jit(asterix._to_obs)
+_observe = jax.jit(asterix._observe)
 
 def test_spawn_entity():
     entities = jnp.ones((8, 4), dtype=jnp.int32) * INF
@@ -86,7 +86,7 @@ def test_observe():
         while not done:
             s = extract_state(env, state_keys)
             s_pgx = minatar2pgx(s, asterix.State)
-            obs_pgx = _to_obs(s_pgx)
+            obs_pgx = _observe(s_pgx)
             assert jnp.allclose(
                 env.state(),
                 obs_pgx,
@@ -97,8 +97,14 @@ def test_observe():
         # check terminal state
         s = extract_state(env, state_keys)
         s_pgx = minatar2pgx(s, asterix.State)
-        obs_pgx = _to_obs(s_pgx)
+        obs_pgx = _observe(s_pgx)
         assert jnp.allclose(
             env.state(),
             obs_pgx,
         )
+
+
+def test_api():
+    import pgx
+    env = pgx.make("minatar/asterix")
+    pgx.api_test(env)

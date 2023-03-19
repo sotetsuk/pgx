@@ -90,7 +90,7 @@ class MinAtarAsterix(core.Env):
     def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
         rng, subkey = jax.random.split(state.rng)
-        state, _, _ = step(
+        state = step(
             state, action, rng, sticky_action_prob=self.sticky_action_prob
         )
         return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
@@ -99,7 +99,7 @@ class MinAtarAsterix(core.Env):
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return _to_obs(state)
+        return _observe(state)
 
     @property
     def name(self) -> str:
@@ -156,10 +156,6 @@ def step(
         is_gold=is_gold,
         slot=slot,
     )
-
-
-def observe(state: State) -> jnp.ndarray:
-    return _to_obs(state)
 
 
 def _step_det(
@@ -369,7 +365,7 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
-def _to_obs(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.player_y, state.player_x, 0].set(True)
     obs = jax.lax.fori_loop(
