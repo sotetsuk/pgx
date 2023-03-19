@@ -8,7 +8,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
+from typing import Literal, Tuple
 
 import jax
 from jax import numpy as jnp
@@ -47,19 +47,60 @@ class State(core.State):
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
 
+class MinAtarFreeway(core.Env):
+    def __init__(
+        self,
+        *,
+        minatar_version: Literal["v0", "v1"] = "v1",
+        sticky_action_prob: float = 0.1,
+    ):
+        super().__init__()
+        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob: float = sticky_action_prob
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return _init(key)  # type: ignore
+
+    def _step(self, state: core.State, action) -> State:
+        assert isinstance(state, State)
+        state = _step(
+            state, action, sticky_action_prob=self.sticky_action_prob
+        )
+        return state.replace(terminated=state.terminal)  # type: ignore
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state)
+
+    @property
+    def name(self) -> str:
+        return "MinAtar/Freeway"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self):
+        return 1
+
+
 def _step(
     state: State,
     action: jnp.ndarray,
-    rng: jnp.ndarray,
     sticky_action_prob: jnp.ndarray,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int32(action)
+    key, subkey0, subkey1 = jax.random.split(state._rng_key, 3)
+    state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
-        jax.random.uniform(rng) < sticky_action_prob,
+        jax.random.uniform(subkey0) < sticky_action_prob,
         lambda: state.last_action,
         lambda: action,
     )
-    speeds, directions = _random_speed_directions(rng)
+    speeds, directions = _random_speed_directions(subkey1)
     return _step_det(state, action, speeds=speeds, directions=directions)
 
 
@@ -199,7 +240,7 @@ def _randomize_cars(
 
 
 def _random_speed_directions(rng):
-    _, rng1, rng2 = jax.random.split(rng, 3)
+    rng1, rng2 = jax.random.split(rng, 2)
     speeds = jax.random.randint(rng1, [8], 1, 6, dtype=jnp.int32)
     directions = jax.random.choice(
         rng2, jnp.array([-1, 1], dtype=jnp.int32), [8]
