@@ -185,7 +185,7 @@ def _step_det_at_non_terminal(
     terminate_timer -= ONE
     terminal = terminate_timer < 0
 
-    next_state = state.replace(
+    next_state = state.replace(  # type: ignore
         cars=cars,
         pos=pos,
         move_timer=move_timer,
@@ -193,7 +193,7 @@ def _step_det_at_non_terminal(
         terminal=terminal,
         last_action=last_action,
         reward=r[jnp.newaxis],
-    )  # type: ignore
+    )
 
     return next_state
 
