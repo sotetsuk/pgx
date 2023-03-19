@@ -209,18 +209,18 @@ def _random_speed_directions(rng):
 
 def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
-    obs = obs.at[state.pos, 4, 0].set(1)
+    obs = obs.at[state.pos, 4, 0].set(TRUE)
 
     def _update_obs(i, _obs):
         car = state.cars[i]
-        _obs = _obs.at[car[1], car[0], 1].set(1)
+        _obs = _obs.at[car[1], car[0], 1].set(TRUE)
         back_x = jax.lax.cond(
             car[3] > 0, lambda: car[0] - 1, lambda: car[0] + 1
         )
         back_x = jax.lax.cond(back_x < 0, lambda: NINE, lambda: back_x)
         back_x = jax.lax.cond(back_x > 9, lambda: ZERO, lambda: back_x)
         trail = jax.lax.abs(car[3]) + 1
-        _obs = _obs.at[car[1], back_x, trail].set(1)
+        _obs = _obs.at[car[1], back_x, trail].set(TRUE)
         return _obs
 
     obs = jax.lax.fori_loop(0, 8, _update_obs, obs)
