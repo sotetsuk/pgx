@@ -32,7 +32,7 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 pip install pgx
 ```
 
-## APIs
+## Usage
 
 ```py
 import jax
@@ -68,7 +68,9 @@ while not state.terminated.all():
 * `is_truncated=True` is also set to state
 --->
 
-## Supported games
+## Game support road map
+
+Use `pgx.available_games()` to see the list of currently available games.
 
 <div align="center">
 <table>
