@@ -20,6 +20,27 @@ from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
+# fmt:off
+LR_MASK = jnp.array([
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0], dtype=jnp.bool_)
+UD_MASK = jnp.array([
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0], dtype=jnp.bool_)
+# fmt:on
+SIDE_MASK = LR_MASK & UD_MASK
 
 
 @dataclass
@@ -46,7 +67,7 @@ class State(core.State):
     board: jnp.ndarray = jnp.zeros(64, jnp.int8)  # -1(opp), 0(empty), 1(self)
 
 
-class ConnectFour(core.Env):
+class Othello(core.Env):
     def __init__(
         self,
     ):
@@ -81,24 +102,40 @@ class ConnectFour(core.Env):
 def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
-    return State(current_player=current_player)  # type:ignore
+    return State(
+        current_player=current_player,
+        board=jnp.zeros(64, dtype=jnp.int8)
+        .at[27]
+        .set(1)
+        .at[36]
+        .set(1)
+        .at[28]
+        .set(-1)
+        .at[35]
+        .set(-1),
+    )  # type:ignore
 
 
 def _step(state, action):
+    action = jnp.int8(action)
     board = state.board
     my = board > 0
     opp = board < 0
     pos = jnp.zeros(64, dtype=jnp.bool_).at[action].set(TRUE)
 
-    rev = jnp.zeros(64, dtype=jnp.bool_)
-    tmp = line_left(pos, opp)
-    rev = jax.lax.cond(
-        (jnp.roll(tmp, 1) & my).any(), lambda: rev | tmp, lambda: rev
-    )
-    tmp = line_right(pos, opp)
-    rev = jax.lax.cond(
-        (jnp.roll(tmp, -1) & my).any(), lambda: rev | tmp, lambda: rev
-    )
+    shifts = jnp.array([1, -1, 8, -8])
+    masks = jnp.array([LR_MASK, LR_MASK, UD_MASK, UD_MASK])
+
+    def _shift(i, rev):
+        tmp = check_line(pos, opp, shifts[i], masks[i])
+        return jax.lax.cond(
+            (jnp.roll(tmp, shifts[i]) & my).any(),
+            lambda: rev | tmp,
+            lambda: rev,
+        )
+
+    rev = jax.lax.fori_loop(0, 4, _shift, jnp.zeros(64, dtype=jnp.bool_))
+
     # TODO
     my ^= pos | rev
     opp ^= rev
@@ -106,47 +143,14 @@ def _step(state, action):
     return state.replace(board=jnp.where(jnp.int8(opp), -1, jnp.int8(my)))
 
 
-def line_left(pos, opp):
-    # fmt: off
-    mask = opp & jnp.array([
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-    ], dtype=jnp.bool_)
-    # fmt: on
-    result = mask & jnp.roll(pos, 1)
-    result |= opp & jnp.roll(result, 1)
-    result |= opp & jnp.roll(result, 1)
-    result |= opp & jnp.roll(result, 1)
-    result |= opp & jnp.roll(result, 1)
-    result |= opp & jnp.roll(result, 1)
-    return result
-
-
-def line_right(pos, opp):
-    # fmt: off
-    mask = opp & jnp.array([
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-        0, 1, 1, 1, 1, 1, 1, 0,
-    ], dtype=jnp.bool_)
-    # fmt: on
-    result = mask & jnp.roll(pos, -1)
-    result |= opp & jnp.roll(result, -1)
-    result |= opp & jnp.roll(result, -1)
-    result |= opp & jnp.roll(result, -1)
-    result |= opp & jnp.roll(result, -1)
-    result |= opp & jnp.roll(result, -1)
+def check_line(pos, opp, shift, mask):
+    result = opp & mask
+    result = result & jnp.roll(pos, shift)
+    result |= opp & jnp.roll(result, shift)
+    result |= opp & jnp.roll(result, shift)
+    result |= opp & jnp.roll(result, shift)
+    result |= opp & jnp.roll(result, shift)
+    result |= opp & jnp.roll(result, shift)
     return result
 
 
