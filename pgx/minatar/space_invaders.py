@@ -137,14 +137,10 @@ def _step_det_at_non_terminal(
     # Update Enemy Bullets
     e_bullet_map = jnp.roll(e_bullet_map, 1, axis=0)
     e_bullet_map = e_bullet_map.at[0, :].set(FALSE)
-    terminal = lax.cond(
-        e_bullet_map[9, pos], lambda: TRUE, lambda: terminal
-    )
+    terminal = lax.cond(e_bullet_map[9, pos], lambda: TRUE, lambda: terminal)
 
     # Update aliens
-    terminal = lax.cond(
-        alien_map[9, pos], lambda: TRUE, lambda: terminal
-    )
+    terminal = lax.cond(alien_map[9, pos], lambda: TRUE, lambda: terminal)
     alien_move_timer, alien_map, alien_dir, terminal = lax.cond(
         alien_move_timer == 0,
         lambda: _update_alien_by_move_timer(
@@ -185,23 +181,25 @@ def _step_det_at_non_terminal(
         lambda: ramp_index,
     )
     alien_map = lax.cond(
-        is_enemy_zero, lambda: alien_map.at[0:4, 2:8].set(TRUE), lambda: alien_map
+        is_enemy_zero,
+        lambda: alien_map.at[0:4, 2:8].set(TRUE),
+        lambda: alien_map,
     )
 
     return state.replace(  # type: ignore
-            pos=pos,
-            f_bullet_map=f_bullet_map,
-            e_bullet_map=e_bullet_map,
-            alien_map=alien_map,
-            alien_dir=alien_dir,
-            enemy_move_interval=enemy_move_interval,
-            alien_move_timer=alien_move_timer,
-            alien_shot_timer=alien_shot_timer,
-            ramp_index=ramp_index,
-            shot_timer=shot_timer,
-            terminal=terminal,
-            last_action=action,
-            reward=r[jnp.newaxis]
+        pos=pos,
+        f_bullet_map=f_bullet_map,
+        e_bullet_map=e_bullet_map,
+        alien_map=alien_map,
+        alien_dir=alien_dir,
+        enemy_move_interval=enemy_move_interval,
+        alien_move_timer=alien_move_timer,
+        alien_shot_timer=alien_shot_timer,
+        ramp_index=ramp_index,
+        shot_timer=shot_timer,
+        terminal=terminal,
+        last_action=action,
+        reward=r[jnp.newaxis],
     )
 
 
