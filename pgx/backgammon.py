@@ -218,7 +218,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     )  # no-opの時はupdateしない
 
 
-def flip_board(board):
+def _flip_board(board):
     """
     ターンが変わる際にボードを反転させ, -1をかける. そうすることで常に黒視点で考えることができる.
     """
@@ -566,7 +566,7 @@ def _legal_action_mask_for_valid_single_dice(
     return legal_action_mask
 
 
-def get_abs_board(state: State) -> jnp.ndarray:
+def _get_abs_board(state: State) -> jnp.ndarray:
     """
     visualization用
     黒ならそのまま, 白なら反転して返す.

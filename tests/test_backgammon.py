@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 from pgx.backgammon import (
     State,
-    flip_board,
+    _flip_board,
     _calc_src,
     _calc_tgt,
     _calc_win_score,
@@ -111,8 +111,8 @@ def test_flip_board():
     board = board.at[13].set(5)
     board = board.at[1].set(3)
     board = board.at[24].set(4)
-    flipped_board = flip_board(test_board)
-    print(flip_board, test_board)
+    flipped_board = _flip_board(test_board)
+    print(_flip_board, test_board)
     assert  (flipped_board == board).all()
 
 
@@ -212,7 +212,7 @@ def test_no_op():
 def test_step():
     # 白
     board: jnp.ndarray = make_test_boad()
-    board = flip_board(board)  # 反転
+    board = _flip_board(board)  # 反転
     legal_action_mask = _legal_action_mask(
         board, jnp.array([0, 1, -1, -1], dtype=jnp.int16)
     )
@@ -352,7 +352,7 @@ def test_is_open():
     assert _is_open(board, 4)
     assert not _is_open(board, 10)
     # 白
-    board = flip_board(board)
+    board = _flip_board(board)
     assert _is_open(board, 9)
     assert _is_open(board, 8)
     assert not _is_open(board, 2)
@@ -366,7 +366,7 @@ def test_exists():
     assert _exists(board, 20)
     assert not _exists(board, 4)
     # 白
-    board = flip_board(board)
+    board = _flip_board(board)
     assert _exists(board, 19)
     assert _exists(board, 20)
     assert not _exists(board, 2)
@@ -377,7 +377,7 @@ def test_is_all_on_home_boad():
     # 黒
     assert _is_all_on_home_board(board)
     # 白
-    board = flip_board(board)
+    board = _flip_board(board)
     assert not _is_all_on_home_board(board)
 
 
@@ -387,7 +387,7 @@ def test_rear_distance():
     # 黒
     assert _rear_distance(board) == 5
     # 白
-    board = flip_board(board)
+    board = _flip_board(board)
     assert _rear_distance(board) == 23
 
 
@@ -431,7 +431,7 @@ def test_is_action_legal():
         board, (20 + 2) * 6 + 5
     )  # 後ろにまだ黒があるためbear offできない.
     # 白
-    board = flip_board(board)
+    board = _flip_board(board)
     assert not _is_action_legal(
         board, (20 + 2) * 6 + 0
     )  # 20->21(反転後): barにcheckerが残っているので動かせない.
@@ -458,7 +458,7 @@ def test_move():
     )
     # enter 白
     board = make_test_boad()
-    board = flip_board(board)
+    board = _flip_board(board)
     board = _move(board, (1) * 6 + 0)  # 25 -> 0
     assert (
         board.at[24].get() == 3
@@ -466,7 +466,7 @@ def test_move():
     )
     # hit 白
     board = make_test_boad()
-    board = flip_board(board)
+    board = _flip_board(board)
     board = _move(board, (1 + 2) * 6 + 1)  # 1 -> 3
     print(board)
     assert (
@@ -517,7 +517,7 @@ def test_legal_action():
     assert (expected_legal_action_mask == legal_action_mask).all()
 
     # 白
-    board = flip_board(board)
+    board = _flip_board(board)
     playable_dice = jnp.array([4, 1, -1, -1], dtype=jnp.int16)
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.bool_
