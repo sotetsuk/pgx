@@ -8,7 +8,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional
 
 import jax
 import jax.lax as lax
@@ -116,8 +116,8 @@ class MinAtarSpaceInvaders(core.Env):
 def _step(
     state: State,
     action: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+    sticky_action_prob,
+):
     action = jnp.int32(action)
     key, subkey = jax.random.split(state._rng_key)
     state = state.replace(_rng_key=key)  # type: ignore
