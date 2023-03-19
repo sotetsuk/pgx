@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx.suzume_jong import _is_completed, init, _to_str, _validate, step, _to_base5, _hand_to_score, observe, _init
+from pgx.sparrow_mahjong import _is_completed, init, _to_str, _validate, step, _to_base5, _hand_to_score, observe, _init
 
 
 def test_to_base5():
