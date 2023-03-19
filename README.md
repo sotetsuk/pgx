@@ -32,7 +32,7 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 pip install pgx
 ```
 
-## APIs
+## Usage
 
 ```py
 import jax
