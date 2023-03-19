@@ -117,7 +117,7 @@ def _step(
     state: State,
     action,
     sticky_action_prob,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     action = jnp.int32(action)
     key, subkey = jax.random.split(state._rng_key)
     state = state.replace(_rng_key=key)  # type: ignore
@@ -136,21 +136,17 @@ def _init(rng: jnp.ndarray) -> State:
 
 def _step_det(
     state: State, action: jnp.ndarray
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     return jax.lax.cond(
         state.terminal,
-        lambda: (
-            state.replace(last_action=action),  # type: ignore
-            jnp.array(0, dtype=jnp.int16),
-            jnp.array(True, dtype=jnp.bool_),
-        ),
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action),
     )
 
 
 def _step_det_at_non_terminal(
     state: State, action: jnp.ndarray
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     ball_y = state.ball_y
     ball_x = state.ball_x
     ball_dir = state.ball_dir
@@ -159,7 +155,7 @@ def _step_det_at_non_terminal(
     strike = state.strike
     terminal = state.terminal
 
-    r = jnp.array(0, dtype=jnp.int16)
+    r = jnp.array(0, dtype=jnp.float32)
 
     pos = _apply_action(pos, action)
 
@@ -213,8 +209,9 @@ def _step_det_at_non_terminal(
         last_y=last_y,
         terminal=terminal,
         last_action=action,
+        reward=r[jnp.newaxis]
     )  # type: ignore
-    return state, r, terminal
+    return state
 
 
 def _apply_action(pos, action):
