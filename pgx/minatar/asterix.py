@@ -90,7 +90,7 @@ class MinAtarAsterix(core.Env):
     def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
         rng, subkey = jax.random.split(state.rng)
-        state = step(
+        state = _step(
             state, action, rng, sticky_action_prob=self.sticky_action_prob
         )
         return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
@@ -114,7 +114,7 @@ class MinAtarAsterix(core.Env):
         return 1
 
 
-def step(
+def _step(
     state: State,
     action: jnp.ndarray,
     rng: jax.random.KeyArray,
