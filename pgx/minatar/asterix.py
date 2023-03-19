@@ -116,7 +116,7 @@ def _step(
     state: State,
     action: jnp.ndarray,
     sticky_action_prob: float,
-) -> State:
+):
     action = jnp.int32(action)
     rng_key, rng0, rng1, rng2, rng3 = jax.random.split(state._rng_key, 5)
     state = state.replace(_rng_key=rng_key)  # type: ignore
@@ -163,7 +163,7 @@ def _step_det(
     lr,
     is_gold,
     slot,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     return jax.lax.cond(
         state.terminal,
         lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
@@ -177,7 +177,7 @@ def _step_det_at_non_terminal(
     lr: bool,
     is_gold: bool,
     slot: int,
-) -> State:
+):
     ramping: bool = True
     r = jnp.float32(0)
 
