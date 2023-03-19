@@ -12,13 +12,16 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
+from typing import Tuple, Literal
 
 import jax
 from jax import numpy as jnp
 
 from pgx._flax.struct import dataclass
+import pgx.core as core
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
 ZERO = jnp.array(0, dtype=jnp.int32)
 ONE = jnp.array(1, dtype=jnp.int32)
 TWO = jnp.array(2, dtype=jnp.int32)
@@ -28,7 +31,18 @@ NINE = jnp.array(9, dtype=jnp.int32)
 
 
 @dataclass
-class State:
+class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
+    current_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.zeros(
+        1, dtype=jnp.float32
+    )  # 1d array for the same API as other multi-agent games
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     ball_y: jnp.ndarray = THREE
     ball_x: jnp.ndarray = ZERO
     ball_dir: jnp.ndarray = TWO
@@ -42,16 +56,56 @@ class State:
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = ZERO
 
+class MinAtarBreakout(core.Env):
+    def __init__(
+        self,
+        *,
+        minatar_version: Literal["v0", "v1"] = "v1",
+        sticky_action_prob: float = 0.1,
+    ):
+        super().__init__()
+        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob: float = sticky_action_prob
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return State(_rng_key=key)  # type: ignore
+
+    def _step(self, state: core.State, action) -> State:
+        assert isinstance(state, State)
+        state, _, _ = _step(
+            state, action, sticky_action_prob=self.sticky_action_prob
+        )
+        return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state)
+
+    @property
+    def name(self) -> str:
+        return "MinAtar/Asterix"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self):
+        return 1
+
 
 def _step(
     state: State,
-    action: jnp.ndarray,
-    rng: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
+    action,
+    sticky_action_prob,
 ) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
     action = jnp.int32(action)
+    key, subkey = jax.random.split(state._rng_key)
+    state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
-        jax.random.uniform(rng) < sticky_action_prob,
+        jax.random.uniform(subkey) < sticky_action_prob,
         lambda: state.last_action,
         lambda: action,
     )

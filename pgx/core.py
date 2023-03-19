@@ -42,7 +42,7 @@ EnvId = Literal[
     "hex",
     # "mahjong",
     "minatar/asterix",
-    # "minatar/breakout",
+    "minatar/breakout",
     # "minatar/freeway",
     # "minatar/seaquest",
     # "minatar/space_invaders",
