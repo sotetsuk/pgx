@@ -46,8 +46,8 @@ class State(core.State):
     board: jnp.ndarray = -jnp.ones(64, jnp.int8)  # -1 (empty), 0, 1
 
 
-def _step(my, opp, pos):
-    pass
+def step():
+    ...
 
 
 def line_left(position, opponent):
@@ -94,14 +94,23 @@ def line_down(position, opponent):
     return result
 
 
-my = 0b00000000_00000000_00000000_00000000_00001000_00000000_00000000_00000000
-op = 0b00000000_00000000_00000000_00011000_00010000_00000000_00000000_00000000
+my = 0b00000000_00000000_00000000_00010000_00001000_00000000_00000000_00000000
+op = 0b00000000_00000000_00000000_00001000_00010000_00000000_00000000_00000000
 pos = 0b00000000_00000000_00000000_00000100_00000000_00000000_00000000_00000000
 
-rev = line_left(pos, op)
-rev = rev | line_right(pos, op)
-rev = rev | line_up(pos, op)
-rev = rev | line_down(pos, op)
+rev = 0
+tmp = line_left(pos, op)
+if (tmp >> 1) & my != 0:
+    rev |= tmp
+tmp = line_right(pos, op)
+if (tmp << 1) & my != 0:
+    rev |= tmp
+tmp = line_up(pos, op)
+if (tmp >> 8) & my != 0:
+    rev |= tmp
+tmp = line_down(pos, op)
+if (tmp << 8) & my != 0:
+    rev |= tmp
 
 my ^= pos | rev
 op ^= rev
