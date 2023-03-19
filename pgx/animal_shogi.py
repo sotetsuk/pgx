@@ -27,7 +27,7 @@ FALSE = jnp.bool_(False)
 
 # 指し手のdataclass
 @dataclass
-class JaxAnimalShogiAction:
+class _Action:
     # 上の3つは移動と駒打ちで共用
     # 下の3つは移動でのみ使用
     # 駒打ちかどうか
@@ -75,7 +75,7 @@ LEGAL_ACTION_MASKS = jnp.array(LEGAL_ACTION_MASKS)
 
 # 盤面のdataclass
 @dataclass
-class JaxAnimalShogiState:
+class State:
     current_player: jnp.ndarray = jnp.int32(0)
     # turn 先手番なら0 後手番なら1
     turn: jnp.ndarray = jnp.int32(0)
@@ -96,14 +96,14 @@ class JaxAnimalShogiState:
     checking_piece: jnp.ndarray = jnp.zeros(12, dtype=jnp.bool_)
 
 
-def init(rng: jax.random.KeyArray) -> JaxAnimalShogiState:
+def init(rng: jax.random.KeyArray) -> State:
     # TODO: use rng
-    return JaxAnimalShogiState()
+    return State()
 
 
 def step(
-    state: JaxAnimalShogiState, action: int
-) -> Tuple[JaxAnimalShogiState, int, bool]:
+    state: State, action: int
+) -> Tuple[State, int, bool]:
     # state, 勝敗判定,終了判定を返す
     reward = 0
     terminated = False
@@ -210,7 +210,7 @@ def _hand_to_direction(piece) -> int:
 
 
 # AnimalShogiActionをdlshogiのint型actionに変換
-def _action_to_dlaction(action: JaxAnimalShogiAction, turn) -> int:
+def _action_to_dlaction(action: _Action, turn) -> int:
     return jax.lax.cond(
         action.is_drop,
         lambda: _dlshogi_action(_hand_to_direction(action.piece), action.to),
@@ -249,13 +249,13 @@ def _direction_to_hand(direction: int) -> int:
 
 
 def _dlmoveaction_to_action(
-    action: int, state: JaxAnimalShogiState
-) -> JaxAnimalShogiAction:
+    action: int, state: State
+) -> _Action:
     direction, to = _separate_dlaction(action)
     _from, is_promote = _direction_to_from(direction, to, state.turn)
     piece = _piece_type(state, _from)
     captured = _piece_type(state, to)
-    return JaxAnimalShogiAction(
+    return _Action(
         is_drop=FALSE,
         piece=piece,
         to=to,
@@ -265,17 +265,17 @@ def _dlmoveaction_to_action(
     )  # type: ignore
 
 
-def _dldropaction_to_action(action: int) -> JaxAnimalShogiAction:
+def _dldropaction_to_action(action: int) -> _Action:
     direction, to = _separate_dlaction(action)
     piece = _direction_to_hand(direction)
-    return JaxAnimalShogiAction(
+    return _Action(
         is_drop=TRUE, piece=piece, to=to
     )  # type: ignore
 
 
 def _dlaction_to_action(
-    action: int, state: JaxAnimalShogiState
-) -> JaxAnimalShogiAction:
+    action: int, state: State
+) -> _Action:
     direction, to = _separate_dlaction(action)
     return jax.lax.cond(
         direction <= 8,
@@ -285,7 +285,7 @@ def _dlaction_to_action(
 
 
 # 手番側でない色を返す
-def _another_color(state: JaxAnimalShogiState) -> jnp.ndarray:
+def _another_color(state: State) -> jnp.ndarray:
     return (state.turn + 1) % 2
 
 
@@ -305,9 +305,9 @@ def _piece_to_hand(piece):
 
 #  移動の処理
 def _move(
-    state: JaxAnimalShogiState,
-    action: JaxAnimalShogiAction,
-) -> JaxAnimalShogiState:
+    state: State,
+    action: _Action,
+) -> State:
     board = state.board
     hand = state.hand
     board = board.at[action.piece, action.from_].set(FALSE)
@@ -333,8 +333,8 @@ def _move(
 
 #  駒打ちの処理
 def _drop(
-    state: JaxAnimalShogiState, action: JaxAnimalShogiAction
-) -> JaxAnimalShogiState:
+    state: State, action: _Action
+) -> State:
     board = state.board
     hand = state.hand
     n = hand[_piece_to_hand(action.piece)]
@@ -348,7 +348,7 @@ def _drop(
 
 
 #  ある座標に存在する駒種を返す
-def _piece_type(state: JaxAnimalShogiState, point: int) -> jnp.ndarray:
+def _piece_type(state: State, point: int) -> jnp.ndarray:
     return state.board[:, point].argmax()
 
 
@@ -360,18 +360,18 @@ def _owner(piece):
 
 # 盤面のどこに何の駒があるかをnp.arrayに移したもの
 # 同じ座標に複数回piece_typeを使用する場合はこちらを使った方が良い
-def _board_status(state: JaxAnimalShogiState) -> jnp.ndarray:
+def _board_status(state: State) -> jnp.ndarray:
     return state.board.argmax(axis=0)  # (11,12) => (12,)
 
 
 # 駒の持ち主の判定
-def _pieces_owner(state: JaxAnimalShogiState) -> jnp.ndarray:
+def _pieces_owner(state: State) -> jnp.ndarray:
     pieces = _board_status(state)  # (12,)
     return jax.vmap(_owner)(pieces)
 
 
 # 利きの判定
-def _effected_positions(state: JaxAnimalShogiState, turn) -> jnp.ndarray:
+def _effected_positions(state: State, turn) -> jnp.ndarray:
     pieces = _board_status(state)
     owners = _pieces_owner(state)  # (12,)
     _from = jnp.arange(12)
@@ -383,7 +383,7 @@ def _effected_positions(state: JaxAnimalShogiState, turn) -> jnp.ndarray:
 
 
 # 王手の判定(turn側の王に王手がかかっているかを判定)
-def _is_check(state: JaxAnimalShogiState):
+def _is_check(state: State):
     effects = _effected_positions(state, _another_color(state))
     king_location = state.board[4 + 5 * state.turn, :].argmax()
     return effects[king_location] != 0
@@ -443,8 +443,8 @@ def _filter_drop_actions(piece, array: jnp.ndarray) -> jnp.ndarray:
 # stateからblack,white両方のlegal_actionsを生成する
 # 普段は使わないがlegal_actionsが設定されていない場合に使用
 def _init_legal_actions(
-    state: JaxAnimalShogiState = JaxAnimalShogiState(),
-) -> JaxAnimalShogiState:
+    state: State = State(),
+) -> State:
     pieces = _board_status(state)
     legal_black = jnp.zeros(180, dtype=jnp.bool_)
     legal_white = jnp.zeros(180, dtype=jnp.bool_)
@@ -489,8 +489,8 @@ def _init_legal_actions(
 
 # 駒の移動によるlegal_actionsの更新
 def _update_legal_move_actions(
-    state: JaxAnimalShogiState, action: JaxAnimalShogiAction
-) -> JaxAnimalShogiState:
+    state: State, action: _Action
+) -> State:
     legal_action_masks = jnp.stack(
         [state.legal_actions_black, state.legal_actions_white]
     )
@@ -532,8 +532,8 @@ def _update_legal_move_actions(
 
 # 駒打ちによるlegal_actionsの更新
 def _update_legal_drop_actions(
-    state: JaxAnimalShogiState, action: JaxAnimalShogiAction
-) -> JaxAnimalShogiState:
+    state: State, action: _Action
+) -> State:
     player_actions = jax.lax.cond(
         state.turn == 0,
         lambda: state.legal_actions_black,
@@ -647,7 +647,7 @@ def _filter_leave_check_actions(
 
 
 # boardのlegal_actionsを利用して合法手を生成する
-def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
+def _legal_actions(state: State) -> jnp.ndarray:
     turn = state.turn
     action_array = jax.lax.cond(
         turn == 0,
@@ -680,7 +680,7 @@ def _legal_actions(state: JaxAnimalShogiState) -> jnp.ndarray:
 
 # トライルールによる勝利判定
 # 王が最奥に動くactionならTrue
-def _is_try(action: JaxAnimalShogiAction):
+def _is_try(action: _Action):
     return ((action.piece == 4) & (action.to % 4 == 0)) | (
         (action.piece == 9) & (action.to % 4 == 3)
     )

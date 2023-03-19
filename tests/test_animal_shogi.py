@@ -1,6 +1,6 @@
 from pgx.animal_shogi import (
-    JaxAnimalShogiState as AnimalShogiState,
-    JaxAnimalShogiAction as AnimalShogiAction,
+    State as AnimalShogiState,
+    _Action as AnimalShogiAction,
     init,
     step,
     _another_color,

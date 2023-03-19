@@ -1,4 +1,4 @@
-from pgx.animal_shogi import JaxAnimalShogiState as AnimalShogiState
+from pgx.animal_shogi import State as AnimalShogiState
 
 
 def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
