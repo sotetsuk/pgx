@@ -1,4 +1,4 @@
-from pgx.animal_shogi import (
+from pgx._animal_shogi import (
     JaxAnimalShogiState as AnimalShogiState,
     JaxAnimalShogiAction as AnimalShogiAction,
     init,

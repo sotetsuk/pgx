@@ -4,7 +4,7 @@ import time
 import jax
 import jax.numpy as jnp
 
-from pgx.animal_shogi import (
+from pgx._animal_shogi import (
     _move,
     _update_legal_move_actions,
     _effected_positions,

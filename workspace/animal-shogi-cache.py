@@ -3,7 +3,7 @@
 import jax
 import jax.numpy as jnp
 from flax.serialization import to_bytes, from_bytes
-from pgx.animal_shogi import _init_legal_actions
+from pgx._animal_shogi import _init_legal_actions
 
 # BLACK/WHITE/(NONE)_○○_MOVEは22にいるときの各駒の動き
 # 端にいる場合は対応するところに0をかけていけないようにする
