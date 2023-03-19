@@ -103,3 +103,8 @@ def test_observe():
             env.state(),
             obs_pgx,
         )
+
+def test_api():
+    import pgx
+    env = pgx.make("minatar/space_invaders")
+    pgx.api_test(env)
