@@ -89,7 +89,7 @@ class MinAtarBreakout(core.Env):
 
     def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
-        state, _, _ = _step(
+        state = _step(
             state, action, sticky_action_prob=self.sticky_action_prob
         )
         return state.replace(terminated=state.terminal)  # type: ignore
@@ -194,7 +194,7 @@ def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
         ~strike_toggle, lambda: jnp.zeros_like(strike), lambda: strike
     )
 
-    state = state.replace(
+    state = state.replace(  # type: ignore
         ball_y=new_y,
         ball_x=new_x,
         ball_dir=ball_dir,
@@ -206,7 +206,7 @@ def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
         terminal=terminal,
         last_action=action,
         reward=r[jnp.newaxis],
-    )  # type: ignore
+    )
     return state
 
 
