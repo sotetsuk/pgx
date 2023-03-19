@@ -151,7 +151,11 @@ def _step(state, action):
     my ^= pos | rev
     opp ^= rev
 
-    return state.replace(board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)))
+    return state.replace(
+        current_player=1 - state.current_player,
+        turn=1 - state.turn,
+        board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
+    )
 
 
 def check_line(pos, opp, shift, mask):
