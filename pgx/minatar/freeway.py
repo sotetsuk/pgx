@@ -14,17 +14,31 @@ import jax
 from jax import numpy as jnp
 
 from pgx._flax.struct import dataclass
+import pgx.core as core
 
 player_speed = jnp.array(3, dtype=jnp.int32)
 time_limit = jnp.array(2500, dtype=jnp.int32)
 
+FALSE = jnp.bool_(False)
+TRUE = jnp.bool_(True)
 ZERO = jnp.array(0, dtype=jnp.int32)
 ONE = jnp.array(1, dtype=jnp.int32)
 NINE = jnp.array(9, dtype=jnp.int32)
 
 
 @dataclass
-class State:
+class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
+    current_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.zeros(
+        1, dtype=jnp.float32
+    )  # 1d array for the same API as other multi-agent games
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int32)
     pos: jnp.ndarray = jnp.array(9, dtype=jnp.int32)
     move_timer: jnp.ndarray = jnp.array(player_speed, dtype=jnp.int32)
@@ -33,7 +47,7 @@ class State:
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
 
-def step(
+def _step(
     state: State,
     action: jnp.ndarray,
     rng: jnp.ndarray,
@@ -49,13 +63,9 @@ def step(
     return _step_det(state, action, speeds=speeds, directions=directions)
 
 
-def init(rng: jnp.ndarray) -> State:
+def _init(rng: jnp.ndarray) -> State:
     speeds, directions = _random_speed_directions(rng)
     return _init_det(speeds=speeds, directions=directions)
-
-
-def observe(state: State) -> jnp.ndarray:
-    return _to_obs(state)
 
 
 def _step_det(
@@ -63,10 +73,10 @@ def _step_det(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.array(0, dtype=jnp.int32), True),  # type: ignore
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, speeds, directions),
     )
 
@@ -76,7 +86,7 @@ def _step_det_at_non_terminal(
     action: jnp.ndarray,
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
 
     cars = state.cars
     pos = state.pos
@@ -85,7 +95,7 @@ def _step_det_at_non_terminal(
     terminal = state.terminal
     last_action = action
 
-    r = jnp.array(0, dtype=jnp.int32)
+    r = jnp.array(0, dtype=jnp.float32)
 
     move_timer, pos = jax.lax.cond(
         (action == 2) & (move_timer == 0),
@@ -118,16 +128,17 @@ def _step_det_at_non_terminal(
     terminate_timer -= ONE
     terminal = terminate_timer < 0
 
-    next_state = State(
-        cars,
-        pos,
-        move_timer,
-        terminate_timer,
-        terminal,
-        last_action,
+    next_state = state.replace(
+        cars=cars,
+        pos=pos,
+        move_timer=move_timer,
+        terminate_timer=terminate_timer,
+        terminal=terminal,
+        last_action=last_action,
+        reward=r[jnp.newaxis]
     )  # type: ignore
 
-    return next_state, r, terminal
+    return next_state
 
 
 def _update_cars(pos, cars):
@@ -196,7 +207,7 @@ def _random_speed_directions(rng):
     return speeds, directions
 
 
-def _to_obs(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
     obs = obs.at[state.pos, 4, 0].set(1)
 
