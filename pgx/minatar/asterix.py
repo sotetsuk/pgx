@@ -6,7 +6,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional
 
 import jax
 from jax import numpy as jnp
@@ -42,7 +42,6 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
-    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
     entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int32) * INF
@@ -85,21 +84,20 @@ class MinAtarAsterix(core.Env):
         self.sticky_action_prob: float = sticky_action_prob
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return State(rng=key)  # type: ignore
+        return State(_rng_key=key)  # type: ignore
 
     def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
-        rng, subkey = jax.random.split(state.rng)
-        state, _, _ = step(
-            state, action, rng, sticky_action_prob=self.sticky_action_prob
+        state = _step(
+            state, action, sticky_action_prob=self.sticky_action_prob
         )
-        return state.replace(rng=rng, terminated=state.terminal)  # type: ignore
+        return state.replace(terminated=state.terminal)  # type: ignore
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return _to_obs(state)
+        return _observe(state)
 
     @property
     def name(self) -> str:
@@ -114,14 +112,15 @@ class MinAtarAsterix(core.Env):
         return 1
 
 
-def step(
+def _step(
     state: State,
     action: jnp.ndarray,
-    rng: jax.random.KeyArray,
     sticky_action_prob: float,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     action = jnp.int32(action)
-    rng0, rng1, rng2, rng3 = jax.random.split(rng, 4)
+    rng_key, rng0, rng1, rng2, rng3 = jax.random.split(state._rng_key, 5)
+    state = state.replace(_rng_key=rng_key)  # type: ignore
+
     # sticky action
     action = jax.lax.cond(
         jax.random.uniform(rng0) < sticky_action_prob,
@@ -158,20 +157,16 @@ def step(
     )
 
 
-def observe(state: State) -> jnp.ndarray:
-    return _to_obs(state)
-
-
 def _step_det(
     state: State,
     action: jnp.ndarray,
     lr,
     is_gold,
     slot,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     return jax.lax.cond(
         state.terminal,
-        lambda: (state.replace(last_action=action), jnp.float32(0), True),  # type: ignore
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, lr, is_gold, slot),
     )
 
@@ -182,7 +177,7 @@ def _step_det_at_non_terminal(
     lr: bool,
     is_gold: bool,
     slot: int,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+):
     ramping: bool = True
     r = jnp.float32(0)
 
@@ -275,7 +270,7 @@ def _step_det_at_non_terminal(
     state = state.replace(  # type: ignore
         reward=r[jnp.newaxis], last_action=action  # 1-d array
     )  # type: ignore
-    return state, r, terminal
+    return state
 
 
 # Spawn a new enemy or treasure at a random location with random direction (if all rows are filled do nothing)
@@ -369,7 +364,7 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
     return spawn_speed, move_speed, ramp_timer, ramp_index
 
 
-def _to_obs(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     obs = obs.at[state.player_y, state.player_x, 0].set(True)
     obs = jax.lax.fori_loop(
