@@ -27,7 +27,7 @@ from ._dwg.go import GoState, _make_go_dwg
 from ._dwg.hex import HexState, _make_hex_dwg
 from ._dwg.othello import OthelloState, _make_othello_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
-from ._dwg.sparrowmahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
+from ._dwg.sparrow_mahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from ._dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
 
 ColorTheme = Literal["light", "dark"]

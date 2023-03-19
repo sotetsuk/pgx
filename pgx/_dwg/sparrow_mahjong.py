@@ -1,9 +1,9 @@
 import base64
 import os
 
-from pgx.suzume_jong import NUM_TILE_TYPES, NUM_TILES
-from pgx.suzume_jong import State as SparrowMahjongState
-from pgx.suzume_jong import _tile_type_to_str
+from pgx.sparrow_mahjong import NUM_TILE_TYPES, NUM_TILES
+from pgx.sparrow_mahjong import State as SparrowMahjongState
+from pgx.sparrow_mahjong import _tile_type_to_str
 
 
 def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
@@ -35,13 +35,18 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
         type_str = _tile_type_to_str(_type)
         if _is_red and type_str != "g" and type_str != "r":
             type_str += "r"
-        PATH = {f"{i+1}": f"images/suzume_jong/{i+1}p.svg" for i in range(9)}
+        PATH = {
+            f"{i+1}": f"images/sparrow_mahjong/{i+1}p.svg" for i in range(9)
+        }
         PATH.update(
-            {f"{i+1}r": f"images/suzume_jong/{i+1}pr.svg" for i in range(9)}
+            {
+                f"{i+1}r": f"images/sparrow_mahjong/{i+1}pr.svg"
+                for i in range(9)
+            }
         )
-        PATH["0"] = "images/suzume_jong/b.svg"
-        PATH["g"] = "images/suzume_jong/gd.svg"
-        PATH["r"] = "images/suzume_jong/rd.svg"
+        PATH["0"] = "images/sparrow_mahjong/b.svg"
+        PATH["g"] = "images/sparrow_mahjong/gd.svg"
+        PATH["r"] = "images/sparrow_mahjong/rd.svg"
 
         file_path = PATH[type_str]
         with open(
