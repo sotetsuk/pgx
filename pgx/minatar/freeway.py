@@ -13,8 +13,8 @@ from typing import Tuple
 import jax
 from jax import numpy as jnp
 
-from pgx._flax.struct import dataclass
 import pgx.core as core
+from pgx._flax.struct import dataclass
 
 player_speed = jnp.array(3, dtype=jnp.int32)
 time_limit = jnp.array(2500, dtype=jnp.int32)
@@ -135,7 +135,7 @@ def _step_det_at_non_terminal(
         terminate_timer=terminate_timer,
         terminal=terminal,
         last_action=last_action,
-        reward=r[jnp.newaxis]
+        reward=r[jnp.newaxis],
     )  # type: ignore
 
     return next_state
