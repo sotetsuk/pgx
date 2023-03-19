@@ -42,7 +42,7 @@ class State:
     last_action: jnp.ndarray = jnp.int32(0)
 
 
-def step(
+def _step(
     state: State,
     action: jnp.ndarray,
     rng: jnp.ndarray,
@@ -57,11 +57,7 @@ def step(
     return _step_det(state, action)
 
 
-def init(rng: jnp.ndarray) -> State:
-    return _init_det()
-
-
-def observe(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
     obs = obs.at[9, state.pos, 0].set(1)
     obs = obs.at[:, :, 1].set(state.alien_map)

@@ -25,7 +25,7 @@ state_keys = [
 _step_det = jax.jit(space_invaders._step_det)
 _nearest_alien = jax.jit(space_invaders._nearest_alien)
 _init_det = jax.jit(space_invaders._init_det)
-observe = jax.jit(space_invaders.observe)
+observe = jax.jit(space_invaders._observe)
 
 
 def test_neareset_alien():
