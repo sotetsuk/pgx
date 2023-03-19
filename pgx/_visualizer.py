@@ -507,6 +507,11 @@ class Visualizer:
                 turn=_states.turn[_i],  # type:ignore
                 board=_states.board[_i],
             )
+        elif isinstance(_states, ConnectFourState):
+            return ConnectFourState(  # type:ignore
+                turn=_states.turn[_i],
+                board=_states.board[_i],
+            )
         elif isinstance(_states, ChessState):
             return ChessState(
                 turn=_states.turn[_i],  # type:ignore
