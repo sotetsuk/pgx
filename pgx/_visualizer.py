@@ -529,6 +529,8 @@ class Visualizer:
             )
         elif isinstance(_states, HexState):
             return HexState(
+                size=_states.size[_i],
+                turn=_states.turn[_i],
                 board=_states.board[_i],
             )
         elif isinstance(_states, OthelloState):
