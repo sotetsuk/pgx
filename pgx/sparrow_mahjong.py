@@ -102,7 +102,9 @@ def _init(rng: jax.random.KeyArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
     shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int32)
-    shuffled_players = jax.random.permutation(key1, shuffled_players, independent=True)
+    shuffled_players = jax.random.permutation(
+        key1, shuffled_players, independent=True
+    )
     wall = jnp.arange(NUM_TILES, dtype=jnp.int32)
     wall = jax.random.permutation(key2, wall, independent=True)
     current_player = shuffled_players[0]  # dealer
