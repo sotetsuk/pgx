@@ -58,7 +58,7 @@ class State(core.State):
     steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    reward: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(9, dtype=jnp.bool_)
@@ -89,21 +89,82 @@ class State(core.State):
     scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
 
 
-@jax.jit
-def init(rng: jax.random.KeyArray):
-    key, subkey = jax.random.split(rng)
-    current_player, state = _init(subkey)
+class SparrowMahjong(core.Env):
+    def __init__(
+        self,
+    ):
+        super().__init__()
 
-    def f(x):
-        k, _subkey = jax.random.split(x[0])
-        c, s = _init(_subkey)
-        return k, c, s
+    def _init(self, key: jax.random.KeyArray) -> State:
+        key, subkey = jax.random.split(key)
+        state = _init(subkey)
 
-    # avoid tenhou
-    key, current_player, state = lax.while_loop(
-        lambda x: x[2].terminated, f, (key, current_player, state)
-    )
-    return current_player, state
+        def f(x):
+            k, _subkey = jax.random.split(x[0])
+            s = _init(_subkey)
+            return k, s
+
+        # avoid tenhou
+        key, state = lax.while_loop(
+            lambda x: x[-1].terminated, f, (key, state)
+        )
+        return state
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        # discard tile
+        hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
+        is_red_discarded = (
+            hands[state.turn % N_PLAYER, action]
+            < state.n_red_in_hands[state.turn % N_PLAYER, action]
+        )
+        n_red_in_hands = state.n_red_in_hands.at[
+            state.turn % N_PLAYER, action
+        ].add(-is_red_discarded.astype(jnp.int32))
+        rivers = state.rivers.at[
+            state.turn % N_PLAYER, state.turn // N_PLAYER
+        ].set(action)
+        is_red_in_river = state.is_red_in_river.at[
+            state.turn % N_PLAYER, state.turn // N_PLAYER
+        ].set(is_red_discarded)
+        last_discard = action
+        state = state.replace(  # type: ignore
+            hands=hands,
+            n_red_in_hands=n_red_in_hands,
+            rivers=rivers,
+            is_red_in_river=is_red_in_river,
+            last_discard=last_discard,
+        )
+
+        scores = _hands_to_score(state)
+        winning_players = _check_ron(state, scores)
+        return lax.cond(
+            jnp.any(winning_players),
+            lambda: _step_by_ron(state, scores, winning_players),
+            lambda: lax.cond(
+                jnp.bool_(NUM_TILES - 1 <= state.draw_ix),
+                lambda: _step_by_tie(state),
+                lambda: _step_non_tied(state, scores),
+            ),
+        )
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state, player_id)
+
+    @property
+    def name(self) -> str:
+        return "SparrowMahjong"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self) -> int:
+        return 3
 
 
 @jax.jit
@@ -151,13 +212,13 @@ def _init(rng: jax.random.KeyArray):
     # check tenhou
     scores = _hands_to_score(state)
     is_tsumo = _check_tsumo(state, scores)
-    current_player, state = lax.cond(
+    state = lax.cond(
         is_tsumo,
-        lambda: _step_by_tsumo(state, scores)[:-1],
-        lambda: (current_player, state),
+        lambda: _step_by_tsumo(state, scores),
+        lambda: state,
     )
 
-    return current_player, state
+    return state
 
 
 @jax.jit
@@ -250,11 +311,11 @@ def _step_by_ron(state: State, scores, winning_players):
     )
     r = (
         _order_by_player_idx(scores, state.shuffled_players).astype(
-            jnp.float16
+            jnp.float32
         )
         / MAX_SCORE
     )
-    return current_player, state, r
+    return state.replace(reward=r)
 
 
 @jax.jit
@@ -274,11 +335,11 @@ def _step_by_tsumo(state: State, scores):
     )
     r = (
         _order_by_player_idx(scores, state.shuffled_players).astype(
-            jnp.float16
+            jnp.float32
         )
         / MAX_SCORE
     )
-    return current_player, state, r
+    return state.replace(reward=r)
 
 
 @jax.jit
@@ -289,8 +350,7 @@ def _step_by_tie(state):
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )
-    r = jnp.zeros(3, dtype=jnp.float16)
-    return current_player, state, r
+    return state.replace(reward=jnp.zeros(3, dtype=jnp.float32))
 
 
 @jax.jit
@@ -321,8 +381,8 @@ def _draw_tile(state: State) -> State:
 
 @jax.jit
 def _step_non_terminal(state: State):
-    r = jnp.zeros(3, dtype=jnp.float16)
-    return state.current_player, state, r
+    r = jnp.zeros(3, dtype=jnp.float32)
+    return state.replace(reward=r)  # type: ignore
 
 
 @jax.jit
@@ -337,47 +397,7 @@ def _step_non_tied(state: State, scores):
     )
 
 
-@jax.jit
-def step(state: State, action: jnp.ndarray):
-    # discard tile
-    hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
-    is_red_discarded = (
-        hands[state.turn % N_PLAYER, action]
-        < state.n_red_in_hands[state.turn % N_PLAYER, action]
-    )
-    n_red_in_hands = state.n_red_in_hands.at[
-        state.turn % N_PLAYER, action
-    ].add(-is_red_discarded.astype(jnp.int32))
-    rivers = state.rivers.at[
-        state.turn % N_PLAYER, state.turn // N_PLAYER
-    ].set(action)
-    is_red_in_river = state.is_red_in_river.at[
-        state.turn % N_PLAYER, state.turn // N_PLAYER
-    ].set(is_red_discarded)
-    last_discard = action
-    state = state.replace(  # type: ignore
-        hands=hands,
-        n_red_in_hands=n_red_in_hands,
-        rivers=rivers,
-        is_red_in_river=is_red_in_river,
-        last_discard=last_discard,
-    )
-
-    scores = _hands_to_score(state)
-    winning_players = _check_ron(state, scores)
-    return lax.cond(
-        jnp.any(winning_players),
-        lambda: _step_by_ron(state, scores, winning_players),
-        lambda: lax.cond(
-            jnp.bool_(NUM_TILES - 1 <= state.draw_ix),
-            lambda: _step_by_tie(state),
-            lambda: _step_non_tied(state, scores),
-        ),
-    )
-
-
-@jax.jit
-def observe(state: State, player_id: jnp.ndarray):
+def _observe(state: State, player_id: jnp.ndarray):
     """
     * [binary 4x11] tile type in the player's hand (private info)
     * [binary 1x11] has red doras
