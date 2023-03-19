@@ -1,12 +1,12 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.tic_tac_toe import _win_check, observe, TicTacToe
+from pgx.tic_tac_toe import _win_check, TicTacToe
 
 env = TicTacToe()
 init = jax.jit(env.init)
 step = jax.jit(env.step)
-observe = jax.jit(observe)
+observe = jax.jit(env.observe)
 
 
 def test_init():
