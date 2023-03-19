@@ -83,7 +83,7 @@ class State(core.State):
     )  # tile id (0~43) is set
     draw_ix: jnp.ndarray = jnp.int32(N_PLAYER * 5)
     shuffled_players: jnp.ndarray = jnp.zeros(
-        N_PLAYER, dtype=jnp.int32
+        N_PLAYER, dtype=jnp.int8
     )  # 0: dealer, ...
     dora: jnp.ndarray = jnp.int32(0)  # tile type (0~10) is set
     scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
@@ -170,7 +170,7 @@ class SparrowMahjong(core.Env):
 def _init(rng: jax.random.KeyArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
-    shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int32)
+    shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int8)
     shuffled_players = jax.random.permutation(
         key1, shuffled_players, independent=True
     )
@@ -293,9 +293,7 @@ def _step_by_ron(state: State, scores, winning_players):
     scores = scores.at[0].add(2)
     scores = scores * winning_players
     scores = scores.at[state.turn % N_PLAYER].set(-scores.sum())
-    current_player = jnp.int32(-1)
     state = state.replace(  # type: ignore
-        current_player=current_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
         scores=scores,
@@ -316,9 +314,7 @@ def _step_by_tsumo(state: State, scores):
     winner_score = loser_score * (N_PLAYER - 1)
     scores = -jnp.ones(N_PLAYER, dtype=jnp.int32) * loser_score
     scores = scores.at[state.turn % N_PLAYER].set(winner_score)
-    current_player = jnp.int32(-1)
     state = state.replace(  # type: ignore
-        current_player=current_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
         scores=scores,
@@ -333,9 +329,7 @@ def _step_by_tsumo(state: State, scores):
 
 
 def _step_by_tie(state):
-    current_player = jnp.int32(-1)
     state = state.replace(  # type: ignore
-        current_player=current_player,
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )

@@ -48,7 +48,7 @@ EnvId = Literal[
     # "minatar/space_invaders",
     # "othello",
     "shogi",
-    # "sparrow_mahjong",
+    "sparrow_mahjong",
     "tic_tac_toe",
 ]
 
@@ -233,6 +233,10 @@ def make(env_id: EnvId):
         from pgx.shogi import Shogi
 
         return Shogi()
+    elif env_id == "sparrow_mahjong":
+        from pgx.sparrow_mahjong import SparrowMahjong
+
+        return SparrowMahjong()
     elif env_id == "tic_tac_toe":
         from pgx.tic_tac_toe import TicTacToe
 
