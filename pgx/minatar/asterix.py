@@ -6,7 +6,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Literal, Optional, Tuple
+from typing import Literal, Optional
 
 import jax
 from jax import numpy as jnp
