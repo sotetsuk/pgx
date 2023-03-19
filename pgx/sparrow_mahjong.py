@@ -167,7 +167,6 @@ class SparrowMahjong(core.Env):
         return 3
 
 
-@jax.jit
 def _init(rng: jax.random.KeyArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
@@ -221,7 +220,6 @@ def _init(rng: jax.random.KeyArray):
     return state
 
 
-@jax.jit
 def _to_base5(hand: jnp.ndarray):
     b = jnp.int32(
         [9765625, 1953125, 390625, 78125, 15625, 3125, 625, 125, 25, 5, 1]
@@ -229,19 +227,16 @@ def _to_base5(hand: jnp.ndarray):
     return (hand * b).sum()
 
 
-@jax.jit
 def _is_completed(hand: jnp.ndarray):
     return jnp.any(_to_base5(hand) == WIN_HANDS)
 
 
-@jax.jit
 def _hand_to_score(hand: jnp.ndarray):
     # behavior for incomplete hand is undefined
     ix = jnp.argmin(jnp.abs(WIN_HANDS - _to_base5(hand)))
     return BASE_SCORES[ix], YAKU_SCORES[ix]
 
 
-@jax.jit
 def _hands_to_score(state: State) -> jnp.ndarray:
     scores = jnp.zeros(3, dtype=jnp.int32)
     for i in range(N_PLAYER):
@@ -265,7 +260,6 @@ def _hands_to_score(state: State) -> jnp.ndarray:
     return scores
 
 
-@jax.jit
 def _check_ron(state: State, scores) -> jnp.ndarray:
     winning_players = jax.lax.fori_loop(
         0,
@@ -282,12 +276,10 @@ def _check_ron(state: State, scores) -> jnp.ndarray:
     return winning_players
 
 
-@jax.jit
 def _check_tsumo(state: State, scores) -> jnp.ndarray:
     return _is_completed(state.hands[state.turn]) & (scores[state.turn] >= 0)
 
 
-@jax.jit
 def _order_by_player_idx(x, shuffled_players):
     return lax.fori_loop(
         0,
@@ -297,7 +289,6 @@ def _order_by_player_idx(x, shuffled_players):
     )
 
 
-@jax.jit
 def _step_by_ron(state: State, scores, winning_players):
     scores = scores.at[0].add(2)
     scores = scores * winning_players
@@ -318,7 +309,6 @@ def _step_by_ron(state: State, scores, winning_players):
     return state.replace(reward=r)
 
 
-@jax.jit
 def _step_by_tsumo(state: State, scores):
     scores = scores.at[0].add(2)
     winner_score = scores[state.turn]
@@ -342,7 +332,6 @@ def _step_by_tsumo(state: State, scores):
     return state.replace(reward=r)
 
 
-@jax.jit
 def _step_by_tie(state):
     current_player = jnp.int32(-1)
     state = state.replace(  # type: ignore
@@ -353,7 +342,6 @@ def _step_by_tie(state):
     return state.replace(reward=jnp.zeros(3, dtype=jnp.float32))
 
 
-@jax.jit
 def _draw_tile(state: State) -> State:
     turn = state.turn + 1
     current_player = state.shuffled_players[turn % N_PLAYER]
@@ -379,13 +367,11 @@ def _draw_tile(state: State) -> State:
     return state
 
 
-@jax.jit
 def _step_non_terminal(state: State):
     r = jnp.zeros(3, dtype=jnp.float32)
     return state.replace(reward=r)  # type: ignore
 
 
-@jax.jit
 def _step_non_tied(state: State, scores):
     state = _draw_tile(state)
     scores = _hands_to_score(state)
