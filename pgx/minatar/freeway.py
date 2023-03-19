@@ -8,7 +8,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Literal, Tuple
+from typing import Literal, Tuple, Optional
 
 import jax
 from jax import numpy as jnp
@@ -46,6 +46,21 @@ class State(core.State):
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
+
+        return visualize_minatar(self)
+
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
+        from pgx.minatar.utils import visualize_minatar
+
+        visualize_minatar(self, filename)
 
 class MinAtarFreeway(core.Env):
     def __init__(
