@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import _count_ji, _count_point, Go, State, show
+from pgx.go import _count_ji, _count_point, Go, State, _show
 
 BOARD_SIZE = 5
 env = Go(size=BOARD_SIZE)

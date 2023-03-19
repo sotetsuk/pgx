@@ -525,7 +525,7 @@ def _check_PSK(state):
 
 
 # only for debug
-def show(state: State) -> None:
+def _show(state: State) -> None:
     BLACK_CHAR = "@"
     WHITE_CHAR = "O"
     POINT_CHAR = "+"
