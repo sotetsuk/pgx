@@ -8,7 +8,7 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Literal, Tuple, Optional
+from typing import Literal, Optional, Tuple
 
 import jax
 from jax import numpy as jnp
@@ -61,6 +61,7 @@ class State(core.State):
         from pgx.minatar.utils import visualize_minatar
 
         visualize_minatar(self, filename)
+
 
 class MinAtarFreeway(core.Env):
     def __init__(
