@@ -59,17 +59,17 @@ class Backgammon(core.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return init(key)
+        return _init(key)
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return step(state, action)
+        return _step(state, action)
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return observe(state, player_id)
+        return _observe(state, player_id)
 
     @property
     def name(self) -> str:
@@ -88,7 +88,7 @@ class Backgammon(core.Env):
         return -3.0
 
 
-def init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()  # 初期配置は対象なので, turnに関係
@@ -112,7 +112,7 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def step(state: State, action: jnp.ndarray) -> State:
+def _step(state: State, action: jnp.ndarray) -> State:
     """
     terminated していない場合のstep 関数.
     """
@@ -124,7 +124,7 @@ def step(state: State, action: jnp.ndarray) -> State:
     )
 
 
-def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """
     手番のplayerに対する観測を返す.
     """
@@ -218,7 +218,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     )  # no-opの時はupdateしない
 
 
-def flip_board(board):
+def _flip_board(board):
     """
     ターンが変わる際にボードを反転させ, -1をかける. そうすることで常に黒視点で考えることができる.
     """
@@ -249,7 +249,7 @@ def _change_turn(state: State) -> State:
     ターンを変更して新しい状態を返す.
     """
     rng1, rng2 = jax.random.split(state.rng)
-    board: jnp.ndarray = flip_board(state.board)  # boardを反転させて黒視点に変える
+    board: jnp.ndarray = _flip_board(state.board)  # boardを反転させて黒視点に変える
     turn: jnp.ndarray = (state.turn + 1) % 2  # turnを変える
     current_player: jnp.ndarray = (state.current_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
@@ -566,11 +566,11 @@ def _legal_action_mask_for_valid_single_dice(
     return legal_action_mask
 
 
-def get_abs_board(state: State) -> jnp.ndarray:
+def _get_abs_board(state: State) -> jnp.ndarray:
     """
     visualization用
     黒ならそのまま, 白なら反転して返す.
     """
     board: jnp.ndarray = state.board
     turn: jnp.ndarray = state.turn
-    return jax.lax.cond(turn == 0, lambda: board, lambda: flip_board(board))
+    return jax.lax.cond(turn == 0, lambda: board, lambda: _flip_board(board))
