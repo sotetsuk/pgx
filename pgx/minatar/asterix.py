@@ -116,7 +116,7 @@ def _step(
     state: State,
     action: jnp.ndarray,
     sticky_action_prob: float,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
+) -> State:
     action = jnp.int32(action)
     rng_key, rng0, rng1, rng2, rng3 = jax.random.split(state._rng_key, 5)
     state = state.replace(_rng_key=rng_key)  # type: ignore
