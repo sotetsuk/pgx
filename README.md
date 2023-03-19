@@ -68,7 +68,9 @@ while not state.terminated.all():
 * `is_truncated=True` is also set to state
 --->
 
-## Supported games
+## Game support road map
+
+Use `pgx.available_games()` to see the list of currently available games.
 
 <div align="center">
 <table>
