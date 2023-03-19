@@ -85,7 +85,7 @@ class MinAtarBreakout(core.Env):
         self.sticky_action_prob: float = sticky_action_prob
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return State(_rng_key=key)  # type: ignore
+        return _init(key)  # type: ignore
 
     def _step(self, state: core.State, action) -> State:
         assert isinstance(state, State)
