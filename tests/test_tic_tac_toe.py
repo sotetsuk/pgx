@@ -190,5 +190,5 @@ def test_observe():
 
 def test_api():
     import pgx
-    env = pgx.make("tic_tac_toe", 10)
-    pgx.api_test(env)
+    env = pgx.make("tic_tac_toe")
+    pgx.api_test(env, 10)
