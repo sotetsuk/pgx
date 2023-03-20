@@ -79,6 +79,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
+    # action and observation are aligned to dlshogi https://github.com/TadaoYamaoka/DeepLearningShogi
     legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
