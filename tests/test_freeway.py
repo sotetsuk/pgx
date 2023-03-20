@@ -105,4 +105,4 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("minatar/freeway")
-    pgx.api_test(env)
+    pgx.api_test(env, 10)

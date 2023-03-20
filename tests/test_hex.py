@@ -128,4 +128,4 @@ def test_random_play():
 def test_api():
     import pgx
     env = pgx.make("hex")
-    pgx.api_test(env)
+    pgx.api_test(env, 10)

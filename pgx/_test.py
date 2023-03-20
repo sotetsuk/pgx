@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 from dataclasses import fields
 
 import jax
@@ -82,6 +83,11 @@ def api_test_single(env: Env, num: int = 100):
 
         _validate_taking_action_after_terminal(state, step)
 
+    # check visualization
+    filename = "/tmp/tmp.svg"
+    state.save_svg(filename)
+    os.remove(filename)
+
 
 def api_test_batch(env: Env, num: int = 100):
     init = jax.jit(jax.vmap(env.init))
@@ -100,6 +106,11 @@ def api_test_batch(env: Env, num: int = 100):
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
             state = step(state, action)
+
+    # check visualization
+    filename = "/tmp/tmp.svg"
+    state.save_svg(filename)
+    os.remove(filename)
 
 
 def _validate_taking_action_after_terminal(state: State, step_fn):

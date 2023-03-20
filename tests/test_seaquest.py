@@ -201,4 +201,4 @@ def test_buggy_sample():
 def test_api():
     import pgx
     env = pgx.make("minatar/seaquest")
-    pgx.api_test(env)
+    pgx.api_test(env, 10)

@@ -1132,6 +1132,6 @@ def test_random_play_5():
 def test_api():
     import pgx
     env = pgx.make("go-9x9")
-    pgx.api_test(env)
+    pgx.api_test(env, 10)
     env = pgx.make("go-19x19")
-    pgx.api_test(env)
+    pgx.api_test(env, 10)
