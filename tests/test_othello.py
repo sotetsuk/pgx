@@ -54,7 +54,7 @@ def test_legal_action():
     # cannot put
     key = jax.random.PRNGKey(0)
     state = init(key)
-    print(state.current_player)
+    assert state.current_player == 0
     for i in [37, 29, 18, 44, 53, 46, 30, 60, 62, 38, 39]:
         state = step(state, i)
     assert ~state.legal_action_mask[:64].any()
@@ -67,6 +67,52 @@ def test_legal_action():
 
     state = step(state, 64)
     assert state.terminated
+
+
+def test_observe():
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    assert state.current_player == 0
+
+    obs = observe(state, state.current_player)
+    assert obs.shape == (8, 8, 2)
+
+    state = step(state, 37)
+    """
+    ........
+    ........
+    ........
+    ...O@...
+    ...@@@..
+    ........
+    ........
+    """
+    obs = observe(state, 0)
+    assert obs[3, 4, 0]
+    assert obs[4, 3, 0]
+    assert obs[4, 4, 0]
+    assert obs[4, 5, 0]
+    assert obs[3, 3, 1]
+    assert not obs[0, 0, 0]
+
+    state = step(state, 29)
+    """
+    ........
+    ........
+    ........
+    ...OOO..
+    ...@@@..
+    ........
+    ........
+    """
+    obs = observe(state, 1)
+    assert obs[3, 3, 0]
+    assert obs[3, 4, 0]
+    assert obs[3, 5, 0]
+    assert obs[4, 3, 1]
+    assert obs[4, 4, 1]
+    assert obs[4, 5, 1]
+    assert not obs[0, 0, 0]
 
 
 def test_random_play():

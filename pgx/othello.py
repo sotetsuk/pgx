@@ -223,7 +223,16 @@ def _get_reward(my, opp, curr_player):
 
 
 def _observe(state, player_id) -> jnp.ndarray:
-    ...
+    board = jax.lax.cond(
+        player_id == state.current_player,
+        lambda: state.board.reshape((8, 8)),
+        lambda: (state.board * -1).reshape((8, 8)),
+    )
+
+    def make(color):
+        return board * color > 0
+
+    return jnp.stack(jax.vmap(make)(jnp.int8([1, -1])), -1)
 
 
 def _get_abs_board(state):
