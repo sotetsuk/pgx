@@ -310,7 +310,7 @@ def _step_det_at_non_terminal(
         surface=surface,
         terminal=terminal,
         last_action=action,
-        reward=r[jnp.newaxis]
+        reward=r[jnp.newaxis],
     )  # type: ignore
     return state
 
