@@ -487,17 +487,23 @@ def _update_enemy_subs(
         removed, _f_bullets, _e_subs, _terminal, _r = lax.cond(
             _e_subs[j, 3] == 0,
             lambda: _update_sub(j, _f_bullets, _e_subs, _terminal, _r),
-            lambda: (FALSE, _f_bullets, _e_subs.at[j, 3].add(-1), _terminal, _r),
+            lambda: (
+                FALSE,
+                _f_bullets,
+                _e_subs.at[j, 3].add(-1),
+                _terminal,
+                _r,
+            ),
         )
         timer_zero = _e_subs[j, 4] == 0
         _e_subs = lax.cond(
             removed,
-            lambda:_e_subs,
+            lambda: _e_subs,
             lambda: lax.cond(
-            timer_zero,
-            lambda: _e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL),
-            lambda: _e_subs.at[j, 4].add(-1),
-            )
+                timer_zero,
+                lambda: _e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL),
+                lambda: _e_subs.at[j, 4].add(-1),
+            ),
         )
         _e_bullets = lax.cond(
             removed,
@@ -505,20 +511,20 @@ def _update_enemy_subs(
             lambda: lax.cond(
                 timer_zero,
                 lambda: _e_bullets.at[find_ix(_e_bullets)].set(
-                jnp.int32(
-                    [
-                        lax.cond(
+                    jnp.int32(
+                        [
+                            lax.cond(
+                                _e_subs[j, 2],
+                                lambda: _e_subs[j, 0],
+                                lambda: _e_subs[j, 0],
+                            ),
+                            _e_subs[j, 1],
                             _e_subs[j, 2],
-                            lambda: _e_subs[j, 0],
-                            lambda: _e_subs[j, 0],
-                        ),
-                        _e_subs[j, 1],
-                        _e_subs[j, 2],
-                    ]
-                )
+                        ]
+                    )
+                ),
+                lambda: _e_bullets,
             ),
-            lambda: _e_bullets,
-        )
         )
         return _f_bullets, _e_subs, _e_bullets, _terminal, _r
 
