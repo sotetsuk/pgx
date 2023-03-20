@@ -133,7 +133,7 @@ class MinAtarSeaquest(core.Env):
 def _step(
     state: State,
     action: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
+    sticky_action_prob,
 ):
     key, subkey = jax.random.split(state._rng_key)
     state = state.replace(_rng_key=key)  # type: ignore
@@ -290,7 +290,7 @@ def _step_det_at_non_terminal(
     )
     r += _r
 
-    state = state.replace(
+    state = state.replace(  # type: ignore
         oxygen=oxygen,
         diver_count=diver_count,
         sub_x=sub_x,
@@ -311,7 +311,7 @@ def _step_det_at_non_terminal(
         terminal=terminal,
         last_action=action,
         reward=r[jnp.newaxis],
-    )  # type: ignore
+    )
     return state
 
 
