@@ -39,7 +39,7 @@ def test_step_det():
     env = Environment("seaquest", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 10
+    N = 100
     for _ in range(N):
         env.reset()
         done = False
@@ -61,7 +61,7 @@ def test_step_det():
                 env.state(),
                 observe(s_next_pgx),
             )
-            # if not jnp.allclose(env.state(), seaquest.observe(s_next_pgx)):
+            # if not jnp.allclose(env.state(), observe(s_next_pgx)):
             #     for field in fields(s_next_pgx):
             #         print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
             #     assert False
@@ -83,7 +83,7 @@ def test_step_det():
             env.state(),
             observe(s_next_pgx),
         )
-        # if not jnp.allclose(env.state(), seaquest.observe(s_next_pgx)):
+        # if not jnp.allclose(env.state(), observe(s_next_pgx)):
         #     for field in fields(s_next_pgx):
         #         print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
         #     assert False
@@ -105,7 +105,7 @@ def test_observe():
     env = Environment("seaquest", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 10
+    N = 100
     for _ in range(N):
         env.reset()
         done = False
