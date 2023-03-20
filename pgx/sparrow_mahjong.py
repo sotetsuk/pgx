@@ -55,7 +55,6 @@ MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 +
 
 @dataclass
 class State(core.State):
-    _step_count: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
@@ -63,6 +62,7 @@ class State(core.State):
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(9, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # --- SparrowMahjong specific ---
     turn: jnp.ndarray = jnp.int32(0)  # 0 = dealer
     rivers: jnp.ndarray = -jnp.ones(

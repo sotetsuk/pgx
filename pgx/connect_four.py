@@ -24,7 +24,6 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    _step_count: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -32,6 +31,7 @@ class State(core.State):
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(7, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # ---
     turn: jnp.ndarray = jnp.int8(0)
     # 6x7 board

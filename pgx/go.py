@@ -26,7 +26,6 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    _step_count: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -34,6 +33,7 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((17, 19, 19), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # --- Go specific ---
     size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int8
     # ids of representative stone id (smallest) in the connected stones

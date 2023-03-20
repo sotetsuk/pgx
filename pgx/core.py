@@ -55,7 +55,6 @@ EnvId = Literal[
 
 @dataclass
 class State:
-    _step_count: jnp.ndarray
     current_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
@@ -67,6 +66,7 @@ class State:
     #   - updated only when actually used
     #   - supposed NOT to be used by agent
     _rng_key: jax.random.KeyArray
+    _step_count: jnp.ndarray
 
     def _repr_html_(self) -> str:
         from pgx._visualizer import Visualizer

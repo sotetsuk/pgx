@@ -26,7 +26,6 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    _step_count: jnp.ndarray = jnp.int32(0)
     size: jnp.ndarray = jnp.int8(11)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(11 * 11, dtype=jnp.bool_)
@@ -35,6 +34,7 @@ class State(core.State):
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(11 * 11, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # 0(black), 1(white)
     turn: jnp.ndarray = jnp.int8(0)
     # 11x11 board
