@@ -20,27 +20,6 @@ from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-# fmt:off
-LR_MASK = jnp.array([
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0], dtype=jnp.bool_)
-UD_MASK = jnp.array([
-    0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    1, 1, 1, 1, 1, 1, 1, 1,
-    0, 0, 0, 0, 0, 0, 0, 0], dtype=jnp.bool_)
-# fmt:on
-SIDE_MASK = LR_MASK & UD_MASK
 
 
 @dataclass
@@ -99,6 +78,29 @@ class Othello(core.Env):
     @property
     def num_players(self) -> int:
         return 2
+
+
+# fmt:off
+LR_MASK = jnp.array([
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0], dtype=jnp.bool_)
+UD_MASK = jnp.array([
+    0, 0, 0, 0, 0, 0, 0, 0,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    1, 1, 1, 1, 1, 1, 1, 1,
+    0, 0, 0, 0, 0, 0, 0, 0], dtype=jnp.bool_)
+# fmt:on
+SIDE_MASK = LR_MASK & UD_MASK
 
 
 def _init(rng: jax.random.KeyArray) -> State:
