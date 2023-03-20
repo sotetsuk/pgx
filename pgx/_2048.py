@@ -39,10 +39,21 @@ class State(core.State):
     #  [ 4,  5,  6,  7],
     #  [ 8,  9, 10, 11],
     #  [12, 13, 14, 15]]
-    board: jnp.ndarray = jnp.zeros(16, jnp.int8)  # 2^n
+    board: jnp.ndarray = jnp.zeros(16, jnp.int8)
+    #  Board is expressed as a power of 2.
+    # e.g.
+    # [[ 0,  0,  1,  1],
+    #  [ 1,  0,  1,  2],
+    #  [ 3,  3,  6,  7],
+    #  [ 3,  6,  7,  9]]
+    # means
+    # [[ 0,  0,  2,  2],
+    #  [ 2,  0,  2,  4],
+    #  [ 8,  8, 64,128],
+    #  [ 8, 64,128,512]]
 
 
-class Game2048(core.Env):
+class Play2048(core.Env):
     def __init__(
         self,
     ):
