@@ -12,39 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Shogi.
-
-piece_board (81,):
-  -1 空白
-   0 歩
-   1 香車
-   2 桂馬
-   3 銀
-   4 角
-   5 飛車
-   6 金
-   7 玉
-   8 と
-   9 成香
-  10 成桂
-  11 成銀
-  12 馬
-  13 龍
-  14 相手歩
-  15 相手香車
-  16 相手桂馬
-  17 相手銀
-  18 相手角
-  19 相手飛車
-  20 相手金
-  21 相手玉
-  22 相手と
-  23 相手成香
-  24 相手成桂
-  25 相手成銀
-  26 相手馬
-  27 相手龍
-"""
 
 from functools import partial
 
@@ -62,41 +29,36 @@ from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
-ZERO = jnp.int8(0)
-ONE = jnp.int8(1)
-TWO = jnp.int8(2)
 
-# Pieces
-EMPTY = jnp.int8(-1)
-PAWN = jnp.int8(0)
-LANCE = jnp.int8(1)
-KNIGHT = jnp.int8(2)
-SILVER = jnp.int8(3)
-BISHOP = jnp.int8(4)
-ROOK = jnp.int8(5)
-GOLD = jnp.int8(6)
-KING = jnp.int8(7)
-PRO_PAWN = jnp.int8(8)
-PRO_LANCE = jnp.int8(9)
-PRO_KNIGHT = jnp.int8(10)
-PRO_SILVER = jnp.int8(11)
-HORSE = jnp.int8(12)
-DRAGON = jnp.int8(13)
-OPP_PAWN = jnp.int8(14)
-OPP_LANCE = jnp.int8(15)
-OPP_KNIGHT = jnp.int8(16)
-OPP_SILVER = jnp.int8(17)
-OPP_BISHOP = jnp.int8(18)
-OPP_ROOK = jnp.int8(19)
-OPP_GOLD = jnp.int8(20)
-OPP_KING = jnp.int8(21)
-OPP_PRO_PAWN = jnp.int8(22)
-OPP_PRO_LANCE = jnp.int8(23)
-OPP_PRO_KNIGHT = jnp.int8(24)
-OPP_PRO_SILVER = jnp.int8(25)
-OPP_HORSE = jnp.int8(26)
-OPP_DRAGON = jnp.int8(27)
-
+EMPTY = jnp.int8(-1)  # 空白
+PAWN = jnp.int8(0)  # 歩
+LANCE = jnp.int8(1)  # 香
+KNIGHT = jnp.int8(2)  # 桂
+SILVER = jnp.int8(3)  # 銀
+BISHOP = jnp.int8(4)  # 角
+ROOK = jnp.int8(5)  # 飛
+GOLD = jnp.int8(6)  # 金
+KING = jnp.int8(7)  # 玉
+PRO_PAWN = jnp.int8(8)  # と
+PRO_LANCE = jnp.int8(9)  # 成香
+PRO_KNIGHT = jnp.int8(10)  # 成桂
+PRO_SILVER = jnp.int8(11)  # 成銀
+HORSE = jnp.int8(12)  # 馬
+DRAGON = jnp.int8(13)  # 龍
+OPP_PAWN = jnp.int8(14)  # 相手歩
+OPP_LANCE = jnp.int8(15)  # 相手香
+OPP_KNIGHT = jnp.int8(16)  # 相手桂
+OPP_SILVER = jnp.int8(17)  # 相手銀
+OPP_BISHOP = jnp.int8(18)  # 相手角
+OPP_ROOK = jnp.int8(19)  # 相手飛
+OPP_GOLD = jnp.int8(20)  # 相手金
+OPP_KING = jnp.int8(21)  # 相手玉
+OPP_PRO_PAWN = jnp.int8(22)  # 相手と
+OPP_PRO_LANCE = jnp.int8(23)  # 相手成香
+OPP_PRO_KNIGHT = jnp.int8(24)  # 相手成桂
+OPP_PRO_SILVER = jnp.int8(25)  # 相手成銀
+OPP_HORSE = jnp.int8(26)  # 相手馬
+OPP_DRAGON = jnp.int8(27)  # 相手龍
 
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
@@ -109,23 +71,6 @@ INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
                              [16, 19, 14, -1, -1, -1, 0,  4, 2],  # noqa: E241
                              [15, -1, 14, -1, -1, -1, 0, -1, 1]]).flatten()  # noqa: E241
 # fmt: on
-
-# Can <piece,14> reach from <from,81> to <to,81> ignoring pieces on board?
-RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
-# When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
-# is <point,81> on the way between two points?
-# TODO: 龍と馬の利き、隣に駒があるときに壊れる？
-IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
-# Give <dir,10> and <to,81>, return the legal <from,81> mask
-# E.g. LEGAL_FROM_MASK[Up right, to=19]
-# Necessary for computing legal_action_mask
-# x x x x x x x
-# x x x x t x x
-# x x x o x x x
-# x x o x x x x
-LEGAL_FROM_MASK = load_shogi_legal_from_mask()  # (10, 81, 81)
-# Queen piece does not exist in Shogi but necessary for computing legal moves
-QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 
 @dataclass
@@ -195,6 +140,24 @@ class Shogi(core.Env):
     @property
     def num_players(self) -> int:
         return 2
+
+
+# Can <piece,14> reach from <from,81> to <to,81> ignoring pieces on board?
+RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
+# When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
+# is <point,81> on the way between two points?
+# TODO: 龍と馬の利き、隣に駒があるときに壊れる？
+IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
+# Give <dir,10> and <to,81>, return the legal <from,81> mask
+# E.g. LEGAL_FROM_MASK[Up right, to=19]
+# Necessary for computing legal_action_mask
+# x x x x x x x
+# x x x x t x x
+# x x x o x x x
+# x x o x x x x
+LEGAL_FROM_MASK = load_shogi_legal_from_mask()  # (10, 81, 81)
+# Queen piece does not exist in Shogi but necessary for computing legal moves
+QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 
 def _init_board():
@@ -671,7 +634,7 @@ def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
     tgt_in_opp_area = jnp.tile(in_opp_area, reps=(81, 1))
     src_in_opp_area = tgt_in_opp_area.transpose()
     mask = src_in_opp_area | tgt_in_opp_area
-    promotion = jnp.where(mask, promotion, ZERO)
+    promotion = jnp.where(mask, promotion, jnp.int8(0))
     # mask where piece have to promote
     is_line1 = jnp.tile(jnp.arange(81) % 9 == 0, reps=(81, 1))
     is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
@@ -683,9 +646,9 @@ def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
     is_stuck |= jnp.tile(where_knight, (81, 1)).transpose() & (
         is_line1 | is_line2
     )
-    promotion = jnp.where((promotion != 0) & is_stuck, TWO, promotion)
+    promotion = jnp.where((promotion != 0) & is_stuck, jnp.int8(2), promotion)
     promotion = jnp.where(
-        (state.piece_board < GOLD).reshape(81, 1), promotion, ZERO
+        (state.piece_board < GOLD).reshape(81, 1), promotion, jnp.int8(0)
     )
     return promotion
 

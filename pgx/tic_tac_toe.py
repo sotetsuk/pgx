@@ -21,21 +21,6 @@ from pgx._flax.struct import dataclass
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
-# fmt off
-IDX = jnp.int8(
-    [
-        [0, 1, 2],
-        [3, 4, 5],
-        [6, 7, 8],
-        [0, 3, 6],
-        [1, 4, 7],
-        [2, 5, 8],
-        [0, 4, 8],
-        [2, 4, 6],
-    ]
-)
-# fmt on
-
 
 @dataclass
 class State(core.State):
@@ -47,7 +32,7 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-    # ---
+    # --- Tic-tac-toe specific ---
     turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
@@ -111,7 +96,8 @@ def _step(state: State, action: jnp.ndarray) -> State:
 
 
 def _win_check(board, turn) -> jnp.ndarray:
-    return ((board[IDX] == turn).all(axis=1)).any()
+    idx = jnp.int8([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
+    return ((board[idx] == turn).all(axis=1)).any()
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
