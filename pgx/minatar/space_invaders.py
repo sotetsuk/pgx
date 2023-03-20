@@ -38,7 +38,6 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-
     # --- MinAtar SpaceInvaders specific ---
     pos: jnp.ndarray = jnp.int32(5)
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)

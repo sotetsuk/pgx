@@ -36,7 +36,6 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-
     # --- MinAtar Freeway specific ---
     cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int32)
     pos: jnp.ndarray = jnp.array(9, dtype=jnp.int32)

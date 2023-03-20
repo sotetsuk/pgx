@@ -42,33 +42,24 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-
     # --- MinAtar Seaquest specific ---
     oxygen: jnp.ndarray = MAX_OXYGEN
     diver_count: jnp.ndarray = ZERO
     sub_x: jnp.ndarray = jnp.int32(5)
     sub_y: jnp.ndarray = ZERO
     sub_or: jnp.ndarray = FALSE
-    f_bullets: jnp.ndarray = -jnp.ones(
-        (5, 3), dtype=jnp.int32
-    )  # <= 2  TODO: confirm
+    f_bullets: jnp.ndarray = -jnp.ones((5, 3), dtype=jnp.int32)
     e_bullets: jnp.ndarray = -jnp.ones(
         (25, 3), dtype=jnp.int32
-    )  # <= 1 per each sub  TODO: confirm
-    e_fish: jnp.ndarray = -jnp.ones(
-        (25, 4), dtype=jnp.int32
-    )  # <= 19  TODO: confirm
-    e_subs: jnp.ndarray = -jnp.ones(
-        (25, 5), dtype=jnp.int32
-    )  # <= 19  TODO: confirm
-    divers: jnp.ndarray = -jnp.ones(
-        (5, 4), dtype=jnp.int32
-    )  # <= 2  TODO: confirm
+    )  # <= 1 per each sub
+    e_fish: jnp.ndarray = -jnp.ones((25, 4), dtype=jnp.int32)  # <= 19
+    e_subs: jnp.ndarray = -jnp.ones((25, 5), dtype=jnp.int32)  # <= 19
+    divers: jnp.ndarray = -jnp.ones((5, 4), dtype=jnp.int32)  # <= 2
     e_spawn_speed: jnp.ndarray = INIT_SPAWN_SPEED
     e_spawn_timer: jnp.ndarray = INIT_SPAWN_SPEED
     d_spawn_timer: jnp.ndarray = DIVER_SPAWN_SPEED
     move_speed: jnp.ndarray = INIT_MOVE_INTERVAL
-    ramp_index: jnp.ndarray = ZERO  # TODO: require int32?
+    ramp_index: jnp.ndarray = ZERO
     shot_timer: jnp.ndarray = ZERO
     surface: jnp.ndarray = TRUE
     terminal: jnp.ndarray = FALSE

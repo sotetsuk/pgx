@@ -39,7 +39,6 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-
     # --- MinAtar Asterix specific ---
     player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
     player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int32)

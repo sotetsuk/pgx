@@ -63,7 +63,6 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.zeros(9, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-
     # --- Sparrow Mahjong specific ---
     turn: jnp.ndarray = jnp.int32(0)  # 0 = dealer
     rivers: jnp.ndarray = -jnp.ones(

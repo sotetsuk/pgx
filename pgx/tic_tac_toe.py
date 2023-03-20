@@ -32,7 +32,6 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-
     # --- Tic-tac-toe specific ---
     turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2

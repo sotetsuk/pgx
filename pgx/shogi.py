@@ -30,46 +30,48 @@ from pgx._flax.struct import dataclass
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
-# fmt: off
-EMPTY          = jnp.int8(-1)  # 空白
-PAWN           = jnp.int8(0)   # 歩
-LANCE          = jnp.int8(1)   # 香
-KNIGHT         = jnp.int8(2)   # 桂
-SILVER         = jnp.int8(3)   # 銀
-BISHOP         = jnp.int8(4)   # 角
-ROOK           = jnp.int8(5)   # 飛
-GOLD           = jnp.int8(6)   # 金
-KING           = jnp.int8(7)   # 玉
-PRO_PAWN       = jnp.int8(8)   # と
-PRO_LANCE      = jnp.int8(9)   # 成香
-PRO_KNIGHT     = jnp.int8(10)  # 成桂
-PRO_SILVER     = jnp.int8(11)  # 成銀
-HORSE          = jnp.int8(12)  # 馬
-DRAGON         = jnp.int8(13)  # 龍
-OPP_PAWN       = jnp.int8(14)  # 相手歩
-OPP_LANCE      = jnp.int8(15)  # 相手香
-OPP_KNIGHT     = jnp.int8(16)  # 相手桂
-OPP_SILVER     = jnp.int8(17)  # 相手銀
-OPP_BISHOP     = jnp.int8(18)  # 相手角
-OPP_ROOK       = jnp.int8(19)  # 相手飛
-OPP_GOLD       = jnp.int8(20)  # 相手金
-OPP_KING       = jnp.int8(21)  # 相手玉
-OPP_PRO_PAWN   = jnp.int8(22)  # 相手と
-OPP_PRO_LANCE  = jnp.int8(23)  # 相手成香
+EMPTY = jnp.int8(-1)  # 空白
+PAWN = jnp.int8(0)  # 歩
+LANCE = jnp.int8(1)  # 香
+KNIGHT = jnp.int8(2)  # 桂
+SILVER = jnp.int8(3)  # 銀
+BISHOP = jnp.int8(4)  # 角
+ROOK = jnp.int8(5)  # 飛
+GOLD = jnp.int8(6)  # 金
+KING = jnp.int8(7)  # 玉
+PRO_PAWN = jnp.int8(8)  # と
+PRO_LANCE = jnp.int8(9)  # 成香
+PRO_KNIGHT = jnp.int8(10)  # 成桂
+PRO_SILVER = jnp.int8(11)  # 成銀
+HORSE = jnp.int8(12)  # 馬
+DRAGON = jnp.int8(13)  # 龍
+OPP_PAWN = jnp.int8(14)  # 相手歩
+OPP_LANCE = jnp.int8(15)  # 相手香
+OPP_KNIGHT = jnp.int8(16)  # 相手桂
+OPP_SILVER = jnp.int8(17)  # 相手銀
+OPP_BISHOP = jnp.int8(18)  # 相手角
+OPP_ROOK = jnp.int8(19)  # 相手飛
+OPP_GOLD = jnp.int8(20)  # 相手金
+OPP_KING = jnp.int8(21)  # 相手玉
+OPP_PRO_PAWN = jnp.int8(22)  # 相手と
+OPP_PRO_LANCE = jnp.int8(23)  # 相手成香
 OPP_PRO_KNIGHT = jnp.int8(24)  # 相手成桂
 OPP_PRO_SILVER = jnp.int8(25)  # 相手成銀
-OPP_HORSE      = jnp.int8(26)  # 相手馬
-OPP_DRAGON     = jnp.int8(27)  # 相手龍
+OPP_HORSE = jnp.int8(26)  # 相手馬
+OPP_DRAGON = jnp.int8(27)  # 相手龍
 
+# fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
-                             [16, 18, 14, -1, -1, -1, 0,  5, 2],  # noqa: E241
+                             [16, 18, 14, -1, -1, -1, 0, 5, 2],  # noqa: E241
                              [17, -1, 14, -1, -1, -1, 0, -1, 3],  # noqa: E241
                              [20, -1, 14, -1, -1, -1, 0, -1, 6],  # noqa: E241
                              [21, -1, 14, -1, -1, -1, 0, -1, 7],  # noqa: E241
                              [20, -1, 14, -1, -1, -1, 0, -1, 6],  # noqa: E241
                              [17, -1, 14, -1, -1, -1, 0, -1, 3],  # noqa: E241
-                             [16, 19, 14, -1, -1, -1, 0,  4, 2],  # noqa: E241
+                             [16, 19, 14, -1, -1, -1, 0, 4, 2],  # noqa: E241
                              [15, -1, 14, -1, -1, -1, 0, -1, 1]]).flatten()  # noqa: E241
+
+
 # fmt: on
 
 
@@ -83,7 +85,6 @@ class State(core.State):
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-
     # --- Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
@@ -125,7 +126,7 @@ class Shogi(core.Env):
         return _step(state, Action.from_dlshogi_action(state, action))
 
     def _observe(
-        self, state: core.State, player_id: jnp.ndarray
+            self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
@@ -513,7 +514,7 @@ def _legal_actions(state: State):
 
 
 def _pseudo_legal_moves(
-    state: State, effect_boards: jnp.ndarray
+        state: State, effect_boards: jnp.ndarray
 ) -> jnp.ndarray:
     """Filter (81, 81) effects and return legal moves (81, 81)"""
 
@@ -525,7 +526,7 @@ def _pseudo_legal_moves(
 
 
 def _filter_suicide_moves(
-    state: State, legal_moves: jnp.ndarray, flipped_effect_boards, is_pinned
+        state: State, legal_moves: jnp.ndarray, flipped_effect_boards, is_pinned
 ) -> jnp.ndarray:
     """Filter suicide action
      - King moves into the effected area
@@ -551,17 +552,17 @@ def _filter_suicide_moves(
 def _find_pinned_pieces(state, flipped_state):
     flipped_opp_raw_effect_boards = _raw_effects_all(flipped_state)
     flipped_king_pos = (
-        80 - jnp.nonzero(state.piece_board == KING, size=1)[0][0]
+            80 - jnp.nonzero(state.piece_board == KING, size=1)[0][0]
     )
     flipped_effecting_mask = flipped_opp_raw_effect_boards[
-        :, flipped_king_pos
-    ]  # (81,) 王に遮蔽無視して聞いている駒の位置
+                             :, flipped_king_pos
+                             ]  # (81,) 王に遮蔽無視して聞いている駒の位置
 
     @jax.vmap
     def pinned_piece_mask(p, f):
         # fにあるpから王までの間にある駒が1枚だけの場合、そこをマスクして返す
         mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :] & (
-            flipped_state.piece_board != EMPTY
+                flipped_state.piece_board != EMPTY
         )
         return jax.lax.cond(
             mask.sum() == 1, lambda: mask, lambda: jnp.zeros_like(mask)
@@ -581,10 +582,10 @@ def _find_pinned_pieces(state, flipped_state):
 
 
 def _filter_ignoring_check_moves(
-    state: State,
-    legal_moves: jnp.ndarray,
-    checking_point_board,
-    check_defense_board,
+        state: State,
+        legal_moves: jnp.ndarray,
+        checking_point_board,
+        check_defense_board,
 ) -> jnp.ndarray:
     """Filter moves which ignores check
 
@@ -640,12 +641,12 @@ def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
     is_line1 = jnp.tile(jnp.arange(81) % 9 == 0, reps=(81, 1))
     is_line2 = jnp.tile(jnp.arange(81) % 9 == 1, reps=(81, 1))
     where_pawn_or_lance = (state.piece_board == PAWN) | (
-        state.piece_board == LANCE
+            state.piece_board == LANCE
     )
     where_knight = state.piece_board == KNIGHT
     is_stuck = jnp.tile(where_pawn_or_lance, (81, 1)).transpose() & is_line1
     is_stuck |= jnp.tile(where_knight, (81, 1)).transpose() & (
-        is_line1 | is_line2
+            is_line1 | is_line2
     )
     promotion = jnp.where((promotion != 0) & is_stuck, jnp.int8(2), promotion)
     promotion = jnp.where(
@@ -655,7 +656,7 @@ def _legal_promotion(state: State, legal_moves: jnp.ndarray) -> jnp.ndarray:
 
 
 def _pseudo_legal_drops(
-    state: State, effect_boards: jnp.ndarray
+        state: State, effect_boards: jnp.ndarray
 ) -> jnp.ndarray:
     """Return (7, 81) boolean array
 
@@ -707,10 +708,10 @@ def _pseudo_legal_drops(
 
 
 def _filter_pawn_drop_mate(
-    state: State,
-    legal_drops: jnp.ndarray,
-    effect_boards: jnp.ndarray,
-    flipped_effect_boards,
+        state: State,
+        legal_drops: jnp.ndarray,
+        effect_boards: jnp.ndarray,
+        flipped_effect_boards,
 ) -> jnp.ndarray:
     """打ち歩詰
 
@@ -724,14 +725,14 @@ def _filter_pawn_drop_mate(
     pb = state.piece_board
     opp_king_pos = jnp.nonzero(pb == OPP_KING, size=1)[0][0]
     opp_king_head_pos = (
-        opp_king_pos + 1
+            opp_king_pos + 1
     )  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
     can_check_by_pawn_drop = opp_king_pos % 9 != 8
 
     # 王が利きも味方の駒もないところへ逃げられるか
     king_escape_mask = RAW_EFFECT_BOARDS[KING, opp_king_pos, :]  # (81,)
     king_escape_mask &= ~(
-        (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
+            (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
     )  # 味方駒があり、逃げられない
     king_escape_mask &= ~effect_boards.any(axis=0)  # 利きがあり逃げられない
     can_king_escape = king_escape_mask.any()
@@ -739,7 +740,7 @@ def _filter_pawn_drop_mate(
     # 反転したボードで処理していることに注意
     flipped_opp_king_head_pos = 80 - opp_king_head_pos
     can_capture_pawn = (
-        flipped_effect_boards[:, flipped_opp_king_head_pos].sum() > 1
+            flipped_effect_boards[:, flipped_opp_king_head_pos].sum() > 1
     )  # 自分以外の利きがないといけない
 
     legal_drops = jax.lax.cond(
@@ -752,11 +753,11 @@ def _filter_pawn_drop_mate(
 
 def _check_info(state, flipped_state, flipped_effect_boards):
     flipped_king_pos = (
-        80 - jnp.nonzero(state.piece_board == KING, size=1)[0][0]
+            80 - jnp.nonzero(state.piece_board == KING, size=1)[0][0]
     )
     flipped_effecting_mask = flipped_effect_boards[
-        :, flipped_king_pos
-    ]  # (81,) 王に利いている駒の位置
+                             :, flipped_king_pos
+                             ]  # (81,) 王に利いている駒の位置
 
     @jax.vmap
     def between_king(p, f):
@@ -779,9 +780,9 @@ def _check_info(state, flipped_state, flipped_effect_boards):
 
 
 def _filter_ignoring_check_drops(
-    legal_drops: jnp.ndarray,
-    checking_piece_board,
-    check_defense_board,
+        legal_drops: jnp.ndarray,
+        checking_piece_board,
+        check_defense_board,
 ):
     num_checks = checking_piece_board.sum()
 
@@ -892,7 +893,7 @@ def _effect_filters_all(state: State) -> jnp.ndarray:
 
 
 def _effect_filter_through(
-    state: State, blocked_pos: jnp.ndarray
+        state: State, blocked_pos: jnp.ndarray
 ) -> jnp.ndarray:
     """
     >>> s = _init_board()
@@ -947,7 +948,7 @@ def _effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
         # toを固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
         # True = 途中でbrockされ、到達できない
         return (
-            IS_ON_THE_WAY[large_piece, from_, t, :] & (state.piece_board >= 0)
+                IS_ON_THE_WAY[large_piece, from_, t, :] & (state.piece_board >= 0)
         ).any()
 
     # (piece, from) にバッチで適用
@@ -1049,9 +1050,9 @@ def _effects_all(state: State):
 
 
 def _to_direction(
-    legal_moves: jnp.ndarray,
-    legal_promotions: jnp.ndarray,
-    legal_drops: jnp.ndarray,
+        legal_moves: jnp.ndarray,
+        legal_promotions: jnp.ndarray,
+        legal_drops: jnp.ndarray,
 ):
     # legal_moves から legal_action_mask を作る。toを固定して、
     #
@@ -1077,16 +1078,16 @@ def _to_direction(
 
     def f(t):
         return (
-            legal_moves[:, t]
-            & (legal_promotions[:, t] != 2)
-            & LEGAL_FROM_MASK[dir_, t, :]
+                legal_moves[:, t]
+                & (legal_promotions[:, t] != 2)
+                & LEGAL_FROM_MASK[dir_, t, :]
         ).any(axis=1)
 
     def g(t):
         return (
-            legal_moves[:, t]
-            & (legal_promotions[:, t] != 0)
-            & LEGAL_FROM_MASK[dir_, t, :]
+                legal_moves[:, t]
+                & (legal_promotions[:, t] != 0)
+                & LEGAL_FROM_MASK[dir_, t, :]
         ).any(axis=1)
 
     legal_action_mask_wo_promotion = jax.vmap(f)(to).transpose()
@@ -1128,7 +1129,8 @@ def _to_sfen(state: State):
     pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""
     # fmt: off
-    board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"]
+    board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n",
+                      "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     hand_dir = [5, 4, 6, 3, 2, 1, 0, 12, 11, 13, 10, 9, 8, 7]
     # fmt: on
@@ -1174,7 +1176,8 @@ def _to_sfen(state: State):
 
 def _from_sfen(sfen):
     # fmt: off
-    board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
+    board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g",
+                      "k"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     # fmt: on
     board, turn, hand, _ = sfen.split()
