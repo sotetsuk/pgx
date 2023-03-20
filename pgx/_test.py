@@ -70,7 +70,7 @@ def api_test_single(env: Env, num: int = 100):
             action = act_randomly(subkey, state)
             state = step(state, action)
             assert (
-                    state._step_count == curr_steps + 1
+                state._step_count == curr_steps + 1
             ), f"{state._step_count}, {curr_steps}"
             curr_steps += 1
 
