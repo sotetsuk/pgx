@@ -112,6 +112,7 @@ def api_test_batch(env: Env, num: int = 100):
     state.save_svg(filename)
     os.remove(filename)
 
+
 def _validate_taking_action_after_terminal(state: State, step_fn):
     prev_state = state
     if not state.terminated:
