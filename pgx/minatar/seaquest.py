@@ -119,7 +119,7 @@ class MinAtarSeaquest(core.Env):
 
     @property
     def name(self) -> str:
-        return "MinAtar/Asterix"
+        return "MinAtar/Seaquest"
 
     @property
     def version(self) -> str:
