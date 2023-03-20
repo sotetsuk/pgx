@@ -185,3 +185,10 @@ def test_observe():
     assert (obs == init_obs.at[0].set(0).at[18].set(1)).all(), obs
     obs = observe(state, 1)
     assert (obs == init_obs.at[0].set(0).at[9].set(1)).all(), obs
+
+
+
+ def test_api():
+    import pgx
+    env = pgx.make("tic_tac_toe")
+    pgx.api_test(env)

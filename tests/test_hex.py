@@ -123,3 +123,9 @@ def test_random_play():
         state = step(state, jnp.int16(action))
         done = state.terminated
         rewards += state.reward
+
+
+ def test_api():
+    import pgx
+    env = pgx.make("hex")
+    pgx.api_test(env)

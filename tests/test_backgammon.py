@@ -570,3 +570,8 @@ def test_black_off():
     playable_dice = jnp.array([1, 1, -1, -1])
     legal_action_mask = _legal_action_mask(board, playable_dice)
     print("1, 1", jnp.where(legal_action_mask != 0)[0])
+
+ def test_api():
+    import pgx
+    env = pgx.make("backgammon")
+    pgx.api_test(env)
