@@ -33,6 +33,15 @@ FALSE: jnp.ndarray = jnp.bool_(False)
 
 @dataclass
 class State:
+    steps: jnp.ndarray = jnp.int32(0)
+    current_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     oxygen: jnp.ndarray = MAX_OXYGEN
     diver_count: jnp.ndarray = ZERO
     sub_x: jnp.ndarray = jnp.int32(5)
