@@ -6,12 +6,13 @@ The authors of original MinAtar implementation are:
 The original MinAtar implementation is distributed under GNU General Public License v3.0
     * https://github.com/kenjyoung/MinAtar/blob/master/License.txt
 """
-from typing import Tuple
+from typing import Literal, Optional
 
 import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 RAMP_INTERVAL: jnp.ndarray = jnp.int32(100)
@@ -32,7 +33,16 @@ FALSE: jnp.ndarray = jnp.bool_(False)
 
 
 @dataclass
-class State:
+class State(core.State):
+    steps: jnp.ndarray = jnp.int32(0)
+    current_player: jnp.ndarray = jnp.int8(0)
+    observation: jnp.ndarray = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    # ---
     oxygen: jnp.ndarray = MAX_OXYGEN
     diver_count: jnp.ndarray = ZERO
     sub_x: jnp.ndarray = jnp.int32(5)
@@ -63,14 +73,71 @@ class State:
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = ZERO
 
+    def _repr_html_(self) -> str:
+        from pgx.minatar.utils import visualize_minatar
 
-def step(
+        return visualize_minatar(self)
+
+    def save_svg(
+        self,
+        filename,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> None:
+        from pgx.minatar.utils import visualize_minatar
+
+        visualize_minatar(self, filename)
+
+
+class MinAtarSeaquest(core.Env):
+    def __init__(
+        self,
+        *,
+        minatar_version: Literal["v0", "v1"] = "v1",
+        sticky_action_prob: float = 0.1,
+    ):
+        super().__init__()
+        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.sticky_action_prob: float = sticky_action_prob
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return _init_det()
+
+    def _step(self, state: core.State, action) -> State:
+        assert isinstance(state, State)
+        state = _step(
+            state, action, sticky_action_prob=self.sticky_action_prob
+        )
+        return state.replace(terminated=state.terminal)  # type: ignore
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state)
+
+    @property
+    def name(self) -> str:
+        return "MinAtar/Asterix"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self):
+        return 1
+
+
+def _step(
     state: State,
     action: jnp.ndarray,
-    rng: jnp.ndarray,
-    sticky_action_prob: jnp.ndarray,
-) -> Tuple[State, jnp.ndarray, jnp.ndarray]:
-    rngs = jax.random.split(rng, 6)
+    sticky_action_prob,
+):
+    key, subkey = jax.random.split(state._rng_key)
+    state = state.replace(_rng_key=key)  # type: ignore
+    rngs = jax.random.split(subkey, 6)
     action = jnp.int32(action)
     # sticky action
     action = jax.lax.cond(
@@ -101,11 +168,7 @@ def _step_det(
 ):
     return lax.cond(
         state.terminal,
-        lambda: (
-            state.replace(last_action=action),  # type: ignore
-            jnp.int32(0),
-            state.terminal,
-        ),
+        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(
             state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y
         ),
@@ -142,7 +205,7 @@ def _step_det_at_non_terminal(
     surface = state.surface
     terminal = state.terminal
 
-    r = jnp.int32(0)
+    r = jnp.float32(0)
 
     # Spawn enemy if timer is up
     e_subs, e_fish = lax.cond(
@@ -227,7 +290,7 @@ def _step_det_at_non_terminal(
     )
     r += _r
 
-    state = State(
+    state = state.replace(  # type: ignore
         oxygen=oxygen,
         diver_count=diver_count,
         sub_x=sub_x,
@@ -247,8 +310,9 @@ def _step_det_at_non_terminal(
         surface=surface,
         terminal=terminal,
         last_action=action,
-    )  # type: ignore
-    return state, r, terminal
+        reward=r[jnp.newaxis],
+    )
+    return state
 
 
 def find_ix(arr):
@@ -665,11 +729,7 @@ def _spawn_diver(divers, diver_lr, diver_y):
     return divers
 
 
-def init(rng: jnp.ndarray) -> State:
-    return _init_det()
-
-
-def observe(state: State) -> jnp.ndarray:
+def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
     obs = obs.at[state.sub_y, state.sub_x, 0].set(TRUE)
     back_x = lax.cond(
