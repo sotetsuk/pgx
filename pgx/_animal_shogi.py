@@ -17,9 +17,9 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
+from chex import dataclass
 
 from pgx._flax.serialization import from_bytes
-from chex import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)

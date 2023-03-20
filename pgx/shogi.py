@@ -50,6 +50,7 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+from chex import dataclass
 
 import pgx.core as core
 from pgx._cache import (
@@ -58,7 +59,6 @@ from pgx._cache import (
     load_shogi_queen_moves,
     load_shogi_raw_effect_boards,
 )
-from chex import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
