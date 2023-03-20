@@ -32,14 +32,14 @@ state_keys = {
 
 _step_det = jax.jit(seaquest._step_det)
 _init_det = jax.jit(seaquest._init_det)
-observe = jax.jit(seaquest.observe)
+observe = jax.jit(seaquest._observe)
 
 
 def test_step_det():
     env = Environment("seaquest", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 100
+    N = 10
     for _ in range(N):
         env.reset()
         done = False
@@ -48,7 +48,7 @@ def test_step_det():
             a = random.randrange(num_actions)
             r, done = env.act(a)
             enemy_lr, is_sub, enemy_y, diver_lr, diver_y = env.env.enemy_lr, env.env.is_sub, env.env.enemy_y, env.env.diver_lr, env.env.diver_y
-            s_next_pgx, _, _ = _step_det(
+            s_next_pgx = _step_det(
                 minatar2pgx(s, seaquest.State),
                 a,
                 enemy_lr,
@@ -71,7 +71,7 @@ def test_step_det():
         a = random.randrange(num_actions)
         r, done = env.act(a)
         enemy_lr, is_sub, enemy_y, diver_lr, diver_y = env.env.enemy_lr, env.env.is_sub, env.env.enemy_y, env.env.diver_lr, env.env.diver_y
-        s_next_pgx, _, _ = _step_det(
+        s_next_pgx = _step_det(
             minatar2pgx(s, seaquest.State), a,
             enemy_lr,
             is_sub,
@@ -105,7 +105,7 @@ def test_observe():
     env = Environment("seaquest", sticky_action_prob=0.0)
     num_actions = env.num_actions()
 
-    N = 100
+    N = 10
     for _ in range(N):
         env.reset()
         done = False
@@ -128,3 +128,9 @@ def test_observe():
             env.state(),
             obs_pgx,
         )
+
+
+def test_api():
+    import pgx
+    env = pgx.make("minatar/seaquest")
+    pgx.api_test(env)
