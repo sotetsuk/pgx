@@ -57,14 +57,14 @@ def test_step_det():
                 diver_lr,
                 diver_y
             )
-            # assert jnp.allclose(
-            #     env.state(),
-            #     observe(s_next_pgx),
-            # )
-            if not jnp.allclose(env.state(), seaquest.observe(s_next_pgx)):
-                for field in fields(s_next_pgx):
-                    print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
-                assert False
+            assert jnp.allclose(
+                env.state(),
+                observe(s_next_pgx),
+            )
+            # if not jnp.allclose(env.state(), seaquest.observe(s_next_pgx)):
+            #     for field in fields(s_next_pgx):
+            #         print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
+            #     assert False
 
         # check terminal state
         s = extract_state(env, state_keys)
@@ -79,14 +79,14 @@ def test_step_det():
             diver_lr,
             diver_y
         )
-        # assert jnp.allclose(
-        #     env.state(),
-        #     observe(s_next_pgx),
-        # )
-        if not jnp.allclose(env.state(), seaquest.observe(s_next_pgx)):
-            for field in fields(s_next_pgx):
-                print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
-            assert False
+        assert jnp.allclose(
+            env.state(),
+            observe(s_next_pgx),
+        )
+        # if not jnp.allclose(env.state(), seaquest.observe(s_next_pgx)):
+        #     for field in fields(s_next_pgx):
+        #         print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
+        #     assert False
 
 
 def test_init_det():
