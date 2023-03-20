@@ -137,4 +137,4 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("connect_four")
-    pgx.api_test(env)
+    pgx.api_test(env, 10)

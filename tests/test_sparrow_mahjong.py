@@ -586,5 +586,5 @@ def test_observe():
 
 def test_api():
     import pgx
-    env = pgx.make("sparrow_mahjong")
+    env = pgx.make("sparrow_mahjong", 10)
     pgx.api_test(env)
