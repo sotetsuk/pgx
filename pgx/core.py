@@ -111,7 +111,7 @@ class Env(abc.ABC):
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
-            lambda: self._step(state.replace(steps=state._step_count + 1), action),  # type: ignore
+            lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
 
         # Taking illegal action leads to immediate game terminal with negative reward
