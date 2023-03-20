@@ -26,13 +26,13 @@ TRUE = jnp.bool_(True)
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    reward: jnp.ndarray = jnp.float32(0.0)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-    # ---
+    # --- 2048 specific ---
     turn: jnp.ndarray = jnp.int8(0)
     # 4x4 board
     # [[ 0,  1,  2,  3],
@@ -82,7 +82,7 @@ class Play2048(core.Env):
 
     @property
     def num_players(self) -> int:
-        return 2
+        return 1
 
 
 def _init(rng: jax.random.KeyArray) -> State:
