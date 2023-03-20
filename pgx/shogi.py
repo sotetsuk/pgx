@@ -1174,8 +1174,7 @@ def _to_sfen(state: State):
 
 def _from_sfen(sfen):
     # fmt: off
-    board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g",
-                      "k"]
+    board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     # fmt: on
     board, turn, hand, _ = sfen.split()
