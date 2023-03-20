@@ -42,7 +42,6 @@ def test_terminated():
     # wipe out
     key = jax.random.PRNGKey(0)
     state = init(key)
-    print(state.current_player)
     for i in [37, 43, 34, 29, 52, 45, 38, 44]:
         state = step(state, i)
         assert not state.terminated
@@ -50,15 +49,24 @@ def test_terminated():
     assert state.terminated
     assert (state.reward == jnp.float32([1.0, -1.0])).all()
 
+
+def test_legal_action():
     # cannot put
+    key = jax.random.PRNGKey(0)
     state = init(key)
     print(state.current_player)
-    for i in [37, 29, 18, 44, 53, 46, 30, 60, 62, 38]:
+    for i in [37, 29, 18, 44, 53, 46, 30, 60, 62, 38, 39]:
         state = step(state, i)
-        assert not state.terminated
-    state = step(state, 39)
+    assert ~state.legal_action_mask[:64].any()
+    assert state.legal_action_mask[64]
+
+    state = step(state, 64)
+    assert ~state.legal_action_mask[:64].any()
+    assert state.legal_action_mask[64]
+    assert not state.terminated
+
+    state = step(state, 64)
     assert state.terminated
-    assert (state.reward == jnp.float32([1.0, -1.0])).all()
 
 
 def test_random_play():

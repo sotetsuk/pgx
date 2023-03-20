@@ -39,17 +39,8 @@ UD_MASK = jnp.array([
     1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1,
     0, 0, 0, 0, 0, 0, 0, 0], dtype=jnp.bool_)
-SIDE_MASK = jnp.array([
-    0, 0, 0, 0, 0, 0, 0, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 1, 1, 1, 1, 1, 1, 0,
-    0, 0, 0, 0, 0, 0, 0, 0], dtype=jnp.bool_)
 # fmt:on
-# SIDE_MASK = LR_MASK & UD_MASK
+SIDE_MASK = LR_MASK & UD_MASK
 
 
 @dataclass
@@ -60,7 +51,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(64, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(64 + 1, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
     turn: jnp.ndarray = jnp.int8(0)
@@ -123,7 +114,7 @@ def _init(rng: jax.random.KeyArray) -> State:
         .set(-1)
         .at[36]
         .set(-1),
-        legal_action_mask=jnp.zeros(64, dtype=jnp.bool_)
+        legal_action_mask=jnp.zeros(64 + 1, dtype=jnp.bool_)
         .at[19]
         .set(TRUE)
         .at[26]
@@ -139,6 +130,10 @@ def _step(state, action):
     board = state.board
     my = board > 0
     opp = board < 0
+
+    # updates at out-of-bounds indices will be skipped:
+    # https://jax.readthedocs.io/en/latest/notebooks/Common_Gotchas_in_JAX.html#out-of-bounds-indexing
+    # Therefore, there is no need to ignore the path action
     pos = jnp.zeros(64, dtype=jnp.bool_).at[action].set(TRUE)
 
     shifts = jnp.array([1, -1, 8, -8, 7, -7, 9, -9])
@@ -180,18 +175,26 @@ def _step(state, action):
     )
 
     reward, terminated = jax.lax.cond(
-        ((jnp.count_nonzero(my | opp) == 64)),
-        lambda: (jnp.float32([-1, -1]).at[state.current_player].set(1), TRUE),
+        (
+            (jnp.count_nonzero(my | opp) == 64)
+            | ~opp.any()
+            | (state.passed & (action == 64))
+        ),
+        lambda: (_get_reward(my, opp, state.current_player), TRUE),
         lambda: (jnp.zeros(2, jnp.float32), FALSE),
     )
 
     return state.replace(
         current_player=1 - state.current_player,
         turn=1 - state.turn,
-        legal_action_mask=legal_action,
+        legal_action_mask=state.legal_action_mask.at[:64]
+        .set(legal_action)
+        .at[64]
+        .set(~legal_action.any()),
         reward=reward,
         terminated=terminated,
         board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
+        passed=action == 64,
     )
 
 
@@ -204,6 +207,19 @@ def _check_line(pos, opp, shift, mask):
     result |= _opp & jnp.roll(result, shift)
     result |= _opp & jnp.roll(result, shift)
     return result
+
+
+def _get_reward(my, opp, curr_player):
+    my = jnp.count_nonzero(my)
+    opp = jnp.count_nonzero(opp)
+    winner = jax.lax.cond(
+        my > opp, lambda: curr_player, lambda: 1 - curr_player
+    )
+    return jax.lax.cond(
+        my == opp,
+        lambda: jnp.zeros(2, jnp.float32),
+        lambda: jnp.float32([-1, -1]).at[winner].set(1),
+    )
 
 
 def _observe(state, player_id) -> jnp.ndarray:
