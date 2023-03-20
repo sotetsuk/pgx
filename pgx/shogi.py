@@ -58,7 +58,7 @@ from pgx._cache import (
     load_shogi_queen_moves,
     load_shogi_raw_effect_boards,
 )
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -128,7 +128,7 @@ LEGAL_FROM_MASK = load_shogi_legal_from_mask()  # (10, 81, 81)
 QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 
-@dataclass
+@dataclass(frozen=True)
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])

@@ -16,7 +16,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -43,7 +43,7 @@ UD_MASK = jnp.array([
 SIDE_MASK = LR_MASK & UD_MASK
 
 
-@dataclass
+@dataclass(frozen=True)
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(64, dtype=jnp.bool_)

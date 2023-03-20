@@ -38,7 +38,7 @@ import jax.lax as lax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -53,7 +53,7 @@ YAKU_SCORES = jnp.int32([15, 15, 15, 0, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 
 MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 + 2) // 2 * 2
 
 
-@dataclass
+@dataclass(frozen=True)
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(27, dtype=jnp.bool_)

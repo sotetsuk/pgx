@@ -19,7 +19,7 @@ import jax
 import jax.numpy as jnp
 
 from pgx._flax.serialization import from_bytes
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)

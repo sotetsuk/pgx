@@ -12,7 +12,7 @@ setup(
     packages=find_packages(),
     package_data={"": ["LICENSE", "*.svg"]},
     include_package_data=True,
-    install_requires=["jax", "svgwrite", "ipywidgets", "msgpack"],
+    install_requires=["jax", "chex", "svgwrite", "ipywidgets", "msgpack"],
     classifiers=[
         "Programming Language :: Python :: 3.8",
     ],

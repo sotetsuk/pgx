@@ -18,13 +18,13 @@ import jax
 from jax import numpy as jnp
 
 import pgx.core as core
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-@dataclass
+@dataclass(frozen=True)
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
