@@ -69,6 +69,13 @@ def test_legal_action():
     assert state.terminated
 
 
+def test_observe():
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    obs = observe(state, state.current_player)
+    assert obs.shape == (8, 8, 2)
+
+
 def test_random_play():
     key = jax.random.PRNGKey(0)
     done = jnp.bool_(False)
