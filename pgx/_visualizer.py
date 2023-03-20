@@ -540,6 +540,7 @@ class Visualizer:
             )
         elif isinstance(_states, OthelloState):
             return OthelloState(
+                turn=_states.turn[_i],
                 board=_states.board[_i],
             )
         elif isinstance(_states, ShogiState):
