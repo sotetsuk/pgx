@@ -179,6 +179,8 @@ def test_buggy_sample():
         terminal=jnp.bool_(False),
         last_action=jnp.int32(4)
     )
+    state = state.replace(observation=observe(state))
+    # state.save_svg("tmp.svg")
     state = _step_det(state, 0,
                       enemy_lr=True,
                       is_sub=False,
