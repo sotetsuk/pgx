@@ -33,6 +33,7 @@ FALSE = jnp.bool_(False)
 # (2) we do not provide older versions (as with OpenAI Gym), and
 # (3) it is tedious to remember and write version numbers.
 EnvId = Literal[
+    # "2048",
     # "animal_shogi",
     "backgammon",
     # "bridge_bidding",
