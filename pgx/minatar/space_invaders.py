@@ -30,7 +30,7 @@ NINE = jnp.int32(9)
 
 @dataclass
 class State(core.State):
-    steps: jnp.ndarray = jnp.int32(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(

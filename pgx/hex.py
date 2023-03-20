@@ -26,7 +26,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    steps: jnp.ndarray = jnp.int32(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     size: jnp.ndarray = jnp.int8(11)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(11 * 11, dtype=jnp.bool_)

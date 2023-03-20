@@ -95,7 +95,7 @@ def time_limit(step_fn, max_truncation_steps: int = -1):
         state = jax.lax.cond(
             ~state.terminated
             & (0 <= max_truncation_steps)
-            & (max_truncation_steps <= state.steps),
+            & (max_truncation_steps <= state._step_count),
             lambda: state.replace(truncated=TRUE),  # type: ignore
             lambda: state,
         )

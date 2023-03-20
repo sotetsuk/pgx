@@ -541,7 +541,7 @@ def test_legal_action():
         illegal_actions = np.where(~state.legal_action_mask)[0][:-1]
         for action in legal_actions:
             _state = env.step(state=state, action=action)
-            if _state.steps < 50:
+            if _state._step_count < 50:
                 assert not _state.terminated
             else:
                 assert _state.terminated

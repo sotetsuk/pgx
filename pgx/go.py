@@ -26,7 +26,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    steps: jnp.ndarray = jnp.int32(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -75,7 +75,7 @@ class Go(core.Env):
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         state = jax.lax.cond(
             (0 <= self.max_termination_steps)
-            & (self.max_termination_steps <= state.steps),
+            & (self.max_termination_steps <= state._step_count),
             lambda: state.replace(  # type: ignore
                 terminated=TRUE,
                 reward=partial(_get_reward, size=self.size)(state),

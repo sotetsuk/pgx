@@ -55,7 +55,7 @@ EnvId = Literal[
 
 @dataclass
 class State:
-    steps: jnp.ndarray
+    _step_count: jnp.ndarray
     current_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
@@ -111,7 +111,7 @@ class Env(abc.ABC):
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
-            lambda: self._step(state.replace(steps=state.steps + 1), action),  # type: ignore
+            lambda: self._step(state.replace(steps=state._step_count + 1), action),  # type: ignore
         )
 
         # Taking illegal action leads to immediate game terminal with negative reward
