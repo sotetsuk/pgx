@@ -1,4 +1,5 @@
 from pgx._othello import State as OthelloState
+from pgx._othello import _get_abs_board
 
 
 def _make_othello_dwg(dwg, state: OthelloState, config):
@@ -83,7 +84,7 @@ def _make_othello_dwg(dwg, state: OthelloState, config):
     board_g.add(hoshi_g)
 
     # stones
-    board = state.board
+    board = _get_abs_board(state)
     for xy, stone in enumerate(board):
         if stone == 0:
             continue

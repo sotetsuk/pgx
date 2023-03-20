@@ -51,7 +51,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(64, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # ---
     turn: jnp.ndarray = jnp.int8(0)
@@ -105,22 +105,31 @@ def _init(rng: jax.random.KeyArray) -> State:
     return State(
         current_player=current_player,
         board=jnp.zeros(64, dtype=jnp.int8)
-        .at[27]
-        .set(1)
-        .at[36]
-        .set(1)
         .at[28]
-        .set(-1)
+        .set(1)
         .at[35]
+        .set(1)
+        .at[27]
+        .set(-1)
+        .at[36]
         .set(-1),
+        legal_action_mask=jnp.zeros(64, dtype=jnp.bool_)
+        .at[19]
+        .set(TRUE)
+        .at[26]
+        .set(TRUE)
+        .at[37]
+        .set(TRUE)
+        .at[44]
+        .set(TRUE),
     )  # type:ignore
 
 
 def _step(state, action):
-    action = jnp.int8(action)
     board = state.board
     my = board > 0
     opp = board < 0
+    emp = ~(my | opp)
     pos = jnp.zeros(64, dtype=jnp.bool_).at[action].set(TRUE)
 
     shifts = jnp.array([1, -1, 8, -8, 7, -7, 9, -9])
@@ -138,7 +147,7 @@ def _step(state, action):
     )
 
     def _shift(i, rev):
-        tmp = check_line(pos, opp, shifts[i], masks[i])
+        tmp = _check_line(pos, opp, shifts[i], masks[i])
         return jax.lax.cond(
             (jnp.roll(tmp, shifts[i]) & my).any(),
             lambda: rev | tmp,
@@ -146,19 +155,29 @@ def _step(state, action):
         )
 
     rev = jax.lax.fori_loop(0, 8, _shift, jnp.zeros(64, dtype=jnp.bool_))
-
-    # TODO
     my ^= pos | rev
     opp ^= rev
+
+    def _make_legal(i, legal):
+        # NOT _check_line(my, opp, shifts[i], masks[i])
+        # because this generates a legal action for the next turn
+        tmp = _check_line(opp, my, shifts[i], masks[i])
+        tmp = jnp.roll(tmp, shifts[i]) & emp
+        return legal | tmp
+
+    legal_action = jax.lax.fori_loop(
+        0, 8, _make_legal, jnp.zeros(64, dtype=jnp.bool_)
+    )
 
     return state.replace(
         current_player=1 - state.current_player,
         turn=1 - state.turn,
+        legal_action_mask=legal_action,
         board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
     )
 
 
-def check_line(pos, opp, shift, mask):
+def _check_line(pos, opp, shift, mask):
     result = opp & mask
     result = result & jnp.roll(pos, shift)
     result |= opp & jnp.roll(result, shift)
@@ -171,3 +190,9 @@ def check_line(pos, opp, shift, mask):
 
 def _observe(state, player_id) -> jnp.ndarray:
     ...
+
+
+def _get_abs_board(state):
+    return jax.lax.cond(
+        state.turn == 0, lambda: state.board, lambda: state.board * -1
+    )
