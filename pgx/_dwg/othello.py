@@ -1,5 +1,5 @@
-from pgx._othello import State as OthelloState
-from pgx._othello import _get_abs_board
+from pgx.othello import State as OthelloState
+from pgx.othello import _get_abs_board
 
 
 def _make_othello_dwg(dwg, state: OthelloState, config):

@@ -129,7 +129,6 @@ def _step(state, action):
     board = state.board
     my = board > 0
     opp = board < 0
-    emp = ~(my | opp)
     pos = jnp.zeros(64, dtype=jnp.bool_).at[action].set(TRUE)
 
     shifts = jnp.array([1, -1, 8, -8, 7, -7, 9, -9])
@@ -157,6 +156,7 @@ def _step(state, action):
     rev = jax.lax.fori_loop(0, 8, _shift, jnp.zeros(64, dtype=jnp.bool_))
     my ^= pos | rev
     opp ^= rev
+    emp = ~(my | opp)
 
     def _make_legal(i, legal):
         # NOT _check_line(my, opp, shifts[i], masks[i])
@@ -170,7 +170,7 @@ def _step(state, action):
     )
 
     reward, terminated = jax.lax.cond(
-        (jnp.count_nonzero(my | opp) == 64),
+        ((jnp.count_nonzero(my | opp) == 64) | ~legal_action.any()),
         lambda: (jnp.float32([-1, -1]).at[state.current_player].set(1), TRUE),
         lambda: (jnp.zeros(2, jnp.float32), FALSE),
     )
