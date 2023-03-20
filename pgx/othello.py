@@ -53,7 +53,8 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(64 + 1, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-    # ---
+
+    # --- Othello specific ---
     turn: jnp.ndarray = jnp.int8(0)
     # 8x8 board
     # [[ 0,  1,  2,  3,  4,  5,  6,  7],
