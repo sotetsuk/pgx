@@ -1129,7 +1129,7 @@ def test_random_play_5():
     assert state.passed or state.turn > 100
 
 
- def test_api():
+def test_api():
     import pgx
     env = pgx.make("go-9x9")
     pgx.api_test(env)

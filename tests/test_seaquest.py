@@ -198,7 +198,7 @@ def test_buggy_sample():
     assert (state.e_subs[0] == jnp.int32([6, 6, 0, 2, 0])).all()
 
 
- def test_api():
+def test_api():
     import pgx
     env = pgx.make("minatar/seaquest")
     pgx.api_test(env)

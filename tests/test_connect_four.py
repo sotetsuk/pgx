@@ -134,7 +134,7 @@ def test_observe():
     )).all()
     assert obs[:, :, 1].sum() == 0
 
- def test_api():
+def test_api():
     import pgx
     env = pgx.make("connect_four")
     pgx.api_test(env)

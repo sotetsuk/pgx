@@ -677,7 +677,7 @@ def test_sfen():
     assert _to_sfen(s) == sfen
 
 
- def test_api():
+def test_api():
     import pgx
     env = pgx.make("shogi")
     pgx.api_test(env)

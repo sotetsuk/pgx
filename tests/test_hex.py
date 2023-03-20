@@ -125,7 +125,7 @@ def test_random_play():
         rewards += state.reward
 
 
- def test_api():
+def test_api():
     import pgx
     env = pgx.make("hex")
     pgx.api_test(env)
