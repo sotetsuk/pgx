@@ -55,7 +55,6 @@ EnvId = Literal[
 
 @dataclass
 class State:
-    steps: jnp.ndarray
     current_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
@@ -67,6 +66,7 @@ class State:
     #   - updated only when actually used
     #   - supposed NOT to be used by agent
     _rng_key: jax.random.KeyArray
+    _step_count: jnp.ndarray
 
     def _repr_html_(self) -> str:
         from pgx._visualizer import Visualizer
@@ -111,7 +111,7 @@ class Env(abc.ABC):
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
-            lambda: self._step(state.replace(steps=state.steps + 1), action),  # type: ignore
+            lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
 
         # Taking illegal action leads to immediate game terminal with negative reward

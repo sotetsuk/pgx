@@ -58,8 +58,8 @@ def api_test_single(env: Env, num: int = 100):
             state.legal_action_mask.sum() != 0
         ), "legal_action_mask at init state cannot be zero."
 
-        assert state.steps == 0
-        curr_steps = state.steps
+        assert state._step_count == 0
+        curr_steps = state._step_count
         _validate_state(state)
         _validate_init_reward(state)
         _validate_current_player(state)
@@ -70,8 +70,8 @@ def api_test_single(env: Env, num: int = 100):
             action = act_randomly(subkey, state)
             state = step(state, action)
             assert (
-                state.steps == curr_steps + 1
-            ), f"{state.steps}, {curr_steps}"
+                state._step_count == curr_steps + 1
+            ), f"{state._step_count}, {curr_steps}"
             curr_steps += 1
 
             _validate_state(state)

@@ -28,7 +28,6 @@ init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 
 
 @dataclass
 class State(core.State):
-    steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -37,6 +36,7 @@ class State(core.State):
     # micro action = 6 * src + die
     legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # --- Backgammon specific ---
     # 各point(24) bar(2) off(2)にあるcheckerの数. 黒+, 白-
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)

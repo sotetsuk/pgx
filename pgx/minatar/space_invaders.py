@@ -30,7 +30,6 @@ NINE = jnp.int32(9)
 
 @dataclass
 class State(core.State):
-    steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(
@@ -40,6 +39,7 @@ class State(core.State):
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # ---
     pos: jnp.ndarray = jnp.int32(5)
     f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)

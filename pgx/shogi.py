@@ -130,7 +130,6 @@ QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 @dataclass
 class State(core.State):
-    steps: jnp.ndarray = jnp.int32(0)
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -138,6 +137,7 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # --- Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
