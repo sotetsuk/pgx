@@ -582,3 +582,9 @@ def test_observe():
     assert jnp.all(obs[12] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
     assert jnp.all(obs[13] == jnp.bool_([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0]))
     assert jnp.all(obs[14] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
+
+
+def test_api():
+    import pgx
+    env = pgx.make("sparrow_mahjong")
+    pgx.api_test(env)

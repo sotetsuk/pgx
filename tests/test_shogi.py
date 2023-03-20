@@ -675,3 +675,9 @@ def test_sfen():
     s = _from_sfen(sfen)
     visualize(s, "tests/assets/shogi/sfen_002.svg")
     assert _to_sfen(s) == sfen
+
+
+def test_api():
+    import pgx
+    env = pgx.make("shogi")
+    pgx.api_test(env)
