@@ -119,7 +119,7 @@ class MinAtarSeaquest(core.Env):
 
     @property
     def name(self) -> str:
-        return "MinAtar/Asterix"
+        return "MinAtar/Seaquest"
 
     @property
     def version(self) -> str:
@@ -479,38 +479,52 @@ def _update_enemy_subs(
             lambda: (_f_bullets, _e_subs, FALSE),
         )
         _r += removed
-        return _f_bullets, _e_subs, _terminal, _r
+        return (removed | is_out), _f_bullets, _e_subs, _terminal, _r
 
     def _update_each_filled(j, x):
         _f_bullets, _e_subs, _e_bullets, _terminal, _r = x
         _terminal |= _is_hit(_e_subs[j], sub_x, sub_y)
-        _f_bullets, _e_subs, _terminal, _r = lax.cond(
+        removed, _f_bullets, _e_subs, _terminal, _r = lax.cond(
             _e_subs[j, 3] == 0,
             lambda: _update_sub(j, _f_bullets, _e_subs, _terminal, _r),
-            lambda: (_f_bullets, _e_subs.at[j, 3].add(-1), _terminal, _r),
+            lambda: (
+                FALSE,
+                _f_bullets,
+                _e_subs.at[j, 3].add(-1),
+                _terminal,
+                _r,
+            ),
         )
         timer_zero = _e_subs[j, 4] == 0
         _e_subs = lax.cond(
-            timer_zero,
-            lambda: _e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL),
-            lambda: _e_subs.at[j, 4].add(-1),
+            removed,
+            lambda: _e_subs,
+            lambda: lax.cond(
+                timer_zero,
+                lambda: _e_subs.at[j, 4].set(ENEMY_SHOT_INTERVAL),
+                lambda: _e_subs.at[j, 4].add(-1),
+            ),
         )
         _e_bullets = lax.cond(
-            timer_zero,
-            lambda: _e_bullets.at[find_ix(_e_bullets)].set(
-                jnp.int32(
-                    [
-                        lax.cond(
-                            _e_subs[j, 2],
-                            lambda: _e_subs[j, 0],
-                            lambda: _e_subs[j, 0],
-                        ),
-                        _e_subs[j, 1],
-                        _e_subs[j, 2],
-                    ]
-                )
-            ),
+            removed,
             lambda: _e_bullets,
+            lambda: lax.cond(
+                timer_zero,
+                lambda: _e_bullets.at[find_ix(_e_bullets)].set(
+                    jnp.int32(
+                        [
+                            lax.cond(
+                                _e_subs[j, 2],
+                                lambda: _e_subs[j, 0],
+                                lambda: _e_subs[j, 0],
+                            ),
+                            _e_subs[j, 1],
+                            _e_subs[j, 2],
+                        ]
+                    )
+                ),
+                lambda: _e_bullets,
+            ),
         )
         return _f_bullets, _e_subs, _e_bullets, _terminal, _r
 
