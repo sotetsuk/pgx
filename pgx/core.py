@@ -46,7 +46,7 @@ EnvId = Literal[
     "minatar/freeway",
     "minatar/seaquest",
     "minatar/space_invaders",
-    # "othello",
+    "othello",
     "shogi",
     "sparrow_mahjong",
     "tic_tac_toe",
@@ -245,6 +245,10 @@ def make(env_id: EnvId):
         from pgx.minatar.space_invaders import MinAtarSpaceInvaders
 
         return MinAtarSpaceInvaders()
+    elif env_id == "othello":
+        from pgx.othello import Othello
+
+        return Othello()
     elif env_id == "shogi":
         from pgx.shogi import Shogi
 
