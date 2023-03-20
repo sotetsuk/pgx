@@ -39,8 +39,17 @@ UD_MASK = jnp.array([
     1, 1, 1, 1, 1, 1, 1, 1,
     1, 1, 1, 1, 1, 1, 1, 1,
     0, 0, 0, 0, 0, 0, 0, 0], dtype=jnp.bool_)
+SIDE_MASK = jnp.array([
+    0, 0, 0, 0, 0, 0, 0, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 1, 1, 1, 1, 1, 1, 0,
+    0, 0, 0, 0, 0, 0, 0, 0], dtype=jnp.bool_)
 # fmt:on
-SIDE_MASK = LR_MASK & UD_MASK
+# SIDE_MASK = LR_MASK & UD_MASK
 
 
 @dataclass
@@ -65,6 +74,7 @@ class State(core.State):
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
     board: jnp.ndarray = jnp.zeros(64, jnp.int8)  # -1(opp), 0(empty), 1(self)
+    passed: jnp.ndarray = FALSE
 
 
 class Othello(core.Env):
@@ -170,7 +180,7 @@ def _step(state, action):
     )
 
     reward, terminated = jax.lax.cond(
-        ((jnp.count_nonzero(my | opp) == 64) | ~legal_action.any()),
+        ((jnp.count_nonzero(my | opp) == 64)),
         lambda: (jnp.float32([-1, -1]).at[state.current_player].set(1), TRUE),
         lambda: (jnp.zeros(2, jnp.float32), FALSE),
     )
@@ -186,13 +196,13 @@ def _step(state, action):
 
 
 def _check_line(pos, opp, shift, mask):
-    result = opp & mask
-    result = result & jnp.roll(pos, shift)
-    result |= opp & jnp.roll(result, shift)
-    result |= opp & jnp.roll(result, shift)
-    result |= opp & jnp.roll(result, shift)
-    result |= opp & jnp.roll(result, shift)
-    result |= opp & jnp.roll(result, shift)
+    _opp = opp & mask
+    result = _opp & jnp.roll(pos, shift)
+    result |= _opp & jnp.roll(result, shift)
+    result |= _opp & jnp.roll(result, shift)
+    result |= _opp & jnp.roll(result, shift)
+    result |= _opp & jnp.roll(result, shift)
+    result |= _opp & jnp.roll(result, shift)
     return result
 
 
