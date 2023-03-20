@@ -23,8 +23,6 @@ from pgx._flax.struct import dataclass
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
-init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 5], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]], dtype=jnp.int16)  # type: ignore
-
 
 @dataclass
 class State(core.State):
@@ -276,6 +274,7 @@ def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     # 違う目が出るまで振り続ける.
     """
 
+    init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 5], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]], dtype=jnp.int16)  # type: ignore
     return jax.random.choice(rng, init_dice_pattern)
 
 
