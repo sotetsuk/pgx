@@ -169,10 +169,18 @@ def _step(state, action):
         0, 8, _make_legal, jnp.zeros(64, dtype=jnp.bool_)
     )
 
+    reward, terminated = jax.lax.cond(
+        (jnp.count_nonzero(my | opp) == 64),
+        lambda: (jnp.float32([-1, -1]).at[state.current_player].set(1), TRUE),
+        lambda: (jnp.zeros(2, jnp.float32), FALSE),
+    )
+
     return state.replace(
         current_player=1 - state.current_player,
         turn=1 - state.turn,
         legal_action_mask=legal_action,
+        reward=reward,
+        terminated=terminated,
         board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
     )
 
