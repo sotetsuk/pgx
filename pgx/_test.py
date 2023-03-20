@@ -20,8 +20,15 @@ import jax.numpy as jnp
 from pgx.core import Env, State
 from pgx.experimental.utils import act_randomly
 
+act_randomly = jax.jit(act_randomly)
+
 
 def api_test(env: Env, num: int = 100):
+    api_test_single(env, num)
+    api_test_batch(env, num)
+
+
+def api_test_single(env: Env, num: int = 100):
     """validate checks these items:
 
     - init
@@ -74,6 +81,25 @@ def api_test(env: Env, num: int = 100):
                 break
 
         _validate_taking_action_after_terminal(state, step)
+
+
+def api_test_batch(env: Env, num: int = 100):
+    init = jax.jit(jax.vmap(env.init))
+    step = jax.jit(jax.vmap(env.step))
+
+    # random play
+    # TODO: add tests
+    batch_size = 4
+    rng = jax.random.PRNGKey(9999)
+
+    for _ in range(num):
+        rng, subkey = jax.random.split(rng)
+        keys = jax.random.split(subkey, batch_size)
+        state = init(keys)
+        while not state.terminated.all():
+            rng, subkey = jax.random.split(rng)
+            action = act_randomly(subkey, state)
+            state = step(state, action)
 
 
 def _validate_taking_action_after_terminal(state: State, step_fn):
