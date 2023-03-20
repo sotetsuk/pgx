@@ -25,7 +25,7 @@ TRUE = jnp.bool_(True)
 @dataclass
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
-    observation: jnp.ndarray = jnp.zeros(64, dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
