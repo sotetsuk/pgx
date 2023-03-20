@@ -671,11 +671,11 @@ def init(rng: jnp.ndarray) -> State:
 
 def observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
-    obs = obs.at[state.sub_y, state.sub_x, 0].set(1)
+    obs = obs.at[state.sub_y, state.sub_x, 0].set(TRUE)
     back_x = lax.cond(
         state.sub_or, lambda: state.sub_x - 1, lambda: state.sub_x + 1
     )
-    obs = obs.at[state.sub_y, back_x, 1].set(1)
+    obs = obs.at[state.sub_y, back_x, 1].set(TRUE)
     oxygen_guage = state.oxygen * 10 // MAX_OXYGEN
     # hotfix to align to original minatar
     oxygen_guage = lax.cond(
@@ -684,13 +684,13 @@ def observe(state: State) -> jnp.ndarray:
     obs = lax.fori_loop(
         jnp.int32(0),
         oxygen_guage,
-        lambda i, _obs: _obs.at[9, i, 7].set(1),
+        lambda i, _obs: _obs.at[9, i, 7].set(TRUE),
         obs,
     )
     obs = lax.fori_loop(
         9 - state.diver_count,
         jnp.int32(9),
-        lambda i, _obs: _obs.at[9, i, 8].set(1),
+        lambda i, _obs: _obs.at[9, i, 8].set(TRUE),
         obs,
     )
     obs = lax.fori_loop(
@@ -700,7 +700,7 @@ def observe(state: State) -> jnp.ndarray:
             state.f_bullets[i][0] >= 0,
             lambda: _obs.at[
                 state.f_bullets[i][1], state.f_bullets[i][0], 2
-            ].set(1),
+            ].set(TRUE),
             lambda: _obs,
         ),
         obs,
@@ -712,18 +712,18 @@ def observe(state: State) -> jnp.ndarray:
             state.e_bullets[i][0] >= 0,
             lambda: _obs.at[
                 state.e_bullets[i][1], state.e_bullets[i][0], 4
-            ].set(1),
+            ].set(TRUE),
             lambda: _obs,
         ),
         obs,
     )
 
     def set_e_fish(_obs, fish):
-        _obs = _obs.at[fish[1], fish[0], 5].set(1)
+        _obs = _obs.at[fish[1], fish[0], 5].set(TRUE)
         back_x = fish[0] + jnp.array([1, -1])[fish[2]]
         _obs = lax.cond(
             (0 <= back_x) & (back_x <= 9),
-            lambda: _obs.at[fish[1], back_x, 3].set(1),
+            lambda: _obs.at[fish[1], back_x, 3].set(TRUE),
             lambda: _obs,
         )
         return _obs
@@ -740,11 +740,11 @@ def observe(state: State) -> jnp.ndarray:
     )
 
     def set_e_subs(_obs, sub):
-        _obs = _obs.at[sub[1], sub[0], 6].set(1)
+        _obs = _obs.at[sub[1], sub[0], 6].set(TRUE)
         back_x = sub[0] + jnp.array([1, -1], dtype=jnp.int32)[sub[2]]
         _obs = lax.cond(
             (0 <= back_x) & (back_x <= 9),
-            lambda: _obs.at[sub[1], back_x, 3].set(1),
+            lambda: _obs.at[sub[1], back_x, 3].set(TRUE),
             lambda: _obs,
         )
         return _obs
@@ -761,11 +761,11 @@ def observe(state: State) -> jnp.ndarray:
     )
 
     def set_divers(_obs, diver):
-        _obs = _obs.at[diver[1], diver[0], 9].set(1)
+        _obs = _obs.at[diver[1], diver[0], 9].set(TRUE)
         back_x = diver[0] + jnp.array([1, -1], dtype=jnp.int32)[diver[2]]
         _obs = lax.cond(
             (back_x >= 0) & (back_x <= 9),
-            lambda: _obs.at[diver[1], back_x, 3].set(1),
+            lambda: _obs.at[diver[1], back_x, 3].set(TRUE),
             lambda: _obs,
         )
         return _obs
