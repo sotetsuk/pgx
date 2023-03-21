@@ -82,7 +82,7 @@ def test_legal_action():
 
 
 def test_terminated():
-    board = jnp.int8([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 0])
+    board = jnp.int8([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
     state = State(board=board)
     state = step(state, 0)
     """
@@ -92,6 +92,27 @@ def test_terminated():
      [16 32 64  2]]
     """
     assert state.terminated
+
+
+def test_observe():
+    key = jax.random.PRNGKey(2)
+    state = init(key)
+    """
+    [[0 0 2 2]
+     [0 0 0 0]
+     [0 0 0 0]
+     [0 0 0 0]]
+    """
+    obs = observe(state, 0)
+    assert obs.shape == (4, 4, 31)
+
+    assert not obs[0, 2, 0]
+    assert obs[0, 2, 1]
+    assert not obs[0, 2, 2]
+
+    assert not obs[0, 3, 0]
+    assert obs[0, 3, 1]
+    assert not obs[0, 3, 2]
 
 
 def test_random_play():

@@ -140,8 +140,12 @@ def _step(state: State, action):
     )
 
 
-def _observe(state, player_id) -> jnp.ndarray:
-    return jnp.ones(16, dtype=jnp.bool_)
+def _observe(state: State, player_id) -> jnp.ndarray:
+    obs = jnp.zeros((16, 31), dtype=jnp.bool_)
+    obs = jax.lax.fori_loop(
+        0, 16, lambda i, obs: obs.at[i, state.board[i]].set(TRUE), obs
+    )
+    return obs.reshape((4, 4, 31))
 
 
 def _add_random_num(board_2d, key):
