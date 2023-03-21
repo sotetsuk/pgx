@@ -379,7 +379,6 @@ def _step(state: State, action: Action) -> State:
         reward=reward,
         terminated=terminated,
         legal_action_mask=legal_action_mask,
-        legal_moves=legal_moves,
     )
 
 
