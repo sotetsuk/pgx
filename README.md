@@ -164,6 +164,11 @@ Use `pgx.available_games()` to see the list of currently available games.
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
+<tr>
+ <td><a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
 </table>
 </div>
 
