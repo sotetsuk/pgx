@@ -563,7 +563,8 @@ def test_buggy_samples():
     state = _from_sfen("8+P/9/9/5b3/9/3B5/9/9/+p8 b 2r4g4s4n4l18p 1")
     dlshogi_action = 202
     a = Action.from_dlshogi_action(state, dlshogi_action)
-    assert a.from_ != 0
+    assert a.from_ == 50
+
 
 def test_observe():
     key = jax.random.PRNGKey(0)
