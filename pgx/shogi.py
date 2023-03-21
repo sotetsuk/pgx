@@ -430,13 +430,13 @@ def _legal_actions(state: State):
     is_pinned, legal_pinned_moves = _find_pinned_pieces(state, flipped_state)
 
     # Filter illegal moves
-    legal_moves = _filter_suicide_moves(
+    legal_moves = _filter_suicide_king_moves(
         state, legal_moves, flipped_effect_boards
     )
     legal_moves = _filter_ignoring_check_moves(
         state, legal_moves, checking_point_board, check_defense_board
     )
-
+    # filter pinned pieces' illegal moves
     legal_moves_wo_pinned = jnp.where(
         is_pinned.reshape(81, 1), FALSE, legal_moves
     )
@@ -485,7 +485,7 @@ def _filter_double_check_moves(state, legal_moves, checking_point_board):
     return legal_moves
 
 
-def _filter_suicide_moves(
+def _filter_suicide_king_moves(
     state: State, legal_moves: jnp.ndarray, flipped_effect_boards
 ) -> jnp.ndarray:
     """Filter suicide action
