@@ -90,9 +90,9 @@ class Play2048(core.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
-    board = _add_random_2(jnp.zeros(16, jnp.int8), rng1)
+    board = _add_random_2(jnp.zeros((4, 4), jnp.int8), rng1)
     board = _add_random_2(board, rng2)
-    return State(board=board)
+    return State(board=board.ravel())
 
 
 def _step(state: State, action):
@@ -117,13 +117,27 @@ def _step(state: State, action):
             lambda: jnp.rot90(board_2d, -3),
         ],
     )
-    board_1d = board_2d.ravel()
 
     _rng_key, sub_key = jax.random.split(state._rng_key)
-    board_1d = _add_random_2(board_1d, sub_key)
+    board_2d = _add_random_2(board_2d, sub_key)
+
+    legal_action = jax.vmap(_can_slide_left)(
+        jnp.array(
+            [
+                board_2d,
+                jnp.rot90(board_2d, 1),
+                jnp.rot90(board_2d, 2),
+                jnp.rot90(board_2d, 3),
+            ]
+        )
+    )
 
     return state.replace(
-        _rng_key=_rng_key, board=board_1d, reward=jnp.float32([reward.sum()])
+        _rng_key=_rng_key,
+        board=board_2d.ravel(),
+        reward=jnp.float32([reward.sum()]),
+        legal_action_mask=legal_action.ravel(),
+        terminated=~legal_action.any(),
     )
 
 
@@ -131,14 +145,17 @@ def _observe(state, player_id) -> jnp.ndarray:
     ...
 
 
-def _add_random_2(board, key):
+def _add_random_2(board_2d, key):
     """Add 2 or 4 to the empty space on the board."""
+    key, sub_key = jax.random.split(key)
     pos = jax.random.choice(
-        key, jnp.arange(16, dtype=jnp.int8), p=(board == 0)
+        key, jnp.arange(16, dtype=jnp.int8), p=(board_2d.ravel() == 0)
     )
-    # TODO 4(rarely)
-    board = board.at[pos].set(1)
-    return board
+    set_num = jax.random.choice(
+        sub_key, jnp.int8([1, 2]), p=jnp.array([0.9, 0.1])
+    )
+    board_2d = board_2d.at[pos // 4, pos % 4].set(set_num)
+    return board_2d
 
 
 def _slide_and_merge(line):
@@ -196,6 +213,19 @@ def _slide_left(line):
         lambda: line,
     )
     return line
+
+
+def _can_slide_left(board_2d):
+    def _can_slide(line):
+        """Judge if it can be moved to the left."""
+        can_slide = (line[0] == 0) | (line[1] == 0) | (line[2] == 0)
+        can_slide |= (
+            (line[0] == line[1]) | (line[1] == line[2]) | (line[2] == line[3])
+        )
+        return can_slide
+
+    can_slide = jax.vmap(_can_slide)(board_2d).any()
+    return can_slide
 
 
 # only for debug
