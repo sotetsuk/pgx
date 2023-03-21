@@ -170,6 +170,7 @@ def test_legal_moves():
     visualize(s, "tests/assets/shogi/legal_moves_004.svg")
     legal_moves, _, _ = _legal_actions(s)
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
+    assert legal_moves[xy2i(5, 7), xy2i(5, 6)]
 
     # Gold is not pinned
     key = jax.random.PRNGKey(0)
@@ -547,6 +548,7 @@ def test_buggy_samples():
     visualize(s, "tests/assets/shogi/buggy_samples_004.svg")
     assert (jnp.nonzero(s.legal_action_mask)[0] == jnp.int32([43, 52, 68, 196, 222, 295, 789, 1996, 2004, 2012])).all()
 
+    # #602
     sfen = "9/4R4/9/9/9/9/9/9/9 b 2r2b4g3s4n4l17p 1"
     state = _from_sfen(sfen)
     visualize(state, "tests/assets/shogi/buggy_samples_005.svg")
@@ -557,6 +559,13 @@ def test_buggy_samples():
     expected_state = _from_sfen(sfen)
     visualize(expected_state, "tests/assets/shogi/buggy_samples_006.svg")
     assert (state.piece_board == expected_state.piece_board).all()
+
+    # #603
+    state = _from_sfen("8k/9/9/5b3/9/3B5/9/9/K8 b 2r4g4s4n4l18p 1")
+    visualize(state, "tests/assets/shogi/buggy_samples_007.svg")
+    dlshogi_action = 202
+    a = Action.from_dlshogi_action(state, dlshogi_action)
+    assert a.from_ == 50
 
 
 def test_observe():
