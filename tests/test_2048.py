@@ -30,3 +30,11 @@ def test_slide_and_merge():
 
     line = jnp.array([1, 4, 4, 5])
     assert (slide_and_merge(line) == jnp.array([1, 5, 5, 0])).all()
+
+    board = jnp.array([0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2])
+    board_2d = board.reshape((4, 4))
+    board_2d = jax.vmap(_slide_and_merge)(board_2d)
+    board_1d = board_2d.ravel()
+    assert (
+        board_1d == jnp.array([3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0])
+    ).all()

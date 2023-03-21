@@ -20,13 +20,14 @@ from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
+ZERO = jnp.int8(0)
 
 
 @dataclass
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32(0.0)
+    reward: jnp.ndarray = jnp.float32([0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
@@ -92,8 +93,16 @@ def _init(rng: jax.random.KeyArray) -> State:
     return State(board=board)
 
 
-def _step(state, action):
-    ...
+def _step(state: State, action):
+    board_2d = state.board.reshape((4, 4))
+    # TODO rotate
+    board_2d = jax.vmap(_slide_and_merge)(board_2d)
+    board_1d = board_2d.ravel()
+
+    _rng_key, sub_key = jax.random.split(state._rng_key)
+    board_1d = _add_random_2(board_1d, sub_key)
+
+    return state.replace(_rng_key=_rng_key, board=board_1d)
 
 
 def _observe(state, player_id) -> jnp.ndarray:
@@ -102,7 +111,9 @@ def _observe(state, player_id) -> jnp.ndarray:
 
 def _add_random_2(board, key):
     """Add 2 or 4 to the empty space on the board."""
-    pos = jax.random.choice(key, jnp.arange(16), p=(board == 0))
+    pos = jax.random.choice(
+        key, jnp.arange(16, dtype=jnp.int8), p=(board == 0)
+    )
     board = board.at[pos].set(1)
     return board
 
@@ -118,17 +129,17 @@ def _merge(line):
     """[2 2 2 2] -> [4 0 4 0]"""
     line = jax.lax.cond(
         (line[0] != 0) & (line[0] == line[1]),
-        lambda: line.at[0].set(line[0] + 1).at[1].set(0),
+        lambda: line.at[0].set(line[0] + 1).at[1].set(ZERO),
         lambda: line,
     )
     line = jax.lax.cond(
         (line[1] != 0) & (line[1] == line[2]),
-        lambda: line.at[1].set(line[1] + 1).at[2].set(0),
+        lambda: line.at[1].set(line[1] + 1).at[2].set(ZERO),
         lambda: line,
     )
     line = jax.lax.cond(
         (line[2] != 0) & (line[2] == line[3]),
-        lambda: line.at[2].set(line[2] + 1).at[3].set(0),
+        lambda: line.at[2].set(line[2] + 1).at[3].set(ZERO),
         lambda: line,
     )
     return line
