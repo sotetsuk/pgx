@@ -86,7 +86,10 @@ class Play2048(core.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    return State()
+    rng1, rng2 = jax.random.split(rng)
+    board = _add_random_2(jnp.zeros(16, jnp.int8), rng1)
+    board = _add_random_2(board, rng2)
+    return State(board=board)
 
 
 def _step(state, action):
@@ -95,6 +98,13 @@ def _step(state, action):
 
 def _observe(state, player_id) -> jnp.ndarray:
     ...
+
+
+def _add_random_2(board, key):
+    """Add 2 or 4 to the empty space on the board."""
+    pos = jax.random.choice(key, jnp.arange(16), p=(board == 0))
+    board = board.at[pos].set(1)
+    return board
 
 
 # only for debug
