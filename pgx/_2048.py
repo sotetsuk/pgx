@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -92,7 +91,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
     board = _add_random_2(jnp.zeros((4, 4), jnp.int8), rng1)
     board = _add_random_2(board, rng2)
-    return State(board=board.ravel())
+    return State(board=board.ravel())  # type:ignore
 
 
 def _step(state: State, action):
@@ -132,7 +131,7 @@ def _step(state: State, action):
         )
     )
 
-    return state.replace(
+    return state.replace(  # type:ignore
         _rng_key=_rng_key,
         board=board_2d.ravel(),
         reward=jnp.float32([reward.sum()]),
