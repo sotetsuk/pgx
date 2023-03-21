@@ -107,7 +107,7 @@ def _add_random_2(board, key):
     return board
 
 
-def _slide(line):
+def _slide_and_merge(line):
     line = _slide_left(line)
     line = _merge(line)
     line = _slide_left(line)
@@ -115,19 +115,20 @@ def _slide(line):
 
 
 def _merge(line):
+    """[2 2 2 2] -> [4 0 4 0]"""
     line = jax.lax.cond(
-        (line[0] == line[1]),
-        lambda: line.at[0].set(line[0] * 2).at[1].set(0),
+        (line[0] != 0) & (line[0] == line[1]),
+        lambda: line.at[0].set(line[0] + 1).at[1].set(0),
         lambda: line,
     )
     line = jax.lax.cond(
-        (line[1] == line[2]),
-        lambda: line.at[1].set(line[1] * 2).at[2].set(0),
+        (line[1] != 0) & (line[1] == line[2]),
+        lambda: line.at[1].set(line[1] + 1).at[2].set(0),
         lambda: line,
     )
     line = jax.lax.cond(
-        (line[2] == line[3]),
-        lambda: line.at[2].set(line[2] * 2).at[3].set(0),
+        (line[2] != 0) & (line[2] == line[3]),
+        lambda: line.at[2].set(line[2] + 1).at[3].set(0),
         lambda: line,
     )
     return line
