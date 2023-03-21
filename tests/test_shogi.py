@@ -31,7 +31,6 @@ def update_board(state, piece_board, hand=None):
     state = state.replace(piece_board=piece_board)
     if hand is not None:
         state = state.replace(hand=hand)
-    state = state.replace(legal_moves=_legal_actions(state)[0])
     return state
 
 
