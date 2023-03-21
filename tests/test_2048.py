@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx._2048 import Play2048, _slide_and_merge, State
+from pgx.play2048 import Play2048, _slide_and_merge, State
 
 env = Play2048()
 init = jax.jit(env.init)

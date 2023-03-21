@@ -141,7 +141,7 @@ def _step(state: State, action):
 
 
 def _observe(state, player_id) -> jnp.ndarray:
-    ...
+    return jnp.ones(16, dtype=jnp.bool_)
 
 
 def _add_random_num(board_2d, key):
