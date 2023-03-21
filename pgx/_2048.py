@@ -107,7 +107,7 @@ def _step(state: State, action):
             lambda: jnp.rot90(board_2d, 3),
         ],
     )
-    board_2d = jax.vmap(_slide_and_merge)(board_2d)
+    board_2d, reward = jax.vmap(_slide_and_merge)(board_2d)
     board_2d = jax.lax.switch(
         action,
         [
@@ -122,7 +122,9 @@ def _step(state: State, action):
     _rng_key, sub_key = jax.random.split(state._rng_key)
     board_1d = _add_random_2(board_1d, sub_key)
 
-    return state.replace(_rng_key=_rng_key, board=board_1d)
+    return state.replace(
+        _rng_key=_rng_key, board=board_1d, reward=jnp.float32([reward.sum()])
+    )
 
 
 def _observe(state, player_id) -> jnp.ndarray:
@@ -142,29 +144,38 @@ def _add_random_2(board, key):
 def _slide_and_merge(line):
     """[2 2 2 2] -> [4 4 0 0]"""
     line = _slide_left(line)
-    line = _merge(line)
+    line, reward = _merge(line)
     line = _slide_left(line)
-    return line
+    return line, reward
 
 
 def _merge(line):
     """[2 2 2 2] -> [4 0 4 0]"""
-    line = jax.lax.cond(
+    line, reward = jax.lax.cond(
         (line[0] != 0) & (line[0] == line[1]),
-        lambda: line.at[0].set(line[0] + 1).at[1].set(ZERO),
-        lambda: line,
+        lambda: (
+            line.at[0].set(line[0] + 1).at[1].set(ZERO),
+            2 ** (line[0] + 1),
+        ),
+        lambda: (line, ZERO),
     )
-    line = jax.lax.cond(
+    line, reward = jax.lax.cond(
         (line[1] != 0) & (line[1] == line[2]),
-        lambda: line.at[1].set(line[1] + 1).at[2].set(ZERO),
-        lambda: line,
+        lambda: (
+            line.at[1].set(line[1] + 1).at[2].set(ZERO),
+            reward + 2 ** (line[1] + 1),
+        ),
+        lambda: (line, reward),
     )
-    line = jax.lax.cond(
+    line, reward = jax.lax.cond(
         (line[2] != 0) & (line[2] == line[3]),
-        lambda: line.at[2].set(line[2] + 1).at[3].set(ZERO),
-        lambda: line,
+        lambda: (
+            line.at[2].set(line[2] + 1).at[3].set(ZERO),
+            reward + 2 ** (line[2] + 1),
+        ),
+        lambda: (line, reward),
     )
-    return line
+    return line, reward
 
 
 def _slide_left(line):
