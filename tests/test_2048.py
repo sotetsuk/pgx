@@ -107,8 +107,8 @@ def test_random_play():
         done = state.terminated
 
 
-# def test_api():
-#    import pgx
-#
-#    env = pgx.make("2048")
-#    pgx.api_test(env, 10)
+def test_api():
+    import pgx
+
+    env = pgx.make("2048")
+    pgx.api_test(env, 10)
