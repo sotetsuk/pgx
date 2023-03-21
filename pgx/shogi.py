@@ -483,6 +483,7 @@ def _filter_suicide_moves(
 
     # pinned piece cannot move
     legal_moves = jnp.where(is_pinned.reshape(81, 1), FALSE, legal_moves)
+    # TODO: fix me
 
     return legal_moves
 
