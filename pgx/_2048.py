@@ -107,6 +107,52 @@ def _add_random_2(board, key):
     return board
 
 
+def _slide(line):
+    line = _slide_left(line)
+    line = _merge(line)
+    line = _slide_left(line)
+    return line
+
+
+def _merge(line):
+    line = jax.lax.cond(
+        (line[0] == line[1]),
+        lambda: line.at[0].set(line[0] * 2).at[1].set(0),
+        lambda: line,
+    )
+    line = jax.lax.cond(
+        (line[1] == line[2]),
+        lambda: line.at[1].set(line[1] * 2).at[2].set(0),
+        lambda: line,
+    )
+    line = jax.lax.cond(
+        (line[2] == line[3]),
+        lambda: line.at[2].set(line[2] * 2).at[3].set(0),
+        lambda: line,
+    )
+    return line
+
+
+def _slide_left(line):
+    """[0 2 0 2] -> [2 2 0 0]"""
+    line = jax.lax.cond(
+        (line[2] == 0),
+        lambda: line.at[2:].set(jnp.roll(line[2:], -1)),
+        lambda: line,
+    )
+    line = jax.lax.cond(
+        (line[1] == 0),
+        lambda: line.at[1:].set(jnp.roll(line[1:], -1)),
+        lambda: line,
+    )
+    line = jax.lax.cond(
+        (line[0] == 0),
+        lambda: jnp.roll(line, -1),
+        lambda: line,
+    )
+    return line
+
+
 # only for debug
 def show(state):
     board = jnp.array([0 if i == 0 else 2**i for i in state.board])
