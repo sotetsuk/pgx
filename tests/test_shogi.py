@@ -4,10 +4,20 @@ import jax.numpy as jnp
 from pgx.shogi import *
 from pgx.shogi import _step, _step_move, _step_drop, _flip, _effects_all, _legal_actions, _rotate, _to_direction, _from_sfen, _pseudo_legal_drops, _to_sfen
 
+
 env = Shogi()
 init = jax.jit(env.init)
 step = jax.jit(env.step)
 observe = jax.jit(env.observe)
+
+
+def xy2i(x, y):
+    """
+    >>> xy2i(2, 6)  # 26歩
+    14
+    """
+    i = (x - 1) * 9 + (y - 1)
+    return i
 
 
 # check visualization results by image preview plugins
@@ -21,8 +31,6 @@ def update_board(state, piece_board, hand=None):
     state = state.replace(piece_board=piece_board)
     if hand is not None:
         state = state.replace(hand=hand)
-    state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))
-    state = state.replace(effects=state.effects.at[1].set(_effects_all(_flip(state))))
     state = state.replace(legal_moves=_legal_actions(state)[0])
     return state
 

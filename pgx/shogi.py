@@ -22,7 +22,6 @@ import pgx.core as core
 from pgx._cache import (
     load_shogi_is_on_the_way,
     load_shogi_legal_from_mask,
-    load_shogi_queen_moves,
     load_shogi_raw_effect_boards,
 )
 from pgx._flax.struct import dataclass
@@ -91,8 +90,6 @@ class State(core.State):
     # Not necessary. Cached only for Action.from_dlshogi_action
     # Must be updated by `_legal_actions` if piece_board or hand is modified w/o `step`
     legal_moves: jnp.ndarray = jnp.zeros((81, 81), dtype=jnp.bool_)
-    # Also cache
-    effects: jnp.ndarray = jnp.zeros((2, 81, 81), dtype=jnp.bool_)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -100,8 +97,6 @@ class State(core.State):
         terminated, reward, and current_player are not changed"""
         state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
         # fmt: off
-        state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))  # type: ignore
-        state = state.replace(effects=state.effects.at[1].set(_effects_all(_flip(state))))  # type: ignore
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         legal_moves, legal_promotions, legal_drops = _legal_actions(state)
         legal_action_mask = _to_direction(legal_moves, legal_promotions, legal_drops)
@@ -157,8 +152,6 @@ IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # x x x o x x x
 # x x o x x x x
 LEGAL_FROM_MASK = load_shogi_legal_from_mask()  # (10, 81, 81)
-# Queen piece does not exist in Shogi but necessary for computing legal moves
-QUEEN_MOVES = load_shogi_queen_moves()  # (81, 81)
 
 
 def _init_board():
@@ -186,10 +179,6 @@ def _init_board():
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
     state = State()
-    state = state.replace(effects=state.effects.at[0].set(_effects_all(state)))
-    state = state.replace(
-        effects=state.effects.at[1].set(_effects_all(_flip(state)))
-    )
     legal_moves, legal_promotions, legal_drops = _legal_actions(state)
     return state.replace(  # type: ignore
         legal_action_mask=_to_direction(
@@ -304,7 +293,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         my_pieces = jnp.arange(OPP_PAWN)
         my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces)
         # 自分の利き
-        my_effect = state.effects[0]
+        my_effect = _effects_all(state)
 
         def e(p):
             mask = state.piece_board == p
@@ -346,8 +335,9 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
 
+    flipped_effect_boards = _effects_all(_flip(state))
     checking_point_board, _ = _check_info(
-        state, _flip(state), state.effects[1]
+        state, _flip(state), flipped_effect_boards
     )
     checked = jnp.tile(checking_point_board.any(), reps=(1, 9, 9))
 
@@ -419,35 +409,7 @@ def _step_move(state: State, action: Action) -> State:
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     # apply piece moves
-    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
-
-    ####################################################################################
-    # Update cached effects
-    ####################################################################################
-    # fmt: off
-    my_effects = state.effects[0]
-    opp_effects = state.effects[1]
-    # 移動元で塞がれていた利きを復元する（from_に効いていた大駒の利きを作り直す）
-    queen_effect = jnp.tile(_queen_effect(state, action.from_), reps=(81, 1))
-    my_effects |= _effect_filter_through(state, action.from_) & queen_effect
-    # 相手も同様
-    opp_effects |= (_effect_filter_through(_flip(state), _roatate_pos(action.from_)) & queen_effect[::-1])
-    # 移動元からの古い利きを消す
-    my_effects = my_effects.at[action.from_, :].set(FALSE)
-    # 移動先で相手の利きを消す（移動先で駒を取っていたら、取られた駒の利きを消す）
-    opp_effects = opp_effects.at[_roatate_pos(action.to), :].set(FALSE)
-    # 移動先から新しい利きを作る
-    my_effects = my_effects.at[action.to, :].set(_effects(state, action.to))
-    # 移動先を通るような利きを塞ぐ
-    my_effects &= ~_effect_filter_through(state, action.to)
-    # 相手も同様
-    opp_effects &= ~_effect_filter_through(_flip(state), _roatate_pos(action.to))
-    # set updated effects
-    state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
-    state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
-    # fmt: on
-
-    return state
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
@@ -455,36 +417,17 @@ def _step_drop(state: State, action: Action) -> State:
     pb = state.piece_board.at[action.to].set(action.piece)
     # remove piece from hand
     hand = state.hand.at[0, action.piece].add(-1)
-    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
-
-    ####################################################################################
-    # Update cached effects
-    ####################################################################################
-    # fmt: off
-    my_effects = state.effects[0]
-    opp_effects = state.effects[1]
-    # 新しい利きが増える
-    my_effects = my_effects.at[action.to, :].set(_effects(state, action.to))
-    # 打たれた点を経由する大駒の利きが消える
-    my_effects &= ~_effect_filter_through(state, action.to)
-    # 相手も同様
-    opp_effects &= ~_effect_filter_through(_flip(state), _roatate_pos(action.to))
-    # set updated effects
-    state = state.replace(effects=state.effects.at[0].set(my_effects))  # type: ignore
-    state = state.replace(effects=state.effects.at[1].set(opp_effects))  # type: ignore
-    # fmt: on
-
-    return state
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
 def _legal_actions(state: State):
-    effect_boards = state.effects[0]  # _apply_effects(state)
+    effect_boards = _effects_all(state)
     legal_moves = _pseudo_legal_moves(state, effect_boards)
     legal_drops = _pseudo_legal_drops(state, effect_boards)
 
     # Prepare necessary materials
     flipped_state = _flip(state)
-    flipped_effect_boards = state.effects[1]  # _apply_effects(flipped_state)
+    flipped_effect_boards = _effects_all(flipped_state)
     checking_point_board, check_defense_board = _check_info(
         state, flipped_state, flipped_effect_boards
     )
@@ -804,7 +747,6 @@ def _flip(state: State):
     return state.replace(  # type: ignore
         piece_board=pb,
         hand=state.hand[jnp.int8((1, 0))],
-        effects=state.effects[jnp.int8((1, 0))],
     )
 
 
@@ -889,134 +831,6 @@ def _effect_filters_all(state: State) -> jnp.ndarray:
     filter_boards = jnp.where(mask, filter_boards, FALSE)
 
     return filter_boards  # (81=from, 81=to)
-
-
-def _effect_filter_through(
-    state: State, blocked_pos: jnp.ndarray
-) -> jnp.ndarray:
-    """
-    >>> s = _init_board()
-    >>> _rotate(_effect_filter_through(s, 10).any(axis=0))
-    Array([[False, False, False, False, False, False, False,  True,  True],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    """
-    pieces = state.piece_board
-    large_pieces = jax.vmap(_to_large_piece_ix)(pieces)
-    from_ = jnp.arange(81)
-    to = jnp.arange(81)
-
-    def func(p, f):
-        # pieceがfromからtoへblock_posに妨害されずに到達できるか否か
-        return IS_ON_THE_WAY[p, f, to, blocked_pos]
-
-    # (piece, from) にバッチで適用
-    filter_boards = jax.vmap(func)(large_pieces, from_)  # (81, 81)
-
-    mask = (large_pieces >= 0).reshape(81, 1)
-    filter_boards = jnp.where(mask, filter_boards, FALSE)
-
-    return filter_boards  # (81=from, 81=to)
-
-
-def _effect_filter_from(state: State, from_: jnp.ndarray) -> jnp.ndarray:
-    """
-    >>> s = _init_board()
-    >>> _rotate(_effect_filter_from(s, 8))
-    Array([[False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    """
-    piece = state.piece_board[from_]
-    large_piece = _to_large_piece_ix(piece)
-    to = jnp.arange(81)
-
-    def func(t):
-        # toを固定したとき、pieceがfromからtoへ妨害されずに到達できるか否か
-        # True = 途中でbrockされ、到達できない
-        return (
-            IS_ON_THE_WAY[large_piece, from_, t, :] & (state.piece_board >= 0)
-        ).any()
-
-    # (piece, from) にバッチで適用
-    filter_boards = jax.vmap(func)(to)  # (81,81)
-
-    # from_にある駒が大駒でないとき、利きには何も影響がない
-    filter_boards = jax.lax.cond(
-        large_piece == -1,
-        lambda: jnp.zeros((81,), dtype=jnp.bool_),
-        lambda: filter_boards,
-    )
-
-    return filter_boards  # (81=to)
-
-
-def xy2i(x, y):
-    """
-    >>> xy2i(2, 6)  # 26歩
-    14
-    """
-    i = (x - 1) * 9 + (y - 1)
-    return i
-
-
-def _queen_effect(state: State, from_: jnp.ndarray) -> jnp.ndarray:
-    """
-    >>> s = _init_board()
-    >>> _rotate(_queen_effect(s, xy2i(5, 5)))
-    Array([[False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False,  True, False,  True, False,  True, False, False],
-           [False, False, False,  True,  True,  True, False, False, False],
-           [ True,  True,  True,  True, False,  True,  True,  True,  True],
-           [False, False, False,  True,  True,  True, False, False, False],
-           [False, False,  True, False,  True, False,  True, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    """
-    queen_moves = QUEEN_MOVES[from_, :]
-
-    def filter(t):
-        # queenはrookとbishopのor
-        is_occupied = state.piece_board >= 0
-        bishop_filter = (IS_ON_THE_WAY[1, from_, t, :] & is_occupied).any()
-        rook_filter = (IS_ON_THE_WAY[2, from_, t, :] & is_occupied).any()
-        return bishop_filter | rook_filter
-
-    filter_board = jax.vmap(filter)(jnp.arange(81))  # (81,)
-    return queen_moves & ~filter_board  # (81,)
-
-
-def _effects(state: State, from_: jnp.ndarray):
-    """fromに現在ある駒からの利き
-
-    >>> s = _init_board()
-    >>> _rotate(_effects(s, 8))  # 香
-    Array([[False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False, False],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False,  True],
-           [False, False, False, False, False, False, False, False, False]],      dtype=bool)
-    """
-    raw_effect_boards = RAW_EFFECT_BOARDS[state.piece_board[from_], from_, :]
-    effect_filter_boards = _effect_filter_from(state, from_)
-    return raw_effect_boards & ~effect_filter_boards
 
 
 def _effects_all(state: State):
