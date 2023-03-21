@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from functools import partial
+
 import jax
 import jax.numpy as jnp
 
@@ -94,9 +96,27 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action):
+    """action: 0(left), 1(up), 2(right), 3(down)"""
     board_2d = state.board.reshape((4, 4))
-    # TODO rotate
+    board_2d = jax.lax.switch(
+        action,
+        [
+            lambda: board_2d,
+            lambda: jnp.rot90(board_2d, 1),
+            lambda: jnp.rot90(board_2d, 2),
+            lambda: jnp.rot90(board_2d, 3),
+        ],
+    )
     board_2d = jax.vmap(_slide_and_merge)(board_2d)
+    board_2d = jax.lax.switch(
+        action,
+        [
+            lambda: board_2d,
+            lambda: jnp.rot90(board_2d, -1),
+            lambda: jnp.rot90(board_2d, -2),
+            lambda: jnp.rot90(board_2d, -3),
+        ],
+    )
     board_1d = board_2d.ravel()
 
     _rng_key, sub_key = jax.random.split(state._rng_key)
@@ -114,11 +134,13 @@ def _add_random_2(board, key):
     pos = jax.random.choice(
         key, jnp.arange(16, dtype=jnp.int8), p=(board == 0)
     )
+    # TODO 4(rarely)
     board = board.at[pos].set(1)
     return board
 
 
 def _slide_and_merge(line):
+    """[2 2 2 2] -> [4 4 0 0]"""
     line = _slide_left(line)
     line = _merge(line)
     line = _slide_left(line)
