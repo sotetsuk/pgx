@@ -26,6 +26,7 @@ from ._dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from ._dwg.go import GoState, _make_go_dwg
 from ._dwg.hex import HexState, _make_hex_dwg
 from ._dwg.othello import OthelloState, _make_othello_dwg
+from ._dwg.play2048 import Play2048State, _make_2048_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
 from ._dwg.sparrow_mahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from ._dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
@@ -421,6 +422,34 @@ class Visualizer:
                     "black",
                     "",
                 )
+        elif isinstance(_state, Play2048State):
+            self.config["GRID_SIZE"] = 50
+            self.config["BOARD_WIDTH"] = 4
+            self.config["BOARD_HEIGHT"] = 4
+            self._make_dwg_group = _make_2048_dwg
+            if (
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "lightgray",
+                    "",
+                    "",
+                    "",
+                    "#1e1e1e",
+                    "black",
+                    "black",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "lightgray",
+                    "",
+                    "",
+                    "",
+                    "white",
+                    "black",
+                    "black",
+                )
         elif isinstance(_state, ShogiState):
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 10
@@ -541,6 +570,10 @@ class Visualizer:
         elif isinstance(_states, OthelloState):
             return OthelloState(
                 turn=_states.turn[_i],
+                board=_states.board[_i],
+            )
+        elif isinstance(_states, Play2048State):
+            return Play2048State(
                 board=_states.board[_i],
             )
         elif isinstance(_states, ShogiState):
