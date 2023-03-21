@@ -560,7 +560,8 @@ def test_buggy_samples():
     assert (state.piece_board == expected_state.piece_board).all()
 
     #
-    state = _from_sfen("8+P/9/9/5b3/9/3B5/9/9/+p8 b 2r4g4s4n4l18p 1")
+    state = _from_sfen("8k/9/9/5b3/9/3B5/9/9/K8 b 2r4g4s4n4l18p 1")
+    visualize(expected_state, "tests/assets/shogi/buggy_samples_007.svg")
     dlshogi_action = 202
     a = Action.from_dlshogi_action(state, dlshogi_action)
     assert a.from_ == 50
