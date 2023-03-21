@@ -145,7 +145,10 @@ def _observe(state, player_id) -> jnp.ndarray:
 
 
 def _add_random_num(board_2d, key):
-    """Add 2 or 4 to the empty space on the board."""
+    """Add 2 or 4 to the empty space on the board.
+    2 appears 90% of the time, and 4 appears 10% of the time.
+    cf. https://github.com/gabrielecirulli/2048/blob/master/js/game_manager.js#L71
+    """
     key, sub_key = jax.random.split(key)
     pos = jax.random.choice(key, jnp.arange(16), p=(board_2d.ravel() == 0))
     set_num = jax.random.choice(
