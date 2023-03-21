@@ -526,16 +526,6 @@ def _find_pinned_pieces(state, flipped_state):
         )
 
     @jax.vmap
-    def pinned_piece_mask(p, f):
-        # fにあるpから王までの間にある駒が1枚だけの場合、そこをマスクして返す
-        mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :] & (
-            flipped_state.piece_board != EMPTY
-        )
-        return jax.lax.cond(
-            mask.sum() == 1, lambda: mask, lambda: jnp.zeros_like(mask)
-        )
-
-    @jax.vmap
     def on_the_way(p, f):
         # fにあるpから王の間のマスクを返す
         mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :]
