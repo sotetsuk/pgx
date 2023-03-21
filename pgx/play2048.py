@@ -142,9 +142,8 @@ def _step(state: State, action):
 
 def _observe(state: State, player_id) -> jnp.ndarray:
     obs = jnp.zeros((16, 31), dtype=jnp.bool_)
-    board = state.board
     obs = jax.lax.fori_loop(
-        0, 16, lambda i, obs: obs.at[i, board[i]].set(TRUE), obs
+        0, 16, lambda i, obs: obs.at[i, state.board[i]].set(TRUE), obs
     )
     return obs.reshape((4, 4, 31))
 
