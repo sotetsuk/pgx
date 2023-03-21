@@ -38,3 +38,30 @@ def test_slide_and_merge():
     assert (
         board_1d == jnp.array([3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0])
     ).all()
+
+
+def test_step():
+    key = jax.random.PRNGKey(1)
+    state = init(key)
+    """
+    [[0 0 0 2]
+     [0 0 0 0]
+     [0 0 0 2]
+     [0 0 0 0]]
+    """
+    assert (
+        state.board
+        == jnp.array([0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0])
+    ).all()
+
+    state = step(state, 3)  # down
+    """
+    [[0 0 0 0]
+     [0 0 0 0]
+     [0 0 0 0]
+     [2 0 0 4]]
+    """
+    assert (
+        state.board
+        == jnp.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2])
+    ).all()
