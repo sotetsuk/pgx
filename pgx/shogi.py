@@ -251,6 +251,7 @@ class Action:
         action = jnp.int32(action)
         direction, to = jnp.int8(action // 81), jnp.int8(action % 81)
         is_drop = direction >= 20
+        is_promotion = (10 <= direction) & (direction < 20)
         # Compute <from> from <dir, to>
         #
         # LEGAL_FROM_MASK[UP, 18]  # to = 81
@@ -266,7 +267,7 @@ class Action:
         # x x o x o x x
         # x x x x x x x
         # x x x x x x x
-        mask1 = LEGAL_FROM_MASK[direction, to]  # (81,)
+        mask1 = LEGAL_FROM_MASK[direction % 10, to]  # (81,)
         legal_moves, _, _ = _legal_actions(state)
         mask2 = legal_moves[:, to]  # (81,)
         from_ = jnp.nonzero(mask1 & mask2, size=1)[0][0]
@@ -276,7 +277,6 @@ class Action:
             lambda: direction - 20,
             lambda: state.piece_board[from_],
         )
-        is_promotion = (10 <= direction) & (direction < 20)
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
