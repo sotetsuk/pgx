@@ -219,6 +219,7 @@ def _can_slide_left(board_2d):
         can_slide |= (
             (line[0] == line[1]) | (line[1] == line[2]) | (line[2] == line[3])
         )
+        can_slide &= ~(line == 0).all()
         return can_slide
 
     can_slide = jax.vmap(_can_slide)(board_2d).any()
