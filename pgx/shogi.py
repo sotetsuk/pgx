@@ -437,7 +437,9 @@ def _legal_actions(state: State):
         state, legal_moves, checking_point_board, check_defense_board
     )
 
-    legal_moves_wo_pinned = jnp.where(is_pinned.reshape(81, 1), FALSE, legal_moves)
+    legal_moves_wo_pinned = jnp.where(
+        is_pinned.reshape(81, 1), FALSE, legal_moves
+    )
     legal_moves = legal_moves_wo_pinned | (legal_moves & legal_pinned_moves)
 
     legal_moves = _filter_double_check_moves(
@@ -478,7 +480,7 @@ def _filter_double_check_moves(state, legal_moves, checking_point_board):
     legal_moves = jax.lax.cond(
         is_double_checked,
         lambda: jnp.where(king_mask.reshape(81, 1), legal_moves, FALSE),  # type: ignore
-        lambda: legal_moves
+        lambda: legal_moves,
     )
     return legal_moves
 
@@ -537,9 +539,7 @@ def _find_pinned_pieces(state, flipped_state):
     def on_the_way(p, f):
         # fにあるpから王の間のマスクを返す
         mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :]
-        return jax.lax.cond(
-            p >= 0, lambda: mask, lambda: jnp.zeros_like(mask)
-        )
+        return jax.lax.cond(p >= 0, lambda: mask, lambda: jnp.zeros_like(mask))
 
     from_ = jnp.arange(81)
     large_piece = _to_large_piece_ix(flipped_state.piece_board)
