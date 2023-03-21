@@ -11,7 +11,6 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
         dwg.rect(
             (0, 0),
             (BOARD_SIZE * GRID_SIZE, BOARD_SIZE * GRID_SIZE),
-            # stroke=svgwrite.rgb(10, 10, 16, "%"),
             fill=color_set.background_color,
         )
     )
@@ -31,7 +30,6 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
                     GRID_SIZE - 4,
                 ),
                 fill=color_set.p1_color,
-                # stroke=color_set.grid_color,
                 rx="3px",
                 ry="3px",
             )
@@ -41,7 +39,7 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
         if num == 0:
             continue
         num = 2**num
-        font_size = 18  # 28 - 2 * len(str(num))
+        font_size = 18
         x = (i % 4) * GRID_SIZE
         y = (i // 4) * GRID_SIZE
         board_g.add(
