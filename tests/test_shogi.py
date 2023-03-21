@@ -169,6 +169,7 @@ def test_legal_moves():
                      .at[xy2i(5, 7)].set(GOLD))
     visualize(s, "tests/assets/shogi/legal_moves_004.svg")
     legal_moves, _, _ = _legal_actions(s)
+    assert legal_moves[xy2i(5, 7), xy2i(5, 6)]
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
 
     # Gold is not pinned
@@ -561,7 +562,7 @@ def test_buggy_samples():
 
     # 603
     state = _from_sfen("8k/9/9/5b3/9/3B5/9/9/K8 b 2r4g4s4n4l18p 1")
-    visualize(expected_state, "tests/assets/shogi/buggy_samples_007.svg")
+    visualize(state, "tests/assets/shogi/buggy_samples_007.svg")
     dlshogi_action = 202
     a = Action.from_dlshogi_action(state, dlshogi_action)
     assert a.from_ == 50
