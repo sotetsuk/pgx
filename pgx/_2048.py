@@ -147,9 +147,7 @@ def _observe(state, player_id) -> jnp.ndarray:
 def _add_random_num(board_2d, key):
     """Add 2 or 4 to the empty space on the board."""
     key, sub_key = jax.random.split(key)
-    pos = jax.random.choice(
-        key, jnp.arange(16), p=(board_2d.ravel() == 0)
-    )
+    pos = jax.random.choice(key, jnp.arange(16), p=(board_2d.ravel() == 0))
     set_num = jax.random.choice(
         sub_key, jnp.int8([1, 2]), p=jnp.array([0.9, 0.1])
     )
