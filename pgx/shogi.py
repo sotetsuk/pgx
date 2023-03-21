@@ -436,6 +436,9 @@ def _legal_actions(state: State):
     legal_moves = _filter_ignoring_check_moves(
         state, legal_moves, checking_point_board, check_defense_board
     )
+    legal_moves = _filter_double_check_moves(
+        state, legal_moves, checking_point_board
+    )
 
     # Filter illegal drops
     legal_drops = _filter_pawn_drop_mate(
@@ -461,6 +464,19 @@ def _pseudo_legal_moves(
     effect_boards = jnp.where(is_my_piece, FALSE, effect_boards)
 
     return effect_boards
+
+
+def _filter_double_check_moves(state, legal_moves, checking_point_board):
+    # 両王手は王が動く以外ない
+    num_checks = checking_point_board.sum()
+    is_double_checked = num_checks > 1
+    king_mask = state.piece_board == KING
+    legal_moves = jax.lax.cond(
+        is_double_checked,
+        lambda: jnp.where(king_mask.reshape(81, 1), legal_moves, FALSE),  # type: ignore
+        lambda: legal_moves
+    )
+    return legal_moves
 
 
 def _filter_suicide_moves(
