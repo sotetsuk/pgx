@@ -82,7 +82,7 @@ def test_legal_action():
 
 
 def test_terminated():
-    board = jnp.int8([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 0])
+    board = jnp.int8([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
     state = State(board=board)
     state = step(state, 0)
     """
