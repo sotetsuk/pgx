@@ -86,7 +86,7 @@ class Play2048(core.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    ...
+    return State()
 
 
 def _step(state, action):
@@ -95,3 +95,9 @@ def _step(state, action):
 
 def _observe(state, player_id) -> jnp.ndarray:
     ...
+
+
+# only for debug
+def show(state):
+    board = jnp.array([0 if i == 0 else 2**i for i in state.board])
+    print(board.reshape((4, 4)))
