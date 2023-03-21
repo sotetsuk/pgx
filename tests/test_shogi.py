@@ -559,7 +559,7 @@ def test_buggy_samples():
     visualize(expected_state, "tests/assets/shogi/buggy_samples_006.svg")
     assert (state.piece_board == expected_state.piece_board).all()
 
-    #
+    # 603
     state = _from_sfen("8k/9/9/5b3/9/3B5/9/9/K8 b 2r4g4s4n4l18p 1")
     visualize(expected_state, "tests/assets/shogi/buggy_samples_007.svg")
     dlshogi_action = 202
