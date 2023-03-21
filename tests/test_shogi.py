@@ -565,7 +565,15 @@ def test_buggy_samples():
     visualize(state, "tests/assets/shogi/buggy_samples_007.svg")
     dlshogi_action = 202
     a = Action.from_dlshogi_action(state, dlshogi_action)
-    assert a.from_ == 50
+    assert a.from_ == xy2i(5, 5)
+
+    state = _from_sfen("+PsGg1p2+P/+B1+Pgp+N1sp/1+N5l1/P3kP1pL/3P1r3/B2KP3L/4L1SP+s/+r2+p2pgP/2P2+n+p2 b")
+    visualize(state, "tests/assets/shogi/buggy_samples_008.svg")
+    dlshogi_action = 225
+    a = Action.from_dlshogi_action(state, dlshogi_action)
+    assert a.piece == HORSE
+    expected_state = _from_sfen("+P+BGg1p2+P/2+Pgp+N1sp/1+N5l1/P3kP1pL/3P1r3/B2KP3L/4L1SP+s/+r2+p2pgP/2P2+n+p2 w")
+    assert (state.piece_board == expected_state.piece_board).all()
 
 
 def test_observe():
