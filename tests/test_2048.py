@@ -94,6 +94,27 @@ def test_terminated():
     assert state.terminated
 
 
+def test_observe():
+    key = jax.random.PRNGKey(2)
+    state = init(key)
+    """
+    [[0 0 2 2]
+     [0 0 0 0]
+     [0 0 0 0]
+     [0 0 0 0]]
+    """
+    obs = observe(state, 0)
+    assert obs.shape == (4, 4, 31)
+
+    assert not obs[0, 2, 0]
+    assert obs[0, 2, 1]
+    assert not obs[0, 2, 2]
+
+    assert not obs[0, 3, 0]
+    assert obs[0, 3, 1]
+    assert not obs[0, 3, 2]
+
+
 def test_random_play():
     key = jax.random.PRNGKey(0)
     done = jnp.bool_(False)
