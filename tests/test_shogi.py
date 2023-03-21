@@ -547,6 +547,7 @@ def test_buggy_samples():
     visualize(s, "tests/assets/shogi/buggy_samples_004.svg")
     assert (jnp.nonzero(s.legal_action_mask)[0] == jnp.int32([43, 52, 68, 196, 222, 295, 789, 1996, 2004, 2012])).all()
 
+    # 602
     sfen = "9/4R4/9/9/9/9/9/9/9 b 2r2b4g3s4n4l17p 1"
     state = _from_sfen(sfen)
     visualize(state, "tests/assets/shogi/buggy_samples_005.svg")
@@ -558,6 +559,11 @@ def test_buggy_samples():
     visualize(expected_state, "tests/assets/shogi/buggy_samples_006.svg")
     assert (state.piece_board == expected_state.piece_board).all()
 
+    #
+    state = _from_sfen("8+P/9/9/5b3/9/3B5/9/9/+p8 b 2r4g4s4n4l18p 1")
+    dlshogi_action = 202
+    a = Action.from_dlshogi_action(state, dlshogi_action)
+    assert a.from_ != 0
 
 def test_observe():
     key = jax.random.PRNGKey(0)
