@@ -217,7 +217,7 @@ def _slide_left(line):
 def _can_slide_left(board_2d):
     def _can_slide(line):
         """Judge if it can be moved to the left."""
-        can_slide = (line[:2] == 0).any()
+        can_slide = (line[:3] == 0).any()
         can_slide |= (
             (line[0] == line[1]) | (line[1] == line[2]) | (line[2] == line[3])
         )
