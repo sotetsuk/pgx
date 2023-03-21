@@ -169,8 +169,8 @@ def test_legal_moves():
                      .at[xy2i(5, 7)].set(GOLD))
     visualize(s, "tests/assets/shogi/legal_moves_004.svg")
     legal_moves, _, _ = _legal_actions(s)
-    assert legal_moves[xy2i(5, 7), xy2i(5, 6)]
     assert not legal_moves[xy2i(5, 7), xy2i(4, 6)]
+    assert legal_moves[xy2i(5, 7), xy2i(5, 6)]
 
     # Gold is not pinned
     key = jax.random.PRNGKey(0)

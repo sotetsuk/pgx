@@ -427,7 +427,7 @@ def _legal_actions(state: State):
     checking_point_board, check_defense_board = _check_info(
         state, flipped_state, flipped_effect_boards
     )
-    # is_pinned = _find_pinned_pieces(state, flipped_state)
+    is_pinned, legal_pinned_moves = _find_pinned_pieces(state, flipped_state)
 
     # Filter illegal moves
     legal_moves = _filter_suicide_moves(
@@ -436,6 +436,10 @@ def _legal_actions(state: State):
     legal_moves = _filter_ignoring_check_moves(
         state, legal_moves, checking_point_board, check_defense_board
     )
+
+    legal_moves_wo_pinned = jnp.where(is_pinned.reshape(81, 1), FALSE, legal_moves)
+    legal_moves = legal_moves_wo_pinned | (legal_moves & legal_pinned_moves)
+
     legal_moves = _filter_double_check_moves(
         state, legal_moves, checking_point_board
     )
@@ -519,6 +523,24 @@ def _find_pinned_pieces(state, flipped_state):
             mask.sum() == 1, lambda: mask, lambda: jnp.zeros_like(mask)
         )
 
+    @jax.vmap
+    def pinned_piece_mask(p, f):
+        # fにあるpから王までの間にある駒が1枚だけの場合、そこをマスクして返す
+        mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :] & (
+            flipped_state.piece_board != EMPTY
+        )
+        return jax.lax.cond(
+            mask.sum() == 1, lambda: mask, lambda: jnp.zeros_like(mask)
+        )
+
+    @jax.vmap
+    def on_the_way(p, f):
+        # fにあるpから王の間のマスクを返す
+        mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :]
+        return jax.lax.cond(
+            p >= 0, lambda: mask, lambda: jnp.zeros_like(mask)
+        )
+
     from_ = jnp.arange(81)
     large_piece = _to_large_piece_ix(flipped_state.piece_board)
     # 利いてないところからの結果は無視する
@@ -529,7 +551,10 @@ def _find_pinned_pieces(state, flipped_state):
     ).any(axis=0)
     is_pinned = flipped_is_pinned[::-1]  # (81,)
 
-    return is_pinned
+    mask = on_the_way(large_piece, from_).any(axis=0)[::-1]
+    legal_pinned_piece_move = is_pinned.reshape(81, 1) & mask.reshape(1, 81)
+
+    return is_pinned, legal_pinned_piece_move
 
 
 def _filter_ignoring_check_moves(
