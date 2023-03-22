@@ -584,8 +584,11 @@ def test_buggy_samples():
     visualize(state, "tests/assets/shogi/buggy_samples_009.svg")
     dlshogi_action = 42
     a = Action.from_dlshogi_action(state, dlshogi_action)
-    assert a.piece == PAWN
     assert a.from_ == xy2i(5, 8)
+    assert a.piece == PAWN
+    state = step(state, dlshogi_action)
+    expected_state = _from_sfen("1+N3s1n1/5k2l/l+P2g1bp1/2pP1p2p/p2ppNS2/LB6P/1pS1P2PL/3K1R2S/1R1G1NG2 w GP4p 1")
+    assert (state.piece_board == expected_state.piece_board).all()
 
 
 def test_observe():
