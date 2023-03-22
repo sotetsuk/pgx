@@ -19,11 +19,9 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._cache import (
-    load_shogi_is_on_the_way,  # type: ignore
-    load_shogi_legal_from_idx,  # type: ignore
-    load_shogi_raw_effect_boards,  # type: ignore
-)
+from pgx._cache import load_shogi_is_on_the_way  # type: ignore
+from pgx._cache import load_shogi_legal_from_idx  # type: ignore
+from pgx._cache import load_shogi_raw_effect_boards  # type: ignore
 from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -255,7 +253,11 @@ class Action:
         # LEGAL_FROM_IDX[UP, 19] = [20, 21, ... -1]
         legal_from_idx = LEGAL_FROM_IDX[direction % 10, to]  # (81,)
         from_cand = state.piece_board[legal_from_idx]  # (8,)
-        mask = (legal_from_idx >= 0) & (PAWN <= from_cand) & (from_cand < OPP_PAWN)
+        mask = (
+            (legal_from_idx >= 0)
+            & (PAWN <= from_cand)
+            & (from_cand < OPP_PAWN)
+        )
         i = jnp.nonzero(mask, size=1)[0][0]
         from_ = legal_from_idx[i]
         piece = jax.lax.cond(
