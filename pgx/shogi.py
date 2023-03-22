@@ -694,7 +694,9 @@ def _filter_pawn_drop_mate(
     king_escape_mask &= ~(
         (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
     )  # 味方駒があり、逃げられない
-    effects = effect_boards & ~filter_effect_by_pawn(_to_large_piece_ix(state.piece_board), jnp.arange(81))
+    effects = effect_boards & ~filter_effect_by_pawn(
+        _to_large_piece_ix(state.piece_board), jnp.arange(81)
+    )
     king_escape_mask &= ~effects.any(axis=0)  # 利きがあり逃げられない
     can_king_escape = king_escape_mask.any()
 
