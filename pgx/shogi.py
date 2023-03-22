@@ -521,7 +521,9 @@ def _find_pinned_pieces(state, flipped_state):
             flipped_state.piece_board != EMPTY
         )
         return jax.lax.cond(
-            (p >= 0) & (mask.sum() == 1), lambda: mask, lambda: jnp.zeros_like(mask)
+            (p >= 0) & (mask.sum() == 1),
+            lambda: mask,
+            lambda: jnp.zeros_like(mask),
         )
 
     @jax.vmap
