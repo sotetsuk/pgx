@@ -580,6 +580,13 @@ def test_buggy_samples():
     expected_state = _from_sfen("+P+BGg1p2+P/2+Pgp+N1sp/1+N5l1/P3kP1pL/3P1r3/B2KP3L/4L1SP+s/+r2+p2pgP/2P2+n+p2 w Snp 1")
     assert (state.piece_board == expected_state.piece_board).all()
 
+    state = _from_sfen("1+N3s1n1/5k2l/l+P2g1bp1/2pP1p2p/p2ppNS2/LB6P/1pS1g2PL/3KPR2S/1R1G1NG2 b P4p 1")
+    visualize(state, "tests/assets/shogi/buggy_samples_009.svg")
+    dlshogi_action = 42
+    a = Action.from_dlshogi_action(state, dlshogi_action)
+    assert a.piece == PAWN
+    assert a.from_ == xy2i(5, 8)
+
 
 def test_observe():
     key = jax.random.PRNGKey(0)
