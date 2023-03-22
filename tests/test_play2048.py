@@ -82,6 +82,7 @@ def test_legal_action():
 
 
 def test_terminated():
+    # lose
     board = jnp.int8([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
     state = State(board=board)
     state = step(state, 0)
@@ -90,6 +91,18 @@ def test_terminated():
      [ 4  8 16 32]
      [ 8 16 32 64]
      [16 32 64  2]]
+    """
+    assert state.terminated
+
+    # win
+    board = jnp.int8([10, 10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+    state = State(board=board)
+    state = step(state, 0)
+    """
+    [[2048    2    0    0]
+     [   0    0    0    0]
+     [   0    0    0    0]
+     [   0    0    0    0]]
     """
     assert state.terminated
 
