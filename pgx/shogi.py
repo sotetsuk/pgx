@@ -683,12 +683,18 @@ def _filter_pawn_drop_mate(
     )  # NOTE: 王が一番下の段にいるとき間違っているが、その場合は使われないので問題ない
     can_check_by_pawn_drop = opp_king_pos % 9 != 8
 
+    @jax.vmap
+    def filter_effect_by_pawn(p, f):
+        # 歩打によってフィルタされる利き
+        return IS_ON_THE_WAY[p, f, :, opp_king_head_pos]
+
     # 王が利きも味方の駒もないところへ逃げられるか
     king_escape_mask = RAW_EFFECT_BOARDS[KING, opp_king_pos, :]  # (81,)
     king_escape_mask &= ~(
         (OPP_PAWN <= pb) & (pb <= OPP_DRAGON)
     )  # 味方駒があり、逃げられない
-    king_escape_mask &= ~effect_boards.any(axis=0)  # 利きがあり逃げられない
+    effects = effect_boards & ~filter_effect_by_pawn(_to_large_piece_ix(state.piece_board), jnp.arange(81))
+    king_escape_mask &= ~effects.any(axis=0)  # 利きがあり逃げられない
     can_king_escape = king_escape_mask.any()
 
     # 反転したボードで処理していることに注意
