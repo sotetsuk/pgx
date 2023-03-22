@@ -128,15 +128,28 @@ def _legal_action_mask(state: State):
     return mask
 
 
-def _is_legal_move(board, move):
+def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
     from_, to = move // 81, move % 81
     # destination is my piece
     is_illegal = (PAWN <= board[to]) & (board[to] < OPP_PAWN)
     # piece cannot move like that
     piece = board[from_]
     is_illegal |= ~CAN_MOVE[piece, from_, to]
+    # there is an obstacle between from_ and to
+    i = _to_large_piece_ix(piece)
+    is_illegal |= ((i >= 0) & (BETWEEN[i, from_, to, :] & (board != EMPTY)).any())
     return ~is_illegal
 
+
+def _to_large_piece_ix(piece):
+    # fmt: off
+    ixs = (-jnp.ones(28, dtype=jnp.int8)) \
+            .at[LANCE].set(0) \
+            .at[BISHOP].set(1) \
+            .at[ROOK].set(2) \
+            .at[HORSE].set(1) \
+            .at[DRAGON].set(2)
+    return ixs[piece]
 
 
 def _observe(state: State, player_id: jnp.ndarray):

@@ -73,8 +73,7 @@ INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
 CAN_MOVE = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
-# TODO: 龍と馬の利き、隣に駒があるときに壊れる？
-IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
+BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # Give <dir,10> and <to,81>, return the legal from idx
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1]
 # Used for computing dlshogi action
