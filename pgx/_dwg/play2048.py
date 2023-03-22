@@ -18,10 +18,15 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
     # board
     # grid
     board_g = dwg.g()
-
-    for i in range(16):
+    for i, _exp2 in enumerate(state.board):
+        exp2 = int(_exp2)
         x = (i % 4) * GRID_SIZE
         y = (i // 4) * GRID_SIZE
+        _color = (
+            f"{(242-exp2*22):02x}"
+            if color_set.background_color == "white"
+            else f"{(35+exp2*20):02x}"
+        )
         board_g.add(
             dwg.rect(
                 (x + 2, y + 2),
@@ -29,19 +34,21 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
                     GRID_SIZE - 4,
                     GRID_SIZE - 4,
                 ),
-                fill=color_set.p1_color,
+                fill=f"#{_color}{_color}{_color}",
                 rx="3px",
                 ry="3px",
             )
         )
 
-    for i, num in enumerate(state.board):
-        if num == 0:
+        if exp2 == 0:
             continue
-        num = 2**num
+        num = 2**exp2
         font_size = 18
-        x = (i % 4) * GRID_SIZE
-        y = (i // 4) * GRID_SIZE
+        large_num_color = (
+            f"#{(145+exp2*10):02x}{(145+exp2*10):02x}{(145+exp2*10):02x}"
+            if color_set.background_color == "white"
+            else f"#{(120-exp2*10):02x}{(120-exp2*10):02x}{(120-exp2*10):02x}"
+        )
         board_g.add(
             dwg.text(
                 text=str(num),
@@ -49,7 +56,7 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
                     x + GRID_SIZE / 2 - font_size * len(str(num)) * 0.3,
                     y + GRID_SIZE / 2 + 5,
                 ),
-                fill=color_set.text_color,
+                fill=color_set.text_color if exp2 < 7 else large_num_color,
                 font_size=f"{font_size}px",
                 font_family="Courier",
                 font_weight="bold",

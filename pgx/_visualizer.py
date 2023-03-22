@@ -438,12 +438,12 @@ class Visualizer:
                     "",
                     "#1e1e1e",
                     "black",
-                    "black",
+                    "white",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
-                    "lightgray",
-                    "",
+                    "black",
+                    "#f0f0f0",
                     "",
                     "",
                     "white",
