@@ -580,7 +580,7 @@ def test_buggy_samples():
     expected_state = _from_sfen("+P+BGg1p2+P/2+Pgp+N1sp/1+N5l1/P3kP1pL/3P1r3/B2KP3L/4L1SP+s/+r2+p2pgP/2P2+n+p2 w Snp 1")
     assert (state.piece_board == expected_state.piece_board).all()
 
-    #
+    # #617
     state = _from_sfen("2+P+P2G1+S/1P2+P+P1+Pn/+S1GK2P2/1b2PP3/1nl4PP/3k2lRL/1pg+s3L1/p2R2p2/P+n+B+p+ng1+s+p w P 1")
     visualize(state, "tests/assets/shogi/buggy_samples_009.svg")
     dlshogi_action = 28
