@@ -565,7 +565,31 @@ def test_buggy_samples():
     visualize(state, "tests/assets/shogi/buggy_samples_007.svg")
     dlshogi_action = 202
     a = Action.from_dlshogi_action(state, dlshogi_action)
-    assert a.from_ == 50
+    assert a.from_ == xy2i(6, 6)
+
+    # #610
+    state = _from_sfen("+PsGg1p2+P/+B1+Pgp+N1sp/1+N5l1/P3kP1pL/3P1r3/B2KP3L/4L1SP+s/+r2+p2pgP/2P2+n+p2 b np 1")
+    visualize(state, "tests/assets/shogi/buggy_samples_008.svg")
+    dlshogi_action = 225
+    a = Action.from_dlshogi_action(state, dlshogi_action)
+    effects = _effects_all(state)
+    assert effects[xy2i(9, 2), xy2i(8, 1)]
+    assert a.from_ == xy2i(9, 2)
+    assert a.piece == HORSE
+    state = step(state, dlshogi_action)
+    expected_state = _from_sfen("+P+BGg1p2+P/2+Pgp+N1sp/1+N5l1/P3kP1pL/3P1r3/B2KP3L/4L1SP+s/+r2+p2pgP/2P2+n+p2 w Snp 1")
+    assert (state.piece_board == expected_state.piece_board).all()
+
+    # #613
+    state = _from_sfen("1+N3s1n1/5k2l/l+P2g1bp1/2pP1p2p/p2ppNS2/LB6P/1pS1g2PL/3KPR2S/1R1G1NG2 b P4p 1")
+    visualize(state, "tests/assets/shogi/buggy_samples_009.svg")
+    dlshogi_action = 42
+    a = Action.from_dlshogi_action(state, dlshogi_action)
+    assert a.from_ == xy2i(5, 8)
+    assert a.piece == PAWN
+    state = step(state, dlshogi_action)
+    expected_state = _from_sfen("1+N3s1n1/5k2l/l+P2g1bp1/2pP1p2p/p2ppNS2/LB6P/1pS1P2PL/3K1R2S/1R1G1NG2 w GP4p 1")
+    assert (state.piece_board == expected_state.piece_board).all()
 
 
 def test_observe():
