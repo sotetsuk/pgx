@@ -582,8 +582,11 @@ def test_buggy_samples():
 
     # #617
     state = _from_sfen("2+P+P2G1+S/1P2+P+P1+Pn/+S1GK2P2/1b2PP3/1nl4PP/3k2lRL/1pg+s3L1/p2R2p2/P+n+B+p+ng1+s+p w P 1")
-    visualize(state, "tests/assets/shogi/buggy_samples_009.svg")
+    visualize(state, "tests/assets/shogi/buggy_samples_010.svg")
     dlshogi_action = 28
+    effects = _effects_all(state)
+    print(_rotate(effects[xy2i(4, 3), :].reshape(9,9)))
+    assert effects[xy2i(4, 3), xy2i(4, 2)]
     a = Action.from_dlshogi_action(state, dlshogi_action)
     assert a.from_ == xy2i(4, 3)
 
