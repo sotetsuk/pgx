@@ -603,23 +603,13 @@ def test_buggy_samples():
     expected_state = _from_sfen("2+P+P2G1+S/1P2+P+P1+Pn/+S1GK2P2/1b2PP3/1nl4PP/3k2lRL/1pg4L1/p2+s2p2/P+n+B+p+ng1+s+p b Pr 1")
     assert (state.piece_board == expected_state.piece_board).all()
 
-
-    state = init(jax.random.PRNGKey(0))
-    actions = [304, 14, 205, 59, 358, 79, 32, 192, 367, 196, 214, 530, 14, 214, 25, 141, 177, 182, 296, 1346, 789, 196,
-               187, 305, 431, 202, 7, 61, 440, 7, 31, 137, 79, 149, 41, 5, 340, 15, 305, 41, 104, 376, 124, 208, 5, 542,
-               22, 304, 277, 145, 715, 58, 611, 1884, 278, 157, 42, 123, 133, 228, 141, 983, 1532, 601, 194, 163, 389,
-               68, 124, 1756, 2063, 562, 444, 407, 377, 23, 1689, 467, 33, 216, 59, 1658, 211, 67, 348, 50, 38, 187, 23,
-               228, 217, 123, 2112, 61, 40, 65, 159, 22, 1935, 306, 461, 2079, 449, 1858, 184, 66, 275, 1179, 55, 561,
-               1697, 1682, 220, 294, 1682, 77, 39, 875, 302, 315, 207, 634, 609, 583, 1441, 313, 1636, 1645, 329, 1660,
-               1958, 13, 965, 315, 389, 387, 48, 315, 76, 159, 316, 387, 544, 317, 337, 2148, 4, 378, 1793, 789, 600,
-               230, 165, 220, 1772, 1685, 1628, 210, 75, 480, 1873, 360, 530, 1694, 255, 203, 554, 537, 256, 39, 2039,
-               2140, 1659, 883, 627, 1624, 569, 61, 420, 1707, 149, 286, 1643, 72, 14, 203, 205, 38, 539, 12, 32, 1939,
-               451, 864, 2165, 49, 196, 3, 884, 11, 1759, 820, 274, 227, 1660, 356]
-    for a in actions:
-        state = step(state, a)
-    expected_state = _from_sfen("1ns6/+S1p+Ng1p1l/+P2pg1nNS/3k3G1/2L1PR2s/p1G2+BPR1/3Pp2+p1/1+p3B1P1/1LPK2+l1+p b 4p 1")
+    # 629
+    state = _from_sfen("1ns6/+S1p+Ng1p1l/+P2pg1nNS/4k2G1/2L2R2s/p1G2+BPR1/3Pp2+p1/1+p3B1P1/1LPK2+l1+p b P4p 1")
     visualize(state, "tests/assets/shogi/buggy_samples_011.svg")
-    assert (state.piece_board == expected_state.piece_board).all()
+    dlshogi_action = 1660  # 歩打
+    state = step(state, dlshogi_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_012.svg")
+    assert not state.terminated  # 打ち歩詰でない
 
 
 def test_observe():
