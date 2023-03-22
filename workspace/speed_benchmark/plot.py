@@ -1,7 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from typing import List, Tuple, Dict
-from itertools import product
+from typing import List, Dict
 import json
 
 
@@ -61,14 +60,6 @@ def plot_ax(ax, game):
     ax.set_xlabel("# Environments")
 
 
-# plt.figure()
-# filtered = filter_data(data, "go", "petting_zoo")
-# for l in filtered:
-#     print(l)
-# bs, val = to_numpy(filtered)
-# plt.plot(val)
-# plt.show()
-
 games = get_all_field(data, "game")
 fig, axes = plt.subplots(1, len(games), figsize=(12, 3))
 for i, game in enumerate(games):
@@ -77,65 +68,3 @@ for i, game in enumerate(games):
 axes[0].set_ylabel("# Steps per second")
 plt.tight_layout()
 plt.show()
-
-
-    
-
-# bs = np.int32([2 ** (i + 1) for i in range(10)])
-# fig, axes = plt.subplots(1, 4, figsize=(12, 3))
-# methods = [("pgx-v0.1.6", None), ("pgx", None), ("open_spiel", "for-loop"), ("open_spiel", "subproc"), ("petting_zoo", "for-loop"), ("cshogi", "for-loop"), ("cshogi", "subproc"), ("petting_zoo", "subproc")]
-# titles = {"go": "Go 19x19", "shogi": "Shogi", "tic_tac_toe": "Tic-Tac-Toe", "backgammon": "Backgammon"}
-# library_titles = {"pgx-v0.1.6": "Pgx-v0.1.6", "pgx": "Pgx", "open_spiel": "OpenSpiel", "petting_zoo": "PettingZoo", "cshogi": "cshogi"}
-# venv_titles = {"subproc": " (Subprocess)", "for-loop": " (For-loop)", None: ""}
-# cmap = plt.get_cmap("tab10")
-# colors = {"petting_zoo": cmap(1), "open_spiel": cmap(2), "cshogi": cmap(0), "pgx": cmap(3), "pgx-v0.1.6": cmap(4)}
-# marker = "."
-# 
-# def plot_ax(ax, game, methods):
-#     for library, venv in methods:
-#         ls = "--" if venv == "for-loop" else "-"
-#         filtered = filter_data(data, game, library, venv)
-#         if len(filtered) == 0:
-#             continue
-#         filtered = to_numpy(filtered)
-#         if game == "backgammon":
-#             filtered /= 2
-#         ax.plot(bs, filtered, label=f"{library_titles[library]}{venv_titles[venv]}", color=colors[library], linestyle=ls, marker=marker)
-#         # ax.set_ylim((1e2, 2e6))
-#         ax.set_yscale('log')
-#         ax.set_xscale('log')
-#         ax.set_title(titles[game])
-#         ax.set_xlabel("# Environments")
-# 
-# 
-# game = "tic_tac_toe"
-# plot_ax(axes[0], game, methods)
-# 
-# game = "backgammon"
-# plot_ax(axes[1], game, methods)
-# 
-# game = "shogi"
-# plot_ax(axes[2], game, methods)
-# 
-# game = "go"
-# plot_ax(axes[3], game, methods)
-# 
-# axes[0].set_ylabel("# Steps per second")
-# plt.tight_layout()
-# plt.subplots_adjust(bottom=0.3)
-# plt.savefig("random_play_speed_benchmark.pdf")
-# 
-# 
-# # legend
-# plt.figure(figsize=(10, 5))
-# a = np.arange(3)
-# plt.plot(a, a, label="cshogi (Subprocess)", c=colors["cshogi"], marker=marker)
-# plt.plot(a, a, label="cshogi (For-loop)", linestyle="--", c=colors["cshogi"], marker=marker)
-# plt.plot(a, a, label="PettingZoo (Subprocess)", c=colors["petting_zoo"], marker=marker)
-# plt.plot(a, a, label="PettingZoo (For-loop)", linestyle="--", c=colors["petting_zoo"], marker=marker)
-# plt.plot(a, a, label="OpenSpiel (Subprocess)", c=colors["open_spiel"], marker=marker)
-# plt.plot(a, a, label="OpenSpiel (For-loop)", linestyle="--", c=colors["open_spiel"], marker=marker)
-# plt.plot(a, a, label="Pgx (Ours)", c=colors["pgx"], marker=marker)
-# plt.legend(ncol=4, frameon=False)
-# plt.tight_layout()
-# plt.savefig("legend.pdf")
