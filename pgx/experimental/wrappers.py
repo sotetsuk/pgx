@@ -59,7 +59,7 @@ def auto_reset(step_fn, init_fn):
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
-                steps=jnp.int32(0),
+                _step_count=jnp.int32(0),
                 terminated=FALSE,
                 truncated=FALSE,
                 reward=jnp.zeros_like(state.reward),
