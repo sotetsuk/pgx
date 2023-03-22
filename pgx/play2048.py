@@ -136,7 +136,7 @@ def _step(state: State, action):
         board=board_2d.ravel(),
         reward=jnp.float32([reward.sum()]),
         legal_action_mask=legal_action.ravel(),
-        terminated=~legal_action.any() | (board_2d == 11).any(),
+        terminated=~legal_action.any(),
     )
 
 
