@@ -599,6 +599,7 @@ def test_buggy_samples():
     assert legal_moves[xy2i(4, 3), xy2i(4, 2)]
     a = Action.from_dlshogi_action(state, dlshogi_action)
     assert a.from_ == xy2i(4, 3)
+    state = step(state, dlshogi_action)
     expected_state = _from_sfen("2+P+P2G1+S/1P2+P+P1+Pn/+S1GK2P2/1b2PP3/1nl4PP/3k2lRL/1pg4L1/p2+s2p2/P+n+B+p+ng1+s+p b Pr 1")
     assert (state.piece_board == expected_state.piece_board).all()
 
