@@ -35,6 +35,7 @@ class State(core.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- 2048 specific ---
+    rng: jax.random.KeyArray = jax.random.PRNGKey(0)
     turn: jnp.ndarray = jnp.int8(0)
     # 4x4 board
     # [[ 0,  1,  2,  3],
@@ -88,10 +89,10 @@ class Play2048(core.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    rng1, rng2 = jax.random.split(rng)
+    rng1, rng2, rng3 = jax.random.split(rng, 3)
     board = _add_random_num(jnp.zeros((4, 4), jnp.int8), rng1)
     board = _add_random_num(board, rng2)
-    return State(board=board.ravel())  # type:ignore
+    return State(board=board.ravel(), rng=rng3)  # type:ignore
 
 
 def _step(state: State, action):
@@ -117,8 +118,8 @@ def _step(state: State, action):
         ],
     )
 
-    _rng_key, sub_key = jax.random.split(state._rng_key)
-    board_2d = _add_random_num(board_2d, sub_key)
+    rng1, rng2 = jax.random.split(state.rng)
+    board_2d = _add_random_num(board_2d, rng1)
 
     legal_action = jax.vmap(_can_slide_left)(
         jnp.array(
@@ -132,7 +133,7 @@ def _step(state: State, action):
     )
 
     return state.replace(  # type:ignore
-        _rng_key=_rng_key,
+        rng=rng2,
         board=board_2d.ravel(),
         reward=jnp.float32([reward.sum()]),
         legal_action_mask=legal_action.ravel(),
@@ -153,10 +154,10 @@ def _add_random_num(board_2d, key):
     2 appears 90% of the time, and 4 appears 10% of the time.
     cf. https://github.com/gabrielecirulli/2048/blob/master/js/game_manager.js#L71
     """
-    key, sub_key = jax.random.split(key)
-    pos = jax.random.choice(key, jnp.arange(16), p=(board_2d.ravel() == 0))
+    rng1, rng2 = jax.random.split(key)
+    pos = jax.random.choice(rng1, jnp.arange(16), p=(board_2d.ravel() == 0))
     set_num = jax.random.choice(
-        sub_key, jnp.int8([1, 2]), p=jnp.array([0.9, 0.1])
+        rng2, jnp.int8([1, 2]), p=jnp.array([0.9, 0.1])
     )
     board_2d = board_2d.at[pos // 4, pos % 4].set(set_num)
     return board_2d
