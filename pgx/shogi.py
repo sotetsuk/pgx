@@ -139,13 +139,9 @@ RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 # is <point,81> on the way between two points?
 # TODO: 龍と馬の利き、隣に駒があるときに壊れる？
 IS_ON_THE_WAY = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
-# Give <dir,10> and <to,81>, return the legal <from,81> mask
-# E.g. LEGAL_FROM_MASK[Up right, to=19]
-# Necessary for computing legal_action_mask
-# x x x x x x x
-# x x x x t x x
-# x x x o x x x
-# x x o x x x x
+# Give <dir,10> and <to,81>, return the legal from idx
+# E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1]
+# Used for computing dlshogi action
 LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
 
 
@@ -883,37 +879,15 @@ def _to_direction(
     legal_promotions: jnp.ndarray,
     legal_drops: jnp.ndarray,
 ):
-    # legal_moves から legal_action_mask を作る。toを固定して、
-    #
-    # legal_from = legal_moves[:, 18]  # to = 18
-    # x x o x t x x
-    # x x x x x x x
-    # x x o x o x x
-    # x x x x x x x
-    # x x x x x x x
-    #
-    # があたえられたとき、 (10, 81, 81) の
-    #
-    # LEGAL_FROM_MASK[UP, 18]  # to = 81
-    # x x x x t x x
-    # x x x x o x x
-    # x x x x o x x
-    # x x x x o x x
-    # x x x x o x x
-    #
-    # とandを取って、anyを取れば、(dir=UP, to=18)がTrueか否かわかる
-    dir_ = jnp.arange(10)
-    to = jnp.arange(81)
-
     def func(d, k):
         def f(d, t, k):
             mask = legal_moves[:, t] & (legal_promotions[:, t] != k)  # (81,)
             idx = LEGAL_FROM_IDX[d, t]  # (10,)
             return ((idx >= 0) & (mask[idx])).any()
 
-        return jax.vmap(partial(f, d=d, k=k))(t=to)
+        return jax.vmap(partial(f, d=d, k=k))(t=jnp.arange(81))
 
-    # k = 2, 0
+    dir_ = jnp.arange(10)
     legal_action_mask_wo_promotion = jax.vmap(partial(func, k=2))(d=dir_)
     legal_action_mask_w_promotion = jax.vmap(partial(func, k=0))(d=dir_)
     legal_action_mask = jnp.concatenate(
