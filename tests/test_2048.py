@@ -41,29 +41,29 @@ def test_slide_and_merge():
 
 
 def test_step():
-    key = jax.random.PRNGKey(0)
+    key = jax.random.PRNGKey(2)
     state = init(key)
     """
-    [[0 0 0 0]
-     [0 0 2 0]
+    [[0 2 0 0]
      [0 0 0 0]
-     [0 0 2 0]]
+     [0 0 0 0]
+     [0 2 0 0]]
     """
     assert (
         state.board
-        == jnp.int8([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0])
+        == jnp.int8([0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0])
     ).all()
 
     state = step(state, 3)  # down
     """
     [[0 0 0 0]
      [0 0 0 0]
-     [0 0 0 2]
-     [0 0 4 0]]
+     [0 0 0 0]
+     [0 4 0 2]]
     """
     assert (
         state.board
-        == jnp.int8([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0])
+        == jnp.int8([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 1])
     ).all()
 
 
@@ -98,21 +98,21 @@ def test_observe():
     key = jax.random.PRNGKey(2)
     state = init(key)
     """
-    [[0 0 2 2]
+    [[0 2 0 0]
      [0 0 0 0]
      [0 0 0 0]
-     [0 0 0 0]]
+     [0 2 0 0]]
     """
     obs = observe(state, 0)
     assert obs.shape == (4, 4, 31)
 
-    assert not obs[0, 2, 0]
-    assert obs[0, 2, 1]
-    assert not obs[0, 2, 2]
+    assert not obs[0, 1, 0]
+    assert obs[0, 1, 1]
+    assert not obs[0, 1, 2]
 
-    assert not obs[0, 3, 0]
-    assert obs[0, 3, 1]
-    assert not obs[0, 3, 2]
+    assert not obs[3, 1, 0]
+    assert obs[3, 1, 1]
+    assert not obs[3, 1, 2]
 
 
 def test_random_play():
