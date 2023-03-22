@@ -603,6 +603,14 @@ def test_buggy_samples():
     expected_state = _from_sfen("2+P+P2G1+S/1P2+P+P1+Pn/+S1GK2P2/1b2PP3/1nl4PP/3k2lRL/1pg4L1/p2+s2p2/P+n+B+p+ng1+s+p b Pr 1")
     assert (state.piece_board == expected_state.piece_board).all()
 
+    # 629
+    state = _from_sfen("1ns6/+S1p+Ng1p1l/+P2pg1nNS/4k2G1/2L2R2s/p1G2+BPR1/3Pp2+p1/1+p3B1P1/1LPK2+l1+p b P4p 1")
+    visualize(state, "tests/assets/shogi/buggy_samples_011.svg")
+    dlshogi_action = 1660  # 歩打
+    state = step(state, dlshogi_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_012.svg")
+    assert not state.terminated  # 打ち歩詰でない
+
 
 def test_observe():
     key = jax.random.PRNGKey(0)
