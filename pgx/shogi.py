@@ -812,9 +812,9 @@ def _raw_effects_all(state: State) -> jnp.ndarray:
 
 
 def _to_large_piece_ix(piece):
-    # Filtering only Lance(0), Bishop(1), Rook(2), Horse(3), and Dragon(4)
+    # Filtering only Lance(0), Bishop(1), Rook(2), Horse(1), and Dragon(2)
     # NOTE: last 14th -1 is sentinel for avoid accessing via -1
-    return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 3, 4, -1])[
+    return jnp.int8([-1, 0, -1, -1, 1, 2, -1, -1, -1, -1, -1, -1, 1, 2, -1])[
         piece
     ]
 
