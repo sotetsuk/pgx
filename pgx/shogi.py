@@ -530,7 +530,9 @@ def _find_pinned_pieces(state, flipped_state):
     @jax.vmap
     def on_the_way(p, f):
         # fにあるpから王の間のマスクを返す
-        mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :]
+        mask = (
+            IS_ON_THE_WAY[p, f, flipped_king_pos, :].at[f].set(TRUE)
+        )  # 王手をかけているコマも取れるのでTRUEをセット
         return jax.lax.cond(p >= 0, lambda: mask, lambda: jnp.zeros_like(mask))
 
     from_ = jnp.arange(81)
