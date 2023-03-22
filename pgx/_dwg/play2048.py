@@ -20,6 +20,9 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
     board_g = dwg.g()
     for i, _exp2 in enumerate(state.board):
         exp2 = int(_exp2)
+        num = 2**exp2
+        if exp2 > 11:
+            exp2 = 11
         x = (i % 4) * GRID_SIZE
         y = (i // 4) * GRID_SIZE
         _color = (
@@ -44,7 +47,7 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
 
         if exp2 == 0:
             continue
-        num = 2**exp2
+
         font_size = 18
         large_num_color = (
             f"#{(145+exp2*10):02x}{(145+exp2*10):02x}{(145+exp2*10):02x}"
