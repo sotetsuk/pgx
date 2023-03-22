@@ -686,7 +686,8 @@ def _filter_pawn_drop_mate(
     @jax.vmap
     def filter_effect_by_pawn(p, f):
         # 歩打によってフィルタされる利き
-        return IS_ON_THE_WAY[p, f, :, opp_king_head_pos]
+        mask = IS_ON_THE_WAY[p, f, :, opp_king_head_pos]
+        return jnp.where(p >= 0, mask, FALSE)
 
     # 王が利きも味方の駒もないところへ逃げられるか
     king_escape_mask = RAW_EFFECT_BOARDS[KING, opp_king_pos, :]  # (81,)
