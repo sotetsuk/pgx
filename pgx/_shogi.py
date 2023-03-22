@@ -124,13 +124,17 @@ def _init_board():
 
 
 def _legal_action_mask(state: State):
-    mask = jax.vmap(partial(_is_legal_move, board=state.piece_board))(move=jnp.arange(81))
+    mask = jax.vmap(partial(_is_legal_move, board=state.piece_board))(move=jnp.arange(81 * 81))
     return mask
 
 
 def _is_legal_move(board, move):
     from_, to = move // 81, move % 81
+    # destination is my piece
     is_illegal = (PAWN <= board[to]) & (board[to] < OPP_PAWN)
+    # piece cannot move like that
+    piece = board[from_]
+    is_illegal |= ~CAN_MOVE[piece, from_, to]
     return ~is_illegal
 
 

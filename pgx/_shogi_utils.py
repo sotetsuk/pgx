@@ -70,7 +70,7 @@ INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
 # fmt: on
 
 # Can <piece,14> reach from <from,81> to <to,81> ignoring pieces on board?
-RAW_EFFECT_BOARDS = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
+CAN_MOVE = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
 # TODO: 龍と馬の利き、隣に駒があるときに壊れる？
