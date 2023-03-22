@@ -724,7 +724,8 @@ def _check_info(state, flipped_state, flipped_effect_boards):
 
     @jax.vmap
     def between_king(p, f):
-        return IS_ON_THE_WAY[p, f, flipped_king_pos, :]
+        mask = IS_ON_THE_WAY[p, f, flipped_king_pos, :]
+        return jnp.where(p >= 0, mask, FALSE)
 
     from_ = jnp.arange(81)
     large_piece = _to_large_piece_ix(flipped_state.piece_board)

@@ -611,14 +611,14 @@ def test_buggy_samples():
     visualize(state, "tests/assets/shogi/buggy_samples_012.svg")
     assert not state.terminated  # 打ち歩詰でない
 
-    state = _from_sfen("l2g3+P1/p+P1g2s1p/nPskr3+P/1GB2P1p1/PN1P2sn1/1p2Sr1PL/6B2/L1K3pN1/2P3+pg1 w L2Pp 1")
+    state = _from_sfen("1+b1+L+P4/Slr4+S1/nl2pp1+Np/1p+L1k1N2/1P1S4n/p1p2Sg2/G1P4pK/5gp1P/1g+r+b1P2+p w P3p 1")
     visualize(state, "tests/assets/shogi/buggy_samples_013.svg")
     assert state.legal_action_mask.sum() == 2
 
-
-    state = _from_sfen("1+b1+L+P4/Slr4+S1/nl2pp1+Np/1p+L1k1N2/1P1S4n/p1p2Sg2/G1P4pK/5gp1P/1g+r+b1P2+p w P3p 1")
+    state = _from_sfen("l2g3+P1/p+P1g2s1p/nPskr3+P/1GB2P1p1/PN1P2sn1/1p2Sr1PL/6B2/L1K3pN1/2P3+pg1 w L2Pp 1")
     visualize(state, "tests/assets/shogi/buggy_samples_014.svg")
     assert state.legal_action_mask.sum() == 2
+
 
 
 def test_observe():
