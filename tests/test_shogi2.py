@@ -2,6 +2,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
+from pgx._shogi_utils import _rotate
 from pgx._shogi import Shogi
 
 
@@ -37,6 +38,8 @@ def update_board(state, piece_board, hand=None):
 def test_init():
     key = jax.random.PRNGKey(0)
     s = init(key)
+    visualize(s, "tests/assets/shogi/tmp.svg")
     assert jnp.unique(s.piece_board).shape[0] == 1 + 8 + 8
+    assert s.legal_action_mask.sum() == 0
 
 

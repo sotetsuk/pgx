@@ -30,8 +30,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    # action and observation are aligned to dlshogi https://github.com/TadaoYamaoka/DeepLearningShogi
-    legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.zeros(81 * 81, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -57,7 +56,6 @@ class State(core.State):
 
     def _to_sfen(self):
         return _to_sfen(self)
-
 
 
 class Shogi(core.Env):
@@ -126,7 +124,15 @@ def _init_board():
 
 
 def _legal_action_mask(state: State):
-    return jnp.ones_like(state.legal_action_mask)
+    mask = jax.vmap(partial(_is_legal_move, board=state.piece_board))(move=jnp.arange(81))
+    return mask
+
+
+def _is_legal_move(board, move):
+    from_, to = move // 81, move % 81
+    is_illegal = (PAWN <= board[to]) & (board[to] < OPP_PAWN)
+    return ~is_illegal
+
 
 
 def _observe(state: State, player_id: jnp.ndarray):
