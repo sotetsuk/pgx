@@ -64,4 +64,4 @@ if __name__ == "__main__":
     steps_num = random_play(env, args.n_steps_lim, args.batch_size)
     time_end = time.time()
     sec = time_end - time_sta
-    print(json.dumps({"game": args.env_name, "library": "petting_zoo", "venv": args.venv, "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))
+    print(json.dumps({"game": args.env_name, "library": f"petting_zoo/{args.venv}", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))
