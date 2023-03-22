@@ -35,6 +35,8 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
                     GRID_SIZE - 4,
                 ),
                 fill=f"#{_color}{_color}{_color}",
+                stroke=color_set.text_color,
+                stroke_width="0.5px",
                 rx="3px",
                 ry="3px",
             )
