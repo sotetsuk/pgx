@@ -59,7 +59,7 @@ def test_is_legal_drop():
 def test_step():
     # data = """{"sfen_before": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1", "action": 115, "legal_actions": [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331], "sfen_after": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2"}"""
     # for line in data.split("\n"):
-    with open("assets/shogi/random_play.json") as f:
+    with open("tests/assets/shogi/random_play.json") as f:
         for line in f:
             d = json.loads(line)
             sfen = d["sfen_before"]
