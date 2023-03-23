@@ -59,6 +59,11 @@ def test_is_legal_move():
         .at[xy2i(5, 9)].set(EMPTY)
     )
     visualize(s, "tests/assets/shogi/legal_moves_003.svg")
+    # 78はOK
+    from_, to = xy2i(6, 8), xy2i(7, 8)
+    move = from_ * 81 + to
+    assert _is_legal_move(s.piece_board, move)
+    # 58はNG
     from_, to = xy2i(6, 8), xy2i(5, 8)
     move = from_ * 81 + to
     assert not _is_legal_move(s.piece_board, move)
