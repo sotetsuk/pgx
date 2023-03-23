@@ -333,7 +333,7 @@ def test_sfen():
     assert s._to_sfen() == sfen
 
 
-# def test_api():
-#     import pgx
-#     env = pgx.make("shogi")
-#     pgx.api_test(env, 10)
+def test_api():
+    import pgx
+    env = pgx.make("shogi")
+    pgx.api_test(env, 10)
