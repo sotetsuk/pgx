@@ -37,7 +37,7 @@ class State(core.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Khun poker specific ---
-    card: jnp.ndarray = jnp.int8([-1, -1])
+    cards: jnp.ndarray = jnp.int8([-1, -1])
     # [(player 0),(player 1)]
     last_action: jnp.ndarray = jnp.int8(-1)
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
@@ -83,8 +83,8 @@ def _init(rng: jax.random.KeyArray) -> State:
     )
     return State(
         current_player=current_player,
-        card=init_card,
-        legal_action_mask=jnp.bool_([0, 0, 1, 1]),
+        cards=init_card,
+        legal_action_mask=jnp.bool_([0, 1, 0, 1]),
     )
 
 
@@ -92,7 +92,10 @@ def _step(state: State, action):
     action = jnp.int8(action)
     terminated, reward = jax.lax.cond(
         action == FOLD,
-        lambda: (TRUE, _get_unit_reward(state)),
+        lambda: (
+            TRUE,
+            jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
+        ),
         lambda: (FALSE, jnp.float32([0, 0])),
     )
     terminated, reward = jax.lax.cond(
@@ -117,6 +120,7 @@ def _step(state: State, action):
     )
 
     return state.replace(  # type:ignore
+        current_player=1 - state.current_player,
         last_action=action,
         legal_action_mask=legal_action,
         terminated=terminated,
@@ -126,8 +130,8 @@ def _step(state: State, action):
 
 def _get_unit_reward(state: State):
     return jax.lax.cond(
-        state.card[state.current_player]
-        > state.card[1 - state.current_player],
+        state.cards[state.current_player]
+        > state.cards[1 - state.current_player],
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
         lambda: jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
     )
