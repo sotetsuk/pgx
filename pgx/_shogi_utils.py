@@ -21,7 +21,6 @@ from pgx._cache import load_shogi_is_on_the_way  # type: ignore
 from pgx._cache import load_shogi_legal_from_idx  # type: ignore
 from pgx._cache import load_shogi_raw_effect_boards  # type: ignore
 
-
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
                              [16, 18, 14, -1, -1, -1, 0,  5, 2],  # noqa: E241
@@ -60,8 +59,6 @@ for i in range(81):
             NEIGHBOURS[i].append(x * 9 + y)
 
 NEIGHBOURS = jnp.int8(NEIGHBOURS)
-
-
 
 
 def _to_sfen(state):

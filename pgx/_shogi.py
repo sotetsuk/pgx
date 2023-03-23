@@ -17,11 +17,18 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
-from pgx._flax.struct import dataclass
 
 import pgx.core as core
-
-from pgx._shogi_utils import INIT_PIECE_BOARD, CAN_MOVE, BETWEEN, LEGAL_FROM_IDX, NEIGHBOURS,  _from_sfen, _to_sfen
+from pgx._flax.struct import dataclass
+from pgx._shogi_utils import (
+    BETWEEN,
+    CAN_MOVE,
+    INIT_PIECE_BOARD,
+    LEGAL_FROM_IDX,
+    NEIGHBOURS,
+    _from_sfen,
+    _to_sfen,
+)
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -428,8 +435,10 @@ def can_neighbour_capture_king(board, king_pos, f):
 def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
 
+
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:
     return jnp.rot90(board.reshape(9, 9), k=3)
+
 
 def _flip(state):
     empty_mask = state.piece_board == EMPTY
@@ -440,6 +449,7 @@ def _flip(state):
         piece_board=pb,
         hand=state.hand[jnp.int8((1, 0))],
     )
+
 
 def _major_piece_ix(piece):
     # fmt: off
