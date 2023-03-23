@@ -40,19 +40,10 @@ def update_board(state, piece_board, hand=None):
 def test_init():
     key = jax.random.PRNGKey(0)
     s = init(key)
-    # visualize(s, "tests/assets/shogi/init_board.svg")
     assert jnp.unique(s.piece_board).shape[0] == 1 + 8 + 8
     assert s.legal_action_mask.sum() != 0
-    # print(s.legal_action_mask.shape)
-    # print(_rotate(s.legal_action_mask[6 * 81: 7*81].reshape(9,9)))
-    # print(_rotate(s.legal_action_mask[8 * 81: 9*81].reshape(9,9)))
-    # assert False
-
     legal_actions = jnp.int32([5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331])
-    print(Action._from_dlshogi_action(s, 241))
-    print(LEGAL_FROM_IDX[2, 79])
-    assert jnp.nonzero(s.legal_action_mask)[0].shape[0] == legal_actions.shape[0], jnp.nonzero(s.legal_action_mask)[0]
-    assert (jnp.nonzero(s.legal_action_mask)[0] == legal_actions).all(), jnp.nonzero(s.legal_action_mask)[0]
+    assert (jnp.nonzero(s.legal_action_mask)[0] == legal_actions).all()
 
 
 def test_step():
