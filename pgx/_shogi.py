@@ -138,8 +138,28 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
     # there is an obstacle between from_ and to
     i = _to_large_piece_ix(piece)
     is_illegal |= ((i >= 0) & (BETWEEN[i, from_, to, :] & (board != EMPTY)).any())
+
+    # actually move
+    board = board.at[from_].set(EMPTY).at[to].set(piece)
+
+    # suicide move （王手放置、自殺手）
+    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
+
+    # 大駒
+    @jax.vmap
+    def can_capture_king(f):
+        p = _flip_piece(board[f])  # 敵の大駒
+        i = _to_large_piece_ix(p)  # 敵の大駒のix
+        return ((i >= 0) &  # 敵の大駒かつ
+                (CAN_MOVE[p, king_pos, f]) &  # 移動可能で
+                ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0))  # 障害物なし
+
+    is_illegal |= can_capture_king(jnp.arange(81)).any()
     return ~is_illegal
 
+
+def _flip_piece(piece):
+    return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
 
 def _to_large_piece_ix(piece):
     # fmt: off
@@ -149,7 +169,8 @@ def _to_large_piece_ix(piece):
             .at[ROOK].set(2) \
             .at[HORSE].set(1) \
             .at[DRAGON].set(2)
-    return ixs[piece]
+    # fmt: on
+    return jax.lax.select(piece >= 0, ixs[piece], jnp.int8(-1))
 
 
 def _observe(state: State, player_id: jnp.ndarray):

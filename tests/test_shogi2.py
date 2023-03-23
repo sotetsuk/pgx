@@ -4,7 +4,7 @@ import jax.numpy as jnp
 
 from pgx._shogi_utils import *
 from pgx._shogi_utils import _rotate
-from pgx._shogi import Shogi, _is_legal_move
+from pgx._shogi import Shogi, _is_legal_move, _to_large_piece_ix, _flip_piece
 
 
 env = Shogi()
@@ -58,7 +58,7 @@ def test_is_legal_move():
         .at[xy2i(6, 8)].set(KING)
         .at[xy2i(5, 9)].set(EMPTY)
     )
-    visualize(s, "tests/assets/shogi/legal_moves_003.svg")
+    visualize(s, "tests/assets/shogi2/legal_moves_001.svg")
     # 78はOK
     from_, to = xy2i(6, 8), xy2i(7, 8)
     move = from_ * 81 + to
