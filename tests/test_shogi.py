@@ -175,7 +175,10 @@ def test_buggy_samples():
 def test_step():
     with open("tests/assets/shogi/random_play.json") as f:
         for line in f:
-            d = json.loads(line)
+            try:
+                d = json.loads(line)
+            except:
+                assert False, line
             sfen = d["sfen_before"]
             state = State._from_sfen(sfen)
             expected_legal_actions = d["legal_actions"]
