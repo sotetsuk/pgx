@@ -1,6 +1,6 @@
 from pgx._chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
-    _is_mate, _is_check, _is_legal_action, int_to_action, _pin
+    _is_mate, _is_check, _is_legal_action, int_to_action, _pin, _to_fen, _from_fen
 import numpy as np
 import time
 
@@ -423,6 +423,38 @@ def test_step():
     assert bs[51] == 0
 
 
+def test_to_fen():
+    s = init()
+    fen = _to_fen(s)
+    assert fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    # アンパッサン
+    s = step(s, 33 + 64 * 8)[0]
+    fen = _to_fen(s)
+    assert fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+    # キャスリング
+    s = _from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1")
+    s = step(s, 32 + 64 * 7)[0]
+    fen = _to_fen(s)
+    assert fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 1"
+
+
+def test_from_sfen():
+    s = init()
+    fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    made = _from_fen(fen)
+    assert np.all(s.board == made.board)
+    fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+    made = _from_fen(fen)
+    assert made.en_passant == 35
+    fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 1"
+    made = _from_fen(fen)
+    assert made.wk_move_count
+    # 本当は左右のルークは移動してないが、fen形式ではその情報が得られない
+    # キャスリングができないというのさえ分かってればいいので特に問題はない
+    assert made.wr1_move_count
+    assert made.wr2_move_count
+
+
 if __name__ == '__main__':
     test_move()
     test_pawn_move()
@@ -434,3 +466,5 @@ if __name__ == '__main__':
     test_legal_action()
     test_is_mate()
     test_step()
+    test_to_fen()
+    test_from_sfen()
