@@ -1,6 +1,6 @@
 from pgx._chess import init, _move, ChessState, ChessAction, _piece_type, _board_status, _make_board, _pawn_moves, \
     _knight_moves, _bishop_moves, _rook_moves, _queen_moves, _king_moves, _legal_actions, _create_actions, step, \
-    _is_mate, _is_check, _is_legal_action, int_to_action, _pin
+    _is_mate, _is_check, _is_legal_action, int_to_action, _pin, _to_fen, _from_fen
 import numpy as np
 import time
 
@@ -423,6 +423,19 @@ def test_step():
     assert bs[51] == 0
 
 
+def test_to_fen():
+    s = init()
+    fen = _to_fen(s)
+    assert fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+
+
+def test_from_sfen():
+    s = init()
+    fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    made = _from_fen(fen)
+    assert np.all(s.board == made.board)
+
+
 if __name__ == '__main__':
     test_move()
     test_pawn_move()
@@ -434,3 +447,4 @@ if __name__ == '__main__':
     test_legal_action()
     test_is_mate()
     test_step()
+    test_to_fen()
