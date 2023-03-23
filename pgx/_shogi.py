@@ -294,6 +294,7 @@ def can_major_capture_king(board, king_pos, f):
             ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0))  # 障害物なし
 
 def can_neighbour_capture_king(board, king_pos, f):
+    # including knight
     p = _flip_piece(board[f])
     return (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
 
