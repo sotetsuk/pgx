@@ -140,7 +140,10 @@ def can_neighbour_capture_king(board, king_pos, f):
 
 
 def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray):
+    # destination is not empty
     is_illegal = board[to] != EMPTY
+    # don't have the piece
+    is_illegal |= hand[0, piece] <= 0
 
     return ~is_illegal
 

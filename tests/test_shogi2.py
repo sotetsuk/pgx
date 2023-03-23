@@ -53,6 +53,8 @@ def test_is_legal_drop():
     s = init(key)
     assert not _is_legal_drop(s.piece_board, s.hand.at[:].set(1), PAWN, xy2i(5, 7))
 
+    s = init(key)
+    assert not _is_legal_drop(s.piece_board, s.hand, PAWN, xy2i(5, 5))
 
 def test_is_legal_move():
     # King cannot move into opponent pieces' effect
