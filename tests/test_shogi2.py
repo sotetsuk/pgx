@@ -4,7 +4,7 @@ import jax.numpy as jnp
 
 from pgx._shogi_utils import *
 from pgx._shogi_utils import _rotate
-from pgx._shogi import Shogi, _is_legal_move, _is_legal_drop
+from pgx._shogi import Shogi, State, _is_legal_move, _is_legal_drop
 
 
 env = Shogi()
@@ -48,6 +48,18 @@ def test_init():
     # assert False
 
 
+def test_step():
+    sfen = "9/4R4/9/9/9/9/9/9/9 b 2r2b4g3s4n4l17p 1"
+    state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi2/test_step_001.svg")
+    dlshogi_action = 846
+    state = step(state, dlshogi_action)
+    sfen = "4+R4/9/9/9/9/9/9/9/9 w 2r2b4g3s4n4l7p 1"
+    expected_state = State._from_sfen(sfen)
+    visualize(expected_state, "tests/assets/shogi2/test_step_002.svg")
+    assert (state.piece_board == expected_state.piece_board).all()
+
+
 def test_is_legal_drop():
     # 駒がある
     key = jax.random.PRNGKey(0)
@@ -72,6 +84,7 @@ def test_is_legal_drop():
     assert _is_legal_drop(s.piece_board, s.hand, GOLD, xy2i(1, 7))  # 合駒はOK
     assert _is_legal_drop(s.piece_board, s.hand, GOLD, xy2i(1, 8))  # 合駒はOK
     assert not _is_legal_drop(s.piece_board, s.hand, GOLD, xy2i(2, 6))  # 合駒はOK
+
 
 def test_is_legal_move():
     # King cannot move into opponent pieces' effect

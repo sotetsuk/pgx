@@ -92,6 +92,53 @@ class Shogi(core.Env):
         return 2
 
 
+@dataclass
+class Action:
+    is_drop: jnp.ndarray
+    piece: jnp.ndarray
+    to: jnp.ndarray
+    # --- Optional (only for move action) ---
+    from_: jnp.ndarray = jnp.int8(0)
+    is_promotion: jnp.ndarray = FALSE
+
+    @staticmethod
+    def make_move(piece, from_, to, is_promotion=FALSE):
+        return Action(
+            is_drop=False,
+            piece=piece,
+            from_=from_,
+            to=to,
+            is_promotion=is_promotion,
+        )
+
+    @staticmethod
+    def make_drop(piece, to):
+        return Action(is_drop=True, piece=piece, to=to)
+
+    @staticmethod
+    def _from_dlshogi_action(state: State, action: jnp.ndarray):
+        action = jnp.int32(action)
+        direction, to = jnp.int8(action // 81), jnp.int8(action % 81)
+        is_drop = direction >= 20
+        is_promotion = (10 <= direction) & (direction < 20)
+        # LEGAL_FROM_IDX[UP, 19] = [20, 21, ... -1]
+        legal_from_idx = LEGAL_FROM_IDX[direction % 10, to]  # (81,)
+        from_cand = state.piece_board[legal_from_idx]  # (8,)
+        mask = (
+            (legal_from_idx >= 0)
+            & (PAWN <= from_cand)
+            & (from_cand < OPP_PAWN)
+        )
+        i = jnp.nonzero(mask, size=1)[0][0]
+        from_ = legal_from_idx[i]
+        piece = jax.lax.cond(
+            is_drop,
+            lambda: direction - 20,
+            lambda: state.piece_board[from_],
+        )
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
+
+
 def _init_board():
     """Initialize Shogi State.
     >>> s = _init_board()
@@ -117,10 +164,52 @@ def _init_board():
            [ 1,  2,  3,  6,  7,  6,  3,  2,  1]], dtype=int8)
     """
     state = State()
-    return state.replace(  # type: ignore
-        legal_action_mask=_legal_action_mask(state)
-    )
+    return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
 
+
+def _step(state: State, action: jnp.ndarray):
+    action = Action._from_dlshogi_action(state, action)
+    # apply move/drop action
+    state = jax.lax.cond(
+        action.is_drop, _step_drop, _step_move, *(state, action)
+    )
+    # flip state
+    state = _flip(state)
+    state = state.replace(  # type: ignore
+        current_player=(state.current_player + 1) % 2,
+        turn=(state.turn + 1) % 2,
+    )
+    return state
+
+
+def _step_move(state: State, action: Action) -> State:
+    pb = state.piece_board
+    # remove piece from the original position
+    pb = pb.at[action.from_].set(EMPTY)
+    # capture the opponent if exists
+    captured = pb[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
+    hand = jax.lax.cond(
+        captured == EMPTY,
+        lambda: state.hand,
+        # add captured piece to my hand after
+        #   (1) tuning opp piece into mine by (x + 14) % 28, and
+        #   (2) filtering promoted piece by x % 8
+        lambda: state.hand.at[0, ((captured + 14) % 28) % 8].add(1),
+    )
+    # promote piece
+    piece = jax.lax.select(action.is_promotion, action.piece + 8, action.piece)
+    # set piece to the target position
+    pb = pb.at[action.to].set(piece)
+    # apply piece moves
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+
+
+def _step_drop(state: State, action: Action) -> State:
+    # add piece to board
+    pb = state.piece_board.at[action.to].set(action.piece)
+    # remove piece from hand
+    hand = state.hand.at[0, action.piece].add(-1)
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
 def _legal_action_mask(state: State):
@@ -201,7 +290,3 @@ def _major_piece_ix(piece):
 
 def _observe(state: State, player_id: jnp.ndarray):
     return jnp.zeros_like(state.observation)
-
-
-def _step(state, action):
-    return state
