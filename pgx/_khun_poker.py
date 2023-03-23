@@ -37,3 +37,56 @@ class State(core.State):
     # [(player 0),(player 1)]
     last_action: jnp.ndarray = jnp.int8(-1)
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
+
+
+class KhunPoker(core.Env):
+    def __init__(
+        self,
+    ):
+        super().__init__()
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        return _init(key)
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        return _step(state, action)
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state, player_id)
+
+    @property
+    def name(self) -> str:
+        return "KhunPoker"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self) -> int:
+        return 2
+
+
+def _init(rng: jax.random.KeyArray) -> State:
+    rng1, rng2 = jax.random.split(rng)
+    current_player = jnp.int8(jax.random.bernoulli(rng1))
+    init_card = jax.random.choice(
+        rng2, jnp.int8([[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]])
+    )
+    return State(
+        current_player=current_player,
+        card=init_card,
+        legal_action_mask=jnp.bool_([0, 0, 1, 1]),
+    )
+
+
+def _step(state, action):
+    ...
+
+
+def _observe(state, player_id) -> jnp.ndarray:
+    ...
