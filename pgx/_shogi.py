@@ -231,6 +231,8 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     is_illegal = board[to] != EMPTY
     # don't have the piece
     is_illegal |= hand[0, piece] <= 0
+    # double pawn
+    is_illegal |= (piece == PAWN) & ((board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
 
     # actually drop
     board = board.at[to].set(piece)
