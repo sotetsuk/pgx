@@ -448,7 +448,9 @@ def _major_piece_ix(piece):
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     state, flip_state = jax.lax.cond(
-        state.current_player == player_id, lambda: (state, _flip(state)), lambda: (_flip(state), state)
+        state.current_player == player_id,
+        lambda: (state, _flip(state)),
+        lambda: (_flip(state), state),
     )
 
     def pieces(state):
