@@ -51,7 +51,7 @@ class State(core.State):
     @staticmethod
     def _from_sfen(sfen):
         turn, pb, hand, step_count = _from_sfen(sfen)
-        return jax.jit(State._from_board)(turn, pb, hand).replace(
+        return jax.jit(State._from_board)(turn, pb, hand).replace(  # type: ignore
             _step_count=jnp.int32(step_count)
         )
 
@@ -67,7 +67,7 @@ class Shogi(core.Env):
         state = _init_board()
         rng, subkey = jax.random.split(key)
         current_player = jnp.int8(jax.random.bernoulli(subkey))
-        return state.replace(current_player=current_player)
+        return state.replace(current_player=current_player)  # type: ignore
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
@@ -268,7 +268,7 @@ def _legal_action_mask(state: State):
     opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
     to = opp_king_pos + 1
     flip_state = _flip(
-        state.replace(piece_board=state.piece_board.at[to].set(PAWN))
+        state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
 
     @jax.vmap
