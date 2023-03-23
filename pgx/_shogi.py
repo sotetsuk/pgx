@@ -145,7 +145,7 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
     # suicide move （王手放置、自殺手）
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
 
-    # 大駒
+    # captured by large piece (大駒)
     @jax.vmap
     def can_capture_king(f):
         p = _flip_piece(board[f])  # 敵の大駒
@@ -154,7 +154,10 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
                 (CAN_MOVE[p, king_pos, f]) &  # 移動可能で
                 ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0))  # 障害物なし
 
-    is_illegal |= can_capture_king(jnp.arange(81)).any()
+    is_illegal |= can_capture_king(jnp.arange(81)).any()  # TODO: 実際には81ではなくqueen moveだけで十分
+
+    # captured by neighbours (王の周囲から)
+
     return ~is_illegal
 
 
