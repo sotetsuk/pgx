@@ -213,8 +213,16 @@ def _step_drop(state: State, action: Action) -> State:
 
 
 def _legal_action_mask(state: State):
-    mask = jax.vmap(partial(_is_legal_move, board=state.piece_board))(move=jnp.arange(81 * 81))
-    return mask
+    @jax.vmap
+    def is_legal(action):
+        a = Action._from_dlshogi_action(state, action)
+        return jax.lax.cond(
+            a.is_drop,
+            lambda: _is_legal_drop(state.piece_board, state.hand, a.piece, a.to),
+            lambda: _is_legal_move(state.piece_board, a.from_ * 81 + a.to)
+        )
+
+    return is_legal(jnp.arange(27 * 81))
 
 
 def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray):
