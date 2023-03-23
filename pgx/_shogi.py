@@ -130,12 +130,8 @@ class Action:
             & (from_cand < OPP_PAWN)
         )
         i = jnp.nonzero(mask, size=1)[0][0]
-        from_ = legal_from_idx[i]
-        piece = jax.lax.cond(
-            is_drop,
-            lambda: direction - 20,
-            lambda: state.piece_board[from_],
-        )
+        from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
+        piece = jax.lax.select(is_drop, direction - 20, state.piece_board[from_])
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
@@ -218,11 +214,11 @@ def _legal_action_mask(state: State):
     def is_legal(action):
         a = Action._from_dlshogi_action(state, action)
         return jax.lax.cond(
-            a.from_ < 0,  # TODO: fix me. a is invalid. all LEGAL_FROM_IDX == -1,
-            lambda: FALSE,
+            a.is_drop,
+            lambda: _is_legal_drop(state.piece_board, state.hand, a.piece, a.to),
             lambda: jax.lax.cond(
-                a.is_drop,
-                lambda: _is_legal_drop(state.piece_board, state.hand, a.piece, a.to),
+                a.from_ < 0,  # TODO: fix me. a is invalid. all LEGAL_FROM_IDX == -1,
+                lambda: FALSE,
                 lambda: _is_legal_move(state.piece_board, a.from_ * 81 + a.to, a.is_promotion)
             )
         )
