@@ -52,7 +52,7 @@ class State(core.State):
     @staticmethod
     def _from_sfen(sfen):
         turn, pb, hand = _from_sfen(sfen)
-        return State._from_board(turn, pb, hand)
+        return jax.jit(State._from_board)(turn, pb, hand)
 
     def _to_sfen(self):
         return _to_sfen(self)
