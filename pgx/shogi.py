@@ -258,7 +258,7 @@ def _step(state: State, action: jnp.ndarray):
         current_player=(state.current_player + 1) % 2,
         turn=(state.turn + 1) % 2,
     )
-    legal_action_mask = _legal_action_mask(state),
+    legal_action_mask = _legal_action_mask(state)
     terminated = ~legal_action_mask.any()
     # fmt: off
     reward = jax.lax.select(
