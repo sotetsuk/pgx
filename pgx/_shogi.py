@@ -291,7 +291,7 @@ def _legal_action_mask(state: State):
         return jax.lax.cond(
             a.is_drop,
             lambda: _is_legal_drop(
-                state.piece_board, state.hand, a.piece, a.to
+                state.hand, a.piece, a.to, state.piece_board
             ),
             lambda: jax.lax.cond(
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
@@ -325,7 +325,7 @@ def _legal_action_mask(state: State):
 
 
 def _is_legal_drop(
-    board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray
+    hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray
 ):
     # destination is not empty
     is_illegal = board[to] != EMPTY
