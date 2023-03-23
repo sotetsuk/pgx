@@ -104,7 +104,7 @@ class Action:
     @staticmethod
     def make_move(piece, from_, to, is_promotion=FALSE):
         return Action(
-            is_drop=False,
+            is_drop=FALSE,
             piece=piece,
             from_=from_,
             to=to,
@@ -113,7 +113,7 @@ class Action:
 
     @staticmethod
     def make_drop(piece, to):
-        return Action(is_drop=True, piece=piece, to=to)
+        return Action(is_drop=TRUE, piece=piece, to=to)
 
     @staticmethod
     def _from_dlshogi_action(state: State, action: jnp.ndarray):
