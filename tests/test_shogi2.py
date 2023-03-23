@@ -56,16 +56,6 @@ def test_init():
 
 
 def test_step():
-    # sfen = "9/4R4/9/9/9/9/9/9/9 b 2r2b4g3s4n4l17p 1"
-    # state = State._from_sfen(sfen)
-    # visualize(state, "tests/assets/shogi2/test_step_001.svg")
-    # dlshogi_action = 846
-    # state = step(state, dlshogi_action)
-    # sfen = "4+R4/9/9/9/9/9/9/9/9 w 2r2b4g3s4n4l7p 1"
-    # expected_state = State._from_sfen(sfen)
-    # visualize(expected_state, "tests/assets/shogi2/test_step_002.svg")
-    # assert (state.piece_board == expected_state.piece_board).all()
-
     data = """{"sfen_before": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1", "action": 115, "legal_actions": [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331], "sfen_after": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2"}
 {"sfen_before": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2", "action": 304, "legal_actions": [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331], "sfen_after": "lnsgkgsnl/6rb1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL b - 3"}
 {"sfen_before": "lnsgkgsnl/6rb1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL b - 3", "action": 142, "legal_actions": [5, 7, 14, 23, 32, 41, 43, 50, 52, 59, 61, 68, 77, 79, 124, 133, 142, 187, 205, 214, 268, 331, 350, 593], "sfen_after": "lnsgkgsnl/6rb1/ppppppppp/9/9/9/PPPPPPPPP/1BG2S1R1/LNS1KG1NL w - 4"}
