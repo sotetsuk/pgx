@@ -4,7 +4,7 @@ import jax.numpy as jnp
 
 from pgx._shogi_utils import *
 from pgx._shogi_utils import _rotate
-from pgx._shogi import Shogi, _is_legal_move, _to_large_piece_ix, _flip_piece
+from pgx._shogi import Shogi, _is_legal_move, _major_piece_ix, _flip_piece
 
 
 env = Shogi()

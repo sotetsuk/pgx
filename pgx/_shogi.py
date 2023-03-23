@@ -136,7 +136,7 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
     piece = board[from_]
     is_illegal |= ~CAN_MOVE[piece, from_, to]
     # there is an obstacle between from_ and to
-    i = _to_large_piece_ix(piece)
+    i = _major_piece_ix(piece)
     is_illegal |= ((i >= 0) & (BETWEEN[i, from_, to, :] & (board != EMPTY)).any())
 
     # actually move
@@ -147,20 +147,20 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
 
     # captured by large piece (大駒)
     @jax.vmap
-    def can_capture_king(f):
+    def can_major_capture_king(f):
         p = _flip_piece(board[f])  # 敵の大駒
-        i = _to_large_piece_ix(p)  # 敵の大駒のix
+        i = _major_piece_ix(p)  # 敵の大駒のix
         return ((i >= 0) &  # 敵の大駒かつ
                 (CAN_MOVE[p, king_pos, f]) &  # 移動可能で
                 ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0))  # 障害物なし
 
-    is_illegal |= can_capture_king(jnp.arange(81)).any()  # TODO: 実際には81ではなくqueen moveだけで十分
+    is_illegal |= can_major_capture_king(jnp.arange(81)).any()  # TODO: 実際には81ではなくqueen movesだけで十分
 
     # captured by neighbours (王の周囲から)
     @jax.vmap
     def can_neighbour_capture_king(f):
         p = _flip_piece(board[f])
-        return (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
+        return (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
 
     is_illegal |= can_neighbour_capture_king(NEIGHBOURS[king_pos]).any()
 
@@ -170,7 +170,7 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
 def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
 
-def _to_large_piece_ix(piece):
+def _major_piece_ix(piece):
     # fmt: off
     ixs = (-jnp.ones(28, dtype=jnp.int8)) \
             .at[LANCE].set(0) \
