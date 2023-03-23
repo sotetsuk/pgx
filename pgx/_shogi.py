@@ -157,6 +157,12 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
     is_illegal |= can_capture_king(jnp.arange(81)).any()  # TODO: 実際には81ではなくqueen moveだけで十分
 
     # captured by neighbours (王の周囲から)
+    @jax.vmap
+    def can_neighbour_capture_king(f):
+        p = _flip_piece(board[f])
+        return (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
+
+    is_illegal |= can_neighbour_capture_king(NEIGHBOURS[king_pos]).any()
 
     return ~is_illegal
 

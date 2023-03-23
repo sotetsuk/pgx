@@ -67,3 +67,27 @@ def test_is_legal_move():
     from_, to = xy2i(6, 8), xy2i(5, 8)
     move = from_ * 81 + to
     assert not _is_legal_move(s.piece_board, move)
+
+    # King must escape
+    key = jax.random.PRNGKey(0)
+    s = init(key)
+    s = update_board(s,
+        piece_board=s.piece_board.at[xy2i(5, 3)].set(EMPTY)
+        .at[xy2i(5, 7)].set(EMPTY)
+        .at[xy2i(5, 8)].set(OPP_PAWN)
+    )
+    visualize(s, "tests/assets/shogi2/legal_moves_002.svg")
+    # 王が逃げるのはOK
+    from_, to = xy2i(5, 9), xy2i(4, 8)
+    move = from_ * 81 + to
+    assert _is_legal_move(s.piece_board, move)
+    from_, to = xy2i(5, 9), xy2i(5, 8)
+    move = from_ * 81 + to
+    assert _is_legal_move(s.piece_board, move)
+    from_, to = xy2i(5, 9), xy2i(6, 8)
+    move = from_ * 81 + to
+    assert _is_legal_move(s.piece_board, move)
+    # 放置はNG
+    from_, to = xy2i(1, 7), xy2i(1, 6)
+    move = from_ * 81 + to
+    assert not _is_legal_move(s.piece_board, move)
