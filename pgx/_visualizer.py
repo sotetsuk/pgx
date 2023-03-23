@@ -18,6 +18,8 @@ from typing import Literal, Optional
 
 import svgwrite  # type: ignore
 
+from ._dwg.khun_poker import KhunPokerState, _make_khunpoker_dwg
+
 from ._dwg.animalshogi import AnimalShogiState, _make_animalshogi_dwg
 from ._dwg.backgammon import BackgammonState, _make_backgammon_dwg
 from ._dwg.bridge_bidding import BridgeBiddingState, _make_bridge_dwg
@@ -394,6 +396,34 @@ class Visualizer:
                     "black",
                     "lightgray",
                 )
+        elif isinstance(_state, KhunPokerState):
+            self.config["GRID_SIZE"] = 30
+            self.config["BOARD_WIDTH"] = 8
+            self.config["BOARD_HEIGHT"] = 8
+            self._make_dwg_group = _make_khunpoker_dwg
+            if (
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "lightgray",
+                    "white",
+                    "lightgray",
+                    "#1e1e1e",
+                    "lightgray",
+                    "",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "black",
+                    "white",
+                    "black",
+                    "black",
+                    "white",
+                    "black",
+                    "",
+                )
         elif isinstance(_state, OthelloState):
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
@@ -566,6 +596,10 @@ class Visualizer:
                 size=_states.size[_i],
                 turn=_states.turn[_i],
                 board=_states.board[_i],
+            )
+        elif isinstance(_states, KhunPokerState):
+            return KhunPokerState(
+                cards == _states.cards[_i],
             )
         elif isinstance(_states, OthelloState):
             return OthelloState(
