@@ -447,8 +447,8 @@ def _major_piece_ix(piece):
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    state = jax.lax.cond(
-        state.current_player != player_id, lambda: _flip(state), lambda: state
+    state, flip_state = jax.lax.cond(
+        state.current_player == player_id, lambda: (state, _flip(state)), lambda: (_flip(state), state)
     )
 
     def pieces(state):
@@ -514,8 +514,8 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
     my_piece_feat = pieces(state)
     my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
-    opp_piece_feat = pieces(_flip(state))
-    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(_flip(state))
+    opp_piece_feat = pieces(flip_state)
+    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(flip_state)
     opp_piece_feat = opp_piece_feat[:, ::-1]
     opp_effect_feat = opp_effect_feat[:, ::-1]
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
