@@ -478,13 +478,18 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
             major_piece_ix = _major_piece_ix(piece)
             has_obstacles = jax.lax.select(
                 major_piece_ix >= 0,
-                (BETWEEN[major_piece_ix, from_, to, :] & (state.piece_board != EMPTY)).any(0),
+                (
+                    BETWEEN[major_piece_ix, from_, to, :]
+                    & (state.piece_board != EMPTY)
+                ).any(0),
                 FALSE,
             )
             return can_move & ~has_obstacles
 
-        effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(jnp.arange(81), jnp.arange(81))
-        mine = ((PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN))
+        effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(
+            jnp.arange(81), jnp.arange(81)
+        )
+        mine = (PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN)
         return jnp.where(mine.reshape(81, 1), effects, FALSE)
 
     def piece_and_effect(state):
@@ -509,9 +514,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     my_piece_feat = pieces(state)
     my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
     opp_piece_feat = pieces(_flip(state))
-    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(
-        _flip(state)
-    )
+    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(_flip(state))
     opp_piece_feat = opp_piece_feat[:, ::-1]
     opp_effect_feat = opp_effect_feat[:, ::-1]
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
