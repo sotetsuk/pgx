@@ -20,6 +20,10 @@ from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
+CALL = jnp.int8(0)
+BET = jnp.int8(1)
+FOLD = jnp.int8(2)
+CHECK = jnp.int8(3)
 
 
 @dataclass
@@ -84,8 +88,49 @@ def _init(rng: jax.random.KeyArray) -> State:
     )
 
 
-def _step(state, action):
-    ...
+def _step(state: State, action):
+    action = jnp.int8(action)
+    terminated, reward = jax.lax.cond(
+        action == FOLD,
+        lambda: (TRUE, _get_unit_reward(state)),
+        lambda: (FALSE, jnp.float32([0, 0])),
+    )
+    terminated, reward = jax.lax.cond(
+        (state.last_action == BET) & (action == CALL),
+        lambda: (TRUE, _get_unit_reward(state) * 2),
+        lambda: (terminated, reward),
+    )
+    terminated, reward = jax.lax.cond(
+        (state.last_action == CHECK) & (action == CHECK),
+        lambda: (TRUE, _get_unit_reward(state)),
+        lambda: (terminated, reward),
+    )
+
+    legal_action = jax.lax.switch(
+        action,
+        [
+            lambda: jnp.bool_([0, 0, 0, 0]),  # CALL
+            lambda: jnp.bool_([1, 0, 1, 0]),  # BET
+            lambda: jnp.bool_([0, 0, 0, 0]),  # FOLD
+            lambda: jnp.bool_([0, 1, 0, 1]),  # CHECK
+        ],
+    )
+
+    return state.replace(  # type:ignore
+        last_action=action,
+        legal_action_mask=legal_action,
+        terminated=terminated,
+        reward=reward,
+    )
+
+
+def _get_unit_reward(state: State):
+    return jax.lax.cond(
+        state.card[state.current_player]
+        > state.card[1 - state.current_player],
+        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
+        lambda: jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
+    )
 
 
 def _observe(state, player_id) -> jnp.ndarray:
