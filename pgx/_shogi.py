@@ -312,16 +312,14 @@ def _legal_action_mask(state: State):
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
 
+    # fmt: off
     @jax.vmap
     def apply(promote):
         return jax.vmap(
-            partial(
-                _is_legal_move,
-                board=flip_state.piece_board,
-                is_promotion=promote,
-            )
+            partial(_is_legal_move, board=flip_state.piece_board, is_promotion=promote,)
         )(move=jnp.arange(81 * 81))
         # TODO: queen moves are enough
+    # fmt: on
 
     is_pawn_mate = ~(apply(jnp.bool_([False, True])).any())
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
