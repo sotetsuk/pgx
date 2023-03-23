@@ -427,6 +427,15 @@ def test_to_fen():
     s = init()
     fen = _to_fen(s)
     assert fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    # アンパッサン
+    s = step(s, 35 + 64 * 8)
+    fen = _to_fen(s)
+    assert fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+    # キャスリング
+    s = _from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1")
+    s = step(s, 33 + 64 * 7)
+    fen = _to_fen(s)
+    assert fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 1"
 
 
 def test_from_sfen():
@@ -434,6 +443,16 @@ def test_from_sfen():
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     made = _from_fen(fen)
     assert np.all(s.board == made.board)
+    fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
+    made = _from_fen(fen)
+    assert made.en_passant == 35
+    fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 1"
+    made = _from_fen(fen)
+    assert made.wk_move_count
+    # 本当は左右のルークは移動してないが、fen形式ではその情報が得られない
+    # キャスリングができないというのさえ分かってればいいので特に問題はない
+    assert made.wr1_move_count
+    assert made.wr2_move_count
 
 
 if __name__ == '__main__':
@@ -448,3 +467,4 @@ if __name__ == '__main__':
     test_is_mate()
     test_step()
     test_to_fen()
+    test_from_sfen()

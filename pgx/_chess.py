@@ -1419,7 +1419,7 @@ def _to_fen(state: ChessState):
         else:
             en = state.en_passant - 1
         fen += board_line_dir[en // 8]
-        fen += str(en % 8)
+        fen += str(en % 8 + 1)
         fen += " "
     fen += "0 1"
     return fen
@@ -1466,7 +1466,7 @@ def _from_fen(fen):
                 move_count[3] = False
                 move_count[4] = False
     if en != "-":
-        point = board_line_dir.index(en[0]) * 8 + int(en[1])
+        point = board_line_dir.index(en[0]) * 8 + int(en[1]) - 1
         if s_turn == 0:
             point -= 1
         else:
@@ -1482,5 +1482,5 @@ def _from_fen(fen):
         bk_move_count=move_count[3],
         br1_move_count=move_count[4],
         br2_move_count=move_count[5],
-        en_passant=point
+        en_passant=point,
     )
