@@ -316,7 +316,7 @@ def _legal_action_mask(state: State):
     @jax.vmap
     def apply(promote):
         return jax.vmap(
-            partial(_is_legal_move, board=flip_state.piece_board, is_promotion=promote,)
+            partial(_is_legal_move, board=flip_state.piece_board, is_promotion=promote)
         )(move=jnp.arange(81 * 81))
         # TODO: queen moves are enough
     # fmt: on
