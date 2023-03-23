@@ -320,9 +320,8 @@ def _legal_action_mask(state: State):
                 board=flip_state.piece_board,
                 is_promotion=promote,
             )
-        )(
-            move=jnp.arange(81 * 81)
-        )  # TODO: queen moves are enough
+        )(move=jnp.arange(81 * 81))
+        # TODO: queen moves are enough
 
     is_pawn_mate = ~(apply(jnp.bool_([False, True])).any())
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
@@ -358,9 +357,8 @@ def _is_legal_drop(
     _apply = jax.vmap(
         partial(can_major_capture_king, board=board, king_pos=king_pos)
     )
-    is_illegal |= _apply(
-        f=jnp.arange(81)
-    ).any()  # TODO: 実際には81ではなくqueen movesだけで十分
+    # TODO: 実際には81ではなくqueen movesだけで十分
+    is_illegal |= _apply(f=jnp.arange(81)).any()
     # captured by neighbours (王の周囲から)
     _apply = jax.vmap(
         partial(can_neighbour_capture_king, board=board, king_pos=king_pos)
@@ -396,9 +394,8 @@ def _is_legal_move(
     _apply = jax.vmap(
         partial(can_major_capture_king, board=board, king_pos=king_pos)
     )
-    is_illegal |= _apply(
-        f=jnp.arange(81)
-    ).any()  # TODO: 実際には81ではなくqueen movesだけで十分
+    # TODO: 実際には81ではなくqueen movesだけで十分
+    is_illegal |= _apply(f=jnp.arange(81)).any()
     # captured by neighbours (王の周囲から)
     _apply = jax.vmap(
         partial(can_neighbour_capture_king, board=board, king_pos=king_pos)
