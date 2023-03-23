@@ -134,7 +134,7 @@ def test_is_legal_move():
     # 58はNG
     from_, to = xy2i(6, 8), xy2i(5, 8)
     move = from_ * 81 + to
-    assert not _is_legal_move(s.piece_board, move, FALSE)
+    assert not jax.jit(_is_legal_move)(s.piece_board, move, FALSE)
 
     # King must escape
     key = jax.random.PRNGKey(0)
