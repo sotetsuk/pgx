@@ -252,12 +252,18 @@ def _step(state: State, action: jnp.ndarray):
     )
     legal_action_mask = _legal_action_mask(state),
     terminated = ~legal_action_mask.any()
+    # fmt: off
     reward = jax.lax.select(
         terminated,
-        lambda: jnp.zeros(2, dtype=jnp.float32),
-        lambda: jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+        jnp.zeros(2, dtype=jnp.float32),
+        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
     )
-    return state.replace(legal_action_mask, terminated=terminated, reward=reward)  # type: ignore
+    # fmt: on
+    return state.replace(  # type: ignore
+        legal_action_mask=legal_action_mask,
+        terminated=terminated,
+        reward=reward
+    )
 
 
 def _step_move(state: State, action: Action) -> State:
