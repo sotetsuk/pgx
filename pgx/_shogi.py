@@ -117,6 +117,36 @@ class Action:
 
     @staticmethod
     def _from_dlshogi_action(state: State, action: jnp.ndarray):
+        """Direction (from github.com/TadaoYamaoka/cshogi)
+
+         0 Up
+         1 Up left
+         2 Up right
+         3 Left
+         4 Right
+         5 Down
+         6 Down left
+         7 Down right
+         8 Up2 left
+         9 Up2 right
+        10 Promote +  Up
+        11 Promote +  Up left
+        12 Promote +  Up right
+        13 Promote +  Left
+        14 Promote +  Right
+        15 Promote +  Down
+        16 Promote +  Down left
+        17 Promote +  Down right
+        18 Promote +  Up2 left
+        19 Promote +  Up2 right
+        20 Drop 歩
+        21 Drop 香車
+        22 Drop 桂馬
+        23 Drop 銀
+        24 Drop 角
+        25 Drop 飛車
+        26 Drop 金
+        """
         action = jnp.int32(action)
         direction, to = jnp.int8(action // 81), jnp.int8(action % 81)
         is_drop = direction >= 20
@@ -247,8 +277,6 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     # captured by neighbours (王の周囲から)
     _apply = jax.vmap(partial(can_neighbour_capture_king, board=board, king_pos=king_pos))
     is_illegal |= _apply(f=NEIGHBOURS[king_pos]).any()
-
-    # TODO: 打ち歩詰
 
     return ~is_illegal
 
