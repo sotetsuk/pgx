@@ -297,7 +297,7 @@ def _legal_action_mask(state: State):
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
                 lambda: FALSE,
                 lambda: _is_legal_move(
-                    state.piece_board, a.from_ * 81 + a.to, a.is_promotion
+                    a.from_ * 81 + a.to, a.is_promotion, state.piece_board
                 ),
             ),
         )
@@ -311,17 +311,11 @@ def _legal_action_mask(state: State):
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
-
     # fmt: off
-    @jax.vmap
-    def apply(promote):
-        return jax.vmap(
-            partial(_is_legal_move, board=flip_state.piece_board, is_promotion=promote)
-        )(move=jnp.arange(81 * 81))
-        # TODO: queen moves are enough
+    is_pawn_mate = ~jax.vmap(jax.vmap(
+        partial(_is_legal_move, board=flip_state.piece_board), (0, None)), (None, 0)
+    )(jnp.arange(81 * 81), jnp.bool_([False, True])).any()  # TODO: queen moves are enough
     # fmt: on
-
-    is_pawn_mate = ~(apply(jnp.bool_([False, True])).any())
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     has_no_pawn = state.hand[0, PAWN] <= 0
     is_occupied = state.piece_board[to] != EMPTY
@@ -355,7 +349,7 @@ def _is_legal_drop(
 
 
 def _is_legal_move(
-    board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndarray
+    move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
 ):
     from_, to = move // 81, move % 81
     # source is not my piece
