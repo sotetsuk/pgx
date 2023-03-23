@@ -435,14 +435,19 @@ def _flip(state):
 
 
 def _major_piece_ix(piece):
-    # fmt: off
-    ixs = (-jnp.ones(28, dtype=jnp.int8)) \
-            .at[LANCE].set(0) \
-            .at[BISHOP].set(1) \
-            .at[ROOK].set(2) \
-            .at[HORSE].set(1) \
-            .at[DRAGON].set(2)
-    # fmt: on
+    ixs = (
+        (-jnp.ones(28, dtype=jnp.int8))
+        .at[LANCE]
+        .set(0)
+        .at[BISHOP]
+        .set(1)
+        .at[ROOK]
+        .set(2)
+        .at[HORSE]
+        .set(1)
+        .at[DRAGON]
+        .set(2)
+    )
     return jax.lax.select(piece >= 0, ixs[piece], jnp.int8(-1))
 
 
