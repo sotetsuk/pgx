@@ -13,8 +13,6 @@
 # limitations under the License.
 
 
-from functools import partial
-
 import jax.numpy as jnp
 
 from pgx._cache import load_shogi_is_on_the_way  # type: ignore
