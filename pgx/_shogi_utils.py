@@ -163,7 +163,7 @@ def _to_sfen(state):
         sfen += "w "
     # 持ち駒
     if jnp.all(state.hand == 0):
-        sfen += f"- {state._step_count + 1}"
+        sfen += "-"
     else:
         for i in range(2):
             for j in range(7):
@@ -174,7 +174,7 @@ def _to_sfen(state):
                 if num_piece >= 2:
                     sfen += str(num_piece)
                 sfen += hand_char_dir[piece_type]
-        sfen += " 1"
+    sfen += f" {state._step_count + 1}"
     return sfen
 
 
