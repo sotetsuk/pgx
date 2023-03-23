@@ -102,8 +102,9 @@ class State(core.State):
 
 
 class Shogi(core.Env):
-    def __init__(self):
+    def __init__(self, max_termination_steps: int=1000):
         super().__init__()
+        self.max_termination_steps = max_termination_steps
 
     def _init(self, key: jax.random.KeyArray) -> State:
         state = _init_board()
@@ -114,7 +115,14 @@ class Shogi(core.Env):
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
-        return _step(state, action)
+        state = _step(state, action)
+        state = jax.lax.cond(
+            (0 <= self.max_termination_steps)
+            & (self.max_termination_steps <= state._step_count),
+            lambda: state.replace(terminated=TRUE),  # end with tie
+            lambda: state,
+        )
+        return state
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
