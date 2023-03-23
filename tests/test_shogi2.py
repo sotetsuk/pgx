@@ -57,6 +57,8 @@ def test_step():
         d = json.loads(line)
         sfen = d["sfen_before"]
         state = State._from_sfen(sfen)
+        legal_actions = d["legal_actions"]
+        assert jnp.nonzero(state.legal_action_mask)[0].shape[0] == len(legal_actions)
         action = int(d["action"])
         state = step(state, action)
         sfen = d["sfen_after"]
