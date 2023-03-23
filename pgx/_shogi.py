@@ -235,7 +235,7 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     is_illegal |= (piece == PAWN) & ((board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
-    is_illegal |= (piece == BISHOP) & (to % 9 < 2)
+    is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
 
     # actually drop
     board = board.at[to].set(piece)
@@ -282,7 +282,7 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndar
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
     is_illegal |= is_promotion & (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
     is_illegal |= ~is_promotion & ((piece == PAWN) | (PAWN == LANCE)) & (to % 9 == 0)  # 必ず成る
-    is_illegal |= ~is_promotion & (piece == BISHOP) & (to % 9 < 2)  # 必ず成る
+    is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
 
     return ~is_illegal
 
