@@ -233,6 +233,9 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     is_illegal |= hand[0, piece] <= 0
     # double pawn
     is_illegal |= (piece == PAWN) & ((board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
+    # get stuck
+    is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
+    is_illegal |= (piece == BISHOP) & (to % 9 < 2)
 
     # actually drop
     board = board.at[to].set(piece)
@@ -245,8 +248,6 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     _apply = jax.vmap(partial(can_neighbour_capture_king, board=board, king_pos=king_pos))
     is_illegal |= _apply(f=NEIGHBOURS[king_pos]).any()
 
-    # TODO: stuck
-    # TODO: 2歩
     # TODO: 打ち歩詰
 
     return ~is_illegal
