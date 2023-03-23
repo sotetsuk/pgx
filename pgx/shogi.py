@@ -119,10 +119,11 @@ class Shogi(core.Env):
         state = jax.lax.cond(
             (0 <= self.max_termination_steps)
             & (self.max_termination_steps <= state._step_count),
-            lambda: state.replace(terminated=TRUE),  # end with tie
+            # end with tie
+            lambda: state.replace(terminated=TRUE),  # type: ignore
             lambda: state,
         )
-        return state
+        return state  # type: ignore
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
@@ -225,11 +226,9 @@ def _init_board():
 
 
 def _step(state: State, action: jnp.ndarray):
-    action = Action._from_dlshogi_action(state, action)
+    a = Action._from_dlshogi_action(state, action)
     # apply move/drop action
-    state = jax.lax.cond(
-        action.is_drop, _step_drop, _step_move, *(state, action)
-    )
+    state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     # flip state
     state = _flip(state)
     state = state.replace(  # type: ignore
