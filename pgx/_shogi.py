@@ -127,17 +127,6 @@ def _legal_action_mask(state: State):
     mask = jax.vmap(partial(_is_legal_move, board=state.piece_board))(move=jnp.arange(81 * 81))
     return mask
 
-def can_major_capture_king(board, king_pos, f):
-    p = _flip_piece(board[f])  # 敵の大駒
-    i = _major_piece_ix(p)  # 敵の大駒のix
-    return ((i >= 0) &  # 敵の大駒かつ
-            (CAN_MOVE[p, king_pos, f]) &  # 移動可能で
-            ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0))  # 障害物なし
-
-def can_neighbour_capture_king(board, king_pos, f):
-    p = _flip_piece(board[f])
-    return (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
-
 
 def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray):
     # destination is not empty
@@ -184,6 +173,16 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
 
     return ~is_illegal
 
+def can_major_capture_king(board, king_pos, f):
+    p = _flip_piece(board[f])  # 敵の大駒
+    i = _major_piece_ix(p)  # 敵の大駒のix
+    return ((i >= 0) &  # 敵の大駒かつ
+            (CAN_MOVE[p, king_pos, f]) &  # 移動可能で
+            ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0))  # 障害物なし
+
+def can_neighbour_capture_king(board, king_pos, f):
+    p = _flip_piece(board[f])
+    return (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
 
 def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
