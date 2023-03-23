@@ -499,10 +499,11 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         my_effect_feat = filter_effect(my_pieces)
         my_effect_sum = my_effect.sum(axis=0)
 
+        @jax.vmap
         def effect_sum(n) -> jnp.ndarray:
             return my_effect_sum >= n  # type: ignore
 
-        effect_sum_feat = jax.vmap(effect_sum)(jnp.arange(1, 4))
+        effect_sum_feat = effect_sum(jnp.arange(1, 4))
         return my_effect_feat, effect_sum_feat
 
     my_piece_feat = pieces(state)
