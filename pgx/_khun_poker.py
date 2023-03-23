@@ -81,7 +81,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     init_card = jax.random.choice(
         rng2, jnp.int8([[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]])
     )
-    return State(
+    return State(  # type:ignore
         current_player=current_player,
         cards=init_card,
         legal_action_mask=jnp.bool_([0, 1, 0, 1]),
