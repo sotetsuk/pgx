@@ -2,7 +2,7 @@ import json
 import jax
 import jax.numpy as jnp
 
-from pgx._shogi import Shogi, State, Action, HORSE, PAWN, DRAGON
+from pgx.shogi import Shogi, State, Action, HORSE, PAWN, DRAGON
 
 
 env = Shogi()
@@ -184,7 +184,7 @@ def test_step():
        legal_actions = jnp.nonzero(state.legal_action_mask)[0]
        ok = legal_actions.shape[0] == len(expected_legal_actions)
        if not ok:
-           visualize(state, "tests/assets/shogi2/failed.svg")
+           visualize(state, "tests/assets/shogi/failed.svg")
            for a in legal_actions:
                if a not in expected_legal_actions:
                    print(Action._from_dlshogi_action(state, a))
