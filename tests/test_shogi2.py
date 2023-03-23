@@ -66,14 +66,20 @@ def test_step():
     # visualize(expected_state, "tests/assets/shogi2/test_step_002.svg")
     # assert (state.piece_board == expected_state.piece_board).all()
 
-    sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
-    state = State._from_sfen(sfen)
-    # # visualize(state, "tests/assets/shogi2/test_step_before.svg")
-    action = 115
-    state = step(state, action)
-    # # visualize(state, "tests/assets/shogi2/test_step_after.svg")
-    sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2"
-    assert state._to_sfen() == sfen
+    data = """{"sfen_before": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1", "action": 115, "legal_actions": [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331], "sfen_after": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2"}
+{"sfen_before": "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2", "action": 304, "legal_actions": [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331], "sfen_after": "lnsgkgsnl/6rb1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL b - 3"}
+{"sfen_before": "lnsgkgsnl/6rb1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL b - 3", "action": 142, "legal_actions": [5, 7, 14, 23, 32, 41, 43, 50, 52, 59, 61, 68, 77, 79, 124, 133, 142, 187, 205, 214, 268, 331, 350, 593], "sfen_after": "lnsgkgsnl/6rb1/ppppppppp/9/9/9/PPPPPPPPP/1BG2S1R1/LNS1KG1NL w - 4"}
+{"sfen_before": "lnsgkgsnl/6rb1/ppppppppp/9/9/9/PPPPPPPPP/1BG2S1R1/LNS1KG1NL w - 4", "action": 77, "legal_actions": [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 68, 77, 79, 115, 124, 133, 178, 187, 196, 205, 214, 331, 340, 349, 358, 367, 376], "sfen_after": "lnsgkgsnl/6rb1/pppppppp1/8p/9/9/PPPPPPPPP/1BG2S1R1/LNS1KG1NL b - 5"}
+{"sfen_before": "lnsgkgsnl/6rb1/pppppppp1/8p/9/9/PPPPPPPPP/1BG2S1R1/LNS1KG1NL b - 5", "action": 32, "legal_actions": [5, 7, 14, 23, 32, 41, 43, 50, 59, 68, 77, 79, 124, 133, 187, 214, 268, 296, 331, 350, 376, 593], "sfen_after": "lnsgkgsnl/6rb1/pppppppp1/8p/9/5P3/PPPPP1PPP/1BG2S1R1/LNS1KG1NL w - 6"}"""
+
+    for line in data.split("\n"):
+        d = json.loads(line)
+        sfen = d["sfen_before"]
+        state = State._from_sfen(sfen)
+        action = int(d["action"])
+        state = step(state, action)
+        sfen = d["sfen_after"]
+        assert state._to_sfen() == sfen
 
 
 def test_is_legal_drop():
