@@ -263,8 +263,8 @@ def _step(state: State, action: jnp.ndarray):
     # fmt: off
     reward = jax.lax.select(
         terminated,
-        jnp.zeros(2, dtype=jnp.float32),
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+        jnp.zeros(2, dtype=jnp.float32),
     )
     # fmt: on
     return state.replace(  # type: ignore
