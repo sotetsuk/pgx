@@ -5063,7 +5063,7 @@ def test_step():
             for a in expected_legal_actions:
                 if a not in legal_actions:
                     print(Action._from_dlshogi_action(state, a))
-            assert False, f"{legal_actions.shape[0]} != {len(expected_legal_actions)}"
+            assert False, f"{legal_actions.shape[0]} != {len(expected_legal_actions)}, {sfen}"
         action = int(d["action"])
         state = step(state, action)
         sfen = d["sfen_after"]
@@ -5139,3 +5139,12 @@ def test_is_legal_move():
     from_, to = xy2i(1, 7), xy2i(1, 6)
     move = from_ * 81 + to
     assert not _is_legal_move(s.piece_board, move, FALSE)
+
+    state = State._from_sfen("l2gg1b2/p1s1k3p/n1r2Pr+Pl/1G1p4P/2pP3n1/Pp2ppSB1/N2S3+pN/L1GK4L/2P3S2 b 3Pp 135")
+    from_, to = 14, 46
+    move = from_ * 81 + to
+    assert _is_legal_move(s.piece_board, move, FALSE)
+    from_, to = 14, 54
+    move = from_ * 81 + to
+    assert _is_legal_move(s.piece_board, move, FALSE)
+
