@@ -51,8 +51,8 @@ class State(core.State):
 
     @staticmethod
     def _from_sfen(sfen):
-        turn, pb, hand = _from_sfen(sfen)
-        return jax.jit(State._from_board)(turn, pb, hand)
+        turn, pb, hand, step_count = _from_sfen(sfen)
+        return jax.jit(State._from_board)(turn, pb, hand).replace(_step_count=jnp.int32(step_count))
 
     def _to_sfen(self):
         return _to_sfen(self)

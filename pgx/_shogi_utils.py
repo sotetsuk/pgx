@@ -163,7 +163,7 @@ def _to_sfen(state):
         sfen += "w "
     # 持ち駒
     if jnp.all(state.hand == 0):
-        sfen += "- 1"
+        sfen += f"- {state._step_count + 1}"
     else:
         for i in range(2):
             for j in range(7):
@@ -183,7 +183,7 @@ def _from_sfen(sfen):
     board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     # fmt: on
-    board, turn, hand, _ = sfen.split()
+    board, turn, hand, step_count = sfen.split()
     board_ranks = board.split("/")
     piece_board = jnp.zeros(81, dtype=jnp.int8)
     for i in range(9):
@@ -203,10 +203,6 @@ def _from_sfen(sfen):
                 piece = 0
         for j in range(9):
             piece_board = piece_board.at[9 * i + j].set(rank[j])
-    if turn == "b":
-        s_turn = jnp.int8(0)
-    else:
-        s_turn = jnp.int8(1)
     s_hand = jnp.zeros(14, dtype=jnp.int8)
     if hand != "-":
         num_piece = 1
@@ -216,7 +212,7 @@ def _from_sfen(sfen):
             else:
                 s_hand = s_hand.at[hand_char_dir.index(char)].set(num_piece)
                 num_piece = 1
-    turn=s_turn
-    piece_board=jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten()
-    hand=jnp.reshape(s_hand, (2, 7))
-    return turn ,piece_board, hand
+    piece_board = jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten()
+    hand = jnp.reshape(s_hand, (2, 7))
+    turn = jnp.int8(0) if turn == "b" else jnp.int8(1)
+    return turn ,piece_board, hand, int(step_count) - 1

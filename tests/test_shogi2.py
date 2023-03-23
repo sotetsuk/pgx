@@ -66,15 +66,14 @@ def test_step():
     # visualize(expected_state, "tests/assets/shogi2/test_step_002.svg")
     # assert (state.piece_board == expected_state.piece_board).all()
 
-    # sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
-    # state = State._from_sfen(sfen)
+    sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
+    state = State._from_sfen(sfen)
     # # visualize(state, "tests/assets/shogi2/test_step_before.svg")
-    # action = 115
-    # state = step(state, action)
+    action = 115
+    state = step(state, action)
     # # visualize(state, "tests/assets/shogi2/test_step_after.svg")
-    # sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2"
-    # assert state._to_sfen() == sfen
-    assert True
+    sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B3S1R1/LNSGKG1NL w - 2"
+    assert state._to_sfen() == sfen
 
 
 def test_is_legal_drop():
