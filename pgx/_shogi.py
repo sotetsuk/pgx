@@ -325,9 +325,7 @@ def _legal_action_mask(state: State):
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     has_no_pawn = state.hand[0, PAWN] <= 0
     is_occupied = state.piece_board[to] != EMPTY
-    can_drop_pawn = jax.lax.select(
-        has_no_pawn | is_occupied | (to % 9 == 0), can_drop_pawn, ~is_pawn_mate
-    )
+    can_drop_pawn &= (~(has_no_pawn | is_occupied | (to % 9 == 0)) & ~is_pawn_mate)
 
     return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
 
