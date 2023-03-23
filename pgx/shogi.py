@@ -102,7 +102,7 @@ class State(core.State):
 
 
 class Shogi(core.Env):
-    def __init__(self, max_termination_steps: int=1000):
+    def __init__(self, max_termination_steps: int = 1000):
         super().__init__()
         self.max_termination_steps = max_termination_steps
 
@@ -270,7 +270,7 @@ def _step(state: State, action: jnp.ndarray):
     return state.replace(  # type: ignore
         legal_action_mask=legal_action_mask,
         terminated=terminated,
-        reward=reward
+        reward=reward,
     )
 
 
