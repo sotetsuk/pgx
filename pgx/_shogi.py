@@ -253,7 +253,23 @@ def _legal_action_mask(state: State):
             )
         )
 
-    return is_legal(jnp.arange(27 * 81))
+    legal_action_mask = is_legal(jnp.arange(27 * 81))
+
+    # pawn drop mate
+    has_no_pawn = state.hand[0, PAWN] <= 0
+    direction = 20  # drop pawn
+    opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
+    to = opp_king_pos + 1
+    can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
+    is_occupied = state.piece_board[to] != EMPTY
+    flip_state = _flip(state.replace(piece_board=state.piece_board.at[to].set(PAWN)))
+    @jax.vmap
+    def apply(promote):
+        return jax.vmap(partial(_is_legal_move, board=flip_state.piece_board, is_promotion=promote))(move=jnp.arange(81 * 81))  # TODO: queen moves are enough
+    is_pawn_mate = ~(apply(jnp.bool_([False, True])).any())
+    can_drop_pawn = jax.lax.select(has_no_pawn | is_occupied | (to % 9 == 0), can_drop_pawn, ~is_pawn_mate)
+
+    return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
 
 
 def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray):

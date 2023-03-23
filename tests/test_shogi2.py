@@ -4,8 +4,8 @@ import jax
 import jax.numpy as jnp
 
 from pgx._shogi_utils import *
-from pgx._shogi_utils import _rotate
-from pgx._shogi import Shogi, State, Action, _is_legal_move, _is_legal_drop
+from pgx._shogi_utils import _rotate, _flip
+from pgx._shogi import Shogi, State, Action, _is_legal_move, _is_legal_drop, _legal_action_mask
 
 
 env = Shogi()
@@ -43,7 +43,7 @@ def test_init():
     assert jnp.unique(s.piece_board).shape[0] == 1 + 8 + 8
     assert s.legal_action_mask.sum() != 0
     legal_actions = jnp.int32([5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331])
-    assert (jnp.nonzero(s.legal_action_mask)[0] == legal_actions).all()
+    assert (jnp.nonzero(s.legal_action_mask)[0] == legal_actions).all(), jnp.nonzero(s.legal_action_mask)[0]
 
 
 def test_is_legal_drop():
@@ -52,25 +52,25 @@ def test_is_legal_drop():
     sfen = "lnsgkgsnl/7b1/ppppppppp/9/9/9/PPPP1PPPP/1B5R1/LNSGKGSNL b P 1"
     state = State._from_sfen(sfen)
     visualize(state, "tests/assets/shogi/legal_drops_001.svg")
-    assert _is_legal_drop(state.piece_board, state.hand, PAWN, xy2i(5, 2))
+    assert state.legal_action_mask[20 * 81 + xy2i(5, 2)]
 
     # 片側に避けられるので打ち歩詰でない
     sfen = "lns1kpsnl/7b1/ppppGpppp/9/9/9/PPPP1PPPP/1B5R1/LNSGKGSNL b P 1"
     state = State._from_sfen(sfen)
     visualize(state, "tests/assets/shogi/legal_drops_002.svg")
-    assert _is_legal_drop(state.piece_board, state.hand, PAWN, xy2i(5, 2))
+    assert state.legal_action_mask[20 * 81 + xy2i(5, 2)]
 
     # 両側に避けられないので打ち歩詰
     sfen = "lnspkpsnl/7b1/ppppGpppp/9/9/9/PPPP1PPPP/1B5R1/LNSGKGSNL b P 1"
     state = State._from_sfen(sfen)
     visualize(state, "tests/assets/shogi/legal_drops_003.svg")
-    assert not _is_legal_drop(state.piece_board, state.hand, PAWN, xy2i(5, 2))
+    assert not state.legal_action_mask[20 * 81 + xy2i(5, 2)]
 
     # 金で取れるので打ち歩詰でない
     sfen = "lnsgkpsnl/7b1/ppppGpppp/9/9/9/PPPP1PPPP/1B5R1/LNSGKGSNL b P 1"
     state = State._from_sfen(sfen)
     visualize(state, "tests/assets/shogi/legal_drops_004.svg")
-    assert _is_legal_drop(state.piece_board, state.hand, PAWN, xy2i(5, 2))
+    assert state.legal_action_mask[20 * 81 + xy2i(5, 2)]
 
 
 def test_step():
