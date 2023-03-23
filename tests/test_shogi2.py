@@ -320,3 +320,20 @@ def test_observe():
     assert obs[-1].all()
 
     # TODO: player_id != current_player
+
+def test_sfen():
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL b b 1"
+    s = State._from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/sfen_001.svg")
+    assert s._to_sfen() == sfen
+
+    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"
+    s = State._from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/sfen_002.svg")
+    assert s._to_sfen() == sfen
+
+
+# def test_api():
+#     import pgx
+#     env = pgx.make("shogi")
+#     pgx.api_test(env, 10)
