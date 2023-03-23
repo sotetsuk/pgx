@@ -30,7 +30,6 @@ from ._dwg.play2048 import Play2048State, _make_2048_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
 from ._dwg.sparrow_mahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from ._dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
-from ._shogi import State as ShogiState2
 
 ColorTheme = Literal["light", "dark"]
 
@@ -451,7 +450,7 @@ class Visualizer:
                     "black",
                     "black",
                 )
-        elif isinstance(_state, ShogiState) or isinstance(_state, ShogiState2):
+        elif isinstance(_state, ShogiState):
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 10
             self.config["BOARD_HEIGHT"] = 9
@@ -579,12 +578,6 @@ class Visualizer:
             )
         elif isinstance(_states, ShogiState):
             return ShogiState(  # type:ignore
-                turn=_states.turn[_i],
-                piece_board=_states.piece_board[_i],
-                hand=_states.hand[_i],
-            )
-        elif isinstance(_states, ShogiState2):
-            return ShogiState2(  # type:ignore
                 turn=_states.turn[_i],
                 piece_board=_states.piece_board[_i],
                 hand=_states.hand[_i],
