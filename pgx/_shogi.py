@@ -497,14 +497,6 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         effect_sum_feat = effect_sum(jnp.arange(1, 4))
         return my_effect_feat, effect_sum_feat
 
-    my_piece_feat = pieces(state)
-    my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
-    opp_piece_feat = pieces(_flip(state))
-    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(_flip(state))
-    opp_piece_feat = opp_piece_feat[:, ::-1]
-    opp_effect_feat = opp_effect_feat[:, ::-1]
-    opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
-
     def num_hand(n, hand, p):
         return jnp.tile(hand[p] >= n, reps=(9, 9))
 
@@ -520,11 +512,16 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         return [pawn_feat, lance_feat, knight_feat, silver_feat, gold_feat, bishop_feat, rook_feat]
         # fmt: on
 
+    my_piece_feat = pieces(state)
+    my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
+    opp_piece_feat = pieces(_flip(state))
+    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(_flip(state))
+    opp_piece_feat = opp_piece_feat[:, ::-1]
+    opp_effect_feat = opp_effect_feat[:, ::-1]
+    opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
-
     checked = jnp.tile(is_checked(state.piece_board), reps=(1, 9, 9))
-
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
         my_effect_feat.reshape(14, 9, 9),
