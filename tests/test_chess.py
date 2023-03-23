@@ -428,12 +428,12 @@ def test_to_fen():
     fen = _to_fen(s)
     assert fen == "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     # アンパッサン
-    s = step(s, 35 + 64 * 8)
+    s = step(s, 35 + 64 * 8)[0]
     fen = _to_fen(s)
     assert fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
     # キャスリング
     s = _from_fen("rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 0 1")
-    s = step(s, 33 + 64 * 7)
+    s = step(s, 33 + 64 * 7)[0]
     fen = _to_fen(s)
     assert fen == "rnbqkbnr/pppppppp/8/8/4P3/8/PPPPKPPP/RNBQ1BNR b kq - 0 1"
 
