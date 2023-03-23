@@ -80,12 +80,12 @@ BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
 
 
-NEIGHBOURS = [[] for i in range(81)]
+NEIGHBOURS = [[] for i in range(81)]  # include knight moves
 
-dx = [ 0, -1, -1, -1,  0, +1, +1, +1]
-dy = [-1, -1,  0, +1, +1, +1,  0, -1]
+dx = [ 0, -1, -1, -1,  0, +1, +1, +1, +1,-1]
+dy = [-1, -1,  0, +1, +1, +1,  0, -1, -2,-2]
 for i in range(81):
-    for j in range(8):
+    for j in range(10):
         x, y = i // 9, i % 9
         x += dx[j]
         y += dy[j]

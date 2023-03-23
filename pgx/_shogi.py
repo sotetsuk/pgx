@@ -281,7 +281,7 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndar
     # promotion
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
     is_illegal |= is_promotion & (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
-    is_illegal |= ~is_promotion & ((piece == PAWN) | (PAWN == LANCE)) & (to % 9 == 0)  # 必ず成る
+    is_illegal |= ~is_promotion & ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # 必ず成る
     is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
 
     return ~is_illegal
