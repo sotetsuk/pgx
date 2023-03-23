@@ -58,6 +58,44 @@ def test_step():
     assert (state.reward == jnp.float32([2, -2])).all()
 
 
+def test_legal_action():
+    key = jax.random.PRNGKey(0)
+    # cards = [2, 0]
+    state = init(key)
+    state = step(state, CHECK)
+    assert (state.legal_action_mask == jnp.bool_([0, 1, 0, 1])).all()
+    state = step(state, CHECK)
+    assert state.terminated
+
+    state = init(key)
+    state = step(state, CHECK)
+    assert (state.legal_action_mask == jnp.bool_([0, 1, 0, 1])).all()
+    state = step(state, BET)
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 0])).all()
+    state = step(state, FOLD)
+    assert state.terminated
+
+    state = init(key)
+    state = step(state, CHECK)
+    assert (state.legal_action_mask == jnp.bool_([0, 1, 0, 1])).all()
+    state = step(state, BET)
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 0])).all()
+    state = step(state, CALL)
+    assert state.terminated
+
+    state = init(key)
+    state = step(state, BET)
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 0])).all()
+    state = step(state, FOLD)
+    assert state.terminated
+
+    state = init(key)
+    state = step(state, BET)
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 0])).all()
+    state = step(state, CALL)
+    assert state.terminated
+
+
 def test_random_play():
     N = 100
     key = jax.random.PRNGKey(0)
