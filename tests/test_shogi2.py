@@ -69,12 +69,6 @@ def test_is_legal_drop():
     visualize(state, "tests/assets/shogi/legal_drops_004.svg")
     assert state.legal_action_mask[20 * 81 + xy2i(5, 2)]
 
-    # 打ち歩詰 # 639
-    sfen = "+P2G1p2+P/1+N2+Pbk1p/3p3l+L/1gp3s1L/2SPG2p1/NK1SL3N/1p5RP/+p+r+p2+np+s1/b1P+p2+p2 w Gp 35"
-    state = State._from_sfen(sfen)
-    visualize(state, "tests/assets/shogi/legal_drops_005.svg")
-    assert state.legal_action_mask[20 * 81 + xy2i(2, 5)]
-
 
 def test_buggy_samples():
     # 歩以外の持ち駒に対しての二歩判定回避
@@ -170,6 +164,12 @@ def test_buggy_samples():
     state = step(state, dlshogi_action)
     visualize(state, "tests/assets/shogi/buggy_samples_012.svg")
     assert not state.terminated  # 打ち歩詰でない
+
+    # 打ち歩詰ではないが2歩 # 639
+    sfen = "+P2G1p2+P/1+N2+Pbk1p/3p3l+L/1gp3s1L/2SPG2p1/NK1SL3N/1p5RP/+p+r+p2+np+s1/b1P+p2+p2 w Gp 35"
+    state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_samples_013.svg")
+    assert not state.legal_action_mask[20 * 81 + xy2i(2, 5)]
 
 
 def test_step():
