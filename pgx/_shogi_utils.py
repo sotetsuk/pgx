@@ -82,8 +82,8 @@ LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
 
 NEIGHBOURS = [[] for i in range(81)]  # include knight moves
 
-dx = [ 0, -1, -1, -1,  0, +1, +1, +1, +1,-1]
-dy = [-1, -1,  0, +1, +1, +1,  0, -1, -2,-2]
+dx = [0, -1, -1, -1, 0, +1, +1, +1, +1, -1]
+dy = [-1, -1, 0, +1, +1, +1, 0, -1, -2, -2]
 for i in range(81):
     for j in range(10):
         x, y = i // 9, i % 9
@@ -95,8 +95,6 @@ for i in range(81):
             NEIGHBOURS[i].append(x * 9 + y)
 
 NEIGHBOURS = jnp.int8(NEIGHBOURS)
-
-
 
 
 def _rotate(board: jnp.ndarray) -> jnp.ndarray:
@@ -215,4 +213,4 @@ def _from_sfen(sfen):
     piece_board = jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten()
     hand = jnp.reshape(s_hand, (2, 7))
     turn = jnp.int8(0) if turn == "b" else jnp.int8(1)
-    return turn ,piece_board, hand, int(step_count) - 1
+    return turn, piece_board, hand, int(step_count) - 1

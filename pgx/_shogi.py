@@ -23,7 +23,6 @@ from pgx._shogi_utils import *
 from pgx._shogi_utils import _flip, _from_sfen, _to_sfen
 
 
-
 @dataclass
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
@@ -52,7 +51,9 @@ class State(core.State):
     @staticmethod
     def _from_sfen(sfen):
         turn, pb, hand, step_count = _from_sfen(sfen)
-        return jax.jit(State._from_board)(turn, pb, hand).replace(_step_count=jnp.int32(step_count))
+        return jax.jit(State._from_board)(turn, pb, hand).replace(
+            _step_count=jnp.int32(step_count)
+        )
 
     def _to_sfen(self):
         return _to_sfen(self)
@@ -161,7 +162,9 @@ class Action:
         )
         i = jnp.nonzero(mask, size=1)[0][0]
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
-        piece = jax.lax.select(is_drop, direction - 20, state.piece_board[from_])
+        piece = jax.lax.select(
+            is_drop, direction - 20, state.piece_board[from_]
+        )
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
@@ -245,12 +248,17 @@ def _legal_action_mask(state: State):
         a = Action._from_dlshogi_action(state, action)
         return jax.lax.cond(
             a.is_drop,
-            lambda: _is_legal_drop(state.piece_board, state.hand, a.piece, a.to),
+            lambda: _is_legal_drop(
+                state.piece_board, state.hand, a.piece, a.to
+            ),
             lambda: jax.lax.cond(
-                a.from_ < 0,  # TODO: fix me. a is invalid. all LEGAL_FROM_IDX == -1,
+                a.from_
+                < 0,  # TODO: fix me. a is invalid. all LEGAL_FROM_IDX == -1,
                 lambda: FALSE,
-                lambda: _is_legal_move(state.piece_board, a.from_ * 81 + a.to, a.is_promotion)
-            )
+                lambda: _is_legal_move(
+                    state.piece_board, a.from_ * 81 + a.to, a.is_promotion
+                ),
+            ),
         )
 
     legal_action_mask = is_legal(jnp.arange(27 * 81))
@@ -259,26 +267,44 @@ def _legal_action_mask(state: State):
     direction = 20  # drop pawn
     opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
     to = opp_king_pos + 1
-    flip_state = _flip(state.replace(piece_board=state.piece_board.at[to].set(PAWN)))
+    flip_state = _flip(
+        state.replace(piece_board=state.piece_board.at[to].set(PAWN))
+    )
+
     @jax.vmap
     def apply(promote):
-        return jax.vmap(partial(_is_legal_move, board=flip_state.piece_board, is_promotion=promote))(move=jnp.arange(81 * 81))  # TODO: queen moves are enough
+        return jax.vmap(
+            partial(
+                _is_legal_move,
+                board=flip_state.piece_board,
+                is_promotion=promote,
+            )
+        )(
+            move=jnp.arange(81 * 81)
+        )  # TODO: queen moves are enough
+
     is_pawn_mate = ~(apply(jnp.bool_([False, True])).any())
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     has_no_pawn = state.hand[0, PAWN] <= 0
     is_occupied = state.piece_board[to] != EMPTY
-    can_drop_pawn = jax.lax.select(has_no_pawn | is_occupied | (to % 9 == 0), can_drop_pawn, ~is_pawn_mate)
+    can_drop_pawn = jax.lax.select(
+        has_no_pawn | is_occupied | (to % 9 == 0), can_drop_pawn, ~is_pawn_mate
+    )
 
     return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
 
 
-def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray):
+def _is_legal_drop(
+    board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray
+):
     # destination is not empty
     is_illegal = board[to] != EMPTY
     # don't have the piece
     is_illegal |= hand[0, piece] <= 0
     # double pawn
-    is_illegal |= (piece == PAWN) & ((board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
+    is_illegal |= (piece == PAWN) & (
+        (board == PAWN).reshape(9, 9).sum(axis=1) > 0
+    )[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
@@ -288,16 +314,24 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
 
     # suicide move
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
-    _apply = jax.vmap(partial(can_major_capture_king, board=board, king_pos=king_pos))
-    is_illegal |= _apply(f=jnp.arange(81)).any()  # TODO: 実際には81ではなくqueen movesだけで十分
+    _apply = jax.vmap(
+        partial(can_major_capture_king, board=board, king_pos=king_pos)
+    )
+    is_illegal |= _apply(
+        f=jnp.arange(81)
+    ).any()  # TODO: 実際には81ではなくqueen movesだけで十分
     # captured by neighbours (王の周囲から)
-    _apply = jax.vmap(partial(can_neighbour_capture_king, board=board, king_pos=king_pos))
+    _apply = jax.vmap(
+        partial(can_neighbour_capture_king, board=board, king_pos=king_pos)
+    )
     is_illegal |= _apply(f=NEIGHBOURS[king_pos]).any()
 
     return ~is_illegal
 
 
-def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndarray):
+def _is_legal_move(
+    board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndarray
+):
     from_, to = move // 81, move % 81
     # source is not my piece
     piece = board[from_]
@@ -308,7 +342,9 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndar
     is_illegal |= ~CAN_MOVE[piece, from_, to]
     # there is an obstacle between from_ and to
     i = _major_piece_ix(piece)
-    is_illegal |= ((i >= 0) & (BETWEEN[i, from_, to, :] & (board != EMPTY)).any())
+    is_illegal |= (i >= 0) & (
+        BETWEEN[i, from_, to, :] & (board != EMPTY)
+    ).any()
 
     # actually move
     board = board.at[from_].set(EMPTY).at[to].set(piece)
@@ -316,34 +352,48 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndar
     # suicide move （王手放置、自殺手）
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
     # captured by large piece (大駒)
-    _apply = jax.vmap(partial(can_major_capture_king, board=board, king_pos=king_pos))
-    is_illegal |= _apply(f=jnp.arange(81)).any()  # TODO: 実際には81ではなくqueen movesだけで十分
+    _apply = jax.vmap(
+        partial(can_major_capture_king, board=board, king_pos=king_pos)
+    )
+    is_illegal |= _apply(
+        f=jnp.arange(81)
+    ).any()  # TODO: 実際には81ではなくqueen movesだけで十分
     # captured by neighbours (王の周囲から)
-    _apply = jax.vmap(partial(can_neighbour_capture_king, board=board, king_pos=king_pos))
+    _apply = jax.vmap(
+        partial(can_neighbour_capture_king, board=board, king_pos=king_pos)
+    )
     is_illegal |= _apply(f=NEIGHBOURS[king_pos]).any()
 
     # promotion
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
     is_illegal |= is_promotion & (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
-    is_illegal |= ~is_promotion & ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # 必ず成る
+    is_illegal |= (
+        ~is_promotion & ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
+    )  # 必ず成る
     is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
 
     return ~is_illegal
 
+
 def can_major_capture_king(board, king_pos, f):
     p = _flip_piece(board[f])  # 敵の大駒
     i = _major_piece_ix(p)  # 敵の大駒のix
-    return ((i >= 0) &  # 敵の大駒かつ
-            (CAN_MOVE[p, king_pos, f]) &  # 移動可能で
-            ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0))  # 障害物なし
+    return (
+        (i >= 0)
+        & (CAN_MOVE[p, king_pos, f])  # 敵の大駒かつ
+        & ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0)  # 移動可能で
+    )  # 障害物なし
+
 
 def can_neighbour_capture_king(board, king_pos, f):
     # including knight
     p = _flip_piece(board[f])
     return (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
 
+
 def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
+
 
 def _major_piece_ix(piece):
     # fmt: off
