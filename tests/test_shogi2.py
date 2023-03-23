@@ -4,7 +4,7 @@ import jax.numpy as jnp
 
 from pgx._shogi_utils import *
 from pgx._shogi_utils import _rotate
-from pgx._shogi import Shogi, _is_legal_move, _major_piece_ix, _flip_piece
+from pgx._shogi import Shogi, _is_legal_move, _is_legal_drop
 
 
 env = Shogi()
@@ -46,6 +46,12 @@ def test_init():
     # print(_rotate(s.legal_action_mask[6 * 81: 7*81].reshape(9,9)))
     # print(_rotate(s.legal_action_mask[8 * 81: 9*81].reshape(9,9)))
     # assert False
+
+
+def test_is_legal_drop():
+    key = jax.random.PRNGKey(0)
+    s = init(key)
+    assert not _is_legal_drop(s.piece_board, s.hand.at[:].set(1), PAWN, xy2i(5, 7))
 
 
 def test_is_legal_move():

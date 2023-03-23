@@ -139,6 +139,12 @@ def can_neighbour_capture_king(board, king_pos, f):
     return (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
 
 
+def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray):
+    is_illegal = board[to] != EMPTY
+
+    return ~is_illegal
+
+
 def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
     from_, to = move // 81, move % 81
     # destination is my piece
