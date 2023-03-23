@@ -247,6 +247,10 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     _apply = jax.vmap(partial(can_neighbour_capture_king, board=board, king_pos=king_pos))
     is_illegal |= _apply(f=NEIGHBOURS[king_pos]).any()
 
+    # TODO: stuck
+    # TODO: 2歩
+    # TODO: 打ち歩詰
+
     return ~is_illegal
 
 
