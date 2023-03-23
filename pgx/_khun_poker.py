@@ -92,7 +92,7 @@ def _init(rng: jax.random.KeyArray) -> State:
 def _step(state: State, action):
     action = jnp.int8(action)
     pot = jax.lax.cond(
-        action == BET,
+        (action == BET) | (action == CALL),
         lambda: state.pot.at[state.current_player].add(1),
         lambda: state.pot,
     )
