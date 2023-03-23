@@ -178,6 +178,7 @@ def _step(state: State, action: jnp.ndarray):
     state = state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         turn=(state.turn + 1) % 2,
+        legal_action_mask=_legal_action_mask(state),
     )
     return state
 
@@ -217,9 +218,13 @@ def _legal_action_mask(state: State):
     def is_legal(action):
         a = Action._from_dlshogi_action(state, action)
         return jax.lax.cond(
-            a.is_drop,
-            lambda: _is_legal_drop(state.piece_board, state.hand, a.piece, a.to),
-            lambda: _is_legal_move(state.piece_board, a.from_ * 81 + a.to)
+            a.from_ < 0,  # TODO: fix me. a is invalid. all LEGAL_FROM_IDX == -1,
+            lambda: FALSE,
+            lambda: jax.lax.cond(
+                a.is_drop,
+                lambda: _is_legal_drop(state.piece_board, state.hand, a.piece, a.to),
+                lambda: _is_legal_move(state.piece_board, a.from_ * 81 + a.to, a.is_promotion)
+            )
         )
 
     return is_legal(jnp.arange(27 * 81))
@@ -245,12 +250,14 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     return ~is_illegal
 
 
-def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
+def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray, is_promotion: jnp.ndarray):
     from_, to = move // 81, move % 81
-    # destination is my piece
-    is_illegal = (PAWN <= board[to]) & (board[to] < OPP_PAWN)
-    # piece cannot move like that
+    # source is not my piece
     piece = board[from_]
+    is_illegal = ~((PAWN <= piece) & (piece < OPP_PAWN))
+    # destination is my piece
+    is_illegal |= (PAWN <= board[to]) & (board[to] < OPP_PAWN)
+    # piece cannot move like that
     is_illegal |= ~CAN_MOVE[piece, from_, to]
     # there is an obstacle between from_ and to
     i = _major_piece_ix(piece)
@@ -267,6 +274,9 @@ def _is_legal_move(board: jnp.ndarray, move: jnp.ndarray):
     # captured by neighbours (王の周囲から)
     _apply = jax.vmap(partial(can_neighbour_capture_king, board=board, king_pos=king_pos))
     is_illegal |= _apply(f=NEIGHBOURS[king_pos]).any()
+
+    # TODO:
+    is_illegal |= is_promotion
 
     return ~is_illegal
 

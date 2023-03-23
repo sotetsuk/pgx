@@ -5,7 +5,7 @@ import jax.numpy as jnp
 
 from pgx._shogi_utils import *
 from pgx._shogi_utils import _rotate
-from pgx._shogi import Shogi, State, _is_legal_move, _is_legal_drop
+from pgx._shogi import Shogi, State, Action, _is_legal_move, _is_legal_drop
 
 
 env = Shogi()
@@ -48,8 +48,11 @@ def test_init():
     # print(_rotate(s.legal_action_mask[8 * 81: 9*81].reshape(9,9)))
     # assert False
 
-    legal_actions = [5, 14, 23, 32, 41, 50, 59, 68, 77, 7, 79, 25, 115, 214, 61, 331, 268, 277, 286, 295, 304, 187, 34, 124, 205, 52, 142, 196, 43, 133]
-    assert s.legal_action_mask.sum() == len(legal_actions)
+    legal_actions = jnp.int32([5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331])
+    print(Action._from_dlshogi_action(s, 241))
+    print(LEGAL_FROM_IDX[2, 79])
+    assert jnp.nonzero(s.legal_action_mask)[0].shape[0] == legal_actions.shape[0], jnp.nonzero(s.legal_action_mask)[0]
+    assert (jnp.nonzero(s.legal_action_mask)[0] == legal_actions).all(), jnp.nonzero(s.legal_action_mask)[0]
 
 
 def test_step():
@@ -114,11 +117,11 @@ def test_is_legal_move():
     # 78はOK
     from_, to = xy2i(6, 8), xy2i(7, 8)
     move = from_ * 81 + to
-    assert _is_legal_move(s.piece_board, move)
+    assert _is_legal_move(s.piece_board, move, FALSE)
     # 58はNG
     from_, to = xy2i(6, 8), xy2i(5, 8)
     move = from_ * 81 + to
-    assert not _is_legal_move(s.piece_board, move)
+    assert not _is_legal_move(s.piece_board, move, FALSE)
 
     # King must escape
     key = jax.random.PRNGKey(0)
@@ -132,14 +135,14 @@ def test_is_legal_move():
     # 王が逃げるのはOK
     from_, to = xy2i(5, 9), xy2i(4, 8)
     move = from_ * 81 + to
-    assert _is_legal_move(s.piece_board, move)
+    assert _is_legal_move(s.piece_board, move, FALSE)
     from_, to = xy2i(5, 9), xy2i(5, 8)
     move = from_ * 81 + to
-    assert _is_legal_move(s.piece_board, move)
+    assert _is_legal_move(s.piece_board, move, FALSE)
     from_, to = xy2i(5, 9), xy2i(6, 8)
     move = from_ * 81 + to
-    assert _is_legal_move(s.piece_board, move)
+    assert _is_legal_move(s.piece_board, move, FALSE)
     # 放置はNG
     from_, to = xy2i(1, 7), xy2i(1, 6)
     move = from_ * 81 + to
-    assert not _is_legal_move(s.piece_board, move)
+    assert not _is_legal_move(s.piece_board, move, FALSE)
