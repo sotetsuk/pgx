@@ -399,12 +399,17 @@ def is_checked(board):
         return (
             (i >= 0)
             & (CAN_MOVE[p, king_pos, f])  # 敵の大駒かつ
-            & ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0)  # 移動可能で
+            & (
+                (BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0
+            )  # 移動可能で
         )  # 障害物なし
+
     def can_neighbour_capture_king(board, king_pos, f):
         # including knight
         p = _flip_piece(board[f])
-        return (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
+        return (
+            (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
+        )
 
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
     checked = jax.vmap(
