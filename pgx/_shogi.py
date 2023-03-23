@@ -145,6 +145,17 @@ def _is_legal_drop(board: jnp.ndarray, hand: jnp.ndarray, piece: jnp.ndarray, to
     # don't have the piece
     is_illegal |= hand[0, piece] <= 0
 
+    # actually drop
+    board = board.at[to].set(piece)
+
+    # suicide move
+    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
+    _apply = jax.vmap(partial(can_major_capture_king, board=board, king_pos=king_pos))
+    is_illegal |= _apply(f=jnp.arange(81)).any()  # TODO: 実際には81ではなくqueen movesだけで十分
+    # captured by neighbours (王の周囲から)
+    _apply = jax.vmap(partial(can_neighbour_capture_king, board=board, king_pos=king_pos))
+    is_illegal |= _apply(f=NEIGHBOURS[king_pos]).any()
+
     return ~is_illegal
 
 

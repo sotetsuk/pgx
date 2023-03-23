@@ -49,12 +49,29 @@ def test_init():
 
 
 def test_is_legal_drop():
+    # 駒がある
     key = jax.random.PRNGKey(0)
     s = init(key)
     assert not _is_legal_drop(s.piece_board, s.hand.at[:].set(1), PAWN, xy2i(5, 7))
 
+    # 持ってない
     s = init(key)
     assert not _is_legal_drop(s.piece_board, s.hand, PAWN, xy2i(5, 5))
+
+    # 合駒
+    key = jax.random.PRNGKey(0)
+    s = init(key)
+    s = update_board(s,
+        piece_board=s.piece_board.at[:].set(EMPTY)
+        .at[xy2i(1, 9)].set(KING)
+        .at[xy2i(1, 5)].set(OPP_LANCE),
+        hand=s.hand.at[0, GOLD].set(1)
+    )
+    visualize(s, "tests/assets/shogi/legal_drops_005.svg")
+    assert _is_legal_drop(s.piece_board, s.hand, GOLD, xy2i(1, 6))  # 合駒はOK
+    assert _is_legal_drop(s.piece_board, s.hand, GOLD, xy2i(1, 7))  # 合駒はOK
+    assert _is_legal_drop(s.piece_board, s.hand, GOLD, xy2i(1, 8))  # 合駒はOK
+    assert not _is_legal_drop(s.piece_board, s.hand, GOLD, xy2i(2, 6))  # 合駒はOK
 
 def test_is_legal_move():
     # King cannot move into opponent pieces' effect
