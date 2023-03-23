@@ -1,11 +1,8 @@
 import json
-from functools import partial
 import jax
 import jax.numpy as jnp
 
-from pgx._shogi_utils import *
-from pgx._shogi_utils import _rotate, _flip
-from pgx._shogi import Shogi, State, Action, _is_legal_move, _is_legal_drop, _legal_action_mask
+from pgx._shogi import Shogi, State, Action, HORSE, PAWN
 
 
 env = Shogi()

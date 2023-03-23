@@ -15,47 +15,12 @@
 
 from functools import partial
 
-import jax
 import jax.numpy as jnp
 
-import pgx.core as core
 from pgx._cache import load_shogi_is_on_the_way  # type: ignore
 from pgx._cache import load_shogi_legal_from_idx  # type: ignore
 from pgx._cache import load_shogi_raw_effect_boards  # type: ignore
-from pgx._flax.struct import dataclass
 
-TRUE = jnp.bool_(True)
-FALSE = jnp.bool_(False)
-
-EMPTY = jnp.int8(-1)  # 空白
-PAWN = jnp.int8(0)  # 歩
-LANCE = jnp.int8(1)  # 香
-KNIGHT = jnp.int8(2)  # 桂
-SILVER = jnp.int8(3)  # 銀
-BISHOP = jnp.int8(4)  # 角
-ROOK = jnp.int8(5)  # 飛
-GOLD = jnp.int8(6)  # 金
-KING = jnp.int8(7)  # 玉
-PRO_PAWN = jnp.int8(8)  # と
-PRO_LANCE = jnp.int8(9)  # 成香
-PRO_KNIGHT = jnp.int8(10)  # 成桂
-PRO_SILVER = jnp.int8(11)  # 成銀
-HORSE = jnp.int8(12)  # 馬
-DRAGON = jnp.int8(13)  # 龍
-OPP_PAWN = jnp.int8(14)  # 相手歩
-OPP_LANCE = jnp.int8(15)  # 相手香
-OPP_KNIGHT = jnp.int8(16)  # 相手桂
-OPP_SILVER = jnp.int8(17)  # 相手銀
-OPP_BISHOP = jnp.int8(18)  # 相手角
-OPP_ROOK = jnp.int8(19)  # 相手飛
-OPP_GOLD = jnp.int8(20)  # 相手金
-OPP_KING = jnp.int8(21)  # 相手玉
-OPP_PRO_PAWN = jnp.int8(22)  # 相手と
-OPP_PRO_LANCE = jnp.int8(23)  # 相手成香
-OPP_PRO_KNIGHT = jnp.int8(24)  # 相手成桂
-OPP_PRO_SILVER = jnp.int8(25)  # 相手成銀
-OPP_HORSE = jnp.int8(26)  # 相手馬
-OPP_DRAGON = jnp.int8(27)  # 相手龍
 
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
@@ -97,19 +62,6 @@ for i in range(81):
 NEIGHBOURS = jnp.int8(NEIGHBOURS)
 
 
-def _rotate(board: jnp.ndarray) -> jnp.ndarray:
-    return jnp.rot90(board.reshape(9, 9), k=3)
-
-
-def _flip(state):
-    empty_mask = state.piece_board == EMPTY
-    pb = (state.piece_board + 14) % 28
-    pb = jnp.where(empty_mask, EMPTY, pb)
-    pb = pb[::-1]
-    return state.replace(  # type: ignore
-        piece_board=pb,
-        hand=state.hand[jnp.int8((1, 0))],
-    )
 
 
 def _to_sfen(state):
@@ -126,8 +78,7 @@ def _to_sfen(state):
     - 最後に手数（1で固定）
 
     """
-    if state.turn % 2 == 1:
-        state = _flip(state)
+    # NOTE: input must be flipped if white turn
 
     pb = jnp.rot90(state.piece_board.reshape((9, 9)), k=3)
     sfen = ""

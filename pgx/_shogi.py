@@ -17,10 +17,44 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+from pgx._flax.struct import dataclass
 
 import pgx.core as core
-from pgx._shogi_utils import *
-from pgx._shogi_utils import _flip, _from_sfen, _to_sfen
+
+from pgx._shogi_utils import INIT_PIECE_BOARD, CAN_MOVE, BETWEEN, LEGAL_FROM_IDX, NEIGHBOURS,  _from_sfen, _to_sfen
+
+TRUE = jnp.bool_(True)
+FALSE = jnp.bool_(False)
+
+EMPTY = jnp.int8(-1)  # 空白
+PAWN = jnp.int8(0)  # 歩
+LANCE = jnp.int8(1)  # 香
+KNIGHT = jnp.int8(2)  # 桂
+SILVER = jnp.int8(3)  # 銀
+BISHOP = jnp.int8(4)  # 角
+ROOK = jnp.int8(5)  # 飛
+GOLD = jnp.int8(6)  # 金
+KING = jnp.int8(7)  # 玉
+PRO_PAWN = jnp.int8(8)  # と
+PRO_LANCE = jnp.int8(9)  # 成香
+PRO_KNIGHT = jnp.int8(10)  # 成桂
+PRO_SILVER = jnp.int8(11)  # 成銀
+HORSE = jnp.int8(12)  # 馬
+DRAGON = jnp.int8(13)  # 龍
+OPP_PAWN = jnp.int8(14)  # 相手歩
+OPP_LANCE = jnp.int8(15)  # 相手香
+OPP_KNIGHT = jnp.int8(16)  # 相手桂
+OPP_SILVER = jnp.int8(17)  # 相手銀
+OPP_BISHOP = jnp.int8(18)  # 相手角
+OPP_ROOK = jnp.int8(19)  # 相手飛
+OPP_GOLD = jnp.int8(20)  # 相手金
+OPP_KING = jnp.int8(21)  # 相手玉
+OPP_PRO_PAWN = jnp.int8(22)  # 相手と
+OPP_PRO_LANCE = jnp.int8(23)  # 相手成香
+OPP_PRO_KNIGHT = jnp.int8(24)  # 相手成桂
+OPP_PRO_SILVER = jnp.int8(25)  # 相手成銀
+OPP_HORSE = jnp.int8(26)  # 相手馬
+OPP_DRAGON = jnp.int8(27)  # 相手龍
 
 
 @dataclass
@@ -56,7 +90,8 @@ class State(core.State):
         )
 
     def _to_sfen(self):
-        return _to_sfen(self)
+        state = self if self.turn % 2 == 0 else _flip(self)
+        return _to_sfen(state)
 
 
 class Shogi(core.Env):
@@ -252,8 +287,7 @@ def _legal_action_mask(state: State):
                 state.piece_board, state.hand, a.piece, a.to
             ),
             lambda: jax.lax.cond(
-                a.from_
-                < 0,  # TODO: fix me. a is invalid. all LEGAL_FROM_IDX == -1,
+                a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
                 lambda: FALSE,
                 lambda: _is_legal_move(
                     state.piece_board, a.from_ * 81 + a.to, a.is_promotion
@@ -394,6 +428,18 @@ def can_neighbour_capture_king(board, king_pos, f):
 def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
 
+def _rotate(board: jnp.ndarray) -> jnp.ndarray:
+    return jnp.rot90(board.reshape(9, 9), k=3)
+
+def _flip(state):
+    empty_mask = state.piece_board == EMPTY
+    pb = (state.piece_board + 14) % 28
+    pb = jnp.where(empty_mask, EMPTY, pb)
+    pb = pb[::-1]
+    return state.replace(  # type: ignore
+        piece_board=pb,
+        hand=state.hand[jnp.int8((1, 0))],
+    )
 
 def _major_piece_ix(piece):
     # fmt: off
