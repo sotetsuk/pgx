@@ -300,27 +300,28 @@ def _legal_action_mask(state: State):
         )
 
     legal_action_mask = is_legal(jnp.arange(27 * 81))
+    return legal_action_mask
 
-    # check pawn drop mate
-    direction = 20  # drop pawn
-    opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
-    to = opp_king_pos + 1
-    flip_state = _flip(
-        state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
-    )
-    # fmt: off
-    is_pawn_mate = ~jax.vmap(jax.vmap(
-        partial(_is_legal_move, board=flip_state.piece_board), (0, None)), (None, 0)
-    )(jnp.arange(81 * 81), jnp.bool_([False, True])).any()  # TODO: queen moves are enough
-    # fmt: on
-    can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
-    has_no_pawn = state.hand[0, PAWN] <= 0
-    is_occupied = state.piece_board[to] != EMPTY
-    can_drop_pawn &= (
-        ~(has_no_pawn | is_occupied | (to % 9 == 0)) & ~is_pawn_mate
-    )
+    # # check pawn drop mate
+    # direction = 20  # drop pawn
+    # opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
+    # to = opp_king_pos + 1
+    # flip_state = _flip(
+    #     state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
+    # )
+    # # fmt: off
+    # is_pawn_mate = ~jax.vmap(jax.vmap(
+    #     partial(_is_legal_move, board=flip_state.piece_board), (0, None)), (None, 0)
+    # )(jnp.arange(81 * 81), jnp.bool_([False, True])).any()  # TODO: queen moves are enough
+    # # fmt: on
+    # can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
+    # has_no_pawn = state.hand[0, PAWN] <= 0
+    # is_occupied = state.piece_board[to] != EMPTY
+    # can_drop_pawn &= (
+    #     ~(has_no_pawn | is_occupied | (to % 9 == 0)) & ~is_pawn_mate
+    # )
 
-    return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
+    # return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
 
 
 def _is_legal_drop(
@@ -364,11 +365,11 @@ def _is_legal_move(
         BETWEEN[i, from_, to, :] & (board != EMPTY)
     ).any()
 
-    # actually move
-    board = board.at[from_].set(EMPTY).at[to].set(piece)
+    # # actually move
+    # board = board.at[from_].set(EMPTY).at[to].set(piece)
 
-    # suicide move （王手放置、自殺手）
-    is_illegal |= is_checked(board)
+    # # suicide move （王手放置、自殺手）
+    # is_illegal |= is_checked(board)
 
     # promotion
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
@@ -517,23 +518,23 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         # fmt: on
 
     my_piece_feat = pieces(state)
-    my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
+    # my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
     opp_piece_feat = pieces(flip_state)
-    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(flip_state)
+    # opp_effect_feat, opp_effect_sum_feat = piece_and_effect(flip_state)
     opp_piece_feat = opp_piece_feat[:, ::-1]
-    opp_effect_feat = opp_effect_feat[:, ::-1]
-    opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
+    # opp_effect_feat = opp_effect_feat[:, ::-1]
+    # opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
-    checked = jnp.tile(is_checked(state.piece_board), reps=(1, 9, 9))
+    # checked = jnp.tile(is_checked(state.piece_board), reps=(1, 9, 9))
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
-        my_effect_feat.reshape(14, 9, 9),
-        my_effect_sum_feat.reshape(3, 9, 9),
+        # my_effect_feat.reshape(14, 9, 9),
+        # my_effect_sum_feat.reshape(3, 9, 9),
         opp_piece_feat.reshape(14, 9, 9),
-        opp_effect_feat.reshape(14, 9, 9),
-        opp_effect_sum_feat.reshape(3, 9, 9),
+        # opp_effect_feat.reshape(14, 9, 9),
+        # opp_effect_sum_feat.reshape(3, 9, 9),
     ]
-    feat2 = my_hand_feat + opp_hand_feat + [checked]
+    feat2 = my_hand_feat + opp_hand_feat # + [checked]
     feat = jnp.vstack(feat1 + feat2)
     return feat
