@@ -343,7 +343,7 @@ def _is_legal_drop(
     board = board.at[to].set(piece)
 
     # suicide move
-    is_illegal |= is_checked(board)
+    # is_illegal |= is_checked(board)
 
     return ~is_illegal
 
