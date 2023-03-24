@@ -82,6 +82,10 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    # cache
+    major_piece_board: jnp.ndarray = jnp.ones((2, 81), dtype=jnp.int8)  # 0 = LANCE, 1 = BISHOP,HORSE, 2 = ROOK,DRAGON
+    legal_moves: jnp.ndarray = jnp.ones((2, 81, 81, 2), dtype=jnp.bool_)
+    checked: jnp.ndarray = jnp.zeros(2, dtype=jnp.bool_)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -233,13 +237,19 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_dlshogi_action(state, action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
+
+    # update cache
+    state = _update_cache(state, action)
+
     # flip state
     state = _flip(state)
     state = state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         turn=(state.turn + 1) % 2,
     )
-    legal_action_mask = jnp.ones_like(state.legal_action_mask)  # TODO: fix me
+
+    legal_action_mask = _update_legal_action_mask(state)
+
     terminated = ~legal_action_mask.any()
     # fmt: off
     reward = jax.lax.select(
@@ -254,6 +264,12 @@ def _step(state: State, action: jnp.ndarray):
         reward=reward,
     )
 
+def _update_cache(state: State, action: Action) -> State:
+    return state
+
+def _update_legal_action_mask(state: State) -> State:
+    """Update legal action mask (only) from cache"""
+    return state.legal_action_mask
 
 def _step_move(state: State, action: Action) -> State:
     pb = state.piece_board
