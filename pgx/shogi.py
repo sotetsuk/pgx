@@ -74,7 +74,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(81 * 81, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -239,7 +239,7 @@ def _step(state: State, action: jnp.ndarray):
         current_player=(state.current_player + 1) % 2,
         turn=(state.turn + 1) % 2,
     )
-    legal_action_mask = _legal_action_mask(state)
+    legal_action_mask = jnp.ones_like(state.legal_action_mask)  # TODO: fix me
     terminated = ~legal_action_mask.any()
     # fmt: off
     reward = jax.lax.select(
@@ -285,6 +285,7 @@ def _step_drop(state: State, action: Action) -> State:
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
+# USED ONLY FOR INITIAL BOARD. DO NOT USE.
 def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal(action):
@@ -327,6 +328,7 @@ def _legal_action_mask(state: State):
     return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
 
 
+# USED ONLY FOR INITIAL BOARD. DO NOT USE.
 def _is_legal_drop(
     hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray
 ):
@@ -351,6 +353,7 @@ def _is_legal_drop(
     return ~is_illegal
 
 
+# USED ONLY FOR INITIAL BOARD. DO NOT USE.
 def _is_legal_move(
     move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
 ):
@@ -385,6 +388,7 @@ def _is_legal_move(
     return ~is_illegal
 
 
+# USED ONLY FOR INITIAL BOARD. DO NOT USE.
 def is_checked(board):
     def can_major_capture_king(board, king_pos, f):
         p = _flip_piece(board[f])  # 敵の大駒
@@ -453,91 +457,4 @@ def _major_piece_ix(piece):
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    state, flip_state = jax.lax.cond(
-        state.current_player == player_id,
-        lambda: (state, _flip(state)),
-        lambda: (_flip(state), state),
-    )
-
-    def pieces(state):
-        # 駒の場所
-        my_pieces = jnp.arange(OPP_PAWN)
-        my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces)
-        return my_piece_feat
-
-    def effect_all(state):
-        def effect(from_, to):
-            piece = state.piece_board[from_]
-            can_move = CAN_MOVE[piece, from_, to]
-            major_piece_ix = _major_piece_ix(piece)
-            has_obstacles = jax.lax.select(
-                major_piece_ix >= 0,
-                (
-                    BETWEEN[major_piece_ix, from_, to, :]
-                    & (state.piece_board != EMPTY)
-                ).any(0),
-                FALSE,
-            )
-            return can_move & ~has_obstacles
-
-        effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(
-            jnp.arange(81), jnp.arange(81)
-        )
-        mine = (PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN)
-        return jnp.where(mine.reshape(81, 1), effects, FALSE)
-
-    def piece_and_effect(state):
-        my_pieces = jnp.arange(OPP_PAWN)
-        my_effect = effect_all(state)
-
-        @jax.vmap
-        def filter_effect(p):
-            mask = state.piece_board == p
-            return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
-
-        my_effect_feat = filter_effect(my_pieces)
-        my_effect_sum = my_effect.sum(axis=0)
-
-        @jax.vmap
-        def effect_sum(n) -> jnp.ndarray:
-            return my_effect_sum >= n  # type: ignore
-
-        effect_sum_feat = effect_sum(jnp.arange(1, 4))
-        return my_effect_feat, effect_sum_feat
-
-    def num_hand(n, hand, p):
-        return jnp.tile(hand[p] >= n, reps=(9, 9))
-
-    def hand_feat(hand):
-        # fmt: off
-        pawn_feat = jax.vmap(partial(num_hand, hand=hand, p=PAWN))(jnp.arange(1, 9))
-        lance_feat = jax.vmap(partial(num_hand, hand=hand, p=LANCE))(jnp.arange(1, 5))
-        knight_feat = jax.vmap(partial(num_hand, hand=hand, p=KNIGHT))(jnp.arange(1, 5))
-        silver_feat = jax.vmap(partial(num_hand, hand=hand, p=SILVER))(jnp.arange(1, 5))
-        gold_feat = jax.vmap(partial(num_hand, hand=hand, p=GOLD))(jnp.arange(1, 5))
-        bishop_feat = jax.vmap(partial(num_hand, hand=hand, p=BISHOP))(jnp.arange(1, 3))
-        rook_feat = jax.vmap(partial(num_hand, hand=hand, p=ROOK))(jnp.arange(1, 3))
-        return [pawn_feat, lance_feat, knight_feat, silver_feat, gold_feat, bishop_feat, rook_feat]
-        # fmt: on
-
-    my_piece_feat = pieces(state)
-    my_effect_feat, my_effect_sum_feat = piece_and_effect(state)
-    opp_piece_feat = pieces(flip_state)
-    opp_effect_feat, opp_effect_sum_feat = piece_and_effect(flip_state)
-    opp_piece_feat = opp_piece_feat[:, ::-1]
-    opp_effect_feat = opp_effect_feat[:, ::-1]
-    opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
-    my_hand_feat = hand_feat(state.hand[0])
-    opp_hand_feat = hand_feat(state.hand[1])
-    checked = jnp.tile(is_checked(state.piece_board), reps=(1, 9, 9))
-    feat1 = [
-        my_piece_feat.reshape(14, 9, 9),
-        my_effect_feat.reshape(14, 9, 9),
-        my_effect_sum_feat.reshape(3, 9, 9),
-        opp_piece_feat.reshape(14, 9, 9),
-        opp_effect_feat.reshape(14, 9, 9),
-        opp_effect_sum_feat.reshape(3, 9, 9),
-    ]
-    feat2 = my_hand_feat + opp_hand_feat + [checked]
-    feat = jnp.vstack(feat1 + feat2)
-    return feat
+    return jnp.zeros_like(state.observation)
