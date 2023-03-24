@@ -28,6 +28,7 @@ from pgx._shogi_utils import (
     BETWEEN,
     CAN_MOVE,
     INIT_LEGAL_ACTION_MASK,
+    INIT_LEGAL_MOVES,
     INIT_PIECE_BOARD,
     INIT_MAJOR_PIECE_BOARD,
     LEGAL_FROM_IDX,
@@ -85,8 +86,8 @@ class State(core.State):
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
     # cache
-    major_piece_board: jnp.ndarray = jnp.ones((2, 81), dtype=jnp.int8)  # 0 = LANCE, 1 = BISHOP,HORSE, 2 = ROOK,DRAGON
-    legal_moves: jnp.ndarray = jnp.ones((2, 81, 81, 2), dtype=jnp.bool_)
+    major_piece_board: jnp.ndarray = INIT_MAJOR_PIECE_BOARD  # (2, 81) 0 = LANCE, 1 = BISHOP,HORSE, 2 = ROOK,DRAGON
+    legal_moves: jnp.ndarray = INIT_LEGAL_MOVES  # (2, 81, 81, 2)
     checked: jnp.ndarray = jnp.zeros(2, dtype=jnp.bool_)
 
     @staticmethod
