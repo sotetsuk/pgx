@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Shogi environment (alpha version)
+"""Shogi environment (beta)
 
-This implementation is simple and stable but very slow."""
+Intended to speed up alpha version implementation."""
 
 
 from functools import partial
