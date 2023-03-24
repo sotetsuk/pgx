@@ -27,7 +27,9 @@ from pgx._flax.struct import dataclass
 from pgx._shogi_utils import (
     BETWEEN,
     CAN_MOVE,
+    INIT_LEGAL_ACTION_MASK,
     INIT_PIECE_BOARD,
+    INIT_MAJOR_PIECE_BOARD,
     LEGAL_FROM_IDX,
     NEIGHBOURS,
     _from_sfen,
@@ -74,7 +76,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -231,8 +233,8 @@ def _init_board():
     """Initialize Shogi State."""
     state = State()
     return state.replace(  # type: ignore
-        legal_action_mask=...,
-        major_piece_board=...,
+        legal_action_mask=INIT_LEGAL_ACTION_MASK,
+        major_piece_board=INIT_MAJOR_PIECE_BOARD,
         legal_movs=...,
     )
 
