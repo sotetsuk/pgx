@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Shogi environment v0.
+
+This implementation is simple and stable but very slow."""
+
 
 from functools import partial
 
