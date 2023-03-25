@@ -21,7 +21,7 @@ import jax.numpy as jnp
 import pgx.core as core
 from pgx._flax.struct import dataclass
 from pgx._shogi_utils import (
-    BETWEEN,
+    BETWEEN_IX,
     CAN_MOVE,
     CAN_MOVE_ANY,
     INIT_PIECE_BOARD,
@@ -368,7 +368,7 @@ def _is_legal_drop(
     ]
     checking_piece = _flip_piece(board[checking_place])
     checking_major_piece = _major_piece_ix(checking_piece)
-    is_on_the_way = BETWEEN[checking_major_piece, king_pos, checking_place, to]
+    is_on_the_way = (to == BETWEEN_IX[checking_major_piece, king_pos, checking_place]).any()
     ok &= (num_checks == 0) | is_on_the_way
 
     return ok
@@ -421,8 +421,9 @@ def _is_pseudo_legal_move(
     is_illegal |= ~CAN_MOVE[piece, from_, to]
     # there is an obstacle between from_ and to
     i = _major_piece_ix(piece)
+    between_ix = BETWEEN_IX[i, from_, to, :]
     is_illegal |= (i >= 0) & (
-        BETWEEN[i, from_, to, :] & (board != EMPTY)
+        (between_ix >= 0) & (board[between_ix] != EMPTY)
     ).any()
     # promotion
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
@@ -514,12 +515,13 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
             piece = state.piece_board[from_]
             can_move = CAN_MOVE[piece, from_, to]
             major_piece_ix = _major_piece_ix(piece)
+            between_ix = BETWEEN_IX[major_piece_ix, from_, to, :]
             has_obstacles = jax.lax.select(
                 major_piece_ix >= 0,
                 (
-                    BETWEEN[major_piece_ix, from_, to, :]
-                    & (state.piece_board != EMPTY)
-                ).any(0),
+                    (between_ix >= 0)
+                    & (state.piece_board[between_ix] != EMPTY)
+                ).any(),
                 FALSE,
             )
             return can_move & ~has_obstacles
