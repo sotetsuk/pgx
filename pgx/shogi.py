@@ -346,7 +346,7 @@ def _is_legal_drop(
     to: jnp.ndarray,
     state: State
 ):
-    ok = _is_pseudo_legal_drop(state.hand, piece, to, state.piece_board)
+    ok = _is_pseudo_legal_drop(piece, to, state)
 
     ##################################################
     # Filter illegal moves
@@ -387,16 +387,16 @@ def _is_legal_move(
 
 
 def _is_pseudo_legal_drop(
-    hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray
+    piece: jnp.ndarray, to: jnp.ndarray, state: State
 ):
     """自殺手を無視した合法手"""
     # destination is not empty
-    is_illegal = board[to] != EMPTY
+    is_illegal = state.piece_board[to] != EMPTY
     # don't have the piece
-    is_illegal |= hand[0, piece] <= 0
+    is_illegal |= state.hand[0, piece] <= 0
     # double pawn
     is_illegal |= (piece == PAWN) & (
-        (board == PAWN).reshape(9, 9).sum(axis=1) > 0
+        (state.piece_board == PAWN).reshape(9, 9).sum(axis=1) > 0
     )[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
