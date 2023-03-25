@@ -312,11 +312,12 @@ def _legal_action_mask(state: State):
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
-
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
+    flipped_checking_places = (80 - checking_places)
+    flipped_checking_places = jnp.where(flipped_checking_places == 81, -1, flipped_checking_places)
     vmap_is_legal_move = jax.vmap(jax.vmap(
-        partial(_is_legal_move, board=flip_state.piece_board),
+        partial(_is_legal_move, board=flip_state.piece_board, checking_places=flipped_checking_places),
         (0, None)), (None, 0)
     )
     flipped_to = 80 - to
@@ -376,7 +377,10 @@ def _is_legal_drop(
 
 
 def _is_legal_move(
-    move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
+    move: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    board: jnp.ndarray,
+    checking_places: jnp.ndarray,
 ):
     from_, to = move // 81, move % 81
     piece = board[from_]
@@ -397,7 +401,6 @@ def _is_pseudo_legal_drop(
     piece: jnp.ndarray,
     to: jnp.ndarray,
     board: jnp.ndarray,
-    checking_places: jnp.ndarray,
 ):
     """自殺手を無視した合法手"""
     # destination is not empty
