@@ -36,7 +36,7 @@ class State(core.State):
     legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-    # --- Khun poker specific ---
+    # --- Kuhn poker specific ---
     cards: jnp.ndarray = jnp.int8([-1, -1])
     # [(player 0),(player 1)]
     last_action: jnp.ndarray = jnp.int8(-1)
@@ -44,7 +44,7 @@ class State(core.State):
     pot: jnp.ndarray = jnp.int8([0, 0])
 
 
-class KhunPoker(core.Env):
+class KuhnPoker(core.Env):
     def __init__(
         self,
     ):
@@ -65,7 +65,7 @@ class KhunPoker(core.Env):
 
     @property
     def name(self) -> str:
-        return "KhunPoker"
+        return "KuhnPoker"
 
     @property
     def version(self) -> str:

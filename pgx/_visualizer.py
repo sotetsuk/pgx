@@ -25,7 +25,7 @@ from ._dwg.chess import ChessState, _make_chess_dwg
 from ._dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from ._dwg.go import GoState, _make_go_dwg
 from ._dwg.hex import HexState, _make_hex_dwg
-from ._dwg.khun_poker import KhunPokerState, _make_khunpoker_dwg
+from ._dwg.kuhn_poker import KuhnPokerState, _make_kuhnpoker_dwg
 from ._dwg.othello import OthelloState, _make_othello_dwg
 from ._dwg.play2048 import Play2048State, _make_2048_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
@@ -395,11 +395,11 @@ class Visualizer:
                     "black",
                     "lightgray",
                 )
-        elif isinstance(_state, KhunPokerState):
+        elif isinstance(_state, KuhnPokerState):
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
-            self._make_dwg_group = _make_khunpoker_dwg
+            self._make_dwg_group = _make_kuhnpoker_dwg
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -596,8 +596,8 @@ class Visualizer:
                 turn=_states.turn[_i],
                 board=_states.board[_i],
             )
-        elif isinstance(_states, KhunPokerState):
-            return KhunPokerState(
+        elif isinstance(_states, KuhnPokerState):
+            return KuhnPokerState(
                 cards=_states.cards[_i],
             )
         elif isinstance(_states, OthelloState):
