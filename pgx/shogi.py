@@ -397,7 +397,9 @@ def _is_legal_move(
 
 
 def is_checked(board):
-    def can_major_capture_king(board, king_pos, f):
+    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
+
+    def can_major_capture_king(f):
         p = _flip_piece(board[f])  # 敵の大駒
         i = _major_piece_ix(p)  # 敵の大駒のix
         return (
@@ -408,22 +410,17 @@ def is_checked(board):
             )  # 移動可能で
         )  # 障害物なし
 
-    def can_neighbour_capture_king(board, king_pos, f):
+    def can_neighbour_capture_king(f):
         # including knight
         p = _flip_piece(board[f])
         return (
             (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
         )
 
-    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
-    checked = jax.vmap(
-        partial(can_major_capture_king, board=board, king_pos=king_pos)
-    )(f=jnp.arange(81)).any()
+    checked = jax.vmap(partial(can_major_capture_king))(f=jnp.arange(81)).any()
     # TODO: 実際には81ではなくqueen movesだけで十分
     # captured by neighbours (王の周囲から)
-    checked |= jax.vmap(
-        partial(can_neighbour_capture_king, board=board, king_pos=king_pos)
-    )(f=NEIGHBOURS[king_pos]).any()
+    checked |= jax.vmap(partial(can_neighbour_capture_king))(f=NEIGHBOURS[king_pos]).any()
     return checked
 
 
