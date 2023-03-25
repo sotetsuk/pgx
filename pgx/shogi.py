@@ -80,6 +80,9 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    # cache
+    legal_moves: jnp.ndarray = jnp.ones((2, 81, 81, 2), dtype=jnp.bool_)
+    legal_drops: jnp.ndarray = jnp.ones((2, 7, 81), dtype=jnp.bool_)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -231,12 +234,56 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_dlshogi_action(state, action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
+
+    def _update_cache(s: State, a: Action):
+        # update legal_moves
+        legal_moves = s.legal_moves[0]
+        # from_からのlegal_movesを消す
+        legal_moves = legal_moves.at[a.from_, :, :].set(FALSE)
+        # to
+        # legal_moves = legal_moves.at[a.to, :, :].set(...)
+        # TODO: 大駒
+        s = s.replace(legal_moves=state.legal_moves.at[0].set(legal_moves))
+
+        # update legal drops
+        legal_drops = s.legal_drops[0]
+        legal_drops = legal_drops.at[:, a.to].set(FALSE)
+        # legal_drops = legal_drops.at[:, a.from_].set(...)
+        s = s.replace(legal_drops=state.legal_drops.at[0].set(legal_drops))
+
+        return s
+
+    state = _update_cache(state, a)
+
     # flip state
     state = _flip(state)
     state = state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         turn=(state.turn + 1) % 2,
     )
+    # update cache
+
+    def _update_cache_flip(s: State, a: Action):
+        from_ = 80 - a.from_
+        to = 80 - a.to
+
+        # update legal_moves
+        legal_moves = s.legal_moves[0]
+        # to
+        legal_moves = legal_moves.at[to, :, :].set(FALSE)
+        # TODO: 大駒
+        s = s.replace(legal_moves=state.legal_moves.at[0].set(legal_moves))
+
+        # update legal drops
+        legal_drops = s.legal_drops[0]
+        legal_drops = legal_drops.at[:, to].set(FALSE)
+        # legal_drops = legal_drops.at[:, from_].set(...)
+        s = s.replace(legal_drops=state.legal_drops.at[0].set(legal_drops))
+
+        return s
+
+    state = _update_cache_flip(state, a)
+
     legal_action_mask = _legal_action_mask(state)
     terminated = ~legal_action_mask.any()
     # fmt: off
@@ -282,22 +329,17 @@ def _step_drop(state: State, action: Action) -> State:
     hand = state.hand.at[0, action.piece].add(-1)
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
-
 def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal(action):
         a = Action._from_dlshogi_action(state, action)
         return jax.lax.cond(
             a.is_drop,
-            lambda: _is_legal_drop(
-                state.hand, a.piece, a.to, state.piece_board
-            ),
+            lambda: state.legal_drops[0, a.piece, a.to],
             lambda: jax.lax.cond(
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
                 lambda: FALSE,
-                lambda: _is_legal_move(
-                    a.from_ * 81 + a.to, a.is_promotion, state.piece_board
-                ),
+                lambda: state.legal_moves[0, a.from_, a.to, a.is_promotion.astype(jnp.int8)]
             ),
         )
 
@@ -475,7 +517,9 @@ def _flip(state):
     pb = pb[::-1]
     return state.replace(  # type: ignore
         piece_board=pb,
-        hand=state.hand[jnp.int8((1, 0))],
+        hand=state.hand[::-1],
+        legal_moves=state.legal_moves[::-1],
+        legal_drops=state.legal_drops[::-1],
     )
 
 
