@@ -381,7 +381,10 @@ def _is_pseudo_legal_drop(
 
 
 def _is_pseudo_legal_move(
-    from_: jnp.ndarray, to: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    board: jnp.ndarray,
 ):
     """自殺手を無視した合法手"""
     # source is not my piece
@@ -410,10 +413,16 @@ def is_checked(board):
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
     flipped_king_pos = 80 - king_pos
     flipped_board = jax.vmap(_flip_piece)(board)[::-1]
+
     @jax.vmap
     def can_capture_king(from_):
         return jax.vmap(
-            partial(_is_pseudo_legal_move, from_=from_, to=flipped_king_pos, board=flipped_board)
+            partial(
+                _is_pseudo_legal_move,
+                from_=from_,
+                to=flipped_king_pos,
+                board=flipped_board,
+            )
         )(is_promotion=jnp.bool_([False, True]))
 
     return can_capture_king(jnp.arange(81)).any()
