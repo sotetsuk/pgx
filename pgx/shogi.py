@@ -289,7 +289,7 @@ def _legal_action_mask(state: State):
         return jax.lax.cond(
             a.is_drop,
             lambda: _is_legal_drop(
-                state.hand, a.piece, a.to, state.piece_board,  checking_places
+                state.hand, a.piece, a.to, state.piece_board, checking_places
             ),
             lambda: jax.lax.cond(
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
@@ -340,7 +340,11 @@ def _around(x):
 
 
 def _is_legal_drop(
-    hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray, checking_places: jnp.ndarray
+    hand: jnp.ndarray,
+    piece: jnp.ndarray,
+    to: jnp.ndarray,
+    board: jnp.ndarray,
+    checking_places: jnp.ndarray,
 ):
     ok = _is_pseudo_legal_drop(hand, piece, to, board)
     # filter illegal moves
@@ -350,7 +354,9 @@ def _is_legal_drop(
     is_illegal = num_checks >= 2  # 両王手は合駒できない
     # num_checks == 1
     king_pos = jnp.nonzero(board == KING, size=1)[0].squeeze()
-    checking_place = checking_places[jnp.nonzero(checking_places != -1, size=1)[0]].squeeze()
+    checking_place = checking_places[
+        jnp.nonzero(checking_places != -1, size=1)[0]
+    ].squeeze()
     checking_piece = _flip_piece(board[checking_place])
     checking_major_piece = _major_piece_ix(checking_piece)
     between = BETWEEN[checking_major_piece, king_pos, checking_place, to]
