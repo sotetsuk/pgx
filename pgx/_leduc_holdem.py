@@ -23,7 +23,7 @@ TRUE = jnp.bool_(True)
 
 INVALID_ACTION = jnp.int8(-1)
 CALL = jnp.int8(0)
-RAIZE = jnp.int8(1)
+RAISE = jnp.int8(1)
 FOLD = jnp.int8(2)
 CHECK = jnp.int8(3)  # not use?
 
@@ -110,8 +110,8 @@ def _step(state: State, action):
             lambda: state.chips.at[state.current_player].set(
                 state.chips[1 - state.current_player]
             ),  # CALL
-            lambda: state.chips.at[state.current_player].add(
-                _raise_chips(state)
+            lambda: state.chips.at[state.current_player].set(
+                jnp.max(state.chips) + _raise_chips(state)
             ),  # RAISE
             lambda: state.chips,  # FOLD
             lambda: state.chips,  # CHECK
@@ -124,7 +124,7 @@ def _step(state: State, action):
         round_over, state.first_player, 1 - state.current_player
     )
     raise_count = jax.lax.select(
-        round_over, jnp.int8(0), state.raise_count + jnp.int8(action == RAIZE)
+        round_over, jnp.int8(0), state.raise_count + jnp.int8(action == RAISE)
     )
 
     reward *= jnp.min(chips)
@@ -138,7 +138,7 @@ def _step(state: State, action):
             lambda: jnp.bool_([0, 0, 0, 0]),  # CHECK
         ],
     )
-    legal_action = legal_action.at[RAIZE].set(raise_count < MAX_RAISE)
+    legal_action = legal_action.at[RAISE].set(raise_count < MAX_RAISE)
 
     state = state.replace(  # type:ignore
         current_player=current_player,
