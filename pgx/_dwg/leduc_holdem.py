@@ -1,4 +1,4 @@
-from pgx._leduc_holdem import State as LeducHoldemState
+from pgx.leduc_holdem import State as LeducHoldemState
 
 CARD = ["J", "Q", "K"]
 
