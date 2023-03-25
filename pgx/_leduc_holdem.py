@@ -37,7 +37,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(3, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Khun poker specific ---
@@ -97,7 +97,7 @@ def _init(rng: jax.random.KeyArray) -> State:
         first_player=current_player,
         current_player=current_player,
         cards=init_card[:3],
-        legal_action_mask=jnp.bool_([1, 1, 0, 0]),
+        legal_action_mask=jnp.bool_([1, 1, 0]),
         chips=jnp.ones(2, dtype=jnp.int8),
     )
 
@@ -114,7 +114,6 @@ def _step(state: State, action):
                 jnp.max(state.chips) + _raise_chips(state)
             ),  # RAISE
             lambda: state.chips,  # FOLD
-            lambda: state.chips,  # CHECK
         ],
     )
 
@@ -132,10 +131,9 @@ def _step(state: State, action):
     legal_action = jax.lax.switch(
         action,
         [
-            lambda: jnp.bool_([1, 1, 0, 0]),  # CALL
-            lambda: jnp.bool_([1, 1, 1, 0]),  # RAISE
-            lambda: jnp.bool_([0, 0, 0, 0]),  # FOLD
-            lambda: jnp.bool_([0, 0, 0, 0]),  # CHECK
+            lambda: jnp.bool_([1, 1, 0]),  # CALL
+            lambda: jnp.bool_([1, 1, 1]),  # RAISE
+            lambda: jnp.bool_([0, 0, 0]),  # FOLD
         ],
     )
     legal_action = legal_action.at[RAISE].set(raise_count < MAX_RAISE)
