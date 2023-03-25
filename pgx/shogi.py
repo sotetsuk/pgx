@@ -377,7 +377,6 @@ def _is_pseudo_legal_drop(
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
-
     return ~is_illegal
 
 
@@ -405,7 +404,6 @@ def _is_pseudo_legal_move(
         ~is_promotion & ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     )  # 必ず成る
     is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
-
     return ~is_illegal
 
 
