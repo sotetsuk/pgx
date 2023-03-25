@@ -411,7 +411,7 @@ def _is_pseudo_legal_move(
     return ~is_illegal
 
 
-def _checking_places(state):
+def _is_checked(state):
     king_pos = jnp.nonzero(state.piece_board == KING, size=1)[0][0]
     flipped_king_pos = 80 - king_pos
 
@@ -427,13 +427,7 @@ def _checking_places(state):
         )(is_promotion=jnp.bool_([False, True])).any()
 
     from_ = CAN_MOVE_ANY[flipped_king_pos]
-    is_checking = can_capture_king(from_)
-    checking_ix = jnp.nonzero(is_checking, size=2, fill_value=-1)[0]
-    return jnp.where(checking_ix != -1, 80 - from_[checking_ix], -1)
-
-
-def _is_checked(state):
-    return (_checking_places(state) != -1).any()
+    return can_capture_king(from_).any()
 
 
 def _flip_piece(piece):
