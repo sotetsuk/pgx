@@ -1,11 +1,11 @@
 import jax
 import jax.numpy as jnp
-from pgx._leduc_holdem import LeducHoldem, CALL, RAISE, FOLD
+from pgx._leduc_holdem import LeducHoldem, CALL, RAISE, FOLD, TRUE, FALSE
 
 env = LeducHoldem()
 init = jax.jit(env.init)
 step = jax.jit(env.step)
-# observe = jax.jit(env.observe)
+observe = jax.jit(env.observe)
 
 
 def test_init():
@@ -29,6 +29,7 @@ def test_step():
     state = step(state, CALL)
 
     # second round
+    assert state.current_player == 1
     state = step(state, CALL)
     state = step(state, RAISE)  # +4(7)
     state = step(state, RAISE)  # +4(11)
@@ -72,6 +73,7 @@ def test_legal_action():
     assert (state.legal_action_mask == jnp.bool_([1, 0, 1])).all()
 
     state = step(state, CALL)
+
     # second round
     assert (state.legal_action_mask == jnp.bool_([1, 1, 0])).all()
     state = step(state, RAISE)
@@ -96,6 +98,29 @@ def test_draw():
     state = step(state, CALL)
     assert state.terminated
     assert (state.reward == jnp.float32([0, 0])).all()
+
+
+def test_observe():
+    key = jax.random.PRNGKey(5)
+    state = init(key)
+    """
+    player 1 is the First.
+    cards = [0 1]
+    public cards = None
+    chips = [1 1]
+    round = 0
+    """
+    obs = observe(state, 1)
+    assert (
+        obs
+        == jnp.zeros(34, dtype=jnp.bool_)
+        .at[1]
+        .set(TRUE)
+        .at[7]
+        .set(TRUE)
+        .at[22]
+        .set(TRUE)
+    ).all()
 
 
 def test_random_play():

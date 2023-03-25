@@ -208,9 +208,11 @@ def _observe(state: State, player_id) -> jnp.ndarray:
     21~35   0 ~ 13 chips for the opponent
     """
     obs = jnp.zeros(34, dtype=jnp.bool_)
-    obs = obs.at[state.cards[player_id]].set(1)
-    obs = jax.lax.select(state.round == 1, obs.at[state.cards[2]].set(1), obs)
-    obs = obs.at[state.chips[player_id]].set(1)
-    obs = obs.at[state.chips[1 - player_id]].set(1)
+    obs = obs.at[state.cards[player_id]].set(TRUE)
+    obs = jax.lax.select(
+        state.round == 1, obs.at[3 + state.cards[2]].set(TRUE), obs
+    )
+    obs = obs.at[6 + state.chips[player_id]].set(TRUE)
+    obs = obs.at[21 + state.chips[1 - player_id]].set(TRUE)
 
     return obs
