@@ -385,6 +385,7 @@ def _is_legal_move(
     from_, to = move // 81, move % 81
     piece = board[from_]
     ok = _is_pseudo_legal_move(from_, to, is_promotion, board)
+
     ##################################################
     # Filter illegal moves
     ##################################################
@@ -396,6 +397,19 @@ def _is_legal_move(
     num_checks = (checking_places != -1).sum()
     # num_checks >= 2
     ok &= (num_checks < 2) | (board[piece] == KING)  # 両王手は王が動くしかない
+    # num_checks == 1
+    # 王以外の駒が王手をかけている駒を取る
+    checking_place = checking_places[
+        jnp.nonzero(checking_places != -1, size=1)[0][0]
+    ]
+    @jax.vmap
+    def can_capture(f):
+        return jax.vmap(partial(
+            _is_pseudo_legal_move, from_=f, to=checking_place, board=board)
+        )(is_promotion=jnp.bool_([False, True])).any()
+    # TODO: queen moves from checking place is enough
+    can_capture_checking_piece = (piece != KING) & can_capture(jnp.arange(81)).any()
+    ok &= (num_checks == 0) | can_capture_checking_piece
     return ok
 
 
