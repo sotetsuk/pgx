@@ -393,6 +393,9 @@ def _is_legal_move(
     #     2. check whether the king is checked:
     # but this is slow
     # > ok &= ~_is_checked(board.at[from_].set(EMPTY).at[to].set(piece))
+    num_checks = (checking_places != -1).sum()
+    # num_checks >= 2
+    ok &= (num_checks < 2) | (board[piece] == KING)  # 両王手は王が動くしかない
     return ok
 
 
