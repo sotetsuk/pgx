@@ -424,8 +424,8 @@ def _checking_places(board):
             )
         )(is_promotion=jnp.bool_([False, True]))
 
-    checking_places = can_capture_king(jnp.arange(81))
-    return jnp.nonzero(checking_places, size=2, fill_value=-1)[0]
+    is_checking = can_capture_king(jnp.arange(81))[::-1]
+    return jnp.nonzero(is_checking, size=2, fill_value=-1)[0]
 
 
 def _is_checked(board):
