@@ -82,6 +82,22 @@ def test_legal_action():
     assert (state.legal_action_mask == jnp.bool_([1, 0, 1])).all()
 
 
+def test_draw():
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    # cards = [1 1]
+    state = step(state, RAISE)
+    state = step(state, RAISE)
+    state = step(state, CALL)
+
+    state = step(state, RAISE)
+    state = step(state, RAISE)
+    assert not state.terminated
+    state = step(state, CALL)
+    assert state.terminated
+    assert (state.reward == jnp.float32([0, 0])).all()
+
+
 def test_random_play():
     N = 100
     key = jax.random.PRNGKey(0)
