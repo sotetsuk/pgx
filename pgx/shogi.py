@@ -340,7 +340,7 @@ def _around(x):
 def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
     ok = _is_pseudo_legal_drop(piece, to, state)
     ok &= ~_is_checked(
-        state.replace(piece_board=state.piece_board.at[to].set(piece))
+        state.replace(piece_board=state.piece_board.at[to].set(piece))  # type: ignore
     )
     return ok
 
@@ -354,7 +354,7 @@ def _is_legal_move(
     ok = _is_pseudo_legal_move(from_, to, is_promotion, state)
     piece = state.piece_board[from_]
     is_illegal = _is_checked(
-        state.replace(
+        state.replace(  # type: ignore
             piece_board=state.piece_board.at[from_]
             .set(EMPTY)
             .at[to]
