@@ -41,6 +41,7 @@ class State(core.State):
     # [(player 0),(player 1)]
     last_action: jnp.ndarray = jnp.int8(-1)
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
+    pot: jnp.ndarray = jnp.int8([0, 0])
 
 
 class KhunPoker(core.Env):
@@ -90,6 +91,12 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 def _step(state: State, action):
     action = jnp.int8(action)
+    pot = jax.lax.cond(
+        (action == BET) | (action == CALL),
+        lambda: state.pot.at[state.current_player].add(1),
+        lambda: state.pot,
+    )
+
     terminated, reward = jax.lax.cond(
         action == FOLD,
         lambda: (
@@ -125,6 +132,7 @@ def _step(state: State, action):
         legal_action_mask=legal_action,
         terminated=terminated,
         reward=reward,
+        pot=pot,
     )
 
 
