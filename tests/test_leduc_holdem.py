@@ -116,9 +116,30 @@ def test_observe():
         == jnp.zeros(34, dtype=jnp.bool_)
         .at[1]
         .set(TRUE)
-        .at[7]
+        .at[6 + 1]
         .set(TRUE)
-        .at[21]
+        .at[20 + 1]
+        .set(TRUE)
+    ).all()
+
+    state = step(state, CALL)
+    state = step(state, CALL)
+
+    # public card: 1
+    state = step(state, RAISE)  # +4(5)
+    state = step(state, RAISE)  # +4(9)
+
+    obs = observe(state, 1)
+    assert (
+        obs
+        == jnp.zeros(34, dtype=jnp.bool_)
+        .at[1]
+        .set(TRUE)
+        .at[3 + 1]
+        .set(TRUE)
+        .at[6 + 5]
+        .set(TRUE)
+        .at[20 + 9]
         .set(TRUE)
     ).all()
 
