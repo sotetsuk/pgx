@@ -296,7 +296,7 @@ def _legal_action_mask(state: State):
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
                 lambda: FALSE,
                 lambda: _is_legal_move(
-                    a.from_ * 81 + a.to, a.is_promotion, state.piece_board
+                    a.from_, a.to, a.is_promotion, state
                 ),
             ),
         )
@@ -313,14 +313,16 @@ def _legal_action_mask(state: State):
 
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
-    vmap_is_legal_move = jax.vmap(jax.vmap(
-        partial(_is_legal_move, board=flip_state.piece_board),
-        (0, None)), (None, 0)
-    )
     flipped_to = 80 - to
-    can_capture_pawn = vmap_is_legal_move(ALL_SQ * 81 + flipped_to, jnp.bool_([False, True])).any()
+    can_capture_pawn = jax.vmap(
+        lambda f: jax.vmap(
+            partial(_is_legal_move, from_=f, to=flipped_to, state=flip_state)
+        )(is_promotion=jnp.bool_([False, True])).any()
+    )(ALL_SQ).any()
     from_ = 80 - opp_king_pos
-    can_king_escape = vmap_is_legal_move(from_ * 81 + _around(from_), jnp.bool_([False])).any()
+    can_king_escape = jax.vmap(
+        partial(_is_legal_move, from_=from_, is_promotion=FALSE, state=flip_state)
+    )(to=_around(from_)).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
 
@@ -373,13 +375,12 @@ def _is_legal_drop(
 
 
 def _is_legal_move(
-    move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
+    from_: jnp.ndarray, to: jnp.ndarray, is_promotion: jnp.ndarray, state: State
 ):
-    from_, to = move // 81, move % 81
-    piece = board[from_]
-    ok = _is_pseudo_legal_move(from_, to, is_promotion, board)
+    piece = state.piece_board[from_]
+    ok = _is_pseudo_legal_move(from_, to, is_promotion, state.piece_board)
     # actually move
-    board = board.at[from_].set(EMPTY).at[to].set(piece)
+    board = state.piece_board.at[from_].set(EMPTY).at[to].set(piece)
     # suicide move （王手放置、自殺手）
     is_illegal = _is_checked(board)
     return ok & ~is_illegal
