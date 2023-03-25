@@ -290,7 +290,7 @@ def _legal_action_mask(state: State):
         return jax.lax.cond(
             a.is_drop,
             lambda: _is_legal_drop(
-                state.hand, a.piece, a.to, state.piece_board
+                a.piece, a.to, state
             ),
             lambda: jax.lax.cond(
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
@@ -340,12 +340,11 @@ def _around(x):
 
 
 def _is_legal_drop(
-    hand: jnp.ndarray,
     piece: jnp.ndarray,
     to: jnp.ndarray,
-    board: jnp.ndarray,
+    state: State
 ):
-    ok = _is_pseudo_legal_drop(hand, piece, to, board)
+    ok = _is_pseudo_legal_drop(state.hand, piece, to, state.piece_board)
 
     ##################################################
     # Filter illegal moves
@@ -354,7 +353,7 @@ def _is_legal_drop(
     #     1. actually drop, and
     #     2. check whether the king is checked:
     # but this is slow
-    ok &= ~_is_checked(board.at[to].set(piece))
+    ok &= ~_is_checked(state.piece_board.at[to].set(piece))
     # num_checks = (checking_places != -1).sum()
     # # num_checks >= 2
     # ok &= num_checks < 2  # 両王手は合駒できない
