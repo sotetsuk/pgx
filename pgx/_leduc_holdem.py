@@ -41,7 +41,7 @@ class State(core.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Khun poker specific ---
-    turn: jnp.ndarray = jnp.int8(0)
+    first_player: jnp.ndarray = jnp.int8(0)
 
     # [(player 0), (player 1), (public)]
     cards: jnp.ndarray = jnp.int8([-1, -1, -1])
@@ -49,7 +49,7 @@ class State(core.State):
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
     last_action: jnp.ndarray = INVALID_ACTION
 
-    chips: jnp.ndarray = jnp.int8([-1, -1])
+    chips: jnp.ndarray = jnp.ones(2, dtype=jnp.int8)
     round: jnp.ndarray = jnp.int8(0)
     raise_count: jnp.ndarray = jnp.int8(0)
 
@@ -94,10 +94,11 @@ def _init(rng: jax.random.KeyArray) -> State:
     )
     return State(  # type:ignore
         _rng_key=rng3,
+        first_player=current_player,
         current_player=current_player,
         cards=init_card[:3],
         legal_action_mask=jnp.bool_([1, 1, 0, 0]),
-        chips=jnp.ones(2),
+        chips=jnp.ones(2, dtype=jnp.int8),
     )
 
 
@@ -119,6 +120,13 @@ def _step(state: State, action):
 
     round_over, terminated, reward = _check_round_over(state, action)
     last_action = jax.lax.select(round_over, INVALID_ACTION, action)
+    current_player = jax.lax.select(
+        round_over, state.first_player, 1 - state.current_player
+    )
+    raise_count = jax.lax.select(
+        round_over, jnp.int8(0), state.raise_count + jnp.int8(action == RAIZE)
+    )
+
     reward *= jnp.min(chips)
 
     legal_action = jax.lax.switch(
@@ -130,11 +138,10 @@ def _step(state: State, action):
             lambda: jnp.bool_([0, 0, 0, 0]),  # CHECK
         ],
     )
-    raise_count = state.raise_count + jnp.int8(action == RAIZE)
     legal_action = legal_action.at[RAIZE].set(raise_count < MAX_RAISE)
 
     state = state.replace(  # type:ignore
-        current_player=1 - state.current_player,
+        current_player=current_player,
         last_action=last_action,
         legal_action_mask=legal_action,
         terminated=terminated,
