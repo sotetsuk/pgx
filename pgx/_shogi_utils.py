@@ -52,6 +52,18 @@ def can_move_any_ix(from_):
     )[0]
 
 
+def between_ix(p, from_, to):
+    return jnp.nonzero(BETWEEN[p, from_, to], size=8, fill_value=-1)[0]
+
+
+BETWEEN_IX = jax.jit(
+    jax.vmap(
+        jax.vmap(jax.vmap(between_ix, (None, None, 0)), (None, 0, None)),
+        (0, None, None),
+    )
+)(jnp.arange(5), jnp.arange(81), jnp.arange(81))
+
+
 CAN_MOVE_ANY = can_move_any_ix(jnp.arange(81))  # (81, 36)
 
 
