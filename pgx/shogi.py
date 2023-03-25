@@ -289,15 +289,11 @@ def _legal_action_mask(state: State):
         a = Action._from_dlshogi_action(state, action)
         return jax.lax.cond(
             a.is_drop,
-            lambda: _is_legal_drop(
-                state.hand, a.piece, a.to, state.piece_board
-            ),
+            lambda: _is_legal_drop(a.piece, a.to, state),
             lambda: jax.lax.cond(
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
                 lambda: FALSE,
-                lambda: _is_legal_move(
-                    a.from_ * 81 + a.to, a.is_promotion, state.piece_board
-                ),
+                lambda: _is_legal_move(a.from_, a.to, a.is_promotion, state),
             ),
         )
 
@@ -313,14 +309,16 @@ def _legal_action_mask(state: State):
 
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
-    vmap_is_legal_move = jax.vmap(jax.vmap(
-        partial(_is_legal_move, board=flip_state.piece_board),
-        (0, None)), (None, 0)
-    )
     flipped_to = 80 - to
-    can_capture_pawn = vmap_is_legal_move(ALL_SQ * 81 + flipped_to, jnp.bool_([False, True])).any()
+    can_capture_pawn = jax.vmap(
+        lambda f: jax.vmap(
+            partial(_is_legal_move, from_=f, to=flipped_to, state=flip_state)
+        )(is_promotion=jnp.bool_([False, True])).any()
+    )(ALL_SQ).any()
     from_ = 80 - opp_king_pos
-    can_king_escape = vmap_is_legal_move(from_ * 81 + _around(from_), jnp.bool_([False])).any()
+    can_king_escape = jax.vmap(
+        partial(_is_legal_move, from_=from_, is_promotion=FALSE, state=flip_state)
+    )(to=_around(from_)).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
 
@@ -339,64 +337,42 @@ def _around(x):
     return jnp.where((y < 0) | (y >= 81), -1, y)
 
 
-def _is_legal_drop(
-    hand: jnp.ndarray,
-    piece: jnp.ndarray,
-    to: jnp.ndarray,
-    board: jnp.ndarray,
-):
-    ok = _is_pseudo_legal_drop(hand, piece, to, board)
-
-    ##################################################
-    # Filter illegal moves
-    ##################################################
-    # Simple implementation is to
-    #     1. actually drop, and
-    #     2. check whether the king is checked:
-    # but this is slow
-    ok &= ~_is_checked(board.at[to].set(piece))
-    # num_checks = (checking_places != -1).sum()
-    # # num_checks >= 2
-    # ok &= num_checks < 2  # 両王手は合駒できない
-    # # num_checks == 1
-    # king_pos = jnp.nonzero(board == KING, size=1)[0][0]
-    # checking_place = checking_places[
-    #     jnp.nonzero(checking_places != -1, size=1)[0][0]
-    # ]
-    # checking_piece = _flip_piece(board[checking_place])
-    # checking_major_piece = _major_piece_ix(checking_piece)
-    # is_on_the_way = (
-    #     to == BETWEEN_IX[checking_major_piece, king_pos, checking_place]
-    # ).any()
-    # ok &= (num_checks == 0) | is_on_the_way
-
+def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
+    ok = _is_pseudo_legal_drop(piece, to, state)
+    ok &= ~_is_checked(
+        state.replace(piece_board=state.piece_board.at[to].set(piece))  # type: ignore
+    )
     return ok
 
 
 def _is_legal_move(
-    move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    state: State,
 ):
-    from_, to = move // 81, move % 81
-    piece = board[from_]
-    ok = _is_pseudo_legal_move(from_, to, is_promotion, board)
-    # actually move
-    board = board.at[from_].set(EMPTY).at[to].set(piece)
-    # suicide move （王手放置、自殺手）
-    is_illegal = _is_checked(board)
+    ok = _is_pseudo_legal_move(from_, to, is_promotion, state)
+    piece = state.piece_board[from_]
+    is_illegal = _is_checked(
+        state.replace(  # type: ignore
+            piece_board=state.piece_board.at[from_]
+            .set(EMPTY)
+            .at[to]
+            .set(piece)
+        )
+    )
     return ok & ~is_illegal
 
 
-def _is_pseudo_legal_drop(
-    hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray
-):
+def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
     """自殺手を無視した合法手"""
     # destination is not empty
-    is_illegal = board[to] != EMPTY
+    is_illegal = state.piece_board[to] != EMPTY
     # don't have the piece
-    is_illegal |= hand[0, piece] <= 0
+    is_illegal |= state.hand[0, piece] <= 0
     # double pawn
     is_illegal |= (piece == PAWN) & (
-        (board == PAWN).reshape(9, 9).sum(axis=1) > 0
+        (state.piece_board == PAWN).reshape(9, 9).sum(axis=1) > 0
     )[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
@@ -408,9 +384,10 @@ def _is_pseudo_legal_move(
     from_: jnp.ndarray,
     to: jnp.ndarray,
     is_promotion: jnp.ndarray,
-    board: jnp.ndarray,
+    state: State,
 ):
     """自殺手を無視した合法手"""
+    board = state.piece_board
     # source is not my piece
     piece = board[from_]
     is_illegal = ~((PAWN <= piece) & (piece < OPP_PAWN))
@@ -434,10 +411,9 @@ def _is_pseudo_legal_move(
     return ~is_illegal
 
 
-def _checking_places(board):
-    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
+def _checking_places(state):
+    king_pos = jnp.nonzero(state.piece_board == KING, size=1)[0][0]
     flipped_king_pos = 80 - king_pos
-    flipped_board = jax.vmap(_flip_piece)(board)[::-1]
 
     @jax.vmap
     def can_capture_king(from_):
@@ -446,7 +422,7 @@ def _checking_places(board):
                 _is_pseudo_legal_move,
                 from_=from_,
                 to=flipped_king_pos,
-                board=flipped_board,
+                state=_flip(state),
             )
         )(is_promotion=jnp.bool_([False, True])).any()
 
@@ -456,8 +432,8 @@ def _checking_places(board):
     return jnp.where(checking_ix != -1, 80 - from_[checking_ix], -1)
 
 
-def _is_checked(board):
-    return (_checking_places(board) != -1).any()
+def _is_checked(state):
+    return (_checking_places(state) != -1).any()
 
 
 def _flip_piece(piece):
@@ -574,7 +550,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
-    checked = jnp.tile(_is_checked(state.piece_board), reps=(1, 9, 9))
+    checked = jnp.tile(_is_checked(state), reps=(1, 9, 9))
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
         my_effect_feat.reshape(14, 9, 9),
