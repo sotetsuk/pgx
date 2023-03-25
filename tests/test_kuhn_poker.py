@@ -96,6 +96,21 @@ def test_legal_action():
     assert state.terminated
 
 
+def test_observation():
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    """
+    Player 0: K
+    Player 1: J
+    """
+    state = step(state, BET)  # Player 0 bets 1 chip
+    obs = observe(state, 0)
+    assert (obs == jnp.bool_([0, 0, 1, 0, 1, 1, 0])).all()
+
+    obs = observe(state, 1)
+    assert (obs == jnp.bool_([1, 0, 0, 1, 0, 0, 1])).all()
+
+
 def test_random_play():
     N = 100
     key = jax.random.PRNGKey(0)
