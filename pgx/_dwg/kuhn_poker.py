@@ -1,4 +1,4 @@
-from pgx._kuhn_poker import State as KuhnPokerState
+from pgx.kuhn_poker import State as KuhnPokerState
 
 CARD = ["J", "Q", "K"]
 

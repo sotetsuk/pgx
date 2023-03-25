@@ -41,6 +41,7 @@ EnvId = Literal[
     "go-9x9",
     "go-19x19",
     "hex",
+    "kuhn_poker",
     "leduc_holdem",
     # "mahjong",
     "minatar/asterix",
@@ -231,6 +232,10 @@ def make(env_id: EnvId):
         from pgx.hex import Hex
 
         return Hex()
+    elif env_id == "kuhn_poker":
+        from pgx.kuhn_poker import KuhnPoker
+
+        return KuhnPoker()
     elif env_id == "leduc_holdem":
         from pgx.leduc_holdem import LeducHoldem
 
