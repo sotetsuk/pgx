@@ -118,7 +118,7 @@ def test_observe():
         .set(TRUE)
         .at[7]
         .set(TRUE)
-        .at[22]
+        .at[21]
         .set(TRUE)
     ).all()
 

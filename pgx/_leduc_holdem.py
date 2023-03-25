@@ -205,7 +205,7 @@ def _observe(state: State, player_id) -> jnp.ndarray:
     0~2     J ~ K in hand
     3~5     J ~ K as public card
     6~19    0 ~ 13 chips for the current player
-    21~35   0 ~ 13 chips for the opponent
+    20~33   0 ~ 13 chips for the opponent
     """
     obs = jnp.zeros(34, dtype=jnp.bool_)
     obs = obs.at[state.cards[player_id]].set(TRUE)
@@ -213,6 +213,6 @@ def _observe(state: State, player_id) -> jnp.ndarray:
         state.round == 1, obs.at[3 + state.cards[2]].set(TRUE), obs
     )
     obs = obs.at[6 + state.chips[player_id]].set(TRUE)
-    obs = obs.at[21 + state.chips[1 - player_id]].set(TRUE)
+    obs = obs.at[20 + state.chips[1 - player_id]].set(TRUE)
 
     return obs
