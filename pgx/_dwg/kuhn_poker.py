@@ -1,9 +1,9 @@
-from pgx._khun_poker import State as KhunPokerState
+from pgx._kuhn_poker import State as KuhnPokerState
 
 CARD = ["J", "Q", "K"]
 
 
-def _make_khunpoker_dwg(dwg, state: KhunPokerState, config):
+def _make_kuhnpoker_dwg(dwg, state: KuhnPokerState, config):
     GRID_SIZE = config["GRID_SIZE"]
     BOARD_SIZE = config["BOARD_WIDTH"]
     color_set = config["COLOR_SET"]
