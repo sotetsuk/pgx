@@ -138,7 +138,7 @@ def _step(state: State, action):
     )
     legal_action = legal_action.at[RAISE].set(raise_count < MAX_RAISE)
 
-    state = state.replace(  # type:ignore
+    return state.replace(  # type:ignore
         current_player=current_player,
         last_action=last_action,
         legal_action_mask=legal_action,
@@ -148,8 +148,6 @@ def _step(state: State, action):
         chips=chips,
         raise_count=raise_count,
     )
-    return state
-    # jax.lax.cond(round_over & (state.round))
 
 
 def _check_round_over(state, action):
@@ -158,15 +156,15 @@ def _check_round_over(state, action):
     )
     terminated = round_over & (state.round == 1)
 
-    reward = jax.lax.cond(
+    reward = jax.lax.select(
         terminated & (action == FOLD),
-        lambda: jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
-        lambda: jnp.float32([0, 0]),
+        jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
+        jnp.float32([0, 0]),
     )
-    reward = jax.lax.cond(
+    reward = jax.lax.select(
         terminated & (action != FOLD),
-        lambda: _get_unit_reward(state),
-        lambda: reward,
+        _get_unit_reward(state),
+        reward,
     )
     return round_over, terminated, reward
 
@@ -181,16 +179,16 @@ def _get_unit_reward(state: State):
             > state.cards[1 - state.current_player]
         )
     )
-    reward = jax.lax.cond(
+    reward = jax.lax.select(
         win,
-        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
-        lambda: jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
+        jnp.float32([-1, -1]).at[state.current_player].set(1),
+        jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
     )
-    return jax.lax.cond(
+    return jax.lax.select(
         state.cards[state.current_player]
         == state.cards[1 - state.current_player],  # Draw
-        lambda: jnp.float32([0, 0]),
-        lambda: reward,
+        jnp.float32([0, 0]),
+        reward,
     )
 
 
