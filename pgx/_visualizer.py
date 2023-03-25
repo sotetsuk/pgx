@@ -18,8 +18,6 @@ from typing import Literal, Optional
 
 import svgwrite  # type: ignore
 
-from ._dwg.khun_poker import KhunPokerState, _make_khunpoker_dwg
-
 from ._dwg.animalshogi import AnimalShogiState, _make_animalshogi_dwg
 from ._dwg.backgammon import BackgammonState, _make_backgammon_dwg
 from ._dwg.bridge_bidding import BridgeBiddingState, _make_bridge_dwg
@@ -27,6 +25,7 @@ from ._dwg.chess import ChessState, _make_chess_dwg
 from ._dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from ._dwg.go import GoState, _make_go_dwg
 from ._dwg.hex import HexState, _make_hex_dwg
+from ._dwg.khun_poker import KhunPokerState, _make_khunpoker_dwg
 from ._dwg.othello import OthelloState, _make_othello_dwg
 from ._dwg.play2048 import Play2048State, _make_2048_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
