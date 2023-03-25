@@ -146,4 +146,10 @@ def _get_unit_reward(state: State):
 
 
 def _observe(state, player_id) -> jnp.ndarray:
+    """
+    Index   Meaning
+    0~2     J ~ K in hand
+    3       chips for the current player
+    4       chips for the opponent
+    """
     ...
