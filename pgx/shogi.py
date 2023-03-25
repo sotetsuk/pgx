@@ -349,7 +349,7 @@ def _is_legal_drop(
     ok = _is_pseudo_legal_drop(hand, piece, to, board)
 
     ##################################################
-    # Filter illegal moves
+    # Filter illegal drops (ignoring check)
     ##################################################
     # Simple implementation is to
     #     1. actually drop, and
@@ -378,11 +378,15 @@ def _is_legal_move(
     from_, to = move // 81, move % 81
     piece = board[from_]
     ok = _is_pseudo_legal_move(from_, to, is_promotion, board)
-    # actually move
-    board = board.at[from_].set(EMPTY).at[to].set(piece)
-    # suicide move （王手放置、自殺手）
-    is_illegal = _is_checked(board)
-    return ok & ~is_illegal
+    ##################################################
+    # Filter illegal moves
+    ##################################################
+    # Simple implementation is to
+    #     1. actually move, and
+    #     2. check whether the king is checked:
+    # but this is slow
+    # > ok &= ~_is_checked(board.at[from_].set(EMPTY).at[to].set(piece))
+    return ok
 
 
 def _is_pseudo_legal_drop(
