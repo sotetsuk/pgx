@@ -450,7 +450,7 @@ def _checking_places(board):
             )
         )(is_promotion=jnp.bool_([False, True])).any()
 
-    is_checking = can_capture_king(CAN_MOVE_ANY[king_pos])[::-1]
+    is_checking = can_capture_king(CAN_MOVE_ANY[flipped_king_pos])[::-1]
     return jnp.nonzero(is_checking, size=2, fill_value=-1)[0]
 
 
