@@ -26,6 +26,7 @@ from pgx._shogi_utils import (
     CAN_MOVE_ANY,
     INIT_PIECE_BOARD,
     LEGAL_FROM_IDX,
+    LINE,
     _from_sfen,
     _to_sfen,
 )
@@ -354,7 +355,7 @@ def _is_legal_drop(
     #     1. actually drop, and
     #     2. check whether the king is checked:
     # but this is slow
-    ok &= ~_is_checked(board.at[to].set(piece))
+    ok &= ~_is_checked(board.at[to].set(piece), Action.make_drop(piece, to))
     # num_checks = (checking_places != -1).sum()
     # # num_checks >= 2
     # ok &= num_checks < 2  # 両王手は合駒できない
@@ -382,7 +383,7 @@ def _is_legal_move(
     # actually move
     board = board.at[from_].set(EMPTY).at[to].set(piece)
     # suicide move （王手放置、自殺手）
-    is_illegal = _is_checked(board)
+    is_illegal = _is_checked(board, Action.make_move(piece, from_, to, is_promotion))
     return ok & ~is_illegal
 
 
@@ -434,12 +435,10 @@ def _is_pseudo_legal_move(
     return ~is_illegal
 
 
-def _checking_places(board):
-    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
-    flipped_king_pos = 80 - king_pos
+def _checking_places(board, action: Action):
+    flipped_king_pos = 80 - jnp.nonzero(board == KING, size=1)[0][0]
     flipped_board = jax.vmap(_flip_piece)(board)[::-1]
 
-    @jax.vmap
     def can_capture_king(from_):
         return (from_ >= 0) & jax.vmap(
             partial(
@@ -450,14 +449,19 @@ def _checking_places(board):
             )
         )(is_promotion=jnp.bool_([False, True])).any()
 
-    from_ = CAN_MOVE_ANY[flipped_king_pos]
-    is_checking = can_capture_king(from_)
-    checking_ix = jnp.nonzero(is_checking, size=2, fill_value=-1)[0]
-    return jnp.where(checking_ix != -1, 80 - from_[checking_ix], -1)
+    check_to = jax.lax.select(
+        can_capture_king(80 - action.to),
+        jnp.int8(80 - action.to),
+        jnp.int8(-1)
+    )
+    from_ = LINE[flipped_king_pos, 80 - action.from_]
+    checking_ix = jnp.nonzero(jax.vmap(can_capture_king)(from_), size=1, fill_value=-1)[0][0]
+    check_from = jax.lax.select(checking_ix >= 0, from_[checking_ix], jnp.int8(-1))
+    return jnp.int8([check_to, check_from])
 
 
-def _is_checked(board):
-    return (_checking_places(board) != -1).any()
+def _is_checked(board, action):
+    return (_checking_places(board, action) != -1).any()
 
 
 def _flip_piece(piece):
@@ -574,7 +578,8 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
-    checked = jnp.tile(_is_checked(state.piece_board), reps=(1, 9, 9))
+    # checked = jnp.tile(_is_checked(state.piece_board), reps=(1, 9, 9))
+    checked = jnp.tile(FALSE, reps=(1, 9, 9))
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
         my_effect_feat.reshape(14, 9, 9),
