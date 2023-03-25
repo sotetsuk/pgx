@@ -341,6 +341,31 @@ def _around(x):
 def _is_legal_drop(
     hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray
 ):
+    ok = _is_pseudo_legal_drop(hand, piece, to, board)
+    # actually drop
+    board = board.at[to].set(piece)
+    # suicide move
+    is_illegal = is_checked(board)
+    return ok & ~is_illegal
+
+
+def _is_legal_move(
+    move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
+):
+    from_, to = move // 81, move % 81
+    piece = board[from_]
+    ok = _is_pseudo_legal_move(move, is_promotion, board)
+    # actually move
+    board = board.at[from_].set(EMPTY).at[to].set(piece)
+    # suicide move （王手放置、自殺手）
+    is_illegal = is_checked(board)
+    return ok & ~is_illegal
+
+
+def _is_pseudo_legal_drop(
+    hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray
+):
+    """自殺手を無視した合法手"""
     # destination is not empty
     is_illegal = board[to] != EMPTY
     # don't have the piece
@@ -353,18 +378,13 @@ def _is_legal_drop(
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
 
-    # actually drop
-    board = board.at[to].set(piece)
-
-    # suicide move
-    is_illegal |= is_checked(board)
-
     return ~is_illegal
 
 
-def _is_legal_move(
+def _is_pseudo_legal_move(
     move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
 ):
+    """自殺手を無視した合法手"""
     from_, to = move // 81, move % 81
     # source is not my piece
     piece = board[from_]
@@ -378,13 +398,6 @@ def _is_legal_move(
     is_illegal |= (i >= 0) & (
         BETWEEN[i, from_, to, :] & (board != EMPTY)
     ).any()
-
-    # actually move
-    board = board.at[from_].set(EMPTY).at[to].set(piece)
-
-    # suicide move （王手放置、自殺手）
-    is_illegal |= is_checked(board)
-
     # promotion
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
     is_illegal |= is_promotion & (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
