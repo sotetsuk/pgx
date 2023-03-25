@@ -408,7 +408,7 @@ def _is_pseudo_legal_move(
     return ~is_illegal
 
 
-def is_checked(board):
+def _checking_places(board):
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
     flipped_king_pos = 80 - king_pos
     flipped_board = jax.vmap(_flip_piece)(board)[::-1]
@@ -424,7 +424,11 @@ def is_checked(board):
             )
         )(is_promotion=jnp.bool_([False, True]))
 
-    return can_capture_king(jnp.arange(81)).any()
+    checking_places = can_capture_king(jnp.arange(81))
+    return jnp.nonzero(checking_places, size=2, fill_value=-1)[0]
+
+def is_checked(board):
+    return (_checking_places(board) != -1).any()
 
 
 def _flip_piece(piece):
