@@ -368,9 +368,9 @@ def _is_legal_drop(
         from_=80 - checking_place,
         to=80 - king_pos,
         is_promotion=FALSE,
-        board=jax.vmap(_flip_piece)(board.at[to].set(piece))[::-1]
+        board=jax.vmap(_flip_piece)(board.at[to].set(piece))[::-1],
     )
-    ok &= (num_checks == 0) | ~is_blocked
+    ok &= (num_checks == 0) | is_blocked
 
     return ok
 
