@@ -145,5 +145,16 @@ def _get_unit_reward(state: State):
     )
 
 
-def _observe(state, player_id) -> jnp.ndarray:
-    ...
+def _observe(state: State, player_id) -> jnp.ndarray:
+    """
+    Index   Meaning
+    0~2     J ~ K in hand
+    3~4     0~1 chips for the current player
+    5~6     0~1 chips for the opponent
+    """
+    obs = jnp.zeros(7, dtype=jnp.bool_)
+    obs = obs.at[state.cards[player_id]].set(TRUE)
+    obs = obs.at[3 + state.pot[player_id]].set(TRUE)
+    obs = obs.at[5 + state.pot[1 - player_id]].set(TRUE)
+
+    return obs
