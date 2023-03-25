@@ -368,7 +368,9 @@ def _is_legal_drop(
     ]
     checking_piece = _flip_piece(board[checking_place])
     checking_major_piece = _major_piece_ix(checking_piece)
-    is_on_the_way = (to == BETWEEN_IX[checking_major_piece, king_pos, checking_place]).any()
+    is_on_the_way = (
+        to == BETWEEN_IX[checking_major_piece, king_pos, checking_place]
+    ).any()
     ok &= (num_checks == 0) | is_on_the_way
 
     return ok
