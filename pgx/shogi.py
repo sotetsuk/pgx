@@ -427,6 +427,7 @@ def _checking_places(board):
     checking_places = can_capture_king(jnp.arange(81))
     return jnp.nonzero(checking_places, size=2, fill_value=-1)[0]
 
+
 def is_checked(board):
     return (_checking_places(board) != -1).any()
 
