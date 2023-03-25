@@ -12,7 +12,7 @@ def test_init():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
     assert state.current_player == 0
-    assert (state.legal_action_mask == jnp.bool_([1, 1, 0, 0])).all()
+    assert (state.legal_action_mask == jnp.bool_([1, 1, 0])).all()
 
 
 def test_step():
