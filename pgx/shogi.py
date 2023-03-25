@@ -347,11 +347,11 @@ def _is_legal_drop(
     checking_places: jnp.ndarray,
 ):
     ok = _is_pseudo_legal_drop(hand, piece, to, board)
-    # filter illegal moves
 
+    # filter illegal moves
     num_checks = (checking_places != -1).sum()
     # num_checks >= 2
-    is_illegal = num_checks >= 2  # 両王手は合駒できない
+    ok &= (num_checks < 2)  # 両王手は合駒できない
     # num_checks == 1
     king_pos = jnp.nonzero(board == KING, size=1)[0].squeeze()
     checking_place = checking_places[
@@ -360,9 +360,9 @@ def _is_legal_drop(
     checking_piece = _flip_piece(board[checking_place])
     checking_major_piece = _major_piece_ix(checking_piece)
     between = BETWEEN[checking_major_piece, king_pos, checking_place, to]
-    is_illegal |= (num_checks == 1) & (~between)
+    ok &= ((num_checks == 0) | between)
 
-    return ok & ~is_illegal
+    return ok
 
 
 def _is_legal_move(
