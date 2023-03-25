@@ -20,10 +20,14 @@ from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
+
+INVALID_ACTION = jnp.int8(-1)
 CALL = jnp.int8(0)
-BET = jnp.int8(1)
+RAIZE = jnp.int8(1)
 FOLD = jnp.int8(2)
-CHECK = jnp.int8(3)
+CHECK = jnp.int8(3)  # not use?
+
+MAX_RAISE = jnp.int8(2)
 
 
 @dataclass
@@ -37,13 +41,17 @@ class State(core.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Khun poker specific ---
-    # # [(player 0), (player 1), (public)]
+    turn: jnp.ndarray = jnp.int8(0)
+
+    # [(player 0), (player 1), (public)]
     cards: jnp.ndarray = jnp.int8([-1, -1, -1])
 
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
-    last_action: jnp.ndarray = jnp.int8(-1)
+    last_action: jnp.ndarray = INVALID_ACTION
 
-    chips = jnp.int8([-1, -1])
+    chips: jnp.ndarray = jnp.int8([-1, -1])
+    round: jnp.ndarray = jnp.int8(0)
+    raise_count: jnp.ndarray = jnp.int8(0)
 
 
 class LeducHoldem(core.Env):
@@ -79,65 +87,111 @@ class LeducHoldem(core.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    rng1, rng2 = jax.random.split(rng)
+    rng1, rng2, rng3 = jax.random.split(rng, 3)
     current_player = jnp.int8(jax.random.bernoulli(rng1))
-    init_card = jax.random.choice(
-        rng2, jnp.int8([[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]])
+    init_card = jax.random.permutation(
+        rng2, jnp.int8([0, 0, 1, 1, 2, 2]), independent=True
     )
     return State(  # type:ignore
+        _rng_key=rng3,
         current_player=current_player,
-        cards=init_card,
-        legal_action_mask=jnp.bool_([0, 1, 0, 1]),
+        cards=init_card[:3],
+        legal_action_mask=jnp.bool_([1, 1, 0, 0]),
+        chips=jnp.ones(2),
     )
 
 
 def _step(state: State, action):
     action = jnp.int8(action)
-    terminated, reward = jax.lax.cond(
-        action == FOLD,
-        lambda: (
-            TRUE,
-            jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
-        ),
-        lambda: (FALSE, jnp.float32([0, 0])),
+    chips = jax.lax.switch(
+        action,
+        [
+            lambda: state.chips.at[state.current_player].set(
+                state.chips[1 - state.current_player]
+            ),  # CALL
+            lambda: state.chips.at[state.current_player].add(
+                _raise_chips(state)
+            ),  # RAISE
+            lambda: state.chips,  # FOLD
+            lambda: state.chips,  # CHECK
+        ],
     )
-    terminated, reward = jax.lax.cond(
-        (state.last_action == BET) & (action == CALL),
-        lambda: (TRUE, _get_unit_reward(state) * 2),
-        lambda: (terminated, reward),
-    )
-    terminated, reward = jax.lax.cond(
-        (state.last_action == CHECK) & (action == CHECK),
-        lambda: (TRUE, _get_unit_reward(state)),
-        lambda: (terminated, reward),
-    )
+
+    round_over, terminated, reward = _check_round_over(state, action)
+    last_action = jax.lax.select(round_over, INVALID_ACTION, action)
+    reward *= jnp.min(chips)
 
     legal_action = jax.lax.switch(
         action,
         [
-            lambda: jnp.bool_([0, 0, 0, 0]),  # CALL
-            lambda: jnp.bool_([1, 0, 1, 0]),  # BET
+            lambda: jnp.bool_([1, 1, 0, 0]),  # CALL
+            lambda: jnp.bool_([1, 1, 1, 0]),  # RAISE
             lambda: jnp.bool_([0, 0, 0, 0]),  # FOLD
-            lambda: jnp.bool_([0, 1, 0, 1]),  # CHECK
+            lambda: jnp.bool_([0, 0, 0, 0]),  # CHECK
         ],
     )
+    raise_count = state.raise_count + jnp.int8(action == RAIZE)
+    legal_action = legal_action.at[RAIZE].set(raise_count < MAX_RAISE)
 
-    return state.replace(  # type:ignore
+    state = state.replace(  # type:ignore
         current_player=1 - state.current_player,
-        last_action=action,
+        last_action=last_action,
         legal_action_mask=legal_action,
         terminated=terminated,
         reward=reward,
+        round=state.round + jnp.int8(round_over),
+        chips=chips,
+        raise_count=raise_count,
     )
+    return state
+    # jax.lax.cond(round_over & (state.round))
+
+
+def _check_round_over(state, action):
+    round_over = (action == FOLD) | (
+        (state.last_action != INVALID_ACTION) & (action == CALL)
+    )
+    terminated = round_over & (state.round == 1)
+
+    reward = jax.lax.cond(
+        terminated & (action == FOLD),
+        lambda: jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
+        lambda: jnp.float32([0, 0]),
+    )
+    reward = jax.lax.cond(
+        terminated & (action != FOLD),
+        lambda: _get_unit_reward(state),
+        lambda: reward,
+    )
+    return round_over, terminated, reward
 
 
 def _get_unit_reward(state: State):
-    return jax.lax.cond(
-        state.cards[state.current_player]
-        > state.cards[1 - state.current_player],
+    win_by_one_pair = state.cards[state.current_player] == state.cards[2]
+    lose_by_one_pair = state.cards[1 - state.current_player] == state.cards[2]
+    win = win_by_one_pair | (
+        ~lose_by_one_pair
+        & (
+            state.cards[state.current_player]
+            > state.cards[1 - state.current_player]
+        )
+    )
+    reward = jax.lax.cond(
+        win,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
         lambda: jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
     )
+    return jax.lax.cond(
+        state.cards[state.current_player]
+        == state.cards[1 - state.current_player],  # Draw
+        lambda: jnp.float32([0, 0]),
+        lambda: reward,
+    )
+
+
+def _raise_chips(state):
+    """raise amounts is 2 in the first round and 4 in the second round."""
+    return (state.round + 1) * 2
 
 
 def _observe(state, player_id) -> jnp.ndarray:
