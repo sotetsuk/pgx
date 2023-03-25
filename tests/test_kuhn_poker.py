@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx._kuhn_poker import KuhnPoker, CALL, BET, FOLD, CHECK
+from pgx.kuhn_poker import KuhnPoker, CALL, BET, FOLD, CHECK
 
 env = KuhnPoker()
 init = jax.jit(env.init)
@@ -126,8 +126,8 @@ def test_random_play():
             done = state.terminated
 
 
-# def test_api():
-#    import pgx
-#
-#    env = pgx.make("kuhn_poker")
-#    pgx.api_test(env, 10)
+def test_api():
+    import pgx
+
+    env = pgx.make("kuhn_poker")
+    pgx.api_test(env, 10)
