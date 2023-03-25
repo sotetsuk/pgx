@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import jax
 import jax.numpy as jnp
 
 from pgx._cache import load_shogi_is_on_the_way  # type: ignore
@@ -39,6 +40,19 @@ BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1]
 # Used for computing dlshogi action
 LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
+
+
+@jax.jit
+@jax.vmap
+def can_move_any_ix(from_):
+    return jnp.nonzero(
+        (CAN_MOVE[:, from_, :] | CAN_MOVE[:, :, from_]).any(axis=0),
+        size=36,
+        fill_value=-1,
+    )[0]
+
+
+CAN_MOVE_ANY = can_move_any_ix(jnp.arange(81))  # (81, 36)
 
 
 def _to_sfen(state):
