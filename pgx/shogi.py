@@ -295,7 +295,7 @@ def _legal_action_mask(state: State):
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
                 lambda: FALSE,
                 lambda: _is_legal_move(
-                    a.from_ * 81 + a.to, a.is_promotion, state.piece_board
+                    a.from_ * 81 + a.to, a.is_promotion, state.piece_board, checking_places
                 ),
             ),
         )
@@ -390,7 +390,8 @@ def _is_legal_move(
 
 
 def _is_pseudo_legal_drop(
-    hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray
+    hand: jnp.ndarray, piece: jnp.ndarray, to: jnp.ndarray, board: jnp.ndarray,
+        checking_places: jnp.ndarray
 ):
     """自殺手を無視した合法手"""
     # destination is not empty
