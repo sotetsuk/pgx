@@ -57,6 +57,31 @@ def test_step():
     assert (state.reward == jnp.float32([-7, 7])).all()
 
 
+def test_legal_action():
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
+    assert (state.legal_action_mask == jnp.bool_([1, 1, 0])).all()
+
+    state = step(state, CALL)
+    assert (state.legal_action_mask == jnp.bool_([1, 1, 0])).all()
+    state = step(state, RAISE)
+    assert (state.legal_action_mask == jnp.bool_([1, 1, 1])).all()
+    state = step(state, RAISE)
+
+    # cannot raise
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1])).all()
+
+    state = step(state, CALL)
+    # second round
+    assert (state.legal_action_mask == jnp.bool_([1, 1, 0])).all()
+    state = step(state, RAISE)
+    assert (state.legal_action_mask == jnp.bool_([1, 1, 1])).all()
+    state = step(state, RAISE)
+
+    # cannot raise
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1])).all()
+
+
 def test_random_play():
     N = 100
     key = jax.random.PRNGKey(0)
