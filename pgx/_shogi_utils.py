@@ -41,13 +41,19 @@ BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # Used for computing dlshogi action
 LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
 
+
 @jax.jit
 @jax.vmap
 def can_move_any_ix(from_):
-    return jnp.nonzero(CAN_MOVE[:, from_, :].any(axis=0), size=34, fill_value=-1)[0]
+    return jnp.nonzero(
+        (CAN_MOVE[:, from_, :] | CAN_MOVE[:, :, from_]).any(axis=0),
+        size=36,
+        fill_value=-1,
+    )[0]
 
 
-CAN_MOVE_ANY = can_move_any_ix(jnp.arange(81))  # (81, 34)
+CAN_MOVE_ANY = can_move_any_ix(jnp.arange(81))  # (81, 36)
+
 
 def _to_sfen(state):
     """Convert state into sfen expression.

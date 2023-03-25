@@ -23,6 +23,7 @@ from pgx._flax.struct import dataclass
 from pgx._shogi_utils import (
     BETWEEN,
     CAN_MOVE,
+    CAN_MOVE_ANY,
     INIT_PIECE_BOARD,
     LEGAL_FROM_IDX,
     _from_sfen,
@@ -440,7 +441,7 @@ def _checking_places(board):
 
     @jax.vmap
     def can_capture_king(from_):
-        return jax.vmap(
+        return (from_ >= 0) & jax.vmap(
             partial(
                 _is_pseudo_legal_move,
                 from_=from_,
@@ -449,7 +450,7 @@ def _checking_places(board):
             )
         )(is_promotion=jnp.bool_([False, True])).any()
 
-    is_checking = can_capture_king(ALL_SQ)[::-1]
+    is_checking = can_capture_king(CAN_MOVE_ANY[king_pos])[::-1]
     return jnp.nonzero(is_checking, size=2, fill_value=-1)[0]
 
 
