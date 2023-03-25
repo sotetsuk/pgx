@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
-
 import jax.numpy as jnp
 
 from pgx._cache import load_shogi_is_on_the_way  # type: ignore
