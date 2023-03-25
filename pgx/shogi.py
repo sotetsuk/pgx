@@ -450,7 +450,7 @@ def _checking_places(board):
                 to=flipped_king_pos,
                 board=flipped_board,
             )
-        )(is_promotion=jnp.bool_([False, True]))
+        )(is_promotion=jnp.bool_([False, True])).any()
 
     is_checking = can_capture_king(jnp.arange(81))[::-1]
     return jnp.nonzero(is_checking, size=2, fill_value=-1)[0]
