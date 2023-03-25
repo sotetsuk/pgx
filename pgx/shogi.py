@@ -25,7 +25,6 @@ from pgx._shogi_utils import (
     CAN_MOVE,
     INIT_PIECE_BOARD,
     LEGAL_FROM_IDX,
-    NEIGHBOURS,
     _from_sfen,
     _to_sfen,
 )
@@ -354,7 +353,7 @@ def _is_legal_move(
 ):
     from_, to = move // 81, move % 81
     piece = board[from_]
-    ok = _is_pseudo_legal_move(move, is_promotion, board)
+    ok = _is_pseudo_legal_move(from_, to, is_promotion, board)
     # actually move
     board = board.at[from_].set(EMPTY).at[to].set(piece)
     # suicide move （王手放置、自殺手）
@@ -381,10 +380,12 @@ def _is_pseudo_legal_drop(
 
 
 def _is_pseudo_legal_move(
-    move: jnp.ndarray, is_promotion: jnp.ndarray, board: jnp.ndarray
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    board: jnp.ndarray,
 ):
     """自殺手を無視した合法手"""
-    from_, to = move // 81, move % 81
     # source is not my piece
     piece = board[from_]
     is_illegal = ~((PAWN <= piece) & (piece < OPP_PAWN))
@@ -408,34 +409,22 @@ def _is_pseudo_legal_move(
 
 
 def is_checked(board):
-    def can_major_capture_king(board, king_pos, f):
-        p = _flip_piece(board[f])  # 敵の大駒
-        i = _major_piece_ix(p)  # 敵の大駒のix
-        return (
-            (i >= 0)
-            & (CAN_MOVE[p, king_pos, f])  # 敵の大駒かつ
-            & (
-                (BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0
-            )  # 移動可能で
-        )  # 障害物なし
-
-    def can_neighbour_capture_king(board, king_pos, f):
-        # including knight
-        p = _flip_piece(board[f])
-        return (
-            (f >= 0) & (PAWN <= p) & (p < OPP_PAWN) & CAN_MOVE[p, king_pos, f]
-        )
-
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
-    checked = jax.vmap(
-        partial(can_major_capture_king, board=board, king_pos=king_pos)
-    )(f=jnp.arange(81)).any()
-    # TODO: 実際には81ではなくqueen movesだけで十分
-    # captured by neighbours (王の周囲から)
-    checked |= jax.vmap(
-        partial(can_neighbour_capture_king, board=board, king_pos=king_pos)
-    )(f=NEIGHBOURS[king_pos]).any()
-    return checked
+    flipped_king_pos = 80 - king_pos
+    flipped_board = jax.vmap(_flip_piece)(board)[::-1]
+
+    @jax.vmap
+    def can_capture_king(from_):
+        return jax.vmap(
+            partial(
+                _is_pseudo_legal_move,
+                from_=from_,
+                to=flipped_king_pos,
+                board=flipped_board,
+            )
+        )(is_promotion=jnp.bool_([False, True]))
+
+    return can_capture_king(jnp.arange(81)).any()
 
 
 def _flip_piece(piece):

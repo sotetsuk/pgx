@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import List
-
 import jax.numpy as jnp
 
 from pgx._cache import load_shogi_is_on_the_way  # type: ignore
@@ -41,23 +39,6 @@ BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1]
 # Used for computing dlshogi action
 LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
-
-
-_NEIGHBOURS: List[List[int]] = [[] for i in range(81)]  # include knight moves
-
-dx = [0, -1, -1, -1, 0, +1, +1, +1, +1, -1]
-dy = [-1, -1, 0, +1, +1, +1, 0, -1, -2, -2]
-for i in range(81):
-    for j in range(10):
-        x, y = i // 9, i % 9
-        x += dx[j]
-        y += dy[j]
-        if x < 0 or x >= 9 or y < 0 or y >= 9:
-            _NEIGHBOURS[i].append(-1)
-        else:
-            _NEIGHBOURS[i].append(x * 9 + y)
-
-NEIGHBOURS: jnp.ndarray = jnp.int8(_NEIGHBOURS)
 
 
 def _to_sfen(state):
