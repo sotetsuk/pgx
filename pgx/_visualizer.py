@@ -26,6 +26,7 @@ from ._dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from ._dwg.go import GoState, _make_go_dwg
 from ._dwg.hex import HexState, _make_hex_dwg
 from ._dwg.kuhn_poker import KuhnPokerState, _make_kuhnpoker_dwg
+from ._dwg.leduc_holdem import LeducHoldemState, _make_leducHoldem_dwg
 from ._dwg.othello import OthelloState, _make_othello_dwg
 from ._dwg.play2048 import Play2048State, _make_2048_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
@@ -423,6 +424,34 @@ class Visualizer:
                     "black",
                     "",
                 )
+        elif isinstance(_state, LeducHoldemState):
+            self.config["GRID_SIZE"] = 30
+            self.config["BOARD_WIDTH"] = 8
+            self.config["BOARD_HEIGHT"] = 8
+            self._make_dwg_group = _make_leducHoldem_dwg
+            if (
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "gray",
+                    "lightgray",
+                    "",
+                    "",
+                    "#1e1e1e",
+                    "lightgray",
+                    "lightgray",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "gray",
+                    "black",
+                    "",
+                    "",
+                    "white",
+                    "black",
+                    "",
+                )
         elif isinstance(_state, OthelloState):
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
@@ -597,8 +626,12 @@ class Visualizer:
                 board=_states.board[_i],
             )
         elif isinstance(_states, KuhnPokerState):
-            return KuhnPokerState(
+            return KuhnPokerState(cards=_states.cards[_i], pot=_states.pot[_i])
+        elif isinstance(_states, LeducHoldemState):
+            return LeducHoldemState(
                 cards=_states.cards[_i],
+                chips=_states.chips[_i],
+                round=_states.round[_i],
             )
         elif isinstance(_states, OthelloState):
             return OthelloState(
