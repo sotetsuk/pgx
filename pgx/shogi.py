@@ -351,12 +351,11 @@ def _is_legal_drop(
     ##################################################
     # Filter illegal moves
     ##################################################
-    #   Simple implementation is to
+    # Simple implementation is to
     #     1. actually drop, and
-    #     2. check whether the king is checked
-    #   but this is slow
-    # ok &= ~_is_checked(board.at[to].set(piece))
-
+    #     2. check whether the king is checked:
+    # but this is slow
+    # > ok &= ~_is_checked(board.at[to].set(piece))
     num_checks = (checking_places != -1).sum()
     # num_checks >= 2
     ok &= num_checks < 2  # 両王手は合駒できない
