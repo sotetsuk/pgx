@@ -308,11 +308,18 @@ def _legal_action_mask(state: State):
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
-    # fmt: off
-    is_pawn_mate = ~jax.vmap(jax.vmap(
+
+    # 玉頭の歩を取るか玉が逃げられれば詰みでない
+    vmap_is_legal_move = jax.vmap(jax.vmap(
         partial(_is_legal_move, board=flip_state.piece_board), (0, None)), (None, 0)
-    )(jnp.arange(81 * 81), jnp.bool_([False, True])).any()  # TODO: queen moves are enough
-    # fmt: on
+    )
+    flipped_to = 80 - to
+    from_ = jnp.arange(81)
+    can_capture_pawn = vmap_is_legal_move(from_ * 81 + flipped_to, jnp.bool_([False, True])).any()
+    from_ = 80 - opp_king_pos
+    can_king_escape = vmap_is_legal_move(from_ * 81 + _around(from_), jnp.bool_([False])).any()
+    is_pawn_mate = ~(can_capture_pawn | can_king_escape)
+
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     has_no_pawn = state.hand[0, PAWN] <= 0
     is_occupied = state.piece_board[to] != EMPTY
@@ -321,6 +328,11 @@ def _legal_action_mask(state: State):
     )
 
     return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
+
+
+def _around(x):
+    y = jnp.int8([x - 1, x - 10, x - 9, x - 8, x + 1, x + 8, x + 9, x + 10])
+    return jnp.where((y < 0) | (y >= 81), -1, y)
 
 
 def _is_legal_drop(
