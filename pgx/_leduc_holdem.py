@@ -25,7 +25,6 @@ INVALID_ACTION = jnp.int8(-1)
 CALL = jnp.int8(0)
 RAISE = jnp.int8(1)
 FOLD = jnp.int8(2)
-CHECK = jnp.int8(3)  # not use?
 
 MAX_RAISE = jnp.int8(2)
 
