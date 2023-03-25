@@ -26,12 +26,12 @@ from ._dwg.connect_four import ConnectFourState, _make_connect_four_dwg
 from ._dwg.go import GoState, _make_go_dwg
 from ._dwg.hex import HexState, _make_hex_dwg
 from ._dwg.kuhn_poker import KuhnPokerState, _make_kuhnpoker_dwg
+from ._dwg.leduc_holdem import LeducHoldemState, _make_leducHoldem_dwg
 from ._dwg.othello import OthelloState, _make_othello_dwg
 from ._dwg.play2048 import Play2048State, _make_2048_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
 from ._dwg.sparrow_mahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from ._dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
-from ._dwg.leduc_holdem import LeducHoldemState, _make_leducHoldem_dwg
 
 ColorTheme = Literal["light", "dark"]
 
