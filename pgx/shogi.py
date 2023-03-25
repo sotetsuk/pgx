@@ -361,10 +361,10 @@ def _is_legal_drop(
     # num_checks >= 2
     ok &= num_checks < 2  # 両王手は合駒できない
     # num_checks == 1
-    king_pos = jnp.nonzero(board == KING, size=1)[0].squeeze()
+    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
     checking_place = checking_places[
-        jnp.nonzero(checking_places != -1, size=1)[0]
-    ].squeeze()
+        jnp.nonzero(checking_places != -1, size=1)[0][0]
+    ]
     checking_piece = _flip_piece(board[checking_place])
     checking_major_piece = _major_piece_ix(checking_piece)
     is_on_the_way = BETWEEN[checking_major_piece, king_pos, checking_place, to]
