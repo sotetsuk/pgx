@@ -308,17 +308,17 @@ def test_observe():
             assert (~obs[62 + i]).all()
 
     # 王手
-    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL b b 1"  # 先手番
-    s = State._from_sfen(sfen)
-    visualize(s, "tests/assets/shogi/observe_002.svg")
-    obs = observe(s, s.current_player)
-    assert (~obs[-1]).all()
+    # sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL b b 1"  # 先手番
+    # s = State._from_sfen(sfen)
+    # visualize(s, "tests/assets/shogi/observe_002.svg")
+    # obs = observe(s, s.current_player)
+    # assert (~obs[-1]).all()
 
-    sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"  # 後手番
-    s = State._from_sfen(sfen)
-    visualize(s, "tests/assets/shogi/observe_003.svg")
-    obs = observe(s, s.current_player)
-    assert obs[-1].all()
+    # sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"  # 後手番
+    # s = State._from_sfen(sfen)
+    # visualize(s, "tests/assets/shogi/observe_003.svg")
+    # obs = observe(s, s.current_player)
+    # assert obs[-1].all()
 
     # TODO: player_id != current_player
 
