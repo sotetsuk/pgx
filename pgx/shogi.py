@@ -365,10 +365,13 @@ def _is_legal_drop(
     checking_place = checking_places[
         jnp.nonzero(checking_places != -1, size=1)[0]
     ].squeeze()
-    checking_piece = _flip_piece(board[checking_place])
-    checking_major_piece = _major_piece_ix(checking_piece)
-    between = BETWEEN[checking_major_piece, king_pos, checking_place, to]
-    ok &= ((num_checks == 0) | between)
+    is_illegal = _is_pseudo_legal_move(
+        from_=80 - checking_place,
+        to=80 - king_pos,
+        is_promotion=FALSE,
+        board=board.at[to].set(piece)[::-1]
+    )
+    ok &= (num_checks == 0) | (~is_illegal)
 
     return ok
 
