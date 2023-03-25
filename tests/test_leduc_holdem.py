@@ -129,6 +129,19 @@ def test_observe():
     state = step(state, RAISE)  # +4(5)
     state = step(state, RAISE)  # +4(9)
 
+    obs = observe(state, 0)
+    assert (
+        obs
+        == jnp.zeros(34, dtype=jnp.bool_)
+        .at[0]
+        .set(TRUE)
+        .at[3 + 1]
+        .set(TRUE)
+        .at[6 + 9]
+        .set(TRUE)
+        .at[20 + 5]
+        .set(TRUE)
+    ).all()
     obs = observe(state, 1)
     assert (
         obs
