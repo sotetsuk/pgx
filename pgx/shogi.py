@@ -289,15 +289,11 @@ def _legal_action_mask(state: State):
         a = Action._from_dlshogi_action(state, action)
         return jax.lax.cond(
             a.is_drop,
-            lambda: _is_legal_drop(
-                a.piece, a.to, state
-            ),
+            lambda: _is_legal_drop(a.piece, a.to, state),
             lambda: jax.lax.cond(
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
                 lambda: FALSE,
-                lambda: _is_legal_move(
-                    a.from_, a.to, a.is_promotion, state
-                ),
+                lambda: _is_legal_move(a.from_, a.to, a.is_promotion, state),
             ),
         )
 
@@ -341,11 +337,7 @@ def _around(x):
     return jnp.where((y < 0) | (y >= 81), -1, y)
 
 
-def _is_legal_drop(
-    piece: jnp.ndarray,
-    to: jnp.ndarray,
-    state: State
-):
+def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
     ok = _is_pseudo_legal_drop(piece, to, state)
     ok &= ~_is_checked(
         state.replace(piece_board=state.piece_board.at[to].set(piece))
@@ -354,19 +346,25 @@ def _is_legal_drop(
 
 
 def _is_legal_move(
-    from_: jnp.ndarray, to: jnp.ndarray, is_promotion: jnp.ndarray, state: State
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    state: State,
 ):
     ok = _is_pseudo_legal_move(from_, to, is_promotion, state)
     piece = state.piece_board[from_]
     is_illegal = _is_checked(
-        state.replace(piece_board=state.piece_board.at[from_].set(EMPTY).at[to].set(piece))
+        state.replace(
+            piece_board=state.piece_board.at[from_]
+            .set(EMPTY)
+            .at[to]
+            .set(piece)
+        )
     )
     return ok & ~is_illegal
 
 
-def _is_pseudo_legal_drop(
-    piece: jnp.ndarray, to: jnp.ndarray, state: State
-):
+def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
     """自殺手を無視した合法手"""
     # destination is not empty
     is_illegal = state.piece_board[to] != EMPTY
@@ -386,7 +384,7 @@ def _is_pseudo_legal_move(
     from_: jnp.ndarray,
     to: jnp.ndarray,
     is_promotion: jnp.ndarray,
-    state: State
+    state: State,
 ):
     """自殺手を無視した合法手"""
     board = state.piece_board
