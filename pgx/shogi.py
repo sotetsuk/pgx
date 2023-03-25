@@ -25,7 +25,6 @@ from pgx._shogi_utils import (
     CAN_MOVE,
     INIT_PIECE_BOARD,
     LEGAL_FROM_IDX,
-    NEIGHBOURS,
     _from_sfen,
     _to_sfen,
 )
