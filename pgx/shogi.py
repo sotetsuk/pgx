@@ -284,15 +284,13 @@ def _step_drop(state: State, action: Action) -> State:
 
 
 def _legal_action_mask(state: State):
-    checking_places = _checking_places(state.piece_board)
-
     @jax.vmap
     def is_legal(action):
         a = Action._from_dlshogi_action(state, action)
         return jax.lax.cond(
             a.is_drop,
             lambda: _is_legal_drop(
-                state.hand, a.piece, a.to, state.piece_board, checking_places
+                state.hand, a.piece, a.to, state.piece_board
             ),
             lambda: jax.lax.cond(
                 a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
@@ -346,7 +344,6 @@ def _is_legal_drop(
     piece: jnp.ndarray,
     to: jnp.ndarray,
     board: jnp.ndarray,
-    checking_places: jnp.ndarray,
 ):
     ok = _is_pseudo_legal_drop(hand, piece, to, board)
 
@@ -357,21 +354,21 @@ def _is_legal_drop(
     #     1. actually drop, and
     #     2. check whether the king is checked:
     # but this is slow
-    # > ok &= ~_is_checked(board.at[to].set(piece))
-    num_checks = (checking_places != -1).sum()
-    # num_checks >= 2
-    ok &= num_checks < 2  # 両王手は合駒できない
-    # num_checks == 1
-    king_pos = jnp.nonzero(board == KING, size=1)[0][0]
-    checking_place = checking_places[
-        jnp.nonzero(checking_places != -1, size=1)[0][0]
-    ]
-    checking_piece = _flip_piece(board[checking_place])
-    checking_major_piece = _major_piece_ix(checking_piece)
-    is_on_the_way = (
-        to == BETWEEN_IX[checking_major_piece, king_pos, checking_place]
-    ).any()
-    ok &= (num_checks == 0) | is_on_the_way
+    ok &= ~_is_checked(board.at[to].set(piece))
+    # num_checks = (checking_places != -1).sum()
+    # # num_checks >= 2
+    # ok &= num_checks < 2  # 両王手は合駒できない
+    # # num_checks == 1
+    # king_pos = jnp.nonzero(board == KING, size=1)[0][0]
+    # checking_place = checking_places[
+    #     jnp.nonzero(checking_places != -1, size=1)[0][0]
+    # ]
+    # checking_piece = _flip_piece(board[checking_place])
+    # checking_major_piece = _major_piece_ix(checking_piece)
+    # is_on_the_way = (
+    #     to == BETWEEN_IX[checking_major_piece, king_pos, checking_place]
+    # ).any()
+    # ok &= (num_checks == 0) | is_on_the_way
 
     return ok
 
