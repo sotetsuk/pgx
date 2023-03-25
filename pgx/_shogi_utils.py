@@ -60,6 +60,74 @@ for i in range(81):
 NEIGHBOURS: jnp.ndarray = jnp.int8(_NEIGHBOURS)
 
 
+LINE = -jnp.ones((81, 81, 9), dtype=jnp.int8)
+
+lines = []
+for s in range(9):
+    dx, dy = +1, 0
+    line = []
+    for i in range(9):
+        x, y = s // 9, s % 9
+        x, y = x + dx * i, y + dy * i
+        t = x * 9 + y
+        if x < 0 or x >= 9 or y < 0 or y >= 9:
+            t = -1
+        line.append(t)
+    line = jnp.int8(line)
+    lines.append(line)
+    # print(line)
+
+for s in range(0, 81, 9):
+    dx, dy = 0, +1
+    line = []
+    for i in range(9):
+        x, y = s // 9, s % 9
+        x, y = x + dx * i, y + dy * i
+        t = x * 9 + y
+        if x < 0 or x >= 9 or y < 0 or y >= 9:
+            t = -1
+        line.append(t)
+    line = jnp.int8(line)
+    lines.append(line)
+    # print(line)
+
+starts = list(range(9)) + list(range(0, 81, 9))
+for s in starts:
+    dx, dy = +1, +1
+    line = []
+    for i in range(9):
+        x, y = s // 9, s % 9
+        x, y = x + dx * i, y + dy * i
+        t = x * 9 + y
+        if x < 0 or x >= 9 or y < 0 or y >= 9:
+            t = -1
+        line.append(t)
+    line = jnp.int8(line)
+    lines.append(line)
+    # print(line)
+
+starts = list(range(9)) + list(range(8, 81, 9))
+for s in starts:
+    dx, dy = +1, -1
+    line = []
+    for i in range(9):
+        x, y = s // 9, s % 9
+        x, y = x + dx * i, y + dy * i
+        t = x * 9 + y
+        if x < 0 or x >= 9 or y < 0 or y >= 9:
+            t = -1
+        line.append(t)
+    line = jnp.int8(line)
+    lines.append(line)
+
+for line in lines:
+    for x in line:
+        for y in line:
+            if x == -1 or y == -1:
+                continue
+            LINE = LINE.at[x, y, :].set(line)
+            LINE = LINE.at[y, x, :].set(line)
+
 def _to_sfen(state):
     """Convert state into sfen expression.
 

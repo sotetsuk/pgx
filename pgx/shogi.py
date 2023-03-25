@@ -26,6 +26,7 @@ from pgx._shogi_utils import (
     INIT_PIECE_BOARD,
     LEGAL_FROM_IDX,
     NEIGHBOURS,
+    LINE,
     _from_sfen,
     _to_sfen,
 )
@@ -357,7 +358,7 @@ def _is_legal_drop(
     board = board.at[to].set(piece)
 
     # suicide move
-    is_illegal |= is_checked(board)
+    is_illegal |= is_checked(board, -1, to)
 
     return ~is_illegal
 
@@ -383,7 +384,7 @@ def _is_legal_move(
     board = board.at[from_].set(EMPTY).at[to].set(piece)
 
     # suicide move （王手放置、自殺手）
-    is_illegal |= is_checked(board)
+    is_illegal |= is_checked(board, from_, to)
 
     # promotion
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
@@ -396,29 +397,30 @@ def _is_legal_move(
     return ~is_illegal
 
 
-def is_checked(board):
+def is_checked(board, from_, to):
+    # from_, toは行動, from_=-1はdrop
+    from_ = 80 - from_
+    to = 80 - to
     king_pos = jnp.nonzero(board == KING, size=1)[0][0]
 
-    @jax.vmap
     def can_capture(f):
         p = _flip_piece(board[f])  # 敵の大駒
         i = _major_piece_ix(p)  # 敵の大駒のix
-        is_mine = (f >= 0) & (PAWN <= p) & (p < OPP_PAWN)
+        is_opp = (f >= 0) & (PAWN <= p) & (p < OPP_PAWN)
         # fmt: off
         return (
-            is_mine &
-            (CAN_MOVE[p, king_pos, f]) &
+            is_opp &  # 敵の駒で
+            (CAN_MOVE[p, king_pos, f]) &  # 玉の位置へ移動可能で
             (
-                (i < 0) |
+                (i < 0) |  # 大駒でなければそのままでOK
                 (i >= 0) & ((BETWEEN[i, king_pos, f, :] & (board != EMPTY)).sum() == 0)  # 大駒なら障害物も確認
             )
         )
         # fmt: on
 
-    checked = can_capture(jnp.arange(81)).any()
-    checked |= can_capture(NEIGHBOURS[king_pos]).any()
+    checked = can_capture(to).any()  # 新しく動いた駒からの王手
+    checked |= jax.vmap(can_capture)(LINE[king_pos, from_]).any()  # 開き王手
     return checked
-
 
 def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
