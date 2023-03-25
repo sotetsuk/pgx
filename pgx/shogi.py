@@ -347,42 +347,17 @@ def _is_legal_drop(
     state: State
 ):
     ok = _is_pseudo_legal_drop(piece, to, state)
-
-    ##################################################
-    # Filter illegal moves
-    ##################################################
-    # Simple implementation is to
-    #     1. actually drop, and
-    #     2. check whether the king is checked:
-    # but this is slow
     ok &= ~_is_checked(
         state.replace(piece_board=state.piece_board.at[to].set(piece))
     )
-    # num_checks = (checking_places != -1).sum()
-    # # num_checks >= 2
-    # ok &= num_checks < 2  # 両王手は合駒できない
-    # # num_checks == 1
-    # king_pos = jnp.nonzero(board == KING, size=1)[0][0]
-    # checking_place = checking_places[
-    #     jnp.nonzero(checking_places != -1, size=1)[0][0]
-    # ]
-    # checking_piece = _flip_piece(board[checking_place])
-    # checking_major_piece = _major_piece_ix(checking_piece)
-    # is_on_the_way = (
-    #     to == BETWEEN_IX[checking_major_piece, king_pos, checking_place]
-    # ).any()
-    # ok &= (num_checks == 0) | is_on_the_way
-
     return ok
 
 
 def _is_legal_move(
     from_: jnp.ndarray, to: jnp.ndarray, is_promotion: jnp.ndarray, state: State
 ):
-    piece = state.piece_board[from_]
     ok = _is_pseudo_legal_move(from_, to, is_promotion, state)
-    # actually move
-    # suicide move （王手放置、自殺手）
+    piece = state.piece_board[from_]
     is_illegal = _is_checked(
         state.replace(piece_board=state.piece_board.at[from_].set(EMPTY).at[to].set(piece))
     )
