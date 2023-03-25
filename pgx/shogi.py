@@ -62,6 +62,8 @@ OPP_PRO_SILVER = jnp.int8(25)  # 相手成銀
 OPP_HORSE = jnp.int8(26)  # 相手馬
 OPP_DRAGON = jnp.int8(27)  # 相手龍
 
+ALL_SQ = jnp.arange(81)
+
 
 @dataclass
 class State(core.State):
@@ -317,8 +319,7 @@ def _legal_action_mask(state: State):
         (0, None)), (None, 0)
     )
     flipped_to = 80 - to
-    from_ = jnp.arange(81)
-    can_capture_pawn = vmap_is_legal_move(from_ * 81 + flipped_to, jnp.bool_([False, True])).any()
+    can_capture_pawn = vmap_is_legal_move(ALL_SQ * 81 + flipped_to, jnp.bool_([False, True])).any()
     from_ = 80 - opp_king_pos
     can_king_escape = vmap_is_legal_move(from_ * 81 + _around(from_), jnp.bool_([False])).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
@@ -448,7 +449,7 @@ def _checking_places(board):
             )
         )(is_promotion=jnp.bool_([False, True])).any()
 
-    is_checking = can_capture_king(jnp.arange(81))[::-1]
+    is_checking = can_capture_king(ALL_SQ)[::-1]
     return jnp.nonzero(is_checking, size=2, fill_value=-1)[0]
 
 
@@ -521,7 +522,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
             return can_move & ~has_obstacles
 
         effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(
-            jnp.arange(81), jnp.arange(81)
+            ALL_SQ, ALL_SQ
         )
         mine = (PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN)
         return jnp.where(mine.reshape(81, 1), effects, FALSE)
