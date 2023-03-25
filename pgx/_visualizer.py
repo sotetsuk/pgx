@@ -412,7 +412,7 @@ class Visualizer:
                     "lightgray",
                     "#1e1e1e",
                     "lightgray",
-                    "",
+                    "lightgray",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -599,7 +599,7 @@ class Visualizer:
             )
         elif isinstance(_states, KhunPokerState):
             return KhunPokerState(
-                cards == _states.cards[_i],
+                cards=_states.cards[_i],
             )
         elif isinstance(_states, OthelloState):
             return OthelloState(
