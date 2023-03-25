@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx._leduc_holdem import LeducHoldem, CALL, RAISE, FOLD, TRUE, FALSE
+from pgx.leduc_holdem import LeducHoldem, CALL, RAISE, FOLD, TRUE
 
 env = LeducHoldem()
 init = jax.jit(env.init)
@@ -172,8 +172,8 @@ def test_random_play():
             done = state.terminated
 
 
-# def test_api():
-#    import pgx
-#
-#    env = pgx.make("leduc_holdem")
-#    pgx.api_test(env, 10)
+def test_api():
+    import pgx
+
+    env = pgx.make("leduc_holdem")
+    pgx.api_test(env, 10)
