@@ -306,7 +306,6 @@ def _legal_action_mask(state: State):
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
-
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
     flipped_to = 80 - to
@@ -314,14 +313,13 @@ def _legal_action_mask(state: State):
         lambda f: jax.vmap(
             partial(_is_legal_move, from_=f, to=flipped_to, state=flip_state)
         )(is_promotion=jnp.bool_([False, True])).any()
-    )(ALL_SQ).any()
+    )(CAN_MOVE_ANY[flipped_to]).any()
     from_ = 80 - opp_king_pos
     can_king_escape = jax.vmap(
         partial(_is_legal_move, from_=from_, is_promotion=FALSE, state=flip_state)
     )(to=_around(from_)).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
-
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     has_no_pawn = state.hand[0, PAWN] <= 0
     is_occupied = state.piece_board[to] != EMPTY
