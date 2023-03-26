@@ -290,11 +290,7 @@ def _legal_action_mask(state: State):
         return jax.lax.cond(
             a.is_drop,
             lambda: _is_legal_drop(a.piece, a.to, state),
-            lambda: jax.lax.cond(
-                a.from_ < 0,  # a is invalid. All LEGAL_FROM_IDX == -1
-                lambda: FALSE,
-                lambda: _is_legal_move(a.from_, a.to, a.is_promotion, state),
-            ),
+            lambda: _is_legal_move(a.from_, a.to, a.is_promotion, state),
         )
 
     legal_action_mask = is_legal(jnp.arange(27 * 81))
@@ -350,16 +346,15 @@ def _is_legal_move(
     state: State,
 ):
     ok = _is_pseudo_legal_move(from_, to, is_promotion, state)
-    piece = state.piece_board[from_]
-    is_illegal = _is_checked(
+    ok &= ~_is_checked(
         state.replace(  # type: ignore
             piece_board=state.piece_board.at[from_]
             .set(EMPTY)
             .at[to]
-            .set(piece)
+            .set(state.piece_board[from_])
         )
     )
-    return ok & ~is_illegal
+    return ok
 
 
 def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
@@ -388,7 +383,7 @@ def _is_pseudo_legal_move(
     board = state.piece_board
     # source is not my piece
     piece = board[from_]
-    is_illegal = ~((PAWN <= piece) & (piece < OPP_PAWN))
+    is_illegal = (from_ < 0) | ~((PAWN <= piece) & (piece < OPP_PAWN))
     # destination is my piece
     is_illegal |= (PAWN <= board[to]) & (board[to] < OPP_PAWN)
     # piece cannot move like that
