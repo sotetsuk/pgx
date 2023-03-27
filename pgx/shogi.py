@@ -296,7 +296,6 @@ def _legal_action_mask(state: State):
     def is_legal_drop(i):
         return _is_legal_drop(a.piece[i], a.to[i], state)
 
-
     legal_moves = is_legal_move_wo_pro(jnp.arange(10 * 81))
 
     @jax.vmap
@@ -310,8 +309,8 @@ def _legal_action_mask(state: State):
 
     legal_action_mask = jnp.hstack(
         (
-           is_legal_move(jnp.arange(20 * 81)),
-           is_legal_drop(jnp.arange(20 * 81, 27 * 81))
+            is_legal_move(jnp.arange(20 * 81)),
+            is_legal_drop(jnp.arange(20 * 81, 27 * 81)),
         )
     )  # (27 * 81)
 
