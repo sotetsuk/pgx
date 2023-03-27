@@ -288,15 +288,22 @@ def _legal_action_mask(state: State):
     def is_legal_move(action):
         a = Action._from_dlshogi_action(state, action)
         return _is_legal_move(a.from_, a.to, a.is_promotion, state)
+
     @jax.vmap
     def is_legal_drop(action):
         a = Action._from_dlshogi_action(state, action)
         return _is_legal_drop(a.piece, a.to, state)
 
     legal_action_mask = jnp.zeros_like(state.legal_action_mask)
-    legal_action_mask = legal_action_mask.at[:10 * 81].set(is_legal_move(jnp.arange(10 * 81)))
-    legal_action_mask = legal_action_mask.at[10 * 81:20 * 81].set(is_legal_move(jnp.arange(10 * 81, 20 * 81)))
-    legal_action_mask = legal_action_mask.at[20 * 81:].set(is_legal_drop(jnp.arange(20 * 81, 27 * 81)))
+    legal_action_mask = legal_action_mask.at[: 10 * 81].set(
+        is_legal_move(jnp.arange(10 * 81))
+    )
+    legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
+        is_legal_move(jnp.arange(10 * 81, 20 * 81))
+    )
+    legal_action_mask = legal_action_mask.at[20 * 81 :].set(
+        is_legal_drop(jnp.arange(20 * 81, 27 * 81))
+    )
 
     # check pawn drop mate
     direction = 20  # drop pawn
