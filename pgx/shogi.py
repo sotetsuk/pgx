@@ -420,7 +420,7 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king(from_):
-        return (from_ >= 0) & jax.vmap(
+        return jax.vmap(
             partial(
                 _is_pseudo_legal_move,
                 from_=from_,
