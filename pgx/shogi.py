@@ -309,13 +309,15 @@ def _legal_action_mask(state: State):
         is_legal_move(jnp.arange(10 * 81))
     )
     legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
-        legal_action_mask[:10 * 81]
+        legal_action_mask[: 10 * 81]
     )
     legal_action_mask = legal_action_mask.at[: 10 * 81].set(
-        legal_action_mask[: 10 * 81] & is_no_promotion_legal(jnp.arange(10 * 81))
+        legal_action_mask[: 10 * 81]
+        & is_no_promotion_legal(jnp.arange(10 * 81))
     )
     legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
-        legal_action_mask[10 * 81 : 20 * 81] & is_promotion_legal(jnp.arange(10 * 81, 20 * 81))
+        legal_action_mask[10 * 81 : 20 * 81]
+        & is_promotion_legal(jnp.arange(10 * 81, 20 * 81))
     )
     legal_action_mask = legal_action_mask.at[20 * 81 :].set(
         is_legal_drop(jnp.arange(20 * 81, 27 * 81))
@@ -423,11 +425,12 @@ def _is_pseudo_legal_move_wo_obstacles(
     is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
     return ~is_illegal
 
+
 def _is_no_promotion_legal(
-        from_: jnp.ndarray,
-        to: jnp.ndarray,
-        is_promotion: jnp.ndarray,
-        state: State,
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    state: State,
 ):
     # source is not my piece
     piece = state.piece_board[from_]
@@ -436,11 +439,12 @@ def _is_no_promotion_legal(
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
     return ~is_illegal
 
+
 def _is_promotion_legal(
-        from_: jnp.ndarray,
-        to: jnp.ndarray,
-        is_promotion: jnp.ndarray,
-        state: State,
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    state: State,
 ):
     # source is not my piece
     piece = state.piece_board[from_]
