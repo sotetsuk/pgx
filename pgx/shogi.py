@@ -297,7 +297,7 @@ def _legal_action_mask(state: State):
 
     # check pawn drop mate
     direction = 20  # drop pawn
-    opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
+    opp_king_pos = jnp.argmin(jnp.abs(state.piece_board - OPP_KING))
     to = opp_king_pos + 1
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
@@ -415,7 +415,7 @@ def _is_pseudo_legal_move(
 
 
 def _is_checked(state):
-    king_pos = jnp.nonzero(state.piece_board == KING, size=1)[0][0]
+    king_pos = jnp.argmin(jnp.abs(state.piece_board - KING))
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
