@@ -310,7 +310,7 @@ def _legal_action_mask(state: State):
 
     @jax.vmap
     def is_legal_drop(i):
-        return pseudo_legal_drops[i % 81] & _is_legal_drop(a.piece[i], a.to[i], state)
+        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(a.piece[i], a.to[i], state)
 
     legal_action_mask = jnp.hstack(
         (
@@ -361,6 +361,20 @@ def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
     return ok
 
 
+def _is_legal_drop_wo_ignoring_check(piece: jnp.ndarray, to: jnp.ndarray, state: State):
+    is_illegal = state.piece_board[to] != EMPTY
+    # don't have the piece
+    is_illegal |= state.hand[0, piece] <= 0
+    # double pawn
+    is_illegal |= (piece == PAWN) & (
+        (state.piece_board == PAWN).reshape(9, 9).sum(axis=1) > 0
+    )[to // 9]
+    # get stuck
+    is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
+    is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
+    return ~is_illegal
+
+
 def _is_legal_move_wo_pro(
     from_: jnp.ndarray,
     to: jnp.ndarray,
@@ -376,21 +390,6 @@ def _is_legal_move_wo_pro(
         )
     )
     return ok
-
-
-def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
-    # destination is not empty
-    is_illegal = state.piece_board[to] != EMPTY
-    # don't have the piece
-    is_illegal |= state.hand[0, piece] <= 0
-    # double pawn
-    is_illegal |= (piece == PAWN) & (
-        (state.piece_board == PAWN).reshape(9, 9).sum(axis=1) > 0
-    )[to // 9]
-    # get stuck
-    is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
-    is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
-    return ~is_illegal
 
 
 def _is_pseudo_legal_move_wo_obstacles(
