@@ -80,6 +80,8 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    # cache
+    king_pos: jnp.ndarray = jnp.int8([44, 36])
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -89,7 +91,10 @@ class State(core.State):
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         # fmt: on
-        return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+        my_king_pos = jnp.nonzero(state.piece_board == KING, size=1)[0][0]
+        opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
+        king_pos = jnp.int8([my_king_pos, opp_king_pos])
+        return state.replace(legal_action_mask=_legal_action_mask(state), king_pos=king_pos)  # type: ignore
 
     @staticmethod
     def _from_sfen(sfen):
@@ -271,8 +276,11 @@ def _step_move(state: State, action: Action) -> State:
     piece = jax.lax.select(action.is_promotion, action.piece + 8, action.piece)
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
+    # if king move, also moves the cache
+    my_king_pos = jax.lax.select(action.piece == KING, action.to, state.king_pos[0])
+    king_pos = state.king_pos.at[0].set(my_king_pos)
     # apply piece moves
-    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+    return state.replace(piece_board=pb, hand=hand, king_pos=king_pos)  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
@@ -297,7 +305,7 @@ def _legal_action_mask(state: State):
 
     # check pawn drop mate
     direction = 20  # drop pawn
-    opp_king_pos = jnp.nonzero(state.piece_board == OPP_KING, size=1)[0][0]
+    opp_king_pos = state.king_pos[1]
     to = opp_king_pos + 1
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
@@ -415,7 +423,7 @@ def _is_pseudo_legal_move(
 
 
 def _is_checked(state):
-    king_pos = jnp.nonzero(state.piece_board == KING, size=1)[0][0]
+    king_pos = state.king_pos[0]
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
@@ -448,7 +456,8 @@ def _flip(state):
     pb = pb[::-1]
     return state.replace(  # type: ignore
         piece_board=pb,
-        hand=state.hand[jnp.int8((1, 0))],
+        hand=state.hand[::-1],
+        king_pos=state.king_pos[::-1]
     )
 
 
