@@ -379,7 +379,6 @@ def _is_legal_move_wo_pro(
 
 
 def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
-    """自殺手を無視した合法手"""
     # destination is not empty
     is_illegal = state.piece_board[to] != EMPTY
     # don't have the piece
@@ -399,7 +398,6 @@ def _is_pseudo_legal_move_wo_obstacles(
     to: jnp.ndarray,
     state: State,
 ):
-    """自殺手を無視した合法手"""
     board = state.piece_board
     # source is not my piece
     piece = board[from_]
@@ -409,6 +407,21 @@ def _is_pseudo_legal_move_wo_obstacles(
     # piece cannot move like that
     is_illegal |= ~CAN_MOVE[piece, from_, to]
     return ~is_illegal
+
+
+def _is_pseudo_legal_move(
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    state: State,
+):
+    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
+    # there is an obstacle between from_ and to
+    i = _major_piece_ix(state.piece_board[from_])
+    between_ix = BETWEEN_IX[i, from_, to, :]
+    is_illegal = (i >= 0) & (
+        (between_ix >= 0) & (state.piece_board[between_ix] != EMPTY)
+    ).any()
+    return ok & ~is_illegal
 
 
 def _is_no_promotion_legal(
@@ -435,21 +448,6 @@ def _is_promotion_legal(
     is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
     is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
     return ~is_illegal
-
-
-def _is_pseudo_legal_move(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
-    state: State,
-):
-    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
-    # there is an obstacle between from_ and to
-    i = _major_piece_ix(state.piece_board[from_])
-    between_ix = BETWEEN_IX[i, from_, to, :]
-    is_illegal = (i >= 0) & (
-        (between_ix >= 0) & (state.piece_board[between_ix] != EMPTY)
-    ).any()
-    return ok & ~is_illegal
 
 
 def _is_checked(state):
