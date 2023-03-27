@@ -321,8 +321,20 @@ def _legal_action_mask(state: State):
         )
     )  # (27 * 81)
 
+    # check drop pawn mate
+    is_drop_pawn_mate, to = _is_drop_pawn_mate(state)
+    direction = 20
+    can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
+    can_drop_pawn &= ~is_drop_pawn_mate
+    legal_action_mask = legal_action_mask.at[direction * 81 + to].set(
+        can_drop_pawn
+    )
+
+    return legal_action_mask
+
+
+def _is_drop_pawn_mate(state: State):
     # check pawn drop mate
-    direction = 20  # drop pawn
     opp_king_pos = jnp.argmin(jnp.abs(state.piece_board - OPP_KING))
     to = opp_king_pos + 1
     flip_state = _flip(
@@ -340,14 +352,7 @@ def _legal_action_mask(state: State):
     )(to=_around(from_)).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
-    can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
-    has_no_pawn = state.hand[0, PAWN] <= 0
-    is_occupied = state.piece_board[to] != EMPTY
-    can_drop_pawn &= (
-        ~(has_no_pawn | is_occupied | (to % 9 == 0)) & ~is_pawn_mate
-    )
-
-    return legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
+    return is_pawn_mate, to
 
 
 def _around(x):
