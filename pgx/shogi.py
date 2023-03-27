@@ -397,6 +397,7 @@ def _is_pseudo_legal_move_wo_obstacles(
     is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
     return ~is_illegal
 
+
 def _is_pseudo_legal_move(
     from_: jnp.ndarray,
     to: jnp.ndarray,
