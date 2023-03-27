@@ -213,7 +213,7 @@ class Action:
             & (PAWN <= from_cand)
             & (from_cand < OPP_PAWN)
         )
-        i = jnp.nonzero(mask, size=1)[0][0]
+        i = jnp.argmax(mask)
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
         piece = jax.lax.select(
             is_drop, direction - 20, state.piece_board[from_]
