@@ -284,22 +284,36 @@ def _step_drop(state: State, action: Action) -> State:
 
 
 def _legal_action_mask(state: State):
-    @jax.vmap
-    def is_legal_move(action):
-        a = Action._from_dlshogi_action(state, action)
-        return _is_legal_move(a.from_, a.to, a.is_promotion, state)
+    actions = jax.vmap(partial(Action._from_dlshogi_action, state=state))(action=jnp.arange(27 * 81))
 
     @jax.vmap
-    def is_legal_drop(action):
-        a = Action._from_dlshogi_action(state, action)
-        return _is_legal_drop(a.piece, a.to, state)
+    def is_legal_move(i):
+        return _is_legal_move(actions.from_[i], actions.to[i], actions.is_promotion[i], state)
+
+    @jax.vmap
+    def is_legal_drop(i):
+        return _is_legal_drop(actions.piece[i], actions.to[i], state)
+
+    @jax.vmap
+    def is_no_promotion_legal(i):
+        return _is_no_promotion_legal(actions.from_[i], actions.to[i], actions.is_promotion[i], state)
+
+    @jax.vmap
+    def is_promotion_legal(i):
+        return _is_promotion_legal(actions.from_[i], actions.to[i], actions.is_promotion[i], state)
 
     legal_action_mask = jnp.zeros_like(state.legal_action_mask)
     legal_action_mask = legal_action_mask.at[: 10 * 81].set(
         is_legal_move(jnp.arange(10 * 81))
     )
     legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
-        is_legal_move(jnp.arange(10 * 81, 20 * 81))
+        legal_action_mask[:10 * 81]
+    )
+    legal_action_mask = legal_action_mask.at[: 10 * 81].set(
+        legal_action_mask[: 10 * 81] & is_no_promotion_legal(jnp.arange(10 * 81))
+    )
+    legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
+        legal_action_mask[10 * 81 : 20 * 81] & is_promotion_legal(jnp.arange(10 * 81, 20 * 81))
     )
     legal_action_mask = legal_action_mask.at[20 * 81 :].set(
         is_legal_drop(jnp.arange(20 * 81, 27 * 81))
@@ -405,6 +419,31 @@ def _is_pseudo_legal_move_wo_obstacles(
         ~is_promotion & ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     )  # 必ず成る
     is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
+    return ~is_illegal
+
+def _is_no_promotion_legal(
+        from_: jnp.ndarray,
+        to: jnp.ndarray,
+        is_promotion: jnp.ndarray,
+        state: State,
+):
+    # source is not my piece
+    piece = state.piece_board[from_]
+    # promotion
+    is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # 必ず成る
+    is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
+
+def _is_promotion_legal(
+        from_: jnp.ndarray,
+        to: jnp.ndarray,
+        is_promotion: jnp.ndarray,
+        state: State,
+):
+    # source is not my piece
+    piece = state.piece_board[from_]
+    # promotion
+    is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
+    is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
     return ~is_illegal
 
 
