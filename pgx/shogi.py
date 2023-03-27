@@ -354,11 +354,11 @@ def _around(x):
 
 
 def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
-    ok = state.piece_board[to] == EMPTY
-    ok &= ~_is_checked(
+    is_illegal = state.piece_board[to] != EMPTY
+    is_illegal |= _is_checked(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
-    return ok
+    return ~is_illegal
 
 
 def _is_legal_drop_wo_ignoring_check(piece: jnp.ndarray, to: jnp.ndarray, state: State):
