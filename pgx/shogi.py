@@ -373,7 +373,7 @@ def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
     return ~is_illegal
 
 
-def _is_pseudo_legal_move(
+def _is_pseudo_legal_move_wo_obstacles(
     from_: jnp.ndarray,
     to: jnp.ndarray,
     is_promotion: jnp.ndarray,
@@ -388,12 +388,6 @@ def _is_pseudo_legal_move(
     is_illegal |= (PAWN <= board[to]) & (board[to] < OPP_PAWN)
     # piece cannot move like that
     is_illegal |= ~CAN_MOVE[piece, from_, to]
-    # there is an obstacle between from_ and to
-    i = _major_piece_ix(piece)
-    between_ix = BETWEEN_IX[i, from_, to, :]
-    is_illegal |= (i >= 0) & (
-        (between_ix >= 0) & (board[between_ix] != EMPTY)
-    ).any()
     # promotion
     is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
     is_illegal |= is_promotion & (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
@@ -402,6 +396,22 @@ def _is_pseudo_legal_move(
     )  # 必ず成る
     is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
     return ~is_illegal
+
+
+def _is_pseudo_legal_move(
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    is_promotion: jnp.ndarray,
+    state: State,
+):
+    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, is_promotion, state)
+    # there is an obstacle between from_ and to
+    i = _major_piece_ix(state.piece_board[from_])
+    between_ix = BETWEEN_IX[i, from_, to, :]
+    is_illegal = (i >= 0) & (
+        (between_ix >= 0) & (state.piece_board[between_ix] != EMPTY)
+    ).any()
+    return ok & ~is_illegal
 
 
 def _is_checked(state):
