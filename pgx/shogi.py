@@ -286,22 +286,22 @@ def _step_drop(state: State, action: Action) -> State:
 def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal_move(action):
-        a = Action._from_dlshogi_action(state=state, action=action)
+        a = Action._from_dlshogi_action(state, action)
         return _is_legal_move(a.from_, a.to, a.is_promotion, state)
 
     @jax.vmap
     def is_legal_drop(action):
-        a = Action._from_dlshogi_action(state=state, action=action)
+        a = Action._from_dlshogi_action(state, action)
         return _is_legal_drop(a.piece, a.to, state)
 
     @jax.vmap
     def is_no_promotion_legal(action):
-        a = Action._from_dlshogi_action(state=state, action=action)
+        a = Action._from_dlshogi_action(state, action)
         return _is_no_promotion_legal(a.from_, a.to, a.is_promotion, state)
 
     @jax.vmap
     def is_promotion_legal(action):
-        a = Action._from_dlshogi_action(state=state, action=action)
+        a = Action._from_dlshogi_action(state, action)
         return _is_promotion_legal(a.from_, a.to, a.is_promotion, state)
 
     legal_action_mask = jnp.zeros_like(state.legal_action_mask)
