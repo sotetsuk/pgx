@@ -290,7 +290,7 @@ def _legal_action_mask(state: State):
 
     @jax.vmap
     def is_legal_move_wo_pro(i):
-        return _is_legal_move(a.from_[i], a.to[i], state)
+        return _is_legal_move_wo_pro(a.from_[i], a.to[i], state)
 
     @jax.vmap
     def is_legal_drop_wo_piece(to):
@@ -330,11 +330,11 @@ def _legal_action_mask(state: State):
     # fmt: off
     flipped_to = 80 - to
     can_capture_pawn = jax.vmap(partial(
-        _is_legal_move, to=flipped_to, state=flip_state
+        _is_legal_move_wo_pro, to=flipped_to, state=flip_state
     ))(from_=CAN_MOVE_ANY[flipped_to]).any()
     from_ = 80 - opp_king_pos
     can_king_escape = jax.vmap(
-        partial(_is_legal_move, from_=from_, state=flip_state)
+        partial(_is_legal_move_wo_pro, from_=from_, state=flip_state)
     )(to=_around(from_)).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
@@ -361,7 +361,7 @@ def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
     return ok
 
 
-def _is_legal_move(
+def _is_legal_move_wo_pro(
     from_: jnp.ndarray,
     to: jnp.ndarray,
     state: State,
