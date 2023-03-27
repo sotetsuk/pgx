@@ -310,7 +310,9 @@ def _legal_action_mask(state: State):
 
     @jax.vmap
     def is_legal_drop(i):
-        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(a.piece[i], a.to[i], state)
+        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(
+            a.piece[i], a.to[i], state
+        )
 
     legal_action_mask = jnp.hstack(
         (
@@ -361,7 +363,9 @@ def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
     return ~is_illegal
 
 
-def _is_legal_drop_wo_ignoring_check(piece: jnp.ndarray, to: jnp.ndarray, state: State):
+def _is_legal_drop_wo_ignoring_check(
+    piece: jnp.ndarray, to: jnp.ndarray, state: State
+):
     is_illegal = state.piece_board[to] != EMPTY
     # don't have the piece
     is_illegal |= state.hand[0, piece] <= 0
