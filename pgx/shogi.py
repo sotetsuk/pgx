@@ -293,19 +293,24 @@ def _legal_action_mask(state: State):
         return _is_legal_move(a.from_[i], a.to[i], state)
 
     @jax.vmap
-    def is_legal_drop(i):
-        return _is_legal_drop(a.piece[i], a.to[i], state)
+    def is_legal_drop_wo_piece(to):
+        return _is_legal_drop_wo_piece(to, state)
 
     legal_moves = is_legal_move_wo_pro(jnp.arange(10 * 81))
+    legal_drops = is_legal_drop_wo_piece(jnp.arange(81))
 
     @jax.vmap
     def is_legal_move(i):
         return legal_moves[i] & jax.lax.cond(
             a.is_promotion[i],
-            _is_no_promotion_legal,
+            _is_promotion_legal,
             _is_no_promotion_legal,
             *(a.from_[i], a.to[i], state)
         )
+
+    @jax.vmap
+    def is_legal_drop(i):
+        return legal_drops[i % 81] & _is_legal_drop(a.piece[i], a.to[i], state)
 
     legal_action_mask = jnp.hstack(
         (
@@ -348,10 +353,10 @@ def _around(x):
     return jnp.where((y < 0) | (y >= 81), -1, y)
 
 
-def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
-    ok = _is_pseudo_legal_drop(piece, to, state)
+def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
+    ok = state.piece_board[to] == EMPTY
     ok &= ~_is_checked(
-        state.replace(piece_board=state.piece_board.at[to].set(piece))  # type: ignore
+        state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
     return ok
 
@@ -373,7 +378,7 @@ def _is_legal_move(
     return ok
 
 
-def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
+def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
     """自殺手を無視した合法手"""
     # destination is not empty
     is_illegal = state.piece_board[to] != EMPTY
