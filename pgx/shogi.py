@@ -72,7 +72,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(81 * 81, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -285,15 +285,18 @@ def _step_drop(state: State, action: Action) -> State:
 
 def _legal_action_mask(state: State):
     @jax.vmap
-    def is_legal(action):
+    def is_legal_move(action):
         a = Action._from_dlshogi_action(state, action)
-        return jax.lax.cond(
-            a.is_drop,
-            lambda: _is_legal_drop(a.piece, a.to, state),
-            lambda: _is_legal_move(a.from_, a.to, a.is_promotion, state),
-        )
+        return _is_legal_move(a.from_, a.to, a.is_promotion, state)
+    @jax.vmap
+    def is_legal_drop(action):
+        a = Action._from_dlshogi_action(state, action)
+        return _is_legal_drop(a.piece, a.to, state)
 
-    legal_action_mask = is_legal(jnp.arange(27 * 81))
+    legal_action_mask = jnp.zeros_like(state.legal_action_mask)
+    legal_action_mask = legal_action_mask.at[:10 * 81].set(is_legal_move(jnp.arange(10 * 81)))
+    legal_action_mask = legal_action_mask.at[10 * 81:20 * 81].set(is_legal_move(jnp.arange(10 * 81, 20 * 81)))
+    legal_action_mask = legal_action_mask.at[20 * 81:].set(is_legal_drop(jnp.arange(20 * 81, 27 * 81)))
 
     # check pawn drop mate
     direction = 20  # drop pawn
