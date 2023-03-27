@@ -289,39 +289,31 @@ def _legal_action_mask(state: State):
     )
 
     @jax.vmap
-    def is_legal_move(i):
+    def is_legal_move_wo_pro(i):
         return _is_legal_move(a.from_[i], a.to[i], state)
 
     @jax.vmap
     def is_legal_drop(i):
         return _is_legal_drop(a.piece[i], a.to[i], state)
 
-    @jax.vmap
-    def is_no_promotion_legal(i):
-        return _is_no_promotion_legal(a.from_[i], a.to[i], state)
+
+    legal_moves = is_legal_move_wo_pro(jnp.arange(10 * 81))
 
     @jax.vmap
-    def is_promotion_legal(i):
-        return _is_promotion_legal(a.from_[i], a.to[i], state)
+    def is_legal_move(i):
+        return legal_moves[i] & jax.lax.cond(
+            a.is_promotion[i],
+            _is_no_promotion_legal,
+            _is_no_promotion_legal,
+            *(a.from_[i], a.to[i], state)
+        )
 
-    legal_action_mask = jnp.zeros_like(state.legal_action_mask)
-    legal_action_mask = legal_action_mask.at[: 10 * 81].set(
-        is_legal_move(jnp.arange(10 * 81))
-    )
-    legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
-        legal_action_mask[: 10 * 81]
-    )
-    legal_action_mask = legal_action_mask.at[: 10 * 81].set(
-        legal_action_mask[: 10 * 81]
-        & is_no_promotion_legal(jnp.arange(10 * 81))
-    )
-    legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
-        legal_action_mask[10 * 81 : 20 * 81]
-        & is_promotion_legal(jnp.arange(10 * 81, 20 * 81))
-    )
-    legal_action_mask = legal_action_mask.at[20 * 81 :].set(
-        is_legal_drop(jnp.arange(20 * 81, 27 * 81))
-    )
+    legal_action_mask = jnp.hstack(
+        (
+           is_legal_move(jnp.arange(20 * 81)),
+           is_legal_drop(jnp.arange(20 * 81, 27 * 81))
+        )
+    )  # (27 * 81)
 
     # check pawn drop mate
     direction = 20  # drop pawn
