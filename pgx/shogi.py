@@ -284,26 +284,42 @@ def _step_drop(state: State, action: Action) -> State:
 
 
 def _legal_action_mask(state: State):
-    @jax.vmap
-    def is_legal_move(action):
-        a = Action._from_dlshogi_action(state, action)
-        return _is_legal_move(a.from_, a.to, a.is_promotion, state)
+    a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(
+        action=jnp.arange(27 * 81)
+    )
 
     @jax.vmap
-    def is_legal_drop(action):
-        a = Action._from_dlshogi_action(state, action)
-        return _is_legal_drop(a.piece, a.to, state)
+    def is_legal_move_wo_pro(i):
+        return _is_legal_move_wo_pro(a.from_[i], a.to[i], state)
 
-    legal_action_mask = jnp.zeros_like(state.legal_action_mask)
-    legal_action_mask = legal_action_mask.at[: 10 * 81].set(
-        is_legal_move(jnp.arange(10 * 81))
-    )
-    legal_action_mask = legal_action_mask.at[10 * 81 : 20 * 81].set(
-        is_legal_move(jnp.arange(10 * 81, 20 * 81))
-    )
-    legal_action_mask = legal_action_mask.at[20 * 81 :].set(
-        is_legal_drop(jnp.arange(20 * 81, 27 * 81))
-    )
+    @jax.vmap
+    def is_legal_drop_wo_piece(to):
+        return _is_legal_drop_wo_piece(to, state)
+
+    pseudo_legal_moves = is_legal_move_wo_pro(jnp.arange(10 * 81))
+    pseudo_legal_drops = is_legal_drop_wo_piece(jnp.arange(81))
+
+    @jax.vmap
+    def is_legal_move(i):
+        return pseudo_legal_moves[i % (10 * 81)] & jax.lax.cond(
+            a.is_promotion[i],
+            _is_promotion_legal,
+            _is_no_promotion_legal,
+            *(a.from_[i], a.to[i], state)
+        )
+
+    @jax.vmap
+    def is_legal_drop(i):
+        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(
+            a.piece[i], a.to[i], state
+        )
+
+    legal_action_mask = jnp.hstack(
+        (
+            is_legal_move(jnp.arange(20 * 81)),
+            is_legal_drop(jnp.arange(20 * 81, 27 * 81)),
+        )
+    )  # (27 * 81)
 
     # check pawn drop mate
     direction = 20  # drop pawn
@@ -315,14 +331,12 @@ def _legal_action_mask(state: State):
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
     flipped_to = 80 - to
-    can_capture_pawn = jax.vmap(
-        lambda f: jax.vmap(
-            partial(_is_legal_move, from_=f, to=flipped_to, state=flip_state)
-        )(is_promotion=jnp.bool_([False, True])).any()
-    )(CAN_MOVE_ANY[flipped_to]).any()
+    can_capture_pawn = jax.vmap(partial(
+        _is_legal_move_wo_pro, to=flipped_to, state=flip_state
+    ))(from_=CAN_MOVE_ANY[flipped_to]).any()
     from_ = 80 - opp_king_pos
     can_king_escape = jax.vmap(
-        partial(_is_legal_move, from_=from_, is_promotion=FALSE, state=flip_state)
+        partial(_is_legal_move_wo_pro, from_=from_, state=flip_state)
     )(to=_around(from_)).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
@@ -341,35 +355,17 @@ def _around(x):
     return jnp.where((y < 0) | (y >= 81), -1, y)
 
 
-def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
-    ok = _is_pseudo_legal_drop(piece, to, state)
-    ok &= ~_is_checked(
-        state.replace(piece_board=state.piece_board.at[to].set(piece))  # type: ignore
+def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
+    is_illegal = state.piece_board[to] != EMPTY
+    is_illegal |= _is_checked(
+        state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
-    return ok
+    return ~is_illegal
 
 
-def _is_legal_move(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
-    state: State,
+def _is_legal_drop_wo_ignoring_check(
+    piece: jnp.ndarray, to: jnp.ndarray, state: State
 ):
-    ok = _is_pseudo_legal_move(from_, to, is_promotion, state)
-    ok &= ~_is_checked(
-        state.replace(  # type: ignore
-            piece_board=state.piece_board.at[from_]
-            .set(EMPTY)
-            .at[to]
-            .set(state.piece_board[from_])
-        )
-    )
-    return ok
-
-
-def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
-    """自殺手を無視した合法手"""
-    # destination is not empty
     is_illegal = state.piece_board[to] != EMPTY
     # don't have the piece
     is_illegal |= state.hand[0, piece] <= 0
@@ -383,38 +379,29 @@ def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
     return ~is_illegal
 
 
-def _is_pseudo_legal_move_wo_obstacles(
+def _is_legal_move_wo_pro(
     from_: jnp.ndarray,
     to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
     state: State,
 ):
-    """自殺手を無視した合法手"""
-    board = state.piece_board
-    # source is not my piece
-    piece = board[from_]
-    is_illegal = (from_ < 0) | ~((PAWN <= piece) & (piece < OPP_PAWN))
-    # destination is my piece
-    is_illegal |= (PAWN <= board[to]) & (board[to] < OPP_PAWN)
-    # piece cannot move like that
-    is_illegal |= ~CAN_MOVE[piece, from_, to]
-    # promotion
-    is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
-    is_illegal |= is_promotion & (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
-    is_illegal |= (
-        ~is_promotion & ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
-    )  # 必ず成る
-    is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
-    return ~is_illegal
+    ok = _is_pseudo_legal_move(from_, to, state)
+    ok &= ~_is_checked(
+        state.replace(  # type: ignore
+            piece_board=state.piece_board.at[from_]
+            .set(EMPTY)
+            .at[to]
+            .set(state.piece_board[from_])
+        )
+    )
+    return ok
 
 
 def _is_pseudo_legal_move(
     from_: jnp.ndarray,
     to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
     state: State,
 ):
-    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, is_promotion, state)
+    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
     # there is an obstacle between from_ and to
     i = _major_piece_ix(state.piece_board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
@@ -424,20 +411,57 @@ def _is_pseudo_legal_move(
     return ok & ~is_illegal
 
 
+def _is_pseudo_legal_move_wo_obstacles(
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    state: State,
+):
+    board = state.piece_board
+    # source is not my piece
+    piece = board[from_]
+    is_illegal = (from_ < 0) | ~((PAWN <= piece) & (piece < OPP_PAWN))
+    # destination is my piece
+    is_illegal |= (PAWN <= board[to]) & (board[to] < OPP_PAWN)
+    # piece cannot move like that
+    is_illegal |= ~CAN_MOVE[piece, from_, to]
+    return ~is_illegal
+
+
+def _is_no_promotion_legal(
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    state: State,
+):
+    # source is not my piece
+    piece = state.piece_board[from_]
+    # promotion
+    is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # 必ず成る
+    is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
+    return ~is_illegal
+
+
+def _is_promotion_legal(
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    state: State,
+):
+    # source is not my piece
+    piece = state.piece_board[from_]
+    # promotion
+    is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
+    is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
+    return ~is_illegal
+
+
 def _is_checked(state):
     king_pos = jnp.argmin(jnp.abs(state.piece_board - KING))
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
     def can_capture_king(from_):
-        return jax.vmap(
-            partial(
-                _is_pseudo_legal_move,
-                from_=from_,
-                to=flipped_king_pos,
-                state=_flip(state),
-            )
-        )(is_promotion=jnp.bool_([False, True])).any()
+        return _is_pseudo_legal_move(
+            from_=from_, to=flipped_king_pos, state=_flip(state)
+        )
 
     from_ = CAN_MOVE_ANY[flipped_king_pos]
     return can_capture_king(from_).any()
