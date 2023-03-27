@@ -392,6 +392,21 @@ def _is_legal_move_wo_pro(
     return ok
 
 
+def _is_pseudo_legal_move(
+    from_: jnp.ndarray,
+    to: jnp.ndarray,
+    state: State,
+):
+    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
+    # there is an obstacle between from_ and to
+    i = _major_piece_ix(state.piece_board[from_])
+    between_ix = BETWEEN_IX[i, from_, to, :]
+    is_illegal = (i >= 0) & (
+        (between_ix >= 0) & (state.piece_board[between_ix] != EMPTY)
+    ).any()
+    return ok & ~is_illegal
+
+
 def _is_pseudo_legal_move_wo_obstacles(
     from_: jnp.ndarray,
     to: jnp.ndarray,
@@ -406,21 +421,6 @@ def _is_pseudo_legal_move_wo_obstacles(
     # piece cannot move like that
     is_illegal |= ~CAN_MOVE[piece, from_, to]
     return ~is_illegal
-
-
-def _is_pseudo_legal_move(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
-    state: State,
-):
-    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
-    # there is an obstacle between from_ and to
-    i = _major_piece_ix(state.piece_board[from_])
-    between_ix = BETWEEN_IX[i, from_, to, :]
-    is_illegal = (i >= 0) & (
-        (between_ix >= 0) & (state.piece_board[between_ix] != EMPTY)
-    ).any()
-    return ok & ~is_illegal
 
 
 def _is_no_promotion_legal(
