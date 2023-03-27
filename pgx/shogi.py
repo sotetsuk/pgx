@@ -287,7 +287,7 @@ def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal_move(action):
         a = Action._from_dlshogi_action(state, action)
-        return _is_legal_move(a.from_, a.to, a.is_promotion, state)
+        return _is_legal_move(a.from_, a.to, state)
 
     @jax.vmap
     def is_legal_drop(action):
@@ -297,12 +297,12 @@ def _legal_action_mask(state: State):
     @jax.vmap
     def is_no_promotion_legal(action):
         a = Action._from_dlshogi_action(state, action)
-        return _is_no_promotion_legal(a.from_, a.to, a.is_promotion, state)
+        return _is_no_promotion_legal(a.from_, a.to, state)
 
     @jax.vmap
     def is_promotion_legal(action):
         a = Action._from_dlshogi_action(state, action)
-        return _is_promotion_legal(a.from_, a.to, a.is_promotion, state)
+        return _is_promotion_legal(a.from_, a.to, state)
 
     legal_action_mask = jnp.zeros_like(state.legal_action_mask)
     legal_action_mask = legal_action_mask.at[: 10 * 81].set(
@@ -333,14 +333,12 @@ def _legal_action_mask(state: State):
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
     flipped_to = 80 - to
-    can_capture_pawn = jax.vmap(
-        lambda f: jax.vmap(
-            partial(_is_legal_move, from_=f, to=flipped_to, state=flip_state)
-        )(is_promotion=jnp.bool_([False, True])).any()
-    )(CAN_MOVE_ANY[flipped_to]).any()
+    can_capture_pawn = jax.vmap(partial(
+        _is_legal_move, to=flipped_to, state=flip_state
+    ))(from_=CAN_MOVE_ANY[flipped_to]).any()
     from_ = 80 - opp_king_pos
     can_king_escape = jax.vmap(
-        partial(_is_legal_move, from_=from_, is_promotion=FALSE, state=flip_state)
+        partial(_is_legal_move, from_=from_, state=flip_state)
     )(to=_around(from_)).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
@@ -370,10 +368,9 @@ def _is_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
 def _is_legal_move(
     from_: jnp.ndarray,
     to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
     state: State,
 ):
-    ok = _is_pseudo_legal_move(from_, to, is_promotion, state)
+    ok = _is_pseudo_legal_move(from_, to, state)
     ok &= ~_is_checked(
         state.replace(  # type: ignore
             piece_board=state.piece_board.at[from_]
@@ -404,7 +401,6 @@ def _is_pseudo_legal_drop(piece: jnp.ndarray, to: jnp.ndarray, state: State):
 def _is_pseudo_legal_move_wo_obstacles(
     from_: jnp.ndarray,
     to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
     state: State,
 ):
     """自殺手を無視した合法手"""
@@ -416,20 +412,12 @@ def _is_pseudo_legal_move_wo_obstacles(
     is_illegal |= (PAWN <= board[to]) & (board[to] < OPP_PAWN)
     # piece cannot move like that
     is_illegal |= ~CAN_MOVE[piece, from_, to]
-    # promotion
-    is_illegal |= is_promotion & (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
-    is_illegal |= is_promotion & (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
-    is_illegal |= (
-        ~is_promotion & ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
-    )  # 必ず成る
-    is_illegal |= (~is_promotion) & (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
     return ~is_illegal
 
 
 def _is_no_promotion_legal(
     from_: jnp.ndarray,
     to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
     state: State,
 ):
     # source is not my piece
@@ -443,7 +431,6 @@ def _is_no_promotion_legal(
 def _is_promotion_legal(
     from_: jnp.ndarray,
     to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
     state: State,
 ):
     # source is not my piece
@@ -457,10 +444,9 @@ def _is_promotion_legal(
 def _is_pseudo_legal_move(
     from_: jnp.ndarray,
     to: jnp.ndarray,
-    is_promotion: jnp.ndarray,
     state: State,
 ):
-    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, is_promotion, state)
+    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
     # there is an obstacle between from_ and to
     i = _major_piece_ix(state.piece_board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
@@ -476,14 +462,7 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king(from_):
-        return jax.vmap(
-            partial(
-                _is_pseudo_legal_move,
-                from_=from_,
-                to=flipped_king_pos,
-                state=_flip(state),
-            )
-        )(is_promotion=jnp.bool_([False, True])).any()
+        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=_flip(state))
 
     from_ = CAN_MOVE_ANY[flipped_king_pos]
     return can_capture_king(from_).any()
