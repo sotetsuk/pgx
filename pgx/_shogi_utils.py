@@ -51,11 +51,12 @@ def can_move_any_ix(from_):
         fill_value=-1,
     )[0]
 
+
 @jax.jit
 @jax.vmap
 def neighbour_ix(from_):
     return jnp.nonzero(
-        (CAN_MOVE[7, from_, :] | CAN_MOVE[2, :, from_]).any(axis=0),
+        (CAN_MOVE[7, from_, :] | CAN_MOVE[2, :, from_]),
         size=10,
         fill_value=-1,
     )[0]
