@@ -353,7 +353,9 @@ def _legal_action_mask(state: State):
 def _is_drop_pawn_mate(state: State):
     opp_king_pos = jnp.argmin(jnp.abs(state.piece_board - OPP_KING))
     to = opp_king_pos + 1
-    is_pawn_mate = (to % 9 != 0) & _is_checked(_set_cache(_flip(_step_drop(state, Action.make_drop(PAWN, to)))))
+    is_pawn_mate = (to % 9 != 0) & _is_checked(_set_cache(_flip(
+        _step_drop(state, Action.make_drop(PAWN, to))
+    )))
     return is_pawn_mate, to
 
 
