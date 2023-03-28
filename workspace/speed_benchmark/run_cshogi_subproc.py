@@ -110,13 +110,13 @@ def random_play(env: SubprocVectorEnv, n_steps_lim: int, batch_size: int):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("batch_size", type=int)
-    parser.add_argument("n_steps_lim", default=2 ** 10 * 10, type=int)
+    parser.add_argument("num_batch_steps", default=2 ** 10 * 10, type=int)
     parser.add_argument("--seed", default=100, type=bool)
     args = parser.parse_args()
     assert args.n_steps_lim % args.batch_size == 0
     env = make_env(args.batch_size)
     time_sta = time.time()
-    steps_num = random_play(env, args.n_steps_lim, args.batch_size)
+    steps_num = random_play(env, args.num_batch_steps * args.batch_size, args.batch_size)
     time_end = time.time()
     sec = time_end - time_sta
     print(json.dumps({"game": "shogi", "library": "cshogi/subproc", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))

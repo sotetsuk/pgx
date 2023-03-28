@@ -10,8 +10,7 @@ from pgx.experimental.wrappers import auto_reset
 act_randomly = jax.jit(act_randomly)
 
 
-def benchmark(env_id: pgx.EnvId, batch_size):
-    num_steps = batch_size * 1_000
+def benchmark(env_id: pgx.EnvId, batch_size, num_steps):
     num_batch_step = num_steps // batch_size
 
     env = pgx.make(env_id)
@@ -51,10 +50,11 @@ games = {
 }
 
 
+num_batch_steps = int(sys.argv[1])
 bs_list = [2 ** i for i in range(1, 11)]
 d = {}
 for game, env_id in games.items():
     for bs in bs_list:
-        num_steps, sec = benchmark(env_id, bs)
+        num_steps, sec = benchmark(env_id, bs, bs * num_batch_steps)
         print(json.dumps({"game": game, "library": "pgx",
               "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
