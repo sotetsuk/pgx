@@ -345,7 +345,16 @@ def test_api():
 def test_buggy_legal_actions():
     sfen = "9/9/9/9/9/8r/8s/9/8K w r2b4g3s4n4l18p 1"
     state = State._from_sfen(sfen)
-    assert state.legal_action_mask.sum() == 537
+    assert int(state.legal_action_mask.sum()) == 537
     dl_action = 226
+    # double_check
     state = step(state, dl_action)
-    assert state.legal_action_mask.sum() == 1
+    assert int(state.legal_action_mask.sum()) == 1
+    sfen = "9/9/9/9/9/5b3/6r2/9/8K w rb4g4s4n4l18p 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 564
+    dl_action = 868
+    # double_check 2
+    state = step(state, dl_action)
+    assert int(state.legal_action_mask.sum()) == 0
+
