@@ -513,8 +513,10 @@ def _is_checked(state):
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
 
+    from_ = 80 - state.m2b
+    from_ = jnp.where(from_ == 81, -1, from_)
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
-    return can_capture_king(state.m2b).any() | can_capture_king_local(neighbours).any()
+    return can_capture_king(from_).any() | can_capture_king_local(neighbours).any()
 
 
 def _flip_piece(piece):
@@ -530,10 +532,12 @@ def _flip(state):
     pb = (state.piece_board + 14) % 28
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = pb[::-1]
+    m2b = 80 - state.m2b
+    m2b = jnp.where(m2b == 81, -1, m2b)
     return state.replace(  # type: ignore
         piece_board=pb,
         hand=state.hand[jnp.int8((1, 0))],
-        m2b=80 - state.m2b,
+        m2b=m2b,
     )
 
 def _is_major_piece(piece):
