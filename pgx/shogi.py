@@ -82,8 +82,9 @@ class State(core.State):
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
     # cache
-    # Redundant information used only in _is_checked for speed-up
+    # Redundant information used only in _is_checked for speeding-up
     cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
+    cache_king: jnp.ndarray = jnp.int32(44)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -287,11 +288,12 @@ def _step_drop(state: State, action: Action) -> State:
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
-def _set_cache(state):
-    return state.replace(
+def _set_cache(state: State):
+    return state.replace(  # type: ignore
         cache_m2b=jnp.nonzero(
             jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1
-        )[0]
+        )[0],
+        cache_king=jnp.argmin(jnp.abs(state.piece_board - KING)),
     )
 
 
@@ -410,7 +412,12 @@ def _is_legal_move_wo_pro(
             piece_board=state.piece_board.at[from_]
             .set(EMPTY)
             .at[to]
-            .set(state.piece_board[from_])
+            .set(state.piece_board[from_]),
+            cache_king=jax.lax.select(  # update cache
+                state.piece_board[from_] == KING,
+                jnp.int32(to),
+                state.cache_king,
+            ),
         )
     )
     return ok
@@ -474,7 +481,9 @@ def _is_promotion_legal(
 
 
 def _is_checked(state):
-    king_pos = jnp.argmin(jnp.abs(state.piece_board - KING))
+    # Use cached king position, simpler implementation is:
+    # jnp.argmin(jnp.abs(state.piece_board - KING))
+    king_pos = state.cache_king
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
