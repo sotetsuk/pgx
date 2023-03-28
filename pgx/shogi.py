@@ -293,7 +293,7 @@ def _set_cache(state: State):
         cache_m2b=jnp.nonzero(
             jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1
         )[0],
-        cache_king=jnp.argmin(jnp.abs(state.piece_board - KING))
+        cache_king=jnp.argmin(jnp.abs(state.piece_board - KING)),
     )
 
 
@@ -414,7 +414,7 @@ def _is_legal_move_wo_pro(
             .at[to]
             .set(state.piece_board[from_]),
             cache_king=jax.lax.select(  # update cache
-                state.piece_board[from_] == KING, jnp.int32(to), state.king_pos
+                state.piece_board[from_] == KING, jnp.int32(to), state.cache_king
             ),
         )
     )
