@@ -357,6 +357,7 @@ def _is_drop_pawn_mate(state: State):
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
+    flip_state = _set_cache(flip_state)
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
     flipped_to = 80 - to
@@ -372,9 +373,18 @@ def _is_drop_pawn_mate(state: State):
     return is_pawn_mate, to
 
 
-def _around(x):
-    y = jnp.int8([x - 1, x - 10, x - 9, x - 8, x + 1, x + 8, x + 9, x + 10])
-    return jnp.where((y < 0) | (y >= 81), -1, y)
+def _around(c):
+    x, y = c // 9, c % 9
+    dx = jnp.int8([-1,-1, 0,+1,+1,+1, 0,-1])
+    dy = jnp.int8([ 0,-1,-1,-1, 0,+1,+1,+1])
+    def f(i):
+        new_x, new_y = x + dx[i], y + dy[i]
+        return jax.lax.select(
+            (new_x < 0) | (new_x >= 9) | (new_y < 0) | (new_y >= 9),
+            -1,
+            new_x * 9 + new_y
+        )
+    return jax.vmap(f)(jnp.arange(8))
 
 
 def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
