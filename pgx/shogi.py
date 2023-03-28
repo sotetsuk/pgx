@@ -358,10 +358,10 @@ def _is_drop_pawn_mate(state: State):
     flip_state = _flip(
         state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
     )
-    flip_state = _set_cache(flip_state)
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
     flipped_to = 80 - to
+    flip_state = _set_cache(flip_state)
     can_capture_pawn = jax.vmap(partial(
         _is_legal_move_wo_pro, to=flipped_to, state=flip_state
     ))(from_=CAN_MOVE_ANY[flipped_to]).any()
