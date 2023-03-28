@@ -488,9 +488,11 @@ def _is_checked(state):
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
 
+    # Simpler implementation without cache of major piece places
+    # from_ = CAN_MOVE_ANY[flipped_king_pos]
+    # return can_capture_king(from_).any()
     from_ = 80 - state.cache_m2b
     from_ = jnp.where(from_ == 81, -1, from_)
-    # from_ = CAN_MOVE_ANY[flipped_king_pos]
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
     return (
         can_capture_king(from_).any()
