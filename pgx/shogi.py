@@ -26,7 +26,6 @@ from pgx._shogi_utils import (
     CAN_MOVE_ANY,
     INIT_PIECE_BOARD,
     LEGAL_FROM_IDX,
-    NEIGHBOUR_IX,
     _from_sfen,
     _to_sfen,
 )
@@ -81,9 +80,6 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
-    # cache
-    # Redundant information used only in _is_checked for speed-up
-    cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -287,18 +283,7 @@ def _step_drop(state: State, action: Action) -> State:
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
-def _set_cache(state):
-    return state.replace(
-        cache_m2b=jnp.nonzero(
-            jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1
-        )[0]
-    )
-
-
 def _legal_action_mask(state: State):
-    # update cache
-    state = _set_cache(state)
-
     a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(
         action=jnp.arange(27 * 81)
     )
@@ -483,22 +468,8 @@ def _is_checked(state):
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
 
-    @jax.vmap
-    def can_capture_king_local(from_):
-        return _is_pseudo_legal_move_wo_obstacles(
-            from_=from_, to=flipped_king_pos, state=_flip(state)
-        )
-
-    # Simpler implementation without cache of major piece places
-    # from_ = CAN_MOVE_ANY[flipped_king_pos]
-    # return can_capture_king(from_).any()
-    from_ = 80 - state.cache_m2b
-    from_ = jnp.where(from_ == 81, -1, from_)
-    neighbours = NEIGHBOUR_IX[flipped_king_pos]
-    return (
-        can_capture_king(from_).any()
-        | can_capture_king_local(neighbours).any()
-    )
+    from_ = CAN_MOVE_ANY[flipped_king_pos]
+    return can_capture_king(from_).any()
 
 
 def _flip_piece(piece):
@@ -517,21 +488,6 @@ def _flip(state):
     return state.replace(  # type: ignore
         piece_board=pb,
         hand=state.hand[jnp.int8((1, 0))],
-    )
-
-
-def _is_major_piece(piece):
-    return (
-        (piece == LANCE)
-        | (piece == BISHOP)
-        | (piece == ROOK)
-        | (piece == HORSE)
-        | (piece == DRAGON)
-        | (piece == OPP_LANCE)
-        | (piece == OPP_BISHOP)
-        | (piece == OPP_ROOK)
-        | (piece == OPP_HORSE)
-        | (piece == OPP_DRAGON)
     )
 
 
@@ -630,8 +586,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
-    # NOTE: update cache
-    checked = jnp.tile(_is_checked(_set_cache(state)), reps=(1, 9, 9))
+    checked = jnp.tile(_is_checked(state), reps=(1, 9, 9))
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
         my_effect_feat.reshape(14, 9, 9),
