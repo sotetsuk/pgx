@@ -4,7 +4,7 @@ from pgx.experimental.wrappers import auto_reset
 import jax
 import time
 
-N = 20
+N = 9
 
 env = Go(size=9)
 init = jax.jit(jax.vmap(env.init))
@@ -23,9 +23,9 @@ print("warmup ends")
 
 st = time.time()
 s = init(subkeys)
-for i in range(1000 + 500):
+for i in range(1000 + 200):
     if i >= 1000 and i % 5 == 0:
-        s.save_svg(f"{i % 1000:03d}.svg", color_theme="light")
+        s.save_svg(f"{i % 1000:03d}.svg", color_theme="dark")
     rng, subkey = jax.random.split(rng)
     a = act_randomly(subkey, s)
     s = step(s, a)
