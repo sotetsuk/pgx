@@ -351,24 +351,9 @@ def _legal_action_mask(state: State):
 
 
 def _is_drop_pawn_mate(state: State):
-    # check pawn drop mate
     opp_king_pos = jnp.argmin(jnp.abs(state.piece_board - OPP_KING))
     to = opp_king_pos + 1
-    flip_state = _flip(
-        state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
-    )
-    # 玉頭の歩を取るか玉が逃げられれば詰みでない
-    # fmt: off
-    flipped_to = 80 - to
-    can_capture_pawn = jax.vmap(partial(
-        _is_legal_move_wo_pro, to=flipped_to, state=flip_state
-    ))(from_=CAN_MOVE_ANY[flipped_to]).any()
-    from_ = 80 - opp_king_pos
-    can_king_escape = jax.vmap(
-        partial(_is_legal_move_wo_pro, from_=from_, state=flip_state)
-    )(to=_around(from_)).any()
-    is_pawn_mate = ~(can_capture_pawn | can_king_escape)
-    # fmt: on
+    is_pawn_mate = (to % 9 != 0) & _is_checked(_set_cache(_flip(_step_drop(state, Action.make_drop(PAWN, to)))))
     return is_pawn_mate, to
 
 
