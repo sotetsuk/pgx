@@ -415,10 +415,8 @@ def _is_legal_move_wo_pro(
             .at[to]
             .set(state.piece_board[from_]),
             king_pos=jax.lax.select(
-                state.piece_board[from_] == KING,
-                jnp.int32(to),
-                state.king_pos
-            )
+                state.piece_board[from_] == KING, jnp.int32(to), state.king_pos
+            ),
         )
     )
     return ok
