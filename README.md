@@ -7,7 +7,7 @@
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
-<img src="fig/go.gif" width="30%"><img src="fig/go.gif" width="30%" style="transform:rotate(270deg);"><img src="fig/go.gif" width="30%" style="transform:rotate(180deg);">
+<img src="fig/go.gif" width="30%"><img src="fig/go.gif" width="30%" style="transform:rotate(270deg);"><img src="fig/go.gif" width="30%" style="transform:rotate(1120deg);">
 </div>
 
 ## Why Pgx?
@@ -70,31 +70,31 @@ while not state.terminated.all():
 ## Game support road map
 
 <div align="center">
-<img src="fig/svgs/2048_dark.svg" height="80px">
-<img src="fig/svgs/backgammon_dark.svg" height="80px">
-<img src="fig/svgs/connect_four_dark.svg" height="80px">
-<img src="fig/svgs/go-9x9_dark.svg" height="80px">
-<img src="fig/svgs/hex_dark.svg" height="80px">
-<img src="fig/svgs/kuhn_poker_dark.svg" height="80px">
-<img src="fig/svgs/leduc_holdem_dark.svg" height="80px">
-<img src="fig/svgs/othello_dark.svg" height="80px">
-<img src="fig/svgs/shogi_dark.svg" height="80px">
-<img src="fig/svgs/sparrow_mahjong_dark.svg" height="80px">
-<img src="fig/svgs/tic_tac_toe_dark.svg" height="80px">
+<img src="fig/svgs/2048_dark.svg" height="120px">
+<img src="fig/svgs/backgammon_dark.svg" height="120px">
+<img src="fig/svgs/connect_four_dark.svg" height="120px">
+<img src="fig/svgs/go-9x9_dark.svg" height="120px">
+<img src="fig/svgs/hex_dark.svg" height="120px">
+<img src="fig/svgs/kuhn_poker_dark.svg" height="120px">
+<img src="fig/svgs/leduc_holdem_dark.svg" height="120px">
+<img src="fig/svgs/othello_dark.svg" height="120px">
+<img src="fig/svgs/shogi_dark.svg" height="120px">
+<img src="fig/svgs/sparrow_mahjong_dark.svg" height="120px">
+<img src="fig/svgs/tic_tac_toe_dark.svg" height="120px">
 </div>
 
 <div align="center">
-<img src="fig/svgs/2048_light.svg" height="80px">
-<img src="fig/svgs/backgammon_light.svg" height="80px">
-<img src="fig/svgs/connect_four_light.svg" height="80px">
-<img src="fig/svgs/go-9x9_light.svg" height="80px">
-<img src="fig/svgs/hex_light.svg" height="80px">
-<img src="fig/svgs/kuhn_poker_light.svg" height="80px">
-<img src="fig/svgs/leduc_holdem_light.svg" height="80px">
-<img src="fig/svgs/othello_light.svg" height="80px">
-<img src="fig/svgs/shogi_light.svg" height="80px">
-<img src="fig/svgs/sparrow_mahjong_light.svg" height="80px">
-<img src="fig/svgs/tic_tac_toe_light.svg" height="80px">
+<img src="fig/svgs/2048_light.svg" height="120px">
+<img src="fig/svgs/backgammon_light.svg" height="120px">
+<img src="fig/svgs/connect_four_light.svg" height="120px">
+<img src="fig/svgs/go-9x9_light.svg" height="120px">
+<img src="fig/svgs/hex_light.svg" height="120px">
+<img src="fig/svgs/kuhn_poker_light.svg" height="120px">
+<img src="fig/svgs/leduc_holdem_light.svg" height="120px">
+<img src="fig/svgs/othello_light.svg" height="120px">
+<img src="fig/svgs/shogi_light.svg" height="120px">
+<img src="fig/svgs/sparrow_mahjong_light.svg" height="120px">
+<img src="fig/svgs/tic_tac_toe_light.svg" height="120px">
 </div>
 
 
