@@ -144,19 +144,19 @@ Use `pgx.available_games()` to see the list of currently available games.
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Kuhn Poker</td>
+ <td><a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td>Leduc Holdem</td>
+ <td><a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a></td>
  <td>:construction:</td>
- <td></td>
+ <td>:construction:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
