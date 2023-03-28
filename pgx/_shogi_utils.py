@@ -83,6 +83,25 @@ CAN_MOVE_ANY = can_move_any_ix(jnp.arange(81))  # (81, 36)
 INIT_LEGAL_ACTION_MASK = load_shogi_init_legal_action_mask()
 
 
+def _around(c):
+    x, y = c // 9, c % 9
+    dx = jnp.int8([-1, -1, 0, +1, +1, +1, 0, -1])
+    dy = jnp.int8([0, -1, -1, -1, 0, +1, +1, +1])
+
+    def f(i):
+        new_x, new_y = x + dx[i], y + dy[i]
+        return jax.lax.select(
+            (new_x < 0) | (new_x >= 9) | (new_y < 0) | (new_y >= 9),
+            -1,
+            new_x * 9 + new_y,
+        )
+
+    return jax.vmap(f)(jnp.arange(8))
+
+
+AROUND_IX = jax.vmap(_around)(jnp.arange(81))
+
+
 def _to_sfen(state):
     """Convert state into sfen expression.
 
