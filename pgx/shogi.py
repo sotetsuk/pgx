@@ -82,9 +82,9 @@ class State(core.State):
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
     # cache
-    # Redundant information used only in _is_checked for speed-up
+    # Redundant information used only in _is_checked for speeding-up
     cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
-    king_pos: jnp.ndarray = jnp.int32(44)
+    cache_king: jnp.ndarray = jnp.int32(44)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -288,19 +288,18 @@ def _step_drop(state: State, action: Action) -> State:
     return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
-def _set_cache(state):
-    return state.replace(
+def _set_cache(state: State):
+    return state.replace(  # type: ignore
         cache_m2b=jnp.nonzero(
             jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1
-        )[0]
+        )[0],
+        cache_king=jnp.argmin(jnp.abs(state.piece_board - KING))
     )
 
 
 def _legal_action_mask(state: State):
     # update cache
     state = _set_cache(state)
-    king_pos = jnp.argmin(jnp.abs(state.piece_board - KING))
-    state = state.replace(king_pos=king_pos)
 
     a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(
         action=jnp.arange(27 * 81)
@@ -414,7 +413,7 @@ def _is_legal_move_wo_pro(
             .set(EMPTY)
             .at[to]
             .set(state.piece_board[from_]),
-            king_pos=jax.lax.select(
+            cache_king=jax.lax.select(  # update cache
                 state.piece_board[from_] == KING, jnp.int32(to), state.king_pos
             ),
         )
@@ -480,6 +479,8 @@ def _is_promotion_legal(
 
 
 def _is_checked(state):
+    # Use cached king position, simpler implementation is:
+    # jnp.argmin(jnp.abs(state.piece_board - KING))
     king_pos = state.king_pos
     flipped_king_pos = 80 - king_pos
 
@@ -637,8 +638,6 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     my_hand_feat = hand_feat(state.hand[0])
     opp_hand_feat = hand_feat(state.hand[1])
     # NOTE: update cache
-    king_pos = jnp.argmin(jnp.abs(state.piece_board - KING))
-    state = state.replace(king_pos=king_pos)
     checked = jnp.tile(_is_checked(_set_cache(state)), reps=(1, 9, 9))
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
