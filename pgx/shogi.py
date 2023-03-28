@@ -22,11 +22,11 @@ import pgx.core as core
 from pgx._flax.struct import dataclass
 from pgx._shogi_utils import (
     BETWEEN_IX,
-    NEIGHBOUR_IX,
     CAN_MOVE,
     CAN_MOVE_ANY,
     INIT_PIECE_BOARD,
     LEGAL_FROM_IDX,
+    NEIGHBOUR_IX,
     _from_sfen,
     _to_sfen,
 )
@@ -282,7 +282,11 @@ def _step_move(state: State, action: Action) -> State:
     state = state.replace(piece_board=pb, hand=hand)  # type: ignore
     # update cache
     state = jax.lax.cond(
-        _is_major_piece(action.piece), lambda: _remove_major_piece(_add_major_piece(state, action.to), action.from_), lambda: state
+        _is_major_piece(action.piece),
+        lambda: _remove_major_piece(
+            _add_major_piece(state, action.to), action.from_
+        ),
+        lambda: state,
     )
     return state
 
@@ -295,27 +299,22 @@ def _step_drop(state: State, action: Action) -> State:
     state = state.replace(piece_board=pb, hand=hand)  # type: ignore
     # update cache
     state = jax.lax.cond(
-        _is_major_piece(action.piece), lambda: _add_major_piece(state, action.to), lambda: state
+        _is_major_piece(action.piece),
+        lambda: _add_major_piece(state, action.to),
+        lambda: state,
     )
     return state
 
 
 def _set_all_major_pieces(state):
-    def set_major_piece(i, s):
-        s = jax.lax.cond(
-            _is_major_piece(s.piece_board[i]), lambda: _add_major_piece(s, i), lambda: state
-        )
-        return s
-    state = jax.lax.fori_loop(
-        0, 81, set_major_piece, state
+    return state.replace(
+        m2b=jnp.nonzero(jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1)[0]
     )
-    return state
 
 
 def _add_major_piece(state, to):
-    return state.replace(
-        m2b=state.m2b.at[jnp.argmin(state.m2b)].set(to)
-    )
+    return state.replace(m2b=state.m2b.at[jnp.argmin(state.m2b)].set(to))
+
 
 def _remove_major_piece(state, from_):
     return state.replace(
@@ -507,16 +506,22 @@ def _is_checked(state):
         return _is_pseudo_legal_move(
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
+
     @jax.vmap
     def can_capture_king_local(from_):
         return _is_pseudo_legal_move_wo_obstacles(
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
 
+    # from_ = state.m2b
     from_ = 80 - state.m2b
     from_ = jnp.where(from_ == 81, -1, from_)
+    # from_ = CAN_MOVE_ANY[flipped_king_pos]
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
-    return can_capture_king(from_).any() | can_capture_king_local(neighbours).any()
+    return (
+        can_capture_king(from_).any()
+        | can_capture_king_local(neighbours).any()
+    )
 
 
 def _flip_piece(piece):
@@ -540,8 +545,21 @@ def _flip(state):
         m2b=m2b,
     )
 
+
 def _is_major_piece(piece):
-    return (piece == LANCE) | (piece == BISHOP) | (piece == ROOK) | (piece == HORSE) | (piece == DRAGON) | (piece == OPP_LANCE) | (piece == OPP_BISHOP) | (piece == OPP_ROOK) | (piece == OPP_HORSE) | (piece == OPP_DRAGON)
+    return (
+        (piece == LANCE)
+        | (piece == BISHOP)
+        | (piece == ROOK)
+        | (piece == HORSE)
+        | (piece == DRAGON)
+        | (piece == OPP_LANCE)
+        | (piece == OPP_BISHOP)
+        | (piece == OPP_ROOK)
+        | (piece == OPP_HORSE)
+        | (piece == OPP_DRAGON)
+    )
+
 
 def _major_piece_ix(piece):
     ixs = (
