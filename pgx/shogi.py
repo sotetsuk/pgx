@@ -82,7 +82,7 @@ class State(core.State):
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
     # cache
-    m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
+    cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -275,8 +275,7 @@ def _step_move(state: State, action: Action) -> State:
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     # apply piece moves
-    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
-    return state
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
@@ -284,11 +283,10 @@ def _step_drop(state: State, action: Action) -> State:
     pb = state.piece_board.at[action.to].set(action.piece)
     # remove piece from hand
     hand = state.hand.at[0, action.piece].add(-1)
-    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
-    return state
+    return state.replace(piece_board=pb, hand=hand)  # type: ignore
 
 
-def _set_all_major_pieces(state):
+def _set_cache(state):
     return state.replace(
         m2b=jnp.nonzero(
             jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1
@@ -298,7 +296,7 @@ def _set_all_major_pieces(state):
 
 def _legal_action_mask(state: State):
     # update cache
-    state = _set_all_major_pieces(state)
+    state = _set_cache(state)
 
     a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(
         action=jnp.arange(27 * 81)
@@ -490,7 +488,7 @@ def _is_checked(state):
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
 
-    from_ = 80 - state.m2b
+    from_ = 80 - state.cache_m2b
     from_ = jnp.where(from_ == 81, -1, from_)
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
@@ -631,7 +629,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     opp_hand_feat = hand_feat(state.hand[1])
     # NOTE: update cache
     checked = jnp.tile(
-        _is_checked(_set_all_major_pieces(state)), reps=(1, 9, 9)
+        _is_checked(_set_cache(state)), reps=(1, 9, 9)
     )
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
