@@ -80,7 +80,6 @@ Use `pgx.available_games()` to see the list of currently available games.
 <img src="fig/svgs/go-9x9_dark.svg#gh-dark-mode-only" height="120px">
 <img src="fig/svgs/kuhn_poker_dark.svg#gh-dark-mode-only" height="120px">
 <img src="fig/svgs/shogi_dark.svg#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/sparrow_mahjong_dark.svg#gh-dark-mode-only" height="120px">
 </div>
 
 <div align="center">
@@ -89,7 +88,6 @@ Use `pgx.available_games()` to see the list of currently available games.
 <img src="fig/svgs/go-9x9_light.svg#gh-light-mode-only" height="120px">
 <img src="fig/svgs/kuhn_poker_light.svg#gh-light-mode-only" height="120px">
 <img src="fig/svgs/shogi_light.svg#gh-light-mode-only" height="120px">
-<img src="fig/svgs/sparrow_mahjong_light.svg#gh-light-mode-only" height="120px">
 </div>
 
 <div align="center">
