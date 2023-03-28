@@ -343,16 +343,9 @@ def test_api():
 
 
 def test_buggy_legal_actions():
-    import cshogi
-    def is_ok(board: cshogi.Board, state: State):
-        return len(board.legal_moves) == state.legal_action_mask.sum()
-    # double check
-    sfen = "9/9/9/9/9/8r/8s/9/8K b r2b4g3s4n4l18p 1"
+    sfen = "9/9/9/9/9/8r/8s/9/8K w r2b4g3s4n4l18p 1"
     state = State._from_sfen(sfen)
-    board = cshogi.Board(sfen)
-    assert is_ok(board, state)
-    usi_action = "1g2h"
+    assert state.legal_action_mask.sum() == 537
     dl_action = 226
     state = step(state, dl_action)
-    board.push_usi(usi_action)
-    assert is_ok(board, state)
+    assert state.legal_action_mask.sum() == 1
