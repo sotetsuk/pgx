@@ -75,7 +75,7 @@ while not state.terminated.all():
 Use `pgx.available_games()` to see the list of currently available games.
 
 <div align="center">
-<img src="fig/svgs/2048_dark.svg#gh-dark-mode-only" height="120px">
+<figure><img src="fig/svgs/2048_dark.svg#gh-dark-mode-only" height="120px"><figcaption>2048</figcaption></figure>
 <img src="fig/svgs/backgammon_dark.svg#gh-dark-mode-only" height="120px">
 <img src="fig/svgs/connect_four_dark.svg#gh-dark-mode-only" height="120px">
 <img src="fig/svgs/go-9x9_dark.svg#gh-dark-mode-only" height="120px">
