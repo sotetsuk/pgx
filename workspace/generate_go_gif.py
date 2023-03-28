@@ -6,7 +6,7 @@ import time
 
 N = 20
 
-env = Go(size=5)
+env = Go(size=9)
 init = jax.jit(jax.vmap(env.init))
 step = jax.jit(jax.vmap(auto_reset(env.step, env.init)))
 
@@ -23,9 +23,9 @@ print("warmup ends")
 
 st = time.time()
 s = init(subkeys)
-for i in range(1000 + 100):
-    if i >= 1000 and i % 3 == 0:
-        s.save_svg(f"{i % 1000:03d}.svg", color_theme="dark")
+for i in range(1000 + 500):
+    if i >= 1000 and i % 5 == 0:
+        s.save_svg(f"{i % 1000:03d}.svg", color_theme="light")
     rng, subkey = jax.random.split(rng)
     a = act_randomly(subkey, s)
     s = step(s, a)

@@ -6,9 +6,16 @@
 
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
+![](./go_dark.gif#gh-dark-mode-only)
+![](./go_light.gif#gh-light-mode-only)
+![](./go_dark.gif#gh-dark-mode-only)
+![](./go_light.gif#gh-light-mode-only)
+
+<!---
 <div align="center">
-<img src="fig/go.gif" width="40%"><img src="fig/go.gif" width="40%" style="transform:rotate(180deg);">
+<img src="fig/go_light.gif" width="40%"><img src="fig/go_light.gif" width="40%" style="transform:rotate(180deg);">
 </div>
+--->
 
 ## Why Pgx?
 
