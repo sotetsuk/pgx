@@ -69,6 +69,9 @@ while not state.terminated.all():
 --->
 
 ## Supported games and road map
+
+> :warning: Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in April 2023. Opinions and comments are more than welcome!
+
 Use `pgx.available_games()` to see the list of currently available games.
 
 <div align="center">
