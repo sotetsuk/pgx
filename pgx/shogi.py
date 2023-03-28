@@ -22,6 +22,7 @@ import pgx.core as core
 from pgx._flax.struct import dataclass
 from pgx._shogi_utils import (
     BETWEEN_IX,
+    NEIGHBOUR_IX,
     CAN_MOVE,
     CAN_MOVE_ANY,
     INIT_PIECE_BOARD,
@@ -80,6 +81,8 @@ class State(core.State):
     turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    # cache
+    m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -89,7 +92,9 @@ class State(core.State):
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         # fmt: on
-        return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+        state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+        state = _set_all_major_pieces(state)
+        return state
 
     @staticmethod
     def _from_sfen(sfen):
@@ -224,7 +229,9 @@ class Action:
 def _init_board():
     """Initialize Shogi State."""
     state = State()
-    return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+    state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+    state = _set_all_major_pieces(state)
+    return state
 
 
 def _step(state: State, action: jnp.ndarray):
@@ -272,7 +279,12 @@ def _step_move(state: State, action: Action) -> State:
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     # apply piece moves
-    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
+    # update cache
+    state = jax.lax.cond(
+        _is_major_piece(action.piece), lambda: _remove_major_piece(_add_major_piece(state, action.to), action.from_), lambda: state
+    )
+    return state
 
 
 def _step_drop(state: State, action: Action) -> State:
@@ -280,7 +292,35 @@ def _step_drop(state: State, action: Action) -> State:
     pb = state.piece_board.at[action.to].set(action.piece)
     # remove piece from hand
     hand = state.hand.at[0, action.piece].add(-1)
-    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+    state = state.replace(piece_board=pb, hand=hand)  # type: ignore
+    # update cache
+    state = jax.lax.cond(
+        _is_major_piece(action.piece), lambda: _add_major_piece(state, action.to), lambda: state
+    )
+    return state
+
+
+def _set_all_major_pieces(state):
+    def set_major_piece(i, s):
+        s = jax.lax.cond(
+            _is_major_piece(s.piece_board[i]), lambda: _add_major_piece(s, i), lambda: state
+        )
+        return s
+    state = jax.lax.fori_loop(
+        0, 81, set_major_piece, state
+    )
+    return state
+
+
+def _add_major_piece(state, to):
+    return state.replace(
+        m2b=state.m2b.at[jnp.argmin(state.m2b)].set(to)
+    )
+
+def _remove_major_piece(state, from_):
+    return state.replace(
+        m2b=state.m2b.at[jnp.argmin(jnp.abs(state.m2b - from_))].set(-1)
+    )
 
 
 def _legal_action_mask(state: State):
@@ -467,9 +507,14 @@ def _is_checked(state):
         return _is_pseudo_legal_move(
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
+    @jax.vmap
+    def can_capture_king_local(from_):
+        return _is_pseudo_legal_move_wo_obstacles(
+            from_=from_, to=flipped_king_pos, state=_flip(state)
+        )
 
-    from_ = CAN_MOVE_ANY[flipped_king_pos]
-    return can_capture_king(from_).any()
+    neighbours = NEIGHBOUR_IX[flipped_king_pos]
+    return can_capture_king(state.m2b).any() | can_capture_king_local(neighbours).any()
 
 
 def _flip_piece(piece):
@@ -488,8 +533,11 @@ def _flip(state):
     return state.replace(  # type: ignore
         piece_board=pb,
         hand=state.hand[jnp.int8((1, 0))],
+        m2b=80 - state.m2b,
     )
 
+def _is_major_piece(piece):
+    return (piece == LANCE) | (piece == BISHOP) | (piece == ROOK) | (piece == HORSE) | (piece == DRAGON) | (piece == OPP_LANCE) | (piece == OPP_BISHOP) | (piece == OPP_ROOK) | (piece == OPP_HORSE) | (piece == OPP_DRAGON)
 
 def _major_piece_ix(piece):
     ixs = (
