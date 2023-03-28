@@ -375,15 +375,17 @@ def _is_drop_pawn_mate(state: State):
 
 def _around(c):
     x, y = c // 9, c % 9
-    dx = jnp.int8([-1,-1, 0,+1,+1,+1, 0,-1])
-    dy = jnp.int8([ 0,-1,-1,-1, 0,+1,+1,+1])
+    dx = jnp.int8([-1, -1, 0, +1, +1, +1, 0, -1])
+    dy = jnp.int8([0, -1, -1, -1, 0, +1, +1, +1])
+
     def f(i):
         new_x, new_y = x + dx[i], y + dy[i]
         return jax.lax.select(
             (new_x < 0) | (new_x >= 9) | (new_y < 0) | (new_y >= 9),
             -1,
-            new_x * 9 + new_y
+            new_x * 9 + new_y,
         )
+
     return jax.vmap(f)(jnp.arange(8))
 
 
