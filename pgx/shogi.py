@@ -25,6 +25,7 @@ from pgx._shogi_utils import (
     CAN_MOVE,
     CAN_MOVE_ANY,
     INIT_PIECE_BOARD,
+    INIT_LEGAL_ACTION_MASK,
     LEGAL_FROM_IDX,
     NEIGHBOUR_IX,
     _from_sfen,
@@ -73,7 +74,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(27 * 81, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK  # (27 * 81,)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -228,8 +229,7 @@ class Action:
 
 def _init_board():
     """Initialize Shogi State."""
-    state = State()
-    return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+    return State()
 
 
 def _step(state: State, action: jnp.ndarray):
