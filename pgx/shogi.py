@@ -289,7 +289,7 @@ def _step_drop(state: State, action: Action) -> State:
 
 def _set_cache(state):
     return state.replace(
-        m2b=jnp.nonzero(
+        cache_m2b=jnp.nonzero(
             jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1
         )[0]
     )
