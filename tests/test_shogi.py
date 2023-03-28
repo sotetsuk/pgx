@@ -343,18 +343,28 @@ def test_api():
 
 
 def test_buggy_legal_actions():
-    sfen = "9/9/9/9/9/8r/8s/9/8K w r2b4g3s4n4l18p 1"
+    sfen = "8k/9/9/9/9/8r/8s/9/7GK w - 1"
     state = State._from_sfen(sfen)
-    assert int(state.legal_action_mask.sum()) == 537
+    assert int(state.legal_action_mask.sum()) == 21
     dl_action = 226
     # double_check
     state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_001.svg")
     assert int(state.legal_action_mask.sum()) == 1
-    sfen = "9/9/9/9/9/5b3/6r2/9/8K w rb4g4s4n4l18p 1"
+    sfen = "8k/9/9/9/9/5b3/6r2/9/7GK w - 1"
     state = State._from_sfen(sfen)
-    assert int(state.legal_action_mask.sum()) == 564
+    assert int(state.legal_action_mask.sum()) == 49
     dl_action = 868
     # double_check 2
     state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_002.svg")
     assert int(state.legal_action_mask.sum()) == 0
+    sfen = "9/8g/9/4r1b1K/P8/9/9/9/9 w - 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 38
+    dl_action = 156
+    # discovered_check 2
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_003.svg")
+    assert int(state.legal_action_mask.sum()) == 1
 
