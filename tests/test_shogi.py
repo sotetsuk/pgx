@@ -397,8 +397,15 @@ def test_buggy_legal_actions():
     # drop pawn mate
     sfen = "8k/9/7L1/7N1/9/9/9/9/8K b P 1"
     state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_legal_009.svg")
     assert int(state.legal_action_mask.sum()) == 76
     # move pawn mate(legal)
     sfen = "8k/9/7LP/7N1/9/9/9/9/8K b - 1"
     state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_legal_010.svg")
     assert int(state.legal_action_mask.sum()) == 10
+    # pinned same line
+    sfen = "8k/9/9/9/4b4/9/6B2/9/8K b - 1"
+    state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_legal_011.svg")
+    assert int(state.legal_action_mask.sum()) == 6
