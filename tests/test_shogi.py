@@ -343,28 +343,47 @@ def test_api():
 
 
 def test_buggy_legal_actions():
+    # double check
     sfen = "8k/9/9/9/9/8r/8s/9/7GK w - 1"
     state = State._from_sfen(sfen)
     assert int(state.legal_action_mask.sum()) == 21
     dl_action = 226
-    # double_check
     state = step(state, dl_action)
     visualize(state, "tests/assets/shogi/buggy_legal_001.svg")
     assert int(state.legal_action_mask.sum()) == 1
+    # double check2
     sfen = "8k/9/9/9/9/5b3/6r2/9/7GK w - 1"
     state = State._from_sfen(sfen)
     assert int(state.legal_action_mask.sum()) == 49
-    dl_action = 868
-    # double_check 2
+    dl_action = 243 + 74
     state = step(state, dl_action)
     visualize(state, "tests/assets/shogi/buggy_legal_002.svg")
     assert int(state.legal_action_mask.sum()) == 0
+    # discovered check
     sfen = "9/8g/9/4r1b1K/P8/9/9/9/9 w - 1"
     state = State._from_sfen(sfen)
     assert int(state.legal_action_mask.sum()) == 38
     dl_action = 156
-    # discovered_check 2
     state = step(state, dl_action)
     visualize(state, "tests/assets/shogi/buggy_legal_003.svg")
     assert int(state.legal_action_mask.sum()) == 1
-
+    # catch pieces
+    sfen = "k1b1r4/5B2g/4p4/9/9/9/8K/4L4/9 b - 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 23
+    dl_action = 38
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_004.svg")
+    assert int(state.legal_action_mask.sum()) == 18
+    dl_action = 42
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_005.svg")
+    assert int(state.legal_action_mask.sum()) == 85
+    dl_action = 81 * 6 + 38
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_006.svg")
+    assert int(state.legal_action_mask.sum()) == 78
+    dl_action = 81 + 42
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_007.svg")
+    assert int(state.legal_action_mask.sum()) == 10
