@@ -84,7 +84,7 @@ class State(core.State):
     # cache
     # Redundant information used only in _is_checked for speed-up
     cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
-    king_pos: jnp.ndarray = jnp.int8(44)
+    king_pos: jnp.ndarray = jnp.int32(44)
 
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
@@ -416,7 +416,7 @@ def _is_legal_move_wo_pro(
             .set(state.piece_board[from_]),
             king_pos=jax.lax.select(
                 state.piece_board[from_] == KING,
-                to,
+                jnp.int32(to),
                 state.king_pos
             )
         )
