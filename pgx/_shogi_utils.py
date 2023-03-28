@@ -64,6 +64,7 @@ def neighbour_ix(from_):
 
 NEIGHBOUR_IX = neighbour_ix(jnp.arange(81))
 
+
 def between_ix(p, from_, to):
     return jnp.nonzero(BETWEEN[p, from_, to], size=8, fill_value=-1)[0]
 
