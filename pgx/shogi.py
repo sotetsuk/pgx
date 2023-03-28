@@ -82,6 +82,7 @@ class State(core.State):
     piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
     hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
     # cache
+    # Redundant information used only in _is_checked for speed-up
     cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
 
     @staticmethod
