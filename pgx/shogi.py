@@ -92,9 +92,7 @@ class State(core.State):
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         # fmt: on
-        state = _set_all_major_pieces(state)
-        state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
-        return state
+        return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
 
     @staticmethod
     def _from_sfen(sfen):
@@ -229,9 +227,7 @@ class Action:
 def _init_board():
     """Initialize Shogi State."""
     state = State()
-    state = _set_all_major_pieces(state)
-    state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
-    return state
+    return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
 
 
 def _step(state: State, action: jnp.ndarray):
@@ -280,14 +276,6 @@ def _step_move(state: State, action: Action) -> State:
     pb = pb.at[action.to].set(piece)
     # apply piece moves
     state = state.replace(piece_board=pb, hand=hand)  # type: ignore
-    # update cache
-    state = jax.lax.cond(
-        _is_major_piece(action.piece),
-        lambda: _remove_major_piece(
-            _add_major_piece(state, action.to), action.from_
-        ),
-        lambda: state,
-    )
     return state
 
 
@@ -297,12 +285,6 @@ def _step_drop(state: State, action: Action) -> State:
     # remove piece from hand
     hand = state.hand.at[0, action.piece].add(-1)
     state = state.replace(piece_board=pb, hand=hand)  # type: ignore
-    # update cache
-    state = jax.lax.cond(
-        _is_major_piece(action.piece),
-        lambda: _add_major_piece(state, action.to),
-        lambda: state,
-    )
     return state
 
 
@@ -313,18 +295,10 @@ def _set_all_major_pieces(state):
         )[0]
     )
 
-
-def _add_major_piece(state, to):
-    return state.replace(m2b=state.m2b.at[jnp.argmin(state.m2b)].set(to))
-
-
-def _remove_major_piece(state, from_):
-    return state.replace(
-        m2b=state.m2b.at[jnp.argmin(jnp.abs(state.m2b - from_))].set(-1)
-    )
-
-
 def _legal_action_mask(state: State):
+    # update cache
+    state = _set_all_major_pieces(state)
+
     a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(
         action=jnp.arange(27 * 81)
     )
@@ -515,7 +489,6 @@ def _is_checked(state):
             from_=from_, to=flipped_king_pos, state=_flip(state)
         )
 
-    # from_ = state.m2b
     from_ = 80 - state.m2b
     from_ = jnp.where(from_ == 81, -1, from_)
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
@@ -539,12 +512,9 @@ def _flip(state):
     pb = (state.piece_board + 14) % 28
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = pb[::-1]
-    m2b = 80 - state.m2b
-    m2b = jnp.where(m2b == 81, -1, m2b)
     return state.replace(  # type: ignore
         piece_board=pb,
         hand=state.hand[jnp.int8((1, 0))],
-        m2b=m2b,
     )
 
 
