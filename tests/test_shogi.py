@@ -172,6 +172,74 @@ def test_buggy_samples():
     visualize(state, "tests/assets/shogi/buggy_samples_013.svg")
     assert not state.legal_action_mask[20 * 81 + xy2i(2, 5)]
 
+    # Hand crafted tests #685
+    # double check
+    sfen = "8k/9/9/9/9/8r/8s/9/7GK w - 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 21
+    dl_action = 226
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_014.svg")
+    assert int(state.legal_action_mask.sum()) == 1
+    # discovered check with pin
+    sfen = "8k/9/9/9/9/5b3/6r2/9/7GK w - 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 49
+    dl_action = 54
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_015.svg")
+    assert int(state.legal_action_mask.sum()) == 1
+    # discovered check
+    sfen = "k8/8g/9/4r1b1K/P8/9/9/9/9 w - 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 37
+    dl_action = 156
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_016.svg")
+    assert int(state.legal_action_mask.sum()) == 1
+    # catch pieces
+    sfen = "k1b1r4/5B2g/4p4/9/9/9/8K/4L4/9 b - 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 23
+    dl_action = 38
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_017.svg")
+    assert int(state.legal_action_mask.sum()) == 18
+    dl_action = 42
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_018.svg")
+    assert int(state.legal_action_mask.sum()) == 85
+    dl_action = 81 * 6 + 38
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_019.svg")
+    assert int(state.legal_action_mask.sum()) == 78
+    dl_action = 81 + 42
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_020.svg")
+    assert int(state.legal_action_mask.sum()) == 10
+    # double pin
+    sfen = "8k/9/9/9/9/5b3/6r2/7P1/7GK w - 1"
+    state = State._from_sfen(sfen)
+    dl_action = 54
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_samples_021.svg")
+    assert int(state.legal_action_mask.sum()) == 2
+    # drop pawn mate
+    sfen = "8k/9/7L1/7N1/9/9/9/9/8K b P 1"
+    state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_samples_022.svg")
+    assert int(state.legal_action_mask.sum()) == 76
+    # move pawn mate(legal)
+    sfen = "8k/9/7LP/7N1/9/9/9/9/8K b - 1"
+    state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_samples_023.svg")
+    assert int(state.legal_action_mask.sum()) == 10
+    # pinned same line
+    sfen = "8k/9/9/9/4b4/9/6B2/9/8K b - 1"
+    state = State._from_sfen(sfen)
+    visualize(state, "tests/assets/shogi/buggy_samples_024.svg")
+    assert int(state.legal_action_mask.sum()) == 6
+
 
 def test_step():
     with open("tests/assets/shogi/random_play.json") as f:
@@ -340,72 +408,3 @@ def test_api():
     # env = pgx.make("shogi")
     env = Shogi(max_termination_steps=50)
     pgx.api_test(env, 5)
-
-
-def test_buggy_legal_actions():
-    # double check
-    sfen = "8k/9/9/9/9/8r/8s/9/7GK w - 1"
-    state = State._from_sfen(sfen)
-    assert int(state.legal_action_mask.sum()) == 21
-    dl_action = 226
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_001.svg")
-    assert int(state.legal_action_mask.sum()) == 1
-    # discovered check with pin
-    sfen = "8k/9/9/9/9/5b3/6r2/9/7GK w - 1"
-    state = State._from_sfen(sfen)
-    assert int(state.legal_action_mask.sum()) == 49
-    dl_action = 54
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_002.svg")
-    assert int(state.legal_action_mask.sum()) == 1
-    # discovered check
-    sfen = "k8/8g/9/4r1b1K/P8/9/9/9/9 w - 1"
-    state = State._from_sfen(sfen)
-    assert int(state.legal_action_mask.sum()) == 37
-    dl_action = 156
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_003.svg")
-    assert int(state.legal_action_mask.sum()) == 1
-    # catch pieces
-    sfen = "k1b1r4/5B2g/4p4/9/9/9/8K/4L4/9 b - 1"
-    state = State._from_sfen(sfen)
-    assert int(state.legal_action_mask.sum()) == 23
-    dl_action = 38
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_004.svg")
-    assert int(state.legal_action_mask.sum()) == 18
-    dl_action = 42
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_005.svg")
-    assert int(state.legal_action_mask.sum()) == 85
-    dl_action = 81 * 6 + 38
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_006.svg")
-    assert int(state.legal_action_mask.sum()) == 78
-    dl_action = 81 + 42
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_007.svg")
-    assert int(state.legal_action_mask.sum()) == 10
-    # double pin
-    sfen = "8k/9/9/9/9/5b3/6r2/7P1/7GK w - 1"
-    state = State._from_sfen(sfen)
-    dl_action = 54
-    state = step(state, dl_action)
-    visualize(state, "tests/assets/shogi/buggy_legal_008.svg")
-    assert int(state.legal_action_mask.sum()) == 2
-    # drop pawn mate
-    sfen = "8k/9/7L1/7N1/9/9/9/9/8K b P 1"
-    state = State._from_sfen(sfen)
-    visualize(state, "tests/assets/shogi/buggy_legal_009.svg")
-    assert int(state.legal_action_mask.sum()) == 76
-    # move pawn mate(legal)
-    sfen = "8k/9/7LP/7N1/9/9/9/9/8K b - 1"
-    state = State._from_sfen(sfen)
-    visualize(state, "tests/assets/shogi/buggy_legal_010.svg")
-    assert int(state.legal_action_mask.sum()) == 10
-    # pinned same line
-    sfen = "8k/9/9/9/4b4/9/6B2/9/8K b - 1"
-    state = State._from_sfen(sfen)
-    visualize(state, "tests/assets/shogi/buggy_legal_011.svg")
-    assert int(state.legal_action_mask.sum()) == 6
