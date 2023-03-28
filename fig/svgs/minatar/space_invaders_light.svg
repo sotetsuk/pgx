@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="330.152727pt" height="280.512pt" viewBox="0 0 330.152727 280.512" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:date>2023-03-28T20:50:55.348398</dc:date>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.7.0rc1, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 280.512 
+L 330.152727 280.512 
+L 330.152727 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g clip-path="url(#p7f5e0c13d4)">
+    <image xlink:href="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQklEQVR4nGNkYGD4n1FlwIANzGi7AGczYVWBBZCvENk6dPAfhs8uevAfmY+MGaEM0qw+9vAjToXkmUi0QillR5wKAdgqF1brtywDAAAAAElFTkSuQmCC" id="imageb3e7cb472f" transform="matrix(12.1 0 0 12.1 7.2 7.16)" style="image-rendering:crisp-edges;image-rendering:pixelated" width="10" height="10"/>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g clip-path="url(#p0e069e3cee)">
+    <image xlink:href="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAPklEQVR4nGNkYGD4z0AEYDq76AEx6hgY0U3MqDLAbiJRxhFSOKPtAgr/PzacUWWAQmO4kSyryVMopexIlEIAamcU9K0idvIAAAAASUVORK5CYII=" id="imagece4174bc02" transform="matrix(12.1 0 0 12.1 201.992727 7.16)" style="image-rendering:crisp-edges;image-rendering:pixelated" width="10" height="10"/>
+   </g>
+  </g>
+  <g id="axes_3">
+   <g clip-path="url(#pf0851b05bc)">
+    <image xlink:href="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAQElEQVR4nGNkYGD4z0AEYCJGEQMDAwMLukBGlQH5Js5ou0CcwowqA9wKZ7RdYJjRdgHOZmSgtq/JVyil7IhVIQBK7Qxt8mUyBgAAAABJRU5ErkJggg==" id="image1a97fe3d0a" transform="matrix(12.1 0 0 12.1 7.2 152.312)" style="image-rendering:crisp-edges;image-rendering:pixelated" width="10" height="10"/>
+   </g>
+  </g>
+  <g id="axes_4">
+   <g clip-path="url(#pdf2e5ff997)">
+    <image xlink:href="data:image/png;base64,
+iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKCAYAAACNMs+9AAAAPUlEQVR4nGNkYGD4z0AEYCJGEQMDAwMLukBGlQFlJhKlcEbbBdwKZ7RdYJjRdgHOZ2Sgtq9JVyil7IhXIQDesAlt4WZYNwAAAABJRU5ErkJggg==" id="image23ca69ec8f" transform="matrix(12.1 0 0 12.1 201.992727 152.312)" style="image-rendering:crisp-edges;image-rendering:pixelated" width="10" height="10"/>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p7f5e0c13d4">
+   <rect x="7.2" y="7.2" width="120.96" height="120.96"/>
+  </clipPath>
+  <clipPath id="p0e069e3cee">
+   <rect x="201.992727" y="7.2" width="120.96" height="120.96"/>
+  </clipPath>
+  <clipPath id="pf0851b05bc">
+   <rect x="7.2" y="152.352" width="120.96" height="120.96"/>
+  </clipPath>
+  <clipPath id="pdf2e5ff997">
+   <rect x="201.992727" y="152.352" width="120.96" height="120.96"/>
+  </clipPath>
+ </defs>
+</svg>
