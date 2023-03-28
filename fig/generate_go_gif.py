@@ -25,7 +25,8 @@ st = time.time()
 s = init(subkeys)
 for i in range(1000 + 200):
     if i >= 1000 and i % 5 == 0:
-        s.save_svg(f"{i % 1000:03d}.svg", color_theme="dark")
+        s.save_svg(f"{i % 1000:03d}_dark.svg", color_theme="dark")
+        s.save_svg(f"{i % 1000:03d}_light.svg", color_theme="light")
     rng, subkey = jax.random.split(rng)
     a = act_randomly(subkey, s)
     s = step(s, a)

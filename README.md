@@ -7,7 +7,8 @@
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
-<img src="fig/go.gif" width="40%"><img src="fig/go.gif" width="40%" style="transform:rotate(180deg);">
+<img src="fig/go_dark.gif#gh-dark-mode-only" width="30%"><img src="fig/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(270deg);"><img src="fig/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(90deg);">
+<img src="fig/go_light.gif#gh-light-mode-only" width="30%"><img src="fig/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="fig/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
 </div>
 
 ## Why Pgx?
@@ -19,8 +20,8 @@ throughput: https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
 Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
 
-- **JAX-native.** All `step` functions are *jittable*
-- **Super fast** in parallel execution (much faster than C++/Python implementation)
+- **JAX-native.** All `step` functions are *JIT-able*
+- **Super fast** in parallel execution on accelerators
 - **Various game support** including **Backgammon**, **Shogi**, and **Go**
 - **Beautiful visualization** in SVG format
 
@@ -67,9 +68,39 @@ while not state.terminated.all():
 * `is_truncated=True` is also set to state
 --->
 
-## Game support road map
+## Supported games and road map
+
+> :warning: Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in April 2023. Opinions and comments are more than welcome!
 
 Use `pgx.available_games()` to see the list of currently available games.
+
+<div align="center">
+<img src="fig/svgs/2048_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/backgammon_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/connect_four_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/go-9x9_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/hex_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/kuhn_poker_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/leduc_holdem_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/othello_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/shogi_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/sparrow_mahjong_dark.svg#gh-dark-mode-only" height="120px">
+<img src="fig/svgs/tic_tac_toe_dark.svg#gh-dark-mode-only" height="120px">
+</div>
+
+<div align="center">
+<img src="fig/svgs/2048_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/backgammon_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/connect_four_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/go-9x9_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/hex_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/kuhn_poker_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/leduc_holdem_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/othello_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/shogi_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/sparrow_mahjong_light.svg#gh-light-mode-only" height="120px">
+<img src="fig/svgs/tic_tac_toe_light.svg#gh-light-mode-only" height="120px">
+</div>
 
 <div align="center">
 <table>
@@ -114,9 +145,19 @@ Use `pgx.available_games()` to see the list of currently available games.
  <td>:white_check_mark:</td>
 </tr>
 <tr>
+ <td><a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td><a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
  <td><a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a></td>
  <td>:construction:</td>
- <td></td>
+ <td>:construction:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
