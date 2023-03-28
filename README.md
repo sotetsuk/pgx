@@ -67,7 +67,7 @@ while not state.terminated.all():
 * `is_truncated=True` is also set to state
 --->
 
-## Game support road map
+## Supported games and road map
 
 <div align="center">
 <img src="fig/svgs/2048_dark.svg" height="120px">
@@ -139,6 +139,16 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a></td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td>Kuhn Poker</td>
+ <td>:white_check_mark:</td>
+ <td>:white_check_mark:</td>
+</tr>
+<tr>
+ <td>Leduc Holdem</td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
