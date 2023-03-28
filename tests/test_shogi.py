@@ -351,14 +351,14 @@ def test_buggy_legal_actions():
     state = step(state, dl_action)
     visualize(state, "tests/assets/shogi/buggy_legal_001.svg")
     assert int(state.legal_action_mask.sum()) == 1
-    # double check2
+    # discovered check with pin
     sfen = "8k/9/9/9/9/5b3/6r2/9/7GK w - 1"
     state = State._from_sfen(sfen)
     assert int(state.legal_action_mask.sum()) == 49
-    dl_action = 243 + 74
+    dl_action = 54
     state = step(state, dl_action)
     visualize(state, "tests/assets/shogi/buggy_legal_002.svg")
-    # assert int(state.legal_action_mask.sum()) == 0
+    assert int(state.legal_action_mask.sum()) == 1
     # discovered check
     sfen = "k8/8g/9/4r1b1K/P8/9/9/9/9 w - 1"
     state = State._from_sfen(sfen)
@@ -386,4 +386,19 @@ def test_buggy_legal_actions():
     dl_action = 81 + 42
     state = step(state, dl_action)
     visualize(state, "tests/assets/shogi/buggy_legal_007.svg")
+    assert int(state.legal_action_mask.sum()) == 10
+    # double pin
+    sfen = "8k/9/9/9/9/5b3/6r2/7P1/7GK b - 1"
+    state = State._from_sfen(sfen)
+    dl_action = 54
+    state = step(state, dl_action)
+    visualize(state, "tests/assets/shogi/buggy_legal_008.svg")
+    assert int(state.legal_action_mask.sum()) == 2
+    # drop pawn mate
+    sfen = "8k/9/7L1/7N1/9/9/9/9/8K b P 1"
+    state = State._from_sfen(sfen)
+    assert int(state.legal_action_mask.sum()) == 76
+    # move pawn mate(legal)
+    sfen = "8k/9/7LP/7N1/9/9/9/9/8K b - 1"
+    state = State._from_sfen(sfen)
     assert int(state.legal_action_mask.sum()) == 10
