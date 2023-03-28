@@ -388,7 +388,7 @@ def test_buggy_legal_actions():
     visualize(state, "tests/assets/shogi/buggy_legal_007.svg")
     assert int(state.legal_action_mask.sum()) == 10
     # double pin
-    sfen = "8k/9/9/9/9/5b3/6r2/7P1/7GK b - 1"
+    sfen = "8k/9/9/9/9/5b3/6r2/7P1/7GK w - 1"
     state = State._from_sfen(sfen)
     dl_action = 54
     state = step(state, dl_action)
