@@ -414,7 +414,9 @@ def _is_legal_move_wo_pro(
             .at[to]
             .set(state.piece_board[from_]),
             cache_king=jax.lax.select(  # update cache
-                state.piece_board[from_] == KING, jnp.int32(to), state.cache_king
+                state.piece_board[from_] == KING,
+                jnp.int32(to),
+                state.cache_king,
             ),
         )
     )
@@ -481,7 +483,7 @@ def _is_promotion_legal(
 def _is_checked(state):
     # Use cached king position, simpler implementation is:
     # jnp.argmin(jnp.abs(state.piece_board - KING))
-    king_pos = state.king_pos
+    king_pos = state.cache_king
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
