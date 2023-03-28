@@ -15,6 +15,7 @@
 import jax
 import jax.numpy as jnp
 
+from pgx._cache import load_shogi_init_legal_action_mask  # type: ignore
 from pgx._cache import load_shogi_is_on_the_way  # type: ignore
 from pgx._cache import load_shogi_legal_from_idx  # type: ignore
 from pgx._cache import load_shogi_raw_effect_boards  # type: ignore
@@ -78,6 +79,8 @@ BETWEEN_IX = jax.jit(
 
 
 CAN_MOVE_ANY = can_move_any_ix(jnp.arange(81))  # (81, 36)
+
+INIT_LEGAL_ACTION_MASK = load_shogi_init_legal_action_mask()
 
 
 def _to_sfen(state):
