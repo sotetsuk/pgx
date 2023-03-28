@@ -21,6 +21,7 @@ import jax.numpy as jnp
 import pgx.core as core
 from pgx._flax.struct import dataclass
 from pgx._shogi_utils import (
+    AROUND_IX,
     BETWEEN_IX,
     CAN_MOVE,
     CAN_MOVE_ANY,
@@ -360,21 +361,17 @@ def _is_drop_pawn_mate(state: State):
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
     flipped_to = 80 - to
+    flip_state = _set_cache(flip_state)
     can_capture_pawn = jax.vmap(partial(
         _is_legal_move_wo_pro, to=flipped_to, state=flip_state
     ))(from_=CAN_MOVE_ANY[flipped_to]).any()
     from_ = 80 - opp_king_pos
     can_king_escape = jax.vmap(
         partial(_is_legal_move_wo_pro, from_=from_, state=flip_state)
-    )(to=_around(from_)).any()
+    )(to=AROUND_IX[from_]).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
     return is_pawn_mate, to
-
-
-def _around(x):
-    y = jnp.int8([x - 1, x - 10, x - 9, x - 8, x + 1, x + 8, x + 9, x + 10])
-    return jnp.where((y < 0) | (y >= 81), -1, y)
 
 
 def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):

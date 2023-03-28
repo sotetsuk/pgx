@@ -57,11 +57,11 @@ if __name__ == "__main__":
     parser.add_argument("env_name")  # go, chess, tic_tac_toe
     parser.add_argument("venv")  # for-loop, subproc
     parser.add_argument("batch_size", type=int)
-    parser.add_argument("n_steps_lim", type=int)
+    parser.add_argument("num_batch_steps", type=int)
     args = parser.parse_args()
     env = make_env(args.env_name, args.batch_size, args.venv)
     time_sta = time.time()
-    steps_num = random_play(env, args.n_steps_lim, args.batch_size)
+    steps_num = random_play(env, args.num_batch_steps * args.batch_size, args.batch_size)
     time_end = time.time()
     sec = time_end - time_sta
     print(json.dumps({"game": args.env_name, "library": f"petting_zoo/{args.venv}", "total_steps": steps_num, "total_sec": sec, "steps/sec": steps_num/sec, "batch_size": args.batch_size}))
