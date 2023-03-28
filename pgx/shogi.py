@@ -92,8 +92,8 @@ class State(core.State):
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         # fmt: on
-        state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
         state = _set_all_major_pieces(state)
+        state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
         return state
 
     @staticmethod
@@ -229,8 +229,8 @@ class Action:
 def _init_board():
     """Initialize Shogi State."""
     state = State()
-    state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
     state = _set_all_major_pieces(state)
+    state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
     return state
 
 
