@@ -1,5 +1,7 @@
-import jax.numpy as jnp
 from copy import deepcopy
+
+import jax.numpy as jnp
+
 from pgx.hex import State as HexState
 from pgx.hex import _get_abs_board
 

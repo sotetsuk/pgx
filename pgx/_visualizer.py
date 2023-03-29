@@ -365,8 +365,9 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, HexState):
-            from pgx._dwg.hex import four_dig
             import jax.numpy as jnp
+
+            from pgx._dwg.hex import four_dig
 
             self.config["GRID_SIZE"] = 30
             try:
