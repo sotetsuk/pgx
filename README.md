@@ -207,7 +207,8 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
 
 - [RobertTLange/gymnax](https://github.com/RobertTLange/gymnax): Classic control, bsuite, etc.
 - [google/brax](https://github.com/google/brax): Rigidbody physics simulation
-- [instadeepai/jumanji](https://github.com/instadeepai/jumanji): Industry-driven environments (e.g., Travelling Salesman Problem)
+- [instadeepai/jumanji](https://github.com/instadeepai/jumanji): A suite of diverse and challenging
+    RL environments in JAX (bin-packing, routing problems, etc).
 
 Combining Pgx with these **JAX-native algorithms/implementations** might be an interesting direction:
 
