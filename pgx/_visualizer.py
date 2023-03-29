@@ -241,8 +241,8 @@ class Visualizer:
                     "white",
                     "white",
                     "#1e1e1e",
-                    "gainsboro",
-                    "",
+                    "lightgray",
+                    "dimgray",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -252,7 +252,7 @@ class Visualizer:
                     "white",
                     "white",
                     "black",
-                    "",
+                    "gray",
                 )
         elif isinstance(_state, BridgeBiddingState):
             self.config["GRID_SIZE"] = 50
