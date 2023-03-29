@@ -64,7 +64,7 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
             p3 = ((i + 1.5 - 12) * GRID_SIZE, 8 * GRID_SIZE)
 
         fill_color = (
-            color_set.p1_outline if i % 2 == 0 else color_set.p2_outline
+            color_set.p1_color if i % 2 == 0 else color_set.p2_color
         )
 
         board_g.add(

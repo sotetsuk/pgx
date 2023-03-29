@@ -236,10 +236,10 @@ class Visualizer:
                 and self.config["COLOR_THEME"] == "dark"
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
+                    "black",
                     "gray",
-                    "black",
-                    "black",
-                    "dimgray",
+                    "white",
+                    "white",
                     "#1e1e1e",
                     "gainsboro",
                     "",
@@ -321,11 +321,11 @@ class Visualizer:
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
-                    "lightgray",
+                    "gray",
                     "white",
-                    "lightgray",
+                    "white",
                     "#1e1e1e",
-                    "lightgray",
+                    "gray",
                     "gray",
                 )
             else:
@@ -379,9 +379,9 @@ class Visualizer:
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
+                    "gray",
                     "white",
                     "white",
-                    "black",
                     "#1e1e1e",
                     "white",
                     "dimgray",
