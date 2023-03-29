@@ -33,6 +33,7 @@ pip install pgx
 ```
 
 ## Usage
+<a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ```py
 import jax
