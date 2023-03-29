@@ -57,21 +57,32 @@ def _make_hex_dwg(dwg, state: HexState, config):
         outline = color_set.p1_outline if stone > 0 else color_set.p2_outline
         r = GRID_SIZE / 1.3
 
-        # 駒を六角形で表示
+        # 駒を円で表示
         board_g.add(
-            dwg.polygon(
-                points=[
-                    (
-                        four_dig(_x + r * jnp.sin(jnp.pi / 3 * i)),
-                        four_dig(_y + r * jnp.cos(jnp.pi / 3 * i)),
-                    )
-                    for i in range(6)
-                ],
+            dwg.circle(
+                center=(four_dig(_x), four_dig(_y)),
+                r=r * 0.9,
                 fill=color,
                 stroke=outline,
                 stroke_width="0.5px",
             )
         )
+
+        # 駒を六角形で表示
+        # board_g.add(
+        #    dwg.polygon(
+        #        points=[
+        #            (
+        #                four_dig(_x + r * jnp.sin(jnp.pi / 3 * i)),
+        #                four_dig(_y + r * jnp.cos(jnp.pi / 3 * i)),
+        #            )
+        #            for i in range(6)
+        #        ],
+        #        fill=color,
+        #        stroke=outline,
+        #        stroke_width="0.5px",
+        #    )
+        # )
     # 周りの領域
     b_points = []
     w_points = []
@@ -114,11 +125,11 @@ def _make_hex_dwg(dwg, state: HexState, config):
     edge = deepcopy(edge)
     edge.rotate(angle=180, center=(cx, cy))
     board_g.add(edge)
-    #board_g.rotate(
+    # board_g.rotate(
     #    angle=-30,
     #    center=(0, 0),
-    #)
-    board_g.translate(GRID_SIZE * BOARD_SIZE)
+    # )
+    board_g.translate(3 * GRID_SIZE, 2 * GRID_SIZE)
     return board_g
 
 

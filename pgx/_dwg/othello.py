@@ -29,7 +29,7 @@ def _make_othello_dwg(dwg, state: OthelloState, config):
             ),
             fill="none",
             stroke=color_set.grid_color,
-            stroke_width="20px",
+            stroke_width="10px",
             rx="3px",
             ry="3px",
         )

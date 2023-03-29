@@ -365,13 +365,20 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, HexState):
+            from pgx._dwg.hex import four_dig
+            import jax.numpy as jnp
+
             self.config["GRID_SIZE"] = 30
             try:
-                self.config["BOARD_WIDTH"] = int(_state.size[0] * 1.3)
-                self.config["BOARD_HEIGHT"] = int(_state.size[0] * 0.8)
+                self.config["BOARD_WIDTH"] = four_dig(_state.size[0] * 1.5)
+                self.config["BOARD_HEIGHT"] = four_dig(
+                    _state.size[0] * jnp.sqrt(3) / 2
+                )
             except IndexError:
-                self.config["BOARD_WIDTH"] = int(_state.size * 1.3)
-                self.config["BOARD_HEIGHT"] = int(_state.size * 0.8)
+                self.config["BOARD_WIDTH"] = four_dig(_state.size * 1.5)
+                self.config["BOARD_HEIGHT"] = four_dig(
+                    _state.size * jnp.sqrt(3) / 2
+                )
             self._make_dwg_group = _make_hex_dwg
             if (
                 self.config["COLOR_THEME"] is None
@@ -384,7 +391,7 @@ class Visualizer:
                     "white",
                     "#1e1e1e",
                     "white",
-                    "dimgray",
+                    "#1e1e1e",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -463,11 +470,11 @@ class Visualizer:
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
-                    "lightgray",
+                    "gray",
                     "white",
-                    "lightgray",
+                    "white",
                     "#1e1e1e",
-                    "lightgray",
+                    "gray",
                     "",
                 )
             else:
