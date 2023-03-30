@@ -25,44 +25,6 @@ TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
-# 指し手のdataclass
-@dataclass
-class JaxAnimalShogiAction:
-    # 上の3つは移動と駒打ちで共用
-    # 下の3つは移動でのみ使用
-    # 駒打ちかどうか
-    is_drop: jnp.ndarray = FALSE
-    # piece: 動かした(打った)駒の種類
-    piece: jnp.ndarray = jnp.int32(0)
-    # final: 移動後の座標
-    to: jnp.ndarray = jnp.int32(0)
-    # 移動前の座標
-    from_: jnp.ndarray = jnp.int32(0)
-    # captured: 取られた駒の種類。駒が取られていない場合は0
-    captured: jnp.ndarray = jnp.int32(0)
-    # is_promote: 駒を成るかどうかの判定
-    is_promote: jnp.ndarray = FALSE
-
-
-INIT_BOARD = jnp.array(
-    [
-        [0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0],
-        [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0],
-        [0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-        [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0],
-        [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0],
-        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    ],
-    dtype=jnp.bool_,
-)
-
-
-
 # -1: EMPTY
 #  0: PAWN
 #  1: ROOK
@@ -80,7 +42,21 @@ INIT_BOARD = jnp.int8([7, -1, -1, 1, 8, 5, 0, 3, 6, -1, -1, 2])  # (12,)
 @dataclass
 class JaxAnimalShogiState:
     current_player: jnp.ndarray = jnp.int8(0)
+    # --- Animal Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)
     board: jnp.ndarray = INIT_BOARD
     hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
+
+
+# Implements AlphaZero like action:
+# 132 =
+#   [Move] 12 (from_) * 8 (to) +
+#   [Drop] 12 (to) * 3 (piece_type)
+@dataclass
+class Action:
+    is_drop: jnp.ndarray = FALSE
+    piece: jnp.ndarray = jnp.int8(0)
+    from_: jnp.ndarray = jnp.int8(0)
+    to: jnp.ndarray = jnp.int8(0)
+    is_promotion: jnp.ndarray = FALSE
 
