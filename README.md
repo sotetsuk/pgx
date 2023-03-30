@@ -205,7 +205,7 @@ Use `pgx.available_games()` to see the list of currently available games.
 
 Pgx is intended to complement these **JAX-native environments** with (classic) board game suits:
 
-- [RobertTLange/gymnax](https://github.com/RobertTLange/gymnax): JAX implementation of classic environments ([classic control](https://github.com/openai/gym/tree/master/gym/envs/classic_control), [bsuite](https://github.com/deepmind/bsuite), MinAtar, etc) and meta RL tasks
+- [RobertTLange/gymnax](https://github.com/RobertTLange/gymnax): JAX implementation of classic environments ([classic control](https://gymnasium.farama.org/environments/classic_control), [bsuite](https://github.com/deepmind/bsuite), MinAtar, etc) and meta RL tasks
 - [google/brax](https://github.com/google/brax): Rigidbody physics simulation in JAX and continuous-space RL tasks (ant, fetch, humanoid, etc)
 - [instadeepai/jumanji](https://github.com/instadeepai/jumanji): A suite of diverse and challenging
     RL environments in JAX (bin-packing, routing problems, etc)
