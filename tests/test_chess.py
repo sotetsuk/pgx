@@ -490,8 +490,7 @@ def test_buggy_samples():
     s = _from_fen(fen)
     s, _, _ = step(s, 382)
     assert _legal_actions(s).sum() == 5
-    # TODO: to_sfen wrong?
-    fen = "7k/8/8/8/1p6/8/P7/K7 b - - 0 1"
+    fen = "7k/8/8/8/1p6/8/P7/K7 w - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 513)
     assert _legal_actions(s).sum() == 5
