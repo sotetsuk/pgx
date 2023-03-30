@@ -5,12 +5,6 @@ import numpy as np
 import time
 
 
-def visualize(state, fname="tests/assets/chess/xxx.svg"):
-    from pgx._visualizer import Visualizer
-    v = Visualizer(color_theme="dark")
-    v.save_svg(state, fname)
-
-
 def test_move():
     s = init()
     m1 = ChessAction(1, 1, 3)
@@ -465,122 +459,108 @@ def test_buggy_samples():
     # init
     fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
     s = _from_fen(fen)
-    visualize(s, "tests/assets/chess/buggy_samples_001.svg")
     assert _legal_actions(s).sum() == 20
     # first pawn
     fen = "7k/8/8/8/8/8/P7/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_002.svg")
     assert _legal_actions(s).sum() == 4
     # first pawn disturbed
     fen = "7k/8/8/8/p7/8/P7/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_003.svg")
     assert _legal_actions(s).sum() == 3
     # second pawn
     fen = "7k/8/8/8/8/P7/8/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_004.svg")
     assert _legal_actions(s).sum() == 4
     # second pawn disturbed
     fen = "7k/8/8/8/p7/P7/8/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_005.svg")
     assert _legal_actions(s).sum() == 3
     # pawn catch
     fen = "7k/8/8/8/8/p1p5/1P6/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_006.svg")
     assert _legal_actions(s).sum() == 6
     # en_passant
     fen = "7k/7p/8/6P1/8/8/8/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 382)
-    visualize(s, "tests/assets/chess/buggy_samples_007.svg")
+    assert _legal_actions(s).sum() == 5
+    # TODO: to_sfen wrong?
+    fen = "7k/8/8/8/1p6/8/P7/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 513)
     assert _legal_actions(s).sum() == 5
     # promotion
     # TODO: index error
     fen = "b1r4k/1P6/8/8/8/8/8/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_008.svg")
     # assert _legal_actions(s).sum() == 15
     # castling(cannot)
     fen = "7k/8/7p/8/8/8/8/R3K2R b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_009.svg")
     assert _legal_actions(s).sum() == 22
     # castling(cannot)
     fen = "7k/8/7p/8/8/8/8/RN2K1NR b KQ - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_010.svg")
     assert _legal_actions(s).sum() == 23
     # castling(cannot)
     fen = "1r4rk/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_011.svg")
     assert _legal_actions(s).sum() == 23
     # castling
     fen = "7k/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_012.svg")
     assert _legal_actions(s).sum() == 24
     # checked
     # TODO: filter leave-check
     fen = "7k/8/8/8/8/1p6/P7/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 394)
-    visualize(s, "tests/assets/chess/buggy_samples_013.svg")
     # assert _legal_actions(s).sum() == 2
     # suicide
     # TODO: filter suicide-move
     fen = "7k/8/8/8/8/8/7q/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
-    visualize(s, "tests/assets/chess/buggy_samples_014.svg")
     # assert _legal_actions(s).sum() == 1
     # discovered check
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2p5/8/KR6 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 402)
-    visualize(s, "tests/assets/chess/buggy_samples_015.svg")
     # assert _legal_actions(s).sum() == 2
     # check with pin
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2r5/8/KR6 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 338)
-    visualize(s, "tests/assets/chess/buggy_samples_016.svg")
     # assert _legal_actions(s).sum() == 1
     # double check
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2r5/8/K7 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 338)
-    visualize(s, "tests/assets/chess/buggy_samples_017.svg")
     # assert _legal_actions(s).sum() == 1
     # pin
     # TODO: filter suicide
     fen = "7k/8/8/8/8/8/7r/KR6 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 441)
-    visualize(s, "tests/assets/chess/buggy_samples_018.svg")
     # assert _legal_actions(s).sum() == 8
     # double pin
     # TODO: filter suicide
     fen = "7k/6b1/5r2/8/3B4/8/8/KR6 b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 173)
-    visualize(s, "tests/assets/chess/buggy_samples_019.svg")
     # assert _legal_actions(s).sum() == 11
 
