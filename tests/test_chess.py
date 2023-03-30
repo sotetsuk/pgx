@@ -455,16 +455,107 @@ def test_from_sfen():
     assert made.wr2_move_count
 
 
-if __name__ == '__main__':
-    test_move()
-    test_pawn_move()
-    test_knight_move()
-    test_bishop_move()
-    test_rook_move()
-    test_king_move()
-    test_pin()
-    test_legal_action()
-    test_is_mate()
-    test_step()
-    test_to_fen()
-    test_from_sfen()
+def test_buggy_samples():
+    # init
+    fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    s = _from_fen(fen)
+    assert _legal_actions(s).sum() == 20
+    # first pawn
+    fen = "7k/8/8/8/8/8/P7/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 4
+    # first pawn disturbed
+    fen = "7k/8/8/8/p7/8/P7/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 3
+    # second pawn
+    fen = "7k/8/8/8/8/P7/8/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 4
+    # second pawn disturbed
+    fen = "7k/8/8/8/p7/P7/8/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 3
+    # pawn catch
+    fen = "7k/8/8/8/8/p1p5/1P6/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 6
+    # en_passant
+    fen = "7k/7p/8/6P1/8/8/8/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 382)
+    assert _legal_actions(s).sum() == 5
+    # promotion
+    # TODO: index error
+    fen = "b1r4k/1P6/8/8/8/8/8/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    # assert _legal_actions(s).sum() == 15
+    # castling(cannot)
+    fen = "7k/8/7p/8/8/8/8/R3K2R b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 22
+    # castling(cannot)
+    fen = "7k/8/7p/8/8/8/8/RN2K1NR b KQ - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 23
+    # castling(cannot)
+    fen = "1r4rk/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 23
+    # castling
+    fen = "7k/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 24
+    # checked
+    # TODO: filter leave-check
+    fen = "7k/8/8/8/8/1p6/P7/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 394)
+    # assert _legal_actions(s).sum() == 2
+    # suicide
+    # TODO: filter suicide-move
+    fen = "7k/8/8/8/8/8/7q/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 447)
+    # assert _legal_actions(s).sum() == 1
+    # discovered check
+    # TODO: filter leave-check
+    fen = "7k/8/8/8/3b4/2p5/8/KR6 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 402)
+    # assert _legal_actions(s).sum() == 2
+    # check with pin
+    # TODO: filter leave-check
+    fen = "7k/8/8/8/3b4/2r5/8/KR6 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 338)
+    # assert _legal_actions(s).sum() == 1
+    # double check
+    # TODO: filter leave-check
+    fen = "7k/8/8/8/3b4/2r5/8/K7 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 338)
+    # assert _legal_actions(s).sum() == 1
+    # pin
+    # TODO: filter suicide
+    fen = "7k/8/8/8/8/8/7r/KR6 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 441)
+    # assert _legal_actions(s).sum() == 8
+    # double pin
+    # TODO: filter suicide
+    fen = "7k/6b1/5r2/8/3B4/8/8/KR6 b - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 173)
+    # assert _legal_actions(s).sum() == 11
+
