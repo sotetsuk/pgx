@@ -490,6 +490,7 @@ def test_buggy_samples():
     s = _from_fen(fen)
     s, _, _ = step(s, 382)
     assert _legal_actions(s).sum() == 5
+    # black
     fen = "7k/8/8/8/1p6/8/P7/K7 w - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 513)
@@ -500,25 +501,50 @@ def test_buggy_samples():
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
     # assert _legal_actions(s).sum() == 15
+    # black
+    fen = "7k/8/8/8/8/8/6p1/K4R1B w - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 448)
+    # assert _legal_actions(s).sum() == 15
     # castling(cannot)
     fen = "7k/8/7p/8/8/8/8/R3K2R b - - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 22
+    # black
+    fen = "r2k3r/8/8/8/8/P7/8/K7 w - - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 448)
     assert _legal_actions(s).sum() == 22
     # castling(cannot)
     fen = "7k/8/7p/8/8/8/8/RN2K1NR b KQ - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
     assert _legal_actions(s).sum() == 23
+    # black
+    fen = "rn1k2nr/8/8/8/8/P7/8/K7 w kq - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 448)
+    assert _legal_actions(s).sum() == 23
     # castling(cannot)
     fen = "1r4rk/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
     assert _legal_actions(s).sum() == 23
+    # black
+    fen = "r2k3r/8/8/8/8/P7/8/KR4R1 w kq - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 448)
+    assert _legal_actions(s).sum() == 23
     # castling
     fen = "7k/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
     s = _from_fen(fen)
     s, _, _ = step(s, 447)
+    assert _legal_actions(s).sum() == 24
+    # black
+    fen = "r2k3r/8/8/8/8/P7/8/K7 w kq - 0 1"
+    s = _from_fen(fen)
+    s, _, _ = step(s, 448)
     assert _legal_actions(s).sum() == 24
     # checked
     # TODO: filter leave-check
