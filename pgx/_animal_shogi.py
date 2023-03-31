@@ -18,7 +18,7 @@ from typing import Tuple
 import jax
 import jax.numpy as jnp
 
-from pgx._flax.serialization import from_bytes
+import pgx.core as core
 from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -40,17 +40,24 @@ INIT_BOARD = jnp.int8([7, -1, -1, 1, 8, 5, 0, 3, 6, -1, -1, 2])  # (12,)
 
 
 @dataclass
-class JaxAnimalShogiState:
+class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
+    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(132, dtype=jnp.bool_)  # (132,)
+    observation: jnp.ndarray = jnp.zeros(1, dtype=jnp.bool_)  # TODO: fix me
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
     # --- Animal Shogi specific ---
     turn: jnp.ndarray = jnp.int8(0)
-    board: jnp.ndarray = INIT_BOARD
+    board: jnp.ndarray = INIT_BOARD  # (12,)
     hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
 
 
 # Implements AlphaZero like action:
 # 132 =
-#   [Move] 12 (from_) * 8 (to) +
+#   [Move] 12 (from_) * 8 (direction) +
 #   [Drop] 12 (to) * 3 (piece_type)
 @dataclass
 class Action:
