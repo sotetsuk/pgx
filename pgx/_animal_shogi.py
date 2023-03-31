@@ -106,7 +106,6 @@ class AnimalShogi(core.Env):
         return 2
 
 
-
 def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     # apply move/drop action
@@ -174,7 +173,9 @@ def _legal_action_mask(state: State):
 
     def is_legal_move(action: Action):
         piece = state.board[action.from_]
-        ok = (state.board[action.to] == EMPTY) | (GOLD < state.board[action.to])
+        ok = (state.board[action.to] == EMPTY) | (
+            GOLD < state.board[action.to]
+        )
         ok &= _can_move(piece, action.from_, action.to)
         # TODO: check
         return ok
