@@ -110,11 +110,12 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
+    is_try = (state.board[jnp.int8([0, 4, 8])] == KING).any()
 
     state = _flip(state)
 
     legal_action_mask = _legal_action_mask(state)  # TODO: fix me
-    terminated = ~legal_action_mask.any()
+    terminated = ~legal_action_mask.any() | is_try
     # fmt: off
     reward = jax.lax.select(
         terminated,
