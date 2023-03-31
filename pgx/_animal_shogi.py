@@ -55,21 +55,26 @@ class State(core.State):
     hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
 
 
-# Implements AlphaZero like action:
-# 132 =
-#   [Move] 12 (from_) * 8 (direction) +
-#   [Drop] 12 (to) * 3 (piece_type)
 @dataclass
 class Action:
     is_drop: jnp.ndarray = FALSE
-    piece: jnp.ndarray = jnp.int8(0)
-    from_: jnp.ndarray = jnp.int8(0)
-    to: jnp.ndarray = jnp.int8(0)
-    is_promotion: jnp.ndarray = FALSE
+    from_: jnp.ndarray = jnp.int8(-1)
+    to: jnp.ndarray = jnp.int8(-1)
+    drop_piece: jnp.ndarray = jnp.int8(-1)
 
     @staticmethod
     def _from_label(a: jnp.ndarray):
-        return Action()  # TODO: write me
+        # Implements AlphaZero like action label:
+        # 132 labels =
+        #   [Move] 12 (from_) * 8 (direction) +
+        #   [Drop] 12 (to) * 3 (piece_type)
+        sq, x = a // 12, a % 12
+        is_drop = x < 8
+        return jax.lax.select(
+            is_drop,
+            Action(is_drop=TRUE, to=sq, drop_piece=x),
+            Action(is_drop=FALSE, from_=sq, to=_to(sq, x))
+        )
 
 
 def _step(state: State, action: jnp.ndarray):
@@ -167,3 +172,12 @@ def _can_move(piece, from_, to):
     # fmt: on
 
     return CAN_MOVE[piece, from_, to]
+
+
+def _to(from_, dir):
+    # 5 3 0
+    # 6 x 1
+    # 7 4 2
+    dx = jnp.int8([-1, -1, -1,  0, 0, 1,  1, 1])
+    dy = jnp.int8([-1,  0,  1, -1, 1, -1, 0, 1])
+    return from_ + dx[dir] * 4 + dy[dir]
