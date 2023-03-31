@@ -187,6 +187,8 @@ def _legal_action_mask(state: State):
         piece = state.board[action.from_]
         # from_が自分の駒
         ok = (PAWN <= piece) & (piece <= GOLD)
+        # toが-1でない
+        ok &= action.to != -1
         # toが自分の駒でない
         ok &= (state.board[action.to] == EMPTY) | (
             GOLD < state.board[action.to]
