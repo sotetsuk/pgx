@@ -63,15 +63,48 @@ class Action:
     def _from_label(a: jnp.ndarray):
         # Implements AlphaZero like action label:
         # 132 labels =
-        #   [Move] 12 (from_) * 8 (direction) +
-        #   [Drop] 12 (to) * 3 (piece_type)
-        sq, x = a // 12, a % 12
-        is_drop = x < 8
+        #   [Move] 8 (direction) * 12 (from_) +
+        #   [Drop] 3 (piece_type) * 12 (to)
+        x, sq = jnp.int8(a // 12), jnp.int8(a % 12)
+        is_drop = 8 <= x
         return jax.lax.cond(
             is_drop,
-            lambda: Action(is_drop=TRUE, to=sq, drop_piece=x),  # type: ignore
+            lambda: Action(is_drop=TRUE, to=sq, drop_piece=x - 8),  # type: ignore
             lambda: Action(is_drop=FALSE, from_=sq, to=_to(sq, x)),  # type: ignore
         )
+
+
+class AnimalShogi(core.Env):
+    def __init__(self):
+        super().__init__()
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        rng, subkey = jax.random.split(key)
+        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        return State(current_player=current_player)  # type: ignore
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        return _step(state, action)
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state, player_id)
+
+    @property
+    def name(self) -> str:
+        return "AnimalShogi"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self) -> int:
+        return 2
+
 
 
 def _step(state: State, action: jnp.ndarray):
@@ -95,6 +128,10 @@ def _step(state: State, action: jnp.ndarray):
         terminated=terminated,
         reward=reward,
     )
+
+
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    return jnp.ones(1, dtype=jnp.bool_)
 
 
 def _step_move(state: State, action: Action) -> State:
@@ -137,7 +174,7 @@ def _legal_action_mask(state: State):
 
     def is_legal_move(action: Action):
         piece = state.board[action.from_]
-        ok = state.board[action.to] == EMPTY
+        ok = (state.board[action.to] == EMPTY) | (GOLD < state.board[action.to])
         ok &= _can_move(piece, action.from_, action.to)
         # TODO: check
         return ok
@@ -148,7 +185,8 @@ def _legal_action_mask(state: State):
         # TODO: check
         return ok
 
-    return jax.vmap(is_legal)(jnp.arange(132))
+    return jnp.ones(132, dtype=jnp.bool_)
+    # return jax.vmap(is_legal)(jnp.arange(132))
 
 
 def _flip(state):

@@ -87,9 +87,14 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
     #  7: OPP_BISHOP
     #  8: OPP_KING
     #  9: OPP_GOLD
+
+    if state.turn == 0:
+        board = state.board
+    else:
+        board = state.board[::-1]
     for xy in range(12):
         piece_type = "EMPTY"
-        n = state.board[xy]
+        n = board[xy]
         if n in (0, 5):
             piece_type = "P"
         if n in (1, 6):
