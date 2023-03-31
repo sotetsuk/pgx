@@ -83,7 +83,7 @@ class AnimalShogi(core.Env):
         rng, subkey = jax.random.split(key)
         current_player = jnp.int8(jax.random.bernoulli(subkey))
         state = State(current_player=current_player)  # type: ignore
-        state = state.replace(legal_action_mask=_legal_action_mask(state))
+        state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
         return state
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
