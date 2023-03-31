@@ -70,10 +70,10 @@ class Action:
         #   [Drop] 12 (to) * 3 (piece_type)
         sq, x = a // 12, a % 12
         is_drop = x < 8
-        return jax.lax.select(
+        return jax.lax.cond(
             is_drop,
-            Action(is_drop=TRUE, to=sq, drop_piece=x),
-            Action(is_drop=FALSE, from_=sq, to=_to(sq, x))
+            lambda: Action(is_drop=TRUE, to=sq, drop_piece=x),
+            lambda: Action(is_drop=FALSE, from_=sq, to=_to(sq, x))
         )
 
 
