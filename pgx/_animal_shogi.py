@@ -98,7 +98,7 @@ def _step(state: State, action: jnp.ndarray):
 
 
 def _step_move(state: State, action: Action) -> State:
-    piece = state.board[state.from_]
+    piece = state.board[action.from_]
     # remove piece from the original position
     board = state.board.at[action.from_].set(EMPTY)
     # capture the opponent if exists
@@ -122,9 +122,9 @@ def _step_move(state: State, action: Action) -> State:
 
 def _step_drop(state: State, action: Action) -> State:
     # add piece to board
-    board = state.board.at[action.to].set(action.piece)
+    board = state.board.at[action.to].set(action.drop_piece)
     # remove piece from hand
-    hand = state.hand.at[0, action.piece].add(-1)
+    hand = state.hand.at[0, action.drop_piece].add(-1)
     return state.replace(board=board, hand=hand)  # type: ignore
 
 
