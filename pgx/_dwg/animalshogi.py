@@ -114,7 +114,7 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
         else:
             is_black = 5 <= n
 
-        if is_black < 5:
+        if is_black:
             pieces_g = p1_pieces_g
             x = 2 - xy // BOARD_HEIGHT  # AnimalShogiStateは右上原点
             y = xy % BOARD_HEIGHT
