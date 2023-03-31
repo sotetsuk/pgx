@@ -48,3 +48,15 @@ def test_step():
     assert state.hand.sum() == 1
 
 
+def test_observe():
+
+    state = init(jax.random.PRNGKey(0))
+    assert state.observation.shape == (4, 3, 28)
+
+    expected = jnp.bool_(
+        [[False, False, False],
+         [False, False, False],
+         [False, True,  False],
+         [False, False, False]]
+    )
+    assert (state.observation[:, :, 0] == expected).all()

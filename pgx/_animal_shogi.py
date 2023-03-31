@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from functools import partial
 
 import jax
 import jax.numpy as jnp
@@ -142,7 +143,29 @@ def _step(state: State, action: jnp.ndarray):
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    return jnp.ones(1, dtype=jnp.bool_)
+    state, flip_state = jax.lax.cond(
+        state.current_player == player_id,
+        lambda: (state, _flip(state)),
+        lambda: (_flip(state), state),
+    )
+
+    def is_piece(p, state):
+        return state.board == p
+
+    def num_hand(p, n, state):
+        return state.hand.flatten()[p] >= n
+
+    # fmt: off
+    piece_feat = jax.vmap(partial(is_piece, state=state))(jnp.arange(10))  # (10, 12)
+    hand_feat = jax.vmap(jax.vmap(
+        partial(num_hand, state=state), (None, 0)), (0, None)
+    )(jnp.arange(6), jnp.arange(3)).reshape(18, 1)  # (18, 1)
+    hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (18, 12)
+    # fmt: on
+
+    return (
+        jnp.vstack((piece_feat, hand_feat)).reshape(-1, 3, 4).T
+    )  # (4, 3, 30)
 
 
 def _step_move(state: State, action: Action) -> State:
