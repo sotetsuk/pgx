@@ -81,7 +81,9 @@ class AnimalShogi(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
         current_player = jnp.int8(jax.random.bernoulli(subkey))
-        return State(current_player=current_player)  # type: ignore
+        state = State(current_player=current_player)  # type: ignore
+        state = state.replace(legal_action_mask=_legal_action_mask(state))
+        return state
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
@@ -174,10 +176,15 @@ def _legal_action_mask(state: State):
 
     def is_legal_move(action: Action):
         piece = state.board[action.from_]
-        ok = (state.board[action.to] == EMPTY) | (
+        # from_が自分の駒
+        ok = (PAWN <= piece) & (piece <= GOLD)
+        # toが自分の駒でない
+        ok &= (state.board[action.to] == EMPTY) | (
             GOLD < state.board[action.to]
         )
+        # 駒の動きが可能
         ok &= _can_move(piece, action.from_, action.to)
+        # 王手放置でない
         ok &= ~_is_checked(_step_move(state, action))
         return ok
 
@@ -251,6 +258,13 @@ def _to(from_, dir):
     # 5 3 0
     # 6 x 1
     # 7 4 2
+    x, y = from_ // 4, from_ % 4
     dx = jnp.int8([-1, -1, -1, 0, 0, 1, 1, 1])
     dy = jnp.int8([-1, 0, 1, -1, 1, -1, 0, 1])
-    return from_ + dx[dir] * 4 + dy[dir]
+    new_x = x + dx[dir]
+    new_y = y + dy[dir]
+    return jax.lax.select(
+        (new_x < 0) | (new_x >= 3) | (new_y < 0) | (new_y >= 4),
+        jnp.int8(-1),
+        new_x * 4 + new_y
+    )
