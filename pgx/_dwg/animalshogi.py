@@ -168,10 +168,7 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
     for i, piece_num, piece_type in zip(
         range(6), state.hand.flatten(), ["P", "R", "B", "P", "R", "B"]
     ):
-        if state.turn == 0:
-            is_black = i < 3
-        else:
-            is_black = 3 <= i
+        is_black = i < 3 if state.turn == 0 else 3 <= i  # type: ignore
         _g = p1_pieces_g if is_black else p2_pieces_g
         _g.add(
             dwg.text(

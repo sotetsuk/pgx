@@ -69,8 +69,8 @@ class Action:
         is_drop = x < 8
         return jax.lax.cond(
             is_drop,
-            lambda: Action(is_drop=TRUE, to=sq, drop_piece=x),
-            lambda: Action(is_drop=FALSE, from_=sq, to=_to(sq, x)),
+            lambda: Action(is_drop=TRUE, to=sq, drop_piece=x),  # type: ignore
+            lambda: Action(is_drop=FALSE, from_=sq, to=_to(sq, x)),  # type: ignore
         )
 
 
