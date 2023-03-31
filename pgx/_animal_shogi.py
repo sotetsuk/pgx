@@ -75,8 +75,9 @@ class Action:
 
 
 class AnimalShogi(core.Env):
-    def __init__(self):
+    def __init__(self,  max_termination_steps: int = 200):
         super().__init__()
+        self.max_termination_steps = max_termination_steps
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -87,7 +88,15 @@ class AnimalShogi(core.Env):
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return _step(state, action)
+        state = _step(state, action)
+        state = jax.lax.cond(
+            (0 <= self.max_termination_steps)
+            & (self.max_termination_steps <= state._step_count),
+            # end with tie
+            lambda: state.replace(terminated=TRUE),  # type: ignore
+            lambda: state,
+        )
+        return state  # type: ignore
 
     def _observe(
         self, state: core.State, player_id: jnp.ndarray
