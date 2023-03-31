@@ -207,7 +207,9 @@ def _is_checked(state):
         is_opp = piece >= 5
         return is_opp & _can_move(state.board[from_] % 5, king_pos, from_)
 
-    return can_capture_king(jnp.arange(12)).any()  # TODO: Around king is enough
+    return can_capture_king(
+        jnp.arange(12)
+    ).any()  # TODO: Around king is enough
 
 
 def _flip(state):
@@ -266,5 +268,5 @@ def _to(from_, dir):
     return jax.lax.select(
         (new_x < 0) | (new_x >= 3) | (new_y < 0) | (new_y >= 4),
         jnp.int8(-1),
-        new_x * 4 + new_y
+        new_x * 4 + new_y,
     )
