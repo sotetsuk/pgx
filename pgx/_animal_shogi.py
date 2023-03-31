@@ -33,7 +33,7 @@ GOLD = jnp.int8(4)
 #  7: OPP_BISHOP
 #  8: OPP_KING
 #  9: OPP_GOLD
-INIT_BOARD = jnp.int8([7, -1, -1, 1, 8, 5, 0, 3, 6, -1, -1, 2])  # (12,)
+INIT_BOARD = jnp.int8([6, -1, -1, 2, 8, 5, 0, 3, 7, -1, -1, 1])  # (12,)
 
 
 @dataclass
@@ -181,13 +181,13 @@ def _legal_action_mask(state: State):
         return ok
 
     def is_legal_drop(action: Action):
-        ok = state.board[action.to] != EMPTY
+        ok = state.board[action.to] == EMPTY
         ok &= state.hand[0, action.drop_piece] > 0
         # TODO: check
         return ok
 
-    return jnp.ones(132, dtype=jnp.bool_)
-    # return jax.vmap(is_legal)(jnp.arange(132))
+    # return jnp.ones(132, dtype=jnp.bool_)
+    return jax.vmap(is_legal)(jnp.arange(132))
 
 
 def _flip(state):
@@ -226,8 +226,8 @@ def _can_move(piece, from_, to):
 
     # fmt: off
     # CAN_MOVE[piece, from_, to] = Can <piece> move from <from_> to <to>?
-    CAN_MOVE = jax.jit(jax.vmap(jax.vmap(jax.vmap(
-        can_move, (None, None, 0)), (None, 0, None)), (0, None, None))
+    CAN_MOVE = jax.vmap(jax.vmap(jax.vmap(
+        can_move, (None, None, 0)), (None, 0, None)), (0, None, None)
     )(jnp.arange(5), jnp.arange(12), jnp.arange(12))
     # fmt: on
 

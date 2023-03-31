@@ -98,9 +98,9 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
         if n in (0, 5):
             piece_type = "P"
         if n in (1, 6):
-            piece_type = "R"
-        if n in (2, 7):
             piece_type = "B"
+        if n in (2, 7):
+            piece_type = "R"
         if n in (3, 8):
             piece_type = "K"
         if n in (4, 9):
