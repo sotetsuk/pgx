@@ -75,7 +75,7 @@ class Action:
 
 
 class AnimalShogi(core.Env):
-    def __init__(self,  max_termination_steps: int = 200):
+    def __init__(self, max_termination_steps: int = 200):
         super().__init__()
         self.max_termination_steps = max_termination_steps
 
