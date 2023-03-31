@@ -178,17 +178,29 @@ def _legal_action_mask(state: State):
             GOLD < state.board[action.to]
         )
         ok &= _can_move(piece, action.from_, action.to)
-        # TODO: check
+        ok &= ~_is_checked(_step_move(state, action))
         return ok
 
     def is_legal_drop(action: Action):
         ok = state.board[action.to] == EMPTY
         ok &= state.hand[0, action.drop_piece] > 0
-        # TODO: check
+        ok &= ~_is_checked(_step_drop(state, action))
         return ok
 
     # return jnp.ones(132, dtype=jnp.bool_)
     return jax.vmap(is_legal)(jnp.arange(132))
+
+
+def _is_checked(state):
+    king_pos = jnp.argmin(jnp.abs(state.board - KING))
+
+    @jax.vmap
+    def can_capture_king(from_):
+        piece = state.board[from_]
+        is_opp = piece >= 5
+        return is_opp & _can_move(state.board[from_] % 5, king_pos, from_)
+
+    return can_capture_king(jnp.arange(12)).any()  # TODO: Around king is enough
 
 
 def _flip(state):
