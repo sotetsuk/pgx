@@ -73,7 +73,7 @@ class Action:
         return jax.lax.cond(
             is_drop,
             lambda: Action(is_drop=TRUE, to=sq, drop_piece=x),
-            lambda: Action(is_drop=FALSE, from_=sq, to=_to(sq, x))
+            lambda: Action(is_drop=FALSE, from_=sq, to=_to(sq, x)),
         )
 
 
@@ -101,7 +101,7 @@ def _step(state: State, action: jnp.ndarray):
 
 
 def _step_move(state: State, action: Action) -> State:
-    piece =  state.board[state.from_]
+    piece = state.board[state.from_]
     # remove piece from the original position
     board = state.board.at[action.from_].set(EMPTY)
     # capture the opponent if exists
@@ -115,7 +115,7 @@ def _step_move(state: State, action: Action) -> State:
         lambda: state.hand.at[0, (captured % 5) % 4].add(1),
     )
     # promote piece (PAWN to GOLD)
-    is_promotion = ((action.from_ % 4 == 1) & (piece == PAWN))
+    is_promotion = (action.from_ % 4 == 1) & (piece == PAWN)
     piece = jax.lax.select(is_promotion, GOLD, piece)
     # set piece to the target position
     board = board.at[action.to].set(piece)
@@ -130,11 +130,13 @@ def _step_drop(state: State, action: Action) -> State:
     hand = state.hand.at[0, action.piece].add(-1)
     return state.replace(board=board, hand=hand)  # type: ignore
 
-def _legal_action_mask(state: State):
 
+def _legal_action_mask(state: State):
     def is_legal(label: jnp.ndarray):
         action = Action._from_label(label)
-        return jax.lax.cond(action.is_drop, is_legal_drop, is_legal_move, action)
+        return jax.lax.cond(
+            action.is_drop, is_legal_drop, is_legal_move, action
+        )
 
     def is_legal_move(action: Action):
         piece = state.board[action.from_]
@@ -150,6 +152,7 @@ def _legal_action_mask(state: State):
         return ok
 
     return jax.vmap(is_legal)(jnp.arange(132))
+
 
 def _flip(state):
     empty_mask = state.board == EMPTY
@@ -171,7 +174,9 @@ def _can_move(piece, from_, to):
         x1, y1 = to // 4, to % 4
         dx = x1 - x0
         dy = y1 - y0
-        is_neighbour = ((dx != 0) | (dy != 0)) & (jnp.abs(dx) <= 1) & (jnp.abs(dy) <= 1)
+        is_neighbour = (
+            ((dx != 0) | (dy != 0)) & (jnp.abs(dx) <= 1) & (jnp.abs(dy) <= 1)
+        )
         return jax.lax.switch(
             piece,
             [
@@ -179,8 +184,8 @@ def _can_move(piece, from_, to):
                 lambda: is_neighbour & ((dx == dy) | (dx == -dy)),  # BISHOP
                 lambda: is_neighbour & ((dx == 0) | (dy == 0)),  # ROOK
                 lambda: is_neighbour,  # KING
-                lambda: is_neighbour & ((dx != 0) | (dy != +1))  # GOLD
-            ]
+                lambda: is_neighbour & ((dx != 0) | (dy != +1)),  # GOLD
+            ],
         )
 
     # fmt: off
@@ -197,6 +202,6 @@ def _to(from_, dir):
     # 5 3 0
     # 6 x 1
     # 7 4 2
-    dx = jnp.int8([-1, -1, -1,  0, 0, 1,  1, 1])
-    dy = jnp.int8([-1,  0,  1, -1, 1, -1, 0, 1])
+    dx = jnp.int8([-1, -1, -1, 0, 0, 1, 1, 1])
+    dy = jnp.int8([-1, 0, 1, -1, 1, -1, 0, 1])
     return from_ + dx[dir] * 4 + dy[dir]
