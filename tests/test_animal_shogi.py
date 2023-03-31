@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx._animal_shogi import AnimalShogi, _step_move, State, Action, _can_move
+from pgx._animal_shogi import AnimalShogi, _step_move, State, Action, _can_move, _legal_action_mask
 
 
 env = AnimalShogi()
@@ -49,14 +49,36 @@ def test_step():
 
 
 def test_observe():
-
     state = init(jax.random.PRNGKey(0))
     assert state.observation.shape == (4, 3, 28)
 
+    # my pawn
     expected = jnp.bool_(
         [[False, False, False],
          [False, False, False],
          [False, True,  False],
          [False, False, False]]
+    )
+    assert (state.observation[:, :, 0] == expected).all()
+
+    # opp king
+    expected = jnp.bool_(
+        [[False, True,  False],
+         [False, False, False],
+         [False, False, False],
+         [False, False, False]]
+    )
+    assert (state.observation[:, :, 8] == expected).all()
+
+    state = State(
+        board=jnp.int8([8, -1, -1, -1, -1, -1, -1, 3, 0, -1, -1, 0]),
+        hand=jnp.int8([[2, 0, 0], [0, 1, 0]])
+    )
+    state = state.replace(legal_action_mask=_legal_action_mask(state))
+    expected = jnp.bool_(
+        [[False, False, False],
+         [False, False, False],
+         [False, False, False],
+         [True, False, False]]
     )
     assert (state.observation[:, :, 0] == expected).all()
