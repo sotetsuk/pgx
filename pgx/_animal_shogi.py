@@ -185,17 +185,12 @@ def _legal_action_mask(state: State):
 
     def is_legal_move(action: Action):
         piece = state.board[action.from_]
-        # from_が自分の駒
         ok = (PAWN <= piece) & (piece <= GOLD)
-        # toが-1でない
         ok &= action.to != -1
-        # toが自分の駒でない
         ok &= (state.board[action.to] == EMPTY) | (
             GOLD < state.board[action.to]
         )
-        # 駒の動きが可能
         ok &= _can_move(piece, action.from_, action.to)
-        # 王手放置でない
         ok &= ~_is_checked(_step_move(state, action))
         return ok
 
@@ -206,7 +201,6 @@ def _legal_action_mask(state: State):
         ok &= ~_is_checked(_step_drop(state, action))
         return ok
 
-    # return jnp.ones(132, dtype=jnp.bool_)
     return jax.vmap(is_legal)(jnp.arange(132))
 
 
