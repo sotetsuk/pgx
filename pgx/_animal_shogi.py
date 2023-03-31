@@ -101,6 +101,7 @@ def _step(state: State, action: jnp.ndarray):
 
 
 def _step_move(state: State, action: Action) -> State:
+    piece =  state.board[state.from_]
     # remove piece from the original position
     board = state.board.at[action.from_].set(EMPTY)
     # capture the opponent if exists
@@ -114,7 +115,8 @@ def _step_move(state: State, action: Action) -> State:
         lambda: state.hand.at[0, (captured % 5) % 4].add(1),
     )
     # promote piece (PAWN to GOLD)
-    piece = jax.lax.select(action.is_promotion, action.piece + 4, action.piece)
+    is_promotion = ((action.from_ % 4 == 1) & (piece == PAWN))
+    piece = jax.lax.select(is_promotion, GOLD, piece)
     # set piece to the target position
     board = board.at[action.to].set(piece)
     # apply piece moves
@@ -128,9 +130,26 @@ def _step_drop(state: State, action: Action) -> State:
     hand = state.hand.at[0, action.piece].add(-1)
     return state.replace(board=board, hand=hand)  # type: ignore
 
-
 def _legal_action_mask(state: State):
-    return jnp.ones(132, dtype=jnp.bool_)
+
+    def is_legal(label: jnp.ndarray):
+        action = Action._from_label(label)
+        return jax.lax.cond(action.is_drop, is_legal_drop, is_legal_move, action)
+
+    def is_legal_move(action: Action):
+        piece = state.board[action.from_]
+        ok = state.board[action.to] == EMPTY
+        ok &= _can_move(piece, action.from_, action.to)
+        # TODO: check
+        return ok
+
+    def is_legal_drop(action: Action):
+        ok = state.board[action.to] != EMPTY
+        ok &= state.hand[0, action.drop_piece] > 0
+        # TODO: check
+        return ok
+
+    return jax.vmap(is_legal)(jnp.arange(132))
 
 def _flip(state):
     empty_mask = state.board == EMPTY
