@@ -105,7 +105,7 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
  <td> <a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a> </td>
- <td>:construction:</td>
+ <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
