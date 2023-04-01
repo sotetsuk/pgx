@@ -80,7 +80,10 @@ def test_observe():
     assert (state.observation[:, :, 8] == expected).all()
 
     state = State(
-        board=jnp.int8([8, -1, -1, -1, -1, -1, -1, 3, 0, -1, -1, 0]),
+        board=jnp.int8([
+             8, -1, -1, -1,
+            -1, -1, -1,  3,
+            -1, -1, -1,  0]),
         hand=jnp.int8([[2, 0, 0], [0, 1, 0]])
     )
     state = state.replace(observation=_observe(state, state.current_player))
