@@ -34,7 +34,7 @@ FALSE = jnp.bool_(False)
 # (3) it is tedious to remember and write version numbers.
 EnvId = Literal[
     "2048",
-    # "animal_shogi",
+    "animal_shogi",
     "backgammon",
     # "bridge_bidding",
     "connect_four",
@@ -207,11 +207,15 @@ def available_games() -> Tuple[EnvId, ...]:
     return get_args(EnvId)
 
 
-def make(env_id: EnvId):
+def make(env_id: EnvId):  # noqa: C901
     if env_id == "2048":
         from pgx.play2048 import Play2048
 
         return Play2048()
+    if env_id == "animal_shogi":
+        from pgx.animal_shogi import AnimalShogi
+
+        return AnimalShogi()
     if env_id == "backgammon":
         from pgx.backgammon import Backgammon
 
