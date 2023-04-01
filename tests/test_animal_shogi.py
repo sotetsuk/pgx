@@ -50,7 +50,7 @@ def test_step():
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
-    assert state.observation.shape == (4, 3, 28)
+    assert state.observation.shape == (4, 3, 22)
 
     # my pawn
     expected = jnp.bool_(
@@ -94,3 +94,11 @@ def test_observe():
          [True, False, False]]
     )
     assert (state.observation[:, :, 0] == expected).all()
+    # hand
+    expected = jnp.bool_([True , True,
+                          False, False,
+                          False, False,
+                          False, False,
+                          True , False,
+                          False, False])
+    assert (state.observation[0, 0, 10:] == expected).all()

@@ -159,8 +159,8 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     piece_feat = jax.vmap(partial(is_piece, state=state))(jnp.arange(10))  # (10, 12)
     hand_feat = jax.vmap(jax.vmap(
         partial(num_hand, state=state), (None, 0)), (0, None)
-    )(jnp.arange(6), jnp.arange(3)).reshape(18, 1)  # (18, 1)
-    hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (18, 12)
+    )(jnp.arange(6), jnp.arange(1, 3)).flatten().reshape(12, 1)  # (12, 1)
+    hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
     # fmt: on
 
     obs = jnp.vstack((piece_feat, hand_feat))
