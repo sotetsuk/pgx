@@ -163,9 +163,9 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (18, 12)
     # fmt: on
 
-    return (
-        jnp.vstack((piece_feat, hand_feat)).reshape(-1, 3, 4).T
-    )  # (4, 3, 28)
+    obs = jnp.vstack((piece_feat, hand_feat))
+    obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))
+    return jnp.flip(obs, axis=1)
 
 
 def _step_move(state: State, action: Action) -> State:
