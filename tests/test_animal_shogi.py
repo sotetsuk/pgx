@@ -61,6 +61,15 @@ def test_observe():
     )
     assert (state.observation[:, :, 0] == expected).all()
 
+    # my bishop
+    expected = jnp.bool_(
+        [[False, False, False],
+         [False, False, False],
+         [False, False, False],
+         [True , False, False]]
+    )
+    assert (state.observation[:, :, 1] == expected).all()
+
     # opp king
     expected = jnp.bool_(
         [[False, True,  False],

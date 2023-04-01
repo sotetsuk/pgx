@@ -165,7 +165,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
     return (
         jnp.vstack((piece_feat, hand_feat)).reshape(-1, 3, 4).T
-    )  # (4, 3, 30)
+    )  # (4, 3, 28)
 
 
 def _step_move(state: State, action: Action) -> State:
