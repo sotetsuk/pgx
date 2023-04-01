@@ -44,7 +44,7 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(132, dtype=jnp.bool_)  # (132,)
-    observation: jnp.ndarray = jnp.zeros(1, dtype=jnp.bool_)  # TODO: fix me
+    observation: jnp.ndarray = jnp.zeros((4, 3, 22), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Animal Shogi specific ---
@@ -238,7 +238,7 @@ def _is_checked(state):
 
     return can_capture_king(
         jnp.arange(12)
-    ).any()  # TODO: Around king is enough
+    ).any()  # TODO: King neighbours are enough
 
 
 def _flip(state):
