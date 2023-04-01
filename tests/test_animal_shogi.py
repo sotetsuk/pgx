@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx._animal_shogi import AnimalShogi, _step_move, State, Action, _can_move, _legal_action_mask, _observe
+from pgx.animal_shogi import AnimalShogi, _step_move, State, Action, _can_move, _legal_action_mask, _observe
 
 
 env = AnimalShogi()
