@@ -102,3 +102,9 @@ def test_observe():
                           True , False,
                           False, False])
     assert (state.observation[0, 0, 10:] == expected).all()
+
+
+def test_api():
+    import pgx
+    env = pgx.make("animal_shogi")
+    pgx.api_test(env, 5)
