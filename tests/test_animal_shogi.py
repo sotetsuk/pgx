@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from pgx._animal_shogi import AnimalShogi, _step_move, State, Action, _can_move, _legal_action_mask
+from pgx._animal_shogi import AnimalShogi, _step_move, State, Action, _can_move, _legal_action_mask, _observe
 
 
 env = AnimalShogi()
@@ -74,7 +74,7 @@ def test_observe():
         board=jnp.int8([8, -1, -1, -1, -1, -1, -1, 3, 0, -1, -1, 0]),
         hand=jnp.int8([[2, 0, 0], [0, 1, 0]])
     )
-    state = state.replace(legal_action_mask=_legal_action_mask(state))
+    state = state.replace(observation=_observe(state, state.current_player))
     expected = jnp.bool_(
         [[False, False, False],
          [False, False, False],
