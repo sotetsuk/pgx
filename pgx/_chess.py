@@ -60,6 +60,7 @@ class State(core.State):
     # --- Chess specific ---
     turn: jnp.ndarray = jnp.int8(0)
     board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
+<<<<<<< HEAD
 
 
 def _to_fen(state: State):
