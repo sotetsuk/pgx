@@ -59,7 +59,4 @@ class State(core.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
     turn: jnp.ndarray = jnp.int8(0)
-    # 空白,WPawn,WKnight,WBishop,WRook,WQueen,WKing,BPawn,BKnight,BBishop,BRook,BQueen,BKing
-    # の順で駒がどの位置にあるかをone_hotで記録
-    # 左上からFENと同じ形式で埋めていく
-    board: jnp.ndarray = INIT_BOARD
+    board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
