@@ -102,10 +102,7 @@ def _to_fen(state: State):
         else:
             fen += " "
     # 手番
-    if state.turn == 0:
-        fen += "w "
-    else:
-        fen += "b "
+    fen += "w " if state.turn == 0 else "b "
     # キャスリング
     # wk_cas = not state.wk_move_count and not state.wr2_move_count
     # wq_cas = not state.wk_move_count and not state.wr1_move_count
