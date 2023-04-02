@@ -60,6 +60,7 @@ class State(core.State):
     # --- Chess specific ---
     turn: jnp.ndarray = jnp.int8(0)
     board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
+    en_passant: jnp.ndarray = jnp.int8(-1)  # does not flip
 
 
 def _to_fen(state: State):
@@ -80,8 +81,7 @@ def _to_fen(state: State):
     pb = state.board.reshape(8, 8)
     fen = ""
     # fmt: off
-    board_char_dir = ["P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k"]
-    board_line_dir = ["a", "b", "c", "d", "e", "f", "g", "h"]
+    pieces = ["P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k"]
     # fmt: on
     # 盤面
     for i in range(8):
@@ -94,7 +94,7 @@ def _to_fen(state: State):
                 fen += str(space_length)
                 space_length = 0
             if piece != -1:
-                fen += board_char_dir[piece]
+                fen += pieces[piece]
         if space_length != 0:
             fen += str(space_length)
         if i != 7:
@@ -121,15 +121,12 @@ def _to_fen(state: State):
     #         fen += "q"
     #     fen += " "
     # アンパッサン
-    # if state.en_passant == -1:
-    #     fen += "- "
-    # else:
-    #     if state.turn == 0:
-    #         en = state.en_passant + 1
-    #     else:
-    #         en = state.en_passant - 1
-    #     fen += board_line_dir[en // 8]
-    #     fen += str(en % 8 + 1)
-    #     fen += " "
+    ep = int(state.en_passant.item())
+    if ep == -1:
+        fen += "- "
+    else:
+        fen += "abcdefgh"[ep % 8]
+        fen += str(8 - ep // 8)
+        fen += " "
     fen += "0 1"
     return fen
