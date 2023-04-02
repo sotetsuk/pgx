@@ -132,14 +132,13 @@ def _make_chess_dwg(dwg, state: ChessState, config):
     # pieces
     pieces_g = dwg.g()
     for i in range(64):
-        pi = int(state.board[i].item())
+        x = i % BOARD_HEIGHT
+        y = i // BOARD_HEIGHT
+        pi = int(state.board[y, x].item())
         if pi == -1:
             continue
         piece_type = PIECES[pi]
-        xy = i
         # ChessStateは左上から
-        x = xy % BOARD_HEIGHT
-        y = xy // BOARD_HEIGHT
         pieces_g = _set_piece(
             x * GRID_SIZE,
             y * GRID_SIZE,
