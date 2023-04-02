@@ -63,6 +63,8 @@ class State(core.State):
     can_castle_queen_side = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
     can_castle_king_side = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
     en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. does not flip
+    halfmove_count: jnp.ndarray = jnp.int32(0)  # # of moves since the last piece capture or pawn move
+    fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
 
 
 def _to_fen(state: State):
@@ -127,5 +129,8 @@ def _to_fen(state: State):
     else:
         fen += "abcdefgh"[ep % 8]
         fen += str(8 - ep // 8)
-    fen += " 0 1"
+    fen += " "
+    fen += str(state.halfmove_count.item())
+    fen += " "
+    fen += str(state.fullmove_count.item())
     return fen
