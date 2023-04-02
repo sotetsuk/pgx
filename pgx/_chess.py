@@ -80,9 +80,6 @@ def _to_fen(state: State):
     """
     pb = state.board.reshape(8, 8)
     fen = ""
-    # fmt: off
-    pieces = ["P", "N", "B", "R", "Q", "K", "p", "n", "b", "r", "q", "k"]
-    # fmt: on
     # 盤面
     for i in range(8):
         space_length = 0
@@ -94,7 +91,7 @@ def _to_fen(state: State):
                 fen += str(space_length)
                 space_length = 0
             if piece != -1:
-                fen += pieces[piece]
+                fen += "PNBRQKpnbrqk"[piece]
         if space_length != 0:
             fen += str(space_length)
         if i != 7:
