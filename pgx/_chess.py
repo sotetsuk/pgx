@@ -60,8 +60,8 @@ class State(core.State):
     # --- Chess specific ---
     turn: jnp.ndarray = jnp.int8(0)
     board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
-    can_castle_queen_side = jnp.zeros(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
-    can_castle_king_side = jnp.zeros(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
+    can_castle_queen_side = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
+    can_castle_king_side = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
     en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. does not flip
 
 
