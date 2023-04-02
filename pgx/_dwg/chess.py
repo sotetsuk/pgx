@@ -1,7 +1,7 @@
 import base64
 import os
 
-from pgx._chess import ChessState
+from pgx._chess import State as ChessState
 
 
 def _make_chess_dwg(dwg, state: ChessState, config):
@@ -41,18 +41,18 @@ def _make_chess_dwg(dwg, state: ChessState, config):
 
     NUM_TO_CHAR = ["a", "b", "c", "d", "e", "f", "g", "h"]
     PIECES = [
-        "P",
-        "N",
-        "B",
-        "R",
-        "Q",
-        "K",
         "wP",
         "wN",
         "wB",
         "wR",
         "wQ",
         "wK",
+        "P",
+        "N",
+        "B",
+        "R",
+        "Q",
+        "K",
     ]  # k"N"ight
     color_set = config["COLOR_SET"]
 
@@ -131,23 +131,23 @@ def _make_chess_dwg(dwg, state: ChessState, config):
 
     # pieces
     pieces_g = dwg.g()
-    for i, piece_pos, piece_type in zip(
-        range(12),
-        state.board[1:13],
-        PIECES,
-    ):
-        for xy, is_set in enumerate(piece_pos):
-            if is_set == 1:
-                x = xy // BOARD_HEIGHT  # ChessStateは左下原点
-                y = 7 - xy % BOARD_HEIGHT
-                pieces_g = _set_piece(
-                    x * GRID_SIZE,
-                    y * GRID_SIZE,
-                    piece_type,
-                    dwg,
-                    pieces_g,
-                    GRID_SIZE,
-                )
+    for i in range(64):
+        pi = int(state.board[i].item())
+        if pi == -1:
+            continue
+        piece_type = PIECES[pi]
+        xy = i
+        # ChessStateは左上から
+        x = xy % BOARD_HEIGHT
+        y = xy // BOARD_HEIGHT
+        pieces_g = _set_piece(
+            x * GRID_SIZE,
+            y * GRID_SIZE,
+            piece_type,
+            dwg,
+            pieces_g,
+            GRID_SIZE,
+        )
 
     board_g.add(pieces_g)
     board_g.translate(10, 0)
