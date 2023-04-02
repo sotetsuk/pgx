@@ -103,29 +103,29 @@ def _to_fen(state: State):
     # 手番
     fen += "w " if state.turn == 0 else "b "
     # キャスリング
-    # wk_cas = not state.wk_move_count and not state.wr2_move_count
-    # wq_cas = not state.wk_move_count and not state.wr1_move_count
-    # bk_cas = not state.bk_move_count and not state.br2_move_count
-    # bq_cas = not state.bk_move_count and not state.br1_move_count
-    # if not wk_cas and not wq_cas and not bk_cas and not bq_cas:
-    #     fen += "- "
-    # else:
-    #     if wk_cas:
-    #         fen += "K"
-    #     if wq_cas:
-    #         fen += "Q"
-    #     if bk_cas:
-    #         fen += "k"
-    #     if bq_cas:
-    #         fen += "q"
-    #     fen += " "
+    can_castle_queen_side = state.can_castle_queen_side
+    can_castle_king_side = state.can_castle_king_side
+    if state.turn == 1:
+        can_castle_queen_side = can_castle_queen_side[::-1]
+        can_castle_king_side = can_castle_king_side[::-1]
+    if not (can_castle_queen_side.any() | can_castle_king_side.any()):
+        fen += "-"
+    else:
+        if can_castle_king_side[0]:
+            fen += "K"
+        if can_castle_queen_side[0]:
+            fen += "Q"
+        if can_castle_king_side[1]:
+            fen += "k"
+        if can_castle_queen_side[1]:
+            fen += "q"
+    fen += " "
     # アンパッサン
     ep = int(state.en_passant.item())
     if ep == -1:
-        fen += "- "
+        fen += "-"
     else:
         fen += "abcdefgh"[ep % 8]
         fen += str(8 - ep // 8)
-        fen += " "
-    fen += "0 1"
+    fen += " 0 1"
     return fen
