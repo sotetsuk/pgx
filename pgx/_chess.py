@@ -61,11 +61,45 @@ class State(core.State):
     # --- Chess specific ---
     turn: jnp.ndarray = jnp.int8(0)
     board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
-    can_castle_queen_side = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
-    can_castle_king_side = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
+    can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
+    can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
     en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. does not flip
     halfmove_count: jnp.ndarray = jnp.int32(0)  # # of moves since the last piece capture or pawn move
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
+
+
+def _from_fen(fen: str):
+    board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
+    arr = []
+    for line in board.split('/'):
+        for c in line:
+            if str.isnumeric(c):
+                for _ in range(int(c)):
+                    arr.append(0)
+            else:
+                ix = "pnbrqk".index(str.lower(c)) + 1
+                if str.islower(c):
+                    ix *= -1
+                arr.append(ix)
+    can_castle_queen_side = jnp.zeros(2, dtype=jnp.bool_)
+    can_castle_king_side = jnp.zeros(2, dtype=jnp.bool_)
+    if "Q" in castling:
+        can_castle_queen_side = can_castle_queen_side.at[0].set(TRUE)
+    if "q" in castling:
+        can_castle_queen_side = can_castle_queen_side.at[1].set(TRUE)
+    if "K" in castling:
+        can_castle_king_side = can_castle_king_side.at[0].set(TRUE)
+    if "k" in castling:
+        can_castle_king_side = can_castle_king_side.at[1].set(TRUE)
+    state = State(
+        board=jnp.int8(arr),
+        turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
+        can_castle_queen_side=can_castle_queen_side,
+        can_castle_king_side=can_castle_king_side,
+        halfmove_count=jnp.int32(halfmove_cnt),
+        fullmove_count=jnp.int32(fullmove_cnt),
+    )
+    return state
 
 
 def _to_fen(state: State):
