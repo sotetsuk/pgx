@@ -232,6 +232,10 @@ def step(
     )
 
 
+def observe(state: State, player_id: jnp.ndarray):
+    """Returns the observation of a given player"""
+
+
 @jax.jit
 def duplicate(
     init_state: State,
