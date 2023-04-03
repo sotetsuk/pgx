@@ -72,6 +72,94 @@ class State(core.State):
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
 
 
+@dataclass
+class Action:
+    from_: jnp.ndarray = jnp.int8(-1)
+    to: jnp.ndarray = jnp.int8(-1)
+    underpromotion: jnp.ndarray = jnp.int8(-1)
+
+    @staticmethod
+    def _from_label(label: jnp.ndarray):
+        return Action()
+
+
+class Chess(core.Env):
+    def __init__(self, max_termination_steps: int = 1000):
+        super().__init__()
+        self.max_termination_steps = max_termination_steps
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        rng, subkey = jax.random.split(key)
+        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        state = State(current_player=current_player)  # type: ignore
+        state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+        return state
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        state = _step(state, action)
+        state = jax.lax.cond(
+            (0 <= self.max_termination_steps)
+            & (self.max_termination_steps <= state._step_count),
+            # end with tie
+            lambda: state.replace(terminated=TRUE),  # type: ignore
+            lambda: state,
+        )
+        return state  # type: ignore
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return jnp.zeros((8, 8, 119), dtype=jnp.bool_)
+
+    @property
+    def name(self) -> str:
+        return "AnimalShogi"
+
+    @property
+    def version(self) -> str:
+        return "alpha"
+
+    @property
+    def num_players(self) -> int:
+        return 2
+
+
+def _step(state: State, action: jnp.ndarray):
+    a = Action._from_label(action)
+    # apply move/drop action
+    ...
+
+    state = _flip(state)
+
+    legal_action_mask = _legal_action_mask(state)
+
+    terminated = ~legal_action_mask.any()
+    # TODO: stailmate
+
+    # fmt: off
+    reward = jax.lax.select(
+        terminated,
+        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+        jnp.zeros(2, dtype=jnp.float32),
+    )
+
+    # fmt: on
+    return state.replace(  # type: ignore
+        legal_action_mask=legal_action_mask,
+        terminated=terminated,
+        reward=reward,
+    )
+
+
+def _flip(state):
+    ...
+
+def _legal_action_mask(state):
+    return jnp.ones(73 * 64, dtype=jnp.bool_)
+
+
 def _from_fen(fen: str):
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     turn = jnp.int8(0) if turn == "w" else jnp.int8(1)
