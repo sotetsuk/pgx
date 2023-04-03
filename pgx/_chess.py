@@ -36,6 +36,7 @@ KING = jnp.int8(6)
 # OPP_KING = -6
 
 
+# fmt: off
 INIT_BOARD = jnp.int8([
     -4, -2, -3, -6, -5, -3, -2, -4,
     -1, -1, -1, -1, -1, -1, -1, -1,
@@ -46,6 +47,7 @@ INIT_BOARD = jnp.int8([
      1,  1,  1,  1,  1,  1,  1,  1,
      4,  2,  3,  6,  5,  3,  2,  4
 ])
+# fmt: on
 
 
 @dataclass
@@ -61,10 +63,12 @@ class State(core.State):
     # --- Chess specific ---
     turn: jnp.ndarray = jnp.int8(0)
     board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
-    can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
-    can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)  # (curr, opp), flips every turn
+    # (curr, opp), flips every turn
+    can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
+    can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
     en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. does not flip
-    halfmove_count: jnp.ndarray = jnp.int32(0)  # # of moves since the last piece capture or pawn move
+    # # of moves since the last piece capture or pawn move
+    halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
 
 
@@ -72,7 +76,7 @@ def _from_fen(fen: str):
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     turn = jnp.int8(0) if turn == "w" else jnp.int8(1)
     arr = []
-    for line in board.split('/'):
+    for line in board.split("/"):
         for c in line:
             if str.isnumeric(c):
                 for _ in range(int(c)):
@@ -98,7 +102,9 @@ def _from_fen(fen: str):
     if en_passant == "-":
         en_passant = jnp.int8(-1)
     else:
-        en_passant = jnp.int8((8 - int(en_passant[1])) * 8 + "abcdefgh".index(en_passant[0]))
+        en_passant = jnp.int8(
+            (8 - int(en_passant[1])) * 8 + "abcdefgh".index(en_passant[0])
+        )
     state = State(
         board=jnp.int8(arr),
         turn=turn,
