@@ -115,7 +115,7 @@ class Chess(core.Env):
 
     @property
     def name(self) -> str:
-        return "AnimalShogi"
+        return "Chess"
 
     @property
     def version(self) -> str:
