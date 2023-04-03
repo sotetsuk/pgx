@@ -21,29 +21,30 @@ from pgx._flax.struct import dataclass
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
-EMPTY = jnp.int8(-1)
-PAWN = jnp.int8(0)
-KNIGHT = jnp.int8(1)
-BISHOP = jnp.int8(2)
-ROOK = jnp.int8(3)
-QUEEN = jnp.int8(4)
-KING = jnp.int8(5)
-# OPP_PAWN = 6
-# OPP_KNIGHT = 7
-# OPP_BISHOP = 8
-# OPP_ROOK = 9
-# OPP_QUEEN = 10
-# OPP_KING = 11
+EMPTY = jnp.int8(0)
+PAWN = jnp.int8(1)
+KNIGHT = jnp.int8(2)
+BISHOP = jnp.int8(3)
+ROOK = jnp.int8(4)
+QUEEN = jnp.int8(5)
+KING = jnp.int8(6)
+# OPP_PAWN = -1
+# OPP_KNIGHT = -2
+# OPP_BISHOP = -3
+# OPP_ROOK = -4
+# OPP_QUEEN = -5
+# OPP_KING = -6
+
 
 INIT_BOARD = jnp.int8([
-    9,  7,  8, 11, 10,  8,  7,  9,
-    6,  6,  6,  6,  6,  6,  6,  6,
-   -1, -1, -1, -1, -1, -1, -1, -1,
-   -1, -1, -1, -1, -1, -1, -1, -1,
-   -1, -1, -1, -1, -1, -1, -1, -1,
-   -1, -1, -1, -1, -1, -1, -1, -1,
-    0,  0,  0,  0,  0,  0,  0,  0,
-    3,  1,  2,  5,  4,  2,  1,  3
+    -4, -2, -3, -6, -5, -3, -2, -4,
+    -1, -1, -1, -1, -1, -1, -1, -1,
+     0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,
+     0,  0,  0,  0,  0,  0,  0,  0,
+     1,  1,  1,  1,  1,  1,  1,  1,
+     4,  2,  3,  6,  5,  3,  2,  4
 ])
 
 
@@ -89,13 +90,16 @@ def _to_fen(state: State):
         space_length = 0
         for j in range(8):
             piece = pb[i, j]
-            if piece == -1:
+            if piece == 0:
                 space_length += 1
             elif space_length != 0:
                 fen += str(space_length)
                 space_length = 0
-            if piece != -1:
-                fen += "PNBRQKpnbrqk"[piece]
+            if piece != 0:
+                if piece > 0:
+                    fen += "PNBRQK"[piece - 1]
+                else:
+                    fen += "pnbrqk"[-piece - 1]
         if space_length != 0:
             fen += str(space_length)
         if i != 7:

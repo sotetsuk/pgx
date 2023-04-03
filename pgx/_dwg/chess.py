@@ -41,6 +41,7 @@ def _make_chess_dwg(dwg, state: ChessState, config):
 
     NUM_TO_CHAR = ["a", "b", "c", "d", "e", "f", "g", "h"]
     PIECES = [
+        "",
         "wP",
         "wN",
         "wB",
@@ -133,8 +134,11 @@ def _make_chess_dwg(dwg, state: ChessState, config):
     pieces_g = dwg.g()
     for i in range(64):
         pi = int(state.board[i].item())
-        if pi == -1:
+        if pi == 0:
             continue
+        if pi < 0:
+            pi *= -1
+            pi += 6
         piece_type = PIECES[pi]
         xy = i
         # ChessStateは左上から
