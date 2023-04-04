@@ -47,7 +47,30 @@ INIT_BOARD = jnp.int8([
      1,  1,  1,  1,  1,  1,  1,  1,
      4,  2,  3,  6,  5,  3,  2,  4
 ])
+
+MOVE_MAP = []
+for from_ in range(64):
+    for to in range(64):
+        row0, col0 = from_ // 8, from_ % 8
+        row1, col1 = to // 8, to % 8
+        if row1 == row0 and col1 == col0:
+            continue
+        if (row1 == row0 or col0 == col1 or abs(row1 - row0) == abs(col1 - col0) or
+            (abs(row1 - row0) == 2 and abs(col1 - col0) == 1) or
+            (abs(row1 - row0) == 1 and abs(col1 - col0) == 2)):
+            MOVE_MAP.append(from_ * 64 + to)
+MOVE_MAP = jnp.int32(MOVE_MAP)  # (1792,)
+
+UNDERPROMOTION_MAP = []
+for from_ in range(8, 16):
+    for to in range(8):
+        col0, col1 = from_ % 8, to % 8
+        if abs(col1 - col0) > 1:
+            continue
+        UNDERPROMOTION_MAP.append(from_ * 64 + to)
+UNDERPROMOTION_MAP = jnp.int32(UNDERPROMOTION_MAP)  # (66,)
 # fmt: on
+
 
 
 @dataclass
@@ -76,7 +99,7 @@ class State(core.State):
 class Action:
     from_: jnp.ndarray = jnp.int8(-1)
     to: jnp.ndarray = jnp.int8(-1)
-    underpromotion: jnp.ndarray = jnp.int8(-1)
+    underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: knight, 1: bishop, 2: rook
 
     @staticmethod
     def _from_az_label(label: jnp.ndarray):
@@ -99,6 +122,22 @@ class Action:
         """
 
         return Action()
+
+    @staticmethod
+    def _from_flat_label(label: jnp.ndarray):  # < 1858
+        def parse_normal_move(a):
+            move = MOVE_MAP[a]
+            from_, to = jnp.int8(move // 64), jnp.int8(move % 64)
+            return from_, to, jnp.int8(-1)  # No underpromotion
+
+        def parse_underpromotion(a):
+            a = a - MOVE_MAP.shape[0]  # a < 66
+            move, underpromotion = UNDERPROMOTION_MAP[a // 3], jnp.int8(a % 3)
+            from_, to = jnp.int8(move // 64), jnp.int8(move % 64)
+            return from_, to, underpromotion
+
+        is_underpromotion = label >= MOVE_MAP.shape[0]  # 1792
+        return jax.lax.cond(is_underpromotion, parse_underpromotion, parse_normal_move, label)
 
 
 class Chess(core.Env):
