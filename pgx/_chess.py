@@ -36,16 +36,26 @@ KING = jnp.int8(6)
 # OPP_KING = -6
 
 
+# board index
+# 8  7 15 23 31 39 47 55 63
+# 7  6 14 22 30 38 46 54 62
+# 6  5 13 21 29 37 45 53 61
+# 5  4 12 20 28 36 44 52 60
+# 4  3 11 19 27 35 43 51 59
+# 3  2 10 18 26 34 42 50 58
+# 2  1  9 17 25 33 41 49 57
+# 1  0  8 16 24 32 40 48 56
+#    a  b  c  d  e  f  g  f
 # fmt: off
 INIT_BOARD = jnp.int8([
-    -4, -2, -3, -5, -6, -3, -2, -4,
-    -1, -1, -1, -1, -1, -1, -1, -1,
-     0,  0,  0,  0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0,  0,  0,  0,
-     0,  0,  0,  0,  0,  0,  0,  0,
-     1,  1,  1,  1,  1,  1,  1,  1,
-     4,  2,  3,  5,  6,  3,  2,  4
+    -4, -1, 0, 0, 0, 0, 1, 4,
+    -2, -1, 0, 0, 0, 0, 1, 2,
+    -3, -1, 0, 0, 0, 0, 1, 3,
+    -6, -1, 0, 0, 0, 0, 1, 6,
+    -5, -1, 0, 0, 0, 0, 1, 5,
+    -3, -1, 0, 0, 0, 0, 1, 3,
+    -2, -1, 0, 0, 0, 0, 1, 2,
+    -4, -1, 0, 0, 0, 0, 1, 4
 ])
 # fmt: on
 
@@ -57,7 +67,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(73 * 64, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(8 * 8 * 73, dtype=jnp.bool_)
     observation: jnp.ndarray = jnp.zeros((8, 8, 119), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -176,10 +186,18 @@ def _flip(state):
     ...
 
 def _legal_action_mask(state):
-    return jnp.ones(73 * 64, dtype=jnp.bool_)
+    return jnp.ones(8 * 8 * 73, dtype=jnp.bool_)
 
 
 def _from_fen(fen: str):
+    """Restore state from FEN
+
+    >>> state = _from_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1')
+    >>> state.board.reshape(8, 8)[:, 0]
+    Array([-4, -2, -3, -6, -5, -3, -2, -4], dtype=int8)
+    >>> state.en_passant
+    Array(34, dtype=int8)
+    """
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     turn = jnp.int8(0) if turn == "w" else jnp.int8(1)
     arr = []
@@ -210,10 +228,10 @@ def _from_fen(fen: str):
         en_passant = jnp.int8(-1)
     else:
         en_passant = jnp.int8(
-            (8 - int(en_passant[1])) * 8 + "abcdefgh".index(en_passant[0])
+            "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
         )
     state = State(
-        board=jnp.int8(arr),
+        board=jnp.rot90(jnp.int8(arr).reshape(8, 8), k=1).flatten(),
         turn=turn,
         can_castle_queen_side=can_castle_queen_side,
         can_castle_king_side=can_castle_king_side,
@@ -235,11 +253,11 @@ def _to_fen(state: State):
     - キャスリングの可否。キングサイドにできる場合はK, クイーンサイドにできる場合はQを先後それぞれ書く。全部不可なら-
     - アンパッサン可能な位置。ポーンが2マス動いた場合はそのポーンが通過した位置を記録
     - 最後にポーンの移動および駒取りが発生してからの手数と通常の手数（0, 1で固定にする）
-    >>> s = State()
+    >>> s = State(en_passant=jnp.int8(34))
     >>> _to_fen(s)
-    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1'
+    'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1'
     """
-    pb = state.board.reshape(8, 8)
+    pb = jnp.rot90(state.board.reshape(8, 8), k=3)
     fen = ""
     # 盤面
     for i in range(8):
@@ -287,8 +305,8 @@ def _to_fen(state: State):
     if ep == -1:
         fen += "-"
     else:
-        fen += "abcdefgh"[ep % 8]
-        fen += str(8 - ep // 8)
+        fen += "abcdefgh"[ep // 8]
+        fen += str(ep % 8 + 1)
     fen += " "
     fen += str(state.halfmove_count.item())
     fen += " "
