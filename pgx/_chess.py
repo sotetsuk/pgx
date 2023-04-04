@@ -79,7 +79,25 @@ class Action:
     underpromotion: jnp.ndarray = jnp.int8(-1)
 
     @staticmethod
-    def _from_label(label: jnp.ndarray):
+    def _from_az_label(label: jnp.ndarray):
+        """AlphaZero style label.
+
+        We use channel-last representation: (8, 8, 73)
+
+        73 = queen moves (56) + knight moves (8) + underpromotions (3 * 3)
+
+        Note: this representation is reported as
+
+        > We also tried using a flat distribution over moves for chess and shogi;
+        > the final result was almost identical although training was slightly slower.
+
+        Flat representation may have 1858 actions (= 1792 normal moves + (7 + 7 + 8) * 3 underpromotions)
+
+        Also see
+          - https://github.com/LeelaChessZero/lc0/issues/637
+          - https://github.com/LeelaChessZero/lc0/pull/712
+        """
+
         return Action()
 
 
