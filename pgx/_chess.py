@@ -139,6 +139,15 @@ class Action:
         is_underpromotion = label >= MOVE_MAP.shape[0]  # 1792
         return jax.lax.cond(is_underpromotion, parse_underpromotion, parse_normal_move, label)
 
+    @staticmethod
+    def _parse_from_san(san: str):
+        if san.startswith("O-O-O"):  # queenside castling
+            return ...
+        if san.startswith("O-O"):  # kingside castling
+            return ...
+        san = "".join(filter(str.isalnum, san))
+        if san[0] in "PNBRQK":
+            san = san[1:]
 
 class Chess(core.Env):
     def __init__(self, max_termination_steps: int = 1000):
