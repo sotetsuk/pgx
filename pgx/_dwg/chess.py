@@ -141,9 +141,8 @@ def _make_chess_dwg(dwg, state: ChessState, config):
             pi += 6
         piece_type = PIECES[pi]
         xy = i
-        # ChessStateは左上から
-        x = xy % BOARD_HEIGHT
-        y = xy // BOARD_HEIGHT
+        x = xy // BOARD_HEIGHT  # ChessStateは左下原点
+        y = xy % BOARD_HEIGHT
         pieces_g = _set_piece(
             x * GRID_SIZE,
             y * GRID_SIZE,
