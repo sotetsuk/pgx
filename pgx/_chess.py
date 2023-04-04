@@ -108,7 +108,8 @@ class Action:
           - https://github.com/LeelaChessZero/lc0/issues/637
           - https://github.com/LeelaChessZero/lc0/pull/712
         """
-
+        from_, plane = label // 73, label % 73
+        is_underpromotion = plane < 9
         return Action()
 
 
