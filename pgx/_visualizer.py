@@ -397,7 +397,7 @@ class Visualizer:
                     "white",
                     "white",
                     "#1e1e1e",
-                    "silver",
+                    "gray",
                     "#333333",
                 )
             else:

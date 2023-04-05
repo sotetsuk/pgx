@@ -82,7 +82,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
                 ],
                 fill=color,
                 stroke=outline,
-                stroke_width="0.5px",
+                stroke_width="1px",
             )
         )
     # 周りの領域
