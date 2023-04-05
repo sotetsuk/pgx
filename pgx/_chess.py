@@ -93,6 +93,9 @@ dc += [-x for x in seq[::-1]]
 # 右下
 dr += [-x for x in seq]
 dc += [x for x in seq]
+# knight moves
+dr += [-1, +1, -2, +2, -1, +1, -2, +2]
+dc += [-2, -2, -1, -1, +2, +2, +1, +1]
 dr = jnp.int8(dr)
 dc = jnp.int8(dc)
 for from_ in range(64):
