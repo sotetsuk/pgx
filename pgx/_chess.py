@@ -320,7 +320,8 @@ def _from_fen(fen: str):
 
 
 def _to_fen(state: State):
-    """Convert state into fen expression.
+    """Convert state into FEN expression.
+
     - ポーン:P ナイト:N ビショップ:B ルーク:R クイーン:Q キング:K
     - 先手の駒は大文字、後手の駒は小文字で表現
     - 空白の場合、連続する空白の数を入れて次の駒にシフトする。P空空空RならP3R
@@ -330,9 +331,12 @@ def _to_fen(state: State):
     - キャスリングの可否。キングサイドにできる場合はK, クイーンサイドにできる場合はQを先後それぞれ書く。全部不可なら-
     - アンパッサン可能な位置。ポーンが2マス動いた場合はそのポーンが通過した位置を記録
     - 最後にポーンの移動および駒取りが発生してからの手数と通常の手数（0, 1で固定にする）
+
     >>> s = State(en_passant=jnp.int8(34))
     >>> _to_fen(s)
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1'
+    >>> _to_fen(_from_fen('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'))
+    'rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'
     """
     pb = jnp.rot90(state.board.reshape(8, 8), k=1)
     if state.turn == 1:
