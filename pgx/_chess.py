@@ -240,8 +240,16 @@ def _step(state: State, action: jnp.ndarray):
 def _rotate(board):
     return jnp.rot90(board, k=1)
 
+
 def _flip(state):
-    ...
+    return state.replace(  # type: ignore
+        current_player=(state.current_player + 1) % 2,
+        board=-jnp.flip(state.board.reshape(8, 8), axis=1),
+        turn=(state.turn + 1) % 2,
+        can_castle_queen_side=state.can_castle_queen_side[::-1],
+        can_castle_king_side=state.can_castle_king_side[::-1],
+    )
+
 
 def _legal_action_mask(state):
     return jnp.ones(8 * 8 * 73, dtype=jnp.bool_)
