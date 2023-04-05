@@ -87,7 +87,7 @@ class State(core.State):
 class Action:
     from_: jnp.ndarray = jnp.int8(-1)
     to: jnp.ndarray = jnp.int8(-1)
-    underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: knight, 1: bishop, 2: rook
+    underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
     def _from_az_label(label: jnp.ndarray):
@@ -109,8 +109,11 @@ class Action:
           - https://github.com/LeelaChessZero/lc0/pull/712
         """
         from_, plane = label // 73, label % 73
-        is_underpromotion = plane < 9
-        return Action()
+        return Action(
+            from_=from_,
+            to=TO_MAP[from_, plane],
+            underpromotion=UNDERPROMOTION_MAP[plane]
+        )
 
 
 class Chess(core.Env):
