@@ -242,7 +242,7 @@ def _rotate(board):
     return jnp.rot90(board, k=1)
 
 
-def _flip(state):
+def _flip(state: State) -> State:
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         board=-jnp.flip(state.board.reshape(8, 8), axis=1),
