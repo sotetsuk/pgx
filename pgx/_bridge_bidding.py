@@ -234,30 +234,35 @@ def step(
 
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
-    position = _player_position(player_id, state).astype(jnp.int16)
+    # make vul of observation
     vul = jnp.array([state.vul_NS, state.vul_EW], dtype=jnp.bool_)
+
+    # make hand of observation
     hand = jnp.zeros(52, dtype=jnp.bool_)
+    position = _player_position(player_id, state).astype(jnp.int16)
     hand = hand.at[state.hand[position * 13 : (position + 1) * 13]].set(True)
+
+    # make history of observation
     obs_history = jnp.zeros(424, dtype=jnp.bool_)
     last_bid = jnp.int16(-1)
     flag = False
     for i in range(state.turn):
         curr_pos = ((state.dealer + i) % 4).astype(jnp.int16)
-        if not flag and state.bidding_history[i] == 35:
+        if (
+            not flag and state.bidding_history[i] == 35
+        ):  # pass before the opening bid
             obs_history = obs_history.at[curr_pos].set(True)
-        elif 0 <= state.bidding_history[i] <= 34:
+        elif 0 <= state.bidding_history[i] <= 34:  # bid
             flag = True
             last_bid = state.bidding_history[i]
             obs_history = obs_history.at[4 + curr_pos * 35 + last_bid].set(
                 True
             )
-        elif state.bidding_history[i] == 35:
-            pass
-        elif state.bidding_history[i] == 36:
+        elif state.bidding_history[i] == 36:  # double
             obs_history = obs_history.at[144 + curr_pos * 35 + last_bid].set(
                 True
             )
-        elif state.bidding_history[i] == 37:
+        elif state.bidding_history[i] == 37:  # redouble
             obs_history = obs_history.at[284 + curr_pos * 35 + last_bid].set(
                 True
             )
