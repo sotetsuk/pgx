@@ -239,7 +239,7 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     hand = jnp.zeros(52, dtype=jnp.bool_)
     hand = hand.at[state.hand[position * 13 : (position + 1) * 13]].set(True)
     obs_history = jnp.zeros(424, dtype=jnp.bool_)
-    last_bid = -1
+    last_bid = jnp.int16(-1)
     flag = False
     for i in range(state.turn):
         curr_pos = ((state.dealer + i) % 4).astype(jnp.int16)
@@ -247,7 +247,7 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
             obs_history = obs_history.at[curr_pos].set(True)
         elif 0 <= state.bidding_history[i] <= 34:
             flag = True
-            last_bid = state.bidding_history[i].astype(jnp.int16)
+            last_bid = state.bidding_history[i]
             obs_history = obs_history.at[4 + curr_pos * 35 + last_bid].set(
                 True
             )
