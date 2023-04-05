@@ -247,11 +247,23 @@ def _legal_action_mask(state):
 def _from_fen(fen: str):
     """Restore state from FEN
 
-    >>> state = _from_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1')
+    >>> state = _from_fen('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq e3 0 1')
     >>> _rotate(state.board.reshape(8, 8))
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [-1, -1, -1, -1, -1, -1, -1, -1],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0],
+           [ 1,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  1,  1,  1,  1,  1,  1,  1],
+           [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int8)
+    >>> state.en_passant
+    Array(34, dtype=int8)
+    >>> state = _from_fen('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1')
+    >>> _rotate(state.board.reshape(8, 8))
+    Array([[-4, -2, -3, -5, -6, -3, -2, -4],
+           [ 0, -1, -1, -1, -1, -1, -1, -1],
+           [-1,  0,  0,  0,  0,  0,  0,  0],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
@@ -292,8 +304,11 @@ def _from_fen(fen: str):
         en_passant = jnp.int8(
             "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
         )
+    arr = jnp.int8(arr).reshape(8, 8)
+    if turn == 1:
+        arr = -jnp.flip(arr, axis=0)
     state = State(
-        board=jnp.rot90(jnp.int8(arr).reshape(8, 8), k=3).flatten(),  # TODO: flip when black turn
+        board=jnp.rot90(arr, k=3).flatten(),
         turn=turn,
         can_castle_queen_side=can_castle_queen_side,
         can_castle_king_side=can_castle_king_side,
@@ -319,7 +334,9 @@ def _to_fen(state: State):
     >>> _to_fen(s)
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1'
     """
-    pb = jnp.rot90(state.board.reshape(8, 8), k=1)  # TODO: flip when black turn
+    pb = jnp.rot90(state.board.reshape(8, 8), k=1)
+    if state.turn == 1:
+        pb = -jnp.flip(pb, axis=0)
     fen = ""
     # 盤面
     for i in range(8):
