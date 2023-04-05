@@ -136,12 +136,10 @@ class Action:
     underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
-    def _from_az_label(label: jnp.ndarray):
-        """AlphaZero style label.
+    def _from_label(label: jnp.ndarray):
+        """We use AlphaZero style label with channel-last representation: (8, 8, 73)
 
-        We use channel-last representation: (8, 8, 73)
-
-        73 = queen moves (56) + knight moves (8) + underpromotions (3 * 3)
+          73 = queen moves (56) + knight moves (8) + underpromotions (3 * 3)
 
         Note: this representation is reported as
 
@@ -157,7 +155,7 @@ class Action:
         from_, plane = label // 73, label % 73
         return Action(
             from_=from_,
-            to=TO_MAP[from_, plane],
+            to=TO_MAP[from_, plane],  # -1 if impossible move
             underpromotion=jax.lax.select(plane >= 9, jnp.int8(-1), jnp.int8(plane // 3))
         )
 
