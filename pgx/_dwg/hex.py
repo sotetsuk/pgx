@@ -57,7 +57,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
 
         color = color_set.p1_color if stone > 0 else color_set.p2_color
         outline = color_set.p1_outline if stone > 0 else color_set.p2_outline
-        r = GRID_SIZE / 1.2
+        r = GRID_SIZE / 1.3
 
         # 駒を円で表示
         # board_g.add(
@@ -82,7 +82,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
                 ],
                 fill=color,
                 stroke=outline,
-                stroke_width="1px",
+                stroke_width="0.5px",
             )
         )
     # 周りの領域

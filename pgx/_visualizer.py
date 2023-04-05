@@ -119,6 +119,8 @@ class Visualizer:
                 HEIGHT = WIDTH
             else:
                 HEIGHT = WIDTH - 1
+            if SIZE == 1:
+                states = self._get_nth_state(states, 0)
         except TypeError:
             SIZE = 1
             WIDTH = 1
