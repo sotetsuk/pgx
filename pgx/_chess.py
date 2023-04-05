@@ -109,7 +109,6 @@ for from_ in range(64):
 # fmt: on
 
 
-
 @dataclass
 class State(core.State):
     current_player: jnp.ndarray = jnp.int8(0)
@@ -163,7 +162,9 @@ class Action:
         return Action(
             from_=from_,
             to=TO_MAP[from_, plane],  # -1 if impossible move
-            underpromotion=jax.lax.select(plane >= 9, jnp.int8(-1), jnp.int8(plane // 3))
+            underpromotion=jax.lax.select(
+                plane >= 9, jnp.int8(-1), jnp.int8(plane // 3)
+            ),
         )
 
 
@@ -258,7 +259,9 @@ def _legal_action_mask(state):
 def _from_fen(fen: str):
     """Restore state from FEN
 
-    >>> state = _from_fen('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq e3 0 1')
+    >>> state = _from_fen(
+    ...     "rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq e3 0 1"
+    ... )
     >>> _rotate(state.board.reshape(8, 8))
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [-1, -1, -1, -1, -1, -1, -1, -1],
@@ -270,7 +273,9 @@ def _from_fen(fen: str):
            [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int8)
     >>> state.en_passant
     Array(34, dtype=int8)
-    >>> state = _from_fen('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1')
+    >>> state = _from_fen(
+    ...     "rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1"
+    ... )
     >>> _rotate(state.board.reshape(8, 8))
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [ 0, -1, -1, -1, -1, -1, -1, -1],
@@ -346,7 +351,11 @@ def _to_fen(state: State):
     >>> s = State(en_passant=jnp.int8(34))
     >>> _to_fen(s)
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1'
-    >>> _to_fen(_from_fen('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'))
+    >>> _to_fen(
+    ...     _from_fen(
+    ...         "rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1"
+    ...     )
+    ... )
     'rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'
     """
     pb = jnp.rot90(state.board.reshape(8, 8), k=1)
