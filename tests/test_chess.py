@@ -25,31 +25,31 @@ def test_action():
     assert action.underpromotion == -1
     action = Action._from_label(jnp.int32(673))
     assert action.from_ == p("b2")
-    assert action.to == 10
+    assert action.to == p("b3")
     assert action.underpromotion == -1
     action = Action._from_label(jnp.int32(686))
     assert action.from_ == p("b2")
-    assert action.to == 1
+    assert action.to == p("a2")
     assert action.underpromotion == -1
     action = Action._from_label(jnp.int32(687))
     assert action.from_ == p("b2")
-    assert action.to == 17
+    assert action.to == p("c2")
     assert action.underpromotion == -1
     action = Action._from_label(jnp.int32(700))
     assert action.from_ == p("b2")
-    assert action.to == 0
+    assert action.to == p("a1")
     assert action.underpromotion == -1
     action = Action._from_label(jnp.int32(701))
     assert action.from_ == p("b2")
-    assert action.to == 18
+    assert action.to == p("c3")
     assert action.underpromotion == -1
     action = Action._from_label(jnp.int32(714))
     assert action.from_ == p("b2")
-    assert action.to == 2
+    assert action.to == p("a3")
     assert action.underpromotion == -1
     action = Action._from_label(jnp.int32(715))
     assert action.from_ == p("b2")
-    assert action.to == 16
+    assert action.to == p("c1")
     assert action.underpromotion == -1
     # knight moves
     state = State._from_fen("k7/8/8/8/2N5/8/P7/7K w - - 0 1")
@@ -92,12 +92,12 @@ def test_action():
     action = Action._from_label(jnp.int32(1022))
     assert action.from_ == p("b7")
     assert action.to == p("b8")
-    assert action.underpromotion == 0
+    assert action.underpromotion == 0  # rook
     action = Action._from_label(jnp.int32(1023))
     assert action.from_ == p("b7")
     assert action.to == p("c8")
-    assert action.underpromotion == 0
+    assert action.underpromotion == 0  # rook
     action = Action._from_label(jnp.int32(1024))
     assert action.from_ == p("b7")
     assert action.to == p("a8")
-    assert action.underpromotion == 0
+    assert action.underpromotion == 0  # rook
