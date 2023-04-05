@@ -86,3 +86,18 @@ def test_action():
     assert action.from_ == p("c4")
     assert action.to == p("d6")
     assert action.underpromotion == -1
+    # underpromotion
+    state = State._from_fen("r1r4k/1P6/8/8/8/8/P7/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/action_003.svg")
+    action = Action._from_label(jnp.int32(1022))
+    assert action.from_ == p("b7")
+    assert action.to == p("b8")
+    assert action.underpromotion == 0
+    action = Action._from_label(jnp.int32(1023))
+    assert action.from_ == p("b7")
+    assert action.to == p("c8")
+    assert action.underpromotion == 0
+    action = Action._from_label(jnp.int32(1024))
+    assert action.from_ == p("b7")
+    assert action.to == p("a8")
+    assert action.underpromotion == 0

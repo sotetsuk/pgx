@@ -62,8 +62,8 @@ TO_MAP = - jnp.ones((64, 73), dtype=jnp.int8)
 for from_ in range(8, 16):
     for plane in range(9):
         dir_ = plane % 3
-        to = from_ + jnp.int8([-8, -7, -9])[dir_]
-        if not(0 <= to < 8):
+        to = from_ + jnp.int8([+1, +9, -7])[dir_]
+        if not(0 <= to < 64):
             continue
         TO_MAP = TO_MAP.at[from_, plane].set(to)
 # normal move
