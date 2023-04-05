@@ -57,6 +57,52 @@ INIT_BOARD = jnp.int8([
     -2, -1, 0, 0, 0, 0, 1, 2,
     -4, -1, 0, 0, 0, 0, 1, 4
 ])
+TO_MAP = - jnp.ones((64, 73), dtype=jnp.int8)
+# underpromotion
+for from_ in range(8, 16):
+    for plane in range(9):
+        dir_ = plane % 3
+        to = from_ + jnp.int8([-8, -7, -9])[dir_]
+        if not(0 <= to < 8):
+            continue
+        TO_MAP = TO_MAP.at[from_, plane].set(to)
+# normal move
+seq = list(range(1, 8))
+zeros = [0 for _ in range(7)]
+# 下
+dr = [-x for x in seq[::-1]]
+dc = [0 for _ in range(7)]
+# 上
+dr += [x for x in seq]
+dc += [0 for _ in range(7)]
+# 左
+dr += [0 for _ in range(7)]
+dc += [-x for x in seq[::-1]]
+# 右
+dr += [0 for _ in range(7)]
+dc += [x for x in seq]
+# 左下
+dr += [-x for x in seq[::-1]]
+dc += [-x for x in seq[::-1]]
+# 右上
+dr += [x for x in seq]
+dc += [x for x in seq]
+# 左上
+dr += [x for x in seq[::-1]]
+dc += [-x for x in seq[::-1]]
+# 右下
+dr += [-x for x in seq]
+dc += [x for x in seq]
+dr = jnp.int8(dr)
+dc = jnp.int8(dc)
+for from_ in range(64):
+    for plane in range(9, 73):
+        r, c = jnp.int8(from_ % 8), jnp.int8(from_ // 8)
+        r = r + dr[plane - 9]
+        c = c + dc[plane - 9]
+        if r < 0 or r >= 8 or c < 0 or c >= 8:
+            continue
+        TO_MAP = TO_MAP.at[from_, plane].set(c * 8 + r)
 # fmt: on
 
 
@@ -112,7 +158,7 @@ class Action:
         return Action(
             from_=from_,
             to=TO_MAP[from_, plane],
-            underpromotion=UNDERPROMOTION_MAP[plane]
+            underpromotion=jax.lax.select(plane >= 9, jnp.int8(-1), jnp.int8(plane // 3))
         )
 
 
