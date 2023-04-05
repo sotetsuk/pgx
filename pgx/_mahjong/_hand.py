@@ -15,6 +15,29 @@ class Hand:
     CACHE = load_hand_cache()
 
     @staticmethod
+    def make_init_hand(deck: jnp.ndarray):
+        hand = jnp.zeros((4, 34), dtype=jnp.uint8)
+        for i in range(3):
+            for j in range(4):
+                hand = hand.at[j].set(
+                    jax.lax.fori_loop(
+                        0,
+                        4,
+                        lambda k, h: Hand.add(
+                            h, deck[-(16 * i + 4 * j + k + 1)]
+                        ),
+                        hand[j],
+                    )
+                )
+        for j in range(4):
+            hand = hand.at[j].set(Hand.add(hand[j], deck[-(16 * 3 + j + 1)]))
+
+        last_draw = deck[-(16 * 3 + 4 + 1)].astype(int)
+        hand = hand.at[0].set(Hand.add(hand[0], last_draw))
+
+        return hand
+
+    @staticmethod
     def cache(code: int) -> int:
         return (Hand.CACHE[code >> 5] >> (code & 0b11111)) & 1
 
