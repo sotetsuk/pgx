@@ -48,14 +48,14 @@ KING = jnp.int8(6)
 #    a  b  c  d  e  f  g  f
 # fmt: off
 INIT_BOARD = jnp.int8([
-    -4, -1, 0, 0, 0, 0, 1, 4,
-    -2, -1, 0, 0, 0, 0, 1, 2,
-    -3, -1, 0, 0, 0, 0, 1, 3,
-    -6, -1, 0, 0, 0, 0, 1, 6,
-    -5, -1, 0, 0, 0, 0, 1, 5,
-    -3, -1, 0, 0, 0, 0, 1, 3,
-    -2, -1, 0, 0, 0, 0, 1, 2,
-    -4, -1, 0, 0, 0, 0, 1, 4
+    4, 1, 0, 0, 0, 0, -1, -4,
+    2, 1, 0, 0, 0, 0, -1, -2,
+    3, 1, 0, 0, 0, 0, -1, -3,
+    5, 1, 0, 0, 0, 0, -1, -5,
+    6, 1, 0, 0, 0, 0, -1, -6,
+    3, 1, 0, 0, 0, 0, -1, -3,
+    2, 1, 0, 0, 0, 0, -1, -2,
+    4, 1, 0, 0, 0, 0, -1, -4
 ])
 TO_MAP = - jnp.ones((64, 73), dtype=jnp.int8)
 # underpromotion
@@ -127,6 +127,10 @@ class State(core.State):
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
+
+    @staticmethod
+    def _from_fen(fen: str):
+        return _from_fen(fen)
 
 
 @dataclass
@@ -230,6 +234,9 @@ def _step(state: State, action: jnp.ndarray):
     )
 
 
+def _rotate(board):
+    return jnp.rot90(board, k=1)
+
 def _flip(state):
     ...
 
@@ -241,8 +248,15 @@ def _from_fen(fen: str):
     """Restore state from FEN
 
     >>> state = _from_fen('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1')
-    >>> state.board.reshape(8, 8)[:, 0]
-    Array([-4, -2, -3, -6, -5, -3, -2, -4], dtype=int8)
+    >>> _rotate(state.board.reshape(8, 8))
+    Array([[-4, -2, -3, -5, -6, -3, -2, -4],
+           [-1, -1, -1, -1, -1, -1, -1, -1],
+           [ 0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0],
+           [ 0,  0,  0,  0,  0,  0,  0,  0],
+           [ 1,  1,  1,  1,  1,  1,  1,  1],
+           [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int8)
     >>> state.en_passant
     Array(34, dtype=int8)
     """
@@ -279,7 +293,7 @@ def _from_fen(fen: str):
             "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
         )
     state = State(
-        board=jnp.rot90(jnp.int8(arr).reshape(8, 8), k=1).flatten(),
+        board=jnp.rot90(jnp.int8(arr).reshape(8, 8), k=3).flatten(),  # TODO: flip when black turn
         turn=turn,
         can_castle_queen_side=can_castle_queen_side,
         can_castle_king_side=can_castle_king_side,
@@ -305,7 +319,7 @@ def _to_fen(state: State):
     >>> _to_fen(s)
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1'
     """
-    pb = jnp.rot90(state.board.reshape(8, 8), k=3)
+    pb = jnp.rot90(state.board.reshape(8, 8), k=1)  # TODO: flip when black turn
     fen = ""
     # 盤面
     for i in range(8):
