@@ -6,11 +6,12 @@ import jax.numpy as jnp
 import numpy as np
 
 from pgx._bridge_bidding import (
-    State,
     BridgeBidding,
+    State,
     _calc_score,
     _calculate_dds_tricks,
     _contract,
+    _init_by_key,
     _key_to_hand,
     _load_sample_hash,
     _pbn_to_key,
@@ -89,7 +90,7 @@ def test_step():
     #   P  P
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = init_by_key(key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
         dealer=jnp.int8(1),
@@ -803,7 +804,7 @@ def max_action_length_agent(state: State) -> int:
 def test_max_action():
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = init(key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
 
     for i in range(319):
         if i < 318:
@@ -823,7 +824,7 @@ def test_pass_out():
     #   P
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = init_by_key(key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
     state = state.replace(
         dealer=jnp.int8(1),
@@ -959,8 +960,7 @@ def test_observe():
     )
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = init_by_key(key)
-    # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
         dealer=jnp.int8(1),
         current_player=jnp.int8(3),
