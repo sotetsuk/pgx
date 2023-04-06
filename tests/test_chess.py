@@ -166,8 +166,8 @@ def test_step():
     # en passant
     state = State._from_fen("1k6/8/8/8/3pP3/8/8/R3K2R b KQ e3 0 1")
     state.save_svg("tests/assets/chess/step_008.svg")
-    assert next_state.board[p("e4", True)] == PAWN
+    assert state.board[p("e4", True)] == -PAWN
     next_state = step(state, jnp.int32(p("d4", True) * 73 + 44))
     next_state.save_svg("tests/assets/chess/step_009.svg")
-    assert next_state.board[p("e3", True)] == -PAWN
-    assert next_state.board[p("e4", True)] == EMPTY
+    assert next_state.board[p("e3")] == -PAWN
+    assert next_state.board[p("e4")] == EMPTY
