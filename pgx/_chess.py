@@ -132,6 +132,9 @@ class State(core.State):
     def _from_fen(fen: str):
         return _from_fen(fen)
 
+    def _to_fen(self) -> str:
+        return _to_fen(self)
+
 
 @dataclass
 class Action:
