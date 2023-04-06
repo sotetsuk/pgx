@@ -1,17 +1,25 @@
+import jax
 import jax.numpy as jnp
 import pgx
-from pgx._chess import State, Action, KING, _rotate
+from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY
+
+env = Chess()
+init = jax.jit(env.init)
+step = jax.jit(env.step)
 
 pgx.set_visualization_config(color_theme="dark")
 
 
-def p(s: str):
+def p(s: str, b=False):
     """
     >>> p("e3")
     34
+    >>> p("e3", b=True)
+    37
     """
     x = "abcdefgh".index(s[0])
-    return x * 8 + int(s[1]) - 1
+    offset = int(s[1]) - 1 if not b else 8 - int(s[1])
+    return x * 8 + offset
 
 
 def test_action():
@@ -101,3 +109,12 @@ def test_action():
     assert action.from_ == p("b7")
     assert action.to == p("a8")
     assert action.underpromotion == 0  # rook
+
+
+def test_step():
+    state = State._from_fen("k7/8/8/8/8/8/1Q6/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/step_001.svg")
+    assert state.board[p("b1")] == EMPTY
+    state = step(state, jnp.int32(672))
+    state.save_svg("tests/assets/chess/step_002.svg")
+    assert state.board[p("b1")] == QUEEN
