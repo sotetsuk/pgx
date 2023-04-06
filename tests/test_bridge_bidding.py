@@ -7,6 +7,7 @@ import numpy as np
 
 from pgx._bridge_bidding import (
     State,
+    BridgeBidding,
     _calc_score,
     _calculate_dds_tricks,
     _contract,
@@ -21,10 +22,12 @@ from pgx._bridge_bidding import (
     _value_to_dds_tricks,
     duplicate,
     init,
-    init_by_key,
-    observe,
-    step,
 )
+
+env = BridgeBidding(0)
+init_by_key = jax.jit(env.init)
+step = jax.jit(env.step)
+observe = jax.jit(env.observe)
 
 
 def test_shuffle_players():
@@ -86,7 +89,8 @@ def test_step():
     #   P  P
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = init_by_key(key)
+    # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
         dealer=jnp.int8(1),
         current_player=jnp.int8(3),
@@ -101,7 +105,7 @@ def test_step():
     first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
     first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -124,7 +128,7 @@ def test_step():
     assert state.pass_num == 1
     assert jnp.all(state.reward == np.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -147,7 +151,7 @@ def test_step():
     assert state.pass_num == 2
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -170,7 +174,7 @@ def test_step():
     assert state.pass_num == 3
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 0, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 0)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -198,7 +202,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 8, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 8)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -228,7 +232,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 36)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -259,7 +263,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -291,7 +295,7 @@ def test_step():
     assert state.pass_num == 1
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -324,7 +328,7 @@ def test_step():
     assert state.pass_num == 2
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 37)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -357,7 +361,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -390,7 +394,7 @@ def test_step():
     assert state.pass_num == 1
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 22, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 22)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -423,7 +427,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 23, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 23)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -457,7 +461,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -491,7 +495,7 @@ def test_step():
     assert state.pass_num == 1
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 25, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 25)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -525,7 +529,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 36)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -559,7 +563,7 @@ def test_step():
     assert state.pass_num == 0
     assert np.all(state.reward == np.zeros(4))
 
-    state = step(state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 37)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -594,7 +598,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -629,7 +633,7 @@ def test_step():
     assert state.pass_num == 1
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 30, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 30)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -664,7 +668,7 @@ def test_step():
     assert state.pass_num == 0
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -699,7 +703,7 @@ def test_step():
     assert state.pass_num == 1
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -735,7 +739,7 @@ def test_step():
     assert state.pass_num == 2
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -761,8 +765,9 @@ def test_step():
     legal_action_mask = jnp.where(
         jnp.arange(38) < 31, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(True)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
+    # legal_action_mask = legal_action_mask.at[36].set(True)
+    # legal_action_mask = legal_action_mask.at[37].set(False)s
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state.last_bid == 30
     assert _player_position(state.last_bidder, state) == 2
@@ -802,20 +807,10 @@ def test_max_action():
 
     for i in range(319):
         if i < 318:
-            state = step(
-                state,
-                max_action_length_agent(state),
-                HASH_TABLE_SAMPLE_KEYS,
-                HASH_TABLE_SAMPLE_VALUES,
-            )
+            state = step(state, max_action_length_agent(state))
             assert not state.terminated
         else:
-            state = step(
-                state,
-                max_action_length_agent(state),
-                HASH_TABLE_SAMPLE_KEYS,
-                HASH_TABLE_SAMPLE_VALUES,
-            )
+            state = step(state, max_action_length_agent(state))
             assert state.terminated
 
 
@@ -828,7 +823,8 @@ def test_pass_out():
     #   P
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
+    state = init_by_key(key)
+    # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
     state = state.replace(
         dealer=jnp.int8(1),
         current_player=jnp.int8(3),
@@ -844,7 +840,7 @@ def test_pass_out():
     first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
     first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -867,7 +863,7 @@ def test_pass_out():
     assert state.pass_num == 1
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -890,7 +886,7 @@ def test_pass_out():
     assert state.pass_num == 2
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -913,7 +909,7 @@ def test_pass_out():
     assert state.pass_num == 3
     assert jnp.all(state.reward == jnp.zeros(4))
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -926,7 +922,7 @@ def test_pass_out():
     assert state.turn == 3
     bidding_history = bidding_history.at[3].set(35)
     assert jnp.all(state.bidding_history == bidding_history)
-    assert jnp.all(state.legal_action_mask == legal_action_mask)
+    assert jnp.all(state.legal_action_mask == jnp.ones(38, dtype=jnp.bool_))
     assert state.last_bid == -1
     assert _player_position(state.last_bidder, state) == -1
     assert not state.call_x
@@ -963,7 +959,8 @@ def test_observe():
     )
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = init_by_key(key)
+    # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
         dealer=jnp.int8(1),
         current_player=jnp.int8(3),
@@ -1060,7 +1057,7 @@ def test_observe():
         vul_EW=jnp.bool_(0),
     )
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1072,7 +1069,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1084,7 +1081,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1097,7 +1094,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 0, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 0)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1110,7 +1107,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 8, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 8)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1123,7 +1120,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 36)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1136,7 +1133,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1149,7 +1146,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1162,7 +1159,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 37)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1176,7 +1173,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1189,7 +1186,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 22, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 22)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1204,7 +1201,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 23, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 23)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1219,7 +1216,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1233,7 +1230,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 25, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 25)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1248,7 +1245,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 36)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1264,7 +1261,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 37)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1280,7 +1277,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1295,7 +1292,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 30, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 30)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1311,7 +1308,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1327,7 +1324,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1343,7 +1340,7 @@ def test_observe():
     correct_obs = jnp.concatenate((vul_history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
