@@ -324,7 +324,7 @@ def _from_fen(fen: str):
     arr = jnp.int8(arr).reshape(8, 8)
     if turn == "b":
         arr = -jnp.flip(arr, axis=0)
-    state = State(
+    state = State(  # type: ignore
         board=jnp.rot90(arr, k=3).flatten(),
         turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
         can_castle_queen_side=can_castle_queen_side,
