@@ -233,14 +233,14 @@ def _step(state: State, action: jnp.ndarray):
         )
     )
     state = state.replace(  # type: ignore
-        can_castle_queen_side=state.can_castle_queen_side[0].set(
+        can_castle_queen_side=state.can_castle_queen_side.at[0].set(
             jax.lax.select(
                 (a.from_ == 32) | (a.from_ == 0),
                 FALSE,
                 state.can_castle_queen_side[0],
             )
         ),
-        can_castle_king_side=state.can_castle_king_side[0].set(
+        can_castle_king_side=state.can_castle_king_side.at[0].set(
             jax.lax.select(
                 (a.from_ == 32) | (a.from_ == 56),
                 FALSE,
