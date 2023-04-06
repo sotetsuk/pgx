@@ -215,13 +215,13 @@ def _step(state: State, action: jnp.ndarray):
     # apply move action
     piece = state.board[a.from_]
     # castling
+    # 可能かどうかの判断はここでは行わない。castlingがlegalでない場合はフィルタされている前提
     # left
     state = state.replace(  # type: ignore
         board=jax.lax.cond(
-            state.can_castle_queen_side[0]
-            & (piece == KING)
+            (piece == KING)
             & (a.from_ == 32)
-            & (a.to == 16),  # TODO: add more conditions
+            & (a.to == 16),
             lambda: state.board.at[0].set(EMPTY).at[24].set(ROOK),
             lambda: state.board,
         )
@@ -229,10 +229,9 @@ def _step(state: State, action: jnp.ndarray):
     # right
     state = state.replace(  # type: ignore
         board=jax.lax.cond(
-            state.can_castle_king_side[0]
-            & (piece == KING)
+            (piece == KING)
             & (a.from_ == 32)
-            & (a.to == 48),  # TODO: add more conditions
+            & (a.to == 48),
             lambda: state.board.at[56].set(EMPTY).at[40].set(ROOK),
             lambda: state.board,
         )
