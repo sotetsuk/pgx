@@ -218,7 +218,7 @@ def _step(state: State, action: jnp.ndarray):
     piece = jax.lax.select(
         piece == PAWN & (a.from_ % 8 == 6) & (a.underpromotion < 0),
         QUEEN,
-        piece
+        piece,
     )
     # underpromotion
     piece = jax.lax.select(
