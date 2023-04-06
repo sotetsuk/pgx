@@ -24,7 +24,7 @@ from pgx._bridge_bidding import (
     init,
 )
 
-env = BridgeBidding(0)
+env = BridgeBidding()
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
 observe = jax.jit(env.observe)
@@ -971,6 +971,7 @@ def test_observe():
 
     init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
     obs = observe(state, 0)
+    print(_state_to_pbn(state))
     assert jnp.all(obs == init_obs)
 
     init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player1_hand))
@@ -1014,6 +1015,7 @@ def test_observe():
         .set(True)
     )
     obs = observe(state, 0)
+
     assert jnp.all(obs == init_obs)
 
     state = state.replace(
