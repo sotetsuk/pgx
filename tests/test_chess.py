@@ -127,7 +127,7 @@ def test_action():
 
 def test_step():
     # normal step
-    state = State._from_fen("k7/8/8/8/8/8/1Q6/7K w - - 0 1")
+    state = State._from_fen("1k6/8/8/8/8/8/1Q6/7K w - - 0 1")
     state.save_svg("tests/assets/chess/step_001.svg")
     assert state.board[p("b1")] == EMPTY
     state = step(state, jnp.int32(672))
@@ -148,7 +148,7 @@ def test_step():
     assert next_state.board[p("b8", True)] == -QUEEN
 
     # castling
-    state = State._from_fen("k7/8/8/8/8/8/8/R3K2R w KQ - 0 1")
+    state = State._from_fen("1k6/8/8/8/8/8/8/R3K2R w KQ - 0 1")
     state.save_svg("tests/assets/chess/step_005.svg")
     # left
     next_state = step(state, jnp.int32(p("e1") * 73 + 28))
