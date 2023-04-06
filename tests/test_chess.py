@@ -149,4 +149,16 @@ def test_step():
     assert next_state.board[p("f1", True)] == -ROOK  # castling
     assert next_state.board[p("h1", True)] == EMPTY  # castling
 
+    # en passant
+    state = State._from_fen("k7/8/8/8/3pP3/8/8/R3K2R b KQ e3 0 1")
+    state.save_svg("tests/assets/chess/step_008.svg")
+    next_state = step(state, jnp.int32(p("d4", True) * 73 + 57))  # UP LEFT
+    next_state.save_svg("tests/assets/chess/step_009.svg")
+
+    state = State._from_fen("k7/8/8/8/3pP3/8/8/R3K2R w KQ - 0 1")
+    state.save_svg("tests/assets/chess/step_010.svg")
+    next_state = step(state, jnp.int32(p("e4") * 73 + 57))  # UP LEFT
+    next_state.save_svg("tests/assets/chess/step_011.svg")
+
+
 

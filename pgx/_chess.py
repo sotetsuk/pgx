@@ -285,6 +285,10 @@ def _step(state: State, action: jnp.ndarray):
     )
 
 
+def _abs_pos(x, turn):
+    return jax.lax.select(turn == 0, x, (x // 8) * 8 + (7 - x % 8))
+
+
 def _rotate(board):
     return jnp.rot90(board, k=1)
 
