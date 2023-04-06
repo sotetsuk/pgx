@@ -214,6 +214,8 @@ def _step(state: State, action: jnp.ndarray):
 
     # apply move action
     piece = state.board[a.from_]
+    # castling
+
     # promotion to queen
     piece = jax.lax.select(
         piece == PAWN & (a.from_ % 8 == 6) & (a.underpromotion < 0),
