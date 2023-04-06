@@ -351,17 +351,6 @@ def duplicate(
 
 
 @jax.jit
-def _illegal_step(
-    state: State,
-) -> State:
-    """Return state when an illegal move is detected"""
-    illegal_rewards = jnp.zeros(4, dtype=jnp.float32)
-    # fmt: off
-    return state.replace(terminated=jnp.bool_(True), current_player=jnp.int8(-1), reward=illegal_rewards)  # type: ignore
-    # fmt: on
-
-
-@jax.jit
 def _terminated_step(
     state: State,
     hash_keys: jnp.ndarray,

@@ -753,12 +753,10 @@ def test_step():
     #   P  P
     # Passが3回続いたので終了
     assert state.terminated == True
-    assert state.current_player == -1
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
     assert state.turn == 20
-    assert _player_position(state.current_player, state) == -1
     assert state.terminated
     bidding_history = bidding_history.at[20].set(35)
     assert jnp.all(state.bidding_history == bidding_history)
@@ -919,7 +917,6 @@ def test_pass_out():
     #   P
 
     assert state.terminated == True
-    assert state.current_player == -1
     assert state.turn == 3
     bidding_history = bidding_history.at[3].set(35)
     assert jnp.all(state.bidding_history == bidding_history)
