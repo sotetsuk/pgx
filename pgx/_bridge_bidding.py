@@ -244,26 +244,22 @@ def _step(
     state = state.replace(bidding_history=state.bidding_history.at[state.turn].set(action))  # type: ignore
     # fmt: on
     return jax.lax.cond(
-        state.legal_action_mask[action] == 0,  # 非合法手判断
-        lambda: _illegal_step(state),
-        lambda: jax.lax.cond(
-            action >= 35,
-            lambda: jax.lax.switch(
-                action - 35,
-                [
-                    lambda: jax.lax.cond(
-                        _is_terminated(_state_pass(state)),
-                        lambda: _terminated_step(
-                            _state_pass(state), hash_keys, hash_values
-                        ),
-                        lambda: _continue_step(_state_pass(state)),
+        action >= 35,
+        lambda: jax.lax.switch(
+            action - 35,
+            [
+                lambda: jax.lax.cond(
+                    _is_terminated(_state_pass(state)),
+                    lambda: _terminated_step(
+                        _state_pass(state), hash_keys, hash_values
                     ),
-                    lambda: _continue_step(_state_X(state)),
-                    lambda: _continue_step(_state_XX(state)),
-                ],
-            ),
-            lambda: _continue_step(_state_bid(state, action)),
+                    lambda: _continue_step(_state_pass(state)),
+                ),
+                lambda: _continue_step(_state_X(state)),
+                lambda: _continue_step(_state_XX(state)),
+            ],
         ),
+        lambda: _continue_step(_state_bid(state, action)),
     )
 
 
@@ -373,10 +369,9 @@ def _terminated_step(
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
-    current_player = jnp.int8(-1)
     reward = _reward(state, hash_keys, hash_values)
     # fmt: off
-    return state.replace(terminated=terminated, current_player=current_player, reward=reward)  # type: ignore
+    return state.replace(terminated=terminated, reward=reward)  # type: ignore
     # fmt: on
 
 

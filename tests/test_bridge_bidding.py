@@ -1731,6 +1731,13 @@ def test_value_to_dds_tricks():
     # fmt: on
 
 
+def test_api():
+    import pgx
+
+    env = pgx.make("bridge_bidding")
+    pgx.api_test(env, 10)
+
+
 def to_value(sample: list) -> jnp.ndarray:
     """Convert sample to value
     >>> sample = ['0', '1', '0', '4', '0', '13', '12', '13', '9', '13', '0', '1', '0', '4', '0', '13', '12', '13', '9', '13']
