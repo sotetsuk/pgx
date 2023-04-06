@@ -96,16 +96,14 @@ dc += [x for x in seq]
 # knight moves
 dr += [-1, +1, -2, +2, -1, +1, -2, +2]
 dc += [-2, -2, -1, -1, +2, +2, +1, +1]
-dr = jnp.int8(dr)
-dc = jnp.int8(dc)
 for from_ in range(64):
     for plane in range(9, 73):
-        r, c = jnp.int8(from_ % 8), jnp.int8(from_ // 8)
+        r, c = from_ % 8, from_ // 8
         r = r + dr[plane - 9]
         c = c + dc[plane - 9]
         if r < 0 or r >= 8 or c < 0 or c >= 8:
             continue
-        TO_MAP = TO_MAP.at[from_, plane].set(c * 8 + r)
+        TO_MAP = TO_MAP.at[from_, plane].set(jnp.int8(c * 8 + r))
 # fmt: on
 
 
@@ -321,11 +319,11 @@ def _from_fen(fen: str):
     if turn == "b":
         can_castle_queen_side = can_castle_queen_side[::-1]
         can_castle_king_side = can_castle_king_side[::-1]
-    arr = jnp.int8(arr).reshape(8, 8)
+    mat = jnp.int8(arr).reshape(8, 8)
     if turn == "b":
-        arr = -jnp.flip(arr, axis=0)
+        mat = -jnp.flip(mat, axis=0)
     state = State(  # type: ignore
-        board=jnp.rot90(arr, k=3).flatten(),
+        board=jnp.rot90(mat, k=3).flatten(),
         turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
         can_castle_queen_side=can_castle_queen_side,
         can_castle_king_side=can_castle_king_side,
