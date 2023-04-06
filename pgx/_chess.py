@@ -213,11 +213,19 @@ class Chess(core.Env):
 
 def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
-    # apply move/drop action
-    ...
+
+    # apply move action
+    piece = state.board[a.from_]
+    piece = jax.lax.select(
+        a.underpromotion < 0,
+        piece,
+        jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion]
+    )
+    state = state.replace(  # type: ignore
+        board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
+    )
 
     state = _flip(state)
-
     legal_action_mask = _legal_action_mask(state)
 
     terminated = ~legal_action_mask.any()
