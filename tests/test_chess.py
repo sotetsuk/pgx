@@ -169,5 +169,8 @@ def test_step():
     assert state.board[p("e4", True)] == -PAWN
     next_state = step(state, jnp.int32(p("d4", True) * 73 + 44))
     next_state.save_svg("tests/assets/chess/step_009.svg")
+    print(jnp.int32(p("e3", True)))
+    print(Action._from_label(jnp.int32(p("d4", True) * 73 + 44)))
+    print(jnp.int32(p("e4", True)))
     assert next_state.board[p("e3")] == -PAWN
     assert next_state.board[p("e4")] == EMPTY
