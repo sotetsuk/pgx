@@ -253,7 +253,7 @@ def _rotate(board):
 def _flip(state: State) -> State:
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        board=-state.board,  #  -jnp.flip(jnp.rot90(state.board.reshape(8, 8), k=1), axis=0).flatten(),
+        board=-jnp.flip(state.board.reshape(8, 8), axis=1).flatten(),
         turn=(state.turn + 1) % 2,
         can_castle_queen_side=state.can_castle_queen_side[::-1],
         can_castle_king_side=state.can_castle_king_side[::-1],

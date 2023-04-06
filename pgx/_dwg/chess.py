@@ -1,6 +1,7 @@
 import base64
 import os
 
+from pgx._chess import _flip
 from pgx._chess import State as ChessState
 
 
@@ -130,12 +131,12 @@ def _make_chess_dwg(dwg, state: ChessState, config):
             )
         )
 
+    if state.turn == 1:
+        state = _flip(state)
     # pieces
     pieces_g = dwg.g()
     for i in range(64):
         pi = int(state.board[i].item())
-        if state.turn == 1:
-            pi *= -1
         if pi == 0:
             continue
         if pi < 0:
