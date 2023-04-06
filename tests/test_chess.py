@@ -117,4 +117,4 @@ def test_step():
     assert state.board[p("b1")] == EMPTY
     state = step(state, jnp.int32(672))
     state.save_svg("tests/assets/chess/step_002.svg")
-    assert state.board[p("b1")] == QUEEN
+    assert state.board[p("b1", True)] == QUEEN
