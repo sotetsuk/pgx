@@ -22,6 +22,7 @@ import numpy as np
 import pgx.core as core
 from pgx._flax.struct import dataclass
 
+TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 # カードと数字の対応
@@ -40,7 +41,7 @@ class State(core.State):
     # 各プレイヤーの観測
     observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
     # 報酬　player_id: 0, 1, 2, 3
-    reward: jnp.ndarray = jnp.int16([0, 0, 0, 0])
+    reward: jnp.ndarray = jnp.float32([0, 0, 0, 0])
     # シャッフルされたプレイヤーの並び
     shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # 終端状態
@@ -88,6 +89,40 @@ class State(core.State):
     pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
 
 
+class BridgeBidding(core.Env):
+    def __init__(self):
+        super().__init__()
+        # fmt: off
+        self.hash_keys, self.hash_values = jnp.array([[19556549, 61212362, 52381660, 50424958], [53254536, 21854346, 37287883, 14009558], [44178585, 6709002, 23279217, 16304124], [36635659, 48114215, 13583653, 26208086], [44309474, 39388022, 28376136, 59735189], [61391908, 52173479, 29276467, 31670621], [34786519, 13802254, 57433417, 43152306], [48319039, 55845612, 44614774, 58169152], [47062227, 32289487, 12941848, 21338650], [36579116, 15643926, 64729756, 18678099], [62136384, 37064817, 59701038, 39188202], [13417016, 56577539, 25995845, 27248037], [61125047, 43238281, 23465183, 20030494], [7139188, 31324229, 58855042, 14296487], [2653767, 47502150, 35507905, 43823846], [31453323, 11605145, 6716808, 41061859], [21294711, 49709, 26110952, 50058629], [48130172, 3340423, 60445890, 7686579], [16041939, 27817393, 37167847, 9605779], [61154057, 17937858, 12254613, 12568801], [13796245, 46546127, 49123920, 51772041], [7195005, 45581051, 41076865, 17429796], [20635965, 14642724, 7001617, 45370595], [35616421, 19938131, 45131030, 16524847], [14559399, 15413729, 39188470, 535365], [48743216, 39672069, 60203571, 60210880], [63862780, 2462075, 23267370, 36595020], [11229980, 11616119, 20292263, 3695004], [24135854, 37532826, 54421444, 14130249], [42798085, 33026223, 2460251, 18566823], [49558558, 65537599, 14768519, 31103243], [44321156, 20075251, 42663767, 11615602], [20186726, 42678073, 11763300, 56739471], [57534601, 16703645, 6039937, 17088125], [50795278, 17350238, 11955835, 21538127], [45919621, 5520088, 27736513, 52674927], [13928720, 57324148, 28222453, 15480785], [910719, 47238830, 26345802, 56166394], [58841430, 1098476, 61890558, 26907706], [10379825, 8624220, 39701822, 29045990], [54444873, 50000486, 48563308, 55867521], [47291672, 22084522, 45484828, 32878832], [55350706, 23903891, 46142039, 11499952], [4708326, 27588734, 31010458, 11730972], [27078872, 59038086, 62842566, 51147874], [28922172, 32377861, 9109075, 10154350], [26104086, 62786977, 224865, 14335943], [20448626, 33187645, 34338784, 26382893], [29194006, 19635744, 24917755, 8532577], [64047742, 34885257, 5027048, 58399668], [27603972, 26820121, 44837703, 63748595], [60038456, 19611050, 7928914, 38555047], [13583610, 19626473, 22239272, 19888268], [28521006, 1743692, 31319264, 15168920], [64585849, 63931241, 57019799, 14189800], [2632453, 7269809, 60404342, 57986125], [1996183, 49918209, 49490468, 47760867], [6233580, 15318425, 51356120, 55074857], [15769884, 61654638, 8374039, 43685186], [44162419, 47272176, 62693156, 35359329], [36345796, 15667465, 53341561, 2978505], [1664472, 12761950, 34145519, 55197543], [37567005, 3228834, 6198166, 15646487], [63233399, 42640049, 12969011, 41620641], [22090925, 3386355, 56655568, 31631004], [16442787, 9420273, 48595545, 29770176], [49404288, 37823218, 58551818, 6772527], [36575583, 53847347, 32379432, 1630009], [9004247, 12999580, 48379959, 14252211], [25850203, 26136823, 64934025, 29362603], [10214276, 43557352, 33387586, 55512773], [45810841, 49561478, 41130845, 27034816], [34460081, 16560450, 57722793, 41007718], [53414778, 6845803, 15340368, 16647575], [30535873, 5193469, 43608154, 11391114], [20622004, 34424126, 31475211, 29619615], [10428836, 49656416, 7912677, 33427787], [57600861, 18251799, 46147432, 58946294], [6760779, 14675737, 42952146, 5480498], [46037552, 39969058, 30103468, 55330772], [64466305, 29376674, 49914839, 55269895], [36494113, 27010567, 65752150, 12395385], [49385632, 19550767, 39809394, 58806235], [20987521, 37444597, 49290126, 42326125], [37150229, 37487849, 28254397, 32949826], [9724895, 53813417, 19431235, 27438556], [42132748, 47073733, 19396568, 10026137], [3961481, 27204521, 62087205, 37602005], [22178323, 17505521, 42006207, 44143605], [12753258, 63063515, 61993175, 8920985], [10998000, 64833190, 6446892, 63676805], [66983817, 63684932, 18378359, 39946382], [63476803, 60000436, 19442420, 66417845], [38004446, 64752157, 42570179, 52844512], [1270809, 23735482, 17543294, 18795903], [4862706, 16352249, 57100612, 6219870], [63203206, 25630930, 35608240, 51357885], [59819625, 64662579, 50925335, 55670434], [29216830, 26446697, 52243336, 58475666], [43138915, 30592834, 43931516, 50628002]], dtype=jnp.int32), jnp.array([[71233, 771721, 71505, 706185], [289177, 484147, 358809, 484147], [359355, 549137, 359096, 549137], [350631, 558133, 350630, 554037], [370087, 538677, 370087, 538677], [4432, 899725, 4432, 904077], [678487, 229987, 678487, 229987], [423799, 480614, 423799, 480870], [549958, 284804, 549958, 280708], [423848, 480565, 423848, 480549], [489129, 283940, 554921, 283940], [86641, 822120, 86641, 822120], [206370, 702394, 206370, 567209], [500533, 407959, 500533, 407959], [759723, 79137, 759723, 79137], [563305, 345460, 559209, 345460], [231733, 611478, 231733, 611478], [502682, 406082, 498585, 406082], [554567, 288662, 554567, 288662], [476823, 427846, 476823, 427846], [488823, 415846, 488823, 415846], [431687, 477078, 431687, 477078], [419159, 424070, 415062, 424070], [493399, 345734, 493143, 345718], [678295, 230451, 678295, 230451], [496520, 342596, 496520, 346709], [567109, 276116, 567109, 276116], [624005, 284758, 624005, 284758], [420249, 484420, 420248, 484420], [217715, 621418, 217715, 621418], [344884, 493977, 344884, 493977], [550841, 292132, 550841, 292132], [284262, 558967, 284006, 558967], [152146, 756616, 152146, 756616], [144466, 698763, 144466, 694667], [284261, 624504, 284261, 624504], [288406, 620102, 288405, 620358], [301366, 607383, 301366, 607382], [468771, 435882, 468771, 435882], [555688, 283444, 555688, 283444], [485497, 414820, 485497, 414820], [633754, 275010, 633754, 275010], [419141, 489608, 419157, 489608], [694121, 214387, 694121, 214387], [480869, 427639, 481125, 427639], [489317, 419447, 489301, 419447], [152900, 747672, 152900, 747672], [348516, 494457, 348516, 494457], [534562, 370088, 534562, 370088], [371272, 537475, 371274, 537475], [144194, 760473, 144194, 760473], [567962, 275011, 567962, 275011], [493161, 350052, 493161, 350052], [490138, 348979, 490138, 348979], [328450, 506552, 328450, 506552], [148882, 759593, 148626, 755497], [642171, 266593, 642171, 266593], [685894, 218774, 685894, 218774], [674182, 234548, 674214, 234548], [756347, 152146, 690811, 86353], [612758, 291894, 612758, 291894], [296550, 612214, 296550, 612214], [363130, 475730, 363130, 475730], [691559, 16496, 691559, 16496], [340755, 502202, 336659, 502218], [632473, 210499, 628377, 210483], [564410, 266513, 564410, 266513], [427366, 481399, 427366, 481399], [493159, 349797, 493159, 415605], [331793, 576972, 331793, 576972], [416681, 492084, 416681, 492084], [813496, 95265, 813496, 91153], [695194, 213571, 695194, 213571], [436105, 407124, 436105, 407124], [836970, 6243, 902506, 6243], [160882, 747882, 160882, 747882], [493977, 414788, 489624, 414788], [29184, 551096, 29184, 616888], [903629, 4880, 899517, 4880], [351419, 553250, 351419, 553250], [75554, 767671, 75554, 767671], [279909, 563304, 279909, 563304], [215174, 628054, 215174, 628054], [361365, 481864, 361365, 481864], [424022, 484743, 358486, 484725], [271650, 633018, 271650, 633018], [681896, 226867, 616088, 226867], [222580, 686184, 222564, 686184], [144451, 698778, 209987, 698778], [532883, 310086, 532883, 310086], [628872, 279893, 628872, 279893], [533797, 374951, 533797, 374951], [91713, 817036, 91713, 817036], [427605, 477046, 431718, 477046], [145490, 689529, 145490, 689529], [551098, 291875, 551098, 291875], [349781, 558984, 349781, 558983], [205378, 703115, 205378, 703115], [362053, 546456, 362053, 546456], [612248, 226371, 678040, 226371]], dtype=jnp.int32)
+        # fmt: on
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        key1, key2, key3 = jax.random.split(key, num=3)
+        return _init_by_key(jax.random.choice(key2, self.hash_keys), key3)
+
+    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        return _step(state, action, self.hash_keys, self.hash_values)
+
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state, player_id)
+
+    @property
+    def name(self) -> str:
+        return "BridgeBidding"
+
+    @property
+    def version(self) -> str:
+        return "beta"
+
+    @property
+    def num_players(self) -> int:
+        return 4
+
+
 @jax.jit
 def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
@@ -116,7 +151,7 @@ def init(rng: jax.random.KeyArray) -> State:
 
 
 @jax.jit
-def init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
+def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
     hand = _key_to_hand(key)
@@ -199,7 +234,7 @@ def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
 
 
 @jax.jit
-def step(
+def _step(
     state: State,
     action: int,
     hash_keys: jnp.ndarray,
@@ -209,31 +244,27 @@ def step(
     state = state.replace(bidding_history=state.bidding_history.at[state.turn].set(action))  # type: ignore
     # fmt: on
     return jax.lax.cond(
-        state.legal_action_mask[action] == 0,  # 非合法手判断
-        lambda: _illegal_step(state),
-        lambda: jax.lax.cond(
-            action >= 35,
-            lambda: jax.lax.switch(
-                action - 35,
-                [
-                    lambda: jax.lax.cond(
-                        _is_terminated(_state_pass(state)),
-                        lambda: _terminated_step(
-                            _state_pass(state), hash_keys, hash_values
-                        ),
-                        lambda: _continue_step(_state_pass(state)),
+        action >= 35,
+        lambda: jax.lax.switch(
+            action - 35,
+            [
+                lambda: jax.lax.cond(
+                    _is_terminated(_state_pass(state)),
+                    lambda: _terminated_step(
+                        _state_pass(state), hash_keys, hash_values
                     ),
-                    lambda: _continue_step(_state_X(state)),
-                    lambda: _continue_step(_state_XX(state)),
-                ],
-            ),
-            lambda: _continue_step(_state_bid(state, action)),
+                    lambda: _continue_step(_state_pass(state)),
+                ),
+                lambda: _continue_step(_state_X(state)),
+                lambda: _continue_step(_state_XX(state)),
+            ],
         ),
+        lambda: _continue_step(_state_bid(state, action)),
     )
 
 
 @jax.jit
-def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
     # make vul of observation
     vul = jnp.array([state.vul_NS, state.vul_EW], dtype=jnp.bool_)
@@ -320,17 +351,6 @@ def duplicate(
 
 
 @jax.jit
-def _illegal_step(
-    state: State,
-) -> State:
-    """Return state when an illegal move is detected"""
-    illegal_rewards = jnp.zeros(4, dtype=jnp.int16)
-    # fmt: off
-    return state.replace(terminated=jnp.bool_(True), current_player=jnp.int8(-1), reward=illegal_rewards)  # type: ignore
-    # fmt: on
-
-
-@jax.jit
 def _terminated_step(
     state: State,
     hash_keys: jnp.ndarray,
@@ -338,10 +358,9 @@ def _terminated_step(
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
-    current_player = jnp.int8(-1)
     reward = _reward(state, hash_keys, hash_values)
     # fmt: off
-    return state.replace(terminated=terminated, current_player=current_player, reward=reward)  # type: ignore
+    return state.replace(terminated=terminated, reward=reward)  # type: ignore
     # fmt: on
 
 
@@ -355,7 +374,7 @@ def _continue_step(
     state = state.replace(current_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4], turn=state.turn + 1)  # type: ignore
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
-    return state.replace(legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask), reward=jnp.zeros(4, dtype=jnp.int16))  # type: ignore
+    return state.replace(legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask), reward=jnp.zeros(4, dtype=jnp.float32))  # type: ignore
     # fmt: on
 
 
@@ -383,7 +402,7 @@ def _reward(
     """
     return jax.lax.cond(
         (state.last_bid == -1) & (state.pass_num == 4),
-        lambda: jnp.zeros(4, dtype=jnp.int16),  # pass out
+        lambda: jnp.zeros(4, dtype=jnp.float32),  # pass out
         lambda: _make_reward(  # caluculate reward
             state, hash_keys, hash_values
         ),
@@ -460,12 +479,12 @@ def _down_score(
         np.ndarray: A score of declarer team
     """
     # fmt: off
-    _DOWN = jnp.array([-50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -550, -600, -650], dtype=jnp.int16)
-    _DOWN_VUL = jnp.array([-100, -200, -300, -400, -500, -600, -700, -800, -900, -1000, -1100, -1200, -1300], dtype=jnp.int16)
-    _DOWN_X = jnp.array([-100, -300, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500], dtype=jnp.int16)
-    _DOWN_X_VUL = jnp.array([-200, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500, -3800], dtype=jnp.int16)
-    _DOWN_XX = jnp.array([-200, -600, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000], dtype=jnp.int16)
-    _DOWN_XX_VUL = jnp.array([-400, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000, -7600], dtype=jnp.int16)
+    _DOWN = jnp.array([-50, -100, -150, -200, -250, -300, -350, -400, -450, -500, -550, -600, -650], dtype=jnp.float32)
+    _DOWN_VUL = jnp.array([-100, -200, -300, -400, -500, -600, -700, -800, -900, -1000, -1100, -1200, -1300], dtype=jnp.float32)
+    _DOWN_X = jnp.array([-100, -300, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500], dtype=jnp.float32)
+    _DOWN_X_VUL = jnp.array([-200, -500, -800, -1100, -1400, -1700, -2000, -2300, -2600, -2900, -3200, -3500, -3800], dtype=jnp.float32)
+    _DOWN_XX = jnp.array([-200, -600, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000], dtype=jnp.float32)
+    _DOWN_XX_VUL = jnp.array([-400, -1000, -1600, -2200, -2800, -3400, -4000, -4600, -5200, -5800, -6400, -7000, -7600], dtype=jnp.float32)
     # fmt: on
     under_trick = level + 6 - trick
     down = jax.lax.cond(
@@ -504,58 +523,58 @@ def _make_score(
         np.ndarray: A score of declarer team
     """
     # fmt: off
-    _MINOR = jnp.int16(20)
-    _MAJOR = jnp.int16(30)
-    _NT = jnp.int16(10)
-    _MAKE = jnp.int16(50)
-    _MAKE_X = jnp.int16(50)
-    _MAKE_XX = jnp.int16(50)
+    _MINOR = jnp.float32(20)
+    _MAJOR = jnp.float32(30)
+    _NT = jnp.float32(10)
+    _MAKE = jnp.float32(50)
+    _MAKE_X = jnp.float32(50)
+    _MAKE_XX = jnp.float32(50)
 
-    _GAME = jnp.int16(250)
-    _GAME_VUL = jnp.int16(450)
-    _SMALL_SLAM = jnp.int16(500)
-    _SMALL_SLAM_VUL = jnp.int16(750)
-    _GRAND_SLAM = jnp.int16(500)
-    _GRAND_SLAM_VUL = jnp.int16(750)
+    _GAME = jnp.float32(250)
+    _GAME_VUL = jnp.float32(450)
+    _SMALL_SLAM = jnp.float32(500)
+    _SMALL_SLAM_VUL = jnp.float32(750)
+    _GRAND_SLAM = jnp.float32(500)
+    _GRAND_SLAM_VUL = jnp.float32(750)
 
-    _OVERTRICK_X = jnp.int16(100)
-    _OVERTRICK_X_VUL = jnp.int16(200)
-    _OVERTRICK_XX = jnp.int16(200)
-    _OVERTRICK_XX_VUL = jnp.int16(400)
+    _OVERTRICK_X = jnp.float32(100)
+    _OVERTRICK_X_VUL = jnp.float32(200)
+    _OVERTRICK_XX = jnp.float32(200)
+    _OVERTRICK_XX_VUL = jnp.float32(400)
     # fmt: on
-    over_trick_score_per_trick = jnp.int16(0)
-    over_trick = trick - level - jnp.int16(6)
-    score = jnp.int16(0)
+    over_trick_score_per_trick = jnp.float32(0)
+    over_trick = trick - level - jnp.float32(6)
+    score = jnp.float32(0)
     score, over_trick_score_per_trick = jax.lax.switch(
         denomination,
         [
             lambda: (
-                score + jnp.int16(_MINOR * level),
+                score + jnp.float32(_MINOR * level),
                 over_trick_score_per_trick + _MINOR,
             ),
             lambda: (
-                score + jnp.int16(_MINOR * level),
+                score + jnp.float32(_MINOR * level),
                 over_trick_score_per_trick + _MINOR,
             ),
             lambda: (
-                score + jnp.int16(_MAJOR * level),
+                score + jnp.float32(_MAJOR * level),
                 over_trick_score_per_trick + _MAJOR,
             ),
             lambda: (
-                score + jnp.int16(_MAJOR * level),
+                score + jnp.float32(_MAJOR * level),
                 over_trick_score_per_trick + _MAJOR,
             ),
             lambda: (
-                score + jnp.int16(_MAJOR * level + _NT),
+                score + jnp.float32(_MAJOR * level + _NT),
                 over_trick_score_per_trick + _MAJOR,
             ),
         ],
     )
     score = jax.lax.cond(
         call_xx,
-        lambda: score * jnp.int16(4),
+        lambda: score * jnp.float32(4),
         lambda: jax.lax.cond(
-            call_x, lambda: score * jnp.int16(2), lambda: score
+            call_x, lambda: score * jnp.float32(2), lambda: score
         ),
     )
     game_bonus = jax.lax.cond(vul, lambda: _GAME_VUL, lambda: _GAME)
