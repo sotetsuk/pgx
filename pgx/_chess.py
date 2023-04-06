@@ -223,6 +223,8 @@ def _step(state: State, action: jnp.ndarray):
             lambda: state.board
         )
     )
+    # right
+
     # promotion to queen
     piece = jax.lax.select(
         piece == PAWN & (a.from_ % 8 == 6) & (a.underpromotion < 0),

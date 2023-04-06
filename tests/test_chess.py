@@ -141,4 +141,12 @@ def test_step():
     next_state.save_svg("tests/assets/chess/step_006.svg")
     assert next_state.board[p("c1", True)] == -KING
     assert next_state.board[p("d1", True)] == -ROOK  # castling
+    assert next_state.board[p("a1", True)] == EMPTY  # castling
+    # right
+    next_state = step(state, jnp.int32(p("e1") * 73 + 31))
+    next_state.save_svg("tests/assets/chess/step_006.svg")
+    assert next_state.board[p("g1", True)] == -KING
+    assert next_state.board[p("f1", True)] == -ROOK  # castling
+    assert next_state.board[p("h1", True)] == EMPTY  # castling
+
 
