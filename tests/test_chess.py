@@ -110,6 +110,25 @@ def test_action():
     assert action.to == p("a8")
     assert action.underpromotion == 0  # rook
 
+    # black turn
+    state = State._from_fen("k7/8/8/8/3qP3/8/8/R3K2R b KQ e3 0 1")
+    state.save_svg("tests/assets/chess/action_004.svg")
+    # 上
+    action = Action._from_label(jnp.int32(p("d4", True) * 73 + 16))
+    assert action.from_ == p("d4", True)
+    assert action.to == p("d3", True)
+    assert action.underpromotion == -1  # rook
+    # 下
+    action = Action._from_label(jnp.int32(p("d4", True) * 73 + 15))
+    assert action.from_ == p("d4", True)
+    assert action.to == p("d5", True)
+    assert action.underpromotion == -1  # rook
+    # 左
+    action = Action._from_label(jnp.int32(p("d4", True) * 73 + 29))
+    assert action.from_ == p("d4", True)
+    assert action.to == p("e4", True)
+    assert action.underpromotion == -1  # rook
+
 
 def test_step():
     # normal step
