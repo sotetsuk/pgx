@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK
+from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN
 
 env = Chess()
 init = jax.jit(env.init)
@@ -113,21 +113,16 @@ def test_action():
     # black turn
     state = State._from_fen("k7/8/8/8/3qP3/8/8/R3K2R b KQ e3 0 1")
     state.save_svg("tests/assets/chess/action_004.svg")
-    # 上
+    # 上（上下はそのまま）
     action = Action._from_label(jnp.int32(p("d4", True) * 73 + 16))
     assert action.from_ == p("d4", True)
     assert action.to == p("d3", True)
-    assert action.underpromotion == -1  # rook
-    # 下
-    action = Action._from_label(jnp.int32(p("d4", True) * 73 + 15))
-    assert action.from_ == p("d4", True)
-    assert action.to == p("d5", True)
-    assert action.underpromotion == -1  # rook
-    # 左
+    assert action.underpromotion == -1
+    # 左（左右は鏡写し）
     action = Action._from_label(jnp.int32(p("d4", True) * 73 + 29))
     assert action.from_ == p("d4", True)
-    assert action.to == p("e4", True)
-    assert action.underpromotion == -1  # rook
+    assert action.to == p("c4", True)
+    assert action.underpromotion == -1
 
 
 def test_step():
@@ -169,15 +164,10 @@ def test_step():
     assert next_state.board[p("h1", True)] == EMPTY  # castling
 
     # en passant
-    state = State._from_fen("k7/8/8/8/3pP3/8/8/R3K2R b KQ e3 0 1")
+    state = State._from_fen("1k6/8/8/8/3pP3/8/8/R3K2R b KQ e3 0 1")
     state.save_svg("tests/assets/chess/step_008.svg")
-    next_state = step(state, jnp.int32(p("d4", True) * 73 + 57))  # UP LEFT
+    assert next_state.board[p("e4", True)] == PAWN
+    next_state = step(state, jnp.int32(p("d4", True) * 73 + 44))
     next_state.save_svg("tests/assets/chess/step_009.svg")
-
-    state = State._from_fen("k7/8/8/8/3pP3/8/8/R3K2R w KQ - 0 1")
-    state.save_svg("tests/assets/chess/step_010.svg")
-    next_state = step(state, jnp.int32(p("e4") * 73 + 57))  # UP LEFT
-    next_state.save_svg("tests/assets/chess/step_011.svg")
-
-
-
+    assert next_state.board[p("e3", True)] == -PAWN
+    assert next_state.board[p("e4", True)] == EMPTY
