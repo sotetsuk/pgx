@@ -219,10 +219,10 @@ def _step(state: State, action: jnp.ndarray):
     piece = state.board[a.from_]
     # en passant
     is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == _abs_pos(a.to, state.turn))
-    removed_pawn = a.to - 1
+    removed_pawn_pos = a.to - 1
     state = state.replace(  # type: ignore
-        board=state.board.at[removed_pawn].set(
-            jax.lax.select(is_en_passant, EMPTY, state.board[removed_pawn])
+        board=state.board.at[removed_pawn_pos].set(
+            jax.lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos])
         ),
     )
     state = state.replace(  # type: ignore
