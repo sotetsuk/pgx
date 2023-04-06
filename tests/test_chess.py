@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY
+from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK
 
 env = Chess()
 init = jax.jit(env.init)
@@ -112,9 +112,22 @@ def test_action():
 
 
 def test_step():
+    # normal step
     state = State._from_fen("k7/8/8/8/8/8/1Q6/7K w - - 0 1")
     state.save_svg("tests/assets/chess/step_001.svg")
     assert state.board[p("b1")] == EMPTY
     state = step(state, jnp.int32(672))
     state.save_svg("tests/assets/chess/step_002.svg")
     assert state.board[p("b1", True)] == -QUEEN
+
+    state = State._from_fen("r1r4k/1P6/8/8/8/8/P7/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/step_002.svg")
+    assert state.board[p("b8")] == EMPTY
+    # underpromotion
+    next_state = step(state, jnp.int32(1022))
+    next_state.save_svg("tests/assets/chess/step_003.svg")
+    assert next_state.board[p("b8", True)] == -ROOK
+    # promotion to queen
+    next_state = step(state, jnp.int32(p("b7") * 73 + 16))
+    next_state.save_svg("tests/assets/chess/step_004.svg")
+    assert next_state.board[p("b8", True)] == -QUEEN
