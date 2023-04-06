@@ -463,131 +463,179 @@ def test_buggy_samples():
     # first pawn
     fen = "7k/8/8/8/8/8/P7/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 4
     # first pawn disturbed
     fen = "7k/8/8/8/p7/8/P7/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 3
     # second pawn
     fen = "7k/8/8/8/8/P7/8/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 4
     # second pawn disturbed
     fen = "7k/8/8/8/p7/P7/8/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 3
     # pawn catch
     fen = "7k/8/8/8/8/p1p5/1P6/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 6
     # en_passant
     fen = "7k/7p/8/6P1/8/8/8/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 382)
+    # h7 -> h5
+    action = 4178
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 5
     # black
     fen = "7k/8/8/8/1p6/8/P7/K7 w - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 513)
+    # a2 -> a4
+    action = 90
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 5
     # promotion
     # TODO: index error
     fen = "b1r4k/1P6/8/8/8/8/8/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 15
     # black
     fen = "7k/8/8/8/8/8/6p1/K4R1B w - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 448)
+    # a1 -> a2
+    action = 16
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 15
     # castling(cannot)
     fen = "7k/8/7p/8/8/8/8/R3K2R b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 22
     # black
     fen = "r2k3r/8/8/8/8/P7/8/K7 w - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 448)
+    # a1 -> a2
+    action = 16
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 22
     # castling(cannot)
     fen = "7k/8/7p/8/8/8/8/RN2K1NR b KQ - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 23
     # black
     fen = "rn1k2nr/8/8/8/8/P7/8/K7 w kq - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 448)
+    # a1 -> a2
+    action = 16
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 23
     # castling(cannot)
     fen = "1r4rk/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 23
     # black
     # TODO: fix black castling
     fen = "r2k3r/8/8/8/8/P7/8/KR4R1 w kq - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 448)
+    # a1 -> a2
+    action = 16
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 23
     # castling
     fen = "7k/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     assert _legal_actions(s).sum() == 24
     # black
     # TODO: fix black castling
     fen = "r2k3r/8/8/8/8/P7/8/K7 w kq - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 448)
+    # a1 -> a2
+    action = 16
+    s, _, _ = step(s, action)
     #assert _legal_actions(s).sum() == 24
     # checked
     # TODO: filter leave-check
     fen = "7k/8/8/8/8/1p6/P7/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 394)
+    # b3 -> b2
+    action = 965
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 2
     # suicide
     # TODO: filter suicide-move
     fen = "7k/8/8/8/8/8/7q/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 447)
+    # h8 -> h7
+    action = 4104
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 1
     # discovered check
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2p5/8/KR6 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 402)
+    # c3 -> c2
+    action = 1549
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 2
     # check with pin
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2r5/8/KR6 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 338)
+    # c3 -> c1
+    action = 1550
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 1
     # double check
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2r5/8/K7 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 338)
+    # c3 -> c1
+    action = 1550
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 1
     # pin
     # TODO: filter suicide
     fen = "7k/8/8/8/8/8/7r/KR6 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 441)
+    # h2 -> h1
+    action = 4542
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 8
     # double pin
     # TODO: filter suicide
     fen = "7k/6b1/5r2/8/3B4/8/8/KR6 b - - 0 1"
     s = _from_fen(fen)
-    s, _, _ = step(s, 173)
+    # f6 -> f1
+    action = 3086
+    s, _, _ = step(s, action)
     # assert _legal_actions(s).sum() == 11
 
