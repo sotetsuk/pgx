@@ -159,7 +159,7 @@ class Action:
           - https://github.com/LeelaChessZero/lc0/pull/712
         """
         from_, plane = label // 73, label % 73
-        return Action(
+        return Action(  # type: ignore
             from_=from_,
             to=TO_MAP[from_, plane],  # -1 if impossible move
             underpromotion=jax.lax.select(
@@ -297,7 +297,6 @@ def _from_fen(fen: str):
     Array(34, dtype=int8)
     """
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
-    turn = jnp.int8(0) if turn == "w" else jnp.int8(1)
     arr = []
     for line in board.split("/"):
         for c in line:
@@ -319,24 +318,22 @@ def _from_fen(fen: str):
         can_castle_king_side = can_castle_king_side.at[0].set(TRUE)
     if "k" in castling:
         can_castle_king_side = can_castle_king_side.at[1].set(TRUE)
-    if turn == 1:
+    if turn == "b":
         can_castle_queen_side = can_castle_queen_side[::-1]
         can_castle_king_side = can_castle_king_side[::-1]
-    if en_passant == "-":
-        en_passant = jnp.int8(-1)
-    else:
-        en_passant = jnp.int8(
-            "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
-        )
     arr = jnp.int8(arr).reshape(8, 8)
-    if turn == 1:
+    if turn == "b":
         arr = -jnp.flip(arr, axis=0)
     state = State(
         board=jnp.rot90(arr, k=3).flatten(),
-        turn=turn,
+        turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
         can_castle_queen_side=can_castle_queen_side,
         can_castle_king_side=can_castle_king_side,
-        en_passant=en_passant,
+        en_passant=jnp.int8(-1)
+        if en_passant == "-"
+        else jnp.int8(
+            "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
+        ),
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
