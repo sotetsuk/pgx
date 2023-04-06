@@ -219,9 +219,7 @@ def _step(state: State, action: jnp.ndarray):
     # left
     state = state.replace(  # type: ignore
         board=jax.lax.cond(
-            (piece == KING)
-            & (a.from_ == 32)
-            & (a.to == 16),
+            (piece == KING) & (a.from_ == 32) & (a.to == 16),
             lambda: state.board.at[0].set(EMPTY).at[24].set(ROOK),
             lambda: state.board,
         )
@@ -229,12 +227,26 @@ def _step(state: State, action: jnp.ndarray):
     # right
     state = state.replace(  # type: ignore
         board=jax.lax.cond(
-            (piece == KING)
-            & (a.from_ == 32)
-            & (a.to == 48),
+            (piece == KING) & (a.from_ == 32) & (a.to == 48),
             lambda: state.board.at[56].set(EMPTY).at[40].set(ROOK),
             lambda: state.board,
         )
+    )
+    state = state.replace(  # type: ignore
+        can_castle_queen_side=state.can_castle_queen_side[0].set(
+            jax.lax.select(
+                (a.from_ == 32) | (a.from_ == 0),
+                FALSE,
+                state.can_castle_queen_side[0],
+            )
+        ),
+        can_castle_king_side=state.can_castle_king_side[0].set(
+            jax.lax.select(
+                (a.from_ == 32) | (a.from_ == 56),
+                FALSE,
+                state.can_castle_king_side[0],
+            )
+        ),
     )
     # promotion to queen
     piece = jax.lax.select(
