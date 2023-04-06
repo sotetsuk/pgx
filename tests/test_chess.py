@@ -516,14 +516,14 @@ def test_buggy_samples():
     # BKing: h8 -> h7
     action = 4104
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 15
+    assert _legal_actions(s).sum() == 15
     # black
     fen = "7k/8/8/8/8/8/6p1/K4R1B w - - 0 1"
     s = _from_fen(fen)
     # WKing: a1 -> a2
     action = 16
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 15
+    assert _legal_actions(s).sum() == 15
     # castling(cannot)
     fen = "7k/8/7p/8/8/8/8/R3K2R b - - 0 1"
     s = _from_fen(fen)
@@ -566,7 +566,7 @@ def test_buggy_samples():
     # WKing: a1 -> a2
     action = 16
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 23
+    assert _legal_actions(s).sum() == 23
     # castling
     fen = "7k/8/7p/8/8/8/8/R3K2R b KQ - 0 1"
     s = _from_fen(fen)
@@ -581,7 +581,7 @@ def test_buggy_samples():
     # WKing: a1 -> a2
     action = 16
     s, _, _ = step(s, action)
-    #assert _legal_actions(s).sum() == 24
+    assert _legal_actions(s).sum() == 24
     # checked
     # TODO: filter leave-check
     fen = "7k/8/8/8/8/1p6/P7/K7 b - - 0 1"
@@ -589,7 +589,7 @@ def test_buggy_samples():
     # BPawn: b3 -> b2
     action = 965
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 2
+    assert _legal_actions(s).sum() == 2
     # suicide
     # TODO: filter suicide-move
     fen = "7k/8/8/8/8/8/7q/K7 b - - 0 1"
@@ -597,7 +597,7 @@ def test_buggy_samples():
     # BKing: h8 -> h7
     action = 4104
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 1
+    assert _legal_actions(s).sum() == 1
     # discovered check
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2p5/8/KR6 b - - 0 1"
@@ -605,7 +605,7 @@ def test_buggy_samples():
     # BPawn: c3 -> c2
     action = 1549
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 2
+    assert _legal_actions(s).sum() == 2
     # check with pin
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2r5/8/KR6 b - - 0 1"
@@ -613,7 +613,7 @@ def test_buggy_samples():
     # BRook: c3 -> c1
     action = 1550
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 1
+    assert _legal_actions(s).sum() == 1
     # double check
     # TODO: filter leave-check
     fen = "7k/8/8/8/3b4/2r5/8/K7 b - - 0 1"
@@ -621,7 +621,7 @@ def test_buggy_samples():
     # BRook: c3 -> c1
     action = 1550
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 1
+    assert _legal_actions(s).sum() == 1
     # pin
     # TODO: filter suicide
     fen = "7k/8/8/8/8/8/7r/KR6 b - - 0 1"
@@ -629,7 +629,7 @@ def test_buggy_samples():
     # BRook: h2 -> h1
     action = 4542
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 8
+    assert _legal_actions(s).sum() == 8
     # double pin
     # TODO: filter suicide
     fen = "7k/6b1/5r2/8/3B4/8/8/KR6 b - - 0 1"
@@ -637,5 +637,5 @@ def test_buggy_samples():
     # BRook: f6 -> f1
     action = 3086
     s, _, _ = step(s, action)
-    # assert _legal_actions(s).sum() == 11
+    assert _legal_actions(s).sum() == 11
 
