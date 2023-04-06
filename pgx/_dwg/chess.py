@@ -1,8 +1,8 @@
 import base64
 import os
 
-from pgx._chess import _flip
 from pgx._chess import State as ChessState
+from pgx._chess import _flip
 
 
 def _make_chess_dwg(dwg, state: ChessState, config):

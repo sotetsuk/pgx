@@ -219,7 +219,7 @@ def _step(state: State, action: jnp.ndarray):
     piece = jax.lax.select(
         a.underpromotion < 0,
         piece,
-        jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion]
+        jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
     state = state.replace(  # type: ignore
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
