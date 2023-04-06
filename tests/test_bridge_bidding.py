@@ -22,6 +22,7 @@ from pgx._bridge_bidding import (
     duplicate,
     init,
     init_by_key,
+    observe,
     step,
 )
 
@@ -934,6 +935,425 @@ def test_pass_out():
     assert jnp.all(state.first_denomination_EW == first_denomination_EW)
     assert state.pass_num == 4
     assert jnp.all(state.reward == jnp.zeros(4))
+
+
+def test_observe():
+    # test init_obs
+    # hand
+    # hand: N:J92.J76.K72.9432 AKQ6.84.J863.T65 87543.KQ9532..K7 T.AT.AQT954.AQJ8
+    player0_hand = (
+        jnp.zeros(52, dtype=jnp.bool_)
+        .at[jnp.array([1, 8, 10, 18, 19, 23, 27, 32, 38, 40, 41, 42, 47])]
+        .set(True)
+    )
+    player1_hand = (
+        jnp.zeros(52, dtype=jnp.bool_)
+        .at[jnp.array([2, 3, 4, 6, 7, 14, 15, 17, 21, 24, 25, 45, 51])]
+        .set(True)
+    )
+    player2_hand = (
+        jnp.zeros(52, dtype=jnp.bool_)
+        .at[jnp.array([9, 13, 22, 26, 29, 30, 34, 35, 37, 39, 46, 49, 50])]
+        .set(True)
+    )
+    player3_hand = (
+        jnp.zeros(52, dtype=jnp.bool_)
+        .at[jnp.array([0, 5, 11, 12, 16, 20, 28, 31, 33, 36, 43, 44, 48])]
+        .set(True)
+    )
+    key = jax.random.PRNGKey(0)
+    HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
+    state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = state.replace(
+        dealer=jnp.int8(1),
+        current_player=jnp.int8(3),
+        shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        vul_NS=jnp.bool_(0),
+        vul_EW=jnp.bool_(0),
+    )
+
+    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+    obs = observe(state, 0)
+    assert jnp.all(obs == init_obs)
+
+    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player1_hand))
+    obs = observe(state, 1)
+    assert jnp.all(obs == init_obs)
+
+    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player2_hand))
+    obs = observe(state, 2)
+    assert jnp.all(obs == init_obs)
+
+    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player3_hand))
+    obs = observe(state, 3)
+    assert jnp.all(obs == init_obs)
+
+    # vul
+    state = state.replace(
+        dealer=jnp.int8(1),
+        current_player=jnp.int8(3),
+        shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        vul_NS=jnp.bool_(1),
+        vul_EW=jnp.bool_(0),
+    )
+    init_obs = (
+        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+        .at[0]
+        .set(True)
+    )
+    obs = observe(state, 0)
+    assert jnp.all(obs == init_obs)
+
+    state = state.replace(
+        dealer=jnp.int8(1),
+        current_player=jnp.int8(3),
+        shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        vul_NS=jnp.bool_(0),
+        vul_EW=jnp.bool_(1),
+    )
+    init_obs = (
+        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+        .at[1]
+        .set(True)
+    )
+    obs = observe(state, 0)
+    assert jnp.all(obs == init_obs)
+
+    state = state.replace(
+        dealer=jnp.int8(1),
+        current_player=jnp.int8(3),
+        shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        vul_NS=jnp.bool_(1),
+        vul_EW=jnp.bool_(1),
+    )
+    init_obs = (
+        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+        .at[0]
+        .set(True)
+        .at[1]
+        .set(True)
+    )
+    obs = observe(state, 0)
+    assert jnp.all(obs == init_obs)
+
+    # bid_history
+    #
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #  XX  P 7C  P
+    #   P  P
+    #
+
+    vul_history = jnp.zeros(426, dtype=jnp.bool_)
+
+    state = state.replace(
+        dealer=jnp.int8(1),
+        current_player=jnp.int8(3),
+        shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        vul_NS=jnp.bool_(0),
+        vul_EW=jnp.bool_(0),
+    )
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  ?
+
+    vul_history = vul_history.at[3].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  ?
+
+    vul_history = vul_history.at[4].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #   ?
+
+    vul_history = vul_history.at[5].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 0, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C  ?
+
+    vul_history = vul_history.at[6].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 8, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  ?
+
+    vul_history = vul_history.at[49].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  ?
+
+    vul_history = vul_history.at[2 + 144 + 35 * 2 + 8].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   ?
+
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P  ?
+
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  ?
+
+    vul_history = vul_history.at[2 + 284 + 35 + 8].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P  ?
+
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 22, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #   ?
+
+    vul_history = vul_history.at[2 + 4 + 35 * 3 + 22].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 23, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  ?
+
+    vul_history = vul_history.at[2 + 4 + 35 * 0 + 23].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P  ?
+
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 25, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  ?
+
+    vul_history = vul_history.at[2 + 4 + 35 * 2 + 25].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 36, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #   ?
+
+    vul_history = vul_history.at[2 + 144 + 35 * 3 + 25].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 37, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #  XX  ?
+
+    vul_history = vul_history.at[2 + 284 + 35 * 0 + 25].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #  XX  P  ?
+
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 30, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #  XX  P 7C  ?
+
+    vul_history = vul_history.at[2 + 4 + 35 * 2 + 30].set(True)
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #  XX  P 7C  P
+    #   ?
+
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #  XX  P 7C  P
+    #   P  ?
+
+    obs = observe(state, state.current_player)
+    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    assert jnp.all(obs == correct_obs)
+
+    state = step(state, 35, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES)
+    #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
+    #   0  3  1  2
+    #   N  E  S  W
+    #  -----------
+    #      P  P  P
+    #  1C 2S  X  P
+    #   P XX  P 5H
+    #  5S  P 6C  X
+    #  XX  P 7C  P
+    #   P  P
 
 
 def test_calc_score():
