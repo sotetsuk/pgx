@@ -232,6 +232,7 @@ def step(
     )
 
 
+@jax.jit
 def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
     # make vul of observation
@@ -240,33 +241,69 @@ def observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     # make hand of observation
     hand = jnp.zeros(52, dtype=jnp.bool_)
     position = _player_position(player_id, state).astype(jnp.int16)
-    hand = hand.at[state.hand[position * 13 : (position + 1) * 13]].set(True)
+    hand = jax.lax.fori_loop(
+        position * 13,
+        (position + 1) * 13,
+        lambda i, hand: hand.at[state.hand[i]].set(True),
+        hand,
+    )
 
     # make history of observation
     obs_history = jnp.zeros(424, dtype=jnp.bool_)
     last_bid = jnp.int16(-1)
-    flag = False
-    for i in range(state.turn):
-        curr_pos = ((state.dealer + i) % 4).astype(jnp.int16)
-        if (
-            not flag and state.bidding_history[i] == 35
-        ):  # pass before the opening bid
-            obs_history = obs_history.at[curr_pos].set(True)
-        elif 0 <= state.bidding_history[i] <= 34:  # bid
-            flag = True
-            last_bid = state.bidding_history[i]
-            obs_history = obs_history.at[4 + curr_pos * 35 + last_bid].set(
-                True
-            )
-        elif state.bidding_history[i] == 36:  # double
-            obs_history = obs_history.at[144 + curr_pos * 35 + last_bid].set(
-                True
-            )
-        elif state.bidding_history[i] == 37:  # redouble
-            obs_history = obs_history.at[284 + curr_pos * 35 + last_bid].set(
-                True
-            )
+    flag = FALSE
+    obs_history, last_bid, flag, state = jax.lax.fori_loop(
+        0,
+        state.turn.astype(jnp.int32),
+        _make_obs_history,
+        (obs_history, last_bid, flag, state),
+    )
     return jnp.concatenate((vul, obs_history, hand))
+
+
+@jax.jit
+def _make_obs_history(i, vals):
+    obs_history, last_bid, flag, state = vals
+    curr_pos = ((state.dealer + i) % 4).astype(jnp.int16)
+    return jax.lax.cond(
+        (flag != jnp.bool_(True)) & (state.bidding_history[i] == 35),
+        lambda: (obs_history.at[curr_pos].set(True), last_bid, flag, state),
+        lambda: jax.lax.cond(
+            (0 <= state.bidding_history[i]) & (state.bidding_history[i] <= 34),
+            lambda: (
+                obs_history.at[
+                    4
+                    + curr_pos * 35
+                    + state.bidding_history[i].astype(jnp.int16)
+                ].set(True),
+                state.bidding_history[i].astype(jnp.int16),
+                jnp.bool_(True),
+                state,
+            ),
+            lambda: jax.lax.switch(
+                state.bidding_history[i] - 35,
+                [
+                    lambda: (obs_history, last_bid, flag, state),
+                    lambda: (
+                        obs_history.at[144 + curr_pos * 35 + last_bid].set(
+                            True
+                        ),
+                        last_bid,
+                        flag,
+                        state,
+                    ),
+                    lambda: (
+                        obs_history.at[284 + curr_pos * 35 + last_bid].set(
+                            True
+                        ),
+                        last_bid,
+                        flag,
+                        state,
+                    ),
+                ],
+            ),
+        ),
+    )
 
 
 @jax.jit
@@ -709,7 +746,7 @@ def _state_to_pbn(state: State) -> str:
     return pbn
 
 
-# @jax.jit
+@jax.jit
 def _state_to_key(state: State) -> jnp.ndarray:
     """Convert state to key of dds table"""
     hand = state.hand
