@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE
+from pgx.chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE
 
 env = Chess()
 init = jax.jit(env.init)
