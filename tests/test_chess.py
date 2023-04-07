@@ -234,7 +234,7 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 6
 
-    # promotion
+    # promotion (white)
     state = State._from_fen("b1r4k/1P6/8/8/8/8/8/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_012.svg")
     state = step(state, jnp.int32(4104))  # BKing: h8 -> h7
@@ -243,14 +243,23 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 15
 
+    # promotion (black)
     state = State._from_fen("7k/8/8/8/8/8/6p1/K4R1B w - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_014.svg")
     state = step(state, jnp.int32(16))  # a1 -> a2
     state.save_svg("tests/assets/chess/legal_action_mask_015.svg")
     print(state._to_fen())
-    print(CAN_MOVE[PAWN, 54])
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 15
+
+    # ignore check
+    state = State._from_fen("7k/8/8/8/8/1p6/P7/K7 b - - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_016.svg")
+    state = step(state, jnp.int32(965))  #
+    state.save_svg("tests/assets/chess/legal_action_mask_017.svg")
+    print(state._to_fen())
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 2
 
 
     # state = State._from_fen()
