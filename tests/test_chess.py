@@ -186,5 +186,6 @@ def test_step():
 def test_legal_action_mask():
     # init board
     s = State._from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    print(jnp.nonzero(_legal_action_mask(s)))
     assert _legal_action_mask(s).sum() == 20
 
