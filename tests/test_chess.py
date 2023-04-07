@@ -189,25 +189,39 @@ def test_legal_action_mask():
     state.save_svg("tests/assets/chess/legal_action_mask_001.svg")
     assert state.legal_action_mask.sum() == 20
 
-    # first pawn
+    # init pawn
     state = State._from_fen("7k/8/8/8/8/8/P7/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_002.svg")
     state = step(state, jnp.int32(4104))  # BKing: h8 -> h7
     state.save_svg("tests/assets/chess/legal_action_mask_003.svg")
     assert state.legal_action_mask.sum() == 4
 
-    # first pawn (blocked)
+    # init pawn (blocked)
     state = State._from_fen("7k/8/8/8/p7/8/P7/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_004.svg")
     state = step(state, jnp.int32(4104))  # BKing: h8 -> h7
     state.save_svg("tests/assets/chess/legal_action_mask_005.svg")
     assert state.legal_action_mask.sum() == 3
 
+    # moved pawn
     state = State._from_fen("7k/8/8/8/8/P7/8/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_006.svg")
     state = step(state, jnp.int32(4104))  # h8 -> h7
     state.save_svg("tests/assets/chess/legal_action_mask_007.svg")
-    print(CAN_MOVE[1, 2])
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 4
 
+    # moved pawn (blocked)
+    state = State._from_fen("7k/8/8/8/p7/P7/8/K7 b - - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_008.svg")
+    state = step(state, jnp.int32(4104))  # BKing: h8 -> h7
+    state.save_svg("tests/assets/chess/legal_action_mask_009.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 3
+
+    # state = State._from_fen()
+    # state.save_svg("tests/assets/chess/legal_action_mask_006.svg")
+    # state = step(state, jnp.int32())  #
+    # state.save_svg("tests/assets/chess/legal_action_mask_007.svg")
+    # print(jnp.nonzero(state.legal_action_mask))
+    # assert state.legal_action_mask.sum() ==
