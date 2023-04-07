@@ -243,6 +243,16 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 15
 
+    state = State._from_fen("7k/8/8/8/8/8/6p1/K4R1B w - - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_014.svg")
+    state = step(state, jnp.int32(16))  # a1 -> a2
+    state.save_svg("tests/assets/chess/legal_action_mask_015.svg")
+    print(state._to_fen())
+    print(CAN_MOVE[PAWN, 54])
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 15
+
+
     # state = State._from_fen()
     # state.save_svg("tests/assets/chess/legal_action_mask_006.svg")
     # state = step(state, jnp.int32())  #

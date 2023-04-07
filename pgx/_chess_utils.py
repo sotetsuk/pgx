@@ -80,6 +80,7 @@ for from_ in range(64):
             jnp.abs(c1 - c0) == 0 and jnp.abs(r1 - r0) == 2
         ):
             legal_dst.append(to)
+    assert len(legal_dst) <= 8
     CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 # KNIGHT
 for from_ in range(64):
