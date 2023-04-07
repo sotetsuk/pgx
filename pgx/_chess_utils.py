@@ -82,10 +82,10 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) <= 1 and jnp.abs(c1 - c0) <= 1:
             legal_dst.append(to)
     # castling
-    if from_ == 32:
-        legal_dst += [16, 48]
-    if from_ == 39:
-        legal_dst += [23, 55]
+    # if from_ == 32:
+    #     legal_dst += [16, 48]
+    # if from_ == 39:
+    #     legal_dst += [23, 55]
     assert len(legal_dst) <= 27
     CAN_MOVE = CAN_MOVE.at[6, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
 
