@@ -187,18 +187,18 @@ def test_legal_action_mask():
     # init board
     state = State._from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_001.svg")
-    assert _legal_action_mask(state).sum() == 20
+    assert state.legal_action_mask.sum() == 20
 
     # first pawn
     state = State._from_fen("7k/8/8/8/8/8/P7/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_002.svg")
     state = step(state, jnp.int32(4104))  # BKing: h8 -> h7
     state.save_svg("tests/assets/chess/legal_action_mask_003.svg")
-    assert _legal_action_mask(state).sum() == 4
+    assert state.legal_action_mask.sum() == 4
 
     # first pawn (blocked)
     state = State._from_fen("7k/8/8/8/p7/8/P7/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_004.svg")
     state = step(state, jnp.int32(4104))  # BKing: h8 -> h7
-    print(jnp.nonzero(_legal_action_mask(state)))
-    assert _legal_action_mask(state).sum() == 3
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 3
