@@ -293,7 +293,6 @@ def _flip(state: State) -> State:
 
 
 def _legal_action_mask(state):
-
     def is_legal(label: jnp.ndarray):
         a = Action._from_label(label)
         ok = is_pseudo_legal(state, a)
