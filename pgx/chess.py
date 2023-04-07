@@ -16,7 +16,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._chess_utils import BETWEEN, CAN_MOVE, TO_MAP  # type: ignore
+from pgx._chess_utils import BETWEEN, CAN_MOVE, TO_MAP, INIT_LEGAL_ACTION_MASK  # type: ignore
 from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -77,7 +77,7 @@ class State(core.State):
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(8 * 8 * 73, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK  # 64 * 73 = 4672
     observation: jnp.ndarray = jnp.zeros((8, 8, 119), dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -142,7 +142,7 @@ class Chess(core.Env):
         rng, subkey = jax.random.split(key)
         current_player = jnp.int8(jax.random.bernoulli(subkey))
         state = State(current_player=current_player)  # type: ignore
-        state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+        state = state.replace(legal_action_mask=INIT_LEGAL_ACTION_MASK)  # type: ignore
         return state
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
