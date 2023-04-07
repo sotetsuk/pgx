@@ -294,7 +294,7 @@ def _legal_action_mask(state):
     def is_pseudo_legal(label: jnp.ndarray):
         a = Action._from_label(label)
         piece = state.board[a.from_]
-        ok = piece >= 0
+        ok = (piece >= 0) & (state.board[a.to] <= 0)
         ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
         between_ixs = BETWEEN[a.from_, a.to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
