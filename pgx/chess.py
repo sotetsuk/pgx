@@ -295,7 +295,7 @@ def _flip(state: State) -> State:
 def _legal_action_mask(state):
     def is_legal(label: jnp.ndarray):
         a = Action._from_label(label)
-        ok = is_pseudo_legal(state, a)
+        ok = _is_pseudo_legal(state, a)
         next_s = _flip(_apply_move(state, a))
         ok &= ~_is_checking(next_s)
 
@@ -313,12 +313,12 @@ def _is_checking(state: State):
     @jax.vmap
     def can_capture_king(from_):
         a = Action(from_=from_, to=opp_king_pos)
-        return (from_ != -1) & is_pseudo_legal(state, a)
+        return (from_ != -1) & _is_pseudo_legal(state, a)
 
     return can_capture_king(CAN_MOVE[QUEEN, opp_king_pos, :]).any()
 
 
-def is_pseudo_legal(state: State, a: Action):
+def _is_pseudo_legal(state: State, a: Action):
     piece = state.board[a.from_]
     ok = (piece >= 0) & (state.board[a.to] <= 0)
     ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
