@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN
+from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask
 
 env = Chess()
 init = jax.jit(env.init)
@@ -181,3 +181,10 @@ def test_step():
     next_state = step(state, jnp.int32(p("a7", True) * 73 + 17))  # UP 2
     next_state.save_svg("tests/assets/chess/step_013.svg")
     assert next_state.en_passant == p("a6")  # en passant is always white view
+
+
+def test_legal_action_mask():
+    # init board
+    s = State._from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    assert _legal_action_mask(s).sum() == 20
+
