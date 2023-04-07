@@ -296,6 +296,8 @@ def _legal_action_mask(state):
         piece = state.board[a.from_]
         ok = piece >= 0
         ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
+        between_ixs = BETWEEN[a.from_, a.to]
+        ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         return (a.to >= 0) & ok
 
     mask = jax.vmap(is_pseudo_legal)(jnp.arange(64 * 73))
