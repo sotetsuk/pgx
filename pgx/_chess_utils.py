@@ -79,5 +79,3 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     CAN_MOVE = CAN_MOVE.at[5, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
-
-print(CAN_MOVE[5, 36])
