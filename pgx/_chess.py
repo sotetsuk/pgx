@@ -16,7 +16,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._chess_utils import BETWEEN, CAN_MOVE, TO_MAP
+from pgx._chess_utils import BETWEEN, CAN_MOVE, TO_MAP  # type: ignore
 from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -290,7 +290,6 @@ def _flip(state: State) -> State:
 
 
 def _legal_action_mask(state):
-
     def is_pseudo_legal(label: jnp.ndarray):
         a = Action._from_label(label)
         piece = state.board[a.from_]
@@ -299,10 +298,22 @@ def _legal_action_mask(state):
         between_ixs = BETWEEN[a.from_, a.to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         # filter pawn move
-        ok &= ~((piece == PAWN) & (state.turn == 0) & ((a.to % 8) < (a.from_ % 8)))
-        ok &= ~((piece == PAWN) & (state.turn == 1) & ((a.to % 8) > (a.from_ % 8)))
-        ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0))
-        ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))
+        ok &= ~(
+            (piece == PAWN) & (state.turn == 0) & ((a.to % 8) < (a.from_ % 8))
+        )
+        ok &= ~(
+            (piece == PAWN) & (state.turn == 1) & ((a.to % 8) > (a.from_ % 8))
+        )
+        ok &= ~(
+            (piece == PAWN)
+            & (jnp.abs(a.to - a.from_) <= 2)
+            & (state.board[a.to] < 0)
+        )
+        ok &= ~(
+            (piece == PAWN)
+            & (jnp.abs(a.to - a.from_) > 2)
+            & (state.board[a.to] >= 0)
+        )
         return (a.to >= 0) & ok
 
     mask = jax.vmap(is_pseudo_legal)(jnp.arange(64 * 73))

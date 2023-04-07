@@ -1,4 +1,6 @@
+# type: ignore
 import jax.numpy as jnp
+
 
 TO_MAP = -jnp.ones((64, 73), dtype=jnp.int8)
 # underpromotiona
@@ -11,7 +13,7 @@ for from_ in range(64):
             # 8  7 15 23 31 39 47 55 63
             # 7  6 14 22 30 38 46 54 62
             to = from_ + jnp.int8([+1, +9, -7])[dir_]
-        else: # (from_ % 8 == 1)  # black
+        else:  # (from_ % 8 == 1)  # black
             # 1  0  8 16 24 32 40 48 56
             # 2  1  9 17 25 33 41 49 57
             to = from_ + jnp.int8([-1, +7, -9])[dir_]
