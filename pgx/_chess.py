@@ -296,11 +296,28 @@ def _legal_action_mask(state):
 
     def is_legal(label: jnp.ndarray):
         a = Action._from_label(label)
-        return is_pseudo_legal(state, a)
+        ok = is_pseudo_legal(state, a)
+        next_s = _flip(_apply_move(state, a))
+        ok &= ~_is_checking(next_s)
+
+        return ok
 
     mask = jax.vmap(is_legal)(jnp.arange(64 * 73))
 
     return mask
+
+
+def _is_checking(state: State):
+    """True if possible to capture the opponent king"""
+    opp_king_pos = jnp.argmin(jnp.abs(state.board - -KING))
+
+    @jax.vmap
+    def can_capture_king(from_):
+        a = Action(from_=from_, to=opp_king_pos)
+        return (from_ != -1) & is_pseudo_legal(state, a)
+
+    return can_capture_king(CAN_MOVE[QUEEN, opp_king_pos, :]).any()
+
 
 def is_pseudo_legal(state: State, a: Action):
     piece = state.board[a.from_]
