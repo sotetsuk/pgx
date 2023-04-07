@@ -293,30 +293,34 @@ def _flip(state: State) -> State:
 
 
 def _legal_action_mask(state):
-    def is_pseudo_legal(label: jnp.ndarray):
-        a = Action._from_label(label)
-        piece = state.board[a.from_]
-        ok = (piece >= 0) & (state.board[a.to] <= 0)
-        ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
-        between_ixs = BETWEEN[a.from_, a.to]
-        ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-        # filter pawn move
-        ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))
-        ok &= ~(
-            (piece == PAWN)
-            & (jnp.abs(a.to - a.from_) <= 2)
-            & (state.board[a.to] < 0)
-        )
-        ok &= ~(
-            (piece == PAWN)
-            & (jnp.abs(a.to - a.from_) > 2)
-            & (state.board[a.to] >= 0)
-        )
-        return (a.to >= 0) & ok
 
-    mask = jax.vmap(is_pseudo_legal)(jnp.arange(64 * 73))
+    def is_legal(label: jnp.ndarray):
+        a = Action._from_label(label)
+        return is_pseudo_legal(state, a)
+
+    mask = jax.vmap(is_legal)(jnp.arange(64 * 73))
 
     return mask
+
+def is_pseudo_legal(state: State, a: Action):
+    piece = state.board[a.from_]
+    ok = (piece >= 0) & (state.board[a.to] <= 0)
+    ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
+    between_ixs = BETWEEN[a.from_, a.to]
+    ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+    # filter pawn move
+    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))
+    ok &= ~(
+        (piece == PAWN)
+        & (jnp.abs(a.to - a.from_) <= 2)
+        & (state.board[a.to] < 0)
+    )
+    ok &= ~(
+        (piece == PAWN)
+        & (jnp.abs(a.to - a.from_) > 2)
+        & (state.board[a.to] >= 0)
+    )
+    return (a.to >= 0) & ok
 
 
 def _from_fen(fen: str):
