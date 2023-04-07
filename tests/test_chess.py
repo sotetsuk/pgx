@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask
+from pgx._chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE
 
 env = Chess()
 init = jax.jit(env.init)
@@ -185,7 +185,16 @@ def test_step():
 
 def test_legal_action_mask():
     # init board
-    s = State._from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-    print(jnp.nonzero(_legal_action_mask(s)))
-    assert _legal_action_mask(s).sum() == 20
+    state = State._from_fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_001.svg")
+    assert _legal_action_mask(state).sum() == 20
+
+    state = State._from_fen("7k/8/8/8/8/8/P7/K7 b - - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_002.svg")
+    state = step(state, jnp.int32(4104))  # BKing: h8 -> h7
+    state.save_svg("tests/assets/chess/legal_action_mask_003.svg")
+    print(state._to_fen())
+    print(CAN_MOVE[6, 0])
+    print(jnp.nonzero(_legal_action_mask(state)))
+    assert _legal_action_mask(state).sum() == 4
 

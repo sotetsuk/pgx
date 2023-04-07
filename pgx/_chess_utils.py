@@ -58,7 +58,7 @@ for from_ in range(64):
         TO_MAP = TO_MAP.at[from_, plane].set(jnp.int8(c * 8 + r))
 
 
-CAN_MOVE = -jnp.ones((6, 64, 27), jnp.int8)
+CAN_MOVE = -jnp.ones((7, 64, 27), jnp.int8)
 # usage: CAN_MOVE[piece, from_x, from_y]
 # CAN_MOVE[0, :, :]はすべて-1
 # 将棋と違い、中央から点対称でないので、注意が必要。
@@ -138,16 +138,17 @@ for from_ in range(64):
         r1, c1 = to % 8, to // 8
         if from_ == to:
             continue
-        if jnp.abs(r1 - r0) <= 1 and jnp.abs(c1 - c0) <= 1:
+        if (jnp.abs(r1 - r0) <= 1) and (jnp.abs(c1 - c0) <= 1):
             legal_dst.append(to)
     # castling
     # if from_ == 32:
     #     legal_dst += [16, 48]
     # if from_ == 39:
     #     legal_dst += [23, 55]
-    assert len(legal_dst) <= 27
+    assert len(legal_dst) <= 8
     CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 
+assert (CAN_MOVE[0, :, :] == -1).all()
 
 # Between
 BETWEEN = -jnp.ones((64, 64, 6), dtype=jnp.int8)
