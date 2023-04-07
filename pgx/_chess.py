@@ -381,7 +381,9 @@ def _from_fen(fen: str):
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
-    return state
+    return state.replace(  # type: ignore
+        legal_action_mask=_legal_action_mask(state)
+    )
 
 
 def _to_fen(state: State):
