@@ -1,7 +1,6 @@
 import jax.numpy as jnp
 
-
-TO_MAP = - jnp.ones((64, 73), dtype=jnp.int8)
+TO_MAP = -jnp.ones((64, 73), dtype=jnp.int8)
 # underpromotion
 for from_ in range(8, 16):
     for plane in range(9):
@@ -67,9 +66,11 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 1 and jnp.abs(c1 - c0) <= 1:
             legal_dst.append(to)
         # init move
-        if (r0 == 1 or r0 == 6) and (jnp.abs(c1 - c0) == 0 and jnp.abs(r1 - r0) == 2):
+        if (r0 == 1 or r0 == 6) and (
+            jnp.abs(c1 - c0) == 0 and jnp.abs(r1 - r0) == 2
+        ):
             legal_dst.append(to)
-    CAN_MOVE = CAN_MOVE.at[1, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -81,7 +82,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 2 and jnp.abs(c1 - c0) == 1:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[2, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 # BISHOP
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -93,7 +94,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[3, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 # ROOK
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -105,7 +106,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[4, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 # QUEEN
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -119,7 +120,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[5, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 # KING
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -136,7 +137,7 @@ for from_ in range(64):
     # if from_ == 39:
     #     legal_dst += [23, 55]
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[6, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 
 
 # Between
@@ -145,8 +146,10 @@ for from_ in range(64):
     for to in range(64):
         r0, c0 = from_ % 8, from_ // 8
         r1, c1 = to % 8, to // 8
-        if not ((jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0) or
-                (jnp.abs(r1 - r0) == jnp.abs(c1 - c0))):
+        if not (
+            (jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0)
+            or (jnp.abs(r1 - r0) == jnp.abs(c1 - c0))
+        ):
             continue
         dr = max(min(r1 - r0, 1), -1)
         dc = max(min(c1 - c0, 1), -1)
@@ -160,5 +163,4 @@ for from_ in range(64):
                 break
             bet.append(c * 8 + r)
         assert len(bet) <= 6
-        BETWEEN = BETWEEN.at[from_, to, :len(bet)].set(jnp.int8(bet))
-
+        BETWEEN = BETWEEN.at[from_, to, : len(bet)].set(jnp.int8(bet))

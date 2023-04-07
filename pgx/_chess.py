@@ -16,8 +16,8 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
+from pgx._chess_utils import BETWEEN, CAN_MOVE, TO_MAP
 from pgx._flax.struct import dataclass
-from pgx._chess_utils import TO_MAP, CAN_MOVE, BETWEEN
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
