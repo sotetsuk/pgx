@@ -17,6 +17,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 1 and jnp.abs(c1 - c0) <= 1:
             legal_dst.append(to)
     CAN_MOVE = CAN_MOVE.at[0, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    # TODO: init move
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -79,3 +80,4 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     CAN_MOVE = CAN_MOVE.at[5, from_, :len(legal_dst)].set(jnp.int8(legal_dst))
+    # TODO: init castling
