@@ -290,7 +290,17 @@ def _flip(state: State) -> State:
 
 
 def _legal_action_mask(state):
-    return jnp.ones(8 * 8 * 73, dtype=jnp.bool_)
+
+    def is_pseudo_legal(label: jnp.ndarray):
+        a = Action._from_label(label)
+        piece = state.board[a.from_]
+        ok = piece >= 0
+        ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
+        return (a.to >= 0) & ok
+
+    mask = jax.vmap(is_pseudo_legal)(jnp.arange(64 * 73))
+
+    return mask
 
 
 def _from_fen(fen: str):
