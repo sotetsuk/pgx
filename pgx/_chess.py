@@ -178,7 +178,29 @@ class Chess(core.Env):
 
 def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
+    state = _apply_move(state, a)
+    state = _flip(state)
+    legal_action_mask = _legal_action_mask(state)
 
+    terminated = ~legal_action_mask.any()
+    # TODO: stailmate
+
+    # fmt: off
+    reward = jax.lax.select(
+        terminated,
+        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+        jnp.zeros(2, dtype=jnp.float32),
+    )
+
+    # fmt: on
+    return state.replace(  # type: ignore
+        legal_action_mask=legal_action_mask,
+        terminated=terminated,
+        reward=reward,
+    )
+
+
+def _apply_move(state: State, a: Action):
     # apply move action
     piece = state.board[a.from_]
     # en passant
@@ -249,26 +271,7 @@ def _step(state: State, action: jnp.ndarray):
     state = state.replace(  # type: ignore
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
     )
-
-    state = _flip(state)
-    legal_action_mask = _legal_action_mask(state)
-
-    terminated = ~legal_action_mask.any()
-    # TODO: stailmate
-
-    # fmt: off
-    reward = jax.lax.select(
-        terminated,
-        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
-        jnp.zeros(2, dtype=jnp.float32),
-    )
-
-    # fmt: on
-    return state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask,
-        terminated=terminated,
-        reward=reward,
-    )
+    return state
 
 
 def _abs_pos(x, turn):
