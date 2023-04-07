@@ -36,7 +36,7 @@ EnvId = Literal[
     "2048",
     "animal_shogi",
     "backgammon",
-    # "bridge_bidding",
+    "bridge_bidding",
     "connect_four",
     "go-9x9",
     "go-19x19",
@@ -220,6 +220,11 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.backgammon import Backgammon
 
         return Backgammon()
+    if env_id == "bridge_bidding":
+        from pgx._bridge_bidding import BridgeBidding
+
+        return BridgeBidding()
+
     if env_id == "connect_four":
         from pgx.connect_four import ConnectFour
 

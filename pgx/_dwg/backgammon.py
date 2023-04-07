@@ -23,29 +23,6 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
     # board
     # grid
     board_g = dwg.g()
-    board_g.add(
-        dwg.rect(
-            (0, 0),
-            (
-                13 * GRID_SIZE,
-                14 * GRID_SIZE,
-            ),
-            stroke=color_set.grid_color,
-            fill=color_set.background_color,
-        )
-    )
-    board_g.add(
-        dwg.rect(
-            (6 * GRID_SIZE, 0),
-            (
-                1 * GRID_SIZE,
-                14 * GRID_SIZE,
-            ),
-            stroke=color_set.grid_color,
-            fill=color_set.background_color,
-        )
-    )
-
     for i in range(24):
         p1 = (i * GRID_SIZE, 0)
         p2 = ((i + 1) * GRID_SIZE, 0)
@@ -63,17 +40,37 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
             p2 = ((i + 2 - 12) * GRID_SIZE, 14 * GRID_SIZE)
             p3 = ((i + 1.5 - 12) * GRID_SIZE, 8 * GRID_SIZE)
 
-        fill_color = (
-            color_set.p1_outline if i % 2 == 0 else color_set.p2_outline
-        )
+        fill_color = color_set.p1_color if i % 2 == 0 else color_set.text_color
 
         board_g.add(
             dwg.polygon(
                 points=[p1, p2, p3],
-                stroke=color_set.grid_color,
+                stroke=color_set.text_color,
                 fill=fill_color,
             )
         )
+    board_g.add(
+        dwg.rect(
+            (0, 0),
+            (
+                13 * GRID_SIZE,
+                14 * GRID_SIZE,
+            ),
+            stroke=color_set.grid_color,
+            fill="none",
+        )
+    )
+    board_g.add(
+        dwg.rect(
+            (6 * GRID_SIZE, 0),
+            (
+                1 * GRID_SIZE,
+                14 * GRID_SIZE,
+            ),
+            stroke=color_set.grid_color,
+            fill="none",
+        )
+    )
 
     # pieces
     for i, piece in enumerate(board[:24]):

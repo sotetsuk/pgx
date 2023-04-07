@@ -119,6 +119,8 @@ class Visualizer:
                 HEIGHT = WIDTH
             else:
                 HEIGHT = WIDTH - 1
+            if SIZE == 1:
+                states = self._get_nth_state(states, 0)
         except TypeError:
             SIZE = 1
             WIDTH = 1
@@ -236,13 +238,13 @@ class Visualizer:
                 and self.config["COLOR_THEME"] == "dark"
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "gray",
                     "black",
-                    "black",
-                    "dimgray",
+                    "darkgray",
+                    "white",
+                    "white",
                     "#1e1e1e",
-                    "gainsboro",
-                    "",
+                    "silver",
+                    "dimgray",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -252,7 +254,7 @@ class Visualizer:
                     "white",
                     "white",
                     "black",
-                    "",
+                    "gray",
                 )
         elif isinstance(_state, BridgeBiddingState):
             self.config["GRID_SIZE"] = 50
@@ -321,11 +323,11 @@ class Visualizer:
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
-                    "lightgray",
+                    "darkgray",
                     "white",
-                    "lightgray",
+                    "white",
                     "#1e1e1e",
-                    "lightgray",
+                    "silver",
                     "gray",
                 )
             else:
@@ -352,7 +354,13 @@ class Visualizer:
                 and self.config["COLOR_THEME"] == "dark"
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "black", "gray", "white", "white", "#1e1e1e", "white", ""
+                    "black",
+                    "darkgray",
+                    "white",
+                    "white",
+                    "#1e1e1e",
+                    "silver",
+                    "",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -365,13 +373,21 @@ class Visualizer:
                     "",
                 )
         elif isinstance(_state, HexState):
+            import jax.numpy as jnp
+
+            from pgx._dwg.hex import four_dig
+
             self.config["GRID_SIZE"] = 30
             try:
-                self.config["BOARD_WIDTH"] = int(_state.size[0] * 1.3)
-                self.config["BOARD_HEIGHT"] = int(_state.size[0] * 0.8)
+                self.config["BOARD_WIDTH"] = four_dig(_state.size[0] * 1.5)
+                self.config["BOARD_HEIGHT"] = four_dig(
+                    _state.size[0] * jnp.sqrt(3) / 2
+                )
             except IndexError:
-                self.config["BOARD_WIDTH"] = int(_state.size * 1.3)
-                self.config["BOARD_HEIGHT"] = int(_state.size * 0.8)
+                self.config["BOARD_WIDTH"] = four_dig(_state.size * 1.5)
+                self.config["BOARD_HEIGHT"] = four_dig(
+                    _state.size * jnp.sqrt(3) / 2
+                )
             self._make_dwg_group = _make_hex_dwg
             if (
                 self.config["COLOR_THEME"] is None
@@ -379,12 +395,12 @@ class Visualizer:
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
+                    "darkgray",
                     "white",
                     "white",
-                    "black",
                     "#1e1e1e",
-                    "white",
-                    "dimgray",
+                    "gray",
+                    "#333333",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -463,11 +479,11 @@ class Visualizer:
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
-                    "lightgray",
+                    "darkgray",
                     "white",
-                    "lightgray",
+                    "white",
                     "#1e1e1e",
-                    "lightgray",
+                    "silver",
                     "",
                 )
             else:
