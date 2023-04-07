@@ -17,6 +17,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._flax.struct import dataclass
+from pgx._chess_utils import TO_MAP, CAN_MOVE, BETWEEN
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -46,7 +47,7 @@ KING = jnp.int8(6)
 # 2  1  9 17 25 33 41 49 57
 # 1  0  8 16 24 32 40 48 56
 #    a  b  c  d  e  f  g  f
-# board index (black view)
+# board index (flipped black view)
 # 1  0  8 16 24 32 40 48 56
 # 2  1  9 17 25 33 41 49 57
 # 3  2 10 18 26 34 42 50 58
@@ -67,53 +68,6 @@ INIT_BOARD = jnp.int8([
     2, 1, 0, 0, 0, 0, -1, -2,
     4, 1, 0, 0, 0, 0, -1, -4
 ])
-TO_MAP = - jnp.ones((64, 73), dtype=jnp.int8)
-# underpromotion
-for from_ in range(8, 16):
-    for plane in range(9):
-        dir_ = plane % 3
-        to = from_ + jnp.int8([+1, +9, -7])[dir_]
-        if not (0 <= to < 64):
-            continue
-        TO_MAP = TO_MAP.at[from_, plane].set(to)
-# normal move
-seq = list(range(1, 8))
-zeros = [0 for _ in range(7)]
-# 下
-dr = [-x for x in seq[::-1]]
-dc = [0 for _ in range(7)]
-# 上
-dr += [x for x in seq]
-dc += [0 for _ in range(7)]
-# 左
-dr += [0 for _ in range(7)]
-dc += [-x for x in seq[::-1]]
-# 右
-dr += [0 for _ in range(7)]
-dc += [x for x in seq]
-# 左下
-dr += [-x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
-# 右上
-dr += [x for x in seq]
-dc += [x for x in seq]
-# 左上
-dr += [x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
-# 右下
-dr += [-x for x in seq]
-dc += [x for x in seq]
-# knight moves
-dr += [-1, +1, -2, +2, -1, +1, -2, +2]
-dc += [-2, -2, -1, -1, +2, +2, +1, +1]
-for from_ in range(64):
-    for plane in range(9, 73):
-        r, c = from_ % 8, from_ // 8
-        r = r + dr[plane - 9]
-        c = c + dc[plane - 9]
-        if r < 0 or r >= 8 or c < 0 or c >= 8:
-            continue
-        TO_MAP = TO_MAP.at[from_, plane].set(jnp.int8(c * 8 + r))
 # fmt: on
 
 
