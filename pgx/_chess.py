@@ -299,6 +299,7 @@ def _legal_action_mask(state):
         between_ixs = BETWEEN[a.from_, a.to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         # filter pawn move
+        ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0))
         ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))
         return (a.to >= 0) & ok
 
