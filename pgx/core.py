@@ -222,7 +222,7 @@ def make(env_id: EnvId):  # noqa: C901
 
         return Backgammon()
     elif env_id == "bridge_bidding":
-        from pgx._bridge_bidding import BridgeBidding
+        from pgx.bridge_bidding import BridgeBidding
 
         return BridgeBidding()
     elif env_id == "chess":

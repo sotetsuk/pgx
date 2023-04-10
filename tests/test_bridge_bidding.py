@@ -5,7 +5,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx._bridge_bidding import (
+from pgx.bridge_bidding import (
     BridgeBidding,
     State,
     _calc_score,
