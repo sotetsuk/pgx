@@ -329,9 +329,9 @@ def _legal_action_mask(state):
 
 
     actions = legal_actions(jnp.arange(64)).flatten()
-    mask = jnp.zeros(64 * 73, dtype=jnp.bool_)
+    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
 
-    return mask.at[actions].set(TRUE)
+    return mask.at[actions].set(TRUE)[:-1]
 
 
 def _is_checking(state: State):
