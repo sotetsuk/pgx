@@ -4,6 +4,7 @@ import jax.numpy as jnp
 from pgx._flax.serialization import from_bytes
 
 TO_MAP = -jnp.ones((64, 73), dtype=jnp.int8)
+PLANE_MAP = -jnp.ones((64, 64), dtype=jnp.int8)  # ignores underpromotion
 # underpromotiona
 for from_ in range(64):
     if (from_ % 8) not in (1, 6):
@@ -58,7 +59,9 @@ for from_ in range(64):
         c = c + dc[plane - 9]
         if r < 0 or r >= 8 or c < 0 or c >= 8:
             continue
-        TO_MAP = TO_MAP.at[from_, plane].set(jnp.int8(c * 8 + r))
+        to = jnp.int8(c * 8 + r)
+        TO_MAP = TO_MAP.at[from_, plane].set(to)
+        PLANE_MAP = PLANE_MAP.at[from_, to].set(jnp.int8(plane))
 
 
 CAN_MOVE = -jnp.ones((7, 64, 27), jnp.int8)

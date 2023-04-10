@@ -21,6 +21,7 @@ from pgx._chess_utils import (  # type: ignore
     CAN_MOVE,
     INIT_LEGAL_ACTION_MASK,
     TO_MAP,
+    PLANE_MAP  # ignores underpromotion
 )
 from pgx._flax.struct import dataclass
 
@@ -136,6 +137,11 @@ class Action:
                 plane >= 9, jnp.int8(-1), jnp.int8(plane // 3)
             ),
         )
+
+    def _to_label(self):
+        plane = PLANE_MAP[self.from_, self.to]
+        # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
+        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
 
 
 class Chess(core.Env):
@@ -298,17 +304,34 @@ def _flip(state: State) -> State:
 
 
 def _legal_action_mask(state):
-    def is_legal(label: jnp.ndarray):
-        a = Action._from_label(label)
+    @jax.vmap
+    def legal_actions(from_):
+        piece = state.board[from_]
+
+        @jax.vmap
+        def is_ok(to):
+            a = Action(from_=from_, to=to)
+            return jax.lax.select(
+                (piece >= 0) & (to >= 0) & is_legal(a),
+                a._to_label(),
+                jnp.int32(-1)
+            )
+
+        return is_ok(CAN_MOVE[piece, from_])
+
+
+    def is_legal(a: Action):
         ok = _is_pseudo_legal(state, a)
         next_s = _flip(_apply_move(state, a))
         ok &= ~_is_checking(next_s)
 
         return ok
 
-    mask = jax.vmap(is_legal)(jnp.arange(64 * 73))
 
-    return mask
+    actions = legal_actions(jnp.arange(64)).flatten()
+    mask = jnp.zeros(64 * 73, dtype=jnp.bool_)
+
+    return mask.at[actions].set(TRUE)
 
 
 def _is_checking(state: State):
