@@ -16,7 +16,12 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._chess_utils import BETWEEN, CAN_MOVE, TO_MAP, INIT_LEGAL_ACTION_MASK  # type: ignore
+from pgx._chess_utils import (  # type: ignore
+    BETWEEN,
+    CAN_MOVE,
+    INIT_LEGAL_ACTION_MASK,
+    TO_MAP,
+)
 from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
