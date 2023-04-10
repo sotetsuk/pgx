@@ -328,9 +328,9 @@ def _legal_action_mask(state):
         return ok
 
 
-    actions = legal_actions(jnp.arange(64)).flatten()
+    actions = legal_actions(jnp.arange(64)).flatten()  # include -1
+    # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
-
     return mask.at[actions].set(TRUE)[:-1]
 
 
