@@ -116,7 +116,7 @@ class BridgeBidding(core.Env):
 
     @property
     def version(self) -> str:
-        return "beta"
+        return "alpha"
 
     @property
     def num_players(self) -> int:
