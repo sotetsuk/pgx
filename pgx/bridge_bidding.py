@@ -51,13 +51,13 @@ class State(core.State):
     # hand 各プレイヤーの手札
     # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札
     # 各要素にはカードを表す0 ~ 51の整数が格納される
-    hand: jnp.ndarray = jnp.zeros(52, dtype=jnp.int8)
+    hand: jnp.ndarray = jnp.zeros(52, dtype=jnp.int32)
     # bidding_history 各プレイヤーのbidを時系列順に記憶
     # 最大の行動系列長 = 319
     # 各要素には、行動を表す整数が格納される
     # bidを表す0 ~ 34, passを表す35, doubleを表す36, redoubleを表す37, 行動が行われていない-1
     # 各ビッドがどのプレイヤーにより行われたかは、要素のindexから分かる（ix % 4）
-    bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int8)
+    bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
     # dealer どのプレイヤーがdealerかを表す
     # 0 = N, 1 = E, 2 = S, 3 = W
     # dealerは最初にbidを行うプレイヤー
@@ -72,7 +72,7 @@ class State(core.State):
     # last_bidder 最後にbidをしたプレイヤー
     # call_x 最後にされたbidがdoubleされているか
     # call_xx 最後にされたbidがredoubleされているか
-    last_bid: jnp.ndarray = jnp.int8(-1)
+    last_bid: jnp.ndarray = jnp.int32(-1)
     last_bidder: jnp.ndarray = jnp.int8(-1)
     call_x: jnp.ndarray = jnp.bool_(False)
     call_xx: jnp.ndarray = jnp.bool_(False)
@@ -86,7 +86,7 @@ class State(core.State):
     # が最初にbidしたかを表す
     first_denomination_EW: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
     # passの回数
-    pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int8)
+    pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
 
 class BridgeBidding(core.Env):
@@ -646,13 +646,13 @@ def _state_pass(
 @jax.jit
 def _state_X(state: State) -> State:
     """Change state if double(X) is taken"""
-    return state.replace(call_x=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
+    return state.replace(call_x=jnp.bool_(True), pass_num=jnp.int32(0))  # type: ignore
 
 
 @jax.jit
 def _state_XX(state: State) -> State:
     """Change state if double(XX) is taken"""
-    return state.replace(call_xx=jnp.bool_(True), pass_num=jnp.int8(0))  # type: ignore
+    return state.replace(call_xx=jnp.bool_(True), pass_num=jnp.int32(0))  # type: ignore
 
 
 @jax.jit
@@ -660,7 +660,7 @@ def _state_bid(state: State, action: int) -> State:
     """Change state if bid is taken"""
     # 最後のbidとそのプレイヤーを保存
     # fmt: off
-    state = state.replace(last_bid=jnp.int8(action), last_bidder=state.current_player)  # type: ignore
+    state = state.replace(last_bid=jnp.int32(action), last_bidder=state.current_player)  # type: ignore
     # fmt: on
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
@@ -677,7 +677,7 @@ def _state_bid(state: State, action: int) -> State:
     # fmt: on
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
-    return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), pass_num=jnp.int8(0))  # type: ignore
+    return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), pass_num=jnp.int32(0))  # type: ignore
 
 
 @jax.jit
@@ -820,7 +820,7 @@ def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
         return quat_digits
 
     cards = jax.vmap(_convert_quat)(key).flatten()
-    hand = jnp.zeros((4, 13), dtype=jnp.int8)
+    hand = jnp.zeros((4, 13), dtype=jnp.int32)
     for i in range(4):
         count = 0
         for j in range(52):
@@ -838,7 +838,7 @@ def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
     >>> value = jnp.array([4160, 904605, 4160, 904605])
     >>> _value_to_dds_tricks(value)
     Array([ 0,  1,  0,  4,  0, 13, 12, 13,  9, 13,  0,  1,  0,  4,  0, 13, 12,
-           13,  9, 13], dtype=int8)
+           13,  9, 13], dtype=int32)
     """
 
     def _convert_hex(j):
@@ -847,7 +847,7 @@ def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
         return hex_digits
 
     hex_digits = jax.vmap(_convert_hex)(value).flatten()
-    return jnp.array(hex_digits, dtype=jnp.int8)
+    return jnp.array(hex_digits, dtype=jnp.int32)
 
 
 @jax.jit
