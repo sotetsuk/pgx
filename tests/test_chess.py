@@ -263,4 +263,11 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 2
 
-    # TODO: enhance black promotion tests
+    # en passant
+    state = State._from_fen("7k/7p/8/6P1/8/8/8/K7 b - - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_018.svg")
+    state = step(state, jnp.int32(4178))  # BPawn: h7 -> h5
+    state.save_svg("tests/assets/chess/legal_action_mask_019.svg")
+    print(state._to_fen())
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 5
