@@ -368,6 +368,3 @@ def test_legal_action_mask():
     assert state.legal_action_mask.sum() == 5
 
     # TODO: add en passant cases when two pawns can capture
-
-if __name__ == "__main__":
-    test_legal_action_mask()
