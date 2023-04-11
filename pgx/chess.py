@@ -351,7 +351,7 @@ def _legal_action_mask(state):
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
 
-    # TODO: promotion
+    # set underpromotions
     actions = underpromotions(mask)
     mask = mask.at[actions].set(TRUE)
 
