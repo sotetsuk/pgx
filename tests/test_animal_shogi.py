@@ -108,3 +108,20 @@ def test_api():
     import pgx
     env = pgx.make("animal_shogi")
     pgx.api_test(env, 5)
+
+
+def test():
+    state = init(jax.random.PRNGKey(0))
+    assert not state.terminated
+    assert state.turn == 0
+
+    state = step(state, 3 * 12 + 6)  # Up PAWN
+    print(state.board)
+    state = step(state, 5 * 12 + 7)
+    print(state.board)
+    a = Action._from_label(3 * 12 + 5)
+    print(a)
+    state = step(state, 3 * 12 + 5)
+
+
+    print(state.board)
