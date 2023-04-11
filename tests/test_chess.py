@@ -406,12 +406,22 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 8
 
+    # double check
+    # 落ちる
+    state = State._from_fen("1q6/R2N3k/8/8/8/8/8/K7 w - - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_039.svg")
+    state = step(state, jnp.int32(2260))  # WPawn: f7 -> f8 Night Promotion
+    state.save_svg("tests/assets/chess/legal_action_mask_040.svg")
+    print(state._to_fen())
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 3
+
     # double check by promotion
     # 落ちる
     state = State._from_fen("1q6/R4P1k/8/8/8/8/8/K7 w - - 0 1")
-    state.save_svg("tests/assets/chess/legal_action_mask_039.svg")
+    state.save_svg("tests/assets/chess/legal_action_mask_041.svg")
     state = step(state, jnp.int32(3364))  # WPawn: f7 -> f8 Night Promotion
-    state.save_svg("tests/assets/chess/legal_action_mask_040.svg")
+    state.save_svg("tests/assets/chess/legal_action_mask_042.svg")
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 3
