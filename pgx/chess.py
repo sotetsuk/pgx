@@ -399,10 +399,10 @@ def _legal_action_mask(state):
         return legal_labels(jnp.int32([to - 9, to + 7]))
 
     def can_castle_king_side():
-        ok = (state.board[32] == KING)
+        ok = state.board[32] == KING
         ok &= state.can_castle_king_side[0]
-        ok &= (state.board[40] == EMPTY)
-        ok &= (state.board[48] == EMPTY)
+        ok &= state.board[40] == EMPTY
+        ok &= state.board[48] == EMPTY
 
         @jax.vmap
         def attacked(pos):
@@ -413,11 +413,11 @@ def _legal_action_mask(state):
         return ok
 
     def can_castle_queen_side():
-        ok = (state.board[32] == KING)
+        ok = state.board[32] == KING
         ok &= state.can_castle_king_side[0]
-        ok &= (state.board[8] == EMPTY)
-        ok &= (state.board[16] == EMPTY)
-        ok &= (state.board[24] == EMPTY)
+        ok &= state.board[8] == EMPTY
+        ok &= state.board[16] == EMPTY
+        ok &= state.board[24] == EMPTY
 
         @jax.vmap
         def attacked(pos):
@@ -446,6 +446,7 @@ def _legal_action_mask(state):
 
     return mask[:-1]
 
+
 def _is_attacking(state: State, pos):
     @jax.vmap
     def can_move(from_):
@@ -453,6 +454,7 @@ def _is_attacking(state: State, pos):
         return (from_ != -1) & _is_pseudo_legal(state, a)
 
     return can_move(CAN_MOVE[QUEEN, pos, :]).any()
+
 
 def _is_checking(state: State):
     """True if possible to capture the opponent king"""
