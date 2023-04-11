@@ -289,6 +289,16 @@ def _abs_pos(x, turn):
     return jax.lax.select(turn == 0, x, (x // 8) * 8 + (7 - x % 8))
 
 
+def _flip_pos(x):
+    """
+    >>> _flip_pos(34)
+    37
+    >>> _flip_pos(37)
+    34
+    """
+    return (x // 8) * 8 + (7 - (x % 8))
+
+
 def _rotate(board):
     return jnp.rot90(board, k=1)
 
@@ -348,6 +358,10 @@ def _legal_action_mask(state):
 
     def legal_en_passnts():
         to = state.en_passant
+        # flip if black turn
+        to = jax.lax.select(
+            (to >= 0) & (state.turn == 1), _flip_pos(to), to
+        )
 
         @jax.vmap
         def legal_labels(from_):

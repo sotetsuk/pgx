@@ -268,6 +268,7 @@ def test_legal_action_mask():
     state.save_svg("tests/assets/chess/legal_action_mask_018.svg")
     state = step(state, jnp.int32(4178))  # BPawn: h7 -> h5
     state.save_svg("tests/assets/chess/legal_action_mask_019.svg")
+    print(state.en_passant)
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
@@ -277,6 +278,7 @@ def test_legal_action_mask():
     state.save_svg("tests/assets/chess/legal_action_mask_020.svg")
     state = step(state, jnp.int32(90))  # WPawn: a2 -> a4
     state.save_svg("tests/assets/chess/legal_action_mask_021.svg")
+    print(state.en_passant)
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
