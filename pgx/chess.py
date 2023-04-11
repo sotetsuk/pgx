@@ -16,7 +16,6 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._chess_utils import PLANE_MAP  # ignores underpromotion
 from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
