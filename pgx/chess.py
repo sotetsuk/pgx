@@ -359,9 +359,7 @@ def _legal_action_mask(state):
     def legal_en_passnts():
         to = state.en_passant
         # flip if black turn
-        to = jax.lax.select(
-            (to >= 0) & (state.turn == 1), _flip_pos(to), to
-        )
+        to = jax.lax.select((to >= 0) & (state.turn == 1), _flip_pos(to), to)
 
         @jax.vmap
         def legal_labels(from_):
