@@ -271,3 +271,5 @@ def test_legal_action_mask():
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
+
+    # TODO: add en passant cases when two pawns can capture

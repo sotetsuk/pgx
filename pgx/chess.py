@@ -346,14 +346,31 @@ def _legal_action_mask(state):
         ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
+    def legal_en_passnts():
+        to = state.en_passant
+
+        @jax.vmap
+        def legal_labels(from_):
+            ok = (to >= 0) & (state.board[from_] == PAWN) & (state.board[to - 1] == -PAWN)
+            return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
+
+        return legal_labels(jnp.int32([to - 9, to + 7]))
+
+
+
     actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
 
+    # set en passant
+    actions = legal_en_passnts()
+    mask = mask.at[actions].set(TRUE)
+
     # set underpromotions
     actions = legal_underpromotions(mask)
     mask = mask.at[actions].set(TRUE)
+
 
     return mask[:-1]
 
