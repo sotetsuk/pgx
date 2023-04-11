@@ -264,7 +264,7 @@ def test_legal_action_mask():
     assert state.legal_action_mask.sum() == 2
 
     # castling (cannot)
-    state = State._from_fen("8/7k/7p/8/8/8/8/R3K2R w - - 1 2")
+    state = State._from_fen("8/7k/7p/8/8/8/8/R3K2R w - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_022.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 22
