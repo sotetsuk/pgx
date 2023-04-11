@@ -289,24 +289,24 @@ def test_legal_action_mask():
 
     # castling (cannot)
     state = State._from_fen("2r3r1/7k/7p/8/8/8/8/R3K2R w KQ - 1 2")
-    state.save_svg("tests/assets/chess/legal_action_mask_025.svg")
+    state.save_svg("tests/assets/chess/legal_action_mask_026.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 22
 
     # black
     state = State._from_fen("r3k2r/8/8/8/8/P7/K7/2R3R1 b kq - 0 1")
-    state.save_svg("tests/assets/chess/legal_action_mask_026.svg")
+    state.save_svg("tests/assets/chess/legal_action_mask_027.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 22
 
     # castling
     state = State._from_fen("8/7k/7p/8/8/8/8/R3K2R w KQ - 0 1")
-    state.save_svg("tests/assets/chess/legal_action_mask_027.svg")
+    state.save_svg("tests/assets/chess/legal_action_mask_028.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 24
 
     state = State._from_fen("r3k2r/8/8/8/8/P7/K7/8 b kq - 0 1")
-    state.save_svg("tests/assets/chess/legal_action_mask_028.svg")
+    state.save_svg("tests/assets/chess/legal_action_mask_029.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 24
 
