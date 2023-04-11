@@ -398,10 +398,20 @@ def _legal_action_mask(state):
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
 
+    def can_castle_king_side():
+        ok = (state.board[32] == KING)
+        ok &= state.can_castle_king_side[0]
+        ok &= (state.board[40] == EMPTY)
+        ok &= (state.board[48] == EMPTY)
+        return ok
+
     actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
+
+    # set king side castling
+    mask = mask.at[2367].set(can_castle_king_side())
 
     # set en passant
     actions = legal_en_passnts()

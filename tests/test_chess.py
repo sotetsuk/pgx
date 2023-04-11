@@ -305,6 +305,7 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 24
 
+    # black
     state = State._from_fen("r3k2r/8/8/8/8/P7/K7/8 b kq - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_029.svg")
     print(jnp.nonzero(state.legal_action_mask))
