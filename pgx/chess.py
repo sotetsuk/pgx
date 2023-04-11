@@ -327,7 +327,7 @@ def _legal_action_mask(state):
         return ok
 
     def underpromotions(mask):
-        # from_ = 6 14 22 30 38 46 54 62 (if white)
+        # from_ = 6 14 22 30 38 46 54 62
         # plane = 0 ... 8
         def make_label(from_):
             return from_ * 73 + jnp.arange(9)
