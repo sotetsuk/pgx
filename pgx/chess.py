@@ -76,6 +76,30 @@ INIT_BOARD = jnp.int8([
 ])
 # fmt: on
 
+# Action
+# 0 ... 9 = underpromotions
+# plane // 3 == 0: rook
+# plane // 3 == 1: bishop
+# plane // 3 == 2: knight
+# plane % 3 == 0: forward
+# plane % 3 == 1: right
+# plane % 3 == 2: left
+# 51                   22                   50
+#    52                21                49
+#       53             20             48
+#          54          19          47
+#             55       18       46
+#                56    17    45
+#                   57 16 44
+# 23 24 25 26 27 28 29  X 30 31 32 33 34 35 36
+#                   43 15 58
+#                42    14    59
+#             41       13       60
+#          40          12          61
+#       39             11             62
+#    38                10                64
+# 37                    9                   64
+
 
 @dataclass
 class State(core.State):
