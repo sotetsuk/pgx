@@ -20,6 +20,7 @@ from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
     INIT_LEGAL_ACTION_MASK,
+    PLANE_MAP,
     TO_MAP,
 )
 from pgx._flax.struct import dataclass
@@ -53,14 +54,14 @@ KING = jnp.int8(6)
 # 1  0  8 16 24 32 40 48 56
 #    a  b  c  d  e  f  g  f
 # board index (flipped black view)
-# 1  0  8 16 24 32 40 48 56
-# 2  1  9 17 25 33 41 49 57
-# 3  2 10 18 26 34 42 50 58
-# 4  3 11 19 27 35 43 51 59
-# 5  4 12 20 28 36 44 52 60
-# 6  5 13 21 29 37 45 53 61
-# 7  6 14 22 30 38 46 54 62
-# 8  7 15 23 31 39 47 55 63
+# 8  0  8 16 24 32 40 48 56
+# 7  1  9 17 25 33 41 49 57
+# 6  2 10 18 26 34 42 50 58
+# 5  3 11 19 27 35 43 51 59
+# 4  4 12 20 28 36 44 52 60
+# 3  5 13 21 29 37 45 53 61
+# 2  6 14 22 30 38 46 54 62
+# 1  7 15 23 31 39 47 55 63
 #    a  b  c  d  e  f  g  h
 # fmt: off
 INIT_BOARD = jnp.int8([
@@ -136,6 +137,11 @@ class Action:
                 plane >= 9, jnp.int8(-1), jnp.int8(plane // 3)
             ),
         )
+
+    def _to_label(self):
+        plane = PLANE_MAP[self.from_, self.to]
+        # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
+        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
 
 
 class Chess(core.Env):
@@ -298,17 +304,58 @@ def _flip(state: State) -> State:
 
 
 def _legal_action_mask(state):
-    def is_legal(label: jnp.ndarray):
-        a = Action._from_label(label)
+    def is_legal(a: Action):
         ok = _is_pseudo_legal(state, a)
         next_s = _flip(_apply_move(state, a))
         ok &= ~_is_checking(next_s)
 
         return ok
 
-    mask = jax.vmap(is_legal)(jnp.arange(64 * 73))
+    @jax.vmap
+    def legal_norml_moves(from_):
+        piece = state.board[from_]
 
-    return mask
+        @jax.vmap
+        def legal_label(to):
+            a = Action(from_=from_, to=to)
+            return jax.lax.select(
+                (piece >= 0) & (to >= 0) & is_legal(a),
+                a._to_label(),
+                jnp.int32(-1),
+            )
+
+        return legal_label(CAN_MOVE[piece, from_])
+
+    def legal_underpromotions(mask):
+        # from_ = 6 14 22 30 38 46 54 62
+        # plane = 0 ... 8
+        @jax.vmap
+        def make_labels(from_):
+            return from_ * 73 + jnp.arange(9)
+
+        labels = make_labels(
+            jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])
+        ).flatten()
+
+        @jax.vmap
+        def legal_labels(label):
+            a = Action._from_label(label)
+            ok = mask[Action(from_=a.from_, to=a.to)._to_label()]
+            return jax.lax.select(ok, label, -1)
+
+        ok_labels = legal_labels(labels)
+        return ok_labels.flatten()
+
+    actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
+    # +1 is to avoid setting True to the last element
+    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
+    mask = mask.at[actions].set(TRUE)
+
+    # set underpromotions
+    actions = legal_underpromotions(mask)
+    mask = mask.at[actions].set(TRUE)
+
+    return mask[:-1]
 
 
 def _is_checking(state: State):

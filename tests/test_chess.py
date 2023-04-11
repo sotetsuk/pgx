@@ -124,6 +124,8 @@ def test_action():
     assert action.to == p("c4", True)
     assert action.underpromotion == -1
 
+    # TODO: black underpromotion
+
 
 def test_step():
     # normal step
@@ -261,11 +263,4 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 2
 
-
-    # state = State._from_fen()
-    # state.save_svg("tests/assets/chess/legal_action_mask_006.svg")
-    # state = step(state, jnp.int32())  #
-    # state.save_svg("tests/assets/chess/legal_action_mask_007.svg")
-    # print(state._to_fen())
-    # print(jnp.nonzero(state.legal_action_mask))
-    # assert state.legal_action_mask.sum() ==
+    # TODO: enhance black promotion tests
