@@ -327,12 +327,33 @@ def _legal_action_mask(state):
 
         return ok
 
+    def underpromotions(mask):
+        # from_ = 6 14 22 30 38 46 54 62 (if white)
+        # plane = 0 ... 8
+        def make_label(from_):
+            return from_ * 73 + jnp.arange(9)
+
+        labels = jax.vmap(make_label)(jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])).flatten()
+
+        def is_ok(label):
+            a = Action._from_label(label)
+            a2 = Action(from_=a.from_, to=a.to)
+            ok = mask[a2._to_label()]
+            return jax.lax.select(ok, label, -1)
+
+        ok_labels = jax.vmap(is_ok)(labels)
+        return ok_labels.flatten()
+
+
 
     actions = legal_actions(jnp.arange(64)).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
+
     # TODO: promotion
+    actions = underpromotions(mask)
+    mask = mask.at[actions].set(TRUE)
 
     return mask[:-1]
 
