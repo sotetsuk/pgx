@@ -20,6 +20,7 @@ from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
     INIT_LEGAL_ACTION_MASK,
+    PLANE_MAP,
     TO_MAP,
 )
 from pgx._flax.struct import dataclass
