@@ -76,6 +76,30 @@ INIT_BOARD = jnp.int8([
 ])
 # fmt: on
 
+# Action
+# 0 ... 9 = underpromotions
+# plane // 3 == 0: rook
+# plane // 3 == 1: bishop
+# plane // 3 == 2: knight
+# plane % 3 == 0: forward
+# plane % 3 == 1: right
+# plane % 3 == 2: left
+# 51                   22                   50
+#    52                21                49
+#       53             20             48
+#          54          19          47
+#             55       18       46
+#                56    17    45
+#                   57 16 44
+# 23 24 25 26 27 28 29  X 30 31 32 33 34 35 36
+#                   43 15 58
+#                42    14    59
+#             41       13       60
+#          40          12          61
+#       39             11             62
+#    38                10                64
+# 37                    9                   64
+
 
 @dataclass
 class State(core.State):
@@ -374,10 +398,43 @@ def _legal_action_mask(state):
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
 
+    def can_castle_king_side():
+        ok = state.board[32] == KING
+        ok &= state.can_castle_king_side[0]
+        ok &= state.board[40] == EMPTY
+        ok &= state.board[48] == EMPTY
+
+        @jax.vmap
+        def attacked(pos):
+            return _is_attacking(_flip(state), pos)
+
+        ok &= ~(attacked(jnp.int8([39, 47, 55])).any())
+
+        return ok
+
+    def can_castle_queen_side():
+        ok = state.board[32] == KING
+        ok &= state.can_castle_king_side[0]
+        ok &= state.board[8] == EMPTY
+        ok &= state.board[16] == EMPTY
+        ok &= state.board[24] == EMPTY
+
+        @jax.vmap
+        def attacked(pos):
+            return _is_attacking(_flip(state), pos)
+
+        ok &= ~(attacked(jnp.int8([23, 31, 39])).any())
+
+        return ok
+
     actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
+
+    # castling
+    mask = mask.at[2364].set(can_castle_queen_side())
+    mask = mask.at[2367].set(can_castle_king_side())
 
     # set en passant
     actions = legal_en_passnts()
@@ -390,16 +447,19 @@ def _legal_action_mask(state):
     return mask[:-1]
 
 
+def _is_attacking(state: State, pos):
+    @jax.vmap
+    def can_move(from_):
+        a = Action(from_=from_, to=pos)
+        return (from_ != -1) & _is_pseudo_legal(state, a)
+
+    return can_move(CAN_MOVE[QUEEN, pos, :]).any()
+
+
 def _is_checking(state: State):
     """True if possible to capture the opponent king"""
     opp_king_pos = jnp.argmin(jnp.abs(state.board - -KING))
-
-    @jax.vmap
-    def can_capture_king(from_):
-        a = Action(from_=from_, to=opp_king_pos)
-        return (from_ != -1) & _is_pseudo_legal(state, a)
-
-    return can_capture_king(CAN_MOVE[QUEEN, opp_king_pos, :]).any()
+    return _is_attacking(state, opp_king_pos)
 
 
 def _is_pseudo_legal(state: State, a: Action):
