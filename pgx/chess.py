@@ -304,21 +304,6 @@ def _flip(state: State) -> State:
 
 
 def _legal_action_mask(state):
-    @jax.vmap
-    def legal_actions(from_):
-        piece = state.board[from_]
-
-        @jax.vmap
-        def is_ok(to):
-            a = Action(from_=from_, to=to)
-            return jax.lax.select(
-                (piece >= 0) & (to >= 0) & is_legal(a),
-                a._to_label(),
-                jnp.int32(-1),
-            )
-
-        return is_ok(CAN_MOVE[piece, from_])
-
     def is_legal(a: Action):
         ok = _is_pseudo_legal(state, a)
         next_s = _flip(_apply_move(state, a))
@@ -326,32 +311,49 @@ def _legal_action_mask(state):
 
         return ok
 
-    def underpromotions(mask):
+    @jax.vmap
+    def legal_norml_moves(from_):
+        piece = state.board[from_]
+
+        @jax.vmap
+        def legal_label(to):
+            a = Action(from_=from_, to=to)
+            return jax.lax.select(
+                (piece >= 0) & (to >= 0) & is_legal(a),
+                a._to_label(),
+                jnp.int32(-1),
+            )
+
+        return legal_label(CAN_MOVE[piece, from_])
+
+    def legal_underpromotions(mask):
         # from_ = 6 14 22 30 38 46 54 62
         # plane = 0 ... 8
-        def make_label(from_):
+        @jax.vmap
+        def make_labels(from_):
             return from_ * 73 + jnp.arange(9)
 
-        labels = jax.vmap(make_label)(
+        labels = make_labels(
             jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])
         ).flatten()
 
-        def is_ok(label):
+        @jax.vmap
+        def legal_labels(label):
             a = Action._from_label(label)
             a2 = Action(from_=a.from_, to=a.to)
             ok = mask[a2._to_label()]
             return jax.lax.select(ok, label, -1)
 
-        ok_labels = jax.vmap(is_ok)(labels)
+        ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
-    actions = legal_actions(jnp.arange(64)).flatten()  # include -1
+    actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
 
     # set underpromotions
-    actions = underpromotions(mask)
+    actions = legal_underpromotions(mask)
     mask = mask.at[actions].set(TRUE)
 
     return mask[:-1]
