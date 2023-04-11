@@ -11,14 +11,15 @@ for from_ in range(64):
         continue
     for plane in range(9):
         dir_ = plane % 3
-        if from_ % 8 == 6:  # white
+        to = -1
+        if from_ % 8 == 6:
+            # white
             # 8  7 15 23 31 39 47 55 63
             # 7  6 14 22 30 38 46 54 62
+            # black
+            # 2  6 14 22 30 38 46 54 62
+            # 1  7 15 23 31 39 47 55 63
             to = from_ + jnp.int8([+1, +9, -7])[dir_]
-        else:  # (from_ % 8 == 1)  # black
-            # 1  0  8 16 24 32 40 48 56
-            # 2  1  9 17 25 33 41 49 57
-            to = from_ + jnp.int8([-1, +7, -9])[dir_]
         if not (0 <= to < 64):
             continue
         TO_MAP = TO_MAP.at[from_, plane].set(to)
