@@ -287,6 +287,18 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 23
 
+    # castling (cannot)
+    state = State._from_fen("1r4r1/7k/7p/8/8/8/8/R3K2R w KQ - 1 2")
+    state.save_svg("tests/assets/chess/legal_action_mask_025.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 23
+
+    # black
+    state = State._from_fen("r2k3r/8/8/8/8/P7/K7/1R4R1 b kq - 1 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_026.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 23
+
     # en passant
     state = State._from_fen("7k/7p/8/6P1/8/8/8/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_018.svg")
