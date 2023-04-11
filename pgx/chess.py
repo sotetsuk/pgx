@@ -289,6 +289,16 @@ def _abs_pos(x, turn):
     return jax.lax.select(turn == 0, x, (x // 8) * 8 + (7 - x % 8))
 
 
+def _flip_pos(x):
+    """
+    >>> _flip_pos(34)
+    37
+    >>> _flip_pos(37)
+    34
+    """
+    return (x // 8) * 8 + (7 - (x % 8))
+
+
 def _rotate(board):
     return jnp.rot90(board, k=1)
 
@@ -346,9 +356,31 @@ def _legal_action_mask(state):
         ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
+    def legal_en_passnts():
+        to = state.en_passant
+        # flip if black turn
+        to = jax.lax.select((to >= 0) & (state.turn == 1), _flip_pos(to), to)
+
+        @jax.vmap
+        def legal_labels(from_):
+            ok = (
+                (to >= 0)
+                & (state.board[from_] == PAWN)
+                & (state.board[to - 1] == -PAWN)
+            )
+            return jax.lax.select(
+                ok, Action(from_=from_, to=to)._to_label(), -1
+            )
+
+        return legal_labels(jnp.int32([to - 9, to + 7]))
+
     actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
+    mask = mask.at[actions].set(TRUE)
+
+    # set en passant
+    actions = legal_en_passnts()
     mask = mask.at[actions].set(TRUE)
 
     # set underpromotions
