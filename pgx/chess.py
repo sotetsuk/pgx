@@ -16,12 +16,12 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
+from pgx._chess_utils import PLANE_MAP  # ignores underpromotion
 from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
     INIT_LEGAL_ACTION_MASK,
     TO_MAP,
-    PLANE_MAP  # ignores underpromotion
 )
 from pgx._flax.struct import dataclass
 
@@ -314,11 +314,10 @@ def _legal_action_mask(state):
             return jax.lax.select(
                 (piece >= 0) & (to >= 0) & is_legal(a),
                 a._to_label(),
-                jnp.int32(-1)
+                jnp.int32(-1),
             )
 
         return is_ok(CAN_MOVE[piece, from_])
-
 
     def is_legal(a: Action):
         ok = _is_pseudo_legal(state, a)
@@ -333,7 +332,9 @@ def _legal_action_mask(state):
         def make_label(from_):
             return from_ * 73 + jnp.arange(9)
 
-        labels = jax.vmap(make_label)(jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])).flatten()
+        labels = jax.vmap(make_label)(
+            jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])
+        ).flatten()
 
         def is_ok(label):
             a = Action._from_label(label)
@@ -343,8 +344,6 @@ def _legal_action_mask(state):
 
         ok_labels = jax.vmap(is_ok)(labels)
         return ok_labels.flatten()
-
-
 
     actions = legal_actions(jnp.arange(64)).flatten()  # include -1
     # +1 is to avoid setting True to the last element
