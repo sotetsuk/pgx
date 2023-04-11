@@ -403,6 +403,28 @@ def _legal_action_mask(state):
         ok &= state.can_castle_king_side[0]
         ok &= (state.board[40] == EMPTY)
         ok &= (state.board[48] == EMPTY)
+
+        @jax.vmap
+        def attacked(pos):
+            return _is_attacking(_flip(state), pos)
+
+        ok &= ~(attacked(jnp.int8([39, 47, 55])).any())
+
+        return ok
+
+    def can_castle_queen_side():
+        ok = (state.board[32] == KING)
+        ok &= state.can_castle_king_side[0]
+        ok &= (state.board[8] == EMPTY)
+        ok &= (state.board[16] == EMPTY)
+        ok &= (state.board[24] == EMPTY)
+
+        @jax.vmap
+        def attacked(pos):
+            return _is_attacking(_flip(state), pos)
+
+        ok &= ~(attacked(jnp.int8([23, 31, 39])).any())
+
         return ok
 
     actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
@@ -410,7 +432,8 @@ def _legal_action_mask(state):
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
 
-    # set king side castling
+    # castling
+    mask = mask.at[2364].set(can_castle_queen_side())
     mask = mask.at[2367].set(can_castle_king_side())
 
     # set en passant
