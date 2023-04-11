@@ -124,6 +124,8 @@ def test_action():
     assert action.to == p("c4", True)
     assert action.underpromotion == -1
 
+    # TODO: black underpromotion
+
 
 def test_step():
     # normal step
