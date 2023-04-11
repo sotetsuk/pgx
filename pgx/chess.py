@@ -413,17 +413,18 @@ def _legal_action_mask(state):
 
     return mask[:-1]
 
+def _is_attacking(state: State, pos):
+    @jax.vmap
+    def can_move(from_):
+        a = Action(from_=from_, to=pos)
+        return (from_ != -1) & _is_pseudo_legal(state, a)
+
+    return can_move(CAN_MOVE[QUEEN, pos, :]).any()
 
 def _is_checking(state: State):
     """True if possible to capture the opponent king"""
     opp_king_pos = jnp.argmin(jnp.abs(state.board - -KING))
-
-    @jax.vmap
-    def can_capture_king(from_):
-        a = Action(from_=from_, to=opp_king_pos)
-        return (from_ != -1) & _is_pseudo_legal(state, a)
-
-    return can_capture_king(CAN_MOVE[QUEEN, opp_king_pos, :]).any()
+    return _is_attacking(state, opp_king_pos)
 
 
 def _is_pseudo_legal(state: State, a: Action):
