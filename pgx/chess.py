@@ -218,7 +218,9 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     state = _apply_move(state, a)
     state = _flip(state)
-    state = state.replace(legal_action_mask=_legal_action_mask(state))
+    state = state.replace(  # type: ignore
+        legal_action_mask=_legal_action_mask(state)
+    )
     state = _check_termination(state)
     return state
 
@@ -314,12 +316,10 @@ def _apply_move(state: State, a: Action):
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
     )
     # update counters
-    halfmove_count = state.halfmove_count + 1
-    halfmove_count = jax.lax.select(
-        captured | (piece == PAWN), 0, halfmove_count
-    )
-    state = state.replace(
-        halfmove_count=halfmove_count,
+    state = state.replace(  # type: ignore
+        halfmove_count=jax.lax.select(
+            captured | (piece == PAWN), 0, state.halfmove_count + 1
+        ),
         fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
     )
     # update possible piece positions
