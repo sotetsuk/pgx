@@ -118,7 +118,9 @@ class State(core.State):
     # (curr, opp) Flips every turn
     can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
     can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
-    en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. Flips every turn.
+    en_passant: jnp.ndarray = jnp.int8(
+        -1
+    )  # En passant target. Flips every turn.
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
@@ -241,9 +243,7 @@ def _apply_move(state: State, a: Action):
     piece = state.board[a.from_]
     # en passant
     is_en_passant = (
-        (state.en_passant >= 0)
-        & (piece == PAWN)
-        & (state.en_passant == a.to)
+        (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
     )
     removed_pawn_pos = a.to - 1
     state = state.replace(  # type: ignore
@@ -545,9 +545,13 @@ def _from_fen(fen: str):
     mat = jnp.int8(arr).reshape(8, 8)
     if turn == "b":
         mat = -jnp.flip(mat, axis=0)
-    en_passant = jnp.int8(-1) if en_passant == "-" else jnp.int8(
+    en_passant = (
+        jnp.int8(-1)
+        if en_passant == "-"
+        else jnp.int8(
             "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
         )
+    )
     if turn == "b" and en_passant >= 0:
         en_passant = _flip_pos(en_passant)
     state = State(  # type: ignore
@@ -635,7 +639,7 @@ def _to_fen(state: State):
     # アンパッサン
     en_passant = state.en_passant
     if state.turn == 1:
-        en_passant  = _flip_pos(en_passant)
+        en_passant = _flip_pos(en_passant)
     ep = int(en_passant.item())
     if ep == -1:
         fen += "-"
