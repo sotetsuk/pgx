@@ -19,6 +19,7 @@ import pgx.core as core
 from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
+    CAN_MOVE_ANY,
     INIT_LEGAL_ACTION_MASK,
     PLANE_MAP,
     TO_MAP,
@@ -453,7 +454,7 @@ def _is_attacking(state: State, pos):
         a = Action(from_=from_, to=pos)
         return (from_ != -1) & _is_pseudo_legal(state, a)
 
-    return can_move(CAN_MOVE[QUEEN, pos, :]).any()
+    return can_move(CAN_MOVE_ANY[pos, :]).any()
 
 
 def _is_checking(state: State):

@@ -158,6 +158,20 @@ for from_ in range(64):
 
 assert (CAN_MOVE[0, :, :] == -1).all()
 
+CAN_MOVE_ANY = -jnp.ones((64, 35), jnp.int8)
+for from_ in range(64):
+    legal_dst = []
+    for i in range(27):
+        to = CAN_MOVE[5, from_, i]  # QUEEN
+        if to >= 0:
+            legal_dst.append(to)
+    for i in range(27):
+        to = CAN_MOVE[2, from_, i]  # KNIGHT
+        if to >= 0:
+            legal_dst.append(to)
+    CAN_MOVE_ANY = CAN_MOVE_ANY.at[from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+
+
 # Between
 BETWEEN = -jnp.ones((64, 64, 6), dtype=jnp.int8)
 for from_ in range(64):
