@@ -439,3 +439,13 @@ def test_terminal():
     assert state.terminated
     assert state.current_player == 0
     assert (state.reward == 0.0).all()
+
+    # 50-move draw rule
+    # FEN is from https://www.chess.com/terms/fen-chess#halfmove-clock
+    state = State._from_fen("8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 99 50")
+    state.save_svg("tests/assets/chess/terminal_003.svg")
+    state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
+    state.save_svg("tests/assets/chess/terminal_004.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
