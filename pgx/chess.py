@@ -218,24 +218,30 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     state = _apply_move(state, a)
     state = _flip(state)
-    legal_action_mask = _legal_action_mask(state)
+    state = state.replace(
+        legal_action_mask=_legal_action_mask(state)
+    )
 
-    terminated = ~legal_action_mask.any()
-    # TODO: stailmate
+    terminated = _is_terminal(state)
 
     # fmt: off
+    is_checkmate = (~(state.legal_action_mask.any())) & _is_checking(_flip(state))
     reward = jax.lax.select(
-        terminated,
+        is_checkmate,
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
 
     # fmt: on
     return state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask,
         terminated=terminated,
         reward=reward,
     )
+
+
+def _is_terminal(state: State):
+    terminated = ~state.legal_action_mask.any()
+    return terminated
 
 
 def _apply_move(state: State, a: Action):
