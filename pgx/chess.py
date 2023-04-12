@@ -226,7 +226,7 @@ def _step(state: State, action: jnp.ndarray):
 def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
     terminated = ~has_legal_action
-    terminated |= (state.halfmove_count >= 100)
+    terminated |= state.halfmove_count >= 100
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -315,7 +315,9 @@ def _apply_move(state: State, a: Action):
     )
     # update counters
     halfmove_count = state.halfmove_count + 1
-    halfmove_count = jax.lax.select(captured | (piece == PAWN), 0, halfmove_count)
+    halfmove_count = jax.lax.select(
+        captured | (piece == PAWN), 0, halfmove_count
+    )
     state = state.replace(
         halfmove_count=halfmove_count,
     )
