@@ -320,7 +320,7 @@ def _apply_move(state: State, a: Action):
     )
     state = state.replace(
         halfmove_count=halfmove_count,
-        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1)
+        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
     )
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
