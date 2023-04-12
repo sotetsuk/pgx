@@ -221,27 +221,26 @@ def _step(state: State, action: jnp.ndarray):
     state = state.replace(
         legal_action_mask=_legal_action_mask(state)
     )
+    state = _check_termination(state)
+    return state
 
-    terminated = _is_terminal(state)
 
+def _check_termination(state: State):
+    has_legal_action = state.legal_action_mask.any()
+    terminated = ~has_legal_action
+
+    is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
-    is_checkmate = (~(state.legal_action_mask.any())) & _is_checking(_flip(state))
     reward = jax.lax.select(
         is_checkmate,
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
-
     # fmt: on
     return state.replace(  # type: ignore
         terminated=terminated,
         reward=reward,
     )
-
-
-def _is_terminal(state: State):
-    terminated = ~state.legal_action_mask.any()
-    return terminated
 
 
 def _apply_move(state: State, a: Action):
@@ -588,11 +587,12 @@ def _from_fen(fen: str):
         fullmove_count=jnp.int32(fullmove_cnt),
     )
     state = state.replace(  # type: ignore
-        possible_piece_positions=_possible_piece_positions(state)
+        possible_piece_positions=jax.jit(_possible_piece_positions)(state)
     )
     state = state.replace(  # type: ignore
-        legal_action_mask=_legal_action_mask(state),
+        legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
+    state = jax.jit(_check_termination)(state)
     return state
 
 
