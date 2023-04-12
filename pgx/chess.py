@@ -19,6 +19,7 @@ import pgx.core as core
 from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
+    CAN_MOVE_ANY,
     INIT_LEGAL_ACTION_MASK,
     PLANE_MAP,
     TO_MAP,
@@ -405,10 +406,13 @@ def _legal_action_mask(state):
         ok &= state.board[48] == EMPTY
 
         @jax.vmap
-        def attacked(pos):
-            return _is_attacking(_flip(state), pos)
+        def is_ok(label):
+            return ~_is_checking(
+                _flip(_apply_move(state, Action._from_label(label)))
+            )
 
-        ok &= ~(attacked(jnp.int8([39, 47, 55])).any())
+        ok &= ~_is_checking(_flip(state))
+        ok &= is_ok(jnp.int32([2366, 2367])).all()
 
         return ok
 
@@ -420,10 +424,13 @@ def _legal_action_mask(state):
         ok &= state.board[24] == EMPTY
 
         @jax.vmap
-        def attacked(pos):
-            return _is_attacking(_flip(state), pos)
+        def is_ok(label):
+            return ~_is_checking(
+                _flip(_apply_move(state, Action._from_label(label)))
+            )
 
-        ok &= ~(attacked(jnp.int8([23, 31, 39])).any())
+        ok &= ~_is_checking(_flip(state))
+        ok &= is_ok(jnp.int32([2364, 2365])).all()
 
         return ok
 
@@ -453,7 +460,7 @@ def _is_attacking(state: State, pos):
         a = Action(from_=from_, to=pos)
         return (from_ != -1) & _is_pseudo_legal(state, a)
 
-    return can_move(CAN_MOVE[QUEEN, pos, :]).any()
+    return can_move(CAN_MOVE_ANY[pos, :]).any()
 
 
 def _is_checking(state: State):
