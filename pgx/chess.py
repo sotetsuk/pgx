@@ -226,6 +226,7 @@ def _step(state: State, action: jnp.ndarray):
 def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
     terminated = ~has_legal_action
+    terminated |= (state.halfmove_count >= 100)
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -307,9 +308,18 @@ def _apply_move(state: State, a: Action):
         piece,
         jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
+    # actually move
+    captured = (state.board[a.to] < 0) | (is_en_passant)
     state = state.replace(  # type: ignore
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
     )
+    # update counters
+    halfmove_count = state.halfmove_count + 1
+    halfmove_count = jax.lax.select(captured | (piece == PAWN), 0, halfmove_count)
+    state = state.replace(
+        halfmove_count=halfmove_count,
+    )
+
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
     state = state.replace(  # type: ignore
