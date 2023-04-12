@@ -309,7 +309,7 @@ def _apply_move(state: State, a: Action):
     )
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
-    state = state.replace(
+    state = state.replace(  # type: ignore
         possible_piece_positions=state.possible_piece_positions.at[0, ix].set(
             a.to
         )
