@@ -405,10 +405,10 @@ def _legal_action_mask(state):
         ok &= state.board[48] == EMPTY
 
         @jax.vmap
-        def attacked(pos):
-            return _is_attacking(_flip(state), pos)
+        def is_ok(label):
+            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
 
-        ok &= ~(attacked(jnp.int8([39, 47, 55])).any())
+        ok &= is_ok(jnp.int32([2366, 2367])).all()
 
         return ok
 
@@ -420,10 +420,10 @@ def _legal_action_mask(state):
         ok &= state.board[24] == EMPTY
 
         @jax.vmap
-        def attacked(pos):
-            return _is_attacking(_flip(state), pos)
+        def is_ok(label):
+            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
 
-        ok &= ~(attacked(jnp.int8([23, 31, 39])).any())
+        ok &= is_ok(jnp.int32([2364, 2365])).all()
 
         return ok
 
