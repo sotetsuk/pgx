@@ -177,7 +177,7 @@ def test_step():
     state.save_svg("tests/assets/chess/step_010.svg")
     next_state = step(state, jnp.int32(p("e2") * 73 + 17))  # UP 2
     next_state.save_svg("tests/assets/chess/step_011.svg")
-    assert next_state.en_passant == p("e3")
+    assert next_state.en_passant == p("e3", True)
     state = State._from_fen("1k6/p7/8/8/3p4/8/4P3/R3K2R b KQ - 0 1")
     state.save_svg("tests/assets/chess/step_012.svg")
     next_state = step(state, jnp.int32(p("a7", True) * 73 + 17))  # UP 2

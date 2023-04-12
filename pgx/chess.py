@@ -115,10 +115,10 @@ class State(core.State):
     # --- Chess specific ---
     turn: jnp.ndarray = jnp.int8(0)
     board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
-    # (curr, opp), flips every turn
+    # (curr, opp) Flips every turn
     can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
     can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
-    en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. does not flip
+    en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. Flips every turn.
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
@@ -243,7 +243,7 @@ def _apply_move(state: State, a: Action):
     is_en_passant = (
         (state.en_passant >= 0)
         & (piece == PAWN)
-        & (state.en_passant == _abs_pos(a.to, state.turn))
+        & (state.en_passant == a.to)
     )
     removed_pawn_pos = a.to - 1
     state = state.replace(  # type: ignore
@@ -254,7 +254,7 @@ def _apply_move(state: State, a: Action):
     state = state.replace(  # type: ignore
         en_passant=jax.lax.select(
             (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2),
-            _abs_pos(jnp.int8((a.to + a.from_) // 2), state.turn),
+            jnp.int8((a.to + a.from_) // 2),
             jnp.int8(-1),
         )
     )
@@ -310,10 +310,6 @@ def _apply_move(state: State, a: Action):
     return state
 
 
-def _abs_pos(x, turn):
-    return jax.lax.select(turn == 0, x, (x // 8) * 8 + (7 - x % 8))
-
-
 def _flip_pos(x):
     """
     >>> _flip_pos(34)
@@ -333,6 +329,7 @@ def _flip(state: State) -> State:
         current_player=(state.current_player + 1) % 2,
         board=-jnp.flip(state.board.reshape(8, 8), axis=1).flatten(),
         turn=(state.turn + 1) % 2,
+        en_passant=_flip_pos(state.en_passant),
         can_castle_queen_side=state.can_castle_queen_side[::-1],
         can_castle_king_side=state.can_castle_king_side[::-1],
     )
@@ -383,8 +380,6 @@ def _legal_action_mask(state):
 
     def legal_en_passnts():
         to = state.en_passant
-        # flip if black turn
-        to = jax.lax.select((to >= 0) & (state.turn == 1), _flip_pos(to), to)
 
         @jax.vmap
         def legal_labels(from_):
@@ -520,7 +515,7 @@ def _from_fen(fen: str):
            [ 1,  1,  1,  1,  1,  1,  1,  1],
            [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int8)
     >>> state.en_passant
-    Array(34, dtype=int8)
+    Array(37, dtype=int8)
     """
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     arr = []
@@ -550,16 +545,17 @@ def _from_fen(fen: str):
     mat = jnp.int8(arr).reshape(8, 8)
     if turn == "b":
         mat = -jnp.flip(mat, axis=0)
+    en_passant = jnp.int8(-1) if en_passant == "-" else jnp.int8(
+            "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
+        )
+    if turn == "b" and en_passant >= 0:
+        en_passant = _flip_pos(en_passant)
     state = State(  # type: ignore
         board=jnp.rot90(mat, k=3).flatten(),
         turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
         can_castle_queen_side=can_castle_queen_side,
         can_castle_king_side=can_castle_king_side,
-        en_passant=jnp.int8(-1)
-        if en_passant == "-"
-        else jnp.int8(
-            "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
-        ),
+        en_passant=en_passant,
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
@@ -637,7 +633,10 @@ def _to_fen(state: State):
             fen += "q"
     fen += " "
     # アンパッサン
-    ep = int(state.en_passant.item())
+    en_passant = state.en_passant
+    if state.turn == 1:
+        en_passant  = _flip_pos(en_passant)
+    ep = int(en_passant.item())
     if ep == -1:
         fen += "-"
     else:
