@@ -123,7 +123,9 @@ class State(core.State):
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
     # index to possible piece positions (redundant, only for speeding up)
-    possible_piece_positions: jnp.ndarray = jnp.zeros((2, 16), dtype=jnp.int8)  # Flips every turn.
+    possible_piece_positions: jnp.ndarray = jnp.zeros(
+        (2, 16), dtype=jnp.int8
+    )  # Flips every turn.
 
     @staticmethod
     def _from_fen(fen: str):
@@ -315,7 +317,9 @@ def _apply_move(state: State, a: Action):
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
     state = state.replace(
-        possible_piece_positions=state.possible_piece_positions.at[0, ix].set(a.to)
+        possible_piece_positions=state.possible_piece_positions.at[0, ix].set(
+            a.to
+        )
     )
     return state
 
@@ -344,7 +348,7 @@ def _flip(state: State) -> State:
         en_passant=_flip_pos(state.en_passant),
         can_castle_queen_side=state.can_castle_queen_side[::-1],
         can_castle_king_side=state.can_castle_king_side[::-1],
-        possible_piece_positions=state.possible_piece_positions[::-1]
+        possible_piece_positions=state.possible_piece_positions[::-1],
     )
 
 
@@ -442,7 +446,9 @@ def _legal_action_mask(state):
 
         return ok
 
-    actions = legal_norml_moves(state.possible_piece_positions[0]).flatten()  # include -1
+    actions = legal_norml_moves(
+        state.possible_piece_positions[0]
+    ).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
