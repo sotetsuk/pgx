@@ -118,9 +118,7 @@ class State(core.State):
     # (curr, opp) Flips every turn
     can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
     can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
-    en_passant: jnp.ndarray = jnp.int8(
-        -1
-    )  # En passant target. Flips every turn.
+    en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. Flips.
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
@@ -312,12 +310,14 @@ def _apply_move(state: State, a: Action):
 
 def _flip_pos(x):
     """
-    >>> _flip_pos(34)
-    37
-    >>> _flip_pos(37)
-    34
+    >>> _flip_pos(jnp.int8(34))
+    Array(37, dtype=int8)
+    >>> _flip_pos(jnp.int8(37))
+    Array(34, dtype=int8)
+    >>> _flip_pos(jnp.int8(-1))
+    Array(-1, dtype=int8)
     """
-    return (x // 8) * 8 + (7 - (x % 8))
+    return jax.lax.select(x == -1, x, (x // 8) * 8 + (7 - (x % 8)))
 
 
 def _rotate(board):
