@@ -205,3 +205,10 @@ INIT_LEGAL_ACTION_MASK = from_bytes(
     jnp.zeros(64 * 73, dtype=jnp.bool_), INIT_LEGAL_ACTION_MASK_BYTES
 )
 INIT_LEGAL_ACTION_MASK = jnp.array(INIT_LEGAL_ACTION_MASK)
+
+INIT_POSSIBLE_PIECE_POSITIONS = jnp.int8(
+    [
+        [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
+        [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
+    ]
+)  # (2, 16)
