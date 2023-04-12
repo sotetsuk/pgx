@@ -407,7 +407,9 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
+            return ~_is_checking(
+                _flip(_apply_move(state, Action._from_label(label)))
+            )
 
         ok &= ~_is_checking(_flip(state))
         ok &= is_ok(jnp.int32([2366, 2367])).all()
@@ -423,7 +425,9 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
+            return ~_is_checking(
+                _flip(_apply_move(state, Action._from_label(label)))
+            )
 
         ok &= ~_is_checking(_flip(state))
         ok &= is_ok(jnp.int32([2364, 2365])).all()

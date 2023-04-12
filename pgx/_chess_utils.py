@@ -169,7 +169,9 @@ for from_ in range(64):
         to = CAN_MOVE[2, from_, i]  # KNIGHT
         if to >= 0:
             legal_dst.append(to)
-    CAN_MOVE_ANY = CAN_MOVE_ANY.at[from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE_ANY = CAN_MOVE_ANY.at[from_, : len(legal_dst)].set(
+        jnp.int8(legal_dst)
+    )
 
 
 # Between
