@@ -420,3 +420,22 @@ def test_legal_action_mask():
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 3
+
+
+def test_terminal():
+    # checkmate (white win)
+    state = State._from_fen("7k/7R/5N2/8/8/8/8/K7 b - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_001.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert state.reward[state.current_player] == -1
+    assert state.reward[1 - state.current_player] == 1.
+
+    # stalemate
+    state = State._from_fen("k7/8/1Q6/K7/8/8/8/8 b - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_002.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
