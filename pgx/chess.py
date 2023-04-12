@@ -545,21 +545,21 @@ def _from_fen(fen: str):
     mat = jnp.int8(arr).reshape(8, 8)
     if turn == "b":
         mat = -jnp.flip(mat, axis=0)
-    en_passant = (
+    ep = (
         jnp.int8(-1)
         if en_passant == "-"
         else jnp.int8(
             "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
         )
     )
-    if turn == "b" and en_passant >= 0:
-        en_passant = _flip_pos(en_passant)
+    if turn == "b" and ep >= 0:
+        ep = _flip_pos(ep)
     state = State(  # type: ignore
         board=jnp.rot90(mat, k=3).flatten(),
         turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
         can_castle_queen_side=can_castle_queen_side,
         can_castle_king_side=can_castle_king_side,
-        en_passant=en_passant,
+        en_passant=ep,
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
