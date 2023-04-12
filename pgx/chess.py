@@ -122,6 +122,8 @@ class State(core.State):
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
+    # index to possible piece positions (redundant, only for speeding up)
+    possible_piece_positions: jnp.ndarray = jnp.zeros((2, 16), dtype=jnp.int8)  # Flips every turn.
 
     @staticmethod
     def _from_fen(fen: str):
@@ -178,7 +180,12 @@ class Chess(core.Env):
         rng, subkey = jax.random.split(key)
         current_player = jnp.int8(jax.random.bernoulli(subkey))
         state = State(current_player=current_player)  # type: ignore
-        state = state.replace(legal_action_mask=INIT_LEGAL_ACTION_MASK)  # type: ignore
+        state = state.replace(  # type: ignore
+            possible_piece_positions=_possible_piece_positions(state)
+        )
+        state = state.replace(  # type: ignore
+            legal_action_mask=INIT_LEGAL_ACTION_MASK,
+        )
         return state
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
@@ -305,6 +312,11 @@ def _apply_move(state: State, a: Action):
     state = state.replace(  # type: ignore
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
     )
+    # update possible piece positions
+    ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
+    state = state.replace(
+        possible_piece_positions=state.possible_piece_positions.at[0, ix].set(a.to)
+    )
     return state
 
 
@@ -332,6 +344,7 @@ def _flip(state: State) -> State:
         en_passant=_flip_pos(state.en_passant),
         can_castle_queen_side=state.can_castle_queen_side[::-1],
         can_castle_king_side=state.can_castle_king_side[::-1],
+        possible_piece_positions=state.possible_piece_positions[::-1]
     )
 
 
@@ -351,7 +364,7 @@ def _legal_action_mask(state):
         def legal_label(to):
             a = Action(from_=from_, to=to)
             return jax.lax.select(
-                (piece >= 0) & (to >= 0) & is_legal(a),
+                (from_ >= 0) & (piece > 0) & (to >= 0) & is_legal(a),
                 a._to_label(),
                 jnp.int32(-1),
             )
@@ -429,7 +442,7 @@ def _legal_action_mask(state):
 
         return ok
 
-    actions = legal_norml_moves(jnp.arange(64)).flatten()  # include -1
+    actions = legal_norml_moves(state.possible_piece_positions[0]).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
@@ -483,6 +496,12 @@ def _is_pseudo_legal(state: State, a: Action):
         & (state.board[a.to] >= 0)
     )
     return (a.to >= 0) & ok
+
+
+def _possible_piece_positions(state):
+    my_pos = jnp.nonzero(state.board > 0, size=16)[0]
+    opp_pos = jnp.nonzero(_flip(state).board > 0, size=16)[0]
+    return jnp.vstack((my_pos, opp_pos))
 
 
 def _from_fen(fen: str):
@@ -563,9 +582,13 @@ def _from_fen(fen: str):
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
-    return state.replace(  # type: ignore
-        legal_action_mask=_legal_action_mask(state)
+    state = state.replace(  # type: ignore
+        possible_piece_positions=_possible_piece_positions(state)
     )
+    state = state.replace(  # type: ignore
+        legal_action_mask=_legal_action_mask(state),
+    )
+    return state
 
 
 def _to_fen(state: State):
