@@ -498,8 +498,8 @@ def _is_pseudo_legal(state: State, a: Action):
 
 
 def _possible_piece_positions(state):
-    my_pos = jnp.nonzero(state.board > 0, size=16)[0]
-    opp_pos = jnp.nonzero(_flip(state).board > 0, size=16)[0]
+    my_pos = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0]
+    opp_pos = jnp.nonzero(_flip(state).board > 0, size=16, fill_value=-1)[0]
     return jnp.vstack((my_pos, opp_pos))
 
 
