@@ -7,7 +7,8 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     NUM_CARD_TYPE = 13
     # fmt: off
     TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"]
-    SUITS = ["\u2660", "\u2665", "\u2666", "\u2663", "N"]  # ♠♡♢♣
+    SUITS = ["\u2660", "\u2665", "\u2666", "\u2663"]  # ♠♡♢♣
+    DENOMINATIONS = ["\u2663", "\u2666", "\u2665", "\u2660", "N"]  # ♣♢♡♠
     ACT = ["P", "X", "XX"]
     # fmt:on
     color_set = config["COLOR_SET"]
@@ -20,7 +21,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     y_offset = [10, 190, 370, 190]
     area_width = 230
     area_height = 150
-    for i in range(4):  # player0,1,2,3
+    for i in range(4):  # N, E, S, W
         hand = sorted(state.hand[i * NUM_CARD_TYPE : (i + 1) * NUM_CARD_TYPE])
         assert len(hand) == NUM_CARD_TYPE
         # player
@@ -173,7 +174,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             )
         )
 
-        # val
+        # vul
         if (state.vul_NS and i % 2 == 0) or (state.vul_EW and i % 2 == 1):
             board_g.add(
                 dwg.text(
@@ -209,7 +210,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         if act == -1:
             break
         act_str = (
-            str(act // 5 + 1) + SUITS[act % 5]
+            str(act // 5 + 1) + DENOMINATIONS[(act % 5)]
             if 0 <= act < 35
             else ACT[act - 35]
         )
