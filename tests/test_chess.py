@@ -283,7 +283,6 @@ def test_legal_action_mask():
     assert state.legal_action_mask.sum() == 20
 
     # black
-    # 落ちる
     state = State._from_fen("r3k2r/8/4N3/8/8/P7/K7/8 b kq - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_017.svg")
     print(jnp.nonzero(state.legal_action_mask))
@@ -296,7 +295,6 @@ def test_legal_action_mask():
     assert state.legal_action_mask.sum() == 5
 
     # black
-    # 落ちる
     state = State._from_fen("r3k2r/8/3N4/8/8/P7/K7/8 b kq - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_019.svg")
     print(jnp.nonzero(state.legal_action_mask))
@@ -370,7 +368,6 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
 
-    # TODO: add en passant cases when two pawns can capture
     # en passant
     state = State._from_fen("7k/4p3/8/3P1P2/8/8/8/K7 b - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_032.svg")
@@ -407,7 +404,6 @@ def test_legal_action_mask():
     assert state.legal_action_mask.sum() == 8
 
     # double check
-    # 落ちる
     state = State._from_fen("1q6/R2N3k/8/8/8/8/8/K7 w - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_039.svg")
     state = step(state, jnp.int32(2260))  # WPawn: f7 -> f8 Night Promotion
@@ -417,7 +413,6 @@ def test_legal_action_mask():
     assert state.legal_action_mask.sum() == 3
 
     # double check by promotion
-    # 落ちる
     state = State._from_fen("1q6/R4P1k/8/8/8/8/8/K7 w - - 0 1")
     state.save_svg("tests/assets/chess/legal_action_mask_041.svg")
     state = step(state, jnp.int32(3364))  # WPawn: f7 -> f8 Night Promotion
