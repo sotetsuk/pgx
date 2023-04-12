@@ -218,9 +218,7 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     state = _apply_move(state, a)
     state = _flip(state)
-    state = state.replace(
-        legal_action_mask=_legal_action_mask(state)
-    )
+    state = state.replace(legal_action_mask=_legal_action_mask(state))
     state = _check_termination(state)
     return state
 
