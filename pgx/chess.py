@@ -21,6 +21,7 @@ from pgx._chess_utils import (  # type: ignore
     CAN_MOVE,
     CAN_MOVE_ANY,
     INIT_LEGAL_ACTION_MASK,
+    INIT_POSSIBLE_PIECE_POSITIONS,
     PLANE_MAP,
     TO_MAP,
 )
@@ -122,10 +123,8 @@ class State(core.State):
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
-    # index to possible piece positions (redundant, only for speeding up)
-    possible_piece_positions: jnp.ndarray = jnp.zeros(
-        (2, 16), dtype=jnp.int8
-    )  # Flips every turn.
+    # index to possible piece positions for speeding up. Flips every turn.
+    possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
     @staticmethod
     def _from_fen(fen: str):
@@ -182,12 +181,6 @@ class Chess(core.Env):
         rng, subkey = jax.random.split(key)
         current_player = jnp.int8(jax.random.bernoulli(subkey))
         state = State(current_player=current_player)  # type: ignore
-        state = state.replace(  # type: ignore
-            possible_piece_positions=_possible_piece_positions(state)
-        )
-        state = state.replace(  # type: ignore
-            legal_action_mask=INIT_LEGAL_ACTION_MASK,
-        )
         return state
 
     def _step(self, state: core.State, action: jnp.ndarray) -> State:
