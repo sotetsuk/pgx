@@ -623,6 +623,7 @@ class Visualizer:
         elif isinstance(_states, BridgeBiddingState):
             return BridgeBiddingState(  # type:ignore
                 turn=_states.turn[_i],
+                dealer=_states.dealer[_i],
                 current_player=_states.current_player[_i],
                 hand=_states.hand[_i],
                 bidding_history=_states.bidding_history[_i],
