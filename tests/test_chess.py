@@ -502,3 +502,9 @@ def test_buggy_samples():
     state = step(state, 3986)
     state.save_svg("tests/assets/chess/buggy_samples_010.svg")
     assert state._to_fen() == "rn1qkbr1/2pp1pp1/p3pn1p/PQ6/1P6/6P1/2PP1P1P/R1BNKBNb w Qq - 0 11"
+
+    state = State._from_fen("rn6/1b6/8/p1Br1k1p/PPp1pPpP/NRp3P1/2B4R/2K5 b - f3 0 54")
+    print(state.en_passant)
+    state.save_svg("tests/assets/chess/buggy_samples_011.svg")
+    expected_legal_actions = [16, 17, 263, 652, 654, 656, 701, 714, 715, 1517, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 2000, 2001, 3154, 3182, 3197, 3853]
+    assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
