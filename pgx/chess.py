@@ -251,7 +251,15 @@ def has_insufficient_pieces(state: State):
         (jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)
     ).sum() - 2  # two kings
     num_bishop = (jnp.abs(state.board) == 3).sum()
-    num_bishop_on_black_tile = (jnp.abs(state.board[::2]) == 3).sum()
+    # simplify
+    num_bishop_on_black_tile = (jnp.abs(state.board[0:8:2]) == 3).sum()
+    num_bishop_on_black_tile += (jnp.abs(state.board[9:16:2]) == 3).sum()
+    num_bishop_on_black_tile += (jnp.abs(state.board[16:24:2]) == 3).sum()
+    num_bishop_on_black_tile += (jnp.abs(state.board[25:32:2]) == 3).sum()
+    num_bishop_on_black_tile += (jnp.abs(state.board[32:40:2]) == 3).sum()
+    num_bishop_on_black_tile += (jnp.abs(state.board[41:48:2]) == 3).sum()
+    num_bishop_on_black_tile += (jnp.abs(state.board[48:56:2]) == 3).sum()
+    num_bishop_on_black_tile += (jnp.abs(state.board[57:64:2]) == 3).sum()
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
