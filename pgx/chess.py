@@ -258,7 +258,10 @@ def has_insufficient_pieces(state: State):
     # King + X vs King. X == KNIGHT or BISHOP
     is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen <= 0)
     # TODO: same color bishop
-    is_insufficient |= (num_pieces == num_bishop + 2) & ((num_bishop_on_black_tile == num_bishop) | (num_bishop_on_black_tile <= 0))
+    is_insufficient |= (num_pieces == num_bishop + 2) & (
+        (num_bishop_on_black_tile == num_bishop)
+        | (num_bishop_on_black_tile <= 0)
+    )
 
     return is_insufficient
 
