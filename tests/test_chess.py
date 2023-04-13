@@ -489,3 +489,9 @@ def test_buggy_samples():
     state.save_svg("tests/assets/chess/buggy_samples_007.svg")
     expected_legal_actions = [4058, 4526, 4529, 4532, 4542]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+
+    # wrong underpromotion from h5
+    state = State._from_fen("3r2k1/5nbp/1p6/pPpr3P/2bppBp1/2P1NBP1/P1R5/2RK4 w - a6 0 43")
+    state.save_svg("tests/assets/chess/buggy_samples_007.svg")
+    expected_legal_actions = [89, 90, 933, 1196, 1197, 1270, 1271, 1272, 1273, 1274, 1275, 1358, 1768, 1782, 2548, 2550, 2551, 2552, 2553, 2554, 3109, 3110, 3123, 3124, 3125, 3183, 3184, 3193, 3194, 3195, 3196, 4396]
+    assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
