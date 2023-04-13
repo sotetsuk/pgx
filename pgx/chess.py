@@ -247,13 +247,15 @@ def _check_termination(state: State):
 
 def has_insufficient_pieces(state: State):
     num_pieces = (state.board != EMPTY).sum()
-    num_rook_queen = ((jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)).sum() - 2  # two kings
+    num_pawn_rook_queen = (
+        (jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)
+    ).sum() - 2  # two kings
 
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
     # King + X vs King. X == ROOK or QUEEN
-    is_insufficient |= (num_pieces == 3) & (num_rook_queen <= 0)
+    is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen <= 0)
     # TODO: same color bishop
 
     return is_insufficient
