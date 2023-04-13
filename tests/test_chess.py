@@ -507,6 +507,14 @@ def test_terminal():
     assert state.current_player == 0
     assert (state.reward == 0.0).all()
 
+    # stalemate with pin
+    state = State._from_fen("kbR/pn6/P1B5/8/8/8/8/7K b - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_012.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
 
 def test_buggy_samples():
     # Found buggy samples by random playing debug
