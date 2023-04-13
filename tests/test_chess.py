@@ -449,3 +449,12 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert (state.reward == 0.0).all()
+
+
+def test_buggy_samples():
+    # from random play
+    state = State._from_fen("r1q1k1nr/2p2p1B/p3pb2/1p4pP/P1pBP3/5P1N/R2P2KP/1Nn2Q1R w kq - 4 23")
+    state.save_svg("tests/assets/chess/buggy_samples_001.svg")
+    expected_legal_actions = [88, 89, 103, 104, 235, 263, 652, 656, 1841, 2012, 2013, 2014, 2015, 2016, 2026, 2027, 2028, 2029, 2030, 2031, 2571, 2936, 2947, 2948, 2949, 2950, 2975, 2976, 2977, 3082, 3592, 3593, 3606, 4117, 4299, 4300, 4301, 4302, 4396, 4568, 4569, 4583]
+    assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+
