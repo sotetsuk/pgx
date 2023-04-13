@@ -466,7 +466,7 @@ def test_buggy_samples():
     expected_legal_actions = [892, 1330, 1476, 1504, 2362, 2363, 2364, 2365, 2366, 2425, 2438, 2439, 2452, 2467, 3572, 3576, 4104]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
-    # half-movecount reset
+    # half-movecount reset when underpromotion happens
     state = State._from_fen("8/3kr3/2R2R1P/p3P3/Pr3P1P/3P4/1p6/4K3 b - - 2 68")
     state.save_svg("tests/assets/chess/buggy_samples_003.svg")
     state = step(state, 1025)

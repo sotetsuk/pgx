@@ -279,6 +279,14 @@ def _apply_move(state: State, a: Action):
             jnp.int8(-1),
         )
     )
+    # update counters
+    captured = (state.board[a.to] < 0) | (is_en_passant)
+    state = state.replace(  # type: ignore
+        halfmove_count=jax.lax.select(
+            captured | (piece == PAWN), 0, state.halfmove_count + 1
+        ),
+        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
+    )
     # castling
     # 可能かどうかの判断はここでは行わない。castlingがlegalでない場合はフィルタされている前提
     # left
@@ -326,16 +334,8 @@ def _apply_move(state: State, a: Action):
         jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
     # actually move
-    captured = (state.board[a.to] < 0) | (is_en_passant)
     state = state.replace(  # type: ignore
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
-    )
-    # update counters
-    state = state.replace(  # type: ignore
-        halfmove_count=jax.lax.select(
-            captured | (piece == PAWN), 0, state.halfmove_count + 1
-        ),
-        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
     )
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
