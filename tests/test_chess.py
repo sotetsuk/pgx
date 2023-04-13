@@ -450,6 +450,63 @@ def test_terminal():
     assert state.terminated
     assert (state.reward == 0.0).all()
 
+    # insufficient pieces
+    # K vs K
+    state = State._from_fen("k7/8/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_005.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
+    # K+B vs K
+    state = State._from_fen("k7/8/8/8/8/8/8/6BK w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_006.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
+    # K vs K+B
+    state = State._from_fen("kb6/8/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_007.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
+    # K+N vs K
+    state = State._from_fen("k7/8/8/8/8/8/8/6NK w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_008.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
+    # K vs K+N
+    state = State._from_fen("kn6/8/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_009.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
+    # K+B vs K+B (Bishop in Black tile)
+    state = State._from_fen("kb6/8/8/8/8/8/8/6BK w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_010.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
+    # K+B vs K+B (Bishop in White tile)
+    state = State._from_fen("k1b1B3/8/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_011.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
 
 def test_buggy_samples():
     # Found buggy samples by random playing debug
