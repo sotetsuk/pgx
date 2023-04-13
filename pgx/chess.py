@@ -250,13 +250,15 @@ def has_insufficient_pieces(state: State):
     num_pawn_rook_queen = (
         (jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)
     ).sum() - 2  # two kings
-
+    num_bishop = (jnp.abs(state.board) == 3).sum()
+    num_bishop_on_black_tile = (jnp.abs(state.board[::2]) == 3).sum()
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
     # King + X vs King. X == KNIGHT or BISHOP
     is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen <= 0)
     # TODO: same color bishop
+    is_insufficient |= (num_pieces == num_bishop + 2) & ((num_bishop_on_black_tile == num_bishop) | (num_bishop_on_black_tile <= 0))
 
     return is_insufficient
 
