@@ -507,9 +507,64 @@ def test_terminal():
     assert state.current_player == 0
     assert (state.reward == 0.0).all()
 
+    # insufficient cases by underpromotion
+    # K+B vs K
+    state = State._from_fen("k7/7P/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_012.svg")
+    state = step(state, jnp.int32(4529))
+    state.save_svg("tests/assets/chess/terminal_013.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
+    # K+N vs K
+    state = State._from_fen("k7/7P/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_014.svg")
+    state = step(state, jnp.int32(4532))
+    state.save_svg("tests/assets/chess/terminal_015.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
+    # K+B vs K+B(Bishop in Black tile)
+    state = State._from_fen("k1b5/4P3/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_016.svg")
+    state = step(state, jnp.int32(2777))
+    state.save_svg("tests/assets/chess/terminal_017.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
+    # K+B vs K+B (Bishop in White tile)
+    state = State._from_fen("kb6/3P4/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_018.svg")
+    state = step(state, jnp.int32(2193))
+    state.save_svg("tests/assets/chess/terminal_019.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
+    # K+B*2 vs K(Bishop in Black tile)
+    state = State._from_fen("k1B5/4P3/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_020.svg")
+    state = step(state, jnp.int32(2777))
+    state.save_svg("tests/assets/chess/terminal_021.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
+    # K+B*2 vs K (Bishop in White tile)
+    state = State._from_fen("kB6/3P4/8/8/8/8/8/7K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_022.svg")
+    state = step(state, jnp.int32(2193))
+    state.save_svg("tests/assets/chess/terminal_023.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
     # stalemate with pin
     state = State._from_fen("kbR/pn6/P1B5/8/8/8/8/7K b - - 0 1")
-    state.save_svg("tests/assets/chess/terminal_012.svg")
+    state.save_svg("tests/assets/chess/terminal_024.svg")
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
