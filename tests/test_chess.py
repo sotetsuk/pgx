@@ -472,3 +472,8 @@ def test_buggy_samples():
     state = step(state, 1025)
     state.save_svg("tests/assets/chess/buggy_samples_004.svg")
     assert state._to_fen() == "8/3kr3/2R2R1P/p3P3/Pr3P1P/3P4/8/1b2K3 w - - 0 69"
+
+    # wrong insufficient piece termination
+    state = State._from_fen("7k/8/5K2/8/P7/8/8/8 b - - 0 152")
+    state.save_svg("tests/assets/chess/buggy_samples_005.svg")
+    assert not state.terminated
