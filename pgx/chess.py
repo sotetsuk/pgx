@@ -421,7 +421,7 @@ def _legal_action_mask(state):
         ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
-    def legal_en_passnts():
+    def legal_en_passants():
         to = state.en_passant
 
         @jax.vmap
@@ -490,7 +490,7 @@ def _legal_action_mask(state):
     )
 
     # set en passant
-    actions = legal_en_passnts()
+    actions = legal_en_passants()
     mask = mask.at[actions].set(TRUE)
 
     # set underpromotions
