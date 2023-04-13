@@ -247,13 +247,15 @@ def _check_termination(state: State):
 
 def has_insufficient_pieces(state: State):
     num_pieces = (state.board != EMPTY).sum()
-    num_rook_queen = (jnp.abs(state.board) >= 4).sum() - 2  # two kings
+    num_pawn_rook_queen = (
+        (jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)
+    ).sum() - 2  # two kings
 
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
-    # King + X vs King. X == ROOK or QUEEN
-    is_insufficient |= (num_pieces == 3) & (num_rook_queen <= 0)
+    # King + X vs King. X == KNIGHT or BISHOP
+    is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen <= 0)
     # TODO: same color bishop
 
     return is_insufficient
@@ -279,6 +281,14 @@ def _apply_move(state: State, a: Action):
             jnp.int8(-1),
         )
     )
+    # update counters
+    captured = (state.board[a.to] < 0) | (is_en_passant)
+    state = state.replace(  # type: ignore
+        halfmove_count=jax.lax.select(
+            captured | (piece == PAWN), 0, state.halfmove_count + 1
+        ),
+        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
+    )
     # castling
     # 可能かどうかの判断はここでは行わない。castlingがlegalでない場合はフィルタされている前提
     # left
@@ -297,6 +307,7 @@ def _apply_move(state: State, a: Action):
             lambda: state.board,
         )
     )
+    # update my can_castle_xxx_side
     state = state.replace(  # type: ignore
         can_castle_queen_side=state.can_castle_queen_side.at[0].set(
             jax.lax.select(
@@ -313,6 +324,23 @@ def _apply_move(state: State, a: Action):
             )
         ),
     )
+    # update opp can_castle_xxx_side
+    state = state.replace(  # type: ignore
+        can_castle_queen_side=state.can_castle_queen_side.at[1].set(
+            jax.lax.select(
+                (a.to == 7),
+                FALSE,
+                state.can_castle_queen_side[1],
+            )
+        ),
+        can_castle_king_side=state.can_castle_king_side.at[1].set(
+            jax.lax.select(
+                (a.to == 63),
+                FALSE,
+                state.can_castle_king_side[1],
+            )
+        ),
+    )
     # promotion to queen
     piece = jax.lax.select(
         piece == PAWN & (a.from_ % 8 == 6) & (a.underpromotion < 0),
@@ -326,16 +354,8 @@ def _apply_move(state: State, a: Action):
         jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
     # actually move
-    captured = (state.board[a.to] < 0) | (is_en_passant)
     state = state.replace(  # type: ignore
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
-    )
-    # update counters
-    state = state.replace(  # type: ignore
-        halfmove_count=jax.lax.select(
-            captured | (piece == PAWN), 0, state.halfmove_count + 1
-        ),
-        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
     )
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
@@ -412,19 +432,22 @@ def _legal_action_mask(state):
         @jax.vmap
         def legal_labels(label):
             a = Action._from_label(label)
-            ok = mask[Action(from_=a.from_, to=a.to)._to_label()]
+            ok = (state.board[a.from_] == PAWN) & (a.to >= 0)
+            ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
             return jax.lax.select(ok, label, -1)
 
         ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
-    def legal_en_passnts():
+    def legal_en_passants():
         to = state.en_passant
 
         @jax.vmap
         def legal_labels(from_):
             ok = (
-                (to >= 0)
+                (from_ >= 0)
+                & (from_ < 64)
+                & (to >= 0)
                 & (state.board[from_] == PAWN)
                 & (state.board[to - 1] == -PAWN)
             )
@@ -436,6 +459,7 @@ def _legal_action_mask(state):
 
     def can_castle_king_side():
         ok = state.board[32] == KING
+        ok &= state.board[56] == ROOK
         ok &= state.can_castle_king_side[0]
         ok &= state.board[40] == EMPTY
         ok &= state.board[48] == EMPTY
@@ -453,7 +477,8 @@ def _legal_action_mask(state):
 
     def can_castle_queen_side():
         ok = state.board[32] == KING
-        ok &= state.can_castle_king_side[0]
+        ok &= state.board[0] == ROOK
+        ok &= state.can_castle_queen_side[0]
         ok &= state.board[8] == EMPTY
         ok &= state.board[16] == EMPTY
         ok &= state.board[24] == EMPTY
@@ -477,11 +502,15 @@ def _legal_action_mask(state):
     mask = mask.at[actions].set(TRUE)
 
     # castling
-    mask = mask.at[2364].set(can_castle_queen_side())
-    mask = mask.at[2367].set(can_castle_king_side())
+    mask = mask.at[2364].set(
+        jax.lax.select(can_castle_queen_side(), TRUE, mask[2364])
+    )
+    mask = mask.at[2367].set(
+        jax.lax.select(can_castle_king_side(), TRUE, mask[2367])
+    )
 
     # set en passant
-    actions = legal_en_passnts()
+    actions = legal_en_passants()
     mask = mask.at[actions].set(TRUE)
 
     # set underpromotions
