@@ -427,7 +427,7 @@ def _legal_action_mask(state):
         @jax.vmap
         def legal_labels(from_):
             ok = (
-                (to >= 0)
+                (from_ >= 0) & (from_ < 64) & (to >= 0)
                 & (state.board[from_] == PAWN)
                 & (state.board[to - 1] == -PAWN)
             )
