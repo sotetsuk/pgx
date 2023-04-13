@@ -218,24 +218,45 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     state = _apply_move(state, a)
     state = _flip(state)
-    legal_action_mask = _legal_action_mask(state)
+    state = state.replace(  # type: ignore
+        legal_action_mask=_legal_action_mask(state)
+    )
+    state = _check_termination(state)
+    return state
 
-    terminated = ~legal_action_mask.any()
-    # TODO: stailmate
 
+def _check_termination(state: State):
+    has_legal_action = state.legal_action_mask.any()
+    terminated = ~has_legal_action
+    terminated |= state.halfmove_count >= 100
+    terminated |= has_insufficient_pieces(state)
+
+    is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
     reward = jax.lax.select(
-        terminated,
+        is_checkmate,
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
-
     # fmt: on
     return state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask,
         terminated=terminated,
         reward=reward,
     )
+
+
+def has_insufficient_pieces(state: State):
+    num_pieces = (state.board != EMPTY).sum()
+    num_rook_queen = (jnp.abs(state.board) >= 4).sum() - 2  # two kings
+
+    is_insufficient = FALSE
+    # King vs King
+    is_insufficient |= num_pieces <= 2
+    # King + X vs King. X == ROOK or QUEEN
+    is_insufficient |= (num_pieces == 3) & (num_rook_queen <= 0)
+    # TODO: same color bishop
+
+    return is_insufficient
 
 
 def _apply_move(state: State, a: Action):
@@ -304,8 +325,17 @@ def _apply_move(state: State, a: Action):
         piece,
         jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
+    # actually move
+    captured = (state.board[a.to] < 0) | (is_en_passant)
     state = state.replace(  # type: ignore
         board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece)
+    )
+    # update counters
+    state = state.replace(  # type: ignore
+        halfmove_count=jax.lax.select(
+            captured | (piece == PAWN), 0, state.halfmove_count + 1
+        ),
+        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
     )
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
@@ -582,11 +612,12 @@ def _from_fen(fen: str):
         fullmove_count=jnp.int32(fullmove_cnt),
     )
     state = state.replace(  # type: ignore
-        possible_piece_positions=_possible_piece_positions(state)
+        possible_piece_positions=jax.jit(_possible_piece_positions)(state)
     )
     state = state.replace(  # type: ignore
-        legal_action_mask=_legal_action_mask(state),
+        legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
+    state = jax.jit(_check_termination)(state)
     return state
 
 

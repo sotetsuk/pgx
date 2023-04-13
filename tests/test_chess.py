@@ -420,3 +420,32 @@ def test_legal_action_mask():
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 3
+
+
+def test_terminal():
+    # checkmate (white win)
+    state = State._from_fen("7k/7R/5N2/8/8/8/8/K7 b - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_001.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert state.reward[state.current_player] == -1
+    assert state.reward[1 - state.current_player] == 1.
+
+    # stalemate
+    state = State._from_fen("k7/8/1Q6/K7/8/8/8/8 b - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_002.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.reward == 0.0).all()
+
+    # 50-move draw rule
+    # FEN is from https://www.chess.com/terms/fen-chess#halfmove-clock
+    state = State._from_fen("8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 99 50")
+    state.save_svg("tests/assets/chess/terminal_003.svg")
+    state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
+    state.save_svg("tests/assets/chess/terminal_004.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.reward == 0.0).all()
