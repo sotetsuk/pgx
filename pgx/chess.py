@@ -457,7 +457,7 @@ def _legal_action_mask(state):
 
     def can_castle_queen_side():
         ok = state.board[32] == KING
-        ok &= state.board[56] == ROOK
+        ok &= state.board[0] == ROOK
         ok &= state.can_castle_queen_side[0]
         ok &= state.board[8] == EMPTY
         ok &= state.board[16] == EMPTY
