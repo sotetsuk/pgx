@@ -437,6 +437,7 @@ def _legal_action_mask(state):
 
     def can_castle_king_side():
         ok = state.board[32] == KING
+        ok &= state.board[56] == ROOK
         ok &= state.can_castle_king_side[0]
         ok &= state.board[40] == EMPTY
         ok &= state.board[48] == EMPTY
@@ -454,7 +455,8 @@ def _legal_action_mask(state):
 
     def can_castle_queen_side():
         ok = state.board[32] == KING
-        ok &= state.can_castle_king_side[0]
+        ok &= state.board[56] == ROOK
+        ok &= state.can_castle_queen_side[0]
         ok &= state.board[8] == EMPTY
         ok &= state.board[16] == EMPTY
         ok &= state.board[24] == EMPTY
@@ -478,8 +480,12 @@ def _legal_action_mask(state):
     mask = mask.at[actions].set(TRUE)
 
     # castling
-    mask = mask.at[2364].set(can_castle_queen_side())
-    mask = mask.at[2367].set(can_castle_king_side())
+    mask = mask.at[2364].set(
+        jax.lax.select(can_castle_queen_side(), TRUE, mask[2364])
+    )
+    mask = mask.at[2367].set(
+        jax.lax.select(can_castle_king_side(), TRUE, mask[2367])
+    )
 
     # set en passant
     actions = legal_en_passnts()
