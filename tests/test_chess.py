@@ -495,3 +495,10 @@ def test_buggy_samples():
     state.save_svg("tests/assets/chess/buggy_samples_008.svg")
     expected_legal_actions = [89, 90, 933, 1196, 1197, 1270, 1271, 1272, 1273, 1274, 1275, 1358, 1768, 1782, 2548, 2550, 2551, 2552, 2553, 2554, 3109, 3110, 3123, 3124, 3125, 3183, 3184, 3193, 3194, 3195, 3196, 4396]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+
+    # wrong castling right
+    state = State._from_fen("rn1qkbr1/2pp1pp1/p3pn1p/PQ6/1P6/6P1/2PP1PbP/R1BNKBNR b KQq - 1 10")
+    state.save_svg("tests/assets/chess/buggy_samples_009.svg")
+    state = step(state, 3986)
+    state.save_svg("tests/assets/chess/buggy_samples_010.svg")
+    assert state._to_fen() == "rn1qkbr1/2pp1pp1/p3pn1p/PQ6/1P6/6P1/2PP1P1P/R1BNKBNb w Qq - 0 11"
