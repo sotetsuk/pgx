@@ -229,6 +229,7 @@ def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
     terminated = ~has_legal_action
     terminated |= state.halfmove_count >= 100
+    terminated |= has_insufficient_pieces(state)
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -242,6 +243,20 @@ def _check_termination(state: State):
         terminated=terminated,
         reward=reward,
     )
+
+
+def has_insufficient_pieces(state: State):
+    num_pieces = (state.board != EMPTY).sum()
+    num_rook_queen = (jnp.abs(state.board) >= 4).sum() - 2  # two kings
+
+    is_insufficient = FALSE
+    # King vs King
+    is_insufficient |= (num_pieces <= 2)
+    # King + X vs King. X == ROOK or QUEEN
+    is_insufficient |= (num_pieces == 3) & (num_rook_queen <= 0)
+    # TODO: same color bishop
+
+    return is_insufficient
 
 
 def _apply_move(state: State, a: Action):
