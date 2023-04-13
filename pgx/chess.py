@@ -307,6 +307,7 @@ def _apply_move(state: State, a: Action):
             lambda: state.board,
         )
     )
+    # update my can_castle_xxx_side
     state = state.replace(  # type: ignore
         can_castle_queen_side=state.can_castle_queen_side.at[0].set(
             jax.lax.select(
@@ -320,6 +321,23 @@ def _apply_move(state: State, a: Action):
                 (a.from_ == 32) | (a.from_ == 56),
                 FALSE,
                 state.can_castle_king_side[0],
+            )
+        ),
+    )
+    # update opp can_castle_xxx_side
+    state = state.replace(  # type: ignore
+        can_castle_queen_side=state.can_castle_queen_side.at[1].set(
+            jax.lax.select(
+                (a.to == 7),
+                FALSE,
+                state.can_castle_queen_side[1],
+            )
+        ),
+        can_castle_king_side=state.can_castle_king_side.at[1].set(
+            jax.lax.select(
+                (a.to == 63),
+                FALSE,
+                state.can_castle_king_side[1],
             )
         ),
     )
