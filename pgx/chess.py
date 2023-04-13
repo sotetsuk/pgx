@@ -251,7 +251,7 @@ def has_insufficient_pieces(state: State):
 
     is_insufficient = FALSE
     # King vs King
-    is_insufficient |= (num_pieces <= 2)
+    is_insufficient |= num_pieces <= 2
     # King + X vs King. X == ROOK or QUEEN
     is_insufficient |= (num_pieces == 3) & (num_rook_queen <= 0)
     # TODO: same color bishop
