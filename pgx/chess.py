@@ -412,7 +412,8 @@ def _legal_action_mask(state):
         @jax.vmap
         def legal_labels(label):
             a = Action._from_label(label)
-            ok = mask[Action(from_=a.from_, to=a.to)._to_label()]
+            ok = state.board[a.from_] == PAWN
+            ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
             return jax.lax.select(ok, label, -1)
 
         ok_labels = legal_labels(labels)
