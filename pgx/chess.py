@@ -247,7 +247,7 @@ def _check_termination(state: State):
 
 def has_insufficient_pieces(state: State):
     num_pieces = (state.board != EMPTY).sum()
-    num_rook_queen = (jnp.abs(state.board) >= 4).sum() - 2  # two kings
+    num_rook_queen = ((jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)).sum() - 2  # two kings
 
     is_insufficient = FALSE
     # King vs King
