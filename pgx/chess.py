@@ -246,6 +246,8 @@ def _check_termination(state: State):
 
 
 def has_insufficient_pieces(state: State):
+    # Uses the same condition as OpenSpiel.
+    # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/chess/chess_board.cc#L724
     num_pieces = (state.board != EMPTY).sum()
     num_pawn_rook_queen = (
         (jnp.abs(state.board) >= ROOK) | (jnp.abs(state.board) == PAWN)
