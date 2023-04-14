@@ -254,7 +254,7 @@ def has_insufficient_pieces(state: State):
     coords = jnp.arange(64).reshape((8, 8))
     # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
     black_coords = jnp.hstack((coords[::2, ::2].ravel(), coords[1::2, 1::2].ravel()))
-    num_bishop_on_black = (state.board[black_coords] == BISHOP).sum()
+    num_bishop_on_black = (jnp.abs(state.board[black_coords]) == BISHOP).sum()
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
