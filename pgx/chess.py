@@ -251,24 +251,19 @@ def has_insufficient_pieces(state: State):
         (jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)
     ).sum() - 2  # two kings
     num_bishop = (jnp.abs(state.board) == 3).sum()
-    # simplify
-    num_bishop_on_black_tile = (jnp.abs(state.board[0:8:2]) == 3).sum()
-    num_bishop_on_black_tile += (jnp.abs(state.board[9:16:2]) == 3).sum()
-    num_bishop_on_black_tile += (jnp.abs(state.board[16:24:2]) == 3).sum()
-    num_bishop_on_black_tile += (jnp.abs(state.board[25:32:2]) == 3).sum()
-    num_bishop_on_black_tile += (jnp.abs(state.board[32:40:2]) == 3).sum()
-    num_bishop_on_black_tile += (jnp.abs(state.board[41:48:2]) == 3).sum()
-    num_bishop_on_black_tile += (jnp.abs(state.board[48:56:2]) == 3).sum()
-    num_bishop_on_black_tile += (jnp.abs(state.board[57:64:2]) == 3).sum()
+    coords = jnp.arange(64).reshape((8, 8))
+    black_coords = coords[:, ::2][::2].ravel() + coords[:, 1::2][::2].ravel()
+    num_bishop_on_black = (state.board[black_coords] == 3).sum()
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
     # King + X vs King. X == KNIGHT or BISHOP
-    is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen <= 0)
-    # TODO: same color bishop
+    is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen == 0)
+    # King + Bishop* vs King + Bishop* (Bishops are on same color tile)
+    is_bishop_all_on_black = num_bishop_on_black == num_bishop
+    is_bishop_all_on_white = num_bishop_on_black == 0
     is_insufficient |= (num_pieces == num_bishop + 2) & (
-        (num_bishop_on_black_tile == num_bishop)
-        | (num_bishop_on_black_tile <= 0)
+        is_bishop_all_on_black | is_bishop_all_on_white
     )
 
     return is_insufficient
