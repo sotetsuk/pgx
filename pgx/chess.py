@@ -246,17 +246,30 @@ def _check_termination(state: State):
 
 
 def has_insufficient_pieces(state: State):
+    # Uses the same condition as OpenSpiel.
+    # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/chess/chess_board.cc#L724
     num_pieces = (state.board != EMPTY).sum()
     num_pawn_rook_queen = (
-        (jnp.abs(state.board) >= 4) | (jnp.abs(state.board) == 1)
+        (jnp.abs(state.board) >= ROOK) | (jnp.abs(state.board) == PAWN)
     ).sum() - 2  # two kings
-
+    num_bishop = (jnp.abs(state.board) == 3).sum()
+    coords = jnp.arange(64).reshape((8, 8))
+    # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
+    black_coords = jnp.hstack(
+        (coords[::2, ::2].ravel(), coords[1::2, 1::2].ravel())
+    )
+    num_bishop_on_black = (jnp.abs(state.board[black_coords]) == BISHOP).sum()
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
     # King + X vs King. X == KNIGHT or BISHOP
-    is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen <= 0)
-    # TODO: same color bishop
+    is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen == 0)
+    # King + Bishop* vs King + Bishop* (Bishops are on same color tile)
+    is_bishop_all_on_black = num_bishop_on_black == num_bishop
+    is_bishop_all_on_white = num_bishop_on_black == 0
+    is_insufficient |= (num_pieces == num_bishop + 2) & (
+        is_bishop_all_on_black | is_bishop_all_on_white
+    )
 
     return is_insufficient
 
