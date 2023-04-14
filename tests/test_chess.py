@@ -503,6 +503,7 @@ def test_buggy_samples():
     state.save_svg("tests/assets/chess/buggy_samples_010.svg")
     assert state._to_fen() == "rn1qkbr1/2pp1pp1/p3pn1p/PQ6/1P6/6P1/2PP1P1P/R1BNKBNb w Qq - 0 11"
 
+    # wrong en passant by pinned pawn
     state = State._from_fen("rn6/1b6/8/p1Br1k1p/PPp1pPpP/NRp3P1/2B4R/2K5 b - f3 0 54")
     print(state.en_passant)
     state.save_svg("tests/assets/chess/buggy_samples_011.svg")

@@ -451,8 +451,10 @@ def _legal_action_mask(state):
                 & (state.board[from_] == PAWN)
                 & (state.board[to - 1] == -PAWN)
             )
+            a = Action(from_=from_, to=to)
+            ok &= ~_is_checking(_flip(_apply_move(state, a)))
             return jax.lax.select(
-                ok, Action(from_=from_, to=to)._to_label(), -1
+                ok, a._to_label(), -1
             )
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
