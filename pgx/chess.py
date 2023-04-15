@@ -180,9 +180,11 @@ class Action:
 
 
 class Chess(core.Env):
-    def __init__(self, max_termination_steps: int = 1000):
+    def __init__(self):
         super().__init__()
-        self.max_termination_steps = max_termination_steps
+        # AlphaZero paper does not mention the number of max termination steps
+        # but we believe 1000 is large enough for Chess.
+        self.max_termination_steps = 1000
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
