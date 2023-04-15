@@ -237,9 +237,11 @@ def _step(state: State, action: jnp.ndarray):
 
 def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
+    rep = (state.hash_history == state.zobrist_hash).any(axis=1).sum() - 1
     terminated = ~has_legal_action
     terminated |= state.halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
+    terminated |= rep >= 3
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
