@@ -22,7 +22,7 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 
 - **JAX-native.** All `step` functions are *JIT-able*
 - **Super fast** in parallel execution on accelerators
-- **Various game support** including **Backgammon**, **Shogi**, and **Go**
+- **Various game support** including **Backgammon**, **Chess**, **Shogi**, and **Go**
 - **Beautiful visualization** in SVG format
 
 
@@ -120,7 +120,7 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
- <td>:construction:</td>
+ <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>

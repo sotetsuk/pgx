@@ -216,7 +216,7 @@ class Chess(core.Env):
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self) -> int:
