@@ -594,7 +594,9 @@ def _observe(state: State):
 
     @jax.vmap
     def is_piece(piece):
-        return _rotate((state.board == piece).reshape((8, 8))).astype(jnp.float32)
+        return _rotate((state.board == piece).reshape((8, 8))).astype(
+            jnp.float32
+        )
 
     ONE_PLANE = jnp.ones((1, 8, 8), dtype=jnp.float32)
 
@@ -622,7 +624,9 @@ def _observe(state: State):
             opp_king_side_castling_right,
             no_progress_count,
         ]
-    ).transpose((1, 2, 0))  # channel last
+    ).transpose(
+        (1, 2, 0)
+    )  # channel last
 
 
 def _from_fen(fen: str):
