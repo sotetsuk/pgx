@@ -1,7 +1,10 @@
-import jax
-import os
 import json
+import os
+
+import jax
 import jax.numpy as jnp
+
+from ._action import Action
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")
 
@@ -134,32 +137,32 @@ class Hand:
     def can_ankan(hand: jnp.ndarray, tile: int) -> bool:
         return hand[tile] == 4  # type: ignore
 
-    # @staticmethod
-    # def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
-    #    return jax.lax.cond(
-    #        (tile >= 27) | (action < Action.CHI_L) | (Action.CHI_R < action),
-    #        lambda: False,
-    #        lambda: jax.lax.switch(
-    #            action - Action.CHI_L,
-    #            [
-    #                lambda: jax.lax.cond(
-    #                    tile % 9 < 7,
-    #                    lambda: (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
-    #                    lambda: False,
-    #                ),
-    #                lambda: jax.lax.cond(
-    #                    (tile % 9 < 8) & (tile % 9 > 0),
-    #                    lambda: (hand[tile - 1] > 0) & (hand[tile + 1] > 0),
-    #                    lambda: False,
-    #                ),
-    #                lambda: jax.lax.cond(
-    #                    tile % 9 > 1,
-    #                    lambda: (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
-    #                    lambda: False,
-    #                ),
-    #            ],
-    #        ),
-    #    )
+    @staticmethod
+    def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
+        return jax.lax.cond(
+            (tile >= 27) | (action < Action.CHI_L) | (Action.CHI_R < action),
+            lambda: False,
+            lambda: jax.lax.switch(
+                action - Action.CHI_L,
+                [
+                    lambda: jax.lax.cond(
+                        tile % 9 < 7,
+                        lambda: (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
+                        lambda: False,
+                    ),
+                    lambda: jax.lax.cond(
+                        (tile % 9 < 8) & (tile % 9 > 0),
+                        lambda: (hand[tile - 1] > 0) & (hand[tile + 1] > 0),
+                        lambda: False,
+                    ),
+                    lambda: jax.lax.cond(
+                        tile % 9 > 1,
+                        lambda: (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
+                        lambda: False,
+                    ),
+                ],
+            ),
+        )
 
     @staticmethod
     def add(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
@@ -185,16 +188,16 @@ class Hand:
     def ankan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
         return Hand.sub(hand, tile, 4)
 
-    # @staticmethod
-    # def chi(hand: jnp.ndarray, tile: int, action: int) -> jnp.ndarray:
-    #    return jax.lax.switch(
-    #        action - Action.CHI_L,
-    #        [
-    #            lambda: Hand.sub(Hand.sub(hand, tile + 1), tile + 2),
-    #            lambda: Hand.sub(Hand.sub(hand, tile - 1), tile + 1),
-    #            lambda: Hand.sub(Hand.sub(hand, tile - 2), tile - 1),
-    #        ],
-    #    )
+    @staticmethod
+    def chi(hand: jnp.ndarray, tile: int, action: int) -> jnp.ndarray:
+        return jax.lax.switch(
+            action - Action.CHI_L,
+            [
+                lambda: Hand.sub(Hand.sub(hand, tile + 1), tile + 2),
+                lambda: Hand.sub(Hand.sub(hand, tile - 1), tile + 1),
+                lambda: Hand.sub(Hand.sub(hand, tile - 2), tile - 1),
+            ],
+        )
 
     @staticmethod
     def to_str(hand: jnp.ndarray) -> str:
