@@ -9,7 +9,7 @@ By contributing, you agree that your contributions will be licensed under its Ap
 ## Install development dependencies
 
 We recomend you to prepare `virtualenv` or non-global Python environment.
-Run `make install-dev` and `make install-fmt`.
+Run `make install-dev` and `make install-fmt` to install all development dependencies.
 
 ## Testing
 
