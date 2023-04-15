@@ -4,7 +4,7 @@ Contribution is more than wellcome! Feel free to send you PR! (even if it's WIP)
 
 ## License
 
-By contributing, you agree that your contributions will be licensed under its Apache-2.0 License.
+By contributing, you agree that your contributions will be licensed under Apache-2.0 license.
 
 ## Install development dependencies
 
