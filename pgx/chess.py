@@ -241,7 +241,7 @@ def _check_termination(state: State):
     terminated = ~has_legal_action
     terminated |= state.halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
-    terminated |= rep >= 3
+    terminated |= rep >= 2
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
