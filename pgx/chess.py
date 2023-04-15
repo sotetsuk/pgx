@@ -199,7 +199,7 @@ class Chess(core.Env):
         self, state: core.State, player_id: jnp.ndarray
     ) -> jnp.ndarray:
         assert isinstance(state, State)
-        return jnp.zeros((8, 8, 119), dtype=jnp.bool_)
+        return _observe(state)
 
     @property
     def name(self) -> str:
@@ -593,10 +593,10 @@ def _observe(state: State):
     """
 
     @jax.vmap
-    def is_piece(state, piece):
-        return _rotate((state == piece).reshape((8, 8))).astype(jnp.float32)
+    def is_piece(piece):
+        return _rotate((state.board == piece).reshape((8, 8))).astype(jnp.float32)
 
-    ONE_PLANE = jnp.ones((8, 8, 1), dtype=jnp.float32)
+    ONE_PLANE = jnp.ones((1, 8, 8), dtype=jnp.float32)
 
     my_pieces = is_piece(jnp.arange(1, 7))
     opp_pieces = is_piece(-jnp.arange(1, 7))
@@ -611,7 +611,7 @@ def _observe(state: State):
     )
 
     return jnp.vstack(
-        (
+        [
             my_pieces,
             opp_pieces,
             repetitions,
@@ -621,8 +621,8 @@ def _observe(state: State):
             opp_queen_side_castling_right,
             opp_king_side_castling_right,
             no_progress_count,
-        )
-    )
+        ]
+    ).transpose((1, 2, 0))  # channel last
 
 
 def _from_fen(fen: str):
