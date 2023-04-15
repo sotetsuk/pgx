@@ -216,5 +216,5 @@ INIT_POSSIBLE_PIECE_POSITIONS = jnp.int8(
 
 key = jax.random.PRNGKey(9999)
 HASH_TABLE = jax.random.randint(
-    key, shape=(64, 13, 2), minval=0, maxval=2 ** 31 - 1, dtype=jnp.uint32
+    key, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
 )

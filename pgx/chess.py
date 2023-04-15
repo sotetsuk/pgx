@@ -20,11 +20,11 @@ from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
     CAN_MOVE_ANY,
+    HASH_TABLE,
     INIT_LEGAL_ACTION_MASK,
     INIT_POSSIBLE_PIECE_POSITIONS,
     PLANE_MAP,
     TO_MAP,
-    HASH_TABLE
 )
 from pgx._flax.struct import dataclass
 
@@ -124,8 +124,12 @@ class State(core.State):
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
-    zobrist_hash: jnp.ndarray = jnp.uint32([1429435994,  901419182])
-    hash_history: jnp.ndarray = jnp.zeros((1005, 2), dtype=jnp.uint32).at[0].set(jnp.uint32([1429435994,  901419182]))
+    zobrist_hash: jnp.ndarray = jnp.uint32([1429435994, 901419182])
+    hash_history: jnp.ndarray = (
+        jnp.zeros((1005, 2), dtype=jnp.uint32)
+        .at[0]
+        .set(jnp.uint32([1429435994, 901419182]))
+    )
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
@@ -607,7 +611,8 @@ def _observe(state: State):
     my_pieces = is_piece(jnp.arange(1, 7))
     opp_pieces = is_piece(-jnp.arange(1, 7))
     repetitions = ONE_PLANE * (
-        (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1  # due to the last item is always same
+        (state.hash_history == state.zobrist_hash).all(axis=1).sum()
+        - 1  # due to the last item is always same
     )
     color = ONE_PLANE * state.turn
     my_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[0]
@@ -641,12 +646,9 @@ def _zobrist_hash(state):
     >>> _zobrist_hash(state)
     Array([1429435994,  901419182], dtype=uint32)
     """
-    board = jax.lax.select(
-        state.turn == 0,
-        state.board,
-        _flip(state).board
-    )
+    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
     hash_ = jnp.uint32([0, 0])
+
     def xor(i, h):
         # 0, ..., 12 (white pawn, ..., black king)
         piece = board[i] + 6
@@ -674,7 +676,7 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= HASH_TABLE[to][piece]
     return state.replace(  # type: ignore
         zobrist_hash=hash_,
-        hash_history=state.hash_history.at[state._step_count].set(hash_)
+        hash_history=state.hash_history.at[state._step_count].set(hash_),
     )
 
 
