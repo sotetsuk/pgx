@@ -5,8 +5,9 @@ install-dev:
 	python3 -m pip install \
 		pytest==7.1.2 \
 		matplotlib \
+		ipython \
 		git+https://github.com/sotetsuk/MinAtar.git \
-		jax[cpu] \
+		jax[cpu]
 
 install-fmt:
 	python3 -m pip install \
