@@ -219,6 +219,16 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 - [RobertTLange/evosax](https://github.com/RobertTLange/evosax): JAX-native evolution strategy (ES) implementations
 - [adaptive-intelligent-robotics/QDax](https://github.com/adaptive-intelligent-robotics/QDax): JAX-native Quality-Diversity (QD) algorithms
 
+## Citation
+
+```
+@article{koyamada2023pgx,
+  title={Pgx: Hardware-accelerated parallel game simulation for reinforcement learning},
+  author={Koyamada, Sotetsu and Okano, Shinri and Nishimori, Soichiro and Murata, Yu and Habara, Keigo and Kita, Haruka and Ishii, Shin},
+  journal={arXiv preprint arXiv:2303.17503},
+  year={2023}
+}
+```
 
 ## LICENSE
 
