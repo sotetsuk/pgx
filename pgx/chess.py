@@ -110,7 +110,7 @@ class State(core.State):
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK  # 64 * 73 = 4672
-    observation: jnp.ndarray = jnp.zeros((8, 8, 119), dtype=jnp.bool_)
+    observation: jnp.ndarray = jnp.zeros((8, 8, 19), dtype=jnp.float32)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
@@ -573,6 +573,57 @@ def _possible_piece_positions(state):
     my_pos = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0]
     opp_pos = jnp.nonzero(_flip(state).board > 0, size=16, fill_value=-1)[0]
     return jnp.vstack((my_pos, opp_pos))
+
+
+def _observe(state: State):
+    """Our observation design is very similar to OpenSpiel
+    except two differences:
+
+    - The board and plane index are oriented to the current agent (like AlphaZero)
+    - No plane for empty square (like AlphaZero)
+
+    There are 19 planes in total:
+
+    - [0, ... 5] 6 my pieces
+    - [6, ... 11] 6 opp pieces
+    - [12] 1 repetition count
+    - [13] 1 color
+    - [14, ..., 17] 4 castling
+    - [18] 1 no progress count
+    """
+
+    @jax.vmap
+    def is_piece(state, piece):
+        return (state == piece).astype(jnp.float32)
+
+    ONE_PLANE = jnp.ones((8, 8, 1), dtype=jnp.float32)
+
+    my_pieces = is_piece(jnp.arange(1, 7))
+    opp_pieces = is_piece(-jnp.arange(1, 7))
+    repetitions = ONE_PLANE * 0.  # TODO: fix me
+    color = ONE_PLANE * state.turn
+    my_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[0]
+    my_king_side_castling_right = ONE_PLANE * state.can_castle_king_side[0]
+    opp_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[1]
+    opp_king_side_castling_right = ONE_PLANE * state.can_castle_king_side[1]
+    no_progress_count = ONE_PLANE * state.halfmove_count.astype(jnp.float32) / 100.
+
+    return jnp.vstack(
+        (
+            my_pieces,
+            opp_pieces,
+            repetitions,
+            color,
+            my_queen_side_castling_right,
+            my_king_side_castling_right,
+            opp_queen_side_castling_right,
+            opp_king_side_castling_right,
+            no_progress_count
+        )
+    )
+
+
+
 
 
 def _from_fen(fen: str):
