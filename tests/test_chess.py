@@ -737,3 +737,9 @@ def test_observe():
 
     # color
     assert (state.observation[:, :, 13] == 1).all()
+
+
+def test_api():
+    import pgx
+    env = pgx.make("chess")
+    pgx.api_test(env, 5)
