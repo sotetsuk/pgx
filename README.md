@@ -120,7 +120,7 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
- <td>:construction:</td>
+ <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
