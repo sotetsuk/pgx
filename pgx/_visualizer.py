@@ -720,7 +720,6 @@ def save_svg_animation(
     dwg = None
     for i, state in enumerate(states):
         dwg = v.get_dwg(states=state)
-        print(dwg.elements)
         assert len([e for e in dwg.elements if type(e) == svgwrite.container.Group]) == 1, "Drawing must contain only one group"
         group: svgwrite.container.Group = dwg.elements[-1]
         group["id"] = f"_fr{i:x}"  # hex frame number
