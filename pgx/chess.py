@@ -594,7 +594,7 @@ def _observe(state: State):
 
     @jax.vmap
     def is_piece(state, piece):
-        return (state == piece).astype(jnp.float32)
+        return _rotate((state == piece).reshape((8, 8))).astype(jnp.float32)
 
     ONE_PLANE = jnp.ones((8, 8, 1), dtype=jnp.float32)
 
