@@ -125,6 +125,7 @@ class State(core.State):
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
     zobrist_hash: jnp.ndarray = jnp.uint32([1429435994,  901419182])
+    hash_history: jnp.ndarray = jnp.zeros((1005, 2), dtype=jnp.uint32).at[0].set(jnp.uint32([1429435994,  901419182]))
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
@@ -605,7 +606,9 @@ def _observe(state: State):
 
     my_pieces = is_piece(jnp.arange(1, 7))
     opp_pieces = is_piece(-jnp.arange(1, 7))
-    repetitions = ONE_PLANE * 0.0  # TODO: fix me
+    repetitions = ONE_PLANE * (
+        (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1  # due to the last item is always same
+    )
     color = ONE_PLANE * state.turn
     my_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[0]
     my_king_side_castling_right = ONE_PLANE * state.can_castle_king_side[0]
@@ -643,14 +646,14 @@ def _zobrist_hash(state):
         state.board,
         _flip(state).board
     )
-    hash = jnp.uint32([0, 0])
+    hash_ = jnp.uint32([0, 0])
     def xor(i, h):
         # 0, ..., 12 (white pawn, ..., black king)
         piece = board[i] + 6
         return h ^ HASH_TABLE[i][piece]
 
-    hash = jax.lax.fori_loop(0, 64, xor, hash)
-    return hash
+    hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    return hash_
 
 
 def _update_zobrist_hash(state: State, action: Action):
@@ -660,17 +663,18 @@ def _update_zobrist_hash(state: State, action: Action):
     >>> state.zobrist_hash
     Array([ 511492215, 1223082425], dtype=uint32)
     """
-    hash = state.zobrist_hash
+    hash_ = state.zobrist_hash
     # fmt: off
     board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
     from_ = jax.lax.select(state.turn == 0, action.from_, _flip_pos(action.from_))
     to = jax.lax.select(state.turn == 0, action.to, _flip_pos(action.to))
     # fmt: on
     piece = board[from_]
-    hash ^= HASH_TABLE[from_][piece]
-    hash ^= HASH_TABLE[to][piece]
+    hash_ ^= HASH_TABLE[from_][piece]
+    hash_ ^= HASH_TABLE[to][piece]
     return state.replace(  # type: ignore
-        zobrist_hash=hash
+        zobrist_hash=hash_,
+        hash_history=state.hash_history.at[state._step_count].set(hash_)
     )
 
 
