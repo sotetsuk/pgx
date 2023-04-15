@@ -126,7 +126,7 @@ class State(core.State):
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
     zobrist_hash: jnp.ndarray = jnp.uint32([1429435994, 901419182])
     hash_history: jnp.ndarray = (
-        jnp.zeros((1005, 2), dtype=jnp.uint32)
+        jnp.zeros((1001, 2), dtype=jnp.uint32)
         .at[0]
         .set(jnp.uint32([1429435994, 901419182]))
     )
