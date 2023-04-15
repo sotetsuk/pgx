@@ -7,11 +7,7 @@ install-dev:
 		matplotlib \
 		ipython \
 		git+https://github.com/sotetsuk/MinAtar.git \
-		jax[cpu] \
-		brax \
-		argdcls \
-		tqdm \
-		shanten_tools \
+		jax[cpu]
 
 install-fmt:
 	python3 -m pip install \
