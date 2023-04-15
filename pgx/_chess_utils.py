@@ -1,5 +1,6 @@
 # type: ignore
 import jax.numpy as jnp
+import jax.random
 
 from pgx._flax.serialization import from_bytes
 
@@ -212,3 +213,8 @@ INIT_POSSIBLE_PIECE_POSITIONS = jnp.int8(
         [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
     ]
 )  # (2, 16)
+
+key = jax.random.PRNGKey(9999)
+HASH_TABLE = jax.random.randint(
+    key, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)

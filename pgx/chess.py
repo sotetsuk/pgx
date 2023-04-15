@@ -20,6 +20,7 @@ from pgx._chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
     CAN_MOVE_ANY,
+    HASH_TABLE,
     INIT_LEGAL_ACTION_MASK,
     INIT_POSSIBLE_PIECE_POSITIONS,
     PLANE_MAP,
@@ -123,6 +124,12 @@ class State(core.State):
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
+    zobrist_hash: jnp.ndarray = jnp.uint32([1429435994, 901419182])
+    hash_history: jnp.ndarray = (
+        jnp.zeros((1001, 2), dtype=jnp.uint32)
+        .at[0]
+        .set(jnp.uint32([1429435994, 901419182]))
+    )
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
@@ -173,9 +180,11 @@ class Action:
 
 
 class Chess(core.Env):
-    def __init__(self, max_termination_steps: int = 1000):
+    def __init__(self):
         super().__init__()
-        self.max_termination_steps = max_termination_steps
+        # AlphaZero paper does not mention the number of max termination steps
+        # but we believe 1000 is large enough for Chess.
+        self.max_termination_steps = 1000
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -216,6 +225,7 @@ class Chess(core.Env):
 
 def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
+    state = _update_zobrist_hash(state, a)
     state = _apply_move(state, a)
     state = _flip(state)
     state = state.replace(  # type: ignore
@@ -227,9 +237,11 @@ def _step(state: State, action: jnp.ndarray):
 
 def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
+    rep = (state.hash_history == state.zobrist_hash).any(axis=1).sum() - 1
     terminated = ~has_legal_action
     terminated |= state.halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
+    terminated |= rep >= 2
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -602,7 +614,9 @@ def _observe(state: State):
 
     my_pieces = is_piece(jnp.arange(1, 7))
     opp_pieces = is_piece(-jnp.arange(1, 7))
-    repetitions = ONE_PLANE * 0.0  # TODO: fix me
+    # See also https://github.com/LeelaChessZero/lc0/blob/f39ad6ceb62c186136fc80ad08c466217c485aa1/src/neural/encoder.cc#L290
+    rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
+    repetitions = ONE_PLANE * (rep >= 1)
     color = ONE_PLANE * state.turn
     my_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[0]
     my_king_side_castling_right = ONE_PLANE * state.can_castle_king_side[0]
@@ -627,6 +641,46 @@ def _observe(state: State):
     ).transpose(
         (1, 2, 0)
     )  # channel last
+
+
+def _zobrist_hash(state):
+    """
+    >>> state = State()
+    >>> _zobrist_hash(state)
+    Array([1429435994,  901419182], dtype=uint32)
+    """
+    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
+    hash_ = jnp.uint32([0, 0])
+
+    def xor(i, h):
+        # 0, ..., 12 (white pawn, ..., black king)
+        piece = board[i] + 6
+        return h ^ HASH_TABLE[i][piece]
+
+    hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    return hash_
+
+
+def _update_zobrist_hash(state: State, action: Action):
+    """
+    >>> state = State()
+    >>> state = _update_zobrist_hash(state, Action._from_label(jnp.int32(89)))
+    >>> state.zobrist_hash
+    Array([ 511492215, 1223082425], dtype=uint32)
+    """
+    hash_ = state.zobrist_hash
+    # fmt: off
+    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
+    from_ = jax.lax.select(state.turn == 0, action.from_, _flip_pos(action.from_))
+    to = jax.lax.select(state.turn == 0, action.to, _flip_pos(action.to))
+    # fmt: on
+    piece = board[from_]
+    hash_ ^= HASH_TABLE[from_][piece]
+    hash_ ^= HASH_TABLE[to][piece]
+    return state.replace(  # type: ignore
+        zobrist_hash=hash_,
+        hash_history=state.hash_history.at[state._step_count].set(hash_),
+    )
 
 
 def _from_fen(fen: str):
