@@ -614,10 +614,9 @@ def _observe(state: State):
 
     my_pieces = is_piece(jnp.arange(1, 7))
     opp_pieces = is_piece(-jnp.arange(1, 7))
-    repetitions = ONE_PLANE * (
-        (state.hash_history == state.zobrist_hash).all(axis=1).sum()
-        - 1  # due to the last item is always same
-    )
+    # See also https://github.com/LeelaChessZero/lc0/blob/f39ad6ceb62c186136fc80ad08c466217c485aa1/src/neural/encoder.cc#L290
+    rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
+    repetitions = ONE_PLANE * (rep >= 1)
     color = ONE_PLANE * state.turn
     my_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[0]
     my_king_side_castling_right = ONE_PLANE * state.can_castle_king_side[0]
