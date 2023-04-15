@@ -24,6 +24,7 @@ from pgx._chess_utils import (  # type: ignore
     INIT_POSSIBLE_PIECE_POSITIONS,
     PLANE_MAP,
     TO_MAP,
+    HASH_TABLE
 )
 from pgx._flax.struct import dataclass
 
@@ -123,6 +124,7 @@ class State(core.State):
     # # of moves since the last piece capture or pawn move
     halfmove_count: jnp.ndarray = jnp.int32(0)
     fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
+    zobrist_hash: jnp.ndarray = jnp.uint32([1429435994,  901419182])
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
@@ -216,6 +218,7 @@ class Chess(core.Env):
 
 def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
+    state = _update_zobrist_hash(state, a)
     state = _apply_move(state, a)
     state = _flip(state)
     state = state.replace(  # type: ignore
@@ -627,6 +630,48 @@ def _observe(state: State):
     ).transpose(
         (1, 2, 0)
     )  # channel last
+
+
+def _zobrist_hash(state):
+    """
+    >>> state = State()
+    >>> _zobrist_hash(state)
+    Array([1429435994,  901419182], dtype=uint32)
+    """
+    board = jax.lax.select(
+        state.turn == 0,
+        state.board,
+        _flip(state).board
+    )
+    hash = jnp.uint32([0, 0])
+    def xor(i, h):
+        # 0, ..., 12 (white pawn, ..., black king)
+        piece = board[i] + 6
+        return h ^ HASH_TABLE[i][piece]
+
+    hash = jax.lax.fori_loop(0, 64, xor, hash)
+    return hash
+
+
+def _update_zobrist_hash(state: State, action: Action):
+    """
+    >>> state = State()
+    >>> state = _update_zobrist_hash(state, Action._from_label(jnp.int32(89)))
+    >>> state.zobrist_hash
+    Array([ 511492215, 1223082425], dtype=uint32)
+    """
+    hash = state.zobrist_hash
+    # fmt: off
+    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
+    from_ = jax.lax.select(state.turn == 0, action.from_, _flip_pos(action.from_))
+    to = jax.lax.select(state.turn == 0, action.to, _flip_pos(action.to))
+    # fmt: on
+    piece = board[from_]
+    hash ^= HASH_TABLE[from_][piece]
+    hash ^= HASH_TABLE[to][piece]
+    return state.replace(  # type: ignore
+        zobrist_hash=hash
+    )
 
 
 def _from_fen(fen: str):
