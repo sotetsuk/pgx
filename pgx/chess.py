@@ -600,13 +600,15 @@ def _observe(state: State):
 
     my_pieces = is_piece(jnp.arange(1, 7))
     opp_pieces = is_piece(-jnp.arange(1, 7))
-    repetitions = ONE_PLANE * 0.  # TODO: fix me
+    repetitions = ONE_PLANE * 0.0  # TODO: fix me
     color = ONE_PLANE * state.turn
     my_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[0]
     my_king_side_castling_right = ONE_PLANE * state.can_castle_king_side[0]
     opp_queen_side_castling_right = ONE_PLANE * state.can_castle_queen_side[1]
     opp_king_side_castling_right = ONE_PLANE * state.can_castle_king_side[1]
-    no_progress_count = ONE_PLANE * state.halfmove_count.astype(jnp.float32) / 100.
+    no_progress_count = (
+        ONE_PLANE * state.halfmove_count.astype(jnp.float32) / 100.0
+    )
 
     return jnp.vstack(
         (
@@ -618,12 +620,9 @@ def _observe(state: State):
             my_king_side_castling_right,
             opp_queen_side_castling_right,
             opp_king_side_castling_right,
-            no_progress_count
+            no_progress_count,
         )
     )
-
-
-
 
 
 def _from_fen(fen: str):
