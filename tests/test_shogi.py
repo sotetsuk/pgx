@@ -22,9 +22,7 @@ def xy2i(x, y):
 
 # check visualization results by image preview plugins
 def visualize(state, fname="tests/assets/shogi/xxx.svg"):
-    from pgx._visualizer import Visualizer
-    v = Visualizer(color_theme="dark")
-    v.save_svg(state, fname)
+    state.save_svg(state, fname, color_theme="dark")
 
 
 def update_board(state, piece_board, hand=None):
