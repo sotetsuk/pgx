@@ -1,6 +1,4 @@
-import pgx
 from pgx._mahjong._hand import Hand
-import jax
 import jax.numpy as jnp
 
 
