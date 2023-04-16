@@ -89,10 +89,9 @@ class State:
         color_theme: Default(None) is "light"
         scale: change image size. Default(None) is 1.0
         """
-        from pgx._visualizer import Visualizer
+        from pgx._visualizer import save_svg
 
-        v = Visualizer(color_theme=color_theme, scale=scale)
-        return v.save_svg(self, filename)
+        save_svg(self, filename, color_theme=color_theme, scale=scale)
 
 
 class Env(abc.ABC):

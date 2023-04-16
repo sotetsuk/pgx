@@ -692,6 +692,9 @@ def test_observe():
     )
     assert (state.observation[:, :, 11] == expected).all()
 
+    # repetitions
+    assert (state.observation[:, :, 12] == 0).all()
+
     # color
     assert (state.observation[:, :, 13] == 0).all()
 
@@ -729,5 +732,14 @@ def test_observe():
     )
     assert (state.observation[:, :, 6] == expected).all()
 
+    # repetitions
+    assert (state.observation[:, :, 12] == 0).all()
+
     # color
     assert (state.observation[:, :, 13] == 1).all()
+
+
+def test_api():
+    import pgx
+    env = pgx.make("chess")
+    pgx.api_test(env, 5)

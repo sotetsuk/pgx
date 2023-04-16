@@ -22,7 +22,7 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 
 - **JAX-native.** All `step` functions are *JIT-able*
 - **Super fast** in parallel execution on accelerators
-- **Various game support** including **Backgammon**, **Shogi**, and **Go**
+- **Various game support** including **Backgammon**, **Chess**, **Shogi**, and **Go**
 - **Beautiful visualization** in SVG format
 
 
@@ -120,7 +120,7 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
- <td>:construction:</td>
+ <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
@@ -219,6 +219,16 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 - [RobertTLange/evosax](https://github.com/RobertTLange/evosax): JAX-native evolution strategy (ES) implementations
 - [adaptive-intelligent-robotics/QDax](https://github.com/adaptive-intelligent-robotics/QDax): JAX-native Quality-Diversity (QD) algorithms
 
+## Citation
+
+```
+@article{koyamada2023pgx,
+  title={Pgx: Hardware-accelerated parallel game simulation for reinforcement learning},
+  author={Koyamada, Sotetsu and Okano, Shinri and Nishimori, Soichiro and Murata, Yu and Habara, Keigo and Kita, Haruka and Ishii, Shin},
+  journal={arXiv preprint arXiv:2303.17503},
+  year={2023}
+}
+```
 
 ## LICENSE
 

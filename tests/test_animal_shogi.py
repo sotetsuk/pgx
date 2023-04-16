@@ -9,9 +9,7 @@ step = jax.jit(env.step)
 
 
 def visualize(state, fname="tests/assets/animal_shogi/xxx.svg"):
-    from pgx._visualizer import Visualizer
-    v = Visualizer(color_theme="dark")
-    v.save_svg(state, fname)
+    state.save_svg(fname, color_theme="dark")
 
 
 def test_step():
