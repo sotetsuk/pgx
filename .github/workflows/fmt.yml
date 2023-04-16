@@ -1,7 +1,6 @@
 name: fmt
 
 on: [pull_request, push]
- 
 
 jobs:
   check:
