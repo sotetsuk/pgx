@@ -14,7 +14,8 @@
 
 import math
 from dataclasses import dataclass
-from typing import Literal, Optional
+from pathlib import Path
+from typing import Literal, Optional, Sequence, Union
 
 import svgwrite  # type: ignore
 
@@ -32,6 +33,7 @@ from ._dwg.play2048 import Play2048State, _make_2048_dwg
 from ._dwg.shogi import ShogiState, _make_shogi_dwg
 from ._dwg.sparrow_mahjong import SparrowMahjongState, _make_sparrowmahjong_dwg
 from ._dwg.tictactoe import TictactoeState, _make_tictactoe_dwg
+from .core import State
 
 ColorTheme = Literal["light", "dark"]
 
@@ -40,16 +42,21 @@ ColorTheme = Literal["light", "dark"]
 class Config:
     color_theme: ColorTheme = "light"
     scale: float = 1.0
+    frame_duration_seconds: float = 0.2
 
 
 global_config = Config()
 
 
 def set_visualization_config(
-    *, color_theme: ColorTheme = "light", scale: float = 1.0
+    *,
+    color_theme: ColorTheme = "light",
+    scale: float = 1.0,
+    frame_duration_seconds: float = 0.2,
 ):
     global_config.color_theme = color_theme
     global_config.scale = scale
+    global_config.frame_duration_seconds = frame_duration_seconds
 
 
 @dataclass
@@ -99,14 +106,6 @@ class Visualizer:
         assert self.state is not None
         return self._to_dwg_from_states(states=self.state).tostring()
     """
-
-    def save_svg(
-        self,
-        state,
-        filename="temp.svg",
-    ) -> None:
-        assert filename.endswith(".svg")
-        self.get_dwg(states=state).saveas(filename=filename)
 
     def get_dwg(
         self,
@@ -623,6 +622,7 @@ class Visualizer:
         elif isinstance(_states, BridgeBiddingState):
             return BridgeBiddingState(  # type:ignore
                 turn=_states.turn[_i],
+                dealer=_states.dealer[_i],
                 current_player=_states.current_player[_i],
                 hand=_states.hand[_i],
                 bidding_history=_states.bidding_history[_i],
@@ -687,3 +687,64 @@ class Visualizer:
             )
         else:
             assert False
+
+
+def save_svg(
+    states: State,
+    filename: Union[str, Path],
+    *,
+    color_theme: Optional[Literal["light", "dark"]] = None,
+    scale: Optional[float] = None,
+) -> None:
+    assert str(filename).endswith(".svg")
+    v = Visualizer(color_theme=color_theme, scale=scale)
+    v.get_dwg(states=states).saveas(filename)
+
+
+def save_svg_animation(
+    states: Sequence[State],
+    filename: Union[str, Path],
+    *,
+    color_theme: Optional[Literal["light", "dark"]] = None,
+    scale: Optional[float] = None,
+    frame_duration_seconds: Optional[float] = None,
+) -> None:
+    assert str(filename).endswith(".svg")
+    v = Visualizer(color_theme=color_theme, scale=scale)
+
+    if frame_duration_seconds is None:
+        frame_duration_seconds = global_config.frame_duration_seconds
+
+    frame_groups = []
+    dwg = None
+    for i, state in enumerate(states):
+        dwg = v.get_dwg(states=state)
+        assert (
+            len(
+                [
+                    e
+                    for e in dwg.elements
+                    if type(e) == svgwrite.container.Group
+                ]
+            )
+            == 1
+        ), "Drawing must contain only one group"
+        group: svgwrite.container.Group = dwg.elements[-1]
+        group["id"] = f"_fr{i:x}"  # hex frame number
+        group["class"] = "frame"
+        frame_groups.append(group)
+
+    assert dwg is not None
+    del dwg.elements[-1]
+    total_seconds = frame_duration_seconds * len(frame_groups)
+
+    style = f".frame{{visibility:hidden; animation:{total_seconds}s linear _k infinite;}}"
+    style += f"@keyframes _k{{0%,{100/len(frame_groups)}%{{visibility:visible}}{100/len(frame_groups) * 1.000001}%,100%{{visibility:hidden}}}}"
+
+    for i, group in enumerate(frame_groups):
+        dwg.add(group)
+        style += (
+            f"#{group['id']}{{animation-delay:{i * frame_duration_seconds}s}}"
+        )
+    dwg.defs.add(svgwrite.container.Style(content=style))
+    dwg.saveas(filename)

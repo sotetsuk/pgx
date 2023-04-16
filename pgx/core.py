@@ -36,7 +36,8 @@ EnvId = Literal[
     "2048",
     "animal_shogi",
     "backgammon",
-    # "bridge_bidding",
+    "bridge_bidding",
+    "chess",
     "connect_four",
     "go-9x9",
     "go-19x19",
@@ -88,10 +89,9 @@ class State:
         color_theme: Default(None) is "light"
         scale: change image size. Default(None) is 1.0
         """
-        from pgx._visualizer import Visualizer
+        from pgx._visualizer import save_svg
 
-        v = Visualizer(color_theme=color_theme, scale=scale)
-        return v.save_svg(self, filename)
+        save_svg(self, filename, color_theme=color_theme, scale=scale)
 
 
 class Env(abc.ABC):
@@ -212,15 +212,23 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.play2048 import Play2048
 
         return Play2048()
-    if env_id == "animal_shogi":
+    elif env_id == "animal_shogi":
         from pgx.animal_shogi import AnimalShogi
 
         return AnimalShogi()
-    if env_id == "backgammon":
+    elif env_id == "backgammon":
         from pgx.backgammon import Backgammon
 
         return Backgammon()
-    if env_id == "connect_four":
+    elif env_id == "bridge_bidding":
+        from pgx.bridge_bidding import BridgeBidding
+
+        return BridgeBidding()
+    elif env_id == "chess":
+        from pgx.chess import Chess
+
+        return Chess()
+    elif env_id == "connect_four":
         from pgx.connect_four import ConnectFour
 
         return ConnectFour()
