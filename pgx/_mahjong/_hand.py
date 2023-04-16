@@ -3,8 +3,7 @@ import os
 
 import jax
 import jax.numpy as jnp
-
-from ._action import Action
+from _action import Action
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")
 
