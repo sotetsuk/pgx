@@ -1,6 +1,6 @@
 name: ci
 
-on: [pull_request, push]
+on: [pull_request]
 
 jobs:
   test:
