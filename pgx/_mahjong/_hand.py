@@ -3,7 +3,7 @@ import os
 
 import jax
 import jax.numpy as jnp
-from _action import Action
+from _action import Action  # type: ignore
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")
 
@@ -26,16 +26,16 @@ class Hand:
                         0,
                         4,
                         lambda k, h: Hand.add(
-                            h, deck[-(16 * i + 4 * j + k + 1)]
+                            h, deck[-(16 * i + 4 * j + k + 1)]  # type: ignore
                         ),
                         hand[j],
                     )
                 )
         for j in range(4):
-            hand = hand.at[j].set(Hand.add(hand[j], deck[-(16 * 3 + j + 1)]))
+            hand = hand.at[j].set(Hand.add(hand[j], deck[-(16 * 3 + j + 1)]))  # type: ignore
 
         last_draw = deck[-(16 * 3 + 4 + 1)].astype(int)
-        hand = hand.at[0].set(Hand.add(hand[0], last_draw))
+        hand = hand.at[0].set(Hand.add(hand[0], last_draw))  # type: ignore
 
         return hand
 
