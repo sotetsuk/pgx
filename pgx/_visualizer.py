@@ -689,7 +689,6 @@ class Visualizer:
             assert False
 
 
-
 def save_svg(
     states: State,
     filename: Union[str, Path],
@@ -720,7 +719,16 @@ def save_svg_animation(
     dwg = None
     for i, state in enumerate(states):
         dwg = v.get_dwg(states=state)
-        assert len([e for e in dwg.elements if type(e) == svgwrite.container.Group]) == 1, "Drawing must contain only one group"
+        assert (
+            len(
+                [
+                    e
+                    for e in dwg.elements
+                    if type(e) == svgwrite.container.Group
+                ]
+            )
+            == 1
+        ), "Drawing must contain only one group"
         group: svgwrite.container.Group = dwg.elements[-1]
         group["id"] = f"_fr{i:x}"  # hex frame number
         group["class"] = "frame"
@@ -735,6 +743,8 @@ def save_svg_animation(
 
     for i, group in enumerate(frame_groups):
         dwg.add(group)
-        style += f"#{group['id']}{{animation-delay:{i * frame_duration_seconds}s}}"
+        style += (
+            f"#{group['id']}{{animation-delay:{i * frame_duration_seconds}s}}"
+        )
     dwg.defs.add(svgwrite.container.Style(content=style))
     dwg.saveas(filename)
