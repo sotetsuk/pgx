@@ -77,6 +77,14 @@ def test_duplicate():
         )
 
 
+def test_illegal_action_penalty():
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    state = step(state, 36)
+    print(state.reward)
+    assert jnp.all(state.reward == jnp.array([22800, -7600, 22800, 22800]))
+
+
 def test_step():
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2

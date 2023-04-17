@@ -122,6 +122,10 @@ class BridgeBidding(core.Env):
     def num_players(self) -> int:
         return 4
 
+    @property
+    def _illegal_action_penalty(self) -> float:
+        return -7600.0
+
 
 @jax.jit
 def init(rng: jax.random.KeyArray) -> State:
