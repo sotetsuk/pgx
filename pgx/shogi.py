@@ -88,6 +88,9 @@ class State(core.State):
     cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
     cache_king: jnp.ndarray = jnp.int32(44)
 
+    def env_id(self) -> core.EnvId:
+        return "shogi"
+
     @staticmethod
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
         """Mainly for debugging purpose.

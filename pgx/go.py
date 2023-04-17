@@ -50,6 +50,10 @@ class State(core.State):
     komi: jnp.ndarray = jnp.float32(7.5)
     black_player: jnp.ndarray = jnp.int8(0)
 
+    def env_id(self) -> core.EnvId:
+        size = int(self.size.item())
+        return f"go-{size}x{size}"
+
 
 class Go(core.Env):
     def __init__(

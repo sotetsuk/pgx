@@ -54,6 +54,9 @@ class State(core.State):
     #  [ 8,  8, 64,128],
     #  [ 8, 64,128,512]]
 
+    def env_id(self) -> core.EnvId:
+        return "2048"
+
 
 class Play2048(core.Env):
     def __init__(

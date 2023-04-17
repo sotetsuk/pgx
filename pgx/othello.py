@@ -46,6 +46,9 @@ class State(core.State):
     board: jnp.ndarray = jnp.zeros(64, jnp.int8)  # -1(opp), 0(empty), 1(self)
     passed: jnp.ndarray = FALSE
 
+    def env_id(self) -> core.EnvId:
+        return "othello"
+
 
 class Othello(core.Env):
     def __init__(

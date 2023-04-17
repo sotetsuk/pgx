@@ -88,6 +88,9 @@ class State(core.State):
     dora: jnp.ndarray = jnp.int32(0)  # tile type (0~10) is set
     scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
 
+    def env_id(self) -> core.EnvId:
+        return "sparrow_mahjong"
+
 
 class SparrowMahjong(core.Env):
     def __init__(

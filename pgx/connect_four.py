@@ -44,6 +44,9 @@ class State(core.State):
     board: jnp.ndarray = -jnp.ones(42, jnp.int8)  # -1 (empty), 0, 1
     blank_row: jnp.ndarray = jnp.full(7, 5)
 
+    def env_id(self) -> core.EnvId:
+        return "connect_four"
+
 
 class ConnectFour(core.Env):
     def __init__(

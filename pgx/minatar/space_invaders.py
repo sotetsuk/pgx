@@ -54,6 +54,9 @@ class State(core.State):
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = jnp.int32(0)
 
+    def env_id(self) -> core.EnvId:
+        return "minatar/space_invaders"
+
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
 

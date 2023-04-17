@@ -52,6 +52,9 @@ class State(core.State):
     round: jnp.ndarray = jnp.int8(0)
     raise_count: jnp.ndarray = jnp.int8(0)
 
+    def env_id(self) -> core.EnvId:
+        return "leduc_holdem"
+
 
 class LeducHoldem(core.Env):
     def __init__(
