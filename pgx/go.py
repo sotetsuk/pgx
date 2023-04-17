@@ -53,7 +53,7 @@ class State(core.State):
     @property
     def env_id(self) -> core.EnvId:
         size = int(self.size.item())
-        return f"go-{size}x{size}"
+        return f"go-{size}x{size}"  # type: ignore
 
 
 class Go(core.Env):
