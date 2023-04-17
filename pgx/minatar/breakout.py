@@ -54,6 +54,7 @@ class State(core.State):
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = ZERO
 
+    @property
     def env_id(self) -> core.EnvId:
         return "minatar/breakout"
 

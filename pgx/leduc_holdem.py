@@ -52,6 +52,7 @@ class State(core.State):
     round: jnp.ndarray = jnp.int8(0)
     raise_count: jnp.ndarray = jnp.int8(0)
 
+    @property
     def env_id(self) -> core.EnvId:
         return "leduc_holdem"
 

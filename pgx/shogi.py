@@ -88,6 +88,7 @@ class State(core.State):
     cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
     cache_king: jnp.ndarray = jnp.int32(44)
 
+    @property
     def env_id(self) -> core.EnvId:
         return "shogi"
 

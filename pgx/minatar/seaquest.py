@@ -65,6 +65,7 @@ class State(core.State):
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = ZERO
 
+    @property
     def env_id(self) -> core.EnvId:
         return "minatar/seaquest"
 

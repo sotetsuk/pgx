@@ -88,6 +88,7 @@ class State(core.State):
     # passの回数
     pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
+    @property
     def env_id(self) -> core.EnvId:
         return "bridge_bidding"
 

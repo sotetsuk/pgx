@@ -49,6 +49,7 @@ class State(core.State):
         11 * 11, jnp.int32
     )  # <0(oppo), 0(empty), 0<(self)
 
+    @property
     def env_id(self) -> core.EnvId:
         return "hex"
 

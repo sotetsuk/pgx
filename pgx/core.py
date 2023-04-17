@@ -72,6 +72,7 @@ class State(abc.ABC):
     _rng_key: jax.random.KeyArray
     _step_count: jnp.ndarray
 
+    @property
     @abc.abstractmethod
     def env_id(self) -> EnvId:
         ...

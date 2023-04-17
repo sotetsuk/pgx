@@ -43,6 +43,7 @@ class State(core.State):
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
     pot: jnp.ndarray = jnp.int8([0, 0])
 
+    @property
     def env_id(self) -> core.EnvId:
         return "kuhn_poker"
 

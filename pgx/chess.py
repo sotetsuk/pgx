@@ -133,6 +133,7 @@ class State(core.State):
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
+    @property
     def env_id(self) -> core.EnvId:
         return "chess"
 

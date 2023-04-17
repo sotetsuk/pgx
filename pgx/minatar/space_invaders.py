@@ -54,6 +54,7 @@ class State(core.State):
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = jnp.int32(0)
 
+    @property
     def env_id(self) -> core.EnvId:
         return "minatar/space_invaders"
 
