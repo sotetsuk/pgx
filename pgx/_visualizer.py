@@ -589,7 +589,7 @@ class Visualizer:
                     "silver",
                     "black",
                 )
-        elif _state == "tic_tac_toe":
+        elif _state.env_id == "tic_tac_toe":
             from ._dwg.tictactoe import _make_tictactoe_dwg
 
             self.config["GRID_SIZE"] = 60

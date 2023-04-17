@@ -52,7 +52,10 @@ class State(core.State):
 
     @property
     def env_id(self) -> core.EnvId:
-        size = int(self.size.item())
+        try:
+            size = int(self.size.item())
+        except TypeError:
+            size = int(self.size[0].item())
         return f"go-{size}x{size}"  # type: ignore
 
 
