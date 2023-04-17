@@ -52,6 +52,10 @@ class State(core.State):
     board: jnp.ndarray = INIT_BOARD  # (12,)
     hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
 
+    @property
+    def env_id(self) -> core.EnvId:
+        return "animal_shogi"
+
 
 @dataclass
 class Action:

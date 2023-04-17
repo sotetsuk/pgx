@@ -49,6 +49,10 @@ class State(core.State):
     # 黒0, 白1
     turn: jnp.ndarray = jnp.int8(1)
 
+    @property
+    def env_id(self) -> core.EnvId:
+        return "backgammon"
+
 
 class Backgammon(core.Env):
     def __init__(

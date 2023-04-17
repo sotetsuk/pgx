@@ -65,6 +65,10 @@ class State(core.State):
     terminal: jnp.ndarray = FALSE
     last_action: jnp.ndarray = ZERO
 
+    @property
+    def env_id(self) -> core.EnvId:
+        return "minatar/seaquest"
+
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
 

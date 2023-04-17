@@ -39,6 +39,10 @@ class State(core.State):
     # 6 7 8
     board: jnp.ndarray = -jnp.ones(9, jnp.int8)  # -1 (empty), 0, 1
 
+    @property
+    def env_id(self) -> core.EnvId:
+        return "tic_tac_toe"
+
 
 class TicTacToe(core.Env):
     def __init__(

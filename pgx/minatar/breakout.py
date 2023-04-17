@@ -54,6 +54,10 @@ class State(core.State):
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = ZERO
 
+    @property
+    def env_id(self) -> core.EnvId:
+        return "minatar/breakout"
+
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
 
