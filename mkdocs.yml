@@ -9,7 +9,7 @@ theme:
   name: material
   language: en
   logo: assets/icon.svg
-  favicon: assets/icon.svg
+  favicon: assets/favicon.svg
   icon:
     repo: fontawesome/brands/github
   palette:
