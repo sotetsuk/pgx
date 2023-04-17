@@ -191,7 +191,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 60
             self.config["BOARD_WIDTH"] = 4
             self.config["BOARD_HEIGHT"] = 4
-            self._make_dwg_group = _make_animalshogi_dwg
+            self._make_dwg_group = _make_animalshogi_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -221,7 +221,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 25
             self.config["BOARD_WIDTH"] = 17
             self.config["BOARD_HEIGHT"] = 14
-            self._make_dwg_group = _make_backgammon_dwg
+            self._make_dwg_group = _make_backgammon_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -251,7 +251,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 14
             self.config["BOARD_HEIGHT"] = 10
-            self._make_dwg_group = _make_bridge_dwg
+            self._make_dwg_group = _make_bridge_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -281,7 +281,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
-            self._make_dwg_group = _make_chess_dwg
+            self._make_dwg_group = _make_chess_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -311,7 +311,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 35
             self.config["BOARD_WIDTH"] = 7
             self.config["BOARD_HEIGHT"] = 7
-            self._make_dwg_group = _make_connect_four_dwg
+            self._make_dwg_group = _make_connect_four_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -340,12 +340,14 @@ class Visualizer:
 
             self.config["GRID_SIZE"] = 25
             try:
-                self.config["BOARD_WIDTH"] = int(_state.size[0])
-                self.config["BOARD_HEIGHT"] = int(_state.size[0])
+                self.config["BOARD_WIDTH"] = int(_state.size[0])  # type:ignore
+                self.config["BOARD_HEIGHT"] = int(
+                    _state.size[0]  # type:ignore
+                )
             except IndexError:
-                self.config["BOARD_WIDTH"] = int(_state.size)
-                self.config["BOARD_HEIGHT"] = int(_state.size)
-            self._make_dwg_group = _make_go_dwg
+                self.config["BOARD_WIDTH"] = int(_state.size)  # type:ignore
+                self.config["BOARD_HEIGHT"] = int(_state.size)  # type:ignore
+            self._make_dwg_group = _make_go_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -376,16 +378,20 @@ class Visualizer:
 
             self.config["GRID_SIZE"] = 30
             try:
-                self.config["BOARD_WIDTH"] = four_dig(_state.size[0] * 1.5)
+                self.config["BOARD_WIDTH"] = four_dig(
+                    _state.size[0] * 1.5  # type:ignore
+                )
                 self.config["BOARD_HEIGHT"] = four_dig(
-                    _state.size[0] * jnp.sqrt(3) / 2
+                    _state.size[0] * jnp.sqrt(3) / 2  # type:ignore
                 )
             except IndexError:
-                self.config["BOARD_WIDTH"] = four_dig(_state.size * 1.5)
-                self.config["BOARD_HEIGHT"] = four_dig(
-                    _state.size * jnp.sqrt(3) / 2
+                self.config["BOARD_WIDTH"] = four_dig(
+                    _state.size * 1.5  # type:ignore
                 )
-            self._make_dwg_group = _make_hex_dwg
+                self.config["BOARD_HEIGHT"] = four_dig(
+                    _state.size * jnp.sqrt(3) / 2  # type:ignore
+                )
+            self._make_dwg_group = _make_hex_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -415,7 +421,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
-            self._make_dwg_group = _make_kuhnpoker_dwg
+            self._make_dwg_group = _make_kuhnpoker_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -445,7 +451,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
-            self._make_dwg_group = _make_leducHoldem_dwg
+            self._make_dwg_group = _make_leducHoldem_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -475,7 +481,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
-            self._make_dwg_group = _make_othello_dwg
+            self._make_dwg_group = _make_othello_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -505,7 +511,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 4
             self.config["BOARD_HEIGHT"] = 4
-            self._make_dwg_group = _make_2048_dwg
+            self._make_dwg_group = _make_2048_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -535,7 +541,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 10
             self.config["BOARD_HEIGHT"] = 9
-            self._make_dwg_group = _make_shogi_dwg
+            self._make_dwg_group = _make_shogi_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -559,7 +565,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 15
             self.config["BOARD_HEIGHT"] = 10
-            self._make_dwg_group = _make_sparrowmahjong_dwg
+            self._make_dwg_group = _make_sparrowmahjong_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -589,7 +595,7 @@ class Visualizer:
             self.config["GRID_SIZE"] = 60
             self.config["BOARD_WIDTH"] = 3
             self.config["BOARD_HEIGHT"] = 3
-            self._make_dwg_group = _make_tictactoe_dwg
+            self._make_dwg_group = _make_tictactoe_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
                 and self.config["COLOR_THEME"] == "dark"
@@ -616,115 +622,117 @@ class Visualizer:
 
             return AnimalShogiState(
                 turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],
-                hand=_states.hand[_i],
+                board=_states.board[_i],  # type:ignore
+                hand=_states.hand[_i],  # type:ignore
             )
         elif _states.env_id == "backgammon":
             from ._dwg.backgammon import BackgammonState
 
             return BackgammonState(
                 turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],
+                board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "connect_four":
             from ._dwg.connect_four import ConnectFourState
 
             return ConnectFourState(  # type:ignore
-                turn=_states.turn[_i],
-                board=_states.board[_i],
+                turn=_states.turn[_i],  # type:ignore
+                board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "chess":
             from ._dwg.chess import ChessState
 
             return ChessState(
                 turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],
+                board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "bridge_bidding":
             from ._dwg.bridge_bidding import BridgeBiddingState
 
             return BridgeBiddingState(  # type:ignore
-                turn=_states.turn[_i],
-                dealer=_states.dealer[_i],
-                current_player=_states.current_player[_i],
-                hand=_states.hand[_i],
-                bidding_history=_states.bidding_history[_i],
-                vul_NS=_states.vul_NS[_i],
-                vul_EW=_states.vul_EW[_i],
+                turn=_states.turn[_i],  # type:ignore
+                dealer=_states.dealer[_i],  # type:ignore
+                current_player=_states.current_player[_i],  # type:ignore
+                hand=_states.hand[_i],  # type:ignore
+                bidding_history=_states.bidding_history[_i],  # type:ignore
+                vul_NS=_states.vul_NS[_i],  # type:ignore
+                vul_EW=_states.vul_EW[_i],  # type:ignore
             )
         elif _states.env_id in ("go-9x9", "go-19x19"):
             from ._dwg.go import GoState
 
             return GoState(  # type:ignore
-                size=_states.size[_i],
-                chain_id_board=_states.chain_id_board[_i],
-                turn=_states.turn[_i],
+                size=_states.size[_i],  # type:ignore
+                chain_id_board=_states.chain_id_board[_i],  # type:ignore
+                turn=_states.turn[_i],  # type:ignore
             )
         elif _states.env_id == "hex":
             from ._dwg.hex import HexState
 
             return HexState(
-                size=_states.size[_i],
-                turn=_states.turn[_i],
-                board=_states.board[_i],
+                size=_states.size[_i],  # type:ignore
+                turn=_states.turn[_i],  # type:ignore
+                board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "kuhn_poker":
             from ._dwg.kuhn_poker import KuhnPokerState
 
-            return KuhnPokerState(cards=_states.cards[_i], pot=_states.pot[_i])
+            return KuhnPokerState(
+                cards=_states.cards[_i], pot=_states.pot[_i]  # type:ignore
+            )
         elif _states.env_id == "leduc_holdem":
             from ._dwg.leduc_holdem import LeducHoldemState
 
             return LeducHoldemState(
-                cards=_states.cards[_i],
-                chips=_states.chips[_i],
-                round=_states.round[_i],
+                cards=_states.cards[_i],  # type:ignore
+                chips=_states.chips[_i],  # type:ignore
+                round=_states.round[_i],  # type:ignore
             )
         elif _states.env_id == "othello":
             from ._dwg.othello import OthelloState
 
             return OthelloState(
-                turn=_states.turn[_i],
-                board=_states.board[_i],
+                turn=_states.turn[_i],  # type:ignore
+                board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "2048":
             from ._dwg.play2048 import Play2048State
 
             return Play2048State(
-                board=_states.board[_i],
+                board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "shogi":
             from ._dwg.shogi import ShogiState
 
             return ShogiState(  # type:ignore
-                turn=_states.turn[_i],
-                piece_board=_states.piece_board[_i],
-                hand=_states.hand[_i],
+                turn=_states.turn[_i],  # type:ignore
+                piece_board=_states.piece_board[_i],  # type:ignore
+                hand=_states.hand[_i],  # type:ignore
             )
         elif _states.env_id == "sparrow_mahjong":
             from ._dwg.sparrow_mahjong import SparrowMahjongState
 
             return SparrowMahjongState(
-                current_player=_states.current_player[_i],
-                turn=_states.turn[_i],
-                rivers=_states.rivers[_i],
-                hands=_states.hands[_i],
-                n_red_in_hands=_states.n_red_in_hands[_i],
-                is_red_in_river=_states.is_red_in_river[_i],
-                wall=_states.wall[_i],
-                draw_ix=_states.draw_ix[_i],
-                shuffled_players=_states.shuffled_players[_i],
-                dora=_states.dora[_i],
+                current_player=_states.current_player[_i],  # type:ignore
+                turn=_states.turn[_i],  # type:ignore
+                rivers=_states.rivers[_i],  # type:ignore
+                hands=_states.hands[_i],  # type:ignore
+                n_red_in_hands=_states.n_red_in_hands[_i],  # type:ignore
+                is_red_in_river=_states.is_red_in_river[_i],  # type:ignore
+                wall=_states.wall[_i],  # type:ignore
+                draw_ix=_states.draw_ix[_i],  # type:ignore
+                shuffled_players=_states.shuffled_players[_i],  # type:ignore
+                dora=_states.dora[_i],  # type:ignore
             )
         elif _states.env_id == "tic_tac_toe":
             from ._dwg.tictactoe import TictactoeState
 
             return TictactoeState(
-                current_player=_states.current_player[_i],
-                legal_action_mask=_states.legal_action_mask[_i],
-                terminated=_states.terminated[_i],
-                turn=_states.turn[_i],
-                board=_states.board[_i],
+                current_player=_states.current_player[_i],  # type:ignore
+                legal_action_mask=_states.legal_action_mask[_i],  # type:ignore
+                terminated=_states.terminated[_i],  # type:ignore
+                turn=_states.turn[_i],  # type:ignore
+                board=_states.board[_i],  # type:ignore
             )
         else:
             assert False
