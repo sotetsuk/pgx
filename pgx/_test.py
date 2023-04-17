@@ -18,7 +18,7 @@ from dataclasses import fields
 import jax
 import jax.numpy as jnp
 
-from pgx.core import Env, State
+from pgx.core import Env, State, EnvId
 from pgx.experimental.utils import act_randomly
 
 act_randomly = jax.jit(act_randomly)
@@ -141,6 +141,7 @@ def _validate_state(state: State):
     - legal_action_mask is bool_
     - TODO: observation is bool_ or int8 (can promote to any other types)
     """
+    assert state.env_id() in EnvId
     assert state.current_player.dtype == jnp.int8, state.current_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
     assert state.reward.dtype == jnp.float32, state.reward.dtype
