@@ -529,7 +529,7 @@ class Visualizer:
                     "black",
                     "black",
                 )
-        elif _state == "shogi":
+        elif _state.env_id == "shogi":
             from ._dwg.shogi import _make_shogi_dwg
 
             self.config["GRID_SIZE"] = 50
@@ -553,7 +553,7 @@ class Visualizer:
                     "black",
                     "",
                 )
-        elif _state == "sparrow_mahjong":
+        elif _state.env_id == "sparrow_mahjong":
             from ._dwg.sparrow_mahjong import _make_sparrowmahjong_dwg
 
             self.config["GRID_SIZE"] = 50
@@ -687,13 +687,13 @@ class Visualizer:
                 turn=_states.turn[_i],
                 board=_states.board[_i],
             )
-        elif _states == "2048":
+        elif _states.env_id == "2048":
             from ._dwg.play2048 import Play2048State
 
             return Play2048State(
                 board=_states.board[_i],
             )
-        elif _states == "shogi":
+        elif _states.env_id == "shogi":
             from ._dwg.shogi import ShogiState
 
             return ShogiState(  # type:ignore
@@ -701,7 +701,7 @@ class Visualizer:
                 piece_board=_states.piece_board[_i],
                 hand=_states.hand[_i],
             )
-        elif _states == "sparrow_mahjong":
+        elif _states.env_id == "sparrow_mahjong":
             from ._dwg.sparrow_mahjong import SparrowMahjongState
 
             return SparrowMahjongState(
@@ -716,7 +716,7 @@ class Visualizer:
                 shuffled_players=_states.shuffled_players[_i],
                 dora=_states.dora[_i],
             )
-        elif _states == "tic_tac_toe":
+        elif _states.env_id == "tic_tac_toe":
             from ._dwg.tictactoe import TictactoeState
 
             return TictactoeState(
