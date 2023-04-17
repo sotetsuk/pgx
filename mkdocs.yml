@@ -6,10 +6,11 @@ repo_name: sotetsuk/pgx
 repo_url: https://github.com/sotetsuk/pgx
 copyright: Copyright &copy Pgx Authors
 nav:
-    - Home: index.md
-    - Games:
-      - Tic-tac-toe: tic_tac_toe.md
-    - tips: tips.md
+  - API: api.md
+  - Examples: examples.md
+  - Available Games:
+    - Tic-tac-toe: tic_tac_toe.md
+    - Go: go.md
 theme:
   name: material
   language: en
@@ -25,6 +26,7 @@ theme:
     text: Noto Sans
     code: Inconsolata
   features:
+    - navigation.sections
     - header.autohide
 markdown_extensions:
   - admonition
@@ -48,6 +50,9 @@ markdown_extensions:
   - markdown_include.include:
       base_path: .
   - admonition
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span

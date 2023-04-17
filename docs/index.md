@@ -2,53 +2,14 @@
 <img src="assets/logo.svg" width="60%">
 </p>
 
-# Welcome to Pgx Documentation
+<p align="center">
+<img src="assets/go_dark.gif" width="30%"><img src="assets/go_dark.gif" width="30%" style="transform:rotate(270deg);"><img src="assets/go_dark.gif" width="30%">
+</p>
 
-:muscle:
+# Pgx Documentation
+ 
 
-!!! check "Beautiful visualization"
-
-    Beatuiful visualization
-
-
-
-!!! success
-
-    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla et euismod
-    nulla. Curabitur feugiat, tortor non consequat finibus, justo purus auctor
-    massa, nec semper lorem quam in massa.
-
-
-
-
-## tab
-
-
-=== "C"
-
-    ``` c
-    #include <stdio.h>
-
-    int main(void) {
-      printf("Hello world!\n");
-      return 0;
-    }
-    ```
-
-=== "C++"
-
-    ``` c++
-    #include <iostream>
-
-    int main(void) {
-      std::cout << "Hello world!" << std::endl;
-      return 0;
-    }
-    ```
-
-
-
-```py title="bubble_sort.py"
+```py
 import jax
 import pgx
 
@@ -64,12 +25,3 @@ while not state.terminated.all():
     state = step(state, action)  # state.reward (2,)
 ```
 
-
-![Image title](https://dummyimage.com/600x400/eee/aaa){ align=left width=20% }
-
-
-WIP.
-
-# README
-
-{!README.md!}
