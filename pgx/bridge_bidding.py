@@ -202,7 +202,7 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     # Randomly determine NSteam and EWteam
     # Arrange in order of NESW
     return jax.lax.cond(
-        jax.random.randint(rng4, (1,), 1, 2)[0] == 1,
+        jax.random.randint(rng4, (1,), 0, 2)[0] == 1,
         lambda: jnp.array(
             [
                 team_a_players[0],
