@@ -53,6 +53,7 @@ class State(core.State):
     def env_id(self) -> core.EnvId:
         return "hex"
 
+
 class Hex(core.Env):
     def __init__(
         self,

@@ -53,6 +53,7 @@ class State(core.State):
     def env_id(self) -> core.EnvId:
         return "backgammon"
 
+
 class Backgammon(core.Env):
     def __init__(
         self,

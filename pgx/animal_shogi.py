@@ -56,6 +56,7 @@ class State(core.State):
     def env_id(self) -> core.EnvId:
         return "animal_shogi"
 
+
 @dataclass
 class Action:
     is_drop: jnp.ndarray = FALSE
