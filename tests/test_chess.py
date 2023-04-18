@@ -570,6 +570,52 @@ def test_terminal():
     assert state.current_player == 0
     assert (state.reward == 0.0).all()
 
+    # perpetual check
+    state = State._from_fen("7k/8/4r1pp/8/8/4q3/8/5Q1K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_025.svg")
+    state = step(state, jnp.int32(2942))
+    state.save_svg("tests/assets/chess/terminal_026.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(4104))
+    state.save_svg("tests/assets/chess/terminal_027.svg")
+    state = step(state, jnp.int32(3446))
+    state.save_svg("tests/assets/chess/terminal_028.svg")
+    state = step(state, jnp.int32(4176))
+    state.save_svg("tests/assets/chess/terminal_029.svg")
+    state = step(state, jnp.int32(3374))
+    state.save_svg("tests/assets/chess/terminal_030.svg")
+    assert (state.observation[:, :, 12] == 1).all()
+    print(state._to_fen())
+    state = step(state, jnp.int32(4104))
+    state = step(state, jnp.int32(3446))
+    state = step(state, jnp.int32(4176))
+    state = step(state, jnp.int32(3374))
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
+    # repetition
+    state = State._from_fen("r6k/8/8/8/8/8/8/R6K w - - 0 1")
+    state.save_svg("tests/assets/chess/terminal_031.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/terminal_032.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/terminal_033.svg")
+    state = step(state, jnp.int32(614))
+    state.save_svg("tests/assets/chess/terminal_034.svg")
+    state = step(state, jnp.int32(614))
+    state.save_svg("tests/assets/chess/terminal_035.svg")
+    state = step(state, jnp.int32(1196))
+    state.save_svg("tests/assets/chess/terminal_036.svg")
+    state = step(state, jnp.int32(1196))
+    state.save_svg("tests/assets/chess/terminal_037.svg")
+    assert (state.observation[:, :, 12] == 1).all()
+    state = step(state, jnp.int32(30))
+    state = step(state, jnp.int32(30))
+    state = step(state, jnp.int32(613))
+    state = step(state, jnp.int32(613))
+    assert state.terminated
+    assert (state.reward == 0.0).all()
+
 
 def test_buggy_samples():
     # Found buggy samples by random playing debug
