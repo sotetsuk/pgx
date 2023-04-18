@@ -349,7 +349,7 @@ def duplicate(
     duplicated_state = copy.deepcopy(init_state)
     ix = jnp.array([1, 0, 3, 2])
     # fmt: off
-    duplicated_state = duplicated_state.replace(shuffled_players=duplicated_state.shuffled_players[ix])  # type: ignore
+    duplicated_state = duplicated_state.replace(shuffled_players=duplicated_state.shuffled_players[ix], current_player=duplicated_state.shuffled_players[ix][duplicated_state.dealer])  # type: ignore
     # fmt: on
     return duplicated_state
 
