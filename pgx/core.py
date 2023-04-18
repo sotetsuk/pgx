@@ -76,7 +76,8 @@ class State(abc.ABC):
             some environments (e.g., Go) have an `max_termination_steps` parameter inside
             and will terminates within a limited number of states (following AlphaGo).
         truncated (jnp.ndarray): so far, not used as all Pgx environments are finite horizon
-        legal_action_mask (jnp.ndarray): Boolean array of legal actions.
+        legal_action_mask (jnp.ndarray): Boolean array of legal actions. If illegal action is taken,
+            the game will terminate immediately with the penalty to the palyer.
 
     Examples:
 
