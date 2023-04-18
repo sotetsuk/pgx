@@ -1,9 +1,9 @@
-import time
+import copy
 import jax
 import jax.numpy as jnp
 import pgx
 from pgx.experimental.utils import act_randomly
-from pgx.bridge_bidding import _player_position, duplicate
+from pgx.bridge_bidding import _player_position, duplicate, State
 
 
 def state_to_pbn(state):
@@ -62,28 +62,90 @@ def _imp_reward(
     )
 
 
+@jax.jit
+def duplicate_init(
+    state: State,
+) -> State:
+    """Make duplicated state where NSplayer and EWplayer are swapped"""
+
+    duplicated_state = copy.deepcopy(state)
+    ix = jnp.array([1, 0, 3, 2])
+    # fmt: off
+    duplicated_state = duplicated_state.replace(_step_count=jnp.int32(0), turn=jnp.int16(0), observation=jnp.zeros(478, dtype=jnp.bool_), reward=jnp.float32([0, 0, 0, 0]), terminated=jnp.bool_(False), truncated=jnp.bool_(False), bidding_history=jnp.full(319, -1, dtype=jnp.int32), shuffled_players=duplicated_state.shuffled_players[ix], current_player=duplicated_state.shuffled_players[ix][duplicated_state.dealer], last_bid=jnp.int32(-1), last_bidder=jnp.int8(-1), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), first_denomination_NS=jnp.full(5, -1, dtype=jnp.int8), first_denomination_EW=jnp.full(5, -1, dtype=jnp.int8), pass_num=jnp.array(0, dtype=jnp.int32))  # type: ignore
+    # fmt: ona
+    return duplicated_state
+
+
+def duplicate_step(
+    state: pgx.State, action, table_a_reward, has_duplicate_result
+):
+    state = env.step(state, action)
+    if not state.terminated:
+        state = state  # no changes
+    else:
+        if has_duplicate_result:
+            reward = _imp_reward(table_a_reward, state.reward)
+            # terminates!
+            # fmt: off
+            state = state.replace(reward=reward)   # type: ignore
+            # fmt: on
+            print(f"calc imp: {reward}")
+            has_duplicate_result = False
+        else:
+            table_a_reward = state.reward
+            state = duplicate_init(
+                state
+            )  # reward = zeros as results are not determined yet
+            has_duplicate_result = True
+    return (state, table_a_reward, has_duplicate_result)
+
+
 env_id: pgx.EnvId = "bridge_bidding"
 env = pgx.make(env_id)
 # run api test
-pgx.api_test(env, 100)
+# pgx.api_test(env, 100)
 
 # jit
 init = jax.jit(jax.vmap(env.init))
 step = jax.jit(jax.vmap(env.step))
 duplicate_vmap = jax.jit(jax.vmap(duplicate))
 imp_reward = jax.jit(jax.vmap(_imp_reward))
-player_position = jax.vmap(_player_position)
+# player_position = jax.vmap(_player_position)
 act_randomly = jax.jit(act_randomly)
 
 # show multi visualizations
-N = 4
+N = 1
 key = jax.random.PRNGKey(0)
 key, subkey = jax.random.split(key)
 keys = jax.random.split(subkey, N)
 
-state: pgx.State = init(keys)
-duplicate_state: pgx.State = duplicate_vmap(state)
+state: pgx.State = env.init(key)
+# duplicate_state: pgx.State = duplicate_vmap(state)
 
+
+i = 0
+has_duplicate_result = False
+table_a_reward = state.reward
+while not state.terminated.all():
+    key, subkey = jax.random.split(key)
+    action = act_randomly(subkey, state)
+    print("================")
+    print(f"{i:04d}")
+    print("================")
+    print(f"curr_player: {state.current_player}\naction: {action}")
+    print(
+        f"curr_player_position: {_player_position(state.current_player, state)}"
+    )
+    #    state.save_svg(f"test/{i:04d}.svg")
+    state, table_a_reward, has_duplicate_result = duplicate_step(
+        state, action, table_a_reward, has_duplicate_result
+    )
+    print(f"reward:\n{state.reward}")
+    i += 1
+# state.save_svg(f"test/{i:04d}.svg")
+
+
+"""
 print("table a")
 print(f"current_player: {state.current_player}")
 print(f"dealer: {state.dealer}")
@@ -138,3 +200,4 @@ print("================")
 print(f"table a reward: {reward}")
 print(f"table b reward: {duplicate_reward}")
 print(f"duplicate reward:\n{imp_reward(reward, duplicate_reward)}")
+"""
