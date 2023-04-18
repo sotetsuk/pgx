@@ -1,5 +1,27 @@
-{!README.md!}
+<p align="center">
+<img src="assets/logo.svg" width="60%">
+</p>
 
-# Welcome to Pgx Documentation
+<p align="center">
+<img src="assets/go_dark.gif" width="30%"><img src="assets/go_dark.gif" width="30%" style="transform:rotate(270deg);"><img src="assets/go_dark.gif" width="30%">
+</p>
 
-WIP.
+# Pgx Documentation
+ 
+
+```py
+import jax
+import pgx
+
+env = pgx.make("go-19x19")
+init = jax.jit(jax.vmap(env.init))  # vectorize and JIT-compile
+step = jax.jit(jax.vmap(env.step))
+
+batch_size = 1024
+keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
+state = init(keys)  # vectorized states
+while not state.terminated.all():
+    action = model(state.current_player, state.observation, state.legal_action_mask)
+    state = step(state, action)  # state.reward (2,)
+```
+

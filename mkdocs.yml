@@ -1,7 +1,44 @@
 site_name: Pgx Documentation
+site_description: Pgx Documentation
+site_author: Sotetsu KOYAMADA
+site_url: http://pgx.readthedocs.io/
+repo_name: sotetsuk/pgx
+repo_url: https://github.com/sotetsuk/pgx
+copyright: Copyright &copy Pgx Authors
+nav:
+  - API: api.md
+  - Examples: examples.md
+  - Available Games:
+    - Tic-tac-toe: tic_tac_toe.md
+    - Go: go.md
 theme:
-  name: readthedocs
-  highlightjs: true
+  name: material
+  language: en
+  logo: assets/icon.svg
+  favicon: assets/favicon.svg
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    scheme: slate
+    primary: teal
+    accent: deep purple
+  font:
+    text: Noto Sans
+    code: Inconsolata
+  features:
+    - navigation.sections
+    - header.autohide
+markdown_extensions:
+  - admonition
+  - pymdownx.tabbed
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - codehilite:
+      use_pygments: true
+      pygments_style: monokai
 plugins:
   - search
   - mkdocstrings:
@@ -13,3 +50,20 @@ markdown_extensions:
   - markdown_include.include:
       base_path: .
   - admonition
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - attr_list
+  - md_in_html

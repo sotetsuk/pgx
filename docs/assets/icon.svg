@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   id="_レイヤー_2"
+   data-name="レイヤー 2"
+   viewBox="0 0 149 171.77"
+   version="1.1"
+   sodipodi:docname="icon2.svg"
+   width="149"
+   height="171.77"
+   inkscape:version="1.1.2 (b8e25be8, 2022-02-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview29"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     showgrid="false"
+     height="172.77px"
+     inkscape:zoom="2.8663403"
+     inkscape:cx="74.136347"
+     inkscape:cy="108.50072"
+     inkscape:window-width="1296"
+     inkscape:window-height="872"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g24" />
+  <defs
+     id="defs20">
+    <style
+       id="style2">
+      .cls-1 {
+        fill: url(#_名称未設定グラデーション_334);
+      }
+
+      .cls-2 {
+        clip-path: url(#clippath);
+      }
+
+      .cls-3 {
+        fill: none;
+      }
+    </style>
+    <clipPath
+       id="clippath">
+      <rect
+         class="cls-3"
+         width="204"
+         height="226.77"
+         id="rect4"
+         x="0"
+         y="0" />
+    </clipPath>
+    <radialGradient
+       id="_名称未設定グラデーション_334"
+       data-name="名称未設定グラデーション 334"
+       cx="102"
+       cy="113.39"
+       fx="102"
+       fy="113.39"
+       r="98.730003"
+       gradientUnits="userSpaceOnUse">
+      <stop
+         offset=".25"
+         stop-color="#00ffb9"
+         id="stop7" />
+      <stop
+         offset=".42"
+         stop-color="#00d1a5"
+         id="stop9" />
+      <stop
+         offset=".6"
+         stop-color="#00a793"
+         id="stop11" />
+      <stop
+         offset=".76"
+         stop-color="#008985"
+         id="stop13" />
+      <stop
+         offset=".9"
+         stop-color="#00767d"
+         id="stop15" />
+      <stop
+         offset="1"
+         stop-color="#00707b"
+         id="stop17" />
+    </radialGradient>
+  </defs>
+  <g
+     id="Element"
+     transform="translate(-27.35,-27.35)">
+    <g
+       id="_シンボルマーク_1"
+       data-name="シンボルマーク_1">
+      <g
+         class="cls-2"
+         clip-path="url(#clippath)"
+         id="g24">
+        <path
+           class="cls-1"
+           d="m 146.2,104.89 h -0.01 v 17 l 14.72,-8.5 h 0.01 V 96.38 Z m -29.47,17 v 17.01 l 14.72,-8.5 v -17.01 z m 0,0 v 17.01 l 14.72,-8.5 v -17.01 z m 0,0 v 17.01 l 14.72,-8.5 v -17.01 z m 14.72,8.51 v 17.01 l 14.74,-8.51 v -17.01 z m -14.72,-8.51 v 17.01 l 14.72,-8.5 v -17.01 z m 0,0 v 17.01 l 14.72,-8.5 v -17.01 z m 44.18,8.51 -14.72,8.5 v 17.02 l 14.72,-8.51 h 0.01 V 130.4 Z m 0.01,17.01 v 17 l 14.72,-8.49 h 0.02 V 138.9 Z m -44.19,8.49 v 17.02 l 14.72,-8.51 v -17 z M 160.92,62.37 146.2,53.86 h -0.01 l -14.74,-8.5 -14.72,-8.51 -14.72,-8.5 -14.73,8.5 v 0 c 0,0 -14.73,8.51 -14.73,8.51 h -0.01 l -14.73,8.5 -14.73,8.51 -14.73,8.49 v 51.03 h 0.01 l 14.72,8.49 v 0.02 h 0.02 l 29.45,17.01 14.73,8.49 v 17.02 l -14.73,-8.51 -14.73,-8.49 v -0.02 c 0,0 -14.72,-8.49 -14.72,-8.49 H 43.08 L 28.35,138.9 v 17.02 h 0.01 l 14.72,8.49 h 0.02 l 14.71,8.5 v 0 c 0,0 0,0.01 0,0.01 l 14.73,8.5 14.73,8.5 14.73,8.51 14.72,-8.51 v -17 L 102,181.42 V 130.4 l 14.72,-8.51 v -17 L 102,113.39 87.27,104.89 72.54,96.4 V 96.38 H 72.53 L 57.8,87.88 v 0 c 0,0 -14.73,-8.51 -14.73,-8.51 L 57.8,70.86 72.53,62.37 h 0.01 l 14.71,8.49 h 0.02 v 0.02 l 14.73,8.49 14.72,8.51 14.72,8.5 14.74,-8.5 h 0.01 l 14.72,-8.51 v 17.01 l 14.74,-8.5 V 70.86 l -14.74,-8.49 z m -103.11,42.52 14.74,8.5 14.73,8.5 v 17.01 l -14.73,-8.5 -14.73,-8.51 v 0 l -14.71,-8.5 H 43.09 V 96.38 l 14.73,8.51 z m 73.66,-25.52 h -0.02 l -14.72,-8.51 -14.72,-8.49 v -0.02 l -14.73,-8.49 14.73,-8.5 29.44,16.99 v 0.02 l 14.74,8.51 z"
+           id="path22"
+           style="fill:#ffffff" />
+      </g>
+    </g>
+  </g>
+</svg>
