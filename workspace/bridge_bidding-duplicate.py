@@ -76,10 +76,29 @@ def duplicate_init(
     return duplicated_state
 
 
-def duplicate_step(
+@jax.jit
+def _duplicate_step(
     state: pgx.State, action, table_a_reward, has_duplicate_result
 ):
     state = env.step(state, action)
+    return jax.lax.cond(
+        state.terminated == jnp.bool_(False),
+        lambda: (state, table_a_reward, has_duplicate_result),
+        lambda: jax.lax.cond(
+            has_duplicate_result == jnp.bool_(True),
+            lambda: (
+                state.replace(
+                    reward=_imp_reward(table_a_reward, state.reward)
+                ),
+                table_a_reward,
+                jnp.bool_(True),
+            ),
+            lambda: (duplicate_init(state), state.reward, jnp.bool_(True)),
+        ),
+    )
+
+
+"""
     if not state.terminated:
         state = state  # no changes
     else:
@@ -98,7 +117,7 @@ def duplicate_step(
             )  # reward = zeros as results are not determined yet
             has_duplicate_result = True
     return (state, table_a_reward, has_duplicate_result)
-
+"""
 
 env_id: pgx.EnvId = "bridge_bidding"
 env = pgx.make(env_id)
@@ -108,23 +127,23 @@ env = pgx.make(env_id)
 # jit
 init = jax.jit(jax.vmap(env.init))
 step = jax.jit(jax.vmap(env.step))
-duplicate_vmap = jax.jit(jax.vmap(duplicate))
+duplicate_step = jax.jit(jax.vmap(_duplicate_step))
 imp_reward = jax.jit(jax.vmap(_imp_reward))
-# player_position = jax.vmap(_player_position)
+player_position = jax.vmap(_player_position)
 act_randomly = jax.jit(act_randomly)
 
 # show multi visualizations
-N = 1
+N = 4
 key = jax.random.PRNGKey(0)
 key, subkey = jax.random.split(key)
 keys = jax.random.split(subkey, N)
 
-state: pgx.State = env.init(key)
+state: pgx.State = init(keys)
 # duplicate_state: pgx.State = duplicate_vmap(state)
 
 
 i = 0
-has_duplicate_result = False
+has_duplicate_result = jnp.zeros(N, dtype=jnp.bool_)
 table_a_reward = state.reward
 while not state.terminated.all():
     key, subkey = jax.random.split(key)
@@ -134,15 +153,15 @@ while not state.terminated.all():
     print("================")
     print(f"curr_player: {state.current_player}\naction: {action}")
     print(
-        f"curr_player_position: {_player_position(state.current_player, state)}"
+        f"curr_player_position: {player_position(state.current_player, state)}"
     )
-    #    state.save_svg(f"test/{i:04d}.svg")
+    state.save_svg(f"test/{i:04d}.svg")
     state, table_a_reward, has_duplicate_result = duplicate_step(
         state, action, table_a_reward, has_duplicate_result
     )
     print(f"reward:\n{state.reward}")
     i += 1
-# state.save_svg(f"test/{i:04d}.svg")
+state.save_svg(f"test/{i:04d}.svg")
 
 
 """
