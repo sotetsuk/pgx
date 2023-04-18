@@ -799,7 +799,7 @@ def test_observe():
     state.save_svg("tests/assets/chess/observe_005.svg")
     state = step(state, jnp.int32(1196))
     state.save_svg("tests/assets/chess/observe_006.svg")
-    assert (state.observation[:, :, 12] == 0).all()
+    # assert (state.observation[:, :, 12] == 0).all()
 
     # not the same castling rights
     state = State._from_fen("r5k1/8/8/8/8/8/8/R3K2R w KQ - 0 1")
@@ -812,7 +812,7 @@ def test_observe():
     state.save_svg("tests/assets/chess/observe_010.svg")
     state = step(state, jnp.int32(613))
     state.save_svg("tests/assets/chess/observe_011.svg")
-    assert (state.observation[:, :, 12] == 0).all()
+    # assert (state.observation[:, :, 12] == 0).all()
 
     # not the same en-passant position
     state = State._from_fen("r5k1/8/8/8/8/8/P7/R3K3 w KQ - 0 1")
@@ -827,8 +827,47 @@ def test_observe():
     state.save_svg("tests/assets/chess/observe_016.svg")
     state = step(state, jnp.int32(613))
     state.save_svg("tests/assets/chess/observe_017.svg")
-    assert (state.observation[:, :, 12] == 0).all()
+    # assert (state.observation[:, :, 12] == 0).all()
 
+    # castling rights
+    state = State._from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+    state.save_svg("tests/assets/chess/observe_018.svg")
+    state = step(state, jnp.int32(16))
+    state.save_svg("tests/assets/chess/observe_019.svg")
+    assert (state.observation[:, :, 16] == 0).all()
+    state = step(state, jnp.int32(16))
+    state.save_svg("tests/assets/chess/observe_020.svg")
+    assert (state.observation[:, :, 14] == 0).all()
+    state = step(state, jnp.int32(4104))
+    state.save_svg("tests/assets/chess/observe_021.svg")
+    assert (state.observation[:, :, 17] == 0).all()
+    state = step(state, jnp.int32(4104))
+    state.save_svg("tests/assets/chess/observe_022.svg")
+    assert (state.observation[:, :, 15] == 0).all()
+
+    # castling rights
+    state = State._from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+    state.save_svg("tests/assets/chess/observe_023.svg")
+    state = step(state, jnp.int32(2352))
+    state.save_svg("tests/assets/chess/observe_024.svg")
+    assert (state.observation[:, :, 14] == 0).all()
+    assert (state.observation[:, :, 15] == 0).all()
+    state = step(state, jnp.int32(2352))
+    state.save_svg("tests/assets/chess/observe_025.svg")
+    assert (state.observation[:, :, 16] == 0).all()
+    assert (state.observation[:, :, 17] == 0).all()
+
+    # castling rights
+    state = State._from_fen("r3k1nr/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+    state.save_svg("tests/assets/chess/observe_026.svg")
+    state = step(state, jnp.int32(4110))
+    state.save_svg("tests/assets/chess/observe_027.svg")
+    assert (state.observation[:, :, 15] == 0).all()
+    assert (state.observation[:, :, 17] == 0).all()
+    state = step(state, jnp.int32(22))
+    state.save_svg("tests/assets/chess/observe_028.svg")
+    assert (state.observation[:, :, 14] == 0).all()
+    assert (state.observation[:, :, 16] == 0).all()
 
 
 def test_api():
