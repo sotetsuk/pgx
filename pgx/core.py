@@ -104,6 +104,15 @@ class Env(abc.ABC):
         ...
 
     def init(self, key: jax.random.KeyArray) -> State:
+        """Return the initial state. Note that no internal state of
+        environment changes.
+
+        Args:
+            key: pseudo-random generator key in JAX
+
+        Returns: initial state of environment
+
+        """
         key, subkey = jax.random.split(key)
         state = self._init(subkey)
         state = state.replace(_rng_key=key)  # type: ignore
