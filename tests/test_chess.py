@@ -784,6 +784,52 @@ def test_observe():
     # color
     assert (state.observation[:, :, 13] == 1).all()
 
+    # repetition
+    # not repetition patterns
+    # not the same turn
+    state = State._from_fen("r6k/8/8/8/8/8/8/R6K w - - 0 1")
+    state.save_svg("tests/assets/chess/observe_001.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_002.svg")
+    state = step(state, jnp.int32(31))
+    state.save_svg("tests/assets/chess/observe_003.svg")
+    state = step(state, jnp.int32(614))
+    state.save_svg("tests/assets/chess/observe_004.svg")
+    state = step(state, jnp.int32(1196))
+    state.save_svg("tests/assets/chess/observe_005.svg")
+    state = step(state, jnp.int32(1196))
+    state.save_svg("tests/assets/chess/observe_006.svg")
+    assert (state.observation[:, :, 12] == 0).all()
+
+    # not the same castling rights
+    state = State._from_fen("r5k1/8/8/8/8/8/8/R3K2R w KQ - 0 1")
+    state.save_svg("tests/assets/chess/observe_007.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_008.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_009.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_010.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_011.svg")
+    assert (state.observation[:, :, 12] == 0).all()
+
+    # not the same en-passant position
+    state = State._from_fen("r5k1/8/8/8/8/8/P7/R3K3 w KQ - 0 1")
+    state.save_svg("tests/assets/chess/observe_012.svg")
+    state = step(state, jnp.int32(90))
+    state.save_svg("tests/assets/chess/observe_013.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_014.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_015.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_016.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_017.svg")
+    assert (state.observation[:, :, 12] == 0).all()
+
+
 
 def test_api():
     import pgx
