@@ -59,6 +59,30 @@ EnvId = Literal[
 
 @dataclass
 class State(abc.ABC):
+    """Base state class of all Pgx game environments.
+    Basically a dataclass. This is
+
+    Attributes:
+        current_player (jnp.ndarray): id of agent to play.
+            Note that this does NOT represent the turn (e.g., black/white in Go).
+            This ID is consistent over the parallel vmapped states.
+        observation (jnp.ndarray): observation for the current state.
+            `Env.observe` is called to compute.
+        reward (jnp.ndarray): the `i`-th element indicates the intermediate reward for
+            the agent with player-id `i`. If `Env.step` is called for a terminal state,
+            the following `state.reward` is zero for all players.
+        terminated (jnp.ndarray): denotes that the state is termianl state. Note that
+            some environments (e.g., Go) have an `max_termination_steps` parameter inside
+            and will terminates within a limited number of states (following AlphaGo).
+        truncated (jnp.ndarray): so far, not used as all Pgx environments are finite horizon
+        legal_action_mask (jnp.ndarray): Boolean array of legal actions.
+
+    Examples:
+
+        >>> env = pgx.make("go-9x9")
+        >>> state = env.step(state)
+
+    """
     current_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
@@ -90,9 +114,15 @@ class State(abc.ABC):
         color_theme: Optional[Literal["light", "dark"]] = None,
         scale: Optional[float] = None,
     ) -> None:
-        """
-        color_theme: Default(None) is "light"
-        scale: change image size. Default(None) is 1.0
+        """Save the entire state (not observation) to a file.
+        The filename must end with `.svg`
+
+        Args:
+            color_theme (Optional[Literal["light", "dark"]]): xxx see also global config.
+            scale (Optional[float]): change image size. Default(None) is 1.0
+
+        Returns:
+            None
         """
         from pgx._visualizer import save_svg
 
@@ -110,7 +140,8 @@ class Env(abc.ABC):
         Args:
             key: pseudo-random generator key in JAX
 
-        Returns: initial state of environment
+        Returns:
+            State: initial state of environment
 
         """
         key, subkey = jax.random.split(key)
