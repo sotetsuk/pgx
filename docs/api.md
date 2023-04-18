@@ -1,5 +1,7 @@
 # API
 
+::: pgx.core.State
+
 ::: pgx.core.Env
     handler: python
     options:
