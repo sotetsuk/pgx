@@ -59,8 +59,9 @@ EnvId = Literal[
 
 @dataclass
 class State(abc.ABC):
-    """Base state class of all Pgx game environments.
-    Basically a dataclass. This is
+    """Base state class of all Pgx game environments. Basically a dataclass.
+    `Env.step` receives and returns this state classs.
+    There are 6 common attributes over all games:
 
     Attributes:
         current_player (jnp.ndarray): id of agent to play.
