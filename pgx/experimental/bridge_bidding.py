@@ -1,8 +1,8 @@
 import jax
 import jax.numpy as jnp
-import pgx
-from pgx.bridge_bidding import State, BridgeBidding
 
+import pgx
+from pgx.bridge_bidding import BridgeBidding, State
 
 env = BridgeBidding()
 
