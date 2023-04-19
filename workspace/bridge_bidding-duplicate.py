@@ -98,31 +98,10 @@ def _duplicate_step(
     )
 
 
-"""
-    if not state.terminated:
-        state = state  # no changes
-    else:
-        if has_duplicate_result:
-            reward = _imp_reward(table_a_reward, state.reward)
-            # terminates!
-            # fmt: off
-            state = state.replace(reward=reward)   # type: ignore
-            # fmt: on
-            print(f"calc imp: {reward}")
-            has_duplicate_result = False
-        else:
-            table_a_reward = state.reward
-            state = duplicate_init(
-                state
-            )  # reward = zeros as results are not determined yet
-            has_duplicate_result = True
-    return (state, table_a_reward, has_duplicate_result)
-"""
-
 env_id: pgx.EnvId = "bridge_bidding"
 env = pgx.make(env_id)
 # run api test
-# pgx.api_test(env, 100)
+pgx.api_test(env, 100)
 
 # jit
 init = jax.jit(jax.vmap(env.init))
