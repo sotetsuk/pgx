@@ -11,28 +11,29 @@ def _imp_reward(
     table_a_reward: jnp.ndarray, table_b_reward: jnp.ndarray
 ) -> jnp.ndarray:
     """Convert score reward to IMP reward
-    >>> table_a_reward = jnp.array([ 0, 0, 0, 0])
-    >>> table_b_reward = jnp.array([ 0, 0, 0, 0])
+
+    >>> table_a_reward = jnp.array([0, 0, 0, 0])
+    >>> table_b_reward = jnp.array([0, 0, 0, 0])
     >>> _imp_reward(table_a_reward, table_b_reward)
     Array([0., 0., 0., 0.], dtype=float32)
-    >>> table_a_reward = jnp.array([ 0, 0, 0, 0])
-    >>> table_b_reward = jnp.array([ 100, 100, -100, -100])
+    >>> table_a_reward = jnp.array([0, 0, 0, 0])
+    >>> table_b_reward = jnp.array([100, 100, -100, -100])
     >>> _imp_reward(table_a_reward, table_b_reward)
     Array([ 3.,  3., -3., -3.], dtype=float32)
-    >>> table_a_reward = jnp.array([ -100, -100, 100, 100])
-    >>> table_b_reward = jnp.array([ 0, 0, 0, 0])
+    >>> table_a_reward = jnp.array([-100, -100, 100, 100])
+    >>> table_b_reward = jnp.array([0, 0, 0, 0])
     >>> _imp_reward(table_a_reward, table_b_reward)
     Array([-3., -3.,  3.,  3.], dtype=float32)
-    >>> table_a_reward = jnp.array([ -100, -100, 100, 100])
-    >>> table_b_reward = jnp.array([ 100, 100, -100, -100])
+    >>> table_a_reward = jnp.array([-100, -100, 100, 100])
+    >>> table_b_reward = jnp.array([100, 100, -100, -100])
     >>> _imp_reward(table_a_reward, table_b_reward)
     Array([0., 0., 0., 0.], dtype=float32)
-    >>> table_a_reward = jnp.array([ -3500, -3500, 3500, 3500])
-    >>> table_b_reward = jnp.array([ 0, 0, 0, 0])
+    >>> table_a_reward = jnp.array([-3500, -3500, 3500, 3500])
+    >>> table_b_reward = jnp.array([0, 0, 0, 0])
     >>> _imp_reward(table_a_reward, table_b_reward)
     Array([-23., -23.,  23.,  23.], dtype=float32)
-    >>> table_a_reward = jnp.array([ 2000, 2000, -2000, -2000])
-    >>> table_b_reward = jnp.array([ 2000, 2000, -2000, -2000])
+    >>> table_a_reward = jnp.array([2000, 2000, -2000, -2000])
+    >>> table_b_reward = jnp.array([2000, 2000, -2000, -2000])
     >>> _imp_reward(table_a_reward, table_b_reward)
     Array([ 24.,  24., -24., -24.], dtype=float32)
     """
@@ -67,10 +68,46 @@ def _imp_reward(
 
 
 @jax.jit
-def duplicate_init(
+def _duplicate_init(
     state: State,
 ) -> State:
-    """Make duplicated state where NSplayer and EWplayer are swapped"""
+    """Make duplicated state where NSplayer and EWplayer are swapped
+
+    >>> key = jax.random.PRNGKey(0)
+    >>> state = env.init(key)
+    >>> duplicate_state = _duplicate_init(state)
+    >>> duplicate_state.shuffled_players
+    Array([0, 2, 1, 3], dtype=int8)
+    >>> duplicate_state.dealer
+    Array(1, dtype=int32)
+    >>> duplicate_state.current_player
+    Array(2, dtype=int8)
+    >>> state = env.step(state, 35)
+    >>> duplicate_state = _duplicate_init(state)
+    >>> duplicate_state.shuffled_players
+    Array([0, 2, 1, 3], dtype=int8)
+    >>> duplicate_state.dealer
+    Array(1, dtype=int32)
+    >>> duplicate_state.current_player
+    Array(2, dtype=int8)
+    >>> duplicate_state.pass_num
+    Array(0, dtype=int32)
+
+    >>> state = env.step(state, 0)
+    >>> duplicate_state = _duplicate_init(state)
+    >>> duplicate_state.shuffled_players
+    Array([0, 2, 1, 3], dtype=int8)
+    >>> duplicate_state.dealer
+    Array(1, dtype=int32)
+    >>> duplicate_state.current_player
+    Array(2, dtype=int8)
+    >>> duplicate_state.legal_action_mask
+    Array([ True,  True,  True,  True,  True,  True,  True,  True,  True,
+            True,  True,  True,  True,  True,  True,  True,  True,  True,
+            True,  True,  True,  True,  True,  True,  True,  True,  True,
+            True,  True,  True,  True,  True,  True,  True,  True,  True,
+           False, False], dtype=bool)
+    """
     ix = jnp.array([1, 0, 3, 2])
     shuffled_players = state.shuffled_players[ix]
     current_player = shuffled_players[state.dealer]
@@ -91,9 +128,10 @@ def duplicate_init(
 
 
 @jax.jit
-def _duplicate_step(
+def duplicate_step(
     state: pgx.State, action, table_a_reward, has_duplicate_result
 ):
+    """step function to perform a DUPLICATE match"""
     state = env.step(state=state, action=action)
     return jax.lax.cond(
         ~state.terminated,
@@ -104,9 +142,9 @@ def _duplicate_step(
                 state.replace(  # type: ignore
                     reward=_imp_reward(table_a_reward, state.reward)
                 ),
-                table_a_reward,
+                jnp.zeros(4, dtype=jnp.float32),
                 jnp.bool_(True),
             ),
-            lambda: (duplicate_init(state), state.reward, jnp.bool_(True)),
+            lambda: (_duplicate_init(state), state.reward, jnp.bool_(True)),
         ),
     )
