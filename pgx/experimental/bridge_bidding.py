@@ -1,13 +1,41 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx.experimental.utils import act_randomly
-from pgx.bridge_bidding import _player_position, State
+from pgx.bridge_bidding import State, BridgeBidding
+
+
+env = BridgeBidding()
 
 
 def _imp_reward(
     table_a_reward: jnp.ndarray, table_b_reward: jnp.ndarray
 ) -> jnp.ndarray:
+    """Convert score reward to IMP reward
+    >>> table_a_reward = jnp.array([ 0, 0, 0, 0])
+    >>> table_b_reward = jnp.array([ 0, 0, 0, 0])
+    >>> _imp_reward(table_a_reward, table_b_reward)
+    Array([0., 0., 0., 0.], dtype=float32)
+    >>> table_a_reward = jnp.array([ 0, 0, 0, 0])
+    >>> table_b_reward = jnp.array([ 100, 100, -100, -100])
+    >>> _imp_reward(table_a_reward, table_b_reward)
+    Array([ 3.,  3., -3., -3.], dtype=float32)
+    >>> table_a_reward = jnp.array([ -100, -100, 100, 100])
+    >>> table_b_reward = jnp.array([ 0, 0, 0, 0])
+    >>> _imp_reward(table_a_reward, table_b_reward)
+    Array([-3., -3.,  3.,  3.], dtype=float32)
+    >>> table_a_reward = jnp.array([ -100, -100, 100, 100])
+    >>> table_b_reward = jnp.array([ 100, 100, -100, -100])
+    >>> _imp_reward(table_a_reward, table_b_reward)
+    Array([0., 0., 0., 0.], dtype=float32)
+    >>> table_a_reward = jnp.array([ -3500, -3500, 3500, 3500])
+    >>> table_b_reward = jnp.array([ 0, 0, 0, 0])
+    >>> _imp_reward(table_a_reward, table_b_reward)
+    Array([-23., -23.,  23.,  23.], dtype=float32)
+    >>> table_a_reward = jnp.array([ 2000, 2000, -2000, -2000])
+    >>> table_b_reward = jnp.array([ 2000, 2000, -2000, -2000])
+    >>> _imp_reward(table_a_reward, table_b_reward)
+    Array([ 24.,  24., -24., -24.], dtype=float32)
+    """
     # fmt: off
     IMP_LIST = jnp.array([20, 50, 90, 130, 170,
                 220, 270, 320, 370, 430,
@@ -66,14 +94,14 @@ def duplicate_init(
 def _duplicate_step(
     state: pgx.State, action, table_a_reward, has_duplicate_result
 ):
-    state = env.step(state, action)
+    state = env.step(state=state, action=action)
     return jax.lax.cond(
         ~state.terminated,
         lambda: (state, table_a_reward, has_duplicate_result),
         lambda: jax.lax.cond(
             has_duplicate_result,
             lambda: (
-                state.replace(
+                state.replace(  # type: ignore
                     reward=_imp_reward(table_a_reward, state.reward)
                 ),
                 table_a_reward,
