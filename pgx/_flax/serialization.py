@@ -23,7 +23,7 @@ import threading
 from contextlib import contextmanager
 
 import jax
-import msgpack
+import msgpack  # type: ignore
 import numpy as np
 
 
