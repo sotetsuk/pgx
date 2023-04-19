@@ -1,4 +1,3 @@
-import copy
 import jax
 import jax.numpy as jnp
 import pgx
@@ -67,12 +66,16 @@ def duplicate_init(
     state: State,
 ) -> State:
     """Make duplicated state where NSplayer and EWplayer are swapped"""
-
-    duplicated_state = copy.deepcopy(state)
     ix = jnp.array([1, 0, 3, 2])
-    # fmt: off
-    duplicated_state = duplicated_state.replace(_step_count=jnp.int32(0), turn=jnp.int16(0), observation=jnp.zeros(478, dtype=jnp.bool_), reward=jnp.float32([0, 0, 0, 0]), terminated=jnp.bool_(False), truncated=jnp.bool_(False), bidding_history=jnp.full(319, -1, dtype=jnp.int32), shuffled_players=duplicated_state.shuffled_players[ix], current_player=duplicated_state.shuffled_players[ix][duplicated_state.dealer], last_bid=jnp.int32(-1), last_bidder=jnp.int8(-1), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), first_denomination_NS=jnp.full(5, -1, dtype=jnp.int8), first_denomination_EW=jnp.full(5, -1, dtype=jnp.int8), pass_num=jnp.array(0, dtype=jnp.int32))  # type: ignore
-    # fmt: ona
+    duplicated_state = State(  # type: ignore
+        shuffled_players=state.shuffled_players[ix],
+        current_player=state.current_player,
+        hand=state.hand,
+        dealer=state.dealer,
+        vul_NS=state.vul_NS,
+        vul_EW=state.vul_EW,
+        legal_action_mask=state.legal_action_mask,
+    )
     return duplicated_state
 
 
@@ -82,10 +85,10 @@ def _duplicate_step(
 ):
     state = env.step(state, action)
     return jax.lax.cond(
-        state.terminated == jnp.bool_(False),
+        ~state.terminated,
         lambda: (state, table_a_reward, has_duplicate_result),
         lambda: jax.lax.cond(
-            has_duplicate_result == jnp.bool_(True),
+            has_duplicate_result,
             lambda: (
                 state.replace(
                     reward=_imp_reward(table_a_reward, state.reward)
