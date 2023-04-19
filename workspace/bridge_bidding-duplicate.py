@@ -67,14 +67,20 @@ def duplicate_init(
 ) -> State:
     """Make duplicated state where NSplayer and EWplayer are swapped"""
     ix = jnp.array([1, 0, 3, 2])
+    shuffled_players = state.shuffled_players[ix]
+    current_player = shuffled_players[state.dealer]
+    legal_actions = jnp.ones(38, dtype=jnp.bool_)
+    # 最初はdable, redoubleできない
+    legal_actions = legal_actions.at[36].set(False)
+    legal_actions = legal_actions.at[37].set(False)
     duplicated_state = State(  # type: ignore
         shuffled_players=state.shuffled_players[ix],
-        current_player=state.current_player,
+        current_player=current_player,
         hand=state.hand,
         dealer=state.dealer,
         vul_NS=state.vul_NS,
         vul_EW=state.vul_EW,
-        legal_action_mask=state.legal_action_mask,
+        legal_action_mask=legal_actions,
     )
     return duplicated_state
 
