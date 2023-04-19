@@ -2,9 +2,61 @@ import jax
 import jax.numpy as jnp
 import pgx
 from pgx.experimental.utils import act_randomly
-from pgx.bridge_bidding import _player_position, duplicate, State
+from pgx.bridge_bidding import _player_position
+from pgx.experimental.bridge_bidding import duplicate_step
 
 
+env_id: pgx.EnvId = "bridge_bidding"
+env = pgx.make(env_id)
+# run api test
+pgx.api_test(env, 100)
+
+# jit
+init = jax.jit(jax.vmap(env.init))
+step = jax.jit(jax.vmap(env.step))
+duplicate_step = jax.jit(jax.vmap(duplicate_step))
+player_position = jax.vmap(_player_position)
+act_randomly = jax.jit(act_randomly)
+
+# show multi visualizations
+N = 4
+key = jax.random.PRNGKey(0)
+key, subkey = jax.random.split(key)
+keys = jax.random.split(subkey, N)
+
+state: pgx.State = init(keys)
+# duplicate_state: pgx.State = duplicate_vmap(state)
+
+
+i = 0
+has_duplicate_result = jnp.zeros(N, dtype=jnp.bool_)
+table_a_reward = state.reward
+while not state.terminated.all():
+    key, subkey = jax.random.split(key)
+    action = act_randomly(subkey, state)
+
+    print("================")
+    print(f"{i:04d}")
+    print("================")
+    print(f"curr_player: {state.current_player}\naction: {action}")
+    print(
+        f"curr_player_position: {player_position(state.current_player, state)}"
+    )
+    print(f"shuflled_players:\n{state.shuffled_players}")
+    state.save_svg(f"test/{i:04d}.svg")
+    state_check = step(state, action)
+    state, table_a_reward, has_duplicate_result = duplicate_step(
+        state, action, table_a_reward, has_duplicate_result
+    )
+    print(f"table a reward\n{table_a_reward}")
+    print(f"score_reward:\n{state_check.reward}")
+    print(f"IMP_reward:\n{state.reward}")
+    print(f"has_duplicate_result:\n{has_duplicate_result}")
+    i += 1
+state.save_svg(f"test/{i:04d}.svg")
+
+
+'''
 def state_to_pbn(state):
     TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
     for state_hand in state.hand:
@@ -105,51 +157,7 @@ def _duplicate_step(
             lambda: (duplicate_init(state), state.reward, jnp.bool_(True)),
         ),
     )
-
-
-env_id: pgx.EnvId = "bridge_bidding"
-env = pgx.make(env_id)
-# run api test
-pgx.api_test(env, 100)
-
-# jit
-init = jax.jit(jax.vmap(env.init))
-step = jax.jit(jax.vmap(env.step))
-duplicate_step = jax.jit(jax.vmap(_duplicate_step))
-imp_reward = jax.jit(jax.vmap(_imp_reward))
-player_position = jax.vmap(_player_position)
-act_randomly = jax.jit(act_randomly)
-
-# show multi visualizations
-N = 4
-key = jax.random.PRNGKey(0)
-key, subkey = jax.random.split(key)
-keys = jax.random.split(subkey, N)
-
-state: pgx.State = init(keys)
-# duplicate_state: pgx.State = duplicate_vmap(state)
-
-
-i = 0
-has_duplicate_result = jnp.zeros(N, dtype=jnp.bool_)
-table_a_reward = state.reward
-while not state.terminated.all():
-    key, subkey = jax.random.split(key)
-    action = act_randomly(subkey, state)
-    print("================")
-    print(f"{i:04d}")
-    print("================")
-    print(f"curr_player: {state.current_player}\naction: {action}")
-    print(
-        f"curr_player_position: {player_position(state.current_player, state)}"
-    )
-    state.save_svg(f"test/{i:04d}.svg")
-    state, table_a_reward, has_duplicate_result = duplicate_step(
-        state, action, table_a_reward, has_duplicate_result
-    )
-    print(f"reward:\n{state.reward}")
-    i += 1
-state.save_svg(f"test/{i:04d}.svg")
+'''
 
 
 """
