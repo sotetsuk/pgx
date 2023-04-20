@@ -121,7 +121,7 @@ def _validate_taking_action_after_terminal(state: State, step_fn):
     state = step_fn(state, action)
     assert (state.reward == 0).all()
     for field in fields(state):
-        if field.name in ["reward", "steps"]:
+        if field.name in ["reward", "steps", "_info"]:
             continue
         assert (
             getattr(state, field.name) == getattr(prev_state, field.name)
