@@ -59,6 +59,35 @@ EnvId = Literal[
 
 @dataclass
 class State(abc.ABC):
+    """Base state class of all Pgx game environments. Basically an immutable (frozen) dataclass.
+    A basic usage is generating via `Env.init`:
+
+        state = env.init(jax.random.PRNGKey(0))
+
+    and `Env.step` receives and returns this state class:
+
+        state = env.step(state, action)
+
+    Serialization via `flax.struct.serialization` is supported.
+    There are 6 common attributes over all games:
+
+    Attributes:
+        current_player (jnp.ndarray): id of agent to play.
+            Note that this does NOT represent the turn (e.g., black/white in Go).
+            This ID is consistent over the parallel vmapped states.
+        observation (jnp.ndarray): observation for the current state.
+            `Env.observe` is called to compute.
+        reward (jnp.ndarray): the `i`-th element indicates the intermediate reward for
+            the agent with player-id `i`. If `Env.step` is called for a terminal state,
+            the following `state.reward` is zero for all players.
+        terminated (jnp.ndarray): denotes that the state is termianl state. Note that
+            some environments (e.g., Go) have an `max_termination_steps` parameter inside
+            and will terminates within a limited number of states (following AlphaGo).
+        truncated (jnp.ndarray): so far, not used as all Pgx environments are finite horizon
+        legal_action_mask (jnp.ndarray): Boolean array of legal actions. If illegal action is taken,
+            the game will terminate immediately with the penalty to the palyer.
+    """
+
     current_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
@@ -76,12 +105,30 @@ class State(abc.ABC):
     @property
     @abc.abstractmethod
     def env_id(self) -> EnvId:
+        """Environment id (e.g. "go-19x19")"""
         ...
 
     def _repr_html_(self) -> str:
+        return self.to_svg()
+
+    def to_svg(
+        self,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> str:
+        """Return SVG string. Useful for visualization in notebook.
+
+        Args:
+            color_theme (Optional[Literal["light", "dark"]]): xxx see also global config.
+            scale (Optional[float]): change image size. Default(None) is 1.0
+
+        Returns:
+            str: SVG string
+        """
         from pgx._visualizer import Visualizer
 
-        v = Visualizer()
+        v = Visualizer(color_theme=color_theme, scale=scale)
         return v.get_dwg(states=self).tostring()
 
     def save_svg(
@@ -91,9 +138,15 @@ class State(abc.ABC):
         color_theme: Optional[Literal["light", "dark"]] = None,
         scale: Optional[float] = None,
     ) -> None:
-        """
-        color_theme: Default(None) is "light"
-        scale: change image size. Default(None) is 1.0
+        """Save the entire state (not observation) to a file.
+        The filename must end with `.svg`
+
+        Args:
+            color_theme (Optional[Literal["light", "dark"]]): xxx see also global config.
+            scale (Optional[float]): change image size. Default(None) is 1.0
+
+        Returns:
+            None
         """
         from pgx._visualizer import save_svg
 
@@ -101,10 +154,33 @@ class State(abc.ABC):
 
 
 class Env(abc.ABC):
+    """Environment class API.
+
+    !!! example "Example usage"
+
+        ```py
+        env: Env = pgx.make("tic_tac_toe")
+        state = env.init(jax.random.PRNGKey(0))
+        action = jax.random.int32(4)
+        state = env.step(state, action)
+        ```
+
+    """
+
     def __init__(self):
         ...
 
     def init(self, key: jax.random.KeyArray) -> State:
+        """Return the initial state. Note that no internal state of
+        environment changes.
+
+        Args:
+            key: pseudo-random generator key in JAX
+
+        Returns:
+            State: initial state of environment
+
+        """
         key, subkey = jax.random.split(key)
         state = self._init(subkey)
         state = state.replace(_rng_key=key)  # type: ignore
@@ -112,6 +188,7 @@ class Env(abc.ABC):
         return state.replace(observation=observation)  # type: ignore
 
     def step(self, state: State, action: jnp.ndarray) -> State:
+        """Step function."""
         is_illegal = ~state.legal_action_mask[action]
         current_player = state.current_player
 
@@ -145,6 +222,7 @@ class Env(abc.ABC):
         return state.replace(observation=observation)  # type: ignore
 
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        """Observation function."""
         obs = self._observe(state, player_id)
         return jax.lax.stop_gradient(obs)
 
@@ -171,12 +249,22 @@ class Env(abc.ABC):
     @property
     @abc.abstractmethod
     def version(self) -> str:
+        """Environment version. Updated when behavior, parameter, or API is changed.
+        Refactoring or speeding up without any expected behavior changes will NOT update the version number.
+        """
         ...
 
     @property
     @abc.abstractmethod
     def num_players(self) -> int:
+        """Number of players (e.g., 2 in Tic-tac-toe)"""
         ...
+
+    @property
+    def num_actions(self) -> int:
+        """Return the size of action space (e.g., 9 in Tic-tac-toe)"""
+        state = self.init(jax.random.PRNGKey(0))
+        return int(state.legal_action_mask.shape[0])
 
     @property
     def observation_shape(self) -> Tuple[int, ...]:
@@ -184,12 +272,6 @@ class Env(abc.ABC):
         state = self.init(jax.random.PRNGKey(0))
         obs = self._observe(state, state.current_player)
         return obs.shape
-
-    @property
-    def action_shape(self) -> Tuple[int, ...]:
-        """Return the matrix shape of legal_action_mask"""
-        state = self.init(jax.random.PRNGKey(0))
-        return state.legal_action_mask.shape
 
     @property
     def _illegal_action_penalty(self) -> float:

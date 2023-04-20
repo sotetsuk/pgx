@@ -6,7 +6,7 @@ repo_name: sotetsuk/pgx
 repo_url: https://github.com/sotetsuk/pgx
 copyright: Copyright &copy Pgx Authors
 nav:
-  - API: api.md
+  - API Reference: api.md
   - Examples: examples.md
   - Available Games:
     - Tic-tac-toe: tic_tac_toe.md
@@ -45,7 +45,7 @@ plugins:
       handlers:
         python:
           options:
-            docstring_style: sphinx
+            docstring_style: google
 markdown_extensions:
   - markdown_include.include:
       base_path: .
