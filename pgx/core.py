@@ -103,6 +103,13 @@ class State(abc.ABC):
         ...
 
     def _repr_html_(self) -> str:
+        return self.to_svg()
+
+    def to_svg(self) -> str:
+        """Return SVG string. Useful for visualization in notebook.
+
+        Returns (str): SVG as string
+        """
         from pgx._visualizer import Visualizer
 
         v = Visualizer()
