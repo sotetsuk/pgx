@@ -82,6 +82,7 @@ class State(abc.ABC):
         legal_action_mask (jnp.ndarray): Boolean array of legal actions. If illegal action is taken,
             the game will terminate immediately with the penalty to the palyer.
     """
+
     current_player: jnp.ndarray
     observation: jnp.ndarray
     reward: jnp.ndarray
@@ -105,14 +106,23 @@ class State(abc.ABC):
     def _repr_html_(self) -> str:
         return self.to_svg()
 
-    def to_svg(self) -> str:
+    def to_svg(
+        self,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> str:
         """Return SVG string. Useful for visualization in notebook.
+
+        Args:
+            color_theme (Optional[Literal["light", "dark"]]): xxx see also global config.
+            scale (Optional[float]): change image size. Default(None) is 1.0
 
         Returns (str): SVG as string
         """
         from pgx._visualizer import Visualizer
 
-        v = Visualizer()
+        v = Visualizer(color_theme=color_theme, scale=scale)
         return v.get_dwg(states=self).tostring()
 
     def save_svg(
