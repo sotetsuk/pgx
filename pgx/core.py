@@ -60,7 +60,10 @@ EnvId = Literal[
 @dataclass
 class State(abc.ABC):
     """Base state class of all Pgx game environments. Basically a dataclass.
-    `Env.step` receives and returns this state classs.
+    `Env.step` receives and returns this state classs:
+
+        state = env.step(state)
+
     There are 6 common attributes over all games:
 
     Attributes:
@@ -78,12 +81,6 @@ class State(abc.ABC):
         truncated (jnp.ndarray): so far, not used as all Pgx environments are finite horizon
         legal_action_mask (jnp.ndarray): Boolean array of legal actions. If illegal action is taken,
             the game will terminate immediately with the penalty to the palyer.
-
-    Examples:
-
-        >>> env = pgx.make("go-9x9")
-        >>> state = env.step(state)
-
     """
     current_player: jnp.ndarray
     observation: jnp.ndarray
