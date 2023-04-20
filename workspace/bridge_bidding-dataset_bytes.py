@@ -5,6 +5,7 @@ from flax.serialization import to_bytes, from_bytes
 from typing import Tuple
 import csv
 import numpy as np
+import time
 
 
 def to_value(sample: list) -> jnp.ndarray:
@@ -41,9 +42,13 @@ def make_hash_table(
     values = []
     with open(csv_path, "r") as f:
         reader = csv.reader(f, delimiter=",")
+        count = 0
         for i in tqdm(reader):
+            if count == 50000:
+                break
             keys.append(_pbn_to_key(i[0]))
             values.append(to_value(i[1:]))
+            count += 1
     return jnp.array(keys, dtype=jnp.int32), jnp.array(values, dtype=jnp.int32)
 
 
@@ -81,15 +86,22 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
+time1 = time.time()
 keys, values = make_hash_table(
-    "/Users/kitayuu/workspace/pgx/tests/assets/contractbridge-ddstable-sample100.csv"
+    "/Users/kitayuu/workspace/pgx/tests/assets/bridge_bidding_dds_results_2500000.csv"
 )
+time2 = time.time()
+print(f"make hash table time: {time2-time1}")
 print(f"keys BYTES = \n{to_bytes(keys)}")
 print(f"values BYTES = \n{to_bytes(values)}")
+time3 = time.time()
+print(f"make byte time: {time3-time2}")
 with open("keys_bytes.txt", "wb") as f:
     f.write(to_bytes(keys))
 with open("values_bytes.txt", "wb") as f:
     f.write(to_bytes(values))
+time4 = time.time()
+print(f"make byte files time: {time4 - time3}")
 with open("keys_bytes.txt", "rb") as f:
     keys_byte = f.read()
     from_bytes(keys, keys_byte)
