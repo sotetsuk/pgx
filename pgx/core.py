@@ -13,7 +13,7 @@
 # limitations under the License.
 
 import abc
-from typing import Literal, Optional, Tuple, get_args, Any, Dict
+from typing import Any, Dict, Literal, Optional, Tuple, get_args
 
 import jax
 import jax.numpy as jnp
