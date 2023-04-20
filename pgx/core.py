@@ -230,7 +230,9 @@ class Env(abc.ABC):
     @property
     @abc.abstractmethod
     def version(self) -> str:
-        """Version of environment"""
+        """Environment version. Updated when behavior, parameter, or API is changed.
+        Refactoring or speeding up without any expected behavior changes will NOT update the version number.
+        """
         ...
 
     @property
