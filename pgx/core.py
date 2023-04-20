@@ -169,6 +169,7 @@ class Env(abc.ABC):
         return state.replace(observation=observation)  # type: ignore
 
     def step(self, state: State, action: jnp.ndarray) -> State:
+        """Step function."""
         is_illegal = ~state.legal_action_mask[action]
         current_player = state.current_player
 
@@ -202,6 +203,7 @@ class Env(abc.ABC):
         return state.replace(observation=observation)  # type: ignore
 
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+        """Observation function."""
         obs = self._observe(state, player_id)
         return jax.lax.stop_gradient(obs)
 
@@ -228,12 +230,20 @@ class Env(abc.ABC):
     @property
     @abc.abstractmethod
     def version(self) -> str:
+        """Version of environment"""
         ...
 
     @property
     @abc.abstractmethod
     def num_players(self) -> int:
+        """Number of players (e.g., 2 in Tic-tac-toe)"""
         ...
+
+    @property
+    def action_shape(self) -> Tuple[int, ...]:
+        """Return the matrix shape of legal_action_mask"""
+        state = self.init(jax.random.PRNGKey(0))
+        return state.legal_action_mask.shape
 
     @property
     def observation_shape(self) -> Tuple[int, ...]:
@@ -241,12 +251,6 @@ class Env(abc.ABC):
         state = self.init(jax.random.PRNGKey(0))
         obs = self._observe(state, state.current_player)
         return obs.shape
-
-    @property
-    def action_shape(self) -> Tuple[int, ...]:
-        """Return the matrix shape of legal_action_mask"""
-        state = self.init(jax.random.PRNGKey(0))
-        return state.legal_action_mask.shape
 
     @property
     def _illegal_action_penalty(self) -> float:
