@@ -240,10 +240,10 @@ class Env(abc.ABC):
         ...
 
     @property
-    def num_actions(self) -> Tuple[int, ...]:
-        """Return the matrix shape of legal_action_mask"""
+    def num_actions(self) -> int:
+        """Return the size of action space (e.g., 9 in Tic-tac-toe)"""
         state = self.init(jax.random.PRNGKey(0))
-        return state.legal_action_mask.shape
+        return int(state.legal_action_mask.shape[0])
 
     @property
     def observation_shape(self) -> Tuple[int, ...]:
