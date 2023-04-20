@@ -62,7 +62,9 @@ class State(abc.ABC):
     """Base state class of all Pgx game environments. Basically a dataclass.
     `Env.step` receives and returns this state classs:
 
+        ```py
         state = env.step(state)
+        ```
 
     There are 6 common attributes over all games:
 
@@ -150,11 +152,17 @@ class State(abc.ABC):
 class Env(abc.ABC):
     """Environment class API.
 
+    !!! example "Example usage"
+
+        ```py
+        env: Env = pgx.make("tic_tac_toe")
         state = env.init(jax.random.PRNGKey(0))
-        action = ...
+        action = jax.random.int32(4)
         state = env.step(state, action)
+        ```
 
     """
+
     def __init__(self):
         ...
 
