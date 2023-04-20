@@ -59,13 +59,16 @@ EnvId = Literal[
 
 @dataclass
 class State(abc.ABC):
-    """Base state class of all Pgx game environments. Basically a dataclass.
-    `Env.step` receives and returns this state classs:
+    """Base state class of all Pgx game environments. Basically an immutable (frozen) dataclass.
+    A basic usage is generating via `Env.init`:
 
-        ```py
-        state = env.step(state)
-        ```
+        state = env.init(jax.random.PRNGKey(0))
 
+    and `Env.step` receives and returns this state class:
+
+        state = env.step(state, action)
+
+    Serialization via `flax.struct.serialization` is supported.
     There are 6 common attributes over all games:
 
     Attributes:
@@ -120,7 +123,8 @@ class State(abc.ABC):
             color_theme (Optional[Literal["light", "dark"]]): xxx see also global config.
             scale (Optional[float]): change image size. Default(None) is 1.0
 
-        Returns (str): SVG as string
+        Returns:
+            str: SVG string
         """
         from pgx._visualizer import Visualizer
 
