@@ -13,12 +13,12 @@
 # limitations under the License.
 
 import abc
-from typing import Literal, Optional, Tuple, get_args
+from typing import Any, Dict, Literal, Optional, Tuple, get_args
 
 import jax
 import jax.numpy as jnp
 
-from pgx._flax.struct import dataclass
+from pgx._flax.struct import dataclass, field
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -97,6 +97,7 @@ class State(abc.ABC):
     #   - supposed NOT to be used by agent
     _rng_key: jax.random.KeyArray
     _step_count: jnp.ndarray
+    _info: Dict[str, Any] = field(default_factory=dict)  # experimental
 
     @property
     @abc.abstractmethod

@@ -60,6 +60,10 @@ def test_duplicate():
         init_state = init(subkey)
         duplicated_state = duplicate(init_state)
         assert (
+            duplicated_state.current_player
+            == duplicated_state.shuffled_players[duplicated_state.dealer]
+        )
+        assert (
             init_state.shuffled_players[0]
             == duplicated_state.shuffled_players[1]
         )
