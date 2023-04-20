@@ -240,7 +240,7 @@ class Env(abc.ABC):
         ...
 
     @property
-    def action_shape(self) -> Tuple[int, ...]:
+    def num_actions(self) -> Tuple[int, ...]:
         """Return the matrix shape of legal_action_mask"""
         state = self.init(jax.random.PRNGKey(0))
         return state.legal_action_mask.shape
