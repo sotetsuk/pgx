@@ -99,6 +99,7 @@ class State(abc.ABC):
     @property
     @abc.abstractmethod
     def env_id(self) -> EnvId:
+        """Environment id (e.g. "go-19x19")"""
         ...
 
     def _repr_html_(self) -> str:
