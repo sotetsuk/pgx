@@ -148,6 +148,13 @@ class State(abc.ABC):
 
 
 class Env(abc.ABC):
+    """Environment class API.
+
+        state = env.init(jax.random.PRNGKey(0))
+        action = ...
+        state = env.step(state, action)
+
+    """
     def __init__(self):
         ...
 
