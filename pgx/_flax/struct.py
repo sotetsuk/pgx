@@ -133,9 +133,17 @@ def dataclass(clz: _T) -> _T:
     kwargs = dict(meta_args + data_args)
     return data_clz(**kwargs)
 
-  jax.tree_util.register_pytree_with_keys(
-      data_clz, iterate_clz_with_keys, clz_from_iterable
-  )
+  if hasattr(jax.tree_util, 'register_pytree_with_keys'):
+    jax.tree_util.register_pytree_with_keys(
+        data_clz, iterate_clz_with_keys, clz_from_iterable
+    )
+  else:
+    jax.tree_util.register_pytree_node(data_clz, iterate_clz, clz_from_iterable)
+    def keypaths(_):
+      return [
+          jax.tree_util.AttributeKeyPathEntry(name) for name in data_fields
+      ]
+    jax.tree_util.register_keypaths(data_clz, keypaths)
 
   def to_state_dict(x):
     state_dict = {name: serialization.to_state_dict(getattr(x, name))
