@@ -1,5 +1,7 @@
 # API
 
+This is the list of all public APIs of Pgx.
+Two important components in Pgx are `Env` and `State`.
 
 
 ::: pgx.State
