@@ -105,7 +105,6 @@ def _win_check(board, turn) -> jnp.ndarray:
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-
     @jax.vmap
     def plane(i):
         return (state.board == i).reshape((3, 3))
