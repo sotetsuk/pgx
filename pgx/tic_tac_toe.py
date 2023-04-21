@@ -105,14 +105,16 @@ def _win_check(board, turn) -> jnp.ndarray:
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    empty_board = state.board == -1
-    my_board, opp_obard = jax.lax.cond(
-        state.current_player
-        == player_id,  # flip board if player_id is opposite
-        lambda: (state.turn == state.board, (1 - state.turn) == state.board),
-        lambda: ((1 - state.turn) == state.board, state.turn == state.board),
+
+    @jax.vmap
+    def plane(i):
+        return (state.current_player == i).reshape((3, 3))
+
+    # flip if player_id is opposite
+    x = jax.lax.cond(
+        state.current_player == player_id,
+        lambda: jnp.int8([state.turn, 1 - state.turn]),
+        lambda: jnp.int8([1 - state.turn, state.turn]),
     )
-    return jnp.concatenate(
-        [empty_board, my_board, opp_obard],
-        dtype=jnp.bool_,
-    )
+
+    return plane(x)
