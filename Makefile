@@ -37,7 +37,7 @@ check:
 
 install:
 	python3 -m pip install --upgrade pip setuptools
-	python3 setup.py install
+	python3 -m pip install .
 
 uninstall:
 	python3 -m pip uninstall pgx -y
