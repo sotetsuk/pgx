@@ -14,7 +14,7 @@ import jax
 from jax import numpy as jnp
 
 import pgx.v1 as v1
-from pgx._flax.struct import dataclass
+from pgx._src.struct import dataclass
 
 player_speed = jnp.array(3, dtype=jnp.int32)
 time_limit = jnp.array(2500, dtype=jnp.int32)

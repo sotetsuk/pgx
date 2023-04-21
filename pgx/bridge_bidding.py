@@ -20,7 +20,7 @@ import jax.numpy as jnp
 import numpy as np
 
 import pgx.v1 as v1
-from pgx._flax.struct import dataclass
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)

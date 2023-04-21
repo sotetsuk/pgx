@@ -1,4 +1,4 @@
-from pgx._flax.struct import dataclass
+from pgx._src.struct import dataclass
 
 
 @dataclass

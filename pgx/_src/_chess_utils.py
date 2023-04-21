@@ -2,7 +2,7 @@
 import jax.numpy as jnp
 import jax.random
 
-from pgx._flax.serialization import from_bytes
+from pgx._src.serialization import from_bytes
 
 TO_MAP = -jnp.ones((64, 73), dtype=jnp.int8)
 PLANE_MAP = -jnp.ones((64, 64), dtype=jnp.int8)  # ignores underpromotion

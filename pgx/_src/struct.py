@@ -16,9 +16,9 @@
 """
 
 import dataclasses
-from typing import TypeVar, Callable, Tuple, Union, Any
+from typing import TypeVar
 
-from . import serialization
+from pgx._src import serialization
 
 import jax
 from typing_extensions import dataclass_transform  # pytype: disable=not-supported-yet

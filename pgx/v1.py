@@ -18,7 +18,7 @@ from typing import Literal, Optional, Tuple, get_args
 import jax
 import jax.numpy as jnp
 
-from pgx._flax.struct import dataclass
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
