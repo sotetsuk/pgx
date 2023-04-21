@@ -17,7 +17,8 @@ from typing import Literal, Optional, Tuple, get_args
 
 import jax
 import jax.numpy as jnp
-from chex import dataclass
+
+from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -67,6 +68,7 @@ class State(abc.ABC):
 
         state = env.step(state, action)
 
+    Serialization via `flax.struct.serialization` is supported.
     There are 6 common attributes over all games:
 
     Attributes:

@@ -15,10 +15,10 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Literal, Optional
 
 import jax
-from chex import dataclass
 from jax import numpy as jnp
 
 import pgx.core as core
+from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
