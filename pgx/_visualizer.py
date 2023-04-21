@@ -186,7 +186,7 @@ class Visualizer:
 
     def _set_config_by_state(self, _state: State):  # noqa: C901
         if _state.env_id == "animal_shogi":
-            from ._dwg.animalshogi import _make_animalshogi_dwg
+            from pgx._src._dwg.animalshogi import _make_animalshogi_dwg
 
             self.config["GRID_SIZE"] = 60
             self.config["BOARD_WIDTH"] = 4
@@ -216,7 +216,7 @@ class Visualizer:
                     "",
                 )
         elif _state.env_id == "backgammon":
-            from ._dwg.backgammon import _make_backgammon_dwg
+            from pgx._src._dwg.backgammon import _make_backgammon_dwg
 
             self.config["GRID_SIZE"] = 25
             self.config["BOARD_WIDTH"] = 17
@@ -246,7 +246,7 @@ class Visualizer:
                     "gray",
                 )
         elif _state.env_id == "bridge_bidding":
-            from ._dwg.bridge_bidding import _make_bridge_dwg
+            from pgx._src._dwg.bridge_bidding import _make_bridge_dwg
 
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 14
@@ -276,7 +276,7 @@ class Visualizer:
                     "black",
                 )
         elif _state.env_id == "chess":
-            from ._dwg.chess import _make_chess_dwg
+            from pgx._src._dwg.chess import _make_chess_dwg
 
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 8
@@ -306,7 +306,7 @@ class Visualizer:
                     "",
                 )
         elif _state.env_id == "connect_four":
-            from ._dwg.connect_four import _make_connect_four_dwg
+            from pgx._src._dwg.connect_four import _make_connect_four_dwg
 
             self.config["GRID_SIZE"] = 35
             self.config["BOARD_WIDTH"] = 7
@@ -336,7 +336,7 @@ class Visualizer:
                     "gray",
                 )
         elif _state.env_id in ("go-9x9", "go-19x19"):
-            from ._dwg.go import _make_go_dwg
+            from pgx._src._dwg.go import _make_go_dwg
 
             self.config["GRID_SIZE"] = 25
             try:
@@ -374,7 +374,7 @@ class Visualizer:
         elif _state.env_id == "hex":
             import jax.numpy as jnp
 
-            from ._dwg.hex import _make_hex_dwg, four_dig
+            from pgx._src._dwg import _make_hex_dwg, four_dig
 
             self.config["GRID_SIZE"] = 30
             try:
@@ -416,7 +416,7 @@ class Visualizer:
                     "lightgray",
                 )
         elif _state.env_id == "kuhn_poker":
-            from ._dwg.kuhn_poker import _make_kuhnpoker_dwg
+            from pgx._src._dwg.kuhn_poker import _make_kuhnpoker_dwg
 
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
@@ -446,7 +446,7 @@ class Visualizer:
                     "",
                 )
         elif _state.env_id == "leduc_holdem":
-            from ._dwg.leduc_holdem import _make_leducHoldem_dwg
+            from pgx._src._dwg.leduc_holdem import _make_leducHoldem_dwg
 
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
@@ -476,7 +476,7 @@ class Visualizer:
                     "",
                 )
         elif _state.env_id == "othello":
-            from ._dwg.othello import _make_othello_dwg
+            from pgx._src._dwg.othello import _make_othello_dwg
 
             self.config["GRID_SIZE"] = 30
             self.config["BOARD_WIDTH"] = 8
@@ -506,7 +506,7 @@ class Visualizer:
                     "",
                 )
         elif _state.env_id == "2048":
-            from ._dwg.play2048 import _make_2048_dwg
+            from pgx._src._dwg.play2048 import _make_2048_dwg
 
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 4
@@ -536,7 +536,7 @@ class Visualizer:
                     "black",
                 )
         elif _state.env_id == "shogi":
-            from ._dwg.shogi import _make_shogi_dwg
+            from pgx._src._dwg.shogi import _make_shogi_dwg
 
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 10
@@ -560,7 +560,7 @@ class Visualizer:
                     "",
                 )
         elif _state.env_id == "sparrow_mahjong":
-            from ._dwg.sparrow_mahjong import _make_sparrowmahjong_dwg
+            from pgx._src._dwg.sparrow_mahjong import _make_sparrowmahjong_dwg
 
             self.config["GRID_SIZE"] = 50
             self.config["BOARD_WIDTH"] = 15
@@ -590,7 +590,7 @@ class Visualizer:
                     "black",
                 )
         elif _state.env_id == "tic_tac_toe":
-            from ._dwg.tictactoe import _make_tictactoe_dwg
+            from pgx._src._dwg.tictactoe import _make_tictactoe_dwg
 
             self.config["GRID_SIZE"] = 60
             self.config["BOARD_WIDTH"] = 3
@@ -618,7 +618,7 @@ class Visualizer:
     # TODO: simplify me
     def _get_nth_state(self, _states: State, _i):
         if _states.env_id == "animal_shogi":
-            from ._dwg.animalshogi import AnimalShogiState
+            from pgx._src._dwg.animalshogi import AnimalShogiState
 
             return AnimalShogiState(
                 turn=_states.turn[_i],  # type:ignore
@@ -626,28 +626,28 @@ class Visualizer:
                 hand=_states.hand[_i],  # type:ignore
             )
         elif _states.env_id == "backgammon":
-            from ._dwg.backgammon import BackgammonState
+            from pgx._src._dwg.backgammon import BackgammonState
 
             return BackgammonState(
                 turn=_states.turn[_i],  # type:ignore
                 board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "connect_four":
-            from ._dwg.connect_four import ConnectFourState
+            from pgx._src._dwg.connect_four import ConnectFourState
 
             return ConnectFourState(  # type:ignore
                 turn=_states.turn[_i],  # type:ignore
                 board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "chess":
-            from ._dwg.chess import ChessState
+            from pgx._src._dwg.chess import ChessState
 
             return ChessState(
                 turn=_states.turn[_i],  # type:ignore
                 board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "bridge_bidding":
-            from ._dwg.bridge_bidding import BridgeBiddingState
+            from pgx._src._dwg.bridge_bidding import BridgeBiddingState
 
             return BridgeBiddingState(  # type:ignore
                 turn=_states.turn[_i],  # type:ignore
@@ -659,7 +659,7 @@ class Visualizer:
                 vul_EW=_states.vul_EW[_i],  # type:ignore
             )
         elif _states.env_id in ("go-9x9", "go-19x19"):
-            from ._dwg.go import GoState
+            from pgx._src._dwg.go import GoState
 
             return GoState(  # type:ignore
                 size=_states.size[_i],  # type:ignore
@@ -667,7 +667,7 @@ class Visualizer:
                 turn=_states.turn[_i],  # type:ignore
             )
         elif _states.env_id == "hex":
-            from ._dwg.hex import HexState
+            from pgx._src._dwg import HexState
 
             return HexState(
                 size=_states.size[_i],  # type:ignore
@@ -675,13 +675,13 @@ class Visualizer:
                 board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "kuhn_poker":
-            from ._dwg.kuhn_poker import KuhnPokerState
+            from pgx._src._dwg.kuhn_poker import KuhnPokerState
 
             return KuhnPokerState(
                 cards=_states.cards[_i], pot=_states.pot[_i]  # type:ignore
             )
         elif _states.env_id == "leduc_holdem":
-            from ._dwg.leduc_holdem import LeducHoldemState
+            from pgx._src._dwg.leduc_holdem import LeducHoldemState
 
             return LeducHoldemState(
                 cards=_states.cards[_i],  # type:ignore
@@ -689,20 +689,20 @@ class Visualizer:
                 round=_states.round[_i],  # type:ignore
             )
         elif _states.env_id == "othello":
-            from ._dwg.othello import OthelloState
+            from pgx._src._dwg.othello import OthelloState
 
             return OthelloState(
                 turn=_states.turn[_i],  # type:ignore
                 board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "2048":
-            from ._dwg.play2048 import Play2048State
+            from pgx._src._dwg.play2048 import Play2048State
 
             return Play2048State(
                 board=_states.board[_i],  # type:ignore
             )
         elif _states.env_id == "shogi":
-            from ._dwg.shogi import ShogiState
+            from pgx._src._dwg.shogi import ShogiState
 
             return ShogiState(  # type:ignore
                 turn=_states.turn[_i],  # type:ignore
@@ -710,7 +710,7 @@ class Visualizer:
                 hand=_states.hand[_i],  # type:ignore
             )
         elif _states.env_id == "sparrow_mahjong":
-            from ._dwg.sparrow_mahjong import SparrowMahjongState
+            from pgx._src._dwg.sparrow_mahjong import SparrowMahjongState
 
             return SparrowMahjongState(
                 current_player=_states.current_player[_i],  # type:ignore
@@ -725,7 +725,7 @@ class Visualizer:
                 dora=_states.dora[_i],  # type:ignore
             )
         elif _states.env_id == "tic_tac_toe":
-            from ._dwg.tictactoe import TictactoeState
+            from pgx._src._dwg.tictactoe import TictactoeState
 
             return TictactoeState(
                 current_player=_states.current_player[_i],  # type:ignore
