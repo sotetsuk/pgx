@@ -506,7 +506,7 @@ def f(n):
   * 実装がJit化可能かどうか検証・修正します。
 * (2) `jax.numpy` に書き換える
   * `import numpy as np` を `import jax.numpy as jnp` とします。
-  * `State` クラスを `chex.dataclass` にします。
+  * `State` クラスを `flax.struct.dataclass` にします。
   * in-placeな配列操作を `at` を使って書き換えます。
 * (3) `jax.jit` 可能な形に書き換える
   * テストが通ることを確認しつつ `@jax.jit` を `def` の上に一つずつ付けていく。

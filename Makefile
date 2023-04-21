@@ -32,7 +32,7 @@ check:
 	black pgx --check --diff --exclude=pgx/_flax
 	blackdoc pgx --check --exclude=pgx/_flax
 	flake8 --config pyproject.toml --ignore E203,E501,W503,E741 pgx --exclude=pgx/_flax
-	mypy --config pyproject.toml pgx --exclude=pgx/_flax/* --ignore-missing-imports
+	mypy --config pyproject.toml pgx --exclude=pgx/_flax/* 
 	isort pgx --check --diff --skip-glob=pgx/_flax
 
 install:

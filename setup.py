@@ -18,7 +18,6 @@ setup(
     include_package_data=True,
     install_requires=[
         "jax>=0.3.25",  # JAX version on Colab (TPU)
-        "chex>=0.1.6",
         "svgwrite",
         "msgpack",
         "typing_extensions"
