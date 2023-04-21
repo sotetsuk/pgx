@@ -1,10 +1,14 @@
 from setuptools import find_packages, setup
+from pathlib import Path
+
+long_description = (Path(__file__).parent / "README.md").read_text()
 
 setup(
     name="pgx",
     version="0.4.0",
-    long_description_content_type="text/markdown",
-    description="",
+    description="GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)",
+    long_description=long_description,
+    long_description_content_type='text/markdown',
     url="",
     author="Sotetsu KOYAMADA",
     author_email="sotetsu.koyamada@gmail.com",
