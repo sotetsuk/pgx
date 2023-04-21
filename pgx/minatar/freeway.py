@@ -11,10 +11,10 @@ The original MinAtar implementation is distributed under GNU General Public Lice
 from typing import Literal, Optional
 
 import jax
+from chex import dataclass
 from jax import numpy as jnp
 
 import pgx.core as core
-from chex import dataclass
 
 player_speed = jnp.array(3, dtype=jnp.int32)
 time_limit = jnp.array(2500, dtype=jnp.int32)

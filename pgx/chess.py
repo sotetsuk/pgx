@@ -14,6 +14,7 @@
 
 import jax
 import jax.numpy as jnp
+from chex import dataclass
 
 import pgx.core as core
 from pgx._chess_utils import (  # type: ignore
@@ -26,7 +27,6 @@ from pgx._chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
 )
-from chex import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)

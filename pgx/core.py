@@ -17,7 +17,6 @@ from typing import Literal, Optional, Tuple, get_args
 
 import jax
 import jax.numpy as jnp
-
 from chex import dataclass
 
 TRUE = jnp.bool_(True)

@@ -12,10 +12,10 @@ from typing import Literal, Optional
 
 import jax
 import jax.lax as lax
+from chex import dataclass
 from jax import numpy as jnp
 
 import pgx.core as core
-from chex import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)

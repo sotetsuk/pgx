@@ -17,9 +17,9 @@ from functools import partial
 
 import jax
 import jax.numpy as jnp
+from chex import dataclass
 
 import pgx.core as core
-from chex import dataclass
 from pgx._shogi_utils import (
     AROUND_IX,
     BETWEEN_IX,
