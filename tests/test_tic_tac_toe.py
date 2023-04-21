@@ -181,9 +181,10 @@ def test_observe():
     assert (obs == init_obs).all()
 
     state = step(state, 1)
-    obs = observe(state, state.current_player)
+    assert state.current_player == 0
+    obs = observe(state, 0)
     assert (obs == init_obs.at[0, 1, 1].set(1)).all(), obs
-    obs = observe(state, 1 - state.current_player)
+    obs = observe(state, 1)
     assert (obs == init_obs.at[0, 1, 0].set(1)).all(), obs
 
 
