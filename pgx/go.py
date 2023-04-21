@@ -101,8 +101,8 @@ class Go(core.Env):
         )(state=state, player_id=player_id)
 
     @property
-    def name(self) -> str:
-        return f"Go ({int(self.size)}x{int(self.size)})"
+    def id(self) -> core.EnvId:
+        return f"go-{int(self.size)}x{int(self.size)}"  # type: ignore
 
     @property
     def version(self) -> str:

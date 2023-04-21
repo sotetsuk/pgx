@@ -159,8 +159,8 @@ class SparrowMahjong(core.Env):
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "SparrowMahjong"
+    def id(self) -> core.EnvId:
+        return "sparrow_mahjong"
 
     @property
     def version(self) -> str:

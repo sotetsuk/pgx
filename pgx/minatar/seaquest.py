@@ -114,8 +114,8 @@ class MinAtarSeaquest(core.Env):
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "MinAtar/Seaquest"
+    def id(self) -> core.EnvId:
+        return "minatar/seaquest"
 
     @property
     def version(self) -> str:

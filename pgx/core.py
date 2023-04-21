@@ -242,7 +242,8 @@ class Env(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def name(self) -> str:
+    def id(self) -> EnvId:
+        """Environment id."""
         ...
 
     @property

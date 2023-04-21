@@ -64,8 +64,8 @@ class TicTacToe(core.Env):
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Tic-tac-toe"
+    def id(self) -> core.EnvId:
+        return "tic_tac_toe"
 
     @property
     def version(self) -> str:

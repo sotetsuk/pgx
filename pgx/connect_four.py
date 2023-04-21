@@ -69,8 +69,8 @@ class ConnectFour(core.Env):
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Connect Four"
+    def id(self) -> core.EnvId:
+        return "connect_four"
 
     @property
     def version(self) -> str:
