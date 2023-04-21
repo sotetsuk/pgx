@@ -13,10 +13,10 @@ setup(
     package_data={"": ["LICENSE", "*.svg"]},
     include_package_data=True,
     install_requires=[
-        "typing_extensions>=4.4.0",
         "jax>=0.3.25",  # JAX version on Colab (TPU)
         "svgwrite",
-        "msgpack"
+        "msgpack",
+        "typing_extensions"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.8",
