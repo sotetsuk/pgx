@@ -1,3 +1,12 @@
+"""NOTE: This file is copied from Flax (https://github.com/google/flax).
+Copyright belongs to the original authors.
+We keep tracking the updates of original Flax implementation.
+We try to minimize the modification to this file. Exceptions includes:
+  - automatic formatting
+  - type checking suppression
+  - support for various JAX versions
+"""
+
 # Copyright 2023 The Flax Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
