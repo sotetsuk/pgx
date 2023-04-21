@@ -108,9 +108,7 @@ class BridgeBidding(v1.Env):
         assert isinstance(state, State)
         return _step(state, action, self.hash_keys, self.hash_values)
 
-    def _observe(
-        self, state: v1.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 

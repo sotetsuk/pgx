@@ -138,9 +138,7 @@ class Shogi(v1.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: v1.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 

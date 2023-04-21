@@ -71,9 +71,7 @@ class Hex(v1.Env):
         assert isinstance(state, State)
         return partial(_step, size=self.size)(state, action)
 
-    def _observe(
-        self, state: v1.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(_observe, size=self.size)(state, player_id)
 

@@ -96,9 +96,7 @@ class MinAtarSpaceInvaders(v1.Env):
         )
         return state.replace(terminated=state.terminal)  # type: ignore
 
-    def _observe(
-        self, state: v1.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state)
 
