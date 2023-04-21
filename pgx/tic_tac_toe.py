@@ -108,7 +108,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
     @jax.vmap
     def plane(i):
-        return (state.current_player == i).reshape((3, 3))
+        return (state.board == i).reshape((3, 3))
 
     # flip if player_id is opposite
     x = jax.lax.cond(
