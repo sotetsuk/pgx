@@ -20,7 +20,7 @@ import jax.numpy as jnp
 
 import pgx.v1 as v1
 from pgx._flax.struct import dataclass
-from pgx._shogi_utils import (
+from pgx._src._shogi_utils import (
     AROUND_IX,
     BETWEEN_IX,
     CAN_MOVE,
