@@ -102,7 +102,7 @@ class Go(core.Env):
 
     @property
     def id(self) -> core.EnvId:
-        return f"go-{int(self.size)}x{int(self.size)})"  # type: ignore
+        return f"go-{int(self.size)}x{int(self.size)}"  # type: ignore
 
     @property
     def version(self) -> str:
