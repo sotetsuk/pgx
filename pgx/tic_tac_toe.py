@@ -117,4 +117,4 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         lambda: jnp.int8([1 - state.turn, state.turn]),
     )
 
-    return plane(x)
+    return jnp.stack(plane(x), -1)
