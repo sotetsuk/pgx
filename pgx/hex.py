@@ -79,7 +79,7 @@ class Hex(core.Env):
 
     @property
     def id(self) -> core.EnvId:
-        return f"hex"
+        return "hex"
 
     @property
     def version(self) -> str:
