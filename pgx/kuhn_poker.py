@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
+import pgx.v1 as v1
 from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -27,7 +27,7 @@ CHECK = jnp.int8(3)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -44,11 +44,11 @@ class State(core.State):
     pot: jnp.ndarray = jnp.int8([0, 0])
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "kuhn_poker"
 
 
-class KuhnPoker(core.Env):
+class KuhnPoker(v1.Env):
     def __init__(
         self,
     ):
@@ -57,18 +57,16 @@ class KuhnPoker(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> core.EnvId:
+    def id(self) -> v1.EnvId:
         return "kuhn_poker"
 
     @property

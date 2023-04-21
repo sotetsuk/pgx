@@ -18,8 +18,8 @@ from dataclasses import fields
 import jax
 import jax.numpy as jnp
 
-from pgx.core import Env, State, available_games
 from pgx.experimental.utils import act_randomly
+from pgx.v1 import Env, State, available_games
 
 act_randomly = jax.jit(act_randomly)
 

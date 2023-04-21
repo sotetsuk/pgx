@@ -4,7 +4,7 @@ from pgx._visualizer import (
     save_svg_animation,
     set_visualization_config,
 )
-from pgx.core import Env, EnvId, State, available_games, make
+from pgx.v1 import Env, EnvId, State, available_games, make
 
 __all__ = [
     "State",

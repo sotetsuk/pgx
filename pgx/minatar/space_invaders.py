@@ -14,7 +14,7 @@ import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
-import pgx.core as core
+import pgx.v1 as v1
 from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -29,7 +29,7 @@ NINE = jnp.int32(9)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
@@ -55,7 +55,7 @@ class State(core.State):
     last_action: jnp.ndarray = jnp.int32(0)
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "minatar/space_invaders"
 
     def _repr_html_(self) -> str:
@@ -75,7 +75,7 @@ class State(core.State):
         visualize_minatar(self, filename)
 
 
-class MinAtarSpaceInvaders(core.Env):
+class MinAtarSpaceInvaders(v1.Env):
     def __init__(
         self,
         *,
@@ -89,21 +89,19 @@ class MinAtarSpaceInvaders(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init_det()
 
-    def _step(self, state: core.State, action) -> State:
+    def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
         state = _step(
             state, action, sticky_action_prob=self.sticky_action_prob
         )
         return state.replace(terminated=state.terminal)  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state)
 
     @property
-    def id(self) -> core.EnvId:
+    def id(self) -> v1.EnvId:
         return "minatar/space_invaders"
 
     @property

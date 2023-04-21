@@ -16,7 +16,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
+import pgx.v1 as v1
 from pgx._flax.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -38,7 +38,7 @@ INIT_BOARD = jnp.int8([6, -1, -1, 2, 8, 5, 0, 3, 7, -1, -1, 1])  # (12,)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -53,7 +53,7 @@ class State(core.State):
     hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "animal_shogi"
 
 
@@ -79,7 +79,7 @@ class Action:
         )
 
 
-class AnimalShogi(core.Env):
+class AnimalShogi(v1.Env):
     def __init__(self, max_termination_steps: int = 200):
         super().__init__()
         self.max_termination_steps = max_termination_steps
@@ -91,7 +91,7 @@ class AnimalShogi(core.Env):
         state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
         return state
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         state = _step(state, action)
         state = jax.lax.cond(
@@ -103,14 +103,12 @@ class AnimalShogi(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> core.EnvId:
+    def id(self) -> v1.EnvId:
         return "animal_shogi"
 
     @property

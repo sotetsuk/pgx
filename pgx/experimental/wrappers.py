@@ -25,7 +25,7 @@ Third, personally, I feel `env = wrapper(env)` style is not easy to follow what 
 import jax
 import jax.numpy as jnp
 
-from pgx.core import State
+from pgx.v1 import State
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
