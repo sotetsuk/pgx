@@ -1,4 +1,4 @@
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 
 @dataclass
