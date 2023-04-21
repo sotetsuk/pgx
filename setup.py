@@ -13,9 +13,8 @@ setup(
     package_data={"": ["LICENSE", "*.svg"]},
     include_package_data=True,
     install_requires=[
-        "jax>=0.4.2",
+        "jax>=0.3.25",  # JAX version on Colab (TPU)
         "svgwrite",
-        "ipywidgets",
         "msgpack"
     ],
     classifiers=[
