@@ -3,7 +3,7 @@ from typing import List
 import jax
 import jax.numpy as jnp
 
-from pgx.core import EnvId, State, make
+from pgx.v1 import EnvId, State, make
 
 
 class RandomOpponentEnv:

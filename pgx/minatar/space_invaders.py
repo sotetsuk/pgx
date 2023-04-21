@@ -14,7 +14,7 @@ import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
-import pgx.core as core
+import pgx.v1 as core
 from pgx._flax.struct import dataclass
 
 FALSE = jnp.bool_(False)

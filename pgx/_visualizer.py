@@ -19,7 +19,7 @@ from typing import Literal, Optional, Sequence, Union
 
 import svgwrite  # type: ignore
 
-from .core import State
+from .v1 import State
 
 ColorTheme = Literal["light", "dark"]
 
