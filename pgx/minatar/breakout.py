@@ -103,8 +103,8 @@ class MinAtarBreakout(core.Env):
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "MinAtar/Asterix"
+    def id(self) -> core.EnvId:
+        return "minatar/asterix"
 
     @property
     def version(self) -> str:

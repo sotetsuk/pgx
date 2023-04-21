@@ -68,8 +68,8 @@ class KuhnPoker(core.Env):
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "KuhnPoker"
+    def id(self) -> core.EnvId:
+        return "kuhn_poker"
 
     @property
     def version(self) -> str:

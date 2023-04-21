@@ -79,7 +79,7 @@ class Play2048(core.Env):
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
+    def id(self) -> core.EnvId:
         return "2048"
 
     @property

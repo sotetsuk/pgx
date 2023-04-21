@@ -93,8 +93,8 @@ class MinAtarFreeway(core.Env):
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "MinAtar/Freeway"
+    def id(self) -> core.EnvId:
+        return "minatar/freeway"
 
     @property
     def version(self) -> str:

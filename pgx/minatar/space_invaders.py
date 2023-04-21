@@ -103,8 +103,8 @@ class MinAtarSpaceInvaders(core.Env):
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "MinAtar/SpaceInvaders"
+    def id(self) -> core.EnvId:
+        return "minatar/space_invaders"
 
     @property
     def version(self) -> str:

@@ -78,8 +78,8 @@ class Hex(core.Env):
         return partial(_observe, size=self.size)(state, player_id)
 
     @property
-    def name(self) -> str:
-        return f"Hex ({self.size}x{self.size})"
+    def id(self) -> core.EnvId:
+        return f"hex"
 
     @property
     def version(self) -> str:

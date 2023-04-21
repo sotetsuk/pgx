@@ -74,8 +74,8 @@ class Backgammon(core.Env):
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Backgammon"
+    def id(self) -> core.EnvId:
+        return "backgammon"
 
     @property
     def version(self) -> str:

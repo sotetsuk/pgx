@@ -145,8 +145,8 @@ class Shogi(core.Env):
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Shogi"
+    def id(self) -> core.EnvId:
+        return "shogi"
 
     @property
     def version(self) -> str:

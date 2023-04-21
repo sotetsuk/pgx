@@ -215,8 +215,8 @@ class Chess(core.Env):
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "Chess"
+    def id(self) -> core.EnvId:
+        return "chess"
 
     @property
     def version(self) -> str:
