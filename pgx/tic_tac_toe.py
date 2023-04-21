@@ -16,7 +16,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)

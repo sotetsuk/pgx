@@ -19,7 +19,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._flax.struct import dataclass
+from chex import dataclass
 from pgx._shogi_utils import (
     AROUND_IX,
     BETWEEN_IX,

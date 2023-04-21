@@ -12,7 +12,7 @@ import jax
 from jax import numpy as jnp
 
 import pgx.core as core
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 ramp_interval: jnp.ndarray = jnp.array(100, dtype=jnp.int32)
 init_spawn_speed: jnp.ndarray = jnp.array(10, dtype=jnp.int32)

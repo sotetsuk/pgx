@@ -26,7 +26,7 @@ from pgx._chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
 )
-from pgx._flax.struct import dataclass
+from chex import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
