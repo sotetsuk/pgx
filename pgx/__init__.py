@@ -1,5 +1,5 @@
 from pgx._test import api_test
-from pgx._visualizer import (
+from pgx._src._visualizer import (
     save_svg,
     save_svg_animation,
     set_visualization_config,

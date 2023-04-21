@@ -374,7 +374,7 @@ class Visualizer:
         elif _state.env_id == "hex":
             import jax.numpy as jnp
 
-            from pgx._src._dwg import _make_hex_dwg, four_dig
+            from pgx._src._dwg.hex import _make_hex_dwg, four_dig
 
             self.config["GRID_SIZE"] = 30
             try:
@@ -667,7 +667,7 @@ class Visualizer:
                 turn=_states.turn[_i],  # type:ignore
             )
         elif _states.env_id == "hex":
-            from pgx._src._dwg import HexState
+            from pgx._src._dwg.hex import HexState
 
             return HexState(
                 size=_states.size[_i],  # type:ignore
