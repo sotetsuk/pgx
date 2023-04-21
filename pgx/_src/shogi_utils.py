@@ -15,10 +15,10 @@
 import jax
 import jax.numpy as jnp
 
-from pgx._src._cache import load_shogi_init_legal_action_mask  # type: ignore
-from pgx._src._cache import load_shogi_is_on_the_way  # type: ignore
-from pgx._src._cache import load_shogi_legal_from_idx  # type: ignore
-from pgx._src._cache import load_shogi_raw_effect_boards  # type: ignore
+from pgx._src.cache import load_shogi_init_legal_action_mask  # type: ignore
+from pgx._src.cache import load_shogi_is_on_the_way  # type: ignore
+from pgx._src.cache import load_shogi_legal_from_idx  # type: ignore
+from pgx._src.cache import load_shogi_raw_effect_boards  # type: ignore
 
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
