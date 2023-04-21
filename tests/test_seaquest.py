@@ -98,8 +98,6 @@ def test_init_det():
         s_pgx = _init_det()
         s_pgx2 = minatar2pgx(s, seaquest.State)
         for field in fields(s_pgx):
-            if field.name == '_info':
-                continue
             assert jnp.allclose(getattr(s_pgx, field.name), getattr(s_pgx2, field.name))
 
 
