@@ -12,12 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import jax
 import jax.numpy as jnp
 import numpy as np
-
-from pgx._src.cache import load_shogi_is_on_the_way  # type: ignore
-from pgx._src.cache import load_shogi_raw_effect_boards  # type: ignore
 
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
@@ -32,11 +30,21 @@ INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
 # fmt: on
 
 # Can <piece,14> reach from <from,81> to <to,81> ignoring pieces on board?
-CAN_MOVE = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
+try:
+    file_path = 'assets/can_move.npy'
+    with open(os.path.join(os.path.dirname(__file__), file_path), 'rb') as f:
+        CAN_MOVE = jnp.load(f)
+except:
+    print("failed to load")
+
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
-BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
-
+try:
+    file_path = 'assets/between.npy'
+    with open(os.path.join(os.path.dirname(__file__), file_path), 'rb') as f:
+        BETWEEN = jnp.load(f)
+except:
+    print("failed to load")
 
 # Give <dir,10> and <to,81>, return the legal <from> idx
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1] (filled by -1)
