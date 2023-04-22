@@ -56,7 +56,7 @@ BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 #  8 Up2 left
 #  9 Up2 right
 
-LEGAL_FROM_IDX = -np.ones((10, 81, 8), dtype=jnp.int32)
+LEGAL_FROM_IDX = -np.ones((10, 81, 8), dtype=jnp.int32)  # type: ignore
 
 for dir_ in range(10):
     for to in range(81):
@@ -90,7 +90,7 @@ for dir_ in range(10):
             if dir_ == 8 or dir_ == 9:
                 break
 
-LEGAL_FROM_IDX = jnp.array(LEGAL_FROM_IDX)
+LEGAL_FROM_IDX = jnp.array(LEGAL_FROM_IDX)  # type: ignore
 
 
 @jax.jit
