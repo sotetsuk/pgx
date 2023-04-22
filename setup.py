@@ -19,7 +19,6 @@ setup(
     install_requires=[
         "jax>=0.3.25",  # JAX version on Colab (TPU)
         "svgwrite",
-        "msgpack",
         "typing_extensions"
     ],
     classifiers=[

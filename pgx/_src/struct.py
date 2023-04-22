@@ -32,7 +32,11 @@ from typing_extensions import (  # pytype: disable=not-supported-yet
     dataclass_transform,
 )
 
-from pgx._src import serialization
+has_flax = True
+try:
+    from flax import serialization  # type: ignore
+except ImportError:
+    has_flax = False
 
 _T = TypeVar("_T")
 
@@ -194,9 +198,10 @@ def dataclass(clz: _T) -> _T:
             )
         return x.replace(**updates)
 
-    serialization.register_serialization_state(
-        data_clz, to_state_dict, from_state_dict
-    )
+    if has_flax:
+        serialization.register_serialization_state(
+            data_clz, to_state_dict, from_state_dict
+        )
 
     # add a _flax_dataclass flag to distinguish from regular dataclasses
     data_clz._flax_dataclass = True  # type: ignore[attr-defined]
