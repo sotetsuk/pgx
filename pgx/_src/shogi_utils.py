@@ -38,7 +38,6 @@ CAN_MOVE = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
 
 
-
 # Give <dir,10> and <to,81>, return the legal <from> idx
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1] (filled by -1)
 # Used for computing dlshogi action
