@@ -34,7 +34,7 @@ from typing_extensions import (  # pytype: disable=not-supported-yet
 
 has_flax = True
 try:
-    from flax import serialization
+    from flax import serialization  # type: ignore
 except ImportError:
     has_flax = False
 
