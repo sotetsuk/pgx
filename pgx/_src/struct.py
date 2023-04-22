@@ -165,8 +165,6 @@ def dataclass(clz: _T) -> _T:
         jax.tree_util.register_keypaths(data_clz, keypaths)
 
     def to_state_dict(x):
-        if not has_flax:
-            raise ...
         state_dict = {
             name: serialization.to_state_dict(getattr(x, name))
             for name in data_fields
@@ -174,8 +172,6 @@ def dataclass(clz: _T) -> _T:
         return state_dict
 
     def from_state_dict(x, state):
-        if not has_flax:
-            raise ...
         """Restore the state of a data class."""
         state = (
             state.copy()
