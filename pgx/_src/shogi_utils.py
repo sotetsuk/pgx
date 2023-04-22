@@ -36,7 +36,9 @@ try:
     with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
         CAN_MOVE = jnp.load(f)
 except:
-    print("failed to load")
+    print("Failed to load cache file for shogi environment.")
+    import sys
+    sys.exit(1)
 
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
@@ -45,7 +47,9 @@ try:
     with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
         BETWEEN = jnp.load(f)
 except:
-    print("failed to load")
+    print("Failed to load cache file for shogi environment.")
+    import sys
+    sys.exit(1)
 
 # Give <dir,10> and <to,81>, return the legal <from> idx
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1] (filled by -1)
