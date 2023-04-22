@@ -1,11 +1,10 @@
-"""NOTE: This file is copied from Flax (https://github.com/google/flax).
-Copyright belongs to the original authors.
-We keep tracking the updates of original Flax implementation.
-We try to minimize the modification to this file. Exceptions includes:
-  - automatic formatting
-  - type checking suppression
-  - support for various JAX versions
-"""
+# NOTE: This file is copied from Flax (https://github.com/google/flax).
+# Copyright belongs to the original authors.
+# We keep tracking the updates of original Flax implementation.
+# We try to minimize the modification to this file. Exceptions includes:
+#   - automatic formatting
+#   - type checking suppression
+#   - support for various JAX versions
 
 # Copyright 2023 The Flax Authors.
 #
@@ -342,12 +341,12 @@ def _np_convert_in_place(d):
     return d
 
 
-_tuple_to_dict = lambda tpl: {
+_tuple_to_dict = lambda tpl: {  # noqa: E731
     str(x): y for x, y in enumerate(tpl)
-}  # noqa: E731
-_dict_to_tuple = lambda dct: tuple(
+}
+_dict_to_tuple = lambda dct: tuple(  # noqa: E731
     dct[str(i)] for i in range(len(dct))
-)  # noqa: E731
+)
 
 
 def _chunk(arr) -> Dict[str, Any]:
