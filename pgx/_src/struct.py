@@ -32,7 +32,11 @@ from typing_extensions import (  # pytype: disable=not-supported-yet
     dataclass_transform,
 )
 
-from pgx._src import serialization
+has_flax = True
+try:
+    from flax import serialization
+except ImportError:
+    has_flax = False
 
 _T = TypeVar("_T")
 
@@ -161,6 +165,8 @@ def dataclass(clz: _T) -> _T:
         jax.tree_util.register_keypaths(data_clz, keypaths)
 
     def to_state_dict(x):
+        if not has_flax:
+            raise ...
         state_dict = {
             name: serialization.to_state_dict(getattr(x, name))
             for name in data_fields
@@ -168,6 +174,8 @@ def dataclass(clz: _T) -> _T:
         return state_dict
 
     def from_state_dict(x, state):
+        if not has_flax:
+            raise ...
         """Restore the state of a data class."""
         state = (
             state.copy()
@@ -194,9 +202,10 @@ def dataclass(clz: _T) -> _T:
             )
         return x.replace(**updates)
 
-    serialization.register_serialization_state(
-        data_clz, to_state_dict, from_state_dict
-    )
+    if has_flax:
+        serialization.register_serialization_state(
+            data_clz, to_state_dict, from_state_dict
+        )
 
     # add a _flax_dataclass flag to distinguish from regular dataclasses
     data_clz._flax_dataclass = True  # type: ignore[attr-defined]
