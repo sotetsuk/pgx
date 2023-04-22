@@ -14,9 +14,9 @@
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from pgx._src.cache import load_shogi_is_on_the_way  # type: ignore
-from pgx._src.cache import load_shogi_legal_from_idx  # type: ignore
 from pgx._src.cache import load_shogi_raw_effect_boards  # type: ignore
 
 # fmt: off
@@ -36,10 +36,62 @@ CAN_MOVE = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
 BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
-# Give <dir,10> and <to,81>, return the legal from idx
-# E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1]
+
+
+
+# Give <dir,10> and <to,81>, return the legal <from> idx
+# E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1] (filled by -1)
 # Used for computing dlshogi action
-LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
+#
+#  dir, to, from
+#  (10, 81, 81)
+#
+#  0 Up
+#  1 Up left
+#  2 Up right
+#  3 Left
+#  4 Right
+#  5 Down
+#  6 Down left
+#  7 Down right
+#  8 Up2 left
+#  9 Up2 right
+
+LEGAL_FROM_IDX = -np.ones((10, 81, 8), dtype=jnp.int32)
+
+for dir_ in range(10):
+    for to in range(81):
+        x, y = to // 9, to % 9
+        if dir_ == 0:  # Up
+            dx, dy = 0, +1
+        elif dir_ == 1:  # Up left
+            dx, dy = -1, +1
+        elif dir_ == 2:  # Up right
+            dx, dy = +1, +1
+        elif dir_ == 3:  # Left
+            dx, dy = -1, 0
+        elif dir_ == 4:  # Right
+            dx, dy = +1, 0
+        elif dir_ == 5:  # Down
+            dx, dy = 0, -1
+        elif dir_ == 6:  # Down left
+            dx, dy = -1, -1
+        elif dir_ == 7:  # Down right
+            dx, dy = +1, -1
+        elif dir_ == 8:  # Up2 left
+            dx, dy = -1, +2
+        elif dir_ == 9:  # Up2 right
+            dx, dy = +1, +2
+        for i in range(8):
+            x += dx
+            y += dy
+            if x < 0 or 8 < x or y < 0 or 8 < y:
+                break
+            LEGAL_FROM_IDX[dir_, to, i] = x * 9 + y
+            if dir_ == 8 or dir_ == 9:
+                break
+
+LEGAL_FROM_IDX = jnp.array(LEGAL_FROM_IDX)
 
 
 @jax.jit
