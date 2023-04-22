@@ -18,7 +18,7 @@ from typing import Literal, Optional, Tuple, get_args
 import jax
 import jax.numpy as jnp
 
-from pgx._flax.struct import dataclass
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -125,7 +125,7 @@ class State(abc.ABC):
         Returns:
             str: SVG string
         """
-        from pgx._visualizer import Visualizer
+        from pgx._src.visualizer import Visualizer
 
         v = Visualizer(color_theme=color_theme, scale=scale)
         return v.get_dwg(states=self).tostring()
@@ -147,7 +147,7 @@ class State(abc.ABC):
         Returns:
             None
         """
-        from pgx._visualizer import save_svg
+        from pgx._src.visualizer import save_svg
 
         save_svg(self, filename, color_theme=color_theme, scale=scale)
 

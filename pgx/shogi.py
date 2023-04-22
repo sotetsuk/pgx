@@ -19,8 +19,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.v1 as v1
-from pgx._flax.struct import dataclass
-from pgx._shogi_utils import (
+from pgx._src.shogi_utils import (
     AROUND_IX,
     BETWEEN_IX,
     CAN_MOVE,
@@ -32,6 +31,7 @@ from pgx._shogi_utils import (
     _from_sfen,
     _to_sfen,
 )
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
