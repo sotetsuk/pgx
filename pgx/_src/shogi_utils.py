@@ -34,12 +34,15 @@ INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
 file_path = "assets/can_move.npy"
 with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
     CAN_MOVE = jnp.load(f)
+assert CAN_MOVE.sum() == 8228
+
 
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
 file_path = "assets/between.npy"
 with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
     BETWEEN = jnp.load(f)
+assert BETWEEN.sum() == 10564
 
 # Give <dir,10> and <to,81>, return the legal <from> idx
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1] (filled by -1)
