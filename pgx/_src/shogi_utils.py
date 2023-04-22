@@ -12,13 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
+
 import jax
 import jax.numpy as jnp
-
-from pgx._src.cache import load_shogi_init_legal_action_mask  # type: ignore
-from pgx._src.cache import load_shogi_is_on_the_way  # type: ignore
-from pgx._src.cache import load_shogi_legal_from_idx  # type: ignore
-from pgx._src.cache import load_shogi_raw_effect_boards  # type: ignore
+import numpy as np
 
 # fmt: off
 INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
@@ -33,14 +31,72 @@ INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
 # fmt: on
 
 # Can <piece,14> reach from <from,81> to <to,81> ignoring pieces on board?
-CAN_MOVE = load_shogi_raw_effect_boards()  # bool (14, 81, 81)
+file_path = "assets/can_move.npy"
+with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
+    CAN_MOVE = jnp.load(f)
+assert CAN_MOVE.sum() == 8228
+
+
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
-BETWEEN = load_shogi_is_on_the_way()  # bool (5, 81, 81, 81)
-# Give <dir,10> and <to,81>, return the legal from idx
-# E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1]
+file_path = "assets/between.npy"
+with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
+    BETWEEN = jnp.load(f)
+assert BETWEEN.sum() == 10564
+
+# Give <dir,10> and <to,81>, return the legal <from> idx
+# E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1] (filled by -1)
 # Used for computing dlshogi action
-LEGAL_FROM_IDX = load_shogi_legal_from_idx()  # (10, 81, 8)
+#
+#  dir, to, from
+#  (10, 81, 81)
+#
+#  0 Up
+#  1 Up left
+#  2 Up right
+#  3 Left
+#  4 Right
+#  5 Down
+#  6 Down left
+#  7 Down right
+#  8 Up2 left
+#  9 Up2 right
+
+LEGAL_FROM_IDX = -np.ones((10, 81, 8), dtype=jnp.int32)  # type: ignore
+
+for dir_ in range(10):
+    for to in range(81):
+        x, y = to // 9, to % 9
+        if dir_ == 0:  # Up
+            dx, dy = 0, +1
+        elif dir_ == 1:  # Up left
+            dx, dy = -1, +1
+        elif dir_ == 2:  # Up right
+            dx, dy = +1, +1
+        elif dir_ == 3:  # Left
+            dx, dy = -1, 0
+        elif dir_ == 4:  # Right
+            dx, dy = +1, 0
+        elif dir_ == 5:  # Down
+            dx, dy = 0, -1
+        elif dir_ == 6:  # Down left
+            dx, dy = -1, -1
+        elif dir_ == 7:  # Down right
+            dx, dy = +1, -1
+        elif dir_ == 8:  # Up2 left
+            dx, dy = -1, +2
+        elif dir_ == 9:  # Up2 right
+            dx, dy = +1, +2
+        for i in range(8):
+            x += dx
+            y += dy
+            if x < 0 or 8 < x or y < 0 or 8 < y:
+                break
+            LEGAL_FROM_IDX[dir_, to, i] = x * 9 + y
+            if dir_ == 8 or dir_ == 9:
+                break
+
+LEGAL_FROM_IDX = jnp.array(LEGAL_FROM_IDX)  # type: ignore
 
 
 @jax.jit
@@ -80,7 +136,14 @@ BETWEEN_IX = jax.jit(
 
 CAN_MOVE_ANY = can_move_any_ix(jnp.arange(81))  # (81, 36)
 
-INIT_LEGAL_ACTION_MASK = load_shogi_init_legal_action_mask()
+INIT_LEGAL_ACTION_MASK = jnp.zeros(81 * 27, dtype=jnp.bool_)
+# fmt: off
+ixs = [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331]
+# fmt: on
+for ix in ixs:
+    INIT_LEGAL_ACTION_MASK = INIT_LEGAL_ACTION_MASK.at[ix].set(True)
+assert INIT_LEGAL_ACTION_MASK.shape == (81 * 27,)
+assert INIT_LEGAL_ACTION_MASK.sum() == 30
 
 
 def _around(c):
