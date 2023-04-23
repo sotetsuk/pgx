@@ -105,31 +105,31 @@ class Yaku:
         )
 
     @staticmethod
-    def head(code: int) -> jnp.ndarray:
+    def head(code) -> jnp.ndarray:
         return Yaku.CACHE[code] & 0b1111
 
     @staticmethod
-    def chow(code: int) -> jnp.ndarray:
+    def chow(code) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 4 & 0b1111111
 
     @staticmethod
-    def pung(code: int) -> jnp.ndarray:
+    def pung(code) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 11 & 0b111111111
 
     @staticmethod
-    def n_pung(code: int) -> jnp.ndarray:
+    def n_pung(code) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 20 & 0b111
 
     @staticmethod
-    def n_double_chow(code: int) -> jnp.ndarray:
+    def n_double_chow(code) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 23 & 0b11
 
     @staticmethod
-    def outside(code: int) -> jnp.ndarray:
+    def outside(code) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 25 & 1
 
     @staticmethod
-    def nine_gates(code: int) -> jnp.ndarray:
+    def nine_gates(code) -> jnp.ndarray:
         return Yaku.CACHE[code] >> 26
 
     @staticmethod
@@ -250,11 +250,11 @@ class Yaku:
     def judge(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
-        n_meld: int,
-        last: int,
-        riichi: bool,
-        is_ron: bool,
-    ) -> tuple[jnp.ndarray, int, int]:
+        n_meld,
+        last,
+        riichi,
+        is_ron,
+    ):
         is_menzen = jax.lax.fori_loop(
             0,
             n_meld,
@@ -498,15 +498,13 @@ class Yaku:
         )
 
     @staticmethod
-    def flatten(
-        hand: jnp.ndarray, melds: jnp.ndarray, n_meld: int
-    ) -> jnp.ndarray:
+    def flatten(hand: jnp.ndarray, melds: jnp.ndarray, n_meld) -> jnp.ndarray:
         return jax.lax.fori_loop(
             0, n_meld, lambda i, arr: Yaku._flatten(arr, melds[i]), hand
         )
 
     @staticmethod
-    def _flatten(hand: jnp.ndarray, meld: int) -> jnp.ndarray:
+    def _flatten(hand: jnp.ndarray, meld) -> jnp.ndarray:
         target, action = Meld.target(meld), Meld.action(meld)
         return jax.lax.switch(
             action - Action.PON + 1,
