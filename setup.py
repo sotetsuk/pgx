@@ -19,7 +19,6 @@ setup(
     install_requires=[
         "jax>=0.3.25",  # JAX version on Colab (TPU)
         "svgwrite",
-        "typing_extensions"
     ],
     classifiers=[
         "Programming Language :: Python :: 3.8",
