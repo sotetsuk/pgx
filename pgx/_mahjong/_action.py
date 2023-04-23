@@ -20,5 +20,5 @@ class Action:
     NONE = 78
 
     @staticmethod
-    def is_selfkan(action: int) -> bool:
+    def is_selfkan(action) -> bool:
         return (34 <= action) & (action < 68)
