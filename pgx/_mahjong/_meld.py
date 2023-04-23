@@ -7,7 +7,7 @@ from pgx._mahjong._action import Action
 
 class Meld:
     @staticmethod
-    def init(action: int, target: int, src: int) -> int:
+    def init(action, target, src) -> int:
         # src: 相対位置
         # - 0: 自分(暗槓の場合のみ)
         # - 1: 下家
@@ -16,7 +16,7 @@ class Meld:
         return (src << 13) | (target << 7) | action
 
     @staticmethod
-    def to_str(meld: int) -> str:
+    def to_str(meld) -> str:
         action = Meld.action(meld)
         target = Meld.target(meld)
         src = Meld.src(meld)
@@ -144,19 +144,19 @@ class Meld:
         assert False
 
     @staticmethod
-    def src(meld: int) -> int:
+    def src(meld) -> int:
         return meld >> 13 & 0b11
 
     @staticmethod
-    def target(meld: int) -> int:
+    def target(meld) -> int:
         return (meld >> 7) & 0b111111
 
     @staticmethod
-    def action(meld: int) -> int:
+    def action(meld) -> int:
         return meld & 0b1111111
 
     @staticmethod
-    def suited_pung(meld: int) -> int:
+    def suited_pung(meld) -> int:
         action = Meld.action(meld)
         target = Meld.target(meld)
         is_pung = (
@@ -169,7 +169,7 @@ class Meld:
         return is_suited_pon << target
 
     @staticmethod
-    def chow(meld: int) -> int:
+    def chow(meld) -> int:
         action = Meld.action(meld)
         is_chi = (Action.CHI_L <= action) & (action <= Action.CHI_R)
         pos = Meld.target(meld) - (
@@ -180,7 +180,7 @@ class Meld:
         return is_chi << pos
 
     @staticmethod
-    def is_outside(meld: int) -> int:
+    def is_outside(meld) -> int:
         action = Meld.action(meld)
         target = Meld.target(meld)
         is_chi = (Action.CHI_L <= action) & (action <= Action.CHI_R)
@@ -193,7 +193,7 @@ class Meld:
         )
 
     @staticmethod
-    def fu(meld: int) -> int:
+    def fu(meld) -> int:
         action = Meld.action(meld)
 
         fu = (
@@ -205,6 +205,6 @@ class Meld:
         return fu * (1 + (Meld._is_outside(Meld.target(meld))))
 
     @staticmethod
-    def _is_outside(tile: int) -> bool:
+    def _is_outside(tile) -> bool:
         num = tile % 9
         return (tile >= 27) | (num == 0) | (num == 8)
