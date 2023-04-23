@@ -17,8 +17,8 @@ from typing import Literal, Optional
 import jax
 from jax import numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -31,7 +31,7 @@ NINE = jnp.array(9, dtype=jnp.int32)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
@@ -54,6 +54,10 @@ class State(core.State):
     terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
     last_action: jnp.ndarray = ZERO
 
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "minatar/breakout"
+
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
 
@@ -71,7 +75,7 @@ class State(core.State):
         visualize_minatar(self, filename)
 
 
-class MinAtarBreakout(core.Env):
+class MinAtarBreakout(v1.Env):
     def __init__(
         self,
         *,
@@ -85,22 +89,20 @@ class MinAtarBreakout(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)  # type: ignore
 
-    def _step(self, state: core.State, action) -> State:
+    def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
         state = _step(
             state, action, sticky_action_prob=self.sticky_action_prob
         )
         return state.replace(terminated=state.terminal)  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "MinAtar/Asterix"
+    def id(self) -> v1.EnvId:
+        return "minatar/asterix"
 
     @property
     def version(self) -> str:

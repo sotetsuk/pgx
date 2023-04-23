@@ -60,6 +60,10 @@ def test_duplicate():
         init_state = init(subkey)
         duplicated_state = duplicate(init_state)
         assert (
+            duplicated_state.current_player
+            == duplicated_state.shuffled_players[duplicated_state.dealer]
+        )
+        assert (
             init_state.shuffled_players[0]
             == duplicated_state.shuffled_players[1]
         )
@@ -75,6 +79,14 @@ def test_duplicate():
             init_state.shuffled_players[3]
             == duplicated_state.shuffled_players[2]
         )
+
+
+def test_illegal_action_penalty():
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    state = step(state, 36)
+    print(state.reward)
+    assert jnp.all(state.reward == jnp.array([22800, -7600, 22800, 22800]))
 
 
 def test_step():

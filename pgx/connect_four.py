@@ -15,15 +15,15 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((6, 7, 2), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -44,8 +44,12 @@ class State(core.State):
     board: jnp.ndarray = -jnp.ones(42, jnp.int8)  # -1 (empty), 0, 1
     blank_row: jnp.ndarray = jnp.full(7, 5)
 
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "connect_four"
 
-class ConnectFour(core.Env):
+
+class ConnectFour(v1.Env):
     def __init__(
         self,
     ):
@@ -54,19 +58,17 @@ class ConnectFour(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Connect Four"
+    def id(self) -> v1.EnvId:
+        return "connect_four"
 
     @property
     def version(self) -> str:

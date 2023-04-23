@@ -37,8 +37,8 @@ import jax
 import jax.lax as lax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -54,7 +54,7 @@ MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 +
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((15, 11), dtype=jnp.bool_)
     reward: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
@@ -88,8 +88,12 @@ class State(core.State):
     dora: jnp.ndarray = jnp.int32(0)  # tile type (0~10) is set
     scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
 
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "sparrow_mahjong"
 
-class SparrowMahjong(core.Env):
+
+class SparrowMahjong(v1.Env):
     def __init__(
         self,
     ):
@@ -110,7 +114,7 @@ class SparrowMahjong(core.Env):
         )
         return state
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         # discard tile
         hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
@@ -148,15 +152,13 @@ class SparrowMahjong(core.Env):
             ),
         )
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "SparrowMahjong"
+    def id(self) -> v1.EnvId:
+        return "sparrow_mahjong"
 
     @property
     def version(self) -> str:

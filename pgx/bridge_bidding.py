@@ -19,8 +19,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -32,7 +32,7 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # turn 現在のターン数
     turn: jnp.ndarray = jnp.int16(0)
@@ -88,8 +88,12 @@ class State(core.State):
     # passの回数
     pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "bridge_bidding"
 
-class BridgeBidding(core.Env):
+
+class BridgeBidding(v1.Env):
     def __init__(self):
         super().__init__()
         # fmt: off
@@ -100,19 +104,17 @@ class BridgeBidding(core.Env):
         key1, key2, key3 = jax.random.split(key, num=3)
         return _init_by_key(jax.random.choice(key2, self.hash_keys), key3)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return _step(state, action, self.hash_keys, self.hash_values)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "BridgeBidding"
+    def id(self) -> v1.EnvId:
+        return "bridge_bidding"
 
     @property
     def version(self) -> str:
@@ -121,6 +123,10 @@ class BridgeBidding(core.Env):
     @property
     def num_players(self) -> int:
         return 4
+
+    @property
+    def _illegal_action_penalty(self) -> float:
+        return -7600.0
 
 
 @jax.jit
@@ -202,7 +208,7 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     # Randomly determine NSteam and EWteam
     # Arrange in order of NESW
     return jax.lax.cond(
-        jax.random.randint(rng4, (1,), 1, 2)[0] == 1,
+        jax.random.randint(rng4, (1,), 0, 2)[0] == 1,
         lambda: jnp.array(
             [
                 team_a_players[0],
@@ -345,7 +351,7 @@ def duplicate(
     duplicated_state = copy.deepcopy(init_state)
     ix = jnp.array([1, 0, 3, 2])
     # fmt: off
-    duplicated_state = duplicated_state.replace(shuffled_players=duplicated_state.shuffled_players[ix])  # type: ignore
+    duplicated_state = duplicated_state.replace(shuffled_players=duplicated_state.shuffled_players[ix], current_player=duplicated_state.shuffled_players[ix][duplicated_state.dealer])  # type: ignore
     # fmt: on
     return duplicated_state
 
