@@ -73,6 +73,7 @@ class Yaku:
         riichi: bool,
         is_ron: bool,
     ) -> int:
+        """handはlast_tileを加えたもの"""
         yaku, fan, fu = Yaku.judge(hand, melds, n_meld, last, riichi, is_ron)
         score = fu << (fan + 2)
         return jax.lax.cond(
@@ -318,6 +319,7 @@ class Yaku:
             + (hand[33] == 3) * 4 * (2 - (is_ron & (33 == last)))
             # NOTE: 東場東家
             + ((27 <= last) & (hand[last] == 2)),
+            dtype=jnp.int32,
         )
 
         for suit in range(3):
