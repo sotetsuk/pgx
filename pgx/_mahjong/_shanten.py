@@ -1,7 +1,8 @@
-import jax.numpy as jnp
-import os
 import json
+import os
+
 import jax
+import jax.numpy as jnp
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")
 
@@ -97,7 +98,7 @@ class Shanten:
         )
 
     @staticmethod
-    def _normal(code: jnp.ndarray, n_set: int, head_suit: int) -> int:
+    def _normal(code: jnp.ndarray, n_set, head_suit) -> int:
         cost = Shanten.CACHE[code[head_suit]][4]
         idx = jnp.full(4, 0).at[head_suit].set(5)
         cost, idx = jax.lax.fori_loop(
@@ -109,9 +110,7 @@ class Shanten:
         return cost
 
     @staticmethod
-    def _update(
-        code: jnp.ndarray, cost: int, idx: jnp.ndarray
-    ) -> tuple[int, jnp.ndarray]:
+    def _update(code: jnp.ndarray, cost: int, idx: jnp.ndarray):
         i = jnp.argmin(Shanten.CACHE[code][[0, 1, 2, 3], idx])
         cost += Shanten.CACHE[code][i][idx[i]]
         idx = idx.at[i].set(idx[i] + 1)
