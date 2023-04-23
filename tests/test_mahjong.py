@@ -1,5 +1,6 @@
 from pgx._mahjong._hand import Hand
 from pgx._mahjong._yaku import Yaku
+from pgx._mahjong._shanten import Shanten
 import jax.numpy as jnp
 
 
@@ -107,3 +108,26 @@ def test_score():
         )
         == 800
     )
+
+
+def test_shanten():
+    # fmt:off
+    hand = jnp.int32([
+        2, 0, 0, 1, 1, 0, 1, 0, 0,
+        1, 1, 1, 1, 0, 0, 1, 0, 0,
+        0, 0, 0, 1, 0, 0, 0, 0, 1,
+        0, 0, 1, 1, 0, 0, 0
+    ])
+    # fmt:on
+
+    assert Shanten.number(hand) == 5
+
+    # fmt:off
+    hand = jnp.int32([
+        2, 0, 0, 2, 0, 0, 0, 0, 2,
+        2, 0, 0, 2, 0, 0, 0, 0, 2,
+        1, 1, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0
+    ])
+    # fmt:on
+    assert Shanten.number(hand) == 1
