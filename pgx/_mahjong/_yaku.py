@@ -3,8 +3,10 @@ import os
 
 import jax
 import jax.numpy as jnp
+
 from pgx._mahjong._action import Action
 from pgx._mahjong._hand import Hand
+from pgx._mahjong._meld import Meld
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")
 
