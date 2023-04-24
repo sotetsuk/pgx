@@ -295,9 +295,7 @@ def available_games() -> Tuple[EnvId, ...]:
     return get_args(EnvId)
 
 
-def make(  # noqa: C901
-    env_id: EnvId, *, dds_hash_table_path: Optional[str] = None
-):
+def make(env_id: EnvId):  # noqa: C901
     if env_id == "2048":
         from pgx.play2048 import Play2048
 
@@ -313,7 +311,7 @@ def make(  # noqa: C901
     elif env_id == "bridge_bidding":
         from pgx.bridge_bidding import BridgeBidding
 
-        return BridgeBidding(dds_hash_table_path=dds_hash_table_path)
+        return BridgeBidding(dds_hash_table_path=None)
     elif env_id == "chess":
         from pgx.chess import Chess
 

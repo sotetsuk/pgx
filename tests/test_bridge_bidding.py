@@ -1746,8 +1746,8 @@ def test_value_to_dds_tricks():
 def test_api():
     import pgx
 
-    env = pgx.make(
-        "bridge_bidding", dds_hash_table_path="tests/assets/dds_hash_table"
+    env = pgx.bridge_bidding.BridgeBidding(
+        dds_hash_table_path="tests/assets/dds_hash_table"
     )
     pgx.api_test(env, 10)
 

@@ -14,6 +14,7 @@
 
 import copy
 import os
+import sys
 from typing import Optional, Tuple
 
 import jax
@@ -105,8 +106,10 @@ class BridgeBidding(v1.Env):
         else:
             dds_hash_table = dds_hash_table_path
         try:
-            self.hash_keys = jnp.load(os.path.join(dds_hash_table, "keys.npy"))
-            self.hash_values = jnp.load(
+            self._hash_keys = jnp.load(
+                os.path.join(dds_hash_table, "keys.npy")
+            )
+            self._hash_values = jnp.load(
                 os.path.join(dds_hash_table, "values.npy")
             )
         except FileNotFoundError as e:
@@ -116,7 +119,7 @@ class BridgeBidding(v1.Env):
                 "1. Place the 'keys.npy' and 'values.npy' you created or downloaded in 'current_directry/dds_hash_table'"
             )
             print("2. Give the path of the dds hash table as an argument")
-            exit()
+            sys.exit(1)
 
     def _init(self, key: jax.random.KeyArray) -> State:
         key1, key2, key3 = jax.random.split(key, num=3)
@@ -145,6 +148,22 @@ class BridgeBidding(v1.Env):
     @property
     def _illegal_action_penalty(self) -> float:
         return -7600.0
+
+    @property
+    def hash_keys(self):
+        return self._hash_keys
+
+    @hash_keys.setter
+    def hash_keys(self, new_keys: jnp.ndarray):
+        self._hash_keys = new_keys
+
+    @property
+    def hash_values(self):
+        return self._hash_values
+
+    @hash_values.setter
+    def hash_values(self, new_values: jnp.ndarray):
+        self._hash_values = new_values
 
 
 @jax.jit
