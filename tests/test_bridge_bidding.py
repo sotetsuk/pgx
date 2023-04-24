@@ -1,4 +1,5 @@
 import csv
+import os
 from typing import Tuple
 
 import jax
@@ -25,7 +26,10 @@ from pgx.bridge_bidding import (
     init,
 )
 
-env = BridgeBidding()
+
+DDS_HASH_TABLE_PATH = os.path.join(os.path.dirname(__file__), "assets/dds_hash_table.npy")
+env = BridgeBidding(dds_hash_table_path=DDS_HASH_TABLE_PATH )
+
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
 observe = jax.jit(env.observe)
@@ -1743,7 +1747,9 @@ def test_value_to_dds_tricks():
 def test_api():
     import pgx
 
-    env = pgx.make("bridge_bidding")
+    env = pgx.bridge_bidding.BridgeBidding(
+        dds_hash_table_path=DDS_HASH_TABLE_PATH
+    )
     pgx.api_test(env, 10)
 
 
