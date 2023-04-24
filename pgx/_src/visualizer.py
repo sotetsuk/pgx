@@ -616,7 +616,6 @@ class Visualizer:
         else:
             assert False
 
-    @jax.jit
     def _get_nth_state(self, states: State, i):
         return jax.tree_util.tree_map(lambda x: x[i], states)
 
