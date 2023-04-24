@@ -76,7 +76,7 @@ def _duplicate_init(
     >>> key = jax.random.PRNGKey(0)
     >>> state = env.init(key)
     >>> duplicate_state = _duplicate_init(state)
-    >>> duplicate_state._shuffled_players
+    >>> duplicate_state.shuffled_players
     Array([0, 2, 1, 3], dtype=int8)
     >>> duplicate_state.dealer
     Array(1, dtype=int32)
@@ -84,7 +84,7 @@ def _duplicate_init(
     Array(2, dtype=int8)
     >>> state = env.step(state, 35)
     >>> duplicate_state = _duplicate_init(state)
-    >>> duplicate_state._shuffled_players
+    >>> duplicate_state.shuffled_players
     Array([0, 2, 1, 3], dtype=int8)
     >>> duplicate_state.dealer
     Array(1, dtype=int32)
@@ -95,7 +95,7 @@ def _duplicate_init(
 
     >>> state = env.step(state, 0)
     >>> duplicate_state = _duplicate_init(state)
-    >>> duplicate_state._shuffled_players
+    >>> duplicate_state.shuffled_players
     Array([0, 2, 1, 3], dtype=int8)
     >>> duplicate_state.dealer
     Array(1, dtype=int32)
