@@ -314,7 +314,8 @@ def _make_obs_history(i, vals):
         (flag != jnp.bool_(True)) & (state._bidding_history[i] == 35),
         lambda: (obs_history.at[curr_pos].set(True), last_bid, flag, state),
         lambda: jax.lax.cond(
-            (0 <= state._bidding_history[i]) & (state._bidding_history[i] <= 34),
+            (0 <= state._bidding_history[i])
+            & (state._bidding_history[i] <= 34),
             lambda: (
                 obs_history.at[
                     4
@@ -647,11 +648,15 @@ def _contract(
     declare_position, vul = jax.lax.cond(
         _position_to_team(_player_position(state._last_bidder, state)) == 0,
         lambda: (
-            _player_position(state._first_denomination_NS[denomination], state),
+            _player_position(
+                state._first_denomination_NS[denomination], state
+            ),
             state._vul_NS,
         ),
         lambda: (
-            _player_position(state._first_denomination_EW[denomination], state),
+            _player_position(
+                state._first_denomination_EW[denomination], state
+            ),
             state._vul_EW,
         ),
     )
@@ -701,10 +706,12 @@ def _state_bid(state: State, action: int) -> State:
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
     return state.replace(  # type: ignore
-        legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask),
+        legal_action_mask=jnp.where(
+            mask, jnp.bool_(0), state.legal_action_mask
+        ),
         _call_x=jnp.bool_(False),
         _call_xx=jnp.bool_(False),
-        _pass_num=jnp.int32(0)
+        _pass_num=jnp.int32(0),
     )
 
 
@@ -777,7 +784,7 @@ def _state_to_pbn(state: State) -> str:
     """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
-        hand = jnp.sort(state._hand[i * 13: (i + 1) * 13])
+        hand = jnp.sort(state._hand[i * 13 : (i + 1) * 13])
         for j in range(4):  # suit
             card = [
                 TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13

@@ -22,7 +22,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     area_width = 230
     area_height = 150
     for i in range(4):  # N, E, S, W
-        hand = sorted(state._hand[i * NUM_CARD_TYPE: (i + 1) * NUM_CARD_TYPE])
+        hand = sorted(state._hand[i * NUM_CARD_TYPE : (i + 1) * NUM_CARD_TYPE])
         assert len(hand) == NUM_CARD_TYPE
         # player
         pos = np.array(["North", "East", "South", "West"], dtype=object)
