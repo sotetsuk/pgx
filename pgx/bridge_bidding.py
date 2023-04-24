@@ -35,21 +35,18 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 @dataclass
 class State(v1.State):
+    current_player: jnp.ndarray = jnp.int8(-1)
+    observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
+    reward: jnp.ndarray = jnp.float32([0, 0, 0, 0])
+    terminated: jnp.ndarray = FALSE
+    truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
+    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # turn 現在のターン数
     turn: jnp.ndarray = jnp.int16(0)
-    # current_player 現在のプレイヤーid
-    current_player: jnp.ndarray = jnp.int8(-1)
-    # 各プレイヤーの観測
-    observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
-    # 報酬　player_id: 0, 1, 2, 3
-    reward: jnp.ndarray = jnp.float32([0, 0, 0, 0])
     # シャッフルされたプレイヤーの並び
     shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
-    # 終端状態
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     # hand 各プレイヤーの手札
     # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札
     # 各要素にはカードを表す0 ~ 51の整数が格納される
@@ -78,8 +75,6 @@ class State(v1.State):
     last_bidder: jnp.ndarray = jnp.int8(-1)
     call_x: jnp.ndarray = jnp.bool_(False)
     call_xx: jnp.ndarray = jnp.bool_(False)
-    # legal_actions プレイヤーの可能なbidの一覧
-    legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
     # デノミネーションの順番は C, D, H, S, NT = 0, 1, 2, 3, 4
