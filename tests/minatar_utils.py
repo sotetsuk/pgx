@@ -32,7 +32,7 @@ def assert_states(state1, state2):
 def pgx2minatar(state, keys) -> Dict[str, Any]:
     d = {}
     for key in keys:
-        d[key] = copy.deepcopy(getattr(state, key))
+        d[key] = copy.deepcopy(getattr(state, "_" + key))
         if isinstance(d[key], jnp.ndarray):
             d[key] = np.array(d[key])
         if key == "entities":
@@ -96,5 +96,6 @@ def minatar2pgx(state_dict: Dict[str, Any], state_cls):
             val = jnp.array(val, dtype=jnp.int32)
         d[key] = val
 
+    d = {"_" + k: v for k, v in d.items()}
     s = state_cls(**d)
     return s
