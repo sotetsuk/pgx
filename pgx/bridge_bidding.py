@@ -132,7 +132,6 @@ class BridgeBidding(v1.Env):
     @property
     def version(self) -> str:
         return "alpha"
-
     @property
     def num_players(self) -> int:
         return 4
@@ -140,22 +139,6 @@ class BridgeBidding(v1.Env):
     @property
     def _illegal_action_penalty(self) -> float:
         return -7600.0
-
-    @property
-    def hash_keys(self):
-        return self._hash_keys
-
-    @hash_keys.setter
-    def hash_keys(self, new_keys: jnp.ndarray):
-        self._hash_keys = new_keys
-
-    @property
-    def hash_values(self):
-        return self._hash_values
-
-    @hash_values.setter
-    def hash_values(self, new_values: jnp.ndarray):
-        self._hash_values = new_values
 
 
 @jax.jit
