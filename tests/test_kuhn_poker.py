@@ -11,7 +11,7 @@ observe = jax.jit(env.observe)
 def test_init():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
-    assert state.cards[0] != state.cards[1]
+    assert state._cards[0] != state._cards[1]
     assert (state.legal_action_mask == jnp.bool_([0, 1, 0, 1])).all()
 
 
