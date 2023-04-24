@@ -129,7 +129,9 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     手番のplayerに対する観測を返す.
     """
     board: jnp.ndarray = state._board
-    zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state._playable_dice)
+    zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(
+        state._playable_dice
+    )
     return jax.lax.cond(
         player_id == state.current_player,
         lambda: jnp.concatenate((board, zero_one_dice_vec), axis=None),  # type: ignore
