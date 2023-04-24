@@ -35,9 +35,9 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Hex specific ---
-    size: jnp.ndarray = jnp.int8(11)
+    _size: jnp.ndarray = jnp.int8(11)
     # 0(black), 1(white)
-    turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 11x11 board
     # [[  0,  1,  2,  ...,  8,  9, 10],
     #  [ 11,  12, 13, ..., 19, 20, 21],
@@ -45,7 +45,7 @@ class State(v1.State):
     #  .
     #  .
     #  [110, 111, 112, ...,  119, 120]]
-    board: jnp.ndarray = -jnp.zeros(
+    _board: jnp.ndarray = -jnp.zeros(
         11 * 11, jnp.int32
     )  # <0(oppo), 0(empty), 0<(self)
 
@@ -91,12 +91,12 @@ class Hex(v1.Env):
 def _init(rng: jax.random.KeyArray, size: int) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
-    return State(size=size, current_player=current_player)  # type:ignore
+    return State(_size=size, current_player=current_player)  # type:ignore
 
 
 def _step(state: State, action: jnp.ndarray, size: int) -> State:
     set_place_id = action + 1
-    board = state.board.at[action].set(set_place_id)
+    board = state._board.at[action].set(set_place_id)
     neighbour = _neighbour(action, size)
 
     def merge(i, b):
@@ -108,7 +108,7 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    won = _is_game_end(board, size, state.turn)
+    won = _is_game_end(board, size, state._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -118,8 +118,8 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
     legal_action_mask = board == 0
     state = state.replace(  # type:ignore
         current_player=1 - state.current_player,
-        turn=1 - state.turn,
-        board=board * -1,
+        _turn=1 - state._turn,
+        _board=board * -1,
         reward=reward,
         terminated=won,
         legal_action_mask=legal_action_mask,
@@ -131,8 +131,8 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
 def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
     board = jax.lax.cond(
         player_id == state.current_player,
-        lambda: state.board.reshape((size, size)),
-        lambda: (state.board * -1).reshape((size, size)),
+        lambda: state._board.reshape((size, size)),
+        lambda: (state._board * -1).reshape((size, size)),
     )
 
     def make(color):
@@ -170,5 +170,5 @@ def _is_game_end(board, size, turn):
 
 def _get_abs_board(state):
     return jax.lax.cond(
-        state.turn == 0, lambda: state.board, lambda: state.board * -1
+        state._turn == 0, lambda: state._board, lambda: state._board * -1
     )
