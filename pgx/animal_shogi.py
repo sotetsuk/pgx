@@ -250,7 +250,7 @@ def _flip(state):
     board = board[::-1]
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        turn=(state._turn + 1) % 2,
+        turn=(state.turn + 1) % 2,
         board=board,
         hand=state.hand[::-1],
     )
