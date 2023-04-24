@@ -116,12 +116,12 @@ def _duplicate_init(
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
     duplicated_state = State(  # type: ignore
-        shuffled_players=state._shuffled_players[ix],
+        _shuffled_players=state._shuffled_players[ix],
         current_player=current_player,
-        hand=state._hand,
-        dealer=state._dealer,
-        vul_NS=state._vul_NS,
-        vul_EW=state._vul_EW,
+        _hand=state._hand,
+        _dealer=state._dealer,
+        _vul_NS=state._vul_NS,
+        _vul_EW=state._vul_EW,
         legal_action_mask=legal_actions,
     )
     return duplicated_state
