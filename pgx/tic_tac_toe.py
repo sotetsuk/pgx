@@ -33,7 +33,7 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Tic-tac-toe specific ---
-    turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
@@ -81,8 +81,8 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action: jnp.ndarray) -> State:
-    state = state.replace(board=state.board.at[action].set(state.turn))  # type: ignore
-    won = _win_check(state.board, state.turn)
+    state = state.replace(board=state.board.at[action].set(state._turn))  # type: ignore
+    won = _win_check(state.board, state._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -93,7 +93,7 @@ def _step(state: State, action: jnp.ndarray) -> State:
         legal_action_mask=state.board < 0,
         reward=reward,
         terminated=won | jnp.all(state.board != -1),
-        turn=(state.turn + 1) % 2,
+        _turn=(state._turn + 1) % 2,
     )
 
 
@@ -110,8 +110,8 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     # flip if player_id is opposite
     x = jax.lax.cond(
         state.current_player == player_id,
-        lambda: jnp.int8([state.turn, 1 - state.turn]),
-        lambda: jnp.int8([1 - state.turn, state.turn]),
+        lambda: jnp.int8([state._turn, 1 - state._turn]),
+        lambda: jnp.int8([1 - state._turn, state._turn]),
     )
 
     return jnp.stack(plane(x), -1)
