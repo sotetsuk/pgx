@@ -99,11 +99,11 @@ class BridgeBidding(v1.Env):
     def __init__(self, *, dds_hash_table_path: Optional[str] = None):
         super().__init__()
         if dds_hash_table_path is None:
-            dds_hash_table_path: str = os.path.join(
+            dds_hash_table_path = os.path.join(
                 os.getcwd(), "dds_hash_table.npz"
             )
         try:
-            self._hash_keys, self._hash_values = jnp.load(dds_hash_table_path)
+            self.hash_keys, self.hash_values = jnp.load(dds_hash_table_path)
         except FileNotFoundError as e:
             print(e)
             print("Try the following methods")
