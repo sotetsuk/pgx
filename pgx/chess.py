@@ -264,7 +264,7 @@ def has_insufficient_pieces(state: State):
     # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/chess/chess_board.cc#L724
     num_pieces = (state._board != EMPTY).sum()
     num_pawn_rook_queen = (
-                                  (jnp.abs(state._board) >= ROOK) | (jnp.abs(state._board) == PAWN)
+        (jnp.abs(state._board) >= ROOK) | (jnp.abs(state._board) == PAWN)
     ).sum() - 2  # two kings
     num_bishop = (jnp.abs(state._board) == 3).sum()
     coords = jnp.arange(64).reshape((8, 8))
@@ -293,12 +293,16 @@ def _apply_move(state: State, a: Action):
     piece = state._board[a.from_]
     # en passant
     is_en_passant = (
-            (state._en_passant >= 0) & (piece == PAWN) & (state._en_passant == a.to)
+        (state._en_passant >= 0)
+        & (piece == PAWN)
+        & (state._en_passant == a.to)
     )
     removed_pawn_pos = a.to - 1
     state = state.replace(  # type: ignore
         _board=state._board.at[removed_pawn_pos].set(
-            jax.lax.select(is_en_passant, EMPTY, state._board[removed_pawn_pos])
+            jax.lax.select(
+                is_en_passant, EMPTY, state._board[removed_pawn_pos]
+            )
         ),
     )
     state = state.replace(  # type: ignore
@@ -387,9 +391,9 @@ def _apply_move(state: State, a: Action):
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state._possible_piece_positions[0, :] - a.from_))
     state = state.replace(  # type: ignore
-        _possible_piece_positions=state._possible_piece_positions.at[0, ix].set(
-            a.to
-        )
+        _possible_piece_positions=state._possible_piece_positions.at[
+            0, ix
+        ].set(a.to)
     )
     return state
 
@@ -625,7 +629,7 @@ def _observe(state: State):
     opp_queen_side_castling_right = ONE_PLANE * state._can_castle_queen_side[1]
     opp_king_side_castling_right = ONE_PLANE * state._can_castle_king_side[1]
     no_progress_count = (
-            ONE_PLANE * state._halfmove_count.astype(jnp.float32) / 100.0
+        ONE_PLANE * state._halfmove_count.astype(jnp.float32) / 100.0
     )
 
     return jnp.vstack(
