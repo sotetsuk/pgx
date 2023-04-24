@@ -27,7 +27,7 @@ from pgx.bridge_bidding import (
 )
 
 
-env = BridgeBidding("tests/assets/dds_hash_table")
+env = BridgeBidding(dds_hash_table_path="tests/assets/dds_hash_table")
 
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
@@ -1747,7 +1747,7 @@ def test_api():
     import pgx
 
     env = pgx.make(
-        "bridge_bidding", dds_hash_table="tests/assets/dds_hash_table"
+        "bridge_bidding", dds_hash_table_path="tests/assets/dds_hash_table"
     )
     pgx.api_test(env, 10)
 

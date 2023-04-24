@@ -8,7 +8,7 @@ import time
 
 env_id: pgx.EnvId = "bridge_bidding"
 time1 = time.time()
-env = pgx.make(env_id)
+env = pgx.make(env_id, dds_hash_table_path="dds_hash_table")
 time2 = time.time()
 print(time2 - time1)
 # run api test
