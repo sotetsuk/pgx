@@ -43,7 +43,7 @@ def _make_kuhnpoker_dwg(dwg, state: KuhnPokerState, config):
     )
     board_g.add(
         dwg.text(
-            text=CARD[state.cards[0]],
+            text=CARD[state._cards[0]],
             insert=(GRID_SIZE, GRID_SIZE),
             fill=color_set.text_color,
             font_size="40px",
@@ -54,7 +54,7 @@ def _make_kuhnpoker_dwg(dwg, state: KuhnPokerState, config):
     # chip
     board_g.add(
         dwg.text(
-            text=f"chip {state.pot[0]}",
+            text=f"chip {state._pot[0]}",
             insert=(0, 3.6 * GRID_SIZE),
             fill=color_set.text_color,
             font_size="18px",
@@ -77,7 +77,7 @@ def _make_kuhnpoker_dwg(dwg, state: KuhnPokerState, config):
     )
     board_g.add(
         dwg.text(
-            text=CARD[state.cards[1]],
+            text=CARD[state._cards[1]],
             insert=(7 * GRID_SIZE, 6 * GRID_SIZE),
             fill=color_set.text_color,
             font_size="40px",
@@ -88,7 +88,7 @@ def _make_kuhnpoker_dwg(dwg, state: KuhnPokerState, config):
     # chip
     board_g.add(
         dwg.text(
-            text=f"chip {state.pot[1]}",
+            text=f"chip {state._pot[1]}",
             insert=(6 * GRID_SIZE, 4.6 * GRID_SIZE),
             fill=color_set.text_color,
             font_size="18px",
