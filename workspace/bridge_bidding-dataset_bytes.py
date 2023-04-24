@@ -1,7 +1,6 @@
 from tqdm import tqdm
 import jax
 import jax.numpy as jnp
-from flax.serialization import to_bytes, from_bytes
 from typing import Tuple
 import csv
 import numpy as np
@@ -111,6 +110,6 @@ with open("values_bytes.txt", "rb") as f:
     values = from_bytes(jnp.zeros((50000, 4)), values_byte)
     print(values) """
 time5 = time.time()
-jnp.save("dds_hash_table/keys.npy", arr=keys)
-jnp.save("dds_hash_table/values.npy", arr=values)
+hash_table = (keys, values)
+jnp.save("dds_hash_table.npy", arr=hash_table)
 # print(f"read byte file time: {time5 - time4}")

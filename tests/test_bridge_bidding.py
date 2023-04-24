@@ -27,7 +27,8 @@ from pgx.bridge_bidding import (
 )
 
 
-env = BridgeBidding(dds_hash_table_path="tests/assets/dds_hash_table")
+DDS_HASH_TABLE_PATH = os.path.join(os.path.dirname(__file__), "assets/dds_hash_table.npy")
+env = BridgeBidding(dds_hash_table_path=DDS_HASH_TABLE_PATH )
 
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
@@ -1747,7 +1748,7 @@ def test_api():
     import pgx
 
     env = pgx.bridge_bidding.BridgeBidding(
-        dds_hash_table_path="tests/assets/dds_hash_table"
+        dds_hash_table_path=DDS_HASH_TABLE_PATH
     )
     pgx.api_test(env, 10)
 
