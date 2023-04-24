@@ -48,9 +48,9 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Animal Shogi specific ---
-    turn: jnp.ndarray = jnp.int8(0)
-    board: jnp.ndarray = INIT_BOARD  # (12,)
-    hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
+    _turn: jnp.ndarray = jnp.int8(0)
+    _board: jnp.ndarray = INIT_BOARD  # (12,)
+    _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -124,7 +124,7 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
-    is_try = (state.board[jnp.int8([0, 4, 8])] == KING).any()
+    is_try = (state._board[jnp.int8([0, 4, 8])] == KING).any()
 
     state = _flip(state)
 
@@ -152,10 +152,10 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     )
 
     def is_piece(p, state):
-        return state.board == p
+        return state._board == p
 
     def num_hand(p, n, state):
-        return state.hand.flatten()[p] >= n
+        return state._hand.flatten()[p] >= n
 
     # fmt: off
     piece_feat = jax.vmap(partial(is_piece, state=state))(jnp.arange(10))  # (10, 12)
@@ -171,18 +171,18 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
 
 def _step_move(state: State, action: Action) -> State:
-    piece = state.board[action.from_]
+    piece = state._board[action.from_]
     # remove piece from the original position
-    board = state.board.at[action.from_].set(EMPTY)
+    board = state._board.at[action.from_].set(EMPTY)
     # capture the opponent if exists
     captured = board[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
     hand = jax.lax.cond(
         captured == EMPTY,
-        lambda: state.hand,
+        lambda: state._hand,
         # add captured piece to my hand after
         #   (1) tuning opp piece into mine by % 5, and
         #   (2) filtering promoted piece by x % 4
-        lambda: state.hand.at[0, (captured % 5) % 4].add(1),
+        lambda: state._hand.at[0, (captured % 5) % 4].add(1),
     )
     # promote piece (PAWN to GOLD)
     is_promotion = (action.from_ % 4 == 1) & (piece == PAWN)
@@ -190,15 +190,15 @@ def _step_move(state: State, action: Action) -> State:
     # set piece to the target position
     board = board.at[action.to].set(piece)
     # apply piece moves
-    return state.replace(board=board, hand=hand)  # type: ignore
+    return state.replace(_board=board, _hand=hand)  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
     # add piece to board
-    board = state.board.at[action.to].set(action.drop_piece)
+    board = state._board.at[action.to].set(action.drop_piece)
     # remove piece from hand
-    hand = state.hand.at[0, action.drop_piece].add(-1)
-    return state.replace(board=board, hand=hand)  # type: ignore
+    hand = state._hand.at[0, action.drop_piece].add(-1)
+    return state.replace(_board=board, _hand=hand)  # type: ignore
 
 
 def _legal_action_mask(state: State):
@@ -209,19 +209,19 @@ def _legal_action_mask(state: State):
         )
 
     def is_legal_move(action: Action):
-        piece = state.board[action.from_]
+        piece = state._board[action.from_]
         ok = (PAWN <= piece) & (piece <= GOLD)
         ok &= action.to != -1
-        ok &= (state.board[action.to] == EMPTY) | (
-            GOLD < state.board[action.to]
+        ok &= (state._board[action.to] == EMPTY) | (
+            GOLD < state._board[action.to]
         )
         ok &= _can_move(piece, action.from_, action.to)
         ok &= ~_is_checked(_step_move(state, action))
         return ok
 
     def is_legal_drop(action: Action):
-        ok = state.board[action.to] == EMPTY
-        ok &= state.hand[0, action.drop_piece] > 0
+        ok = state._board[action.to] == EMPTY
+        ok &= state._hand[0, action.drop_piece] > 0
         ok &= (action.drop_piece != PAWN) | (action.to % 4 != 0)
         ok &= ~_is_checked(_step_drop(state, action))
         return ok
@@ -230,13 +230,13 @@ def _legal_action_mask(state: State):
 
 
 def _is_checked(state):
-    king_pos = jnp.argmin(jnp.abs(state.board - KING))
+    king_pos = jnp.argmin(jnp.abs(state._board - KING))
 
     @jax.vmap
     def can_capture_king(from_):
-        piece = state.board[from_]
+        piece = state._board[from_]
         is_opp = piece >= 5
-        return is_opp & _can_move(state.board[from_] % 5, king_pos, from_)
+        return is_opp & _can_move(state._board[from_] % 5, king_pos, from_)
 
     return can_capture_king(
         jnp.arange(12)
@@ -244,15 +244,15 @@ def _is_checked(state):
 
 
 def _flip(state):
-    empty_mask = state.board == EMPTY
-    board = (state.board + 5) % 10
+    empty_mask = state._board == EMPTY
+    board = (state._board + 5) % 10
     board = jnp.where(empty_mask, EMPTY, board)
     board = board[::-1]
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        turn=(state.turn + 1) % 2,
-        board=board,
-        hand=state.hand[::-1],
+        _turn=(state._turn + 1) % 2,
+        _board=board,
+        _hand=state._hand[::-1],
     )
 
 
