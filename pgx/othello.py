@@ -190,7 +190,7 @@ def _step(state, action):
 
     return state.replace(
         current_player=1 - state.current_player,
-        turn=1 - state.turn,
+        turn=1 - state._turn,
         legal_action_mask=state.legal_action_mask.at[:64]
         .set(legal_action)
         .at[64]
@@ -241,5 +241,5 @@ def _observe(state, player_id) -> jnp.ndarray:
 
 def _get_abs_board(state):
     return jax.lax.cond(
-        state.turn == 0, lambda: state.board, lambda: state.board * -1
+        state._turn == 0, lambda: state.board, lambda: state.board * -1
     )

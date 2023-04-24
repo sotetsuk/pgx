@@ -243,7 +243,7 @@ def _step(state: State, action: jnp.ndarray):
     state = _flip(state)
     state = state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        turn=(state.turn + 1) % 2,
+        turn=(state._turn + 1) % 2,
     )
     legal_action_mask = _legal_action_mask(state)
     terminated = ~legal_action_mask.any()

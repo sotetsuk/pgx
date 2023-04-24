@@ -906,12 +906,12 @@ class State:
     @jit
     def _draw(state: State) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
-        state.turn += 1
-        state.turn %= 4
+        state._turn += 1
+        state._turn %= 4
         state.deck, tile = Deck.draw(state.deck)
         state.last_draw = tile
-        state.hand = state.hand.at[state.turn].set(
-            Hand.add(state.hand[state.turn], tile)
+        state.hand = state.hand.at[state._turn].set(
+            Hand.add(state.hand[state._turn], tile)
         )
         return state, jnp.zeros(4, dtype=jnp.int32), False
 
@@ -993,21 +993,21 @@ class State:
     def _minkan(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
         meld = Meld.init(
-            Action.MINKAN, state.target, (state.turn - player) % 4
+            Action.MINKAN, state.target, (state._turn - player) % 4
         )
         state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
             Hand.minkan(state.hand[player], state.target)
         )
         state.target = -1
-        state.turn = player
+        state._turn = player
         state.is_menzen = state.is_menzen.at[player].set(False)
 
         # 嶺上牌
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
-        state.hand = state.hand.at[state.turn].set(
-            Hand.add(state.hand[state.turn], tile)
+        state.hand = state.hand.at[state._turn].set(
+            Hand.add(state.hand[state._turn], tile)
         )
         return state, jnp.zeros(4, dtype=jnp.int32), False
 
@@ -1027,16 +1027,16 @@ class State:
     def _ankan(state: State, target: int) -> tuple[State, jnp.ndarray, bool]:
         meld = Meld.init(target + 34, target, src=0)
         state = State._append_meld(state, meld, state.turn)
-        state.hand = state.hand.at[state.turn].set(
-            Hand.ankan(state.hand[state.turn], target)
+        state.hand = state.hand.at[state._turn].set(
+            Hand.ankan(state.hand[state._turn], target)
         )
         # TODO: 国士無双ロンの受付
 
         # 嶺上牌
         state.deck, tile = Deck.draw(state.deck, is_kan=True)
         state.last_draw = tile
-        state.hand = state.hand.at[state.turn].set(
-            Hand.add(state.hand[state.turn], tile)
+        state.hand = state.hand.at[state._turn].set(
+            Hand.add(state.hand[state._turn], tile)
         )
         return state, jnp.zeros(4, dtype=jnp.int32), False
 
@@ -1066,7 +1066,7 @@ class State:
     @jit
     def _pon(state: State, player: int) -> tuple[State, jnp.ndarray, bool]:
         state = State._accept_riichi(state)
-        src = (state.turn - player) % 4
+        src = (state._turn - player) % 4
         meld = Meld.init(Action.PON, state.target, src)
         state = State._append_meld(state, meld, player)
         state.hand = state.hand.at[player].set(
@@ -1077,7 +1077,7 @@ class State:
             src << 2 | state.n_meld[player] - 1
         )
         state.target = -1
-        state.turn = player
+        state._turn = player
         return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
@@ -1093,7 +1093,7 @@ class State:
         )
         state.is_menzen = state.is_menzen.at[player].set(False)
         state.target = -1
-        state.turn = player
+        state._turn = player
         return state, jnp.zeros(4, dtype=jnp.int32), False
 
     @staticmethod
