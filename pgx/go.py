@@ -184,7 +184,7 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
     # increment turns
-    state = state.replace(turn=(state._turn + 1) % 2)  # type: ignore
+    state = state.replace(turn=(state.turn + 1) % 2)  # type: ignore
     state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
 
     # add legal action mask
@@ -220,7 +220,7 @@ def _pass_move(state: State, size) -> State:
 def _not_pass_move(state: State, action, size) -> State:
     state = state.replace(passed=FALSE)  # type: ignore
     xy = action
-    num_captured_stones_before = state.num_captured_stones[state._turn]
+    num_captured_stones_before = state.num_captured_stones[state.turn]
 
     ko_may_occur = _ko_may_occur(state, xy)
 
@@ -260,7 +260,7 @@ def _not_pass_move(state: State, action, size) -> State:
     # Check Ko
     # fmt: off
     state = jax.lax.cond(
-        state.num_captured_stones[state._turn] - num_captured_stones_before == 1,
+        state.num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
         lambda: state.replace(ko=jnp.int32(-1)),  # type:ignore
     )
