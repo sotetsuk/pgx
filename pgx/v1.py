@@ -295,9 +295,9 @@ def available_games() -> Tuple[EnvId, ...]:
     return get_args(EnvId)
 
 
-def make(
+def make(  # noqa: C901
     env_id: EnvId, *, dds_hash_table_path: Optional[str] = None
-):  # noqa: C901
+):
     if env_id == "2048":
         from pgx.play2048 import Play2048
 
