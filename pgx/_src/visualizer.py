@@ -342,8 +342,8 @@ class Visualizer:
             self.config["GRID_SIZE"] = 25
             try:
                 self.config["BOARD_WIDTH"] = int(
-                    _state._size[0]
-                )  # type:ignore
+                    _state._size[0]  # type:ignore
+                )
                 self.config["BOARD_HEIGHT"] = int(
                     _state._size[0]  # type:ignore
                 )
