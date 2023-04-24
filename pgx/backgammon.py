@@ -37,17 +37,17 @@ class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Backgammon specific ---
     # 各point(24) bar(2) off(2)にあるcheckerの数. 黒+, 白-
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+    _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     # サイコロを振るたびにrngをsplitして更新する.
-    rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
+    _rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
     # サイコロの出目 0~5: 1~6
-    dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)
+    _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)
     # プレイできるサイコロの目
-    playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
+    _playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
     # プレイしたサイコロの目の数
-    played_dice_num: jnp.ndarray = jnp.int16(0)
+    _played_dice_num: jnp.ndarray = jnp.int16(0)
     # 黒0, 白1
-    turn: jnp.ndarray = jnp.int8(1)
+    _turn: jnp.ndarray = jnp.int8(1)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -100,13 +100,13 @@ def _init(rng: jax.random.KeyArray) -> State:
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     state = State(  # type: ignore
         current_player=current_player,
-        rng=rng3,
-        board=board,
+        _rng=rng3,
+        _board=board,
         terminated=terminated,
-        dice=dice,
-        playable_dice=playable_dice,
-        played_dice_num=played_dice_num,
-        turn=turn,
+        _dice=dice,
+        _playable_dice=playable_dice,
+        _played_dice_num=played_dice_num,
+        _turn=turn,
         legal_action_mask=legal_action_mask,
     )
     return state
@@ -118,7 +118,7 @@ def _step(state: State, action: jnp.ndarray) -> State:
     """
     state = _update_by_action(state, action)
     return jax.lax.cond(
-        _is_all_off(state.board),
+        _is_all_off(state._board),
         lambda: _winning_step(state),
         lambda: _no_winning_step(state, action),
     )
@@ -128,8 +128,8 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """
     手番のplayerに対する観測を返す.
     """
-    board: jnp.ndarray = state.board
-    zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state.playable_dice)
+    board: jnp.ndarray = state._board
+    zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(state._playable_dice)
     return jax.lax.cond(
         player_id == state.current_player,
         lambda: jnp.concatenate((board, zero_one_dice_vec), axis=None),  # type: ignore
@@ -166,7 +166,7 @@ def _winning_step(
     """
     勝利者がいる場合のstep.
     """
-    win_score = _calc_win_score(state.board)
+    win_score = _calc_win_score(state._board)
     winner = state.current_player
     loser = 1 - winner
     reward = jnp.ones_like(state.reward)
@@ -192,13 +192,13 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     行動を受け取って状態をupdate
     """
     is_no_op = action // 6 == 0
-    rng = state.rng
+    rng = state._rng
     current_player: jnp.ndarray = state.current_player
     terminated: jnp.ndarray = state.terminated
-    board: jnp.ndarray = _move(state.board, action)
-    played_dice_num: jnp.ndarray = jnp.int16(state.played_dice_num + 1)
+    board: jnp.ndarray = _move(state._board, action)
+    played_dice_num: jnp.ndarray = jnp.int16(state._played_dice_num + 1)
     playable_dice: jnp.ndarray = _update_playable_dice(
-        state.playable_dice, state.played_dice_num, state.dice, action
+        state._playable_dice, state._played_dice_num, state._dice, action
     )
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     return jax.lax.cond(
@@ -206,13 +206,13 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
         lambda: state,
         lambda: state.replace(  # type: ignore
             current_player=current_player,
-            rng=rng,
+            _rng=rng,
             terminated=terminated,
-            board=board,
-            turn=state.turn,
-            dice=state.dice,
-            playable_dice=playable_dice,
-            played_dice_num=played_dice_num,
+            _board=board,
+            _turn=state._turn,
+            _dice=state._dice,
+            _playable_dice=playable_dice,
+            _played_dice_num=played_dice_num,
             legal_action_mask=legal_action_mask,
         ),
     )  # no-opの時はupdateしない
@@ -241,16 +241,16 @@ def _is_turn_end(state: State) -> bool:
     """
     play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
     """
-    return state.playable_dice.sum() == -4  # type: ignore
+    return state._playable_dice.sum() == -4  # type: ignore
 
 
 def _change_turn(state: State) -> State:
     """
     ターンを変更して新しい状態を返す.
     """
-    rng1, rng2 = jax.random.split(state.rng)
-    board: jnp.ndarray = _flip_board(state.board)  # boardを反転させて黒視点に変える
-    turn: jnp.ndarray = (state.turn + 1) % 2  # turnを変える
+    rng1, rng2 = jax.random.split(state._rng)
+    board: jnp.ndarray = _flip_board(state._board)  # boardを反転させて黒視点に変える
+    turn: jnp.ndarray = (state._turn + 1) % 2  # turnを変える
     current_player: jnp.ndarray = (state.current_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
     dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
@@ -259,13 +259,13 @@ def _change_turn(state: State) -> State:
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
         current_player=current_player,
-        rng=rng2,
-        board=board,
+        _rng=rng2,
+        _board=board,
         terminated=terminated,
-        turn=turn,
-        dice=dice,
-        playable_dice=playable_dice,
-        played_dice_num=played_dice_num,
+        _turn=turn,
+        _dice=dice,
+        _playable_dice=playable_dice,
+        _played_dice_num=played_dice_num,
         legal_action_mask=legal_action_mask,
     )
 
@@ -572,6 +572,6 @@ def _get_abs_board(state: State) -> jnp.ndarray:
     visualization用
     黒ならそのまま, 白なら反転して返す.
     """
-    board: jnp.ndarray = state.board
-    turn: jnp.ndarray = state.turn
+    board: jnp.ndarray = state._board
+    turn: jnp.ndarray = state._turn
     return jax.lax.cond(turn == 0, lambda: board, lambda: _flip_board(board))
