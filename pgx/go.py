@@ -17,15 +17,15 @@ from functools import partial
 import jax
 from jax import numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -51,7 +51,7 @@ class State(core.State):
     black_player: jnp.ndarray = jnp.int8(0)
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         try:
             size = int(self.size.item())
         except TypeError:
@@ -59,7 +59,7 @@ class State(core.State):
         return f"go-{size}x{size}"  # type: ignore
 
 
-class Go(core.Env):
+class Go(v1.Env):
     def __init__(
         self,
         *,
@@ -77,7 +77,7 @@ class Go(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(_init, size=self.size, komi=self.komi)(key=key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         state = partial(_step, size=self.size)(state, action)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
@@ -92,17 +92,15 @@ class Go(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(
             _observe, size=self.size, history_length=self.history_length
         )(state=state, player_id=player_id)
 
     @property
-    def name(self) -> str:
-        return f"Go ({int(self.size)}x{int(self.size)})"
+    def id(self) -> v1.EnvId:
+        return f"go-{int(self.size)}x{int(self.size)}"  # type: ignore
 
     @property
     def version(self) -> str:

@@ -15,8 +15,8 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._chess_utils import (  # type: ignore
+import pgx.v1 as v1
+from pgx._src.chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
     CAN_MOVE_ANY,
@@ -26,7 +26,7 @@ from pgx._chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
 )
-from pgx._flax.struct import dataclass
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -105,7 +105,7 @@ INIT_BOARD = jnp.int8([
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -134,7 +134,7 @@ class State(core.State):
     possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "chess"
 
     @staticmethod
@@ -183,7 +183,7 @@ class Action:
         return jnp.int32(self.from_) * 73 + jnp.int32(plane)
 
 
-class Chess(core.Env):
+class Chess(v1.Env):
     def __init__(self):
         super().__init__()
         # AlphaZero paper does not mention the number of max termination steps
@@ -196,7 +196,7 @@ class Chess(core.Env):
         state = State(current_player=current_player)  # type: ignore
         return state
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         state = _step(state, action)
         state = jax.lax.cond(
@@ -208,15 +208,13 @@ class Chess(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "Chess"
+    def id(self) -> v1.EnvId:
+        return "chess"
 
     @property
     def version(self) -> str:

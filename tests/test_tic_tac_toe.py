@@ -177,14 +177,15 @@ def test_win_check():
 def test_observe():
     state = init(jax.random.PRNGKey(1))
     obs = observe(state, state.current_player)
-    init_obs = jnp.zeros(27).at[:9].set(1)
+    init_obs = jnp.zeros([3, 3, 2])
     assert (obs == init_obs).all()
 
-    state = step(state, 0)
+    state = step(state, 1)
+    assert state.current_player == 0
     obs = observe(state, 0)
-    assert (obs == init_obs.at[0].set(0).at[18].set(1)).all(), obs
+    assert (obs == init_obs.at[0, 1, 1].set(1)).all(), obs
     obs = observe(state, 1)
-    assert (obs == init_obs.at[0].set(0).at[9].set(1)).all(), obs
+    assert (obs == init_obs.at[0, 1, 0].set(1)).all(), obs
 
 
 

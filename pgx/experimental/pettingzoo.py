@@ -11,7 +11,7 @@ from IPython.display import display_svg  # type:ignore
 from pettingzoo import AECEnv  # type: ignore
 from pettingzoo.utils import wrappers  # type: ignore
 
-from pgx.core import Env, EnvId, State, make
+from pgx.v1 import Env, EnvId, State, make
 
 
 def pettingzoo_env(

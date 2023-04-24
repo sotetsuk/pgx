@@ -18,9 +18,8 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
-from pgx._shogi_utils import (
+import pgx.v1 as v1
+from pgx._src.shogi_utils import (
     AROUND_IX,
     BETWEEN_IX,
     CAN_MOVE,
@@ -32,6 +31,7 @@ from pgx._shogi_utils import (
     _from_sfen,
     _to_sfen,
 )
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -70,7 +70,7 @@ ALL_SQ = jnp.arange(81)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     reward: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -89,7 +89,7 @@ class State(core.State):
     cache_king: jnp.ndarray = jnp.int32(44)
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "shogi"
 
     @staticmethod
@@ -114,7 +114,7 @@ class State(core.State):
         return _to_sfen(state)
 
 
-class Shogi(core.Env):
+class Shogi(v1.Env):
     def __init__(self, max_termination_steps: int = 1000):
         super().__init__()
         self.max_termination_steps = max_termination_steps
@@ -125,7 +125,7 @@ class Shogi(core.Env):
         current_player = jnp.int8(jax.random.bernoulli(subkey))
         return state.replace(current_player=current_player)  # type: ignore
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
         state = _step(state, action)
@@ -138,15 +138,13 @@ class Shogi(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Shogi"
+    def id(self) -> v1.EnvId:
+        return "shogi"
 
     @property
     def version(self) -> str:
