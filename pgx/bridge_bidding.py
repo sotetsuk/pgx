@@ -13,14 +13,15 @@
 # limitations under the License.
 
 import copy
+import os
 from typing import Tuple
 
 import jax
 import jax.numpy as jnp
 import numpy as np
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
