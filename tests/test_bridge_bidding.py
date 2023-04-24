@@ -1,4 +1,5 @@
 import csv
+import os
 from typing import Tuple
 
 import jax
@@ -25,7 +26,10 @@ from pgx.bridge_bidding import (
     init,
 )
 
+print(os.getcwd())
+os.chdir("tests/assets")
 env = BridgeBidding()
+os.chdir("../..")
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
 observe = jax.jit(env.observe)
