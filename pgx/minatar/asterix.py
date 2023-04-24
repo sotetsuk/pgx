@@ -227,7 +227,13 @@ def _step_det_at_non_terminal(
             lambda: x,
             lambda: _update_entities(x[0], x[1], x[2], x[3], x[4], i),
         ),
-        (state._entities, state._player_x, state._player_y, r, state._terminal),
+        (
+            state._entities,
+            state._player_x,
+            state._player_y,
+            r,
+            state._terminal,
+        ),
     )
     state = state.replace(_entities=entities, _player_x=player_x, _player_y=player_y, _terminal=terminal)  # type: ignore
 
