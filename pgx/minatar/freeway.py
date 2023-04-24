@@ -37,12 +37,12 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- MinAtar Freeway specific ---
-    cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int32)
-    pos: jnp.ndarray = jnp.array(9, dtype=jnp.int32)
-    move_timer: jnp.ndarray = jnp.array(player_speed, dtype=jnp.int32)
-    terminate_timer: jnp.ndarray = jnp.array(time_limit, dtype=jnp.int32)
-    terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
-    last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
+    _cars: jnp.ndarray = jnp.zeros((8, 4), dtype=jnp.int32)
+    _pos: jnp.ndarray = jnp.array(9, dtype=jnp.int32)
+    _move_timer: jnp.ndarray = jnp.array(player_speed, dtype=jnp.int32)
+    _terminate_timer: jnp.ndarray = jnp.array(time_limit, dtype=jnp.int32)
+    _terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
+    _last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -84,7 +84,7 @@ class MinAtarFreeway(v1.Env):
         state = _step(
             state, action, sticky_action_prob=self.sticky_action_prob
         )
-        return state.replace(terminated=state.terminal)  # type: ignore
+        return state.replace(terminated=state._terminal)  # type: ignore
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -113,7 +113,7 @@ def _step(
     state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
         jax.random.uniform(subkey0) < sticky_action_prob,
-        lambda: state.last_action,
+        lambda: state._last_action,
         lambda: action,
     )
     speeds, directions = _random_speed_directions(subkey1)
@@ -132,8 +132,8 @@ def _step_det(
     directions: jnp.ndarray,
 ):
     return jax.lax.cond(
-        state.terminal,
-        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
+        state._terminal,
+        lambda: state.replace(_last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, speeds, directions),
     )
 
@@ -145,11 +145,11 @@ def _step_det_at_non_terminal(
     directions: jnp.ndarray,
 ):
 
-    cars = state.cars
-    pos = state.pos
-    move_timer = state.move_timer
-    terminate_timer = state.terminate_timer
-    terminal = state.terminal
+    cars = state._cars
+    pos = state._pos
+    move_timer = state._move_timer
+    terminate_timer = state._terminate_timer
+    terminal = state._terminal
     last_action = action
 
     r = jnp.array(0, dtype=jnp.float32)
@@ -186,12 +186,12 @@ def _step_det_at_non_terminal(
     terminal = terminate_timer < 0
 
     next_state = state.replace(  # type: ignore
-        cars=cars,
-        pos=pos,
-        move_timer=move_timer,
-        terminate_timer=terminate_timer,
-        terminal=terminal,
-        last_action=last_action,
+        _cars=cars,
+        _pos=pos,
+        _move_timer=move_timer,
+        _terminate_timer=terminate_timer,
+        _terminal=terminal,
+        _last_action=last_action,
         reward=r[jnp.newaxis],
     )
 
@@ -229,7 +229,7 @@ def _update_cars(pos, cars):
 
 def _init_det(speeds: jnp.ndarray, directions: jnp.ndarray) -> State:
     cars = _randomize_cars(speeds, directions, initialize=True)
-    return State(cars=cars)  # type: ignore
+    return State(_cars=cars)  # type: ignore
 
 
 def _randomize_cars(
@@ -266,10 +266,10 @@ def _random_speed_directions(rng):
 
 def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
-    obs = obs.at[state.pos, 4, 0].set(TRUE)
+    obs = obs.at[state._pos, 4, 0].set(TRUE)
 
     def _update_obs(i, _obs):
-        car = state.cars[i]
+        car = state._cars[i]
         _obs = _obs.at[car[1], car[0], 1].set(TRUE)
         back_x = jax.lax.cond(
             car[3] > 0, lambda: car[0] - 1, lambda: car[0] + 1
