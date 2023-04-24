@@ -17,6 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal, Optional, Sequence, Union
 
+import jax
 import svgwrite  # type: ignore
 
 from pgx.v1 import State
@@ -615,127 +616,9 @@ class Visualizer:
         else:
             assert False
 
-    # TODO: simplify me
-    def _get_nth_state(self, _states: State, _i):
-        if _states.env_id == "animal_shogi":
-            from pgx._src.dwg.animalshogi import AnimalShogiState
-
-            return AnimalShogiState(
-                turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],  # type:ignore
-                hand=_states.hand[_i],  # type:ignore
-            )
-        elif _states.env_id == "backgammon":
-            from pgx._src.dwg.backgammon import BackgammonState
-
-            return BackgammonState(
-                turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],  # type:ignore
-            )
-        elif _states.env_id == "connect_four":
-            from pgx._src.dwg.connect_four import ConnectFourState
-
-            return ConnectFourState(  # type:ignore
-                turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],  # type:ignore
-            )
-        elif _states.env_id == "chess":
-            from pgx._src.dwg.chess import ChessState
-
-            return ChessState(
-                turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],  # type:ignore
-            )
-        elif _states.env_id == "bridge_bidding":
-            from pgx._src.dwg.bridge_bidding import BridgeBiddingState
-
-            return BridgeBiddingState(  # type:ignore
-                turn=_states.turn[_i],  # type:ignore
-                dealer=_states.dealer[_i],  # type:ignore
-                current_player=_states.current_player[_i],  # type:ignore
-                hand=_states.hand[_i],  # type:ignore
-                bidding_history=_states.bidding_history[_i],  # type:ignore
-                vul_NS=_states.vul_NS[_i],  # type:ignore
-                vul_EW=_states.vul_EW[_i],  # type:ignore
-            )
-        elif _states.env_id in ("go-9x9", "go-19x19"):
-            from pgx._src.dwg.go import GoState
-
-            return GoState(  # type:ignore
-                size=_states.size[_i],  # type:ignore
-                chain_id_board=_states.chain_id_board[_i],  # type:ignore
-                turn=_states.turn[_i],  # type:ignore
-            )
-        elif _states.env_id == "hex":
-            from pgx._src.dwg.hex import HexState
-
-            return HexState(
-                size=_states.size[_i],  # type:ignore
-                turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],  # type:ignore
-            )
-        elif _states.env_id == "kuhn_poker":
-            from pgx._src.dwg.kuhn_poker import KuhnPokerState
-
-            return KuhnPokerState(
-                cards=_states.cards[_i], pot=_states.pot[_i]  # type:ignore
-            )
-        elif _states.env_id == "leduc_holdem":
-            from pgx._src.dwg.leduc_holdem import LeducHoldemState
-
-            return LeducHoldemState(
-                cards=_states.cards[_i],  # type:ignore
-                chips=_states.chips[_i],  # type:ignore
-                round=_states.round[_i],  # type:ignore
-            )
-        elif _states.env_id == "othello":
-            from pgx._src.dwg.othello import OthelloState
-
-            return OthelloState(
-                turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],  # type:ignore
-            )
-        elif _states.env_id == "2048":
-            from pgx._src.dwg.play2048 import Play2048State
-
-            return Play2048State(
-                board=_states.board[_i],  # type:ignore
-            )
-        elif _states.env_id == "shogi":
-            from pgx._src.dwg.shogi import ShogiState
-
-            return ShogiState(  # type:ignore
-                turn=_states.turn[_i],  # type:ignore
-                piece_board=_states.piece_board[_i],  # type:ignore
-                hand=_states.hand[_i],  # type:ignore
-            )
-        elif _states.env_id == "sparrow_mahjong":
-            from pgx._src.dwg.sparrow_mahjong import SparrowMahjongState
-
-            return SparrowMahjongState(
-                current_player=_states.current_player[_i],  # type:ignore
-                turn=_states.turn[_i],  # type:ignore
-                rivers=_states.rivers[_i],  # type:ignore
-                hands=_states.hands[_i],  # type:ignore
-                n_red_in_hands=_states.n_red_in_hands[_i],  # type:ignore
-                is_red_in_river=_states.is_red_in_river[_i],  # type:ignore
-                wall=_states.wall[_i],  # type:ignore
-                draw_ix=_states.draw_ix[_i],  # type:ignore
-                shuffled_players=_states.shuffled_players[_i],  # type:ignore
-                dora=_states.dora[_i],  # type:ignore
-            )
-        elif _states.env_id == "tic_tac_toe":
-            from pgx._src.dwg.tictactoe import TictactoeState
-
-            return TictactoeState(
-                current_player=_states.current_player[_i],  # type:ignore
-                legal_action_mask=_states.legal_action_mask[_i],  # type:ignore
-                terminated=_states.terminated[_i],  # type:ignore
-                turn=_states.turn[_i],  # type:ignore
-                board=_states.board[_i],  # type:ignore
-            )
-        else:
-            assert False
+    @jax.jit
+    def _get_nth_state(self, states: State, i):
+        return jax.tree_util.tree_map(lambda x: x[i], states)
 
 
 def save_svg(
