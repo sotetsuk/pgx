@@ -224,9 +224,7 @@ class Action:
         )
         i = jnp.argmax(mask)
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
-        piece = jax.lax.select(
-            is_drop, direction - 20, state._board[from_]
-        )
+        piece = jax.lax.select(is_drop, direction - 20, state._board[from_])
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
@@ -392,7 +390,7 @@ def _is_legal_drop_wo_ignoring_check(
     is_illegal |= state._hand[0, piece] <= 0
     # double pawn
     is_illegal |= (piece == PAWN) & (
-            (state._board == PAWN).reshape(9, 9).sum(axis=1) > 0
+        (state._board == PAWN).reshape(9, 9).sum(axis=1) > 0
     )[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
@@ -582,8 +580,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
             has_obstacles = jax.lax.select(
                 major_piece_ix >= 0,
                 (
-                    (between_ix >= 0)
-                    & (state._board[between_ix] != EMPTY)
+                    (between_ix >= 0) & (state._board[between_ix] != EMPTY)
                 ).any(),
                 FALSE,
             )
