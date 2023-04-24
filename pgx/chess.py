@@ -314,7 +314,7 @@ def _apply_move(state: State, a: Action):
         halfmove_count=jax.lax.select(
             captured | (piece == PAWN), 0, state.halfmove_count + 1
         ),
-        fullmove_count=state.fullmove_count + jnp.int32(state._turn == 1),
+        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
     )
     # castling
     # 可能かどうかの判断はここでは行わない。castlingがlegalでない場合はフィルタされている前提
@@ -651,7 +651,7 @@ def _zobrist_hash(state):
     >>> _zobrist_hash(state)
     Array([1429435994,  901419182], dtype=uint32)
     """
-    board = jax.lax.select(state._turn == 0, state.board, _flip(state).board)
+    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
     hash_ = jnp.uint32([0, 0])
 
     def xor(i, h):
