@@ -77,7 +77,7 @@ def _make_connect_four_dwg(dwg, state: ConnectFourState, config):
     )
 
     # stones
-    board = state.board
+    board = state._board
     for xy, stone in enumerate(board):
         if stone == -1:
             continue

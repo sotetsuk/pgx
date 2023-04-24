@@ -77,7 +77,7 @@ def _make_tictactoe_dwg(dwg, state: TictactoeState, config):
             )
         )
 
-    for i, mark in enumerate(state.board):
+    for i, mark in enumerate(state._board):
         x = i % BOARD_WIDTH
         y = i // BOARD_HEIGHT
         if mark == 0:  # 先手

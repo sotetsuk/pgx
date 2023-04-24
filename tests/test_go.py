@@ -23,16 +23,16 @@ def test_end_by_pass():
 
     state = init(key=key)
     state = step(state=state, action=25)
-    assert state.passed
+    assert state._passed
     assert not state.terminated
     state = step(state=state, action=0)
-    assert not state.passed
+    assert not state._passed
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state.passed
+    assert state._passed
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state.passed
+    assert state._passed
     assert state.terminated
 
 
@@ -84,7 +84,7 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (jnp.clip(state.chain_id_board, -1, 1) == expected_board.ravel()).all()
+    assert (jnp.clip(state._chain_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
     # 同点なのでコミの分 黒 == player_1 の負け
@@ -119,7 +119,7 @@ def test_ko():
     + + O + +
     + + + + +
     """
-    assert state.ko == 12
+    assert state._ko == 12
 
     loser = state.current_player
     state1: State = step(
@@ -133,7 +133,7 @@ def test_ko():
     state2: State = step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not state2.terminated
-    assert state2.ko == -1
+    assert state2._ko == -1
 
     # see #468
     state: State = init(key=key)
@@ -168,7 +168,7 @@ def test_ko():
     state = step(state, action=14)
     state = step(state, action=23)
     state = step(state, action=0)
-    assert state.ko == -1
+    assert state._ko == -1
 
     # see #468
     state: State = init(key=key)
@@ -200,7 +200,7 @@ def test_ko():
     state = step(state, action=25)
     state = step(state, action=3)
     state = step(state, action=20)
-    assert state.ko == -1
+    assert state._ko == -1
 
     # Ko after pass
     state: State = init(key=key)
@@ -242,7 +242,7 @@ def test_ko():
     state = step(state, action=13)
     state = step(state, action=24)
     state = step(state, action=25)  # pass
-    assert state.ko == -1
+    assert state._ko == -1
 
     # see #479
     actions = [107, 11, 56, 41, 300, 19, 228, 231, 344, 257, 35, 32, 57, 276, 0, 277, 164, 15, 187, 179, 357, 255, 150, 211, 256,
@@ -268,7 +268,7 @@ def test_ko():
     state = env.init(jax.random.PRNGKey(0))
     for a in actions:
         state = env.step(state, a)
-    assert state.ko == -1
+    assert state._ko == -1
     assert state.legal_action_mask[231]
 
 def test_observe():
@@ -301,7 +301,7 @@ def test_observe():
     )
     # fmt: on
     assert state.current_player == 1
-    assert state.turn % 2 == 0  # black turn
+    assert state._turn % 2 == 0  # black turn
     obs = observe(state, 0)   # white
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == -1)).all()
@@ -1106,7 +1106,7 @@ def test_PSK():
     #  + @ O O O
     #  @ @ @ O +
     assert state.terminated
-    assert state.black_player == 1
+    assert state._black_player == 1
     assert (state.reward == jnp.float32([-1, 1])).all()  # black wins
 
 
@@ -1124,9 +1124,9 @@ def test_random_play_5():
 
         state = step(state=state, action=a)
 
-        if state.turn > 100:
+        if state._turn > 100:
             break
-    assert state.passed or state.turn > 100
+    assert state._passed or state._turn > 100
 
 
 def test_api():

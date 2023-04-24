@@ -35,60 +35,55 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 
 @dataclass
 class State(v1.State):
-    _step_count: jnp.ndarray = jnp.int32(0)
-    # turn 現在のターン数
-    turn: jnp.ndarray = jnp.int16(0)
-    # current_player 現在のプレイヤーid
     current_player: jnp.ndarray = jnp.int8(-1)
-    # 各プレイヤーの観測
     observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
-    # 報酬　player_id: 0, 1, 2, 3
     reward: jnp.ndarray = jnp.float32([0, 0, 0, 0])
-    # シャッフルされたプレイヤーの並び
-    shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
-    # 終端状態
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
+    legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _step_count: jnp.ndarray = jnp.int32(0)
+    # turn 現在のターン数
+    _turn: jnp.ndarray = jnp.int16(0)
+    # シャッフルされたプレイヤーの並び
+    _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # hand 各プレイヤーの手札
     # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札
     # 各要素にはカードを表す0 ~ 51の整数が格納される
-    hand: jnp.ndarray = jnp.zeros(52, dtype=jnp.int32)
+    _hand: jnp.ndarray = jnp.zeros(52, dtype=jnp.int32)
     # bidding_history 各プレイヤーのbidを時系列順に記憶
     # 最大の行動系列長 = 319
     # 各要素には、行動を表す整数が格納される
     # bidを表す0 ~ 34, passを表す35, doubleを表す36, redoubleを表す37, 行動が行われていない-1
     # 各ビッドがどのプレイヤーにより行われたかは、要素のindexから分かる（ix % 4）
-    bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
+    _bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
     # dealer どのプレイヤーがdealerかを表す
     # 0 = N, 1 = E, 2 = S, 3 = W
     # dealerは最初にbidを行うプレイヤー
-    dealer: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    _dealer: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # vul_NS NSチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_NS: jnp.ndarray = jnp.bool_(False)
+    _vul_NS: jnp.ndarray = jnp.bool_(False)
     # vul_EW EWチームがvulかどうかを表す
     # 0 = non vul, 1 = vul
-    vul_EW: jnp.ndarray = jnp.bool_(False)
+    _vul_EW: jnp.ndarray = jnp.bool_(False)
     # last_bid 最後にされたbid
     # last_bidder 最後にbidをしたプレイヤー
     # call_x 最後にされたbidがdoubleされているか
     # call_xx 最後にされたbidがredoubleされているか
-    last_bid: jnp.ndarray = jnp.int32(-1)
-    last_bidder: jnp.ndarray = jnp.int8(-1)
-    call_x: jnp.ndarray = jnp.bool_(False)
-    call_xx: jnp.ndarray = jnp.bool_(False)
-    # legal_actions プレイヤーの可能なbidの一覧
-    legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
+    _last_bid: jnp.ndarray = jnp.int32(-1)
+    _last_bidder: jnp.ndarray = jnp.int8(-1)
+    _call_x: jnp.ndarray = jnp.bool_(False)
+    _call_xx: jnp.ndarray = jnp.bool_(False)
     # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
     # デノミネーションの順番は C, D, H, S, NT = 0, 1, 2, 3, 4
-    first_denomination_NS: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
+    _first_denomination_NS: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
     # first_denominaton_EW EWチームにおいて、各denominationをどのプレイヤー
     # が最初にbidしたかを表す
-    first_denomination_EW: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
+    _first_denomination_EW: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
     # passの回数
-    pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
+    _pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -158,12 +153,12 @@ def init(rng: jax.random.KeyArray) -> State:
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
     state = State(  # type: ignore
-        shuffled_players=shuffled_players,
+        _shuffled_players=shuffled_players,
         current_player=current_player,
-        hand=hand,
-        dealer=dealer,
-        vul_NS=vul_NS,
-        vul_EW=vul_EW,
+        _hand=hand,
+        _dealer=dealer,
+        _vul_NS=vul_NS,
+        _vul_EW=vul_EW,
         legal_action_mask=legal_actions,
     )
     return state
@@ -185,12 +180,12 @@ def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
     state = State(  # type: ignore
-        shuffled_players=shuffled_players,
+        _shuffled_players=shuffled_players,
         current_player=current_player,
-        hand=hand,
-        dealer=dealer,
-        vul_NS=vul_NS,
-        vul_EW=vul_EW,
+        _hand=hand,
+        _dealer=dealer,
+        _vul_NS=vul_NS,
+        _vul_EW=vul_EW,
         legal_action_mask=legal_actions,
     )
     return state
@@ -246,7 +241,7 @@ def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
     return jax.lax.cond(
         player != -1,
         lambda: jnp.int8(
-            jnp.argmax(state.shuffled_players == player)
+            jnp.argmax(state._shuffled_players == player)
         ),  # playerと同じ要素のstate.shuffle_playersのindexを返す
         lambda: jnp.int8(-1),
     )
@@ -260,7 +255,7 @@ def _step(
     hash_values: jnp.ndarray,
 ) -> State:
     # fmt: off
-    state = state.replace(bidding_history=state.bidding_history.at[state.turn].set(action))  # type: ignore
+    state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
     # fmt: on
     return jax.lax.cond(
         action >= 35,
@@ -286,7 +281,7 @@ def _step(
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
     # make vul of observation
-    vul = jnp.array([state.vul_NS, state.vul_EW], dtype=jnp.bool_)
+    vul = jnp.array([state._vul_NS, state._vul_EW], dtype=jnp.bool_)
 
     # make hand of observation
     hand = jnp.zeros(52, dtype=jnp.bool_)
@@ -294,7 +289,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     hand = jax.lax.fori_loop(
         position * 13,
         (position + 1) * 13,
-        lambda i, hand: hand.at[state.hand[i]].set(True),
+        lambda i, hand: hand.at[state._hand[i]].set(True),
         hand,
     )
 
@@ -304,7 +299,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     flag = FALSE
     obs_history, last_bid, flag, state = jax.lax.fori_loop(
         0,
-        state.turn.astype(jnp.int32),
+        state._turn.astype(jnp.int32),
         _make_obs_history,
         (obs_history, last_bid, flag, state),
     )
@@ -314,24 +309,25 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 @jax.jit
 def _make_obs_history(i, vals):
     obs_history, last_bid, flag, state = vals
-    curr_pos = ((state.dealer + i) % 4).astype(jnp.int16)
+    curr_pos = ((state._dealer + i) % 4).astype(jnp.int16)
     return jax.lax.cond(
-        (flag != jnp.bool_(True)) & (state.bidding_history[i] == 35),
+        (flag != jnp.bool_(True)) & (state._bidding_history[i] == 35),
         lambda: (obs_history.at[curr_pos].set(True), last_bid, flag, state),
         lambda: jax.lax.cond(
-            (0 <= state.bidding_history[i]) & (state.bidding_history[i] <= 34),
+            (0 <= state._bidding_history[i])
+            & (state._bidding_history[i] <= 34),
             lambda: (
                 obs_history.at[
                     4
                     + curr_pos * 35
-                    + state.bidding_history[i].astype(jnp.int16)
+                    + state._bidding_history[i].astype(jnp.int16)
                 ].set(True),
-                state.bidding_history[i].astype(jnp.int16),
+                state._bidding_history[i].astype(jnp.int16),
                 jnp.bool_(True),
                 state,
             ),
             lambda: jax.lax.switch(
-                state.bidding_history[i] - 35,
+                state._bidding_history[i] - 35,
                 [
                     lambda: (obs_history, last_bid, flag, state),
                     lambda: (
@@ -364,7 +360,10 @@ def duplicate(
     duplicated_state = copy.deepcopy(init_state)
     ix = jnp.array([1, 0, 3, 2])
     # fmt: off
-    duplicated_state = duplicated_state.replace(shuffled_players=duplicated_state.shuffled_players[ix], current_player=duplicated_state.shuffled_players[ix][duplicated_state.dealer])  # type: ignore
+    duplicated_state = duplicated_state.replace(  # type: ignore
+        _shuffled_players=duplicated_state._shuffled_players[ix],
+        current_player=duplicated_state._shuffled_players[ix][duplicated_state._dealer]
+    )
     # fmt: on
     return duplicated_state
 
@@ -390,10 +389,16 @@ def _continue_step(
     """Return state when the game continues"""
     # fmt: off
     # 次ターンのプレイヤー、ターン数
-    state = state.replace(current_player=state.shuffled_players[(state.dealer + state.turn + 1) % 4], turn=state.turn + 1)  # type: ignore
+    state = state.replace(  # type: ignore
+        current_player=state._shuffled_players[(state._dealer + state._turn + 1) % 4],
+        _turn=state._turn + 1
+    )
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
-    return state.replace(legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask), reward=jnp.zeros(4, dtype=jnp.float32))  # type: ignore
+    return state.replace(  # type: ignore
+        legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask),
+        reward=jnp.zeros(4, dtype=jnp.float32)
+    )
     # fmt: on
 
 
@@ -403,8 +408,8 @@ def _is_terminated(state: State) -> bool:
     Four consecutive passes if not bid (pass out), otherwise three consecutive passes
     """
     return jax.lax.cond(
-        ((state.last_bid == -1) & (state.pass_num == 4))
-        | ((state.last_bid != -1) & (state.pass_num == 3)),
+        ((state._last_bid == -1) & (state._pass_num == 4))
+        | ((state._last_bid != -1) & (state._pass_num == 3)),
         lambda: True,
         lambda: False,
     )
@@ -420,7 +425,7 @@ def _reward(
     If pass out, 0 reward for everyone; if bid, calculate and return reward
     """
     return jax.lax.cond(
-        (state.last_bid == -1) & (state.pass_num == 4),
+        (state._last_bid == -1) & (state._pass_num == 4),
         lambda: jnp.zeros(4, dtype=jnp.float32),  # pass out
         lambda: _make_reward(  # caluculate reward
             state, hash_keys, hash_values
@@ -450,8 +455,8 @@ def _make_reward(
         denomination,
         level,
         vul,
-        state.call_x,
-        state.call_xx,
+        state._call_x,
+        state._call_xx,
         dds_trick,
     )
     # Make reward array in playerID order
@@ -638,17 +643,21 @@ def _contract(
     state: State,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
     """Return Contract which has position of declare ,denomination, level"""
-    denomination = state.last_bid % 5
-    level = state.last_bid // 5 + 1
+    denomination = state._last_bid % 5
+    level = state._last_bid // 5 + 1
     declare_position, vul = jax.lax.cond(
-        _position_to_team(_player_position(state.last_bidder, state)) == 0,
+        _position_to_team(_player_position(state._last_bidder, state)) == 0,
         lambda: (
-            _player_position(state.first_denomination_NS[denomination], state),
-            state.vul_NS,
+            _player_position(
+                state._first_denomination_NS[denomination], state
+            ),
+            state._vul_NS,
         ),
         lambda: (
-            _player_position(state.first_denomination_EW[denomination], state),
-            state.vul_EW,
+            _player_position(
+                state._first_denomination_EW[denomination], state
+            ),
+            state._vul_EW,
         ),
     )
     return declare_position, denomination, level, vul
@@ -659,19 +668,19 @@ def _state_pass(
     state: State,
 ) -> State:
     """Change state if pass is taken"""
-    return state.replace(pass_num=state.pass_num + 1)  # type: ignore
+    return state.replace(_pass_num=state._pass_num + 1)  # type: ignore
 
 
 @jax.jit
 def _state_X(state: State) -> State:
     """Change state if double(X) is taken"""
-    return state.replace(call_x=jnp.bool_(True), pass_num=jnp.int32(0))  # type: ignore
+    return state.replace(_call_x=jnp.bool_(True), _pass_num=jnp.int32(0))  # type: ignore
 
 
 @jax.jit
 def _state_XX(state: State) -> State:
     """Change state if double(XX) is taken"""
-    return state.replace(call_xx=jnp.bool_(True), pass_num=jnp.int32(0))  # type: ignore
+    return state.replace(_call_xx=jnp.bool_(True), _pass_num=jnp.int32(0))  # type: ignore
 
 
 @jax.jit
@@ -679,24 +688,31 @@ def _state_bid(state: State, action: int) -> State:
     """Change state if bid is taken"""
     # 最後のbidとそのプレイヤーを保存
     # fmt: off
-    state = state.replace(last_bid=jnp.int32(action), last_bidder=state.current_player)  # type: ignore
+    state = state.replace(_last_bid=jnp.int32(action), _last_bidder=state.current_player)  # type: ignore
     # fmt: on
     # チーム内で各denominationを最初にbidしたプレイヤー
     denomination = _bid_to_denomination(action)
-    team = _position_to_team(_player_position(state.last_bidder, state))
+    team = _position_to_team(_player_position(state._last_bidder, state))
     # fmt: off
     # team = 1ならEWチーム
-    state = jax.lax.cond(team & (state.first_denomination_EW[denomination] == -1),
-                         lambda: state.replace(first_denomination_EW=state.first_denomination_EW.at[denomination].set(state.last_bidder.astype(jnp.int8))),  # type: ignore
+    state = jax.lax.cond(team & (state._first_denomination_EW[denomination] == -1),
+                         lambda: state.replace(_first_denomination_EW=state._first_denomination_EW.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
                          lambda: state)  # type: ignore
     # team = 0ならNSチーム
-    state = jax.lax.cond((team == 0) & (state.first_denomination_NS[denomination] == -1),
-                         lambda: state.replace(first_denomination_NS=state.first_denomination_NS.at[denomination].set(state.last_bidder.astype(jnp.int8))),  # type: ignore
+    state = jax.lax.cond((team == 0) & (state._first_denomination_NS[denomination] == -1),
+                         lambda: state.replace(_first_denomination_NS=state._first_denomination_NS.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
                          lambda: state)  # type: ignore
     # fmt: on
     # 小さいbidを非合法手にする
     mask = jnp.arange(38) < action + 1
-    return state.replace(legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask), call_x=jnp.bool_(False), call_xx=jnp.bool_(False), pass_num=jnp.int32(0))  # type: ignore
+    return state.replace(  # type: ignore
+        legal_action_mask=jnp.where(
+            mask, jnp.bool_(0), state.legal_action_mask
+        ),
+        _call_x=jnp.bool_(False),
+        _call_xx=jnp.bool_(False),
+        _pass_num=jnp.int32(0),
+    )
 
 
 @jax.jit
@@ -719,7 +735,7 @@ def _update_legal_action_X_XX(
 ) -> Tuple[bool, bool]:
     """Determine if X or XX is a legal move for the next player"""
     return jax.lax.cond(
-        state.last_bidder != -1,
+        state._last_bidder != -1,
         lambda: (_is_legal_X(state), _is_legal_XX(state)),
         lambda: (False, False),
     )
@@ -728,11 +744,11 @@ def _update_legal_action_X_XX(
 @jax.jit
 def _is_legal_X(state: State) -> bool:
     return jax.lax.cond(
-        (state.call_x == 0)
-        & (state.call_xx == 0)
+        (state._call_x == 0)
+        & (state._call_xx == 0)
         & (
             _is_partner(
-                _player_position(state.last_bidder, state),
+                _player_position(state._last_bidder, state),
                 _player_position(state.current_player, state),
             )
             == 0
@@ -745,11 +761,11 @@ def _is_legal_X(state: State) -> bool:
 @jax.jit
 def _is_legal_XX(state: State) -> bool:
     return jax.lax.cond(
-        state.call_x
-        & (state.call_xx == 0)
+        state._call_x
+        & (state._call_xx == 0)
         & (
             _is_partner(
-                _player_position(state.last_bidder, state),
+                _player_position(state._last_bidder, state),
                 _player_position(state.current_player, state),
             )
         ),
@@ -768,7 +784,7 @@ def _state_to_pbn(state: State) -> str:
     """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
-        hand = jnp.sort(state.hand[i * 13 : (i + 1) * 13])
+        hand = jnp.sort(state._hand[i * 13 : (i + 1) * 13])
         for j in range(4):  # suit
             card = [
                 TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13
@@ -787,7 +803,7 @@ def _state_to_pbn(state: State) -> str:
 @jax.jit
 def _state_to_key(state: State) -> jnp.ndarray:
     """Convert state to key of dds table"""
-    hand = state.hand
+    hand = state._hand
     key = jnp.zeros(52, dtype=jnp.int8)
     for i in range(52):  # N: 0, E: 1, S: 2, W: 3
         key = key.at[hand[i]].set(i // 13)

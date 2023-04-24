@@ -37,11 +37,11 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Kuhn poker specific ---
-    cards: jnp.ndarray = jnp.int8([-1, -1])
+    _cards: jnp.ndarray = jnp.int8([-1, -1])
     # [(player 0),(player 1)]
-    last_action: jnp.ndarray = jnp.int8(-1)
+    _last_action: jnp.ndarray = jnp.int8(-1)
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
-    pot: jnp.ndarray = jnp.int8([0, 0])
+    _pot: jnp.ndarray = jnp.int8([0, 0])
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -86,7 +86,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     )
     return State(  # type:ignore
         current_player=current_player,
-        cards=init_card,
+        _cards=init_card,
         legal_action_mask=jnp.bool_([0, 1, 0, 1]),
     )
 
@@ -95,8 +95,8 @@ def _step(state: State, action):
     action = jnp.int8(action)
     pot = jax.lax.cond(
         (action == BET) | (action == CALL),
-        lambda: state.pot.at[state.current_player].add(1),
-        lambda: state.pot,
+        lambda: state._pot.at[state.current_player].add(1),
+        lambda: state._pot,
     )
 
     terminated, reward = jax.lax.cond(
@@ -108,12 +108,12 @@ def _step(state: State, action):
         lambda: (FALSE, jnp.float32([0, 0])),
     )
     terminated, reward = jax.lax.cond(
-        (state.last_action == BET) & (action == CALL),
+        (state._last_action == BET) & (action == CALL),
         lambda: (TRUE, _get_unit_reward(state) * 2),
         lambda: (terminated, reward),
     )
     terminated, reward = jax.lax.cond(
-        (state.last_action == CHECK) & (action == CHECK),
+        (state._last_action == CHECK) & (action == CHECK),
         lambda: (TRUE, _get_unit_reward(state)),
         lambda: (terminated, reward),
     )
@@ -130,18 +130,18 @@ def _step(state: State, action):
 
     return state.replace(  # type:ignore
         current_player=1 - state.current_player,
-        last_action=action,
+        _last_action=action,
         legal_action_mask=legal_action,
         terminated=terminated,
         reward=reward,
-        pot=pot,
+        _pot=pot,
     )
 
 
 def _get_unit_reward(state: State):
     return jax.lax.cond(
-        state.cards[state.current_player]
-        > state.cards[1 - state.current_player],
+        state._cards[state.current_player]
+        > state._cards[1 - state.current_player],
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
         lambda: jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
     )
@@ -155,8 +155,8 @@ def _observe(state: State, player_id) -> jnp.ndarray:
     5~6     0~1 chips for the opponent
     """
     obs = jnp.zeros(7, dtype=jnp.bool_)
-    obs = obs.at[state.cards[player_id]].set(TRUE)
-    obs = obs.at[3 + state.pot[player_id]].set(TRUE)
-    obs = obs.at[5 + state.pot[1 - player_id]].set(TRUE)
+    obs = obs.at[state._cards[player_id]].set(TRUE)
+    obs = obs.at[3 + state._pot[player_id]].set(TRUE)
+    obs = obs.at[5 + state._pot[1 - player_id]].set(TRUE)
 
     return obs

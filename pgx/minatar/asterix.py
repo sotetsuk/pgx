@@ -40,18 +40,18 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- MinAtar Asterix specific ---
-    player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
-    player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
-    entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int32) * INF
-    shot_timer: jnp.ndarray = jnp.ones(0, dtype=jnp.int32)
-    spawn_speed: jnp.ndarray = init_spawn_speed
-    spawn_timer: jnp.ndarray = init_spawn_speed
-    move_speed: jnp.ndarray = init_move_interval
-    move_timer: jnp.ndarray = init_move_interval
-    ramp_timer: jnp.ndarray = ramp_interval
-    ramp_index: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
-    terminal: jnp.ndarray = FALSE  # duplicated but necessary for checking the consistency to the original MinAtar
-    last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
+    _player_x: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
+    _player_y: jnp.ndarray = jnp.array(5, dtype=jnp.int32)
+    _entities: jnp.ndarray = jnp.ones((8, 4), dtype=jnp.int32) * INF
+    _shot_timer: jnp.ndarray = jnp.ones(0, dtype=jnp.int32)
+    _spawn_speed: jnp.ndarray = init_spawn_speed
+    _spawn_timer: jnp.ndarray = init_spawn_speed
+    _move_speed: jnp.ndarray = init_move_interval
+    _move_timer: jnp.ndarray = init_move_interval
+    _ramp_timer: jnp.ndarray = ramp_interval
+    _ramp_index: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
+    _terminal: jnp.ndarray = FALSE  # duplicated but necessary for checking the consistency to the original MinAtar
+    _last_action: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -93,7 +93,7 @@ class MinAtarAsterix(v1.Env):
         state = _step(
             state, action, sticky_action_prob=self.sticky_action_prob
         )
-        return state.replace(terminated=state.terminal)  # type: ignore
+        return state.replace(terminated=state._terminal)  # type: ignore
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -124,7 +124,7 @@ def _step(
     # sticky action
     action = jax.lax.cond(
         jax.random.uniform(rng0) < sticky_action_prob,
-        lambda: state.last_action,
+        lambda: state._last_action,
         lambda: action,
     )
 
@@ -137,7 +137,7 @@ def _step(
         0,
         8,
         lambda i, x: jax.lax.cond(
-            state.entities[i, 0] == INF,
+            state._entities[i, 0] == INF,
             lambda: x.at[i].set(1),
             lambda: x,
         ),
@@ -165,8 +165,8 @@ def _step_det(
     slot,
 ):
     return jax.lax.cond(
-        state.terminal,
-        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
+        state._terminal,
+        lambda: state.replace(_last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action, lr, is_gold, slot),
     )
 
@@ -183,40 +183,40 @@ def _step_det_at_non_terminal(
 
     # Spawn enemy if timer is up
     entities, spawn_timer = jax.lax.cond(
-        state.spawn_timer == 0,
+        state._spawn_timer == 0,
         lambda: (
-            _spawn_entity(state.entities, lr, is_gold, slot),
-            state.spawn_speed,
+            _spawn_entity(state._entities, lr, is_gold, slot),
+            state._spawn_speed,
         ),
-        lambda: (state.entities, state.spawn_timer),
+        lambda: (state._entities, state._spawn_timer),
     )
-    state = state.replace(entities=entities, spawn_timer=spawn_timer)  # type: ignore
+    state = state.replace(_entities=entities, _spawn_timer=spawn_timer)  # type: ignore
 
     # Resolve player action
     player_x, player_y = jax.lax.switch(
         action,
         [
-            lambda: (state.player_x, state.player_y),  # 0
+            lambda: (state._player_x, state._player_y),  # 0
             lambda: (
-                jax.lax.max(ZERO, state.player_x - 1),
-                state.player_y,
+                jax.lax.max(ZERO, state._player_x - 1),
+                state._player_y,
             ),  # 1
             lambda: (
-                state.player_x,
-                jax.lax.max(ONE, state.player_y - 1),
+                state._player_x,
+                jax.lax.max(ONE, state._player_y - 1),
             ),  # 2
             lambda: (
-                jax.lax.min(NINE, state.player_x + 1),
-                state.player_y,
+                jax.lax.min(NINE, state._player_x + 1),
+                state._player_y,
             ),  # 3
             lambda: (
-                state.player_x,
-                jax.lax.min(EIGHT, state.player_y + 1),
+                state._player_x,
+                jax.lax.min(EIGHT, state._player_y + 1),
             ),  # 4
-            lambda: (state.player_x, state.player_y),  # 5
+            lambda: (state._player_x, state._player_y),  # 5
         ],
     )
-    state = state.replace(player_x=player_x, player_y=player_y)  # type: ignore
+    state = state.replace(_player_x=player_x, _player_y=player_y)  # type: ignore
 
     # Update entities
     entities, player_x, player_y, r, terminal = jax.lax.fori_loop(
@@ -227,48 +227,54 @@ def _step_det_at_non_terminal(
             lambda: x,
             lambda: _update_entities(x[0], x[1], x[2], x[3], x[4], i),
         ),
-        (state.entities, state.player_x, state.player_y, r, state.terminal),
+        (
+            state._entities,
+            state._player_x,
+            state._player_y,
+            r,
+            state._terminal,
+        ),
     )
-    state = state.replace(entities=entities, player_x=player_x, player_y=player_y, terminal=terminal)  # type: ignore
+    state = state.replace(_entities=entities, _player_x=player_x, _player_y=player_y, _terminal=terminal)  # type: ignore
 
     entities, r, terminal = jax.lax.cond(
-        state.move_timer == 0,
+        state._move_timer == 0,
         lambda: _update_entities_by_timer(
             entities, r, terminal, player_x, player_y
         ),
-        lambda: (state.entities, r, state.terminal),
+        lambda: (state._entities, r, state._terminal),
     )
-    state = state.replace(entities=entities, terminal=terminal)  # type: ignore
+    state = state.replace(_entities=entities, _terminal=terminal)  # type: ignore
     move_timer = jax.lax.cond(
-        state.move_timer == 0,
-        lambda: state.move_speed,
-        lambda: state.move_timer,
+        state._move_timer == 0,
+        lambda: state._move_speed,
+        lambda: state._move_timer,
     )
-    state = state.replace(move_timer=move_timer)  # type: ignore
+    state = state.replace(_move_timer=move_timer)  # type: ignore
 
     # Update various timers
-    state = state.replace(move_timer=state.move_timer - 1, spawn_timer=state.spawn_timer - 1)  # type: ignore
+    state = state.replace(_move_timer=state._move_timer - 1, _spawn_timer=state._spawn_timer - 1)  # type: ignore
 
     # Ramp difficulty if interval has elapsed
     spawn_speed, move_speed, ramp_timer, ramp_index = jax.lax.cond(
         ramping,
         lambda: _update_ramp(
-            state.spawn_speed,
-            state.move_speed,
-            state.ramp_timer,
-            state.ramp_index,
+            state._spawn_speed,
+            state._move_speed,
+            state._ramp_timer,
+            state._ramp_index,
         ),
         lambda: (
-            state.spawn_speed,
-            state.move_speed,
-            state.ramp_timer,
-            state.ramp_index,
+            state._spawn_speed,
+            state._move_speed,
+            state._ramp_timer,
+            state._ramp_index,
         ),
     )
-    state = state.replace(spawn_speed=spawn_speed, move_speed=move_speed, ramp_timer=ramp_timer, ramp_index=ramp_index)  # type: ignore
+    state = state.replace(_spawn_speed=spawn_speed, _move_speed=move_speed, _ramp_timer=ramp_timer, _ramp_index=ramp_index)  # type: ignore
 
     state = state.replace(  # type: ignore
-        reward=r[jnp.newaxis], last_action=action  # 1-d array
+        reward=r[jnp.newaxis], _last_action=action  # 1-d array
     )  # type: ignore
     return state
 
@@ -366,12 +372,12 @@ def __update_ramp(spawn_speed, move_speed, ramp_index):
 
 def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
-    obs = obs.at[state.player_y, state.player_x, 0].set(True)
+    obs = obs.at[state._player_y, state._player_x, 0].set(True)
     obs = jax.lax.fori_loop(
         0,
         8,
         lambda i, _obs: jax.lax.cond(
-            state.entities[i, 0] != INF,
+            state._entities[i, 0] != INF,
             lambda: _update_obs_by_entity(_obs, state, i),
             lambda: _obs,
         ),
@@ -381,16 +387,16 @@ def _observe(state: State) -> jnp.ndarray:
 
 
 def _update_obs_by_entity(obs, state, i):
-    c = jax.lax.cond(state.entities[i, 3], lambda: 3, lambda: 1)
-    obs = obs.at[state.entities[i, 1], state.entities[i, 0], c].set(True)
+    c = jax.lax.cond(state._entities[i, 3], lambda: 3, lambda: 1)
+    obs = obs.at[state._entities[i, 1], state._entities[i, 0], c].set(True)
     back_x = jax.lax.cond(
-        state.entities[i, 2],
-        lambda: state.entities[i, 0] - 1,
-        lambda: state.entities[i, 0] + 1,
+        state._entities[i, 2],
+        lambda: state._entities[i, 0] - 1,
+        lambda: state._entities[i, 0] + 1,
     )
     obs = jax.lax.cond(
         (0 <= back_x) & (back_x <= 9),
-        lambda: obs.at[state.entities[i, 1], back_x, 2].set(True),
+        lambda: obs.at[state._entities[i, 1], back_x, 2].set(True),
         lambda: obs,
     )
     return obs

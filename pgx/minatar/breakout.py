@@ -41,18 +41,18 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- MinAtar Breakout specific ---
-    ball_y: jnp.ndarray = THREE
-    ball_x: jnp.ndarray = ZERO
-    ball_dir: jnp.ndarray = TWO
-    pos: jnp.ndarray = FOUR
-    brick_map: jnp.ndarray = (
+    _ball_y: jnp.ndarray = THREE
+    _ball_x: jnp.ndarray = ZERO
+    _ball_dir: jnp.ndarray = TWO
+    _pos: jnp.ndarray = FOUR
+    _brick_map: jnp.ndarray = (
         jnp.zeros((10, 10), dtype=jnp.bool_).at[1:4, :].set(True)
     )
-    strike: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
-    last_x: jnp.ndarray = ZERO
-    last_y: jnp.ndarray = THREE
-    terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
-    last_action: jnp.ndarray = ZERO
+    _strike: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
+    _last_x: jnp.ndarray = ZERO
+    _last_y: jnp.ndarray = THREE
+    _terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
+    _last_action: jnp.ndarray = ZERO
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -94,7 +94,7 @@ class MinAtarBreakout(v1.Env):
         state = _step(
             state, action, sticky_action_prob=self.sticky_action_prob
         )
-        return state.replace(terminated=state.terminal)  # type: ignore
+        return state.replace(terminated=state._terminal)  # type: ignore
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -123,7 +123,7 @@ def _step(
     state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
         jax.random.uniform(subkey) < sticky_action_prob,
-        lambda: state.last_action,
+        lambda: state._last_action,
         lambda: action,
     )
     return _step_det(state, action)
@@ -136,20 +136,20 @@ def _init(rng: jnp.ndarray) -> State:
 
 def _step_det(state: State, action: jnp.ndarray):
     return jax.lax.cond(
-        state.terminal,
-        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
+        state._terminal,
+        lambda: state.replace(_last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
         lambda: _step_det_at_non_terminal(state, action),
     )
 
 
 def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
-    ball_y = state.ball_y
-    ball_x = state.ball_x
-    ball_dir = state.ball_dir
-    pos = state.pos
-    brick_map = state.brick_map
-    strike = state.strike
-    terminal = state.terminal
+    ball_y = state._ball_y
+    ball_x = state._ball_x
+    ball_dir = state._ball_dir
+    pos = state._pos
+    brick_map = state._brick_map
+    strike = state._strike
+    terminal = state._terminal
 
     r = jnp.array(0, dtype=jnp.float32)
 
@@ -195,16 +195,16 @@ def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
     )
 
     state = state.replace(  # type: ignore
-        ball_y=new_y,
-        ball_x=new_x,
-        ball_dir=ball_dir,
-        pos=pos,
-        brick_map=brick_map,
-        strike=strike,
-        last_x=last_x,
-        last_y=last_y,
-        terminal=terminal,
-        last_action=action,
+        _ball_y=new_y,
+        _ball_x=new_x,
+        _ball_dir=ball_dir,
+        _pos=pos,
+        _brick_map=brick_map,
+        _strike=strike,
+        _last_x=last_x,
+        _last_y=last_y,
+        _terminal=terminal,
+        _last_action=action,
         reward=r[jnp.newaxis],
     )
     return state
@@ -286,14 +286,14 @@ def _init_det(ball_start: jnp.ndarray) -> State:
     )
     last_x = ball_x
     return State(
-        ball_x=ball_x, ball_dir=ball_dir, last_x=last_x
+        _ball_x=ball_x, _ball_dir=ball_dir, _last_x=last_x
     )  # type: ignore
 
 
 def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
-    obs = obs.at[state.ball_y, state.ball_x, 1].set(True)
-    obs = obs.at[9, state.pos, 0].set(True)
-    obs = obs.at[state.last_y, state.last_x, 2].set(True)
-    obs = obs.at[:, :, 3].set(state.brick_map)
+    obs = obs.at[state._ball_y, state._ball_x, 1].set(True)
+    obs = obs.at[9, state._pos, 0].set(True)
+    obs = obs.at[state._last_y, state._last_x, 2].set(True)
+    obs = obs.at[:, :, 3].set(state._brick_map)
     return obs

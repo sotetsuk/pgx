@@ -149,6 +149,20 @@ def _validate_state(state: State):
         state.legal_action_mask.dtype == jnp.bool_
     ), state.legal_action_mask.dtype
 
+    # check public attributes
+    public_attributes = [
+        "current_player",
+        "observation",
+        "reward",
+        "terminated",
+        "truncated",
+        "legal_action_mask",
+    ]
+    for k, v in state.__dict__.items():
+        if k.startswith("_"):  # internal
+            continue
+        assert k in public_attributes
+
 
 def _validate_legal_actions(state: State):
     if state.terminated:

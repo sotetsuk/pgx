@@ -341,13 +341,15 @@ class Visualizer:
 
             self.config["GRID_SIZE"] = 25
             try:
-                self.config["BOARD_WIDTH"] = int(_state.size[0])  # type:ignore
+                self.config["BOARD_WIDTH"] = int(
+                    _state._size[0]  # type:ignore
+                )
                 self.config["BOARD_HEIGHT"] = int(
-                    _state.size[0]  # type:ignore
+                    _state._size[0]  # type:ignore
                 )
             except IndexError:
-                self.config["BOARD_WIDTH"] = int(_state.size)  # type:ignore
-                self.config["BOARD_HEIGHT"] = int(_state.size)  # type:ignore
+                self.config["BOARD_WIDTH"] = int(_state._size)  # type:ignore
+                self.config["BOARD_HEIGHT"] = int(_state._size)  # type:ignore
             self._make_dwg_group = _make_go_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
@@ -380,17 +382,17 @@ class Visualizer:
             self.config["GRID_SIZE"] = 30
             try:
                 self.config["BOARD_WIDTH"] = four_dig(
-                    _state.size[0] * 1.5  # type:ignore
+                    _state._size[0] * 1.5  # type:ignore
                 )
                 self.config["BOARD_HEIGHT"] = four_dig(
-                    _state.size[0] * jnp.sqrt(3) / 2  # type:ignore
+                    _state._size[0] * jnp.sqrt(3) / 2  # type:ignore
                 )
             except IndexError:
                 self.config["BOARD_WIDTH"] = four_dig(
-                    _state.size * 1.5  # type:ignore
+                    _state._size * 1.5  # type:ignore
                 )
                 self.config["BOARD_HEIGHT"] = four_dig(
-                    _state.size * jnp.sqrt(3) / 2  # type:ignore
+                    _state._size * jnp.sqrt(3) / 2  # type:ignore
                 )
             self._make_dwg_group = _make_hex_dwg  # type:ignore
             if (

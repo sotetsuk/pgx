@@ -12,7 +12,7 @@ slide_and_merge = jax.jit(_slide_and_merge)
 def test_init():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
-    assert jnp.count_nonzero(state.board == 1) == 2
+    assert jnp.count_nonzero(state._board == 1) == 2
 
 
 def test_slide_and_merge():
@@ -50,7 +50,7 @@ def test_step():
      [0 0 2 0]]
     """
     assert (
-        state.board
+        state._board
         == jnp.int8([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0])
     ).all()
 
@@ -62,14 +62,14 @@ def test_step():
      [0 0 4 0]]
     """
     assert (
-        state.board
+        state._board
         == jnp.int8([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0])
     ).all()
 
 
 def test_legal_action():
     board = jnp.int8([0, 1, 2, 3, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 0])
-    state = State(board=board)
+    state = State(_board=board)
     state = step(state, 0)
     """
     [[ 2  4  8  2]
@@ -83,7 +83,7 @@ def test_legal_action():
 
 def test_terminated():
     board = jnp.int8([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
-    state = State(board=board)
+    state = State(_board=board)
     state = step(state, 0)
     """
     [[ 2  4  8 16]

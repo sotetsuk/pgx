@@ -35,13 +35,13 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- 2048 specific ---
-    turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 4x4 board
     # [[ 0,  1,  2,  3],
     #  [ 4,  5,  6,  7],
     #  [ 8,  9, 10, 11],
     #  [12, 13, 14, 15]]
-    board: jnp.ndarray = jnp.zeros(16, jnp.int8)
+    _board: jnp.ndarray = jnp.zeros(16, jnp.int8)
     #  Board is expressed as a power of 2.
     # e.g.
     # [[ 0,  0,  1,  1],
@@ -93,12 +93,12 @@ def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
     board = _add_random_num(jnp.zeros((4, 4), jnp.int8), rng1)
     board = _add_random_num(board, rng2)
-    return State(board=board.ravel())  # type:ignore
+    return State(_board=board.ravel())  # type:ignore
 
 
 def _step(state: State, action):
     """action: 0(left), 1(up), 2(right), 3(down)"""
-    board_2d = state.board.reshape((4, 4))
+    board_2d = state._board.reshape((4, 4))
     board_2d = jax.lax.switch(
         action,
         [
@@ -135,7 +135,7 @@ def _step(state: State, action):
 
     return state.replace(  # type:ignore
         _rng_key=_rng_key,
-        board=board_2d.ravel(),
+        _board=board_2d.ravel(),
         reward=jnp.float32([reward.sum()]),
         legal_action_mask=legal_action.ravel(),
         terminated=~legal_action.any(),
@@ -145,7 +145,7 @@ def _step(state: State, action):
 def _observe(state: State, player_id) -> jnp.ndarray:
     obs = jnp.zeros((16, 31), dtype=jnp.bool_)
     obs = jax.lax.fori_loop(
-        0, 16, lambda i, obs: obs.at[i, state.board[i]].set(TRUE), obs
+        0, 16, lambda i, obs: obs.at[i, state._board[i]].set(TRUE), obs
     )
     return obs.reshape((4, 4, 31))
 
@@ -237,5 +237,5 @@ def _can_slide_left(board_2d):
 
 # only for debug
 def show(state):
-    board = jnp.array([0 if i == 0 else 2**i for i in state.board])
+    board = jnp.array([0 if i == 0 else 2**i for i in state._board])
     print(board.reshape((4, 4)))

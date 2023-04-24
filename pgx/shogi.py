@@ -80,13 +80,13 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Shogi specific ---
-    turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
-    piece_board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
-    hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    _turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
+    _board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
+    _hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
     # cache
     # Redundant information used only in _is_checked for speeding-up
-    cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
-    cache_king: jnp.ndarray = jnp.int32(44)
+    _cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
+    _cache_king: jnp.ndarray = jnp.int32(44)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -96,7 +96,7 @@ class State(v1.State):
     def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
         """Mainly for debugging purpose.
         terminated, reward, and current_player are not changed"""
-        state = State(turn=turn, piece_board=piece_board, hand=hand)  # type: ignore
+        state = State(_turn=turn, _board=piece_board, _hand=hand)  # type: ignore
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         # fmt: on
@@ -110,7 +110,7 @@ class State(v1.State):
         )
 
     def _to_sfen(self):
-        state = self if self.turn % 2 == 0 else _flip(self)
+        state = self if self._turn % 2 == 0 else _flip(self)
         return _to_sfen(state)
 
 
@@ -216,7 +216,7 @@ class Action:
         is_promotion = (10 <= direction) & (direction < 20)
         # LEGAL_FROM_IDX[UP, 19] = [20, 21, ... -1]
         legal_from_idx = LEGAL_FROM_IDX[direction % 10, to]  # (81,)
-        from_cand = state.piece_board[legal_from_idx]  # (8,)
+        from_cand = state._board[legal_from_idx]  # (8,)
         mask = (
             (legal_from_idx >= 0)
             & (PAWN <= from_cand)
@@ -224,9 +224,7 @@ class Action:
         )
         i = jnp.argmax(mask)
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
-        piece = jax.lax.select(
-            is_drop, direction - 20, state.piece_board[from_]
-        )
+        piece = jax.lax.select(is_drop, direction - 20, state._board[from_])
         return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
@@ -243,7 +241,7 @@ def _step(state: State, action: jnp.ndarray):
     state = _flip(state)
     state = state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        turn=(state.turn + 1) % 2,
+        _turn=(state._turn + 1) % 2,
     )
     legal_action_mask = _legal_action_mask(state)
     terminated = ~legal_action_mask.any()
@@ -262,41 +260,41 @@ def _step(state: State, action: jnp.ndarray):
 
 
 def _step_move(state: State, action: Action) -> State:
-    pb = state.piece_board
+    pb = state._board
     # remove piece from the original position
     pb = pb.at[action.from_].set(EMPTY)
     # capture the opponent if exists
     captured = pb[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
     hand = jax.lax.cond(
         captured == EMPTY,
-        lambda: state.hand,
+        lambda: state._hand,
         # add captured piece to my hand after
         #   (1) tuning opp piece into mine by (x + 14) % 28, and
         #   (2) filtering promoted piece by x % 8
-        lambda: state.hand.at[0, ((captured + 14) % 28) % 8].add(1),
+        lambda: state._hand.at[0, ((captured + 14) % 28) % 8].add(1),
     )
     # promote piece
     piece = jax.lax.select(action.is_promotion, action.piece + 8, action.piece)
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     # apply piece moves
-    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+    return state.replace(_board=pb, _hand=hand)  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
     # add piece to board
-    pb = state.piece_board.at[action.to].set(action.piece)
+    pb = state._board.at[action.to].set(action.piece)
     # remove piece from hand
-    hand = state.hand.at[0, action.piece].add(-1)
-    return state.replace(piece_board=pb, hand=hand)  # type: ignore
+    hand = state._hand.at[0, action.piece].add(-1)
+    return state.replace(_board=pb, _hand=hand)  # type: ignore
 
 
 def _set_cache(state: State):
     return state.replace(  # type: ignore
-        cache_m2b=jnp.nonzero(
-            jax.vmap(_is_major_piece)(state.piece_board), size=8, fill_value=-1
+        _cache_m2b=jnp.nonzero(
+            jax.vmap(_is_major_piece)(state._board), size=8, fill_value=-1
         )[0],
-        cache_king=jnp.argmin(jnp.abs(state.piece_board - KING)),
+        _cache_king=jnp.argmin(jnp.abs(state._board - KING)),
     )
 
 
@@ -355,10 +353,10 @@ def _legal_action_mask(state: State):
 
 def _is_drop_pawn_mate(state: State):
     # check pawn drop mate
-    opp_king_pos = jnp.argmin(jnp.abs(state.piece_board - OPP_KING))
+    opp_king_pos = jnp.argmin(jnp.abs(state._board - OPP_KING))
     to = opp_king_pos + 1
     flip_state = _flip(
-        state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
+        state.replace(_board=state._board.at[to].set(PAWN))  # type: ignore
     )
     # 玉頭の歩を取るか玉が逃げられれば詰みでない
     # fmt: off
@@ -377,9 +375,9 @@ def _is_drop_pawn_mate(state: State):
 
 
 def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
-    is_illegal = state.piece_board[to] != EMPTY
+    is_illegal = state._board[to] != EMPTY
     is_illegal |= _is_checked(
-        state.replace(piece_board=state.piece_board.at[to].set(PAWN))  # type: ignore
+        state.replace(_board=state._board.at[to].set(PAWN))  # type: ignore
     )
     return ~is_illegal
 
@@ -387,12 +385,12 @@ def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
 def _is_legal_drop_wo_ignoring_check(
     piece: jnp.ndarray, to: jnp.ndarray, state: State
 ):
-    is_illegal = state.piece_board[to] != EMPTY
+    is_illegal = state._board[to] != EMPTY
     # don't have the piece
-    is_illegal |= state.hand[0, piece] <= 0
+    is_illegal |= state._hand[0, piece] <= 0
     # double pawn
     is_illegal |= (piece == PAWN) & (
-        (state.piece_board == PAWN).reshape(9, 9).sum(axis=1) > 0
+        (state._board == PAWN).reshape(9, 9).sum(axis=1) > 0
     )[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
@@ -408,14 +406,14 @@ def _is_legal_move_wo_pro(
     ok = _is_pseudo_legal_move(from_, to, state)
     ok &= ~_is_checked(
         state.replace(  # type: ignore
-            piece_board=state.piece_board.at[from_]
+            _board=state._board.at[from_]
             .set(EMPTY)
             .at[to]
-            .set(state.piece_board[from_]),
-            cache_king=jax.lax.select(  # update cache
-                state.piece_board[from_] == KING,
+            .set(state._board[from_]),
+            _cache_king=jax.lax.select(  # update cache
+                state._board[from_] == KING,
                 jnp.int32(to),
-                state.cache_king,
+                state._cache_king,
             ),
         )
     )
@@ -429,10 +427,10 @@ def _is_pseudo_legal_move(
 ):
     ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
     # there is an obstacle between from_ and to
-    i = _major_piece_ix(state.piece_board[from_])
+    i = _major_piece_ix(state._board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
     is_illegal = (i >= 0) & (
-        (between_ix >= 0) & (state.piece_board[between_ix] != EMPTY)
+        (between_ix >= 0) & (state._board[between_ix] != EMPTY)
     ).any()
     return ok & ~is_illegal
 
@@ -442,7 +440,7 @@ def _is_pseudo_legal_move_wo_obstacles(
     to: jnp.ndarray,
     state: State,
 ):
-    board = state.piece_board
+    board = state._board
     # source is not my piece
     piece = board[from_]
     is_illegal = (from_ < 0) | ~((PAWN <= piece) & (piece < OPP_PAWN))
@@ -459,7 +457,7 @@ def _is_no_promotion_legal(
     state: State,
 ):
     # source is not my piece
-    piece = state.piece_board[from_]
+    piece = state._board[from_]
     # promotion
     is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # 必ず成る
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
@@ -472,7 +470,7 @@ def _is_promotion_legal(
     state: State,
 ):
     # source is not my piece
-    piece = state.piece_board[from_]
+    piece = state._board[from_]
     # promotion
     is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
     is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
@@ -482,7 +480,7 @@ def _is_promotion_legal(
 def _is_checked(state):
     # Use cached king position, simpler implementation is:
     # jnp.argmin(jnp.abs(state.piece_board - KING))
-    king_pos = state.cache_king
+    king_pos = state._cache_king
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
@@ -500,7 +498,7 @@ def _is_checked(state):
     # Simpler implementation without cache of major piece places
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
     # return can_capture_king(from_).any()
-    from_ = 80 - state.cache_m2b
+    from_ = 80 - state._cache_m2b
     from_ = jnp.where(from_ == 81, -1, from_)
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
     return (
@@ -518,13 +516,13 @@ def _rotate(board: jnp.ndarray) -> jnp.ndarray:
 
 
 def _flip(state):
-    empty_mask = state.piece_board == EMPTY
-    pb = (state.piece_board + 14) % 28
+    empty_mask = state._board == EMPTY
+    pb = (state._board + 14) % 28
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = pb[::-1]
     return state.replace(  # type: ignore
-        piece_board=pb,
-        hand=state.hand[jnp.int8((1, 0))],
+        _board=pb,
+        _hand=state._hand[jnp.int8((1, 0))],
     )
 
 
@@ -570,20 +568,19 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     def pieces(state):
         # 駒の場所
         my_pieces = jnp.arange(OPP_PAWN)
-        my_piece_feat = jax.vmap(lambda p: state.piece_board == p)(my_pieces)
+        my_piece_feat = jax.vmap(lambda p: state._board == p)(my_pieces)
         return my_piece_feat
 
     def effect_all(state):
         def effect(from_, to):
-            piece = state.piece_board[from_]
+            piece = state._board[from_]
             can_move = CAN_MOVE[piece, from_, to]
             major_piece_ix = _major_piece_ix(piece)
             between_ix = BETWEEN_IX[major_piece_ix, from_, to, :]
             has_obstacles = jax.lax.select(
                 major_piece_ix >= 0,
                 (
-                    (between_ix >= 0)
-                    & (state.piece_board[between_ix] != EMPTY)
+                    (between_ix >= 0) & (state._board[between_ix] != EMPTY)
                 ).any(),
                 FALSE,
             )
@@ -592,7 +589,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(
             ALL_SQ, ALL_SQ
         )
-        mine = (PAWN <= state.piece_board) & (state.piece_board < OPP_PAWN)
+        mine = (PAWN <= state._board) & (state._board < OPP_PAWN)
         return jnp.where(mine.reshape(81, 1), effects, FALSE)
 
     def piece_and_effect(state):
@@ -601,7 +598,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
         @jax.vmap
         def filter_effect(p):
-            mask = state.piece_board == p
+            mask = state._board == p
             return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
 
         my_effect_feat = filter_effect(my_pieces)
@@ -636,8 +633,8 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     opp_piece_feat = opp_piece_feat[:, ::-1]
     opp_effect_feat = opp_effect_feat[:, ::-1]
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
-    my_hand_feat = hand_feat(state.hand[0])
-    opp_hand_feat = hand_feat(state.hand[1])
+    my_hand_feat = hand_feat(state._hand[0])
+    opp_hand_feat = hand_feat(state._hand[1])
     # NOTE: update cache
     checked = jnp.tile(_is_checked(_set_cache(state)), reps=(1, 9, 9))
     feat1 = [
