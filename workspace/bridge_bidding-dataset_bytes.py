@@ -88,9 +88,9 @@ def _card_str_to_int(card: str) -> int:
 
 time1 = time.time()
 keys, values = make_hash_table(
-    "/Users/kitayuu/workspace/pgx/tests/assets/bridge_bidding_dds_results_2500000.csv"
+    "/Users/kitayuu/workspace/pgx/tests/assets/contractbridge-ddstable-sample100.csv"
 )
-time2 = time.time()
+""" time2 = time.time()
 print(f"make hash table time: {time2-time1}")
 print(f"keys BYTES = \n{to_bytes(keys)}")
 print(f"values BYTES = \n{to_bytes(values)}")
@@ -101,12 +101,16 @@ with open("keys_bytes.txt", "wb") as f:
 with open("values_bytes.txt", "wb") as f:
     f.write(to_bytes(values))
 time4 = time.time()
-print(f"make byte files time: {time4 - time3}")
+# print(f"make byte files time: {time4 - time3}")
 with open("keys_bytes.txt", "rb") as f:
     keys_byte = f.read()
-    from_bytes(keys, keys_byte)
+    keys = from_bytes(jnp.zeros((50000, 4)), keys_byte)
     print(keys)
 with open("values_bytes.txt", "rb") as f:
     values_byte = f.read()
-    from_bytes(values, values_byte)
-    print(values)
+    values = from_bytes(jnp.zeros((50000, 4)), values_byte)
+    print(values) """
+time5 = time.time()
+jnp.save("dds_hash_table/keys.npy", arr=keys)
+jnp.save("dds_hash_table/values.npy", arr=values)
+# print(f"read byte file time: {time5 - time4}")
