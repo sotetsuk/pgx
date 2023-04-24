@@ -1747,7 +1747,9 @@ def test_value_to_dds_tricks():
 def test_api():
     import pgx
 
+    os.chdir("tests/assets")
     env = pgx.make("bridge_bidding")
+    os.chdir("../..")
     pgx.api_test(env, 10)
 
 
