@@ -156,12 +156,12 @@ def _validate_state(state: State):
         "reward",
         "terminated",
         "truncated",
-        "legal_action_mask"
+        "legal_action_mask",
     ]
     for k, v in state.__dict__.items():
         if k.startswith("_"):  # internal
             continue
-        assert k in public_attributes:
+        assert k in public_attributes
 
 
 def _validate_legal_actions(state: State):
