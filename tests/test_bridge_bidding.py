@@ -26,10 +26,9 @@ from pgx.bridge_bidding import (
     init,
 )
 
-print(os.getcwd())
-os.chdir("tests/assets")
-env = BridgeBidding()
-os.chdir("../..")
+
+env = BridgeBidding("tests/assets/dds_hash_table")
+
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
 observe = jax.jit(env.observe)
@@ -1747,9 +1746,9 @@ def test_value_to_dds_tricks():
 def test_api():
     import pgx
 
-    os.chdir("tests/assets")
-    env = pgx.make("bridge_bidding")
-    os.chdir("../..")
+    env = pgx.make(
+        "bridge_bidding", dds_hash_table="tests/assets/dds_hash_table"
+    )
     pgx.api_test(env, 10)
 
 
