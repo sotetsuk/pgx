@@ -311,7 +311,7 @@ def make(env_id: EnvId):  # noqa: C901
     elif env_id == "bridge_bidding":
         from pgx.bridge_bidding import BridgeBidding
 
-        return BridgeBidding()
+        return BridgeBidding(dds_hash_table_path=None)
     elif env_id == "chess":
         from pgx.chess import Chess
 
