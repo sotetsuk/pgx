@@ -37,7 +37,7 @@ class State(v1.State):
     # 0 1 2
     # 3 4 5
     # 6 7 8
-    board: jnp.ndarray = -jnp.ones(9, jnp.int8)  # -1 (empty), 0, 1
+    _board: jnp.ndarray = -jnp.ones(9, jnp.int8)  # -1 (empty), 0, 1
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -81,8 +81,8 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action: jnp.ndarray) -> State:
-    state = state.replace(board=state.board.at[action].set(state._turn))  # type: ignore
-    won = _win_check(state.board, state._turn)
+    state = state.replace(_board=state._board.at[action].set(state._turn))  # type: ignore
+    won = _win_check(state._board, state._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -90,9 +90,9 @@ def _step(state: State, action: jnp.ndarray) -> State:
     )
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        legal_action_mask=state.board < 0,
+        legal_action_mask=state._board < 0,
         reward=reward,
-        terminated=won | jnp.all(state.board != -1),
+        terminated=won | jnp.all(state._board != -1),
         _turn=(state._turn + 1) % 2,
     )
 
@@ -105,7 +105,7 @@ def _win_check(board, turn) -> jnp.ndarray:
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     @jax.vmap
     def plane(i):
-        return (state.board == i).reshape((3, 3))
+        return (state._board == i).reshape((3, 3))
 
     # flip if player_id is opposite
     x = jax.lax.cond(
