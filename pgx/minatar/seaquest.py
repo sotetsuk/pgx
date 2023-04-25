@@ -90,19 +90,32 @@ class MinAtarSeaquest(v1.Env):
     def __init__(
         self,
         *,
-        minatar_version: Literal["v0", "v1"] = "v1",
+        use_minimal_action_set: bool = True,
         sticky_action_prob: float = 0.1,
     ):
         super().__init__()
-        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.use_minimal_action_set = use_minimal_action_set
         self.sticky_action_prob: float = sticky_action_prob
+        self.minimal_action_set = jnp.int32([0, 1, 2, 3, 4, 5])
+        self.legal_action_mask = jnp.ones(6, dtype=jnp.bool_)
+        if self.use_minimal_action_set:
+            self.legal_action_mask = jnp.ones(
+                self.minimal_action_set.shape[0], dtype=jnp.bool_
+            )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return _init_det()
+        state = State(_rng_key=key)
+        return state  # type: ignore
 
     def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
-        return _step(state, action, sticky_action_prob=self.sticky_action_prob)
+        state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
+        action = jax.lax.select(
+            self.use_minimal_action_set,
+            self.minimal_action_set[action],
+            action,
+        )
+        return _step(state, action, sticky_action_prob=self.sticky_action_prob)  # type: ignore
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -848,7 +861,3 @@ def _observe(state: State) -> jnp.ndarray:
     )
 
     return obs
-
-
-def _init_det() -> State:
-    return State()
