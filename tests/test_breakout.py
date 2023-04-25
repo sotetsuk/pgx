@@ -40,14 +40,8 @@ def test_step_det():
                 minatar2pgx(s, breakout.State), a
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
-            ok = r == s_next_pgx.reward[0]
-            assert ok
-            if not ok:
-                s_next_pgx.save_svg("failed.svg")
-            ok = done == s_next_pgx.terminated
-            if not ok:
-                s_next_pgx.save_svg("failed.svg")
-            assert ok
+            assert r == s_next_pgx.reward[0]
+            assert done == s_next_pgx.terminated
 
 
 def test_init_det():
