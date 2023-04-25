@@ -90,10 +90,7 @@ class MinAtarAsterix(v1.Env):
 
     def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
-        state = _step(
-            state, action, sticky_action_prob=self.sticky_action_prob
-        )
-        return state.replace(terminated=state._terminal)  # type: ignore
+        return _step(state, action, sticky_action_prob=self.sticky_action_prob)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -274,8 +271,10 @@ def _step_det_at_non_terminal(
     state = state.replace(_spawn_speed=spawn_speed, _move_speed=move_speed, _ramp_timer=ramp_timer, _ramp_index=ramp_index)  # type: ignore
 
     state = state.replace(  # type: ignore
-        reward=r[jnp.newaxis], _last_action=action  # 1-d array
-    )  # type: ignore
+        reward=r[jnp.newaxis],
+        _last_action=action,  # 1-d array
+        terminated=terminal,
+    )
     return state
 
 

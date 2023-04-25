@@ -54,16 +54,8 @@ def test_step_det():
                 a,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
-
-        # check terminal state
-        s = extract_state(env, state_keys)
-        a = random.randrange(num_actions)
-        r, done = env.act(a)
-        s_next = extract_state(env, state_keys)
-        s_next_pgx = _step_det(
-            minatar2pgx(s, space_invaders.State), a
-        )
-        assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+            assert r == s_next_pgx.reward[0]
+            assert done == s_next_pgx.terminated
 
 
 def test_init_det():

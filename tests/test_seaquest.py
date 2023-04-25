@@ -65,28 +65,8 @@ def test_step_det():
             #     for field in fields(s_next_pgx):
             #         print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
             #     assert False
-
-        # check terminal state
-        s = extract_state(env, state_keys)
-        a = random.randrange(num_actions)
-        r, done = env.act(a)
-        enemy_lr, is_sub, enemy_y, diver_lr, diver_y = env.env.enemy_lr, env.env.is_sub, env.env.enemy_y, env.env.diver_lr, env.env.diver_y
-        s_next_pgx = _step_det(
-            minatar2pgx(s, seaquest.State), a,
-            enemy_lr,
-            is_sub,
-            enemy_y,
-            diver_lr,
-            diver_y
-        )
-        assert jnp.allclose(
-            env.state(),
-            observe(s_next_pgx),
-        )
-        # if not jnp.allclose(env.state(), observe(s_next_pgx)):
-        #     for field in fields(s_next_pgx):
-        #         print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
-        #     assert False
+            assert r == s_next_pgx.reward[0]
+            assert done == s_next_pgx.terminated
 
 
 def test_init_det():
