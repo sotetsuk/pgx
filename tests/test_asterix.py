@@ -62,17 +62,8 @@ def test_step_det():
                 slot,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
-
-        # check terminal state
-        s = extract_state(env, state_keys)
-        a = random.randrange(num_actions)
-        r, done = env.act(a)
-        lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
-        s_next = extract_state(env, state_keys)
-        s_next_pgx = _step_det(
-            minatar2pgx(s, asterix.State), a, lr, is_gold, slot
-        )
-        assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+            assert r == s_next_pgx.reward[0]
+            assert done == s_next_pgx.terminated
 
 
 def test_observe():
