@@ -40,6 +40,8 @@ def test_step_det():
                 minatar2pgx(s, breakout.State), a
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+            assert r == s_next_pgx.reward[0]
+            assert done == s_next_pgx.terminated
 
         # check terminal state
         s = extract_state(env, state_keys)
@@ -50,6 +52,8 @@ def test_step_det():
             minatar2pgx(s, breakout.State), a
         )
         assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+        assert r == s_next_pgx.reward[0]
+        assert done == s_next_pgx.terminated
 
 
 def test_init_det():
