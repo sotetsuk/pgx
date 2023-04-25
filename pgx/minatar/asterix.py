@@ -92,7 +92,7 @@ class MinAtarAsterix(v1.Env):
             )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        state = State(_rng_key=key)  # type: ignore
+        state = State()
         state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
         return state  # type: ignore
 
