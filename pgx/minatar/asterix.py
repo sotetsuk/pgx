@@ -92,7 +92,7 @@ class MinAtarAsterix(v1.Env):
             )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        state = State(_rng_key=key)
+        state = State(_rng_key=key)  # type: ignore
         state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
         return state  # type: ignore
 
@@ -104,7 +104,7 @@ class MinAtarAsterix(v1.Env):
             self.minimal_action_set[action],
             action,
         )
-        return _step(state, action, sticky_action_prob=self.sticky_action_prob)
+        return _step(state, action, sticky_action_prob=self.sticky_action_prob)  # type: ignore
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
