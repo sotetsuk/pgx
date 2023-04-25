@@ -24,7 +24,6 @@ state_keys = [
 
 _step_det = jax.jit(space_invaders._step_det)
 _nearest_alien = jax.jit(space_invaders._nearest_alien)
-_init_det = jax.jit(space_invaders._init_det)
 observe = jax.jit(space_invaders._observe)
 
 
@@ -64,7 +63,7 @@ def test_init_det():
     for _ in range(N):
         env.reset()
         s = extract_state(env, state_keys)
-        s_pgx = _init_det()
+        s_pgx = space_invaders.State()
         assert_states(s, pgx2minatar(s_pgx, state_keys))
 
 
@@ -95,6 +94,15 @@ def test_observe():
             env.state(),
             obs_pgx,
         )
+
+def test_minimal_action_set():
+    import pgx
+    env = pgx.make("minatar/space_invaders")
+    assert env.num_actions == 4
+    state = jax.jit(env.init)(jax.random.PRNGKey(0))
+    assert state.legal_action_mask.shape == (4,)
+    state = jax.jit(env.step)(state, 0)
+    assert state.legal_action_mask.shape == (4,)
 
 def test_api():
     import pgx
