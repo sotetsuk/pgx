@@ -104,8 +104,7 @@ class MinAtarSeaquest(v1.Env):
             )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        state = State(_rng_key=key)
-        return state  # type: ignore
+        return State(_rng_key=key)  # type: ignore
 
     def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
