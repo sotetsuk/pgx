@@ -84,6 +84,7 @@ class MinAtarAsterix(v1.Env):
         super().__init__()
         self.minatar_version: Literal["v0", "v1"] = minatar_version
         self.sticky_action_prob: float = sticky_action_prob
+        self.minimal_action_set = jnp.int32([0, 1, 2, 3, 4])
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return State(_rng_key=key)  # type: ignore
