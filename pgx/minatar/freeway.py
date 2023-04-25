@@ -83,7 +83,7 @@ class MinAtarFreeway(v1.Env):
             )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        state = _init(rng=subkey)  # type: ignore
+        state = _init(rng=key)  # type: ignore
         state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
         return state  # type: ignore
 
