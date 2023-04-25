@@ -95,6 +95,16 @@ def test_observe():
         )
 
 
+def test_minimal_action_set():
+    import pgx
+    env = pgx.make("minatar/asterix")
+    assert env.num_actions == 5
+    state = jax.jit(env.init)(jax.random.PRNGKey(0))
+    assert state.legal_action_mask.shape == (5,)
+    state = jax.jit(env.step)(state, 0)
+    assert state.legal_action_mask.shape == (5,)
+
+
 def test_api():
     import pgx
     env = pgx.make("minatar/asterix")
