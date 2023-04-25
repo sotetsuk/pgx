@@ -358,16 +358,16 @@ def _update_by_f_bullets_hit(j, _f_bullets, e):
 
 def _update_friendly_bullets(f_bullets, e_subs, e_fish, r):
     def _remove(j, _f_bullets, _e_subs, _e_fish, _r):
-        _f_bullets, _e_fish, removed = _update_by_f_bullets_hit(
+        _f_bullets, _e_fish, fish_removed = _update_by_f_bullets_hit(
             j, _f_bullets, _e_fish
         )
-        _r += removed
-        _f_bullets, _e_subs, removed = lax.cond(
-            removed,
-            lambda: (_f_bullets, _e_subs, removed),
+        _r += fish_removed
+        _f_bullets, _e_subs, sub_removed = lax.cond(
+            fish_removed,
+            lambda: (_f_bullets, _e_subs, FALSE),
             lambda: _update_by_f_bullets_hit(j, _f_bullets, _e_subs),
         )
-        _r += removed
+        _r += sub_removed
         return _f_bullets, _e_subs, _e_fish, _r
 
     def _update_each(i, x):
