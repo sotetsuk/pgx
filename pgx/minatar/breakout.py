@@ -93,9 +93,10 @@ class MinAtarBreakout(v1.Env):
             )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        state = _init(_rng_key=key)  # type: ignore
+        key, subkey = jax.random.split(key)
+        state = _init(_rng_key=subkey)  # type: ignore
         state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
-        return state  # type: ignore
+        return state.replace(_rng_key=key)  # type: ignore
 
     def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
