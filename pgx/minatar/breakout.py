@@ -91,9 +91,7 @@ class MinAtarBreakout(v1.Env):
 
     def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
-        return _step(
-            state, action, sticky_action_prob=self.sticky_action_prob
-        )
+        return _step(state, action, sticky_action_prob=self.sticky_action_prob)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
