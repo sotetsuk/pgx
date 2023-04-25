@@ -31,7 +31,6 @@ state_keys = {
 }
 
 _step_det = jax.jit(seaquest._step_det)
-_init_det = jax.jit(seaquest._init_det)
 observe = jax.jit(seaquest._observe)
 
 
@@ -75,7 +74,7 @@ def test_init_det():
     for _ in range(N):
         env.reset()
         s = extract_state(env, state_keys)
-        s_pgx = _init_det()
+        s_pgx = seaquest.State()
         s_pgx2 = minatar2pgx(s, seaquest.State)
         for field in fields(s_pgx):
             assert jnp.allclose(getattr(s_pgx, field.name), getattr(s_pgx2, field.name))
@@ -176,6 +175,16 @@ def test_buggy_sample():
     print(state._e_subs)
     assert (state._e_bullets[0] == jnp.int32([-1, -1, -1])).all()
     assert (state._e_subs[0] == jnp.int32([6, 6, 0, 2, 0])).all()
+
+
+def test_minimal_action_set():
+    import pgx
+    env = pgx.make("minatar/seaquest")
+    assert env.num_actions == 6
+    state = jax.jit(env.init)(jax.random.PRNGKey(0))
+    assert state.legal_action_mask.shape == (6,)
+    state = jax.jit(env.step)(state, 0)
+    assert state.legal_action_mask.shape == (6,)
 
 
 def test_api():
