@@ -105,7 +105,7 @@ class MinAtarSeaquest(v1.Env):
 
     def _init(self, key: jax.random.KeyArray) -> State:
         state = State()
-        state = state.replace(legal_action_mask=self.legal_action_mask)
+        state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
         return state
 
     def _step(self, state: v1.State, action) -> State:
