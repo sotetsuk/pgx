@@ -207,7 +207,7 @@ for ix in ixs:
 assert INIT_LEGAL_ACTION_MASK.shape == (64 * 73,)
 assert INIT_LEGAL_ACTION_MASK.sum() == 20
 
-INIT_POSSIBLE_PIECE_POSITIONS = jnp.int8(
+INIT_POSSIBLE_PIECE_POSITIONS = jnp.int32(
     [
         [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
         [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
