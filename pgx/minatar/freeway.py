@@ -68,10 +68,11 @@ class MinAtarFreeway(v1.Env):
     def __init__(
         self,
         *,
+        auto_reset: bool = False,
         use_minimal_action_set: bool = True,
         sticky_action_prob: float = 0.1,
     ):
-        super().__init__()
+        super().__init__(auto_reset=auto_reset)
         self.use_minimal_action_set = use_minimal_action_set
         self.sticky_action_prob: float = sticky_action_prob
         self.minimal_action_set = jnp.int32([0, 2, 4])

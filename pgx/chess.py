@@ -183,8 +183,8 @@ class Action:
 
 
 class Chess(v1.Env):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *, auto_reset: bool = False):
+        super().__init__(auto_reset=auto_reset)
         # AlphaZero paper does not mention the number of max termination steps
         # but we believe 1000 is large enough for Chess.
         self.max_termination_steps = 1000
@@ -587,8 +587,12 @@ def _is_pseudo_legal(state: State, a: Action):
 
 
 def _possible_piece_positions(state):
-    my_pos = jnp.nonzero(state._board > 0, size=16, fill_value=-1)[0]
-    opp_pos = jnp.nonzero(_flip(state)._board > 0, size=16, fill_value=-1)[0]
+    my_pos = jnp.nonzero(state._board > 0, size=16, fill_value=-1)[0].astype(
+        jnp.int8
+    )
+    opp_pos = jnp.nonzero(_flip(state)._board > 0, size=16, fill_value=-1)[
+        0
+    ].astype(jnp.int8)
     return jnp.vstack((my_pos, opp_pos))
 
 

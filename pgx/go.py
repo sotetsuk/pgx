@@ -62,11 +62,12 @@ class Go(v1.Env):
     def __init__(
         self,
         *,
+        auto_reset: bool = False,
         size: int = 19,
         komi: float = 7.5,
         history_length: int = 8,
     ):
-        super().__init__()
+        super().__init__(auto_reset=auto_reset)
         assert isinstance(size, int)
         self.size = size
         self.komi = komi
