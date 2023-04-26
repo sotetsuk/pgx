@@ -183,8 +183,12 @@ class Action:
 
 
 class Chess(v1.Env):
-    def __init__(self):
-        super().__init__()
+    def __init__(
+        self,
+        *,
+        auto_reset: bool = False
+    ):
+        super().__init__(auto_reset=auto_reset)
         # AlphaZero paper does not mention the number of max termination steps
         # but we believe 1000 is large enough for Chess.
         self.max_termination_steps = 1000

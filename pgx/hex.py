@@ -58,8 +58,9 @@ class Hex(v1.Env):
         self,
         *,
         size: int = 11,
+        auto_reset: bool = False
     ):
-        super().__init__()
+        super().__init__(auto_reset=auto_reset)
         assert isinstance(size, int)
         self.size = size
 

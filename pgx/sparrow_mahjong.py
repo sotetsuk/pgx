@@ -95,8 +95,10 @@ class State(v1.State):
 class SparrowMahjong(v1.Env):
     def __init__(
         self,
+        *,
+        auto_reset: bool = False
     ):
-        super().__init__()
+        super().__init__(auto_reset=auto_reset)
 
     def _init(self, key: jax.random.KeyArray) -> State:
         key, subkey = jax.random.split(key)
