@@ -146,9 +146,9 @@ def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
     hand = jax.random.permutation(rng2, hand)
-    vul_NS = jax.random.randint(rng3, (1,), 0, 2)[0]
-    vul_EW = jax.random.randint(rng4, (1,), 0, 2)[0]
-    dealer = jax.random.randint(rng5, (1,), 0, 4)[0]
+    vul_NS = jax.random.choice(rng3, jnp.bool_([False, True]))
+    vul_EW = jax.random.choice(rng4, jnp.bool_([False, True]))
+    dealer = jax.random.randint(rng5, (1,), 0, 4, dtype=jnp.int8)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng6)
     current_player = shuffled_players[dealer]
@@ -173,9 +173,9 @@ def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
     hand = _key_to_hand(key)
-    vul_NS = jax.random.randint(rng2, (1,), 0, 2)[0]
-    vul_EW = jax.random.randint(rng3, (1,), 0, 2)[0]
-    dealer = jax.random.randint(rng4, (1,), 0, 4)[0]
+    vul_NS = jax.random.choice(rng2, jnp.bool_([False, True]))
+    vul_EW = jax.random.choice(rng3, jnp.bool_([False, True]))
+    dealer = jax.random.randint(rng4, (1,), 0, 4, dtype=jnp.int8)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng5)
     current_player = shuffled_players[dealer]
