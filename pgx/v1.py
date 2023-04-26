@@ -189,6 +189,17 @@ class Env(abc.ABC):
         is_illegal = ~state.legal_action_mask[action]
         current_player = state.current_player
 
+        # auto reset
+        state = jax.lax.cond(
+            self.auto_reset & state.terminated,
+            lambda: state.replace(  # type: ignore
+                _step_count=jnp.int32(0),
+                terminated=FALSE,
+                reward=jnp.zeros_like(state.reward),
+            ),
+            lambda: state,
+        )
+
         # If the state is already terminated or truncated, environment does not take usual step,
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
@@ -216,7 +227,33 @@ class Env(abc.ABC):
         )
 
         observation = self.observe(state, state.current_player)
-        return state.replace(observation=observation)  # type: ignore
+        state = state.replace(observation=observation)  # type: ignore
+
+        # auto reset
+        state = jax.lax.cond(
+            self.auto_reset & state.terminated,
+            # state is replaced by initial state,
+            # but preserve (terminated, truncated, reward)
+            lambda: self.init(state._rng_key).replace(  # type: ignore
+                terminated=state.terminated,
+                reward=state.reward,
+            ),
+            lambda: state,
+        )
+        # NOTE on final observation
+        # When auto reset happened, the terminal (or truncated) observation is replaced by initial observation,
+        # This is NOT problematic if it's termination.
+        # However, when truncation happened, final observation might be used by agent (for bootstrap)
+        # So we have to preserve the final observation somewhere. For example, in Gymnasium,
+        #
+        # https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/wrappers/autoreset.py#L59
+        #
+        # However, currently, truncation does **NOT** actually happens in Pgx environments because
+        # all of Pgx environments (games) are finite-horizon and terminates within reasonable # of steps.
+        # (NOTE: Chess, Shogi, and Go have `max_termination_steps` parameter following AlphaZero paper)
+        # So we believe current implementation is sufficient (final observation is not necessary).
+
+        return state
 
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         """Observation function."""
