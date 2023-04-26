@@ -171,24 +171,6 @@ def _step_det(
     diver_lr,
     diver_y,
 ):
-    return lax.cond(
-        state._terminal,
-        lambda: state.replace(_last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
-        lambda: _step_det_at_non_terminal(
-            state, action, enemy_lr, is_sub, enemy_y, diver_lr, diver_y
-        ),
-    )
-
-
-def _step_det_at_non_terminal(
-    state: State,
-    action: jnp.ndarray,
-    enemy_lr,
-    is_sub,
-    enemy_y,
-    diver_lr,
-    diver_y,
-):
     ramping = TRUE
 
     oxygen = state._oxygen

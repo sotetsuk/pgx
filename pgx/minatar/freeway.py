@@ -142,20 +142,6 @@ def _step_det(
     speeds: jnp.ndarray,
     directions: jnp.ndarray,
 ):
-    return jax.lax.cond(
-        state._terminal,
-        lambda: state.replace(_last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
-        lambda: _step_det_at_non_terminal(state, action, speeds, directions),
-    )
-
-
-def _step_det_at_non_terminal(
-    state: State,
-    action: jnp.ndarray,
-    speeds: jnp.ndarray,
-    directions: jnp.ndarray,
-):
-
     cars = state._cars
     pos = state._pos
     move_timer = state._move_timer

@@ -175,20 +175,6 @@ def _step_det(
     is_gold,
     slot,
 ):
-    return jax.lax.cond(
-        state._terminal,
-        lambda: state.replace(_last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
-        lambda: _step_det_at_non_terminal(state, action, lr, is_gold, slot),
-    )
-
-
-def _step_det_at_non_terminal(
-    state: State,
-    action: jnp.ndarray,
-    lr: bool,
-    is_gold: bool,
-    slot: int,
-):
     ramping: bool = True
     r = jnp.float32(0)
 

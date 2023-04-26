@@ -146,14 +146,6 @@ def _init(rng: jnp.ndarray) -> State:
 
 
 def _step_det(state: State, action: jnp.ndarray):
-    return jax.lax.cond(
-        state._terminal,
-        lambda: state.replace(_last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
-        lambda: _step_det_at_non_terminal(state, action),
-    )
-
-
-def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
     ball_y = state._ball_y
     ball_x = state._ball_x
     ball_dir = state._ball_dir
