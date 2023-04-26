@@ -171,9 +171,9 @@ def _step(
 def _step_det(
     state: State,
     action: jnp.ndarray,
-    lr: bool,
-    is_gold: bool,
-    slot: int,
+    lr,
+    is_gold,
+    slot,
 ):
     ramping: bool = True
     r = jnp.float32(0)
