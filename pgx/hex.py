@@ -54,12 +54,7 @@ class State(v1.State):
 
 
 class Hex(v1.Env):
-    def __init__(
-        self,
-        *,
-        size: int = 11,
-        auto_reset: bool = False
-    ):
+    def __init__(self, *, size: int = 11, auto_reset: bool = False):
         super().__init__(auto_reset=auto_reset)
         assert isinstance(size, int)
         self.size = size

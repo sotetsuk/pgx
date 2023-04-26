@@ -79,11 +79,7 @@ class Action:
 
 
 class AnimalShogi(v1.Env):
-    def __init__(
-        self,
-        *,
-        auto_reset: bool = False
-    ):
+    def __init__(self, *, auto_reset: bool = False):
         super().__init__(auto_reset=auto_reset)
         self.max_termination_steps: int = 200
 

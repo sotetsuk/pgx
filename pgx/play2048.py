@@ -59,11 +59,7 @@ class State(v1.State):
 
 
 class Play2048(v1.Env):
-    def __init__(
-        self,
-        *,
-        auto_reset: bool = False
-    ):
+    def __init__(self, *, auto_reset: bool = False):
         super().__init__(auto_reset=auto_reset)
 
     def _init(self, key: jax.random.KeyArray) -> State:
