@@ -330,87 +330,87 @@ def available_games() -> Tuple[EnvId, ...]:
     return get_args(EnvId)
 
 
-def make(env_id: EnvId):  # noqa: C901
+def make(env_id: EnvId, *, auto_reset:bool=False):  # noqa: C901
     if env_id == "2048":
         from pgx.play2048 import Play2048
 
-        return Play2048()
+        return Play2048(auto_reset=auto_reset)
     elif env_id == "animal_shogi":
         from pgx.animal_shogi import AnimalShogi
 
-        return AnimalShogi()
+        return AnimalShogi(auto_reset=auto_reset)
     elif env_id == "backgammon":
         from pgx.backgammon import Backgammon
 
-        return Backgammon()
+        return Backgammon(auto_reset=auto_reset)
     elif env_id == "bridge_bidding":
         from pgx.bridge_bidding import BridgeBidding
 
-        return BridgeBidding(dds_hash_table_path=None)
+        return BridgeBidding(auto_reset=auto_reset, dds_hash_table_path=None)
     elif env_id == "chess":
         from pgx.chess import Chess
 
-        return Chess()
+        return Chess(auto_reset=auto_reset)
     elif env_id == "connect_four":
         from pgx.connect_four import ConnectFour
 
-        return ConnectFour()
+        return ConnectFour(auto_reset=auto_reset)
     elif env_id == "go-9x9":
         from pgx.go import Go
 
-        return Go(size=9, komi=7.5)
+        return Go(auto_reset=auto_reset, size=9, komi=7.5)
     elif env_id == "go-19x19":
         from pgx.go import Go
 
-        return Go(size=19, komi=7.5)
+        return Go(auto_reset=auto_reset, size=19, komi=7.5)
     elif env_id == "hex":
         from pgx.hex import Hex
 
-        return Hex()
+        return Hex(auto_reset=auto_reset)
     elif env_id == "kuhn_poker":
         from pgx.kuhn_poker import KuhnPoker
 
-        return KuhnPoker()
+        return KuhnPoker(auto_reset=auto_reset)
     elif env_id == "leduc_holdem":
         from pgx.leduc_holdem import LeducHoldem
 
-        return LeducHoldem()
+        return LeducHoldem(auto_reset=auto_reset)
     elif env_id == "minatar/asterix":
         from pgx.minatar.asterix import MinAtarAsterix
 
-        return MinAtarAsterix()
+        return MinAtarAsterix(auto_reset=auto_reset)
     elif env_id == "minatar/breakout":
         from pgx.minatar.breakout import MinAtarBreakout
 
-        return MinAtarBreakout()
+        return MinAtarBreakout(auto_reset=auto_reset)
     elif env_id == "minatar/freeway":
         from pgx.minatar.freeway import MinAtarFreeway
 
-        return MinAtarFreeway()
+        return MinAtarFreeway(auto_reset=auto_reset)
     elif env_id == "minatar/seaquest":
         from pgx.minatar.seaquest import MinAtarSeaquest
 
-        return MinAtarSeaquest()
+        return MinAtarSeaquest(auto_reset=auto_reset)
     elif env_id == "minatar/space_invaders":
         from pgx.minatar.space_invaders import MinAtarSpaceInvaders
 
-        return MinAtarSpaceInvaders()
+        return MinAtarSpaceInvaders(auto_reset=auto_reset)
     elif env_id == "othello":
         from pgx.othello import Othello
 
-        return Othello()
+        return Othello(auto_reset=auto_reset)
     elif env_id == "shogi":
         from pgx.shogi import Shogi
 
-        return Shogi()
+        return Shogi(auto_reset=auto_reset)
     elif env_id == "sparrow_mahjong":
         from pgx.sparrow_mahjong import SparrowMahjong
 
-        return SparrowMahjong()
+        return SparrowMahjong(auto_reset=auto_reset)
     elif env_id == "tic_tac_toe":
         from pgx.tic_tac_toe import TicTacToe
 
-        return TicTacToe()
+        return TicTacToe(auto_reset=auto_reset)
     else:
         available_envs = "\n".join(available_games())
         raise ValueError(
