@@ -192,7 +192,7 @@ class Env(abc.ABC):
         # If the state is already terminated or truncated, environment does not take usual step,
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
-            (state.terminated | state.truncated),
+            state.terminated,
             lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
             lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
@@ -208,7 +208,7 @@ class Env(abc.ABC):
         # This is to avoid zero-division error when normalizing action probability
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
-            (state.terminated | state.truncated),
+            state.terminated,
             lambda: state.replace(  # type: ignore
                 legal_action_mask=jnp.ones_like(state.legal_action_mask)
             ),

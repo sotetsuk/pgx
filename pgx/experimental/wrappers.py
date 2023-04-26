@@ -57,7 +57,7 @@ def auto_reset(step_fn, init_fn):
 
     def wrapped_step_fn(state: State, action):
         state = jax.lax.cond(
-            (state.terminated | state.truncated),
+            state.terminated,
             lambda: state.replace(  # type: ignore
                 _step_count=jnp.int32(0),
                 terminated=FALSE,
@@ -68,12 +68,11 @@ def auto_reset(step_fn, init_fn):
         )
         state = step_fn(state, action)
         state = jax.lax.cond(
-            (state.terminated | state.truncated),
+            state.terminated,
             # state is replaced by initial state,
             # but preserve (terminated, truncated, reward)
             lambda: init_fn(state._rng_key).replace(  # type: ignore
                 terminated=state.terminated,
-                truncated=state.truncated,
                 reward=state.reward,
             ),
             lambda: state,
