@@ -81,24 +81,3 @@ def auto_reset(step_fn, init_fn):
         return state
 
     return wrapped_step_fn
-
-
-def time_limit(step_fn, max_truncation_steps: int = -1):
-    """Time limit wrapper.
-
-    So far, all of Pgx environment are finite-horizon and terminates in reasonable # of steps.
-    Thus, this wrapper is useless.
-    """
-
-    def wrapped_step_fn(state: State, action):
-        state = step_fn(state, action)
-        state = jax.lax.cond(
-            ~state.terminated
-            & (0 <= max_truncation_steps)
-            & (max_truncation_steps <= state._step_count),
-            lambda: state.replace(truncated=TRUE),  # type: ignore
-            lambda: state,
-        )
-        return state
-
-    return wrapped_step_fn
