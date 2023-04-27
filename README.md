@@ -71,17 +71,24 @@ while not state.terminated.all():
 * `is_truncated=True` is also set to state
 --->
 
-## Supported games and road map
-
-
-Use `pgx.available_games()` to see the list of currently available games.
+## Supported games
 
 | Backgammon | Chess | Shogi | Go |
 |:---:|:---:|:---:|:---:|
 |<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px">|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="160px">|<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="160px">|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="160px">|
 
+
+Use `pgx.available_games() -> Tuple[EnvId]` to see the list of currently available games. Given an `<env_id>`, you can create the environment via
+
 ```py
-env = pgx.make(<EnvId>)
+>>> env = pgx.make(<EnvId>)
+```
+
+You can check the current version of each environment by
+
+
+```py
+>>> env.version
 ```
 
 | Game | Visualization | EnvId | Version | Documentation |
