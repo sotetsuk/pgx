@@ -21,16 +21,16 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 </tr>
 <tr>
 <td>
-<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="135px">
+<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px">
 </td>
 <td>
-<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="120px">
+<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px">
 </td>
 <td>
-<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="130px">
+<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px">
 </td>
 <td>
-<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="120px">
+<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px">
 </td>
 </tr>
 </table>
