@@ -81,9 +81,9 @@ Use `pgx.available_games()` to see the list of currently available games.
 |<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px">|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="150px">|<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="160px">|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="150px">|
 
 
-| | Game | Usage | Version | Documentation |
-|:---:|:---|:---:|:---:|:---:|
-|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px">|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>| `pgx.make("2048")` | `v0` | doc |
+| Game | Usage | Version | Documentation |
+|:---|:---:|:---:|:---:|
+|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px"> <a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>| `pgx.make("2048")` | `v0` | doc |
 
 <div align="center">
 <table>
