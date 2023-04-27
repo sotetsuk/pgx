@@ -337,7 +337,7 @@ def available_games() -> Tuple[EnvId, ...]:
 
         ```py
         pgx.available_games()
-        ('2048', 'animal_shogi', 'backgammon', 'chess', 'connect_four', 'go-9x9', 'go-19x19', 'hex', 'kuhn_poker', 'leduc_holdem', 'minatar/asterix', 'minatar/breakout', 'minatar/freeway', 'minatar/seaquest', 'minatar/space_invaders', 'othello', 'shogi', 'sparrow_mahjong', 'tic_tac_toe')
+        ('2048', 'animal_shogi', 'backgammon', 'chess', 'connect_four', 'go_9x9', 'go_19x19', 'hex', 'kuhn_poker', 'leduc_holdem', 'minatar-asterix', 'minatar-breakout', 'minatar-freeway', 'minatar-seaquest', 'minatar-space_invaders', 'othello', 'shogi', 'sparrow_mahjong', 'tic_tac_toe')
         ```
 
 
