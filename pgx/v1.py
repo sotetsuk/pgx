@@ -327,14 +327,44 @@ class Env(abc.ABC):
 
 
 def available_games() -> Tuple[EnvId, ...]:
+    """List up all environment id available in `pgx.make` function.
+
+    !!! example "Example usage"
+
+        ```py
+        >>> pgx.available_games()
+        ('2048', 'animal_shogi', 'backgammon', 'chess', 'connect_four', 'go-9x9', 'go-19x19', 'hex', 'kuhn_poker', 'leduc_holdem', 'minatar/asterix', 'minatar/breakout', 'minatar/freeway', 'minatar/seaquest', 'minatar/space_invaders', 'othello', 'shogi', 'sparrow_mahjong', 'tic_tac_toe')
+        ```
+
+
+    !!! note "`BridgeBidding` environment"
+
+        `BridgeBidding` environment requires the domain knowledge of bridge game.
+        So we forbid users to load the bridge environment by `make("bridge_bidding")`.
+        Use `BridgeBidding` class directly by `from pgx.bridge_bidding import BridgeBidding`.
+
+    """
     games = get_args(EnvId)
-    # NOTE: BridgeBidding environment requires the domain knowledge of bridge
-    # So we forbid users to load the bridge environment by `make("bridge_bidding")`.
     games = tuple(filter(lambda x: x != "bridge_bidding", games))
     return games
 
 
 def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
+    """Load the specified environment.
+
+    !!! example "Example usage"
+
+        ```py
+        >>> env = pgx.make("tic_tac_toe")
+        ```
+
+    !!! note "`BridgeBidding` environment"
+
+        `BridgeBidding` environment requires the domain knowledge of bridge game.
+        So we forbid users to load the bridge environment by `make("bridge_bidding")`.
+        Use `BridgeBidding` class directly by `from pgx.bridge_bidding import BridgeBidding`.
+
+    """
     # NOTE: BridgeBidding environment requires the domain knowledge of bridge
     # So we forbid users to load the bridge environment by `make("bridge_bidding")`.
     if env_id == "2048":
