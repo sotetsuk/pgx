@@ -75,7 +75,7 @@ while not state.terminated.all():
 
 | Backgammon | Chess | Shogi | Go |
 |:---:|:---:|:---:|:---:|
-|<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="170px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="170px">|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="160px">|<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="170px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="170px">|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="160px">|
+|<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="170px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="170px">|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="158px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="158px">|<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="170px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="170px">|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="160px">|
 
 
 Use `pgx.available_games() -> Tuple[EnvId]` to see the list of currently available games. Given an `<env_id>`, you can create the environment via
