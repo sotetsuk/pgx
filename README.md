@@ -92,7 +92,7 @@ You can check the current version of each environment by
 ```
 
 | Game/EnvId | Visualization | Version | Five-words description |
-|:---:|:---:|:---:|:---:|:---:|
+|:---:|:---:|:---:|:---:|
 |<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a> <br> `"2048"` |<img src="docs/assets/2048_dark.gif" width="60px"><img src="docs/assets/2048_light.gif" width="60px">| `v0` | *Merge tiles to create 2048.* |
 |<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a><br>`"animal_shogi"` |<img src="docs/assets/animal_shogi_dark.gif" width="60px"><img src="docs/assets/animal_shogi_light.gif" width="60px">|  `v0` | *Animal-themed child-friendly shogi.* |
 |<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a><br>`"backgammon"` |<img src="docs/assets/backgammon_dark.gif" width="60px"><img src="docs/assets/backgammon_light.gif" width="60px">| `v0` | Dice and strategy board game. |
