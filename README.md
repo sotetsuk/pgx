@@ -92,8 +92,8 @@ env = pgx.make(<EnvId>)
 |<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="50px">| `"chess"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a>|<img src="docs/assets/connect_four_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/connect_four_light.gif#gh-light-mode-only" width="50px">| `"connect_four"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="50px">| `"go_9x9"` `"go_19x19"`| `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px">| `"hex_9x9"` `"hex_19x19"`| `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px">| `"kuhn_poker_9x9"` `"kuhn_poker_19x19"`| `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px">| `"hex"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px">| `"kuhn_poker"` | `v0` | doc |
 
 <table>
 <tr>
