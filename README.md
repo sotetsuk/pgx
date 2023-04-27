@@ -102,11 +102,11 @@ You can check the current version of each environment by
 |<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif" width="60px"><img src="docs/assets/hex_light.gif" width="60px">| `"hex"` | `v0` | *Connect opposite sides, block opponent.* |
 |<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif" width="60px"><img src="docs/assets/kuhn_poker_light.gif" width="60px">| `"kuhn_poker"` | `v0` | *three-card, betting, game-theoretic.* |
 |<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a>|<img src="docs/assets/leduc_holdem_dark.gif" width="60px"><img src="docs/assets/leduc_holdem_light.gif" width="60px">| `"leduc_holdem"` | `v0` | *Simple 2-suit poker variant.* |
-|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a>|<img src="docs/assets/minatar-asterix.gif" width="50px">| `"minatar-asterix"` | `v0` | doc |
-|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a>|<img src="docs/assets/minatar-breakout.gif" width="50px">| `"minatar-breakout"` | `v0` | doc |
-|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a>|<img src="docs/assets/minatar-freeway.gif" width="50px">| `"minatar-freeway"` | `v0` | doc |
-|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a>|<img src="docs/assets/minatar-seaquest.gif" width="50px">| `"minatar-seaquest"` | `v0` | doc |
-|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a>|<img src="docs/assets/minatar-space_invaders.gif" width="50px">| `"minatar-space_invaders"` | `v0` | doc |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a>|<img src="docs/assets/minatar-asterix.gif" width="50px">| `"minatar-asterix"` | `v0` | *Adventure game with increasing difficulty.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a>|<img src="docs/assets/minatar-breakout.gif" width="50px">| `"minatar-breakout"` | `v0` | *Paddle, ball, bricks, bounce, clear.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a>|<img src="docs/assets/minatar-freeway.gif" width="50px">| `"minatar-freeway"` | `v0` | *Dodging cars, climbing up freeway.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a>|<img src="docs/assets/minatar-seaquest.gif" width="50px">| `"minatar-seaquest"` | `v0` | *Underwater submarine rescue and combat.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a>|<img src="docs/assets/minatar-space_invaders.gif" width="50px">| `"minatar-space_invaders"` | `v0` | *Alien shooter game, dodge bullets.* |
 |<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a>|<img src="docs/assets/othello_dark.gif" width="60px"><img src="docs/assets/othello_light.gif" width="60px">| `"othello"` | `v0` | *Flip and conquer opponent's pieces.* |
 |<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a>|<img src="docs/assets/shogi_dark.gif" width="60px"><img src="docs/assets/shogi_light.gif" width="60px">| `"shogi"` | `v0` | *Japanese chess with captured pieces.* |
 |<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a>|<img src="docs/assets/sparrow_mahjong_dark.gif" width="60px"><img src="docs/assets/sparrow_mahjong_light.gif" width="60px">| `"sparrow_mahjong"` | `v0` | doc |
