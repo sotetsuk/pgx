@@ -46,7 +46,7 @@ games = {
     "tic_tac_toe": "tic_tac_toe",
     "backgammon": "backgammon",
     "shogi": "shogi",
-    "go": "go-19x19",
+    "go": "go_19x19",
 }
 
 
