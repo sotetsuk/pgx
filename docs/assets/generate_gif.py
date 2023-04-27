@@ -18,7 +18,7 @@ states = []
 rng, subkey = jax.random.split(rng)
 state = init(subkey)
 # while not state.terminated.all():
-for i in range(30):
+for i in range(50):
     state.save_svg(f"tmp/{env_id}_{i:03d}.svg", color_theme=color_theme)
     rng, subkey = jax.random.split(rng)
     action = act_randomly(subkey, state)
