@@ -84,20 +84,14 @@ Use `pgx.available_games()` to see the list of currently available games.
 | Game | | Usage | Version | Documentation |
 |:---|:---:|:---:|:---:|:---:|
 |<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px">| `pgx.make("2048")` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px">| `pgx.make("animal_shogi")` | `v0` | doc |
 
-<div align="center">
 <table>
 <tr>
   <th>Game</th>
   <th>Environment</th>
   <th>Visualization</th>
 </tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a></td>
- <td><div align="center"><img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
  <td> <a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a> </td>
  <td><div align="center"><img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
