@@ -107,8 +107,8 @@ You can check the current version of each environment by
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a>|<img src="docs/assets/minatar-freeway.gif" width="50px">| `"minatar-freeway"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a>|<img src="docs/assets/minatar-seaquest.gif" width="50px">| `"minatar-seaquest"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a>|<img src="docs/assets/minatar-space_invaders.gif" width="50px">| `"minatar-space_invaders"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a>|<img src="docs/assets/othello_dark.gif" width="60px"><img src="docs/assets/othello_light.gif" width="60px">| `"othello"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a>|<img src="docs/assets/shogi_dark.gif" width="60px"><img src="docs/assets/shogi_light.gif" width="60px">| `"shogi"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a>|<img src="docs/assets/othello_dark.gif" width="60px"><img src="docs/assets/othello_light.gif" width="60px">| `"othello"` | `v0` | *Flip and conquer opponent's pieces.* |
+|<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a>|<img src="docs/assets/shogi_dark.gif" width="60px"><img src="docs/assets/shogi_light.gif" width="60px">| `"shogi"` | `v0` | *Japanese chess with captured pieces.* |
 |<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a>|<img src="docs/assets/sparrow_mahjong_dark.gif" width="60px"><img src="docs/assets/sparrow_mahjong_light.gif" width="60px">| `"sparrow_mahjong"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a>|<img src="docs/assets/tic_tac_toe_dark.gif" width="60px"><img src="docs/assets/tic_tac_toe_light.gif" width="60px">| `"tic_tac_toe"` | `v0` | *Three in a row wins.* |
 
