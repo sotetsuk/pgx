@@ -18,3 +18,5 @@ inkscape --export-type=png *.svg
 convert *.png "$1"_dark.gif
 mv "$1"_dark.gif ../
 cd ..
+
+rm -rf tmp
