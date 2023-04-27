@@ -39,7 +39,15 @@ env = Go(size=19, komi=6.5)
 
 The rule implemented in Pgx follows [Tromp-Taylor Rules](https://webdocs.cs.ualberta.ca/~hayward/396/hoven/tromptaylor.pdf).
 
-- Komi: `6.5` (default)
+!!! note "Komi"
+
+    By default, we use `6.5`. Users can set different `komi` at `Go` class constructor.
+
+
+!!! note "Ko"
+
+    TODO: write me.
+
 
 ## Specs
 
