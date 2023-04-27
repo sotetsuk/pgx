@@ -1,4 +1,4 @@
-"""MinAtar/Asterix: A fork of github.com/kenjyoung/MinAtar
+"""MinAtar/Freeway: A fork of github.com/kenjyoung/MinAtar
 
 https://github.com/kenjyoung/MinAtar/blob/master/minatar/environments/freeway.py
 
@@ -45,7 +45,7 @@ class State(v1.State):
 
     @property
     def env_id(self) -> v1.EnvId:
-        return "minatar/freeway"
+        return "minatar-freeway"
 
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
