@@ -103,7 +103,7 @@ class MinAtarFreeway(v1.Env):
 
     @property
     def id(self) -> v1.EnvId:
-        return "minatar/freeway"
+        return "minatar-freeway"
 
     @property
     def version(self) -> str:
