@@ -328,11 +328,15 @@ class Env(abc.ABC):
 
 def available_games() -> Tuple[EnvId, ...]:
     games = get_args(EnvId)
+    # NOTE: BridgeBidding environment requires the domain knowledge of bridge
+    # So we forbid users to load the bridge environment by `make("bridge_bidding")`.
     games = tuple(filter(lambda x: x != "bridge_bidding", games))
     return games
 
 
 def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
+    # NOTE: BridgeBidding environment requires the domain knowledge of bridge
+    # So we forbid users to load the bridge environment by `make("bridge_bidding")`.
     if env_id == "2048":
         from pgx.play2048 import Play2048
 
