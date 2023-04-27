@@ -103,11 +103,6 @@ Use `pgx.available_games()` to see the list of currently available games.
  <td>:white_check_mark:</td>
 </tr>
 <tr>
- <td><a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a></td>
- <td>:construction:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
  <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
@@ -136,11 +131,6 @@ Use `pgx.available_games()` to see the list of currently available games.
  <td><a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a></td>
  <td>:white_check_mark:</td>
  <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a></td>
- <td>:construction:</td>
- <td>:construction:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
@@ -189,6 +179,8 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 </table>
 </div>
+
+<a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a> and <a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a> environments are under development 🚧
 
 ## See also
 
