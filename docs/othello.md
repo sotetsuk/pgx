@@ -69,11 +69,7 @@ The reward at terminal state is described in this table:
 
 ## Termination
 
-Termination happens when 
-
-1. either one player connect opposite sides of the board, or 
-2. all `64 (= 8 x 8)` cells are filled.
-
+Termination happens when all `64 (= 8 x 8)` playable squares are filled.
 
 ## Version History
 
