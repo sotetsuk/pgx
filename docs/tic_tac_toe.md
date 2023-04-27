@@ -55,6 +55,7 @@ env = TicTacToe("tic_tac_toe")
 | `[:, :, 1]` | represents `(3, 3)` squares filled by the opponent player of current player |
 
 ## Action
+Each action represents the square index to be filled.
 
 ## Rewards
 Non-zero rewards are given only at the terminal states.
