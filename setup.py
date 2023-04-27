@@ -14,7 +14,7 @@ setup(
     author_email="sotetsu.koyamada@gmail.com",
     keywords="",
     packages=find_packages(),
-    package_data={"": ["LICENSE", "*.svg"]},
+    package_data={"": ["LICENSE", "*.svg", "_src/assets/*.npy"]},
     include_package_data=True,
     install_requires=[
         "jax>=0.3.25",  # JAX version on Colab (TPU)
