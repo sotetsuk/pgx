@@ -32,6 +32,10 @@ FALSE = jnp.bool_(False)
 #     the comparison to other agents (i.e., environment version is less important),
 # (2) we do not provide older versions (as with OpenAI Gym), and
 # (3) it is tedious to remember and write version numbers.
+#
+# Naming convention:
+# Hyphen - is used to represent that there is a different original game source, and
+# Underscore - is used for the other cases.
 EnvId = Literal[
     "2048",
     "animal_shogi",
@@ -39,17 +43,17 @@ EnvId = Literal[
     "bridge_bidding",
     "chess",
     "connect_four",
-    "go-9x9",
-    "go-19x19",
+    "go_9x9",
+    "go_19x19",
     "hex",
     "kuhn_poker",
     "leduc_holdem",
     # "mahjong",
-    "minatar/asterix",
-    "minatar/breakout",
-    "minatar/freeway",
-    "minatar/seaquest",
-    "minatar/space_invaders",
+    "minatar-asterix",
+    "minatar-breakout",
+    "minatar-freeway",
+    "minatar-seaquest",
+    "minatar-space_invaders",
     "othello",
     "shogi",
     "sparrow_mahjong",
