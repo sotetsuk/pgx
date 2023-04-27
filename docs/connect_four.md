@@ -71,7 +71,7 @@ The reward at terminal state is described in this table:
 Termination happens when 
 
 1. either one player places four of their tokens in a row (horizontally, vertically, or diagonally), or 
-2. all nine squares are filled.
+2. all `42 (= 6 x 7)` squares are filled.
 
 
 ## Version History
