@@ -134,4 +134,4 @@ def test_api():
     import pgx
 
     env = pgx.make("othello")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

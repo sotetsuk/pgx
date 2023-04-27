@@ -574,4 +574,4 @@ def test_black_off():
 def test_api():
     import pgx
     env = pgx.make("backgammon")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

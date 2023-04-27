@@ -12,7 +12,7 @@ env = pgx.make(env_id, dds_hash_table_path="dds_hash_table")
 time2 = time.time()
 print(time2 - time1)
 # run api test
-pgx.api_test(env, 100)
+pgx.v1_api_test(env, 100)
 
 # jit
 init = jax.jit(jax.vmap(env.init))

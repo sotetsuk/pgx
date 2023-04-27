@@ -130,4 +130,4 @@ def test_api():
     import pgx
 
     env = pgx.make("kuhn_poker")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

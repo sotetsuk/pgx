@@ -107,4 +107,4 @@ def test_minimal_action_set():
 def test_api():
     import pgx
     env = pgx.make("minatar/space_invaders")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

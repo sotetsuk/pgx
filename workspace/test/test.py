@@ -10,7 +10,7 @@ env_id: pgx.EnvId = sys.argv[1]
 env = pgx.make(env_id)
 
 # run api test
-pgx.api_test(env, 100)
+pgx.v1_api_test(env, 100)
 
 # jit
 init = jax.jit(jax.vmap(env.init))

@@ -112,7 +112,7 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("minatar/seaquest")
-    pgx.api_test(env)
+    pgx.v1_api_test(env)
 
 
 def test_buggy_sample():
@@ -190,4 +190,4 @@ def test_minimal_action_set():
 def test_api():
     import pgx
     env = pgx.make("minatar/seaquest")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

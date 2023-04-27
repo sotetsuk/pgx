@@ -1750,7 +1750,7 @@ def test_api():
     env = pgx.bridge_bidding.BridgeBidding(
         dds_hash_table_path=DDS_HASH_TABLE_PATH
     )
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)
 
 
 def to_value(sample: list) -> jnp.ndarray:
