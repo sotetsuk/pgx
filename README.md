@@ -11,6 +11,31 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 <img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
 </div>
 
+<div align="center">
+<table>
+<tr>
+<th> <div align="center"><b>Backgammon</b></div> </th>
+<th> <div align="center"><b>Chess</b></div> </th>
+<th> <div align="center"><b>Shogi</b></div> </th>
+<th> <div align="center"><b>Go</b></div> </th>
+</tr>
+<tr>
+<td>
+<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" height="100px">
+</td>
+<td>
+<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" height="100px">
+</td>
+<td>
+<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" height="100px">
+</td>
+<td>
+<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" height="100px">
+</td>
+</tr>
+</table>
+</div>
+
 ## Why Pgx?
 
 <!--- 
