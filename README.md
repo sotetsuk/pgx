@@ -89,92 +89,92 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td> <a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a> </td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/connect_four_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/connect_four_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/leduc_holdem_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/leduc_holdem_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/minatar-asterix.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-asterix.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/minatar-breakout.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-breakout.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/minatar-freeway.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-freeway.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/minatar-seaquest.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-seaquest.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/minatar-space_invaders.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-space_invaders.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Reversi">Othello</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/othello_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/othello_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/sparrow_mahjong_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/sparrow_mahjong_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a></td>
- <td>:white_check_mark:</td>
+ <td><div align="center"><img src="docs/assets/tic_tac_toe_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/tic_tac_toe_light.gif#gh-light-mode-only" width="50px"></div></td>
  <td>:white_check_mark:</td>
 </tr>
 </table>
