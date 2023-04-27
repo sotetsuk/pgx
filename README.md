@@ -20,10 +20,9 @@ throughput: https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
 Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
 
-- **JAX-native.** All `step` functions are *JIT-able*
-- **Super fast** in parallel execution on accelerators
-- **Various game support** including **Backgammon**, **Chess**, **Shogi**, and **Go**
-- **Beautiful visualization** in SVG format
+- ⚡ **Super fast** in parallel execution on accelerators
+- 🎲 **Various game support** including **Backgammon**, **Chess**, **Shogi**, and **Go**
+- 🖼️ **Beautiful visualization** in SVG format
 
 
 ## Installation
@@ -33,6 +32,10 @@ pip install pgx
 ```
 
 ## Usage
+
+
+Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
+
 <a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ```py
@@ -51,7 +54,7 @@ while not state.terminated.all():
     state = step(state, action)  # state.reward (2,)
 ```
 
-> :warning: Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in April 2023. Opinions and comments are more than welcome!
+> ⚠️ Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in April 2023. Opinions and comments are more than welcome!
 
 <!---
 ### Limitations (for the simplicity)
