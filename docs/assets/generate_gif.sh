@@ -8,6 +8,7 @@ cd tmp
 inkscape --export-type=png *.svg
 convert *.png "$1"_light.gif
 mv "$1"_light.gif ../
+cd ..
 
 # dark theme
 rm -rf tmp
@@ -16,3 +17,4 @@ cd tmp
 inkscape --export-type=png *.svg
 convert *.png "$1"_dark.gif
 mv "$1"_dark.gif ../
+cd ..
