@@ -85,20 +85,16 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
 <td>
-<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px">
-<img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px">
+<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px">
 </td>
 <td>
-<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px">
-<img src="docs/assets/chess_light.gif#gh-light-mode-only" width="150px">
+<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="150px">
 </td>
 <td>
-<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px">
-<img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="160px">
+<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="160px">
 </td>
 <td>
-<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px">
-<img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="150px">
+<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="150px">
 </td>
 </tr>
 </table>
