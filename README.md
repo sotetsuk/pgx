@@ -88,46 +88,18 @@ env = pgx.make(<EnvId>)
 |:---|:---:|:---:|:---:|:---:|
 |<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px">| `"2048"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px">| `"animal_shogi"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a>|<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="50px">| `"backgammon"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="50px">| `"chess"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a>|<img src="docs/assets/connect_four_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/connect_four_light.gif#gh-light-mode-only" width="50px">| `"connect_four"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="50px">| `"go_9x9"` `"go_19x19"`| `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px">| `"hex_9x9"` `"hex_19x19"`| `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px">| `"kuhn_poker_9x9"` `"kuhn_poker_19x19"`| `v0` | doc |
 
 <table>
 <tr>
   <th>Game</th>
   <th>Environment</th>
   <th>Visualization</th>
-</tr>
- <td> <a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a> </td>
- <td><div align="center"><img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a></td>
- <td><div align="center"><img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
- <td><div align="center"><img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a></td>
- <td><div align="center"><img src="docs/assets/connect_four_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/connect_four_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a></td>
- <td><div align="center"><img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a></td>
- <td><div align="center"><img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a></td>
- <td><div align="center"><img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
 </tr>
 <tr>
  <td><a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a></td>
