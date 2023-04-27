@@ -26,7 +26,7 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 - **Beautiful visualization** in SVG format
 
 
-## Install
+## Installation
 
 ```sh
 pip install pgx
@@ -91,7 +91,7 @@ env = pgx.make(<EnvId>)
 |<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a>|<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="50px">| `"backgammon"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="50px">| `"chess"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a>|<img src="docs/assets/connect_four_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/connect_four_light.gif#gh-light-mode-only" width="50px">| `"connect_four"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="50px">| `"go_9x9"` `"go_19x19"`| `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="50px">| `"go_9x9"` `"go_19x19"`| `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px">| `"hex"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px">| `"kuhn_poker"` | `v0` | doc |
 
