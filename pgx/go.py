@@ -55,7 +55,7 @@ class State(v1.State):
             size = int(self._size.item())
         except TypeError:
             size = int(self._size[0].item())
-        return f"go-{size}x{size}"  # type: ignore
+        return f"go_{size}x{size}"  # type: ignore
 
 
 class Go(v1.Env):
@@ -100,7 +100,7 @@ class Go(v1.Env):
 
     @property
     def id(self) -> v1.EnvId:
-        return f"go-{int(self.size)}x{int(self.size)}"  # type: ignore
+        return f"go_{int(self.size)}x{int(self.size)}"  # type: ignore
 
     @property
     def version(self) -> str:

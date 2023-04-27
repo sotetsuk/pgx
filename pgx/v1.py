@@ -106,7 +106,7 @@ class State(abc.ABC):
     @property
     @abc.abstractmethod
     def env_id(self) -> EnvId:
-        """Environment id (e.g. "go-19x19")"""
+        """Environment id (e.g. "go_19x19")"""
         ...
 
     def _repr_html_(self) -> str:
@@ -359,11 +359,11 @@ def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
         from pgx.connect_four import ConnectFour
 
         return ConnectFour(auto_reset=auto_reset)
-    elif env_id == "go-9x9":
+    elif env_id == "go_9x9":
         from pgx.go import Go
 
         return Go(auto_reset=auto_reset, size=9, komi=7.5)
-    elif env_id == "go-19x19":
+    elif env_id == "go_19x19":
         from pgx.go import Go
 
         return Go(auto_reset=auto_reset, size=19, komi=7.5)
