@@ -80,11 +80,14 @@ Use `pgx.available_games()` to see the list of currently available games.
 |:---:|:---:|:---:|:---:|
 |<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px">|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="150px">|<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="160px">|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="150px">|
 
+```py
+env = pgx.make(<EnvId>)
+```
 
-| Game | | Usage | Version | Documentation |
+| Game | | EnvId | Version | Documentation |
 |:---|:---:|:---:|:---:|:---:|
-|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px">| `pgx.make("2048")` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px">| `pgx.make("animal_shogi")` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px">| `"2048"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px">| `"animal_shogi"` | `v0` | doc |
 
 <table>
 <tr>
