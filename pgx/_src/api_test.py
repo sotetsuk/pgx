@@ -24,7 +24,7 @@ from pgx.v1 import Env, State, available_games
 act_randomly = jax.jit(act_randomly)
 
 
-def api_test(env: Env, num: int = 100):
+def v1_api_test(env: Env, num: int = 100):
     api_test_single(env, num)
     api_test_batch(env, num)
 

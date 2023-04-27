@@ -105,4 +105,4 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("animal_shogi")
-    pgx.api_test(env, 5)
+    pgx.v1_api_test(env, 5)

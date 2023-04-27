@@ -405,4 +405,4 @@ def test_api():
     import pgx
     # env = pgx.make("shogi")
     env = Shogi(max_termination_steps=50)
-    pgx.api_test(env, 5)
+    pgx.v1_api_test(env, 5)
