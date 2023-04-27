@@ -86,7 +86,7 @@ env = pgx.make(<EnvId>)
 
 | Game | Visualization | EnvId | Version | Documentation |
 |:---|:---:|:---:|:---:|:---:|
-|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px">| `"2048"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif" width="50px"><img src="docs/assets/2048_light.gif" width="50px">| `"2048"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px">| `"animal_shogi"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a>|<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="50px">| `"backgammon"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="50px">| `"chess"` | `v0` | doc |
