@@ -94,65 +94,16 @@ env = pgx.make(<EnvId>)
 |<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="50px">| `"go_9x9"` `"go_19x19"`| `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px">| `"hex"` | `v0` | doc |
 |<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px">| `"kuhn_poker"` | `v0` | doc |
-
-<table>
-<tr>
-  <th>Game</th>
-  <th>Environment</th>
-  <th>Visualization</th>
-</tr>
-<tr>
- <td><a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a></td>
- <td><div align="center"><img src="docs/assets/leduc_holdem_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/leduc_holdem_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
- <td><div align="center"><img src="docs/assets/minatar-asterix.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-asterix.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a></td>
- <td><div align="center"><img src="docs/assets/minatar-breakout.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-breakout.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a></td>
- <td><div align="center"><img src="docs/assets/minatar-freeway.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-freeway.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a></td>
- <td><div align="center"><img src="docs/assets/minatar-seaquest.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-seaquest.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a></td>
- <td><div align="center"><img src="docs/assets/minatar-space_invaders.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/minatar-space_invaders.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Reversi">Othello</a></td>
- <td><div align="center"><img src="docs/assets/othello_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/othello_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a></td>
- <td><div align="center"><img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a></td>
- <td><div align="center"><img src="docs/assets/sparrow_mahjong_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/sparrow_mahjong_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a></td>
- <td><div align="center"><img src="docs/assets/tic_tac_toe_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/tic_tac_toe_light.gif#gh-light-mode-only" width="50px"></div></td>
- <td>:white_check_mark:</td>
-</tr>
-</table>
-</div>
+|<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a>|<img src="docs/assets/leduc_holdem_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/leduc_holdem_light.gif#gh-light-mode-only" width="50px">| `"leduc_holdem"` | `v0` | doc |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a>|<img src="docs/assets/minatar-asterix.gif" width="50px">| `"minatar-asterix"` | `v0` | doc |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a>|<img src="docs/assets/minatar-breakout.gif" width="50px">| `"minatar-breakout"` | `v0` | doc |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a>|<img src="docs/assets/minatar-freeway.gif" width="50px">| `"minatar-freeway"` | `v0` | doc |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a>|<img src="docs/assets/minatar-seaquest.gif" width="50px">| `"minatar-seaquest"` | `v0` | doc |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a>|<img src="docs/assets/minatar-space_invaders.gif" width="50px">| `"minatar-space_invaders"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a>|<img src="docs/assets/othello_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/othello_light.gif#gh-light-mode-only" width="50px">| `"othello"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a>|<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="50px">| `"shogi"` | `v0` | doc |
+|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a>|<img src="docs/assets/sparrow_mahjong_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/sparrow_mahjong_light.gif#gh-light-mode-only" width="50px">| `"sparrow_mahjong"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a>|<img src="docs/assets/tic_tac_toe_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/tic_tac_toe_light.gif#gh-light-mode-only" width="50px">| `"tic_tac_toe"` | `v0` | doc |
 
 <a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a> and <a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a> environments are under development 🚧
 
