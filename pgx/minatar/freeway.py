@@ -105,7 +105,7 @@ class MinAtarFreeway(v1.Env):
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self):
