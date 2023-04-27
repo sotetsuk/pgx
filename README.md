@@ -11,31 +11,6 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 <img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
 </div>
 
-<div align="center">
-<table>
-<tr>
-<th> <div align="center"><b>Backgammon</b></div> </th>
-<th> <div align="center"><b>Chess</b></div> </th>
-<th> <div align="center"><b>Shogi</b></div> </th>
-<th> <div align="center"><b>Go</b></div> </th>
-</tr>
-<tr>
-<td>
-<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px">
-</td>
-<td>
-<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px">
-</td>
-<td>
-<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px">
-</td>
-<td>
-<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px">
-</td>
-</tr>
-</table>
-</div>
-
 ## Why Pgx?
 
 <!--- 
@@ -101,19 +76,32 @@ while not state.terminated.all():
 Use `pgx.available_games()` to see the list of currently available games.
 
 <div align="center">
-<img src="fig/svgs/2048_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/backgammon_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/go-9x9_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/kuhn_poker_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/shogi_dark.png#gh-dark-mode-only" height="120px">
-</div>
-
-<div align="center">
-<img src="fig/svgs/2048_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/backgammon_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/go-9x9_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/kuhn_poker_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/shogi_light.png#gh-light-mode-only" height="120px">
+<table>
+<tr>
+<th> <div align="center"><b>Backgammon</b></div> </th>
+<th> <div align="center"><b>Chess</b></div> </th>
+<th> <div align="center"><b>Shogi</b></div> </th>
+<th> <div align="center"><b>Go</b></div> </th>
+</tr>
+<tr>
+<td>
+<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px">
+<img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px">
+</td>
+<td>
+<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px">
+<img src="docs/assets/chess_light.gif#gh-light-mode-only" width="150px">
+</td>
+<td>
+<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px">
+<img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="160px">
+</td>
+<td>
+<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px">
+<img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="150px">
+</td>
+</tr>
+</table>
 </div>
 
 <div align="center">
