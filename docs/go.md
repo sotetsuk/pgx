@@ -46,8 +46,31 @@ The rule implemented in Pgx follows [Tromp-Taylor Rules](https://webdocs.cs.ualb
 
 !!! note "Ko"
 
-    TODO: write me.
+    On PSK implementations.
 
+    Tromp-Taylor rule employ PSK. However, implementing strict PSK is inefficient because
+
+    - Simulator has to store all previous board (or hash) history, and
+    - Agent also has to remember all previous board to avoid losing by PSK
+
+    As PSK rarely happens, as far as our best knowledge, it is usual to compromise in PSK implementations.
+    For example,
+
+    - **OpenSpiel** employs SSK (instead of PSK) for computing legal actions, and if PSK action happened, the game ends with tie.
+        - Pros: Detect all PSK actions
+        - Cons: Agent cannot know why the game ends with tie (if the same board is too old)
+    - **PettingZoo** employs SSK for legal actions, and ignores even if PSK action happened.
+        - Pros: Simple
+        - Cons: PSK is totally ignored
+
+    Note that the strict rule is "PSK for legal actions, and PSK action leads to immediate lose."
+    So, we also compromise at this point, our approach is
+
+    - **Pgx** employs SSK for legal actions, PSK is approximated by up to 8-steps before board, and approximate PSK action leads to immediate lose
+        - Pros: Agent may be able to avoid PSK (as it observes board history up to 8-steps in AlphaGo Zero feature)
+        - Cons: Ignoring the old same boards
+
+    Anyway, we believe it's effect is very small as PSK rarely happens, especially in 19x19 board.
 
 ## Specs
 
