@@ -1,7 +1,5 @@
 """MinAtar/Freeway: A fork of github.com/kenjyoung/MinAtar
 
-https://github.com/kenjyoung/MinAtar/blob/master/minatar/environments/freeway.py
-
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)
     * Tian Tian (ttian@ualberta.ca)
