@@ -1,4 +1,4 @@
-# Tic-tac-toe
+# Hex
 
 === "dark" 
 
@@ -26,7 +26,7 @@ or you can directly load `Hex` class
 ```py
 from pgx.hex import Hex
 
-env = Hex("hex")
+env = Hex()
 ```
 
 ## Description

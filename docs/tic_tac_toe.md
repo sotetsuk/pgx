@@ -26,7 +26,7 @@ or you can directly load `TicTacToe` class
 ```py
 from pgx.tic_tac_toe import TicTacToe
 
-env = TicTacToe("tic_tac_toe")
+env = TicTacToe()
 ```
 
 ## Description

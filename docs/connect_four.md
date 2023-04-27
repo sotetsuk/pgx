@@ -26,7 +26,7 @@ or you can directly load `ConnectFour` class
 ```py
 from pgx.connect_four import ConnectFour
 
-env = ConnectFour("connect_four")
+env = ConnectFour()
 ```
 
 ## Description

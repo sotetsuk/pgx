@@ -13,6 +13,7 @@ nav:
     - Tic-tac-toe: tic_tac_toe.md
     - Go: go.md
     - Hex: hex.md
+    - Othello: othello.md
 theme:
   name: material
   language: en
