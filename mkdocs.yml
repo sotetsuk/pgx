@@ -9,6 +9,7 @@ nav:
   - API Reference: api.md
   - Examples: examples.md
   - Available Games:
+    - Connect four: connect_four.md
     - Tic-tac-toe: tic_tac_toe.md
     - Go: go.md
 theme:
