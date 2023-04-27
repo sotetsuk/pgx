@@ -92,7 +92,7 @@ def test_observe():
 
 def test_minimal_action_set():
     import pgx
-    env = pgx.make("minatar/freeway")
+    env = pgx.make("minatar-freeway")
     assert env.num_actions == 3
     state = jax.jit(env.init)(jax.random.PRNGKey(0))
     assert state.legal_action_mask.shape == (3,)
@@ -102,5 +102,5 @@ def test_minimal_action_set():
 
 def test_api():
     import pgx
-    env = pgx.make("minatar/freeway")
+    env = pgx.make("minatar-freeway")
     pgx.v1_api_test(env, 10)

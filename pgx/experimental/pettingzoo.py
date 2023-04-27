@@ -130,7 +130,7 @@ def get_agents_spaces(env_id: EnvId):
             for i in agents
         }
         return agents, action_spaces, observation_spaces
-    elif env_id == "go-19x19":
+    elif env_id == "go_19x19":
         agents = ["player_0", "player_1"]
         size = 19
         action_spaces = {i: spaces.Discrete(size * size + 1) for i in agents}

@@ -3,7 +3,6 @@
 This is the list of all public APIs of Pgx.
 Two important components in Pgx are `State` and `Env`.
 
-
 ::: pgx.State
     handler: python
     options:
@@ -21,6 +20,10 @@ Two important components in Pgx are `State` and `Env`.
     options:
       show_root_heading: true
       show_source: true
+
+!!! Note "Naming convention of `EnvId`"
+
+    Hyphen `-` is used to represent that there is a different original game source (e.g., `MinAtar`), and underscore `-` is used for the other cases.
 
 ::: pgx.make
     handler: python

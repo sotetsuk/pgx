@@ -1,6 +1,4 @@
-"""MinAtar/Asterix: A fork of github.com/kenjyoung/MinAtar
-
-https://github.com/kenjyoung/MinAtar/blob/master/minatar/environments/freeway.py
+"""MinAtar/Freeway: A fork of github.com/kenjyoung/MinAtar
 
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)
@@ -45,7 +43,7 @@ class State(v1.State):
 
     @property
     def env_id(self) -> v1.EnvId:
-        return "minatar/freeway"
+        return "minatar-freeway"
 
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
@@ -103,7 +101,7 @@ class MinAtarFreeway(v1.Env):
 
     @property
     def id(self) -> v1.EnvId:
-        return "minatar/freeway"
+        return "minatar-freeway"
 
     @property
     def version(self) -> str:

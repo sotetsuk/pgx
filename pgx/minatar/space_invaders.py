@@ -1,7 +1,5 @@
 """MinAtar/SpaceInvaders: A fork of github.com/kenjyoung/MinAtar
 
-https://github.com/kenjyoung/MinAtar/blob/master/minatar/environments/freeway.py
-
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)
     * Tian Tian (ttian@ualberta.ca)
@@ -55,7 +53,7 @@ class State(v1.State):
 
     @property
     def env_id(self) -> v1.EnvId:
-        return "minatar/space_invaders"
+        return "minatar-space_invaders"
 
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
@@ -113,7 +111,7 @@ class MinAtarSpaceInvaders(v1.Env):
 
     @property
     def id(self) -> v1.EnvId:
-        return "minatar/space_invaders"
+        return "minatar-space_invaders"
 
     @property
     def version(self) -> str:

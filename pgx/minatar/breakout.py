@@ -1,11 +1,5 @@
 """MinAtar/Breakout: A fork of github.com/kenjyoung/MinAtar
 
-The player controls a paddle on the bottom of the screen and must bounce a ball to break 3 rows of bricks along the
-top of the screen. A reward of +1 is given for each brick broken by the ball.  When all bricks are cleared another 3
-rows are added. The ball travels only along diagonals, when it hits the paddle it is bounced either to the left or
-right depending on the side of the paddle hit, when it hits a wall or brick it is reflected. Termination occurs when
-the ball hits the bottom of the screen. The balls direction is indicated by a trail channel.
-
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)
     * Tian Tian (ttian@ualberta.ca)
@@ -55,7 +49,7 @@ class State(v1.State):
 
     @property
     def env_id(self) -> v1.EnvId:
-        return "minatar/breakout"
+        return "minatar-breakout"
 
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
@@ -113,7 +107,7 @@ class MinAtarBreakout(v1.Env):
 
     @property
     def id(self) -> v1.EnvId:
-        return "minatar/asterix"
+        return "minatar-asterix"
 
     @property
     def version(self) -> str:

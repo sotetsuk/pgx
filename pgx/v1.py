@@ -32,6 +32,10 @@ FALSE = jnp.bool_(False)
 #     the comparison to other agents (i.e., environment version is less important),
 # (2) we do not provide older versions (as with OpenAI Gym), and
 # (3) it is tedious to remember and write version numbers.
+#
+# Naming convention:
+# Hyphen - is used to represent that there is a different original game source, and
+# Underscore - is used for the other cases.
 EnvId = Literal[
     "2048",
     "animal_shogi",
@@ -39,17 +43,17 @@ EnvId = Literal[
     "bridge_bidding",
     "chess",
     "connect_four",
-    "go-9x9",
-    "go-19x19",
+    "go_9x9",
+    "go_19x19",
     "hex",
     "kuhn_poker",
     "leduc_holdem",
     # "mahjong",
-    "minatar/asterix",
-    "minatar/breakout",
-    "minatar/freeway",
-    "minatar/seaquest",
-    "minatar/space_invaders",
+    "minatar-asterix",
+    "minatar-breakout",
+    "minatar-freeway",
+    "minatar-seaquest",
+    "minatar-space_invaders",
     "othello",
     "shogi",
     "sparrow_mahjong",
@@ -102,7 +106,7 @@ class State(abc.ABC):
     @property
     @abc.abstractmethod
     def env_id(self) -> EnvId:
-        """Environment id (e.g. "go-19x19")"""
+        """Environment id (e.g. "go_19x19")"""
         ...
 
     def _repr_html_(self) -> str:
@@ -387,11 +391,11 @@ def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
         from pgx.connect_four import ConnectFour
 
         return ConnectFour(auto_reset=auto_reset)
-    elif env_id == "go-9x9":
+    elif env_id == "go_9x9":
         from pgx.go import Go
 
         return Go(auto_reset=auto_reset, size=9, komi=7.5)
-    elif env_id == "go-19x19":
+    elif env_id == "go_19x19":
         from pgx.go import Go
 
         return Go(auto_reset=auto_reset, size=19, komi=7.5)
@@ -407,23 +411,23 @@ def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
         from pgx.leduc_holdem import LeducHoldem
 
         return LeducHoldem(auto_reset=auto_reset)
-    elif env_id == "minatar/asterix":
+    elif env_id == "minatar-asterix":
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix(auto_reset=auto_reset)
-    elif env_id == "minatar/breakout":
+    elif env_id == "minatar-breakout":
         from pgx.minatar.breakout import MinAtarBreakout
 
         return MinAtarBreakout(auto_reset=auto_reset)
-    elif env_id == "minatar/freeway":
+    elif env_id == "minatar-freeway":
         from pgx.minatar.freeway import MinAtarFreeway
 
         return MinAtarFreeway(auto_reset=auto_reset)
-    elif env_id == "minatar/seaquest":
+    elif env_id == "minatar-seaquest":
         from pgx.minatar.seaquest import MinAtarSeaquest
 
         return MinAtarSeaquest(auto_reset=auto_reset)
-    elif env_id == "minatar/space_invaders":
+    elif env_id == "minatar-space_invaders":
         from pgx.minatar.space_invaders import MinAtarSpaceInvaders
 
         return MinAtarSpaceInvaders(auto_reset=auto_reset)
