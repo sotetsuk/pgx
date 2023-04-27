@@ -94,14 +94,14 @@ You can check the current version of each environment by
 | Game | Visualization | EnvId | Version | Five-words description |
 |:---|:---:|:---:|:---:|:---:|
 |<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif" width="60px"><img src="docs/assets/2048_light.gif" width="60px">| `"2048"` | `v0` | *Merge tiles to create 2048.* |
-|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif" width="60px"><img src="docs/assets/animal_shogi_light.gif" width="60px">| `"animal_shogi"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a>|<img src="docs/assets/backgammon_dark.gif" width="60px"><img src="docs/assets/backgammon_light.gif" width="60px">| `"backgammon"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif" width="60px"><img src="docs/assets/chess_light.gif" width="60px">| `"chess"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif" width="60px"><img src="docs/assets/animal_shogi_light.gif" width="60px">| `"animal_shogi"` | `v0` | *Animal-themed child-friendly shogi.* |
+|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a>|<img src="docs/assets/backgammon_dark.gif" width="60px"><img src="docs/assets/backgammon_light.gif" width="60px">| `"backgammon"` | `v0` | Dice and strategy board game. |
+|<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif" width="60px"><img src="docs/assets/chess_light.gif" width="60px">| `"chess"` | `v0` | *Classic board game of strategy.* |
 |<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a>|<img src="docs/assets/connect_four_dark.gif" width="60px"><img src="docs/assets/connect_four_light.gif" width="60px">| `"connect_four"` | `v0` | *Connect four in a row.* |
 |<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go-19x19_dark.gif" width="60px"><img src="docs/assets/go-19x19_light.gif" width="60px">| `"go_9x9"` `"go_19x19"`| `v0` | *Place stones, surround territory.* |
 |<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif" width="60px"><img src="docs/assets/hex_light.gif" width="60px">| `"hex"` | `v0` | *Connect opposite sides, block opponent.* |
-|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif" width="60px"><img src="docs/assets/kuhn_poker_light.gif" width="60px">| `"kuhn_poker"` | `v0` | doc |
-|<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a>|<img src="docs/assets/leduc_holdem_dark.gif" width="60px"><img src="docs/assets/leduc_holdem_light.gif" width="60px">| `"leduc_holdem"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif" width="60px"><img src="docs/assets/kuhn_poker_light.gif" width="60px">| `"kuhn_poker"` | `v0` | *three-card, betting, game-theoretic.* |
+|<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a>|<img src="docs/assets/leduc_holdem_dark.gif" width="60px"><img src="docs/assets/leduc_holdem_light.gif" width="60px">| `"leduc_holdem"` | `v0` | *Simple 2-suit poker variant.* |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a>|<img src="docs/assets/minatar-asterix.gif" width="50px">| `"minatar-asterix"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a>|<img src="docs/assets/minatar-breakout.gif" width="50px">| `"minatar-breakout"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a>|<img src="docs/assets/minatar-freeway.gif" width="50px">| `"minatar-freeway"` | `v0` | doc |
