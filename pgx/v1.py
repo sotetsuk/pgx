@@ -379,23 +379,23 @@ def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
         from pgx.leduc_holdem import LeducHoldem
 
         return LeducHoldem(auto_reset=auto_reset)
-    elif env_id == "minatar/asterix":
+    elif env_id == "minatar-asterix":
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix(auto_reset=auto_reset)
-    elif env_id == "minatar/breakout":
+    elif env_id == "minatar-breakout":
         from pgx.minatar.breakout import MinAtarBreakout
 
         return MinAtarBreakout(auto_reset=auto_reset)
-    elif env_id == "minatar/freeway":
+    elif env_id == "minatar-freeway":
         from pgx.minatar.freeway import MinAtarFreeway
 
         return MinAtarFreeway(auto_reset=auto_reset)
-    elif env_id == "minatar/seaquest":
+    elif env_id == "minatar-seaquest":
         from pgx.minatar.seaquest import MinAtarSeaquest
 
         return MinAtarSeaquest(auto_reset=auto_reset)
-    elif env_id == "minatar/space_invaders":
+    elif env_id == "minatar-space_invaders":
         from pgx.minatar.space_invaders import MinAtarSpaceInvaders
 
         return MinAtarSpaceInvaders(auto_reset=auto_reset)
