@@ -85,7 +85,7 @@ Use `pgx.available_games()` to see the list of currently available games.
 </tr>
 <tr>
 <td>
-<div align="centr"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px"><img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px"></div>
+<div align="centr"><img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px"></div>
 </td>
 <td>
 <div align="centr"><img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="150px"></div>
