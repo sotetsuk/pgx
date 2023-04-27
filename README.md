@@ -109,7 +109,7 @@ You can check the current version of each environment by
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a><br>`"minatar-space_invaders"` |<img src="docs/assets/minatar-space_invaders.gif" width="50px">| `beta` | *Alien shooter game, dodge bullets.* |
 |<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a><br>`"othello"` |<img src="docs/assets/othello_dark.gif" width="60px"><img src="docs/assets/othello_light.gif" width="60px">| `beta` | *Flip and conquer opponent's pieces.* |
 |<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a><br>`"shogi"` |<img src="docs/assets/shogi_dark.gif" width="60px"><img src="docs/assets/shogi_light.gif" width="60px"> | `beta` | *Japanese chess with captured pieces.* |
-|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a><br>`"sparrow_mahjong"` |<img src="docs/assets/sparrow_mahjong_dark.gif" width="60px"><img src="docs/assets/sparrow_mahjong_light.gif" width="60px">|  `beta` | *A simplified, children-friendly Mahjong.* |
+|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a><br>`"sparrow_mahjong"` |<img src="docs/assets/sparrow_mahjong_dark.svg" width="60px"><img src="docs/assets/sparrow_mahjong_light.svg" width="60px">|  `beta` | *A simplified, children-friendly Mahjong.* |
 |<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a><br>`"tic_tac_toe"` |<img src="docs/assets/tic_tac_toe_dark.gif" width="60px"><img src="docs/assets/tic_tac_toe_light.gif" width="60px">| `beta` | *Three in a row wins.* |
 
 - <a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a> and <a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a> environments are under development 🚧
