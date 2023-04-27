@@ -87,23 +87,23 @@ env = pgx.make(<EnvId>)
 | Game | Visualization | EnvId | Version | Documentation |
 |:---|:---:|:---:|:---:|:---:|
 |<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>|<img src="docs/assets/2048_dark.gif" width="50px"><img src="docs/assets/2048_light.gif" width="50px">| `"2048"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/animal_shogi_light.gif#gh-light-mode-only" width="50px">| `"animal_shogi"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a>|<img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="50px">| `"backgammon"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="50px">| `"chess"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a>|<img src="docs/assets/connect_four_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/connect_four_light.gif#gh-light-mode-only" width="50px">| `"connect_four"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="50px">| `"go_9x9"` `"go_19x19"`| `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/hex_light.gif#gh-light-mode-only" width="50px">| `"hex"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/kuhn_poker_light.gif#gh-light-mode-only" width="50px">| `"kuhn_poker"` | `v0` | doc |
-|<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a>|<img src="docs/assets/leduc_holdem_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/leduc_holdem_light.gif#gh-light-mode-only" width="50px">| `"leduc_holdem"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a>|<img src="docs/assets/animal_shogi_dark.gif" width="50px"><img src="docs/assets/animal_shogi_light.gif" width="50px">| `"animal_shogi"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a>|<img src="docs/assets/backgammon_dark.gif" width="50px"><img src="docs/assets/backgammon_light.gif" width="50px">| `"backgammon"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Chess">Chess</a>|<img src="docs/assets/chess_dark.gif" width="50px"><img src="docs/assets/chess_light.gif" width="50px">| `"chess"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a>|<img src="docs/assets/connect_four_dark.gif" width="50px"><img src="docs/assets/connect_four_light.gif" width="50px">| `"connect_four"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a>|<img src="docs/assets/go-19x19_dark.gif" width="50px"><img src="docs/assets/go-19x19_light.gif" width="50px">| `"go_9x9"` `"go_19x19"`| `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a>|<img src="docs/assets/hex_dark.gif" width="50px"><img src="docs/assets/hex_light.gif" width="50px">| `"hex"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a>|<img src="docs/assets/kuhn_poker_dark.gif" width="50px"><img src="docs/assets/kuhn_poker_light.gif" width="50px">| `"kuhn_poker"` | `v0` | doc |
+|<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a>|<img src="docs/assets/leduc_holdem_dark.gif" width="50px"><img src="docs/assets/leduc_holdem_light.gif" width="50px">| `"leduc_holdem"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a>|<img src="docs/assets/minatar-asterix.gif" width="50px">| `"minatar-asterix"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a>|<img src="docs/assets/minatar-breakout.gif" width="50px">| `"minatar-breakout"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a>|<img src="docs/assets/minatar-freeway.gif" width="50px">| `"minatar-freeway"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a>|<img src="docs/assets/minatar-seaquest.gif" width="50px">| `"minatar-seaquest"` | `v0` | doc |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a>|<img src="docs/assets/minatar-space_invaders.gif" width="50px">| `"minatar-space_invaders"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a>|<img src="docs/assets/othello_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/othello_light.gif#gh-light-mode-only" width="50px">| `"othello"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a>|<img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="50px">| `"shogi"` | `v0` | doc |
-|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a>|<img src="docs/assets/sparrow_mahjong_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/sparrow_mahjong_light.gif#gh-light-mode-only" width="50px">| `"sparrow_mahjong"` | `v0` | doc |
-|<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a>|<img src="docs/assets/tic_tac_toe_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/tic_tac_toe_light.gif#gh-light-mode-only" width="50px">| `"tic_tac_toe"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a>|<img src="docs/assets/othello_dark.gif" width="50px"><img src="docs/assets/othello_light.gif" width="50px">| `"othello"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a>|<img src="docs/assets/shogi_dark.gif" width="50px"><img src="docs/assets/shogi_light.gif" width="50px">| `"shogi"` | `v0` | doc |
+|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a>|<img src="docs/assets/sparrow_mahjong_dark.gif" width="50px"><img src="docs/assets/sparrow_mahjong_light.gif" width="50px">| `"sparrow_mahjong"` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a>|<img src="docs/assets/tic_tac_toe_dark.gif" width="50px"><img src="docs/assets/tic_tac_toe_light.gif" width="50px">| `"tic_tac_toe"` | `v0` | doc |
 
 <a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a> and <a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a> environments are under development 🚧
 
