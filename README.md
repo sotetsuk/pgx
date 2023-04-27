@@ -83,7 +83,7 @@ Use `pgx.available_games()` to see the list of currently available games.
 
 | Game | Usage | Version | Documentation |
 |:---|:---:|:---:|:---:|
-|<img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px"> <a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a>| `pgx.make("2048")` | `v0` | doc |
+|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a><img src="docs/assets/2048_dark.gif#gh-dark-mode-only" width="50px"><img src="docs/assets/2048_light.gif#gh-light-mode-only" width="50px">| `pgx.make("2048")` | `v0` | doc |
 
 <div align="center">
 <table>
