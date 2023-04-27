@@ -82,31 +82,6 @@ Use `pgx.available_games()` to see the list of currently available games.
 <div align="center">
 <table>
 <tr>
-<th> <div align="center"><b>Backgammon</b></div> </th>
-<th> <div align="center"><b>Chess</b></div> </th>
-<th> <div align="center"><b>Shogi</b></div> </th>
-<th> <div align="center"><b>Go</b></div> </th>
-</tr>
-<tr>
-<td>
-<div align="centr"><img src="docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="155px"><img src="docs/assets/backgammon_light.gif#gh-light-mode-only" width="155px"></div>
-</td>
-<td>
-<div align="centr"><img src="docs/assets/chess_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/chess_light.gif#gh-light-mode-only" width="150px"></div>
-</td>
-<td>
-<div align="centr"><img src="docs/assets/shogi_dark.gif#gh-dark-mode-only" width="160px"><img src="docs/assets/shogi_light.gif#gh-light-mode-only" width="160px"></div>
-</td>
-<td>
-<div align="centr"><img src="docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="150px"><img src="docs/assets/go-19x19_light.gif#gh-light-mode-only" width="150px"></div>
-</td>
-</tr>
-</table>
-</div>
-
-<div align="center">
-<table>
-<tr>
   <th>Game</th>
   <th>Environment</th>
   <th>Visualization</th>
