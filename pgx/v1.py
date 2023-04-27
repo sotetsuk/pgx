@@ -327,7 +327,9 @@ class Env(abc.ABC):
 
 
 def available_games() -> Tuple[EnvId, ...]:
-    return get_args(EnvId)
+    games = get_args(EnvId)
+    games = tuple(filter(lambda x: x != "bridge_bidding", games))
+    return games
 
 
 def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
@@ -343,10 +345,6 @@ def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
         from pgx.backgammon import Backgammon
 
         return Backgammon(auto_reset=auto_reset)
-    elif env_id == "bridge_bidding":
-        from pgx.bridge_bidding import BridgeBidding
-
-        return BridgeBidding(auto_reset=auto_reset, dds_hash_table_path=None)
     elif env_id == "chess":
         from pgx.chess import Chess
 
