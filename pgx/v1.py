@@ -81,7 +81,7 @@ class State(abc.ABC):
             This ID is consistent over the parallel vmapped states.
         observation (jnp.ndarray): observation for the current state.
             `Env.observe` is called to compute.
-        reward (jnp.ndarray): the `i`-th element indicates the intermediate reward for
+        rewards (jnp.ndarray): the `i`-th element indicates the intermediate reward for
             the agent with player-id `i`. If `Env.step` is called for a terminal state,
             the following `state.reward` is zero for all players.
         terminated (jnp.ndarray): denotes that the state is terminal state. Note that
