@@ -93,10 +93,9 @@ class BridgeBidding(v1.Env):
     def __init__(
         self,
         *,
-        auto_reset: bool = False,
         dds_hash_table_path: Optional[str] = None
     ):
-        super().__init__(auto_reset=auto_reset)
+        super().__init__()
         if dds_hash_table_path is None:
             dds_hash_table_path = os.path.join(
                 os.getcwd(), "dds_hash_table.npz"

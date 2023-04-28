@@ -115,9 +115,9 @@ class State(v1.State):
 
 class Shogi(v1.Env):
     def __init__(
-        self, *, auto_reset: bool = False, max_termination_steps: int = 1000
+        self, *, max_termination_steps: int = 1000
     ):
-        super().__init__(auto_reset=auto_reset)
+        super().__init__()
         self.max_termination_steps = max_termination_steps
 
     def _init(self, key: jax.random.KeyArray) -> State:
