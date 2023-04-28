@@ -173,8 +173,8 @@ class Env(abc.ABC):
 
     """
 
-    def __init__(self, *, auto_reset: bool = False):
-        self.auto_reset = auto_reset
+    def __init__(self):
+        ...
 
     def init(self, key: jax.random.KeyArray) -> State:
         """Return the initial state. Note that no internal state of
@@ -197,17 +197,6 @@ class Env(abc.ABC):
         """Step function."""
         is_illegal = ~state.legal_action_mask[action]
         current_player = state.current_player
-
-        # auto reset
-        state = jax.lax.cond(
-            self.auto_reset & state.terminated,
-            lambda: state.replace(  # type: ignore
-                _step_count=jnp.int32(0),
-                terminated=FALSE,
-                reward=jnp.zeros_like(state.reward),
-            ),
-            lambda: state,
-        )
 
         # If the state is already terminated or truncated, environment does not take usual step,
         # but return the same state with zero-rewards for all players
@@ -237,30 +226,6 @@ class Env(abc.ABC):
 
         observation = self.observe(state, state.current_player)
         state = state.replace(observation=observation)  # type: ignore
-
-        # auto reset
-        state = jax.lax.cond(
-            self.auto_reset & state.terminated,
-            # state is replaced by initial state,
-            # but preserve (terminated, truncated, reward)
-            lambda: self.init(state._rng_key).replace(  # type: ignore
-                terminated=state.terminated,
-                reward=state.reward,
-            ),
-            lambda: state,
-        )
-        # NOTE on final observation
-        # When auto reset happened, the terminal (or truncated) observation is replaced by initial observation,
-        # This is NOT problematic if it's termination.
-        # However, when truncation happened, final observation might be used by agent (for bootstrap)
-        # So we have to preserve the final observation somewhere. For example, in Gymnasium,
-        #
-        # https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/wrappers/autoreset.py#L59
-        #
-        # However, currently, truncation does **NOT** actually happens in Pgx environments because
-        # all of Pgx environments (games) are finite-horizon and terminates within reasonable # of steps.
-        # (NOTE: Chess, Shogi, and Go have `max_termination_steps` parameter following AlphaZero paper)
-        # So we believe current implementation is sufficient (final observation is not necessary).
 
         return state
 
@@ -358,7 +323,7 @@ def available_games() -> Tuple[EnvId, ...]:
     return games
 
 
-def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
+def make(env_id: EnvId):  # noqa: C901
     """Load the specified environment.
 
     !!! example "Example usage"
@@ -379,79 +344,79 @@ def make(env_id: EnvId, *, auto_reset: bool = False):  # noqa: C901
     if env_id == "2048":
         from pgx.play2048 import Play2048
 
-        return Play2048(auto_reset=auto_reset)
+        return Play2048()
     elif env_id == "animal_shogi":
         from pgx.animal_shogi import AnimalShogi
 
-        return AnimalShogi(auto_reset=auto_reset)
+        return AnimalShogi()
     elif env_id == "backgammon":
         from pgx.backgammon import Backgammon
 
-        return Backgammon(auto_reset=auto_reset)
+        return Backgammon()
     elif env_id == "chess":
         from pgx.chess import Chess
 
-        return Chess(auto_reset=auto_reset)
+        return Chess()
     elif env_id == "connect_four":
         from pgx.connect_four import ConnectFour
 
-        return ConnectFour(auto_reset=auto_reset)
+        return ConnectFour()
     elif env_id == "go_9x9":
         from pgx.go import Go
 
-        return Go(auto_reset=auto_reset, size=9, komi=7.5)
+        return Go(size=9, komi=7.5)
     elif env_id == "go_19x19":
         from pgx.go import Go
 
-        return Go(auto_reset=auto_reset, size=19, komi=7.5)
+        return Go(size=19, komi=7.5)
     elif env_id == "hex":
         from pgx.hex import Hex
 
-        return Hex(auto_reset=auto_reset)
+        return Hex()
     elif env_id == "kuhn_poker":
         from pgx.kuhn_poker import KuhnPoker
 
-        return KuhnPoker(auto_reset=auto_reset)
+        return KuhnPoker()
     elif env_id == "leduc_holdem":
         from pgx.leduc_holdem import LeducHoldem
 
-        return LeducHoldem(auto_reset=auto_reset)
+        return LeducHoldem()
     elif env_id == "minatar-asterix":
         from pgx.minatar.asterix import MinAtarAsterix
 
-        return MinAtarAsterix(auto_reset=auto_reset)
+        return MinAtarAsterix()
     elif env_id == "minatar-breakout":
         from pgx.minatar.breakout import MinAtarBreakout
 
-        return MinAtarBreakout(auto_reset=auto_reset)
+        return MinAtarBreakout()
     elif env_id == "minatar-freeway":
         from pgx.minatar.freeway import MinAtarFreeway
 
-        return MinAtarFreeway(auto_reset=auto_reset)
+        return MinAtarFreeway()
     elif env_id == "minatar-seaquest":
         from pgx.minatar.seaquest import MinAtarSeaquest
 
-        return MinAtarSeaquest(auto_reset=auto_reset)
+        return MinAtarSeaquest()
     elif env_id == "minatar-space_invaders":
         from pgx.minatar.space_invaders import MinAtarSpaceInvaders
 
-        return MinAtarSpaceInvaders(auto_reset=auto_reset)
+        return MinAtarSpaceInvaders()
     elif env_id == "othello":
         from pgx.othello import Othello
 
-        return Othello(auto_reset=auto_reset)
+        return Othello()
     elif env_id == "shogi":
         from pgx.shogi import Shogi
 
-        return Shogi(auto_reset=auto_reset)
+        return Shogi()
     elif env_id == "sparrow_mahjong":
         from pgx.sparrow_mahjong import SparrowMahjong
 
-        return SparrowMahjong(auto_reset=auto_reset)
+        return SparrowMahjong()
     elif env_id == "tic_tac_toe":
         from pgx.tic_tac_toe import TicTacToe
 
-        return TicTacToe(auto_reset=auto_reset)
+        return TicTacToe()
     else:
         available_envs = "\n".join(available_games())
         raise ValueError(
