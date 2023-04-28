@@ -187,7 +187,7 @@ def _step_det(
         _terminate_timer=terminate_timer,
         _terminal=terminal,
         _last_action=last_action,
-        reward=r[jnp.newaxis],
+        rewards=r[jnp.newaxis],
         terminated=terminal,
     )
 

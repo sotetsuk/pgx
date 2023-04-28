@@ -134,7 +134,7 @@ def _step(state: State, action):
     return state.replace(  # type:ignore
         _rng_key=_rng_key,
         _board=board_2d.ravel(),
-        reward=jnp.float32([reward.sum()]),
+        rewards=jnp.float32([reward.sum()]),
         legal_action_mask=legal_action.ravel(),
         terminated=~legal_action.any(),
     )

@@ -129,7 +129,7 @@ def _step(state: State, action: jnp.ndarray) -> State:
         _board=board,
         _blank_row=blank_row,
         terminated=won | jnp.all(blank_row == -1),
-        reward=reward,
+        rewards=reward,
     )
 
 

@@ -131,7 +131,7 @@ def _step(state: State, action):
         _last_action=action,
         legal_action_mask=legal_action,
         terminated=terminated,
-        reward=reward,
+        rewards=reward,
         _pot=pot,
     )
 

@@ -140,7 +140,7 @@ def _step(state: State, action: jnp.ndarray):
     return state.replace(  # type: ignore
         legal_action_mask=legal_action_mask,
         terminated=terminated,
-        reward=reward,
+        rewards=reward,
     )
 
 

@@ -297,7 +297,7 @@ def _step_det(
         _surface=surface,
         _terminal=terminal,
         _last_action=action,
-        reward=r[jnp.newaxis],
+        rewards=r[jnp.newaxis],
         terminated=terminal,
     )
     return state

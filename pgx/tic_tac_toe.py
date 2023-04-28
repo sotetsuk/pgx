@@ -89,7 +89,7 @@ def _step(state: State, action: jnp.ndarray) -> State:
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         legal_action_mask=state._board < 0,
-        reward=reward,
+        rewards=reward,
         terminated=won | jnp.all(state._board != -1),
         _turn=(state._turn + 1) % 2,
     )

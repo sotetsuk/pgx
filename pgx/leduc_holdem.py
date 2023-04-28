@@ -139,7 +139,7 @@ def _step(state: State, action):
         _last_action=last_action,
         legal_action_mask=legal_action,
         terminated=terminated,
-        reward=reward,
+        rewards=reward,
         _round=state._round + jnp.int8(round_over),
         _chips=chips,
         _raise_count=raise_count,

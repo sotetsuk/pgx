@@ -116,7 +116,7 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
         current_player=1 - state.current_player,
         _turn=1 - state._turn,
         _board=board * -1,
-        reward=reward,
+        rewards=reward,
         terminated=won,
         legal_action_mask=legal_action_mask,
     )

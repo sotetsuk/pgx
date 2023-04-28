@@ -378,7 +378,7 @@ def _terminated_step(
     terminated = jnp.bool_(True)
     reward = _reward(state, hash_keys, hash_values)
     # fmt: off
-    return state.replace(terminated=terminated, reward=reward)  # type: ignore
+    return state.replace(terminated=terminated, rewards=reward)  # type: ignore
     # fmt: on
 
 
@@ -397,7 +397,7 @@ def _continue_step(
     x_mask, xx_mask = _update_legal_action_X_XX(state)
     return state.replace(  # type: ignore
         legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask),
-        reward=jnp.zeros(4, dtype=jnp.float32)
+        rewards=jnp.zeros(4, dtype=jnp.float32)
     )
     # fmt: on
 

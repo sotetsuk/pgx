@@ -202,7 +202,7 @@ def _step_det(state: State, action: jnp.ndarray):
         _last_y=last_y,
         _terminal=terminal,
         _last_action=action,
-        reward=r[jnp.newaxis],
+        rewards=r[jnp.newaxis],
         terminated=terminal,
     )
     return state

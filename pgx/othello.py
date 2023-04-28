@@ -193,7 +193,7 @@ def _step(state, action):
         .set(legal_action)
         .at[64]
         .set(~legal_action.any()),
-        reward=reward,
+        rewards=reward,
         terminated=terminated,
         _board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
         _passed=action == 64,

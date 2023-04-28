@@ -255,7 +255,7 @@ def _check_termination(state: State):
     # fmt: on
     return state.replace(  # type: ignore
         terminated=terminated,
-        reward=reward,
+        rewards=reward,
     )
 
 

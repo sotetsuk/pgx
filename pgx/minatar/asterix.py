@@ -271,7 +271,7 @@ def _step_det(
     state = state.replace(_spawn_speed=spawn_speed, _move_speed=move_speed, _ramp_timer=ramp_timer, _ramp_index=ramp_index)  # type: ignore
 
     state = state.replace(  # type: ignore
-        reward=r[jnp.newaxis],
+        rewards=r[jnp.newaxis],
         _last_action=action,  # 1-d array
         terminated=terminal,
     )

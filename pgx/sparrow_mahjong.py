@@ -306,7 +306,7 @@ def _step_by_ron(state: State, scores, winning_players):
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_by_tsumo(state: State, scores):
@@ -327,7 +327,7 @@ def _step_by_tsumo(state: State, scores):
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_by_tie(state):
@@ -335,7 +335,7 @@ def _step_by_tie(state):
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )
-    return state.replace(reward=jnp.zeros(3, dtype=jnp.float32))  # type: ignore
+    return state.replace(rewards=jnp.zeros(3, dtype=jnp.float32))  # type: ignore
 
 
 def _draw_tile(state: State) -> State:
@@ -365,7 +365,7 @@ def _draw_tile(state: State) -> State:
 
 def _step_non_terminal(state: State):
     r = jnp.zeros(3, dtype=jnp.float32)
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_non_tied(state: State, scores):
