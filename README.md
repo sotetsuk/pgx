@@ -49,7 +49,7 @@ step = jax.jit(jax.vmap(env.step))
 batch_size = 1024
 keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
 state = init(keys)  # vectorized states
-while not state.terminated.all():
+while not (state.terminated | state.terminated).all():
     action = model(state.current_player, state.observation, state.legal_action_mask)
     state = step(state, action)  # state.reward (2,)
 ```
