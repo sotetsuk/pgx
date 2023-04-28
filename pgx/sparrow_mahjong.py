@@ -57,7 +57,7 @@ MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 +
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((15, 11), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
+    rewards: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(9, dtype=jnp.bool_)

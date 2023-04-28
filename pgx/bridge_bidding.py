@@ -37,7 +37,7 @@ TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(-1)
     observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0, 0, 0, 0])
+    rewards: jnp.ndarray = jnp.float32([0, 0, 0, 0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)

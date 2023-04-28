@@ -72,7 +72,7 @@ ALL_SQ = jnp.arange(81)
 @dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK  # (27 * 81,)

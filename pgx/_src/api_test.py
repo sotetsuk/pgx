@@ -120,7 +120,7 @@ def _validate_taking_action_after_terminal(state: State, step_fn):
         return
     action = 0
     state = step_fn(state, action)
-    assert (state.reward == 0).all()
+    assert (state.rewards == 0).all()
     for field in fields(state):
         if field.name in ["reward", "steps"]:
             continue
@@ -130,7 +130,7 @@ def _validate_taking_action_after_terminal(state: State, step_fn):
 
 
 def _validate_init_reward(state: State):
-    assert (state.reward == jnp.zeros_like(state.reward)).all()
+    assert (state.rewards == jnp.zeros_like(state.rewards)).all()
 
 
 def _validate_state(state: State):
@@ -145,7 +145,7 @@ def _validate_state(state: State):
     assert state.env_id in get_args(EnvId)
     assert state.current_player.dtype == jnp.int8, state.current_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
-    assert state.reward.dtype == jnp.float32, state.reward.dtype
+    assert state.rewards.dtype == jnp.float32, state.rewards.dtype
     assert (
         state.legal_action_mask.dtype == jnp.bool_
     ), state.legal_action_mask.dtype

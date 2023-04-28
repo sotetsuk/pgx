@@ -28,7 +28,7 @@ NINE = jnp.array(9, dtype=jnp.int32)
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 7), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
+    rewards: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(3, dtype=jnp.bool_)

@@ -66,7 +66,7 @@ def test_win_check():
         state = step(state, 1)
     state = step(state, 0)
     assert state.terminated
-    assert (state.reward == jnp.array([1.0, -1.0])).all()
+    assert (state.rewards == jnp.array([1.0, -1.0])).all()
 
     state = init(sub_key)
     for i in range(3):
@@ -74,7 +74,7 @@ def test_win_check():
         state = step(state, i)
     state = step(state, 3)
     assert state.terminated
-    assert (state.reward == jnp.array([1.0, -1.0])).all()
+    assert (state.rewards == jnp.array([1.0, -1.0])).all()
 
     state = init(sub_key)
     for i in [1, 2, 2, 3, 3, 4, 3, 4, 4, 6, 4]:
@@ -88,7 +88,7 @@ def test_win_check():
     .@OOO.O
     """
     assert state.terminated
-    assert (state.reward == jnp.array([1.0, -1.0])).all()
+    assert (state.rewards == jnp.array([1.0, -1.0])).all()
 
 
 def test_random_play():

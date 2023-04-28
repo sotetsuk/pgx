@@ -89,8 +89,8 @@ def test_illegal_action_penalty():
     key = jax.random.PRNGKey(0)
     state = init(key)
     state = step(state, 36)
-    print(state.reward)
-    assert jnp.all(state.reward == jnp.array([22800, -7600, 22800, 22800]))
+    print(state.rewards)
+    assert jnp.all(state.rewards == jnp.array([22800, -7600, 22800, 22800]))
 
 
 def test_step():
@@ -143,7 +143,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 1
-    assert jnp.all(state.reward == np.zeros(4))
+    assert jnp.all(state.rewards == np.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -166,7 +166,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 2
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -189,7 +189,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 3
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 0)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -217,7 +217,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 8)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -247,7 +247,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 36)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -278,7 +278,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -310,7 +310,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 1
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -343,7 +343,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 2
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 37)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -376,7 +376,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -409,7 +409,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 1
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 22)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -442,7 +442,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 23)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -476,7 +476,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -510,7 +510,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 1
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 25)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -544,7 +544,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 36)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -578,7 +578,7 @@ def test_step():
     assert np.all(state._first_denomination_NS == first_denomination_NS)
     assert np.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert np.all(state.reward == np.zeros(4))
+    assert np.all(state.rewards == np.zeros(4))
 
     state = step(state, 37)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -613,7 +613,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -648,7 +648,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 1
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 30)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -683,7 +683,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 0
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -718,7 +718,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 1
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -754,7 +754,7 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 2
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -791,9 +791,9 @@ def test_step():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 3
-    assert state.reward.shape == (4,)
+    assert state.rewards.shape == (4,)
     assert jnp.all(
-        state.reward == jnp.array([-600, -600, 600, 600], dtype=jnp.int16)
+        state.rewards == jnp.array([-600, -600, 600, 600], dtype=jnp.int16)
     )
     declare_position, denomination, level, vul = _contract(state)
     assert declare_position == 0
@@ -876,7 +876,7 @@ def test_pass_out():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 1
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -899,7 +899,7 @@ def test_pass_out():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 2
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -922,7 +922,7 @@ def test_pass_out():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 3
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
     state = step(state, 35)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
@@ -944,7 +944,7 @@ def test_pass_out():
     assert jnp.all(state._first_denomination_NS == first_denomination_NS)
     assert jnp.all(state._first_denomination_EW == first_denomination_EW)
     assert state._pass_num == 4
-    assert jnp.all(state.reward == jnp.zeros(4))
+    assert jnp.all(state.rewards == jnp.zeros(4))
 
 
 def test_observe():

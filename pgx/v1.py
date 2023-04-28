@@ -97,7 +97,7 @@ class State(abc.ABC):
 
     current_player: jnp.ndarray
     observation: jnp.ndarray
-    reward: jnp.ndarray
+    rewards: jnp.ndarray
     terminated: jnp.ndarray
     truncated: jnp.ndarray
     legal_action_mask: jnp.ndarray
@@ -202,7 +202,7 @@ class Env(abc.ABC):
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
             (state.terminated | state.truncated),
-            lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
+            lambda: state.replace(reward=jnp.zeros_like(state.rewards)),  # type: ignore
             lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
 
@@ -292,7 +292,7 @@ class Env(abc.ABC):
     ) -> State:
         penalty = self._illegal_action_penalty
         reward = (
-            jnp.ones_like(state.reward)
+            jnp.ones_like(state.rewards)
             * (-1 * penalty)
             * (self.num_players - 1)
         )
