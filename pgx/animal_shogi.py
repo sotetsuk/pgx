@@ -79,8 +79,8 @@ class Action:
 
 
 class AnimalShogi(v1.Env):
-    def __init__(self, *, auto_reset: bool = False):
-        super().__init__(auto_reset=auto_reset)
+    def __init__(self):
+        super().__init__()
         self.max_termination_steps: int = 200
 
     def _init(self, key: jax.random.KeyArray) -> State:
