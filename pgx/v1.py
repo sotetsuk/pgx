@@ -84,9 +84,13 @@ class State(abc.ABC):
         reward (jnp.ndarray): the `i`-th element indicates the intermediate reward for
             the agent with player-id `i`. If `Env.step` is called for a terminal state,
             the following `state.reward` is zero for all players.
-        terminated (jnp.ndarray): denotes that the state is termianl state. Note that
+        terminated (jnp.ndarray): denotes that the state is terminal state. Note that
             some environments (e.g., Go) have an `max_termination_steps` parameter inside
-            and will terminates within a limited number of states (following AlphaGo).
+            and will terminate within a limited number of states (following AlphaGo).
+        truncated (jnp.ndarray): indicates that the episode ends with the reason other than termination.
+            Note that current Pgx environments do not invoke truncation but users can use `TimeLimit` wrapper
+            to truncate the environment. In Pgx environments, some MinAtar games may not terminate within a finite timestep.
+            However, the other environments are supposed to terminate within a finite timestep with probability one.
         legal_action_mask (jnp.ndarray): Boolean array of legal actions. If illegal action is taken,
             the game will terminate immediately with the penalty to the palyer.
     """
@@ -95,6 +99,7 @@ class State(abc.ABC):
     observation: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
+    truncated: jnp.ndarray
     legal_action_mask: jnp.ndarray
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
@@ -196,7 +201,7 @@ class Env(abc.ABC):
         # If the state is already terminated or truncated, environment does not take usual step,
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
-            state.terminated,
+            (state.terminated | state.truncated),
             lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
             lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
