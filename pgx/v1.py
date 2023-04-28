@@ -83,7 +83,7 @@ class State(abc.ABC):
             `Env.observe` is called to compute.
         rewards (jnp.ndarray): the `i`-th element indicates the intermediate reward for
             the agent with player-id `i`. If `Env.step` is called for a terminal state,
-            the following `state.reward` is zero for all players.
+            the following `state.rewards` is zero for all players.
         terminated (jnp.ndarray): denotes that the state is terminal state. Note that
             some environments (e.g., Go) have an `max_termination_steps` parameter inside
             and will terminate within a limited number of states (following AlphaGo).
