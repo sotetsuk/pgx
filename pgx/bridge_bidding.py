@@ -90,11 +90,7 @@ class State(v1.State):
 
 
 class BridgeBidding(v1.Env):
-    def __init__(
-        self,
-        *,
-        dds_hash_table_path: Optional[str] = None
-    ):
+    def __init__(self, *, dds_hash_table_path: Optional[str] = None):
         super().__init__()
         if dds_hash_table_path is None:
             dds_hash_table_path = os.path.join(

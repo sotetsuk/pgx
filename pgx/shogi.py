@@ -114,9 +114,7 @@ class State(v1.State):
 
 
 class Shogi(v1.Env):
-    def __init__(
-        self, *, max_termination_steps: int = 1000
-    ):
+    def __init__(self, *, max_termination_steps: int = 1000):
         super().__init__()
         self.max_termination_steps = max_termination_steps
 
