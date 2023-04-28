@@ -201,7 +201,7 @@ class Env(abc.ABC):
         # If the state is already terminated or truncated, environment does not take usual step,
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
-            state.terminated,
+            (state.terminated | state.truncated),
             lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
             lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
