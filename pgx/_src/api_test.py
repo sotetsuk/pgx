@@ -156,6 +156,7 @@ def _validate_state(state: State):
         "observation",
         "reward",
         "terminated",
+        "truncated",
         "legal_action_mask",
     ]
     for k, v in state.__dict__.items():
