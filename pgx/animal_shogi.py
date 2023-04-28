@@ -40,7 +40,7 @@ INIT_BOARD = jnp.int8([6, -1, -1, 2, 8, 5, 0, 3, 7, -1, -1, 1])  # (12,)
 @dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(132, dtype=jnp.bool_)  # (132,)
@@ -140,7 +140,7 @@ def _step(state: State, action: jnp.ndarray):
     return state.replace(  # type: ignore
         legal_action_mask=legal_action_mask,
         terminated=terminated,
-        reward=reward,
+        rewards=reward,
     )
 
 

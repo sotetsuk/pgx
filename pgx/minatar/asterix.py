@@ -33,7 +33,7 @@ TRUE = jnp.bool_(True)
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
+    rewards: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(5, dtype=jnp.bool_)
@@ -271,7 +271,7 @@ def _step_det(
     state = state.replace(_spawn_speed=spawn_speed, _move_speed=move_speed, _ramp_timer=ramp_timer, _ramp_index=ramp_index)  # type: ignore
 
     state = state.replace(  # type: ignore
-        reward=r[jnp.newaxis],
+        rewards=r[jnp.newaxis],
         _last_action=action,  # 1-d array
         terminated=terminal,
     )

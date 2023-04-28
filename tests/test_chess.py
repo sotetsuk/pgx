@@ -429,8 +429,8 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert state.reward[state.current_player] == -1
-    assert state.reward[1 - state.current_player] == 1.
+    assert state.rewards[state.current_player] == -1
+    assert state.rewards[1 - state.current_player] == 1.
 
     # stalemate
     state = State._from_fen("k7/8/1Q6/K7/8/8/8/8 b - - 0 1")
@@ -438,7 +438,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # 50-move draw rule
     # FEN is from https://www.chess.com/terms/fen-chess#halfmove-clock
@@ -448,7 +448,7 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_004.svg")
     print(state._to_fen())
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # insufficient pieces
     # K vs K
@@ -457,7 +457,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+B vs K
     state = State._from_fen("k7/8/8/8/8/8/8/6BK w - - 0 1")
@@ -465,7 +465,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K vs K+B
     state = State._from_fen("kb6/8/8/8/8/8/8/7K w - - 0 1")
@@ -473,7 +473,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+N vs K
     state = State._from_fen("k7/8/8/8/8/8/8/6NK w - - 0 1")
@@ -481,7 +481,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K vs K+N
     state = State._from_fen("kn6/8/8/8/8/8/8/7K w - - 0 1")
@@ -489,7 +489,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+B vs K+B (Bishop in Black tile)
     state = State._from_fen("kb6/8/8/8/8/8/8/6BK w - - 0 1")
@@ -497,7 +497,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+B vs K+B (Bishop in White tile)
     state = State._from_fen("k1b1B3/8/8/8/8/8/8/7K w - - 0 1")
@@ -505,7 +505,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # insufficient cases by underpromotion
     # K+B vs K
@@ -515,7 +515,7 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_013.svg")
     print(state._to_fen())
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+N vs K
     state = State._from_fen("k7/7P/8/8/8/8/8/7K w - - 0 1")
@@ -524,7 +524,7 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_015.svg")
     print(state._to_fen())
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+B vs K+B(Bishop in Black tile)
     state = State._from_fen("k1b5/4P3/8/8/8/8/8/7K w - - 0 1")
@@ -533,7 +533,7 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_017.svg")
     print(state._to_fen())
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+B vs K+B (Bishop in White tile)
     state = State._from_fen("kb6/3P4/8/8/8/8/8/7K w - - 0 1")
@@ -542,7 +542,7 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_019.svg")
     print(state._to_fen())
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+B*2 vs K(Bishop in Black tile)
     state = State._from_fen("k1B5/4P3/8/8/8/8/8/7K w - - 0 1")
@@ -551,7 +551,7 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_021.svg")
     print(state._to_fen())
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # K+B*2 vs K (Bishop in White tile)
     state = State._from_fen("kB6/3P4/8/8/8/8/8/7K w - - 0 1")
@@ -560,7 +560,7 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_023.svg")
     print(state._to_fen())
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # stalemate with pin
     state = State._from_fen("kbR5/pn6/P1B5/8/8/8/8/7K b - - 0 1")
@@ -568,7 +568,7 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert state.current_player == 0
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
 
 def test_buggy_samples():

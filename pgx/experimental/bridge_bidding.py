@@ -140,11 +140,11 @@ def duplicate_step(
             has_duplicate_result,
             lambda: (
                 state.replace(  # type: ignore
-                    reward=_imp_reward(table_a_reward, state.reward)
+                    reward=_imp_reward(table_a_reward, state.rewards)
                 ),
                 jnp.zeros(4, dtype=jnp.float32),
                 jnp.bool_(True),
             ),
-            lambda: (_duplicate_init(state), state.reward, jnp.bool_(True)),
+            lambda: (_duplicate_init(state), state.rewards, jnp.bool_(True)),
         ),
     )

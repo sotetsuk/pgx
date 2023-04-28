@@ -62,7 +62,7 @@ def test_step_det():
                 slot,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
-            assert r == s_next_pgx.reward[0]
+            assert r == s_next_pgx.rewards[0]
             assert done == s_next_pgx.terminated
 
 

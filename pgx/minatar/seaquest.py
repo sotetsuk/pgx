@@ -36,7 +36,7 @@ FALSE: jnp.ndarray = jnp.bool_(False)
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
+    rewards: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
@@ -297,7 +297,7 @@ def _step_det(
         _surface=surface,
         _terminal=terminal,
         _last_action=action,
-        reward=r[jnp.newaxis],
+        rewards=r[jnp.newaxis],
         terminated=terminal,
     )
     return state

@@ -28,7 +28,7 @@ TRUE = jnp.bool_(True)
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((11, 11, 2), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(11 * 11, dtype=jnp.bool_)
@@ -116,7 +116,7 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
         current_player=1 - state.current_player,
         _turn=1 - state._turn,
         _board=board * -1,
-        reward=reward,
+        rewards=reward,
         terminated=won,
         legal_action_mask=legal_action_mask,
     )

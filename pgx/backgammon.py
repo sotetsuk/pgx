@@ -28,7 +28,7 @@ FALSE = jnp.bool_(False)
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     # micro action = 6 * src + die
@@ -169,11 +169,11 @@ def _winning_step(
     win_score = _calc_win_score(state._board)
     winner = state.current_player
     loser = 1 - winner
-    reward = jnp.ones_like(state.reward)
+    reward = jnp.ones_like(state.rewards)
     reward = reward.at[winner].set(win_score)
     reward = reward.at[loser].set(-win_score)
     state = state.replace(terminated=TRUE)  # type: ignore
-    return state.replace(reward=reward)  # type: ignore
+    return state.replace(rewards=reward)  # type: ignore
 
 
 def _no_winning_step(state: State, action: jnp.ndarray) -> State:

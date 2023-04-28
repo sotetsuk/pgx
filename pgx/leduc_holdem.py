@@ -33,7 +33,7 @@ MAX_RAISE = jnp.int8(2)
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(3, dtype=jnp.bool_)
@@ -139,7 +139,7 @@ def _step(state: State, action):
         _last_action=last_action,
         legal_action_mask=legal_action,
         terminated=terminated,
-        reward=reward,
+        rewards=reward,
         _round=state._round + jnp.int8(round_over),
         _chips=chips,
         _raise_count=raise_count,

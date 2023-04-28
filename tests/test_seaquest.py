@@ -64,7 +64,7 @@ def test_step_det():
             #     for field in fields(s_next_pgx):
             #         print(str(field.name) + "\n" + str(getattr(s_next_pgx, field.name)) + "\n"  + str(getattr(minatar2pgx(extract_state(env, state_keys), seaquest.MinAtarSeaquestState), field.name)))
             #     assert False
-            assert r == s_next_pgx.reward[0]
+            assert r == s_next_pgx.rewards[0]
             assert done == s_next_pgx.terminated
 
 

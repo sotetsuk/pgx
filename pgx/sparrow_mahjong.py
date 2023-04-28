@@ -57,7 +57,7 @@ MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 +
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((15, 11), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
+    rewards: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(9, dtype=jnp.bool_)
@@ -306,7 +306,7 @@ def _step_by_ron(state: State, scores, winning_players):
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_by_tsumo(state: State, scores):
@@ -327,7 +327,7 @@ def _step_by_tsumo(state: State, scores):
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_by_tie(state):
@@ -335,7 +335,7 @@ def _step_by_tie(state):
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )
-    return state.replace(reward=jnp.zeros(3, dtype=jnp.float32))  # type: ignore
+    return state.replace(rewards=jnp.zeros(3, dtype=jnp.float32))  # type: ignore
 
 
 def _draw_tile(state: State) -> State:
@@ -365,7 +365,7 @@ def _draw_tile(state: State) -> State:
 
 def _step_non_terminal(state: State):
     r = jnp.zeros(3, dtype=jnp.float32)
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_non_tied(state: State, scores):

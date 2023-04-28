@@ -27,7 +27,7 @@ TRUE = jnp.bool_(True)
 @dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
@@ -86,7 +86,7 @@ class Go(v1.Env):
             & (self.max_termination_steps <= state._step_count),
             lambda: state.replace(  # type: ignore
                 terminated=TRUE,
-                reward=partial(_get_reward, size=self.size)(state),
+                rewards=partial(_get_reward, size=self.size)(state),
             ),
             lambda: state,
         )
@@ -211,9 +211,9 @@ def _pass_move(state: State, size) -> State:
     return jax.lax.cond(
         state._passed,
         # consecutive passes results in the game end
-        lambda: state.replace(terminated=TRUE, reward=_get_reward(state, size)),  # type: ignore
+        lambda: state.replace(terminated=TRUE, rewards=_get_reward(state, size)),  # type: ignore
         # One pass continues the game
-        lambda: state.replace(_passed=TRUE, reward=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
+        lambda: state.replace(_passed=TRUE, rewards=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
     )
 
 
@@ -266,7 +266,7 @@ def _not_pass_move(state: State, action, size) -> State:
     )
     # fmt: on
 
-    return state.replace(reward=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
+    return state.replace(rewards=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
 
 
 def _merge_around_xy(i, state: State, xy, size):
@@ -522,7 +522,7 @@ def _check_PSK(state):
         is_psk,
         lambda: state.replace(  # type: ignore
             terminated=TRUE,
-            reward=jnp.float32([-1, -1]).at[winner].set(1.0),
+            rewards=jnp.float32([-1, -1]).at[winner].set(1.0),
         ),
         lambda: state,
     )

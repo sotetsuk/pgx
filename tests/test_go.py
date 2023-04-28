@@ -88,7 +88,7 @@ def test_step():
     assert state.terminated
 
     # 同点なのでコミの分 黒 == player_1 の負け
-    assert (state.reward == jnp.array([1, -1])).all()
+    assert (state.rewards == jnp.array([1, -1])).all()
 
 
 def test_ko():
@@ -127,8 +127,8 @@ def test_ko():
     )  # BLACK
     # ルール違反により黒 = player_id=1 の負け
     assert state1.terminated
-    assert state1.reward[loser] == -1.
-    assert state1.reward.sum() == 0.
+    assert state1.rewards[loser] == -1.
+    assert state1.rewards.sum() == 0.
 
     state2: State = step(state=state, action=0)  # BLACK
     # 回避した場合
@@ -1107,7 +1107,7 @@ def test_PSK():
     #  @ @ @ O +
     assert state.terminated
     assert state._black_player == 1
-    assert (state.reward == jnp.float32([-1, 1])).all()  # black wins
+    assert (state.rewards == jnp.float32([-1, 1])).all()  # black wins
 
 
 def test_random_play_5():

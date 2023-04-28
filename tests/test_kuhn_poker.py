@@ -23,7 +23,7 @@ def test_step():
     assert not state.terminated
     state = step(state, CHECK)
     assert state.terminated
-    assert (state.reward == jnp.float32([1, -1])).all()
+    assert (state.rewards == jnp.float32([1, -1])).all()
 
     state = init(key)
     state = step(state, CHECK)
@@ -32,7 +32,7 @@ def test_step():
     assert not state.terminated
     state = step(state, FOLD)
     assert state.terminated
-    assert (state.reward == jnp.float32([-1, 1])).all()
+    assert (state.rewards == jnp.float32([-1, 1])).all()
 
     state = init(key)
     state = step(state, CHECK)
@@ -41,21 +41,21 @@ def test_step():
     assert not state.terminated
     state = step(state, CALL)
     assert state.terminated
-    assert (state.reward == jnp.float32([2, -2])).all()
+    assert (state.rewards == jnp.float32([2, -2])).all()
 
     state = init(key)
     state = step(state, BET)
     assert not state.terminated
     state = step(state, FOLD)
     assert state.terminated
-    assert (state.reward == jnp.float32([1, -1])).all()
+    assert (state.rewards == jnp.float32([1, -1])).all()
 
     state = init(key)
     state = step(state, BET)
     assert not state.terminated
     state = step(state, CALL)
     assert state.terminated
-    assert (state.reward == jnp.float32([2, -2])).all()
+    assert (state.rewards == jnp.float32([2, -2])).all()
 
 
 def test_legal_action():

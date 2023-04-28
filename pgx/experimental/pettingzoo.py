@@ -79,7 +79,7 @@ class PettingZooEnv(AECEnv):
 
         if self._state.terminated:
             for i in range(self._num_players):
-                self.rewards[f"player_{i}"] = float(self._state.reward[i])
+                self.rewards[f"player_{i}"] = float(self._state.rewards[i])
             self.terminations = {i: True for i in self.agents}
 
         self._cumulative_rewards[self.agent_selection] = 0

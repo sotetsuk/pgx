@@ -81,9 +81,9 @@ class State(abc.ABC):
             This ID is consistent over the parallel vmapped states.
         observation (jnp.ndarray): observation for the current state.
             `Env.observe` is called to compute.
-        reward (jnp.ndarray): the `i`-th element indicates the intermediate reward for
+        rewards (jnp.ndarray): the `i`-th element indicates the intermediate reward for
             the agent with player-id `i`. If `Env.step` is called for a terminal state,
-            the following `state.reward` is zero for all players.
+            the following `state.rewards` is zero for all players.
         terminated (jnp.ndarray): denotes that the state is terminal state. Note that
             some environments (e.g., Go) have an `max_termination_steps` parameter inside
             and will terminate within a limited number of states (following AlphaGo).
@@ -97,7 +97,7 @@ class State(abc.ABC):
 
     current_player: jnp.ndarray
     observation: jnp.ndarray
-    reward: jnp.ndarray
+    rewards: jnp.ndarray
     terminated: jnp.ndarray
     truncated: jnp.ndarray
     legal_action_mask: jnp.ndarray
@@ -202,7 +202,7 @@ class Env(abc.ABC):
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
             (state.terminated | state.truncated),
-            lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
+            lambda: state.replace(rewards=jnp.zeros_like(state.rewards)),  # type: ignore
             lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
 
@@ -292,12 +292,12 @@ class Env(abc.ABC):
     ) -> State:
         penalty = self._illegal_action_penalty
         reward = (
-            jnp.ones_like(state.reward)
+            jnp.ones_like(state.rewards)
             * (-1 * penalty)
             * (self.num_players - 1)
         )
         reward = reward.at[loser].set(penalty)
-        return state.replace(reward=reward, terminated=TRUE)  # type: ignore
+        return state.replace(rewards=reward, terminated=TRUE)  # type: ignore
 
 
 def available_envs() -> Tuple[EnvId, ...]:
