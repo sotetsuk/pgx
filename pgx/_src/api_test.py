@@ -154,7 +154,7 @@ def _validate_state(state: State):
     public_attributes = [
         "current_player",
         "observation",
-        "reward",
+        "rewards",
         "terminated",
         "truncated",
         "legal_action_mask",
