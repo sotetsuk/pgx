@@ -107,7 +107,7 @@ class MinAtarBreakout(v1.Env):
 
     @property
     def id(self) -> v1.EnvId:
-        return "minatar-asterix"
+        return "minatar-breakout"
 
     @property
     def version(self) -> str:
