@@ -202,7 +202,7 @@ class Env(abc.ABC):
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
             (state.terminated | state.truncated),
-            lambda: state.replace(reward=jnp.zeros_like(state.rewards)),  # type: ignore
+            lambda: state.replace(rewards=jnp.zeros_like(state.rewards)),  # type: ignore
             lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
 
@@ -297,7 +297,7 @@ class Env(abc.ABC):
             * (self.num_players - 1)
         )
         reward = reward.at[loser].set(penalty)
-        return state.replace(reward=reward, terminated=TRUE)  # type: ignore
+        return state.replace(rewards=reward, terminated=TRUE)  # type: ignore
 
 
 def available_games() -> Tuple[EnvId, ...]:
