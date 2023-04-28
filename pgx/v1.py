@@ -300,13 +300,13 @@ class Env(abc.ABC):
         return state.replace(rewards=reward, terminated=TRUE)  # type: ignore
 
 
-def available_games() -> Tuple[EnvId, ...]:
+def available_envs() -> Tuple[EnvId, ...]:
     """List up all environment id available in `pgx.make` function.
 
     !!! example "Example usage"
 
         ```py
-        pgx.available_games()
+        pgx.available_envs()
         ('2048', 'animal_shogi', 'backgammon', 'chess', 'connect_four', 'go_9x9', 'go_19x19', 'hex', 'kuhn_poker', 'leduc_holdem', 'minatar-asterix', 'minatar-breakout', 'minatar-freeway', 'minatar-seaquest', 'minatar-space_invaders', 'othello', 'shogi', 'sparrow_mahjong', 'tic_tac_toe')
         ```
 
@@ -418,7 +418,7 @@ def make(env_id: EnvId):  # noqa: C901
 
         return TicTacToe()
     else:
-        available_envs = "\n".join(available_games())
+        envs = "\n".join(available_envs())
         raise ValueError(
-            f"Wrong env_id is passed. Available ids are: \n{available_envs}"
+            f"Wrong env_id '{env_id}' is passed. Available ids are: \n{envs}"
         )

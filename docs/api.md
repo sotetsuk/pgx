@@ -31,7 +31,7 @@ Two important components in Pgx are `State` and `Env`.
       show_root_heading: true
       show_source: true
 
-::: pgx.available_games
+::: pgx.available_envs
     handler: python
     options:
       show_root_heading: true

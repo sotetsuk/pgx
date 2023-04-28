@@ -7,7 +7,7 @@ import time
 N = 4
 
 
-games = pgx.available_games()
+games = pgx.available_envs()
 
 for game in games:
     env = pgx.make(game)

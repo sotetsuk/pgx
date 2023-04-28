@@ -4,7 +4,7 @@ from pgx._src.visualizer import (
     save_svg_animation,
     set_visualization_config,
 )
-from pgx.v1 import Env, EnvId, State, available_games, make
+from pgx.v1 import Env, EnvId, State, available_envs, make
 
 __all__ = [
     # v1 api components
@@ -12,7 +12,7 @@ __all__ = [
     "Env",
     "EnvId",
     "make",
-    "available_games",
+    "available_envs",
     # visualization
     "set_visualization_config",
     "save_svg",
