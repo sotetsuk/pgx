@@ -127,8 +127,8 @@ def test_ko():
     )  # BLACK
     # ルール違反により黒 = player_id=1 の負け
     assert state1.terminated
-    assert state1.reward[loser] == -1.
-    assert state1.reward.sum() == 0.
+    assert state1.rewards[loser] == -1.
+    assert state1.rewards.sum() == 0.
 
     state2: State = step(state=state, action=0)  # BLACK
     # 回避した場合
