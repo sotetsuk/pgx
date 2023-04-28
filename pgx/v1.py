@@ -418,7 +418,7 @@ def make(env_id: EnvId):  # noqa: C901
 
         return TicTacToe()
     else:
-        available_envs = "\n".join(available_envs())
+        envs = "\n".join(available_envs())
         raise ValueError(
-            f"Wrong env_id is passed. Available ids are: \n{available_envs}"
+            f"Wrong env_id '{env_id}' is passed. Available ids are: \n{envs}"
         )
