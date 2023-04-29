@@ -14,17 +14,18 @@
 
 import os
 from dataclasses import fields
+from typing import get_args
 
 import jax
 import jax.numpy as jnp
 
 from pgx.experimental.utils import act_randomly
-from pgx.v1 import Env, State, available_games
+from pgx.v1 import Env, EnvId, State
 
 act_randomly = jax.jit(act_randomly)
 
 
-def api_test(env: Env, num: int = 100):
+def v1_api_test(env: Env, num: int = 100):
     api_test_single(env, num)
     api_test_batch(env, num)
 
@@ -119,9 +120,9 @@ def _validate_taking_action_after_terminal(state: State, step_fn):
         return
     action = 0
     state = step_fn(state, action)
-    assert (state.reward == 0).all()
+    assert (state.rewards == 0).all()
     for field in fields(state):
-        if field.name in ["reward", "steps"]:
+        if field.name in ["rewards", "steps"]:
             continue
         assert (
             getattr(state, field.name) == getattr(prev_state, field.name)
@@ -129,7 +130,7 @@ def _validate_taking_action_after_terminal(state: State, step_fn):
 
 
 def _validate_init_reward(state: State):
-    assert (state.reward == jnp.zeros_like(state.reward)).all()
+    assert (state.rewards == jnp.zeros_like(state.rewards)).all()
 
 
 def _validate_state(state: State):
@@ -141,13 +142,27 @@ def _validate_state(state: State):
     - legal_action_mask is bool_
     - TODO: observation is bool_ or int8 (can promote to any other types)
     """
-    assert state.env_id in available_games()
+    assert state.env_id in get_args(EnvId)
     assert state.current_player.dtype == jnp.int8, state.current_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
-    assert state.reward.dtype == jnp.float32, state.reward.dtype
+    assert state.rewards.dtype == jnp.float32, state.rewards.dtype
     assert (
         state.legal_action_mask.dtype == jnp.bool_
     ), state.legal_action_mask.dtype
+
+    # check public attributes
+    public_attributes = [
+        "current_player",
+        "observation",
+        "rewards",
+        "terminated",
+        "truncated",
+        "legal_action_mask",
+    ]
+    for k, v in state.__dict__.items():
+        if k.startswith("_"):  # internal
+            continue
+        assert k in public_attributes
 
 
 def _validate_legal_actions(state: State):

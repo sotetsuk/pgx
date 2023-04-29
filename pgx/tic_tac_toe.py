@@ -26,18 +26,18 @@ TRUE = jnp.bool_(True)
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Tic-tac-toe specific ---
-    turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
-    board: jnp.ndarray = -jnp.ones(9, jnp.int8)  # -1 (empty), 0, 1
+    _board: jnp.ndarray = -jnp.ones(9, jnp.int8)  # -1 (empty), 0, 1
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -45,9 +45,7 @@ class State(v1.State):
 
 
 class TicTacToe(v1.Env):
-    def __init__(
-        self,
-    ):
+    def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
@@ -81,8 +79,8 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action: jnp.ndarray) -> State:
-    state = state.replace(board=state.board.at[action].set(state.turn))  # type: ignore
-    won = _win_check(state.board, state.turn)
+    state = state.replace(_board=state._board.at[action].set(state._turn))  # type: ignore
+    won = _win_check(state._board, state._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -90,10 +88,10 @@ def _step(state: State, action: jnp.ndarray) -> State:
     )
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        legal_action_mask=state.board < 0,
-        reward=reward,
-        terminated=won | jnp.all(state.board != -1),
-        turn=(state.turn + 1) % 2,
+        legal_action_mask=state._board < 0,
+        rewards=reward,
+        terminated=won | jnp.all(state._board != -1),
+        _turn=(state._turn + 1) % 2,
     )
 
 
@@ -105,13 +103,13 @@ def _win_check(board, turn) -> jnp.ndarray:
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     @jax.vmap
     def plane(i):
-        return (state.board == i).reshape((3, 3))
+        return (state._board == i).reshape((3, 3))
 
     # flip if player_id is opposite
     x = jax.lax.cond(
         state.current_player == player_id,
-        lambda: jnp.int8([state.turn, 1 - state.turn]),
-        lambda: jnp.int8([1 - state.turn, state.turn]),
+        lambda: jnp.int8([state._turn, 1 - state._turn]),
+        lambda: jnp.int8([1 - state._turn, state._turn]),
     )
 
     return jnp.stack(plane(x), -1)

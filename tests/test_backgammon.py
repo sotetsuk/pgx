@@ -89,12 +89,12 @@ def make_test_state(
 ):
     return State(
         current_player=current_player,
-        rng=rng,
-        board=board,
-        turn=turn,
-        dice=dice,
-        playable_dice=playable_dice,
-        played_dice_num=played_dice_num,
+        _rng=rng,
+        _board=board,
+        _turn=turn,
+        _dice=dice,
+        _playable_dice=playable_dice,
+        _played_dice_num=played_dice_num,
         legal_action_mask=legal_action_mask,
     )
 
@@ -119,7 +119,7 @@ def test_flip_board():
 
 def test_init():
     state = init(rng)
-    assert state.turn == 0 or state.turn == 1
+    assert state._turn == 0 or state._turn == 1
 
 
 def test_init_roll():
@@ -161,9 +161,9 @@ def test_is_turn_end():
 
 def test_change_turn():
     state = init(rng)
-    _turn = state.turn
+    _turn = state._turn
     state = _change_turn(state)
-    assert state.turn == (_turn + 1) % 2
+    assert state._turn == (_turn + 1) % 2
 
     test_board: jnp.ndarray = make_test_boad()
     board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
@@ -186,9 +186,9 @@ def test_change_turn():
         played_dice_num=jnp.int16(2),
     )
     state = _change_turn(state)
-    print(state.board, board)
-    assert state.turn == jnp.int8(1)  # ターンが変わっている.
-    assert (state.board == board).all()  # 反転している.
+    print(state._board, board)
+    assert state._turn == jnp.int8(1)  # ターンが変わっている.
+    assert (state._board == board).all()  # 反転している.
 
 def test_no_op():
     board: jnp.ndarray = make_test_boad()
@@ -206,7 +206,7 @@ def test_no_op():
         legal_action_mask=legal_action_mask,
     )
     state = step(state, 0)  # execute no-op action
-    assert state.turn == jnp.int8(0)  # no-opの後はturnが変わっていることを確認.
+    assert state._turn == jnp.int8(0)  # no-opの後はturnが変わっていることを確認.
 
 
 def test_step():
@@ -244,11 +244,11 @@ def test_step():
     # 白がサイコロ2をplay 24(bar)->1
     state = step(state=state, action=(1) * 6 + 1)
     assert (
-        state.playable_dice == jnp.array([0, -1, -1, -1], dtype=jnp.int16)
+            state._playable_dice == jnp.array([0, -1, -1, -1], dtype=jnp.int16)
     ).all()  # playable diceが正しく更新されているか
-    assert state.played_dice_num == 1  # played diceが増えているか.
-    assert state.turn == 1  # turnが変わっていないか.
-    assert state.board.at[1].get() == 4 and state.board.at[24].get() == 3
+    assert state._played_dice_num == 1  # played diceが増えているか.
+    assert state._turn == 1  # turnが変わっていないか.
+    assert state._board.at[1].get() == 4 and state._board.at[24].get() == 3
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26 + 6, dtype=jnp.bool_
     )
@@ -260,9 +260,9 @@ def test_step():
     assert (expected_legal_action_mask == state.legal_action_mask).all()  # legal_actionが正しく更新されているか
     # 白がサイコロ1をplay 24(off)->0
     state = step(state=state, action=(1) * 6 + 0)
-    assert state.played_dice_num == 0
-    assert state.turn == 0  # turn が黒に変わっているか.
-    assert state.board.at[23].get() == -1 and state.board.at[25].get() == -2
+    assert state._played_dice_num == 0
+    assert state._turn == 0  # turn が黒に変わっているか.
+    assert state._board.at[23].get() == -1 and state._board.at[25].get() == -2
     
     # 黒
     board: jnp.ndarray = make_test_boad()
@@ -574,4 +574,4 @@ def test_black_off():
 def test_api():
     import pgx
     env = pgx.make("backgammon")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

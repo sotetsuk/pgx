@@ -18,7 +18,7 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
     # board
     # grid
     board_g = dwg.g()
-    for i, _exp2 in enumerate(state.board):
+    for i, _exp2 in enumerate(state._board):
         exp2 = int(_exp2)
         num = 2**exp2
         if exp2 > 11:

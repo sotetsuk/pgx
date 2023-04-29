@@ -44,20 +44,8 @@ def test_step_det():
                 directions,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
-
-        # check terminal state
-        s = extract_state(env, state_keys)
-        a = random.randrange(num_actions)
-        r, done = env.act(a)
-        # extract random variables
-        speeds, directions = jnp.array(env.env.speeds), jnp.array(
-            env.env.directions
-        )
-        s_next = extract_state(env, state_keys)
-        s_next_pgx = _step_det(
-            minatar2pgx(s, freeway.State), a, speeds, directions
-        )
-        assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+            assert r == s_next_pgx.rewards[0]
+            assert done == s_next_pgx.terminated
 
 
 def test_init_det():
@@ -102,7 +90,17 @@ def test_observe():
         )
 
 
+def test_minimal_action_set():
+    import pgx
+    env = pgx.make("minatar-freeway")
+    assert env.num_actions == 3
+    state = jax.jit(env.init)(jax.random.PRNGKey(0))
+    assert state.legal_action_mask.shape == (3,)
+    state = jax.jit(env.step)(state, 0)
+    assert state.legal_action_mask.shape == (3,)
+
+
 def test_api():
     import pgx
-    env = pgx.make("minatar/freeway")
-    pgx.api_test(env, 10)
+    env = pgx.make("minatar-freeway")
+    pgx.v1_api_test(env, 10)

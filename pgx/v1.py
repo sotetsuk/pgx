@@ -32,6 +32,10 @@ FALSE = jnp.bool_(False)
 #     the comparison to other agents (i.e., environment version is less important),
 # (2) we do not provide older versions (as with OpenAI Gym), and
 # (3) it is tedious to remember and write version numbers.
+#
+# Naming convention:
+# Hyphen - is used to represent that there is a different original game source, and
+# Underscore - is used for the other cases.
 EnvId = Literal[
     "2048",
     "animal_shogi",
@@ -39,17 +43,17 @@ EnvId = Literal[
     "bridge_bidding",
     "chess",
     "connect_four",
-    "go-9x9",
-    "go-19x19",
+    "go_9x9",
+    "go_19x19",
     "hex",
     "kuhn_poker",
     "leduc_holdem",
     # "mahjong",
-    "minatar/asterix",
-    "minatar/breakout",
-    "minatar/freeway",
-    "minatar/seaquest",
-    "minatar/space_invaders",
+    "minatar-asterix",
+    "minatar-breakout",
+    "minatar-freeway",
+    "minatar-seaquest",
+    "minatar-space_invaders",
     "othello",
     "shogi",
     "sparrow_mahjong",
@@ -77,22 +81,25 @@ class State(abc.ABC):
             This ID is consistent over the parallel vmapped states.
         observation (jnp.ndarray): observation for the current state.
             `Env.observe` is called to compute.
-        reward (jnp.ndarray): the `i`-th element indicates the intermediate reward for
+        rewards (jnp.ndarray): the `i`-th element indicates the intermediate reward for
             the agent with player-id `i`. If `Env.step` is called for a terminal state,
-            the following `state.reward` is zero for all players.
-        terminated (jnp.ndarray): denotes that the state is termianl state. Note that
+            the following `state.rewards` is zero for all players.
+        terminated (jnp.ndarray): denotes that the state is terminal state. Note that
             some environments (e.g., Go) have an `max_termination_steps` parameter inside
-            and will terminates within a limited number of states (following AlphaGo).
-        truncated (jnp.ndarray): so far, not used as all Pgx environments are finite horizon
+            and will terminate within a limited number of states (following AlphaGo).
+        truncated (jnp.ndarray): indicates that the episode ends with the reason other than termination.
+            Note that current Pgx environments do not invoke truncation but users can use `TimeLimit` wrapper
+            to truncate the environment. In Pgx environments, some MinAtar games may not terminate within a finite timestep.
+            However, the other environments are supposed to terminate within a finite timestep with probability one.
         legal_action_mask (jnp.ndarray): Boolean array of legal actions. If illegal action is taken,
             the game will terminate immediately with the penalty to the palyer.
     """
 
     current_player: jnp.ndarray
     observation: jnp.ndarray
-    reward: jnp.ndarray
+    rewards: jnp.ndarray
     terminated: jnp.ndarray
-    truncated: jnp.ndarray  # so far, not used as all Pgx environments are finite horizon
+    truncated: jnp.ndarray
     legal_action_mask: jnp.ndarray
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
@@ -104,7 +111,7 @@ class State(abc.ABC):
     @property
     @abc.abstractmethod
     def env_id(self) -> EnvId:
-        """Environment id (e.g. "go-19x19")"""
+        """Environment id (e.g. "go_19x19")"""
         ...
 
     def _repr_html_(self) -> str:
@@ -195,7 +202,7 @@ class Env(abc.ABC):
         # but return the same state with zero-rewards for all players
         state = jax.lax.cond(
             (state.terminated | state.truncated),
-            lambda: state.replace(reward=jnp.zeros_like(state.reward)),  # type: ignore
+            lambda: state.replace(rewards=jnp.zeros_like(state.rewards)),  # type: ignore
             lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
         )
 
@@ -210,7 +217,7 @@ class Env(abc.ABC):
         # This is to avoid zero-division error when normalizing action probability
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
-            (state.terminated | state.truncated),
+            state.terminated,
             lambda: state.replace(  # type: ignore
                 legal_action_mask=jnp.ones_like(state.legal_action_mask)
             ),
@@ -218,7 +225,9 @@ class Env(abc.ABC):
         )
 
         observation = self.observe(state, state.current_player)
-        return state.replace(observation=observation)  # type: ignore
+        state = state.replace(observation=observation)  # type: ignore
+
+        return state
 
     def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         """Observation function."""
@@ -283,19 +292,55 @@ class Env(abc.ABC):
     ) -> State:
         penalty = self._illegal_action_penalty
         reward = (
-            jnp.ones_like(state.reward)
+            jnp.ones_like(state.rewards)
             * (-1 * penalty)
             * (self.num_players - 1)
         )
         reward = reward.at[loser].set(penalty)
-        return state.replace(reward=reward, terminated=TRUE)  # type: ignore
+        return state.replace(rewards=reward, terminated=TRUE)  # type: ignore
 
 
-def available_games() -> Tuple[EnvId, ...]:
-    return get_args(EnvId)
+def available_envs() -> Tuple[EnvId, ...]:
+    """List up all environment id available in `pgx.make` function.
+
+    !!! example "Example usage"
+
+        ```py
+        pgx.available_envs()
+        ('2048', 'animal_shogi', 'backgammon', 'chess', 'connect_four', 'go_9x9', 'go_19x19', 'hex', 'kuhn_poker', 'leduc_holdem', 'minatar-asterix', 'minatar-breakout', 'minatar-freeway', 'minatar-seaquest', 'minatar-space_invaders', 'othello', 'shogi', 'sparrow_mahjong', 'tic_tac_toe')
+        ```
+
+
+    !!! note "`BridgeBidding` environment"
+
+        `BridgeBidding` environment requires the domain knowledge of bridge game.
+        So we forbid users to load the bridge environment by `make("bridge_bidding")`.
+        Use `BridgeBidding` class directly by `from pgx.bridge_bidding import BridgeBidding`.
+
+    """
+    games = get_args(EnvId)
+    games = tuple(filter(lambda x: x != "bridge_bidding", games))
+    return games
 
 
 def make(env_id: EnvId):  # noqa: C901
+    """Load the specified environment.
+
+    !!! example "Example usage"
+
+        ```py
+        env = pgx.make("tic_tac_toe")
+        ```
+
+    !!! note "`BridgeBidding` environment"
+
+        `BridgeBidding` environment requires the domain knowledge of bridge game.
+        So we forbid users to load the bridge environment by `make("bridge_bidding")`.
+        Use `BridgeBidding` class directly by `from pgx.bridge_bidding import BridgeBidding`.
+
+    """
+    # NOTE: BridgeBidding environment requires the domain knowledge of bridge
+    # So we forbid users to load the bridge environment by `make("bridge_bidding")`.
     if env_id == "2048":
         from pgx.play2048 import Play2048
 
@@ -308,10 +353,6 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.backgammon import Backgammon
 
         return Backgammon()
-    elif env_id == "bridge_bidding":
-        from pgx.bridge_bidding import BridgeBidding
-
-        return BridgeBidding()
     elif env_id == "chess":
         from pgx.chess import Chess
 
@@ -320,11 +361,11 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.connect_four import ConnectFour
 
         return ConnectFour()
-    elif env_id == "go-9x9":
+    elif env_id == "go_9x9":
         from pgx.go import Go
 
         return Go(size=9, komi=7.5)
-    elif env_id == "go-19x19":
+    elif env_id == "go_19x19":
         from pgx.go import Go
 
         return Go(size=19, komi=7.5)
@@ -340,23 +381,23 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.leduc_holdem import LeducHoldem
 
         return LeducHoldem()
-    elif env_id == "minatar/asterix":
+    elif env_id == "minatar-asterix":
         from pgx.minatar.asterix import MinAtarAsterix
 
         return MinAtarAsterix()
-    elif env_id == "minatar/breakout":
+    elif env_id == "minatar-breakout":
         from pgx.minatar.breakout import MinAtarBreakout
 
         return MinAtarBreakout()
-    elif env_id == "minatar/freeway":
+    elif env_id == "minatar-freeway":
         from pgx.minatar.freeway import MinAtarFreeway
 
         return MinAtarFreeway()
-    elif env_id == "minatar/seaquest":
+    elif env_id == "minatar-seaquest":
         from pgx.minatar.seaquest import MinAtarSeaquest
 
         return MinAtarSeaquest()
-    elif env_id == "minatar/space_invaders":
+    elif env_id == "minatar-space_invaders":
         from pgx.minatar.space_invaders import MinAtarSpaceInvaders
 
         return MinAtarSpaceInvaders()
@@ -377,7 +418,7 @@ def make(env_id: EnvId):  # noqa: C901
 
         return TicTacToe()
     else:
-        available_envs = "\n".join(available_games())
+        envs = "\n".join(available_envs())
         raise ValueError(
-            f"Wrong env_id is passed. Available ids are: \n{available_envs}"
+            f"Wrong env_id '{env_id}' is passed. Available ids are: \n{envs}"
         )

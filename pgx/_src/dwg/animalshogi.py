@@ -88,10 +88,10 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
     #  8: OPP_KING
     #  9: OPP_GOLD
 
-    if state.turn == 0:
-        board = state.board
+    if state._turn == 0:
+        board = state._board
     else:
-        board = state.board[::-1]
+        board = state._board[::-1]
     for xy in range(12):
         piece_type = "EMPTY"
         n = board[xy]
@@ -109,7 +109,7 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
         if piece_type == "EMPTY":
             continue
 
-        if state.turn == 0:
+        if state._turn == 0:
             is_black = 0 <= n < 5
         else:
             is_black = 5 <= n
@@ -171,9 +171,9 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
 
     # # hand
     for i, piece_num, piece_type in zip(
-        range(6), state.hand.flatten(), ["P", "R", "B", "P", "R", "B"]
+        range(6), state._hand.flatten(), ["P", "R", "B", "P", "R", "B"]
     ):
-        is_black = i < 3 if state.turn == 0 else 3 <= i  # type: ignore
+        is_black = i < 3 if state._turn == 0 else 3 <= i  # type: ignore
         _g = p1_pieces_g if is_black else p2_pieces_g
         _g.add(
             dwg.text(

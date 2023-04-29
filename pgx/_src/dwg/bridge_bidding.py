@@ -22,11 +22,11 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     area_width = 230
     area_height = 150
     for i in range(4):  # N, E, S, W
-        hand = sorted(state.hand[i * NUM_CARD_TYPE : (i + 1) * NUM_CARD_TYPE])
+        hand = sorted(state._hand[i * NUM_CARD_TYPE : (i + 1) * NUM_CARD_TYPE])
         assert len(hand) == NUM_CARD_TYPE
         # player
         pos = np.array(["North", "East", "South", "West"], dtype=object)
-        pos[state.dealer] = pos[state.dealer] + "(Dealer)"
+        pos[state._dealer] = pos[state._dealer] + "(Dealer)"
         newline_offset = 0
         over_offset = 0
 
@@ -175,7 +175,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         )
 
         # vul
-        if (state.vul_NS and i % 2 == 0) or (state.vul_EW and i % 2 == 1):
+        if (state._vul_NS and i % 2 == 0) or (state._vul_EW and i % 2 == 1):
             board_g.add(
                 dwg.text(
                     text="Vul.",
@@ -206,7 +206,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             stroke_width="5px",
         )
     )
-    for i, act in enumerate(state.bidding_history):
+    for i, act in enumerate(state._bidding_history):
         if act == -1:
             break
         act_str = (
@@ -238,7 +238,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     )
     # player
     pos = np.array(["N", "E", "S", "W"], dtype=object)
-    pos = np.roll(pos, -state.dealer)
+    pos = np.roll(pos, -state._dealer)
     pos[0] = pos[0] + "(D)"
     for i in range(4):
         board_g.add(

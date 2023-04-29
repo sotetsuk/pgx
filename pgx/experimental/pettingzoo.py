@@ -79,7 +79,7 @@ class PettingZooEnv(AECEnv):
 
         if self._state.terminated:
             for i in range(self._num_players):
-                self.rewards[f"player_{i}"] = float(self._state.reward[i])
+                self.rewards[f"player_{i}"] = float(self._state.rewards[i])
             self.terminations = {i: True for i in self.agents}
 
         self._cumulative_rewards[self.agent_selection] = 0
@@ -130,7 +130,7 @@ def get_agents_spaces(env_id: EnvId):
             for i in agents
         }
         return agents, action_spaces, observation_spaces
-    elif env_id == "go-19x19":
+    elif env_id == "go_19x19":
         agents = ["player_0", "player_1"]
         size = 19
         action_spaces = {i: spaces.Discrete(size * size + 1) for i in agents}

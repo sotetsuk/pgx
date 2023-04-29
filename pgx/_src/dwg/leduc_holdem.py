@@ -35,7 +35,7 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
     )
     board_g.add(
         dwg.text(
-            text=CARD[state.cards[0]],
+            text=CARD[state._cards[0]],
             insert=(GRID_SIZE, 5 * GRID_SIZE),
             fill=color_set.text_color,
             font_size="40px",
@@ -46,7 +46,7 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
     # chip
     board_g.add(
         dwg.text(
-            text=f"chip +{state.chips[0]}",
+            text=f"chip +{state._chips[0]}",
             insert=(0, 7.6 * GRID_SIZE),
             fill=color_set.text_color,
             font_size="18px",
@@ -69,7 +69,7 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
     )
     board_g.add(
         dwg.text(
-            text=CARD[state.cards[1]],
+            text=CARD[state._cards[1]],
             insert=(7 * GRID_SIZE, 5 * GRID_SIZE),
             fill=color_set.text_color,
             font_size="40px",
@@ -78,7 +78,7 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
         )
     )
     # chip
-    chip = f"chip +{state.chips[1]}"
+    chip = f"chip +{state._chips[1]}"
     board_g.add(
         dwg.text(
             text=chip,
@@ -108,7 +108,7 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
             (2 * GRID_SIZE, 3 * GRID_SIZE),
             fill=color_set.background_color,
             stroke=color_set.p1_color
-            if state.round == 0
+            if state._round == 0
             else color_set.p2_color,
             stroke_width="2px",
             rx="5px",
@@ -117,10 +117,10 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
     )
     board_g.add(
         dwg.text(
-            text=CARD[state.cards[2]],
+            text=CARD[state._cards[2]],
             insert=(4 * GRID_SIZE, GRID_SIZE),
             fill=color_set.p1_color
-            if state.round == 0
+            if state._round == 0
             else color_set.p2_color,
             font_size="40px",
             font_family="Courier",

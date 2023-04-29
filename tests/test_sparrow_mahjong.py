@@ -88,7 +88,7 @@ def test_random_play():
             state = step(state, action)
             # _validate(state)
         print(_to_str(state))
-        print(state.reward)
+        print(state.rewards)
         results += _to_str(state)
 
     expected = """[terminated] dora: 5
@@ -587,4 +587,4 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("sparrow_mahjong")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

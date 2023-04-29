@@ -76,28 +76,28 @@ def _duplicate_init(
     >>> key = jax.random.PRNGKey(0)
     >>> state = env.init(key)
     >>> duplicate_state = _duplicate_init(state)
-    >>> duplicate_state.shuffled_players
+    >>> duplicate_state._shuffled_players
     Array([0, 2, 1, 3], dtype=int8)
-    >>> duplicate_state.dealer
+    >>> duplicate_state._dealer
     Array(1, dtype=int32)
     >>> duplicate_state.current_player
     Array(2, dtype=int8)
     >>> state = env.step(state, 35)
     >>> duplicate_state = _duplicate_init(state)
-    >>> duplicate_state.shuffled_players
+    >>> duplicate_state._shuffled_players
     Array([0, 2, 1, 3], dtype=int8)
-    >>> duplicate_state.dealer
+    >>> duplicate_state._dealer
     Array(1, dtype=int32)
     >>> duplicate_state.current_player
     Array(2, dtype=int8)
-    >>> duplicate_state.pass_num
+    >>> duplicate_state._pass_num
     Array(0, dtype=int32)
 
     >>> state = env.step(state, 0)
     >>> duplicate_state = _duplicate_init(state)
-    >>> duplicate_state.shuffled_players
+    >>> duplicate_state._shuffled_players
     Array([0, 2, 1, 3], dtype=int8)
-    >>> duplicate_state.dealer
+    >>> duplicate_state._dealer
     Array(1, dtype=int32)
     >>> duplicate_state.current_player
     Array(2, dtype=int8)
@@ -109,19 +109,19 @@ def _duplicate_init(
            False, False], dtype=bool)
     """
     ix = jnp.array([1, 0, 3, 2])
-    shuffled_players = state.shuffled_players[ix]
-    current_player = shuffled_players[state.dealer]
+    shuffled_players = state._shuffled_players[ix]
+    current_player = shuffled_players[state._dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
     duplicated_state = State(  # type: ignore
-        shuffled_players=state.shuffled_players[ix],
+        _shuffled_players=state._shuffled_players[ix],
         current_player=current_player,
-        hand=state.hand,
-        dealer=state.dealer,
-        vul_NS=state.vul_NS,
-        vul_EW=state.vul_EW,
+        _hand=state._hand,
+        _dealer=state._dealer,
+        _vul_NS=state._vul_NS,
+        _vul_EW=state._vul_EW,
         legal_action_mask=legal_actions,
     )
     return duplicated_state
@@ -140,11 +140,11 @@ def duplicate_step(
             has_duplicate_result,
             lambda: (
                 state.replace(  # type: ignore
-                    reward=_imp_reward(table_a_reward, state.reward)
+                    reward=_imp_reward(table_a_reward, state.rewards)
                 ),
                 jnp.zeros(4, dtype=jnp.float32),
                 jnp.bool_(True),
             ),
-            lambda: (_duplicate_init(state), state.reward, jnp.bool_(True)),
+            lambda: (_duplicate_init(state), state.rewards, jnp.bool_(True)),
         ),
     )

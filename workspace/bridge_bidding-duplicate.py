@@ -4,12 +4,15 @@ import pgx
 from pgx.experimental.utils import act_randomly
 from pgx.bridge_bidding import _player_position
 from pgx.experimental.bridge_bidding import duplicate_step
-
+import time
 
 env_id: pgx.EnvId = "bridge_bidding"
-env = pgx.make(env_id)
+time1 = time.time()
+env = pgx.make(env_id, dds_hash_table_path="dds_hash_table")
+time2 = time.time()
+print(time2 - time1)
 # run api test
-pgx.api_test(env, 100)
+pgx.v1_api_test(env, 100)
 
 # jit
 init = jax.jit(jax.vmap(env.init))
@@ -30,7 +33,7 @@ state: pgx.State = init(keys)
 
 i = 0
 has_duplicate_result = jnp.zeros(N, dtype=jnp.bool_)
-table_a_reward = state.reward
+table_a_reward = state.rewards
 while not state.terminated.all():
     key, subkey = jax.random.split(key)
     action = act_randomly(subkey, state)
@@ -49,8 +52,8 @@ while not state.terminated.all():
         state, action, table_a_reward, has_duplicate_result
     )
     print(f"table a reward\n{table_a_reward}")
-    print(f"score_reward:\n{state_check.reward}")
-    print(f"IMP_reward:\n{state.reward}")
+    print(f"score_reward:\n{state_check.rewards}")
+    print(f"IMP_reward:\n{state.rewards}")
     print(f"has_duplicate_result:\n{has_duplicate_result}")
     i += 1
 state.save_svg(f"test/{i:04d}.svg")

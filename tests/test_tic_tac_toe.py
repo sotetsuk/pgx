@@ -19,13 +19,13 @@ def test_step():
     key = jax.random.PRNGKey(1)
     state = init(key=key)
     assert state.current_player == 1
-    assert state.turn == 0
+    assert state._turn == 0
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(
-        state.board == jnp.int8([-1, -1, -1, -1, -1, -1, -1, -1, -1])
+        state._board == jnp.int8([-1, -1, -1, -1, -1, -1, -1, -1, -1])
     )
     assert not state.terminated
     # -1 -1 -1
@@ -35,15 +35,15 @@ def test_step():
     action = jnp.int8(4)
     state = step(state, action)
     assert state.current_player == 0
-    assert state.turn == 1
+    assert state._turn == 1
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(
-        state.board == jnp.int8([-1, -1, -1, -1, 0, -1, -1, -1, -1])
+        state._board == jnp.int8([-1, -1, -1, -1, 0, -1, -1, -1, -1])
     )
-    assert jnp.all(state.reward == 0)  # fmt: ignore
+    assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     # -1 -1 -1
     # -1  0 -1
@@ -52,13 +52,13 @@ def test_step():
     action = jnp.int8(0)
     state = step(state, action)
     assert state.current_player == 1
-    assert state.turn == 0
+    assert state._turn == 0
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([0, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state.board == jnp.int8([1, -1, -1, -1, 0, -1, -1, -1, -1]))
-    assert jnp.all(state.reward == 0)  # fmt: ignore
+    assert jnp.all(state._board == jnp.int8([1, -1, -1, -1, 0, -1, -1, -1, -1]))
+    assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1 -1 -1
     # -1  0 -1
@@ -67,13 +67,13 @@ def test_step():
     action = jnp.int8(1)
     state = step(state, action)
     assert state.current_player == 0
-    assert state.turn == 1
+    assert state._turn == 1
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state.board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, -1]))
-    assert jnp.all(state.reward == 0)  # fmt: ignore
+    assert jnp.all(state._board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, -1]))
+    assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1  0 -1
     # -1  0 -1
@@ -82,13 +82,13 @@ def test_step():
     action = jnp.int8(8)
     state = step(state, action)
     assert state.current_player == 1
-    assert state.turn == 0
+    assert state._turn == 0
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 0], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state.board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, 1]))
-    assert jnp.all(state.reward == 0)  # fmt: ignore
+    assert jnp.all(state._board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, 1]))
+    assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1  0 -1
     # -1  0 -1
@@ -97,13 +97,13 @@ def test_step():
     action = jnp.int8(7)
     state = step(state, action)
     assert state.current_player == 0
-    assert state.turn == 1
+    assert state._turn == 1
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state.board == jnp.int8([1, 0, -1, -1, 0, -1, -1, 0, 1]))
-    assert jnp.all(state.reward == jnp.int16([-1, 1]))  # fmt: ignore
+    assert jnp.all(state._board == jnp.int8([1, 0, -1, -1, 0, -1, -1, 0, 1]))
+    assert jnp.all(state.rewards == jnp.int16([-1, 1]))  # fmt: ignore
     assert state.terminated
     #  1  0 -1
     # -1  0 -1
@@ -119,13 +119,13 @@ def test_random_play():
         state = init(sub_key)
         rewards = jnp.int16([0.0, 0.0])
         while not done:
-            assert jnp.all(rewards == 0), state.board
+            assert jnp.all(rewards == 0), state._board
             legal_actions = jnp.where(state.legal_action_mask)[0]
             key, sub_key = jax.random.split(key)
             action = jax.random.choice(sub_key, legal_actions)
             state = step(state, action)
             done = state.terminated
-            rewards += state.reward
+            rewards += state.rewards
 
 
 def test_win_check():
@@ -192,4 +192,4 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("tic_tac_toe")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

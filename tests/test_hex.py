@@ -39,7 +39,7 @@ def test_merge():
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0])
     # fmt:on
-    assert jnp.all(state.board == expected)
+    assert jnp.all(state._board == expected)
 
 
 def test_terminated():
@@ -71,13 +71,13 @@ def test_reward():
     key = jax.random.PRNGKey(1)
     state = init(key=key)
     assert state.current_player == 1
-    assert (state.reward == jnp.float32([0.0, 0.0])).all()
+    assert (state.rewards == jnp.float32([0.0, 0.0])).all()
 
     for i in range(10):
         state = step(state, i * 11)
         state = step(state, i * 11 + 1)
     state = step(state, 110)
-    assert (state.reward == jnp.float32([-1.0, 1.0])).all()
+    assert (state.rewards == jnp.float32([-1.0, 1.0])).all()
 
     state = init(key=key)
     for i in range(10):
@@ -85,7 +85,7 @@ def test_reward():
         state = step(state, i + 11)
     state = step(state, 120)
     state = step(state, 21)
-    assert (state.reward == jnp.float32([1.0, -1.0])).all()
+    assert (state.rewards == jnp.float32([1.0, -1.0])).all()
 
 
 def test_observe():
@@ -122,10 +122,10 @@ def test_random_play():
         action = jax.random.choice(sub_key, legal_actions)
         state = step(state, jnp.int16(action))
         done = state.terminated
-        rewards += state.reward
+        rewards += state.rewards
 
 
 def test_api():
     import pgx
     env = pgx.make("hex")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

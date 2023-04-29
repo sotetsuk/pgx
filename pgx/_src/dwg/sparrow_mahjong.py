@@ -83,7 +83,9 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
     p3_g = dwg.g()
 
     # pieces
-    for player_id, pieces_g in zip(state.shuffled_players, [p1_g, p2_g, p3_g]):
+    for player_id, pieces_g in zip(
+        state._shuffled_players, [p1_g, p2_g, p3_g]
+    ):
         pieces_g = dwg.g()
 
         # border
@@ -107,9 +109,9 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
         y = 370
         for type, num in zip(
             range(NUM_TILE_TYPES),
-            state.hands[player_id],
+            state._hands[player_id],
         ):
-            num_red = state.n_red_in_hands[player_id, type]
+            num_red = state._n_red_in_hands[player_id, type]
             for _ in range(num):
                 pieces_g = _set_piece(
                     x,
@@ -128,7 +130,7 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
         y = 220
         river_count = 0
         for type, is_red in zip(
-            state.rivers[player_id], state.is_red_in_river[player_id]
+            state._rivers[player_id], state._is_red_in_river[player_id]
         ):
             if type >= 0:
                 pieces_g = _set_piece(
@@ -147,12 +149,12 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
                     x = 270
                     y += 60
 
-        if player_id == state.shuffled_players[1]:
+        if player_id == state._shuffled_players[1]:
             pieces_g.rotate(
                 angle=90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
             )
 
-        elif player_id == state.shuffled_players[2]:
+        elif player_id == state._shuffled_players[2]:
             pieces_g.rotate(
                 angle=-90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
             )
@@ -189,7 +191,7 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
     board_g = _set_piece(
         BOARD_WIDTH * GRID_SIZE / 2 - 25,
         15,
-        state.dora,
+        state._dora,
         False,
         dwg,
         board_g,
@@ -201,7 +203,7 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
     board_g = _set_piece(330, 120, wall_type, False, dwg, board_g, GRID_SIZE)
     board_g.add(
         dwg.text(
-            text=f"× {NUM_TILES - state.draw_ix-1}",
+            text=f"× {NUM_TILES - state._draw_ix - 1}",
             insert=(380, 150),
             fill=color_set.text_color,
             font_size="20px",

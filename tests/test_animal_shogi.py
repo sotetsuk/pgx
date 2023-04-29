@@ -16,34 +16,34 @@ def test_step():
     state = init(jax.random.PRNGKey(0))
     visualize(state, "tests/assets/animal_shogi/test_step_000.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
 
     state = step(state, 3 * 12 + 6)  # Up PAWN
     visualize(state, "tests/assets/animal_shogi/test_step_001.svg")
     assert not state.terminated
-    assert state.turn == 1
-    assert state.board[6] == 5
-    assert state.hand[0, 0] == 0
-    assert state.hand[1, 0] == 1
-    assert state.hand.sum() == 1
+    assert state._turn == 1
+    assert state._board[6] == 5
+    assert state._hand[0, 0] == 0
+    assert state._hand[1, 0] == 1
+    assert state._hand.sum() == 1
 
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
     visualize(state, "tests/assets/animal_shogi/test_step_002.svg")
     assert not state.terminated
-    assert state.turn == 0
-    assert state.board[5] == 6
-    assert state.hand[0, 0] == 1
-    assert state.hand[1, 0] == 1
-    assert state.hand.sum() == 2
+    assert state._turn == 0
+    assert state._board[5] == 6
+    assert state._hand[0, 0] == 1
+    assert state._hand[1, 0] == 1
+    assert state._hand.sum() == 2
 
     state = step(state, 8 * 12 + 6)  # Drop PAWN to 6
     visualize(state, "tests/assets/animal_shogi/test_step_003.svg")
     assert not state.terminated
-    assert state.turn == 1
-    assert state.board[5] == 5
-    assert state.hand[0, 0] == 1
-    assert state.hand[1, 0] == 0
-    assert state.hand.sum() == 1
+    assert state._turn == 1
+    assert state._board[5] == 5
+    assert state._hand[0, 0] == 1
+    assert state._hand[1, 0] == 0
+    assert state._hand.sum() == 1
 
 
 def test_observe():
@@ -78,11 +78,11 @@ def test_observe():
     assert (state.observation[:, :, 8] == expected).all()
 
     state = State(
-        board=jnp.int8([
+        _board=jnp.int8([
              8, -1, -1, -1,
             -1, -1, -1,  3,
             -1, -1, -1,  0]),
-        hand=jnp.int8([[2, 0, 0], [0, 1, 0]])
+        _hand=jnp.int8([[2, 0, 0], [0, 1, 0]])
     )
     state = state.replace(observation=_observe(state, state.current_player))
     expected = jnp.bool_(
@@ -105,4 +105,4 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("animal_shogi")
-    pgx.api_test(env, 5)
+    pgx.v1_api_test(env, 5)
