@@ -917,13 +917,17 @@ def _find_value_from_key(
     return hash_values[ix]
 
 
-def download_from_google_drive(save_path: str):
+def download_dataset(save_path: Optional[str] = None):
     """Download zip file (160MB) with dataset of dds results
     in csv and npy format from google drive"""
-    import gdown
+    import gdown  # type: ignore
 
     url = "https://drive.google.com/uc?id=1eQAsgJVyiTSSOK78L51UL09YI6Z2jI-3"
-    gdown.download(url, save_path, quiet=False)
+    if save_path is None:
+        save_path = ""
+    gdown.download(
+        url, os.path.join(str(save_path), "dds_results.zip"), quiet=False
+    )
 
 
 def _load_sample_hash() -> Tuple[jnp.ndarray, jnp.ndarray]:
