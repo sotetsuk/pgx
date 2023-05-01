@@ -918,6 +918,8 @@ def _find_value_from_key(
 
 
 def download_from_google_drive(save_path: str):
+    """Download zip file (160MB) with dataset of dds results
+    in csv and npy format from google drive"""
     import gdown
 
     url = "https://drive.google.com/uc?id=1eQAsgJVyiTSSOK78L51UL09YI6Z2jI-3"
