@@ -54,7 +54,7 @@ while not (state.terminated | state.terminated).all():
     state = step(state, action)  # state.reward (2,)
 ```
 
-> ⚠️ Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in April 2023. Opinions and comments are more than welcome!
+> ⚠️ Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in May 2023. Opinions and comments are more than welcome!
 
 <!---
 ### Limitations (for the simplicity)
