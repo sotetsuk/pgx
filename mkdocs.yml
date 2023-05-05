@@ -10,6 +10,7 @@ nav:
   - Examples: examples.md
   - Available Games:
     - 2048: play2048.md
+    - Backgammon: backgammon.md
     - Connect four: connect_four.md
     - Tic-tac-toe: tic_tac_toe.md
     - Go: go.md
