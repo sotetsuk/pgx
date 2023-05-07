@@ -44,7 +44,8 @@ def test_ron():
     assert jit(Hand.can_ron)(hand, 0)
     assert ~jit(Hand.can_ron)(hand, 1)
 
-def test_riichi()
+
+def test_riichi():
     # fmt:off
     hand = jnp.int8([
         1, 1, 1, 1, 1, 1, 1, 1, 0,
@@ -65,8 +66,8 @@ def test_riichi()
     ])
     # fmt:on
 
-    assert jit(Hand.can_riichi)(hand)
-    
+    assert ~jit(Hand.can_riichi)(hand)
+
     # fmt:off
     hand = jnp.int8([
         1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -77,6 +78,7 @@ def test_riichi()
     # fmt:on
 
     assert jit(Hand.can_riichi)(hand)
+
 
 def test_score():
     # 平和ツモ
