@@ -29,6 +29,26 @@ def test_hand(func):
     print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
 
 
+def test_chi(func):
+    from pgx._mahjong._action import Action
+
+    # fmt:off
+    hand = jnp.int8([
+        0, 1, 1, 1, 1, 1, 1, 1, 1,
+        3, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        2, 0, 0, 0, 0, 0, 0
+    ])
+    # fmt:on
+    time_sta = time.perf_counter()
+    jax.jit(func)(hand, 0, Action.CHI_L)
+    time_end = time.perf_counter()
+    delta = (time_end - time_sta) * 1000
+    exp = jax.make_jaxpr(func)(hand, 0, Action.CHI_L)
+    n_line = len(str(exp).split("\n"))
+    print(f"| `{func.__name__}` | {n_line} | {delta:.1f}ms |")
+
+
 def test_yaku(func):
     # fmt:off
     hand= jnp.int8([
@@ -71,6 +91,9 @@ elif func_name == "is_tenpai":
 elif func_name == "can_tsumo":
     func = Hand.can_tsumo
     test_hand(func=func)
+elif func_name == "can_chi":
+    func = Hand.can_chi
+    test_chi(func=func)
 elif func_name == "score":
     func = Yaku.score
     test_yaku(func=func)

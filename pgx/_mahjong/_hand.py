@@ -144,21 +144,18 @@ class Hand:
             lambda: jax.lax.switch(
                 action - Action.CHI_L,
                 [
-                    lambda: jax.lax.cond(
-                        tile % 9 < 7,
-                        lambda: (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
-                        lambda: False,
+                    lambda: (tile % 9 < 7)
+                    & (hand[tile + 1] > 0)
+                    & (hand[tile + 2] > 0),
+                    lambda: (
+                        (tile % 9 < 8)
+                        & (tile % 9 > 0)
+                        & (hand[tile - 1] > 0)
+                        & (hand[tile + 1] > 0)
                     ),
-                    lambda: jax.lax.cond(
-                        (tile % 9 < 8) & (tile % 9 > 0),
-                        lambda: (hand[tile - 1] > 0) & (hand[tile + 1] > 0),
-                        lambda: False,
-                    ),
-                    lambda: jax.lax.cond(
-                        tile % 9 > 1,
-                        lambda: (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
-                        lambda: False,
-                    ),
+                    lambda: (tile % 9 > 1)
+                    & (hand[tile - 2] > 0)
+                    & (hand[tile - 1] > 0),
                 ],
             ),
         )

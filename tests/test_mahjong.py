@@ -80,6 +80,20 @@ def test_riichi():
     assert jit(Hand.can_riichi)(hand)
 
 
+def test_can_chi():
+    from pgx._mahjong._action import Action
+
+    # fmt:off
+    hand = jnp.int8([
+        0, 1, 1, 1, 1, 1, 1, 1, 1,
+        3, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        2, 0, 0, 0, 0, 0, 0
+    ])
+    # fmt:on
+    assert jit(Hand.can_chi)(hand, 0, Action.CHI_L)
+
+
 def test_score():
     # 平和ツモ
     # fmt:off
