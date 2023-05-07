@@ -45,18 +45,18 @@ class Hand:
         return (Hand.CACHE[code >> 5] >> (code & 0b11111)) & 1
 
     @staticmethod
-    def can_ron(hand: jnp.ndarray, tile: int) -> bool:
+    def can_ron(hand: jnp.ndarray, tile: int):
         return Hand.can_tsumo(Hand.add(hand, tile))
 
     @staticmethod
-    def can_riichi(hand: jnp.ndarray) -> bool:
+    def can_riichi(hand: jnp.ndarray):
         """手牌は14枚"""
         return jax.vmap(
             lambda i: (hand[i] != 0) & Hand.is_tenpai(Hand.sub(hand, i))
         )(jnp.arange(34)).any()
 
     @staticmethod
-    def is_tenpai(hand: jnp.ndarray) -> bool:
+    def is_tenpai(hand: jnp.ndarray):
         """手牌は13枚"""
         return jax.vmap(
             lambda tile: (hand[tile] != 4) & Hand.can_ron(hand, tile)
