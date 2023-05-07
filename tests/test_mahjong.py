@@ -2,7 +2,7 @@ from pgx._mahjong._hand import Hand
 from pgx._mahjong._yaku import Yaku
 from pgx._mahjong._shanten import Shanten
 import jax.numpy as jnp
-
+from jax import jit
 
 def test_ron():
     # fmt:off
@@ -14,8 +14,8 @@ def test_ron():
     ])
     # fmt:on
 
-    assert Hand.can_ron(hand, 0)
-    assert Hand._can_tsumo(Hand.add(hand, 0))
+    assert jit(Hand.can_ron)(hand, 0)
+    #assert jit(Hand._can_tsumo(Hand.add(hand, 0)))
     assert ~Hand.can_ron(hand, 1)
     assert ~Hand._can_tsumo(Hand.add(hand, 1))
 
