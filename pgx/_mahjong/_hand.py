@@ -41,7 +41,7 @@ class Hand:
         return hand
 
     @staticmethod
-    def cache(code: int) -> int:
+    def cache(code: int):
         return (Hand.CACHE[code >> 5] >> (code & 0b11111)) & 1
 
     @staticmethod
@@ -108,6 +108,62 @@ class Hand:
                 )
             )
             heads += jnp.sum(hand[9 * suit : 9 * (suit + 1)]) % 3 == 2
+
+        heads, valid = jax.lax.fori_loop(
+            27,
+            34,
+            lambda i, tpl: (
+                tpl[0] + (hand[i] == 2),
+                tpl[1] & (hand[i] != 1) & (hand[i] != 4),
+            ),
+            (heads, valid),
+        )
+
+        return ((valid & (heads == 1)) | thirteen_orphan | seven_pairs) == 1
+
+    @staticmethod
+    def _can_tsumo(hand: jnp.ndarray):
+        thirteen_orphan = (
+            (hand[0] > 0)
+            & (hand[8] > 0)
+            & (hand[9] > 0)
+            & (hand[17] > 0)
+            & (hand[18] > 0)
+            & jnp.all(hand[26:] > 0)
+            & (
+                (
+                    hand[0]
+                    + hand[8]
+                    + hand[9]
+                    + hand[17]
+                    + hand[18]
+                    + jnp.sum(hand[26:])
+                )
+                == 14
+            )
+        )
+        seven_pairs = jnp.sum(hand == 2) == 7
+
+        heads, valid = jnp.int32(0), jnp.int32(1)
+
+        def _is_valid(suit):
+            return Hand.cache(
+                jax.lax.fori_loop(
+                    9 * suit,
+                    9 * (suit + 1),
+                    lambda i, code: code * 5 + hand[i].astype(int),
+                    0,
+                )
+            )
+
+        def _heads(suit):
+            return (
+                jnp.sum(jax.lax.dynamic_slice(hand, jnp.int8(9 * suit), 9)) % 3
+                == 2
+            )
+
+        valid = jax.vmap(_is_valid)(jnp.arange(3)).all()
+        heads = jax.vmap(_heads)(jnp.arange(3)).sum()
 
         heads, valid = jax.lax.fori_loop(
             27,
