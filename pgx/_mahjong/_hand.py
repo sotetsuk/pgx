@@ -144,8 +144,6 @@ class Hand:
         )
         seven_pairs = jnp.sum(hand == 2) == 7
 
-        heads, valid = jnp.int32(0), jnp.int32(1)
-
         def _is_valid(suit):
             return Hand.cache(
                 jax.lax.fori_loop(
@@ -156,14 +154,18 @@ class Hand:
                 )
             )
 
-        def _heads(suit):
-            return (
-                jnp.sum(jax.lax.dynamic_slice(hand, jnp.int8(9 * suit), 9)) % 3
-                == 2
-            )
-
         valid = jax.vmap(_is_valid)(jnp.arange(3)).all()
-        heads = jax.vmap(_heads)(jnp.arange(3)).sum()
+
+        # heads = jax.lax.fori_loop(
+        #    0,
+        #    3,
+        #    lambda i, heads: heads + jnp.sum(hand[9 * i : 9 * (i + 1)]) % 3
+        #    == 2,
+        #    0,
+        # )
+        heads = jnp.int32(0)
+        for suit in range(3):
+            heads += jnp.sum(hand[9 * suit : 9 * (suit + 1)]) % 3 == 2
 
         heads, valid = jax.lax.fori_loop(
             27,
