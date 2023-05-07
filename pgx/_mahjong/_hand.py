@@ -97,16 +97,11 @@ class Hand:
 
         valid = jax.vmap(_is_valid)(jnp.arange(3)).all()
 
-        # heads = jax.lax.fori_loop(
-        #    0,
-        #    3,
-        #    lambda i, heads: heads + jnp.sum(hand[9 * i : 9 * (i + 1)]) % 3
-        #    == 2,
-        #    0,
-        # )
-        heads = jnp.int32(0)
-        for suit in range(3):
-            heads += jnp.sum(hand[9 * suit : 9 * (suit + 1)]) % 3 == 2
+        heads = (
+            (jnp.sum(hand[0:9]) % 3 == 2)
+            + (jnp.sum(hand[9:18]) % 3 == 2)
+            + (jnp.sum(hand[18:27]) % 3 == 2)
+        )
 
         heads, valid = jax.lax.fori_loop(
             27,
