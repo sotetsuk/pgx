@@ -20,14 +20,13 @@ class Shanten:
 
     @staticmethod
     def discard(hand: jnp.ndarray) -> jnp.ndarray:
-        return jax.lax.map(
+        return jax.vmap(
             lambda i: jax.lax.cond(
                 hand[i] == 0,
                 lambda: 0,
                 lambda: Shanten.number(hand.at[i].set(hand[i] - 1)),
-            ),
-            jnp.arange(34),
-        )
+            )
+        )(jnp.arange(34))
 
     @staticmethod
     def number(hand: jnp.ndarray):
@@ -69,7 +68,7 @@ class Shanten:
 
     @staticmethod
     def normal(hand: jnp.ndarray):
-        code = jax.lax.map(
+        code = jax.vmap(
             lambda suit: jax.lax.cond(
                 suit == 3,
                 lambda: jax.lax.fori_loop(
@@ -85,15 +84,14 @@ class Shanten:
                     lambda i, code: code * 5 + hand[i].astype(int),
                     0,
                 ),
-            ),
-            jnp.arange(4),
-        )
+            )
+        )(jnp.arange(4))
 
         n_set = jnp.sum(hand).astype(int) // 3
 
         return jnp.min(
-            jax.lax.map(
-                lambda suit: Shanten._normal(code, n_set, suit), jnp.arange(4)
+            jax.vmap(lambda suit: Shanten._normal(code, n_set, suit))(
+                jnp.arange(4)
             )
         )
 
