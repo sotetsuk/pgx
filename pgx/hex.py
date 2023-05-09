@@ -45,7 +45,7 @@ class State(v1.State):
     #  .
     #  .
     #  [110, 111, 112, ...,  119, 120]]
-    _board: jnp.ndarray = -jnp.zeros(
+    _board: jnp.ndarray = jnp.zeros(
         11 * 11, jnp.int32
     )  # <0(oppo), 0(empty), 0<(self)
 
@@ -125,16 +125,19 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
 
 
 def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
-    board = jax.lax.cond(
+    board = jax.lax.select(
         player_id == state.current_player,
-        lambda: state._board.reshape((size, size)),
-        lambda: (state._board * -1).reshape((size, size)),
+        state._board.reshape((size, size)),
+        -state._board.reshape((size, size)),
     )
 
-    def make(color):
-        return board * color > 0
+    my_board = board * 1 > 0
+    opp_board = board * -1 > 0
+    my_color = jax.lax.select(
+        player_id == state.current_player, state._turn, 1 - state._turn
+    ) * jnp.ones_like(my_board)
 
-    return jnp.stack(jax.vmap(make)(jnp.int8([1, -1])), 2)
+    return jnp.stack([my_board, opp_board, my_color], 2, dtype=jnp.bool_)
 
 
 def _neighbour(xy, size):
