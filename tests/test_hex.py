@@ -97,15 +97,17 @@ def test_observe():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
     assert state.current_player == 0
-    assert (jnp.zeros((11, 11, 2)) == observe(state, 0)).all()
+    assert (jnp.zeros((11, 11, 3)) == observe(state, 0)).all()
     state = step(state, 0)
+    assert (observe(state, 0)[:, :, 2] == 0).all()
+    assert (observe(state, 1)[:, :, 2] == 1).all()
     state = step(state, 1)
     assert (
-        jnp.zeros((11, 11, 2)).at[0, 0, 0].set(1).at[0, 1, 1].set(1)
+        jnp.zeros((11, 11, 3), dtype=jnp.bool_).at[0, 0, 0].set(True).at[0, 1, 1].set(True)
         == observe(state, 0)
     ).all()
     assert (
-        jnp.zeros((11, 11, 2)).at[0, 1, 0].set(1).at[0, 0, 1].set(1)
+            jnp.zeros((11, 11, 3), dtype=jnp.bool_).at[0, 1, 0].set(True).at[0, 0, 1].set(True).at[:, :, 2].set(True)
         == observe(state, 1)
     ).all()
 
