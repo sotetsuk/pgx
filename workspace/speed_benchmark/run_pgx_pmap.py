@@ -93,7 +93,6 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_steps):
     rng_key, subkey = jax.random.split(rng_key)
     pmap_keys = jax.random.split(subkey, num_devices)
     s = run(pmap_keys)
-    print(s.rewards.shape)
     # warmup end
 
     ts = time.time()
