@@ -57,5 +57,5 @@ d = {}
 for game, env_id in games.items():
     for bs in bs_list:
         num_steps, sec = benchmark(env_id, bs, bs * num_batch_steps)
-        print(json.dumps({"game": game, "library": "pgx",
+        print(json.dumps({"game": game, "library": "pgx (A100 x 1)",
               "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
