@@ -45,13 +45,14 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_steps):
 games = {
     "tic_tac_toe": "tic_tac_toe",
     "backgammon": "backgammon",
-    "shogi": "shogi",
+    "connect_four": "connect_four",
+    "chess": "chess",
     "go": "go_19x19",
 }
 
 
 num_batch_steps = int(sys.argv[1])
-bs_list = [2 ** i for i in range(1, 11)]
+bs_list = [2 ** i for i in range(1, 16)]
 d = {}
 for game, env_id in games.items():
     for bs in bs_list:
