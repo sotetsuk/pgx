@@ -2,9 +2,9 @@ import time
 import sys
 import json
 import jax
-import jax.numpy as jnp
 import pgx
 from pgx.experimental.utils import act_randomly
+import jax.numpy as jnp
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -57,15 +57,21 @@ def auto_reset(step_fn, init_fn):
     return wrapped_step_fn
 
 
-def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
+def benchmark(env_id: pgx.EnvId, batch_size, num_steps):
+    num_batch_step = num_steps // batch_size
 
     env = pgx.make(env_id)
     assert env is not None
 
-    @jax.jit
+    num_devices = jax.device_count()
+    batchsize_per_dev = batch_size // num_devices
+    # print(num_devices)
+    # print(batchsize_per_dev)
+
+    @jax.pmap
     def run(key):
         key, subkey = jax.random.split(key)
-        keys = jax.random.split(subkey, batch_size)
+        keys = jax.random.split(subkey, batchsize_per_dev)
         state = jax.vmap(env.init)(keys)
 
         def fn(i, x):
@@ -77,39 +83,41 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
             return key, s
 
         _, state = jax.lax.fori_loop(
-            0, num_batch_steps, fn, (key, state)
+            0, num_batch_step, fn, (rng_key, state)
         )
         return state
 
-    # warmup
+    rng_key = jax.random.PRNGKey(0)
 
-    key = jax.random.PRNGKey(0)
-    key, subkey = jax.random.split(key)
-    run(subkey)
+    # warmup start
+    rng_key, subkey = jax.random.split(rng_key)
+    pmap_keys = jax.random.split(subkey, num_devices)
+    s = run(pmap_keys)
+    # warmup end
 
     ts = time.time()
-    key, subkey = jax.random.split(key)
-    run(subkey)
+    rng_key, subkey = jax.random.split(rng_key)
+    pmap_keys = jax.random.split(subkey, num_devices)
+    run(pmap_keys)
     te = time.time()
 
-    return te - ts
+    return num_steps, te - ts
 
 
 games = {
     "tic_tac_toe": "tic_tac_toe",
-    "backgammon": "backgammon",
     "connect_four": "connect_four",
-    "chess": "chess",
+    "backgammon": "backgammon",
+    "shogi": "shogi",
     "go": "go_19x19",
+    "chess": "chess",
 }
 
 
-num_batch_steps = int(sys.argv[1])
-bs_list = [2 ** i for i in range(1, 16)]
-d = {}
-for game, env_id in games.items():
-    for bs in bs_list:
-        num_steps = bs * num_batch_steps
-        sec = benchmark(env_id, bs, num_batch_steps)
-        print(json.dumps({"game": game, "library": "pgx (A100 x 1)",
-              "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
+game = sys.argv[1]
+bs = int(sys.argv[2])
+num_batch_steps = int(sys.argv[3])
+env_id = games[game]
+
+num_steps, sec = benchmark(env_id, bs, bs * num_batch_steps)
+print(json.dumps({"game": game, "library": "pgx (A100 x 8)", "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
