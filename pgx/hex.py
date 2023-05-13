@@ -69,7 +69,7 @@ class Hex(v1.Env):
         return jax.lax.cond(
             action != self.size * self.size,
             lambda: partial(_step, size=self.size)(state, action),
-            lambda: partial(_swap, size=self.size)(state)
+            lambda: partial(_swap, size=self.size)(state),
         )
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
@@ -122,7 +122,10 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
         _board=board * -1,
         rewards=reward,
         terminated=won,
-        legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(state._step_count == 1),
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(board == 0)
+        .at[-1]
+        .set(state._step_count == 1),
     )
 
     return state
@@ -139,8 +142,12 @@ def _swap(state: State, size: int) -> State:
         current_player=1 - state.current_player,
         _turn=1 - state._turn,
         _board=board * -1,
-        legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(FALSE),
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(board == 0)
+        .at[-1]
+        .set(FALSE),
     )
+
 
 def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
     board = jax.lax.select(
