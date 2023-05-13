@@ -42,6 +42,44 @@ def test_merge():
     assert jnp.all(state._board == expected)
 
 
+def test_swap():
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
+    state = step(state, 1)
+    state.save_svg("tests/assets/hex/swap_01.svg")
+    assert (state._board != 0).sum() == 1
+    assert state._board[1] == -2
+    assert state.legal_action_mask[-1]
+    state = step(state, 121)  # swap!
+    state.save_svg("tests/assets/hex/swap_02.svg")
+    assert (state._board != 0).sum() == 1
+    assert state._board[11] == -12
+    assert ~state.legal_action_mask[-1]
+
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
+    state = step(state, 0)
+    state.save_svg("tests/assets/hex/swap_03.svg")
+    assert (state._board != 0).sum() == 1
+    assert state._board[0] == -1
+    assert state.legal_action_mask[-1]
+    state = step(state, 121)  # swap!
+    state.save_svg("tests/assets/hex/swap_04.svg")
+    assert (state._board != 0).sum() == 1
+    assert state._board[0] == -1
+    assert ~state.legal_action_mask[-1]
+
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
+    state = step(state, 1)
+    state = step(state, 121)  # swap!
+    for i in range(10):
+        state = step(state, 0 + i)
+        state = step(state, 12 + i)
+    state.save_svg("tests/assets/hex/swap_05.svg")
+    assert state.terminated
+
+
 def test_terminated():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
