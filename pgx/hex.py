@@ -55,11 +55,10 @@ class State(v1.State):
 
 
 class Hex(v1.Env):
-    def __init__(self, *, size: int = 11, use_swap_rule: bool = True):
+    def __init__(self, *, size: int = 11):
         super().__init__()
         assert isinstance(size, int)
         self.size = size
-        self.use_wap_rule = use_swap_rule
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(_init, size=self.size)(rng=key)
@@ -68,8 +67,8 @@ class Hex(v1.Env):
         assert isinstance(state, State)
         return jax.lax.cond(
             action != self.size * self.size,
-            lambda: partial(_step, size=self.size)(state, action),
             lambda: partial(_swap, size=self.size)(state),
+            lambda: partial(_step, size=self.size)(state, action),
         )
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
