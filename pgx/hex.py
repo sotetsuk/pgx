@@ -67,8 +67,8 @@ class Hex(v1.Env):
         assert isinstance(state, State)
         return jax.lax.cond(
             action != self.size * self.size,
-            lambda: partial(_swap, size=self.size)(state),
             lambda: partial(_step, size=self.size)(state, action),
+            lambda: partial(_swap, size=self.size)(state),
         )
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
