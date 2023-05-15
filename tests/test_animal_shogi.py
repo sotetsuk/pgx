@@ -132,11 +132,11 @@ def test_repetition():
 
     # same repetition
     state1 = step(state, 3 * 12 + 3)  # Up Rook
-    assert not state.terminated
+    assert not state1.terminated
     state1 = step(state1, 3 * 12 + 3)  # Up Rook
-    assert not state.terminated
+    assert not state1.terminated
     state1 = step(state1, 4 * 12 + 2)  # Down Rook
-    assert not state.terminated
+    assert not state1.terminated
     # third
     state1 = step(state1, 4 * 12 + 2)  # Down Rook
     # three times
