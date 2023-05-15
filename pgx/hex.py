@@ -31,7 +31,7 @@ class State(v1.State):
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(11 * 11, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(11 * 11 + 1, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Hex specific ---
@@ -65,7 +65,11 @@ class Hex(v1.Env):
 
     def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return partial(_step, size=self.size)(state, action)
+        return jax.lax.cond(
+            action != self.size * self.size,
+            lambda: partial(_step, size=self.size)(state, action),
+            lambda: partial(_swap, size=self.size)(state),
+        )
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -111,17 +115,37 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
         lambda: jnp.zeros(2, jnp.float32),
     )
 
-    legal_action_mask = board == 0
     state = state.replace(  # type:ignore
         current_player=1 - state.current_player,
         _turn=1 - state._turn,
         _board=board * -1,
         rewards=reward,
         terminated=won,
-        legal_action_mask=legal_action_mask,
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(board == 0)
+        .at[-1]
+        .set(state._step_count == 1),
     )
 
     return state
+
+
+def _swap(state: State, size: int) -> State:
+    ix = jnp.nonzero(state._board, size=1)[0]
+    row = ix // size
+    col = ix % size
+    swapped_ix = col * size + row
+    set_place_id = swapped_ix + 1
+    board = state._board.at[ix].set(0).at[swapped_ix].set(set_place_id)
+    return state.replace(  # type: ignore
+        current_player=1 - state.current_player,
+        _turn=1 - state._turn,
+        _board=board * -1,
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(board == 0)
+        .at[-1]
+        .set(FALSE),
+    )
 
 
 def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
