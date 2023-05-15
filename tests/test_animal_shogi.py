@@ -102,6 +102,42 @@ def test_observe():
     assert (state.observation[0, 0, 10:] == expected).all()
 
 
+def test_repetition():
+    state = init(jax.random.PRNGKey(0))
+    visualize(state, "tests/assets/animal_shogi/test_repetition_000.svg")
+    assert not state.terminated
+    assert state._turn == 0
+
+    state = step(state, 3 * 12 + 3)  # Up Rook
+    visualize(state, "tests/assets/animal_shogi/test_repetition_002.svg")
+    assert not state.terminated
+    assert state._turn == 1
+
+    state = step(state, 3 * 12 + 8)  # Up Rook
+    visualize(state, "tests/assets/animal_shogi/test_repetition_003.svg")
+    assert not state.terminated
+    assert state._turn == 0
+
+    state = step(state, 4 * 12 + 2)  # Down Rook
+    visualize(state, "tests/assets/animal_shogi/test_repetition_004.svg")
+    assert not state.terminated
+    assert state._turn == 1
+
+    state = step(state, 4 * 12 + 9)  # Down Rook
+    visualize(state, "tests/assets/animal_shogi/test_repetition_005.svg")
+    assert not state.terminated
+    assert state._turn == 0
+    assert (state == init(jax.random.PRNGKey(0))).all()
+
+    state = step(state, 3 * 12 + 3)  # Up Rook
+    state = step(state, 3 * 12 + 8)  # Up Rook
+    state = step(state, 4 * 12 + 2)  # Down Rook
+    state = step(state, 4 * 12 + 9)  # Down Rook
+    # three times
+    assert state.terminated
+
+
+
 def test_api():
     import pgx
     env = pgx.make("animal_shogi")
