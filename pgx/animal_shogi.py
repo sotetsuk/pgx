@@ -40,7 +40,6 @@ ZOBRIST_KEY = jax.random.PRNGKey(23279)
 ZOBRIST_SIDE = jax.random.randint(
     ZOBRIST_KEY, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
 )
-ZOBRIST_KEY, ZOBRIST_SIDE = jax.random.split(ZOBRIST_KEY)
 ZOBRIST_KEY, ZOBRIST_SUBKEY = jax.random.split(ZOBRIST_KEY)
 ZOBRIST_BOARD = jax.random.randint(
     ZOBRIST_SUBKEY,
