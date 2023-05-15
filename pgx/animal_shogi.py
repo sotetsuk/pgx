@@ -201,6 +201,11 @@ def _step_move(state: State, action: Action) -> State:
         #   (2) filtering promoted piece by x % 4
         lambda: state._hand.at[0, (captured % 5) % 4].add(1),
     )
+    zobrist_hash = jax.lax.select(
+        captured == EMPTY,
+        zobrist_hash,
+        zobrist_hash ^ ZOBRIST_BOARD[zb_from_, jax.lax.select(state._turn == 0, captured, (captured + 5) % 10)]
+    )
     num_hand = hand[0, (captured % 5) % 4]
     zobrist_hash ^= ZOBRIST_HAND[state._turn, (captured % 5) % 4, num_hand - 1]
     zobrist_hash ^= ZOBRIST_HAND[state._turn, (captured % 5) % 4, num_hand]

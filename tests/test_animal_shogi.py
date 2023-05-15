@@ -140,6 +140,7 @@ def test_repetition():
     # third
     state1 = step(state1, 4 * 12 + 2)  # Down Rook
     # three times
+    print(state1._hash_history[:state1._step_count + 3])
     assert state1.terminated
 
     # different repetition
@@ -192,13 +193,18 @@ def test_repetition():
     assert state._turn == 1
 
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_016.svg")
     # second
     assert not state.terminated
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_017.svg")
     assert not state.terminated
     state = step(state, 7 * 12 + 6)  # Left Down Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_018.svg")
     assert not state.terminated
     state = step(state, 7 * 12 + 6)  # Left Down Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_019.svg")
+    print(state._hash_history[:state._step_count + 3])
     assert not state.terminated
 
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
