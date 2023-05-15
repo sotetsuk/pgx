@@ -102,6 +102,118 @@ def test_observe():
     assert (state.observation[0, 0, 10:] == expected).all()
 
 
+def test_repetition():
+    state = init(jax.random.PRNGKey(0))
+    # first
+    visualize(state, "tests/assets/animal_shogi/test_repetition_000.svg")
+    assert not state.terminated
+    assert state._turn == 0
+
+    state = step(state, 3 * 12 + 3)  # Up Rook
+    visualize(state, "tests/assets/animal_shogi/test_repetition_002.svg")
+    assert not state.terminated
+    assert state._turn == 1
+
+    state = step(state, 3 * 12 + 3)  # Up Rook
+    visualize(state, "tests/assets/animal_shogi/test_repetition_003.svg")
+    assert not state.terminated
+    assert state._turn == 0
+
+    state = step(state, 4 * 12 + 2)  # Down Rook
+    visualize(state, "tests/assets/animal_shogi/test_repetition_004.svg")
+    assert not state.terminated
+    assert state._turn == 1
+
+    state = step(state, 4 * 12 + 2)  # Down Rook
+    # second
+    visualize(state, "tests/assets/animal_shogi/test_repetition_005.svg")
+    assert not state.terminated
+    assert state._turn == 0
+
+    # same repetition
+    state1 = step(state, 3 * 12 + 3)  # Up Rook
+    assert not state1.terminated
+    state1 = step(state1, 3 * 12 + 3)  # Up Rook
+    assert not state1.terminated
+    state1 = step(state1, 4 * 12 + 2)  # Down Rook
+    assert not state1.terminated
+    # third
+    state1 = step(state1, 4 * 12 + 2)  # Down Rook
+    # three times
+    assert state1.terminated
+    assert (state1.rewards == 0).all()
+
+    # different repetition
+    state2 = step(state, 0 * 12 + 7)  # Right Up King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_006.svg")
+    assert not state2.terminated
+    assert state2._turn == 1
+    state2 = step(state2, 0 * 12 + 7)  # Right Up King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_007.svg")
+    assert not state2.terminated
+    assert state2._turn == 0
+    state2 = step(state2, 7 * 12 + 2)  # Left Down King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_008.svg")
+    assert not state2.terminated
+    assert state2._turn == 1
+    state2 = step(state2, 7 * 12 + 2)  # Left Down King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_009.svg")
+    # third
+    assert state2.terminated
+    assert (state2.rewards == 0).all()
+
+    # hand
+    state = init(jax.random.PRNGKey(0))
+    visualize(state, "tests/assets/animal_shogi/test_repetition_010.svg")
+    assert not state.terminated
+    assert state._turn == 0
+    state = step(state, 3 * 12 + 6)  # Up PAWN
+    visualize(state, "tests/assets/animal_shogi/test_repetition_011.svg")
+    assert not state.terminated
+    assert state._turn == 1
+
+    state = step(state, 0 * 12 + 11)  # Right Up Bishop
+    # first
+    visualize(state, "tests/assets/animal_shogi/test_repetition_012.svg")
+    assert not state.terminated
+    assert state._turn == 0
+
+    state = step(state, 0 * 12 + 11)  # Right Up Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_013.svg")
+    assert not state.terminated
+    assert state._turn == 1
+
+    state = step(state, 7 * 12 + 6)  # Left Down Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_014.svg")
+    assert not state.terminated
+    assert state._turn == 0
+
+    state = step(state, 7 * 12 + 6)  # Left Down Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_015.svg")
+    assert not state.terminated
+    assert state._turn == 1
+
+    state = step(state, 0 * 12 + 11)  # Right Up Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_016.svg")
+    # second
+    assert not state.terminated
+    state = step(state, 0 * 12 + 11)  # Right Up Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_017.svg")
+    assert not state.terminated
+    state = step(state, 7 * 12 + 6)  # Left Down Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_018.svg")
+    assert not state.terminated
+    state = step(state, 7 * 12 + 6)  # Left Down Bishop
+    visualize(state, "tests/assets/animal_shogi/test_repetition_019.svg")
+    assert not state.terminated
+
+    state = step(state, 0 * 12 + 11)  # Right Up Bishop
+    # third
+    assert state.terminated
+    assert (state.rewards == 0).all()
+
+
+
 def test_api():
     import pgx
     env = pgx.make("animal_shogi")

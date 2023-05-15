@@ -36,6 +36,27 @@ GOLD = jnp.int8(4)
 #  9: OPP_GOLD
 INIT_BOARD = jnp.int8([6, -1, -1, 2, 8, 5, 0, 3, 7, -1, -1, 1])  # (12,)
 
+ZOBRIST_KEY = jax.random.PRNGKey(23279)
+ZOBRIST_SIDE = jax.random.randint(
+    ZOBRIST_KEY, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)
+ZOBRIST_KEY, ZOBRIST_SUBKEY = jax.random.split(ZOBRIST_KEY)
+ZOBRIST_BOARD = jax.random.randint(
+    ZOBRIST_SUBKEY,
+    shape=(12, 10, 2),
+    minval=0,
+    maxval=2**31 - 1,
+    dtype=jnp.uint32,
+)
+ZOBRIST_KEY, ZOBRIST_SUBKEY = jax.random.split(ZOBRIST_KEY)
+ZOBRIST_HAND = jax.random.randint(
+    ZOBRIST_SUBKEY,
+    shape=(2, 3, 3, 2),
+    minval=0,
+    maxval=2**31 - 1,
+    dtype=jnp.uint32,
+)
+
 
 @dataclass
 class State(v1.State):
@@ -51,6 +72,12 @@ class State(v1.State):
     _turn: jnp.ndarray = jnp.int8(0)
     _board: jnp.ndarray = INIT_BOARD  # (12,)
     _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
+    _zobrist_hash: jnp.ndarray = jnp.uint32([233882788, 593924309])
+    _hash_history: jnp.ndarray = (
+        jnp.zeros((101, 2), dtype=jnp.uint32)
+        .at[0]
+        .set(jnp.uint32([233882788, 593924309]))
+    )
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -82,7 +109,7 @@ class Action:
 class AnimalShogi(v1.Env):
     def __init__(self):
         super().__init__()
-        self.max_termination_steps: int = 200
+        self.max_termination_steps: int = 100
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -127,12 +154,19 @@ def _step(state: State, action: jnp.ndarray):
     is_try = (state._board[jnp.int8([0, 4, 8])] == KING).any()
 
     state = _flip(state)
+    state = state.replace(  # type: ignore
+        _hash_history=state._hash_history.at[state._step_count].set(
+            state._zobrist_hash
+        ),
+    )
 
     legal_action_mask = _legal_action_mask(state)  # TODO: fix me
-    terminated = ~legal_action_mask.any() | is_try
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum()
+    is_rep_draw = rep >= 3
+    terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
     # fmt: off
     reward = jax.lax.select(
-        terminated,
+        terminated & ~is_rep_draw,
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
@@ -174,6 +208,11 @@ def _step_move(state: State, action: Action) -> State:
     piece = state._board[action.from_]
     # remove piece from the original position
     board = state._board.at[action.from_].set(EMPTY)
+    zb_from_ = jax.lax.select(
+        state._turn == 0, action.from_, 11 - action.from_
+    )
+    zb_piece = jax.lax.select(state._turn == 0, piece, (piece + 5) % 10)
+    zobrist_hash = state._zobrist_hash ^ ZOBRIST_BOARD[zb_from_, zb_piece]
     # capture the opponent if exists
     captured = board[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
     hand = jax.lax.cond(
@@ -184,21 +223,44 @@ def _step_move(state: State, action: Action) -> State:
         #   (2) filtering promoted piece by x % 4
         lambda: state._hand.at[0, (captured % 5) % 4].add(1),
     )
+    zobrist_hash = jax.lax.select(
+        captured == EMPTY,
+        zobrist_hash,
+        zobrist_hash
+        ^ ZOBRIST_BOARD[
+            zb_from_,
+            jax.lax.select(state._turn == 0, captured, (captured + 5) % 10),
+        ],
+    )
+    num_hand = hand[0, (captured % 5) % 4]
+    zobrist_hash ^= ZOBRIST_HAND[state._turn, (captured % 5) % 4, num_hand - 1]
+    zobrist_hash ^= ZOBRIST_HAND[state._turn, (captured % 5) % 4, num_hand]
     # promote piece (PAWN to GOLD)
     is_promotion = (action.from_ % 4 == 1) & (piece == PAWN)
     piece = jax.lax.select(is_promotion, GOLD, piece)
     # set piece to the target position
     board = board.at[action.to].set(piece)
+    zb_to_ = jax.lax.select(state._turn == 0, action.to, 11 - action.to)
+    zb_piece = jax.lax.select(state._turn == 0, piece, (piece + 5) % 10)
+    zobrist_hash ^= ZOBRIST_BOARD[zb_to_, zb_piece]
     # apply piece moves
-    return state.replace(_board=board, _hand=hand)  # type: ignore
+    return state.replace(_board=board, _hand=hand, _zobrist_hash=zobrist_hash)  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
     # add piece to board
     board = state._board.at[action.to].set(action.drop_piece)
+    zb_to_ = jax.lax.select(state._turn == 0, action.to, 11 - action.to)
+    zb_piece = jax.lax.select(
+        state._turn == 0, action.drop_piece, (action.drop_piece + 5) % 10
+    )
+    zobrist_hash = state._zobrist_hash ^ ZOBRIST_BOARD[zb_to_, zb_piece]
     # remove piece from hand
     hand = state._hand.at[0, action.drop_piece].add(-1)
-    return state.replace(_board=board, _hand=hand)  # type: ignore
+    num_hand = state._hand[0, action.drop_piece]
+    zobrist_hash ^= ZOBRIST_HAND[state._turn, action.drop_piece, num_hand + 1]
+    zobrist_hash ^= ZOBRIST_HAND[state._turn, action.drop_piece, num_hand]
+    return state.replace(_board=board, _hand=hand, _zobrist_hash=zobrist_hash)  # type: ignore
 
 
 def _legal_action_mask(state: State):
@@ -253,6 +315,7 @@ def _flip(state):
         _turn=(state._turn + 1) % 2,
         _board=board,
         _hand=state._hand[::-1],
+        _zobrist_hash=state._zobrist_hash ^ ZOBRIST_SIDE,
     )
 
 
