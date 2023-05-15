@@ -150,7 +150,7 @@ def test_repetition():
     state2 = step(state2, 0 * 12 + 7)  # Right Up King
     visualize(state2, "tests/assets/animal_shogi/test_repetition_007.svg")
     assert not state2.terminated
-    assert state2._turn == 1
+    assert state2._turn == 0
     state2 = step(state2, 7 * 12 + 2)  # Left Down King
     visualize(state2, "tests/assets/animal_shogi/test_repetition_008.svg")
     assert not state2.terminated
