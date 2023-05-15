@@ -141,6 +141,7 @@ def test_repetition():
     state1 = step(state1, 4 * 12 + 2)  # Down Rook
     # three times
     assert state1.terminated
+    assert (state1.rewards == 0).all()
 
     # different repetition
     state2 = step(state, 0 * 12 + 7)  # Right Up King
@@ -159,6 +160,7 @@ def test_repetition():
     visualize(state2, "tests/assets/animal_shogi/test_repetition_009.svg")
     # third
     assert state2.terminated
+    assert (state2.rewards == 0).all()
 
     # hand
     state = init(jax.random.PRNGKey(0))
@@ -208,6 +210,7 @@ def test_repetition():
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
     # third
     assert state.terminated
+    assert (state.rewards == 0).all()
 
 
 
