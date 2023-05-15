@@ -59,6 +59,7 @@ class State(v1.State):
     _board: jnp.ndarray = INIT_BOARD  # (12,)
     _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
     _zobrist_hash: jnp.ndarray = jnp.uint32([233882788, 593924309])
+    _hash_history: jnp.ndarray = jnp.zeros((101, 2), dtype=jnp.uint32).at[0].set(jnp.uint32([233882788, 593924309]))
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -90,7 +91,7 @@ class Action:
 class AnimalShogi(v1.Env):
     def __init__(self):
         super().__init__()
-        self.max_termination_steps: int = 200
+        self.max_termination_steps: int = 100
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -135,12 +136,17 @@ def _step(state: State, action: jnp.ndarray):
     is_try = (state._board[jnp.int8([0, 4, 8])] == KING).any()
 
     state = _flip(state)
+    state = state.replace(  # type: ignore
+        _hash_history=state._hash_history.at[state._step_count].set(state._zobrist_hash),
+    )
 
     legal_action_mask = _legal_action_mask(state)  # TODO: fix me
-    terminated = ~legal_action_mask.any() | is_try
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum()
+    is_rep_draw = rep >= 3
+    terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
     # fmt: off
     reward = jax.lax.select(
-        terminated,
+        terminated & ~is_rep_draw,
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
