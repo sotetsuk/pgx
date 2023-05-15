@@ -128,12 +128,33 @@ def test_repetition():
     assert not state.terminated
     assert state._turn == 0
 
-    state = step(state, 3 * 12 + 3)  # Up Rook
-    state = step(state, 3 * 12 + 8)  # Up Rook
-    state = step(state, 4 * 12 + 2)  # Down Rook
-    state = step(state, 4 * 12 + 9)  # Down Rook
+    # same repetition
+    state1 = step(state, 3 * 12 + 3)  # Up Rook
+    assert not state.terminated
+    state1 = step(state1, 3 * 12 + 3)  # Up Rook
+    assert not state.terminated
+    state1 = step(state1, 4 * 12 + 2)  # Down Rook
+    assert not state.terminated
+    state1 = step(state1, 4 * 12 + 2)  # Down Rook
     # three times
-    # assert state.terminated
+    # assert state1.terminated
+
+    # different repetition
+    state2 = step(state, 0 * 12 + 7)  # Right Up King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_006.svg")
+    assert not state2.terminated
+    assert state2._turn == 1
+    state2 = step(state2, 0 * 12 + 7)  # Right Up King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_007.svg")
+    assert not state2.terminated
+    assert state2._turn == 1
+    state2 = step(state2, 7 * 12 + 2)  # Left Down King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_008.svg")
+    assert not state2.terminated
+    assert state2._turn == 1
+    state2 = step(state2, 7 * 12 + 2)  # Left Down King
+    visualize(state2, "tests/assets/animal_shogi/test_repetition_009.svg")
+    # assert not state2.terminated
 
 
 def test_api():
