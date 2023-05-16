@@ -47,6 +47,14 @@ class State(v1.State):
     def env_id(self) -> v1.EnvId:
         return "gardner_chess"
 
+    @property
+    def version(self) -> str:
+        return "beta"
+
+    @property
+    def num_players(self) -> int:
+        return 2
+
 
 def _flip_pos(x):
     """
