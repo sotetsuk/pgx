@@ -75,18 +75,14 @@ def _rotate(board):
 def _from_fen(fen: str):
     """Restore state from FEN
 
-    >>> state = _from_fen(
-    ...     "rnbqk/ppppp/5/PPPPP/RNBQK w Qq - 0 1"
-    ... )
+    >>> state = _from_fen("rnbqk/ppppp/5/PPPPP/RNBQK w Qq - 0 1")
     >>> _rotate(state._board.reshape(5, 5))
     Array([[-4, -2, -3, -5, -6],
            [-1, -1, -1, -1, -1],
            [ 0,  0,  0,  0,  0],
            [ 1,  1,  1,  1,  1],
            [ 4,  2,  3,  5,  6]], dtype=int8)
-    >>> state = _from_fen(
-    ...     "rnbqk/Ppppp/5/1PPPP/RNBQK b Qq a3 0 1"
-    ... )
+    >>> state = _from_fen("rnbqk/Ppppp/5/1PPPP/RNBQK b Qq a3 0 1")
     >>> _rotate(state._board.reshape(5, 5))
     Array([[-4, -2, -3, -5, -6],
            [ 1, -1, -1, -1, -1],
@@ -162,11 +158,7 @@ def _to_fen(state: State):
     >>> s = State(_en_passant=jnp.int8(12))
     >>> _to_fen(s)
     'rnbqk/ppppp/5/PPPPP/RNBQK w Qq c3 0 1'
-    >>> _to_fen(
-    ...     _from_fen(
-    ...         "rnbqk/ppppp/P4/1PPPP/RNBQK b Qq d3 0 1"
-    ...     )
-    ... )
+    >>> _to_fen(_from_fen("rnbqk/ppppp/P4/1PPPP/RNBQK b Qq d3 0 1"))
     'rnbqk/ppppp/P4/1PPPP/RNBQK b Qq d3 0 1'
     """
     pb = jnp.rot90(state._board.reshape(5, 5), k=1)
