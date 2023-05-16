@@ -43,6 +43,7 @@ EnvId = Literal[
     "bridge_bidding",
     "chess",
     "connect_four",
+    "gardner_chess",
     "go_9x9",
     "go_19x19",
     "hex",
@@ -320,6 +321,7 @@ def available_envs() -> Tuple[EnvId, ...]:
     """
     games = get_args(EnvId)
     games = tuple(filter(lambda x: x != "bridge_bidding", games))
+    games = tuple(filter(lambda x: x != "gardner_chess", games))
     return games
 
 
