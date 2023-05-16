@@ -199,13 +199,12 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
     # fmt: on
 
-    # ONE_PLANE = jnp.ones((1, 8, 8), dtype=jnp.float32)
-    # rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
-    # rep = ONE_PLANE * (rep >= 1)
-    # turn = ONE_PLANE * state._turn
+    ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    rep = ONE_PLANE * (rep >= 1)
 
-    obs = jnp.vstack((piece_feat, hand_feat))
-    obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))
+    obs = jnp.vstack((piece_feat, hand_feat, rep))
+    obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
 
