@@ -109,7 +109,7 @@ class Action:
 class AnimalShogi(v1.Env):
     def __init__(self):
         super().__init__()
-        self.max_termination_steps: int = 100
+        self.max_termination_steps: int = 250
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -161,8 +161,8 @@ def _step(state: State, action: jnp.ndarray):
     )
 
     legal_action_mask = _legal_action_mask(state)  # TODO: fix me
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum()
-    is_rep_draw = rep >= 3
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    is_rep_draw = rep >= 2
     terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
     # fmt: off
     reward = jax.lax.select(
@@ -199,8 +199,12 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
     # fmt: on
 
-    obs = jnp.vstack((piece_feat, hand_feat))
-    obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))
+    ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    rep = ONE_PLANE * (rep >= 1)
+
+    obs = jnp.vstack((piece_feat, hand_feat, rep))
+    obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
 
