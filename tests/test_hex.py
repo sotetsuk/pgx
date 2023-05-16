@@ -45,6 +45,7 @@ def test_merge():
 def test_swap():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
+    assert ~state.legal_action_mask[-1]
     state = step(state, 1)
     state.save_svg("tests/assets/hex/swap_01.svg")
     assert (state._board != 0).sum() == 1
@@ -135,19 +136,27 @@ def test_observe():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
     assert state.current_player == 0
-    assert (jnp.zeros((11, 11, 3)) == observe(state, 0)).all()
+    assert state.observation[:, :, 0].sum() == 0
+    assert state.observation[:, :, 1].sum() == 0
+    assert state.observation[:, :, 2].sum() == 0
+    assert state.observation[:, :, 3].sum() == 0
+    assert state.observation.sum() == 0
+    assert (jnp.zeros((11, 11, 4)) == observe(state, 0)).all()
+    assert (state.observation[:, :, -1] == 0).all()
     state = step(state, 0)
     assert (observe(state, 0)[:, :, 2] == 0).all()
     assert (observe(state, 1)[:, :, 2] == 1).all()
+    assert (state.observation[:, :, -1] == 1).all()
     state = step(state, 1)
     assert (
-        jnp.zeros((11, 11, 3), dtype=jnp.bool_).at[0, 0, 0].set(True).at[0, 1, 1].set(True)
+        jnp.zeros((11, 11, 4), dtype=jnp.bool_).at[0, 0, 0].set(True).at[0, 1, 1].set(True)
         == observe(state, 0)
     ).all()
     assert (
-            jnp.zeros((11, 11, 3), dtype=jnp.bool_).at[0, 1, 0].set(True).at[0, 0, 1].set(True).at[:, :, 2].set(True)
+            jnp.zeros((11, 11, 4), dtype=jnp.bool_).at[0, 1, 0].set(True).at[0, 0, 1].set(True).at[:, :, 2].set(True)
         == observe(state, 1)
     ).all()
+    assert (state.observation[:, :, -1] == 0).all()
 
 
 def test_random_play():
