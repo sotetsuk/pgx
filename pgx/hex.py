@@ -31,7 +31,9 @@ class State(v1.State):
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(11 * 11 + 1, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = (
+        jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
+    )
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Hex specific ---
@@ -157,11 +159,18 @@ def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
 
     my_board = board * 1 > 0
     opp_board = board * -1 > 0
-    my_color = jax.lax.select(
-        player_id == state.current_player, state._turn, 1 - state._turn
-    ) * jnp.ones_like(my_board)
+    ones = jnp.ones_like(my_board)
+    my_color = (
+        jax.lax.select(
+            player_id == state.current_player, state._turn, 1 - state._turn
+        )
+        * ones
+    )
+    can_swap = state.legal_action_mask[-1] * ones
 
-    return jnp.stack([my_board, opp_board, my_color], 2, dtype=jnp.bool_)
+    return jnp.stack(
+        [my_board, opp_board, my_color, can_swap], 2, dtype=jnp.bool_
+    )
 
 
 def _neighbour(xy, size):
