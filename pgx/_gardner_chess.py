@@ -70,11 +70,11 @@ def _from_fen(fen: str):
            [ 4,  2,  3,  5,  6]], dtype=int8)
     >>> state = _from_fen("bbkqr/Ppppp/5/1PPP1/RNBQK b - - 0 1")
     >>> _rotate(state._board.reshape(5, 5))
-    Array([[-3, -3, -6, -5, -4],
-           [ 1, -1, -1, -1, -1],
+    Array([[-4, -2, -3, -5, -6],
+           [ 0, -1, -1, -1,  0],
            [ 0,  0,  0,  0,  0],
-           [ 0,  1,  1,  1,  0],
-           [ 4,  2,  3,  5,  6]], dtype=int8)
+           [-1,  1,  1,  1,  1],
+           [ 3,  3,  6,  5,  4]], dtype=int8)
     """
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     arr = []
