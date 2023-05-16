@@ -6,36 +6,15 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 
-
-INIT_BOARD = jnp.int8(
-    [
-        4,
-        1,
-        0,
-        -1,
-        -4,
-        2,
-        1,
-        0,
-        -1,
-        -2,
-        3,
-        1,
-        0,
-        -1,
-        -3,
-        5,
-        1,
-        0,
-        -1,
-        -5,
-        6,
-        1,
-        0,
-        -1,
-        -6,
-    ]
-)
+# fmt: off
+INIT_BOARD = jnp.int8([
+    4, 1, 0, -1, -4,
+    2, 1, 0, -1, -2,
+    3, 1, 0, -1, -3,
+    5, 1, 0, -1, -5,
+    6, 1, 0, -1, -6,
+])
+# fmt: o
 
 
 @dataclass
