@@ -31,6 +31,21 @@ class State(v1.State):
     # --- Chess specific ---
     _turn: jnp.ndarray = jnp.int8(0)
     _board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
+    _can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
+    _en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. Flips.
+    # # of moves since the last piece capture or pawn move
+    _halfmove_count: jnp.ndarray = jnp.int32(0)
+    _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
+    _zobrist_hash: jnp.ndarray = jnp.uint32([1429435994, 901419182])
+    _hash_history: jnp.ndarray = (
+        jnp.zeros((1001, 2), dtype=jnp.uint32)
+            .at[0]
+            .set(jnp.uint32([1429435994, 901419182]))
+    )
+
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "gardner_chess"
 
 
 def _flip_pos(x):
@@ -45,11 +60,15 @@ def _flip_pos(x):
     return jax.lax.select(x == -1, x, (x // 5) * 5 + (4 - (x % 5)))
 
 
+def _rotate(board):
+    return jnp.rot90(board, k=1)
+
+
 def _from_fen(fen: str):
     """Restore state from FEN
 
     >>> state = _from_fen(
-    ...     "rnbqk/ppppp/5/PPPPP/RNBQK b Qq - 0 1"
+    ...     "rnbqk/ppppp/5/PPPPP/RNBQK w Qq - 0 1"
     ... )
     >>> _rotate(state._board.reshape(5, 5))
     Array([[-4, -2, -3, -5, -6],
@@ -58,7 +77,7 @@ def _from_fen(fen: str):
            [ 1,  1,  1,  1,  1],
            [ 4,  2,  3,  5,  6]], dtype=int8)
     >>> state = _from_fen(
-    ...     "rnbqk/Ppppp/5/1PPPP/RNBQK w Qq a3 0 1"
+    ...     "rnbqk/Ppppp/5/1PPPP/RNBQK b Qq a3 0 1"
     ... )
     >>> _rotate(state._board.reshape(5, 5))
     Array([[-4, -2, -3, -5, -6],
@@ -95,11 +114,12 @@ def _from_fen(fen: str):
         jnp.int8(-1)
         if en_passant == "-"
         else jnp.int8(
-            "abcde".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
+            "abcde".index(en_passant[0]) * 5 + int(en_passant[1]) - 1
         )
     )
     if turn == "b" and ep >= 0:
         ep = _flip_pos(ep)
+    state =State()
     state = State(  # type: ignore
         _board=jnp.rot90(mat, k=3).flatten(),
         _turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
@@ -133,7 +153,7 @@ def _to_fen(state: State):
 
     >>> s = State(_en_passant=jnp.int8(12))
     >>> _to_fen(s)
-    'rnbqk/ppppp/5/PPPPP/RNBQK b Qq c3 0 1'
+    'rnbqk/ppppp/5/PPPPP/RNBQK w Qq c3 0 1'
     >>> _to_fen(
     ...     _from_fen(
     ...         "rnbqk/ppppp/P4/1PPPP/RNBQK b Qq d3 0 1"
