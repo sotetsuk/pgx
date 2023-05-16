@@ -54,18 +54,6 @@ class State(v1.State):
         return 2
 
 
-def _flip_pos(x):
-    """
-    >>> _flip_pos(jnp.int8(11))
-    Array(13, dtype=int8)
-    >>> _flip_pos(jnp.int8(13))
-    Array(11, dtype=int8)
-    >>> _flip_pos(jnp.int8(-1))
-    Array(-1, dtype=int8)
-    """
-    return jax.lax.select(x == -1, x, (x // 5) * 5 + (4 - (x % 5)))
-
-
 def _rotate(board):
     return jnp.rot90(board, k=1)
 
@@ -109,13 +97,6 @@ def _from_fen(fen: str):
         _halfmove_count=jnp.int32(halfmove_cnt),
         _fullmove_count=jnp.int32(fullmove_cnt),
     )
-    # state = state.replace(  # type: ignore
-    #     _possible_piece_positions=jax.jit(_possible_piece_positions)(state)
-    # )
-    # state = state.replace(  # type: ignore
-    #     legal_action_mask=jax.jit(_legal_action_mask)(state),
-    # )
-    # state = jax.jit(_check_termination)(state)
     return state
 
 
