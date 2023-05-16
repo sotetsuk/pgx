@@ -101,6 +101,8 @@ def _from_fen(fen: str):
                     ix *= -1
                 arr.append(ix)
     mat = jnp.int8(arr).reshape(5, 5)
+    if turn == "b":
+        mat = -jnp.flip(mat, axis=0)
     state = State(  # type: ignore
         _board=jnp.rot90(mat, k=3).flatten(),
         _turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
