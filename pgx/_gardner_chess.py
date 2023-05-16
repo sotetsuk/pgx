@@ -15,7 +15,7 @@ INIT_BOARD = jnp.int8([
     5, 1, 0, -1, -5,
     6, 1, 0, -1, -6,
 ])
-# fmt: o
+# fmt: on
 
 
 @dataclass
@@ -37,8 +37,8 @@ class State(v1.State):
     _zobrist_hash: jnp.ndarray = jnp.uint32([1429435994, 901419182])
     _hash_history: jnp.ndarray = (
         jnp.zeros((1001, 2), dtype=jnp.uint32)
-            .at[0]
-            .set(jnp.uint32([1429435994, 901419182]))
+        .at[0]
+        .set(jnp.uint32([1429435994, 901419182]))
     )
 
     @property
