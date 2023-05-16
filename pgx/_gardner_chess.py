@@ -123,7 +123,6 @@ def _from_fen(fen: str):
     )
     if turn == "b" and ep >= 0:
         ep = _flip_pos(ep)
-    state =State()
     state = State(  # type: ignore
         _board=jnp.rot90(mat, k=3).flatten(),
         _turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
