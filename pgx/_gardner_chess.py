@@ -64,7 +64,7 @@ class State(v1.State):
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(1)  # TODO: fix me
-    observation: jnp.ndarray = jnp.zeros((8, 8, 19), dtype=jnp.float32)
+    observation: jnp.ndarray = jnp.zeros((5, 5, 19), dtype=jnp.float32)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
@@ -75,7 +75,7 @@ class State(v1.State):
     _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
     _zobrist_hash: jnp.ndarray = jnp.uint32([1429435994, 901419182])
     _hash_history: jnp.ndarray = (
-        jnp.zeros((1001, 2), dtype=jnp.uint32)
+        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
         .at[0]
         .set(jnp.uint32([1429435994, 901419182]))
     )
