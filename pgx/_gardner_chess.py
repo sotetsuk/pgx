@@ -2,7 +2,13 @@ import jax
 import jax.numpy as jnp
 
 import pgx.v1 as v1
-from pgx._src.gardner_chess_utils import PLANE_MAP, TO_MAP, CAN_MOVE, CAN_MOVE_ANY, BETWEEN
+from pgx._src.gardner_chess_utils import (
+    BETWEEN,
+    CAN_MOVE,
+    CAN_MOVE_ANY,
+    PLANE_MAP,
+    TO_MAP,
+)
 from pgx._src.struct import dataclass
 
 MAX_TERMINATION_STEPS = 250
@@ -286,6 +292,7 @@ def _is_checking(state: State):
     opp_king_pos = jnp.argmin(jnp.abs(state._board - -KING))
     return _is_attacking(state, opp_king_pos)
 
+
 def _is_pseudo_legal(state: State, a: Action):
     piece = state._board[a.from_]
     ok = (piece >= 0) & (state._board[a.to] <= 0)
@@ -305,7 +312,6 @@ def _is_pseudo_legal(state: State, a: Action):
         & (state._board[a.to] >= 0)
     )
     return (a.to >= 0) & ok
-
 
 
 def _observe(state):
