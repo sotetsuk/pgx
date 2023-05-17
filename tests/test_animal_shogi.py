@@ -48,7 +48,7 @@ def test_step():
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
-    assert state.observation.shape == (4, 3, 23)
+    assert state.observation.shape == (4, 3, 184)
 
     # my pawn
     expected = jnp.bool_(

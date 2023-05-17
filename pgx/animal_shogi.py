@@ -219,9 +219,9 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
         rep = (state._hash_history == state._hash_history[state._step_count]).any(axis=1).sum() - 1
         rep = ONE_PLANE * (rep >= 1)
-        return jnp.vstack((piece_feat, hand_feat, rep))
+        return jnp.vstack((piece_feat, hand_feat, rep))  # (23, 12)
 
-    obs = make(0)
+    obs = jax.vmap(make)(jnp.arange(8))
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
