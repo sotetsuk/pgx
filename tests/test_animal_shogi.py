@@ -132,6 +132,7 @@ def test_repetition():
     # second
     visualize(state, "tests/assets/animal_shogi/test_repetition_005.svg")
     assert not state.terminated
+    assert (state.observation[:, :, 22] == 1).all()  # rep
     assert state._turn == 0
 
     # same repetition
