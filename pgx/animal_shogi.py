@@ -34,7 +34,13 @@ GOLD = jnp.int8(4)
 #  7: OPP_BISHOP
 #  8: OPP_KING
 #  9: OPP_GOLD
-INIT_BOARD = jnp.int8([6, -1, -1, 2, 8, 5, 0, 3, 7, -1, -1, 1])  # (12,)
+# fmt: off
+INIT_BOARD = jnp.int8(
+    [6, -1, -1, 2,
+     8, 5, 0, 3,
+     7, -1, -1, 1]
+)  # (12,)
+# fmt: on
 
 ZOBRIST_KEY = jax.random.PRNGKey(23279)
 ZOBRIST_SIDE = jax.random.randint(
@@ -78,7 +84,7 @@ class State(v1.State):
         .at[0]
         .set(jnp.uint32([233882788, 593924309]))
     )
-    _board_history: jnp.ndarray = -jnp.ones((8, 12), dtype=jnp.int8)
+    _board_history: jnp.ndarray = (-jnp.ones((8, 12), dtype=jnp.int8)).at[0, :].set(INIT_BOARD)
     _hand_history: jnp.ndarray = jnp.zeros((8, 6), dtype=jnp.int8)
 
     @property
@@ -195,25 +201,27 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         lambda: (_flip(state), state),
     )
 
-    def is_piece(p, state):
-        return state._board == p
+    def make(i):
+        def is_piece(p, state):
+            return state._board_history[i] == p
 
-    def num_hand(p, n, state):
-        return state._hand.flatten()[p] >= n
+        def num_hand(p, n, state):
+            return state._hand_history[i, p] >= n
 
-    # fmt: off
-    piece_feat = jax.vmap(partial(is_piece, state=state))(jnp.arange(10))  # (10, 12)
-    hand_feat = jax.vmap(jax.vmap(
-        partial(num_hand, state=state), (None, 0)), (0, None)
-    )(jnp.arange(6), jnp.arange(1, 3)).flatten().reshape(12, 1)  # (12, 1)
-    hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
-    # fmt: on
+        # fmt: off
+        piece_feat = jax.vmap(partial(is_piece, state=state))(jnp.arange(10))  # (10, 12)
+        hand_feat = jax.vmap(jax.vmap(
+            partial(num_hand, state=state), (None, 0)), (0, None)
+        )(jnp.arange(6), jnp.arange(1, 3)).flatten().reshape(12, 1)  # (12, 1)
+        hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
+        # fmt: on
 
-    ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
-    rep = ONE_PLANE * (rep >= 1)
+        ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
+        rep = (state._hash_history == state._hash_history[state._step_count]).any(axis=1).sum() - 1
+        rep = ONE_PLANE * (rep >= 1)
+        return jnp.vstack((piece_feat, hand_feat, rep))
 
-    obs = jnp.vstack((piece_feat, hand_feat, rep))
+    obs = make(0)
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
