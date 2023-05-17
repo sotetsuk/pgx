@@ -19,10 +19,10 @@ for from_ in range(25):
             continue
         TO_MAP = TO_MAP.at[from_, plane].set(to)
 # normal move
-# fmt off
+# fmt: off
 dr = [-4, -3, -2, -1,  1,  2,  3,  4,  0,  0,  0,  0,  0,  0,  0,  0, -4, -3, -2, -1,  1,  2,  3,  4,  4,  3,  2,  1, -1, -2, -3, -4, -1, +1, -2, +2, -1, +1, -2, +2]
 dc = [ 0,  0,  0,  0,  0,  0,  0,  0, -4, -3, -2, -1, +1, +2, +3, +4, -4, -3, -2, -1, +1, +2, +3, +4, -4, -3, -2, -1, +1, +2, +3, +4, -2, -2, -1, -1, +2, +2, +1, +1]
-# fmt on
+# fmt: on
 for from_ in range(25):
     for plane in range(9, 49):
         r, c = from_ % 5, from_ // 5
