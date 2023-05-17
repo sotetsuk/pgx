@@ -251,7 +251,6 @@ def has_insufficient_pieces(state: State):
         (jnp.abs(state._board) >= ROOK) | (jnp.abs(state._board) == PAWN)
     ).sum() - 2  # two kings
     num_bishop = (jnp.abs(state._board) == 3).sum()
-    coords = jnp.arange(25).reshape((5, 5))
     # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
     black_coords = jnp.arange(0, 25, 2)
     num_bishop_on_black = (jnp.abs(state._board[black_coords]) == BISHOP).sum()
