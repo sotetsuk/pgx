@@ -182,7 +182,7 @@ def _step(state: State, action: jnp.ndarray):
     state = state.replace(  # type: ignore
         legal_action_mask=_legal_action_mask(state)
     )
-    # state = _check_termination(state)
+    state = _check_termination(state)
     return state
 
 
@@ -218,6 +218,55 @@ def _apply_move(state: State, a: Action):
     )
 
     return state
+
+
+def _check_termination(state: State):
+    has_legal_action = state.legal_action_mask.any()
+    # rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    terminated = ~has_legal_action
+    terminated |= state._halfmove_count >= 100
+    terminated |= has_insufficient_pieces(state)
+    # terminated |= rep >= 2
+
+    is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
+    # fmt: off
+    reward = jax.lax.select(
+        is_checkmate,
+        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+        jnp.zeros(2, dtype=jnp.float32),
+    )
+    # fmt: on
+    return state.replace(  # type: ignore
+        terminated=terminated,
+        rewards=reward,
+    )
+
+
+def has_insufficient_pieces(state: State):
+    # Uses the same condition as OpenSpiel.
+    # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/chess/chess_board.cc#L724
+    num_pieces = (state._board != EMPTY).sum()
+    num_pawn_rook_queen = (
+        (jnp.abs(state._board) >= ROOK) | (jnp.abs(state._board) == PAWN)
+    ).sum() - 2  # two kings
+    num_bishop = (jnp.abs(state._board) == 3).sum()
+    coords = jnp.arange(25).reshape((5, 5))
+    # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
+    black_coords = jnp.arange(0, 25, 2)
+    num_bishop_on_black = (jnp.abs(state._board[black_coords]) == BISHOP).sum()
+    is_insufficient = FALSE
+    # King vs King
+    is_insufficient |= num_pieces <= 2
+    # King + X vs King. X == KNIGHT or BISHOP
+    is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen == 0)
+    # King + Bishop* vs King + Bishop* (Bishops are on same color tile)
+    is_bishop_all_on_black = num_bishop_on_black == num_bishop
+    is_bishop_all_on_white = num_bishop_on_black == 0
+    is_insufficient |= (num_pieces == num_bishop + 2) & (
+        is_bishop_all_on_black | is_bishop_all_on_white
+    )
+
+    return is_insufficient
 
 
 def _legal_action_mask(state):
