@@ -5,8 +5,27 @@ import pgx.v1 as v1
 from pgx._src.gardner_chess_utils import PLANE_MAP, TO_MAP
 from pgx._src.struct import dataclass
 
+MAX_TERMINATION_STEPS = 250
+
+
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
+
+EMPTY = jnp.int8(0)
+PAWN = jnp.int8(1)
+KNIGHT = jnp.int8(2)
+BISHOP = jnp.int8(3)
+ROOK = jnp.int8(4)
+QUEEN = jnp.int8(5)
+KING = jnp.int8(6)
+# OPP_PAWN = -1
+# OPP_KNIGHT = -2
+# OPP_BISHOP = -3
+# OPP_ROOK = -4
+# OPP_QUEEN = -5
+# OPP_KING = -6
+
+
 
 # board index (white view)
 # 5  4  9 14 19 24
@@ -111,6 +130,90 @@ class Action:
         # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
         return jnp.int32(self.from_) * 49 + jnp.int32(plane)
 
+
+class GardnerChess(v1.Env):
+    def __init__(self):
+        super().__init__()
+
+    def _init(self, key: jax.random.KeyArray) -> State:
+        rng, subkey = jax.random.split(key)
+        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        state = State(current_player=current_player)  # type: ignore
+        return state
+
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+        assert isinstance(state, State)
+        state = _step(state, action)
+        state = jax.lax.cond(
+            MAX_TERMINATION_STEPS <= state._step_count,
+            # end with tie
+            lambda: state.replace(terminated=TRUE),  # type: ignore
+            lambda: state,
+        )
+        return state  # type: ignore
+
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+        assert isinstance(state, State)
+        return _observe(state)
+
+    @property
+    def id(self) -> v1.EnvId:
+        return "gardner_chess"
+
+    @property
+    def version(self) -> str:
+        return "beta"
+
+    @property
+    def num_players(self) -> int:
+        return 2
+
+def _step(state: State, action: jnp.ndarray):
+    a = Action._from_label(action)
+    # state = _update_zobrist_hash(state, a)
+    state = _apply_move(state, a)
+    state = _flip(state)
+    # state = state.replace(  # type: ignore
+    #     legal_action_mask=_legal_action_mask(state)
+    # )
+    # state = _check_termination(state)
+    return state
+
+def _apply_move(state: State, a: Action):
+    # apply move action
+    piece = state._board[a.from_]
+
+    # update counters
+    captured = state._board[a.to] < 0
+    state = state.replace(  # type: ignore
+        _halfmove_count=jax.lax.select(
+            captured | (piece == PAWN), 0, state._halfmove_count + 1
+        ),
+        _fullmove_count=state._fullmove_count + jnp.int32(state._turn == 1),
+    )
+
+    # promotion to queen
+    piece = jax.lax.select(
+        piece == PAWN & (a.from_ % 5 == 3) & (a.underpromotion < 0),
+        QUEEN,
+        piece,
+    )
+    # underpromotion
+    piece = jax.lax.select(
+        a.underpromotion < 0,
+        piece,
+        jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
+    )
+
+    # actually move
+    state = state.replace(  # type: ignore
+        _board=state._board.at[a.from_].set(EMPTY).at[a.to].set(piece)
+    )
+
+    return state
+
+def _observe(state):
+    return jnp.zeros(1)
 
 def _flip_pos(x):
     """
