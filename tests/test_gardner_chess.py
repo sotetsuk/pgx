@@ -19,4 +19,102 @@ def p(s: str, b=False):
 
 
 def test_action():
-    ...
+    state = State._from_fen("k4/5/5/1Q3/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/action_001.svg")
+    action = Action._from_label(jnp.int32(306))
+    assert action.from_ == p("b2")
+    assert action.to == p("b1")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(309))
+    assert action.from_ == p("b2")
+    assert action.to == p("b5")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(314))
+    assert action.from_ == p("b2")
+    assert action.to == p("a2")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(317))
+    assert action.from_ == p("b2")
+    assert action.to == p("e2")
+    assert action.underpromotion == -1
+    # fail
+    action = Action._from_label(jnp.int32(322))
+    assert action.from_ == p("b2")
+    assert action.to == p("a1")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(325))
+    assert action.from_ == p("b2")
+    assert action.to == p("e5")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(330))
+    assert action.from_ == p("b2")
+    assert action.to == p("a3")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(331))
+    assert action.from_ == p("b2")
+    assert action.to == p("c1")
+    assert action.underpromotion == -1
+    # knight moves
+    # fail
+    state = State._from_fen("k4/5/2N2/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/action_002.svg")
+    action = Action._from_label(jnp.int32(629))
+    assert action.from_ == p("c3")
+    assert action.to == p("a2")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(630))
+    assert action.from_ == p("c3")
+    assert action.to == p("a4")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(631))
+    assert action.from_ == p("c3")
+    assert action.to == p("b1")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(632))
+    assert action.from_ == p("c3")
+    assert action.to == p("b5")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(633))
+    assert action.from_ == p("c3")
+    assert action.to == p("e2")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(634))
+    assert action.from_ == p("c3")
+    assert action.to == p("e4")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(635))
+    assert action.from_ == p("c3")
+    assert action.to == p("d1")
+    assert action.underpromotion == -1
+    action = Action._from_label(jnp.int32(636))
+    assert action.from_ == p("c3")
+    assert action.to == p("d5")
+    assert action.underpromotion == -1
+    # underpromotion
+    state = State._from_fen("r1r1k/1P3/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/action_003.svg")
+    action = Action._from_label(jnp.int32(392))
+    assert action.from_ == p("b4")
+    assert action.to == p("b5")
+    assert action.underpromotion == 0  # rook
+    action = Action._from_label(jnp.int32(393))
+    assert action.from_ == p("b4")
+    assert action.to == p("c5")
+    assert action.underpromotion == 0  # rook
+    action = Action._from_label(jnp.int32(394))
+    assert action.from_ == p("b4")
+    assert action.to == p("a5")
+    assert action.underpromotion == 0  # rook
+    # black turn
+    state = State._from_fen("k4/3q1/5/5/4K b - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/action_004.svg")
+    # 上（上下はそのまま）
+    action = Action._from_label(jnp.int32(797))
+    assert action.from_ == p("d4", True)
+    assert action.to == p("d3", True)
+    assert action.underpromotion == -1
+    # 左（左右は鏡写し）
+    action = Action._from_label(jnp.int32(805))
+    assert action.from_ == p("d4", True)
+    assert action.to == p("e4", True)
+    assert action.underpromotion == -1
