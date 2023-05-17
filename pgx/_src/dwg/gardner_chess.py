@@ -73,11 +73,10 @@ def _make_gardner_chess_dwg(dwg, state: GardnerChessState, config):
     # board
     # grid
     board_g = dwg.g()
+    fill_colors = (color_set.p1_outline, color_set.p2_outline)
+    c = 0
     for i in range(BOARD_WIDTH * BOARD_HEIGHT):
-        if (i // BOARD_HEIGHT) % 2 != i % 2:
-            fill_color = color_set.p1_outline
-        else:
-            fill_color = color_set.p2_outline
+        fill_color = fill_colors[c]
 
         x = i % BOARD_WIDTH
         y = i // BOARD_HEIGHT
@@ -91,6 +90,7 @@ def _make_gardner_chess_dwg(dwg, state: GardnerChessState, config):
                 fill=fill_color,
             )
         )
+        c = (c + 1) % 2
 
     board_g.add(
         dwg.rect(
