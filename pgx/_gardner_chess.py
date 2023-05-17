@@ -396,11 +396,11 @@ def _zobrist_hash(state):
 
 def _update_zobrist_hash(state: State, action: Action):
     hash_ = state._zobrist_hash
-    source_piece = state.board[action.from_]
+    source_piece = state._board[action.from_]
     source_piece = jax.lax.select(
         state._turn == 0, source_piece + 6, (source_piece * -1) + 6
     )
-    destination_piece = state.board[action.to]
+    destination_piece = state._board[action.to]
     destination_piece = jax.lax.select(
         state._turn == 0, destination_piece + 6, (destination_piece * -1) + 6
     )
