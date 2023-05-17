@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from _src.gardner_chess_utils import PLANE_MAP, TO_MAP
+from pgx._src.gardner_chess_utils import PLANE_MAP, TO_MAP
 
 import pgx.v1 as v1
 from pgx._src.struct import dataclass
