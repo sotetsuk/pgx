@@ -19,37 +19,10 @@ for from_ in range(25):
             continue
         TO_MAP = TO_MAP.at[from_, plane].set(to)
 # normal move
-seq = list(range(1, 5))
-zeros = [0 for _ in range(4)]
-# 下
-dr = [-x for x in seq[::-1]]
-dc = zeros
-# 上
-dr += [x for x in seq]
-dc += [0 for _ in zeros]
-# 左
-dr += [0 for _ in zeros]
-dc += [-x for x in seq[::-1]]
-# 右
-dr += [0 for _ in zeros]
-dc += [x for x in seq]
-# 左下
-dr += [-x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
-# 右上
-dr += [x for x in seq]
-dc += [x for x in seq]
-# 左上
-dr += [x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
-# 右下
-dr += [-x for x in seq]
-dc += [x for x in seq]
-# knight moves
-dr += [-1, +1, -2, +2, -1, +1, -2, +2]
-dc += [-2, -2, -1, -1, +2, +2, +1, +1]
+# fmt off
 dr = [-4, -3, -2, -1,  1,  2,  3,  4,  0,  0,  0,  0,  0,  0,  0,  0, -4, -3, -2, -1,  1,  2,  3,  4,  4,  3,  2,  1, -1, -2, -3, -4, -1, +1, -2, +2, -1, +1, -2, +2]
 dc = [ 0,  0,  0,  0,  0,  0,  0,  0, -4, -3, -2, -1, +1, +2, +3, +4, -4, -3, -2, -1, +1, +2, +3, +4, -4, -3, -2, -1, +1, +2, +3, +4, -2, -2, -1, -1, +2, +2, +1, +1]
+# fmt on
 for from_ in range(25):
     for plane in range(9, 49):
         r, c = from_ % 5, from_ // 5
