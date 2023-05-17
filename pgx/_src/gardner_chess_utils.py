@@ -51,7 +51,7 @@ for from_ in range(25):
         r1, c1 = to % 5, to // 5
         if jnp.abs(r1 - r0) == 1 and jnp.abs(c1 - c0) <= 1:
             legal_dst.append(to)
-    assert len(legal_dst) <= 2
+    assert len(legal_dst) <= 6, f"{from_=}, {to=}, {legal_dst=}"
     CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
 # KNIGHT
 for from_ in range(25):
@@ -134,8 +134,6 @@ for from_ in range(25):
         jnp.int8(legal_dst)
     )
 
-
-# Between
 BETWEEN = -jnp.ones((25, 25, 3), dtype=jnp.int8)
 for from_ in range(25):
     for to in range(25):
@@ -159,3 +157,13 @@ for from_ in range(25):
             bet.append(c * 5 + r)
         assert len(bet) <= 3
         BETWEEN = BETWEEN.at[from_, to, : len(bet)].set(jnp.int8(bet))
+
+
+INIT_LEGAL_ACTION_MASK = jnp.zeros(25 * 49, dtype=jnp.bool_)
+# fmt: off
+ixs = [62, 289, 293, 307, 552, 797, 1042]
+# fmt: on
+for ix in ixs:
+    INIT_LEGAL_ACTION_MASK = INIT_LEGAL_ACTION_MASK.at[ix].set(True)
+assert INIT_LEGAL_ACTION_MASK.shape == (25 * 49,)
+assert INIT_LEGAL_ACTION_MASK.sum() == 7

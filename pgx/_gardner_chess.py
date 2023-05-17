@@ -8,6 +8,7 @@ from pgx._src.gardner_chess_utils import (
     CAN_MOVE_ANY,
     PLANE_MAP,
     TO_MAP,
+INIT_LEGAL_ACTION_MASK
 )
 from pgx._src.struct import dataclass
 
@@ -63,7 +64,7 @@ class State(v1.State):
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(1)  # TODO: fix me
+    legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK
     observation: jnp.ndarray = jnp.zeros((5, 5, 19), dtype=jnp.float32)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
@@ -293,7 +294,7 @@ def _legal_action_mask(state):
         return legal_label(CAN_MOVE[piece, from_])
 
     def legal_underpromotions(mask):
-        # from_ = 6 14 22 30 38 46 54 62
+        # from_ = 3, 8, 13, 18, 23
         # plane = 0 ... 8
         @jax.vmap
         def make_labels(from_):
@@ -313,9 +314,7 @@ def _legal_action_mask(state):
         ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
-    actions = legal_normal_moves(
-        state._possible_piece_positions[0]
-    ).flatten()  # include -1
+    actions = legal_normal_moves(jnp.arange(25)).flatten()
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(25 * 49 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
