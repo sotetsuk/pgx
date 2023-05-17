@@ -87,7 +87,9 @@ class State(v1.State):
         .at[0]
         .set(jnp.uint32([233882788, 593924309]))
     )
-    _board_history: jnp.ndarray = (-jnp.ones((8, 12), dtype=jnp.int8)).at[0, :].set(INIT_BOARD)
+    _board_history: jnp.ndarray = (
+        (-jnp.ones((8, 12), dtype=jnp.int8)).at[0, :].set(INIT_BOARD)
+    )
     _hand_history: jnp.ndarray = jnp.zeros((8, 6), dtype=jnp.int8)
     _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
 
@@ -178,7 +180,9 @@ def _step(state: State, action: jnp.ndarray):
         ),
     )
 
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum().astype(jnp.int8) - 1
+    rep = (state._hash_history == state._zobrist_hash).any(
+        axis=1
+    ).sum().astype(jnp.int8) - 1
     is_rep_draw = rep >= 2
     legal_action_mask = _legal_action_mask(state)  # TODO: fix me
     terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
@@ -202,7 +206,9 @@ def _step(state: State, action: jnp.ndarray):
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     # player_id's color
-    color = jax.lax.select(state.current_player == player_id, state._turn, 1 - state._turn)
+    color = jax.lax.select(
+        state.current_player == player_id, state._turn, 1 - state._turn
+    )
 
     state = jax.lax.cond(
         state.current_player == player_id,
@@ -230,9 +236,13 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         rep1 = ones * (state._rep_history[i] == 1)
         return jnp.vstack((piece_feat, hand_feat, rep0, rep1))  # (24, 12)
 
-    obs = jax.vmap(make)(jnp.arange(8)).reshape(-1, 12).astype(jnp.float32)  # (192 = 8 * 24, 12)
+    obs = (
+        jax.vmap(make)(jnp.arange(8)).reshape(-1, 12).astype(jnp.float32)
+    )  # (192 = 8 * 24, 12)
     ones = jnp.ones((1, 12), dtype=jnp.float32)
-    obs = jnp.vstack([obs, ones * color, ones * state._step_count / MAX_TERMINATION_STEPS])  # (193, 12)
+    obs = jnp.vstack(
+        [obs, ones * color, ones * state._step_count / MAX_TERMINATION_STEPS]
+    )  # (193, 12)
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
@@ -354,7 +364,7 @@ def _flip(state):
         _hand=state._hand[::-1],
         _zobrist_hash=state._zobrist_hash ^ ZOBRIST_SIDE,
         _board_history=board_history,
-        _hand_history=jnp.roll(state._hand_history, 3, axis=1)
+        _hand_history=jnp.roll(state._hand_history, 3, axis=1),
     )
 
 
