@@ -214,7 +214,9 @@ def _update_history(state: State):
     board_history = board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
     # rep history
-    rep = ((state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1).astype(jnp.int8)
+    rep = (
+        (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    ).astype(jnp.int8)
     rep_history = jnp.roll(state._rep_history, 1)
     rep_history = rep_history.at[0].set(rep)
     state = state.replace(_rep_history=rep_history)  # type: ignore
@@ -454,9 +456,7 @@ def _observe(state: State, player_id: jnp.ndarray):
         return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
 
     color = jax.lax.select(
-        state.current_player == player_id,
-        state._turn,
-        1 - state._turn
+        state.current_player == player_id, state._turn, 1 - state._turn
     )
     color = color * ones
     total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones
