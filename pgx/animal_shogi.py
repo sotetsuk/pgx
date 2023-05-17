@@ -34,7 +34,13 @@ GOLD = jnp.int8(4)
 #  7: OPP_BISHOP
 #  8: OPP_KING
 #  9: OPP_GOLD
-INIT_BOARD = jnp.int8([6, -1, -1, 2, 8, 5, 0, 3, 7, -1, -1, 1])  # (12,)
+# fmt: off
+INIT_BOARD = jnp.int8(
+    [6, -1, -1, 2,
+     8, 5, 0, 3,
+     7, -1, -1, 1]
+)  # (12,)
+# fmt: on
 
 ZOBRIST_KEY = jax.random.PRNGKey(23279)
 ZOBRIST_SIDE = jax.random.randint(
@@ -58,6 +64,9 @@ ZOBRIST_HAND = jax.random.randint(
 )
 
 
+MAX_TERMINATION_STEPS = 250
+
+
 @dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
@@ -74,10 +83,15 @@ class State(v1.State):
     _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
     _zobrist_hash: jnp.ndarray = jnp.uint32([233882788, 593924309])
     _hash_history: jnp.ndarray = (
-        jnp.zeros((101, 2), dtype=jnp.uint32)
+        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
         .at[0]
         .set(jnp.uint32([233882788, 593924309]))
     )
+    _board_history: jnp.ndarray = (
+        (-jnp.ones((8, 12), dtype=jnp.int8)).at[0, :].set(INIT_BOARD)
+    )
+    _hand_history: jnp.ndarray = jnp.zeros((8, 6), dtype=jnp.int8)
+    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -109,7 +123,6 @@ class Action:
 class AnimalShogi(v1.Env):
     def __init__(self):
         super().__init__()
-        self.max_termination_steps: int = 250
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -122,8 +135,7 @@ class AnimalShogi(v1.Env):
         assert isinstance(state, State)
         state = _step(state, action)
         state = jax.lax.cond(
-            (0 <= self.max_termination_steps)
-            & (self.max_termination_steps <= state._step_count),
+            MAX_TERMINATION_STEPS <= state._step_count,
             # end with tie
             lambda: state.replace(terminated=TRUE),  # type: ignore
             lambda: state,
@@ -153,6 +165,14 @@ def _step(state: State, action: jnp.ndarray):
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     is_try = (state._board[jnp.int8([0, 4, 8])] == KING).any()
 
+    # update board/hand history
+    board_history = jnp.roll(state._board_history, 8)
+    board_history = board_history.at[0].set(state._board)
+    state = state.replace(_board_history=board_history)  # type:ignore
+    hand_history = jnp.roll(state._hand_history, 8)
+    hand_history = hand_history.at[0].set(state._hand.flatten())
+    state = state.replace(_hand_history=hand_history)  # type:ignore
+
     state = _flip(state)
     state = state.replace(  # type: ignore
         _hash_history=state._hash_history.at[state._step_count].set(
@@ -160,9 +180,11 @@ def _step(state: State, action: jnp.ndarray):
         ),
     )
 
-    legal_action_mask = _legal_action_mask(state)  # TODO: fix me
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    rep = (state._hash_history == state._zobrist_hash).any(
+        axis=1
+    ).sum().astype(jnp.int8) - 1
     is_rep_draw = rep >= 2
+    legal_action_mask = _legal_action_mask(state)  # TODO: fix me
     terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
     # fmt: off
     reward = jax.lax.select(
@@ -170,40 +192,57 @@ def _step(state: State, action: jnp.ndarray):
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
+    # rep history
+    rep_history = jnp.roll(state._rep_history, 1)
+    rep_history = rep_history.at[0].set(rep)
     # fmt: on
     return state.replace(  # type: ignore
         legal_action_mask=legal_action_mask,
         terminated=terminated,
         rewards=reward,
+        _rep_history=rep_history,
     )
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    state, flip_state = jax.lax.cond(
-        state.current_player == player_id,
-        lambda: (state, _flip(state)),
-        lambda: (_flip(state), state),
+    # player_id's color
+    color = jax.lax.select(
+        state.current_player == player_id, state._turn, 1 - state._turn
     )
 
-    def is_piece(p, state):
-        return state._board == p
+    state = jax.lax.cond(
+        state.current_player == player_id,
+        lambda: state,
+        lambda: _flip(state),
+    )
 
-    def num_hand(p, n, state):
-        return state._hand.flatten()[p] >= n
+    def make(i):
+        def is_piece(p, state):
+            return state._board_history[i] == p
 
-    # fmt: off
-    piece_feat = jax.vmap(partial(is_piece, state=state))(jnp.arange(10))  # (10, 12)
-    hand_feat = jax.vmap(jax.vmap(
-        partial(num_hand, state=state), (None, 0)), (0, None)
-    )(jnp.arange(6), jnp.arange(1, 3)).flatten().reshape(12, 1)  # (12, 1)
-    hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
-    # fmt: on
+        def num_hand(p, n, state):
+            return state._hand_history[i, p] >= n
 
-    ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
-    rep = ONE_PLANE * (rep >= 1)
+        # fmt: off
+        piece_feat = jax.vmap(partial(is_piece, state=state))(jnp.arange(10))  # (10, 12)
+        hand_feat = jax.vmap(jax.vmap(
+            partial(num_hand, state=state), (None, 0)), (0, None)
+        )(jnp.arange(6), jnp.arange(1, 3)).flatten().reshape(12, 1)  # (12, 1)
+        hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
+        # fmt: on
 
-    obs = jnp.vstack((piece_feat, hand_feat, rep))
+        ones = jnp.ones((1, 12), dtype=jnp.float32)
+        rep0 = ones * (state._rep_history[i] == 0)
+        rep1 = ones * (state._rep_history[i] == 1)
+        return jnp.vstack((piece_feat, hand_feat, rep0, rep1))  # (24, 12)
+
+    obs = (
+        jax.vmap(make)(jnp.arange(8)).reshape(-1, 12).astype(jnp.float32)
+    )  # (192 = 8 * 24, 12)
+    ones = jnp.ones((1, 12), dtype=jnp.float32)
+    obs = jnp.vstack(
+        [obs, ones * color, ones * state._step_count / MAX_TERMINATION_STEPS]
+    )  # (193, 12)
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
@@ -314,12 +353,18 @@ def _flip(state):
     board = (state._board + 5) % 10
     board = jnp.where(empty_mask, EMPTY, board)
     board = board[::-1]
+    empty_mask_hist = state._board_history == EMPTY
+    board_history = (state._board_history + 5) % 10
+    board_history = jnp.where(empty_mask_hist, EMPTY, board_history)
+    board_history = board_history[:, ::-1]
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         _turn=(state._turn + 1) % 2,
         _board=board,
         _hand=state._hand[::-1],
         _zobrist_hash=state._zobrist_hash ^ ZOBRIST_SIDE,
+        _board_history=board_history,
+        _hand_history=jnp.roll(state._hand_history, 3, axis=1),
     )
 
 
