@@ -1,9 +1,14 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx._gardner_chess import State, Action
+from pgx._gardner_chess import State, Action, GardnerChess
 
 pgx.set_visualization_config(color_theme="dark")
+
+
+env = GardnerChess()
+init = jax.jit(env.init)
+step = jax.jit(env.step)
 
 
 def p(s: str, b=False):
@@ -118,3 +123,27 @@ def test_action():
     assert action.from_ == p("d4", True)
     assert action.to == p("e4", True)
     assert action.underpromotion == -1
+
+
+def test_observe():
+    state = init(jax.random.PRNGKey(0))
+    expected = jnp.float32(
+        [[0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.],
+         [1., 1., 1., 1., 1.],
+         [0., 0., 0., 0., 0.]]
+    )
+    assert (state.observation[:, :, 0] == expected).all()
+    state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
+    state.save_svg("tests/assets/gardner_chess/observe_001.svg")
+    state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
+    state.save_svg("tests/assets/gardner_chess/observe_002.svg")
+    expected = jnp.float32(
+        [[0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.],
+         [0., 1., 1., 1., 1.],
+         [0., 0., 0., 0., 0.]]
+    )
+    assert (state.observation[:, :, 0] == expected).all()

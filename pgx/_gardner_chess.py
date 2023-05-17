@@ -180,7 +180,7 @@ class GardnerChess(v1.Env):
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
-        return _observe(state)
+        return _observe(state, player_id)
 
     @property
     def id(self) -> v1.EnvId:
@@ -214,7 +214,7 @@ def _update_history(state: State):
     board_history = board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
     # rep history
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    rep = ((state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1).astype(jnp.int8)
     rep_history = jnp.roll(state._rep_history, 1)
     rep_history = rep_history.at[0].set(rep)
     state = state.replace(_rep_history=rep_history)  # type: ignore
@@ -437,12 +437,12 @@ def _update_zobrist_hash(state: State, action: Action):
 
 
 def _observe(state: State, player_id: jnp.ndarray):
-    state = jax.lax.cond(state.turn == 0, lambda: state, lambda: _flip(state))
+    state = jax.lax.cond(state._turn == 0, lambda: state, lambda: _flip(state))
 
     ones = jnp.ones((1, 5, 5), dtype=jnp.float32)
 
     def make(i):
-        board = _rotate(state._board_history[i].reshape((8, 8)))
+        board = _rotate(state._board_history[i].reshape((5, 5)))
 
         def piece_feat(p):
             return (board == p).astype(jnp.float32)
@@ -453,14 +453,14 @@ def _observe(state: State, player_id: jnp.ndarray):
         rep1 = ones * (state._rep_history[i] == 1)
         return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
 
-    color = (
-        jax.lax.select(
-            state.current_player == player_id, state._turn, 1 - state._turn
-        )
-        * ones
+    color = jax.lax.select(
+        state.current_player == player_id,
+        state._turn,
+        1 - state._turn
     )
-    total_move_cnt = state._step_count / MAX_TERMINATION_STEPS
-    no_prog_cnt = ones * state._halfmove_count.astype(jnp.float32) / 100.0
+    color = color * ones
+    total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones
+    no_prog_cnt = (state._halfmove_count.astype(jnp.float32) / 100.0) * ones
 
     curr_feat = make(0)
     return jnp.vstack(
