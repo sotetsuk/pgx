@@ -68,6 +68,23 @@ class State(v1.State):
         return "gardner_chess"
 
 
+# Action
+# 0 ... 9 = underpromotions
+# plane // 3 == 0: rook
+# plane // 3 == 1: bishop
+# plane // 3 == 2: knight
+# plane % 3 == 0: forward
+# plane % 3 == 1: right
+# plane % 3 == 2: left
+# 33          16          32
+#    34       15       31
+#       35 44 14 48 30
+#       42 36 13 29 46
+# 17 18 19 20  X 21 22 23 24
+#       41 28 12 37 45
+#       27 43 11 47 38
+#    26       10       39
+# 25           9          40
 @dataclass
 class Action:
     from_: jnp.ndarray = jnp.int8(-1)
@@ -92,7 +109,7 @@ class Action:
     def _to_label(self):
         plane = PLANE_MAP[self.from_, self.to]
         # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
-        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
+        return jnp.int32(self.from_) * 49 + jnp.int32(plane)
 
 
 def _flip_pos(x):

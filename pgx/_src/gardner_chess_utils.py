@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 TO_MAP = -jnp.ones((25, 49), dtype=jnp.int8)
-PLANE_MAP = -jnp.ones((5, 5), dtype=jnp.int8)  # ignores underpromotions
+PLANE_MAP = -jnp.ones((25, 25), dtype=jnp.int8)  # ignores underpromotions
 # underpromotions
 for from_ in range(25):
     if from_ % 5 != 3:  # 4th row in current player view
@@ -15,39 +15,14 @@ for from_ in range(25):
         # 5  0  5 10 15 20
         # 4  1  6 11 16 21
         to = from_ + jnp.int8([+1, +6, -4])[dir_]
-        if not (0 <= to < 64):
+        if not (0 <= to < 25):
             continue
         TO_MAP = TO_MAP.at[from_, plane].set(to)
 # normal move
-seq = list(range(1, 5))
-zeros = [0 for _ in range(4)]
-# 下
-dr = [-x for x in seq[::-1]]
-dc = zeros
-# 上
-dr += [x for x in seq]
-dc += [0 for _ in zeros]
-# 左
-dr += [0 for _ in zeros]
-dc += [-x for x in seq[::-1]]
-# 右
-dr += [0 for _ in zeros]
-dc += [x for x in seq]
-# 左下
-dr += [-x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
-# 右上
-dr += [x for x in seq]
-dc += [x for x in seq]
-# 左上
-dr += [x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
-# 右下
-dr += [-x for x in seq]
-dc += [x for x in seq]
-# knight moves
-dr += [-1, +1, -2, +2, -1, +1, -2, +2]
-dc += [-2, -2, -1, -1, +2, +2, +1, +1]
+# fmt: off
+dr = [-4, -3, -2, -1,  1,  2,  3,  4,  0,  0,  0,  0,  0,  0,  0,  0, -4, -3, -2, -1,  1,  2,  3,  4,  4,  3,  2,  1, -1, -2, -3, -4, -1, +1, -2, +2, -1, +1, -2, +2]  # noqa
+dc = [ 0,  0,  0,  0,  0,  0,  0,  0, -4, -3, -2, -1, +1, +2, +3, +4, -4, -3, -2, -1, +1, +2, +3, +4, -4, -3, -2, -1, +1, +2, +3, +4, -2, -2, -1, -1, +2, +2, +1, +1]  # noqa
+# fmt: on
 for from_ in range(25):
     for plane in range(9, 49):
         r, c = from_ % 5, from_ // 5
