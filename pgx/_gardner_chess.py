@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.v1 as v1
-from pgx._src.gardner_chess_utils import PLANE_MAP, TO_MAP
+from pgx._src.gardner_chess_utils import PLANE_MAP, TO_MAP, CAN_MOVE, CAN_MOVE_ANY, BETWEEN
 from pgx._src.struct import dataclass
 
 MAX_TERMINATION_STEPS = 250
@@ -173,9 +173,9 @@ def _step(state: State, action: jnp.ndarray):
     # state = _update_zobrist_hash(state, a)
     state = _apply_move(state, a)
     state = _flip(state)
-    # state = state.replace(  # type: ignore
-    #     legal_action_mask=_legal_action_mask(state)
-    # )
+    state = state.replace(  # type: ignore
+        legal_action_mask=_legal_action_mask(state)
+    )
     # state = _check_termination(state)
     return state
 
@@ -212,6 +212,100 @@ def _apply_move(state: State, a: Action):
     )
 
     return state
+
+
+def _legal_action_mask(state):
+    def is_legal(a: Action):
+        ok = _is_pseudo_legal(state, a)
+        next_s = _flip(_apply_move(state, a))
+        ok &= ~_is_checking(next_s)
+
+        return ok
+
+    @jax.vmap
+    def legal_normal_moves(from_):
+        piece = state._board[from_]
+
+        @jax.vmap
+        def legal_label(to):
+            a = Action(from_=from_, to=to)
+            return jax.lax.select(
+                (from_ >= 0) & (piece > 0) & (to >= 0) & is_legal(a),
+                a._to_label(),
+                jnp.int32(-1),
+            )
+
+        return legal_label(CAN_MOVE[piece, from_])
+
+    def legal_underpromotions(mask):
+        # from_ = 6 14 22 30 38 46 54 62
+        # plane = 0 ... 8
+        @jax.vmap
+        def make_labels(from_):
+            return from_ * 73 + jnp.arange(9)
+
+        labels = make_labels(
+            jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])
+        ).flatten()
+
+        @jax.vmap
+        def legal_labels(label):
+            a = Action._from_label(label)
+            ok = (state._board[a.from_] == PAWN) & (a.to >= 0)
+            ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
+            return jax.lax.select(ok, label, -1)
+
+        ok_labels = legal_labels(labels)
+        return ok_labels.flatten()
+
+    actions = legal_normal_moves(
+        state._possible_piece_positions[0]
+    ).flatten()  # include -1
+    # +1 is to avoid setting True to the last element
+    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
+    mask = mask.at[actions].set(TRUE)
+
+    # set underpromotions
+    actions = legal_underpromotions(mask)
+    mask = mask.at[actions].set(TRUE)
+
+    return mask[:-1]
+
+
+def _is_attacking(state: State, pos):
+    @jax.vmap
+    def can_move(from_):
+        a = Action(from_=from_, to=pos)
+        return (from_ != -1) & _is_pseudo_legal(state, a)
+
+    return can_move(CAN_MOVE_ANY[pos, :]).any()
+
+
+def _is_checking(state: State):
+    """True if possible to capture the opponent king"""
+    opp_king_pos = jnp.argmin(jnp.abs(state._board - -KING))
+    return _is_attacking(state, opp_king_pos)
+
+def _is_pseudo_legal(state: State, a: Action):
+    piece = state._board[a.from_]
+    ok = (piece >= 0) & (state._board[a.to] <= 0)
+    ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
+    between_ixs = BETWEEN[a.from_, a.to]
+    ok &= ((between_ixs < 0) | (state._board[between_ixs] == EMPTY)).all()
+    # filter pawn move
+    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))
+    ok &= ~(
+        (piece == PAWN)
+        & (jnp.abs(a.to - a.from_) <= 2)
+        & (state._board[a.to] < 0)
+    )
+    ok &= ~(
+        (piece == PAWN)
+        & (jnp.abs(a.to - a.from_) > 2)
+        & (state._board[a.to] >= 0)
+    )
+    return (a.to >= 0) & ok
+
 
 
 def _observe(state):

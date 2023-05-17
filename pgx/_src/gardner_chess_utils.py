@@ -33,3 +33,129 @@ for from_ in range(25):
         to = jnp.int8(c * 5 + r)
         TO_MAP = TO_MAP.at[from_, plane].set(to)
         PLANE_MAP = PLANE_MAP.at[from_, to].set(jnp.int8(plane))
+
+
+CAN_MOVE = -jnp.ones((7, 25, 16), jnp.int8)
+# usage: CAN_MOVE[piece, from_x, from_y]
+# CAN_MOVE[0, :, :]はすべて-1
+# 将棋と違い、中央から点対称でないので、注意が必要。
+# 視点は常に白側のイメージが良い。
+# PAWN以外の動きは上下左右対称。PAWNは上下と斜めへ動ける駒と定義して、手番に応じてフィルタする。
+
+
+# PAWN
+for from_ in range(25):
+    r0, c0 = from_ % 5, from_ // 5
+    legal_dst = []
+    for to in range(25):
+        r1, c1 = to % 5, to // 5
+        if jnp.abs(r1 - r0) == 1 and jnp.abs(c1 - c0) <= 1:
+            legal_dst.append(to)
+    assert len(legal_dst) <= 2
+    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+# KNIGHT
+for from_ in range(25):
+    r0, c0 = from_ % 5, from_ // 5
+    legal_dst = []
+    for to in range(25):
+        r1, c1 = to % 5, to // 5
+        if jnp.abs(r1 - r0) == 1 and jnp.abs(c1 - c0) == 2:
+            legal_dst.append(to)
+        if jnp.abs(r1 - r0) == 2 and jnp.abs(c1 - c0) == 1:
+            legal_dst.append(to)
+    assert len(legal_dst) <= 8
+    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+# BISHOP
+for from_ in range(25):
+    r0, c0 = from_ % 5, from_ // 5
+    legal_dst = []
+    for to in range(25):
+        r1, c1 = to % 5, to // 5
+        if from_ == to:
+            continue
+        if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
+            legal_dst.append(to)
+    assert len(legal_dst) <= 8
+    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+# ROOK
+for from_ in range(25):
+    r0, c0 = from_ % 5, from_ // 5
+    legal_dst = []
+    for to in range(25):
+        r1, c1 = to % 5, to // 5
+        if from_ == to:
+            continue
+        if jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0:
+            legal_dst.append(to)
+    assert len(legal_dst) <= 8
+    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+# QUEEN
+for from_ in range(25):
+    r0, c0 = from_ % 5, from_ // 5
+    legal_dst = []
+    for to in range(25):
+        r1, c1 = to % 5, to // 5
+        if from_ == to:
+            continue
+        if jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0:
+            legal_dst.append(to)
+        if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
+            legal_dst.append(to)
+    assert len(legal_dst) <= 16
+    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+# KING
+for from_ in range(25):
+    r0, c0 = from_ % 5, from_ // 5
+    legal_dst = []
+    for to in range(25):
+        r1, c1 = to % 5, to // 5
+        if from_ == to:
+            continue
+        if (jnp.abs(r1 - r0) <= 1) and (jnp.abs(c1 - c0) <= 1):
+            legal_dst.append(to)
+    assert len(legal_dst) <= 8
+    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+
+assert (CAN_MOVE[0, :, :] == -1).all()
+
+CAN_MOVE_ANY = -jnp.ones((25, 24), jnp.int8)
+for from_ in range(25):
+    legal_dst = []
+    for i in range(16):
+        to = CAN_MOVE[5, from_, i]  # QUEEN
+        if to >= 0:
+            legal_dst.append(to)
+    for i in range(16):
+        to = CAN_MOVE[2, from_, i]  # KNIGHT
+        if to >= 0:
+            legal_dst.append(to)
+    assert len(legal_dst) <= 24
+    CAN_MOVE_ANY = CAN_MOVE_ANY.at[from_, : len(legal_dst)].set(
+        jnp.int8(legal_dst)
+    )
+
+
+# Between
+BETWEEN = -jnp.ones((25, 25, 3), dtype=jnp.int8)
+for from_ in range(25):
+    for to in range(25):
+        r0, c0 = from_ % 5, from_ // 5
+        r1, c1 = to % 5, to // 5
+        if not (
+            (jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0)
+            or (jnp.abs(r1 - r0) == jnp.abs(c1 - c0))
+        ):
+            continue
+        dr = max(min(r1 - r0, 1), -1)
+        dc = max(min(c1 - c0, 1), -1)
+        r = r0
+        c = c0
+        bet = []
+        while True:
+            r += dr
+            c += dc
+            if r == r1 and c == c1:
+                break
+            bet.append(c * 5 + r)
+        assert len(bet) <= 3
+        BETWEEN = BETWEEN.at[from_, to, : len(bet)].set(jnp.int8(bet))
