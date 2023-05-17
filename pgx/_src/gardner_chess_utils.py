@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 
 TO_MAP = -jnp.ones((25, 49), dtype=jnp.int8)
-PLANE_MAP = -jnp.ones((5, 5), dtype=jnp.int8)  # ignores underpromotions
+PLANE_MAP = -jnp.ones((25, 25), dtype=jnp.int8)  # ignores underpromotions
 # underpromotions
 for from_ in range(25):
     if from_ % 5 != 3:  # 4th row in current player view
@@ -15,7 +15,7 @@ for from_ in range(25):
         # 5  0  5 10 15 20
         # 4  1  6 11 16 21
         to = from_ + jnp.int8([+1, +6, -4])[dir_]
-        if not (0 <= to < 64):
+        if not (0 <= to < 25):
             continue
         TO_MAP = TO_MAP.at[from_, plane].set(to)
 # normal move
