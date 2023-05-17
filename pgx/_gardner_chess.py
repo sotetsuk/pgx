@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.v1 as v1
+from pgx._src.gardner_chess_utils import PLANE_MAP, TO_MAP
 from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -55,17 +56,43 @@ class State(v1.State):
         .set(jnp.uint32([1429435994, 901419182]))
     )
 
+    @staticmethod
+    def _from_fen(fen: str):
+        return _from_fen(fen)
+
+    def _to_fen(self) -> str:
+        return _to_fen(self)
+
     @property
     def env_id(self) -> v1.EnvId:
         return "gardner_chess"
 
-    @property
-    def version(self) -> str:
-        return "beta"
 
-    @property
-    def num_players(self) -> int:
-        return 2
+@dataclass
+class Action:
+    from_: jnp.ndarray = jnp.int8(-1)
+    to: jnp.ndarray = jnp.int8(-1)
+    underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
+
+    @staticmethod
+    def _from_label(label: jnp.ndarray):
+        """We use AlphaZero style label with channel-last representation: (5, 5, 49)
+
+        49 = queen moves (32) + knight moves (8) + underpromotions (3 * 3)
+        """
+        from_, plane = label // 49, label % 49
+        return Action(  # type: ignore
+            from_=from_,
+            to=TO_MAP[from_, plane],  # -1 if impossible move
+            underpromotion=jax.lax.select(
+                plane >= 9, jnp.int8(-1), jnp.int8(plane // 3)
+            ),
+        )
+
+    def _to_label(self):
+        plane = PLANE_MAP[self.from_, self.to]
+        # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
+        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
 
 
 def _flip_pos(x):
