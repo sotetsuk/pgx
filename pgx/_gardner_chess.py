@@ -63,16 +63,16 @@ class State(v1.State):
     def _to_fen(self) -> str:
         return _to_fen(self)
 
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "gardner_chess"
+
 
 @dataclass
 class Action:
     from_: jnp.ndarray = jnp.int8(-1)
     to: jnp.ndarray = jnp.int8(-1)
     underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
-
-    @property
-    def env_id(self) -> v1.EnvId:
-        return "gardner_chess"
 
     @staticmethod
     def _from_label(label: jnp.ndarray):
