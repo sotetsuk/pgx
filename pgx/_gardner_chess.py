@@ -462,9 +462,9 @@ def _observe(state: State, player_id: jnp.ndarray):
     total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones
     no_prog_cnt = (state._halfmove_count.astype(jnp.float32) / 100.0) * ones
 
-    curr_feat = make(0)
+    board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 5, 5)
     return jnp.vstack(
-        [curr_feat, color, total_move_cnt, no_prog_cnt]
+        [board_feat, color, total_move_cnt, no_prog_cnt]
     ).transpose((1, 2, 0))
 
 
