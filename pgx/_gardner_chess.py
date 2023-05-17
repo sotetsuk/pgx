@@ -346,7 +346,7 @@ def _is_pseudo_legal(state: State, a: Action):
     between_ixs = BETWEEN[a.from_, a.to]
     ok &= ((between_ixs < 0) | (state._board[between_ixs] == EMPTY)).all()
     # filter pawn move
-    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))
+    ok &= ~((piece == PAWN) & ((a.to % 5) < (a.from_ % 5)))
     ok &= ~(
         (piece == PAWN)
         & (jnp.abs(a.to - a.from_) <= 2)
