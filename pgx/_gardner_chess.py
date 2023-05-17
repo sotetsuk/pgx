@@ -6,9 +6,9 @@ from pgx._src.gardner_chess_utils import (
     BETWEEN,
     CAN_MOVE,
     CAN_MOVE_ANY,
+    INIT_LEGAL_ACTION_MASK,
     PLANE_MAP,
     TO_MAP,
-INIT_LEGAL_ACTION_MASK
 )
 from pgx._src.struct import dataclass
 
@@ -300,9 +300,7 @@ def _legal_action_mask(state):
         def make_labels(from_):
             return from_ * 49 + jnp.arange(9)
 
-        labels = make_labels(
-            jnp.int32([3, 8, 13, 18, 23])
-        ).flatten()
+        labels = make_labels(jnp.int32([3, 8, 13, 18, 23])).flatten()
 
         @jax.vmap
         def legal_labels(label):
