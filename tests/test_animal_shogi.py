@@ -121,6 +121,7 @@ def test_observe():
          [False, False, False]]
     )
     assert (state.observation[:, :, 5] == expected).all()
+    assert (state.observation[:, :, 10 + 6] == 1).all()  # opp captured pawn
 
 def test_repetition():
     state = init(jax.random.PRNGKey(0))
