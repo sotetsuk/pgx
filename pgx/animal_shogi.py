@@ -200,10 +200,13 @@ def _step(state: State, action: jnp.ndarray):
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    state, flip_state = jax.lax.cond(
+    # player_id's color
+    color = jax.lax.select(state.current_player == player_id, state._turn, 1 - state._turn)
+
+    state = jax.lax.cond(
         state.current_player == player_id,
-        lambda: (state, _flip(state)),
-        lambda: (_flip(state), state),
+        lambda: state,
+        lambda: _flip(state),
     )
 
     def make(i):
@@ -221,12 +224,14 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         hand_feat = jnp.tile(hand_feat, reps=(1, 12))  # (12, 12)
         # fmt: on
 
-        ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
-        rep0 = ONE_PLANE * (state._rep_history[i] == 0)
-        rep1 = ONE_PLANE * (state._rep_history[i] == 1)
+        ones = jnp.ones((1, 12), dtype=jnp.float32)
+        rep0 = ones * (state._rep_history[i] == 0)
+        rep1 = ones * (state._rep_history[i] == 1)
         return jnp.vstack((piece_feat, hand_feat, rep0, rep1))  # (24, 12)
 
-    obs = jax.vmap(make)(jnp.arange(8))
+    obs = jax.vmap(make)(jnp.arange(8)).reshape(-1, 12)  # (192 = 8 * 24, 12)
+    ones = jnp.ones((1, 12), dtype=jnp.bool_)
+    obs = jnp.vstack([obs, ones * color])  # (193, 12)
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
