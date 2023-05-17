@@ -56,18 +56,12 @@ class State(v1.State):
         .set(jnp.uint32([1429435994, 901419182]))
     )
 
-    @property
-    def env_id(self) -> v1.EnvId:
-        return "gardner_chess"
+    @staticmethod
+    def _from_fen(fen: str):
+        return _from_fen(fen)
 
-    @property
-    def version(self) -> str:
-        return "beta"
-
-    @property
-    def num_players(self) -> int:
-        return 2
-
+    def _to_fen(self) -> str:
+        return _to_fen(self)
 
 @dataclass
 class Action:
