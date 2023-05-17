@@ -64,6 +64,9 @@ ZOBRIST_HAND = jax.random.randint(
 )
 
 
+MAX_TERMINATION_STEPS = 250
+
+
 @dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
@@ -80,7 +83,7 @@ class State(v1.State):
     _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
     _zobrist_hash: jnp.ndarray = jnp.uint32([233882788, 593924309])
     _hash_history: jnp.ndarray = (
-        jnp.zeros((101, 2), dtype=jnp.uint32)
+        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
         .at[0]
         .set(jnp.uint32([233882788, 593924309]))
     )
@@ -118,7 +121,6 @@ class Action:
 class AnimalShogi(v1.Env):
     def __init__(self):
         super().__init__()
-        self.max_termination_steps: int = 250
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -131,8 +133,7 @@ class AnimalShogi(v1.Env):
         assert isinstance(state, State)
         state = _step(state, action)
         state = jax.lax.cond(
-            (0 <= self.max_termination_steps)
-            & (self.max_termination_steps <= state._step_count),
+            MAX_TERMINATION_STEPS <= state._step_count,
             # end with tie
             lambda: state.replace(terminated=TRUE),  # type: ignore
             lambda: state,
@@ -229,9 +230,9 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         rep1 = ones * (state._rep_history[i] == 1)
         return jnp.vstack((piece_feat, hand_feat, rep0, rep1))  # (24, 12)
 
-    obs = jax.vmap(make)(jnp.arange(8)).reshape(-1, 12)  # (192 = 8 * 24, 12)
-    ones = jnp.ones((1, 12), dtype=jnp.bool_)
-    obs = jnp.vstack([obs, ones * color])  # (193, 12)
+    obs = jax.vmap(make)(jnp.arange(8)).reshape(-1, 12).astype(jnp.float32)  # (192 = 8 * 24, 12)
+    ones = jnp.ones((1, 12), dtype=jnp.float32)
+    obs = jnp.vstack([obs, ones * color, ones * state._step_count / MAX_TERMINATION_STEPS])  # (193, 12)
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
