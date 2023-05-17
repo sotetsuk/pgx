@@ -362,6 +362,10 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.connect_four import ConnectFour
 
         return ConnectFour()
+    elif env_id == "gardner_chess":
+        from pgx.gardner_chess import GardnerChess
+
+        return GardnerChess()
     elif env_id == "go_9x9":
         from pgx.go import Go
 

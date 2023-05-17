@@ -148,3 +148,9 @@ def test_observe():
          [0., 0., 0., 0., 0.]]
     )
     assert (state.observation[:, :, 0] == expected).all()
+
+
+def test_api():
+    import pgx
+    env = pgx.make("gardner_chess")
+    pgx.v1_api_test(env, 3)
