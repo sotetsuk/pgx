@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx._gardner_chess import State, Action, GardnerChess
+from pgx.gardner_chess import State, Action, GardnerChess
 
 pgx.set_visualization_config(color_theme="dark")
 
