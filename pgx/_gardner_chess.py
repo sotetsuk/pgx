@@ -248,10 +248,10 @@ def _legal_action_mask(state):
         # plane = 0 ... 8
         @jax.vmap
         def make_labels(from_):
-            return from_ * 73 + jnp.arange(9)
+            return from_ * 49 + jnp.arange(9)
 
         labels = make_labels(
-            jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])
+            jnp.int32([3, 8, 13, 18, 23])
         ).flatten()
 
         @jax.vmap
@@ -268,7 +268,7 @@ def _legal_action_mask(state):
         state._possible_piece_positions[0]
     ).flatten()  # include -1
     # +1 is to avoid setting True to the last element
-    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
+    mask = jnp.zeros(25 * 49 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
 
     # set underpromotions
