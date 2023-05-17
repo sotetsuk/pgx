@@ -1,3 +1,4 @@
+# type: ignore
 import jax.numpy as jnp
 
 TO_MAP = -jnp.ones((25, 49), dtype=jnp.int8)
