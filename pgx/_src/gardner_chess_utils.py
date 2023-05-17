@@ -1,4 +1,5 @@
 # type: ignore
+import jax
 import jax.numpy as jnp
 
 TO_MAP = -jnp.ones((25, 49), dtype=jnp.int8)
@@ -168,3 +169,14 @@ for ix in ixs:
     INIT_LEGAL_ACTION_MASK = INIT_LEGAL_ACTION_MASK.at[ix].set(True)
 assert INIT_LEGAL_ACTION_MASK.shape == (25 * 49,)
 assert INIT_LEGAL_ACTION_MASK.sum() == 7
+
+
+key = jax.random.PRNGKey(238942)
+key, subkey = jax.random.split(key)
+ZOBRIST_BOARD = jax.random.randint(
+    subkey, shape=(25, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)
+key, subkey = jax.random.split(key)
+ZOBRIST_SIDE = jax.random.randint(
+    subkey, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)

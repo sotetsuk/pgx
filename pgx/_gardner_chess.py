@@ -23,6 +23,8 @@ from pgx._src.gardner_chess_utils import (  # type: ignore
     INIT_LEGAL_ACTION_MASK,
     PLANE_MAP,
     TO_MAP,
+    ZOBRIST_BOARD,
+    ZOBRIST_SIDE,
 )
 from pgx._src.struct import dataclass
 
@@ -88,11 +90,11 @@ class State(v1.State):
     # # of moves since the last piece capture or pawn move
     _halfmove_count: jnp.ndarray = jnp.int32(0)
     _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
-    _zobrist_hash: jnp.ndarray = jnp.uint32([1429435994, 901419182])
+    _zobrist_hash: jnp.ndarray = jnp.uint32([1926877726, 2129525500])
     _hash_history: jnp.ndarray = (
         jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
         .at[0]
-        .set(jnp.uint32([1429435994, 901419182]))
+        .set(jnp.uint32([1926877726, 2129525500]))
     )
 
     @staticmethod
@@ -191,7 +193,7 @@ class GardnerChess(v1.Env):
 
 def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
-    # state = _update_zobrist_hash(state, a)
+    state = _update_zobrist_hash(state, a)
     state = _apply_move(state, a)
     state = _flip(state)
     state = state.replace(  # type: ignore
@@ -237,11 +239,11 @@ def _apply_move(state: State, a: Action):
 
 def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
-    # rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
     terminated = ~has_legal_action
     terminated |= state._halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
-    # terminated |= rep >= 2
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    terminated |= rep >= 2
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -370,6 +372,51 @@ def _is_pseudo_legal(state: State, a: Action):
         & (state._board[a.to] >= 0)
     )
     return (a.to >= 0) & ok
+
+
+def _zobrist_hash(state):
+    """
+    >>> state = State()
+    >>> _zobrist_hash(state)
+    Array([1926877726, 2129525500], dtype=uint32)
+    """
+    hash_ = jnp.zeros(2, dtype=jnp.uint32)
+    hash_ = jax.lax.select(state._turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
+
+    board = jax.lax.select(state._turn == 0, state._board, _flip(state)._board)
+
+    def xor(i, h):
+        # 0, ..., 12 (white pawn, ..., black king)
+        piece = board[i] + 6
+        return h ^ ZOBRIST_BOARD[i, piece]
+
+    hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    return hash_
+
+
+def _update_zobrist_hash(state: State, action: Action):
+    hash_ = state._zobrist_hash
+    source_piece = state._board[action.from_]
+    source_piece = jax.lax.select(
+        state._turn == 0, source_piece + 6, (source_piece * -1) + 6
+    )
+    destination_piece = state._board[action.to]
+    destination_piece = jax.lax.select(
+        state._turn == 0, destination_piece + 6, (destination_piece * -1) + 6
+    )
+    from_ = jax.lax.select(
+        state._turn == 0, action.from_, _flip_pos(action.from_)
+    )
+    to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
+    hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # 移動元駒を消す
+    hash_ ^= ZOBRIST_BOARD[from_, 6]  # 移動元をemptyに
+    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # 移動先を動かした駒に
+    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # 移動先の駒（empty含む）を消す
+    hash_ ^= ZOBRIST_SIDE
+    return state.replace(  # type: ignore
+        _zobrist_hash=hash_,
+        _hash_history=state._hash_history.at[state._step_count].set(hash_),
+    )
 
 
 def _observe(state):
