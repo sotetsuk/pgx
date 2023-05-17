@@ -63,6 +63,7 @@ class State(v1.State):
     def _to_fen(self) -> str:
         return _to_fen(self)
 
+
 @dataclass
 class Action:
     from_: jnp.ndarray = jnp.int8(-1)
