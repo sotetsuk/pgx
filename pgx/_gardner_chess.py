@@ -96,6 +96,10 @@ class State(v1.State):
         .at[0]
         .set(jnp.uint32([1926877726, 2129525500]))
     )
+    _board_history: jnp.ndarray = (
+        jnp.zeros((8, 25), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
+    )
+    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
 
     @staticmethod
     def _from_fen(fen: str):
@@ -196,10 +200,24 @@ def _step(state: State, action: jnp.ndarray):
     state = _update_zobrist_hash(state, a)
     state = _apply_move(state, a)
     state = _flip(state)
+    state = _update_history(state)
     state = state.replace(  # type: ignore
         legal_action_mask=_legal_action_mask(state)
     )
     state = _check_termination(state)
+    return state
+
+
+def _update_history(state: State):
+    # board history
+    board_history = jnp.roll(state._board_history, 25)
+    board_history = board_history.at[0].set(state._board)
+    state = state.replace(_board_history=board_history)  # type:ignore
+    # rep history
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    rep_history = jnp.roll(state._rep_history, 1)
+    rep_history = rep_history.at[0].set(rep)
+    state = state.replace(_rep_history=rep_history)  # type: ignore
     return state
 
 
@@ -242,8 +260,7 @@ def _check_termination(state: State):
     terminated = ~has_legal_action
     terminated |= state._halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
-    terminated |= rep >= 2
+    terminated |= state._rep_history[0] >= 2
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -419,8 +436,36 @@ def _update_zobrist_hash(state: State, action: Action):
     )
 
 
-def _observe(state):
-    return jnp.zeros(1)
+def _observe(state: State, player_id: jnp.ndarray):
+    state = jax.lax.cond(state.turn == 0, lambda: state, lambda: _flip(state))
+
+    ones = jnp.ones((1, 5, 5), dtype=jnp.float32)
+
+    def make(i):
+        board = _rotate(state._board_history[i].reshape((8, 8)))
+
+        def piece_feat(p):
+            return (board == p).astype(jnp.float32)
+
+        my_pieces = jax.vmap(piece_feat)(jnp.arange(1, 7))
+        opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
+        rep0 = ones * (state._rep_history[i] == 0)
+        rep1 = ones * (state._rep_history[i] == 1)
+        return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
+
+    color = (
+        jax.lax.select(
+            state.current_player == player_id, state._turn, 1 - state._turn
+        )
+        * ones
+    )
+    total_move_cnt = state._step_count / MAX_TERMINATION_STEPS
+    no_prog_cnt = ones * state._halfmove_count.astype(jnp.float32) / 100.0
+
+    curr_feat = make(0)
+    return jnp.vstack(
+        [curr_feat, color, total_move_cnt, no_prog_cnt]
+    ).transpose((1, 2, 0))
 
 
 def _flip_pos(x):
