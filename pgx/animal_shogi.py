@@ -78,6 +78,7 @@ class State(v1.State):
         .at[0]
         .set(jnp.uint32([233882788, 593924309]))
     )
+    _board_history: jnp.ndarray = -jnp.ones((8, 12), dtype=jnp.int8)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -152,6 +153,11 @@ def _step(state: State, action: jnp.ndarray):
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     is_try = (state._board[jnp.int8([0, 4, 8])] == KING).any()
+
+    # update board history
+    board_history = jnp.roll(state._board_history, 8)
+    board_history = board_history.at[0].set(state._board)
+    state = state.replace(_board_history=board_history)  # type:ignore
 
     state = _flip(state)
     state = state.replace(  # type: ignore
@@ -314,12 +320,17 @@ def _flip(state):
     board = (state._board + 5) % 10
     board = jnp.where(empty_mask, EMPTY, board)
     board = board[::-1]
+    empty_mask_hist = state._board_history == EMPTY
+    board_history = (state._board_history + 5) % 10
+    board_history = jnp.where(empty_mask_hist, EMPTY, board_history)
+    board_history = board_history[::-1]
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         _turn=(state._turn + 1) % 2,
         _board=board,
         _hand=state._hand[::-1],
         _zobrist_hash=state._zobrist_hash ^ ZOBRIST_SIDE,
+        _board_history=board_history
     )
 
 
