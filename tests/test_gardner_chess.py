@@ -127,6 +127,7 @@ def test_action():
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
+    assert state.observation.shape == (5, 5, 115)
     expected = jnp.float32(
         [[0., 0., 0., 0., 0.],
          [0., 0., 0., 0., 0.],
