@@ -70,6 +70,10 @@ class Action:
     to: jnp.ndarray = jnp.int8(-1)
     underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
 
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "gardner_chess"
+
     @staticmethod
     def _from_label(label: jnp.ndarray):
         """We use AlphaZero style label with channel-last representation: (5, 5, 49)
