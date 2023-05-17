@@ -67,6 +67,7 @@ class State(v1.State):
     def num_players(self) -> int:
         return 2
 
+
 def _flip_pos(x):
     """
     >>> _flip_pos(jnp.int8(0))
@@ -78,12 +79,14 @@ def _flip_pos(x):
     """
     return jax.lax.select(x == -1, x, (x // 5) * 5 + (4 - (x % 5)))
 
+
 def _flip(state: State) -> State:
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         _board=-jnp.flip(state._board.reshape(5, 5), axis=1).flatten(),
         _turn=(state._turn + 1) % 2,
     )
+
 
 def _rotate(board):
     return jnp.rot90(board, k=1)
