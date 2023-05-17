@@ -26,7 +26,6 @@ KING = jnp.int8(6)
 # OPP_KING = -6
 
 
-
 # board index (white view)
 # 5  4  9 14 19 24
 # 4  3  8 13 18 23
@@ -168,6 +167,7 @@ class GardnerChess(v1.Env):
     def num_players(self) -> int:
         return 2
 
+
 def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     # state = _update_zobrist_hash(state, a)
@@ -178,6 +178,7 @@ def _step(state: State, action: jnp.ndarray):
     # )
     # state = _check_termination(state)
     return state
+
 
 def _apply_move(state: State, a: Action):
     # apply move action
@@ -212,8 +213,10 @@ def _apply_move(state: State, a: Action):
 
     return state
 
+
 def _observe(state):
     return jnp.zeros(1)
+
 
 def _flip_pos(x):
     """
