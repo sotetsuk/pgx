@@ -86,6 +86,7 @@ class State(v1.State):
     )
     _board_history: jnp.ndarray = (-jnp.ones((8, 12), dtype=jnp.int8)).at[0, :].set(INIT_BOARD)
     _hand_history: jnp.ndarray = jnp.zeros((8, 6), dtype=jnp.int8)
+    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -176,9 +177,9 @@ def _step(state: State, action: jnp.ndarray):
         ),
     )
 
-    legal_action_mask = _legal_action_mask(state)  # TODO: fix me
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum().astype(jnp.int8) - 1
     is_rep_draw = rep >= 2
+    legal_action_mask = _legal_action_mask(state)  # TODO: fix me
     terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
     # fmt: off
     reward = jax.lax.select(
@@ -186,11 +187,15 @@ def _step(state: State, action: jnp.ndarray):
         jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
+    # rep history
+    rep_history = jnp.roll(state._rep_history, 1)
+    rep_history = rep_history.at[0].set(rep)
     # fmt: on
     return state.replace(  # type: ignore
         legal_action_mask=legal_action_mask,
         terminated=terminated,
         rewards=reward,
+        _rep_history=rep_history,
     )
 
 
@@ -217,9 +222,9 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         # fmt: on
 
         ONE_PLANE = jnp.ones((1, 12), dtype=jnp.float32)
-        rep = (state._hash_history == state._hash_history[state._step_count]).any(axis=1).sum() - 1
-        rep = ONE_PLANE * (rep >= 1)
-        return jnp.vstack((piece_feat, hand_feat, rep))  # (23, 12)
+        rep0 = ONE_PLANE * (state._rep_history[i] == 0)
+        rep1 = ONE_PLANE * (state._rep_history[i] == 1)
+        return jnp.vstack((piece_feat, hand_feat, rep0, rep1))  # (24, 12)
 
     obs = jax.vmap(make)(jnp.arange(8))
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last

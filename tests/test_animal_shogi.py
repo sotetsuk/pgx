@@ -48,7 +48,7 @@ def test_step():
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
-    assert state.observation.shape == (4, 3, 184)
+    assert state.observation.shape == (4, 3, 192)
 
     # my pawn
     expected = jnp.bool_(
@@ -112,27 +112,32 @@ def test_repetition():
     visualize(state, "tests/assets/animal_shogi/test_repetition_000.svg")
     assert not state.terminated
     assert state._turn == 0
+    assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 3 * 12 + 3)  # Up Rook
     visualize(state, "tests/assets/animal_shogi/test_repetition_002.svg")
     assert not state.terminated
     assert state._turn == 1
+    assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 3 * 12 + 3)  # Up Rook
     visualize(state, "tests/assets/animal_shogi/test_repetition_003.svg")
     assert not state.terminated
     assert state._turn == 0
+    assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 4 * 12 + 2)  # Down Rook
     visualize(state, "tests/assets/animal_shogi/test_repetition_004.svg")
     assert not state.terminated
     assert state._turn == 1
+    assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 4 * 12 + 2)  # Down Rook
     # second
     visualize(state, "tests/assets/animal_shogi/test_repetition_005.svg")
     assert not state.terminated
-    assert (state.observation[:, :, 22] == 1).all()  # rep
+    assert (state.observation[:, :, 22] == 0).all()  # rep = 0
+    assert (state.observation[:, :, 23] == 1).all()  # rep = 1
     assert state._turn == 0
 
     # same repetition
