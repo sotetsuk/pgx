@@ -2,7 +2,7 @@ import base64
 import os
 
 from pgx._gardner_chess import State as GardnerChessState
-from pgx.chess import _flip
+from pgx._gardner_chess import _flip
 
 
 def _make_gardner_chess_dwg(dwg, state: GardnerChessState, config):

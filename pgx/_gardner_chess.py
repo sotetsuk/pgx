@@ -7,6 +7,20 @@ from pgx._src.struct import dataclass
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
+# board index (white view)
+# 5  4  9 14 19 24
+# 4  3  8 13 18 23
+# 3  2  7 12 17 22
+# 2  1  6 11 16 21
+# 1  0  5 10 15 20
+#    a  b  c  d  e
+# board index (flipped black view)
+# 5  0  5 10 15 20
+# 4  1  6 11 16 21
+# 3  2  7 12 17 22
+# 2  3  8 13 18 23
+# 1  4  9 14 19 24
+#    a  b  c  d  e
 # fmt: off
 INIT_BOARD = jnp.int8([
     4, 1, 0, -1, -4,
@@ -53,6 +67,23 @@ class State(v1.State):
     def num_players(self) -> int:
         return 2
 
+def _flip_pos(x):
+    """
+    >>> _flip_pos(jnp.int8(0))
+    Array(4, dtype=int8)
+    >>> _flip_pos(jnp.int8(4))
+    Array(0, dtype=int8)
+    >>> _flip_pos(jnp.int8(-1))
+    Array(-1, dtype=int8)
+    """
+    return jax.lax.select(x == -1, x, (x // 5) * 5 + (4 - (x % 5)))
+
+def _flip(state: State) -> State:
+    return state.replace(  # type: ignore
+        current_player=(state.current_player + 1) % 2,
+        _board=-jnp.flip(state._board.reshape(5, 5), axis=1).flatten(),
+        _turn=(state._turn + 1) % 2,
+    )
 
 def _rotate(board):
     return jnp.rot90(board, k=1)
