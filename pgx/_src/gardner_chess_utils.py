@@ -40,7 +40,7 @@ CAN_MOVE = -jnp.ones((7, 25, 16), jnp.int8)
 # CAN_MOVE[0, :, :]はすべて-1
 # 将棋と違い、中央から点対称でないので、注意が必要。
 # 視点は常に白側のイメージが良い。
-# PAWN以外の動きは上下左右対称。PAWNは上下と斜めへ動ける駒と定義して、手番に応じてフィルタする。
+# PAWN以外の動きは上下左右対称。
 
 
 # PAWN
@@ -49,7 +49,7 @@ for from_ in range(25):
     legal_dst = []
     for to in range(25):
         r1, c1 = to % 5, to // 5
-        if jnp.abs(r1 - r0) == 1 and jnp.abs(c1 - c0) <= 1:
+        if r1 - r0 == 1 and jnp.abs(c1 - c0) <= 1:
             legal_dst.append(to)
     assert len(legal_dst) <= 6, f"{from_=}, {to=}, {legal_dst=}"
     CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
