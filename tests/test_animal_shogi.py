@@ -102,6 +102,26 @@ def test_observe():
     assert (state.observation[0, 0, 10:22] == expected).all()
 
 
+    state = init(jax.random.PRNGKey(0))
+    state = step(state, 6 + 12 * 3)
+    state.save_svg("tests/assets/animal_shogi/test_obs_001.svg")
+    # my pawn
+    expected = jnp.bool_(
+        [[False, False, False],
+         [False, False, False],
+         [False, False,  False],
+         [False, False, False]]
+    )
+    assert (state.observation[:, :, 0] == expected).all()
+    # opp pawn
+    expected = jnp.bool_(
+        [[False, False, False],
+         [False, False, False],
+         [False, True,  False],
+         [False, False, False]]
+    )
+    assert (state.observation[:, :, 5] == expected).all()
+
 def test_repetition():
     state = init(jax.random.PRNGKey(0))
     # first
