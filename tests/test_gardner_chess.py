@@ -37,6 +37,7 @@ def test_action():
     assert action.from_ == p("b2")
     assert action.to == p("e2")
     assert action.underpromotion == -1
+    # fail
     action = Action._from_label(jnp.int32(322))
     assert action.from_ == p("b2")
     assert action.to == p("a1")
@@ -54,6 +55,7 @@ def test_action():
     assert action.to == p("c1")
     assert action.underpromotion == -1
     # knight moves
+    # fail
     state = State._from_fen("k4/5/2N2/5/4K w - - 0 1")
     state.save_svg("tests/assets/gardner_chess/action_002.svg")
     action = Action._from_label(jnp.int32(629))
@@ -89,7 +91,7 @@ def test_action():
     assert action.to == p("d5")
     assert action.underpromotion == -1
     # underpromotion
-    state = State._from_fen("r1r1k/1P3/5/5/7K w - - 0 1")
+    state = State._from_fen("r1r1k/1P3/5/5/4K w - - 0 1")
     state.save_svg("tests/assets/gardner_chess/action_003.svg")
     action = Action._from_label(jnp.int32(392))
     assert action.from_ == p("b4")
