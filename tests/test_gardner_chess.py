@@ -105,7 +105,6 @@ def test_action():
     assert action.from_ == p("b4")
     assert action.to == p("a5")
     assert action.underpromotion == 0  # rook
-
     # black turn
     state = State._from_fen("k4/3q1/5/5/4K b - - 0 1")
     state.save_svg("tests/assets/gardner_chess/action_004.svg")
