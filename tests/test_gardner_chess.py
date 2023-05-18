@@ -150,6 +150,47 @@ def test_observe():
     assert (state.observation[:, :, 0] == expected).all()
 
 
+def test_step():
+    # normal step
+    # queen
+    state = State._from_fen("k4/5/5/1Q3/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/step_001.svg")
+    assert state._board[p("b1")] == jnp.int8(0)
+    assert state._board[p("e5")] == jnp.int8(0)
+    state1 = step(state, jnp.int32(306))
+    state1.save_svg("tests/assets/gardner_chess/step_002.svg")
+    assert state1._board[p("b1", True)] == -jnp.int8(5)
+    state2 = step(state, jnp.int32(325))
+    state2.save_svg("tests/assets/gardner_chess/step_003.svg")
+    assert state2._board[p("e5", True)] == -jnp.int8(5)
+
+    # knight
+    state = State._from_fen("k4/5/2N2/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/step_004.svg")
+    assert state._board[p("b1")] == jnp.int8(0)
+    assert state._board[p("e4")] == jnp.int8(0)
+    state1 = step(state, jnp.int32(631))
+    state1.save_svg("tests/assets/gardner_chess/step_005.svg")
+    assert state1._board[p("b1", True)] == -jnp.int8(2)
+    state2 = step(state, jnp.int32(634))
+    state2.save_svg("tests/assets/gardner_chess/step_006.svg")
+    assert state2._board[p("e4", True)] == -jnp.int8(2)
+
+    # promotion
+    state = State._from_fen("r1r1k/1P3/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/step_007.svg")
+    assert state._board[p("b5")] == jnp.int8(0)
+    assert state._board[p("c5")] == -jnp.int8(4)
+    # underpromotion
+    next_state = step(state, jnp.int32(392))
+    next_state.save_svg("tests/assets/gardner_chess/step_008.svg")
+    assert next_state._board[p("b5", True)] == -jnp.int8(4)
+    # promotion to queen
+    next_state = step(state, jnp.int32(421))
+    next_state.save_svg("tests/assets/gardner_chess/step_008.svg")
+    assert next_state._board[p("b8", True)] == -jnp.int8(5)
+
+
 def test_api():
     import pgx
     env = pgx.make("gardner_chess")
