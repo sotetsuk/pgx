@@ -38,7 +38,6 @@ class State(v1.State):
     # --- Backgammon specific ---
     # points(24) bar(2) off(2). black+, white-
     _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
-    _rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
     _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)  # 0~5: 1~6
     _playable_dice: jnp.ndarray = jnp.zeros(
         4, dtype=jnp.int16
@@ -95,7 +94,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     state = State(  # type: ignore
         current_player=current_player,
-        _rng=rng3,
+        _rng_key=rng3,
         _board=board,
         terminated=terminated,
         _dice=dice,
@@ -189,7 +188,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     Update state by action
     """
     is_no_op = action // 6 == 0
-    rng = state._rng
+    rng_key = state._rng_key
     current_player: jnp.ndarray = state.current_player
     terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state._board, action)
@@ -203,7 +202,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
         lambda: state,
         lambda: state.replace(  # type: ignore
             current_player=current_player,
-            _rng=rng,
+            _rng_key=rng_key,
             terminated=terminated,
             _board=board,
             _turn=state._turn,
@@ -256,7 +255,7 @@ def _change_turn(state: State) -> State:
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
         current_player=current_player,
-        _rng=rng2,
+        _rng_key=rng2,
         _board=board,
         terminated=terminated,
         _turn=turn,
