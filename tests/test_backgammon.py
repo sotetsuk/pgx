@@ -314,6 +314,20 @@ def test_observe():
     )
     assert (observe(state, jnp.int8(1)) == expected_obs).all()
 
+    state = make_test_state(
+        current_player=jnp.int8(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int8(1),
+        dice=jnp.array([0, 1], dtype=jnp.int16),
+        playable_dice=jnp.array([1, 1, 1, 1], dtype=jnp.int16),
+        played_dice_num=jnp.int16(0),
+    )
+    expected_obs = jnp.concatenate(
+        (board, jnp.array([0, 4, 0, 0, 0, 0])), axis=None
+    )
+    assert (observe(state, jnp.int8(1)) == expected_obs).all()
+
     # current_playerが黒で, playできるdiceが(2)のみの場合
     state = make_test_state(
         current_player=jnp.int8(1),
