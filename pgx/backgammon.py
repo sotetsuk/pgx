@@ -124,12 +124,12 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     Return observation for player_id
     """
     board: jnp.ndarray = state._board
-    zero_one_dice_vec: jnp.ndarray = _to_playable_dice_count(
+    playable_dice_count_vec: jnp.ndarray = _to_playable_dice_count(
         state._playable_dice
     )
     return jax.lax.cond(
         player_id == state.current_player,
-        lambda: jnp.concatenate((board, zero_one_dice_vec), axis=None),  # type: ignore
+        lambda: jnp.concatenate((board, playable_dice_count_vec), axis=None),  # type: ignore
         lambda: jnp.concatenate(
             (board, jnp.zeros(6, dtype=jnp.int8)), axis=None  # type: ignore
         ),
