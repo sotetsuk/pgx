@@ -40,7 +40,9 @@ class State(v1.State):
     _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
     _rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
     _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)  # 0~5: 1~6
-    _playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)  # playable dice -1 for empty
+    _playable_dice: jnp.ndarray = jnp.zeros(
+        4, dtype=jnp.int16
+    )  # playable dice -1 for empty
     _played_dice_num: jnp.ndarray = jnp.int16(0)  # the number of dice played
     _turn: jnp.ndarray = jnp.int8(1)  # black: 0 white:1
 
@@ -84,7 +86,7 @@ class Backgammon(v1.Env):
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
-    board: jnp.ndarray = _make_init_board() 
+    board: jnp.ndarray = _make_init_board()
     terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
@@ -136,7 +138,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
 def _to_playable_dice_count(playable_dice: jnp.ndarray) -> jnp.ndarray:
     """
-    Return 6 dim vec which represents the number of playable die 
+    Return 6 dim vec which represents the number of playable die
     """
     dice_indices: jnp.ndarray = jnp.array(
         [0, 1, 2, 3], dtype=jnp.int8
@@ -244,12 +246,12 @@ def _change_turn(state: State) -> State:
     Change turn and return new state.
     """
     rng1, rng2 = jax.random.split(state._rng)
-    board: jnp.ndarray = _flip_board(state._board)  
-    turn: jnp.ndarray = (state._turn + 1) % 2 
+    board: jnp.ndarray = _flip_board(state._board)
+    turn: jnp.ndarray = (state._turn + 1) % 2
     current_player: jnp.ndarray = (state.current_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
-    dice: jnp.ndarray = _roll_dice(rng1)  
-    playable_dice: jnp.ndarray = _set_playable_dice(dice) 
+    dice: jnp.ndarray = _roll_dice(rng1)
+    playable_dice: jnp.ndarray = _set_playable_dice(dice)
     played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
@@ -446,7 +448,7 @@ def _is_to_off_legal(board: jnp.ndarray, src: int, tgt: int, die: int):
     """
     Check if the action is legal when the target is off.
     The conditions are:
-    1. src has checkers.    
+    1. src has checkers.
     2. All checkers are on home board.
     3. The distance from the src to the goal is the same as the die or the src is the farthest checker and the die is bigger than the distance.
     """
