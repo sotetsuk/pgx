@@ -36,18 +36,13 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Backgammon specific ---
-    # 各point(24) bar(2) off(2)にあるcheckerの数. 黒+, 白-
+    # points(24) bar(2) off(2). black+, white-
     _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
-    # サイコロを振るたびにrngをsplitして更新する.
     _rng: jax.random.KeyArray = jnp.zeros(2, dtype=jnp.uint16)
-    # サイコロの出目 0~5: 1~6
-    _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)
-    # プレイできるサイコロの目
-    _playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)
-    # プレイしたサイコロの目の数
-    _played_dice_num: jnp.ndarray = jnp.int16(0)
-    # 黒0, 白1
-    _turn: jnp.ndarray = jnp.int8(1)
+    _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)  # 0~5: 1~6
+    _playable_dice: jnp.ndarray = jnp.zeros(4, dtype=jnp.int16)  # playable dice -1 for empty
+    _played_dice_num: jnp.ndarray = jnp.int16(0)  # the number of dice played
+    _turn: jnp.ndarray = jnp.int8(1)  # black: 0 white:1
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -89,7 +84,7 @@ class Backgammon(v1.Env):
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
-    board: jnp.ndarray = _make_init_board()  # 初期配置は対象なので, turnに関係
+    board: jnp.ndarray = _make_init_board() 
     terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
@@ -112,7 +107,7 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 def _step(state: State, action: jnp.ndarray) -> State:
     """
-    terminated していない場合のstep 関数.
+    Step when not terminated
     """
     state = _update_by_action(state, action)
     return jax.lax.cond(
@@ -124,10 +119,10 @@ def _step(state: State, action: jnp.ndarray) -> State:
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """
-    手番のplayerに対する観測を返す.
+    Return observation for player_id
     """
     board: jnp.ndarray = state._board
-    zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(
+    zero_one_dice_vec: jnp.ndarray = _to_playable_dice_count(
         state._playable_dice
     )
     return jax.lax.cond(
@@ -139,13 +134,13 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     )
 
 
-def _to_zero_one_dice_vec(playable_dice: jnp.ndarray) -> jnp.ndarray:
+def _to_playable_dice_count(playable_dice: jnp.ndarray) -> jnp.ndarray:
     """
-    playできるサイコロを6次元の0-1ベクトルで返す.
+    Return 6 dim vec which represents the number of playable die 
     """
     dice_indices: jnp.ndarray = jnp.array(
         [0, 1, 2, 3], dtype=jnp.int8
-    )  # サイコロの数は最大4
+    )  # maximum number of playable dice is 4
 
     def _insert_dice_num(
         idx: jnp.ndarray, playable_dice: jnp.ndarray
@@ -164,7 +159,7 @@ def _winning_step(
     state: State,
 ) -> State:
     """
-    勝利者がいる場合のstep.
+    Step with winner
     """
     win_score = _calc_win_score(state._board)
     winner = state.current_player
@@ -178,7 +173,7 @@ def _winning_step(
 
 def _no_winning_step(state: State, action: jnp.ndarray) -> State:
     """
-    勝利者がいない場合のstep, ターン終了の条件を満たせばターンを変更する.
+    Step with no winner. Change turn if turn end condition is satisfied.
     """
     return jax.lax.cond(
         (_is_turn_end(state) | (action // 6 == 0)),
@@ -189,7 +184,7 @@ def _no_winning_step(state: State, action: jnp.ndarray) -> State:
 
 def _update_by_action(state: State, action: jnp.ndarray) -> State:
     """
-    行動を受け取って状態をupdate
+    Update state by action
     """
     is_no_op = action // 6 == 0
     rng = state._rng
@@ -220,7 +215,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
 
 def _flip_board(board):
     """
-    ターンが変わる際にボードを反転させ, -1をかける. そうすることで常に黒視点で考えることができる.
+    Flip a board when turn changes. Multiply -1 to the board so that we can always consider the board from black's perspective.
     """
     _board = board
     board = board.at[:24].set(jnp.flip(_board[:24]))
@@ -231,7 +226,7 @@ def _flip_board(board):
 
 def _make_init_board() -> jnp.ndarray:
     """
-    黒基準で初期化
+    Initialize the board based on black's perspective.
     """
     board: jnp.ndarray = jnp.array([2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0, 0], dtype=jnp.int8)  # type: ignore
     return board
@@ -239,22 +234,22 @@ def _make_init_board() -> jnp.ndarray:
 
 def _is_turn_end(state: State) -> bool:
     """
-    play可能なサイコロ数が0の場合ないしlegal_actionがない場合交代
+    Turn will end if there is no playable dice or no legal action.
     """
     return state._playable_dice.sum() == -4  # type: ignore
 
 
 def _change_turn(state: State) -> State:
     """
-    ターンを変更して新しい状態を返す.
+    Change turn and return new state.
     """
     rng1, rng2 = jax.random.split(state._rng)
-    board: jnp.ndarray = _flip_board(state._board)  # boardを反転させて黒視点に変える
-    turn: jnp.ndarray = (state._turn + 1) % 2  # turnを変える
+    board: jnp.ndarray = _flip_board(state._board)  
+    turn: jnp.ndarray = (state._turn + 1) % 2 
     current_player: jnp.ndarray = (state.current_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
-    dice: jnp.ndarray = _roll_dice(rng1)  # diceを振る
-    playable_dice: jnp.ndarray = _set_playable_dice(dice)  # play可能なサイコロを初期化
+    dice: jnp.ndarray = _roll_dice(rng1)  
+    playable_dice: jnp.ndarray = _set_playable_dice(dice) 
     played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
@@ -272,7 +267,7 @@ def _change_turn(state: State) -> State:
 
 def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     """
-    # 違う目が出るまで振り続ける.
+    Roll till the dice are different.
     """
 
     init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 5], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]], dtype=jnp.int16)  # type: ignore
@@ -288,8 +283,8 @@ def _roll_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
 
 def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     """
-    ゲーム開始時のターン決め.
-    サイコロの目が大きい方が手番.
+    Decide turn at the beginning of the game.
+    Begin with those who have bigger dice
     """
     diff = dice[1] - dice[0]
     return jnp.int8(diff > 0)
@@ -297,7 +292,7 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
     """
-    -1でemptyを表す.
+    -1 for empty
     """
     return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int16) + (
         dice[0] != dice[1]
@@ -314,7 +309,7 @@ def _update_playable_dice(
     die_array = jnp.array([action % 6] * 4, dtype=jnp.int16)
     dice_indices: jnp.ndarray = jnp.array(
         [0, 1, 2, 3], dtype=jnp.int16
-    )  # サイコロの数は最大4
+    )  # maximum number of playable dice is 4
 
     def _update_for_diff_dice(
         die: jnp.ndarray, idx: jnp.ndarray, playable_dice: jnp.ndarray
@@ -334,28 +329,28 @@ def _update_playable_dice(
 
 def _home_board() -> jnp.ndarray:
     """
-    黒: [18~23], 白: [0~5]: 常に黒視点
+    black: [18~23], white: [0~5]: Always black's perspective
     """
     return jnp.arange(18, 24, dtype=jnp.int8)  # type: ignore
 
 
 def _off_idx() -> int:
     """
-    黒: 26, 白: 27: 常に黒視点
+    black: 26, white: 27: Always black's perspective
     """
     return 26  # type: ignore
 
 
 def _bar_idx() -> int:
     """
-    黒: 24, 白 25: 常に黒視点
+    black: 24, white 25: Always black's perspective
     """
     return 24  # type: ignore
 
 
 def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
     """
-    board上にあるcheckerについて, goal地点とcheckerの距離の最大値: 常に黒視点
+    The distance from the farthest checker to the goal: Always black's perspective
     """
     b = board[:24]
     exists = jnp.where((b > 0), size=24, fill_value=jnp.nan)[0]  # type: ignore
@@ -364,7 +359,7 @@ def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
 
 def _is_all_on_home_board(board: jnp.ndarray) -> bool:
     """
-    全てのcheckerがhome boardにあれば, bear offできる.
+    One can bear off if all checkers are on home board.
     """
     home_board: jnp.ndarray = _home_board()
     on_home_board: int = jnp.clip(board[home_board], a_min=0, a_max=15).sum()
@@ -374,8 +369,8 @@ def _is_all_on_home_board(board: jnp.ndarray) -> bool:
 
 def _is_open(board: jnp.ndarray, point: int) -> bool:
     """
-    手番のplayerにとって, pointが空いてるかを判定する.
-    pointにある相手のcheckerの数が1以下なら自分のcheckerをそのpointにおける.
+    Check if the point is open for the current player: Always black's perspective
+    One can move to the point if there is no more than one opponent's checker.
     """
     checkers = board[point]
     return checkers >= -1  # type: ignore
@@ -383,7 +378,7 @@ def _is_open(board: jnp.ndarray, point: int) -> bool:
 
 def _exists(board: jnp.ndarray, point: int) -> bool:
     """
-    指定pointに手番のchckerが存在するか.
+    Check if the point has the current player's checker: Always black's perspective
     """
     checkers = board[point]
     return checkers >= 1  # type: ignore
@@ -391,7 +386,7 @@ def _exists(board: jnp.ndarray, point: int) -> bool:
 
 def _calc_src(src: jnp.ndarray) -> int:
     """
-    boardのindexに合わせる.
+    Translate src to board index.
     """
     return (src == 1) * jnp.int16(_bar_idx()) + (src != 1) * jnp.int16(
         src - 2
@@ -400,7 +395,7 @@ def _calc_src(src: jnp.ndarray) -> int:
 
 def _calc_tgt(src: int, die) -> int:
     """
-    boardのindexに合わせる. actionは src*6 + dieの形になっている. targetは黒ならsrcからdie分+白ならdie分-(目的地が逆だから.)
+    Translate tgt to board index.
     """
     return (src >= 24) * (jnp.int16(die) - 1) + (src < 24) * jnp.int16(
         _from_board(src, die)
@@ -416,7 +411,8 @@ def _from_board(src: int, die: int) -> int:
 
 def _decompose_action(action: jnp.ndarray):
     """
-    action(int)をsource, die, tagetに分解する.
+    Decompose action to src, die, tgt.
+    action = src*6 + die
     """
     src = _calc_src(action // 6)  # 0~25
     die = action % 6 + 1  # 0~5 -> 1~6
@@ -426,7 +422,7 @@ def _decompose_action(action: jnp.ndarray):
 
 def _is_action_legal(board: jnp.ndarray, action: jnp.ndarray) -> bool:
     """
-    micro actionの合法判定
+    Check if the action is legal.
     action = src * 6 + die
     src = [no op., from bar, 0, .., 23]
     """
@@ -441,18 +437,18 @@ def _is_action_legal(board: jnp.ndarray, action: jnp.ndarray) -> bool:
 
 def _distance_to_goal(src: int) -> int:
     """
-    goal までの距離: 常に黒視点
+    The distance from the src to the goal: Always black's perspective
     """
     return 24 - src  # type: ignore
 
 
 def _is_to_off_legal(board: jnp.ndarray, src: int, tgt: int, die: int):
     """
-    board外への移動についての合法判定
-    条件は
-    1. srcにcheckerがある
-    2. 自身のcheckeが全てhomeboardにある.
-    3. サイコロの目とgoalへの距離が同じ or srcが最後尾であり, サイコロの目がそれよりも大きい.
+    Check if the action is legal when the target is off.
+    The conditions are:
+    1. src has checkers.    
+    2. All checkers are on home board.
+    3. The distance from the src to the goal is the same as the die or the src is the farthest checker and the die is bigger than the distance.
     """
     r = _rear_distance(board)
     d = _distance_to_goal(src)
@@ -466,7 +462,7 @@ def _is_to_off_legal(board: jnp.ndarray, src: int, tgt: int, die: int):
 
 def _is_to_point_legal(board: jnp.ndarray, src: int, tgt: int) -> bool:
     """
-    tgtがpointの場合の合法手判定
+    Check if the action is legal when the target is point.
     """
     e = _exists(board, src)
     o = _is_open(board, tgt)
@@ -477,7 +473,7 @@ def _is_to_point_legal(board: jnp.ndarray, src: int, tgt: int) -> bool:
 
 def _move(board: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
     """
-    micro actionに基づく状態更新: 常に黒視点
+    Move checkers based on the action.
     """
     src, _, tgt = _decompose_action(action)
     board = board.at[_bar_idx() + 1].add(
@@ -491,15 +487,16 @@ def _move(board: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
 def _is_all_off(board: jnp.ndarray) -> bool:
     """
     手番のプレイヤーのチェッカーが全てoffにあれば勝利となる. 常に黒視点
+    If all checkers are off, the player wins. Always black's perspective.
     """
     return board[_off_idx()] == 15  # type: ignore
 
 
 def _calc_win_score(board: jnp.ndarray) -> int:
     """
-    通常勝ち: 1点
-    gammon勝ち: 2点
-    backgammon勝ち: 3点
+    Normal win: 1 point
+    Gammon win: 2 points
+    Backgammon win: 3 points
     """
     g = _is_gammon(board)
     return 1 + g + (g & _remains_at_inner(board))
@@ -507,15 +504,14 @@ def _calc_win_score(board: jnp.ndarray) -> int:
 
 def _is_gammon(board: jnp.ndarray) -> bool:
     """
-    相手のoffに一つもcheckerがなければgammon勝ち
+    If there is no opponent's checker on off, the player wins gammon.
     """
     return board[_off_idx() + 1] == 0  # type: ignore
 
 
 def _remains_at_inner(board: jnp.ndarray) -> bool:
     """
-    相手のoffに一つもcheckerがない && 相手のcheckerが一つでも自分のインナーに残っている
-    => backgammon勝ち
+    (1)If there is no opponent's checker on off and (2) there is at least one opponent's checker on inner, the player wins backgammon.
     """
     return jnp.take(board, _home_board()).sum() != 0  # type: ignore
 
@@ -531,12 +527,12 @@ def _legal_action_mask(board: jnp.ndarray, dice: jnp.ndarray) -> jnp.ndarray:
     return (
         legal_action_exists * legal_action_mask
         + ~legal_action_exists * no_op_mask
-    )  # legal_actionがなければ, np_op maskを返す
+    )  # if there is no legal action, no-op is legal
 
 
 def _legal_action_mask_for_single_die(board: jnp.ndarray, die) -> jnp.ndarray:
     """
-    一つのサイコロの目に対するlegal micro action
+    Legal action mask for a single die.
     """
     return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.bool_) + (
         die != -1
@@ -547,7 +543,7 @@ def _legal_action_mask_for_valid_single_dice(
     board: jnp.ndarray, die
 ) -> jnp.ndarray:
     """
-    -1以外のサイコロの目に対して合法判定
+    Legal action mask for a single die when the die is valid.
     """
     src_indices = jnp.arange(
         26, dtype=jnp.int16
@@ -569,8 +565,7 @@ def _legal_action_mask_for_valid_single_dice(
 
 def _get_abs_board(state: State) -> jnp.ndarray:
     """
-    visualization用
-    黒ならそのまま, 白なら反転して返す.
+    For visualization.
     """
     board: jnp.ndarray = state._board
     turn: jnp.ndarray = state._turn
