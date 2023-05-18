@@ -29,6 +29,10 @@ def make_env(env_name, n_envs, vec_env):
         def env_fn():
             from pettingzoo.classic.chess import chess
             return AutoResetPettingZooEnv(chess.env())
+    elif env_name == "connect_four":
+        def env_fn():
+            from pettingzoo.classic.connect_four import connect_four
+            return AutoResetPettingZooEnv(connect_four.env())
 
     if vec_env == "for-loop":
         from tianshou.env import DummyVectorEnv as VecEnv

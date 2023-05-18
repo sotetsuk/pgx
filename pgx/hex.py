@@ -31,7 +31,9 @@ class State(v1.State):
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(11 * 11, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = (
+        jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
+    )
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Hex specific ---
@@ -45,7 +47,7 @@ class State(v1.State):
     #  .
     #  .
     #  [110, 111, 112, ...,  119, 120]]
-    _board: jnp.ndarray = -jnp.zeros(
+    _board: jnp.ndarray = jnp.zeros(
         11 * 11, jnp.int32
     )  # <0(oppo), 0(empty), 0<(self)
 
@@ -65,7 +67,11 @@ class Hex(v1.Env):
 
     def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return partial(_step, size=self.size)(state, action)
+        return jax.lax.cond(
+            action != self.size * self.size,
+            lambda: partial(_step, size=self.size)(state, action),
+            lambda: partial(_swap, size=self.size)(state),
+        )
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -111,30 +117,60 @@ def _step(state: State, action: jnp.ndarray, size: int) -> State:
         lambda: jnp.zeros(2, jnp.float32),
     )
 
-    legal_action_mask = board == 0
     state = state.replace(  # type:ignore
         current_player=1 - state.current_player,
         _turn=1 - state._turn,
         _board=board * -1,
         rewards=reward,
         terminated=won,
-        legal_action_mask=legal_action_mask,
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(board == 0)
+        .at[-1]
+        .set(state._step_count == 1),
     )
 
     return state
 
 
-def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
-    board = jax.lax.cond(
-        player_id == state.current_player,
-        lambda: state._board.reshape((size, size)),
-        lambda: (state._board * -1).reshape((size, size)),
+def _swap(state: State, size: int) -> State:
+    ix = jnp.nonzero(state._board, size=1)[0]
+    row = ix // size
+    col = ix % size
+    swapped_ix = col * size + row
+    set_place_id = swapped_ix + 1
+    board = state._board.at[ix].set(0).at[swapped_ix].set(set_place_id)
+    return state.replace(  # type: ignore
+        current_player=1 - state.current_player,
+        _turn=1 - state._turn,
+        _board=board * -1,
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(board == 0)
+        .at[-1]
+        .set(FALSE),
     )
 
-    def make(color):
-        return board * color > 0
 
-    return jnp.stack(jax.vmap(make)(jnp.int8([1, -1])), 2)
+def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
+    board = jax.lax.select(
+        player_id == state.current_player,
+        state._board.reshape((size, size)),
+        -state._board.reshape((size, size)),
+    )
+
+    my_board = board * 1 > 0
+    opp_board = board * -1 > 0
+    ones = jnp.ones_like(my_board)
+    my_color = (
+        jax.lax.select(
+            player_id == state.current_player, state._turn, 1 - state._turn
+        )
+        * ones
+    )
+    can_swap = state.legal_action_mask[-1] * ones
+
+    return jnp.stack(
+        [my_board, opp_board, my_color, can_swap], 2, dtype=jnp.bool_
+    )
 
 
 def _neighbour(xy, size):

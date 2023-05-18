@@ -42,7 +42,7 @@ env = Hex()
 | Version | `v0` |
 | Number of players | `2` |
 | Number of actions | `121 (= 11 x 11)` |
-| Observation shape | `(11, 11, 2)` |
+| Observation shape | `(11, 11, 3)` |
 | Observation type | `bool` |
 | Rewards | `{-1, 1}` |
 
@@ -51,8 +51,9 @@ env = Hex()
 
 | Index | Description |
 |:---:|:----|
-| `[:, :, 0]` | represents `(11, 11)` cells filled by the current player |
-| `[:, :, 1]` | represents `(11, 11)` cells filled by the opponent player of current player |
+| `[:, :, 0]` | represents `(11, 11)` cells filled by `player_ix` |
+| `[:, :, 1]` | represents `(11, 11)` cells filled by the opponent player of `player_id` |
+| `[:, :, 2]` | represents whether `player_id` is black or white|
 
 ## Action
 Each action represents the cell index to be filled.

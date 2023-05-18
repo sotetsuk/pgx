@@ -2,6 +2,7 @@ from pgx._mahjong._hand import Hand
 from pgx._mahjong._yaku import Yaku
 from pgx._mahjong._shanten import Shanten
 import jax.numpy as jnp
+from jax import jit
 
 
 def test_ron():
@@ -14,8 +15,8 @@ def test_ron():
     ])
     # fmt:on
 
-    assert Hand.can_ron(hand, 0)
-    assert ~Hand.can_ron(hand, 1)
+    assert jit(Hand.can_ron)(hand, 0)
+    assert ~jit(Hand.can_ron)(hand, 1)
 
     # 国士無双
     # fmt:off
@@ -27,8 +28,8 @@ def test_ron():
     ])
     # fmt:on
 
-    assert Hand.can_ron(hand, 33)
-    assert ~Hand.can_ron(hand, 1)
+    assert jit(Hand.can_ron)(hand, 33)
+    assert ~jit(Hand.can_ron)(hand, 1)
 
     # 七対子
     # fmt:off
@@ -40,8 +41,57 @@ def test_ron():
     ])
     # fmt:on
 
-    assert Hand.can_ron(hand, 0)
-    assert ~Hand.can_ron(hand, 1)
+    assert jit(Hand.can_ron)(hand, 0)
+    assert ~jit(Hand.can_ron)(hand, 1)
+
+
+def test_riichi():
+    # fmt:off
+    hand = jnp.int8([
+        1, 1, 1, 1, 1, 1, 1, 1, 0,
+        3, 0, 0, 0, 0, 0, 0, 0, 1,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        2, 0, 0, 0, 0, 0, 0
+    ])
+    # fmt:on
+
+    assert jit(Hand.can_riichi)(hand)
+
+    # fmt:off
+    hand = jnp.int8([
+        1, 1, 1, 1, 1, 1, 1, 0, 0,
+        3, 0, 0, 0, 0, 0, 0, 1, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        2, 0, 0, 0, 0, 0, 0
+    ])
+    # fmt:on
+
+    assert ~jit(Hand.can_riichi)(hand)
+
+    # fmt:off
+    hand = jnp.int8([
+        1, 1, 1, 1, 1, 1, 1, 1, 1,
+        3, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        2, 0, 0, 0, 0, 0, 0
+    ])
+    # fmt:on
+
+    assert jit(Hand.can_riichi)(hand)
+
+
+def test_can_chi():
+    from pgx._mahjong._action import Action
+
+    # fmt:off
+    hand = jnp.int8([
+        0, 1, 1, 1, 1, 1, 1, 1, 1,
+        3, 0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0, 0,
+        2, 0, 0, 0, 0, 0, 0
+    ])
+    # fmt:on
+    assert jit(Hand.can_chi)(hand, 0, Action.CHI_L)
 
 
 def test_score():
@@ -55,7 +105,7 @@ def test_score():
     ])
     # fmt:on
     assert (
-        Yaku.score(
+        jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
             n_meld=0,
@@ -76,7 +126,7 @@ def test_score():
     # fmt:on
 
     assert (
-        Yaku.score(
+        jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
             n_meld=0,
@@ -98,7 +148,7 @@ def test_score():
     # fmt:on
 
     assert (
-        Yaku.score(
+        jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
             n_meld=0,
@@ -120,7 +170,7 @@ def test_shanten():
     ])
     # fmt:on
 
-    assert Shanten.number(hand) == 5
+    assert jit(Shanten.number)(hand) == 5
 
     # fmt:off
     hand = jnp.int32([
@@ -130,4 +180,4 @@ def test_shanten():
         0, 0, 0, 0, 0, 0, 0
     ])
     # fmt:on
-    assert Shanten.number(hand) == 1
+    assert jit(Shanten.number)(hand) == 1

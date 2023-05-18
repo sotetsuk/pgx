@@ -322,13 +322,41 @@ class Yaku:
             dtype=jnp.int32,
         )
 
-        for suit in range(3):
+        def _update_yaku(suit, tpl):
             code = jax.lax.fori_loop(
                 9 * suit,
                 9 * (suit + 1),
                 lambda i, code: code * 5 + hand[i].astype(int),
                 0,
             )
+            return Yaku.update(
+                tpl[0],
+                tpl[1],
+                tpl[2],
+                tpl[3],
+                tpl[4],
+                tpl[5],
+                tpl[6],
+                tpl[7],
+                code,
+                suit,
+                last,
+                is_ron,
+            )
+
+        (
+            is_pinfu,
+            is_outside,
+            n_double_chow,
+            all_chow,
+            all_pung,
+            n_concealed_pung,
+            nine_gates,
+            fu,
+        ) = jax.lax.fori_loop(
+            0,
+            3,
+            _update_yaku,
             (
                 is_pinfu,
                 is_outside,
@@ -338,20 +366,38 @@ class Yaku:
                 n_concealed_pung,
                 nine_gates,
                 fu,
-            ) = Yaku.update(
-                is_pinfu,
-                is_outside,
-                n_double_chow,
-                all_chow,
-                all_pung,
-                n_concealed_pung,
-                nine_gates,
-                fu,
-                code,
-                suit,
-                last,
-                is_ron,
-            )
+            ),
+        )
+        # for suit in range(3):
+        #    code = jax.lax.fori_loop(
+        #        9 * suit,
+        #        9 * (suit + 1),
+        #        lambda i, code: code * 5 + hand[i].astype(int),
+        #        0,
+        #    )
+        #    (
+        #        is_pinfu,
+        #        is_outside,
+        #        n_double_chow,
+        #        all_chow,
+        #        all_pung,
+        #        n_concealed_pung,
+        #        nine_gates,
+        #        fu,
+        #    ) = Yaku.update(
+        #        is_pinfu,
+        #        is_outside,
+        #        n_double_chow,
+        #        all_chow,
+        #        all_pung,
+        #        n_concealed_pung,
+        #        nine_gates,
+        #        fu,
+        #        code,
+        #        suit,
+        #        last,
+        #        is_ron,
+        #    )
 
         n_concealed_pung += jnp.sum(hand[27:] >= 3) - (
             is_ron & (last >= 27) & (hand[last] >= 3)

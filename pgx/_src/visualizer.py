@@ -306,6 +306,36 @@ class Visualizer:
                     "black",
                     "",
                 )
+        elif _state.env_id == "gardner_chess":
+            from pgx._src.dwg.gardner_chess import _make_gardner_chess_dwg
+
+            self.config["GRID_SIZE"] = 50
+            self.config["BOARD_WIDTH"] = 5
+            self.config["BOARD_HEIGHT"] = 5
+            self._make_dwg_group = _make_gardner_chess_dwg  # type:ignore
+            if (
+                self.config["COLOR_THEME"] is None
+                and self.config["COLOR_THEME"] == "dark"
+            ) or self.config["COLOR_THEME"] == "dark":
+                self.config["COLOR_SET"] = ColorSet(
+                    "none",
+                    "none",
+                    "#404040",
+                    "gray",
+                    "#1e1e1e",
+                    "silver",
+                    "",
+                )
+            else:
+                self.config["COLOR_SET"] = ColorSet(
+                    "none",
+                    "none",
+                    "gray",
+                    "white",
+                    "white",
+                    "black",
+                    "",
+                )
         elif _state.env_id == "connect_four":
             from pgx._src.dwg.connect_four import _make_connect_four_dwg
 

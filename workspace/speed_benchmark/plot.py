@@ -45,6 +45,10 @@ def get_all_field(data, field):
     return fields
 
 
+cmap = plt.get_cmap("tab10")
+colors = {}
+max_color = [0]
+
 
 def plot_ax(ax, game):
     libraries = get_all_field(data, "library")
@@ -53,7 +57,11 @@ def plot_ax(ax, game):
         if len(filtered) == 0:
             continue
         bs, val = to_numpy(filtered)
-        ax.plot(bs, val, label=f"{lib}", marker=".")
+        if lib not in colors:
+            colors[lib] = max_color[0]
+            max_color[0] += 1
+        c = cmap(colors[lib])
+        ax.plot(bs, val, label=f"{lib}", marker=".", color=c)
     ax.set_yscale('log')
     ax.set_xscale('log')
     ax.set_title(game)
@@ -64,7 +72,8 @@ games = get_all_field(data, "game")
 fig, axes = plt.subplots(1, len(games), figsize=(12, 3))
 for i, game in enumerate(games):
     plot_ax(axes[i], game)
-    axes[i].legend()
+    # if game == "tic_tac_toe":
+    #     axes[i].legend()
 axes[0].set_ylabel("# Steps per second")
 plt.tight_layout()
-plt.show()
+plt.savefig("results.pdf")
