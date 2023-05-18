@@ -278,13 +278,13 @@ def test_terminal():
 
     # 50-move draw rule
     # FEN is from https://www.chess.com/terms/fen-chess#halfmove-clock
-    state = State._from_fen("2k2/3p1/1p1Pp/pP2P/2P1K/ b - - 99 50")
+    state = State._from_fen("2k2/p1p1p/PpPpP/1P1P1/4K b - - 99 50")
     state.save_svg("tests/assets/gardner_chess/terminal_003.svg")
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/terminal_004.svg")
     print(state._to_fen())
-    # assert state.terminated
-    # assert (state.rewards == 0.0).all()
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
 
     # insufficient pieces
     # K vs K
