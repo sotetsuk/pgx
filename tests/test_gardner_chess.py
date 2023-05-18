@@ -191,6 +191,73 @@ def test_step():
     assert next_state._board[p("b8", True)] == -jnp.int8(5)
 
 
+def test_legal_action_mask():
+    # init board
+    state = State()
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_001.svg")
+    assert state.legal_action_mask.sum() == 7
+
+    # pawn (blocked)
+    state = State._from_fen("5/5/4k/4P/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_002.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 1
+
+    # pawn capture
+    state = State._from_fen("4k/5/3r1/4P/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_003.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 2
+
+    # promotion (white)
+    state = State._from_fen("2r1k/1P3/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_007.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 11
+
+    # promotion (black)
+    state = State._from_fen("4k/5/5/p4/BB2K b - - 0 1")
+    state.save_svg("tests/assets/chess/legal_action_mask_008.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 7
+
+    # check
+    state = State._from_fen("4k/5/2b2/5/KRR2 w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_009.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 3
+
+    # pinned
+    state = State._from_fen("4k/5/r1b2/BP3/KBr2 w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_010.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 1
+
+    # pinned(same line)
+    state = State._from_fen("k3b/5/5/1Q3/K4 w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_011.svg")
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 5
+
+    # double check
+    #state = State._from_fen("1q6/R2N3k/8/8/8/8/8/K7 w - - 0 1")
+    #state.save_svg("tests/assets/chess/legal_action_mask_039.svg")
+    #state = step(state, jnp.int32(2260))  # WPawn: f7 -> f8 Night Promotion
+    #state.save_svg("tests/assets/chess/legal_action_mask_040.svg")
+    #print(state._to_fen())
+    #print(jnp.nonzero(state.legal_action_mask))
+    #assert state.legal_action_mask.sum() == 3
+
+    # double check by promotion
+    #state = State._from_fen("1q6/R4P1k/8/8/8/8/8/K7 w - - 0 1")
+    #state.save_svg("tests/assets/chess/legal_action_mask_041.svg")
+    #state = step(state, jnp.int32(3364))  # WPawn: f7 -> f8 Night Promotion
+    #state.save_svg("tests/assets/chess/legal_action_mask_042.svg")
+    #print(state._to_fen())
+    #print(jnp.nonzero(state.legal_action_mask))
+    #assert state.legal_action_mask.sum() == 3
+
+
 def test_api():
     import pgx
     env = pgx.make("gardner_chess")
