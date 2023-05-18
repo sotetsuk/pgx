@@ -125,7 +125,6 @@ def _step(state: State, action: jnp.ndarray) -> State:
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """
     手番のplayerに対する観測を返す.
-    [board, playable_dice, playable_dice_num]
     """
     board: jnp.ndarray = state._board
     zero_one_dice_vec: jnp.ndarray = _to_zero_one_dice_vec(
