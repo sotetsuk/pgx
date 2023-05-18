@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx.gardner_chess import State, Action, GardnerChess
+from pgx.gardner_chess import State, Action, GardnerChess, QUEEN, EMPTY, ROOK, PAWN, KNIGHT
 
 pgx.set_visualization_config(color_theme="dark")
 
@@ -155,40 +155,40 @@ def test_step():
     # queen
     state = State._from_fen("k4/5/5/1Q3/4K w - - 0 1")
     state.save_svg("tests/assets/gardner_chess/step_001.svg")
-    assert state._board[p("b1")] == jnp.int8(0)
-    assert state._board[p("e5")] == jnp.int8(0)
-    state1 = step(state, jnp.int32(306))
+    assert state._board[p("b1")] == EMPTY
+    assert state._board[p("e5")] == EMPTY
+    state1 = step(state, jnp.int32(306)) # b2 -> b1
     state1.save_svg("tests/assets/gardner_chess/step_002.svg")
-    assert state1._board[p("b1", True)] == -jnp.int8(5)
-    state2 = step(state, jnp.int32(325))
+    assert state1._board[p("b1", True)] == -QUEEN
+    state2 = step(state, jnp.int32(325)) # b2 -> e5
     state2.save_svg("tests/assets/gardner_chess/step_003.svg")
-    assert state2._board[p("e5", True)] == -jnp.int8(5)
+    assert state2._board[p("e5", True)] == -QUEEN
 
     # knight
     state = State._from_fen("k4/5/2N2/5/4K w - - 0 1")
     state.save_svg("tests/assets/gardner_chess/step_004.svg")
-    assert state._board[p("b1")] == jnp.int8(0)
-    assert state._board[p("e4")] == jnp.int8(0)
-    state1 = step(state, jnp.int32(631))
+    assert state._board[p("b1")] == EMPTY
+    assert state._board[p("e4")] == EMPTY
+    state1 = step(state, jnp.int32(631)) # c3 -> b1
     state1.save_svg("tests/assets/gardner_chess/step_005.svg")
-    assert state1._board[p("b1", True)] == -jnp.int8(2)
-    state2 = step(state, jnp.int32(634))
+    assert state1._board[p("b1", True)] == KNIGHT
+    state2 = step(state, jnp.int32(634)) # c3 -> e4
     state2.save_svg("tests/assets/gardner_chess/step_006.svg")
-    assert state2._board[p("e4", True)] == -jnp.int8(2)
+    assert state2._board[p("e4", True)] == KNIGHT
 
     # promotion
     state = State._from_fen("r1r1k/1P3/5/5/4K w - - 0 1")
     state.save_svg("tests/assets/gardner_chess/step_007.svg")
-    assert state._board[p("b5")] == jnp.int8(0)
-    assert state._board[p("c5")] == -jnp.int8(4)
+    assert state._board[p("b5")] == EMPTY
+    assert state._board[p("c5")] == -ROOK
     # underpromotion
-    next_state = step(state, jnp.int32(392))
+    next_state = step(state, jnp.int32(392)) # b4 -> b5 (underpromotion:Rook)
     next_state.save_svg("tests/assets/gardner_chess/step_008.svg")
-    assert next_state._board[p("b5", True)] == -jnp.int8(4)
+    assert next_state._board[p("b5", True)] == -ROOK
     # promotion to queen
-    next_state = step(state, jnp.int32(421))
+    next_state = step(state, jnp.int32(421)) # b4 -> c5 (promotion:Queen)
     next_state.save_svg("tests/assets/gardner_chess/step_008.svg")
-    assert next_state._board[p("b8", True)] == -jnp.int8(5)
+    assert next_state._board[p("c5", True)] == -QUEEN
 
 
 def test_legal_action_mask():
@@ -239,23 +239,14 @@ def test_legal_action_mask():
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
 
-    # double check
-    #state = State._from_fen("1q6/R2N3k/8/8/8/8/8/K7 w - - 0 1")
-    #state.save_svg("tests/assets/chess/legal_action_mask_039.svg")
-    #state = step(state, jnp.int32(2260))  # WPawn: f7 -> f8 Night Promotion
-    #state.save_svg("tests/assets/chess/legal_action_mask_040.svg")
-    #print(state._to_fen())
-    #print(jnp.nonzero(state.legal_action_mask))
-    #assert state.legal_action_mask.sum() == 3
-
-    # double check by promotion
-    #state = State._from_fen("1q6/R4P1k/8/8/8/8/8/K7 w - - 0 1")
-    #state.save_svg("tests/assets/chess/legal_action_mask_041.svg")
-    #state = step(state, jnp.int32(3364))  # WPawn: f7 -> f8 Night Promotion
-    #state.save_svg("tests/assets/chess/legal_action_mask_042.svg")
-    #print(state._to_fen())
-    #print(jnp.nonzero(state.legal_action_mask))
-    #assert state.legal_action_mask.sum() == 3
+    # remote check
+    state = State._from_fen("5/R1B1k/1b3/5/K4 w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_012.svg")
+    state = step(state, jnp.int32(673))  # c4 -> b5
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_013.svg")
+    print(state._to_fen())
+    print(jnp.nonzero(state.legal_action_mask))
+    assert state.legal_action_mask.sum() == 6
 
 
 def test_api():
