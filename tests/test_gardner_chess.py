@@ -406,6 +406,45 @@ def test_terminal():
     assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
+    # rep termination
+    state = State._from_fen("k3r/5/5/5/K3R w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_025.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(13))
+    state.save_svg("tests/assets/gardner_chess/terminal_026.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(993))
+    state.save_svg("tests/assets/gardner_chess/terminal_026.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(993))
+    state.save_svg("tests/assets/gardner_chess/terminal_027.svg")
+    print(state._to_fen())
+    # rep in 4 moves
+    state1 = step(state, jnp.int32(1041))
+    state1.save_svg("tests/assets/gardner_chess/terminal_028.svg")
+    print(state1._to_fen())
+    state1 = step(state1, jnp.int32(1041))
+    state1.save_svg("tests/assets/gardner_chess/terminal_029.svg")
+    print(state1._to_fen())
+    assert state1.terminated
+    assert (state1.rewards == 0.0).all()
+    # rep in 6 moves
+    state2 = step(state, jnp.int32(1042))
+    state2.save_svg("tests/assets/gardner_chess/terminal_030.svg")
+    print(state2._to_fen())
+    state2 = step(state2, jnp.int32(1042))
+    state2.save_svg("tests/assets/gardner_chess/terminal_031.svg")
+    print(state2._to_fen())
+    state2 = step(state, jnp.int32(1089))
+    state2.save_svg("tests/assets/gardner_chess/terminal_032.svg")
+    print(state2._to_fen())
+    state2 = step(state2, jnp.int32(1089))
+    state2.save_svg("tests/assets/gardner_chess/terminal_033.svg")
+    print(state2._to_fen())
+    assert state2.terminated
+    assert (state2.rewards == 0.0).all()
+
+
 
 def test_api():
     import pgx
