@@ -244,7 +244,7 @@ def _change_turn(state: State) -> State:
     """
     Change turn and return new state.
     """
-    rng1, rng2 = jax.random.split(state._rng)
+    rng1, rng2 = jax.random.split(state._rng_key)
     board: jnp.ndarray = _flip_board(state._board)
     turn: jnp.ndarray = (state._turn + 1) % 2
     current_player: jnp.ndarray = (state.current_player + 1) % 2

@@ -89,7 +89,7 @@ def make_test_state(
 ):
     return State(
         current_player=current_player,
-        _rng=rng,
+        _rng_key=rng,
         _board=board,
         _turn=turn,
         _dice=dice,
