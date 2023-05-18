@@ -531,6 +531,10 @@ def _from_fen(fen: str):
         _halfmove_count=jnp.int32(halfmove_cnt),
         _fullmove_count=jnp.int32(fullmove_cnt),
     )
+    state = state.replace(  # type: ignore
+        legal_action_mask=jax.jit(_legal_action_mask)(state),
+    )
+    state = jax.jit(_check_termination)(state)
     return state
 
 

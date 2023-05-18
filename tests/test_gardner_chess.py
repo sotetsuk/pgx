@@ -165,7 +165,7 @@ def test_step():
     assert state2._board[p("e5", True)] == -QUEEN
 
     # knight
-    state = State._from_fen("k4/5/2N2/5/4K w - - 0 1")
+    state = State._from_fen("k1b2/5/2N2/5/4K w - - 0 1")
     state.save_svg("tests/assets/gardner_chess/step_004.svg")
     assert state._board[p("b1")] == EMPTY
     assert state._board[p("e4")] == EMPTY
@@ -211,51 +211,200 @@ def test_legal_action_mask():
 
     # promotion (white)
     state = State._from_fen("2r1k/1P3/5/5/4K w - - 0 1")
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_007.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_004.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 11
 
     # promotion (black, pin)
     state = State._from_fen("4k/5/5/1p3/BB2K b - - 0 1")
-    state.save_svg("tests/assets/chess/legal_action_mask_008.svg")
+    state.save_svg("tests/assets/chess/legal_action_mask_005.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 6
 
     # check
     state = State._from_fen("4k/5/2b2/5/KRR2 w - - 0 1")
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_009.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_006.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 3
 
     # pinned
     state = State._from_fen("4k/5/r1b2/BP3/KBr2 w - - 0 1")
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_010.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_007.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 1
 
     # pinned(same line)
     state = State._from_fen("k3b/5/5/1Q3/K4 w - - 0 1")
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_011.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_008.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
 
     # remote check
     state = State._from_fen("5/R1B1k/1b3/5/K4 w - - 0 1")
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_012.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_009.svg")
     state = step(state, jnp.int32(673))  # c4 -> b5
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_013.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_010.svg")
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
 
     # double check
     state = State._from_fen("5/R1B1k/1b3/5/K4 w - - 0 1")
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_014.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_011.svg")
     state = step(state, jnp.int32(666))  # c4 -> d5
-    state.save_svg("tests/assets/gardner_chess/legal_action_mask_015.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_012.svg")
     print(state._to_fen())
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 4
+
+
+def test_terminal():
+    # checkmate (white win)
+    state = State._from_fen("4k/4R/2N2/5/K4 b - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_001.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert state.rewards[state.current_player] == -1
+    assert state.rewards[1 - state.current_player] == 1.
+
+    # stalemate
+    state = State._from_fen("k4/5/1Q3/K4/5 b - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_002.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # 50-move draw rule
+    # FEN is from https://www.chess.com/terms/fen-chess#halfmove-clock
+    state = State._from_fen("2k2/3p1/1p1Pp/pP2P/2P1K/ b - - 99 50")
+    state.save_svg("tests/assets/gardner_chess/terminal_003.svg")
+    state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
+    state.save_svg("tests/assets/gardner_chess/terminal_004.svg")
+    print(state._to_fen())
+    # assert state.terminated
+    # assert (state.rewards == 0.0).all()
+
+    # insufficient pieces
+    # K vs K
+    state = State._from_fen("k4/5/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_005.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # K+B vs K
+    state = State._from_fen("k4/5/5/5/3BK w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_006.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # K vs K+B
+    state = State._from_fen("kb3/5/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_007.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # K+N vs K
+    state = State._from_fen("k4/5/5/5/3NK w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_008.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # K vs K+N
+    state = State._from_fen("kn3/5/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_009.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # K+B vs K+B (Bishop in Black tile)
+    state = State._from_fen("k1b1b/5/5/5/B1B1K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_010.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # K+B vs K+B (Bishop in White tile)
+    state = State._from_fen("kb1B1/B1b2/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_011.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
+
+    # insufficient cases by underpromotion
+    # K+B vs K
+    state = State._from_fen("k4/4P/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_012.svg")
+    state = step(state, jnp.int32(1130))
+    state.save_svg("tests/assets/chess/terminal_013.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
+
+    # K+N vs K
+    state = State._from_fen("k4/4P/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_014.svg")
+    state = step(state, jnp.int32(1133))
+    state.save_svg("tests/assets/gardner_chess/terminal_015.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
+
+    # K+B vs K+B(Bishop in Black tile)
+    state = State._from_fen("k1b2/4P/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_016.svg")
+    state = step(state, jnp.int32(1130))
+    state.save_svg("tests/assets/gardner_chess/terminal_017.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
+
+    # K+B vs K+B (Bishop in White tile)
+    state = State._from_fen("kb3/3P1/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_018.svg")
+    state = step(state, jnp.int32(885))
+    state.save_svg("tests/assets/gardner_chess/terminal_019.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
+
+    # K+B*2 vs K(Bishop in Black tile)
+    state = State._from_fen("k1B2/4P/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_020.svg")
+    state = step(state, jnp.int32(1130))
+    state.save_svg("tests/assets/gardner_chess/terminal_021.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
+
+    # K+B*2 vs K (Bishop in White tile)
+    state = State._from_fen("kB3/3P1/5/5/4K w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_022.svg")
+    state = step(state, jnp.int32(885))
+    state.save_svg("tests/assets/gardner_chess/terminal_023.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
+
+    # stalemate with pin
+    state = State._from_fen("kbR2/pn3/P1B2/5/4K b - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/terminal_024.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert state.current_player == 0
+    assert (state.rewards == 0.0).all()
 
 
 def test_api():
