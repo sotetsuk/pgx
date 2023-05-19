@@ -16,9 +16,11 @@ import jax
 import jax.numpy as jnp
 
 import pgx.v1 as v1
-from pgx._mahjong._action import Action
+
+# from pgx._mahjong._action import Action
 from pgx._mahjong._hand import Hand
-from pgx._mahjong._meld import Meld
+
+# from pgx._mahjong._meld import Meld
 from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -37,7 +39,7 @@ class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
     deck: jnp.ndarray
-    next_deck_ix: jnp.ndarray  # 最後に引いたdeckのindex
+    next_deck_ix: jnp.ndarray  # 次に引く牌のindex
     hand: jnp.ndarray  # 各プレイヤーの手牌. 長さ34で、数字は持っている牌の数
     turn: int  # 手牌が3n+2枚, もしくは直前に牌を捨てたplayer
     target: int  # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
@@ -87,7 +89,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     first_tile = init_deck[135 - 13 * 4]
     init_hand = Hand.make_init_hand(init_deck)
     init_hand = init_hand.at[current_player].set(
-        Hand.add(init_hand.at[current_player], first_tile)
+        Hand.add(init_hand[current_player], first_tile)
     )
     return State(
         current_player=current_player,
@@ -106,7 +108,7 @@ def _step(state: State, action: jnp.ndarray) -> State:
     #   - ron, tsumo
     # - 勝利条件確認
 
-    current_player = (current_player + 1) % 4
+    current_player = (state.current_player + 1) % 4
     return State(current_player=current_player)  # type:ignore
 
 
