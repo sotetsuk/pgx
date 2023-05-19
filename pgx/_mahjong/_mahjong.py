@@ -33,6 +33,16 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
+    deck: jnp.ndarray
+    last_deck_ix: jnp.ndarray  # 最後に引いたdeckのindex
+    hand: jnp.ndarray  # 各プレイヤーの手牌. 長さ34で、数字は持っている牌の数
+    turn: int  # 手牌が3n+2枚, もしくは直前に牌を捨てたplayer
+    target: int  # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
+    last_draw: int  # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
+    riichi_declared: bool  # state.turn がリーチ宣言してから, その直後の打牌が通るまでTrue
+    riichi: jnp.ndarray  # 各playerのリーチが成立しているかどうか
+    n_meld: jnp.ndarray  # 各playerの副露回数
+    melds: jnp.ndarray  # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
 
     @property
     def env_id(self) -> v1.EnvId:
