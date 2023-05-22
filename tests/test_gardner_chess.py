@@ -224,29 +224,61 @@ def test_observe():
     state.save_svg("tests/assets/gardner_chess/observe_005.svg")
     state = step(state, 265)
     state.save_svg("tests/assets/gardner_chess/observe_006.svg")
+    assert (state.observation[:, :, 12] == 0.).all()
     assert (state.observation[:, :, 13] == 1.).all()
-    assert (state.observation[:, :, 14] == 0.).all()
     state = step(state, 21)
     state.save_svg("tests/assets/gardner_chess/observe_007.svg")
+    assert (state.observation[:, :, 12] == 0.).all()
     assert (state.observation[:, :, 13] == 1.).all()
     state = step(state, 21)
     state.save_svg("tests/assets/gardner_chess/observe_008.svg")
+    assert (state.observation[:, :, 12] == 0.).all()
     assert (state.observation[:, :, 13] == 1.).all()
     state = step(state, 265)
     state.save_svg("tests/assets/gardner_chess/observe_009.svg")
+    assert (state.observation[:, :, 12] == 0.).all()
     assert (state.observation[:, :, 13] == 1.).all()
     state = step(state, 265)
     state.save_svg("tests/assets/gardner_chess/observe_010.svg")
-    # need fix?
-    # assert (state.observation[:, :, 14] == 1.).all()
+    assert (state.observation[:, :, 12] == 0.).all()
+    assert (state.observation[:, :, 13] == 0.).all()
+    assert state.terminated
 
     # color
-    state = State._from_fen("k3r/5/5/5/K4 w - - 0 1")
-    print(state.observation[0, 0, 112])
-    #assert state.observation[0, 0, 112] == 0.
-    state = State._from_fen("k3r/5/5/5/K4 b - - 0 1")
-    print(state.observation[0, 0, 112])
-    #assert state.observation[:, :, 112] == 1.
+    state = State._from_fen("k3r/5/5/5/K3R w - - 23 20")
+    state.save_svg("tests/assets/gardner_chess/observe_011.svg")
+    state = step(state, 1000)
+    state.save_svg("tests/assets/gardner_chess/observe_012.svg")
+    assert state.observation[0, 0, 112] == 1.
+    state = step(state, 1000)
+    state.save_svg("tests/assets/gardner_chess/observe_013.svg")
+    assert state.observation[0, 0, 112] == 0.
+    state = step(state, 755)
+    state.save_svg("tests/assets/gardner_chess/observe_014.svg")
+    assert state.observation[0, 0, 112] == 1.
+    state = step(state, 755)
+    state.save_svg("tests/assets/gardner_chess/observe_015.svg")
+    assert state.observation[0, 0, 112] == 0.
+    state = step(state, 510)
+    state.save_svg("tests/assets/gardner_chess/observe_016.svg")
+    assert state.observation[0, 0, 112] == 1.
+    state = step(state, 510)
+    state.save_svg("tests/assets/gardner_chess/observe_017.svg")
+    assert state.observation[0, 0, 112] == 0.
+    state = step(state, 13)
+    state.save_svg("tests/assets/gardner_chess/observe_018.svg")
+    # check rook history
+    assert state.observation[4, 1, 3] == 1.
+    assert state.observation[4, 1, 17] == 1.
+    assert state.observation[4, 2, 31] == 1.
+    assert state.observation[4, 2, 45] == 1.
+    assert state.observation[4, 3, 59] == 1.
+    assert state.observation[4, 3, 73] == 1.
+    assert state.observation[4, 4, 87] == 1.
+    # color, move_counts
+    assert state.observation[0, 0, 112] == 1.
+    assert state.observation[0, 0, 113] == 0.28
+    assert state.observation[0, 0, 114] != 0.
 
 
 def test_step():
