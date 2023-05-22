@@ -55,6 +55,7 @@ class State(v1.State):
     # 最大の行動系列長 = 319
     # 各要素には、行動を表す整数が格納される
     # bidを表す0 ~ 34, passを表す35, doubleを表す36, redoubleを表す37, 行動が行われていない-1
+    # TODO pass = 0, double = 1, redouble = 2, bid = 3 ~ 37に変更
     # 各ビッドがどのプレイヤーにより行われたかは、要素のindexから分かる（ix % 4）
     _bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
     # dealer どのプレイヤーがdealerかを表す
