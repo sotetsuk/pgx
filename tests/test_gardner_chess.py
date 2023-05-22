@@ -701,9 +701,31 @@ def test_buggy_samples():
     print(state._to_fen())
     assert state.terminated
 
+    # pin
+    state = State._from_fen("k3b/5/2b2/1P3/K4 b - - 0 0")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_026.svg")
+    state = step(state, 617)
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_027.svg")
+    expected_legal_actions = [13, 21]
+    assert state.legal_action_mask.sum() == len(
+        expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
+    # stalemate by promotion
+    state = State._from_fen("5/2P1k/5/4P/K4 w - - 0 0")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_028.svg")
+    state = step(state, 650)
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_029.svg")
+    assert state.terminated
 
-
+    # mate by pinned piece
+    state = State._from_fen("k1b1R/4Q/K4/5/5 w - - 0 0")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_030.svg")
+    state = step(state, 1145)
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_031.svg")
+    assert state.terminated
+    assert state.current_player == 1
+    assert state.rewards[state.current_player] == -1
+    assert state.rewards[1 - state.current_player] == 1.
 
 
 def test_api():
