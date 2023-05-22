@@ -126,28 +126,116 @@ def test_action():
 
 
 def test_observe():
+    # position
     state = init(jax.random.PRNGKey(0))
     assert state.observation.shape == (5, 5, 115)
-    expected = jnp.float32(
+    expected_wpawn1 = jnp.float32(
         [[0., 0., 0., 0., 0.],
          [0., 0., 0., 0., 0.],
          [0., 0., 0., 0., 0.],
          [1., 1., 1., 1., 1.],
          [0., 0., 0., 0., 0.]]
     )
-    assert (state.observation[:, :, 0] == expected).all()
+    expected_bpawn1 = jnp.float32(
+        [[0., 0., 0., 0., 0.],
+         [1., 1., 1., 1., 1.],
+         [0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.]]
+    )
+    assert (state.observation[:, :, 0] == expected_wpawn1).all()
+    assert state.observation[4, 1, 1] == 1.
+    assert state.observation[4, 2, 2] == 1.
+    assert state.observation[4, 0, 3] == 1.
+    assert state.observation[4, 3, 4] == 1.
+    assert state.observation[4, 4, 5] == 1.
+    assert (state.observation[:, :, 6] == expected_bpawn1).all()
+    assert state.observation[0, 1, 7] == 1.
+    assert state.observation[0, 2, 8] == 1.
+    assert state.observation[0, 0, 9] == 1.
+    assert state.observation[0, 3, 10] == 1.
+    assert state.observation[0, 4, 11] == 1.
+
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/observe_001.svg")
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/observe_002.svg")
-    expected = jnp.float32(
+    expected_wpawn2 = jnp.float32(
+        [[0., 0., 0., 0., 0.],
+         [0., 1., 1., 1., 1.],
+         [1., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.]]
+    )
+    expected_wpawn3 = jnp.float32(
         [[0., 0., 0., 0., 0.],
          [0., 0., 0., 0., 0.],
          [0., 0., 0., 0., 0.],
          [0., 1., 1., 1., 1.],
          [0., 0., 0., 0., 0.]]
     )
-    assert (state.observation[:, :, 0] == expected).all()
+    assert (state.observation[:, :, 0] == expected_wpawn3).all()
+    assert state.observation[4, 1, 1] == 1.
+    assert state.observation[4, 2, 2] == 1.
+    assert state.observation[4, 0, 3] == 1.
+    assert state.observation[4, 3, 4] == 1.
+    assert state.observation[4, 4, 5] == 1.
+    assert (state.observation[:, :, 6] == expected_bpawn1).all()
+    assert state.observation[2, 0, 7] == 1.
+    assert state.observation[0, 2, 8] == 1.
+    assert state.observation[0, 0, 9] == 1.
+    assert state.observation[0, 3, 10] == 1.
+    assert state.observation[0, 4, 11] == 1.
+    # history
+    # 14~27
+    assert (state.observation[:, :, 14] == expected_wpawn1).all()
+    assert state.observation[4, 1, 15] == 1.
+    assert state.observation[4, 2, 16] == 1.
+    assert state.observation[4, 0, 17] == 1.
+    assert state.observation[4, 3, 18] == 1.
+    assert state.observation[4, 4, 19] == 1.
+    assert (state.observation[:, :, 20] == expected_wpawn2).all()
+    assert state.observation[0, 1, 21] == 1.
+    assert state.observation[0, 2, 22] == 1.
+    assert state.observation[0, 0, 23] == 1.
+    assert state.observation[0, 3, 24] == 1.
+    assert state.observation[0, 4, 25] == 1.
+    # 28~41
+    assert (state.observation[:, :, 28] == expected_wpawn1).all()
+    assert state.observation[4, 1, 29] == 1.
+    assert state.observation[4, 2, 30] == 1.
+    assert state.observation[4, 0, 31] == 1.
+    assert state.observation[4, 3, 32] == 1.
+    assert state.observation[4, 4, 33] == 1.
+    assert (state.observation[:, :, 34] == expected_bpawn1).all()
+    assert state.observation[0, 1, 35] == 1.
+    assert state.observation[0, 2, 36] == 1.
+    assert state.observation[0, 0, 37] == 1.
+    assert state.observation[0, 3, 38] == 1.
+    assert state.observation[0, 4, 39] == 1.
+
+    # repetition
+    state = State._from_fen("k3q/5/5/5/K4 b - - 0 1")
+    state = step(state, 21)
+    state.save_svg("tests/assets/gardner_chess/observe_003.svg")
+    state = step(state, 21)
+    state.save_svg("tests/assets/gardner_chess/observe_004.svg")
+    state = step(state, 265)
+    state.save_svg("tests/assets/gardner_chess/observe_005.svg")
+    state = step(state, 265)
+    state.save_svg("tests/assets/gardner_chess/observe_006.svg")
+    assert (state.observation[:, :, 13] == 1.).all()
+    assert (state.observation[:, :, 14] == 0.).all()
+    state = step(state, 21)
+    assert (state.observation[:, :, 13] == 1.).all()
+    state = step(state, 21)
+    assert (state.observation[:, :, 13] == 1.).all()
+    state = step(state, 265)
+    assert (state.observation[:, :, 13] == 1.).all()
+    state = step(state, 265)
+    assert (state.observation[:, :, 13] == 1.).all()
+    # need fix?
+    # assert (state.observation[:, :, 14] == 1.).all()
 
 
 def test_step():
@@ -439,6 +527,92 @@ def test_terminal():
     print(state._to_fen())
     assert state.terminated
     assert (state.rewards == 0.0).all()
+
+    # rep termination2
+    # 途中まで上と同じ
+    state = State._from_fen("k3r/5/5/5/K3R w - - 0 1")
+    print(state._to_fen())
+    state = step(state, jnp.int32(13))
+    print(state._to_fen())
+    state = step(state, jnp.int32(993))
+    print(state._to_fen())
+    state = step(state, jnp.int32(993))
+    print(state._to_fen())
+    state = step(state, jnp.int32(1041))
+    print(state._to_fen())
+    state = step(state, jnp.int32(1041))
+    print(state._to_fen())
+    state = step(state, jnp.int32(999))
+    state.save_svg("tests/assets/gardner_chess/terminal_031.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(999))
+    state.save_svg("tests/assets/gardner_chess/terminal_033.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(511))
+    state.save_svg("tests/assets/gardner_chess/terminal_034.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(511))
+    state.save_svg("tests/assets/gardner_chess/terminal_035.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(756))
+    state.save_svg("tests/assets/gardner_chess/terminal_036.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(756))
+    state.save_svg("tests/assets/gardner_chess/terminal_037.svg")
+    print(state._to_fen())
+    assert state.terminated
+    assert (state.rewards == 0.0).all()
+
+
+def test_buggy_samples():
+    # half-movecount reset when underpromotion happens
+    state = State._from_fen("5/P3k/K4/5/5 w - - 2 68")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_001.svg")
+    state = step(state, 160)
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_002.svg")
+    assert state._to_fen() == "Q4/4k/K4/5/5 b - - 0 68"
+
+    # pinned pawn moves
+    state = State._from_fen("4k/5/r1q1n/3PK/5 b - - 0 0")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_003.svg")
+    state = step(state, 111)
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_004.svg")
+    expected_legal_actions = [1041]
+    assert state.legal_action_mask.sum() == len(
+        expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+
+    # lift pin
+    state = State._from_fen("4k/3b1/5/1PP2/K4 w - - 0 0")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_005.svg")
+    # self lift
+    state1 = step(state, 552)
+    state1.save_svg("tests/assets/gardner_chess/buggy_samples_006.svg")
+    state1 = step(state1, 1000)
+    state1.save_svg("tests/assets/gardner_chess/buggy_samples_007.svg")
+    expected_legal_actions = [13, 21, 307, 601, 617]
+    assert state1.legal_action_mask.sum() == len(
+        expected_legal_actions), f"\nactual:{jnp.nonzero(state1.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+    # lift by king move
+    state2 = step(state, 21)
+    state2.save_svg("tests/assets/gardner_chess/buggy_samples_008.svg")
+    state2 = step(state2, 1000)
+    state2.save_svg("tests/assets/gardner_chess/buggy_samples_009.svg")
+    expected_legal_actions = [265, 260, 281, 307, 601]
+    assert state2.legal_action_mask.sum() == len(
+        expected_legal_actions), f"\nactual:{jnp.nonzero(state2.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+    # lift by opponent
+    state = State._from_fen("k4/2pb1/5/1P3/K4 b - - 0 0")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_010.svg")
+    state1 = step(state, 813)
+    state1.save_svg("tests/assets/gardner_chess/buggy_samples_011.svg")
+    expected_legal_actions = [13, 21, 307]
+    assert state1.legal_action_mask.sum() == len(
+        expected_legal_actions), f"\nactual:{jnp.nonzero(state1.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+    state2 = step(state, 552)
+    state2.save_svg("tests/assets/gardner_chess/buggy_samples_012.svg")
+    expected_legal_actions = [13, 21, 307, 323]
+    assert state2.legal_action_mask.sum() == len(
+        expected_legal_actions), f"\nactual:{jnp.nonzero(state2.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
 
 
