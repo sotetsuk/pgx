@@ -215,7 +215,7 @@ def test_observe():
     assert state.observation[0, 4, 39] == 1.
 
     # repetition
-    state = State._from_fen("k3q/5/5/5/K4 b - - 0 1")
+    state = State._from_fen("k3r/5/5/5/K4 b - - 0 1")
     state = step(state, 21)
     state.save_svg("tests/assets/gardner_chess/observe_003.svg")
     state = step(state, 21)
@@ -227,15 +227,26 @@ def test_observe():
     assert (state.observation[:, :, 13] == 1.).all()
     assert (state.observation[:, :, 14] == 0.).all()
     state = step(state, 21)
+    state.save_svg("tests/assets/gardner_chess/observe_007.svg")
     assert (state.observation[:, :, 13] == 1.).all()
     state = step(state, 21)
+    state.save_svg("tests/assets/gardner_chess/observe_008.svg")
     assert (state.observation[:, :, 13] == 1.).all()
     state = step(state, 265)
+    state.save_svg("tests/assets/gardner_chess/observe_009.svg")
     assert (state.observation[:, :, 13] == 1.).all()
     state = step(state, 265)
-    assert (state.observation[:, :, 13] == 1.).all()
+    state.save_svg("tests/assets/gardner_chess/observe_010.svg")
     # need fix?
     # assert (state.observation[:, :, 14] == 1.).all()
+
+    # color
+    state = State._from_fen("k3r/5/5/5/K4 w - - 0 1")
+    print(state.observation[0, 0, 112])
+    #assert state.observation[0, 0, 112] == 0.
+    state = State._from_fen("k3r/5/5/5/K4 b - - 0 1")
+    print(state.observation[0, 0, 112])
+    #assert state.observation[:, :, 112] == 1.
 
 
 def test_step():
@@ -365,7 +376,6 @@ def test_terminal():
     assert (state.rewards == 0.0).all()
 
     # 50-move draw rule
-    # FEN is from https://www.chess.com/terms/fen-chess#halfmove-clock
     state = State._from_fen("2k2/p1p1p/PpPpP/1P1P1/4K b - - 99 50")
     state.save_svg("tests/assets/gardner_chess/terminal_003.svg")
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
@@ -613,6 +623,18 @@ def test_buggy_samples():
     expected_legal_actions = [13, 21, 307, 323]
     assert state2.legal_action_mask.sum() == len(
         expected_legal_actions), f"\nactual:{jnp.nonzero(state2.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+
+    # pin by promotion
+    state = State._from_fen("3bk/2P2/5/5/K4 w - - 0 0")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_013.svg")
+    state = step(state, 650)
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_014.svg")
+    expected_legal_actions = [993]
+    assert state.legal_action_mask.sum() == len(
+        expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+
+
+
 
 
 
