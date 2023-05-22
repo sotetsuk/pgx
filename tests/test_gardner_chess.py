@@ -665,6 +665,42 @@ def test_buggy_samples():
     assert state.legal_action_mask.sum() == len(
         expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
+    # not the same turn repetition
+    state = State._from_fen("k3r/5/5/5/K3R w - - 0 1")
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_015.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(13))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_016.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(993))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_017.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(993))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_018.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(1041))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_019.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(1041))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_020.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(999))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_021.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(1000))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_022.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(707))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_023.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(756))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_024.svg")
+    print(state._to_fen())
+    state = step(state, jnp.int32(756))
+    state.save_svg("tests/assets/gardner_chess/buggy_samples_025.svg")
+    print(state._to_fen())
+    assert state.terminated
+
 
 
 
