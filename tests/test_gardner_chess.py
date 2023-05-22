@@ -277,8 +277,8 @@ def test_observe():
     assert state.observation[4, 4, 87] == 1.
     # color, move_counts
     assert state.observation[0, 0, 112] == 1.
-    assert state.observation[0, 0, 113] == 0.28
-    assert state.observation[0, 0, 114] != 0.
+    assert state.observation[0, 0, 113] == 0.028
+    assert state.observation[0, 0, 114] > 0.
 
 
 def test_step():
