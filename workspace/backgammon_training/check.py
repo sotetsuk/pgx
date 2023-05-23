@@ -4,6 +4,7 @@ import pgx
 import time
 import pickle
 from ppo import ActorCritic
+from train import evaluate
 from utils import single_play_step
 import distrax
 TRUE = jnp.bool_(True)
@@ -11,7 +12,7 @@ FALSE = jnp.bool_(False)
 
 def _get(rewards, actor):
     return rewards[actor]
-def visualize(network, params, env,  rng_key, num_envs):
+def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
     _single_play_step = jax.jit(single_play_step(env.step, network, params))
     rng_key, sub_key = jax.random.split(rng_key)
     subkeys = jax.random.split(sub_key, num_envs)
@@ -30,13 +31,17 @@ def visualize(network, params, env,  rng_key, num_envs):
         actor = state.current_player
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
+        #assert not (actor != jnp.zeros(num_envs, dtype=jnp.int8) & ~state.terminated).any()  # 終了するまでactorは変わらない
         rng_key, _rng = jax.random.split(rng_key)
+        state = _single_play_step(state, action, _rng)
         cum_return = cum_return + jax.vmap(_get)(state.rewards, actor)
         R = R + state.rewards
         states.append(state)
         i += 1
-    fname = f"{'_'.join((env.id).lower().split())}.svg"
-    pgx.save_svg_animation(states, fname, frame_duration_seconds=0.5)
+        print(i)
+    if save_svg:
+        fname = f"{'_'.join((env.id).lower().split())}.svg"
+        pgx.save_svg_animation(states, fname, frame_duration_seconds=0.5)
     print(f"avarage cumulative return over{num_envs}", cum_return.mean())
     print(f"R of {num_envs}", R.mean(axis=0))
 
@@ -44,8 +49,9 @@ def visualize(network, params, env,  rng_key, num_envs):
 if __name__ == "__main__":
     env = pgx.make("backgammon")
     network = ActorCritic(env.num_actions, activation="tanh")
-    ckpt_filename = f'params/{"backgammon"}_steps_{1671168}.ckpt'
+    ckpt_filename = f'params/{"backgammon"}_steps_{770048}.ckpt'
     with open(ckpt_filename, "rb") as f:
         params = pickle.load(f)["params"]
     rng_key = jax.random.PRNGKey(3)
-    visualize(network, params, env, rng_key, 2)
+    print(evaluate(new_state, old_state, network, env, rng_key, num_envs):)
+    visualize(network, params, env, rng_key, 64)

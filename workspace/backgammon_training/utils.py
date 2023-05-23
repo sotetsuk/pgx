@@ -58,10 +58,28 @@ def auto_reset(step_fn, init_fn):
     return wrapped_step_fn
 
 
-def single_play_step(step_fn, network, params):
+def single_play_step(step_fn, network, params, vs_random=True):
     """
     assume backgammon
     """
+    def act_randomly(state, rng):
+        logits = jnp.log(state.legal_action_mask.astype(jnp.float16))
+        action = jax.random.categorical(rng, logits)
+        return action
+
+
+    def act_based_on_policy(state, rng):
+        logits, value = network.apply(params, state.observation)
+        logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
+        pi = distrax.Categorical(logits=logits)
+        action = pi.sample(seed=rng)
+        return action
+    
+    if vs_random:
+        act_fn = act_randomly
+    else:
+        act_fn = act_based_on_policy
+        assert param is not None
     def act_till_turn_end(state, rng, current_player, actor):
         def cond_fn(tup):
             state, _, _ = tup
@@ -69,13 +87,8 @@ def single_play_step(step_fn, network, params):
         
         def loop_fn(tup):
             state, rng, rewards = tup
-            #logits, value = network.apply(params, state.observation)
-            #logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
-            #pi = distrax.Categorical(logits=logits)
-            #rng, _rng = jax.random.split(rng)
-            #action = pi.sample(seed=_rng)
-            logits = jnp.log(state.legal_action_mask.astype(jnp.float16))
-            action = jax.random.categorical(rng, logits)
+            rng, _rng = jax.random.split(rng)
+            action = act_fn(state, _rng)
             state = step_fn(state, action)
             rewards = rewards + state.rewards
             return state, rng, rewards

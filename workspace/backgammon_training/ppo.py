@@ -242,8 +242,8 @@ def make_update_fn(config, env, network):
         return runner_state, loss_info
     return _update_step
 
-def evaluate(new_state, old_state, network, env, rng_key, num_envs):
-    _single_play_step = single_play_step(env.step, network, old_state.params)
+def evaluate(new_params, old_params, network, env, rng_key, num_envs):
+    _single_play_step = single_play_step(env.step, network, old_params)
     rng_key, sub_key = jax.random.split(rng_key)
     subkeys = jax.random.split(sub_key, num_envs)
     state = jax.vmap(env.init)(subkeys)
@@ -257,7 +257,7 @@ def evaluate(new_state, old_state, network, env, rng_key, num_envs):
     def loop_fn(tup):
         state, cum_return, rng_key = tup
         actor = state.current_player
-        logits, value = network.apply(new_state.params, state.observation)
+        logits, value = network.apply(new_params, state.observation)
         logits = logits + jnp.finfo(np.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
@@ -315,22 +315,19 @@ def train(config, rng):
     steps = 0
     for i in range(config["NUM_UPDATES"]):
         old_train_state = runner_state[0]
-        runner_state, loss_info = jitted_update_step(runner_state, old_train_state)
-        steps += config["NUM_ENVS"] * config["NUM_STEPS"]
-        _, (value_loss, loss_actor, entropy) = loss_info
-        eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, config["NUM_ENVS"])
+        eval_R = evaluate(runner_state[0].params, old_train_state.params, network, env, rng, config["NUM_ENVS"])
         log = {
-            "value_loss": float(value_loss.mean()),
-            "loss_actor": float(loss_actor.mean()),
-            "entropy": float(entropy.mean()),
             "eval_vs_random_policy": float(eval_R),
             "steps": steps,
         }
         print(log)
         wandb.log(log)
+        runner_state, loss_info = jitted_update_step(runner_state, old_train_state)
+        steps += config["NUM_ENVS"] * config["NUM_STEPS"]
+        _, (value_loss, loss_actor, entropy) = loss_info
         ckpt_filename = f'params/{config["ENV_NAME"]}_vs_random_steps_{steps}.ckpt'
         with open(ckpt_filename, "wb") as writer:
-                dic = {"params": train_state.params}
+                dic = {"params": runner_state[0].params}
                 pickle.dump(dic, writer)
     return runner_state
 
