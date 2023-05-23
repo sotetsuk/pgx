@@ -44,9 +44,10 @@ def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
 
 
 if __name__ == "__main__":
+    steps = 4980736 # please specify according to your ckpt file
     env = pgx.make("backgammon")
     network = ActorCritic(env.num_actions, activation="tanh")
-    ckpt_filename = f'params/{"backgammon"}_vs_{"random"}_steps_{1015808}.ckpt'
+    ckpt_filename = f'params/{"backgammon"}_vs_{"prev_policy"}_steps_{steps}.ckpt'
     with open(ckpt_filename, "rb") as f:
         params = pickle.load(f)["params"]
     rng_key = jax.random.PRNGKey(3)

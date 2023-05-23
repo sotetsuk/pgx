@@ -35,7 +35,8 @@ class PPOConfig(BaseModel):
     NUM_UPDATES: int = 10000
     MINIBATCH_SIZE: int = 32
     ANNEAL_LR: bool = True
-    VS_RANDOM: bool = True
+    VS_RANDOM: bool = False
+    UPDATE_INTERVAL:int = 5
 
 
 class ActorCritic(nn.Module):
@@ -315,13 +316,14 @@ def train(config, rng):
 
     rng, _rng = jax.random.split(rng)
     runner_state = (train_state, env_state, env_state.observation, _rng)
+    old_params = runner_state[0].params
     steps = 0
-    enemy = "random" if config["VS_RANDOM"] else "policy"
+    enemy = "random" if config["VS_RANDOM"] else "prev_policy"
     for i in range(config["NUM_UPDATES"]):
         if config["VS_RANDOM"]:
             step_fn = single_play__step_vs_random(env.step)  # vs random 
         else:
-            step_fn = single_play_step_vs_policy(env.step, network, runner_state[0].params) # vs policy
+            step_fn = single_play_step_vs_policy(env.step, network, old_params) # vs policy
         eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
         log = {
             f"eval_vs_{enemy}": float(eval_R),
@@ -329,6 +331,8 @@ def train(config, rng):
         }
         print(log)
         wandb.log(log)
+        if i % config["UPDATE_INTERVAL"] == 0:
+            old_params = runner_state[0].params
         runner_state, loss_info = jitted_update_step(runner_state)
         steps += config["NUM_ENVS"] * config["NUM_STEPS"]
         _, (value_loss, loss_actor, entropy) = loss_info
@@ -336,11 +340,6 @@ def train(config, rng):
         with open(ckpt_filename, "wb") as writer:
                 dic = {"params": runner_state[0].params}
                 pickle.dump(dic, writer)
-        print("load")
-        with open(ckpt_filename, "rb") as f:
-            params = pickle.load(f)["params"]
-        eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
-        print("loaded", eval_R)
     return runner_state
 
 
@@ -364,7 +363,8 @@ if __name__ == "__main__":
         "ACTIVATION": args.ACTIVATION,
         "ENV_NAME": args.ENV_NAME,
         "ANNEAL_LR": True,
-        "VS_RANDOM": True,
+        "VS_RANDOM": args.VS_RANDOM,
+        "UPDATE_INTERVAL": args.UPDATE_INTERVAL,
     }
     print("training of", config["ENV_NAME"])
     rng = jax.random.PRNGKey(0)
