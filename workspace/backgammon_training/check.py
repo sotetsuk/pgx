@@ -3,9 +3,8 @@ import jax.numpy as jnp
 import pgx
 import time
 import pickle
-from ppo import ActorCritic
-from train import evaluate
-from utils import single_play_step
+from ppo import ActorCritic, evaluate
+from utils import single_play_step_vs_policy, single_play__step_vs_random
 import distrax
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -13,7 +12,7 @@ FALSE = jnp.bool_(False)
 def _get(rewards, actor):
     return rewards[actor]
 def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
-    _single_play_step = jax.jit(single_play_step(env.step, network, params))
+    _single_play_step = jax.jit(single_play__step_vs_random(env.step))
     rng_key, sub_key = jax.random.split(rng_key)
     subkeys = jax.random.split(sub_key, num_envs)
     state = jax.vmap(env.init)(subkeys)
@@ -37,8 +36,6 @@ def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
         cum_return = cum_return + jax.vmap(_get)(state.rewards, actor)
         R = R + state.rewards
         states.append(state)
-        i += 1
-        print(i)
     if save_svg:
         fname = f"{'_'.join((env.id).lower().split())}.svg"
         pgx.save_svg_animation(states, fname, frame_duration_seconds=0.5)
@@ -49,9 +46,10 @@ def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
 if __name__ == "__main__":
     env = pgx.make("backgammon")
     network = ActorCritic(env.num_actions, activation="tanh")
-    ckpt_filename = f'params/{"backgammon"}_steps_{770048}.ckpt'
+    ckpt_filename = f'params/{"backgammon"}_vs_{"random"}_steps_{1015808}.ckpt'
     with open(ckpt_filename, "rb") as f:
         params = pickle.load(f)["params"]
     rng_key = jax.random.PRNGKey(3)
-    print(evaluate(new_state, old_state, network, env, rng_key, num_envs):)
-    visualize(network, params, env, rng_key, 64)
+    _single_play_step = jax.jit(single_play__step_vs_random(env.step))
+    print(evaluate(params, network, _single_play_step, env, rng_key, 64))
+    visualize(network, params, env, rng_key, 7, save_svg=True)
