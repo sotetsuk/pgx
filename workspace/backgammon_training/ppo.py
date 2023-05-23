@@ -8,7 +8,7 @@ from typing import Sequence, NamedTuple, Any, Literal
 from flax.training.train_state import TrainState
 import distrax
 import pgx
-from utils import auto_reset, single_play_step
+from utils import auto_reset, single_play_step_vs_policy, single_play__step_vs_random
 import time
 import pickle
 import argparse
@@ -35,6 +35,7 @@ class PPOConfig(BaseModel):
     NUM_UPDATES: int = 10000
     MINIBATCH_SIZE: int = 32
     ANNEAL_LR: bool = True
+    VS_RANDOM: bool = True
 
 
 class ActorCritic(nn.Module):
@@ -94,7 +95,10 @@ def make_update_fn(config, env, network):
     def _update_step(runner_state, unused):
         # COLLECT TRAJECTORIES
         auto_rese_step = auto_reset(env.step, env.init)
-        _single_play_step = single_play_step(auto_rese_step, network, runner_state[0].params)
+        if config["VS_RANDOM"]:
+            single_play_step = single_play__step_vs_random(auto_rese_step)
+        else:
+            single_play_step = single_play_step_vs_policy(auto_rese_step, network, runner_state[0].params)
         def _env_step(runner_state, unused):
             train_state, env_state, last_obs, rng = runner_state
             actor = env_state.current_player
@@ -242,8 +246,7 @@ def make_update_fn(config, env, network):
         return runner_state, loss_info
     return _update_step
 
-def evaluate(new_params, old_params, network, env, rng_key, num_envs):
-    _single_play_step = single_play_step(env.step, network, old_params)
+def evaluate(params, network, step_fn,  env, rng_key, num_envs, config):
     rng_key, sub_key = jax.random.split(rng_key)
     subkeys = jax.random.split(sub_key, num_envs)
     state = jax.vmap(env.init)(subkeys)
@@ -263,7 +266,7 @@ def evaluate(new_params, old_params, network, env, rng_key, num_envs):
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
-        state = _single_play_step(state, action, _rng)
+        state = step_fn(state, action, _rng)
         cum_return = cum_return + jax.vmap(_get)(state.rewards, actor)
         return state, cum_return ,rng_key
     state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
@@ -314,8 +317,11 @@ def train(config, rng):
     runner_state = (train_state, env_state, env_state.observation, _rng)
     steps = 0
     for i in range(config["NUM_UPDATES"]):
-        old_train_state = runner_state[0]
-        eval_R = evaluate(runner_state[0].params, old_train_state.params, network, env, rng, config["NUM_ENVS"])
+        if config["VS_RANDOM"]:
+            step_fn = single_play__step_vs_random(env.step)  # vs random 
+        else:
+            step_fn = single_play_step_vs_policy(env.step, network, runner_state[0].params) # vs policy
+        eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
         log = {
             "eval_vs_random_policy": float(eval_R),
             "steps": steps,
@@ -325,7 +331,8 @@ def train(config, rng):
         runner_state, loss_info = jitted_update_step(runner_state, old_train_state)
         steps += config["NUM_ENVS"] * config["NUM_STEPS"]
         _, (value_loss, loss_actor, entropy) = loss_info
-        ckpt_filename = f'params/{config["ENV_NAME"]}_vs_random_steps_{steps}.ckpt'
+        enemy = "random" if config["VS_RANDOM"] else "policy"
+        ckpt_filename = f'params/{config["ENV_NAME"]}_vs_{enemy}_steps_{steps}.ckpt'
         with open(ckpt_filename, "wb") as writer:
                 dic = {"params": runner_state[0].params}
                 pickle.dump(dic, writer)
@@ -352,6 +359,7 @@ if __name__ == "__main__":
         "ACTIVATION": args.ACTIVATION,
         "ENV_NAME": args.ENV_NAME,
         "ANNEAL_LR": True,
+        "VS_RANDOM": True,
     }
     print("training of", config["ENV_NAME"])
     rng = jax.random.PRNGKey(0)
