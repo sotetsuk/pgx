@@ -31,6 +31,7 @@ def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         #assert not (actor != jnp.zeros(num_envs, dtype=jnp.int8) & ~state.terminated).any()  # 終了するまでactorは変わらない
+        print(f"actor: {actor}", state.terminated)
         rng_key, _rng = jax.random.split(rng_key)
         state = _single_play_step(state, action, _rng)
         cum_return = cum_return + jax.vmap(_get)(state.rewards, actor)
@@ -38,7 +39,7 @@ def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
         states.append(state)
     if save_svg:
         fname = f"{'_'.join((env.id).lower().split())}.svg"
-        pgx.save_svg_animation(states, fname, frame_duration_seconds=0.5)
+        pgx.save_svg_animation(states, fname, frame_duration_seconds=1.5)
     print(f"avarage cumulative return over{num_envs}", cum_return.mean())
     print(f"R of {num_envs}", R.mean(axis=0))
 
@@ -52,5 +53,4 @@ if __name__ == "__main__":
         params = pickle.load(f)["params"]
     rng_key = jax.random.PRNGKey(3)
     _single_play_step = jax.jit(single_play__step_vs_random(env.step))
-    print(evaluate(params, network, _single_play_step, env, rng_key, 64))
     visualize(network, params, env, rng_key, 7, save_svg=True)

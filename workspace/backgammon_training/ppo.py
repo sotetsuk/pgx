@@ -345,7 +345,8 @@ def train(config, rng):
 
 if __name__ == "__main__":
     args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
-    wandb.login(key="483ca3866ab4eaa8f523bacae3cb603d27d69c3d")
+    key = None # please specify your wandb key
+    wandb.login(key=key)
     wandb.init(project=f"ppo-Backgammon", config=args.dict())
     config = {
         "LR": args.LR,
