@@ -286,6 +286,62 @@ def _step(
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
     # make vul of observation
+    """ if state._dealer == 0 or 2:
+        is_dealer_vul = state._vul_NS
+        is_non_dealer_vul = state._vul_EW
+    else:
+        is_dealer_vul = state._vul_EW
+        is_non_dealer_vul = state._vul_NS
+    vul = jnp.array([state._vul_NS, state._vul_EW], dtype=jnp.bool_) """
+    is_dealer_vul, is_non_dealer_vul = jax.lax.cond(
+        (state._dealer == 0) | (state._dealer == 2),
+        lambda: (state._vul_NS, state._vul_EW),
+        lambda: (state._vul_EW, state._vul_NS),
+    )
+    vul = jnp.array(
+        [~is_dealer_vul, is_dealer_vul, ~is_non_dealer_vul, is_non_dealer_vul],
+        dtype=jnp.bool_,
+    )
+
+    # make hand of observation
+    hand = jnp.zeros(52, dtype=jnp.bool_)
+    position = _player_position(player_id, state).astype(jnp.int16)
+    hand = jax.lax.fori_loop(
+        position * 13,
+        (position + 1) * 13,
+        lambda i, hand: hand.at[
+            _convert_card_pgx_to_openspiel(state._hand[i])
+        ].set(True),
+        hand,
+    )
+
+    # make history of observation
+    obs_history = jnp.zeros(424, dtype=jnp.bool_)
+    last_bid = jnp.int16(-1)
+    flag = FALSE
+    obs_history, last_bid, flag, state = jax.lax.fori_loop(
+        0,
+        state._turn.astype(jnp.int32),
+        _make_obs_history,
+        (obs_history, last_bid, flag, state),
+    )
+    return jnp.concatenate((vul, obs_history, hand))
+
+
+@jax.jit
+def _convert_card_pgx_to_openspiel(card: int) -> jnp.ndarray:
+    OPEN_SPIEL_SUIT_NUM = jnp.array([3, 2, 1, 0], dtype=jnp.int32)
+    OPEN_SPIEL_RANK_NUM = jnp.array(
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 0], dtype=jnp.int32
+    )
+    suit = OPEN_SPIEL_SUIT_NUM[card // 13]
+    rank = OPEN_SPIEL_RANK_NUM[card % 13]
+    return suit + rank * 4
+
+
+""" @jax.jit
+def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    # make vul of observation
     vul = jnp.array([state._vul_NS, state._vul_EW], dtype=jnp.bool_)
 
     # make hand of observation
@@ -308,7 +364,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         _make_obs_history,
         (obs_history, last_bid, flag, state),
     )
-    return jnp.concatenate((vul, obs_history, hand))
+    return jnp.concatenate((vul, obs_history, hand)) """
 
 
 @jax.jit
