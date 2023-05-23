@@ -31,6 +31,10 @@ FALSE = jnp.bool_(False)
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
 # それぞれのsuitにおいて以下の順で数字が並ぶ
 TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
+PASS_ACTION_NUM = 0
+DOUBLE_ACTION_NUM = 1
+REDOUBLE_ACTION_NUM = 2
+BID_OFFSET_NUM = 3
 
 
 @dataclass
@@ -151,8 +155,8 @@ def init(rng: jax.random.KeyArray) -> State:
     current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
-    legal_actions = legal_actions.at[36].set(False)
-    legal_actions = legal_actions.at[37].set(False)
+    legal_actions = legal_actions.at[DOUBLE_ACTION_NUM].set(False)
+    legal_actions = legal_actions.at[REDOUBLE_ACTION_NUM].set(False)
     state = State(  # type: ignore
         _shuffled_players=shuffled_players,
         current_player=current_player,
@@ -178,8 +182,8 @@ def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
-    legal_actions = legal_actions.at[36].set(False)
-    legal_actions = legal_actions.at[37].set(False)
+    legal_actions = legal_actions.at[DOUBLE_ACTION_NUM].set(False)
+    legal_actions = legal_actions.at[REDOUBLE_ACTION_NUM].set(False)
     state = State(  # type: ignore
         _shuffled_players=shuffled_players,
         current_player=current_player,
@@ -259,9 +263,9 @@ def _step(
     state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
     # fmt: on
     return jax.lax.cond(
-        action >= 35,
+        action <= 2,
         lambda: jax.lax.switch(
-            action - 35,
+            action,
             [
                 lambda: jax.lax.cond(
                     _is_terminated(_state_pass(state)),
@@ -397,7 +401,7 @@ def _continue_step(
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
     return state.replace(  # type: ignore
-        legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask),
+        legal_action_mask=state.legal_action_mask.at[PASS_ACTION_NUM].set(True).at[DOUBLE_ACTION_NUM].set(x_mask).at[REDOUBLE_ACTION_NUM].set(xx_mask),
         rewards=jnp.zeros(4, dtype=jnp.float32)
     )
     # fmt: on
@@ -688,11 +692,12 @@ def _state_XX(state: State) -> State:
 def _state_bid(state: State, action: int) -> State:
     """Change state if bid is taken"""
     # 最後のbidとそのプレイヤーを保存
+    bid = action - BID_OFFSET_NUM
     # fmt: off
-    state = state.replace(_last_bid=jnp.int32(action), _last_bidder=state.current_player)  # type: ignore
+    state = state.replace(_last_bid=bid, _last_bidder=state.current_player)  # type: ignore
     # fmt: on
     # チーム内で各denominationを最初にbidしたプレイヤー
-    denomination = _bid_to_denomination(action)
+    denomination = _bid_to_denomination(bid)
     team = _position_to_team(_player_position(state._last_bidder, state))
     # fmt: off
     # team = 1ならEWチーム
@@ -704,7 +709,7 @@ def _state_bid(state: State, action: int) -> State:
                          lambda: state.replace(_first_denomination_NS=state._first_denomination_NS.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
                          lambda: state)  # type: ignore
     # fmt: on
-    # 小さいbidを非合法手にする
+    # pass, double, redouble, 小さいbidを一旦全て非合法手にする
     mask = jnp.arange(38) < action + 1
     return state.replace(  # type: ignore
         legal_action_mask=jnp.where(
