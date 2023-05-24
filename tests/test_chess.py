@@ -633,6 +633,7 @@ def test_buggy_samples():
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
+    assert state.observation.shape == (8, 8, 119)
 
     # my pawn
     expected = jnp.float32(
@@ -693,11 +694,12 @@ def test_observe():
     assert (state.observation[:, :, 11] == expected).all()
 
     # repetitions
-    assert (state.observation[:, :, 12] == 0).all()
-
-    # color
+    assert (state.observation[:, :, 12] == 1).all()
     assert (state.observation[:, :, 13] == 0).all()
 
+    # color
+    assert state._turn == 0
+    assert (state.observation[:, :, 112] == 0).all()
 
 
     state = step(state, jnp.int32(89))
@@ -733,10 +735,12 @@ def test_observe():
     assert (state.observation[:, :, 6] == expected).all()
 
     # repetitions
-    assert (state.observation[:, :, 12] == 0).all()
+    assert (state.observation[:, :, 12] == 1).all()
+    assert (state.observation[:, :, 13] == 0).all()
 
     # color
-    assert (state.observation[:, :, 13] == 1).all()
+    assert state._turn == 1
+    assert (state.observation[:, :, 112] == 1).all()
 
 
 def test_api():

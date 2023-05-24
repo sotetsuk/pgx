@@ -454,7 +454,7 @@ def _update_zobrist_hash(state: State, action: Action):
 
 
 def _observe(state: State, player_id: jnp.ndarray):
-    state = jax.lax.cond(state._turn == 0, lambda: state, lambda: _flip(state))
+    state = jax.lax.cond(state.current_player == player_id, lambda: state, lambda: _flip(state))
 
     ones = jnp.ones((1, 5, 5), dtype=jnp.float32)
 
