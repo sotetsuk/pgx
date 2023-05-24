@@ -136,8 +136,14 @@ def test_observe():
          [0., 0., 0., 0., 0.]]
     )
     assert (state.observation[:, :, 0] == expected).all()
+    assert state._turn == 0
+    assert (state.observation[:, :, 112] == 0).all()
+
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/observe_001.svg")
+    assert state._turn == 1
+    assert (state.observation[:, :, 112] == 1).all()
+
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/observe_002.svg")
     expected = jnp.float32(
@@ -158,6 +164,8 @@ def test_observe():
     print(state.observation[:, :, 14])
     print(state.observation[:, :, 20])
     assert (state.observation[:, :, 14] == expected).all()
+    assert state._turn == 0
+    assert (state.observation[:, :, 112] == 0).all()
 
 
 def test_api():
