@@ -592,11 +592,14 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
 
 
 def _update_by_hit(j, _f_bullets, e):
-    k = lax.while_loop(
-        lambda i: ~_is_hit(e[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
-        lambda i: i + 1,
-        0,
-    )
+    is_hit = (e[j, 0] == _f_bullets[:, 0]) & (e[j, 1] == _f_bullets[:, 1])
+    k = jnp.argmax(is_hit)
+    k = jax.lax.select(jnp.sum(is_hit) == 0, 5, k)
+    # k = lax.while_loop(
+    #     lambda i: ~_is_hit(e[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
+    #     lambda i: i + 1,
+    #     0,
+    # )
     _f_bullets, e, removed = lax.cond(
         k < 5,
         lambda: (_remove_i(_f_bullets, k), _remove_i(e, j), TRUE),
