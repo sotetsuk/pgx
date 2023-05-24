@@ -746,13 +746,10 @@ def _observe(state: State) -> jnp.ndarray:
     obs = obs.at[9, :, 7].set(
             jnp.where(jnp.arange(11) < oxygen_guage, TRUE, obs[9, :, 7])
     )
-    obs = lax.fori_loop(
-        9 - state._diver_count,
-        jnp.int32(9),
-        lambda i, _obs: _obs.at[9, i, 8].set(TRUE),
-        obs,
+    mask = (9 - state._diver_count <= jnp.arange(11)) & (jnp.arange(11) < 9)
+    obs = obs.at[9, :, 8].set(
+            jnp.where(mask, TRUE, obs[9, :, 8])
     )
-
     obs = obs.at[state._f_bullets[:, 1], state._f_bullets[:, 0], 2].set(TRUE)
     obs = obs.at[state._e_bullets[:, 1], state._e_bullets[:, 0], 4].set(TRUE)
 
