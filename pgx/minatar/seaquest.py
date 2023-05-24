@@ -732,7 +732,7 @@ def _spawn_diver(divers, diver_lr, diver_y):
 
 
 def _observe(state: State) -> jnp.ndarray:
-    obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
+    obs = jnp.zeros((11, 11, 10), dtype=jnp.bool_)
     obs = obs.at[state._sub_y, state._sub_x, 0].set(TRUE)
     back_x = lax.cond(
         state._sub_or, lambda: state._sub_x - 1, lambda: state._sub_x + 1
@@ -755,30 +755,9 @@ def _observe(state: State) -> jnp.ndarray:
         lambda i, _obs: _obs.at[9, i, 8].set(TRUE),
         obs,
     )
-    obs = lax.fori_loop(
-        0,
-        5,
-        lambda i, _obs: lax.cond(
-            state._f_bullets[i][0] >= 0,
-            lambda: _obs.at[
-                state._f_bullets[i][1], state._f_bullets[i][0], 2
-            ].set(TRUE),
-            lambda: _obs,
-        ),
-        obs,
-    )
-    obs = lax.fori_loop(
-        0,
-        25,
-        lambda i, _obs: lax.cond(
-            state._e_bullets[i][0] >= 0,
-            lambda: _obs.at[
-                state._e_bullets[i][1], state._e_bullets[i][0], 4
-            ].set(TRUE),
-            lambda: _obs,
-        ),
-        obs,
-    )
+
+    obs = obs.at[state._f_bullets[:, 1], state._f_bullets[:, 0], 2].set(TRUE)
+    obs = obs.at[state._e_bullets[:, 1], state._e_bullets[:, 0], 4].set(TRUE)
 
     def set_e_fish(_obs, fish):
         _obs = _obs.at[fish[1], fish[0], 5].set(TRUE)
@@ -843,4 +822,4 @@ def _observe(state: State) -> jnp.ndarray:
         obs,
     )
 
-    return obs
+    return obs[:10, :10, :]
