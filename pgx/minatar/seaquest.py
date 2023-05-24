@@ -743,11 +743,8 @@ def _observe(state: State) -> jnp.ndarray:
     oxygen_guage = lax.cond(
         state._oxygen < 0, lambda: jnp.int32(9), lambda: oxygen_guage
     )
-    obs = lax.fori_loop(
-        jnp.int32(0),
-        oxygen_guage,
-        lambda i, _obs: _obs.at[9, i, 7].set(TRUE),
-        obs,
+    obs = obs.at[9, :, 7].set(
+            jnp.where(jnp.arange(11) < oxygen_guage, TRUE, obs[9, :, 7])
     )
     obs = lax.fori_loop(
         9 - state._diver_count,
