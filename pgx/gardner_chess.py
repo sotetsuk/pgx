@@ -412,11 +412,10 @@ def _zobrist_hash(state):
     """
     >>> state = State()
     >>> _zobrist_hash(state)
-    Array([1926877726, 2129525500], dtype=uint32)
+    Array([2025569903, 1172890342], dtype=uint32)
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
     hash_ = jax.lax.select(state._turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
-
     board = jax.lax.select(state._turn == 0, state._board, _flip(state)._board)
 
     def xor(i, h):
@@ -424,7 +423,7 @@ def _zobrist_hash(state):
         piece = board[i] + 6
         return h ^ ZOBRIST_BOARD[i, piece]
 
-    hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    hash_ = jax.lax.fori_loop(0, 25, xor, hash_)
     return hash_
 
 
