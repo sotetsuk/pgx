@@ -1,8 +1,10 @@
 from pgx._mahjong._hand import Hand
 from pgx._mahjong._yaku import Yaku
 from pgx._mahjong._shanten import Shanten
+from pgx._mahjong._mahjong import Mahjong
 import jax.numpy as jnp
 from jax import jit
+import jax
 
 
 def test_ron():
@@ -181,3 +183,41 @@ def test_shanten():
     ])
     # fmt:on
     assert jit(Shanten.number)(hand) == 1
+
+
+def test_discard():
+
+    env = Mahjong()
+    key = jax.random.PRNGKey(0)
+    state = env.init(key=key)
+    assert state.current_player == 0
+    assert state.deck[state.next_deck_ix] == 8
+    # fmt:off
+    assert (state.hand==jnp.int8([
+        [0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
+        [1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
+        [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+        [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]])).all()
+    # fmt:on
+
+    state = env.step(state, 4)
+    assert state.current_player == 1
+    assert state.deck[state.next_deck_ix] == 31
+    # fmt:off
+    assert (state.hand==jnp.int8([
+        [[0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
+         [1, 0, 0, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+         [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]]])).all()
+    # fmt:on
+
+    state = env.step(state, 0)
+    assert state.current_player == 2
+    assert state.deck[state.next_deck_ix] == 16
+    # fmt:off
+    assert (state.hand==jnp.int8([
+        [[0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
+         [0, 0, 0, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
+         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 2, 1, 0],
+         [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]]])).all()
+    # fmt:on

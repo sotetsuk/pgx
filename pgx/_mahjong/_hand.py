@@ -35,9 +35,6 @@ class Hand:
         for j in range(4):
             hand = hand.at[j].set(Hand.add(hand[j], deck[-(16 * 3 + j + 1)]))  # type: ignore
 
-        last_draw = deck[-(16 * 3 + 4 + 1)].astype(int)
-        hand = hand.at[0].set(Hand.add(hand[0], last_draw))  # type: ignore
-
         return hand
 
     @staticmethod
