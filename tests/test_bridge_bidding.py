@@ -24,6 +24,7 @@ from pgx.bridge_bidding import (
     _value_to_dds_tricks,
     duplicate,
     init,
+    observe,
 )
 
 PASS_ACTION_NUM = 0
@@ -37,7 +38,7 @@ env = BridgeBidding(dds_hash_table_path=DDS_HASH_TABLE_PATH)
 
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
-observe = jax.jit(env.observe)
+# observe = env.observe
 
 
 def test_shuffle_players():
@@ -1821,25 +1822,27 @@ def test_pass_out():
 def test_observe():
     # test init_obs
     # hand
+
+    # player_id: 0 = N, 1 = S, 2 = W, 3 = E
     # hand: N:J92.J76.K72.9432 AKQ6.84.J863.T65 87543.KQ9532..K7 T.AT.AQT954.AQJ8
     player0_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([1, 8, 10, 18, 19, 23, 27, 32, 38, 40, 41, 42, 47])]
+        .at[jnp.array([0, 1, 3, 4, 8, 18, 21, 22, 28, 31, 38, 39, 45])]
         .set(True)
     )
     player1_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([2, 3, 4, 6, 7, 14, 15, 17, 21, 24, 25, 45, 51])]
+        .at[jnp.array([2, 6, 7, 11, 14, 15, 20, 23, 27, 30, 42, 44, 46])]
         .set(True)
     )
     player2_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([9, 13, 22, 26, 29, 30, 34, 35, 37, 39, 46, 49, 50])]
+        .at[jnp.array([9, 13, 24, 29, 33, 34, 35, 36, 40, 41, 48, 49, 50])]
         .set(True)
     )
     player3_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([0, 5, 11, 12, 16, 20, 28, 31, 33, 36, 43, 44, 48])]
+        .at[jnp.array([5, 10, 12, 16, 17, 19, 25, 26, 32, 37, 43, 47, 51])]
         .set(True)
     )
     key = jax.random.PRNGKey(0)
@@ -1853,24 +1856,29 @@ def test_observe():
         _vul_EW=jnp.bool_(0),
     )
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 0)
-    print(_state_to_pbn(state))
     assert jnp.all(obs == init_obs)
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player1_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player1_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 1)
     assert jnp.all(obs == init_obs)
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player2_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player2_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 2)
     assert jnp.all(obs == init_obs)
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player3_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player3_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 3)
     assert jnp.all(obs == init_obs)
 
     # vul
+    # dealer team: EW
+    # non dealer team: NS
     state = state.replace(
         _dealer=jnp.int8(1),
         current_player=jnp.int8(3),
@@ -1879,8 +1887,10 @@ def test_observe():
         _vul_EW=jnp.bool_(0),
     )
     init_obs = (
-        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+        jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
         .at[0]
+        .set(True)
+        .at[3]
         .set(True)
     )
     obs = observe(state, 0)
@@ -1894,8 +1904,10 @@ def test_observe():
         _vul_EW=jnp.bool_(1),
     )
     init_obs = (
-        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+        jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
         .at[1]
+        .set(True)
+        .at[2]
         .set(True)
     )
     obs = observe(state, 0)
@@ -1910,10 +1922,10 @@ def test_observe():
         _vul_EW=jnp.bool_(1),
     )
     init_obs = (
-        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
-        .at[0]
-        .set(True)
+        jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
         .at[1]
+        .set(True)
+        .at[3]
         .set(True)
     )
     obs = observe(state, 0)
@@ -1932,8 +1944,16 @@ def test_observe():
     #  XX  P 7C  P
     #   P  P
     #
-
-    vul_history = jnp.zeros(426, dtype=jnp.bool_)
+    # fmt: off
+    actions = iter([0, 0, 0,
+                    3, 11, 1, 0,
+                    0, 2, 0, 25,
+                    26, 0, 28, 1,
+                    2, 0, 33, 0,
+                    0, 0])
+    # fmt: on
+    vul = jnp.zeros(4, dtype=jnp.bool_).at[0].set(True).at[2].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
 
     state = state.replace(
         _dealer=jnp.int8(1),
@@ -1942,32 +1962,39 @@ def test_observe():
         _vul_NS=jnp.bool_(0),
         _vul_EW=jnp.bool_(0),
     )
-
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  ?
 
-    vul_history = vul_history.at[3].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  ?
 
-    vul_history = vul_history.at[4].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[2].set(True).at[3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1975,12 +2002,15 @@ def test_observe():
     #      P  P  P
     #   ?
 
-    vul_history = vul_history.at[5].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 0)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1988,25 +2018,32 @@ def test_observe():
     #      P  P  P
     #  1C  ?
 
-    vul_history = vul_history.at[6].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = history.at[4 + 3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 8)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  ?
-
-    vul_history = vul_history.at[49].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = history.at[4 + 2].set(True).at[4 + (11 - 3) * 12 + 3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 36)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2014,12 +2051,23 @@ def test_observe():
     #      P  P  P
     #  1C 2S  X  ?
 
-    vul_history = vul_history.at[2 + 144 + 35 * 2 + 8].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2027,12 +2075,23 @@ def test_observe():
     #      P  P  P
     #  1C 2S  X  P
     #   ?
-
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2041,11 +2100,23 @@ def test_observe():
     #  1C 2S  X  P
     #   P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 37)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2054,12 +2125,25 @@ def test_observe():
     #  1C 2S  X  P
     #   P XX  ?
 
-    vul_history = vul_history.at[2 + 284 + 35 + 8].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2068,11 +2152,25 @@ def test_observe():
     #  1C 2S  X  P
     #   P XX  P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 22)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2082,12 +2180,27 @@ def test_observe():
     #   P XX  P 5H
     #   ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 3 + 22].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 23)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2097,12 +2210,29 @@ def test_observe():
     #   P XX  P 5H
     #  5S  ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 0 + 23].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2112,11 +2242,29 @@ def test_observe():
     #   P XX  P 5H
     #  5S  P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 3]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 25)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2126,12 +2274,31 @@ def test_observe():
     #   P XX  P 5H
     #  5S  P 6C  ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 2 + 25].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 2]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 36)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2142,12 +2309,33 @@ def test_observe():
     #  5S  P 6C  X
     #   ?
 
-    vul_history = vul_history.at[2 + 144 + 35 * 3 + 25].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 37)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2158,12 +2346,35 @@ def test_observe():
     #  5S  P 6C  X
     #  XX  ?
 
-    vul_history = vul_history.at[2 + 284 + 35 * 0 + 25].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2174,11 +2385,35 @@ def test_observe():
     #  5S  P 6C  X
     #  XX  P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 3]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 30)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2189,12 +2424,37 @@ def test_observe():
     #  5S  P 6C  X
     #  XX  P 7C  ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 2 + 30].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 2]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (33 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2206,11 +2466,37 @@ def test_observe():
     #  XX  P 7C  P
     #   ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (33 - 3) * 12 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -2222,11 +2508,38 @@ def test_observe():
     #  XX  P 7C  P
     #   P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 3]
+        .set(True)
+        .at[4 + (33 - 3) * 12 + 1]
+        .set(True)
+    )
+
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
