@@ -564,8 +564,14 @@ def _remove_hit(arr, ix, x, y):
 def _step_obj(arr, ix):
     arr_p = arr.at[:, 0].add(1)
     arr_m = arr.at[:, 0].add(-1)
-    arr_2 = jnp.where(jnp.tile(arr[:, 2], reps=(arr.shape[1], 1)).T, arr_p, arr_m)
-    arr = jnp.where(jnp.tile(jnp.arange(arr.shape[0]) < ix, reps=(arr.shape[1], 1)).T, arr_2, arr)
+    arr_2 = jnp.where(
+        jnp.tile(arr[:, 2], reps=(arr.shape[1], 1)).T, arr_p, arr_m
+    )
+    arr = jnp.where(
+        jnp.tile(jnp.arange(arr.shape[0]) < ix, reps=(arr.shape[1], 1)).T,
+        arr_2,
+        arr,
+    )
     # arr = lax.fori_loop(
     #     0,
     #     ix,
@@ -576,7 +582,9 @@ def _step_obj(arr, ix):
 
 
 def _hit(arr, ix, x, y):
-    return ((arr[:, 0] == x) & (arr[:, 1] == y) & (jnp.arange(arr.shape[0]) < ix)).any()
+    return (
+        (arr[:, 0] == x) & (arr[:, 1] == y) & (jnp.arange(arr.shape[0]) < ix)
+    ).any()
 
 
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
@@ -744,25 +752,32 @@ def _observe(state: State) -> jnp.ndarray:
         state._oxygen < 0, lambda: jnp.int32(9), lambda: oxygen_guage
     )
     obs = obs.at[9, :, 7].set(
-            jnp.where(jnp.arange(11) < oxygen_guage, TRUE, obs[9, :, 7])
+        jnp.where(jnp.arange(11) < oxygen_guage, TRUE, obs[9, :, 7])
     )
     mask = (9 - state._diver_count <= jnp.arange(11)) & (jnp.arange(11) < 9)
-    obs = obs.at[9, :, 8].set(
-            jnp.where(mask, TRUE, obs[9, :, 8])
-    )
+    obs = obs.at[9, :, 8].set(jnp.where(mask, TRUE, obs[9, :, 8]))
     obs = obs.at[state._f_bullets[:, 1], state._f_bullets[:, 0], 2].set(TRUE)
     obs = obs.at[state._e_bullets[:, 1], state._e_bullets[:, 0], 4].set(TRUE)
 
     obs = obs.at[state._e_fish[:, 1], state._e_fish[:, 0], 5].set(TRUE)
-    back_x = state._e_fish[:, 0] + jnp.array([1, -1], dtype=jnp.int32)[state._e_fish[:, 2]]
+    back_x = (
+        state._e_fish[:, 0]
+        + jnp.array([1, -1], dtype=jnp.int32)[state._e_fish[:, 2]]
+    )
     obs = obs.at[state._e_fish[:, 1], back_x, 3].set(TRUE)
 
     obs = obs.at[state._e_subs[:, 1], state._e_subs[:, 0], 6].set(TRUE)
-    back_x = state._e_subs[:, 0] + jnp.array([1, -1], dtype=jnp.int32)[state._e_subs[:, 2]]
+    back_x = (
+        state._e_subs[:, 0]
+        + jnp.array([1, -1], dtype=jnp.int32)[state._e_subs[:, 2]]
+    )
     obs = obs.at[state._e_subs[:, 1], back_x, 3].set(TRUE)
 
     obs = obs.at[state._divers[:, 1], state._divers[:, 0], 9].set(TRUE)
-    back_x = state._divers[:, 0] + jnp.array([1, -1], dtype=jnp.int32)[state._divers[:, 2]]
+    back_x = (
+        state._divers[:, 0]
+        + jnp.array([1, -1], dtype=jnp.int32)[state._divers[:, 2]]
+    )
     obs = obs.at[state._divers[:, 1], back_x, 3].set(TRUE)
 
     return obs[:10, :10, :]
