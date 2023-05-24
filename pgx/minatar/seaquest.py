@@ -562,12 +562,16 @@ def _remove_hit(arr, ix, x, y):
 
 
 def _step_obj(arr, ix):
-    arr = lax.fori_loop(
-        0,
-        ix,
-        lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)),
-        arr,
-    )
+    arr_p = arr.at[:, 0].add(1)
+    arr_m = arr.at[:, 0].add(-1)
+    arr_2 = jnp.where(jnp.tile(arr[:, 2], reps=(arr.shape[1], 1)).T, arr_p, arr_m)
+    arr = jnp.where(jnp.tile(jnp.arange(arr.shape[0]) < ix, reps=(arr.shape[1], 1)).T, arr_2, arr)
+    # arr = lax.fori_loop(
+    #     0,
+    #     ix,
+    #     lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)),
+    #     arr,
+    # )
     return arr
 
 
