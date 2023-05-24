@@ -101,8 +101,10 @@ class State(v1.State):
     )
     _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
     _possible_piece_positions: jnp.ndarray = jnp.int8(
-        [[0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
-         [0, 1, 5, 6, 10, 11, 15, 16, 20, 21]]
+        [
+            [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
+            [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
+        ]
     )
 
     @staticmethod
