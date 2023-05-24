@@ -510,6 +510,7 @@ def _flip(state: State) -> State:
         current_player=(state.current_player + 1) % 2,
         _board=-jnp.flip(state._board.reshape(5, 5), axis=1).flatten(),
         _turn=(state._turn + 1) % 2,
+        _board_history=-jnp.flip(state._board_history.reshape(8, 5, 5), axis=-1).reshape(-1, 25),
         _possible_piece_positions=state._possible_piece_positions[::-1],
     )
 
