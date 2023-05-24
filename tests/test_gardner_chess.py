@@ -148,6 +148,16 @@ def test_observe():
          [0., 0., 0., 0., 0.]]
     )
     assert (state.observation[:, :, 0] == expected).all()
+    expected = jnp.float32(
+        [[0., 0., 0., 0., 0.],
+         [0., 0., 0., 0., 0.],
+         [1., 0., 0., 0., 0.],
+         [0., 1., 1., 1., 1.],
+         [0., 0., 0., 0., 0.]]
+    )
+    print(state.observation[:, :, 14])
+    print(state.observation[:, :, 20])
+    assert (state.observation[:, :, 14] == expected).all()
 
 
 def test_api():
