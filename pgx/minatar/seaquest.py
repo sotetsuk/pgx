@@ -304,7 +304,6 @@ def _step_det(
 
 
 def find_ix(arr):
-    # ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
     return (arr[:, 0] == -1).argmax()
 
 
@@ -339,11 +338,14 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
 
 
 def _update_by_f_bullets_hit(j, _f_bullets, e):
-    k = lax.while_loop(
-        lambda i: ~_is_hit(_f_bullets[j], e[i, 0], e[i, 1]) & (i < 25),
-        lambda i: i + 1,
-        0,
-    )
+    is_hit = (_f_bullets[j, 0] == e[:, 0]) & (_f_bullets[j, 1] == e[:, 1])
+    k = jnp.argmax(is_hit)
+    k = jax.lax.select(jnp.sum(is_hit) == 0, 25, k)
+    # k = lax.while_loop(
+    #     lambda i: ~hit[i] & (i < 25),
+    #     lambda i: i + 1,
+    #     0,
+    # )
     _f_bullets, e, removed = lax.cond(
         k < 25,
         lambda: (_remove_i(_f_bullets, j), _remove_i(e, k), TRUE),
