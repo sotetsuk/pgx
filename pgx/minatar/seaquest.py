@@ -774,26 +774,9 @@ def _observe(state: State) -> jnp.ndarray:
         obs,
     )
 
-    def set_e_subs(_obs, sub):
-        _obs = _obs.at[sub[1], sub[0], 6].set(TRUE)
-        back_x = sub[0] + jnp.array([1, -1], dtype=jnp.int32)[sub[2]]
-        _obs = lax.cond(
-            (0 <= back_x) & (back_x <= 9),
-            lambda: _obs.at[sub[1], back_x, 3].set(TRUE),
-            lambda: _obs,
-        )
-        return _obs
-
-    obs = lax.fori_loop(
-        0,
-        25,
-        lambda i, _obs: lax.cond(
-            state._e_subs[i][0] >= 0,
-            lambda: set_e_subs(_obs, state._e_subs[i]),
-            lambda: _obs,
-        ),
-        obs,
-    )
+    obs = obs.at[state._e_subs[:, 1], state._e_subs[:, 0], 6].set(TRUE)
+    back_x = state._e_subs[:, 0] + jnp.array([1, -1], dtype=jnp.int32)[state._e_subs[:, 2]]
+    obs = obs.at[state._e_subs[:, 1], back_x, 3].set(TRUE)
 
     def set_divers(_obs, diver):
         _obs = _obs.at[diver[1], diver[0], 9].set(TRUE)
