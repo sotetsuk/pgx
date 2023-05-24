@@ -572,14 +572,7 @@ def _step_obj(arr, ix):
 
 
 def _hit(arr, ix, x, y):
-    return lax.fori_loop(
-        0,
-        ix,
-        lambda i, t: lax.cond(
-            (arr[i][0] == x) & (arr[i][1] == y), lambda: TRUE, lambda: t
-        ),
-        FALSE,
-    )
+    return ((arr[:, 0] == x) & (arr[:, 1] == y) & (jnp.arange(arr.shape[0]) < ix)).any()
 
 
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
