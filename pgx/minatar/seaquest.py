@@ -304,8 +304,8 @@ def _step_det(
 
 
 def find_ix(arr):
-    ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
-    return ix
+    # ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
+    return (arr[:, 0] == -1).argmax()
 
 
 def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
