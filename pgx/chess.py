@@ -28,7 +28,6 @@ from pgx._src.chess_utils import (  # type: ignore
 )
 from pgx._src.struct import dataclass
 
-
 MAX_TERMINATION_STEPS = 500
 
 TRUE = jnp.bool_(True)
@@ -622,7 +621,9 @@ def _observe(state: State, player_id: jnp.ndarray):
     ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
     color = state._turn * ones
 
-    state = jax.lax.cond(state.current_player == player_id, lambda: state, lambda: _flip(state))
+    state = jax.lax.cond(
+        state.current_player == player_id, lambda: state, lambda: _flip(state)
+    )
 
     def make(i):
         board = _rotate(state._board_history[i].reshape((8, 8)))
@@ -649,14 +650,16 @@ def _observe(state: State, player_id: jnp.ndarray):
 
     board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8)
     return jnp.vstack(
-        [board_feat,
-         color,
-         total_move_cnt,
-         my_queen_side_castling_right,
-         my_king_side_castling_right,
-         opp_queen_side_castling_right,
-         opp_king_side_castling_right,
-         no_prog_cnt]
+        [
+            board_feat,
+            color,
+            total_move_cnt,
+            my_queen_side_castling_right,
+            my_king_side_castling_right,
+            opp_queen_side_castling_right,
+            opp_king_side_castling_right,
+            no_prog_cnt,
+        ]
     ).transpose((1, 2, 0))
 
 
