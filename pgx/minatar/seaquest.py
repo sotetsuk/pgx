@@ -530,11 +530,9 @@ def _update_enemy_subs(
 
 
 def _remove_i(arr, i):
-    N = arr.shape[0]
-    arr = lax.fori_loop(
-        i, N - 1, lambda j, _arr: _arr.at[j].set(arr[j + 1]), arr
-    )
-    return arr
+    mask = jnp.tile(jnp.arange(arr.shape[0]) < i, (arr.shape[1], 1)).T
+    rolled = jnp.roll(arr, -1, axis=0)
+    return jnp.where(mask, arr, rolled).at[-1, :].set(-1)
 
 
 def _remove_out_of_bound(arr, ix):
