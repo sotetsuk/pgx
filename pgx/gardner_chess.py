@@ -100,6 +100,10 @@ class State(v1.State):
         jnp.zeros((8, 25), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
     )
     _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
+    _possible_piece_positions: jnp.ndarray = jnp.int8(
+        [[0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
+         [0, 1, 5, 6, 10, 11, 15, 16, 20, 21]]
+    )
 
     @staticmethod
     def _from_fen(fen: str):
@@ -254,6 +258,13 @@ def _apply_move(state: State, a: Action):
         _board=state._board.at[a.from_].set(EMPTY).at[a.to].set(piece)
     )
 
+    # update possible piece positions
+    ix = jnp.argmin(jnp.abs(state._possible_piece_positions[0, :] - a.from_))
+    state = state.replace(  # type: ignore
+        _possible_piece_positions=state._possible_piece_positions.at[
+            0, ix
+        ].set(a.to)
+    )
     return state
 
 
@@ -346,7 +357,9 @@ def _legal_action_mask(state):
         ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
-    actions = legal_normal_moves(jnp.arange(25)).flatten()
+    actions = legal_normal_moves(
+        state._possible_piece_positions[0]
+    ).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(25 * 49 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
@@ -468,6 +481,16 @@ def _observe(state: State, player_id: jnp.ndarray):
     ).transpose((1, 2, 0))
 
 
+def _possible_piece_positions(state: State):
+    my_pos = jnp.nonzero(state._board > 0, size=10, fill_value=-1)[0].astype(
+        jnp.int8
+    )
+    opp_pos = jnp.nonzero(_flip(state)._board > 0, size=10, fill_value=-1)[
+        0
+    ].astype(jnp.int8)
+    return jnp.vstack((my_pos, opp_pos))
+
+
 def _flip_pos(x):
     """
     >>> _flip_pos(jnp.int8(0))
@@ -485,6 +508,7 @@ def _flip(state: State) -> State:
         current_player=(state.current_player + 1) % 2,
         _board=-jnp.flip(state._board.reshape(5, 5), axis=1).flatten(),
         _turn=(state._turn + 1) % 2,
+        _possible_piece_positions=state._possible_piece_positions[::-1],
     )
 
 
@@ -531,6 +555,13 @@ def _from_fen(fen: str):
         _halfmove_count=jnp.int32(halfmove_cnt),
         _fullmove_count=jnp.int32(fullmove_cnt),
     )
+    state = state.replace(  # type: ignore
+        _possible_piece_positions=jax.jit(_possible_piece_positions)(state)
+    )
+    state = state.replace(  # type: ignore
+        legal_action_mask=jax.jit(_legal_action_mask)(state),
+    )
+    state = jax.jit(_check_termination)(state)
     return state
 
 
