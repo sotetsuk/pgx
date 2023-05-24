@@ -1,12 +1,14 @@
 .vscode/*
 .idea/*
-!.idea/watcherTasks.xml
-!.idea/pyinspections.xml
 *.iml
 *.pyc
 build/*
 dist/*
 *.egg-info/*
 venv
+.venv
 pythonenv*
 .DS_Store
+workspace/backgammon_training/params/*
+workspace/backgammon_training/wandb/*
+

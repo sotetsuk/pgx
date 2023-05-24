@@ -10,7 +10,7 @@ env_id: pgx.EnvId = sys.argv[1]
 env = pgx.make(env_id)
 
 # run api test
-pgx.api_test(env, 100)
+pgx.v1_api_test(env, 100)
 
 # jit
 init = jax.jit(jax.vmap(env.init))
@@ -33,6 +33,6 @@ while not state.terminated.all():
     print(f"curr_player: {state.current_player}\naction: {action}")
     state.save_svg(f"{i:04d}.svg")
     state = step(state, action)
-    print(f"reward:\n{state.reward}")
+    print(f"reward:\n{state.rewards}")
     i += 1
 state.save_svg(f"{i:04d}.svg")

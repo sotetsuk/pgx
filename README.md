@@ -1,14 +1,14 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
 
 <div align="center">
-<img src="docs/assets/logo.svg" width="40%">
+<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/logo.svg" width="40%">
 </div>
 
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
-<img src="docs/assets/go_dark.gif#gh-dark-mode-only" width="30%"><img src="docs/assets/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(270deg);"><img src="docs/assets/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(90deg);">
-<img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
+<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_dark.gif#gh-dark-mode-only" width="30%"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(270deg);"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(90deg);">
+<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
 </div>
 
 ## Why Pgx?
@@ -20,36 +20,41 @@ throughput: https://colab.research.google.com/drive/1gIWHYLKBxE2XKDhAlEYKVecz3WG
 [Brax](https://github.com/google/brax), a [JAX](https://github.com/google/jax)-native physics engine, provides extremely high-speed parallel simulation for RL in *continuous* state space.
 Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx** provides a wide variety of JAX-native game simulators! Highlighted features include:
 
-- **JAX-native.** All `step` functions are *JIT-able*
-- **Super fast** in parallel execution on accelerators
-- **Various game support** including **Backgammon**, **Chess**, **Shogi**, and **Go**
-- **Beautiful visualization** in SVG format
+- ⚡ **Super fast** in parallel execution on accelerators
+- 🎲 **Various game support** including **Backgammon**, **Chess**, **Shogi**, and **Go**
+- 🖼️ **Beautiful visualization** in SVG format
 
 
-## Install
+## Installation
 
 ```sh
 pip install pgx
 ```
 
 ## Usage
+
+
+Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
+
 <a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ```py
 import jax
 import pgx
 
-env = pgx.make("go-19x19")
+env = pgx.make("go_19x19")
 init = jax.jit(jax.vmap(env.init))  # vectorize and JIT-compile
 step = jax.jit(jax.vmap(env.step))
 
 batch_size = 1024
 keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
 state = init(keys)  # vectorized states
-while not state.terminated.all():
+while not (state.terminated | state.truncated).all():
     action = model(state.current_player, state.observation, state.legal_action_mask)
     state = step(state, action)  # state.reward (2,)
 ```
+
+> ⚠️ Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in May 2023. Opinions and comments are more than welcome!
 
 <!---
 ### Limitations (for the simplicity)
@@ -69,137 +74,51 @@ while not state.terminated.all():
 * `is_truncated=True` is also set to state
 --->
 
-## Supported games and road map
+## Supported games
 
-> :warning: Pgx is currently in the beta version. Therefore, API is subject to change without notice. We aim to release v1.0.0 in April 2023. Opinions and comments are more than welcome!
+| Backgammon | Chess | Shogi | Go |
+|:---:|:---:|:---:|:---:|
+|<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_dark.gif#gh-dark-mode-only" width="170px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_light.gif#gh-light-mode-only" width="170px">|<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_dark.gif#gh-dark-mode-only" width="158px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_light.gif#gh-light-mode-only" width="158px">|<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/shogi_dark.gif#gh-dark-mode-only" width="170px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/shogi_light.gif#gh-light-mode-only" width="170px">|<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go-19x19_dark.gif#gh-dark-mode-only" width="160px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go-19x19_light.gif#gh-light-mode-only" width="160px">|
 
-Use `pgx.available_games()` to see the list of currently available games.
 
-<div align="center">
-<img src="fig/svgs/2048_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/backgammon_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/go-9x9_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/kuhn_poker_dark.png#gh-dark-mode-only" height="120px">
-<img src="fig/svgs/shogi_dark.png#gh-dark-mode-only" height="120px">
-</div>
+Use `pgx.available_envs() -> Tuple[EnvId]` to see the list of currently available games. Given an `<EnvId>`, you can create the environment via
 
-<div align="center">
-<img src="fig/svgs/2048_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/backgammon_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/go-9x9_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/kuhn_poker_light.png#gh-light-mode-only" height="120px">
-<img src="fig/svgs/shogi_light.png#gh-light-mode-only" height="120px">
-</div>
+```py
+>>> env = pgx.make(<EnvId>)
+```
 
-<div align="center">
-<table>
-<tr>
-  <th>Game</th>
-  <th>Environment</th>
-  <th>Visualization</th>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td> <a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a> </td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a></td>
- <td>:construction:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Chess">Chess</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a></td>
- <td>:construction:</td>
- <td>:construction:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Reversi">Othello</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-<tr>
- <td><a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a></td>
- <td>:white_check_mark:</td>
- <td>:white_check_mark:</td>
-</tr>
-</table>
-</div>
+You can check the current version of each environment by
+
+
+```py
+>>> env.version
+```
+
+| Game/EnvId | Visualization | Version | Five-word description |
+|:---:|:---:|:---:|:---:|
+|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a> <br> `"2048"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_light.gif" width="60px">| `beta` | *Merge tiles to create 2048.* |
+|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a><br>`"animal_shogi"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_light.gif" width="60px">|  `beta` | *Animal-themed child-friendly shogi.* |
+|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a><br>`"backgammon"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_light.gif" width="60px">| `beta` | *Luck aids bearing off checkers.* |
+|<a href="https://en.wikipedia.org/wiki/Chess">Chess</a><br>`"chess"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_light.gif" width="60px">| `beta` | *Checkmate opponent's king to win.* |
+|<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a><br>`"connect_four"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/connect_four_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/connect_four_light.gif" width="60px">| `beta` | *Connect discs, win with four.* |
+|<a href="https://en.wikipedia.org/wiki/Minichess">Gardner Chess</a><br>`"gardner_chess"`|<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/gardner_chess_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/gardner_chess_light.gif" width="60px">| `beta` | *5x5 chess variant, excluding castling.* |
+|<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a><br>`"go_9x9"` `"go_19x19"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go-19x19_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go-19x19_light.gif" width="60px">| `beta` | *Strategically place stones, claim territory.* |
+|<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a><br>`"hex"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/hex_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/hex_light.gif" width="60px">| `beta` | *Connect opposite sides, block opponent.* |
+|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a><br>`"kuhn_poker"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/kuhn_poker_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/kuhn_poker_light.gif" width="60px">| `beta` | *Three-card betting and bluffing game.* |
+|<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a><br>`"leduc_holdem"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/leduc_holdem_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/leduc_holdem_light.gif" width="60px">| `beta` | *Two-suit, limited deck poker.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a><br>`"minatar-asterix"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-asterix.gif" width="50px">| `beta` | *Avoid enemies, collect treasure, survive.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a><br>`"minatar-breakout"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-breakout.gif" width="50px">| `beta` | *Paddle, ball, bricks, bounce, clear.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Freeway</a><br>`"minatar-freeway"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-freeway.gif" width="50px">| `beta` | *Dodging cars, climbing up freeway.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Seaquest</a><br>`"minatar-seaquest"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-seaquest.gif" width="50px">| `beta` | *Underwater submarine rescue and combat.* |
+|<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a><br>`"minatar-space_invaders"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-space_invaders.gif" width="50px">| `beta` | *Alien shooter game, dodge bullets.* |
+|<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a><br>`"othello"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/othello_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/othello_light.gif" width="60px">| `beta` | *Flip and conquer opponent's pieces.* |
+|<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a><br>`"shogi"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/shogi_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/shogi_light.gif" width="60px"> | `beta` | *Japanese chess with captured pieces.* |
+|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a><br>`"sparrow_mahjong"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_dark.svg" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_light.svg" width="60px">|  `beta` | *A simplified, children-friendly Mahjong.* |
+|<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a><br>`"tic_tac_toe"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/tic_tac_toe_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/tic_tac_toe_light.gif" width="60px">| `beta` | *Three in a row wins.* |
+
+- <a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge Bidding</a> and <a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a> environments are under development 🚧
+- Five-word descriptions were generated by [ChatGPT](https://chat.openai.com/) 🤖
+
 
 ## See also
 

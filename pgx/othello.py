@@ -15,25 +15,25 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(64 + 1, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Othello specific ---
-    turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 8x8 board
     # [[ 0,  1,  2,  3,  4,  5,  6,  7],
     #  [ 8,  9, 10, 11, 12, 13, 14, 15],
@@ -43,40 +43,36 @@ class State(core.State):
     #  [40, 41, 42, 43, 44, 45, 46, 47],
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
-    board: jnp.ndarray = jnp.zeros(64, jnp.int8)  # -1(opp), 0(empty), 1(self)
-    passed: jnp.ndarray = FALSE
+    _board: jnp.ndarray = jnp.zeros(64, jnp.int8)  # -1(opp), 0(empty), 1(self)
+    _passed: jnp.ndarray = FALSE
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "othello"
 
 
-class Othello(core.Env):
-    def __init__(
-        self,
-    ):
+class Othello(v1.Env):
+    def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Othello"
+    def id(self) -> v1.EnvId:
+        return "othello"
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self) -> int:
@@ -111,7 +107,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     current_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(
         current_player=current_player,
-        board=jnp.zeros(64, dtype=jnp.int8)
+        _board=jnp.zeros(64, dtype=jnp.int8)
         .at[28]
         .set(1)
         .at[35]
@@ -133,7 +129,7 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state, action):
-    board = state.board
+    board = state._board
     my = board > 0
     opp = board < 0
 
@@ -184,7 +180,7 @@ def _step(state, action):
         (
             (jnp.count_nonzero(my | opp) == 64)
             | ~opp.any()
-            | (state.passed & (action == 64))
+            | (state._passed & (action == 64))
         ),
         lambda: (_get_reward(my, opp, state.current_player), TRUE),
         lambda: (jnp.zeros(2, jnp.float32), FALSE),
@@ -192,15 +188,15 @@ def _step(state, action):
 
     return state.replace(
         current_player=1 - state.current_player,
-        turn=1 - state.turn,
+        _turn=1 - state._turn,
         legal_action_mask=state.legal_action_mask.at[:64]
         .set(legal_action)
         .at[64]
         .set(~legal_action.any()),
-        reward=reward,
+        rewards=reward,
         terminated=terminated,
-        board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
-        passed=action == 64,
+        _board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
+        _passed=action == 64,
     )
 
 
@@ -231,8 +227,8 @@ def _get_reward(my, opp, curr_player):
 def _observe(state, player_id) -> jnp.ndarray:
     board = jax.lax.cond(
         player_id == state.current_player,
-        lambda: state.board.reshape((8, 8)),
-        lambda: (state.board * -1).reshape((8, 8)),
+        lambda: state._board.reshape((8, 8)),
+        lambda: (state._board * -1).reshape((8, 8)),
     )
 
     def make(color):
@@ -243,5 +239,5 @@ def _observe(state, player_id) -> jnp.ndarray:
 
 def _get_abs_board(state):
     return jax.lax.cond(
-        state.turn == 0, lambda: state.board, lambda: state.board * -1
+        state._turn == 0, lambda: state._board, lambda: state._board * -1
     )

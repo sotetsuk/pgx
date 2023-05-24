@@ -1,6 +1,6 @@
 from typing import List, Union
 
-from pgx.core import State
+from pgx.v1 import State
 
 
 def show_state_seq(

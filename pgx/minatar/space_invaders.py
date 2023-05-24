@@ -1,7 +1,5 @@
 """MinAtar/SpaceInvaders: A fork of github.com/kenjyoung/MinAtar
 
-https://github.com/kenjyoung/MinAtar/blob/master/minatar/environments/freeway.py
-
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)
     * Tian Tian (ttian@ualberta.ca)
@@ -14,8 +12,8 @@ import jax
 import jax.lax as lax
 from jax import numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -29,34 +27,34 @@ NINE = jnp.int32(9)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
+    rewards: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- MinAtar SpaceInvaders specific ---
-    pos: jnp.ndarray = jnp.int32(5)
-    f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
-    e_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
-    alien_map: jnp.ndarray = (
+    _pos: jnp.ndarray = jnp.int32(5)
+    _f_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
+    _e_bullet_map: jnp.ndarray = jnp.zeros((10, 10), dtype=jnp.bool_)
+    _alien_map: jnp.ndarray = (
         jnp.zeros((10, 10), dtype=jnp.bool_).at[0:4, 2:8].set(TRUE)
     )
-    alien_dir: jnp.ndarray = jnp.int32(-1)
-    enemy_move_interval: jnp.ndarray = ENEMY_MOVE_INTERVAL
-    alien_move_timer: jnp.ndarray = ENEMY_MOVE_INTERVAL
-    alien_shot_timer: jnp.ndarray = ENEMY_SHOT_INTERVAL
-    ramp_index: jnp.ndarray = jnp.int32(0)
-    shot_timer: jnp.ndarray = jnp.int32(0)
-    terminal: jnp.ndarray = FALSE
-    last_action: jnp.ndarray = jnp.int32(0)
+    _alien_dir: jnp.ndarray = jnp.int32(-1)
+    _enemy_move_interval: jnp.ndarray = ENEMY_MOVE_INTERVAL
+    _alien_move_timer: jnp.ndarray = ENEMY_MOVE_INTERVAL
+    _alien_shot_timer: jnp.ndarray = ENEMY_SHOT_INTERVAL
+    _ramp_index: jnp.ndarray = jnp.int32(0)
+    _shot_timer: jnp.ndarray = jnp.int32(0)
+    _terminal: jnp.ndarray = FALSE
+    _last_action: jnp.ndarray = jnp.int32(0)
 
     @property
-    def env_id(self) -> core.EnvId:
-        return "minatar/space_invaders"
+    def env_id(self) -> v1.EnvId:
+        return "minatar-space_invaders"
 
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
@@ -75,40 +73,49 @@ class State(core.State):
         visualize_minatar(self, filename)
 
 
-class MinAtarSpaceInvaders(core.Env):
+class MinAtarSpaceInvaders(v1.Env):
     def __init__(
         self,
         *,
-        minatar_version: Literal["v0", "v1"] = "v1",
+        use_minimal_action_set: bool = True,
         sticky_action_prob: float = 0.1,
     ):
         super().__init__()
-        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.use_minimal_action_set = use_minimal_action_set
         self.sticky_action_prob: float = sticky_action_prob
+        self.minimal_action_set = jnp.int32([0, 1, 3, 5])
+        self.legal_action_mask = jnp.ones(6, dtype=jnp.bool_)
+        if self.use_minimal_action_set:
+            self.legal_action_mask = jnp.ones(
+                self.minimal_action_set.shape[0], dtype=jnp.bool_
+            )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return _init_det()
+        state = State()
+        state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
+        return state  # type: ignore
 
-    def _step(self, state: core.State, action) -> State:
+    def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
-        state = _step(
-            state, action, sticky_action_prob=self.sticky_action_prob
+        state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
+        action = jax.lax.select(
+            self.use_minimal_action_set,
+            self.minimal_action_set[action],
+            action,
         )
-        return state.replace(terminated=state.terminal)  # type: ignore
+        return _step(state, action, sticky_action_prob=self.sticky_action_prob)  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "MinAtar/SpaceInvaders"
+    def id(self) -> v1.EnvId:
+        return "minatar-space_invaders"
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self):
@@ -125,7 +132,7 @@ def _step(
     state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
         jax.random.uniform(subkey) < sticky_action_prob,
-        lambda: state.last_action,
+        lambda: state._last_action,
         lambda: action,
     )
     return _step_det(state, action)
@@ -133,24 +140,24 @@ def _step(
 
 def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 6), dtype=jnp.bool_)
-    obs = obs.at[9, state.pos, 0].set(TRUE)
-    obs = obs.at[:, :, 1].set(state.alien_map)
+    obs = obs.at[9, state._pos, 0].set(TRUE)
+    obs = obs.at[:, :, 1].set(state._alien_map)
     obs = obs.at[:, :, 2].set(
         lax.cond(
-            state.alien_dir < 0,
-            lambda: state.alien_map,
-            lambda: jnp.zeros_like(state.alien_map),
+            state._alien_dir < 0,
+            lambda: state._alien_map,
+            lambda: jnp.zeros_like(state._alien_map),
         )
     )
     obs = obs.at[:, :, 3].set(
         lax.cond(
-            state.alien_dir < 0,
-            lambda: jnp.zeros_like(state.alien_map),
-            lambda: state.alien_map,
+            state._alien_dir < 0,
+            lambda: jnp.zeros_like(state._alien_map),
+            lambda: state._alien_map,
         )
     )
-    obs = obs.at[:, :, 4].set(state.f_bullet_map)
-    obs = obs.at[:, :, 5].set(state.e_bullet_map)
+    obs = obs.at[:, :, 4].set(state._f_bullet_map)
+    obs = obs.at[:, :, 5].set(state._e_bullet_map)
     return obs
 
 
@@ -158,30 +165,19 @@ def _step_det(
     state: State,
     action: jnp.ndarray,
 ):
-    return lax.cond(
-        state.terminal,
-        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
-        lambda: _step_det_at_non_terminal(state, action),
-    )
-
-
-def _step_det_at_non_terminal(
-    state: State,
-    action: jnp.ndarray,
-):
     r = jnp.float32(0)
 
-    pos = state.pos
-    f_bullet_map = state.f_bullet_map
-    e_bullet_map = state.e_bullet_map
-    alien_map = state.alien_map
-    alien_dir = state.alien_dir
-    enemy_move_interval = state.enemy_move_interval
-    alien_move_timer = state.alien_move_timer
-    alien_shot_timer = state.alien_shot_timer
-    ramp_index = state.ramp_index
-    shot_timer = state.shot_timer
-    terminal = state.terminal
+    pos = state._pos
+    f_bullet_map = state._f_bullet_map
+    e_bullet_map = state._e_bullet_map
+    alien_map = state._alien_map
+    alien_dir = state._alien_dir
+    enemy_move_interval = state._enemy_move_interval
+    alien_move_timer = state._alien_move_timer
+    alien_shot_timer = state._alien_shot_timer
+    ramp_index = state._ramp_index
+    shot_timer = state._shot_timer
+    terminal = state._terminal
 
     # Resolve player action
     # action_map = ['n','l','u','r','d','f']
@@ -246,19 +242,20 @@ def _step_det_at_non_terminal(
     )
 
     return state.replace(  # type: ignore
-        pos=pos,
-        f_bullet_map=f_bullet_map,
-        e_bullet_map=e_bullet_map,
-        alien_map=alien_map,
-        alien_dir=alien_dir,
-        enemy_move_interval=enemy_move_interval,
-        alien_move_timer=alien_move_timer,
-        alien_shot_timer=alien_shot_timer,
-        ramp_index=ramp_index,
-        shot_timer=shot_timer,
-        terminal=terminal,
-        last_action=action,
-        reward=r[jnp.newaxis],
+        _pos=pos,
+        _f_bullet_map=f_bullet_map,
+        _e_bullet_map=e_bullet_map,
+        _alien_map=alien_map,
+        _alien_dir=alien_dir,
+        _enemy_move_interval=enemy_move_interval,
+        _alien_move_timer=alien_move_timer,
+        _alien_shot_timer=alien_shot_timer,
+        _ramp_index=ramp_index,
+        _shot_timer=shot_timer,
+        _terminal=terminal,
+        _last_action=action,
+        rewards=r[jnp.newaxis],
+        terminated=terminal,
     )
 
 
@@ -318,7 +315,3 @@ def _update_alien_by_move_timer(
         alien_map[9, pos], lambda: jnp.bool_(True), lambda: terminal
     )
     return alien_move_timer, alien_map, alien_dir, terminal
-
-
-def _init_det() -> State:
-    return State()

@@ -1,11 +1,5 @@
 """MinAtar/Breakout: A fork of github.com/kenjyoung/MinAtar
 
-The player controls a paddle on the bottom of the screen and must bounce a ball to break 3 rows of bricks along the
-top of the screen. A reward of +1 is given for each brick broken by the ball.  When all bricks are cleared another 3
-rows are added. The ball travels only along diagonals, when it hits the paddle it is bounced either to the left or
-right depending on the side of the paddle hit, when it hits a wall or brick it is reflected. Termination occurs when
-the ball hits the bottom of the screen. The balls direction is indicated by a trail channel.
-
 The authors of original MinAtar implementation are:
     * Kenny Young (kjyoung@ualberta.ca)
     * Tian Tian (ttian@ualberta.ca)
@@ -17,8 +11,8 @@ from typing import Literal, Optional
 import jax
 from jax import numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -31,32 +25,32 @@ NINE = jnp.array(9, dtype=jnp.int32)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
+    rewards: jnp.ndarray = jnp.zeros(1, dtype=jnp.float32)  # (1,)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(6, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.ones(3, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- MinAtar Breakout specific ---
-    ball_y: jnp.ndarray = THREE
-    ball_x: jnp.ndarray = ZERO
-    ball_dir: jnp.ndarray = TWO
-    pos: jnp.ndarray = FOUR
-    brick_map: jnp.ndarray = (
+    _ball_y: jnp.ndarray = THREE
+    _ball_x: jnp.ndarray = ZERO
+    _ball_dir: jnp.ndarray = TWO
+    _pos: jnp.ndarray = FOUR
+    _brick_map: jnp.ndarray = (
         jnp.zeros((10, 10), dtype=jnp.bool_).at[1:4, :].set(True)
     )
-    strike: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
-    last_x: jnp.ndarray = ZERO
-    last_y: jnp.ndarray = THREE
-    terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
-    last_action: jnp.ndarray = ZERO
+    _strike: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
+    _last_x: jnp.ndarray = ZERO
+    _last_y: jnp.ndarray = THREE
+    _terminal: jnp.ndarray = jnp.array(False, dtype=jnp.bool_)
+    _last_action: jnp.ndarray = ZERO
 
     @property
-    def env_id(self) -> core.EnvId:
-        return "minatar/breakout"
+    def env_id(self) -> v1.EnvId:
+        return "minatar-breakout"
 
     def _repr_html_(self) -> str:
         from pgx.minatar.utils import visualize_minatar
@@ -75,40 +69,49 @@ class State(core.State):
         visualize_minatar(self, filename)
 
 
-class MinAtarBreakout(core.Env):
+class MinAtarBreakout(v1.Env):
     def __init__(
         self,
         *,
-        minatar_version: Literal["v0", "v1"] = "v1",
+        use_minimal_action_set: bool = True,
         sticky_action_prob: float = 0.1,
     ):
         super().__init__()
-        self.minatar_version: Literal["v0", "v1"] = minatar_version
+        self.use_minimal_action_set = use_minimal_action_set
         self.sticky_action_prob: float = sticky_action_prob
+        self.minimal_action_set = jnp.int32([0, 1, 3])
+        self.legal_action_mask = jnp.ones(6, dtype=jnp.bool_)
+        if self.use_minimal_action_set:
+            self.legal_action_mask = jnp.ones(
+                self.minimal_action_set.shape[0], dtype=jnp.bool_
+            )
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        return _init(key)  # type: ignore
+        state = _init(rng=key)  # type: ignore
+        state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
+        return state  # type: ignore
 
-    def _step(self, state: core.State, action) -> State:
+    def _step(self, state: v1.State, action) -> State:
         assert isinstance(state, State)
-        state = _step(
-            state, action, sticky_action_prob=self.sticky_action_prob
+        state = state.replace(legal_action_mask=self.legal_action_mask)  # type: ignore
+        action = jax.lax.select(
+            self.use_minimal_action_set,
+            self.minimal_action_set[action],
+            action,
         )
-        return state.replace(terminated=state.terminal)  # type: ignore
+        return _step(state, action, sticky_action_prob=self.sticky_action_prob)  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state)
 
     @property
-    def name(self) -> str:
-        return "MinAtar/Asterix"
+    def id(self) -> v1.EnvId:
+        return "minatar-breakout"
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self):
@@ -125,7 +128,7 @@ def _step(
     state = state.replace(_rng_key=key)  # type: ignore
     action = jax.lax.cond(
         jax.random.uniform(subkey) < sticky_action_prob,
-        lambda: state.last_action,
+        lambda: state._last_action,
         lambda: action,
     )
     return _step_det(state, action)
@@ -137,21 +140,13 @@ def _init(rng: jnp.ndarray) -> State:
 
 
 def _step_det(state: State, action: jnp.ndarray):
-    return jax.lax.cond(
-        state.terminal,
-        lambda: state.replace(last_action=action, reward=jnp.zeros_like(state.reward)),  # type: ignore
-        lambda: _step_det_at_non_terminal(state, action),
-    )
-
-
-def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
-    ball_y = state.ball_y
-    ball_x = state.ball_x
-    ball_dir = state.ball_dir
-    pos = state.pos
-    brick_map = state.brick_map
-    strike = state.strike
-    terminal = state.terminal
+    ball_y = state._ball_y
+    ball_x = state._ball_x
+    ball_dir = state._ball_dir
+    pos = state._pos
+    brick_map = state._brick_map
+    strike = state._strike
+    terminal = state._terminal
 
     r = jnp.array(0, dtype=jnp.float32)
 
@@ -197,17 +192,18 @@ def _step_det_at_non_terminal(state: State, action: jnp.ndarray):
     )
 
     state = state.replace(  # type: ignore
-        ball_y=new_y,
-        ball_x=new_x,
-        ball_dir=ball_dir,
-        pos=pos,
-        brick_map=brick_map,
-        strike=strike,
-        last_x=last_x,
-        last_y=last_y,
-        terminal=terminal,
-        last_action=action,
-        reward=r[jnp.newaxis],
+        _ball_y=new_y,
+        _ball_x=new_x,
+        _ball_dir=ball_dir,
+        _pos=pos,
+        _brick_map=brick_map,
+        _strike=strike,
+        _last_x=last_x,
+        _last_y=last_y,
+        _terminal=terminal,
+        _last_action=action,
+        rewards=r[jnp.newaxis],
+        terminated=terminal,
     )
     return state
 
@@ -288,14 +284,14 @@ def _init_det(ball_start: jnp.ndarray) -> State:
     )
     last_x = ball_x
     return State(
-        ball_x=ball_x, ball_dir=ball_dir, last_x=last_x
+        _ball_x=ball_x, _ball_dir=ball_dir, _last_x=last_x
     )  # type: ignore
 
 
 def _observe(state: State) -> jnp.ndarray:
     obs = jnp.zeros((10, 10, 4), dtype=jnp.bool_)
-    obs = obs.at[state.ball_y, state.ball_x, 1].set(True)
-    obs = obs.at[9, state.pos, 0].set(True)
-    obs = obs.at[state.last_y, state.last_x, 2].set(True)
-    obs = obs.at[:, :, 3].set(state.brick_map)
+    obs = obs.at[state._ball_y, state._ball_x, 1].set(True)
+    obs = obs.at[9, state._pos, 0].set(True)
+    obs = obs.at[state._last_y, state._last_x, 2].set(True)
+    obs = obs.at[:, :, 3].set(state._brick_map)
     return obs

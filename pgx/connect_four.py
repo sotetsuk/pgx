@@ -15,25 +15,25 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((6, 7, 2), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0, 0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(7, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Connect Four specific ---
-    turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 6x7 board
     # [[ 0,  1,  2,  3,  4,  5,  6],
     #  [ 7,  8,  9, 10, 11, 12, 13],
@@ -41,40 +41,36 @@ class State(core.State):
     #  [21, 22, 23, 24, 25, 26, 27],
     #  [28, 29, 30, 31, 32, 33, 34],
     #  [35, 36, 37, 38, 39, 40, 41]]
-    board: jnp.ndarray = -jnp.ones(42, jnp.int8)  # -1 (empty), 0, 1
-    blank_row: jnp.ndarray = jnp.full(7, 5)
+    _board: jnp.ndarray = -jnp.ones(42, jnp.int8)  # -1 (empty), 0, 1
+    _blank_row: jnp.ndarray = jnp.full(7, 5)
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "connect_four"
 
 
-class ConnectFour(core.Env):
-    def __init__(
-        self,
-    ):
+class ConnectFour(v1.Env):
+    def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "Connect Four"
+    def id(self) -> v1.EnvId:
+        return "connect_four"
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self) -> int:
@@ -116,11 +112,11 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action: jnp.ndarray) -> State:
-    board = state.board
-    row = state.blank_row[action]
-    blank_row = state.blank_row.at[action].set(row - 1)
-    board = board.at[_to_idx(row, action)].set(state.turn)
-    won = _win_check(board, state.turn)
+    board = state._board
+    row = state._blank_row[action]
+    blank_row = state._blank_row.at[action].set(row - 1)
+    board = board.at[_to_idx(row, action)].set(state._turn)
+    won = _win_check(board, state._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -129,11 +125,11 @@ def _step(state: State, action: jnp.ndarray) -> State:
     return state.replace(  # type: ignore
         current_player=1 - state.current_player,
         legal_action_mask=blank_row >= 0,
-        turn=1 - state.turn,
-        board=board,
-        blank_row=blank_row,
+        _turn=1 - state._turn,
+        _board=board,
+        _blank_row=blank_row,
         terminated=won | jnp.all(blank_row == -1),
-        reward=reward,
+        rewards=reward,
     )
 
 
@@ -146,7 +142,7 @@ def _win_check(board, turn) -> jnp.ndarray:
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    turns = jnp.int8([state.turn, 1 - state.turn])
+    turns = jnp.int8([state._turn, 1 - state._turn])
     turns = jax.lax.cond(
         player_id == state.current_player,
         lambda: turns,
@@ -154,6 +150,6 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     )
 
     def make(turn):
-        return state.board.reshape(6, 7) == turn
+        return state._board.reshape(6, 7) == turn
 
     return jnp.stack(jax.vmap(make)(turns), -1)

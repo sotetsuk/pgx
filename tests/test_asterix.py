@@ -62,17 +62,8 @@ def test_step_det():
                 slot,
             )
             assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
-
-        # check terminal state
-        s = extract_state(env, state_keys)
-        a = random.randrange(num_actions)
-        r, done = env.act(a)
-        lr, is_gold, slot = env.env.lr, env.env.is_gold, env.env.slot
-        s_next = extract_state(env, state_keys)
-        s_next_pgx = _step_det(
-            minatar2pgx(s, asterix.State), a, lr, is_gold, slot
-        )
-        assert_states(s_next, pgx2minatar(s_next_pgx, state_keys))
+            assert r == s_next_pgx.rewards[0]
+            assert done == s_next_pgx.terminated
 
 
 def test_observe():
@@ -104,7 +95,17 @@ def test_observe():
         )
 
 
+def test_minimal_action_set():
+    import pgx
+    env = pgx.make("minatar-asterix")
+    assert env.num_actions == 5
+    state = jax.jit(env.init)(jax.random.PRNGKey(0))
+    assert state.legal_action_mask.shape == (5,)
+    state = jax.jit(env.step)(state, 0)
+    assert state.legal_action_mask.shape == (5,)
+
+
 def test_api():
     import pgx
-    env = pgx.make("minatar/asterix")
-    pgx.api_test(env, 10)
+    env = pgx.make("minatar-asterix")
+    pgx.v1_api_test(env, 10)

@@ -36,7 +36,7 @@ def test_step():
     assert not state.terminated
     state = step(state, CALL)
     assert state.terminated
-    assert (state.reward == jnp.float32([11, -11])).all()
+    assert (state.rewards == jnp.float32([11, -11])).all()
 
     state = init(key)
     assert state.current_player == 1
@@ -55,7 +55,7 @@ def test_step():
     assert not state.terminated
     state = step(state, FOLD)
     assert state.terminated
-    assert (state.reward == jnp.float32([-7, 7])).all()
+    assert (state.rewards == jnp.float32([-7, 7])).all()
 
 
 def test_legal_action():
@@ -97,7 +97,7 @@ def test_draw():
     assert not state.terminated
     state = step(state, CALL)
     assert state.terminated
-    assert (state.reward == jnp.float32([0, 0])).all()
+    assert (state.rewards == jnp.float32([0, 0])).all()
 
 
 def test_observe():
@@ -176,4 +176,4 @@ def test_api():
     import pgx
 
     env = pgx.make("leduc_holdem")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

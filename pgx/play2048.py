@@ -16,8 +16,8 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -25,23 +25,23 @@ ZERO = jnp.int8(0)
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.float32([0.0])
+    rewards: jnp.ndarray = jnp.float32([0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- 2048 specific ---
-    turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int8(0)
     # 4x4 board
     # [[ 0,  1,  2,  3],
     #  [ 4,  5,  6,  7],
     #  [ 8,  9, 10, 11],
     #  [12, 13, 14, 15]]
-    board: jnp.ndarray = jnp.zeros(16, jnp.int8)
+    _board: jnp.ndarray = jnp.zeros(16, jnp.int8)
     #  Board is expressed as a power of 2.
     # e.g.
     # [[ 0,  0,  1,  1],
@@ -55,36 +55,32 @@ class State(core.State):
     #  [ 8, 64,128,512]]
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "2048"
 
 
-class Play2048(core.Env):
-    def __init__(
-        self,
-    ):
+class Play2048(v1.Env):
+    def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
+    def id(self) -> v1.EnvId:
         return "2048"
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self) -> int:
@@ -95,12 +91,12 @@ def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
     board = _add_random_num(jnp.zeros((4, 4), jnp.int8), rng1)
     board = _add_random_num(board, rng2)
-    return State(board=board.ravel())  # type:ignore
+    return State(_board=board.ravel())  # type:ignore
 
 
 def _step(state: State, action):
     """action: 0(left), 1(up), 2(right), 3(down)"""
-    board_2d = state.board.reshape((4, 4))
+    board_2d = state._board.reshape((4, 4))
     board_2d = jax.lax.switch(
         action,
         [
@@ -137,8 +133,8 @@ def _step(state: State, action):
 
     return state.replace(  # type:ignore
         _rng_key=_rng_key,
-        board=board_2d.ravel(),
-        reward=jnp.float32([reward.sum()]),
+        _board=board_2d.ravel(),
+        rewards=jnp.float32([reward.sum()]),
         legal_action_mask=legal_action.ravel(),
         terminated=~legal_action.any(),
     )
@@ -147,7 +143,7 @@ def _step(state: State, action):
 def _observe(state: State, player_id) -> jnp.ndarray:
     obs = jnp.zeros((16, 31), dtype=jnp.bool_)
     obs = jax.lax.fori_loop(
-        0, 16, lambda i, obs: obs.at[i, state.board[i]].set(TRUE), obs
+        0, 16, lambda i, obs: obs.at[i, state._board[i]].set(TRUE), obs
     )
     return obs.reshape((4, 4, 31))
 
@@ -239,5 +235,5 @@ def _can_slide_left(board_2d):
 
 # only for debug
 def show(state):
-    board = jnp.array([0 if i == 0 else 2**i for i in state.board])
+    board = jnp.array([0 if i == 0 else 2**i for i in state._board])
     print(board.reshape((4, 4)))

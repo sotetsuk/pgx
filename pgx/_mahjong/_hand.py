@@ -41,38 +41,26 @@ class Hand:
         return hand
 
     @staticmethod
-    def cache(code: int) -> int:
+    def cache(code: int):
         return (Hand.CACHE[code >> 5] >> (code & 0b11111)) & 1
 
     @staticmethod
-    def can_ron(hand: jnp.ndarray, tile: int) -> bool:
+    def can_ron(hand: jnp.ndarray, tile: int):
         return Hand.can_tsumo(Hand.add(hand, tile))
 
     @staticmethod
-    def can_riichi(hand: jnp.ndarray) -> bool:
-        return jax.lax.fori_loop(
-            0,
-            34,
-            lambda i, sum: jax.lax.cond(
-                hand[i] == 0,
-                lambda: sum,
-                lambda: sum | Hand.is_tenpai(Hand.sub(hand, i)),
-            ),
-            False,
-        )
+    def can_riichi(hand: jnp.ndarray):
+        """手牌は14枚"""
+        return jax.vmap(
+            lambda i: (hand[i] != 0) & Hand.is_tenpai(Hand.sub(hand, i))
+        )(jnp.arange(34)).any()
 
     @staticmethod
-    def is_tenpai(hand: jnp.ndarray) -> bool:
-        return jax.lax.fori_loop(
-            0,
-            34,
-            lambda tile, sum: jax.lax.cond(
-                hand[tile] == 4,
-                lambda: False,
-                lambda: sum | Hand.can_ron(hand, tile),
-            ),
-            False,
-        )
+    def is_tenpai(hand: jnp.ndarray):
+        """手牌は13枚"""
+        return jax.vmap(
+            lambda tile: (hand[tile] != 4) & Hand.can_ron(hand, tile)
+        )(jnp.arange(34)).any()
 
     @staticmethod
     def can_tsumo(hand: jnp.ndarray):
@@ -97,9 +85,8 @@ class Hand:
         )
         seven_pairs = jnp.sum(hand == 2) == 7
 
-        heads, valid = jnp.int32(0), jnp.int32(1)
-        for suit in range(3):
-            valid &= Hand.cache(
+        def _is_valid(suit):
+            return Hand.cache(
                 jax.lax.fori_loop(
                     9 * suit,
                     9 * (suit + 1),
@@ -107,6 +94,18 @@ class Hand:
                     0,
                 )
             )
+
+        valid = jax.vmap(_is_valid)(jnp.arange(3)).all()
+
+        # これはうまく行かない
+        # heads = (
+        #     (jnp.sum(hand[0:9]) % 3 == 2)
+        #     + (jnp.sum(hand[9:18]) % 3 == 2)
+        #     + (jnp.sum(hand[18:27]) % 3 == 2)
+        # )
+
+        heads = jnp.int32(0)
+        for suit in range(3):
             heads += jnp.sum(hand[9 * suit : 9 * (suit + 1)]) % 3 == 2
 
         heads, valid = jax.lax.fori_loop(
@@ -145,21 +144,18 @@ class Hand:
             lambda: jax.lax.switch(
                 action - Action.CHI_L,
                 [
-                    lambda: jax.lax.cond(
-                        tile % 9 < 7,
-                        lambda: (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
-                        lambda: False,
+                    lambda: (tile % 9 < 7)
+                    & (hand[tile + 1] > 0)
+                    & (hand[tile + 2] > 0),
+                    lambda: (
+                        (tile % 9 < 8)
+                        & (tile % 9 > 0)
+                        & (hand[tile - 1] > 0)
+                        & (hand[tile + 1] > 0)
                     ),
-                    lambda: jax.lax.cond(
-                        (tile % 9 < 8) & (tile % 9 > 0),
-                        lambda: (hand[tile - 1] > 0) & (hand[tile + 1] > 0),
-                        lambda: False,
-                    ),
-                    lambda: jax.lax.cond(
-                        tile % 9 > 1,
-                        lambda: (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
-                        lambda: False,
-                    ),
+                    lambda: (tile % 9 > 1)
+                    & (hand[tile - 2] > 0)
+                    & (hand[tile - 1] > 0),
                 ],
             ),
         )

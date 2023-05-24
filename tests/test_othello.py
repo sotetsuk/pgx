@@ -35,7 +35,7 @@ def test_step():
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0])
     # fmt:on
-    assert jnp.all(state.board == expected)
+    assert jnp.all(state._board == expected)
 
 
 def test_terminated():
@@ -47,7 +47,7 @@ def test_terminated():
         assert not state.terminated
     state = step(state, 20)
     assert state.terminated
-    assert (state.reward == jnp.float32([1.0, -1.0])).all()
+    assert (state.rewards == jnp.float32([1.0, -1.0])).all()
 
 
 def test_legal_action():
@@ -127,11 +127,11 @@ def test_random_play():
         action = jax.random.choice(sub_key, legal_actions)
         state = step(state, jnp.int16(action))
         done = state.terminated
-        rewards += state.reward
+        rewards += state.rewards
 
 
 def test_api():
     import pgx
 
     env = pgx.make("othello")
-    pgx.api_test(env, 10)
+    pgx.v1_api_test(env, 10)

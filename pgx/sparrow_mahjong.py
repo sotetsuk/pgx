@@ -37,8 +37,8 @@ import jax
 import jax.lax as lax
 import jax.numpy as jnp
 
-import pgx.core as core
-from pgx._flax.struct import dataclass
+import pgx.v1 as v1
+from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -54,49 +54,47 @@ MAX_SCORE = 26  # 親の中含むスーパーレッド自摸和了 (1 + 2 + 20 +
 
 
 @dataclass
-class State(core.State):
+class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)
     observation: jnp.ndarray = jnp.zeros((15, 11), dtype=jnp.bool_)
-    reward: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
+    rewards: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(9, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Sparrow Mahjong specific ---
-    turn: jnp.ndarray = jnp.int32(0)  # 0 = dealer
-    rivers: jnp.ndarray = -jnp.ones(
+    _turn: jnp.ndarray = jnp.int32(0)  # 0 = dealer
+    _rivers: jnp.ndarray = -jnp.ones(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.int32
     )  # tile type (0~10) is set
-    last_discard: jnp.ndarray = jnp.int32(-1)  # tile type (0~10) is set
-    hands: jnp.ndarray = jnp.zeros(
+    _last_discard: jnp.ndarray = jnp.int32(-1)  # tile type (0~10) is set
+    _hands: jnp.ndarray = jnp.zeros(
         (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int32
     )  # tile type (0~10) is set
-    n_red_in_hands: jnp.ndarray = jnp.zeros(
+    _n_red_in_hands: jnp.ndarray = jnp.zeros(
         (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int32
     )
-    is_red_in_river: jnp.ndarray = jnp.zeros(
+    _is_red_in_river: jnp.ndarray = jnp.zeros(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.bool_
     )
-    wall: jnp.ndarray = jnp.zeros(
+    _wall: jnp.ndarray = jnp.zeros(
         NUM_TILES, dtype=jnp.int32
     )  # tile id (0~43) is set
-    draw_ix: jnp.ndarray = jnp.int32(N_PLAYER * 5)
-    shuffled_players: jnp.ndarray = jnp.zeros(
+    _draw_ix: jnp.ndarray = jnp.int32(N_PLAYER * 5)
+    _shuffled_players: jnp.ndarray = jnp.zeros(
         N_PLAYER, dtype=jnp.int8
     )  # 0: dealer, ...
-    dora: jnp.ndarray = jnp.int32(0)  # tile type (0~10) is set
-    scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
+    _dora: jnp.ndarray = jnp.int32(0)  # tile type (0~10) is set
+    _scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
 
     @property
-    def env_id(self) -> core.EnvId:
+    def env_id(self) -> v1.EnvId:
         return "sparrow_mahjong"
 
 
-class SparrowMahjong(core.Env):
-    def __init__(
-        self,
-    ):
+class SparrowMahjong(v1.Env):
+    def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
@@ -114,30 +112,30 @@ class SparrowMahjong(core.Env):
         )
         return state
 
-    def _step(self, state: core.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
         # discard tile
-        hands = state.hands.at[state.turn % N_PLAYER, action].add(-1)
+        hands = state._hands.at[state._turn % N_PLAYER, action].add(-1)
         is_red_discarded = (
-            hands[state.turn % N_PLAYER, action]
-            < state.n_red_in_hands[state.turn % N_PLAYER, action]
+            hands[state._turn % N_PLAYER, action]
+            < state._n_red_in_hands[state._turn % N_PLAYER, action]
         )
-        n_red_in_hands = state.n_red_in_hands.at[
-            state.turn % N_PLAYER, action
+        n_red_in_hands = state._n_red_in_hands.at[
+            state._turn % N_PLAYER, action
         ].add(-is_red_discarded.astype(jnp.int32))
-        rivers = state.rivers.at[
-            state.turn % N_PLAYER, state.turn // N_PLAYER
+        rivers = state._rivers.at[
+            state._turn % N_PLAYER, state._turn // N_PLAYER
         ].set(action)
-        is_red_in_river = state.is_red_in_river.at[
-            state.turn % N_PLAYER, state.turn // N_PLAYER
+        is_red_in_river = state._is_red_in_river.at[
+            state._turn % N_PLAYER, state._turn // N_PLAYER
         ].set(is_red_discarded)
         last_discard = action
         state = state.replace(  # type: ignore
-            hands=hands,
-            n_red_in_hands=n_red_in_hands,
-            rivers=rivers,
-            is_red_in_river=is_red_in_river,
-            last_discard=last_discard,
+            _hands=hands,
+            _n_red_in_hands=n_red_in_hands,
+            _rivers=rivers,
+            _is_red_in_river=is_red_in_river,
+            _last_discard=last_discard,
         )
 
         scores = _hands_to_score(state)  # type: ignore
@@ -146,25 +144,23 @@ class SparrowMahjong(core.Env):
             jnp.any(winning_players),
             lambda: _step_by_ron(state, scores, winning_players),  # type: ignore
             lambda: lax.cond(
-                jnp.bool_(NUM_TILES - 1 <= state.draw_ix),  # type: ignore
+                jnp.bool_(NUM_TILES - 1 <= state._draw_ix),  # type: ignore
                 lambda: _step_by_tie(state),
                 lambda: _step_non_tied(state, scores),  # type: ignore
             ),
         )
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def name(self) -> str:
-        return "SparrowMahjong"
+    def id(self) -> v1.EnvId:
+        return "sparrow_mahjong"
 
     @property
     def version(self) -> str:
-        return "alpha"
+        return "beta"
 
     @property
     def num_players(self) -> int:
@@ -204,12 +200,12 @@ def _init(rng: jax.random.KeyArray):
     state = State(
         current_player=current_player,
         legal_action_mask=legal_action_mask,
-        hands=hands,
-        n_red_in_hands=n_red_in_hands,
-        wall=wall,
-        draw_ix=draw_ix,
-        shuffled_players=shuffled_players,
-        dora=dora,
+        _hands=hands,
+        _n_red_in_hands=n_red_in_hands,
+        _wall=wall,
+        _draw_ix=draw_ix,
+        _shuffled_players=shuffled_players,
+        _dora=dora,
     )  # type: ignore
 
     # check tenhou
@@ -244,15 +240,15 @@ def _hand_to_score(hand: jnp.ndarray):
 def _hands_to_score(state: State) -> jnp.ndarray:
     scores = jnp.zeros(3, dtype=jnp.int32)
     for i in range(N_PLAYER):
-        hand = state.hands[i]
+        hand = state._hands[i]
         hand = jax.lax.cond(
             hand.sum() == 5,
-            lambda: hand.at[state.last_discard].add(1),
+            lambda: hand.at[state._last_discard].add(1),
             lambda: hand,
         )
         bs, ys = _hand_to_score(hand)
-        n_doras = hand[state.dora]
-        n_red_doras = state.n_red_in_hands[i].sum().astype(jnp.int32)
+        n_doras = hand[state._dora]
+        n_red_doras = state._n_red_in_hands[i].sum().astype(jnp.int32)
         is_super_red = n_red_doras >= 6
         ys = lax.cond(is_super_red, lambda: jnp.int32(20), lambda: ys)
         s = lax.cond(
@@ -269,19 +265,21 @@ def _check_ron(state: State, scores) -> jnp.ndarray:
         0,
         N_PLAYER,
         lambda i, x: x.at[i].set(
-            _is_completed(state.hands.at[i, state.last_discard].add(1)[i])
+            _is_completed(state._hands.at[i, state._last_discard].add(1)[i])
         ),
         jnp.zeros(N_PLAYER, dtype=jnp.bool_),
     )
-    winning_players = winning_players.at[state.turn].set(False)
-    is_furiten = (state.rivers == state.last_discard).sum(axis=1) > 0
+    winning_players = winning_players.at[state._turn].set(False)
+    is_furiten = (state._rivers == state._last_discard).sum(axis=1) > 0
     winning_players = winning_players & jnp.logical_not(is_furiten)
     winning_players = winning_players & (scores >= 5)
     return winning_players
 
 
 def _check_tsumo(state: State, scores) -> jnp.ndarray:
-    return _is_completed(state.hands[state.turn]) & (scores[state.turn] >= 0)
+    return _is_completed(state._hands[state._turn]) & (
+        scores[state._turn] >= 0
+    )
 
 
 def _order_by_player_idx(x, shuffled_players):
@@ -296,40 +294,40 @@ def _order_by_player_idx(x, shuffled_players):
 def _step_by_ron(state: State, scores, winning_players):
     scores = scores.at[0].add(2)
     scores = scores * winning_players
-    scores = scores.at[state.turn % N_PLAYER].set(-scores.sum())
+    scores = scores.at[state._turn % N_PLAYER].set(-scores.sum())
     state = state.replace(  # type: ignore
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
-        scores=scores,
+        _scores=scores,
     )
     r = (
-        _order_by_player_idx(scores, state.shuffled_players).astype(
+        _order_by_player_idx(scores, state._shuffled_players).astype(
             jnp.float32
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_by_tsumo(state: State, scores):
     scores = scores.at[0].add(2)
-    winner_score = scores[state.turn]
+    winner_score = scores[state._turn]
     loser_score = jnp.ceil(winner_score / (N_PLAYER - 1)).astype(jnp.int32)
     winner_score = loser_score * (N_PLAYER - 1)
     scores = -jnp.ones(N_PLAYER, dtype=jnp.int32) * loser_score
-    scores = scores.at[state.turn % N_PLAYER].set(winner_score)
+    scores = scores.at[state._turn % N_PLAYER].set(winner_score)
     state = state.replace(  # type: ignore
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
-        scores=scores,
+        _scores=scores,
     )
     r = (
-        _order_by_player_idx(scores, state.shuffled_players).astype(
+        _order_by_player_idx(scores, state._shuffled_players).astype(
             jnp.float32
         )
         / MAX_SCORE
     )
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_by_tie(state):
@@ -337,37 +335,37 @@ def _step_by_tie(state):
         terminated=jnp.bool_(True),
         legal_action_mask=jnp.zeros_like(state.legal_action_mask),
     )
-    return state.replace(reward=jnp.zeros(3, dtype=jnp.float32))  # type: ignore
+    return state.replace(rewards=jnp.zeros(3, dtype=jnp.float32))  # type: ignore
 
 
 def _draw_tile(state: State) -> State:
-    turn = state.turn + 1
-    current_player = state.shuffled_players[turn % N_PLAYER]
-    tile_id = state.wall[state.draw_ix]
+    turn = state._turn + 1
+    current_player = state._shuffled_players[turn % N_PLAYER]
+    tile_id = state._wall[state._draw_ix]
     tile_type = tile_id // 4
     # gd=[36,37,38,39], rd=[40,41,42,43]
     is_red = ((tile_id % 4 == 0) & (tile_id != 36)) | (tile_id >= 40)
-    hands = state.hands.at[turn % N_PLAYER, tile_type].add(1)
-    n_red_in_hands = state.n_red_in_hands.at[turn % N_PLAYER, tile_type].add(
+    hands = state._hands.at[turn % N_PLAYER, tile_type].add(1)
+    n_red_in_hands = state._n_red_in_hands.at[turn % N_PLAYER, tile_type].add(
         is_red
     )
-    draw_ix = state.draw_ix + 1
+    draw_ix = state._draw_ix + 1
     legal_action_mask = hands[turn % N_PLAYER] > 0
     state = state.replace(  # type: ignore
-        turn=turn,
         current_player=current_player,
-        hands=hands,
-        n_red_in_hands=n_red_in_hands,
-        draw_ix=draw_ix,
         legal_action_mask=legal_action_mask,
         terminated=jnp.bool_(False),
+        _turn=turn,
+        _hands=hands,
+        _n_red_in_hands=n_red_in_hands,
+        _draw_ix=draw_ix,
     )
     return state
 
 
 def _step_non_terminal(state: State):
     r = jnp.zeros(3, dtype=jnp.float32)
-    return state.replace(reward=r)  # type: ignore
+    return state.replace(rewards=r)  # type: ignore
 
 
 def _step_non_tied(state: State, scores):
@@ -391,29 +389,29 @@ def _observe(state: State, player_id: jnp.ndarray):
     """
     N = 3
     n_feat = 4 + 1 + 1 + 3 + N * 2
-    turn = jnp.abs(state.shuffled_players - player_id).argmin()
+    turn = jnp.abs(state._shuffled_players - player_id).argmin()
     obs = jnp.zeros((n_feat, NUM_TILE_TYPES), dtype=jnp.bool_)
     zeros = jnp.zeros(NUM_TILE_TYPES, dtype=jnp.bool_)
     ones = jnp.ones(NUM_TILE_TYPES, dtype=jnp.bool_)
     # hand
-    obs = obs.at[0].set(jnp.where(state.hands[turn] >= 1, ones, zeros))
-    obs = obs.at[1].set(jnp.where(state.hands[turn] >= 2, ones, zeros))
-    obs = obs.at[2].set(jnp.where(state.hands[turn] >= 3, ones, zeros))
-    obs = obs.at[3].set(jnp.where(state.hands[turn] >= 4, ones, zeros))
+    obs = obs.at[0].set(jnp.where(state._hands[turn] >= 1, ones, zeros))
+    obs = obs.at[1].set(jnp.where(state._hands[turn] >= 2, ones, zeros))
+    obs = obs.at[2].set(jnp.where(state._hands[turn] >= 3, ones, zeros))
+    obs = obs.at[3].set(jnp.where(state._hands[turn] >= 4, ones, zeros))
     # red dora
     obs = obs.at[4].set(
-        jnp.where(state.n_red_in_hands[turn] >= 1, ones, zeros)
+        jnp.where(state._n_red_in_hands[turn] >= 1, ones, zeros)
     )
     # dora
-    obs = obs.at[5, state.dora].set(True)
+    obs = obs.at[5, state._dora].set(True)
     # all discards
     obs = obs.at[6].set(
         lax.fori_loop(
             0,
             MAX_RIVER_LENGTH,
             lambda i, x: lax.cond(
-                state.rivers[turn, i] >= 0,
-                lambda: x.at[state.rivers[turn, i]].set(True),
+                state._rivers[turn, i] >= 0,
+                lambda: x.at[state._rivers[turn, i]].set(True),
                 lambda: x,
             ),
             zeros,
@@ -424,8 +422,10 @@ def _observe(state: State, player_id: jnp.ndarray):
             0,
             MAX_RIVER_LENGTH,
             lambda i, x: lax.cond(
-                state.rivers[(turn + 1) % N_PLAYER, i] >= 0,
-                lambda: x.at[state.rivers[(turn + 1) % N_PLAYER, i]].set(True),
+                state._rivers[(turn + 1) % N_PLAYER, i] >= 0,
+                lambda: x.at[state._rivers[(turn + 1) % N_PLAYER, i]].set(
+                    True
+                ),
                 lambda: x,
             ),
             zeros,
@@ -436,8 +436,10 @@ def _observe(state: State, player_id: jnp.ndarray):
             0,
             MAX_RIVER_LENGTH,
             lambda i, x: lax.cond(
-                state.rivers[(turn + 2) % N_PLAYER, i] >= 0,
-                lambda: x.at[state.rivers[(turn + 2) % N_PLAYER, i]].set(True),
+                state._rivers[(turn + 2) % N_PLAYER, i] >= 0,
+                lambda: x.at[state._rivers[(turn + 2) % N_PLAYER, i]].set(
+                    True
+                ),
                 lambda: x,
             ),
             zeros,
@@ -447,49 +449,49 @@ def _observe(state: State, player_id: jnp.ndarray):
     zeros = jnp.zeros(MAX_RIVER_LENGTH, dtype=jnp.bool_)
     ones = jnp.ones(MAX_RIVER_LENGTH, dtype=jnp.bool_)
     ix = (
-        jnp.where(state.rivers[(turn + 1) % N_PLAYER] >= 0, ones, zeros)
+        jnp.where(state._rivers[(turn + 1) % N_PLAYER] >= 0, ones, zeros)
     ).sum()
     obs = lax.cond(
         ix - 1 >= 0,
-        lambda: obs.at[9, state.rivers[(turn + 1) % N_PLAYER, ix - 1]].set(
+        lambda: obs.at[9, state._rivers[(turn + 1) % N_PLAYER, ix - 1]].set(
             True
         ),
         lambda: obs,
     )
     obs = lax.cond(
         ix - 2 >= 0,
-        lambda: obs.at[10, state.rivers[(turn + 1) % N_PLAYER, ix - 2]].set(
+        lambda: obs.at[10, state._rivers[(turn + 1) % N_PLAYER, ix - 2]].set(
             True
         ),
         lambda: obs,
     )
     obs = lax.cond(
         ix - 3 >= 0,
-        lambda: obs.at[11, state.rivers[(turn + 1) % N_PLAYER, ix - 3]].set(
+        lambda: obs.at[11, state._rivers[(turn + 1) % N_PLAYER, ix - 3]].set(
             True
         ),
         lambda: obs,
     )
     ix = (
-        jnp.where(state.rivers[(turn + 2) % N_PLAYER] >= 0, ones, zeros)
+        jnp.where(state._rivers[(turn + 2) % N_PLAYER] >= 0, ones, zeros)
     ).sum()
     obs = lax.cond(
         ix - 1 >= 0,
-        lambda: obs.at[12, state.rivers[(turn + 2) % N_PLAYER, ix - 1]].set(
+        lambda: obs.at[12, state._rivers[(turn + 2) % N_PLAYER, ix - 1]].set(
             True
         ),
         lambda: obs,
     )
     obs = lax.cond(
         ix - 2 >= 0,
-        lambda: obs.at[13, state.rivers[(turn + 2) % N_PLAYER, ix - 2]].set(
+        lambda: obs.at[13, state._rivers[(turn + 2) % N_PLAYER, ix - 2]].set(
             True
         ),
         lambda: obs,
     )
     obs = lax.cond(
         ix - 3 >= 0,
-        lambda: obs.at[14, state.rivers[(turn + 2) % N_PLAYER, ix - 3]].set(
+        lambda: obs.at[14, state._rivers[(turn + 2) % N_PLAYER, ix - 3]].set(
             True
         ),
         lambda: obs,
@@ -532,29 +534,29 @@ def _river_to_str(river: jnp.ndarray, is_red_in_river: jnp.ndarray) -> str:
 
 
 def _to_str(state: State):
-    s = f"{'[terminated]' if state. terminated else ''} dora: {_tile_type_to_str(state.dora)}\n"
+    s = f"{'[terminated]' if state. terminated else ''} dora: {_tile_type_to_str(state._dora)}\n"
     for i in range(N_PLAYER):
-        s += f"{'*' if not state.terminated and state.turn % N_PLAYER == i else ' '}[{state.shuffled_players[i]}] "
-        s += f"{_hand_to_str(state.hands[i], state.n_red_in_hands[i])}: "
-        s += f"{_river_to_str(state.rivers[i], state.is_red_in_river[i])} "
+        s += f"{'*' if not state.terminated and state._turn % N_PLAYER == i else ' '}[{state._shuffled_players[i]}] "
+        s += f"{_hand_to_str(state._hands[i], state._n_red_in_hands[i])}: "
+        s += f"{_river_to_str(state._rivers[i], state._is_red_in_river[i])} "
         s += "\n"
     return s
 
 
 def _validate(state: State) -> bool:
-    if state.dora < 0 or 10 < state.dora:
+    if state._dora < 0 or 10 < state._dora:
         assert False
-    if 10 < state.last_discard:
+    if 10 < state._last_discard:
         assert False
-    if state.last_discard < 0 and state.rivers[0, 0] >= 0:
+    if state._last_discard < 0 and state._rivers[0, 0] >= 0:
         assert False
-    if jnp.any(state.hands < 0):
+    if jnp.any(state._hands < 0):
         assert False
-    counts = state.hands.sum(axis=0)
+    counts = state._hands.sum(axis=0)
     for i in range(N_PLAYER):
         for j in range(MAX_RIVER_LENGTH):
-            if state.rivers[i, j] >= 0:
-                counts = counts.at[state.rivers[i, j]].add(1)
+            if state._rivers[i, j] >= 0:
+                counts = counts.at[state._rivers[i, j]].add(1)
     if jnp.any(counts > 4):
         assert False
 
@@ -563,25 +565,25 @@ def _validate(state: State) -> bool:
         for i in range(NUM_TILE_TYPES):
             if (
                 state.legal_action_mask[i]
-                and state.hands[state.turn % N_PLAYER, i] <= 0
+                and state._hands[state._turn % N_PLAYER, i] <= 0
             ):
                 assert (
                     False
-                ), f"\n{state.legal_action_mask[i]}\n{state.hands[state.turn % N_PLAYER, i]}\n{_to_str(state)}"
+                ), f"\n{state.legal_action_mask[i]}\n{state._hands[state._turn % N_PLAYER, i]}\n{_to_str(state)}"
             if (
                 not state.legal_action_mask[i]
-                and state.hands[state.turn % N_PLAYER, i] > 0
+                and state._hands[state._turn % N_PLAYER, i] > 0
             ):
                 assert (
                     False
-                ), f"\n{state.legal_action_mask}\n{state.hands[state.turn % N_PLAYER]}\n{_to_str(state)}"
+                ), f"\n{state.legal_action_mask}\n{state._hands[state._turn % N_PLAYER]}\n{_to_str(state)}"
 
-    if not jnp.all(state.n_red_in_hands[:, :-2] <= 1):
+    if not jnp.all(state._n_red_in_hands[:, :-2] <= 1):
         assert False
-    if (state.n_red_in_hands.sum() + state.is_red_in_river.sum()) > 14:
+    if (state._n_red_in_hands.sum() + state._is_red_in_river.sum()) > 14:
         assert (
             False
-        ), f"\n{state.n_red_in_hands}\n{state.is_red_in_river}\n{_to_str(state)}"
+        ), f"\n{state._n_red_in_hands}\n{state._is_red_in_river}\n{_to_str(state)}"
 
-    assert state.scores.sum() == 0, f"\n{state.scores}\n{_to_str(state)}"
+    assert state._scores.sum() == 0, f"\n{state._scores}\n{_to_str(state)}"
     return True
