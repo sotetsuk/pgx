@@ -28,7 +28,7 @@ from pgx._src.chess_utils import (  # type: ignore
 )
 from pgx._src.struct import dataclass
 
-MAX_TERMINATION_STEPS = 500
+MAX_TERMINATION_STEPS = 512  # from AZ paper
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
