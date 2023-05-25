@@ -236,12 +236,12 @@ def _step(state: State, action: jnp.ndarray):
     state = _update_zobrist_hash(state, a)
 
     hash_ = state._zobrist_hash
-    hash_ ^= _xor_castling_en_passant(state)
+    hash_ ^= _hash_castling_en_passant(state)
 
     state = _apply_move(state, a)
     state = _flip(state)
 
-    hash_ ^= _xor_castling_en_passant(state)
+    hash_ ^= _hash_castling_en_passant(state)
     state = state.replace(_zobrist_hash=hash_)  # type: ignore
 
     state = _update_history(state)
@@ -693,11 +693,11 @@ def _zobrist_hash(state):
         return h ^ ZOBRIST_BOARD[i, piece]
 
     hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
-    hash_ ^= _xor_castling_en_passant(state)
+    hash_ ^= _hash_castling_en_passant(state)
     return hash_
 
 
-def _xor_castling_en_passant(state):
+def _hash_castling_en_passant(state):
     # we don't take care side (turn) as it's already taken into account in hash
     zero = jnp.uint32([0, 0])
     hash_ = zero
