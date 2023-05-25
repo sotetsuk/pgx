@@ -33,6 +33,9 @@ from pgx._src.shogi_utils import (
 )
 from pgx._src.struct import dataclass
 
+
+MAX_TERMINATION_STEPS = 512  # From AZ paper
+
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
@@ -115,9 +118,8 @@ class State(v1.State):
 
 
 class Shogi(v1.Env):
-    def __init__(self, *, max_termination_steps: int = 1000):
+    def __init__(self):
         super().__init__()
-        self.max_termination_steps = max_termination_steps
 
     def _init(self, key: jax.random.KeyArray) -> State:
         state = _init_board()
@@ -130,8 +132,7 @@ class Shogi(v1.Env):
         # Note: Assume that illegal action is already filtered by Env.step
         state = _step(state, action)
         state = jax.lax.cond(
-            (0 <= self.max_termination_steps)
-            & (self.max_termination_steps <= state._step_count),
+            (MAX_TERMINATION_STEPS <= state._step_count),
             # end with tie
             lambda: state.replace(terminated=TRUE),  # type: ignore
             lambda: state,
