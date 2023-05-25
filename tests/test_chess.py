@@ -34,8 +34,7 @@ def test_zobrist_hash():
         key, subkey = jax.random.split(key)
         action = act_randomly(subkey, state)
         state = step(state, action)
-        state.save_svg("debug.svg")
-        print(action % 73)
+        # state.save_svg("debug.svg")
         assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
 
 def test_action():
