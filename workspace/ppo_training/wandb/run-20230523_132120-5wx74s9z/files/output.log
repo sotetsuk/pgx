@@ -1,9 +1,0 @@
-
-training of backgammon
-{'eval_vs_prev_policy': 0.28125, 'steps': 0}
-Traceback (most recent call last):
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 371, in <module>
-    out = train(config, rng)
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 334, in train
-    if i % config["UPDATE_INTERVAL"] == 0:
-KeyError: 'UPDATE_INTERVAL'

@@ -1,9 +1,0 @@
-
-training of backgammon
-{'eval_vs_random_policy': -0.140625, 'steps': 0}
-Traceback (most recent call last):
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 367, in <module>
-    out = train(config, rng)
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 331, in train
-    runner_state, loss_info = jitted_update_step(runner_state, old_train_state)
-NameError: name 'old_train_state' is not defined

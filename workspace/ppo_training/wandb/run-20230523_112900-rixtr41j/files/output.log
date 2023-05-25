@@ -1,8 +1,0 @@
-
-training of backgammon
-Traceback (most recent call last):
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 367, in <module>
-    out = train(config, rng)
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 324, in train
-    eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
-TypeError: evaluate() missing 1 required positional argument: 'config'

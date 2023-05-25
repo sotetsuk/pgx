@@ -1,8 +1,0 @@
-
-training of backgammon
-Traceback (most recent call last):
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 362, in <module>
-    out = train(config, rng)
-  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 320, in train
-    "value_loss": float(value_loss.mean()),
-UnboundLocalError: local variable 'value_loss' referenced before assignment

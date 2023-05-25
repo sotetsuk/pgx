@@ -1,1 +1,0 @@
-{"value_loss": 0.152391716837883, "loss_actor": -0.0002720249758567661, "entropy": 0.8277059197425842, "eval_vs_random_policy": 1.234375, "steps": 4997120, "_timestamp": 1684487708.8153543, "_runtime": 9708.700181245804, "_step": 304, "_wandb": {"runtime": 9708}}
