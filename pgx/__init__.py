@@ -6,6 +6,8 @@ from pgx._src.visualizer import (
 )
 from pgx.v1 import Env, EnvId, State, available_envs, make
 
+__version__ = "0.8.0"
+
 __all__ = [
     # v1 api components
     "State",
