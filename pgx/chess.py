@@ -259,9 +259,7 @@ def _check_termination(state: State):
     terminated |= state._halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
     # rep history
-    rep = (
-        (state._hash_history == state._zobrist_hash).all(axis=1).sum() - 1
-    ).astype(jnp.int8)
+    rep = (state._hash_history == state._zobrist_hash).all(axis=1).sum() - 1
     terminated |= rep >= 2
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
@@ -636,12 +634,8 @@ def _observe(state: State, player_id: jnp.ndarray):
         my_pieces = jax.vmap(piece_feat)(jnp.arange(1, 7))
         opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
 
-        rep = (
-            (state._hash_history == state._hash_history[i, :])
-            .all(axis=1)
-            .sum()
-            - 1
-        ).astype(jnp.int8)
+        h = state._hash_history[i, :]
+        rep = (state._hash_history == h).all(axis=1).sum() - 1
         rep0 = ones * (rep == 0)
         rep1 = ones * (rep >= 1)
         return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
