@@ -33,7 +33,6 @@ from pgx._src.shogi_utils import (
 )
 from pgx._src.struct import dataclass
 
-
 MAX_TERMINATION_STEPS = 512  # From AZ paper
 
 TRUE = jnp.bool_(True)
