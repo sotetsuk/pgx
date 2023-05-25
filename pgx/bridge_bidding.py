@@ -286,13 +286,14 @@ def _step(
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
     # make vul of observation
-    is_dealer_vul, is_non_dealer_vul = jax.lax.cond(
-        (state._dealer == 0) | (state._dealer == 2),
+    is_player_vul, is_non_player_vul = jax.lax.cond(
+        (_player_position(state.current_player, state) == 0)
+        | (_player_position(state.current_player, state) == 2),
         lambda: (state._vul_NS, state._vul_EW),
         lambda: (state._vul_EW, state._vul_NS),
     )
     vul = jnp.array(
-        [~is_dealer_vul, is_dealer_vul, ~is_non_dealer_vul, is_non_dealer_vul],
+        [~is_player_vul, is_player_vul, ~is_non_player_vul, is_non_player_vul],
         dtype=jnp.bool_,
     )
 
