@@ -250,6 +250,14 @@ def test_observe():
     state.save_svg("tests/assets/gardner_chess/observe_006.svg")
     assert (state.observation[:, :, 12] == 0.).all()
     assert (state.observation[:, :, 13] == 1.).all()
+    assert (state.observation[:, :, 14 * 1 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 1 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 2 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 2 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 3 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 3 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
     state = step(state, 21)
     state.save_svg("tests/assets/gardner_chess/observe_007.svg")
     assert (state.observation[:, :, 12] == 0.).all()
