@@ -242,7 +242,7 @@ def _step(state: State, action: jnp.ndarray):
     state = _flip(state)
 
     hash_ ^= _xor_castling_en_passant(state)
-    state = state.replace(_zobrist_hash=hash_)
+    state = state.replace(_zobrist_hash=hash_)  # type: ignore
 
     state = _update_history(state)
     state = state.replace(  # type: ignore
