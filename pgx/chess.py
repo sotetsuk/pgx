@@ -25,14 +25,11 @@ from pgx._src.chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
     ZOBRIST_BOARD,
-    ZOBRIST_CASTLING_KING,
-    ZOBRIST_CASTLING_QUEEN,
-    ZOBRIST_EN_PASSANT,
     ZOBRIST_SIDE,
 )
 from pgx._src.struct import dataclass
 
-INIT_ZOBRIST_HASH = jnp.uint32([352059157, 5392715])
+INIT_ZOBRIST_HASH = jnp.uint32([2142282502, 1156113084])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 
 TRUE = jnp.bool_(True)
@@ -234,16 +231,8 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     state = _update_zobrist_hash(state, a)
 
-    # cancel out previous castling/em passant hash
-    hash_ = _xor_castling_en_passant(state, state._zobrist_hash)
-    state = state.replace(_zobrist_hash=hash_)  # type: ignore
-
     state = _apply_move(state, a)
     state = _flip(state)
-
-    # apply new castling/em passant hash
-    hash_ = _xor_castling_en_passant(state, state._zobrist_hash)
-    state = state.replace(_zobrist_hash=hash_)  # type: ignore
 
     state = _update_history(state)
     state = state.replace(  # type: ignore
@@ -258,6 +247,12 @@ def _update_history(state: State):
     board_history = jnp.roll(state._board_history, 64)
     board_history = board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
+    # hash hist
+    state = state.replace(  # type: ignore
+        _hash_history=state._hash_history.at[state._step_count].set(
+            state._zobrist_hash
+        ),
+    )
     # rep history
     rep = (
         (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
@@ -680,7 +675,7 @@ def _zobrist_hash(state):
     """
     >>> state = State()
     >>> _zobrist_hash(state)
-    Array([352059157,   5392715], dtype=uint32)
+    Array([2142282502, 1156113084], dtype=uint32)
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
     hash_ = jax.lax.select(state._turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
@@ -692,40 +687,6 @@ def _zobrist_hash(state):
         return h ^ ZOBRIST_BOARD[i, piece]
 
     hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
-    hash_ = _xor_castling_en_passant(state, hash_)
-
-    return hash_
-
-
-def _xor_castling_en_passant(state, hash_):
-    # castling
-    castling_queen = jax.lax.select(
-        state._turn == 0,
-        state._can_castle_queen_side,
-        state._can_castle_queen_side[::-1],
-    )
-    castling_king = jax.lax.select(
-        state._turn == 0,
-        state._can_castle_king_side,
-        state._can_castle_king_side[::-1],
-    )
-    hash_ ^= jax.lax.select(
-        castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_
-    )  # white
-    hash_ ^= jax.lax.select(
-        castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_
-    )  # black
-    hash_ ^= jax.lax.select(
-        castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_
-    )  # white
-    hash_ ^= jax.lax.select(
-        castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_
-    )  # black
-    # en passant
-    en_passant = jax.lax.select(
-        state._turn == 0, state._en_passant, _flip_pos(state._en_passant)
-    )
-    hash_ ^= ZOBRIST_EN_PASSANT[en_passant]
     return hash_
 
 
@@ -763,7 +724,6 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _zobrist_hash=hash_,
-        _hash_history=state._hash_history.at[state._step_count].set(hash_),
     )
 
 
@@ -851,7 +811,12 @@ def _from_fen(fen: str):
     state = state.replace(  # type: ignore
         legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
+    state = state.replace(_zobrist_hash=_zobrist_hash(state))  # type: ignore
+    state = _update_history(state)
     state = jax.jit(_check_termination)(state)
+    state = state.replace(  # type: ignore
+        observation=jax.jit(_observe)(state, state.current_player)
+    )
     return state
 
 
