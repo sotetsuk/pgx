@@ -28,7 +28,7 @@ from pgx._src.gardner_chess_utils import (  # type: ignore
 )
 from pgx._src.struct import dataclass
 
-MAX_TERMINATION_STEPS = 250
+MAX_TERMINATION_STEPS = 256
 
 
 TRUE = jnp.bool_(True)
@@ -71,6 +71,8 @@ INIT_BOARD = jnp.int8([
     5, 1, 0, -1, -5,
     6, 1, 0, -1, -6,
 ])
+
+INIT_ZOBRIST_HASH = jnp.uint32([2025569903, 1172890342])
 # fmt: on
 
 
@@ -90,11 +92,11 @@ class State(v1.State):
     # # of moves since the last piece capture or pawn move
     _halfmove_count: jnp.ndarray = jnp.int32(0)
     _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
-    _zobrist_hash: jnp.ndarray = jnp.uint32([1926877726, 2129525500])
+    _zobrist_hash: jnp.ndarray = jnp.uint32(INIT_ZOBRIST_HASH)
     _hash_history: jnp.ndarray = (
         jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
         .at[0]
-        .set(jnp.uint32([1926877726, 2129525500]))
+        .set(jnp.uint32(INIT_ZOBRIST_HASH))
     )
     _board_history: jnp.ndarray = (
         jnp.zeros((8, 25), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
@@ -412,11 +414,10 @@ def _zobrist_hash(state):
     """
     >>> state = State()
     >>> _zobrist_hash(state)
-    Array([1926877726, 2129525500], dtype=uint32)
+    Array([2025569903, 1172890342], dtype=uint32)
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
     hash_ = jax.lax.select(state._turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
-
     board = jax.lax.select(state._turn == 0, state._board, _flip(state)._board)
 
     def xor(i, h):
@@ -424,7 +425,7 @@ def _zobrist_hash(state):
         piece = board[i] + 6
         return h ^ ZOBRIST_BOARD[i, piece]
 
-    hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    hash_ = jax.lax.fori_loop(0, 25, xor, hash_)
     return hash_
 
 
@@ -444,8 +445,18 @@ def _update_zobrist_hash(state: State, action: Action):
     to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
     hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # 移動元駒を消す
     hash_ ^= ZOBRIST_BOARD[from_, 6]  # 移動元をemptyに
-    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # 移動先を動かした駒に
-    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # 移動先の駒（empty含む）を消す
+    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # 移動先の駒（empty含む）を消す
+    # underpromotion
+    source_piece = jax.lax.select(
+        action.underpromotion >= 0,
+        jax.lax.select(
+            state._turn == 0,
+            source_piece + 3 - action.underpromotion,
+            source_piece - (3 - action.underpromotion),
+        ),
+        source_piece,
+    )
+    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # 移動先を動かした駒に
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _zobrist_hash=hash_,

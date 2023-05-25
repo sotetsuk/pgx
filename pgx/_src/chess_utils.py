@@ -214,7 +214,31 @@ INIT_POSSIBLE_PIECE_POSITIONS = jnp.int8(
     ]
 )  # (2, 16)
 
-key = jax.random.PRNGKey(9999)
-HASH_TABLE = jax.random.randint(
-    key, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+key = jax.random.PRNGKey(238290)
+key, subkey = jax.random.split(key)
+ZOBRIST_BOARD = jax.random.randint(
+    subkey, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)
+key, subkey = jax.random.split(key)
+ZOBRIST_SIDE = jax.random.randint(
+    subkey, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)
+key, subkey = jax.random.split(key)
+ZOBRIST_CASTLING_QUEEN = jax.random.randint(
+    subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)
+key, subkey = jax.random.split(key)
+ZOBRIST_CASTLING_KING = jax.random.randint(
+    subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+)
+key, subkey = jax.random.split(key)
+ZOBRIST_EN_PASSANT = jax.random.randint(
+    subkey,
+    shape=(
+        65,
+        2,
+    ),
+    minval=0,
+    maxval=2**31 - 1,
+    dtype=jnp.uint32,
 )
