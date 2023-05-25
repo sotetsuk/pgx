@@ -271,7 +271,7 @@ def test_observe():
     s: State = init(key)
     obs = observe(s, s.current_player)
 
-    assert obs.shape == (119, 9, 9)
+    assert obs.shape == (9, 9, 119)
 
     expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,1.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.],
@@ -282,7 +282,7 @@ def test_observe():
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.]])
-    assert (obs[PAWN] == expected).all()  # 0
+    assert (obs[:, :, PAWN] == expected).all()  # 0
 
     expected = jnp.bool_([[0.,0.,0.,0.,0.,1.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.],
@@ -293,7 +293,7 @@ def test_observe():
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,1.,0.,0.,0.]])
-    assert (obs[DRAGON + 1] == expected).all()  # 14
+    assert (obs[:, :, DRAGON + 1] == expected).all()  # 14
 
     expected = jnp.bool_([[0.,0.,0.,0.,0.,1.,1.,1.,0.],
                           [0.,0.,0.,0.,0.,1.,1.,1.,1.],
@@ -304,7 +304,7 @@ def test_observe():
                           [0.,0.,0.,0.,0.,1.,1.,1.,1.],
                           [0.,0.,0.,0.,0.,1.,0.,1.,0.],
                           [0.,0.,0.,0.,0.,1.,1.,1.,1.]])
-    assert (obs[28] == expected).all()  # 利きの数1以上
+    assert (obs[:, :, 28] == expected).all()  # 利きの数1以上
 
     expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,1.,1.,0.],
                           [0.,0.,0.,0.,0.,0.,0.,0.,0.],
@@ -315,7 +315,7 @@ def test_observe():
                           [0.,0.,0.,0.,0.,0.,1.,1.,1.],
                           [0.,0.,0.,0.,0.,0.,0.,1.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.]])
-    assert (obs[29] == expected).all()  # 利きの数2以上
+    assert (obs[:, :, 29] == expected).all()  # 利きの数2以上
 
     expected = jnp.bool_([[0.,0.,0.,0.,0.,0.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,0.,0.,0.],
@@ -326,7 +326,7 @@ def test_observe():
                           [0.,0.,0.,0.,0.,0.,0.,1.,0.],
                           [0.,0.,0.,0.,0.,0.,0.,0.,0.],
                           [0.,0.,0.,0.,0.,0.,1.,0.,0.]])
-    assert (obs[30] == expected).all()  # 利きの数3以上
+    assert (obs[:, :, 30] == expected).all()  # 利きの数3以上
 
     expected = jnp.bool_([[0.,0.,1.,0.,0.,0.,0.,0.,0.],
                           [0.,0.,1.,0.,0.,0.,0.,0.,0.],
@@ -337,7 +337,7 @@ def test_observe():
                           [0.,0.,1.,0.,0.,0.,0.,0.,0.],
                           [0.,0.,1.,0.,0.,0.,0.,0.,0.],
                           [0.,0.,1.,0.,0.,0.,0.,0.,0.]])
-    assert (obs[31] == expected).all()
+    assert (obs[:, :, 31] == expected).all()
 
     expected = jnp.bool_([[0.,0.,0.,1.,0.,0.,0.,0.,0.],
                           [0.,0.,0.,1.,0.,0.,0.,0.,0.],
@@ -348,7 +348,7 @@ def test_observe():
                           [0.,0.,0.,1.,0.,0.,0.,0.,0.],
                           [0.,0.,0.,1.,0.,0.,0.,0.,0.],
                           [0.,0.,0.,1.,0.,0.,0.,0.,0.]])
-    assert (obs[45] == expected).all()
+    assert (obs[:, :, 45] == expected).all()
 
     expected = jnp.bool_([[1.,1.,1.,1.,0.,0.,0.,0.,0.],
                           [0.,1.,0.,1.,0.,0.,0.,0.,0.],
@@ -359,7 +359,7 @@ def test_observe():
                           [1.,1.,1.,1.,0.,0.,0.,0.,0.],
                           [1.,1.,1.,1.,0.,0.,0.,0.,0.],
                           [0.,1.,1.,1.,0.,0.,0.,0.,0.]])
-    assert (obs[59] == expected).all()
+    assert (obs[:, :, 59] == expected).all()
 
     # 駒打ち
     sfen = "1ns4nl/1r4k2/2p1gp3/1p1pp3p/l8/2P2PP2/1PNPP3P/2G2S3/2S1KG2L b BGS3Prbnl2p 1"
@@ -370,22 +370,22 @@ def test_observe():
     filled = [0, 1, 2, 16, 20, 24, 28, 29, 36, 40, 52, 54]
     for i in range(56):
         if i in filled:
-            assert obs[62 + i].all()
+            assert obs[:, :, 62 + i].all()
         else:
-            assert (~obs[62 + i]).all()
+            assert (~obs[:, :, 62 + i]).all()
 
     # 王手
     sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL b b 1"  # 先手番
     s = State._from_sfen(sfen)
     visualize(s, "tests/assets/shogi/observe_002.svg")
     obs = observe(s, s.current_player)
-    assert (~obs[-1]).all()
+    assert (~obs[:, :, -1]).all()
 
     sfen = "lnsgkg1nl/1r5s1/pppppp1pp/6p2/8B/2P6/PP1PPPPPP/7R1/LNSGKGSNL w b 1"  # 後手番
     s = State._from_sfen(sfen)
     visualize(s, "tests/assets/shogi/observe_003.svg")
     obs = observe(s, s.current_player)
-    assert obs[-1].all()
+    assert obs[:, :, -1].all()
 
     # TODO: player_id != current_player
 
