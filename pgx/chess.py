@@ -261,7 +261,7 @@ def _step(state: State, action: jnp.ndarray):
         state._turn == 0, state._en_passant, _flip_pos(state._en_passant)
     )
     hash_ ^= ZOBRIST_EN_PASSANT[en_passant]
-    state = state.replace(_zobrist_hash=hash_)
+    state = state.replace(_zobrist_hash=hash_)  # type: ignore
 
     state = _apply_move(state, a)
     state = _flip(state)
@@ -293,7 +293,7 @@ def _step(state: State, action: jnp.ndarray):
         state._turn == 0, state._en_passant, _flip_pos(state._en_passant)
     )
     hash_ ^= ZOBRIST_EN_PASSANT[en_passant]
-    state = state.replace(_zobrist_hash=hash_)
+    state = state.replace(_zobrist_hash=hash_)  # type: ignore
 
     state = _update_history(state)
     state = state.replace(  # type: ignore
