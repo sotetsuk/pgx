@@ -101,7 +101,6 @@ class State(v1.State):
     _board_history: jnp.ndarray = (
         jnp.zeros((8, 25), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
     )
-    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
     _possible_piece_positions: jnp.ndarray = jnp.int8(
         [
             [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
@@ -222,18 +221,9 @@ def _update_history(state: State):
     board_history = board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
     # hash hist
-    state = state.replace(  # type: ignore
-        _hash_history=state._hash_history.at[state._step_count].set(
-            state._zobrist_hash
-        ),
-    )
-    # rep history
-    rep = (
-        (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
-    ).astype(jnp.int8)
-    rep_history = jnp.roll(state._rep_history, 1)
-    rep_history = rep_history.at[0].set(rep)
-    state = state.replace(_rep_history=rep_history)  # type: ignore
+    hash_hist = jnp.roll(state._hash_history, 2)
+    hash_hist = hash_hist.at[0].set(state._zobrist_hash)
+    state = state.replace(_hash_history=hash_hist)  # type: ignore
     return state
 
 
@@ -283,7 +273,8 @@ def _check_termination(state: State):
     terminated = ~has_legal_action
     terminated |= state._halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
-    terminated |= state._rep_history[0] >= 2
+    rep = (state._hash_history == state._zobrist_hash).all(axis=1).sum() - 1
+    terminated |= rep >= 2
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -485,8 +476,11 @@ def _observe(state: State, player_id: jnp.ndarray):
 
         my_pieces = jax.vmap(piece_feat)(jnp.arange(1, 7))
         opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
-        rep0 = ones * (state._rep_history[i] == 0)
-        rep1 = ones * (state._rep_history[i] == 1)
+
+        h = state._hash_history[i, :]
+        rep = (state._hash_history == h).all(axis=1).sum() - 1
+        rep0 = ones * (rep == 0)
+        rep1 = ones * (rep >= 1)
         return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
 
     total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones

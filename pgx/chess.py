@@ -258,7 +258,6 @@ def _check_termination(state: State):
     terminated = ~has_legal_action
     terminated |= state._halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
-    # rep history
     rep = (state._hash_history == state._zobrist_hash).all(axis=1).sum() - 1
     terminated |= rep >= 2
 

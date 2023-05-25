@@ -267,7 +267,7 @@ def test_observe():
     state = step(state, 265)
     state.save_svg("tests/assets/gardner_chess/observe_010.svg")
     assert (state.observation[:, :, 12] == 0.).all()
-    assert (state.observation[:, :, 13] == 0.).all()
+    assert (state.observation[:, :, 13] == 1.).all()
     assert state.terminated
 
     # color
