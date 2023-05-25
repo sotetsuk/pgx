@@ -25,10 +25,10 @@ from pgx._src.chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
     ZOBRIST_BOARD,
+    ZOBRIST_CASTLING_KING,
+    ZOBRIST_CASTLING_QUEEN,
+    ZOBRIST_EN_PASSANT,
     ZOBRIST_SIDE,
-ZOBRIST_CASTLING_KING,
-ZOBRIST_EN_PASSANT,
-ZOBRIST_CASTLING_QUEEN
 )
 from pgx._src.struct import dataclass
 
@@ -696,6 +696,7 @@ def _zobrist_hash(state):
     hash_ ^= _xor_castling_en_passant(state)
     return hash_
 
+
 def _xor_castling_en_passant(state):
     # we don't take care side (turn) as it's already taken into account in hash
     zero = jnp.uint32([0, 0])
@@ -714,6 +715,7 @@ def _xor_castling_en_passant(state):
     )
     hash_ ^= ZOBRIST_EN_PASSANT[state._en_passant]
     return hash_
+
 
 def _update_zobrist_hash(state: State, action: Action):
     # do NOT take into account
