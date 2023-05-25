@@ -258,6 +258,10 @@ def _update_history(state: State):
     board_history = jnp.roll(state._board_history, 64)
     board_history = board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
+    # hash hist
+    state = state.replace(
+        _hash_history=state._hash_history.at[state._step_count].set(state._zobrist_hash),
+    )
     # rep history
     rep = (
         (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
@@ -763,7 +767,6 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _zobrist_hash=hash_,
-        _hash_history=state._hash_history.at[state._step_count].set(hash_),
     )
 
 
@@ -851,6 +854,10 @@ def _from_fen(fen: str):
     state = state.replace(  # type: ignore
         legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
+    state = state.replace(
+        _zobrist_hash=_zobrist_hash(state)
+    )
+    state = _update_history(state)
     state = jax.jit(_check_termination)(state)
     state = state.replace(  # type: ignore
         observation=jax.jit(_observe)(state, state.current_player)
