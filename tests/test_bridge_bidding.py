@@ -26,9 +26,14 @@ from pgx.bridge_bidding import (
     init,
 )
 
-
-DDS_HASH_TABLE_PATH = os.path.join(os.path.dirname(__file__), "assets/dds_hash_table.npy")
-env = BridgeBidding(dds_hash_table_path=DDS_HASH_TABLE_PATH )
+PASS_ACTION_NUM = 0
+DOUBLE_ACTION_NUM = 1
+REDOUBLE_ACTION_NUM = 2
+BID_OFFSET_NUM = 3
+DDS_HASH_TABLE_PATH = os.path.join(
+    os.path.dirname(__file__), "assets/dds_hash_table.npy"
+)
+env = BridgeBidding(dds_hash_table_path=DDS_HASH_TABLE_PATH)
 
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
@@ -53,8 +58,10 @@ def test_init():
     assert not state._call_xx
     assert not state._pass_num
     assert _player_position(state.current_player, state) == state._dealer
-    assert state.legal_action_mask[:-2].all()
-    assert not state.legal_action_mask[-2:].all()
+    assert state.legal_action_mask[PASS_ACTION_NUM]
+    assert not state.legal_action_mask[DOUBLE_ACTION_NUM]
+    assert not state.legal_action_mask[REDOUBLE_ACTION_NUM]
+    assert state.legal_action_mask[BID_OFFSET_NUM:].all()
 
 
 def test_duplicate():
@@ -88,7 +95,7 @@ def test_duplicate():
 def test_illegal_action_penalty():
     key = jax.random.PRNGKey(0)
     state = init(key)
-    state = step(state, 36)
+    state = step(state, DOUBLE_ACTION_NUM)
     print(state.rewards)
     assert jnp.all(state.rewards == jnp.array([22800, -7600, 22800, 22800]))
 
@@ -104,6 +111,14 @@ def test_step():
     #  5S  P 6C  X
     #  XX  P 7C  P
     #   P  P
+    # fmt: off
+    actions = iter([0, 0, 0,
+                    3, 11, 1, 0,
+                    0, 2, 0, 25,
+                    26, 0, 28, 1,
+                    2, 0, 33, 0,
+                    0, 0])
+    # fmt: on
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
     state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
@@ -117,12 +132,13 @@ def test_step():
     )
     bidding_history = jnp.full(319, -1, dtype=jnp.int8)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = legal_action_mask.at[DOUBLE_ACTION_NUM].set(False)
+    legal_action_mask = legal_action_mask.at[REDOUBLE_ACTION_NUM].set(False)
     first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
     first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -133,7 +149,7 @@ def test_step():
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
-    bidding_history = bidding_history.at[0].set(35)
+    bidding_history = bidding_history.at[0].set(0)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == -1
@@ -145,7 +161,8 @@ def test_step():
     assert state._pass_num == 1
     assert jnp.all(state.rewards == np.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -156,7 +173,7 @@ def test_step():
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
-    bidding_history = bidding_history.at[1].set(35)
+    bidding_history = bidding_history.at[1].set(0)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == -1
@@ -168,7 +185,8 @@ def test_step():
     assert state._pass_num == 2
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -179,7 +197,7 @@ def test_step():
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
-    bidding_history = bidding_history.at[2].set(35)
+    bidding_history = bidding_history.at[2].set(0)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == -1
@@ -191,7 +209,8 @@ def test_step():
     assert state._pass_num == 3
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 0)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -205,10 +224,10 @@ def test_step():
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
-    bidding_history = bidding_history.at[3].set(0)
+    bidding_history = bidding_history.at[3].set(3)
     assert jnp.all(state._bidding_history == bidding_history)
-    legal_action_mask = legal_action_mask.at[0].set(False)
-    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = legal_action_mask.at[3].set(False)
+    legal_action_mask = legal_action_mask.at[DOUBLE_ACTION_NUM].set(True)
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 0
     assert _player_position(state._last_bidder, state) == 0
@@ -219,7 +238,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 8)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -233,12 +253,20 @@ def test_step():
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
-    bidding_history = bidding_history.at[4].set(8)
+    bidding_history = bidding_history.at[4].set(11)
     assert np.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 9, False, state.legal_action_mask
+        jnp.arange(38) <= 11, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(True)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(True)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
+
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 8
     assert _player_position(state._last_bidder, state) == 1
@@ -249,7 +277,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 36)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -263,13 +292,19 @@ def test_step():
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
-    bidding_history = bidding_history.at[5].set(36)
+    bidding_history = bidding_history.at[5].set(DOUBLE_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 9, False, state.legal_action_mask
+        jnp.arange(38) <= 11, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(True)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(True)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 8
     assert _player_position(state._last_bidder, state) == 1
@@ -280,7 +315,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -294,14 +330,21 @@ def test_step():
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
-    bidding_history = bidding_history.at[6].set(35)
+    bidding_history = bidding_history.at[6].set(PASS_ACTION_NUM)
     assert np.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 9, False, state.legal_action_mask
+        jnp.arange(38) <= 11, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
+
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 8
     assert _player_position(state._last_bidder, state) == 1
@@ -312,7 +355,8 @@ def test_step():
     assert state._pass_num == 1
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -327,14 +371,20 @@ def test_step():
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
-    bidding_history = bidding_history.at[7].set(35)
+    bidding_history = bidding_history.at[7].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 9, False, state.legal_action_mask
+        jnp.arange(38) <= 11, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(True)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(True)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 8
     assert _player_position(state._last_bidder, state) == 1
@@ -345,7 +395,8 @@ def test_step():
     assert state._pass_num == 2
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 37)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -360,14 +411,20 @@ def test_step():
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
-    bidding_history = bidding_history.at[8].set(37)
+    bidding_history = bidding_history.at[8].set(REDOUBLE_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 9, False, state.legal_action_mask
+        jnp.arange(38) <= 11, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 8
     assert _player_position(state._last_bidder, state) == 1
@@ -378,7 +435,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -393,14 +451,20 @@ def test_step():
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
-    bidding_history = bidding_history.at[9].set(35)
+    bidding_history = bidding_history.at[9].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 9, False, state.legal_action_mask
+        jnp.arange(38) <= 11, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 8
     assert _player_position(state._last_bidder, state) == 1
@@ -411,7 +475,8 @@ def test_step():
     assert state._pass_num == 1
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 22)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -426,14 +491,20 @@ def test_step():
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
-    bidding_history = bidding_history.at[10].set(22)
+    bidding_history = bidding_history.at[10].set(25)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 23, False, state.legal_action_mask
+        jnp.arange(38) <= 25, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(True)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(True)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 22
     assert _player_position(state._last_bidder, state) == 3
@@ -444,7 +515,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 23)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -460,14 +532,20 @@ def test_step():
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
-    bidding_history = bidding_history.at[11].set(23)
+    bidding_history = bidding_history.at[11].set(26)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 24, False, state.legal_action_mask
+        jnp.arange(38) <= 26, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(True)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(True)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 23
     assert _player_position(state._last_bidder, state) == 0
@@ -478,7 +556,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -494,14 +573,20 @@ def test_step():
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
-    bidding_history = bidding_history.at[12].set(35)
+    bidding_history = bidding_history.at[12].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 24, False, state.legal_action_mask
+        jnp.arange(38) <= 26, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 23
     assert _player_position(state._last_bidder, state) == 0
@@ -512,7 +597,8 @@ def test_step():
     assert state._pass_num == 1
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 25)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -528,14 +614,20 @@ def test_step():
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
-    bidding_history = bidding_history.at[13].set(25)
+    bidding_history = bidding_history.at[13].set(28)
     assert np.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 26, False, state.legal_action_mask
+        jnp.arange(38) <= 28, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(True)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(True)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 25
     assert _player_position(state._last_bidder, state) == 2
@@ -546,7 +638,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 36)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -562,14 +655,20 @@ def test_step():
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
-    bidding_history = bidding_history.at[14].set(36)
+    bidding_history = bidding_history.at[14].set(DOUBLE_ACTION_NUM)
     assert np.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 26, False, state.legal_action_mask
+        jnp.arange(38) <= 28, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(True)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(True)
+    )
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 25
     assert _player_position(state._last_bidder, state) == 2
@@ -580,7 +679,8 @@ def test_step():
     assert state._pass_num == 0
     assert np.all(state.rewards == np.zeros(4))
 
-    state = step(state, 37)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -597,14 +697,20 @@ def test_step():
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
-    bidding_history = bidding_history.at[15].set(37)
+    bidding_history = bidding_history.at[15].set(REDOUBLE_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 26, False, state.legal_action_mask
+        jnp.arange(38) <= 28, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 25
     assert _player_position(state._last_bidder, state) == 2
@@ -615,7 +721,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -632,14 +739,20 @@ def test_step():
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
-    bidding_history = bidding_history.at[16].set(35)
+    bidding_history = bidding_history.at[16].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 26, False, state.legal_action_mask
+        jnp.arange(38) <= 28, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert np.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 25
     assert _player_position(state._last_bidder, state) == 2
@@ -650,7 +763,8 @@ def test_step():
     assert state._pass_num == 1
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 30)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -667,14 +781,20 @@ def test_step():
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
-    bidding_history = bidding_history.at[17].set(30)
+    bidding_history = bidding_history.at[17].set(33)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 31, False, state.legal_action_mask
+        jnp.arange(38) <= 33, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(True)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(True)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 30
     assert _player_position(state._last_bidder, state) == 2
@@ -685,7 +805,8 @@ def test_step():
     assert state._pass_num == 0
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -702,14 +823,20 @@ def test_step():
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
-    bidding_history = bidding_history.at[18].set(35)
+    bidding_history = bidding_history.at[18].set(PASS_ACTION_NUM)
     assert np.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 31, False, state.legal_action_mask
+        jnp.arange(38) <= 33, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(False)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 30
     assert _player_position(state._last_bidder, state) == 2
@@ -720,7 +847,8 @@ def test_step():
     assert state._pass_num == 1
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -738,14 +866,20 @@ def test_step():
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
-    bidding_history = bidding_history.at[19].set(35)
+    bidding_history = bidding_history.at[19].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = jnp.where(
-        jnp.arange(38) < 31, False, state.legal_action_mask
+        jnp.arange(38) <= 33, False, state.legal_action_mask
     )
-    legal_action_mask = legal_action_mask.at[36].set(True)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = (
+        legal_action_mask.at[PASS_ACTION_NUM]
+        .set(True)
+        .at[DOUBLE_ACTION_NUM]
+        .set(True)
+        .at[REDOUBLE_ACTION_NUM]
+        .set(False)
+    )
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 30
     assert _player_position(state._last_bidder, state) == 2
@@ -756,7 +890,8 @@ def test_step():
     assert state._pass_num == 2
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -774,15 +909,9 @@ def test_step():
 
     assert state._turn == 20
     assert state.terminated
-    bidding_history = bidding_history.at[20].set(35)
+    bidding_history = bidding_history.at[20].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
-    legal_action_mask = jnp.where(
-        jnp.arange(38) < 31, False, state.legal_action_mask
-    )
-    legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
-    # legal_action_mask = legal_action_mask.at[36].set(True)
-    # legal_action_mask = legal_action_mask.at[37].set(False)s
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == 30
     assert _player_position(state._last_bidder, state) == 2
@@ -804,15 +933,42 @@ def test_step():
 
 def max_action_length_agent(state: State) -> int:
     if (state._last_bid == -1 and state._pass_num != 3) or (
-            state._last_bid != -1 and state._pass_num != 2
+        state._last_bid != -1 and state._pass_num != 2
     ):
-        return 35
-    elif state.legal_action_mask[36]:
-        return 36
-    elif state.legal_action_mask[37]:
-        return 37
+        return PASS_ACTION_NUM
+    elif state.legal_action_mask[DOUBLE_ACTION_NUM]:
+        return DOUBLE_ACTION_NUM
+    elif state.legal_action_mask[REDOUBLE_ACTION_NUM]:
+        return REDOUBLE_ACTION_NUM
     else:
-        return int(state._last_bid) + 1
+        return int(state._last_bid) + 1 + BID_OFFSET_NUM
+
+
+def test_max_action():
+    key = jax.random.PRNGKey(0)
+    HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+
+    for i in range(319):
+        if i < 318:
+            state = step(state, max_action_length_agent(state))
+            assert not state.terminated
+        else:
+            state = step(state, max_action_length_agent(state))
+            assert state.terminated
+
+
+def max_action_length_agent(state: State) -> int:
+    if (state._last_bid == -1 and state._pass_num != 3) or (
+        state._last_bid != -1 and state._pass_num != 2
+    ):
+        return PASS_ACTION_NUM
+    elif state.legal_action_mask[DOUBLE_ACTION_NUM]:
+        return DOUBLE_ACTION_NUM
+    elif state.legal_action_mask[REDOUBLE_ACTION_NUM]:
+        return REDOUBLE_ACTION_NUM
+    else:
+        return int(state._last_bid) + 1 + 3
 
 
 def test_max_action():
@@ -836,6 +992,7 @@ def test_pass_out():
     #  -----------
     #      P  P  P
     #   P
+    actions = iter([0, 0, 0, 0])
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
     state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
@@ -850,12 +1007,13 @@ def test_pass_out():
 
     bidding_history = jnp.full(319, -1, dtype=jnp.int8)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[36].set(False)
-    legal_action_mask = legal_action_mask.at[37].set(False)
+    legal_action_mask = legal_action_mask.at[DOUBLE_ACTION_NUM].set(False)
+    legal_action_mask = legal_action_mask.at[REDOUBLE_ACTION_NUM].set(False)
     first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
     first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -866,7 +1024,7 @@ def test_pass_out():
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
-    bidding_history = bidding_history.at[0].set(35)
+    bidding_history = bidding_history.at[0].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == -1
@@ -878,7 +1036,8 @@ def test_pass_out():
     assert state._pass_num == 1
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -889,7 +1048,7 @@ def test_pass_out():
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
-    bidding_history = bidding_history.at[1].set(35)
+    bidding_history = bidding_history.at[1].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == -1
@@ -901,7 +1060,8 @@ def test_pass_out():
     assert state._pass_num == 2
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -912,7 +1072,7 @@ def test_pass_out():
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
-    bidding_history = bidding_history.at[2].set(35)
+    bidding_history = bidding_history.at[2].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == legal_action_mask)
     assert state._last_bid == -1
@@ -924,7 +1084,8 @@ def test_pass_out():
     assert state._pass_num == 3
     assert jnp.all(state.rewards == jnp.zeros(4))
 
-    state = step(state, 35)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -934,7 +1095,7 @@ def test_pass_out():
 
     assert state.terminated == True
     assert state._turn == 3
-    bidding_history = bidding_history.at[3].set(35)
+    bidding_history = bidding_history.at[3].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == jnp.ones(38, dtype=jnp.bool_))
     assert state._last_bid == -1
@@ -950,25 +1111,27 @@ def test_pass_out():
 def test_observe():
     # test init_obs
     # hand
+
+    # player_id: 0 = N, 1 = S, 2 = W, 3 = E
     # hand: N:J92.J76.K72.9432 AKQ6.84.J863.T65 87543.KQ9532..K7 T.AT.AQT954.AQJ8
     player0_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([1, 8, 10, 18, 19, 23, 27, 32, 38, 40, 41, 42, 47])]
+        .at[jnp.array([0, 1, 3, 4, 8, 18, 21, 22, 28, 31, 38, 39, 45])]
         .set(True)
     )
     player1_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([2, 3, 4, 6, 7, 14, 15, 17, 21, 24, 25, 45, 51])]
+        .at[jnp.array([2, 6, 7, 11, 14, 15, 20, 23, 27, 30, 42, 44, 46])]
         .set(True)
     )
     player2_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([9, 13, 22, 26, 29, 30, 34, 35, 37, 39, 46, 49, 50])]
+        .at[jnp.array([9, 13, 24, 29, 33, 34, 35, 36, 40, 41, 48, 49, 50])]
         .set(True)
     )
     player3_hand = (
         jnp.zeros(52, dtype=jnp.bool_)
-        .at[jnp.array([0, 5, 11, 12, 16, 20, 28, 31, 33, 36, 43, 44, 48])]
+        .at[jnp.array([5, 10, 12, 16, 17, 19, 25, 26, 32, 37, 43, 47, 51])]
         .set(True)
     )
     key = jax.random.PRNGKey(0)
@@ -982,24 +1145,29 @@ def test_observe():
         _vul_EW=jnp.bool_(0),
     )
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 0)
-    print(_state_to_pbn(state))
     assert jnp.all(obs == init_obs)
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player1_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player1_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 1)
     assert jnp.all(obs == init_obs)
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player2_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player2_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 2)
     assert jnp.all(obs == init_obs)
 
-    init_obs = jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player3_hand))
+    init_obs = jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player3_hand))
+    init_obs = init_obs.at[0].set(True).at[2].set(True)
     obs = observe(state, 3)
     assert jnp.all(obs == init_obs)
 
     # vul
+    # dealer team: EW
+    # non dealer team: NS
     state = state.replace(
         _dealer=jnp.int8(1),
         current_player=jnp.int8(3),
@@ -1008,8 +1176,10 @@ def test_observe():
         _vul_EW=jnp.bool_(0),
     )
     init_obs = (
-        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+        jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
         .at[0]
+        .set(True)
+        .at[3]
         .set(True)
     )
     obs = observe(state, 0)
@@ -1023,8 +1193,10 @@ def test_observe():
         _vul_EW=jnp.bool_(1),
     )
     init_obs = (
-        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
+        jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
         .at[1]
+        .set(True)
+        .at[2]
         .set(True)
     )
     obs = observe(state, 0)
@@ -1039,10 +1211,10 @@ def test_observe():
         _vul_EW=jnp.bool_(1),
     )
     init_obs = (
-        jnp.concatenate((jnp.zeros(426, dtype=jnp.bool_), player0_hand))
-        .at[0]
-        .set(True)
+        jnp.concatenate((jnp.zeros(428, dtype=jnp.bool_), player0_hand))
         .at[1]
+        .set(True)
+        .at[3]
         .set(True)
     )
     obs = observe(state, 0)
@@ -1061,8 +1233,16 @@ def test_observe():
     #  XX  P 7C  P
     #   P  P
     #
-
-    vul_history = jnp.zeros(426, dtype=jnp.bool_)
+    # fmt: off
+    actions = iter([0, 0, 0,
+                    3, 11, 1, 0,
+                    0, 2, 0, 25,
+                    26, 0, 28, 1,
+                    2, 0, 33, 0,
+                    0, 0])
+    # fmt: on
+    vul = jnp.zeros(4, dtype=jnp.bool_).at[0].set(True).at[2].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
 
     state = state.replace(
         _dealer=jnp.int8(1),
@@ -1071,32 +1251,39 @@ def test_observe():
         _vul_NS=jnp.bool_(0),
         _vul_EW=jnp.bool_(0),
     )
-
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  ?
 
-    vul_history = vul_history.at[3].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  ?
 
-    vul_history = vul_history.at[4].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[2].set(True).at[3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1104,12 +1291,15 @@ def test_observe():
     #      P  P  P
     #   ?
 
-    vul_history = vul_history.at[5].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 0)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1117,25 +1307,32 @@ def test_observe():
     #      P  P  P
     #  1C  ?
 
-    vul_history = vul_history.at[6].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = history.at[4 + 3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 8)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
     #  -----------
     #      P  P  P
     #  1C 2S  ?
-
-    vul_history = vul_history.at[49].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = history.at[4 + 2].set(True).at[4 + (11 - 3) * 12 + 3].set(True)
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 36)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1143,12 +1340,23 @@ def test_observe():
     #      P  P  P
     #  1C 2S  X  ?
 
-    vul_history = vul_history.at[2 + 144 + 35 * 2 + 8].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1156,12 +1364,23 @@ def test_observe():
     #      P  P  P
     #  1C 2S  X  P
     #   ?
-
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1170,11 +1389,23 @@ def test_observe():
     #  1C 2S  X  P
     #   P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 37)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1183,12 +1414,25 @@ def test_observe():
     #  1C 2S  X  P
     #   P XX  ?
 
-    vul_history = vul_history.at[2 + 284 + 35 + 8].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1197,11 +1441,25 @@ def test_observe():
     #  1C 2S  X  P
     #   P XX  P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 22)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1211,12 +1469,27 @@ def test_observe():
     #   P XX  P 5H
     #   ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 3 + 22].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 23)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1226,12 +1499,29 @@ def test_observe():
     #   P XX  P 5H
     #  5S  ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 0 + 23].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1241,11 +1531,29 @@ def test_observe():
     #   P XX  P 5H
     #  5S  P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 3]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 25)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1255,12 +1563,31 @@ def test_observe():
     #   P XX  P 5H
     #  5S  P 6C  ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 2 + 25].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 2]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 36)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1271,12 +1598,33 @@ def test_observe():
     #  5S  P 6C  X
     #   ?
 
-    vul_history = vul_history.at[2 + 144 + 35 * 3 + 25].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 37)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1287,12 +1635,35 @@ def test_observe():
     #  5S  P 6C  X
     #  XX  ?
 
-    vul_history = vul_history.at[2 + 284 + 35 * 0 + 25].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1303,11 +1674,35 @@ def test_observe():
     #  5S  P 6C  X
     #  XX  P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 3]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player1_hand))
+    correct_obs = jnp.concatenate((vul, history, player1_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 30)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1318,12 +1713,37 @@ def test_observe():
     #  5S  P 6C  X
     #  XX  P 7C  ?
 
-    vul_history = vul_history.at[2 + 4 + 35 * 2 + 30].set(True)
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 2]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (33 - 3) * 12 + 3]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player2_hand))
+    correct_obs = jnp.concatenate((vul, history, player2_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1335,11 +1755,37 @@ def test_observe():
     #  XX  P 7C  P
     #   ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[1].set(True).at[2].set(True).at[3].set(True)
+    history = (
+        history.at[4 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 1]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (33 - 3) * 12 + 2]
+        .set(True)
+    )
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player0_hand))
+    correct_obs = jnp.concatenate((vul, history, player0_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
@@ -1351,11 +1797,38 @@ def test_observe():
     #  XX  P 7C  P
     #   P  ?
 
+    history = jnp.zeros(424, dtype=jnp.bool_)
+    history = history.at[0].set(True).at[1].set(True).at[2].set(True)
+    history = (
+        history.at[4 + 3]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 0]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 4 + 1]
+        .set(True)
+        .at[4 + (11 - 3) * 12 + 8 + 0]
+        .set(True)
+        .at[4 + (25 - 3) * 12 + 2]
+        .set(True)
+        .at[4 + (26 - 3) * 12 + 3]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 1]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 4 + 2]
+        .set(True)
+        .at[4 + (28 - 3) * 12 + 8 + 3]
+        .set(True)
+        .at[4 + (33 - 3) * 12 + 1]
+        .set(True)
+    )
+
     obs = observe(state, state.current_player)
-    correct_obs = jnp.concatenate((vul_history, player3_hand))
+    correct_obs = jnp.concatenate((vul, history, player3_hand))
     assert jnp.all(obs == correct_obs)
 
-    state = step(state, 35)
+    actions = iter(actions)
+    action = next(actions)
+    state = step(state, action)
     #  player_id: 0 = N, 1 = S, 2 = W, 3 = E
     #   0  3  1  2
     #   N  E  S  W
