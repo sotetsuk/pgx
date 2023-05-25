@@ -1,0 +1,40 @@
+
+training of backgammon
+{'value_loss': 4.538661956787109, 'loss_actor': -0.0037865417543798685, 'entropy': 1.8755356073379517, 'eval_vs_previous_policy': -3.0, 'steps': 16384}
+{'value_loss': 2.4464101791381836, 'loss_actor': -0.00579126225784421, 'entropy': 1.8657549619674683, 'eval_vs_previous_policy': -3.0, 'steps': 32768}
+{'value_loss': 0.1554618626832962, 'loss_actor': -0.005669257137924433, 'entropy': 1.8428257703781128, 'eval_vs_previous_policy': -3.0, 'steps': 49152}
+{'value_loss': 0.0039240219630301, 'loss_actor': -0.006312102545052767, 'entropy': 1.8254600763320923, 'eval_vs_previous_policy': -3.0, 'steps': 65536}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 359, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 318, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, config["NUM_ENVS"])
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 265, in evaluate
+    state = _single_play_step(state, action, _rng)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 155, in _python_pjit_helper
+    out_flat = pjit_p.bind(*args_flat, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 790, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 1088, in _pjit_call_impl
+    always_lower=False, lowering_platform=None).compile()
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2313, in compile
+    executable = UnloadedMeshExecutable.from_hlo(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2633, in from_hlo
+    xla_executable, compile_options = _cached_compilation(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2551, in _cached_compilation
+    xla_executable = dispatch.compile_or_get_cached(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 495, in compile_or_get_cached
+    return backend_compile(backend, computation, compile_options,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 463, in backend_compile
+    return backend.compile(built_c, compile_options=options)
+KeyboardInterrupt

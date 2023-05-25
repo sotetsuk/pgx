@@ -1,0 +1,121 @@
+
+training of backgammon
+(1, 34)
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728405
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728405
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+0.0061728396
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 355, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 318, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, 10)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 253, in evaluate
+    logits, value = network.apply(new_state.params, state.observation)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 1489, in apply
+    return apply(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/scope.py", line 933, in wrapper
+    y = fn(root, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 2060, in scope_fn
+    return fn(module.clone(parent=scope), *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 432, in wrapped_module_method
+    return self._call_wrapped_method(fun, args, kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 864, in _call_wrapped_method
+    y = fun(self, *args, **kwargs)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 56, in __call__
+    actor_mean = nn.Dense(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 432, in wrapped_module_method
+    return self._call_wrapped_method(fun, args, kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 864, in _call_wrapped_method
+    y = fun(self, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/linear.py", line 196, in __call__
+    kernel = self.param('kernel',
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 1241, in param
+    v = self.scope.param(name, init_fn, *init_args, unbox=unbox)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/scope.py", line 827, in param
+    abs_value = jax.eval_shape(lambda rng: init_fn(rng, *init_args), abs_rng)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 2751, in eval_shape
+    out = pe.abstract_eval_fun(wrapped_fun.call_wrapped,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 670, in abstract_eval_fun
+    _, avals_out, _ = trace_to_jaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/scope.py", line 827, in <lambda>
+    abs_value = jax.eval_shape(lambda rng: init_fn(rng, *init_args), abs_rng)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/nn/initializers.py", line 569, in init
+    diag_sign = lax.broadcast_to_rank(jnp.sign(jnp.diag(R)), rank=Q.ndim)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/numpy/lax_numpy.py", line 2797, in diag
+    return _diag(v, operator.index(k))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 155, in _python_pjit_helper
+    out_flat = pjit_p.bind(*args_flat, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 471, in full_raise
+    def full_raise(self, val) -> TracerType:
+KeyboardInterrupt

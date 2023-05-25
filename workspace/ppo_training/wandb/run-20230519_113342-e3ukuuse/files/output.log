@@ -1,0 +1,125 @@
+
+training of backgammon
+(1, 34)
+{'value_loss': Array(8.652366, dtype=float32), 'loss_actor': Array(-0.02006351, dtype=float32), 'entropy': Array(5.0753164, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 8192}
+{'value_loss': Array(7.984471, dtype=float32), 'loss_actor': Array(-0.01596086, dtype=float32), 'entropy': Array(5.064561, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 16384}
+{'value_loss': Array(7.401535, dtype=float32), 'loss_actor': Array(-0.01632697, dtype=float32), 'entropy': Array(5.0553446, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 24576}
+{'value_loss': Array(6.8789287, dtype=float32), 'loss_actor': Array(-0.01743833, dtype=float32), 'entropy': Array(5.0448465, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 32768}
+{'value_loss': Array(6.5312295, dtype=float32), 'loss_actor': Array(-0.01806246, dtype=float32), 'entropy': Array(5.0379915, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 40960}
+{'value_loss': Array(5.942691, dtype=float32), 'loss_actor': Array(-0.01794836, dtype=float32), 'entropy': Array(5.0208306, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 49152}
+{'value_loss': Array(5.7206497, dtype=float32), 'loss_actor': Array(-0.02153231, dtype=float32), 'entropy': Array(5.009157, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 57344}
+{'value_loss': Array(5.298336, dtype=float32), 'loss_actor': Array(-0.02002358, dtype=float32), 'entropy': Array(4.999566, dtype=float32), 'eval_vs_previous_policy': Array(-3., dtype=float32), 'steps': 65536}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 343, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 306, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, config["NUM_ENVS"])
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 252, in evaluate
+    state = step(state, action)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 150, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _ = infer_params_fn(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 301, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 474, in common_infer_params
+    jaxpr, consts, canonicalized_out_shardings_flat = _pjit_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 935, in _pjit_jaxpr
+    jaxpr, final_consts, out_type = _create_pjit_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 345, in memoized_fun
+    ans = call(fun, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 888, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts = pe.trace_to_jaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 1239, in vmap_f
+    out_flat = batching.batch(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/v1.py", line 203, in step
+    state = jax.lax.cond(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 283, in cond
+    return _cond(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 264, in _cond
+    out = cond_p.bind(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 804, in cond_bind
+    return core.AxisPrimitive.bind(cond_p, *args, branches=branches, linear=linear)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 365, in _cond_batching_rule
+    branches_batched = [
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 366, in <listcomp>
+    batching.batch_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 673, in batch_jaxpr
+    return _batch_jaxpr(closed_jaxpr, axis_size, tuple(in_batched), inst,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 685, in _batch_jaxpr
+    return batch_jaxpr_axes(closed_jaxpr, axis_size, in_axes, out_axes_dest,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 690, in batch_jaxpr_axes
+    return _batch_jaxpr_axes(closed_jaxpr, axis_size, tuple(in_axes),
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 704, in _batch_jaxpr_axes
+    jaxpr_out, _, consts = pe.trace_to_jaxpr_dynamic(f, avals_in)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 229, in jaxpr_as_fun
+    return eval_jaxpr(closed_jaxpr.jaxpr, closed_jaxpr.consts, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 447, in eval_jaxpr
+    ans = eqn.primitive.bind(*subfuns, *map(read, eqn.invars), **bind_params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 2743, in _broadcast_in_dim_batch_rule
+    return broadcast_in_dim(new_operand, new_shape, new_broadcast_dimensions), 0
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 796, in broadcast_in_dim
+    return broadcast_in_dim_p.bind(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 1854, in process_primitive
+    return custom_staging_rules[primitive](self, *tracers, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 2766, in _broadcast_in_dim_staging_rule
+    return trace.default_process_primitive(broadcast_in_dim_p, (x,), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 1859, in default_process_primitive
+    out_avals, effects = primitive.abstract_eval(*avals, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 416, in abstract_eval_
+    return abstract_eval(*args, **kwargs), no_effects
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 2845, in _broadcast_in_dim_abstract_eval
+    shape = _broadcast_in_dim_shape_rule(  # error checking
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 2675, in _broadcast_in_dim_shape_rule
+    _check_shapelike('broadcast_in_dim', 'shape', shape)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 4613, in _check_shapelike
+    if not all(core.greater_equal_dim(d, lower_bound) for d in obj_arr):
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 4613, in <genexpr>
+    if not all(core.greater_equal_dim(d, lower_bound) for d in obj_arr):
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 1928, in greater_equal_dim
+    handler, ds = _dim_handler_and_canonical(d1, d2)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 1878, in _dim_handler_and_canonical
+    handler = _get_special_dim_handler(d)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 1867, in _get_special_dim_handler
+    return _SPECIAL_DIMENSION_HANDLERS.get(type(dim))
+KeyboardInterrupt

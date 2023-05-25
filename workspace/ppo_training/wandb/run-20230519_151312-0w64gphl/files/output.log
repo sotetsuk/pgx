@@ -1,0 +1,92 @@
+
+training of backgammon
+(1, 34)
+{'value_loss': 0.18739046156406403, 'loss_actor': -0.020811041817069054, 'entropy': 1.311829686164856, 'eval_vs_random_policy': 1.100000023841858, 'steps': 16384}
+{'value_loss': 0.1615632176399231, 'loss_actor': -0.021924560889601707, 'entropy': 1.2766869068145752, 'eval_vs_random_policy': 1.7000000476837158, 'steps': 32768}
+{'value_loss': 0.11891566962003708, 'loss_actor': -0.023382484912872314, 'entropy': 1.2688990831375122, 'eval_vs_random_policy': 0.800000011920929, 'steps': 49152}
+{'value_loss': 0.12077051401138306, 'loss_actor': -0.02189479023218155, 'entropy': 1.2614240646362305, 'eval_vs_random_policy': -0.800000011920929, 'steps': 65536}
+{'value_loss': 0.1075487732887268, 'loss_actor': -0.02351796068251133, 'entropy': 1.2492449283599854, 'eval_vs_random_policy': 1.3000000715255737, 'steps': 81920}
+{'value_loss': 0.12939172983169556, 'loss_actor': -0.023502808064222336, 'entropy': 1.2345272302627563, 'eval_vs_random_policy': 1.5, 'steps': 98304}
+{'value_loss': 0.11014973372220993, 'loss_actor': -0.0231102854013443, 'entropy': 1.2351319789886475, 'eval_vs_random_policy': 1.600000023841858, 'steps': 114688}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 356, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 319, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, config["NUM_ENVS"])
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 257, in evaluate
+    logits, value = network.apply(new_state.params, state.observation)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 1489, in apply
+    return apply(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/scope.py", line 933, in wrapper
+    y = fn(root, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 2060, in scope_fn
+    return fn(module.clone(parent=scope), *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 432, in wrapped_module_method
+    return self._call_wrapped_method(fun, args, kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 864, in _call_wrapped_method
+    y = fun(self, *args, **kwargs)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 60, in __call__
+    actor_mean = nn.Dense(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 432, in wrapped_module_method
+    return self._call_wrapped_method(fun, args, kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 864, in _call_wrapped_method
+    y = fun(self, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/linear.py", line 196, in __call__
+    kernel = self.param('kernel',
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/linen/module.py", line 1241, in param
+    v = self.scope.param(name, init_fn, *init_args, unbox=unbox)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/scope.py", line 827, in param
+    abs_value = jax.eval_shape(lambda rng: init_fn(rng, *init_args), abs_rng)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 2751, in eval_shape
+    out = pe.abstract_eval_fun(wrapped_fun.call_wrapped,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 670, in abstract_eval_fun
+    _, avals_out, _ = trace_to_jaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/scope.py", line 827, in <lambda>
+    abs_value = jax.eval_shape(lambda rng: init_fn(rng, *init_args), abs_rng)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/nn/initializers.py", line 567, in init
+    A = random.normal(key, matrix_shape, dtype)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/random.py", line 609, in normal
+    return _normal(key, shape, dtype)  # type: ignore
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 155, in _python_pjit_helper
+    out_flat = pjit_p.bind(*args_flat, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 1854, in process_primitive
+    return custom_staging_rules[primitive](self, *tracers, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 1251, in pjit_staging_rule
+    return core.eval_jaxpr(jaxpr.jaxpr, jaxpr.consts, *args,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 447, in eval_jaxpr
+    ans = eqn.primitive.bind(*subfuns, *map(read, eqn.invars), **bind_params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 1855, in process_primitive
+    return self.default_process_primitive(primitive, tracers, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 1865, in default_process_primitive
+    eqn = new_jaxpr_eqn(invars, outvars, primitive, params, effects, source_info)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 266, in new_jaxpr_eqn
+    if config.jax_enable_checks:
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/config.py", line 239, in get_state
+    def get_state(self):
+KeyboardInterrupt

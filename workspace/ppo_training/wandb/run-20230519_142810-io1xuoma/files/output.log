@@ -1,0 +1,11 @@
+
+training of backgammon
+(1, 34)
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 353, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 316, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, 10)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 255, in evaluate
+    pi = distrax.Categorical(logits=actor_mean)
+NameError: name 'actor_mean' is not defined

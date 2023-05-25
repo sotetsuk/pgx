@@ -1,0 +1,9 @@
+
+training of backgammon
+(1, 34)
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 343, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 305, in train
+    value_loss, loss_actor, entropy = loss_info
+ValueError: not enough values to unpack (expected 3, got 2)

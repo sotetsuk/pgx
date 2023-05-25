@@ -1,0 +1,13 @@
+
+training of backgammon
+(1, 34)
+{'value_loss': 4.746579170227051, 'loss_actor': -0.02102862298488617, 'entropy': 5.074974536895752, 'eval_vs_previous_policy': -3.0, 'steps': 16384}
+{'value_loss': 1.922471523284912, 'loss_actor': -0.022019434720277786, 'entropy': 5.060956954956055, 'eval_vs_previous_policy': -3.0, 'steps': 32768}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 349, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 309, in train
+    runner_state, loss_info = jitted_update_step(runner_state, None)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/frozen_dict.py", line 162, in tree_unflatten
+    @classmethod
+KeyboardInterrupt

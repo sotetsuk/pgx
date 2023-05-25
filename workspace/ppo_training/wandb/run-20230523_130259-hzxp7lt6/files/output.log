@@ -1,0 +1,101 @@
+
+training of backgammon
+{'eval_vs_prev_policy': 0.28125, 'steps': 0}
+loaded 0.28125
+{'eval_vs_prev_policy': -0.125, 'steps': 16384}
+loaded -0.125
+{'eval_vs_prev_policy': -0.03125, 'steps': 32768}
+loaded -0.03125
+{'eval_vs_prev_policy': 0.046875, 'steps': 49152}
+loaded 0.046875
+{'eval_vs_prev_policy': 0.171875, 'steps': 65536}
+loaded 0.171875
+{'eval_vs_prev_policy': 0.15625, 'steps': 81920}
+loaded 0.15625
+{'eval_vs_prev_policy': -0.078125, 'steps': 98304}
+loaded -0.078125
+{'eval_vs_prev_policy': -0.09375, 'steps': 114688}
+loaded -0.09375
+{'eval_vs_prev_policy': 0.515625, 'steps': 131072}
+loaded 0.515625
+{'eval_vs_prev_policy': 0.375, 'steps': 147456}
+loaded 0.375
+{'eval_vs_prev_policy': 0.03125, 'steps': 163840}
+loaded 0.03125
+{'eval_vs_prev_policy': -0.125, 'steps': 180224}
+loaded -0.125
+{'eval_vs_prev_policy': 0.3125, 'steps': 196608}
+loaded 0.3125
+{'eval_vs_prev_policy': 0.1875, 'steps': 212992}
+loaded 0.1875
+{'eval_vs_prev_policy': 0.3125, 'steps': 229376}
+loaded 0.3125
+{'eval_vs_prev_policy': 0.171875, 'steps': 245760}
+loaded 0.171875
+{'eval_vs_prev_policy': 0.125, 'steps': 262144}
+loaded 0.125
+{'eval_vs_prev_policy': 0.125, 'steps': 278528}
+loaded 0.125
+{'eval_vs_prev_policy': 0.296875, 'steps': 294912}
+loaded 0.296875
+{'eval_vs_prev_policy': 0.5625, 'steps': 311296}
+loaded 0.5625
+{'eval_vs_prev_policy': 0.125, 'steps': 327680}
+loaded 0.125
+{'eval_vs_prev_policy': -0.09375, 'steps': 344064}
+loaded -0.09375
+{'eval_vs_prev_policy': 0.0625, 'steps': 360448}
+loaded 0.0625
+{'eval_vs_prev_policy': 0.171875, 'steps': 376832}
+loaded 0.171875
+{'eval_vs_prev_policy': -0.046875, 'steps': 393216}
+loaded -0.046875
+{'eval_vs_prev_policy': 0.265625, 'steps': 409600}
+loaded 0.265625
+{'eval_vs_prev_policy': 0.203125, 'steps': 425984}
+loaded 0.203125
+{'eval_vs_prev_policy': 0.171875, 'steps': 442368}
+loaded 0.171875
+{'eval_vs_prev_policy': 0.0625, 'steps': 458752}
+loaded 0.0625
+{'eval_vs_prev_policy': -0.140625, 'steps': 475136}
+loaded -0.140625
+{'eval_vs_prev_policy': -0.03125, 'steps': 491520}
+loaded -0.03125
+{'eval_vs_prev_policy': -0.078125, 'steps': 507904}
+loaded -0.078125
+{'eval_vs_prev_policy': -0.390625, 'steps': 524288}
+loaded -0.390625
+{'eval_vs_prev_policy': -0.125, 'steps': 540672}
+loaded -0.125
+{'eval_vs_prev_policy': -0.171875, 'steps': 557056}
+loaded -0.171875
+{'eval_vs_prev_policy': -0.03125, 'steps': 573440}
+loaded -0.03125
+{'eval_vs_prev_policy': -0.015625, 'steps': 589824}
+loaded -0.015625
+{'eval_vs_prev_policy': 0.046875, 'steps': 606208}
+loaded 0.046875
+{'eval_vs_prev_policy': 0.15625, 'steps': 622592}
+loaded 0.15625
+{'eval_vs_prev_policy': -0.15625, 'steps': 638976}
+loaded -0.15625
+{'eval_vs_prev_policy': 0.1875, 'steps': 655360}
+loaded 0.1875
+{'eval_vs_prev_policy': 0.109375, 'steps': 671744}
+loaded 0.109375
+{'eval_vs_prev_policy': 0.28125, 'steps': 688128}
+loaded 0.28125
+{'eval_vs_prev_policy': 0.171875, 'steps': 704512}
+loaded 0.171875
+{'eval_vs_prev_policy': 0.125, 'steps': 720896}
+loaded 0.125
+{'eval_vs_prev_policy': 0.109375, 'steps': 737280}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 370, in <module>
+    sta = time.time()
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 334, in train
+    if i % config["UPDATE_INTERVAL"] == 0:
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/frozen_dict.py", line 162, in tree_unflatten
+    @classmethod
+KeyboardInterrupt

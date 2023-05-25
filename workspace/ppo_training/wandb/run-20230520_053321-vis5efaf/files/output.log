@@ -1,0 +1,41 @@
+
+training of backgammon
+Traceback (most recent call last):
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api_util.py", line 563, in shaped_abstractify
+    return _shaped_abstractify_handlers[type(x)](x)
+KeyError: <class 'function'>
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 362, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 321, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, config["NUM_ENVS"])
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 269, in evaluate
+    state, cum_return = jax.jit(jax.lax.while_loop)(cond_fn, loop_fn, (state, cum_return))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 150, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _ = infer_params_fn(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 301, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 460, in common_infer_params
+    avals.append(shaped_abstractify(a))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api_util.py", line 565, in shaped_abstractify
+    return _shaped_abstractify_slow(x)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api_util.py", line 554, in _shaped_abstractify_slow
+    raise TypeError(
+jax._src.traceback_util.UnfilteredStackTrace: TypeError: Cannot interpret value of type <class 'function'> as an abstract array; it does not have a dtype attribute
+The stack trace below excludes JAX-internal frames.
+The preceding is the original exception that occurred, unmodified.
+--------------------
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 362, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 321, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, config["NUM_ENVS"])
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 269, in evaluate
+    state, cum_return = jax.jit(jax.lax.while_loop)(cond_fn, loop_fn, (state, cum_return))
+TypeError: Cannot interpret value of type <class 'function'> as an abstract array; it does not have a dtype attribute

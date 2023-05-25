@@ -1,0 +1,24 @@
+
+training of backgammon
+{'value_loss': 0.14811642467975616, 'loss_actor': -0.022147364914417267, 'entropy': 1.3339921236038208, 'eval_vs_previous_policy': -0.125, 'steps': 16384}
+{'value_loss': 0.12492068111896515, 'loss_actor': -0.025416258722543716, 'entropy': 1.2953040599822998, 'eval_vs_previous_policy': -0.03125, 'steps': 32768}
+{'value_loss': 0.09918537735939026, 'loss_actor': -0.02655130811035633, 'entropy': 1.2618547677993774, 'eval_vs_previous_policy': 0.046875, 'steps': 49152}
+{'value_loss': 0.07292905449867249, 'loss_actor': -0.029376808553934097, 'entropy': 1.248801589012146, 'eval_vs_previous_policy': 0.171875, 'steps': 65536}
+{'value_loss': 0.06845739483833313, 'loss_actor': -0.029467981308698654, 'entropy': 1.209374189376831, 'eval_vs_previous_policy': 0.15625, 'steps': 81920}
+{'value_loss': 0.05871930718421936, 'loss_actor': -0.029645537957549095, 'entropy': 1.1667999029159546, 'eval_vs_previous_policy': -0.078125, 'steps': 98304}
+{'value_loss': 0.049033116549253464, 'loss_actor': -0.028651174157857895, 'entropy': 1.1408461332321167, 'eval_vs_previous_policy': -0.09375, 'steps': 114688}
+{'value_loss': 0.05400843918323517, 'loss_actor': -0.02907065860927105, 'entropy': 1.1043241024017334, 'eval_vs_previous_policy': 0.515625, 'steps': 131072}
+{'value_loss': 0.05523635819554329, 'loss_actor': -0.0297487024217844, 'entropy': 1.0703245401382446, 'eval_vs_previous_policy': 0.375, 'steps': 147456}
+{'value_loss': 0.05383435636758804, 'loss_actor': -0.02913603000342846, 'entropy': 1.032820463180542, 'eval_vs_previous_policy': 0.03125, 'steps': 163840}
+{'value_loss': 0.0508827343583107, 'loss_actor': -0.026743464171886444, 'entropy': 0.9811406135559082, 'eval_vs_previous_policy': -0.125, 'steps': 180224}
+{'value_loss': 0.0573824942111969, 'loss_actor': -0.02781120128929615, 'entropy': 1.0021950006484985, 'eval_vs_previous_policy': 0.3125, 'steps': 196608}
+{'value_loss': 0.05634176731109619, 'loss_actor': -0.027629317715764046, 'entropy': 0.9724392890930176, 'eval_vs_previous_policy': 0.1875, 'steps': 212992}
+{'value_loss': 0.059245795011520386, 'loss_actor': -0.028161197900772095, 'entropy': 0.9569215774536133, 'eval_vs_previous_policy': 0.3125, 'steps': 229376}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 362, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 318, in train
+    runner_state, loss_info = jitted_update_step(runner_state, old_train_state)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/frozen_dict.py", line 162, in tree_unflatten
+    @classmethod
+KeyboardInterrupt

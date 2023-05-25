@@ -1,0 +1,16 @@
+
+training of backgammon
+{'eval_vs_random_policy': -0.140625, 'steps': 0}
+{'eval_vs_random_policy': -0.03125, 'steps': 16384}
+{'eval_vs_random_policy': -0.1875, 'steps': 32768}
+{'eval_vs_random_policy': 0.046875, 'steps': 49152}
+{'eval_vs_random_policy': 0.390625, 'steps': 65536}
+{'eval_vs_random_policy': 0.1875, 'steps': 81920}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 367, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 331, in train
+    wandb.log(log)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/frozen_dict.py", line 162, in tree_unflatten
+    @classmethod
+KeyboardInterrupt

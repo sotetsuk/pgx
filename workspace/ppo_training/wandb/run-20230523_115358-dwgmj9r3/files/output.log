@@ -1,0 +1,342 @@
+
+training of backgammon
+{'eval_vs_random': -0.140625, 'steps': 0}
+load
+loaded -0.03125
+{'eval_vs_random': -0.03125, 'steps': 16384}
+load
+loaded -0.1875
+{'eval_vs_random': -0.1875, 'steps': 32768}
+load
+loaded 0.046875
+{'eval_vs_random': 0.046875, 'steps': 49152}
+load
+loaded 0.390625
+{'eval_vs_random': 0.390625, 'steps': 65536}
+load
+loaded 0.1875
+{'eval_vs_random': 0.1875, 'steps': 81920}
+load
+loaded 0.546875
+{'eval_vs_random': 0.546875, 'steps': 98304}
+load
+loaded 0.59375
+{'eval_vs_random': 0.59375, 'steps': 114688}
+load
+loaded 0.9375
+{'eval_vs_random': 0.9375, 'steps': 131072}
+load
+loaded 1.046875
+{'eval_vs_random': 1.046875, 'steps': 147456}
+load
+loaded 1.3125
+{'eval_vs_random': 1.3125, 'steps': 163840}
+load
+loaded 1.140625
+{'eval_vs_random': 1.140625, 'steps': 180224}
+load
+loaded 1.296875
+{'eval_vs_random': 1.296875, 'steps': 196608}
+load
+loaded 1.3125
+{'eval_vs_random': 1.3125, 'steps': 212992}
+load
+loaded 1.578125
+{'eval_vs_random': 1.578125, 'steps': 229376}
+load
+loaded 1.46875
+{'eval_vs_random': 1.46875, 'steps': 245760}
+load
+loaded 1.484375
+{'eval_vs_random': 1.484375, 'steps': 262144}
+load
+loaded 1.296875
+{'eval_vs_random': 1.296875, 'steps': 278528}
+load
+loaded 1.375
+{'eval_vs_random': 1.375, 'steps': 294912}
+load
+loaded 1.578125
+{'eval_vs_random': 1.578125, 'steps': 311296}
+load
+loaded 1.71875
+{'eval_vs_random': 1.71875, 'steps': 327680}
+load
+loaded 1.34375
+{'eval_vs_random': 1.34375, 'steps': 344064}
+load
+loaded 1.640625
+{'eval_vs_random': 1.640625, 'steps': 360448}
+load
+loaded 1.78125
+{'eval_vs_random': 1.78125, 'steps': 376832}
+load
+loaded 1.609375
+{'eval_vs_random': 1.609375, 'steps': 393216}
+load
+loaded 1.703125
+{'eval_vs_random': 1.703125, 'steps': 409600}
+load
+loaded 1.96875
+{'eval_vs_random': 1.96875, 'steps': 425984}
+load
+loaded 1.78125
+{'eval_vs_random': 1.78125, 'steps': 442368}
+load
+loaded 1.734375
+{'eval_vs_random': 1.734375, 'steps': 458752}
+load
+loaded 1.625
+{'eval_vs_random': 1.625, 'steps': 475136}
+load
+loaded 1.921875
+{'eval_vs_random': 1.921875, 'steps': 491520}
+load
+loaded 1.90625
+{'eval_vs_random': 1.90625, 'steps': 507904}
+load
+loaded 1.734375
+{'eval_vs_random': 1.734375, 'steps': 524288}
+load
+loaded 1.78125
+{'eval_vs_random': 1.78125, 'steps': 540672}
+load
+loaded 1.6875
+{'eval_vs_random': 1.6875, 'steps': 557056}
+load
+loaded 1.875
+{'eval_vs_random': 1.875, 'steps': 573440}
+load
+loaded 1.75
+{'eval_vs_random': 1.75, 'steps': 589824}
+load
+loaded 1.78125
+{'eval_vs_random': 1.78125, 'steps': 606208}
+load
+loaded 1.984375
+{'eval_vs_random': 1.984375, 'steps': 622592}
+load
+loaded 1.828125
+{'eval_vs_random': 1.828125, 'steps': 638976}
+load
+loaded 1.609375
+{'eval_vs_random': 1.609375, 'steps': 655360}
+load
+loaded 1.84375
+{'eval_vs_random': 1.84375, 'steps': 671744}
+load
+loaded 1.984375
+{'eval_vs_random': 1.984375, 'steps': 688128}
+load
+loaded 2.015625
+{'eval_vs_random': 2.015625, 'steps': 704512}
+load
+loaded 2.0
+{'eval_vs_random': 2.0, 'steps': 720896}
+load
+loaded 1.953125
+{'eval_vs_random': 1.953125, 'steps': 737280}
+load
+loaded 1.921875
+{'eval_vs_random': 1.921875, 'steps': 753664}
+load
+loaded 1.984375
+{'eval_vs_random': 1.984375, 'steps': 770048}
+load
+loaded 2.03125
+{'eval_vs_random': 2.03125, 'steps': 786432}
+load
+loaded 2.0625
+{'eval_vs_random': 2.0625, 'steps': 802816}
+load
+loaded 2.09375
+{'eval_vs_random': 2.09375, 'steps': 819200}
+load
+loaded 2.125
+{'eval_vs_random': 2.125, 'steps': 835584}
+load
+loaded 1.90625
+{'eval_vs_random': 1.90625, 'steps': 851968}
+load
+loaded 1.9375
+{'eval_vs_random': 1.9375, 'steps': 868352}
+load
+loaded 2.15625
+{'eval_vs_random': 2.15625, 'steps': 884736}
+load
+loaded 2.03125
+{'eval_vs_random': 2.03125, 'steps': 901120}
+load
+loaded 2.03125
+{'eval_vs_random': 2.03125, 'steps': 917504}
+load
+loaded 2.046875
+{'eval_vs_random': 2.046875, 'steps': 933888}
+load
+loaded 1.90625
+{'eval_vs_random': 1.90625, 'steps': 950272}
+load
+loaded 2.0
+{'eval_vs_random': 2.0, 'steps': 966656}
+load
+loaded 1.953125
+{'eval_vs_random': 1.953125, 'steps': 983040}
+load
+loaded 1.890625
+{'eval_vs_random': 1.890625, 'steps': 999424}
+load
+loaded 1.96875
+{'eval_vs_random': 1.96875, 'steps': 1015808}
+load
+loaded 2.015625
+{'eval_vs_random': 2.015625, 'steps': 1032192}
+load
+loaded 1.984375
+{'eval_vs_random': 1.984375, 'steps': 1048576}
+load
+loaded 2.046875
+{'eval_vs_random': 2.046875, 'steps': 1064960}
+load
+loaded 2.15625
+{'eval_vs_random': 2.15625, 'steps': 1081344}
+load
+loaded 2.15625
+{'eval_vs_random': 2.15625, 'steps': 1097728}
+load
+loaded 2.171875
+{'eval_vs_random': 2.171875, 'steps': 1114112}
+load
+loaded 1.984375
+{'eval_vs_random': 1.984375, 'steps': 1130496}
+load
+loaded 2.078125
+{'eval_vs_random': 2.078125, 'steps': 1146880}
+load
+loaded 2.109375
+{'eval_vs_random': 2.109375, 'steps': 1163264}
+load
+loaded 2.125
+{'eval_vs_random': 2.125, 'steps': 1179648}
+load
+loaded 2.3125
+{'eval_vs_random': 2.3125, 'steps': 1196032}
+load
+loaded 2.171875
+{'eval_vs_random': 2.171875, 'steps': 1212416}
+load
+loaded 2.015625
+{'eval_vs_random': 2.015625, 'steps': 1228800}
+load
+loaded 2.09375
+{'eval_vs_random': 2.09375, 'steps': 1245184}
+load
+loaded 2.1875
+{'eval_vs_random': 2.1875, 'steps': 1261568}
+load
+loaded 2.15625
+{'eval_vs_random': 2.15625, 'steps': 1277952}
+load
+loaded 1.953125
+{'eval_vs_random': 1.953125, 'steps': 1294336}
+load
+loaded 2.0625
+{'eval_vs_random': 2.0625, 'steps': 1310720}
+load
+loaded 2.03125
+{'eval_vs_random': 2.03125, 'steps': 1327104}
+load
+loaded 2.0
+{'eval_vs_random': 2.0, 'steps': 1343488}
+load
+loaded 2.03125
+{'eval_vs_random': 2.03125, 'steps': 1359872}
+load
+loaded 2.0625
+{'eval_vs_random': 2.0625, 'steps': 1376256}
+load
+loaded 1.9375
+{'eval_vs_random': 1.9375, 'steps': 1392640}
+load
+loaded 2.015625
+{'eval_vs_random': 2.015625, 'steps': 1409024}
+load
+loaded 1.9375
+{'eval_vs_random': 1.9375, 'steps': 1425408}
+load
+loaded 2.046875
+{'eval_vs_random': 2.046875, 'steps': 1441792}
+load
+loaded 2.140625
+{'eval_vs_random': 2.140625, 'steps': 1458176}
+load
+loaded 2.203125
+{'eval_vs_random': 2.203125, 'steps': 1474560}
+load
+loaded 2.203125
+{'eval_vs_random': 2.203125, 'steps': 1490944}
+load
+loaded 1.953125
+{'eval_vs_random': 1.953125, 'steps': 1507328}
+load
+loaded 2.28125
+{'eval_vs_random': 2.28125, 'steps': 1523712}
+load
+loaded 2.15625
+{'eval_vs_random': 2.15625, 'steps': 1540096}
+load
+loaded 2.234375
+{'eval_vs_random': 2.234375, 'steps': 1556480}
+load
+loaded 2.1875
+{'eval_vs_random': 2.1875, 'steps': 1572864}
+load
+loaded 2.25
+{'eval_vs_random': 2.25, 'steps': 1589248}
+load
+loaded 2.203125
+{'eval_vs_random': 2.203125, 'steps': 1605632}
+load
+loaded 2.1875
+{'eval_vs_random': 2.1875, 'steps': 1622016}
+load
+loaded 2.3125
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 372, in <module>
+    print("training: time", end - sta)
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 325, in train
+    step_fn = single_play_step_vs_policy(env.step, network, old_params) # vs policy
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 272, in evaluate
+    state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/loops.py", line 1160, in while_loop
+    outs = while_p.bind(*cond_consts, *body_consts, *init_vals,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 790, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 131, in apply_primitive
+    compiled_fun = xla_primitive_callable(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/util.py", line 284, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/util.py", line 277, in cached
+    return f(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 222, in xla_primitive_callable
+    compiled = _xla_callable_uncached(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 252, in _xla_callable_uncached
+    return computation.compile().unsafe_call
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2313, in compile
+    executable = UnloadedMeshExecutable.from_hlo(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2633, in from_hlo
+    xla_executable, compile_options = _cached_compilation(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2551, in _cached_compilation
+    xla_executable = dispatch.compile_or_get_cached(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 495, in compile_or_get_cached
+    return backend_compile(backend, computation, compile_options,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 463, in backend_compile
+    return backend.compile(built_c, compile_options=options)
+KeyboardInterrupt

@@ -1,0 +1,109 @@
+
+training of backgammon
+(1, 34)
+Traceback (most recent call last):
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api_util.py", line 563, in shaped_abstractify
+    return _shaped_abstractify_handlers[type(x)](x)
+KeyError: <class 'int'>
+During handling of the above exception, another exception occurred:
+Traceback (most recent call last):
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 460, in common_infer_params
+    avals.append(shaped_abstractify(a))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api_util.py", line 565, in shaped_abstractify
+    return _shaped_abstractify_slow(x)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api_util.py", line 545, in _shaped_abstractify_slow
+    x if isinstance(x, core.AbstractValue) else core.get_aval(x))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 1334, in get_aval
+    return concrete_aval(x)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 1323, in concrete_aval
+    if handler: return handler(x)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/abstract_arrays.py", line 75, in _make_concrete_python_scalar
+    dtype = dtypes._scalar_type_to_dtype(t, x)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dtypes.py", line 183, in _scalar_type_to_dtype
+    raise OverflowError(f"Python int {value} too large to convert to {dtype}")
+OverflowError: Python int 100000000000 too large to convert to int32
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 355, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 315, in train
+    runner_state, loss_info = jitted_update_step(runner_state, None)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 150, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _ = infer_params_fn(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 301, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 474, in common_infer_params
+    jaxpr, consts, canonicalized_out_shardings_flat = _pjit_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 935, in _pjit_jaxpr
+    jaxpr, final_consts, out_type = _create_pjit_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 345, in memoized_fun
+    ans = call(fun, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 888, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts = pe.trace_to_jaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 119, in _update_step
+    runner_state, traj_batch = jax.lax.scan(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/loops.py", line 249, in scan
+    init_flat, carry_avals, carry_avals_out, init_tree, *rest = _create_jaxpr(init)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/loops.py", line 235, in _create_jaxpr
+    jaxpr, consts, out_tree = _initial_style_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/common.py", line 60, in _initial_style_jaxpr
+    jaxpr, consts, out_tree = _initial_style_open_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/common.py", line 54, in _initial_style_open_jaxpr
+    jaxpr, _, consts = pe.trace_to_jaxpr_dynamic(wrapped_fun, in_avals, debug)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 103, in _env_step
+    logits = logits - 100000000000 * (~env_state.legal_action_mask).astype(jnp.float16)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/numpy/array_methods.py", line 790, in op
+    return getattr(self.aval, f"_{name}")(self, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/numpy/array_methods.py", line 258, in deferring_binary_op
+    return binary_op(*args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 150, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _ = infer_params_fn(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 301, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 464, in common_infer_params
+    raise OverflowError(
+jax._src.traceback_util.UnfilteredStackTrace: OverflowError: An overflow was encountered while parsing an argument to a jitted computation, whose argument path is x1.
+The stack trace below excludes JAX-internal frames.
+The preceding is the original exception that occurred, unmodified.
+--------------------
+The above exception was the direct cause of the following exception:
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 355, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 315, in train
+    runner_state, loss_info = jitted_update_step(runner_state, None)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 119, in _update_step
+    runner_state, traj_batch = jax.lax.scan(
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 103, in _env_step
+    logits = logits - 100000000000 * (~env_state.legal_action_mask).astype(jnp.float16)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/numpy/array_methods.py", line 790, in op
+    return getattr(self.aval, f"_{name}")(self, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/numpy/array_methods.py", line 258, in deferring_binary_op
+    return binary_op(*args)
+OverflowError: An overflow was encountered while parsing an argument to a jitted computation, whose argument path is x1.

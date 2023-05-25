@@ -1,0 +1,441 @@
+
+training of backgammon
+(1, 34)
+[       -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf  0.17748508
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf  0.20732476 -0.08969425
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf -0.16403794 -0.20090677
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf]
+[0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.23857951
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.24580592 0.18264115
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.16955538 0.1634179
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.        ]
+[False False False False False False False False False False False False
+ False False False False False  True False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False  True  True
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False  True  True False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False]
+-1.7976931348623157e+308
+[0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.04385303 0.02779874 0.03398876 0.04822093 0.         0.12263989
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.03679377 0.02359047 0.04890788 0.11779697 0.093871
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.03153533 0.02515642 0.0222472  0.03439263 0.08085165 0.08497896
+ 0.         0.         0.         0.         0.         0.
+ 0.02986741 0.03213367 0.02647263 0.03490265 0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.        ]
+{'value_loss': 0.18739046156406403, 'loss_actor': -0.020811041817069054, 'entropy': 1.311829686164856, 'eval_vs_previous_policy': 0.0, 'steps': 16384}
+[       -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf  0.5002995
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf  0.29389393  0.04598134
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf -0.12842572 -0.30866313
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf]
+[0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.29180256
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.23738226 0.1852598
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.15560988 0.12994544
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.        ]
+[False False False False False False False False False False False False
+ False False False False False  True False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False  True  True
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False  True  True False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False]
+-1.7976931348623157e+308
+[0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.04646673 0.02313529 0.02815484 0.0435951  0.         0.15408574
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.04058109 0.0189572  0.04448274 0.11987191 0.09787858
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.02767815 0.02236878 0.02854505 0.04268223 0.07931641 0.06949467
+ 0.         0.         0.         0.         0.         0.
+ 0.02594343 0.02759483 0.02943945 0.02972778 0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.        ]
+{'value_loss': 0.1615632176399231, 'loss_actor': -0.021924560889601707, 'entropy': 1.2766869068145752, 'eval_vs_previous_policy': 0.0, 'steps': 32768}
+[       -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf  0.47875834
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf  0.24845722  0.06761994
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf  0.22577275 -0.41414666
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf
+        -inf        -inf        -inf        -inf        -inf        -inf]
+[0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.274489
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.21802507 0.18195744
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.21313497 0.11239351
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.        ]
+[False False False False False False False False False False False False
+ False False False False False  True False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False  True  True
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False  True  True False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False False False False False False False
+ False False False False False False]
+-1.7976931348623157e+308
+[0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.04769348 0.02080787 0.02888831 0.04418476 0.         0.14647084
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.03378485 0.01833479 0.03782305 0.10771769 0.09908719
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.03341469 0.02013502 0.02278794 0.05290089 0.10676598 0.06127431
+ 0.         0.         0.         0.         0.         0.
+ 0.02010003 0.03655358 0.03738123 0.02389351 0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.
+ 0.         0.         0.         0.         0.         0.        ]
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 364, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 327, in train
+    eval_R = evaluate(runner_state[0], old_train_state, network, env, rng, 10)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 272, in evaluate
+    state = _single_play_step(state, action, _rng)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 208, in cache_miss
+    outs, out_flat, out_tree, args_flat = _python_pjit_helper(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 150, in _python_pjit_helper
+    args_flat, _, params, in_tree, out_tree, _ = infer_params_fn(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 301, in infer_params
+    return pjit.common_infer_params(pjit_info_args, *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 474, in common_infer_params
+    jaxpr, consts, canonicalized_out_shardings_flat = _pjit_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 935, in _pjit_jaxpr
+    jaxpr, final_consts, out_type = _create_pjit_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 345, in memoized_fun
+    ans = call(fun, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/pjit.py", line 888, in _create_pjit_jaxpr
+    jaxpr, global_out_avals, consts = pe.trace_to_jaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/utils.py", line 73, in wrapped_step_fn
+    state = step_fn(state, action)  # step by right
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 1239, in vmap_f
+    out_flat = batching.batch(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/v1.py", line 203, in step
+    state = jax.lax.cond(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 283, in cond
+    return _cond(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 264, in _cond
+    out = cond_p.bind(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 804, in cond_bind
+    return core.AxisPrimitive.bind(cond_p, *args, branches=branches, linear=linear)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 365, in _cond_batching_rule
+    branches_batched = [
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 366, in <listcomp>
+    batching.batch_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 673, in batch_jaxpr
+    return _batch_jaxpr(closed_jaxpr, axis_size, tuple(in_batched), inst,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 685, in _batch_jaxpr
+    return batch_jaxpr_axes(closed_jaxpr, axis_size, in_axes, out_axes_dest,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 690, in batch_jaxpr_axes
+    return _batch_jaxpr_axes(closed_jaxpr, axis_size, tuple(in_axes),
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 704, in _batch_jaxpr_axes
+    jaxpr_out, _, consts = pe.trace_to_jaxpr_dynamic(f, avals_in)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 229, in jaxpr_as_fun
+    return eval_jaxpr(closed_jaxpr.jaxpr, closed_jaxpr.consts, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 447, in eval_jaxpr
+    ans = eqn.primitive.bind(*subfuns, *map(read, eqn.invars), **bind_params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 804, in cond_bind
+    return core.AxisPrimitive.bind(cond_p, *args, branches=branches, linear=linear)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 365, in _cond_batching_rule
+    branches_batched = [
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 366, in <listcomp>
+    batching.batch_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 673, in batch_jaxpr
+    return _batch_jaxpr(closed_jaxpr, axis_size, tuple(in_batched), inst,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 685, in _batch_jaxpr
+    return batch_jaxpr_axes(closed_jaxpr, axis_size, in_axes, out_axes_dest,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 690, in batch_jaxpr_axes
+    return _batch_jaxpr_axes(closed_jaxpr, axis_size, tuple(in_axes),
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 704, in _batch_jaxpr_axes
+    jaxpr_out, _, consts = pe.trace_to_jaxpr_dynamic(f, avals_in)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 229, in jaxpr_as_fun
+    return eval_jaxpr(closed_jaxpr.jaxpr, closed_jaxpr.consts, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 447, in eval_jaxpr
+    ans = eqn.primitive.bind(*subfuns, *map(read, eqn.invars), **bind_params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 804, in cond_bind
+    return core.AxisPrimitive.bind(cond_p, *args, branches=branches, linear=linear)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 365, in _cond_batching_rule
+    branches_batched = [
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 366, in <listcomp>
+    batching.batch_jaxpr(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 673, in batch_jaxpr
+    return _batch_jaxpr(closed_jaxpr, axis_size, tuple(in_batched), inst,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 685, in _batch_jaxpr
+    return batch_jaxpr_axes(closed_jaxpr, axis_size, in_axes, out_axes_dest,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 690, in batch_jaxpr_axes
+    return _batch_jaxpr_axes(closed_jaxpr, axis_size, tuple(in_axes),
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 704, in _batch_jaxpr_axes
+    jaxpr_out, _, consts = pe.trace_to_jaxpr_dynamic(f, avals_in)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2150, in trace_to_jaxpr_dynamic
+    jaxpr, out_avals, consts = trace_to_subjaxpr_dynamic(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/partial_eval.py", line 2172, in trace_to_subjaxpr_dynamic
+    ans = fun.call_wrapped(*in_tracers_)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 229, in jaxpr_as_fun
+    return eval_jaxpr(closed_jaxpr.jaxpr, closed_jaxpr.consts, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 451, in eval_jaxpr
+    write(eqn.outvars[0], ans)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 435, in write
+    if config.jax_enable_checks and not config.jax_dynamic_shapes:
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/config.py", line 241, in get_state
+    return val if val is not unset else self._read(name)
+KeyboardInterrupt

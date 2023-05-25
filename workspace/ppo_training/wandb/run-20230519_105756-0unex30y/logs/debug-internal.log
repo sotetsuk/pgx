@@ -1,0 +1,178 @@
+2023-05-19 10:57:56,727 INFO    StreamThr :2562697 [internal.py:wandb_internal():86] W&B internal server running at pid: 2562697, started at: 2023-05-19 10:57:56.726821
+2023-05-19 10:57:56,730 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: status
+2023-05-19 10:57:56,731 INFO    WriterThread:2562697 [datastore.py:open_for_write():85] open: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/run-0unex30y.wandb
+2023-05-19 10:57:56,735 DEBUG   SenderThread:2562697 [sender.py:send():375] send: header
+2023-05-19 10:57:56,736 DEBUG   SenderThread:2562697 [sender.py:send():375] send: run
+2023-05-19 10:57:57,304 INFO    SenderThread:2562697 [dir_watcher.py:__init__():219] watching files in: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files
+2023-05-19 10:57:57,304 INFO    SenderThread:2562697 [sender.py:_start_run_threads():1124] run started: 0unex30y with start time 1684461476.722761
+2023-05-19 10:57:57,304 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: summary_record
+2023-05-19 10:57:57,304 INFO    SenderThread:2562697 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-19 10:57:57,312 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: check_version
+2023-05-19 10:57:57,312 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: check_version
+2023-05-19 10:57:57,507 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: run_start
+2023-05-19 10:57:57,522 DEBUG   HandlerThread:2562697 [system_info.py:__init__():31] System info init
+2023-05-19 10:57:57,522 DEBUG   HandlerThread:2562697 [system_info.py:__init__():46] System info init done
+2023-05-19 10:57:57,522 INFO    HandlerThread:2562697 [system_monitor.py:start():181] Starting system monitor
+2023-05-19 10:57:57,523 INFO    SystemMonitor:2562697 [system_monitor.py:_start():145] Starting system asset monitoring threads
+2023-05-19 10:57:57,523 INFO    HandlerThread:2562697 [system_monitor.py:probe():201] Collecting system info
+2023-05-19 10:57:57,524 INFO    SystemMonitor:2562697 [interfaces.py:start():190] Started cpu monitoring
+2023-05-19 10:57:57,525 INFO    SystemMonitor:2562697 [interfaces.py:start():190] Started disk monitoring
+2023-05-19 10:57:57,527 INFO    SystemMonitor:2562697 [interfaces.py:start():190] Started gpu monitoring
+2023-05-19 10:57:57,528 INFO    SystemMonitor:2562697 [interfaces.py:start():190] Started memory monitoring
+2023-05-19 10:57:57,529 INFO    SystemMonitor:2562697 [interfaces.py:start():190] Started network monitoring
+2023-05-19 10:57:57,584 DEBUG   HandlerThread:2562697 [system_info.py:probe():195] Probing system
+2023-05-19 10:57:57,588 DEBUG   HandlerThread:2562697 [system_info.py:_probe_git():180] Probing git
+2023-05-19 10:57:57,599 DEBUG   HandlerThread:2562697 [system_info.py:_probe_git():188] Probing git done
+2023-05-19 10:57:57,599 DEBUG   HandlerThread:2562697 [system_info.py:probe():240] Probing system done
+2023-05-19 10:57:57,599 DEBUG   HandlerThread:2562697 [system_monitor.py:probe():210] {'os': 'Linux-5.4.0-146-generic-x86_64-with-glibc2.35', 'python': '3.10.0', 'heartbeatAt': '2023-05-19T01:57:57.584864', 'startedAt': '2023-05-19T01:57:56.712941', 'docker': None, 'cuda': None, 'args': (), 'state': 'running', 'program': '/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py', 'codePath': 'workspace/backgammon_trainig/ppo.py', 'git': {'remote': 'https://github.com/sotetsuk/pgx.git', 'commit': 'd7ff2e95fe2d96abef84dfa2250c148e9146a2e5'}, 'email': 'kyoudai.630@gmail.com', 'root': '/root/src/pgx/pgx', 'host': '3480689c7656', 'username': 'root', 'executable': '/root/.pyenv/versions/3.10.0/bin/python', 'cpu_count': 24, 'cpu_count_logical': 48, 'cpu_freq': {'current': 1537.4920625000002, 'min': 1200.0, 'max': 2900.0}, 'cpu_freq_per_core': [{'current': 1200.304, 'min': 1200.0, 'max': 2900.0}, {'current': 2549.781, 'min': 1200.0, 'max': 2900.0}, {'current': 1239.659, 'min': 1200.0, 'max': 2900.0}, {'current': 1203.404, 'min': 1200.0, 'max': 2900.0}, {'current': 2500.523, 'min': 1200.0, 'max': 2900.0}, {'current': 2600.23, 'min': 1200.0, 'max': 2900.0}, {'current': 1203.587, 'min': 1200.0, 'max': 2900.0}, {'current': 1201.006, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.594, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.241, 'min': 1200.0, 'max': 2900.0}, {'current': 2199.619, 'min': 1200.0, 'max': 2900.0}, {'current': 1201.651, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.964, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.234, 'min': 1200.0, 'max': 2900.0}, {'current': 1702.271, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.319, 'min': 1200.0, 'max': 2900.0}, {'current': 2500.93, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.426, 'min': 1200.0, 'max': 2900.0}, {'current': 1365.599, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.997, 'min': 1200.0, 'max': 2900.0}, {'current': 1891.744, 'min': 1200.0, 'max': 2900.0}, {'current': 1201.192, 'min': 1200.0, 'max': 2900.0}, {'current': 1203.532, 'min': 1200.0, 'max': 2900.0}, {'current': 2531.167, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.105, 'min': 1200.0, 'max': 2900.0}, {'current': 2499.606, 'min': 1200.0, 'max': 2900.0}, {'current': 1384.474, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.174, 'min': 1200.0, 'max': 2900.0}, {'current': 2551.214, 'min': 1200.0, 'max': 2900.0}, {'current': 2551.284, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.051, 'min': 1200.0, 'max': 2900.0}, {'current': 1201.317, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.148, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.226, 'min': 1200.0, 'max': 2900.0}, {'current': 2077.856, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.689, 'min': 1200.0, 'max': 2900.0}, {'current': 1199.927, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.315, 'min': 1200.0, 'max': 2900.0}, {'current': 2065.359, 'min': 1200.0, 'max': 2900.0}, {'current': 1199.935, 'min': 1200.0, 'max': 2900.0}, {'current': 2531.97, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.101, 'min': 1200.0, 'max': 2900.0}, {'current': 1248.442, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.16, 'min': 1200.0, 'max': 2900.0}, {'current': 1667.12, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.132, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.155, 'min': 1200.0, 'max': 2900.0}, {'current': 2499.649, 'min': 1200.0, 'max': 2900.0}], 'disk': {'total': 207.51084899902344, 'used': 34.9990348815918}, 'gpu': 'NVIDIA GeForce GTX 1080 Ti', 'gpu_count': 4, 'gpu_devices': [{'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}, {'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}, {'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}, {'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}], 'memory': {'total': 251.78957748413086}}
+2023-05-19 10:57:57,600 INFO    HandlerThread:2562697 [system_monitor.py:probe():211] Finished collecting system info
+2023-05-19 10:57:57,600 INFO    HandlerThread:2562697 [system_monitor.py:probe():214] Publishing system info
+2023-05-19 10:57:57,600 DEBUG   HandlerThread:2562697 [system_info.py:_save_pip():51] Saving list of pip packages installed into the current environment
+2023-05-19 10:57:57,600 DEBUG   HandlerThread:2562697 [system_info.py:_save_pip():67] Saving pip packages done
+2023-05-19 10:57:57,601 INFO    HandlerThread:2562697 [system_monitor.py:probe():216] Finished publishing system info
+2023-05-19 10:57:57,604 DEBUG   SenderThread:2562697 [sender.py:send():375] send: files
+2023-05-19 10:57:57,605 INFO    SenderThread:2562697 [sender.py:_save_file():1378] saving file wandb-metadata.json with policy now
+2023-05-19 10:57:57,619 DEBUG   SenderThread:2562697 [sender.py:send():375] send: telemetry
+2023-05-19 10:57:57,633 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-19 10:57:57,634 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: stop_status
+2023-05-19 10:57:58,310 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/wandb-summary.json
+2023-05-19 10:57:58,311 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/wandb-metadata.json
+2023-05-19 10:57:58,311 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/output.log
+2023-05-19 10:57:58,311 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/requirements.txt
+2023-05-19 10:57:58,339 INFO    wandb-upload_0:2562697 [upload_job.py:push():137] Uploaded file /tmp/tmp5234tcrkwandb/a7j5gdbk-wandb-metadata.json
+2023-05-19 10:58:00,305 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/output.log
+2023-05-19 10:58:01,931 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: status_report
+2023-05-19 10:58:01,974 DEBUG   SenderThread:2562697 [sender.py:send():375] send: exit
+2023-05-19 10:58:01,974 INFO    SenderThread:2562697 [sender.py:send_exit():598] handling exit code: 1
+2023-05-19 10:58:01,975 INFO    SenderThread:2562697 [sender.py:send_exit():600] handling runtime: 4
+2023-05-19 10:58:01,980 INFO    SenderThread:2562697 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-19 10:58:01,980 INFO    SenderThread:2562697 [sender.py:send_exit():606] send defer
+2023-05-19 10:58:01,981 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:01,981 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 0
+2023-05-19 10:58:01,981 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:01,982 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 0
+2023-05-19 10:58:01,982 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 1
+2023-05-19 10:58:01,982 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:01,982 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 1
+2023-05-19 10:58:01,983 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:01,983 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 1
+2023-05-19 10:58:01,983 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 2
+2023-05-19 10:58:01,983 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:01,984 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 2
+2023-05-19 10:58:01,984 INFO    HandlerThread:2562697 [system_monitor.py:finish():190] Stopping system monitor
+2023-05-19 10:58:01,985 INFO    HandlerThread:2562697 [interfaces.py:finish():202] Joined cpu monitor
+2023-05-19 10:58:01,985 INFO    HandlerThread:2562697 [interfaces.py:finish():202] Joined disk monitor
+2023-05-19 10:58:01,986 DEBUG   SystemMonitor:2562697 [system_monitor.py:_start():159] Starting system metrics aggregation loop
+2023-05-19 10:58:01,986 DEBUG   SystemMonitor:2562697 [system_monitor.py:_start():166] Finished system metrics aggregation loop
+2023-05-19 10:58:01,986 DEBUG   SystemMonitor:2562697 [system_monitor.py:_start():170] Publishing last batch of metrics
+2023-05-19 10:58:02,307 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/wandb-summary.json
+2023-05-19 10:58:02,849 INFO    HandlerThread:2562697 [interfaces.py:finish():202] Joined gpu monitor
+2023-05-19 10:58:02,850 INFO    HandlerThread:2562697 [interfaces.py:finish():202] Joined memory monitor
+2023-05-19 10:58:02,850 INFO    HandlerThread:2562697 [interfaces.py:finish():202] Joined network monitor
+2023-05-19 10:58:02,851 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:02,851 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 2
+2023-05-19 10:58:02,851 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 3
+2023-05-19 10:58:02,852 DEBUG   SenderThread:2562697 [sender.py:send():375] send: stats
+2023-05-19 10:58:02,852 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:02,853 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 3
+2023-05-19 10:58:02,854 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:02,854 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 3
+2023-05-19 10:58:02,854 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 4
+2023-05-19 10:58:02,854 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:02,855 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 4
+2023-05-19 10:58:02,855 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:02,855 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 4
+2023-05-19 10:58:02,856 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 5
+2023-05-19 10:58:02,856 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:02,856 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 5
+2023-05-19 10:58:02,857 DEBUG   SenderThread:2562697 [sender.py:send():375] send: summary
+2023-05-19 10:58:02,858 INFO    SenderThread:2562697 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-19 10:58:02,858 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:02,858 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 5
+2023-05-19 10:58:02,858 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 6
+2023-05-19 10:58:02,859 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:02,859 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 6
+2023-05-19 10:58:02,859 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:02,860 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 6
+2023-05-19 10:58:02,865 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: status_report
+2023-05-19 10:58:02,975 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-19 10:58:03,076 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 7
+2023-05-19 10:58:03,077 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: poll_exit
+2023-05-19 10:58:03,077 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:03,077 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 7
+2023-05-19 10:58:03,078 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:03,078 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 7
+2023-05-19 10:58:03,307 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/wandb-summary.json
+2023-05-19 10:58:03,308 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/config.yaml
+2023-05-19 10:58:03,976 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-19 10:58:04,027 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 8
+2023-05-19 10:58:04,028 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: poll_exit
+2023-05-19 10:58:04,028 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:04,029 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 8
+2023-05-19 10:58:04,029 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:04,029 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 8
+2023-05-19 10:58:04,037 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 9
+2023-05-19 10:58:04,037 DEBUG   SenderThread:2562697 [sender.py:send():375] send: artifact
+2023-05-19 10:58:04,037 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:04,043 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 9
+2023-05-19 10:58:04,308 INFO    Thread-12 :2562697 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/output.log
+2023-05-19 10:58:04,978 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-19 10:58:05,361 INFO    SenderThread:2562697 [sender.py:send_artifact():1474] sent artifact job-https___github.com_sotetsuk_pgx.git_workspace_backgammon_trainig_ppo.py - {'id': 'QXJ0aWZhY3Q6NDU5NjY1MTM0', 'digest': 'c45a103e54246a17ccdbed2fcd3d2e54', 'state': 'COMMITTED', 'aliases': [{'artifactCollectionName': 'job-https___github.com_sotetsuk_pgx.git_workspace_backgammon_trainig_ppo.py', 'alias': 'latest'}, {'artifactCollectionName': 'job-https___github.com_sotetsuk_pgx.git_workspace_backgammon_trainig_ppo.py', 'alias': 'v1'}], 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjcwMjUxMzU2', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6NDU5NjY1MTM0', 'versionIndex': 1}}, 'version': 'v1'}
+2023-05-19 10:58:05,361 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:05,362 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 9
+2023-05-19 10:58:05,362 INFO    SenderThread:2562697 [dir_watcher.py:finish():365] shutting down directory watcher
+2023-05-19 10:58:06,310 INFO    SenderThread:2562697 [dir_watcher.py:finish():395] scan: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files
+2023-05-19 10:58:06,310 INFO    SenderThread:2562697 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/config.yaml config.yaml
+2023-05-19 10:58:06,311 INFO    SenderThread:2562697 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/requirements.txt requirements.txt
+2023-05-19 10:58:06,316 INFO    SenderThread:2562697 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/wandb-summary.json wandb-summary.json
+2023-05-19 10:58:06,332 INFO    SenderThread:2562697 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/wandb-metadata.json wandb-metadata.json
+2023-05-19 10:58:06,333 INFO    SenderThread:2562697 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/output.log output.log
+2023-05-19 10:58:06,343 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 10
+2023-05-19 10:58:06,344 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: poll_exit
+2023-05-19 10:58:06,344 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:06,345 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 10
+2023-05-19 10:58:06,351 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:06,351 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 10
+2023-05-19 10:58:06,351 INFO    SenderThread:2562697 [file_pusher.py:finish():167] shutting down file pusher
+2023-05-19 10:58:06,934 INFO    wandb-upload_1:2562697 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/requirements.txt
+2023-05-19 10:58:07,092 INFO    wandb-upload_0:2562697 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/config.yaml
+2023-05-19 10:58:07,351 INFO    wandb-upload_2:2562697 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/wandb-summary.json
+2023-05-19 10:58:07,451 INFO    wandb-upload_3:2562697 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/files/output.log
+2023-05-19 10:58:07,651 INFO    Thread-11 (_thread_body):2562697 [sender.py:transition_state():626] send defer: 11
+2023-05-19 10:58:07,652 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:07,652 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 11
+2023-05-19 10:58:07,653 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:07,653 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 11
+2023-05-19 10:58:07,653 INFO    SenderThread:2562697 [file_pusher.py:join():172] waiting for file pusher
+2023-05-19 10:58:07,654 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 12
+2023-05-19 10:58:07,654 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:07,654 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 12
+2023-05-19 10:58:07,655 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:07,655 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 12
+2023-05-19 10:58:07,861 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 13
+2023-05-19 10:58:07,861 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:07,862 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 13
+2023-05-19 10:58:07,862 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:07,862 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 13
+2023-05-19 10:58:07,863 INFO    SenderThread:2562697 [sender.py:transition_state():626] send defer: 14
+2023-05-19 10:58:07,864 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: defer
+2023-05-19 10:58:07,864 INFO    HandlerThread:2562697 [handler.py:handle_request_defer():170] handle defer: 14
+2023-05-19 10:58:07,864 DEBUG   SenderThread:2562697 [sender.py:send():375] send: final
+2023-05-19 10:58:07,865 DEBUG   SenderThread:2562697 [sender.py:send():375] send: footer
+2023-05-19 10:58:07,865 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: defer
+2023-05-19 10:58:07,865 INFO    SenderThread:2562697 [sender.py:send_request_defer():622] handle sender defer: 14
+2023-05-19 10:58:07,866 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-19 10:58:07,867 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: poll_exit
+2023-05-19 10:58:07,868 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: server_info
+2023-05-19 10:58:07,869 DEBUG   SenderThread:2562697 [sender.py:send_request():402] send_request: server_info
+2023-05-19 10:58:07,877 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: get_summary
+2023-05-19 10:58:07,878 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: sampled_history
+2023-05-19 10:58:08,040 INFO    MainThread:2562697 [wandb_run.py:_footer_history_summary_info():3469] rendering history
+2023-05-19 10:58:08,041 INFO    MainThread:2562697 [wandb_run.py:_footer_history_summary_info():3501] rendering summary
+2023-05-19 10:58:08,041 INFO    MainThread:2562697 [wandb_run.py:_footer_sync_info():3428] logging synced files
+2023-05-19 10:58:08,041 DEBUG   HandlerThread:2562697 [handler.py:handle_request():144] handle_request: shutdown
+2023-05-19 10:58:08,042 INFO    HandlerThread:2562697 [handler.py:finish():845] shutting down handler
+2023-05-19 10:58:08,869 INFO    WriterThread:2562697 [datastore.py:close():298] close: /root/src/pgx/pgx/workspace/backgammon_trainig/wandb/run-20230519_105756-0unex30y/run-0unex30y.wandb
+2023-05-19 10:58:09,040 INFO    SenderThread:2562697 [sender.py:finish():1550] shutting down sender
+2023-05-19 10:58:09,041 INFO    SenderThread:2562697 [file_pusher.py:finish():167] shutting down file pusher
+2023-05-19 10:58:09,041 INFO    SenderThread:2562697 [file_pusher.py:join():172] waiting for file pusher

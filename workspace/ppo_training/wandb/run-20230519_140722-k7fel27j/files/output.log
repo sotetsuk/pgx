@@ -1,0 +1,86 @@
+
+training of backgammon
+(1, 34)
+{'value_loss': 4.746579170227051, 'loss_actor': -0.02102862298488617, 'entropy': 5.074974536895752, 'eval_vs_previous_policy': -3.0, 'steps': 16384}
+{'value_loss': 1.922471523284912, 'loss_actor': -0.022019434720277786, 'entropy': 5.060956954956055, 'eval_vs_previous_policy': -3.0, 'steps': 32768}
+{'value_loss': 0.10300429910421371, 'loss_actor': -0.025452274829149246, 'entropy': 5.04404878616333, 'eval_vs_previous_policy': -3.0, 'steps': 49152}
+{'value_loss': 0.011509763076901436, 'loss_actor': -0.029075928032398224, 'entropy': 5.023768901824951, 'eval_vs_previous_policy': -3.0, 'steps': 65536}
+{'value_loss': 0.0005403450923040509, 'loss_actor': -0.03195798769593239, 'entropy': 4.99414587020874, 'eval_vs_previous_policy': -3.0, 'steps': 81920}
+{'value_loss': 0.00017383656813763082, 'loss_actor': -0.03464710712432861, 'entropy': 4.9539055824279785, 'eval_vs_previous_policy': -3.0, 'steps': 98304}
+{'value_loss': 0.000146171820233576, 'loss_actor': -0.047495923936367035, 'entropy': 4.874511241912842, 'eval_vs_previous_policy': -3.0, 'steps': 114688}
+{'value_loss': 0.00018752868345472962, 'loss_actor': -0.06482914090156555, 'entropy': 4.639001846313477, 'eval_vs_previous_policy': -3.0, 'steps': 131072}
+{'value_loss': 0.00026641093427315354, 'loss_actor': -0.0912867933511734, 'entropy': 4.218585014343262, 'eval_vs_previous_policy': -3.0, 'steps': 147456}
+{'value_loss': 0.0003650734724942595, 'loss_actor': -0.11287561804056168, 'entropy': 3.7516047954559326, 'eval_vs_previous_policy': -3.0, 'steps': 163840}
+{'value_loss': 0.0004288594354875386, 'loss_actor': -0.12630103528499603, 'entropy': 3.2726378440856934, 'eval_vs_previous_policy': -3.0, 'steps': 180224}
+{'value_loss': 0.0005626104539260268, 'loss_actor': -0.12001723796129227, 'entropy': 2.766291856765747, 'eval_vs_previous_policy': -3.0, 'steps': 196608}
+{'value_loss': 0.0007322370074689388, 'loss_actor': -0.09731373935937881, 'entropy': 2.35783052444458, 'eval_vs_previous_policy': -3.0, 'steps': 212992}
+{'value_loss': 0.000901412102393806, 'loss_actor': -0.07192588597536087, 'entropy': 2.1124186515808105, 'eval_vs_previous_policy': -3.0, 'steps': 229376}
+{'value_loss': 0.0010140594094991684, 'loss_actor': -0.05720418691635132, 'entropy': 1.9202944040298462, 'eval_vs_previous_policy': -3.0, 'steps': 245760}
+{'value_loss': 0.0011638039723038673, 'loss_actor': -0.0491815023124218, 'entropy': 1.7819137573242188, 'eval_vs_previous_policy': -3.0, 'steps': 262144}
+{'value_loss': 0.001253049704246223, 'loss_actor': -0.04630276560783386, 'entropy': 1.647249460220337, 'eval_vs_previous_policy': -3.0, 'steps': 278528}
+{'value_loss': 0.0014062239788472652, 'loss_actor': -0.04109013453125954, 'entropy': 1.5484622716903687, 'eval_vs_previous_policy': -3.0, 'steps': 294912}
+{'value_loss': 0.001536287018097937, 'loss_actor': -0.03729500249028206, 'entropy': 1.4583635330200195, 'eval_vs_previous_policy': -3.0, 'steps': 311296}
+{'value_loss': 0.0016444160137325525, 'loss_actor': -0.03599420562386513, 'entropy': 1.3625209331512451, 'eval_vs_previous_policy': -3.0, 'steps': 327680}
+{'value_loss': 0.0017576246755197644, 'loss_actor': -0.033581942319869995, 'entropy': 1.2767057418823242, 'eval_vs_previous_policy': -3.0, 'steps': 344064}
+{'value_loss': 0.001846807892434299, 'loss_actor': -0.030231285840272903, 'entropy': 1.1947880983352661, 'eval_vs_previous_policy': -3.0, 'steps': 360448}
+{'value_loss': 0.0018552134279161692, 'loss_actor': -0.028642451390624046, 'entropy': 1.1337231397628784, 'eval_vs_previous_policy': -3.0, 'steps': 376832}
+{'value_loss': 0.0020211089868098497, 'loss_actor': -0.028485450893640518, 'entropy': 1.0724155902862549, 'eval_vs_previous_policy': -3.0, 'steps': 393216}
+{'value_loss': 0.0020272117108106613, 'loss_actor': -0.026840494945645332, 'entropy': 1.0235466957092285, 'eval_vs_previous_policy': -3.0, 'steps': 409600}
+{'value_loss': 0.002264028415083885, 'loss_actor': -0.024720193818211555, 'entropy': 0.9800427556037903, 'eval_vs_previous_policy': -3.0, 'steps': 425984}
+{'value_loss': 0.002147544641047716, 'loss_actor': -0.024409634992480278, 'entropy': 0.9545720815658569, 'eval_vs_previous_policy': -3.0, 'steps': 442368}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 345, in <module>
+    sta = time.time()
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 308, in train
+    _, (value_loss, loss_actor, entropy) = loss_info
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 254, in evaluate
+    rng_key, _rng = jax.random.split(rng_key)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/utils.py", line 65, in wrapped_step_fn
+    state = step_fn(state, action)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 1239, in vmap_f
+    out_flat = batching.batch(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/v1.py", line 203, in step
+    state = jax.lax.cond(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 283, in cond
+    return _cond(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 264, in _cond
+    out = cond_p.bind(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 804, in cond_bind
+    return core.AxisPrimitive.bind(cond_p, *args, branches=branches, linear=linear)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/conditionals.py", line 377, in _cond_batching_rule
+    branch_outs.append(core.jaxpr_as_fun(jaxpr)(*ops_))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 229, in jaxpr_as_fun
+    return eval_jaxpr(closed_jaxpr.jaxpr, closed_jaxpr.consts, *args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 447, in eval_jaxpr
+    ans = eqn.primitive.bind(*subfuns, *map(read, eqn.invars), **bind_params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 790, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 143, in apply_primitive
+    return compiled_fun(*args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 226, in <lambda>
+    return lambda *args, **kw: compiled(*args, **kw)[0]
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 1334, in __call__
+    input_bufs = self.in_handler(args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 1178, in __call__
+    return self.handler(input_buffers)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 313, in wrapper
+    with TraceAnnotation(name, **decorator_kwargs):
+KeyboardInterrupt

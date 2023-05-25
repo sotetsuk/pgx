@@ -1,0 +1,112 @@
+
+training of backgammon
+{'value_loss': 0.17279568314552307, 'loss_actor': -0.02188386581838131, 'entropy': 1.3384957313537598, 'eval_vs_random_policy': -0.53125, 'steps': 16384}
+{'value_loss': 0.1080830842256546, 'loss_actor': -0.02459479495882988, 'entropy': 1.281977653503418, 'eval_vs_random_policy': 0.0625, 'steps': 32768}
+{'value_loss': 0.08620640635490417, 'loss_actor': -0.02600494585931301, 'entropy': 1.253472089767456, 'eval_vs_random_policy': 0.1875, 'steps': 49152}
+{'value_loss': 0.0601581335067749, 'loss_actor': -0.028317369520664215, 'entropy': 1.2159299850463867, 'eval_vs_random_policy': -0.140625, 'steps': 65536}
+{'value_loss': 0.05969392508268356, 'loss_actor': -0.0289533082395792, 'entropy': 1.1753528118133545, 'eval_vs_random_policy': -0.046875, 'steps': 81920}
+{'value_loss': 0.05012236535549164, 'loss_actor': -0.030503656715154648, 'entropy': 1.1442017555236816, 'eval_vs_random_policy': 0.5, 'steps': 98304}
+{'value_loss': 0.051843442022800446, 'loss_actor': -0.03029647283256054, 'entropy': 1.1315935850143433, 'eval_vs_random_policy': 0.796875, 'steps': 114688}
+{'value_loss': 0.04677204042673111, 'loss_actor': -0.031568169593811035, 'entropy': 1.1173447370529175, 'eval_vs_random_policy': 1.0, 'steps': 131072}
+{'value_loss': 0.05155838280916214, 'loss_actor': -0.03034297190606594, 'entropy': 1.0566834211349487, 'eval_vs_random_policy': 0.609375, 'steps': 147456}
+{'value_loss': 0.05089674890041351, 'loss_actor': -0.028728242963552475, 'entropy': 1.0019094944000244, 'eval_vs_random_policy': 0.5, 'steps': 163840}
+{'value_loss': 0.053300242871046066, 'loss_actor': -0.030731473118066788, 'entropy': 0.9982728958129883, 'eval_vs_random_policy': 0.90625, 'steps': 180224}
+{'value_loss': 0.05064884573221207, 'loss_actor': -0.030110353603959084, 'entropy': 0.9636596441268921, 'eval_vs_random_policy': 1.046875, 'steps': 196608}
+{'value_loss': 0.04872407391667366, 'loss_actor': -0.03078852966427803, 'entropy': 0.9551455974578857, 'eval_vs_random_policy': 0.921875, 'steps': 212992}
+{'value_loss': 0.05076577514410019, 'loss_actor': -0.028589297086000443, 'entropy': 0.932436466217041, 'eval_vs_random_policy': 1.0, 'steps': 229376}
+{'value_loss': 0.05486784130334854, 'loss_actor': -0.029540816321969032, 'entropy': 0.9089783430099487, 'eval_vs_random_policy': 1.0, 'steps': 245760}
+{'value_loss': 0.0496431365609169, 'loss_actor': -0.02912122569978237, 'entropy': 0.8904320001602173, 'eval_vs_random_policy': 0.9375, 'steps': 262144}
+{'value_loss': 0.053158290684223175, 'loss_actor': -0.028871651738882065, 'entropy': 0.865086019039154, 'eval_vs_random_policy': 0.8125, 'steps': 278528}
+{'value_loss': 0.05112801492214203, 'loss_actor': -0.027741169556975365, 'entropy': 0.8334340453147888, 'eval_vs_random_policy': 0.75, 'steps': 294912}
+{'value_loss': 0.049058567732572556, 'loss_actor': -0.030383557081222534, 'entropy': 0.8487111926078796, 'eval_vs_random_policy': 1.21875, 'steps': 311296}
+{'value_loss': 0.04708055034279823, 'loss_actor': -0.028142858296632767, 'entropy': 0.8074100017547607, 'eval_vs_random_policy': 1.078125, 'steps': 327680}
+{'value_loss': 0.048989880830049515, 'loss_actor': -0.027727792039513588, 'entropy': 0.7968127727508545, 'eval_vs_random_policy': 1.03125, 'steps': 344064}
+{'value_loss': 0.048299890011548996, 'loss_actor': -0.028388937935233116, 'entropy': 0.7928350567817688, 'eval_vs_random_policy': 1.296875, 'steps': 360448}
+{'value_loss': 0.044757671654224396, 'loss_actor': -0.027605529874563217, 'entropy': 0.7750475406646729, 'eval_vs_random_policy': 0.984375, 'steps': 376832}
+{'value_loss': 0.04407105594873428, 'loss_actor': -0.028045937418937683, 'entropy': 0.7759045958518982, 'eval_vs_random_policy': 1.328125, 'steps': 393216}
+{'value_loss': 0.04367255046963692, 'loss_actor': -0.027345750480890274, 'entropy': 0.765607476234436, 'eval_vs_random_policy': 1.125, 'steps': 409600}
+{'value_loss': 0.04716762900352478, 'loss_actor': -0.02792629785835743, 'entropy': 0.7487288117408752, 'eval_vs_random_policy': 1.140625, 'steps': 425984}
+{'value_loss': 0.050168149173259735, 'loss_actor': -0.027781791985034943, 'entropy': 0.7345422506332397, 'eval_vs_random_policy': 1.140625, 'steps': 442368}
+{'value_loss': 0.04781889542937279, 'loss_actor': -0.027927739545702934, 'entropy': 0.7239372134208679, 'eval_vs_random_policy': 1.359375, 'steps': 458752}
+{'value_loss': 0.046084221452474594, 'loss_actor': -0.026522621512413025, 'entropy': 0.721331775188446, 'eval_vs_random_policy': 1.46875, 'steps': 475136}
+{'value_loss': 0.04425082728266716, 'loss_actor': -0.02713683620095253, 'entropy': 0.7161246538162231, 'eval_vs_random_policy': 1.375, 'steps': 491520}
+{'value_loss': 0.04351826757192612, 'loss_actor': -0.02737986296415329, 'entropy': 0.712928295135498, 'eval_vs_random_policy': 1.609375, 'steps': 507904}
+{'value_loss': 0.048734571784734726, 'loss_actor': -0.02704879269003868, 'entropy': 0.7030211091041565, 'eval_vs_random_policy': 1.5, 'steps': 524288}
+{'value_loss': 0.0426255501806736, 'loss_actor': -0.02898363396525383, 'entropy': 0.7210777997970581, 'eval_vs_random_policy': 1.421875, 'steps': 540672}
+{'value_loss': 0.04501292109489441, 'loss_actor': -0.028055323287844658, 'entropy': 0.6923384070396423, 'eval_vs_random_policy': 1.71875, 'steps': 557056}
+{'value_loss': 0.045574504882097244, 'loss_actor': -0.02651781029999256, 'entropy': 0.6755148768424988, 'eval_vs_random_policy': 1.421875, 'steps': 573440}
+{'value_loss': 0.04351731017231941, 'loss_actor': -0.027478255331516266, 'entropy': 0.6738039255142212, 'eval_vs_random_policy': 1.5, 'steps': 589824}
+{'value_loss': 0.04469980299472809, 'loss_actor': -0.027738744392991066, 'entropy': 0.6754680871963501, 'eval_vs_random_policy': 1.4375, 'steps': 606208}
+{'value_loss': 0.039351530373096466, 'loss_actor': -0.02696003019809723, 'entropy': 0.6652268171310425, 'eval_vs_random_policy': 1.46875, 'steps': 622592}
+{'value_loss': 0.03754676505923271, 'loss_actor': -0.02688916213810444, 'entropy': 0.6418517231941223, 'eval_vs_random_policy': 1.484375, 'steps': 638976}
+{'value_loss': 0.04448316991329193, 'loss_actor': -0.02678891271352768, 'entropy': 0.6622157692909241, 'eval_vs_random_policy': 1.46875, 'steps': 655360}
+{'value_loss': 0.04204043373465538, 'loss_actor': -0.027815427631139755, 'entropy': 0.6732519865036011, 'eval_vs_random_policy': 1.515625, 'steps': 671744}
+{'value_loss': 0.042046453803777695, 'loss_actor': -0.02720608375966549, 'entropy': 0.6539997458457947, 'eval_vs_random_policy': 1.578125, 'steps': 688128}
+{'value_loss': 0.04051041975617409, 'loss_actor': -0.026237905025482178, 'entropy': 0.6321884393692017, 'eval_vs_random_policy': 1.46875, 'steps': 704512}
+{'value_loss': 0.04166992008686066, 'loss_actor': -0.02718951366841793, 'entropy': 0.6536325812339783, 'eval_vs_random_policy': 1.71875, 'steps': 720896}
+{'value_loss': 0.03875139728188515, 'loss_actor': -0.026426665484905243, 'entropy': 0.632498025894165, 'eval_vs_random_policy': 1.78125, 'steps': 737280}
+{'value_loss': 0.03773798048496246, 'loss_actor': -0.027076872065663338, 'entropy': 0.6348452568054199, 'eval_vs_random_policy': 1.71875, 'steps': 753664}
+{'value_loss': 0.0417088158428669, 'loss_actor': -0.027576347813010216, 'entropy': 0.638708233833313, 'eval_vs_random_policy': 1.734375, 'steps': 770048}
+{'value_loss': 0.0415031835436821, 'loss_actor': -0.027138985693454742, 'entropy': 0.6211063265800476, 'eval_vs_random_policy': 1.5625, 'steps': 786432}
+{'value_loss': 0.04114723950624466, 'loss_actor': -0.02662516012787819, 'entropy': 0.6072520017623901, 'eval_vs_random_policy': 1.5625, 'steps': 802816}
+{'value_loss': 0.037811584770679474, 'loss_actor': -0.02684105560183525, 'entropy': 0.6138750910758972, 'eval_vs_random_policy': 1.65625, 'steps': 819200}
+{'value_loss': 0.04022965580224991, 'loss_actor': -0.02552594058215618, 'entropy': 0.5956448912620544, 'eval_vs_random_policy': 1.71875, 'steps': 835584}
+{'value_loss': 0.03956254944205284, 'loss_actor': -0.02470116689801216, 'entropy': 0.5957108736038208, 'eval_vs_random_policy': 1.359375, 'steps': 851968}
+{'value_loss': 0.03947233408689499, 'loss_actor': -0.025940222665667534, 'entropy': 0.5939023494720459, 'eval_vs_random_policy': 1.421875, 'steps': 868352}
+{'value_loss': 0.03689642623066902, 'loss_actor': -0.02640315517783165, 'entropy': 0.596428394317627, 'eval_vs_random_policy': 1.375, 'steps': 884736}
+{'value_loss': 0.03696039691567421, 'loss_actor': -0.02588924951851368, 'entropy': 0.5810229778289795, 'eval_vs_random_policy': 1.453125, 'steps': 901120}
+{'value_loss': 0.034710731357336044, 'loss_actor': -0.02514764666557312, 'entropy': 0.5820780992507935, 'eval_vs_random_policy': 1.578125, 'steps': 917504}
+{'value_loss': 0.037264540791511536, 'loss_actor': -0.02574504166841507, 'entropy': 0.5824050307273865, 'eval_vs_random_policy': 1.375, 'steps': 933888}
+{'value_loss': 0.0364263691008091, 'loss_actor': -0.0250043123960495, 'entropy': 0.5882670283317566, 'eval_vs_random_policy': 1.6875, 'steps': 950272}
+{'value_loss': 0.03496585041284561, 'loss_actor': -0.025864487513899803, 'entropy': 0.5847068428993225, 'eval_vs_random_policy': 1.734375, 'steps': 966656}
+{'value_loss': 0.038070715963840485, 'loss_actor': -0.027018100023269653, 'entropy': 0.5902363061904907, 'eval_vs_random_policy': 1.71875, 'steps': 983040}
+{'value_loss': 0.040202412754297256, 'loss_actor': -0.02597518265247345, 'entropy': 0.579399824142456, 'eval_vs_random_policy': 1.859375, 'steps': 999424}
+{'value_loss': 0.039250697940588, 'loss_actor': -0.026365743950009346, 'entropy': 0.5896435976028442, 'eval_vs_random_policy': 1.6875, 'steps': 1015808}
+{'value_loss': 0.03947863355278969, 'loss_actor': -0.025662854313850403, 'entropy': 0.5817539095878601, 'eval_vs_random_policy': 1.875, 'steps': 1032192}
+{'value_loss': 0.03717632219195366, 'loss_actor': -0.02644265815615654, 'entropy': 0.5834547877311707, 'eval_vs_random_policy': 1.6875, 'steps': 1048576}
+{'value_loss': 0.03284898400306702, 'loss_actor': -0.026169368997216225, 'entropy': 0.5713089108467102, 'eval_vs_random_policy': 1.5, 'steps': 1064960}
+{'value_loss': 0.03905191645026207, 'loss_actor': -0.026482094079256058, 'entropy': 0.5873168110847473, 'eval_vs_random_policy': 1.609375, 'steps': 1081344}
+{'value_loss': 0.03715384379029274, 'loss_actor': -0.02448730356991291, 'entropy': 0.5640771389007568, 'eval_vs_random_policy': 1.578125, 'steps': 1097728}
+{'value_loss': 0.033396195620298386, 'loss_actor': -0.025778910145163536, 'entropy': 0.5782808661460876, 'eval_vs_random_policy': 1.828125, 'steps': 1114112}
+{'value_loss': 0.03714533522725105, 'loss_actor': -0.025604907423257828, 'entropy': 0.5665136575698853, 'eval_vs_random_policy': 1.71875, 'steps': 1130496}
+{'value_loss': 0.0392419807612896, 'loss_actor': -0.024593554437160492, 'entropy': 0.5734205842018127, 'eval_vs_random_policy': 1.640625, 'steps': 1146880}
+{'value_loss': 0.03686091676354408, 'loss_actor': -0.026350991800427437, 'entropy': 0.5740542411804199, 'eval_vs_random_policy': 1.78125, 'steps': 1163264}
+{'value_loss': 0.037253487855196, 'loss_actor': -0.026399528607726097, 'entropy': 0.5803950428962708, 'eval_vs_random_policy': 1.625, 'steps': 1179648}
+{'value_loss': 0.03268339857459068, 'loss_actor': -0.027623701840639114, 'entropy': 0.5673139691352844, 'eval_vs_random_policy': 1.828125, 'steps': 1196032}
+{'value_loss': 0.03870604559779167, 'loss_actor': -0.025814814493060112, 'entropy': 0.5652703642845154, 'eval_vs_random_policy': 1.828125, 'steps': 1212416}
+{'value_loss': 0.03695866838097572, 'loss_actor': -0.02713700383901596, 'entropy': 0.5699846148490906, 'eval_vs_random_policy': 1.6875, 'steps': 1228800}
+{'value_loss': 0.035959288477897644, 'loss_actor': -0.02509276382625103, 'entropy': 0.5500053763389587, 'eval_vs_random_policy': 1.703125, 'steps': 1245184}
+{'value_loss': 0.03885381296277046, 'loss_actor': -0.025397388264536858, 'entropy': 0.5740633606910706, 'eval_vs_random_policy': 1.609375, 'steps': 1261568}
+{'value_loss': 0.039331234991550446, 'loss_actor': -0.024439368396997452, 'entropy': 0.5400562286376953, 'eval_vs_random_policy': 1.71875, 'steps': 1277952}
+{'value_loss': 0.03703122213482857, 'loss_actor': -0.024193815886974335, 'entropy': 0.5428728461265564, 'eval_vs_random_policy': 1.75, 'steps': 1294336}
+{'value_loss': 0.033221978694200516, 'loss_actor': -0.025175195187330246, 'entropy': 0.5472206473350525, 'eval_vs_random_policy': 1.90625, 'steps': 1310720}
+{'value_loss': 0.04024031013250351, 'loss_actor': -0.024778323248028755, 'entropy': 0.5519145131111145, 'eval_vs_random_policy': 1.703125, 'steps': 1327104}
+{'value_loss': 0.03837612271308899, 'loss_actor': -0.025030747056007385, 'entropy': 0.5479592680931091, 'eval_vs_random_policy': 1.875, 'steps': 1343488}
+{'value_loss': 0.037033651024103165, 'loss_actor': -0.025198087096214294, 'entropy': 0.5529661178588867, 'eval_vs_random_policy': 1.828125, 'steps': 1359872}
+{'value_loss': 0.037003789097070694, 'loss_actor': -0.026176422834396362, 'entropy': 0.5585564970970154, 'eval_vs_random_policy': 1.9375, 'steps': 1376256}
+{'value_loss': 0.04177733138203621, 'loss_actor': -0.02702007256448269, 'entropy': 0.5770922899246216, 'eval_vs_random_policy': 2.0, 'steps': 1392640}
+{'value_loss': 0.03345348685979843, 'loss_actor': -0.023655546829104424, 'entropy': 0.5411340594291687, 'eval_vs_random_policy': 1.78125, 'steps': 1409024}
+{'value_loss': 0.03427981585264206, 'loss_actor': -0.025812631472945213, 'entropy': 0.5423715710639954, 'eval_vs_random_policy': 1.875, 'steps': 1425408}
+{'value_loss': 0.037464216351509094, 'loss_actor': -0.02505693957209587, 'entropy': 0.5447192788124084, 'eval_vs_random_policy': 1.9375, 'steps': 1441792}
+{'value_loss': 0.0353989452123642, 'loss_actor': -0.025561563670635223, 'entropy': 0.5443680286407471, 'eval_vs_random_policy': 1.84375, 'steps': 1458176}
+{'value_loss': 0.03748825937509537, 'loss_actor': -0.02458077110350132, 'entropy': 0.5346189141273499, 'eval_vs_random_policy': 1.71875, 'steps': 1474560}
+{'value_loss': 0.03885408490896225, 'loss_actor': -0.02714078314602375, 'entropy': 0.5527069568634033, 'eval_vs_random_policy': 1.90625, 'steps': 1490944}
+{'value_loss': 0.04136268422007561, 'loss_actor': -0.025009403005242348, 'entropy': 0.5354579091072083, 'eval_vs_random_policy': 2.015625, 'steps': 1507328}
+{'value_loss': 0.03522013500332832, 'loss_actor': -0.02390129864215851, 'entropy': 0.5226345062255859, 'eval_vs_random_policy': 1.703125, 'steps': 1523712}
+{'value_loss': 0.0367729552090168, 'loss_actor': -0.024920793250203133, 'entropy': 0.5428650975227356, 'eval_vs_random_policy': 1.8125, 'steps': 1540096}
+{'value_loss': 0.03840675577521324, 'loss_actor': -0.02466551959514618, 'entropy': 0.531814455986023, 'eval_vs_random_policy': 1.640625, 'steps': 1556480}
+{'value_loss': 0.03482414782047272, 'loss_actor': -0.0244390070438385, 'entropy': 0.5336758494377136, 'eval_vs_random_policy': 1.6875, 'steps': 1572864}
+{'value_loss': 0.0356711708009243, 'loss_actor': -0.023425878956913948, 'entropy': 0.5267306566238403, 'eval_vs_random_policy': 1.703125, 'steps': 1589248}
+{'value_loss': 0.036848630756139755, 'loss_actor': -0.02413913793861866, 'entropy': 0.536614179611206, 'eval_vs_random_policy': 1.625, 'steps': 1605632}
+{'value_loss': 0.03818030655384064, 'loss_actor': -0.024130558595061302, 'entropy': 0.5465220808982849, 'eval_vs_random_policy': 1.78125, 'steps': 1622016}
+{'value_loss': 0.033789392560720444, 'loss_actor': -0.023356996476650238, 'entropy': 0.5131902098655701, 'eval_vs_random_policy': 1.828125, 'steps': 1638400}
+{'value_loss': 0.03560216724872589, 'loss_actor': -0.02568134479224682, 'entropy': 0.5387780070304871, 'eval_vs_random_policy': 1.6875, 'steps': 1654784}
+{'value_loss': 0.034844256937503815, 'loss_actor': -0.024184519425034523, 'entropy': 0.5334623456001282, 'eval_vs_random_policy': 1.625, 'steps': 1671168}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 362, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py", line 318, in train
+    runner_state, loss_info = jitted_update_step(runner_state, old_train_state)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/flax/core/frozen_dict.py", line 162, in tree_unflatten
+    @classmethod
+KeyboardInterrupt

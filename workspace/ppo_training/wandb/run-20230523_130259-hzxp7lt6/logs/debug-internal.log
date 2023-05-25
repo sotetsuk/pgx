@@ -1,0 +1,871 @@
+2023-05-23 13:02:59,309 INFO    StreamThr :862669 [internal.py:wandb_internal():86] W&B internal server running at pid: 862669, started at: 2023-05-23 13:02:59.308307
+2023-05-23 13:02:59,312 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status
+2023-05-23 13:02:59,315 INFO    WriterThread:862669 [datastore.py:open_for_write():85] open: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/run-hzxp7lt6.wandb
+2023-05-23 13:02:59,318 DEBUG   SenderThread:862669 [sender.py:send():375] send: header
+2023-05-23 13:02:59,328 DEBUG   SenderThread:862669 [sender.py:send():375] send: run
+2023-05-23 13:02:59,877 INFO    SenderThread:862669 [dir_watcher.py:__init__():219] watching files in: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files
+2023-05-23 13:02:59,878 INFO    SenderThread:862669 [sender.py:_start_run_threads():1124] run started: hzxp7lt6 with start time 1684814579.305054
+2023-05-23 13:02:59,878 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:02:59,878 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:02:59,886 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: check_version
+2023-05-23 13:02:59,887 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: check_version
+2023-05-23 13:03:00,074 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: run_start
+2023-05-23 13:03:00,097 DEBUG   HandlerThread:862669 [system_info.py:__init__():31] System info init
+2023-05-23 13:03:00,097 DEBUG   HandlerThread:862669 [system_info.py:__init__():46] System info init done
+2023-05-23 13:03:00,098 INFO    HandlerThread:862669 [system_monitor.py:start():181] Starting system monitor
+2023-05-23 13:03:00,098 INFO    SystemMonitor:862669 [system_monitor.py:_start():145] Starting system asset monitoring threads
+2023-05-23 13:03:00,098 INFO    HandlerThread:862669 [system_monitor.py:probe():201] Collecting system info
+2023-05-23 13:03:00,099 INFO    SystemMonitor:862669 [interfaces.py:start():190] Started cpu monitoring
+2023-05-23 13:03:00,100 INFO    SystemMonitor:862669 [interfaces.py:start():190] Started disk monitoring
+2023-05-23 13:03:00,102 INFO    SystemMonitor:862669 [interfaces.py:start():190] Started gpu monitoring
+2023-05-23 13:03:00,103 INFO    SystemMonitor:862669 [interfaces.py:start():190] Started memory monitoring
+2023-05-23 13:03:00,105 INFO    SystemMonitor:862669 [interfaces.py:start():190] Started network monitoring
+2023-05-23 13:03:00,163 DEBUG   HandlerThread:862669 [system_info.py:probe():195] Probing system
+2023-05-23 13:03:00,167 DEBUG   HandlerThread:862669 [system_info.py:_probe_git():180] Probing git
+2023-05-23 13:03:00,180 DEBUG   HandlerThread:862669 [system_info.py:_probe_git():188] Probing git done
+2023-05-23 13:03:00,180 DEBUG   HandlerThread:862669 [system_info.py:probe():240] Probing system done
+2023-05-23 13:03:00,180 DEBUG   HandlerThread:862669 [system_monitor.py:probe():210] {'os': 'Linux-5.4.0-146-generic-x86_64-with-glibc2.35', 'python': '3.10.0', 'heartbeatAt': '2023-05-23T04:03:00.164049', 'startedAt': '2023-05-23T04:02:59.293565', 'docker': None, 'cuda': None, 'args': ('--VS_RANDOM=False',), 'state': 'running', 'program': '/root/src/pgx/pgx/workspace/backgammon_training/ppo.py', 'codePath': 'workspace/backgammon_training/ppo.py', 'git': {'remote': 'https://github.com/sotetsuk/pgx.git', 'commit': '94149a51d6065ff316baf0d0d7ec5012e5a42e16'}, 'email': 'kyoudai.630@gmail.com', 'root': '/root/src/pgx/pgx', 'host': '3480689c7656', 'username': 'root', 'executable': '/root/.pyenv/versions/3.10.0/bin/python', 'cpu_count': 24, 'cpu_count_logical': 48, 'cpu_freq': {'current': 1662.4149583333335, 'min': 1200.0, 'max': 2900.0}, 'cpu_freq_per_core': [{'current': 1200.345, 'min': 1200.0, 'max': 2900.0}, {'current': 1506.957, 'min': 1200.0, 'max': 2900.0}, {'current': 2565.131, 'min': 1200.0, 'max': 2900.0}, {'current': 2502.3, 'min': 1200.0, 'max': 2900.0}, {'current': 1202.085, 'min': 1200.0, 'max': 2900.0}, {'current': 1202.446, 'min': 1200.0, 'max': 2900.0}, {'current': 2366.242, 'min': 1200.0, 'max': 2900.0}, {'current': 2564.954, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.356, 'min': 1200.0, 'max': 2900.0}, {'current': 2565.142, 'min': 1200.0, 'max': 2900.0}, {'current': 1203.855, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.629, 'min': 1200.0, 'max': 2900.0}, {'current': 1793.059, 'min': 1200.0, 'max': 2900.0}, {'current': 2528.071, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.056, 'min': 1200.0, 'max': 2900.0}, {'current': 1438.415, 'min': 1200.0, 'max': 2900.0}, {'current': 2200.985, 'min': 1200.0, 'max': 2900.0}, {'current': 2499.751, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.346, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.859, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.563, 'min': 1200.0, 'max': 2900.0}, {'current': 1429.59, 'min': 1200.0, 'max': 2900.0}, {'current': 2199.839, 'min': 1200.0, 'max': 2900.0}, {'current': 1203.171, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.123, 'min': 1200.0, 'max': 2900.0}, {'current': 1564.034, 'min': 1200.0, 'max': 2900.0}, {'current': 2589.571, 'min': 1200.0, 'max': 2900.0}, {'current': 2567.409, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.808, 'min': 1200.0, 'max': 2900.0}, {'current': 1201.092, 'min': 1200.0, 'max': 2900.0}, {'current': 2046.213, 'min': 1200.0, 'max': 2900.0}, {'current': 2510.746, 'min': 1200.0, 'max': 2900.0}, {'current': 1201.264, 'min': 1200.0, 'max': 2900.0}, {'current': 2511.727, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.208, 'min': 1200.0, 'max': 2900.0}, {'current': 1201.938, 'min': 1200.0, 'max': 2900.0}, {'current': 1798.705, 'min': 1200.0, 'max': 2900.0}, {'current': 2503.222, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.267, 'min': 1200.0, 'max': 2900.0}, {'current': 1529.799, 'min': 1200.0, 'max': 2900.0}, {'current': 2199.839, 'min': 1200.0, 'max': 2900.0}, {'current': 2531.844, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.115, 'min': 1200.0, 'max': 2900.0}, {'current': 1200.556, 'min': 1200.0, 'max': 2900.0}, {'current': 1199.945, 'min': 1200.0, 'max': 2900.0}, {'current': 1405.876, 'min': 1200.0, 'max': 2900.0}, {'current': 2199.87, 'min': 1200.0, 'max': 2900.0}, {'current': 1199.986, 'min': 1200.0, 'max': 2900.0}], 'disk': {'total': 207.51084899902344, 'used': 37.537235260009766}, 'gpu': 'NVIDIA GeForce GTX 1080 Ti', 'gpu_count': 4, 'gpu_devices': [{'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}, {'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}, {'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}, {'name': 'NVIDIA GeForce GTX 1080 Ti', 'memory_total': 11811160064}], 'memory': {'total': 251.78957748413086}}
+2023-05-23 13:03:00,181 INFO    HandlerThread:862669 [system_monitor.py:probe():211] Finished collecting system info
+2023-05-23 13:03:00,181 INFO    HandlerThread:862669 [system_monitor.py:probe():214] Publishing system info
+2023-05-23 13:03:00,181 DEBUG   HandlerThread:862669 [system_info.py:_save_pip():51] Saving list of pip packages installed into the current environment
+2023-05-23 13:03:00,182 DEBUG   HandlerThread:862669 [system_info.py:_save_pip():67] Saving pip packages done
+2023-05-23 13:03:00,184 INFO    HandlerThread:862669 [system_monitor.py:probe():216] Finished publishing system info
+2023-05-23 13:03:00,189 DEBUG   SenderThread:862669 [sender.py:send():375] send: files
+2023-05-23 13:03:00,189 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-metadata.json with policy now
+2023-05-23 13:03:00,202 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:03:00,203 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:03:00,492 DEBUG   SenderThread:862669 [sender.py:send():375] send: telemetry
+2023-05-23 13:03:00,834 INFO    wandb-upload_0:862669 [upload_job.py:push():137] Uploaded file /tmp/tmps826kpgqwandb/ojhekt61-wandb-metadata.json
+2023-05-23 13:03:00,884 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:03:00,884 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-metadata.json
+2023-05-23 13:03:00,884 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/requirements.txt
+2023-05-23 13:03:00,885 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_created():278] file/dir created: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:03:02,879 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:03:04,495 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:09,495 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:14,496 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:15,202 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:03:15,203 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:03:20,383 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:25,361 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:03:25,363 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:03:25,363 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:03:25,369 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:03:25,891 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:03:26,369 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:26,892 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:03:30,385 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:03:30,386 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:03:31,571 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:31,894 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/config.yaml
+2023-05-23 13:03:36,804 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:41,805 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:45,250 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:03:45,251 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:03:47,431 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:52,432 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:57,433 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:03:58,909 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:04:00,105 DEBUG   SystemMonitor:862669 [system_monitor.py:_start():159] Starting system metrics aggregation loop
+2023-05-23 13:04:00,110 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:04:00,434 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:04:00,435 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:04:02,620 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:07,621 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:12,622 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:13,613 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:04:13,615 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:04:13,616 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:04:13,617 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:04:13,917 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:04:14,918 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:04:15,280 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:04:15,281 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:04:18,459 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:22,922 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:04:24,193 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:29,194 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:30,114 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:04:30,280 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:04:30,281 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:04:34,462 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:36,502 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:04:36,504 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:04:36,504 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:04:36,510 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:04:36,930 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:04:36,931 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:04:39,511 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:44,512 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:45,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:04:45,283 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:04:46,936 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:04:50,465 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:55,466 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:04:59,527 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:04:59,528 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:04:59,529 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:04:59,534 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:04:59,943 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:05:00,117 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:05:00,281 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:05:00,282 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:05:00,944 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:05:01,463 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:06,464 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:08,948 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:05:11,827 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:15,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:05:15,282 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:05:17,463 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:22,465 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:22,573 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:05:22,575 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:05:22,575 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:05:22,576 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:05:22,956 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:05:22,957 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:05:27,578 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:30,121 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:05:30,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:05:30,282 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:05:32,821 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:32,962 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:05:37,822 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:42,823 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:45,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:05:45,283 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:05:45,305 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:05:45,454 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:05:45,455 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:05:45,456 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:05:45,969 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:05:46,970 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:05:48,457 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:54,397 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:05:54,975 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:05:59,398 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:00,125 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:06:00,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:06:00,283 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:06:04,465 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:07,872 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:06:07,876 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:06:07,876 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:06:07,884 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:06:07,981 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:06:08,981 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:06:09,886 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:14,887 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:15,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:06:15,283 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:06:16,986 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:06:20,288 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:25,289 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:30,129 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:06:30,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:06:30,283 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:06:30,463 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:30,607 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:06:30,609 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:06:30,609 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:06:30,610 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:06:30,993 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:06:30,994 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:06:35,612 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:40,964 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:40,999 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:06:45,282 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:06:45,283 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:06:46,469 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:51,470 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:06:53,732 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:06:53,734 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:06:53,734 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:06:53,735 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:06:54,006 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:06:55,007 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:06:56,737 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:00,132 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:07:00,283 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:07:00,284 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:07:01,984 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:03,010 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:07:06,985 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:11,986 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:15,283 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:07:15,284 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:07:16,575 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:07:16,577 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:07:16,577 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:07:16,582 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:07:17,018 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:07:17,583 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:19,019 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:07:22,584 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:27,024 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:07:27,813 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:30,135 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:07:30,283 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:07:30,284 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:07:33,464 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:38,465 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:38,788 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:07:38,790 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:07:38,791 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:07:38,794 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:07:39,031 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:07:41,032 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:07:43,796 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:45,283 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:07:45,284 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:07:49,037 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:07:49,224 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:54,225 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:07:59,227 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:00,138 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:08:00,283 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:08:00,284 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:08:02,091 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:08:02,093 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:08:02,094 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:08:02,095 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:08:03,045 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:08:03,046 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:08:05,096 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:10,097 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:11,050 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:08:15,198 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:15,288 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:08:15,289 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:08:20,472 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:24,209 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:08:24,211 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:08:24,212 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:08:24,216 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:08:25,058 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:08:25,058 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:08:26,218 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:30,141 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:08:30,287 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:08:30,288 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:08:31,470 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:35,064 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:08:36,598 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:41,599 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:45,287 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:08:45,288 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:08:47,123 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:08:47,126 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:08:47,127 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:47,127 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:08:47,128 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:08:48,072 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:08:49,072 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:08:52,130 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:08:57,077 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:08:57,576 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:00,144 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:09:00,446 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:09:00,447 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:09:02,627 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:07,629 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:09,546 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:09:09,548 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:09:09,548 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:09:09,549 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:09:10,084 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:09:11,085 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:09:13,550 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:15,294 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:09:15,294 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:09:18,920 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:19,089 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:09:23,922 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:28,923 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:30,148 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:09:30,293 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:09:30,294 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:09:31,827 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:09:31,829 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:09:31,830 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:09:31,831 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:09:32,097 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:09:33,098 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:09:34,832 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:39,833 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:41,102 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:09:45,157 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:45,380 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:09:45,381 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:09:50,553 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:54,994 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:09:54,996 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:09:54,997 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:09:54,998 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:09:55,111 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:09:55,999 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:09:57,112 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:10:00,151 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:10:00,297 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:10:00,298 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:10:01,468 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:05,116 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:10:07,242 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:12,243 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:15,297 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:10:15,298 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:10:17,100 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:10:17,102 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:10:17,103 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:10:17,103 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:10:17,123 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:10:18,104 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:19,124 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:10:23,106 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:27,128 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:10:28,381 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:30,153 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:10:30,402 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:10:30,403 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:10:33,577 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:38,579 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:39,972 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:10:39,975 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:10:39,975 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:10:39,976 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:10:40,136 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:10:41,136 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:10:43,978 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:45,299 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:10:45,300 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:10:49,141 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:10:49,263 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:54,264 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:10:59,265 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:00,156 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:11:00,299 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:11:00,300 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:11:02,108 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:11:02,110 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:11:02,110 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:11:02,111 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:11:02,148 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:11:03,149 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:11:05,113 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:10,114 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:11,153 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:11:15,332 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:15,418 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:11:15,419 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:11:20,605 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:24,496 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:11:24,499 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:11:24,499 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:11:24,500 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:11:25,162 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:11:25,162 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:11:26,502 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:30,160 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:11:30,300 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:11:30,301 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:11:32,483 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:35,172 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:11:37,920 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:42,921 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:45,300 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:11:45,301 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:11:47,590 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:11:47,591 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:11:47,592 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:11:47,593 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:11:48,179 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:11:48,594 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:49,180 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:11:53,595 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:11:57,185 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:11:58,735 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:00,164 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:12:00,478 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:12:00,479 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:12:04,662 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:09,359 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:12:09,362 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:12:09,362 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:12:09,363 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:12:10,192 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:12:10,364 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:11,193 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:12:15,306 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:12:15,307 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:12:15,491 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:19,197 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:12:20,613 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:25,615 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:30,168 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:12:30,306 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:12:30,307 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:12:31,344 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:12:31,346 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:31,347 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:12:31,347 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:12:31,348 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:12:32,205 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:12:33,205 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:12:36,350 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:41,210 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:12:41,685 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:45,441 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:12:45,442 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:12:47,618 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:52,619 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:12:54,141 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:12:54,143 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:12:54,143 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:12:54,144 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:12:54,217 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:12:55,218 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:12:58,146 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:00,171 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:13:00,322 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:13:00,323 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:13:03,776 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:05,224 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:13:08,778 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:13,779 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:15,322 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:13:15,323 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:13:16,844 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:13:16,847 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:13:16,847 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:13:16,848 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:13:17,231 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:13:18,849 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:19,231 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:13:23,851 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:28,236 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:13:29,128 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:30,174 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:13:30,322 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:13:30,323 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:13:34,494 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:38,854 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:13:38,856 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:13:38,856 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:13:38,857 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:13:39,242 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:13:39,858 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:42,244 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:13:44,859 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:45,323 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:13:45,323 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:13:50,188 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:13:50,249 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:13:55,190 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:00,179 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:14:00,314 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:00,323 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:14:00,323 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:14:01,163 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:14:01,165 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:14:01,166 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:14:01,167 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:14:01,256 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:14:04,257 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:14:06,169 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:11,649 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:12,262 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:14:15,522 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:14:15,522 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:14:16,693 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:21,695 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:24,218 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:14:24,220 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:14:24,221 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:14:24,222 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:14:24,268 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:14:26,269 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:14:27,223 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:30,182 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:14:30,339 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:14:30,340 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:14:32,425 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:34,274 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:14:37,427 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:42,428 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:45,339 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:14:45,340 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:14:45,984 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:14:45,986 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:14:45,987 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:14:45,988 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:14:46,280 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:14:47,989 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:48,281 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:14:52,990 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:14:56,286 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:14:58,606 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:00,184 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:15:00,339 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:15:00,340 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:15:04,513 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:08,212 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:15:08,214 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:15:08,215 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:15:08,215 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:15:08,293 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:15:10,217 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:10,294 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:15:15,218 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:15,339 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:15:15,340 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:15:18,299 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:15:20,418 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:25,419 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:29,851 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:15:29,853 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:15:29,853 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:15:29,854 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:15:30,187 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:15:30,306 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:15:30,339 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:15:30,340 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:15:30,511 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:32,307 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:15:35,512 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:40,312 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:15:41,444 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:45,340 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:15:45,341 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:15:46,519 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:51,521 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:15:52,935 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:15:52,937 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:15:52,938 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:15:52,939 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:15:53,319 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:15:56,321 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:15:56,940 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:00,191 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:16:00,340 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:16:00,341 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:16:02,198 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:04,326 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:16:07,199 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:12,201 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:14,503 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:16:14,505 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:16:14,506 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:16:14,507 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:16:15,332 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:16:15,340 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:16:15,341 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:16:16,333 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:16:17,510 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:22,511 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:24,337 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:16:27,816 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:30,195 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:16:30,340 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:16:30,341 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:16:33,523 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:36,688 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:16:36,691 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:16:36,692 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:16:36,693 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:16:37,353 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:16:38,353 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:16:38,695 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:43,696 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:45,765 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:16:45,766 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:16:46,357 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:16:48,949 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:53,951 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:16:58,446 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:16:58,448 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:16:58,448 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:16:58,449 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:16:59,365 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:16:59,450 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:00,199 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:17:00,365 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:17:00,564 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:17:00,565 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:17:04,743 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:08,370 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:17:09,836 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:14,837 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:15,564 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:17:15,565 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:17:20,740 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:21,793 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:17:21,795 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:17:21,796 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:17:21,796 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:17:22,387 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:17:24,391 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:17:25,798 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:30,203 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:17:30,566 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:17:30,566 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:17:31,749 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:32,405 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:17:36,750 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:41,752 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:44,750 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:17:44,752 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:17:44,753 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:17:44,754 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:17:45,427 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:17:45,565 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:17:45,566 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:17:46,428 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:17:47,747 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:52,748 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:17:56,442 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:17:58,281 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:00,207 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:18:00,565 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:18:00,566 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:18:03,739 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:07,013 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:18:07,015 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:18:07,016 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:18:07,016 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:18:07,453 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:18:08,454 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:18:09,017 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:14,019 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:15,576 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:18:15,576 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:18:18,460 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:18:19,750 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:24,752 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:29,015 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:18:29,017 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:18:29,017 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:18:29,018 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:18:29,465 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:18:30,018 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:30,211 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:18:30,465 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:18:30,569 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:18:30,570 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:18:35,750 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:40,470 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:18:41,258 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:45,570 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:18:45,571 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:18:46,794 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:51,072 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:18:51,074 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:18:51,074 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:18:51,075 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:18:51,475 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:18:52,076 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:18:52,475 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:18:57,077 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:00,215 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:19:00,734 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:19:00,735 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:19:02,480 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:19:02,915 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:07,916 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:12,917 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:14,362 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:19:14,364 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:19:14,364 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:19:14,365 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:19:14,485 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:19:15,572 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:19:15,573 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:19:16,486 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:19:18,758 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:23,883 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:24,490 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:19:28,884 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:30,217 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:19:30,572 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:19:30,573 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:19:34,749 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:36,449 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:19:36,451 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:19:36,451 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:19:36,452 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:19:36,495 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:19:38,496 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:19:40,454 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:45,662 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:45,917 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:19:45,918 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:19:46,499 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:19:51,092 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:56,093 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:19:58,349 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:19:58,351 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:19:58,351 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:19:58,352 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:19:58,506 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:20:00,221 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:20:00,507 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:00,629 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:20:00,630 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:20:01,801 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:06,802 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:08,511 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:11,815 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:15,629 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:20:15,630 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:20:16,817 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:20,419 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:20:20,423 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:20:20,423 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:20:20,424 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:20:20,518 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:20:22,425 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:22,519 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:27,426 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:30,224 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:20:30,524 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:31,143 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:20:31,143 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:20:33,319 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:38,320 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:42,298 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: partial_history
+2023-05-23 13:20:42,300 DEBUG   SenderThread:862669 [sender.py:send():375] send: history
+2023-05-23 13:20:42,300 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: summary_record
+2023-05-23 13:20:42,301 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:20:42,531 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:20:44,301 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:44,532 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:45,741 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: stop_status
+2023-05-23 13:20:45,742 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: stop_status
+2023-05-23 13:20:49,915 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:50,993 DEBUG   SenderThread:862669 [sender.py:send():375] send: exit
+2023-05-23 13:20:50,994 INFO    SenderThread:862669 [sender.py:send_exit():598] handling exit code: 255
+2023-05-23 13:20:50,994 INFO    SenderThread:862669 [sender.py:send_exit():600] handling runtime: 1070
+2023-05-23 13:20:50,995 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:20:50,995 INFO    SenderThread:862669 [sender.py:send_exit():606] send defer
+2023-05-23 13:20:50,996 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:50,996 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 0
+2023-05-23 13:20:50,997 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:50,997 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 0
+2023-05-23 13:20:50,997 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 1
+2023-05-23 13:20:50,997 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:50,998 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 1
+2023-05-23 13:20:50,998 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:50,998 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 1
+2023-05-23 13:20:50,999 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 2
+2023-05-23 13:20:50,999 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:50,999 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 2
+2023-05-23 13:20:50,999 INFO    HandlerThread:862669 [system_monitor.py:finish():190] Stopping system monitor
+2023-05-23 13:20:51,000 INFO    HandlerThread:862669 [interfaces.py:finish():202] Joined cpu monitor
+2023-05-23 13:20:51,001 DEBUG   SystemMonitor:862669 [system_monitor.py:_start():166] Finished system metrics aggregation loop
+2023-05-23 13:20:51,002 INFO    HandlerThread:862669 [interfaces.py:finish():202] Joined disk monitor
+2023-05-23 13:20:51,002 DEBUG   SystemMonitor:862669 [system_monitor.py:_start():170] Publishing last batch of metrics
+2023-05-23 13:20:51,536 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:20:52,065 INFO    HandlerThread:862669 [interfaces.py:finish():202] Joined gpu monitor
+2023-05-23 13:20:52,066 INFO    HandlerThread:862669 [interfaces.py:finish():202] Joined memory monitor
+2023-05-23 13:20:52,066 INFO    HandlerThread:862669 [interfaces.py:finish():202] Joined network monitor
+2023-05-23 13:20:52,067 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-23 13:20:52,068 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:52,069 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 2
+2023-05-23 13:20:52,069 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 3
+2023-05-23 13:20:52,069 DEBUG   SenderThread:862669 [sender.py:send():375] send: stats
+2023-05-23 13:20:52,069 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:52,072 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: poll_exit
+2023-05-23 13:20:52,072 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 3
+2023-05-23 13:20:52,073 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:52,074 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 3
+2023-05-23 13:20:52,074 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 4
+2023-05-23 13:20:52,074 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:52,074 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 4
+2023-05-23 13:20:52,075 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:52,075 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 4
+2023-05-23 13:20:52,075 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 5
+2023-05-23 13:20:52,075 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:52,076 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 5
+2023-05-23 13:20:52,076 DEBUG   SenderThread:862669 [sender.py:send():375] send: summary
+2023-05-23 13:20:52,077 INFO    SenderThread:862669 [sender.py:_save_file():1378] saving file wandb-summary.json with policy end
+2023-05-23 13:20:52,078 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:52,078 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 5
+2023-05-23 13:20:52,078 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 6
+2023-05-23 13:20:52,079 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:52,079 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 6
+2023-05-23 13:20:52,079 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:52,080 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 6
+2023-05-23 13:20:52,080 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 7
+2023-05-23 13:20:52,080 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:20:52,081 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:52,081 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 7
+2023-05-23 13:20:52,081 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:52,082 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 7
+2023-05-23 13:20:52,537 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:20:52,995 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: poll_exit
+2023-05-23 13:20:53,538 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:55,003 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 8
+2023-05-23 13:20:55,003 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: poll_exit
+2023-05-23 13:20:55,004 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:55,004 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 8
+2023-05-23 13:20:55,005 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:55,005 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 8
+2023-05-23 13:20:55,015 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 9
+2023-05-23 13:20:55,015 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:55,016 DEBUG   SenderThread:862669 [sender.py:send():375] send: artifact
+2023-05-23 13:20:55,016 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 9
+2023-05-23 13:20:55,539 INFO    Thread-12 :862669 [dir_watcher.py:_on_file_modified():295] file/dir modified: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:56,240 INFO    wandb-upload_1:862669 [upload_job.py:push():92] Skipped uploading /root/.local/share/wandb/artifacts/staging/tmplhkvy_cw
+2023-05-23 13:20:56,683 INFO    wandb-upload_0:862669 [upload_job.py:push():95] Uploaded file /root/.local/share/wandb/artifacts/staging/tmpf3azjcnl
+2023-05-23 13:20:58,005 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: keepalive
+2023-05-23 13:20:58,259 INFO    SenderThread:862669 [sender.py:send_artifact():1474] sent artifact job-https___github.com_sotetsuk_pgx.git_workspace_backgammon_training_ppo.py - {'id': 'QXJ0aWZhY3Q6NDYyOTMyNDQw', 'digest': 'a79c975e9a4b56a4b076cc58155a9214', 'state': 'PENDING', 'aliases': [], 'artifactSequence': {'id': 'QXJ0aWZhY3RDb2xsZWN0aW9uOjcwNTQzMjc1', 'latestArtifact': {'id': 'QXJ0aWZhY3Q6NDYyOTEzNTI5', 'versionIndex': 6}}, 'version': 'latest'}
+2023-05-23 13:20:58,260 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:58,260 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 9
+2023-05-23 13:20:58,260 INFO    SenderThread:862669 [dir_watcher.py:finish():365] shutting down directory watcher
+2023-05-23 13:20:58,541 INFO    SenderThread:862669 [dir_watcher.py:finish():395] scan: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files
+2023-05-23 13:20:58,542 INFO    SenderThread:862669 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/config.yaml config.yaml
+2023-05-23 13:20:58,542 INFO    SenderThread:862669 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/requirements.txt requirements.txt
+2023-05-23 13:20:58,552 INFO    SenderThread:862669 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json wandb-summary.json
+2023-05-23 13:20:58,559 INFO    SenderThread:862669 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-metadata.json wandb-metadata.json
+2023-05-23 13:20:58,559 INFO    SenderThread:862669 [dir_watcher.py:finish():409] scan save: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log output.log
+2023-05-23 13:20:58,572 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 10
+2023-05-23 13:20:58,579 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:58,583 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 10
+2023-05-23 13:20:58,585 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:58,585 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 10
+2023-05-23 13:20:58,585 INFO    SenderThread:862669 [file_pusher.py:finish():167] shutting down file pusher
+2023-05-23 13:20:59,051 INFO    wandb-upload_1:862669 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/config.yaml
+2023-05-23 13:20:59,406 INFO    wandb-upload_0:862669 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/requirements.txt
+2023-05-23 13:20:59,624 INFO    wandb-upload_3:862669 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/output.log
+2023-05-23 13:20:59,653 INFO    wandb-upload_2:862669 [upload_job.py:push():137] Uploaded file /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/files/wandb-summary.json
+2023-05-23 13:20:59,854 INFO    Thread-11 (_thread_body):862669 [sender.py:transition_state():626] send defer: 11
+2023-05-23 13:20:59,855 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:59,855 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 11
+2023-05-23 13:20:59,856 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:59,856 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 11
+2023-05-23 13:20:59,856 INFO    SenderThread:862669 [file_pusher.py:join():172] waiting for file pusher
+2023-05-23 13:20:59,856 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 12
+2023-05-23 13:20:59,857 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:20:59,857 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 12
+2023-05-23 13:20:59,857 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:20:59,857 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 12
+2023-05-23 13:21:00,475 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 13
+2023-05-23 13:21:00,476 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:21:00,476 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 13
+2023-05-23 13:21:00,476 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: status_report
+2023-05-23 13:21:00,477 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:21:00,477 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 13
+2023-05-23 13:21:00,478 INFO    SenderThread:862669 [sender.py:transition_state():626] send defer: 14
+2023-05-23 13:21:00,479 DEBUG   HandlerThread:862669 [handler.py:handle_request():144] handle_request: defer
+2023-05-23 13:21:00,479 INFO    HandlerThread:862669 [handler.py:handle_request_defer():170] handle defer: 14
+2023-05-23 13:21:00,479 DEBUG   SenderThread:862669 [sender.py:send():375] send: final
+2023-05-23 13:21:00,480 DEBUG   SenderThread:862669 [sender.py:send():375] send: footer
+2023-05-23 13:21:00,480 DEBUG   SenderThread:862669 [sender.py:send_request():402] send_request: defer
+2023-05-23 13:21:00,480 INFO    SenderThread:862669 [sender.py:send_request_defer():622] handle sender defer: 14
+2023-05-23 13:21:01,442 WARNING StreamThr :862669 [internal.py:is_dead():414] Internal process exiting, parent pid 862338 disappeared
+2023-05-23 13:21:01,442 ERROR   StreamThr :862669 [internal.py:wandb_internal():152] Internal process shutdown.
+2023-05-23 13:21:01,479 INFO    HandlerThread:862669 [handler.py:finish():845] shutting down handler
+2023-05-23 13:21:01,480 INFO    WriterThread:862669 [datastore.py:close():298] close: /root/src/pgx/pgx/workspace/backgammon_training/wandb/run-20230523_130259-hzxp7lt6/run-hzxp7lt6.wandb
+2023-05-23 13:21:01,480 INFO    SenderThread:862669 [sender.py:finish():1550] shutting down sender
+2023-05-23 13:21:01,481 INFO    SenderThread:862669 [file_pusher.py:finish():167] shutting down file pusher
+2023-05-23 13:21:01,481 INFO    SenderThread:862669 [file_pusher.py:join():172] waiting for file pusher

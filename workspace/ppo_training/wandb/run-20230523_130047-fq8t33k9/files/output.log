@@ -1,0 +1,116 @@
+
+training of backgammon
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 370, in <module>
+    out = train(config, rng)
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 314, in train
+    env_state = jax.vmap(env.init)(reset_rng)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 1239, in vmap_f
+    out_flat = batching.batch(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/v1.py", line 191, in init
+    state = self._init(subkey)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 62, in _init
+    return _init(key)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 98, in _init
+    legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 525, in _legal_action_mask
+    legal_action_mask = jax.vmap(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 1239, in vmap_f
+    out_flat = batching.batch(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 543, in _legal_action_mask_for_single_die
+    ) * _legal_action_mask_for_valid_single_dice(board, die)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 564, in _legal_action_mask_for_valid_single_dice
+    legal_action_mask = jax.vmap(_is_legal)(src_indices).any(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/api.py", line 1239, in vmap_f
+    out_flat = batching.batch(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/linear_util.py", line 188, in call_wrapped
+    ans = self.f(*args, **dict(self.params, **kwargs))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 560, in _is_legal
+    _is_action_legal(board, action)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 435, in _is_action_legal
+    return _is_to_point & _is_to_point_legal(board, src, tgt) | (
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 471, in _is_to_point_legal
+    e = _exists(board, src)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/pgx/backgammon.py", line 388, in _exists
+    checkers = board[point]
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/array.py", line 316, in __getitem__
+    return lax_numpy._rewriting_take(self, idx)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/numpy/lax_numpy.py", line 4077, in _rewriting_take
+    if (result := _attempt_rewriting_take_via_slice(arr, idx, mode)) is not None:
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/numpy/lax_numpy.py", line 4062, in _attempt_rewriting_take_via_slice
+    arr = lax.dynamic_slice(arr, start_indices=start_indices, slice_sizes=slice_sizes)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/slicing.py", line 105, in dynamic_slice
+    start_indices = _dynamic_slice_indices(operand, start_indices)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/slicing.py", line 2132, in _dynamic_slice_indices
+    result.append(lax.select(i < 0, i + d_arr, i))
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 913, in select
+    return select_n_p.bind(pred, on_false, on_true)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 3331, in _select_batch_rule
+    return select_n(which, *cases), which_bdim
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 938, in select_n
+    return select_n_p.bind(which, *cases)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 3331, in _select_batch_rule
+    return select_n(which, *cases), which_bdim
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 938, in select_n
+    return select_n_p.bind(which, *cases)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/batching.py", line 363, in process_primitive
+    val_out, dim_out = batched_primitive(vals_in, dims_in, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 3331, in _select_batch_rule
+    return select_n(which, *cases), which_bdim
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/lax.py", line 938, in select_n
+    return select_n_p.bind(which, *cases)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 380, in bind
+    return self.bind_with_trace(find_top_trace(args), args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 790, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 131, in apply_primitive
+    compiled_fun = xla_primitive_callable(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/util.py", line 284, in wrapper
+    return cached(config._trace_context(), *args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/util.py", line 277, in cached
+    return f(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 222, in xla_primitive_callable
+    compiled = _xla_callable_uncached(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 252, in _xla_callable_uncached
+    return computation.compile().unsafe_call
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2313, in compile
+    executable = UnloadedMeshExecutable.from_hlo(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2633, in from_hlo
+    xla_executable, compile_options = _cached_compilation(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 2551, in _cached_compilation
+    xla_executable = dispatch.compile_or_get_cached(
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 495, in compile_or_get_cached
+    return backend_compile(backend, computation, compile_options,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 463, in backend_compile
+    return backend.compile(built_c, compile_options=options)
+KeyboardInterrupt

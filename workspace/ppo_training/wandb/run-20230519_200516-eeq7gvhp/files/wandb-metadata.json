@@ -1,0 +1,297 @@
+{
+    "os": "Linux-5.4.0-146-generic-x86_64-with-glibc2.35",
+    "python": "3.10.0",
+    "heartbeatAt": "2023-05-19T11:05:17.184588",
+    "startedAt": "2023-05-19T11:05:16.310372",
+    "docker": null,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "program": "/root/src/pgx/pgx/workspace/backgammon_trainig/ppo.py",
+    "codePath": "workspace/backgammon_trainig/ppo.py",
+    "git": {
+        "remote": "https://github.com/sotetsuk/pgx.git",
+        "commit": "d7ff2e95fe2d96abef84dfa2250c148e9146a2e5"
+    },
+    "email": "kyoudai.630@gmail.com",
+    "root": "/root/src/pgx/pgx",
+    "host": "3480689c7656",
+    "username": "root",
+    "executable": "/root/.pyenv/versions/3.10.0/bin/python",
+    "cpu_count": 24,
+    "cpu_count_logical": 48,
+    "cpu_freq": {
+        "current": 1573.5522083333335,
+        "min": 1200.0,
+        "max": 2900.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 1200.119,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1202.328,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2199.861,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1201.197,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1498.485,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1928.479,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.879,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2496.998,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1201.026,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2625.61,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.94,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1201.528,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.336,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1383.619,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2604.799,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2498.026,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1202.717,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.677,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.908,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1394.076,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.966,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2507.096,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1390.643,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.741,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1201.093,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.224,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2200.77,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.414,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1500.348,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1598.077,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1201.371,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2639.189,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1201.286,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2495.716,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.351,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.196,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1202.136,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1309.485,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2498.309,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2606.198,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.91,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.286,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.154,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1390.529,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1200.135,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 2596.418,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1302.856,
+            "min": 1200.0,
+            "max": 2900.0
+        },
+        {
+            "current": 1199.914,
+            "min": 1200.0,
+            "max": 2900.0
+        }
+    ],
+    "disk": {
+        "total": 207.51084899902344,
+        "used": 35.27534866333008
+    },
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "gpu_count": 4,
+    "gpu_devices": [
+        {
+            "name": "NVIDIA GeForce GTX 1080 Ti",
+            "memory_total": 11811160064
+        },
+        {
+            "name": "NVIDIA GeForce GTX 1080 Ti",
+            "memory_total": 11811160064
+        },
+        {
+            "name": "NVIDIA GeForce GTX 1080 Ti",
+            "memory_total": 11811160064
+        },
+        {
+            "name": "NVIDIA GeForce GTX 1080 Ti",
+            "memory_total": 11811160064
+        }
+    ],
+    "memory": {
+        "total": 251.78957748413086
+    }
+}

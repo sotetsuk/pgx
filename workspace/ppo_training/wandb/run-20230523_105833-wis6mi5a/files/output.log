@@ -1,0 +1,38 @@
+
+training of backgammon
+{'eval_vs_random_policy': -0.265625, 'steps': 0}
+{'eval_vs_random_policy': -0.265625, 'steps': 16384}
+{'eval_vs_random_policy': -0.265625, 'steps': 32768}
+{'eval_vs_random_policy': -0.265625, 'steps': 49152}
+{'eval_vs_random_policy': -0.265625, 'steps': 65536}
+{'eval_vs_random_policy': -0.265625, 'steps': 81920}
+{'eval_vs_random_policy': -0.265625, 'steps': 98304}
+{'eval_vs_random_policy': -0.265625, 'steps': 114688}
+{'eval_vs_random_policy': -0.265625, 'steps': 131072}
+{'eval_vs_random_policy': -0.265625, 'steps': 147456}
+{'eval_vs_random_policy': -0.265625, 'steps': 163840}
+{'eval_vs_random_policy': -0.265625, 'steps': 180224}
+{'eval_vs_random_policy': -0.265625, 'steps': 196608}
+Traceback (most recent call last):
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 361, in <module>
+    print("training: time", end - sta)
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 320, in train
+    "eval_vs_random_policy": float(eval_R),
+  File "/root/src/pgx/pgx/workspace/backgammon_training/ppo.py", line 271, in evaluate
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/traceback_util.py", line 166, in reraise_with_filtered_traceback
+    return fun(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/lax/control_flow/loops.py", line 1160, in while_loop
+    outs = while_p.bind(*cond_consts, *body_consts, *init_vals,
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 2633, in bind
+    return self.bind_with_trace(top_trace, args, params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 383, in bind_with_trace
+    out = trace.process_primitive(self, map(trace.full_raise, args), params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/core.py", line 790, in process_primitive
+    return primitive.impl(*tracers, **params)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/dispatch.py", line 143, in apply_primitive
+    return compiled_fun(*args)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/profiler.py", line 314, in wrapper
+    return func(*args, **kwargs)
+  File "/root/.pyenv/versions/3.10.0/lib/python3.10/site-packages/jax/_src/interpreters/pxla.py", line 1346, in __call__
+    results = self.xla_executable.execute_sharded(input_bufs)
+KeyboardInterrupt
