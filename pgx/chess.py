@@ -130,7 +130,7 @@ class State(v1.State):
     _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
     _zobrist_hash: jnp.ndarray = INIT_ZOBRIST_HASH
     _hash_history: jnp.ndarray = (
-        jnp.zeros((1001, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
+        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
     )
     _board_history: jnp.ndarray = (
         jnp.zeros((8, 64), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
