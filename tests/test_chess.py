@@ -610,14 +610,14 @@ def test_terminal():
     state = step(state, jnp.int32(3374))
     state.save_svg("tests/assets/chess/terminal_030.svg")
     assert (state.observation[:, :, 12] == 0).all()
-    assert (state.observation[:, :, 12] == 1).all()
+    assert (state.observation[:, :, 13] == 1).all()
     print(state._to_fen())
     state = step(state, jnp.int32(4104))
     state = step(state, jnp.int32(3446))
     state = step(state, jnp.int32(4176))
     state = step(state, jnp.int32(3374))
     assert state.terminated
-    assert (state.reward == 0.0).all()
+    assert (state.rewards == 0.0).all()
 
     # repetition
     state = State._from_fen("r6k/8/8/8/8/8/8/R6K w - - 0 1")
