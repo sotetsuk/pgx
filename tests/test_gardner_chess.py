@@ -337,6 +337,23 @@ def test_step():
     next_state.save_svg("tests/assets/gardner_chess/step_008.svg")
     assert next_state._board[p("c5", True)] == -QUEEN
 
+    # steps
+    state = init(jax.random.PRNGKey(0))
+    steps = [1042, 552, 993, 289, 797, 1065, 1065, 771]
+    for i in range(8):
+        num = 9 + i
+        if num == 9:
+            s = "09"
+        else:
+            s = str(num)
+        svg_name = "tests/assets/gardner_chess/step_0" + s + ".svg"
+        state = step(state, steps[i])
+        state.save_svg(svg_name)
+        if i != 7:
+            assert not state.terminated
+        else:
+            assert state.terminated
+
 
 def test_legal_action_mask():
     # init board
