@@ -866,9 +866,8 @@ def test_observe():
     state.save_svg("tests/assets/chess/observe_010.svg")
     state = step(state, jnp.int32(613))
     state.save_svg("tests/assets/chess/observe_011.svg")
-    # TODO: fix me
-    # assert (state.observation[:, :, 12] == 1).all()
-    # assert (state.observation[:, :, 13] == 0).all()
+    assert (state.observation[:, :, 12] == 1).all()
+    assert (state.observation[:, :, 13] == 0).all()
 
     # not the same en-passant position
     state = State._from_fen("r5k1/8/8/8/8/8/P7/R3K3 w KQ - 0 1")
@@ -883,9 +882,8 @@ def test_observe():
     state.save_svg("tests/assets/chess/observe_016.svg")
     state = step(state, jnp.int32(613))
     state.save_svg("tests/assets/chess/observe_017.svg")
-    # TODO: fix me
-    # assert (state.observation[:, :, 12] == 1).all()
-    # assert (state.observation[:, :, 13] == 0).all()
+    assert (state.observation[:, :, 12] == 1).all()
+    assert (state.observation[:, :, 13] == 0).all()
 
     # castling rights
     state = State._from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")

@@ -25,11 +25,14 @@ from pgx._src.chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
     ZOBRIST_BOARD,
+    ZOBRIST_CASTLING_KING,
+    ZOBRIST_CASTLING_QUEEN,
+    ZOBRIST_EN_PASSANT,
     ZOBRIST_SIDE,
 )
 from pgx._src.struct import dataclass
 
-INIT_ZOBRIST_HASH = jnp.uint32([2142282502, 1156113084])
+INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 
 TRUE = jnp.bool_(True)
@@ -232,8 +235,14 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     state = _update_zobrist_hash(state, a)
 
+    hash_ = state._zobrist_hash
+    hash_ ^= _hash_castling_en_passant(state)
+
     state = _apply_move(state, a)
     state = _flip(state)
+
+    hash_ ^= _hash_castling_en_passant(state)
+    state = state.replace(_zobrist_hash=hash_)  # type: ignore
 
     state = _update_history(state)
     state = state.replace(  # type: ignore
@@ -672,7 +681,7 @@ def _zobrist_hash(state):
     """
     >>> state = State()
     >>> _zobrist_hash(state)
-    Array([2142282502, 1156113084], dtype=uint32)
+    Array([1172276016, 1112364556], dtype=uint32)
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
     hash_ = jax.lax.select(state._turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
@@ -684,6 +693,27 @@ def _zobrist_hash(state):
         return h ^ ZOBRIST_BOARD[i, piece]
 
     hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    hash_ ^= _hash_castling_en_passant(state)
+    return hash_
+
+
+def _hash_castling_en_passant(state):
+    # we don't take care side (turn) as it's already taken into account in hash
+    zero = jnp.uint32([0, 0])
+    hash_ = zero
+    hash_ ^= jax.lax.select(
+        state._can_castle_queen_side[0], ZOBRIST_CASTLING_QUEEN[0], zero
+    )
+    hash_ ^= jax.lax.select(
+        state._can_castle_queen_side[1], ZOBRIST_CASTLING_QUEEN[1], zero
+    )
+    hash_ ^= jax.lax.select(
+        state._can_castle_king_side[0], ZOBRIST_CASTLING_KING[0], zero
+    )
+    hash_ ^= jax.lax.select(
+        state._can_castle_king_side[1], ZOBRIST_CASTLING_KING[1], zero
+    )
+    hash_ ^= ZOBRIST_EN_PASSANT[state._en_passant]
     return hash_
 
 
