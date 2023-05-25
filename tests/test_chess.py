@@ -609,7 +609,6 @@ def test_terminal():
     assert (state.observation[:, :, 13] == 0).all()
     state = step(state, jnp.int32(3374))
     state.save_svg("tests/assets/chess/terminal_030.svg")
-    print(state._hash_history[:8])
     assert (state.observation[:, :, 12] == 0).all()
     assert (state.observation[:, :, 13] == 1).all()
     print(state._to_fen())
