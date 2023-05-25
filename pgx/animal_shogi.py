@@ -64,7 +64,7 @@ ZOBRIST_HAND = jax.random.randint(
 )
 
 
-MAX_TERMINATION_STEPS = 250
+MAX_TERMINATION_STEPS = 256
 
 
 @dataclass
