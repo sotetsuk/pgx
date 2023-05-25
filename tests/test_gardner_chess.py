@@ -151,6 +151,8 @@ def test_observe():
          [0., 0., 0., 0., 0.]]
     )
     assert (state.observation[:, :, 0] == expected).all()
+    assert (state.observation[:, :, 12] == 1).all()
+    assert (state.observation[:, :, 13] == 0).all()
     assert state._turn == 0
     assert (state.observation[:, :, 112] == 0).all()
 
