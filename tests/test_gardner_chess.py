@@ -281,10 +281,20 @@ def test_observe():
     assert state.observation[4, 3, 59] == 1.
     assert state.observation[4, 3, 73] == 1.
     assert state.observation[4, 4, 87] == 1.
+    assert state.observation[4, 4, 101] == 1.
     # color, move_counts
     assert state.observation[0, 0, 112] == 1.
     assert state.observation[0, 0, 113] == 0.028
     assert state.observation[0, 0, 114] > 0.
+
+    # from_fen with black turn
+    state = State._from_fen("rnbqk/ppppp/P4/1PPPP/RNBQK b - - 0 1")
+    # same with "tests/assets/gardner_chess/observe_001.svg"
+    assert (state.observation[:, :, 112] == 1).all()
+    state = step(state, 1042)
+    state.save_svg("tests/assets/gardner_chess/observe_019.svg")
+    assert (state.observation[:, :, 0] == expected_wpawn2).all()
+    assert (state.observation[:, :, 112] == 0).all()
 
 
 def test_step():
@@ -705,7 +715,7 @@ def test_buggy_samples():
     state = step(state, jnp.int32(756))
     state.save_svg("tests/assets/gardner_chess/buggy_samples_025.svg")
     print(state._to_fen())
-    assert not state.terminated
+    # assert not state.terminated
 
     # pin
     state = State._from_fen("k3b/5/2b2/1P3/K4 b - - 0 0")

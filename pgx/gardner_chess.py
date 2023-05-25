@@ -559,6 +559,12 @@ def _from_fen(fen: str):
         _halfmove_count=jnp.int32(halfmove_cnt),
         _fullmove_count=jnp.int32(fullmove_cnt),
     )
+    board_history = state._board_history.at[0].set(state._board)
+    state = state.replace(_board_history=board_history)  # type:ignore
+    current_player = jnp.int8(0) if turn == "w" else jnp.int8(1)
+    state = state.replace(  # type: ignore
+        observation=jax.jit(_observe)(state, current_player)
+    )
     state = state.replace(  # type: ignore
         _possible_piece_positions=jax.jit(_possible_piece_positions)(state)
     )
