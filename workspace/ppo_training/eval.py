@@ -41,11 +41,14 @@ def vs_two_policy(params1, params2, network, env, rng_key, num_envs):
 
 
 if __name__ == "__main__":
-    steps = 4980736
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env_name", type=str, default="backgammon")
+    parser.add_argument("--num_envs", type=int, default=64)
+    args = parser.parse_args()
     param_dir = "params"
-    env = pgx.make("backgammon")
+    env = pgx.make(args.env_name)
     network = ActorCritic(env.num_actions, activation="tanh")
-    cand_policy_filename = f'params/{"backgammon"}_vs_{"prev_policy"}_steps_{steps}.ckpt'
+    cand_policy_filename = f'params/{args.env_name}/anchor.ckpt'
     with open(cand_policy_filename, "rb") as f:
         params = pickle.load(f)["params"]
     vs_fn = jax.jit(partial(vs_two_policy, params2=params, network=network, env=env, num_envs=64, rng_key=jax.random.PRNGKey(3)))
