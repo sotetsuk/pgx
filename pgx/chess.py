@@ -248,7 +248,7 @@ def _update_history(state: State):
     board_history = board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
     # hash hist
-    state = state.replace(
+    state = state.replace(  # type: ignore
         _hash_history=state._hash_history.at[state._step_count].set(
             state._zobrist_hash
         ),
@@ -811,7 +811,7 @@ def _from_fen(fen: str):
     state = state.replace(  # type: ignore
         legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
-    state = state.replace(_zobrist_hash=_zobrist_hash(state))
+    state = state.replace(_zobrist_hash=_zobrist_hash(state))  # type: ignore
     state = _update_history(state)
     state = jax.jit(_check_termination)(state)
     state = state.replace(  # type: ignore
