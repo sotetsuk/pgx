@@ -25,14 +25,14 @@ from pgx._src.chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
     ZOBRIST_BOARD,
-    ZOBRIST_SIDE,
-    ZOBRIST_CASTLING_QUEEN,
     ZOBRIST_CASTLING_KING,
-    ZOBRIST_EN_PASSANT
+    ZOBRIST_CASTLING_QUEEN,
+    ZOBRIST_EN_PASSANT,
+    ZOBRIST_SIDE,
 )
 from pgx._src.struct import dataclass
 
-INIT_ZOBRIST_HASH = jnp.uint32([352059157,   5392715])
+INIT_ZOBRIST_HASH = jnp.uint32([352059157, 5392715])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 
 TRUE = jnp.bool_(True)
@@ -133,9 +133,7 @@ class State(v1.State):
     _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
     _zobrist_hash: jnp.ndarray = INIT_ZOBRIST_HASH
     _hash_history: jnp.ndarray = (
-        jnp.zeros((1001, 2), dtype=jnp.uint32)
-        .at[0]
-        .set(INIT_ZOBRIST_HASH)
+        jnp.zeros((1001, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
     )
     _board_history: jnp.ndarray = (
         jnp.zeros((8, 64), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
@@ -237,13 +235,31 @@ def _step(state: State, action: jnp.ndarray):
     state = _update_zobrist_hash(state, a)
 
     hash_ = state._zobrist_hash
-    castling_queen = jax.lax.select(state._turn == 0, state._can_castle_queen_side, state._can_castle_queen_side[::-1])
-    castling_king = jax.lax.select(state._turn == 0, state._can_castle_king_side, state._can_castle_king_side[::-1])
-    hash_ ^= jax.lax.select(castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_)  # white
-    hash_ ^= jax.lax.select(castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_)  # black
-    hash_ ^= jax.lax.select(castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_)  # white
-    hash_ ^= jax.lax.select(castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_)  # black
-    en_passant = jax.lax.select(state._turn == 0, state._en_passant, _flip_pos(state._en_passant))
+    castling_queen = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_queen_side,
+        state._can_castle_queen_side[::-1],
+    )
+    castling_king = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_king_side,
+        state._can_castle_king_side[::-1],
+    )
+    hash_ ^= jax.lax.select(
+        castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_
+    )  # black
+    hash_ ^= jax.lax.select(
+        castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_
+    )  # black
+    en_passant = jax.lax.select(
+        state._turn == 0, state._en_passant, _flip_pos(state._en_passant)
+    )
     hash_ ^= ZOBRIST_EN_PASSANT[en_passant]
     state = state.replace(_zobrist_hash=hash_)
 
@@ -251,13 +267,31 @@ def _step(state: State, action: jnp.ndarray):
     state = _flip(state)
 
     hash_ = state._zobrist_hash
-    castling_queen = jax.lax.select(state._turn == 0, state._can_castle_queen_side, state._can_castle_queen_side[::-1])
-    castling_king = jax.lax.select(state._turn == 0, state._can_castle_king_side, state._can_castle_king_side[::-1])
-    hash_ ^= jax.lax.select(castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_)  # white
-    hash_ ^= jax.lax.select(castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_)  # black
-    hash_ ^= jax.lax.select(castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_)  # white
-    hash_ ^= jax.lax.select(castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_)  # black
-    en_passant = jax.lax.select(state._turn == 0, state._en_passant, _flip_pos(state._en_passant))
+    castling_queen = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_queen_side,
+        state._can_castle_queen_side[::-1],
+    )
+    castling_king = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_king_side,
+        state._can_castle_king_side[::-1],
+    )
+    hash_ ^= jax.lax.select(
+        castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_
+    )  # black
+    hash_ ^= jax.lax.select(
+        castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_
+    )  # black
+    en_passant = jax.lax.select(
+        state._turn == 0, state._en_passant, _flip_pos(state._en_passant)
+    )
     hash_ ^= ZOBRIST_EN_PASSANT[en_passant]
     state = state.replace(_zobrist_hash=hash_)
 
@@ -710,14 +744,32 @@ def _zobrist_hash(state):
     hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
 
     # castling
-    castling_queen = jax.lax.select(state._turn == 0, state._can_castle_queen_side, state._can_castle_queen_side[::-1])
-    castling_king = jax.lax.select(state._turn == 0, state._can_castle_king_side, state._can_castle_king_side[::-1])
-    hash_ ^= jax.lax.select(castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_)  # white
-    hash_ ^= jax.lax.select(castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_)  # black
-    hash_ ^= jax.lax.select(castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_)  # white
-    hash_ ^= jax.lax.select(castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_)  # black
+    castling_queen = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_queen_side,
+        state._can_castle_queen_side[::-1],
+    )
+    castling_king = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_king_side,
+        state._can_castle_king_side[::-1],
+    )
+    hash_ ^= jax.lax.select(
+        castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_
+    )  # black
+    hash_ ^= jax.lax.select(
+        castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_
+    )  # black
     # en passant
-    en_passant = jax.lax.select(state._turn == 0, state._en_passant, _flip_pos(state._en_passant))
+    en_passant = jax.lax.select(
+        state._turn == 0, state._en_passant, _flip_pos(state._en_passant)
+    )
     hash_ ^= ZOBRIST_EN_PASSANT[en_passant]
     return hash_
 
@@ -750,7 +802,7 @@ def _update_zobrist_hash(state: State, action: Action):
             source_piece + 3 - action.underpromotion,
             source_piece - (3 - action.underpromotion),
         ),
-        source_piece
+        source_piece,
     )
     hash_ ^= ZOBRIST_BOARD[to, source_piece]  # 移動先を動かした駒に
     hash_ ^= ZOBRIST_SIDE

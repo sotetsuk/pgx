@@ -233,5 +233,12 @@ ZOBRIST_CASTLING_KING = jax.random.randint(
 )
 key, subkey = jax.random.split(key)
 ZOBRIST_EN_PASSANT = jax.random.randint(
-    subkey, shape=(65, 2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
+    subkey,
+    shape=(
+        65,
+        2,
+    ),
+    minval=0,
+    maxval=2**31 - 1,
+    dtype=jnp.uint32,
 )
