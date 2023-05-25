@@ -290,6 +290,8 @@ def test_observe():
     # from_fen with black turn
     state = State._from_fen("rnbqk/ppppp/P4/1PPPP/RNBQK b - - 0 1")
     # same with "tests/assets/gardner_chess/observe_001.svg"
+    print(state.observation[:, :, 0])
+    assert (state.observation[:, :, 0] == expected_wpawn1).all()
     assert (state.observation[:, :, 112] == 1).all()
     state = step(state, 1042)
     state.save_svg("tests/assets/gardner_chess/observe_019.svg")
