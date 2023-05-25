@@ -32,7 +32,7 @@ from pgx._src.chess_utils import (  # type: ignore
 )
 from pgx._src.struct import dataclass
 
-INIT_ZOBRIST_HASH = jnp.uint32([2142282502, 1156113084])
+INIT_ZOBRIST_HASH = jnp.uint32([352059157, 5392715])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 
 TRUE = jnp.bool_(True)
@@ -234,8 +234,16 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     state = _update_zobrist_hash(state, a)
 
+    # cancel out previous castling/em passant hash
+    hash_ = _xor_castling_en_passant(state, state._zobrist_hash)
+    state = state.replace(_zobrist_hash=hash_)  # type: ignore
+
     state = _apply_move(state, a)
     state = _flip(state)
+
+    # apply new castling/em passant hash
+    hash_ = _xor_castling_en_passant(state, state._zobrist_hash)
+    state = state.replace(_zobrist_hash=hash_)  # type: ignore
 
     state = _update_history(state)
     state = state.replace(  # type: ignore
@@ -672,7 +680,7 @@ def _zobrist_hash(state):
     """
     >>> state = State()
     >>> _zobrist_hash(state)
-    Array([2142282502, 1156113084], dtype=uint32)
+    Array([352059157,   5392715], dtype=uint32)
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
     hash_ = jax.lax.select(state._turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
@@ -684,6 +692,40 @@ def _zobrist_hash(state):
         return h ^ ZOBRIST_BOARD[i, piece]
 
     hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    hash_ = _xor_castling_en_passant(state, hash_)
+
+    return hash_
+
+
+def _xor_castling_en_passant(state, hash_):
+    # castling
+    castling_queen = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_queen_side,
+        state._can_castle_queen_side[::-1],
+    )
+    castling_king = jax.lax.select(
+        state._turn == 0,
+        state._can_castle_king_side,
+        state._can_castle_king_side[::-1],
+    )
+    hash_ ^= jax.lax.select(
+        castling_queen[0], hash_ ^ ZOBRIST_CASTLING_QUEEN[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_queen[1], hash_ ^ ZOBRIST_CASTLING_QUEEN[1], hash_
+    )  # black
+    hash_ ^= jax.lax.select(
+        castling_king[0], hash_ ^ ZOBRIST_CASTLING_KING[0], hash_
+    )  # white
+    hash_ ^= jax.lax.select(
+        castling_king[1], hash_ ^ ZOBRIST_CASTLING_KING[1], hash_
+    )  # black
+    # en passant
+    en_passant = jax.lax.select(
+        state._turn == 0, state._en_passant, _flip_pos(state._en_passant)
+    )
+    hash_ ^= ZOBRIST_EN_PASSANT[en_passant]
     return hash_
 
 
