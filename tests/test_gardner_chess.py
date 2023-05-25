@@ -381,7 +381,7 @@ def test_legal_action_mask():
 
     # promotion (black, pin)
     state = State._from_fen("4k/5/5/1p3/BB2K b - - 0 1")
-    state.save_svg("tests/assets/chess/legal_action_mask_005.svg")
+    state.save_svg("tests/assets/gardner_chess/legal_action_mask_005.svg")
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 6
 
@@ -511,7 +511,7 @@ def test_terminal():
     state = State._from_fen("k4/4P/5/5/4K w - - 0 1")
     state.save_svg("tests/assets/gardner_chess/terminal_012.svg")
     state = step(state, jnp.int32(1130))
-    state.save_svg("tests/assets/chess/terminal_013.svg")
+    state.save_svg("tests/assets/gardner_chess/terminal_013.svg")
     print(state._to_fen())
     assert state.terminated
     assert (state.rewards == 0.0).all()
