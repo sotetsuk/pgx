@@ -810,6 +810,9 @@ def _from_fen(fen: str):
         legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
     state = jax.jit(_check_termination)(state)
+    state = state.replace(  # type: ignore
+        observation=jax.jit(_observe)(state, state.current_player)
+    )
     return state
 
 
