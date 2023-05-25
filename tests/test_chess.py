@@ -839,8 +839,8 @@ def test_observe():
     assert (state.observation[:, :, 13] == 0).all()
     state = step(state, jnp.int32(1196))
     state.save_svg("tests/assets/chess/observe_006.svg")
-    assert (state.observation[:, :, 12] == 0).all()
-    assert (state.observation[:, :, 13] == 1).all()
+    assert (state.observation[:, :, 12] == 1).all()
+    assert (state.observation[:, :, 13] == 0).all()
 
     # not the same castling rights
     state = State._from_fen("r5k1/8/8/8/8/8/8/R3K2R w KQ - 0 1")
