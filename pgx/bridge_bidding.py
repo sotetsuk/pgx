@@ -31,6 +31,10 @@ FALSE = jnp.bool_(False)
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
 # それぞれのsuitにおいて以下の順で数字が並ぶ
 TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
+PASS_ACTION_NUM = 0
+DOUBLE_ACTION_NUM = 1
+REDOUBLE_ACTION_NUM = 2
+BID_OFFSET_NUM = 3
 
 
 @dataclass
@@ -55,6 +59,7 @@ class State(v1.State):
     # 最大の行動系列長 = 319
     # 各要素には、行動を表す整数が格納される
     # bidを表す0 ~ 34, passを表す35, doubleを表す36, redoubleを表す37, 行動が行われていない-1
+    # TODO pass = 0, double = 1, redouble = 2, bid = 3 ~ 37に変更
     # 各ビッドがどのプレイヤーにより行われたかは、要素のindexから分かる（ix % 4）
     _bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
     # dealer どのプレイヤーがdealerかを表す
@@ -150,8 +155,8 @@ def init(rng: jax.random.KeyArray) -> State:
     current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
-    legal_actions = legal_actions.at[36].set(False)
-    legal_actions = legal_actions.at[37].set(False)
+    legal_actions = legal_actions.at[DOUBLE_ACTION_NUM].set(False)
+    legal_actions = legal_actions.at[REDOUBLE_ACTION_NUM].set(False)
     state = State(  # type: ignore
         _shuffled_players=shuffled_players,
         current_player=current_player,
@@ -177,8 +182,8 @@ def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない
-    legal_actions = legal_actions.at[36].set(False)
-    legal_actions = legal_actions.at[37].set(False)
+    legal_actions = legal_actions.at[DOUBLE_ACTION_NUM].set(False)
+    legal_actions = legal_actions.at[REDOUBLE_ACTION_NUM].set(False)
     state = State(  # type: ignore
         _shuffled_players=shuffled_players,
         current_player=current_player,
@@ -258,9 +263,9 @@ def _step(
     state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
     # fmt: on
     return jax.lax.cond(
-        action >= 35,
+        action <= 2,
         lambda: jax.lax.switch(
-            action - 35,
+            action,
             [
                 lambda: jax.lax.cond(
                     _is_terminated(_state_pass(state)),
@@ -281,7 +286,15 @@ def _step(
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
     # make vul of observation
-    vul = jnp.array([state._vul_NS, state._vul_EW], dtype=jnp.bool_)
+    is_dealer_vul, is_non_dealer_vul = jax.lax.cond(
+        (state._dealer == 0) | (state._dealer == 2),
+        lambda: (state._vul_NS, state._vul_EW),
+        lambda: (state._vul_EW, state._vul_NS),
+    )
+    vul = jnp.array(
+        [~is_dealer_vul, is_dealer_vul, ~is_non_dealer_vul, is_non_dealer_vul],
+        dtype=jnp.bool_,
+    )
 
     # make hand of observation
     hand = jnp.zeros(52, dtype=jnp.bool_)
@@ -289,67 +302,85 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     hand = jax.lax.fori_loop(
         position * 13,
         (position + 1) * 13,
-        lambda i, hand: hand.at[state._hand[i]].set(True),
+        lambda i, hand: hand.at[
+            _convert_card_pgx_to_openspiel(state._hand[i])
+        ].set(True),
         hand,
     )
 
     # make history of observation
+    last_bid = 0
     obs_history = jnp.zeros(424, dtype=jnp.bool_)
-    last_bid = jnp.int16(-1)
-    flag = FALSE
-    obs_history, last_bid, flag, state = jax.lax.fori_loop(
+    state, player_id, last_bid, obs_history = jax.lax.fori_loop(
         0,
         state._turn.astype(jnp.int32),
         _make_obs_history,
-        (obs_history, last_bid, flag, state),
+        (state, player_id, last_bid, obs_history),
     )
     return jnp.concatenate((vul, obs_history, hand))
 
 
 @jax.jit
-def _make_obs_history(i, vals):
-    obs_history, last_bid, flag, state = vals
-    curr_pos = ((state._dealer + i) % 4).astype(jnp.int16)
-    return jax.lax.cond(
-        (flag != jnp.bool_(True)) & (state._bidding_history[i] == 35),
-        lambda: (obs_history.at[curr_pos].set(True), last_bid, flag, state),
-        lambda: jax.lax.cond(
-            (0 <= state._bidding_history[i])
-            & (state._bidding_history[i] <= 34),
-            lambda: (
-                obs_history.at[
-                    4
-                    + curr_pos * 35
-                    + state._bidding_history[i].astype(jnp.int16)
-                ].set(True),
-                state._bidding_history[i].astype(jnp.int16),
-                jnp.bool_(True),
-                state,
-            ),
-            lambda: jax.lax.switch(
-                state._bidding_history[i] - 35,
-                [
-                    lambda: (obs_history, last_bid, flag, state),
+def _make_obs_history(turn, vuls):
+    state, player_id, last_bid, obs_history = vuls
+    action = state._bidding_history[turn]
+    relative_bidder = (
+        (turn + state._dealer.astype(jnp.int32)) % 4
+        + (4 - _player_position(player_id, state).astype(jnp.int32))
+    ) % 4
+    last_bid, obs_history = jax.lax.cond(
+        action <= 2,
+        lambda: jax.lax.switch(
+            action,
+            [
+                lambda: jax.lax.cond(
+                    last_bid == 0,
                     lambda: (
-                        obs_history.at[144 + curr_pos * 35 + last_bid].set(
-                            True
-                        ),
                         last_bid,
-                        flag,
-                        state,
+                        obs_history.at[relative_bidder].set(True),
                     ),
-                    lambda: (
-                        obs_history.at[284 + curr_pos * 35 + last_bid].set(
-                            True
-                        ),
-                        last_bid,
-                        flag,
-                        state,
-                    ),
-                ],
-            ),
+                    lambda: (last_bid, obs_history),
+                ),
+                lambda: (
+                    last_bid,
+                    obs_history.at[
+                        4
+                        + (last_bid - BID_OFFSET_NUM) * 4 * 3
+                        + 4
+                        + relative_bidder
+                    ].set(True),
+                ),
+                lambda: (
+                    last_bid,
+                    obs_history.at[
+                        4
+                        + (last_bid - BID_OFFSET_NUM) * 4 * 3
+                        + 4 * 2
+                        + relative_bidder
+                    ].set(True),
+                ),
+            ],
+        ),
+        lambda: (
+            action,
+            obs_history.at[
+                4 + (action - BID_OFFSET_NUM) * 4 * 3 + relative_bidder
+            ].set(True),
         ),
     )
+    return state, player_id, last_bid, obs_history
+
+
+@jax.jit
+def _convert_card_pgx_to_openspiel(card: int) -> jnp.ndarray:
+    """Convert numerical representation of cards from pgx to openspiel"""
+    OPEN_SPIEL_SUIT_NUM = jnp.array([3, 2, 1, 0], dtype=jnp.int32)
+    OPEN_SPIEL_RANK_NUM = jnp.array(
+        [12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], dtype=jnp.int32
+    )
+    suit = OPEN_SPIEL_SUIT_NUM[card // 13]
+    rank = OPEN_SPIEL_RANK_NUM[card % 13]
+    return suit + rank * 4
 
 
 @jax.jit
@@ -396,7 +427,7 @@ def _continue_step(
     # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
     return state.replace(  # type: ignore
-        legal_action_mask=state.legal_action_mask.at[36].set(x_mask).at[37].set(xx_mask),
+        legal_action_mask=state.legal_action_mask.at[PASS_ACTION_NUM].set(True).at[DOUBLE_ACTION_NUM].set(x_mask).at[REDOUBLE_ACTION_NUM].set(xx_mask),
         rewards=jnp.zeros(4, dtype=jnp.float32)
     )
     # fmt: on
@@ -687,11 +718,12 @@ def _state_XX(state: State) -> State:
 def _state_bid(state: State, action: int) -> State:
     """Change state if bid is taken"""
     # 最後のbidとそのプレイヤーを保存
+    bid = action - BID_OFFSET_NUM
     # fmt: off
-    state = state.replace(_last_bid=jnp.int32(action), _last_bidder=state.current_player)  # type: ignore
+    state = state.replace(_last_bid=bid, _last_bidder=state.current_player)  # type: ignore
     # fmt: on
     # チーム内で各denominationを最初にbidしたプレイヤー
-    denomination = _bid_to_denomination(action)
+    denomination = _bid_to_denomination(bid)
     team = _position_to_team(_player_position(state._last_bidder, state))
     # fmt: off
     # team = 1ならEWチーム
@@ -703,7 +735,7 @@ def _state_bid(state: State, action: int) -> State:
                          lambda: state.replace(_first_denomination_NS=state._first_denomination_NS.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
                          lambda: state)  # type: ignore
     # fmt: on
-    # 小さいbidを非合法手にする
+    # pass, double, redouble, 小さいbidを一旦全て非合法手にする
     mask = jnp.arange(38) < action + 1
     return state.replace(  # type: ignore
         legal_action_mask=jnp.where(
