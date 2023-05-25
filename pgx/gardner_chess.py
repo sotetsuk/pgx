@@ -479,6 +479,7 @@ def _observe(state: State, player_id: jnp.ndarray):
 
         h = state._hash_history[i, :]
         rep = (state._hash_history == h).all(axis=1).sum() - 1
+        rep = jax.lax.select((h == 0).all(), 0, rep)
         rep0 = ones * (rep == 0)
         rep1 = ones * (rep >= 1)
         return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])

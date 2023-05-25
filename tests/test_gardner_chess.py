@@ -248,8 +248,8 @@ def test_observe():
     state.save_svg("tests/assets/gardner_chess/observe_005.svg")
     state = step(state, 265)
     state.save_svg("tests/assets/gardner_chess/observe_006.svg")
-    assert (state.observation[:, :, 12] == 0.).all()
-    assert (state.observation[:, :, 13] == 1.).all()
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
     assert (state.observation[:, :, 14 * 1 + 12] == 1.).all()
     assert (state.observation[:, :, 14 * 1 + 13] == 0.).all()
     assert (state.observation[:, :, 14 * 2 + 12] == 1.).all()
@@ -258,10 +258,30 @@ def test_observe():
     assert (state.observation[:, :, 14 * 3 + 13] == 0.).all()
     assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
     assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 5 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 6 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 6 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 7 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 7 + 13] == 0.).all()
     state = step(state, 21)
     state.save_svg("tests/assets/gardner_chess/observe_007.svg")
-    assert (state.observation[:, :, 12] == 0.).all()
-    assert (state.observation[:, :, 13] == 1.).all()
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 2 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 2 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 3 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 3 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 6 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 6 + 13] == 0.).all()
+    assert (state.observation[:, :, 14 * 7 + 12] == 1.).all()
+    assert (state.observation[:, :, 14 * 7 + 13] == 0.).all()
     state = step(state, 21)
     state.save_svg("tests/assets/gardner_chess/observe_008.svg")
     assert (state.observation[:, :, 12] == 0.).all()
