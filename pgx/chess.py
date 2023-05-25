@@ -260,7 +260,7 @@ def _check_termination(state: State):
     terminated |= has_insufficient_pieces(state)
     # rep history
     rep = (
-            (state._hash_history == state._zobrist_hash).all(axis=1).sum() - 1
+        (state._hash_history == state._zobrist_hash).all(axis=1).sum() - 1
     ).astype(jnp.int8)
     terminated |= rep >= 2
 
@@ -637,7 +637,10 @@ def _observe(state: State, player_id: jnp.ndarray):
         opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
 
         rep = (
-                (state._hash_history == state._hash_history[i, :]).all(axis=1).sum() - 1
+            (state._hash_history == state._hash_history[i, :])
+            .all(axis=1)
+            .sum()
+            - 1
         ).astype(jnp.int8)
         rep0 = ones * (rep == 0)
         rep1 = ones * (rep >= 1)
