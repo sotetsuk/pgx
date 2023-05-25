@@ -733,7 +733,7 @@ def test_buggy_samples():
     assert state.legal_action_mask.sum() == 4
 
     # stalemate by promotion
-    state = State._from_fen("3bk/p4/3Q1/5/K4 w - - 0 0")
+    state = State._from_fen("3bk/P4/3Q1/5/K4 w - - 0 0")
     state.save_svg("tests/assets/gardner_chess/buggy_samples_033.svg")
     state = step(state, 147)
     state.save_svg("tests/assets/gardner_chess/buggy_samples_034.svg")
