@@ -25,9 +25,6 @@ from pgx._src.chess_utils import (  # type: ignore
     PLANE_MAP,
     TO_MAP,
     ZOBRIST_BOARD,
-    ZOBRIST_CASTLING_KING,
-    ZOBRIST_CASTLING_QUEEN,
-    ZOBRIST_EN_PASSANT,
     ZOBRIST_SIDE,
 )
 from pgx._src.struct import dataclass
