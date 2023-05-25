@@ -561,7 +561,7 @@ def _from_fen(fen: str):
     )
     board_history = state._board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
-    current_player = jnp.int8(0) if turn == "w" else jnp.int8(1)
+    current_player = jnp.int8(0)
     state = state.replace(  # type: ignore
         observation=jax.jit(_observe)(state, current_player)
     )
