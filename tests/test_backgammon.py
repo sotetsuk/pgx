@@ -89,7 +89,7 @@ def make_test_state(
 ):
     return State(
         current_player=current_player,
-        _rng=rng,
+        _rng_key=rng,
         _board=board,
         _turn=turn,
         _dice=dice,
@@ -311,6 +311,20 @@ def test_observe():
     )
     expected_obs = jnp.concatenate(
         (board, jnp.array([1, 1, 0, 0, 0, 0])), axis=None
+    )
+    assert (observe(state, jnp.int8(1)) == expected_obs).all()
+
+    state = make_test_state(
+        current_player=jnp.int8(1),
+        rng=rng,
+        board=board,
+        turn=jnp.int8(1),
+        dice=jnp.array([0, 1], dtype=jnp.int16),
+        playable_dice=jnp.array([1, 1, 1, 1], dtype=jnp.int16),
+        played_dice_num=jnp.int16(0),
+    )
+    expected_obs = jnp.concatenate(
+        (board, jnp.array([0, 4, 0, 0, 0, 0])), axis=None
     )
     assert (observe(state, jnp.int8(1)) == expected_obs).all()
 

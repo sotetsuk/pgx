@@ -304,8 +304,7 @@ def _step_det(
 
 
 def find_ix(arr):
-    ix = lax.while_loop(lambda i: arr[i][0] != -1, lambda i: i + 1, 0)
-    return ix
+    return (arr[:, 0] == -1).argmax()
 
 
 def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
@@ -339,11 +338,14 @@ def _resolve_action(action, shot_timer, f_bullets, sub_x, sub_y, sub_or):
 
 
 def _update_by_f_bullets_hit(j, _f_bullets, e):
-    k = lax.while_loop(
-        lambda i: ~_is_hit(_f_bullets[j], e[i, 0], e[i, 1]) & (i < 25),
-        lambda i: i + 1,
-        0,
-    )
+    is_hit = (_f_bullets[j, 0] == e[:, 0]) & (_f_bullets[j, 1] == e[:, 1])
+    k = jnp.argmax(is_hit)
+    k = jax.lax.select(jnp.sum(is_hit) == 0, 25, k)
+    # k = lax.while_loop(
+    #     lambda i: ~hit[i] & (i < 25),
+    #     lambda i: i + 1,
+    #     0,
+    # )
     _f_bullets, e, removed = lax.cond(
         k < 25,
         lambda: (_remove_i(_f_bullets, j), _remove_i(e, k), TRUE),
@@ -530,11 +532,9 @@ def _update_enemy_subs(
 
 
 def _remove_i(arr, i):
-    N = arr.shape[0]
-    arr = lax.fori_loop(
-        i, N - 1, lambda j, _arr: _arr.at[j].set(arr[j + 1]), arr
-    )
-    return arr
+    mask = jnp.tile(jnp.arange(arr.shape[0]) < i, (arr.shape[1], 1)).T
+    rolled = jnp.roll(arr, -1, axis=0)
+    return jnp.where(mask, arr, rolled).at[-1, :].set(-1)
 
 
 def _remove_out_of_bound(arr, ix):
@@ -562,24 +562,29 @@ def _remove_hit(arr, ix, x, y):
 
 
 def _step_obj(arr, ix):
-    arr = lax.fori_loop(
-        0,
-        ix,
-        lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)),
+    arr_p = arr.at[:, 0].add(1)
+    arr_m = arr.at[:, 0].add(-1)
+    arr_2 = jnp.where(
+        jnp.tile(arr[:, 2], reps=(arr.shape[1], 1)).T, arr_p, arr_m
+    )
+    arr = jnp.where(
+        jnp.tile(jnp.arange(arr.shape[0]) < ix, reps=(arr.shape[1], 1)).T,
+        arr_2,
         arr,
     )
+    # arr = lax.fori_loop(
+    #     0,
+    #     ix,
+    #     lambda i, a: a.at[i, 0].add(lax.cond(a[i, 2], lambda: 1, lambda: -1)),
+    #     arr,
+    # )
     return arr
 
 
 def _hit(arr, ix, x, y):
-    return lax.fori_loop(
-        0,
-        ix,
-        lambda i, t: lax.cond(
-            (arr[i][0] == x) & (arr[i][1] == y), lambda: TRUE, lambda: t
-        ),
-        FALSE,
-    )
+    return (
+        (arr[:, 0] == x) & (arr[:, 1] == y) & (jnp.arange(arr.shape[0]) < ix)
+    ).any()
 
 
 def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
@@ -592,11 +597,14 @@ def _update_enemy_bullets(e_bullets, sub_x, sub_y, terminal):
 
 
 def _update_by_hit(j, _f_bullets, e):
-    k = lax.while_loop(
-        lambda i: ~_is_hit(e[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
-        lambda i: i + 1,
-        0,
-    )
+    is_hit = (e[j, 0] == _f_bullets[:, 0]) & (e[j, 1] == _f_bullets[:, 1])
+    k = jnp.argmax(is_hit)
+    k = jax.lax.select(jnp.sum(is_hit) == 0, 5, k)
+    # k = lax.while_loop(
+    #     lambda i: ~_is_hit(e[j], _f_bullets[i, 0], _f_bullets[i, 1]) & (i < 5),
+    #     lambda i: i + 1,
+    #     0,
+    # )
     _f_bullets, e, removed = lax.cond(
         k < 5,
         lambda: (_remove_i(_f_bullets, k), _remove_i(e, j), TRUE),
@@ -732,7 +740,7 @@ def _spawn_diver(divers, diver_lr, diver_y):
 
 
 def _observe(state: State) -> jnp.ndarray:
-    obs = jnp.zeros((10, 10, 10), dtype=jnp.bool_)
+    obs = jnp.zeros((11, 11, 10), dtype=jnp.bool_)
     obs = obs.at[state._sub_y, state._sub_x, 0].set(TRUE)
     back_x = lax.cond(
         state._sub_or, lambda: state._sub_x - 1, lambda: state._sub_x + 1
@@ -743,104 +751,33 @@ def _observe(state: State) -> jnp.ndarray:
     oxygen_guage = lax.cond(
         state._oxygen < 0, lambda: jnp.int32(9), lambda: oxygen_guage
     )
-    obs = lax.fori_loop(
-        jnp.int32(0),
-        oxygen_guage,
-        lambda i, _obs: _obs.at[9, i, 7].set(TRUE),
-        obs,
+    obs = obs.at[9, :, 7].set(
+        jnp.where(jnp.arange(11) < oxygen_guage, TRUE, obs[9, :, 7])
     )
-    obs = lax.fori_loop(
-        9 - state._diver_count,
-        jnp.int32(9),
-        lambda i, _obs: _obs.at[9, i, 8].set(TRUE),
-        obs,
+    mask = (9 - state._diver_count <= jnp.arange(11)) & (jnp.arange(11) < 9)
+    obs = obs.at[9, :, 8].set(jnp.where(mask, TRUE, obs[9, :, 8]))
+    obs = obs.at[state._f_bullets[:, 1], state._f_bullets[:, 0], 2].set(TRUE)
+    obs = obs.at[state._e_bullets[:, 1], state._e_bullets[:, 0], 4].set(TRUE)
+
+    obs = obs.at[state._e_fish[:, 1], state._e_fish[:, 0], 5].set(TRUE)
+    back_x = (
+        state._e_fish[:, 0]
+        + jnp.array([1, -1], dtype=jnp.int32)[state._e_fish[:, 2]]
     )
-    obs = lax.fori_loop(
-        0,
-        5,
-        lambda i, _obs: lax.cond(
-            state._f_bullets[i][0] >= 0,
-            lambda: _obs.at[
-                state._f_bullets[i][1], state._f_bullets[i][0], 2
-            ].set(TRUE),
-            lambda: _obs,
-        ),
-        obs,
+    obs = obs.at[state._e_fish[:, 1], back_x, 3].set(TRUE)
+
+    obs = obs.at[state._e_subs[:, 1], state._e_subs[:, 0], 6].set(TRUE)
+    back_x = (
+        state._e_subs[:, 0]
+        + jnp.array([1, -1], dtype=jnp.int32)[state._e_subs[:, 2]]
     )
-    obs = lax.fori_loop(
-        0,
-        25,
-        lambda i, _obs: lax.cond(
-            state._e_bullets[i][0] >= 0,
-            lambda: _obs.at[
-                state._e_bullets[i][1], state._e_bullets[i][0], 4
-            ].set(TRUE),
-            lambda: _obs,
-        ),
-        obs,
+    obs = obs.at[state._e_subs[:, 1], back_x, 3].set(TRUE)
+
+    obs = obs.at[state._divers[:, 1], state._divers[:, 0], 9].set(TRUE)
+    back_x = (
+        state._divers[:, 0]
+        + jnp.array([1, -1], dtype=jnp.int32)[state._divers[:, 2]]
     )
+    obs = obs.at[state._divers[:, 1], back_x, 3].set(TRUE)
 
-    def set_e_fish(_obs, fish):
-        _obs = _obs.at[fish[1], fish[0], 5].set(TRUE)
-        back_x = fish[0] + jnp.array([1, -1])[fish[2]]
-        _obs = lax.cond(
-            (0 <= back_x) & (back_x <= 9),
-            lambda: _obs.at[fish[1], back_x, 3].set(TRUE),
-            lambda: _obs,
-        )
-        return _obs
-
-    obs = lax.fori_loop(
-        0,
-        25,
-        lambda i, _obs: lax.cond(
-            state._e_fish[i][0] >= 0,
-            lambda: set_e_fish(_obs, state._e_fish[i]),
-            lambda: _obs,
-        ),
-        obs,
-    )
-
-    def set_e_subs(_obs, sub):
-        _obs = _obs.at[sub[1], sub[0], 6].set(TRUE)
-        back_x = sub[0] + jnp.array([1, -1], dtype=jnp.int32)[sub[2]]
-        _obs = lax.cond(
-            (0 <= back_x) & (back_x <= 9),
-            lambda: _obs.at[sub[1], back_x, 3].set(TRUE),
-            lambda: _obs,
-        )
-        return _obs
-
-    obs = lax.fori_loop(
-        0,
-        25,
-        lambda i, _obs: lax.cond(
-            state._e_subs[i][0] >= 0,
-            lambda: set_e_subs(_obs, state._e_subs[i]),
-            lambda: _obs,
-        ),
-        obs,
-    )
-
-    def set_divers(_obs, diver):
-        _obs = _obs.at[diver[1], diver[0], 9].set(TRUE)
-        back_x = diver[0] + jnp.array([1, -1], dtype=jnp.int32)[diver[2]]
-        _obs = lax.cond(
-            (back_x >= 0) & (back_x <= 9),
-            lambda: _obs.at[diver[1], back_x, 3].set(TRUE),
-            lambda: _obs,
-        )
-        return _obs
-
-    obs = lax.fori_loop(
-        0,
-        5,
-        lambda i, _obs: lax.cond(
-            state._divers[i][0] >= 0,
-            lambda: set_divers(_obs, state._divers[i]),
-            lambda: _obs,
-        ),
-        obs,
-    )
-
-    return obs
+    return obs[:10, :10, :]

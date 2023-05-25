@@ -10,6 +10,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
     SUITS = ["\u2660", "\u2665", "\u2666", "\u2663"]  # ♠♡♢♣
     DENOMINATIONS = ["\u2663", "\u2666", "\u2665", "\u2660", "N"]  # ♣♢♡♠
     ACT = ["P", "X", "XX"]
+    BID_OFFSET_NUM = 3
     # fmt:on
     color_set = config["COLOR_SET"]
 
@@ -210,13 +211,22 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         if act == -1:
             break
         act_str = (
-            str(act // 5 + 1) + DENOMINATIONS[(act % 5)]
-            if 0 <= act < 35
-            else ACT[act - 35]
+            str((act - BID_OFFSET_NUM) // 5 + 1)
+            + DENOMINATIONS[(act - BID_OFFSET_NUM) % 5]
+            if BID_OFFSET_NUM <= act < 35 + BID_OFFSET_NUM
+            else ACT[act]
         )
         color = (
             "orangered"
-            if act % 5 == 1 or act % 5 == 2
+            if (
+                (act > BID_OFFSET_NUM)
+                and (
+                    (act - BID_OFFSET_NUM) % 5 == 1
+                    or (act - BID_OFFSET_NUM) % 5 == 2
+                )
+            )
+            or act == 1
+            or act == 2
             else color_set.text_color
         )
         board_g.add(

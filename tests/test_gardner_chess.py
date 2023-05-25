@@ -155,16 +155,22 @@ def test_observe():
     assert state.observation[0, 0, 9] == 1.
     assert state.observation[0, 3, 10] == 1.
     assert state.observation[0, 4, 11] == 1.
+    assert state._turn == 0
+    assert (state.observation[:, :, 112] == 0).all()
 
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/observe_001.svg")
+    assert state._turn == 1
+    assert (state.observation[:, :, 112] == 1).all()
+    assert (state.observation[:, :, 0] == expected_wpawn1).all()
+
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/observe_002.svg")
     expected_wpawn2 = jnp.float32(
         [[0., 0., 0., 0., 0.],
-         [0., 1., 1., 1., 1.],
-         [1., 0., 0., 0., 0.],
          [0., 0., 0., 0., 0.],
+         [1., 0., 0., 0., 0.],
+         [0., 1., 1., 1., 1.],
          [0., 0., 0., 0., 0.]]
     )
     expected_wpawn3 = jnp.float32(
@@ -188,13 +194,13 @@ def test_observe():
     assert state.observation[0, 4, 11] == 1.
     # history
     # 14~27
-    assert (state.observation[:, :, 14] == expected_wpawn1).all()
+    assert (state.observation[:, :, 14] == expected_wpawn2).all()
     assert state.observation[4, 1, 15] == 1.
     assert state.observation[4, 2, 16] == 1.
     assert state.observation[4, 0, 17] == 1.
     assert state.observation[4, 3, 18] == 1.
     assert state.observation[4, 4, 19] == 1.
-    assert (state.observation[:, :, 20] == expected_wpawn2).all()
+    assert (state.observation[:, :, 20] == expected_bpawn1).all()
     assert state.observation[0, 1, 21] == 1.
     assert state.observation[0, 2, 22] == 1.
     assert state.observation[0, 0, 23] == 1.
@@ -699,8 +705,7 @@ def test_buggy_samples():
     state = step(state, jnp.int32(756))
     state.save_svg("tests/assets/gardner_chess/buggy_samples_025.svg")
     print(state._to_fen())
-    # need fix
-    # assert not state.terminated
+    assert not state.terminated
 
     # pin
     state = State._from_fen("k3b/5/2b2/1P3/K4 b - - 0 0")

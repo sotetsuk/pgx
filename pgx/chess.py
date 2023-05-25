@@ -28,6 +28,8 @@ from pgx._src.chess_utils import (  # type: ignore
 )
 from pgx._src.struct import dataclass
 
+MAX_TERMINATION_STEPS = 512  # from AZ paper
+
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
@@ -130,6 +132,10 @@ class State(v1.State):
         .at[0]
         .set(jnp.uint32([1429435994, 901419182]))
     )
+    _board_history: jnp.ndarray = (
+        jnp.zeros((8, 64), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
+    )
+    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
     # index to possible piece positions for speeding up. Flips every turn.
     _possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
 
@@ -186,9 +192,6 @@ class Action:
 class Chess(v1.Env):
     def __init__(self):
         super().__init__()
-        # AlphaZero paper does not mention the number of max termination steps
-        # but we believe 1000 is large enough for Chess.
-        self.max_termination_steps = 1000
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
@@ -200,8 +203,7 @@ class Chess(v1.Env):
         assert isinstance(state, State)
         state = _step(state, action)
         state = jax.lax.cond(
-            (0 <= self.max_termination_steps)
-            & (self.max_termination_steps <= state._step_count),
+            (MAX_TERMINATION_STEPS <= state._step_count),
             # end with tie
             lambda: state.replace(terminated=TRUE),  # type: ignore
             lambda: state,
@@ -210,7 +212,7 @@ class Chess(v1.Env):
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
-        return _observe(state)
+        return _observe(state, player_id)
 
     @property
     def id(self) -> v1.EnvId:
@@ -230,6 +232,7 @@ def _step(state: State, action: jnp.ndarray):
     state = _update_zobrist_hash(state, a)
     state = _apply_move(state, a)
     state = _flip(state)
+    state = _update_history(state)
     state = state.replace(  # type: ignore
         legal_action_mask=_legal_action_mask(state)
     )
@@ -237,13 +240,27 @@ def _step(state: State, action: jnp.ndarray):
     return state
 
 
+def _update_history(state: State):
+    # board history
+    board_history = jnp.roll(state._board_history, 64)
+    board_history = board_history.at[0].set(state._board)
+    state = state.replace(_board_history=board_history)  # type:ignore
+    # rep history
+    rep = (
+        (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
+    ).astype(jnp.int8)
+    rep_history = jnp.roll(state._rep_history, 1)
+    rep_history = rep_history.at[0].set(rep)
+    state = state.replace(_rep_history=rep_history)  # type: ignore
+    return state
+
+
 def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
-    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum() - 1
     terminated = ~has_legal_action
     terminated |= state._halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
-    terminated |= rep >= 2
+    terminated |= state._rep_history[0] >= 2
 
     is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
     # fmt: off
@@ -422,6 +439,9 @@ def _flip(state: State) -> State:
         _en_passant=_flip_pos(state._en_passant),
         _can_castle_queen_side=state._can_castle_queen_side[::-1],
         _can_castle_king_side=state._can_castle_king_side[::-1],
+        _board_history=-jnp.flip(
+            state._board_history.reshape(-1, 8, 8), axis=-1
+        ).reshape(-1, 64),
         _possible_piece_positions=state._possible_piece_positions[::-1],
     )
 
@@ -597,60 +617,50 @@ def _possible_piece_positions(state):
     return jnp.vstack((my_pos, opp_pos))
 
 
-def _observe(state: State):
-    """Our observation design is very similar to OpenSpiel
-    except two differences:
+def _observe(state: State, player_id: jnp.ndarray):
+    ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
+    color = state._turn * ones
 
-    - The board and plane index are oriented to the current agent (like AlphaZero)
-    - No plane for empty square (like AlphaZero)
-
-    There are 19 planes in total:
-
-    - [0, ... 5] 6 my pieces
-    - [6, ... 11] 6 opp pieces
-    - [12] 1 repetition count
-    - [13] 1 color
-    - [14, ..., 17] 4 castling
-    - [18] 1 no progress count
-    """
-
-    @jax.vmap
-    def is_piece(piece):
-        return _rotate((state._board == piece).reshape((8, 8))).astype(
-            jnp.float32
-        )
-
-    ONE_PLANE = jnp.ones((1, 8, 8), dtype=jnp.float32)
-
-    my_pieces = is_piece(jnp.arange(1, 7))
-    opp_pieces = is_piece(-jnp.arange(1, 7))
-    # See also https://github.com/LeelaChessZero/lc0/blob/f39ad6ceb62c186136fc80ad08c466217c485aa1/src/neural/encoder.cc#L290
-    rep = (state._hash_history == state._zobrist_hash).all(axis=1).sum() - 1
-    repetitions = ONE_PLANE * (rep >= 1)
-    color = ONE_PLANE * state._turn
-    my_queen_side_castling_right = ONE_PLANE * state._can_castle_queen_side[0]
-    my_king_side_castling_right = ONE_PLANE * state._can_castle_king_side[0]
-    opp_queen_side_castling_right = ONE_PLANE * state._can_castle_queen_side[1]
-    opp_king_side_castling_right = ONE_PLANE * state._can_castle_king_side[1]
-    no_progress_count = (
-        ONE_PLANE * state._halfmove_count.astype(jnp.float32) / 100.0
+    state = jax.lax.cond(
+        state.current_player == player_id, lambda: state, lambda: _flip(state)
     )
 
+    def make(i):
+        board = _rotate(state._board_history[i].reshape((8, 8)))
+
+        def piece_feat(p):
+            return (board == p).astype(jnp.float32)
+
+        my_pieces = jax.vmap(piece_feat)(jnp.arange(1, 7))
+        opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
+        rep0 = ones * (state._rep_history[i] == 0)
+        rep1 = ones * (state._rep_history[i] == 1)
+        return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
+
+    # color = jax.lax.select(
+    #     state.current_player == player_id, state._turn, 1 - state._turn
+    # )
+    color = color * ones
+    total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones
+    my_queen_side_castling_right = ones * state._can_castle_queen_side[0]
+    my_king_side_castling_right = ones * state._can_castle_king_side[0]
+    opp_queen_side_castling_right = ones * state._can_castle_queen_side[1]
+    opp_king_side_castling_right = ones * state._can_castle_king_side[1]
+    no_prog_cnt = (state._halfmove_count.astype(jnp.float32) / 100.0) * ones
+
+    board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8)
     return jnp.vstack(
         [
-            my_pieces,
-            opp_pieces,
-            repetitions,
+            board_feat,
             color,
+            total_move_cnt,
             my_queen_side_castling_right,
             my_king_side_castling_right,
             opp_queen_side_castling_right,
             opp_king_side_castling_right,
-            no_progress_count,
+            no_prog_cnt,
         ]
-    ).transpose(
-        (1, 2, 0)
-    )  # channel last
+    ).transpose((1, 2, 0))
 
 
 def _zobrist_hash(state):
