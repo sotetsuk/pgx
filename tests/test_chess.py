@@ -1,11 +1,13 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx.chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE
+from pgx.chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash
+from pgx.experimental.utils import act_randomly
 
 env = Chess()
 init = jax.jit(env.init)
 step = jax.jit(env.step)
+act_randomly = jax.jit(act_randomly)
 
 pgx.set_visualization_config(color_theme="dark")
 
@@ -21,6 +23,20 @@ def p(s: str, b=False):
     offset = int(s[1]) - 1 if not b else 8 - int(s[1])
     return x * 8 + offset
 
+
+def test_zobrist_hash():
+    key = jax.random.PRNGKey(0)
+    key, subkey = jax.random.split(key)
+    state = init(subkey)
+    assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+    # for i in range(5):
+    while not state.terminated:
+        key, subkey = jax.random.split(key)
+        action = act_randomly(subkey, state)
+        state = step(state, action)
+        state.save_svg("debug.svg")
+        print(action % 73)
+        assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
 
 def test_action():
     # See #704
