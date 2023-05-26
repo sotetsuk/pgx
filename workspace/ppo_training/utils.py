@@ -159,9 +159,18 @@ def single_play_step_vs_policy_in_two(step_fn, network, params):
     def wrapped_step_fn(state, action, rng):
         actor = state.current_player
         state = jax.vmap(step_fn)(state, action)
-        action = jax.vmap(act_fn)(state, rng)
+        rewards = state.rewards
+        action = jax.vmap(act_fn, in_axes=(0, None))(state, rng)
         state = jax.vmap(step_fn)(state, action)
+        rewards = rewards + state.rewards
         return state.replace(rewards=rewards)
+    return wrapped_step_fn
+
+
+def normal_step(step_fn):
+    def wrapped_step_fn(state, action, rng):
+        state = jax.vmap(step_fn)(state, action)
+        return state
     return wrapped_step_fn
 
 
