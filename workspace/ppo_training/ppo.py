@@ -8,7 +8,7 @@ from typing import Sequence, NamedTuple, Any, Literal
 from flax.training.train_state import TrainState
 import distrax
 import pgx
-from utils import auto_reset, single_play_step_vs_policy, single_play__step_vs_random
+from utils import auto_reset, single_play_step_vs_policy_in_backgammon, single_play_step_vs_policy_in_two
 import time
 import pickle
 import argparse
@@ -18,7 +18,17 @@ import wandb
 
 
 class PPOConfig(BaseModel):
-    ENV_NAME: str = "backgammon"
+    ENV_NAME: Literal[
+        "backgammon", 
+        "leduc_holdem", 
+        "kuhn_poker", 
+        "breakout", 
+        "freeway", 
+        "space_invaders", 
+        "asterix", 
+        "seaquest", 
+        "2048"
+        ] = "backgammon"
     LR: float = 2.5e-4
     NUM_ENVS: int = 64
     NUM_STEPS: int = 256
@@ -78,8 +88,20 @@ class ActorCritic(nn.Module):
         return actor_mean, jnp.squeeze(critic, axis=-1)
 
 
+def _make_step(env_name, network, params):
+    env = pgx.make(env_name)
+    auto_rese_step = auto_reset(env.step, env.init)
+    if env_name == "backgammon":
+        return single_play_step_vs_policy_in_backgammon(auto_rese_step, network, params)
+    elif env_name in ["kuhn_poker", "leduc_holdem"]:
+        return single_play_step_vs_policy_in_two(auto_rese_step, network, params)
+    else:
+        return auto_rese_step
+
+
 def _get(x, i):
     return x[i]
+
 
 class Transition(NamedTuple):
     done: jnp.ndarray
@@ -95,11 +117,7 @@ def make_update_fn(config, env, network):
      # TRAIN LOOP
     def _update_step(runner_state):
         # COLLECT TRAJECTORIES
-        auto_rese_step = auto_reset(env.step, env.init)
-        if config["VS_RANDOM"]:
-            _single_play_step = single_play__step_vs_random(auto_rese_step)
-        else:
-            _single_play_step = single_play_step_vs_policy(auto_rese_step, network, runner_state[0].params)
+        step_fn = _make_step(config["ENV_NAME"])
         def _env_step(runner_state, unused):
             train_state, env_state, last_obs, rng = runner_state
             actor = env_state.current_player
@@ -316,30 +334,32 @@ def train(config, rng):
 
     rng, _rng = jax.random.split(rng)
     runner_state = (train_state, env_state, env_state.observation, _rng)
-    old_params = runner_state[0].params
+
+    ckpt_params = None
+    ckpt_filename = f'params/{config["ENV_NAME"]}/anchor.ckpt'
+    if ckpt_filename != "" and os.path.isfile(ckpt_filename):
+        with open(ckpt_filename, "rb") as reader:
+            dic = pickle.load(reader)
+        ckpt_params = dic["params"]
+    
     steps = 0
-    enemy = "random" if config["VS_RANDOM"] else "prev_policy"
     for i in range(config["NUM_UPDATES"]):
-        if config["VS_RANDOM"]:
-            step_fn = single_play__step_vs_random(env.step)  # vs random 
+        step_fn = _make_step(config["ENV_NAME"])
+        if ckpt_param is not None:
+            step_fn = _make_step(config["ENV_NAME"], network, ckpt_params)
+            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
         else:
-            step_fn = single_play_step_vs_policy(env.step, network, old_params) # vs policy
-        eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
+            step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params)
+            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
         log = {
-            f"eval_vs_{enemy}": float(eval_R),
+            f"eval_R": float(eval_R),
             "steps": steps,
         }
         print(log)
         wandb.log(log)
-        if i % config["UPDATE_INTERVAL"] == 0:
-            old_params = runner_state[0].params
         runner_state, loss_info = jitted_update_step(runner_state)
         steps += config["NUM_ENVS"] * config["NUM_STEPS"]
         _, (value_loss, loss_actor, entropy) = loss_info
-        ckpt_filename = f'params/{config["ENV_NAME"]}_vs_{enemy}_steps_{steps}.ckpt'
-        with open(ckpt_filename, "wb") as writer:
-                dic = {"params": runner_state[0].params}
-                pickle.dump(dic, writer)
     return runner_state
 
 

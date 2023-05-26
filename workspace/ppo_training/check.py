@@ -4,15 +4,18 @@ import pgx
 import time
 import pickle
 from ppo import ActorCritic, evaluate
-from utils import single_play_step_vs_policy, single_play__step_vs_random
+from train import _make_step_fn
 import distrax
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 def _get(rewards, actor):
     return rewards[actor]
+
+
 def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
-    _single_play_step = jax.jit(single_play__step_vs_random(env.step))
+    step_fn = _make_step(config["ENV_NAME"], network, ckpt_params)
+    step_fn = jax.jit(step_fn)
     rng_key, sub_key = jax.random.split(rng_key)
     subkeys = jax.random.split(sub_key, num_envs)
     state = jax.vmap(env.init)(subkeys)
@@ -30,10 +33,10 @@ def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
         actor = state.current_player
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
-        #assert not (actor != jnp.zeros(num_envs, dtype=jnp.int8) & ~state.terminated).any()  # 終了するまでactorは変わらない
+        #  assert not (actor != jnp.zeros(num_envs, dtype=jnp.int8) & ~state.terminated).any()  # 終了するまでactorは変わらない
         print(f"actor: {actor}", state.terminated)
         rng_key, _rng = jax.random.split(rng_key)
-        state = _single_play_step(state, action, _rng)
+        state = step_fn(state, action, _rng)
         cum_return = cum_return + jax.vmap(_get)(state.rewards, actor)
         R = R + state.rewards
         states.append(state)
@@ -45,12 +48,18 @@ def visualize(network, params, env,  rng_key, num_envs, save_svg=False):
 
 
 if __name__ == "__main__":
-    steps = 4980736 # please specify according to your ckpt file
-    env = pgx.make("backgammon")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env_name", type=str, default="backgammon")
+    parser.add_argument("--num_envs", type=int, default=64)
+    args = parser.parse_args()
+
+    env = pgx.make(args.env_name)
     network = ActorCritic(env.num_actions, activation="tanh")
-    ckpt_filename = f'params/{"backgammon"}_vs_{"prev_policy"}_steps_{steps}.ckpt'
+    ckpt_filename = f'params/{args.env_name}/anchor.ckpt'
     with open(ckpt_filename, "rb") as f:
         params = pickle.load(f)["params"]
+
+    env = pgx.make(args.env_name)
+    network = ActorCritic(env.num_actions, activation="tanh")
     rng_key = jax.random.PRNGKey(3)
-    _single_play_step = jax.jit(single_play__step_vs_random(env.step))
     visualize(network, params, env, rng_key, 7, save_svg=True)

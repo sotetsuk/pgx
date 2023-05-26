@@ -58,7 +58,7 @@ def auto_reset(step_fn, init_fn):
     return wrapped_step_fn
 
 
-def single_play__step_vs_random(step_fn):
+def single_play__step_vs_random_in_backgammon(step_fn):
     """
     assume backgammon
     """
@@ -100,7 +100,7 @@ def single_play__step_vs_random(step_fn):
     return wrapped_step_fn
 
 
-def single_play_step_vs_policy(step_fn, network, params):
+def single_play_step_vs_policy_in_backgammon(step_fn, network, params):
     """
     assume backgammon
     """
@@ -139,6 +139,28 @@ def single_play_step_vs_policy(step_fn, network, params):
         actor = state.current_player
         state = jax.vmap(step_fn)(state, action)
         state, rewards = jax.vmap(enemy_step_fn, in_axes=(0, None, 0))(state, rng, actor)
+        return state.replace(rewards=rewards)
+    return wrapped_step_fn
+
+
+def single_play_step_vs_policy_in_two(step_fn, network, params):
+    """
+    assume backgammon
+    """
+    def act_based_on_policy(state, rng):
+        logits, value = network.apply(params, state.observation)
+        logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
+        pi = distrax.Categorical(logits=logits)
+        action = pi.sample(seed=rng)
+        return action
+    
+    act_fn = act_based_on_policy
+
+    def wrapped_step_fn(state, action, rng):
+        actor = state.current_player
+        state = jax.vmap(step_fn)(state, action)
+        action = jax.vmap(act_fn)(state, rng)
+        state = jax.vmap(step_fn)(state, action)
         return state.replace(rewards=rewards)
     return wrapped_step_fn
 
