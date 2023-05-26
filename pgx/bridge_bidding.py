@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from urllib.request import urlopen
+
 import copy
 import os
 import sys
@@ -35,6 +37,24 @@ PASS_ACTION_NUM = 0
 DOUBLE_ACTION_NUM = 1
 REDOUBLE_ACTION_NUM = 2
 BID_OFFSET_NUM = 3
+
+
+DDS_RESULTS_TRAIN_URL = "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
+DDS_RESULTS_TEST_URL = "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
+DDS_RESULTS_TRAIN_FNAME = "dds_results_2.5M.npy"
+DDS_RESULTS_TEST_FNAME = "dds_results_500K.npy"
+
+
+def download_dds_reullts(is_train=False):
+    download_url = DDS_RESULTS_TRAIN_URL if is_train else DDS_RESULTS_TEST_URL
+    fname = DDS_RESULTS_TRAIN_FNAME if is_train else DDS_RESULTS_TEST_FNAME
+    try:
+        print(f"Downloading from {download_url} ...")
+        data = urlopen(download_url).read()
+        with open(fname, mode="wb") as f:
+            f.write(data)
+    except:
+        print("Failed to downalod the data ...")
 
 
 @dataclass
