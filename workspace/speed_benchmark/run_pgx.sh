@@ -9,12 +9,12 @@ BATCH_SIZE=8192
 
 # all gpus
 for game in $GAMES; do
-  $PY -O run_pgx.py $game $bs $NUM_BATCH_STEPS
+  $PY -O run_pgx.py $game $BATCH_SIZE $NUM_BATCH_STEPS
 done
 
 BATCH_SIZE=1024
 
 # 1 gpu
 for game in $GAMES; do
-  CUDA_VISIBLE_DEVICES=0 $PY -O run_pgx.py $game $bs $NUM_BATCH_STEPS
+  CUDA_VISIBLE_DEVICES=0 $PY -O run_pgx.py $game $BATCH_SIZE $NUM_BATCH_STEPS
 done
