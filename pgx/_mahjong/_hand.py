@@ -35,17 +35,14 @@ class Hand:
         for j in range(4):
             hand = hand.at[j].set(Hand.add(hand[j], deck[-(16 * 3 + j + 1)]))  # type: ignore
 
-        last_draw = deck[-(16 * 3 + 4 + 1)].astype(int)
-        hand = hand.at[0].set(Hand.add(hand[0], last_draw))  # type: ignore
-
         return hand
 
     @staticmethod
-    def cache(code: int):
+    def cache(code):
         return (Hand.CACHE[code >> 5] >> (code & 0b11111)) & 1
 
     @staticmethod
-    def can_ron(hand: jnp.ndarray, tile: int):
+    def can_ron(hand: jnp.ndarray, tile):
         return Hand.can_tsumo(Hand.add(hand, tile))
 
     @staticmethod
@@ -121,23 +118,23 @@ class Hand:
         return ((valid & (heads == 1)) | thirteen_orphan | seven_pairs) == 1
 
     @staticmethod
-    def can_pon(hand: jnp.ndarray, tile: int) -> bool:
+    def can_pon(hand: jnp.ndarray, tile) -> bool:
         return hand[tile] >= 2  # type: ignore
 
     @staticmethod
-    def can_minkan(hand: jnp.ndarray, tile: int) -> bool:
+    def can_minkan(hand: jnp.ndarray, tile) -> bool:
         return hand[tile] == 3  # type: ignore
 
     @staticmethod
-    def can_kakan(hand: jnp.ndarray, tile: int) -> bool:
+    def can_kakan(hand: jnp.ndarray, tile) -> bool:
         return hand[tile] == 1  # type: ignore
 
     @staticmethod
-    def can_ankan(hand: jnp.ndarray, tile: int) -> bool:
+    def can_ankan(hand: jnp.ndarray, tile) -> bool:
         return hand[tile] == 4  # type: ignore
 
     @staticmethod
-    def can_chi(hand: jnp.ndarray, tile: int, action: int) -> bool:
+    def can_chi(hand: jnp.ndarray, tile, action) -> bool:
         return jax.lax.cond(
             (tile >= 27) | (action < Action.CHI_L) | (Action.CHI_R < action),
             lambda: False,
@@ -161,31 +158,31 @@ class Hand:
         )
 
     @staticmethod
-    def add(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
+    def add(hand: jnp.ndarray, tile, x=1) -> jnp.ndarray:
         return hand.at[tile].set(hand[tile] + x)
 
     @staticmethod
-    def sub(hand: jnp.ndarray, tile: int, x: int = 1) -> jnp.ndarray:
+    def sub(hand: jnp.ndarray, tile, x=1) -> jnp.ndarray:
         return Hand.add(hand, tile, -x)
 
     @staticmethod
-    def pon(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+    def pon(hand: jnp.ndarray, tile) -> jnp.ndarray:
         return Hand.sub(hand, tile, 2)
 
     @staticmethod
-    def minkan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+    def minkan(hand: jnp.ndarray, tile) -> jnp.ndarray:
         return Hand.sub(hand, tile, 3)
 
     @staticmethod
-    def kakan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+    def kakan(hand: jnp.ndarray, tile) -> jnp.ndarray:
         return Hand.sub(hand, tile)
 
     @staticmethod
-    def ankan(hand: jnp.ndarray, tile: int) -> jnp.ndarray:
+    def ankan(hand: jnp.ndarray, tile) -> jnp.ndarray:
         return Hand.sub(hand, tile, 4)
 
     @staticmethod
-    def chi(hand: jnp.ndarray, tile: int, action: int) -> jnp.ndarray:
+    def chi(hand: jnp.ndarray, tile, action) -> jnp.ndarray:
         return jax.lax.switch(
             action - Action.CHI_L,
             [
