@@ -16,7 +16,8 @@ import jax
 import jax.numpy as jnp
 
 import pgx.v1 as v1
-from pgx._mahjong._action import Action
+
+# from pgx._mahjong._action import Action
 from pgx._mahjong._hand import Hand
 
 # from pgx._mahjong._meld import Meld
@@ -125,6 +126,8 @@ def _step(state: State, action: jnp.ndarray) -> State:
     # - 勝利条件確認
 
     state = _discard(state, action)
+
+    # ポンとかチーとかない場合はdrawへ
     state = _draw(state)
 
     return state
