@@ -160,16 +160,14 @@ def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
     my_board = board * 1 > 0
     opp_board = board * -1 > 0
     ones = jnp.ones_like(my_board)
-    my_color = (
-        jax.lax.select(
-            player_id == state.current_player, state._turn, 1 - state._turn
-        )
-        * ones
+    color = jax.lax.select(
+        player_id == state.current_player, state._turn, 1 - state._turn
     )
+    color = color * ones
     can_swap = state.legal_action_mask[-1] * ones
 
     return jnp.stack(
-        [my_board, opp_board, my_color, can_swap], 2, dtype=jnp.bool_
+        [my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_
     )
 
 

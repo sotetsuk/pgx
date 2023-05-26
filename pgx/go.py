@@ -155,7 +155,7 @@ def _observe(state: State, player_id, size, history_length):
         return state._board_history[i // 2] == color
 
     log = _make(jnp.arange(history_length * 2))
-    color = jnp.full_like(log[0], my_color == 1)  # black=1, white=0
+    color = jnp.full_like(log[0], my_color == -1)  # black=0, white=1
 
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
