@@ -16,7 +16,7 @@ done
 # 1 gpu
 for game in $GAMES; do
 for bs in $BATCH_SIZES; do
-  CUDA_VISIBLE_DEVICES=0 $PY -O run_pgx.py $game $bs $NUM_BATCH_STEPS
+  CUDA_VISIBLE_DEVICES=7 $PY -O run_pgx.py $game $bs $NUM_BATCH_STEPS
 done
 done
 

@@ -42,57 +42,48 @@ def auto_reset(step_fn, init_fn):
 
 
 def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
+    assert batch_size % num_devices == 0
     num_steps = batch_size * num_batch_steps
-
     env = pgx.make(env_id)
-    assert env is not None
 
-    batch_size_per_dev = batch_size // num_devices
-
-    def run(key):
-        key, subkey = jax.random.split(key)
-        keys = jax.random.split(subkey, batch_size_per_dev)
-        state = jax.vmap(env.init)(keys)
-
-        def fn(i, x):
-            key, s = x
-            del i
-            key, subkey = jax.random.split(key)
-            action = act_randomly(subkey, state)
-            s = jax.vmap(env.step)(s, action)
-            return key, s
-
-        _, state = jax.lax.fori_loop(
-            0, num_batch_steps, fn, (rng_key, state)
-        )
+    def step_fn(key, state):
+        action = act_randomly(key, state)
+        state = auto_reset(env.step, env.init)(state, action)
         return state
 
-    rng_key = jax.random.PRNGKey(0)
-
     if num_devices > 1:
-        run = jax.pmap(run)
         # warmup start
-        rng_key, subkey = jax.random.split(rng_key)
-        pmap_keys = jax.random.split(subkey, num_devices)
-        s = run(pmap_keys)
-        # warmup end
-        ts = time.time()
-        rng_key, subkey = jax.random.split(rng_key)
-        pmap_keys = jax.random.split(subkey, num_devices)
-        s = run(pmap_keys)
-        te = time.time()
+        init_fn = jax.pmap(env.init)
+        step_fn = jax.pmap(step_fn)
     else:
-        run = jax.jit(run)
-        # warmup start
-        key = jax.random.PRNGKey(0)
-        key, subkey = jax.random.split(key)
-        s = run(subkey)
-        # warmup end
-        ts = time.time()
-        key, subkey = jax.random.split(key)
-        s = run(subkey)
-        te = time.time()
+        init_fn = jax.jit(jax.vmap(env.init))
+        step_fn = jax.jit(jax.vmap(step_fn))
 
+    rng_key = jax.random.PRNGKey(0)
+    rng_key, subkey = jax.random.split(rng_key)
+    keys = jax.random.split(subkey, batch_size)
+
+    # warmup
+    print("compiling ... ")
+    ts = time.time()
+    s = init_fn(keys)
+    s = step_fn(keys, s)
+    te = time.time()
+    print(f"done: {te - ts:.03f} sec")
+    # warmup end
+
+    ts = time.time()
+
+    rng_key, subkey = jax.random.split(rng_key)
+    keys = jax.random.split(subkey, batch_size)
+    s = init_fn(keys)
+    for i in range(num_batch_steps):
+        print(i, flush=True)
+        rng_key, subkey = jax.random.split(rng_key)
+        keys = jax.random.split(subkey, batch_size)
+        s = step_fn(keys, s)
+
+    te = time.time()
     return num_steps, te - ts
 
 
@@ -104,5 +95,5 @@ bs = int(sys.argv[2])
 num_batch_steps = int(sys.argv[3])
 
 
-num_steps, sec = benchmark(env_id, bs, bs * num_batch_steps)
+num_steps, sec = benchmark(env_id, bs, num_batch_steps)
 print(json.dumps({"game": game, "library": f"pgx/{num_devices}dev", "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs, "pgx.__version__": pgx.__version__}))
