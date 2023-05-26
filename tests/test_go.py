@@ -276,6 +276,10 @@ def test_observe():
     state = init(key=key)
     assert state.current_player == 1
     # player 0 is white, player 1 is black
+    obs = observe(state, 1)   # black turn, black view
+    assert (obs[:, :, -1] == 0).all()
+    obs = observe(state, 0)   # black turn, white view
+    assert (obs[:, :, -1] == 1).all()
 
     state = step(state=state, action=0)
     state = step(state=state, action=1)
@@ -306,13 +310,13 @@ def test_observe():
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == -1)).all()
     assert (obs[:, :, 1] == (curr_board == 1)).all()
-    assert (obs[:, :, -1] == 0).all()
+    assert (obs[:, :, -1] == 1).all()
 
     obs = observe(state, 1)  # black
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == 1)).all()
     assert (obs[:, :, 1] == (curr_board == -1)).all()
-    assert (obs[:, :, -1] == 1).all()
+    assert (obs[:, :, -1] == 0).all()
 
 
 def test_legal_action():

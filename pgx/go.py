@@ -142,6 +142,9 @@ def _observe(state: State, player_id, size, history_length):
         So, we use player_id's color to let the agent komi information.
         As long as it's called when state.current_player == player_id, this doesn't matter.
     """
+    my_turn = jax.lax.select(
+        player_id == state.current_player, state._turn, 1 - state._turn
+    )
     current_player_color = _my_color(state)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
         player_id == state.current_player,
@@ -155,7 +158,7 @@ def _observe(state: State, player_id, size, history_length):
         return state._board_history[i // 2] == color
 
     log = _make(jnp.arange(history_length * 2))
-    color = jnp.full_like(log[0], my_color == 1)  # black=1, white=0
+    color = jnp.full_like(log[0], my_turn)  # black=0, white=1
 
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 

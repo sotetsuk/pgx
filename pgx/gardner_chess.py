@@ -461,8 +461,10 @@ def _update_zobrist_hash(state: State, action: Action):
 
 
 def _observe(state: State, player_id: jnp.ndarray):
+    color = jax.lax.select(
+        state.current_player == player_id, state._turn, 1 - state._turn
+    )
     ones = jnp.ones((1, 5, 5), dtype=jnp.float32)
-    color = state._turn * ones
 
     state = jax.lax.cond(
         state.current_player == player_id, lambda: state, lambda: _flip(state)
@@ -484,10 +486,11 @@ def _observe(state: State, player_id: jnp.ndarray):
         rep1 = ones * (rep >= 1)
         return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
 
+    board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 5, 5)
+    color = color * ones
     total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones
     no_prog_cnt = (state._halfmove_count.astype(jnp.float32) / 100.0) * ones
 
-    board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 5, 5)
     return jnp.vstack(
         [board_feat, color, total_move_cnt, no_prog_cnt]
     ).transpose((1, 2, 0))
