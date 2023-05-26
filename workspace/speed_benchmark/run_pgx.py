@@ -51,36 +51,32 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
         state = auto_reset(env.step, env.init)(state, action)
         return state
 
-    if num_devices > 1:
-        # warmup start
-        init_fn = jax.pmap(env.init)
-        step_fn = jax.pmap(step_fn)
-    else:
-        init_fn = jax.jit(jax.vmap(env.init))
-        step_fn = jax.jit(jax.vmap(step_fn))
+    init_fn = jax.pmap(jax.vmap(env.init))
+    step_fn = jax.pmap(jax.vmap(step_fn))
 
     rng_key = jax.random.PRNGKey(0)
-    rng_key, subkey = jax.random.split(rng_key)
-    keys = jax.random.split(subkey, batch_size)
 
     # warmup
-    print("compiling ... ")
+    # print("compiling ... ")
     ts = time.time()
+    rng_key, subkey = jax.random.split(rng_key)
+    keys = jax.random.split(subkey, batch_size)
+    keys = keys.reshape(num_devices, -1, 2)
     s = init_fn(keys)
     s = step_fn(keys, s)
     te = time.time()
-    print(f"done: {te - ts:.03f} sec")
+    # print(f"done: {te - ts:.03f} sec")
     # warmup end
 
     ts = time.time()
 
     rng_key, subkey = jax.random.split(rng_key)
     keys = jax.random.split(subkey, batch_size)
+    keys = keys.reshape(num_devices, -1, 2)
     s = init_fn(keys)
     for i in range(num_batch_steps):
-        print(i, flush=True)
         rng_key, subkey = jax.random.split(rng_key)
-        keys = jax.random.split(subkey, batch_size)
+        keys = keys.reshape(num_devices, -1, 2)
         s = step_fn(keys, s)
 
     te = time.time()
