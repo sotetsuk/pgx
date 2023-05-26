@@ -9,7 +9,7 @@ GAMES="tic_tac_toe connect_four chess go"
 # all gpus
 for game in $GAMES; do
 for bs in $BATCH_SIZES; do
-  $PY O run_pgx.py $game $bs NUM_BATCH_STEPS
+  $PY -O run_pgx.py $game $bs NUM_BATCH_STEPS
 done
 done
 
