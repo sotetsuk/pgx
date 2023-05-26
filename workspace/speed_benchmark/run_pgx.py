@@ -84,9 +84,9 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
 
 
 game = sys.argv[1]
-if game == "go":
-    game = "go_19x19"
 env_id = game
+if env_id == "go":
+    env_id = "go_19x19"
 bs = int(sys.argv[2])
 num_batch_steps = int(sys.argv[3])
 
