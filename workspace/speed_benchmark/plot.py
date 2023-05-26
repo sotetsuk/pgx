@@ -72,8 +72,8 @@ games = get_all_field(data, "game")
 fig, axes = plt.subplots(1, len(games), figsize=(12, 3))
 for i, game in enumerate(games):
     plot_ax(axes[i], game)
-    # if game == "tic_tac_toe":
-    #     axes[i].legend()
+    if game == "tic_tac_toe":
+        axes[i].legend()
 axes[0].set_ylabel("# Steps per second")
 plt.tight_layout()
 plt.savefig("results.pdf")
