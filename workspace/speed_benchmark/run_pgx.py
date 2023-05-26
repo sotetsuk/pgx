@@ -105,4 +105,4 @@ num_batch_steps = int(sys.argv[3])
 
 
 num_steps, sec = benchmark(env_id, bs, bs * num_batch_steps)
-print(json.dumps({"game": game, "library": f"pgx/{num_devices}dev", "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs}))
+print(json.dumps({"game": game, "library": f"pgx/{num_devices}dev", "total_steps": num_steps, "total_sec": sec, "steps/sec": num_steps / sec, "batch_size": bs, "pgx.__version__": pgx.__version__}))
