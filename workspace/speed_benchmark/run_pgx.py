@@ -42,17 +42,26 @@ def auto_reset(step_fn, init_fn):
 
 
 def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
+    N = 100
+    assert num_batch_steps % N == 0
     assert batch_size % num_devices == 0
     num_steps = batch_size * num_batch_steps
     env = pgx.make(env_id)
 
-    def step_fn(key, state):
-        action = act_randomly(key, state)
-        state = auto_reset(env.step, env.init)(state, action)
+    def step_for(key, state, n):
+
+        def step_fn(i, x):
+            del i
+            key, state = x
+            action = act_randomly(key, state)
+            state = auto_reset(env.step, env.init)(state, action)
+            return (key, state)
+
+        _, state = jax.lax.fori_loop(0, n, step_fn, (key, state))
         return state
 
     init_fn = jax.pmap(jax.vmap(env.init))
-    step_fn = jax.pmap(jax.vmap(step_fn))
+    step_for = jax.pmap(jax.vmap(step_for, in_axes=(0, 0, None)), in_axes=(0, 0, None))
 
     rng_key = jax.random.PRNGKey(0)
 
@@ -63,7 +72,7 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
     keys = jax.random.split(subkey, batch_size)
     keys = keys.reshape(num_devices, -1, 2)
     s = init_fn(keys)
-    s = step_fn(keys, s)
+    s = step_for(keys, s, N)
     te = time.time()
     # print(f"done: {te - ts:.03f} sec")
     # warmup end
@@ -74,10 +83,10 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
     keys = jax.random.split(subkey, batch_size)
     keys = keys.reshape(num_devices, -1, 2)
     s = init_fn(keys)
-    for i in range(num_batch_steps):
+    for i in range(num_batch_steps // N):
         rng_key, subkey = jax.random.split(rng_key)
         keys = keys.reshape(num_devices, -1, 2)
-        s = step_fn(keys, s)
+        s = step_for(keys, s, N)
 
     te = time.time()
     return num_steps, te - ts
