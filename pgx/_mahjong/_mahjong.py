@@ -141,16 +141,18 @@ def _draw(state: State):
         Hand.add(state.hand[current_player], new_tile)
     )
 
-    return state.replace(
+    return state.replace(  # type:ignore
         current_player=current_player, next_deck_ix=next_deck_ix, hand=hand
-    )  # type:ignore
+    )
 
 
 def _discard(state: State, tile: jnp.ndarray):
     hand = state.hand.at[state.current_player].set(
         Hand.sub(state.hand[state.current_player], tile)
     )
-    return state.replace(target=jnp.int8(tile), last_draw=-1, hand=hand)
+    return state.replace(  # type:ignore
+        target=jnp.int8(tile), last_draw=-1, hand=hand
+    )
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
