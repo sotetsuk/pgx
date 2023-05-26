@@ -96,18 +96,12 @@ def benchmark(env_id: pgx.EnvId, batch_size, num_batch_steps):
     return num_steps, te - ts
 
 
-games = {
-    "tic_tac_toe": "tic_tac_toe",
-    "connect_four": "connect_four",
-    "go": "go_19x19",
-    "chess": "chess",
-}
-
-
 game = sys.argv[1]
+if game == "go":
+    game = "go_19x19"
+env_id = game
 bs = int(sys.argv[2])
 num_batch_steps = int(sys.argv[3])
-env_id = games[game]
 
 
 num_steps, sec = benchmark(env_id, bs, bs * num_batch_steps)
