@@ -65,7 +65,7 @@ class TicTacToe(v1.Env):
 
     @property
     def version(self) -> str:
-        return "beta"
+        return "v0"
 
     @property
     def num_players(self) -> int:
