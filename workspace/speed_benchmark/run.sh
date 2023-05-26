@@ -4,7 +4,7 @@
 NUM_BATCH_STEPS=${1}
 PY="python3"
 BATCH_SIZES="8 16 32 64 128 256 512 1024 2048 4096 8192 16384 32768"
-GAMES="tic_tac_toe" "connect_four" "chess" "go"
+GAMES="tic_tac_toe connect_four chess go"
 
 # all gpus
 for game in $GAMES; do
