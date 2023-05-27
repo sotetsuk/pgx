@@ -324,8 +324,6 @@ def train(config, rng):
     network = ActorCritic(env.num_actions, activation=config["ACTIVATION"], env_name=config["ENV_NAME"])
     rng, _rng = jax.random.split(rng)
     init_x = jnp.zeros((1, ) + env.observation_shape)
-    print("id", env.id)
-    print("init_x", init_x.shape)
     network_params = network.init(_rng, init_x)
     if config["ANNEAL_LR"]:
         tx = optax.chain(

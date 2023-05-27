@@ -11,7 +11,7 @@ FALSE = jnp.bool_(False)
 
 
 def visualize(network, params, env,  rng_key):
-    subkeys = jax.random.split(rng_key, 2)
+    subkeys = jax.random.split(rng_key, 5)
     state = jax.vmap(env.init)(subkeys)
     states = []
     states.append(state)
