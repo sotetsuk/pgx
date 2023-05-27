@@ -8,8 +8,10 @@ from typing import Sequence, NamedTuple, Any, Literal
 from flax.training.train_state import TrainState
 import distrax
 import pgx
-from utils import auto_reset, single_play_step_vs_policy, single_play__step_vs_random
+from utils import auto_reset, single_play_step_vs_policy_in_backgammon, single_play_step_vs_policy_in_two, normal_step
 import time
+import os
+
 import pickle
 import argparse
 from omegaconf import OmegaConf
@@ -18,7 +20,17 @@ import wandb
 
 
 class PPOConfig(BaseModel):
-    ENV_NAME: str = "backgammon"
+    ENV_NAME: Literal[ 
+        "leduc_holdem", 
+        "kuhn_poker", 
+        "minatar-breakout", 
+        "minatar-freeway", 
+        "minatar-space_invaders", 
+        "minatar-asterix", 
+        "minatar-seaquest", 
+        "play2048",
+        "backgammon"
+        ] = "backgammon"
     LR: float = 2.5e-4
     NUM_ENVS: int = 64
     NUM_STEPS: int = 256
@@ -37,11 +49,13 @@ class PPOConfig(BaseModel):
     ANNEAL_LR: bool = True
     VS_RANDOM: bool = False
     UPDATE_INTERVAL:int = 5
+    MAKE_ANCHOR: bool = True
 
 
 class ActorCritic(nn.Module):
     action_dim: Sequence[int]
     activation: str = "tanh"
+    env_name: str = "backgammon"
 
     @nn.compact
     def __call__(self, x):
@@ -49,6 +63,11 @@ class ActorCritic(nn.Module):
             activation = nn.relu
         else:
             activation = nn.tanh
+        if self.env_name not in ["backgammon", "kuhn_poker", "leduc_holdem"]:
+            x = nn.Conv(features=32, kernel_size=(2, 2))(x)
+            x = nn.relu(x)
+            x = nn.avg_pool(x, window_shape=(2, 2), strides=(2, 2))
+            x = x.reshape((x.shape[0], -1))  # flatten
         x = nn.Dense(64)(x)
         x = nn.relu(x)
         actor_mean = nn.Dense(
@@ -78,8 +97,16 @@ class ActorCritic(nn.Module):
         return actor_mean, jnp.squeeze(critic, axis=-1)
 
 
-def _get(x, i):
-    return x[i]
+def _make_step(env_name, network, params, eval=False):
+    env = pgx.make(env_name)
+    step_fn = auto_reset(env.step, env.init) if not eval else env.step
+    if env_name == "backgammon":
+        return single_play_step_vs_policy_in_backgammon(step_fn, network, params)
+    elif env_name in ["kuhn_poker", "leduc_holdem"]:
+        return single_play_step_vs_policy_in_two(step_fn, network, params)
+    else:
+        return normal_step(step_fn)
+
 
 class Transition(NamedTuple):
     done: jnp.ndarray
@@ -95,11 +122,8 @@ def make_update_fn(config, env, network):
      # TRAIN LOOP
     def _update_step(runner_state):
         # COLLECT TRAJECTORIES
-        auto_rese_step = auto_reset(env.step, env.init)
-        if config["VS_RANDOM"]:
-            _single_play_step = single_play__step_vs_random(auto_rese_step)
-        else:
-            _single_play_step = single_play_step_vs_policy(auto_rese_step, network, runner_state[0].params)
+        step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params)
+        get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker"] else _get_zero
         def _env_step(runner_state, unused):
             train_state, env_state, last_obs, rng = runner_state
             actor = env_state.current_player
@@ -114,11 +138,11 @@ def make_update_fn(config, env, network):
 
             # STEP ENV
             rng, _rng = jax.random.split(rng)
-            env_state = _single_play_step(
+            env_state = step_fn(
                 env_state, action, _rng
             )
             transition = Transition(
-                env_state.terminated, action, value, jax.vmap(_get)(env_state.rewards, actor), log_prob, last_obs, mask
+                env_state.terminated, action, value, jax.vmap(get_fn)(env_state.rewards, actor), log_prob, last_obs, mask
             )
             runner_state = (train_state, env_state, env_state.observation, rng)
             return runner_state, transition
@@ -247,12 +271,21 @@ def make_update_fn(config, env, network):
         return runner_state, loss_info
     return _update_step
 
-def evaluate(params, network, step_fn,  env, rng_key, num_envs):
+
+def _get(x, i):
+    return x[i]
+
+
+def _get_zero(x, i):
+    return x[0]
+
+
+def evaluate(params, network, step_fn,  env, rng_key, config):
     rng_key, sub_key = jax.random.split(rng_key)
-    subkeys = jax.random.split(sub_key, num_envs)
+    subkeys = jax.random.split(sub_key, config["NUM_ENVS"])
     state = jax.vmap(env.init)(subkeys)
-    state = state.replace(_turn=jnp.zeros(num_envs, dtype=jnp.int8))  # starts by black
-    cum_return = jnp.zeros(num_envs)
+    cum_return = jnp.zeros(config["NUM_ENVS"])
+    get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker"] else _get_zero
     i = 0
     states = []
     def cond_fn(tup):
@@ -268,7 +301,7 @@ def evaluate(params, network, step_fn,  env, rng_key, num_envs):
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
         state = step_fn(state, action, _rng)
-        cum_return = cum_return + jax.vmap(_get)(state.rewards, actor)
+        cum_return = cum_return + jax.vmap(get_fn)(state.rewards, actor)
         return state, cum_return ,rng_key
     state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
     return cum_return.mean()
@@ -288,7 +321,7 @@ def train(config, rng):
         return config["LR"] * frac
 
     # INIT NETWORK
-    network = ActorCritic(env.num_actions, activation=config["ACTIVATION"])
+    network = ActorCritic(env.num_actions, activation=config["ACTIVATION"], env_name=config["ENV_NAME"])
     rng, _rng = jax.random.split(rng)
     init_x = jnp.zeros((1, ) + env.observation_shape)
     network_params = network.init(_rng, init_x)
@@ -316,38 +349,47 @@ def train(config, rng):
 
     rng, _rng = jax.random.split(rng)
     runner_state = (train_state, env_state, env_state.observation, _rng)
-    old_params = runner_state[0].params
+
+    anchor_params = None
+    ckpt_filename = f'checkpoints/{config["ENV_NAME"]}/model.ckpt'
+    anchor_filename = f'checkpoints/{config["ENV_NAME"]}/anchor.ckpt'
+    if anchor_filename != "" and os.path.isfile(anchor_filename):
+        with open(ckpt_filename, "rb") as reader:
+            dic = pickle.load(reader)
+        anchor_params = dic["params"]
+    
     steps = 0
-    enemy = "random" if config["VS_RANDOM"] else "prev_policy"
     for i in range(config["NUM_UPDATES"]):
-        if config["VS_RANDOM"]:
-            step_fn = single_play__step_vs_random(env.step)  # vs random 
+        if anchor_params is not None and not config["MAKE_ANCHOR"]:
+            step_fn = _make_step(config["ENV_NAME"], network, anchor_params, eval=True)
+            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config)
         else:
-            step_fn = single_play_step_vs_policy(env.step, network, old_params) # vs policy
-        eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config["NUM_ENVS"])
+            step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params, eval=True)
+            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config)
         log = {
-            f"eval_vs_{enemy}": float(eval_R),
+            f"eval_R_{config['ENV_NAME']}": float(eval_R),
             "steps": steps,
         }
         print(log)
         wandb.log(log)
-        if i % config["UPDATE_INTERVAL"] == 0:
-            old_params = runner_state[0].params
         runner_state, loss_info = jitted_update_step(runner_state)
         steps += config["NUM_ENVS"] * config["NUM_STEPS"]
+        if config["MAKE_ANCHOR"]:
+            with open(f"checkpoints/{config['ENV_NAME']}/anchor.ckpt", "wb") as writer:
+                pickle.dump({"params": runner_state[0].params}, writer)
+        if i % 10 == 0:
+            with open(f"checkpoints/{config['ENV_NAME']}/model.ckpt", "wb") as writer:
+                pickle.dump({"params": runner_state[0].params}, writer)
         _, (value_loss, loss_actor, entropy) = loss_info
-        ckpt_filename = f'params/{config["ENV_NAME"]}_vs_{enemy}_steps_{steps}.ckpt'
-        with open(ckpt_filename, "wb") as writer:
-                dic = {"params": runner_state[0].params}
-                pickle.dump(dic, writer)
     return runner_state
 
 
 if __name__ == "__main__":
     args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
-    key = None # please specify your wandb key
+    key = "483ca3866ab4eaa8f523bacae3cb603d27d69c3d" # please specify your wandb key
     wandb.login(key=key)
-    wandb.init(project=f"ppo-Backgammon", config=args.dict())
+    mode = "make-anchor" if args.MAKE_ANCHOR else "train"
+    wandb.init(project=f"ppo-{mode}", config=args.dict())
     config = {
         "LR": args.LR,
         "NUM_ENVS": args.NUM_ENVS,
@@ -366,11 +408,13 @@ if __name__ == "__main__":
         "ANNEAL_LR": True,
         "VS_RANDOM": args.VS_RANDOM,
         "UPDATE_INTERVAL": args.UPDATE_INTERVAL,
+        "MAKE_ANCHOR": args.MAKE_ANCHOR,
     }
+    if config["ENV_NAME"] == "play2048":
+        config["ENV_NAME"] = "2048"
     print("training of", config["ENV_NAME"])
     rng = jax.random.PRNGKey(0)
     sta = time.time()
     out = train(config, rng)
     end = time.time()
     print("training: time", end - sta)
-    train_state, _, _, key = out["runner_state"]

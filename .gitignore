@@ -9,6 +9,6 @@ venv
 .venv
 pythonenv*
 .DS_Store
-workspace/backgammon_training/params/*
-workspace/backgammon_training/wandb/*
+workspace/ppo_training/vis/*
+workspace/ppo_training/wandb/*
 
