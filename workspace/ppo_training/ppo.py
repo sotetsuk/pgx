@@ -360,7 +360,7 @@ def train(config, rng):
     
     steps = 0
     for i in range(config["NUM_UPDATES"]):
-        if anchor_params is not None:
+        if anchor_params is not None and not config["MAKE_ANCHOR"]:
             step_fn = _make_step(config["ENV_NAME"], network, anchor_params, eval=True)
             eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config)
         else:
