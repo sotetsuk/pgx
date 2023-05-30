@@ -9,7 +9,6 @@ import numpy as np
 import optax
 from flax.linen.initializers import constant, orthogonal
 from typing import Sequence, NamedTuple, Any, Literal
-from flax.training.train_state import TrainState
 import distrax
 import pgx
 from utils import auto_reset, single_play_step_vs_policy_in_backgammon, single_play_step_vs_policy_in_two, normal_step
@@ -17,7 +16,6 @@ import time
 import os
 
 import pickle
-import argparse
 from omegaconf import OmegaConf
 from pydantic import BaseModel
 import wandb
@@ -112,15 +110,15 @@ forward_pass = hk.without_apply_rng(hk.transform_with_state(forward_pass))
 optimizer = optax.adam(learning_rate=args.LR)
 
 
-def _make_step(env_name, model):  # DONE
+def _make_step(env_name, params, eval=False):
     env = pgx.make(env_name)
-    auto_rese_step = auto_reset(env.step, env.init)
+    step_fn = auto_reset(env.step, env.init) if not eval else env.step
     if env_name == "backgammon":
-        return single_play_step_vs_policy_in_backgammon(auto_rese_step, forward_pass, model)
+        return single_play_step_vs_policy_in_backgammon(step_fn, forward_pass, params)
     elif env_name in ["kuhn_poker", "leduc_holdem"]:
-        return single_play_step_vs_policy_in_two(auto_rese_step, forward_pass, model)
+        return single_play_step_vs_policy_in_two(step_fn, forward_pass, params)
     else:
-        return normal_step(auto_rese_step)
+        return normal_step(step_fn)
 
 
 class Transition(NamedTuple):
@@ -170,7 +168,7 @@ def make_update_fn(config):
         # CALCULATE ADVANTAGE
         model, opt_state, env_state, last_obs, rng = runner_state  # DONE
         model_params, model_state = model
-        _, last_val = forward_pass.apply(model_params, model_state, last_obs, is_eval=False)  # DONE
+        (_, last_val), _ = forward_pass.apply(model_params, model_state, last_obs, is_eval=False)  # DONE
 
         def _calculate_gae(traj_batch, last_val):
             def _get_advantages(gae_and_next_value, transition):
@@ -200,13 +198,14 @@ def make_update_fn(config):
 
         # UPDATE NETWORK
         def _update_epoch(update_state, unused):
-            def _update_minbatch(model, opt_state, batch_info):
+            def _update_minbatch(tup, batch_info):
+                model, opt_state = tup
                 traj_batch, advantages, targets = batch_info
                 model_params, model_state = model
 
                 def _loss_fn(model_params, model_state,  traj_batch, gae, targets):
                     # RERUN NETWORK
-                    (logits, value), model_state = forward_pass.apply(model_params, model_state, traj_batch.obs, eval=False)  # DONE
+                    (logits, value), model_state = forward_pass.apply(model_params, model_state, traj_batch.obs, is_eval=False)  # DONE
                     mask = traj_batch.legal_action_mask
                     logits = logits + jnp.finfo(np.float64).min * (~mask)
                     pi = distrax.Categorical(logits=logits)
@@ -251,7 +250,7 @@ def make_update_fn(config):
                 )  # DONE
                 updates, opt_state = optimizer.update(grads, opt_state)
                 model_params = optax.apply_updates(model_params, updates)  # DONE
-                return (model_params, model_state), opt_state, total_loss  # DONE
+                return ((model_params, model_state), opt_state), total_loss  # DONE
 
             model, opt_state, traj_batch, advantages, targets, rng = update_state  # DONE
             rng, _rng = jax.random.split(rng)
@@ -273,8 +272,8 @@ def make_update_fn(config):
                 ),
                 shuffled_batch,
             )
-            model, opt_state, total_loss = jax.lax.scan(
-                _update_minbatch, model, opt_state, minibatches
+            (model, opt_state),  total_loss = jax.lax.scan(
+                _update_minbatch, (model, opt_state), minibatches
             )  # DONE
             update_state = (model, opt_state, traj_batch, advantages, targets, rng)  # DONE
             return update_state, total_loss
@@ -368,10 +367,10 @@ def train(config, rng):
     steps = 0
     for i in range(config["NUM_UPDATES"]):
         if anchor_model is not None and not config["MAKE_ANCHOR"]:
-            step_fn = _make_step(config["ENV_NAME"],  anchor_model)  # DONE
+            step_fn = _make_step(config["ENV_NAME"],  anchor_model, eval=True)  # DONE
             eval_R = evaluate(runner_state[0] , step_fn, env, rng, config)   # DONE
         else:
-            step_fn = _make_step(config["ENV_NAME"],runner_state[0])  # DONE
+            step_fn = _make_step(config["ENV_NAME"],runner_state[0], eval=True)  # DONE
             eval_R = evaluate(runner_state[0], step_fn, env, rng, config) # DONE
         log = {
             f"eval_R_{config['ENV_NAME']}": float(eval_R),
@@ -415,6 +414,7 @@ if __name__ == "__main__":
         "ANNEAL_LR": True,
         "VS_RANDOM": args.VS_RANDOM,
         "UPDATE_INTERVAL": args.UPDATE_INTERVAL,
+        "MAKE_ANCHOR": args.MAKE_ANCHOR
     }
     if config["ENV_NAME"] == "play2048":
         config["ENV_NAME"] = "2048"
@@ -424,4 +424,3 @@ if __name__ == "__main__":
     out = train(config, rng)
     end = time.time()
     print("training: time", end - sta)
-    train_state, _, _, key = out["runner_state"]
