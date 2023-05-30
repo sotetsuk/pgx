@@ -30,7 +30,7 @@ class PPOConfig(BaseModel):
         "minatar-space_invaders", 
         "minatar-asterix", 
         "minatar-seaquest", 
-        "play2048",
+        "2048",
         "backgammon"
         ] = "backgammon"
     LR: float = 2.5e-4
@@ -70,9 +70,9 @@ class ActorCritic(hk.Module):
         else:
             activation = jax.nn.tanh
         if self.env_name not in ["backgammon", "2048", "kuhn_poker", "leduc_holdem"]:
-            x = hk.Conv2d(features=32, kernel_shap=2)(x)
+            x = hk.Conv2D(32, kernel_shape=2)(x)
             x = jax.nn.relu(x)
-            x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2))
+            x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2), padding="VALID")
             x = x.reshape((x.shape[0], -1))  # flatten
         x = hk.Linear(64)(x)
         x = jax.nn.relu(x)
@@ -107,7 +107,17 @@ def forward_pass(x, is_eval=False):
     logits, value = net(x, is_training=not is_eval, test_local_stats=False)
     return logits, value
 forward_pass = hk.without_apply_rng(hk.transform_with_state(forward_pass))
-optimizer = optax.adam(learning_rate=args.LR)
+
+def linear_schedule(count):
+    frac = 1.0 - (count // (config["NUM_MINIBATCHES"] * config["UPDATE_EPOCHS"])) / config["NUM_UPDATES"]
+    return config["LR"] * frac
+if args.ANNEAL_LR:
+    optimizer = optax.chain(
+        optax.clip_by_global_norm(args.MAX_GRAD_NORM),
+        optax.adam(learning_rate=linear_schedule, eps=1e-5),
+    )
+else:
+    optimizer = optax.chain(optax.clip_by_global_norm(args.MAX_GRAD_NORM), optax.adam(args.LR, eps=1e-5))
 
 
 def _make_step(env_name, params, eval=False):
@@ -143,7 +153,7 @@ def make_update_fn(config):
             actor = env_state.current_player
             # SELECT ACTION
             rng, _rng = jax.random.split(rng)
-            (logits, value), _  = forward_pass.apply(model_params, model_state, last_obs, is_eval=True)  # DONE
+            (logits, value), _  = forward_pass.apply(model_params, model_state, last_obs.astype(jnp.float32), is_eval=True)  # DONE
             mask = env_state.legal_action_mask
             logits = logits + jnp.finfo(np.float64).min * (~mask)
             pi = distrax.Categorical(logits=logits)
@@ -168,7 +178,7 @@ def make_update_fn(config):
         # CALCULATE ADVANTAGE
         model, opt_state, env_state, last_obs, rng = runner_state  # DONE
         model_params, model_state = model
-        (_, last_val), _ = forward_pass.apply(model_params, model_state, last_obs, is_eval=False)  # DONE
+        (_, last_val), _ = forward_pass.apply(model_params, model_state, last_obs.astype(jnp.float32), is_eval=False)  # DONE
 
         def _calculate_gae(traj_batch, last_val):
             def _get_advantages(gae_and_next_value, transition):
@@ -205,7 +215,7 @@ def make_update_fn(config):
 
                 def _loss_fn(model_params, model_state,  traj_batch, gae, targets):
                     # RERUN NETWORK
-                    (logits, value), model_state = forward_pass.apply(model_params, model_state, traj_batch.obs, is_eval=False)  # DONE
+                    (logits, value), model_state = forward_pass.apply(model_params, model_state, traj_batch.obs.astype(jnp.float32), is_eval=False)  # DONE
                     mask = traj_batch.legal_action_mask
                     logits = logits + jnp.finfo(np.float64).min * (~mask)
                     pi = distrax.Categorical(logits=logits)
@@ -312,7 +322,7 @@ def evaluate(model, step_fn,  env, rng_key, config):
     def loop_fn(tup):
         state, cum_return, rng_key = tup
         actor = state.current_player
-        (logits, value), _  = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)  # DONE
+        (logits, value), _  = forward_pass.apply(model_params, model_state, state.observation.astype(jnp.float32), is_eval=True)  # DONE
         logits = logits + jnp.finfo(np.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
