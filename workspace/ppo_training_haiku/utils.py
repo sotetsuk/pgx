@@ -106,7 +106,7 @@ def single_play_step_vs_policy_in_backgammon(step_fn, forward_pass, model):
     """
     model_params, model_state = model
     def act_based_on_policy(state, rng):
-        logits, value = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)
+        (logits, value), _  = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)
         logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         action = pi.sample(seed=rng)
@@ -150,7 +150,7 @@ def single_play_step_vs_policy_in_two(step_fn, forward_pass, model):
     """
     model_params, model_state = model
     def act_based_on_policy(state, rng):
-        logits, value = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)
+        (logits, value), _  = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)
         logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         action = pi.sample(seed=rng)
@@ -175,28 +175,3 @@ def normal_step(step_fn):
         state = jax.vmap(step_fn)(state, action)
         return state
     return wrapped_step_fn
-
-
-def visualize(forward_pass, model, env_name, rng_key, num_envs):
-    print("evaluate is called")
-    env = pgx.make(env_name)
-    rng_key, sub_key = jax.random.split(rng_key)
-    subkeys = jax.random.split(sub_key, num_envs)
-    state = jax.vmap(env.init)(subkeys)
-    states = []
-    states.append(state)
-    cum_return = jnp.zeros(num_envs)
-    i = 0
-    step = jax.jit(jax.vmap(env.step))
-    model_params, model_state = model
-    while not state.terminated.all():
-        i += 1
-        pi, value = forward_pass.apply(model_params,model_state, state.observation, is_eval=True)
-        action = pi.sample(seed=rng_key)
-        state = step(state, action)
-        states.append(state)
-        cum_return += state.rewards[:, 0]
-    fname = f"{'_'.join((env.id).lower().split())}.svg"
-    print(f"avarage cumulative return over{num_envs}", cum_return.mean())
-    if env.id == "2048":
-        pgx.save_svg_animation(states, fname, frame_duration_seconds=0.5)

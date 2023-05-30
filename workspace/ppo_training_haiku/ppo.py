@@ -1,3 +1,6 @@
+"""
+This code is based on https://github.com/luchris429/purejaxrl
+"""
 
 import jax
 import jax.numpy as jnp
@@ -52,28 +55,29 @@ class PPOConfig(BaseModel):
     UPDATE_INTERVAL:int = 5
     MAKE_ANCHOR: bool = True
 
+args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
+env = pgx.make(args.ENV_NAME)
 
-env = pgx.make(config.env_name)
 
+class ActorCritic(hk.Module):
+    def __init__(self, action_dim, activation="tanh", env_name="backgammon"):
+        super().__init__()
+        self.action_dim = action_dim
+        self.activation = activation
+        self.env_name = env_name
 
-class ActorCritic(nn.Module):
-    action_dim: Sequence[int]
-    activation: str = "tanh"
-    env_name: str = "backgammon"
-
-    @nn.compact
-    def __call__(self, x):
+    def __call__(self, x, is_training, test_local_stats):
         if self.activation == "relu":
-            activation = nn.relu
+            activation = jax.nn.relu
         else:
-            activation = nn.tanh
+            activation = jax.nn.tanh
         if self.env_name not in ["backgammon", "2048", "kuhn_poker", "leduc_holdem"]:
             x = hk.Conv2d(features=32, kernel_shap=2)(x)
-            x = nn.relu(x)
+            x = jax.nn.relu(x)
             x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2))
             x = x.reshape((x.shape[0], -1))  # flatten
         x = hk.Linear(64)(x)
-        x = nn.relu(x)
+        x = jax.nn.relu(x)
         actor_mean = hk.Linear(
             64
         )(x)
@@ -83,7 +87,7 @@ class ActorCritic(nn.Module):
         )(actor_mean)
         actor_mean = activation(actor_mean)
         actor_mean = hk.Linear(
-            self.action_dim, kernel_init=orthogonal(0.01), bias_init=constant(0.0)
+            self.action_dim
         )(actor_mean)
 
         critic = hk.Linear(
@@ -94,18 +98,18 @@ class ActorCritic(nn.Module):
             64
         )(critic)
         critic = activation(critic)
-        critic = hk.Linear(1, kernel_init=orthogonal(1.0), bias_init=constant(0.0))(
+        critic = hk.Linear(1)(
             critic
         )
 
         return actor_mean, jnp.squeeze(critic, axis=-1)
 
 def forward_pass(x, is_eval=False):
-    net = ActorCritic(env.num_actions, activation=config.activation, env_name=config.env_name)
+    net = ActorCritic(env.num_actions, activation="tanh", env_name=env.id)
     logits, value = net(x, is_training=not is_eval, test_local_stats=False)
     return logits, value
 forward_pass = hk.without_apply_rng(hk.transform_with_state(forward_pass))
-optimizer = optax.adam(learning_rate=config.learning_rate)
+optimizer = optax.adam(learning_rate=args.LR)
 
 
 def _make_step(env_name, model):  # DONE
@@ -141,7 +145,7 @@ def make_update_fn(config):
             actor = env_state.current_player
             # SELECT ACTION
             rng, _rng = jax.random.split(rng)
-            logits, value = forward_pass.apply(model_params, model_state, last_obs, is_eval=True)  # DONE
+            (logits, value), _  = forward_pass.apply(model_params, model_state, last_obs, is_eval=True)  # DONE
             mask = env_state.legal_action_mask
             logits = logits + jnp.finfo(np.float64).min * (~mask)
             pi = distrax.Categorical(logits=logits)
@@ -202,7 +206,7 @@ def make_update_fn(config):
 
                 def _loss_fn(model_params, model_state,  traj_batch, gae, targets):
                     # RERUN NETWORK
-                    logits, value = ne.apply(model_params, model_state, traj_batch.obs, eval=False)  # DONE
+                    (logits, value), model_state = forward_pass.apply(model_params, model_state, traj_batch.obs, eval=False)  # DONE
                     mask = traj_batch.legal_action_mask
                     logits = logits + jnp.finfo(np.float64).min * (~mask)
                     pi = distrax.Categorical(logits=logits)
@@ -309,7 +313,7 @@ def evaluate(model, step_fn,  env, rng_key, config):
     def loop_fn(tup):
         state, cum_return, rng_key = tup
         actor = state.current_player
-        logits, value = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)  # DONE
+        (logits, value), _  = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)  # DONE
         logits = logits + jnp.finfo(np.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
@@ -389,11 +393,10 @@ def train(config, rng):
 
 
 if __name__ == "__main__":
-    args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
     key = "483ca3866ab4eaa8f523bacae3cb603d27d69c3d" # please specify your wandb key
     wandb.login(key=key)
     mode = "make-anchor" if args.MAKE_ANCHOR else "train"
-    wandb.init(project=f"ppo-{mode}", config=args.dict())
+    wandb.init(project=f"ppo-{mode}-haiku", config=args.dict())
     config = {
         "LR": args.LR,
         "NUM_ENVS": args.NUM_ENVS,

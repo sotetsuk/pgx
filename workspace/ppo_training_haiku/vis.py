@@ -10,14 +10,15 @@ TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
-def visualize(network, params, env,  rng_key):
+def visualize(forward_pass, model, env,  rng_key):
+    model_params, model_state = model
     subkeys = jax.random.split(rng_key, 5)
     state = jax.vmap(env.init)(subkeys)
     states = []
     states.append(state)
     step_fn = jax.jit(jax.vmap(env.step))
     while not state.terminated.all():
-        logits, value = network.apply(params, state.observation)
+        logits, value = forward_pass.apply(model_params,model_state, state.observation, is_eval=True)
         logits = logits +  jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
@@ -35,11 +36,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     env = pgx.make(args.env_name)
-    network = ActorCritic(env.num_actions, activation="tanh")
+    def forward_pass(x, is_eval=False):
+        net = ActorCritic(env.num_actions, activation="tanh", env_name=env.id)
+        logits, value = net(x, is_training=not is_eval, test_local_stats=False)
+        return logits, value
+    forward_pass = hk.without_apply_rng(hk.transform_with_state(forward_pass))
     ckpt_filename = f'checkpoints/{args.env_name}/model.ckpt'
     with open(ckpt_filename, "rb") as f:
-        params = pickle.load(f)["params"]
+        model = pickle.load(f)["model"]
     env = pgx.make(args.env_name)
-    network = ActorCritic(env.num_actions, activation="tanh", env_name=args.env_name)
     rng_key = jax.random.PRNGKey(3)
-    visualize(network, params, env, rng_key)
+    visualize(forward_pass, model, env, rng_key)
