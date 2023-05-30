@@ -294,7 +294,8 @@ def _get_zero(x, i):
     return x[0]
 
 
-def evaluate(params, network, step_fn,  env, rng_key, config):
+def evaluate(model, step_fn,  env, rng_key, config):
+    model_params, model_state = model
     rng_key, sub_key = jax.random.split(rng_key)
     subkeys = jax.random.split(sub_key, config["NUM_ENVS"])
     state = jax.vmap(env.init)(subkeys)
@@ -308,7 +309,7 @@ def evaluate(params, network, step_fn,  env, rng_key, config):
     def loop_fn(tup):
         state, cum_return, rng_key = tup
         actor = state.current_player
-        logits, value = network.apply(params, state.observation)  # TODO
+        logits, value = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)  # DONE
         logits = logits + jnp.finfo(np.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
@@ -350,7 +351,7 @@ def train(config, rng):
     env_state = jax.vmap(env.init)(reset_rng)
 
     rng, _rng = jax.random.split(rng)
-    runner_state = (train_state, env_state, env_state.observation, _rng)  # TODO
+    runner_state = (model, opt_state, env_state, env_state.observation, _rng)  # DONE
 
     ckpt_params = None
     ckpt_filename = f'params/{config["ENV_NAME"]}/anchor.ckpt'
@@ -363,17 +364,17 @@ def train(config, rng):
     for i in range(config["NUM_UPDATES"]):
         if ckpt_params is not None:
             step_fn = _make_step(config["ENV_NAME"], network, ckpt_params, eval=True)  # TODO
-            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config)   # TODO
+            eval_R = evaluate(runner_state[0], runner_state[1] , step_fn, env, rng, config)   # DONE
         else:
             step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params)  # TODO
-            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config, eval=True) # TODO
+            eval_R = evaluate(runner_state[0], runner_state[1], step_fn, env, rng, config, eval=True) # DONE
         log = {
             f"eval_R{config['ENV_NAME']}": float(eval_R),
             "steps": steps,
         }
         print(log)
         wandb.log(log)
-        runner_state, loss_info = jitted_update_step(runner_state)  # TODO
+        runner_state, loss_info = jitted_update_step(runner_state)  # DONE
         steps += config["NUM_ENVS"] * config["NUM_STEPS"]
         _, (value_loss, loss_actor, entropy) = loss_info
     return runner_state
