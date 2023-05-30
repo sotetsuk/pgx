@@ -52,10 +52,9 @@ class PPOConfig(BaseModel):
     MAKE_ANCHOR: bool = True
 
 
-class ActorCritic(nn.Module):
-    action_dim: Sequence[int]
-    activation: str = "tanh"
-    env_name: str = "backgammon"
+class ActorCritic(hk.Module):
+    def __init__(action_dim: int, activation: str = "tanh", env_name: str = "backgammon")
+
 
     @nn.compact
     def __call__(self, x):
