@@ -63,7 +63,7 @@ class ActorCritic(nn.Module):
             activation = nn.relu
         else:
             activation = nn.tanh
-        if self.env_name not in ["backgammon", "kuhn_poker", "leduc_holdem"]:
+        if self.env_name not in ["backgammon", "2048", "kuhn_poker", "leduc_holdem"]:
             x = nn.Conv(features=32, kernel_size=(2, 2))(x)
             x = nn.relu(x)
             x = nn.avg_pool(x, window_shape=(2, 2), strides=(2, 2))
@@ -97,15 +97,15 @@ class ActorCritic(nn.Module):
         return actor_mean, jnp.squeeze(critic, axis=-1)
 
 
-def _make_step(env_name, network, params, eval=False):
+def _make_step(env_name, network, params,):
     env = pgx.make(env_name)
-    step_fn = auto_reset(env.step, env.init) if not eval else env.step
+    auto_rese_step = auto_reset(env.step, env.init)
     if env_name == "backgammon":
-        return single_play_step_vs_policy_in_backgammon(step_fn, network, params)
+        return single_play_step_vs_policy_in_backgammon(auto_rese_step, network, params)
     elif env_name in ["kuhn_poker", "leduc_holdem"]:
-        return single_play_step_vs_policy_in_two(step_fn, network, params)
+        return single_play_step_vs_policy_in_two(auto_rese_step, network, params)
     else:
-        return normal_step(step_fn)
+        return normal_step(auto_rese_step)
 
 
 class Transition(NamedTuple):
@@ -324,6 +324,8 @@ def train(config, rng):
     network = ActorCritic(env.num_actions, activation=config["ACTIVATION"], env_name=config["ENV_NAME"])
     rng, _rng = jax.random.split(rng)
     init_x = jnp.zeros((1, ) + env.observation_shape)
+    print("id", env.id)
+    print("init_x", init_x.shape)
     network_params = network.init(_rng, init_x)
     if config["ANNEAL_LR"]:
         tx = optax.chain(
@@ -350,36 +352,29 @@ def train(config, rng):
     rng, _rng = jax.random.split(rng)
     runner_state = (train_state, env_state, env_state.observation, _rng)
 
-    anchor_params = None
-    ckpt_filename = f'checkpoints/{config["ENV_NAME"]}/model.ckpt'
-    anchor_filename = f'checkpoints/{config["ENV_NAME"]}/anchor.ckpt'
-    if anchor_filename != "" and os.path.isfile(anchor_filename):
+    ckpt_params = None
+    ckpt_filename = f'params/{config["ENV_NAME"]}/anchor.ckpt'
+    if ckpt_filename != "" and os.path.isfile(ckpt_filename):
         with open(ckpt_filename, "rb") as reader:
             dic = pickle.load(reader)
-        anchor_params = dic["params"]
+        ckpt_params = dic["params"]
     
     steps = 0
     for i in range(config["NUM_UPDATES"]):
-        if anchor_params is not None and not config["MAKE_ANCHOR"]:
-            step_fn = _make_step(config["ENV_NAME"], network, anchor_params, eval=True)
+        if ckpt_params is not None:
+            step_fn = _make_step(config["ENV_NAME"], network, ckpt_params, eval=True)
             eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config)
         else:
-            step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params, eval=True)
-            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config)
+            step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params)
+            eval_R = evaluate(runner_state[0].params, network, step_fn, env, rng, config, eval=True)
         log = {
-            f"eval_R_{config['ENV_NAME']}": float(eval_R),
+            f"eval_R{config['ENV_NAME']}": float(eval_R),
             "steps": steps,
         }
         print(log)
         wandb.log(log)
         runner_state, loss_info = jitted_update_step(runner_state)
         steps += config["NUM_ENVS"] * config["NUM_STEPS"]
-        if config["MAKE_ANCHOR"]:
-            with open(f"checkpoints/{config['ENV_NAME']}/anchor.ckpt", "wb") as writer:
-                pickle.dump({"params": runner_state[0].params}, writer)
-        if i % 10 == 0:
-            with open(f"checkpoints/{config['ENV_NAME']}/model.ckpt", "wb") as writer:
-                pickle.dump({"params": runner_state[0].params}, writer)
         _, (value_loss, loss_actor, entropy) = loss_info
     return runner_state
 
@@ -408,7 +403,6 @@ if __name__ == "__main__":
         "ANNEAL_LR": True,
         "VS_RANDOM": args.VS_RANDOM,
         "UPDATE_INTERVAL": args.UPDATE_INTERVAL,
-        "MAKE_ANCHOR": args.MAKE_ANCHOR,
     }
     if config["ENV_NAME"] == "play2048":
         config["ENV_NAME"] = "2048"
@@ -418,3 +412,4 @@ if __name__ == "__main__":
     out = train(config, rng)
     end = time.time()
     print("training: time", end - sta)
+    train_state, _, _, key = out["runner_state"]
