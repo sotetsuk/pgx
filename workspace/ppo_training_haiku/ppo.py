@@ -108,13 +108,13 @@ forward_pass = hk.without_apply_rng(hk.transform_with_state(forward_pass))
 optimizer = optax.adam(learning_rate=config.learning_rate)
 
 
-def _make_step(env_name, network, params,):  # TODO
+def _make_step(env_name, model):  # DONE
     env = pgx.make(env_name)
     auto_rese_step = auto_reset(env.step, env.init)
     if env_name == "backgammon":
-        return single_play_step_vs_policy_in_backgammon(auto_rese_step, network, params)
+        return single_play_step_vs_policy_in_backgammon(auto_rese_step, forward_pass, model)
     elif env_name in ["kuhn_poker", "leduc_holdem"]:
-        return single_play_step_vs_policy_in_two(auto_rese_step, network, params)
+        return single_play_step_vs_policy_in_two(auto_rese_step, forward_pass, model)
     else:
         return normal_step(auto_rese_step)
 
@@ -133,7 +133,7 @@ def make_update_fn(config):
      # TRAIN LOOP
     def _update_step(runner_state):
         # COLLECT TRAJECTORIES
-        step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params)  # TODO
+        step_fn = _make_step(config["ENV_NAME"], runner_state[0])  # DONE
         get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker"] else _get_zero
         def _env_step(runner_state, unused):
             model, opt_state, env_state, last_obs, rng = runner_state  # DONE
@@ -353,28 +353,36 @@ def train(config, rng):
     rng, _rng = jax.random.split(rng)
     runner_state = (model, opt_state, env_state, env_state.observation, _rng)  # DONE
 
-    ckpt_params = None
-    ckpt_filename = f'params/{config["ENV_NAME"]}/anchor.ckpt'
-    if ckpt_filename != "" and os.path.isfile(ckpt_filename):
+    anchor_model = None
+    ckpt_filename = f'checkpoints/{config["ENV_NAME"]}/model.ckpt'
+    anchor_filename = f'checkpoints/{config["ENV_NAME"]}/anchor.ckpt'
+    if anchor_filename != "" and os.path.isfile(anchor_filename):
         with open(ckpt_filename, "rb") as reader:
             dic = pickle.load(reader)
-        ckpt_params = dic["params"]
+        anchor_model = dic["model"]
     
     steps = 0
     for i in range(config["NUM_UPDATES"]):
-        if ckpt_params is not None:
-            step_fn = _make_step(config["ENV_NAME"], network, ckpt_params, eval=True)  # TODO
-            eval_R = evaluate(runner_state[0], runner_state[1] , step_fn, env, rng, config)   # DONE
+        if anchor_model is not None and not config["MAKE_ANCHOR"]:
+            step_fn = _make_step(config["ENV_NAME"],  anchor_model)  # DONE
+            eval_R = evaluate(runner_state[0] , step_fn, env, rng, config)   # DONE
         else:
-            step_fn = _make_step(config["ENV_NAME"], network, runner_state[0].params)  # TODO
-            eval_R = evaluate(runner_state[0], runner_state[1], step_fn, env, rng, config, eval=True) # DONE
+            step_fn = _make_step(config["ENV_NAME"],runner_state[0])  # DONE
+            eval_R = evaluate(runner_state[0], step_fn, env, rng, config) # DONE
         log = {
-            f"eval_R{config['ENV_NAME']}": float(eval_R),
+            f"eval_R_{config['ENV_NAME']}": float(eval_R),
             "steps": steps,
         }
         print(log)
         wandb.log(log)
         runner_state, loss_info = jitted_update_step(runner_state)  # DONE
+        steps += config["NUM_ENVS"] * config["NUM_STEPS"]
+        if config["MAKE_ANCHOR"]:
+            with open(f"checkpoints/{config['ENV_NAME']}/anchor.ckpt", "wb") as writer:
+                pickle.dump({"model": runner_state[0], "opt_state": runner_state[1]}, writer)
+        if i % 10 == 0:
+            with open(f"checkpoints/{config['ENV_NAME']}/model.ckpt", "wb") as writer:
+                pickle.dump({"model": runner_state[0], "opt_state": runner_state[1]}, writer)
         steps += config["NUM_ENVS"] * config["NUM_STEPS"]
         _, (value_loss, loss_actor, entropy) = loss_info
     return runner_state
