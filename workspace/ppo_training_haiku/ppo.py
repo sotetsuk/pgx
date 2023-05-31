@@ -11,7 +11,7 @@ from flax.linen.initializers import constant, orthogonal
 from typing import Sequence, NamedTuple, Any, Literal
 import distrax
 import pgx
-from utils import auto_reset, single_play_step_vs_policy_in_backgammon, single_play_step_vs_policy_in_two, normal_step
+from utils import auto_reset, single_play_step_vs_policy_in_backgammon, single_play_step_vs_policy_in_two, normal_step, single_play_step_vs_policy_in_sparrow_mahjong
 import time
 import os
 
@@ -127,6 +127,8 @@ def _make_step(env_name, params, eval=False):
     step_fn = auto_reset(env.step, env.init) if not eval else env.step
     if env_name == "backgammon":
         return single_play_step_vs_policy_in_backgammon(step_fn, forward_pass, params)
+    elif env_name == "sparrow_mahjong":
+        return single_play_step_vs_policy_in_sparrow_mahjong(step_fn, forward_pass, params)
     elif env_name in ["kuhn_poker", "leduc_holdem"]:
         return single_play_step_vs_policy_in_two(step_fn, forward_pass, params)
     else:
@@ -345,16 +347,11 @@ def train(config, rng):
         config["NUM_ENVS"] * config["NUM_STEPS"] // config["NUM_MINIBATCHES"]
     )
 
-    def linear_schedule(count):
-        frac = 1.0 - (count // (config["NUM_MINIBATCHES"] * config["UPDATE_EPOCHS"])) / config["NUM_UPDATES"]
-        return config["LR"] * frac
-
     # INIT NETWORK
     rng, _rng = jax.random.split(rng)
     init_x = jnp.zeros((1, ) + env.observation_shape)
     model = forward_pass.init(_rng, init_x)  # (params, state)  # DONE
     opt_state = optimizer.init(params=model[0])  # DONE
-    
 
     # INIT UPDATE FUNCTION
     _update_step = make_update_fn(config)  # DONE
