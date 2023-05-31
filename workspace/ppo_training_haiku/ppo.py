@@ -333,7 +333,7 @@ def evaluate(model, step_fn,  env, rng_key, config):
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
-        state = jax.step_fn(state, action, _rng)
+        state = step_fn(state, action, _rng)
         cum_return = cum_return + jax.vmap(get_fn)(state.rewards, actor)
         return state, cum_return ,rng_key
     state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
