@@ -58,48 +58,6 @@ def auto_reset(step_fn, init_fn):
     return wrapped_step_fn
 
 
-def single_play__step_vs_random_in_backgammon(step_fn):
-    """
-    assume backgammon
-    """
-    def act_randomly(state, rng):
-        logits = jnp.log(state.legal_action_mask.astype(jnp.float16))
-        pi = distrax.Categorical(logits=logits)
-        action = pi.sample(seed=rng)
-        return action
-    
-    act_fn = act_randomly
-    def act_till_turn_end(state, rng, current_player, actor):
-        def cond_fn(tup):
-            state, _, _ = tup
-            return (state.current_player != actor) & (state.current_player == current_player) & ~state.terminated
-        
-        def loop_fn(tup):
-            state, rng, rewards = tup
-            rng, _rng = jax.random.split(rng)
-            action = act_fn(state, _rng)
-            state = step_fn(state, action)
-            rewards = rewards + state.rewards
-            return state, rng, rewards
-        tup = (state, rng, state.rewards)
-        state, _, rewards = jax.lax.while_loop(cond_fn, loop_fn, tup)
-        return state, rewards
-
-    def enemy_step_fn(state, rng, actor):
-        return jax.lax.cond(
-            actor != state.current_player & ~state.terminated,
-            lambda: act_till_turn_end(state, rng, state.current_player, actor),
-            lambda: (state, state.rewards),
-            ) 
-
-    def wrapped_step_fn(state, action, rng):
-        actor = state.current_player
-        state = jax.vmap(step_fn)(state, action)
-        state, rewards = jax.vmap(enemy_step_fn, in_axes=(0, None, 0))(state, rng, actor)
-        return state.replace(rewards=rewards)
-    return wrapped_step_fn
-
-
 def single_play_step_vs_policy_in_backgammon(step_fn, forward_pass, model):
     """
     assume backgammon
@@ -166,6 +124,45 @@ def single_play_step_vs_policy_in_two(step_fn, forward_pass, model):
         state = jax.vmap(step_fn)(state, action)
         rewards = rewards + state.rewards
         terminated = terminated | state.terminated
+        return state.replace(rewards=rewards, terminated=terminated)
+    return wrapped_step_fn
+
+
+def normal_step(step_fn):
+    def wrapped_step_fn(state, action, rng):
+        state = jax.vmap(step_fn)(state, action)
+        return state
+    return wrapped_step_fn
+
+
+def single_play_step_vs_policy_in_sparrow_mahjong(step_fn, forward_pass, model):
+    """
+    assume sparrow mahjong
+    """
+    model_params, model_state = model
+    def wrapped_step_fn(state, action, rng):
+        state = step_fn(state, action)
+        rewards1 = state.rewards
+        terminated1 = state.terminated
+        rng, _rng = jax.random.split(rng)
+        (logits, _), _  = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)
+        logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
+        pi = distrax.Categorical(logits=logits)
+        action = pi.sample(seed=_rng)
+        state = step_fn(state, action)  # step by right
+        rewards2 = state.rewards
+        terminated2 = state.terminated
+
+        rng, _rng = jax.random.split(rng)
+        (logits, _), _  = forward_pass.apply(model_params, model_state, state.observation, is_eval=True)
+        logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
+        pi = distrax.Categorical(logits=logits)
+        action = pi.sample(seed=_rng)
+        state = step_fn(state, action)   # step by left
+        rewards3 = state.rewards
+        terminated3 = state.terminated
+        rewards = rewards1 + rewards2 + rewards3
+        terminated = terminated1 | terminated2 | terminated3
         return state.replace(rewards=rewards, terminated=terminated)
     return wrapped_step_fn
 
