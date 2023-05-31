@@ -151,7 +151,7 @@ def make_update_fn(config):
     def _update_step(runner_state):
         # COLLECT TRAJECTORIES
         step_fn = _make_step(config["ENV_NAME"], runner_state[0])  # DONE
-        get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker"] else _get_zero
+        get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker", "sparrow_mahjong"] else _get_zero
         def _env_step(runner_state, unused):
             model, opt_state, env_state, last_obs, rng = runner_state  # DONE
             model_params, model_state = model
@@ -318,7 +318,7 @@ def evaluate(model, step_fn,  env, rng_key, config):
     subkeys = jax.random.split(sub_key, config["NUM_ENVS"])
     state = jax.vmap(env.init)(subkeys)
     cum_return = jnp.zeros(config["NUM_ENVS"])
-    get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker"] else _get_zero
+    get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker", "sparrow_mahjong"] else _get_zero
     i = 0
     states = []
     def cond_fn(tup):
