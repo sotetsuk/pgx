@@ -30,7 +30,7 @@ class PPOConfig(BaseModel):
         "minatar-space_invaders", 
         "minatar-asterix", 
         "minatar-seaquest", 
-        "2048",
+        "play2048",
         "backgammon"
         ] = "backgammon"
     LR: float = 2.5e-4
@@ -54,6 +54,8 @@ class PPOConfig(BaseModel):
     MAKE_ANCHOR: bool = True
 
 args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
+if args.ENV_NAME == "play2048":
+    args.ENV_NAME = "2048"
 env = pgx.make(args.ENV_NAME)
 
 
@@ -69,7 +71,7 @@ class ActorCritic(hk.Module):
             activation = jax.nn.relu
         else:
             activation = jax.nn.tanh
-        if self.env_name not in ["backgammon", "2048", "kuhn_poker", "leduc_holdem"]:
+        if self.env_name not in ["backgammon", "kuhn_poker", "leduc_holdem"]:
             x = hk.Conv2D(32, kernel_shape=2)(x)
             x = jax.nn.relu(x)
             x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2), padding="VALID")
