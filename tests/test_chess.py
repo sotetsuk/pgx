@@ -955,6 +955,127 @@ def test_observe():
     state.save_svg("tests/assets/chess/observe_032.svg")
     assert (state.observation[:, :, 118] == 0).all()
 
+    # repetition observation
+    # normal
+    state = State._from_fen("r3k2r/8/8/8/8/8/8/R3K2R w - - 0 1")
+    state.save_svg("tests/assets/chess/observe_033.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_034.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_035.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_036.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_037.svg")
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    state = step(state, jnp.int32(30))
+    # "tests/assets/chess/observe_034.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 13] == 1.).all()  # rep
+    state = step(state, jnp.int32(30))
+    # "tests/assets/chess/observe_035.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 2 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 2 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 6 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 6 + 13] == 1.).all()  # rep
+    state = step(state, jnp.int32(613))
+    # "tests/assets/chess/observe_036.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 2 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 2 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 3 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 3 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 6 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 6 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 7 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 7 + 13] == 1.).all()  # rep
+
+    # with castling rights
+    state = State._from_fen("r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1")
+    # "tests/assets/chess/observe_033.svg"
+    state = step(state, jnp.int32(30))
+    # "tests/assets/chess/observe_034.svg"
+    state = step(state, jnp.int32(30))
+    # "tests/assets/chess/observe_035.svg"
+    state = step(state, jnp.int32(613))
+    # "tests/assets/chess/observe_036.svg"
+    state = step(state, jnp.int32(613))
+    # "tests/assets/chess/observe_037.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 1).all()
+    assert (state.observation[:, :, 14 * 0 + 13] == 0).all()
+    assert (state.observation[:, :, 14 * 4 + 12] == 1).all()
+    assert (state.observation[:, :, 14 * 4 + 13] == 0).all()
+    state = step(state, jnp.int32(30))
+    # "tests/assets/chess/observe_034.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 1).all()
+    assert (state.observation[:, :, 14 * 0 + 13] == 0).all()
+    assert (state.observation[:, :, 14 * 4 + 12] == 1).all()
+    assert (state.observation[:, :, 14 * 4 + 13] == 0).all()
+    state = step(state, jnp.int32(30))
+    # "tests/assets/chess/observe_035.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    state = step(state, jnp.int32(613))
+    # "tests/assets/chess/observe_036.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 1 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 5 + 13] == 1.).all()  # rep
+
+    # with en-passant
+    state = State._from_fen("r3k2r/8/8/8/8/8/P7/R3K2R w - - 0 1")
+    state.save_svg("tests/assets/chess/observe_038.svg")
+    state = step(state, jnp.int32(90))
+    state.save_svg("tests/assets/chess/observe_039.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_040.svg")
+    state = step(state, jnp.int32(30))
+    state.save_svg("tests/assets/chess/observe_041.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_042.svg")
+    state = step(state, jnp.int32(613))
+    state.save_svg("tests/assets/chess/observe_043.svg")
+    assert (state.observation[:, :, 14 * 0 + 12] == 1).all()
+    assert (state.observation[:, :, 14 * 0 + 13] == 0).all()
+    assert (state.observation[:, :, 14 * 4 + 12] == 1).all()
+    assert (state.observation[:, :, 14 * 4 + 13] == 0).all()
+    state = step(state, jnp.int32(30))
+    # "tests/assets/chess/observe_039.svg"
+    assert (state.observation[:, :, 14 * 0 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
+    assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+
 
 def test_api():
     import pgx
