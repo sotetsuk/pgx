@@ -430,8 +430,8 @@ class Visualizer:
                 and self.config["COLOR_THEME"] == "dark"
             ) or self.config["COLOR_THEME"] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
-                    "black",
                     "darkgray",
+                    "black",
                     "white",
                     "white",
                     "#1e1e1e",

@@ -191,4 +191,43 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
         )
     )
 
+    # dice
+    DICE = "⚀⚁⚂⚃⚄⚅"
+    if state._playable_dice[2] != -1:
+        for y in range(2):
+            for x in range(2):
+                if state._playable_dice[y + 2 * x] == -1:
+                    continue
+
+                board_g.add(
+                    dwg.text(
+                        text=f"{DICE[state._playable_dice[y+2*x]]}",
+                        insert=(
+                            (13.5 + x * 1.3) * GRID_SIZE,
+                            (7.0 + y * 1.3) * GRID_SIZE,
+                        ),
+                        fill=color_set.grid_color,
+                        font_size="44px",
+                        font_family="sans serif",
+                    )
+                )
+    else:
+        x = 0
+        for dice in state._playable_dice:
+            if dice == -1:
+                continue
+            board_g.add(
+                dwg.text(
+                    text=f"{DICE[dice]}",
+                    insert=(
+                        (13.5 + x * 1.3) * GRID_SIZE,
+                        7.5 * GRID_SIZE,
+                    ),
+                    fill=color_set.grid_color,
+                    font_size="44px",
+                    font_family="sans serif",
+                )
+            )
+            x += 1
+
     return board_g
