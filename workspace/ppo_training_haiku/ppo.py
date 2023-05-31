@@ -333,7 +333,7 @@ def evaluate(model, step_fn,  env, rng_key, config):
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
-        state = step_fn(state, action, _rng)
+        state = jax.step_fn(state, action, _rng)
         cum_return = cum_return + jax.vmap(get_fn)(state.rewards, actor)
         return state, cum_return ,rng_key
     state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
@@ -396,7 +396,6 @@ def train(config, rng):
         if i % 10 == 0:
             with open(f"checkpoints/{config['ENV_NAME']}/model.ckpt", "wb") as writer:
                 pickle.dump({"model": runner_state[0], "opt_state": runner_state[1]}, writer)
-        steps += config["NUM_ENVS"] * config["NUM_STEPS"]
         _, (value_loss, loss_actor, entropy) = loss_info
     return runner_state
 
