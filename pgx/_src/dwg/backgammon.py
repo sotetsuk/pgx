@@ -2,7 +2,7 @@ from pgx.backgammon import State as BackgammonState
 from pgx.backgammon import _get_abs_board
 
 
-def _make_backgammon_dwg(dwg, state: BackgammonState, config):
+def _make_backgammon_dwg(dwg, state: BackgammonState, config):  # noqa: C901
     board = _get_abs_board(state)
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
@@ -104,27 +104,34 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
             )
 
     # bar
-    for i, piece in enumerate(board[24:26]):  # 24:黒, 25:白
-        fill_color = color_set.p2_color
-        delta = 1
-        offset = 0.5
-        if i == 1:
-            piece = -piece
-            fill_color = color_set.p1_color
-            delta = -1
-            offset = -0.5
-        for n in range(piece):
-            board_g.add(
-                dwg.circle(
-                    center=(
-                        6.5 * GRID_SIZE,
-                        (7 + offset + n * delta) * GRID_SIZE,
-                    ),
-                    r=0.5 * GRID_SIZE,
-                    stroke=color_set.grid_color,
-                    fill=fill_color,
-                )
+    # 24:黒
+    piece = board[24]
+    for n in range(piece):
+        board_g.add(
+            dwg.circle(
+                center=(
+                    6.5 * GRID_SIZE,
+                    (7.5 + n) * GRID_SIZE,
+                ),
+                r=0.5 * GRID_SIZE,
+                stroke=color_set.grid_color,
+                fill=color_set.p2_color,
             )
+        )
+    # 25:白
+    piece = -board[25]
+    for n in range(piece):
+        board_g.add(
+            dwg.circle(
+                center=(
+                    6.5 * GRID_SIZE,
+                    (6.5 - n) * GRID_SIZE,
+                ),
+                r=0.5 * GRID_SIZE,
+                stroke=color_set.grid_color,
+                fill=color_set.p1_color,
+            )
+        )
 
     # off
     board_g.add(
@@ -192,10 +199,13 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
     )
 
     # dice
-    DICE = "⚀⚁⚂⚃⚄⚅"
-    if state._playable_dice[2] != -1:
-        for y in range(2):
-            for x in range(2):
+    def _add_dice():
+        DICE = "⚀⚁⚂⚃⚄⚅"
+        if state._playable_dice[2] != -1:
+            for xy in range(4):
+                x = xy // 2
+                y = xy % 2
+
                 if state._playable_dice[y + 2 * x] == -1:
                     continue
 
@@ -211,23 +221,25 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):
                         font_family="sans serif",
                     )
                 )
-    else:
-        x = 0
-        for dice in state._playable_dice:
-            if dice == -1:
-                continue
-            board_g.add(
-                dwg.text(
-                    text=f"{DICE[dice]}",
-                    insert=(
-                        (13.5 + x * 1.3) * GRID_SIZE,
-                        7.5 * GRID_SIZE,
-                    ),
-                    fill=color_set.grid_color,
-                    font_size="44px",
-                    font_family="sans serif",
+        else:
+            x = 0
+            for dice in state._playable_dice:
+                if dice == -1:
+                    continue
+                board_g.add(
+                    dwg.text(
+                        text=f"{DICE[dice]}",
+                        insert=(
+                            (13.5 + x * 1.3) * GRID_SIZE,
+                            7.5 * GRID_SIZE,
+                        ),
+                        fill=color_set.grid_color,
+                        font_size="44px",
+                        font_family="sans serif",
+                    )
                 )
-            )
-            x += 1
+                x += 1
+        return board_g
 
+    board_g = _add_dice()
     return board_g
