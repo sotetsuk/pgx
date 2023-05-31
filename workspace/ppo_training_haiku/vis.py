@@ -13,19 +13,18 @@ FALSE = jnp.bool_(False)
 
 def visualize(forward_pass, model, env,  rng_key):
     model_params, model_state = model
-    subkeys = jax.random.split(rng_key, 5)
-    state = jax.vmap(env.init)(subkeys)
+    state = env.init(rng_key)
     states = []
     states.append(state)
-    step_fn = jax.jit(jax.vmap(env.step))
+    step_fn = jax.jit(env.step)
     while not state.terminated.all():
-        (logits, value), _ = forward_pass.apply(model_params,model_state, state.observation, is_eval=True)
+        (logits, value), _ = forward_pass.apply(model_params,model_state, jnp.expand_dims(state.observation.astype(jnp.float32), axis=0), is_eval=True)
         logits = logits +  jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
-        state = step_fn(state, action)
+        state = step_fn(state, action[0])
         states.append(state)
     fname = f"vis/{'_'.join((env.id).lower().split())}.svg"
     pgx.save_svg_animation(states, fname, frame_duration_seconds=0.7)
@@ -46,5 +45,5 @@ if __name__ == "__main__":
     with open(ckpt_filename, "rb") as f:
         model = pickle.load(f)["model"]
     env = pgx.make(args.env_name)
-    rng_key = jax.random.PRNGKey(3)
+    rng_key = jax.random.PRNGKey(10)
     visualize(forward_pass, model, env, rng_key)
