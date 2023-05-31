@@ -141,7 +141,7 @@ def single_play_step_vs_policy_in_sparrow_mahjong(step_fn, forward_pass, model):
     """
     model_params, model_state = model
     def wrapped_step_fn(state, action, rng):
-        state = step_fn(state, action)
+        state = jax.vmap(step_fn)(state, action)
         rewards1 = state.rewards
         terminated1 = state.terminated
         rng, _rng = jax.random.split(rng)
@@ -149,7 +149,7 @@ def single_play_step_vs_policy_in_sparrow_mahjong(step_fn, forward_pass, model):
         logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         action = pi.sample(seed=_rng)
-        state = step_fn(state, action)  # step by right
+        state = jax.vmap(step_fn)(state, action)  # step by right
         rewards2 = state.rewards
         terminated2 = state.terminated
 
@@ -158,7 +158,7 @@ def single_play_step_vs_policy_in_sparrow_mahjong(step_fn, forward_pass, model):
         logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         action = pi.sample(seed=_rng)
-        state = step_fn(state, action)   # step by left
+        state = jax.vmap(step_fn)(state, action)   # step by left
         rewards3 = state.rewards
         terminated3 = state.terminated
         rewards = rewards1 + rewards2 + rewards3

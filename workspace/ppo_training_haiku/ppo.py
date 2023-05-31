@@ -31,7 +31,8 @@ class PPOConfig(BaseModel):
         "minatar-asterix", 
         "minatar-seaquest", 
         "play2048",
-        "backgammon"
+        "backgammon",
+        "sparrow_mahjong"
         ] = "backgammon"
     LR: float = 2.5e-4
     NUM_ENVS: int = 64
