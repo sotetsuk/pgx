@@ -296,7 +296,7 @@ def _get_zero(x, i):
 
 def evaluate(model,  env, rng_key):
     model_params, model_state = model
-    step_fn = jax.vmap(auto_reset(env.step, env.init))
+    step_fn = jax.vmap(env.step)
     rng_key, sub_key = jax.random.split(rng_key)
     subkeys = jax.random.split(sub_key, args.NUM_ENVS)
     state = jax.vmap(env.init)(subkeys)
@@ -315,8 +315,8 @@ def evaluate(model,  env, rng_key):
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
-        state = step_fn(state, action, _rng)
-        cum_return = cum_return + rewards[0]
+        state = step_fn(state, action)
+        cum_return = cum_return + state.rewards[0]
         return state, cum_return ,rng_key
     state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
     return cum_return.mean()
