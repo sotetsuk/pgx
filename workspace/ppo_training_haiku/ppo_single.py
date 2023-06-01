@@ -58,7 +58,7 @@ env = pgx.make(args.ENV_NAME)
 
 
 class ActorCritic(hk.Module):
-    def __init__(self, action_dim, activation="tanh"):
+    def __init__(self, num_actions, activation="tanh"):
         super().__init__()
         self.num_actions = num_actions
         self.activation = activation
@@ -68,7 +68,7 @@ class ActorCritic(hk.Module):
         if self.activation == "relu":
             activation = jax.nn.relu
         else:
-        activation = jax.nn.tanh
+            activation = jax.nn.tanh
         x = hk.Conv2D(32, kernel_shape=2)(x)
         x = jax.nn.relu(x)
         x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2), padding="VALID")
@@ -107,10 +107,7 @@ def forward_pass(x, is_eval=False):
     return logits, value
 forward_pass = hk.without_apply_rng(hk.transform_with_state(forward_pass))
 
-def linear_sc
-
-
-hedule(count):
+def linear_schedule(count):
     frac = 1.0 - (count // (args.NUM_MINIBATCHES * args.UPDATE_EPOCHS)) / args.NUM_UPDATES
     return args.LR * frac
 if args.ANNEAL_LR:
