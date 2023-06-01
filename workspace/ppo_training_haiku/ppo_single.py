@@ -133,7 +133,7 @@ def make_update_fn():
      # TRAIN LOOP
     def _update_step(runner_state):
         # COLLECT TRAJECTORIES
-        step_fn = auto_reset(env.step, env.init)
+        step_fn = jax.vmap(auto_reset(env.step, env.init))
         def _env_step(runner_state, unused):
             model, opt_state, env_state, last_obs, rng = runner_state  # DONE
             model_params, model_state = model
@@ -150,7 +150,7 @@ def make_update_fn():
             # STEP ENV
             rng, _rng = jax.random.split(rng)
             env_state = step_fn(
-                env_state, action, _rng
+                env_state, action
             )
             transition = Transition(
                 env_state.terminated, action, value, env_state.rewards[0], log_prob, last_obs, mask
