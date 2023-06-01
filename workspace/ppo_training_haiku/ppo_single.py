@@ -59,7 +59,7 @@ env = pgx.make(args.ENV_NAME)
 class ActorCritic(hk.Module):
     def __init__(self, action_dim, activation="tanh"):
         super().__init__()
-        self.action_dim = action_dim
+        self.num_actions = num_actions
         self.activation = activation
         assert activation in ["relu", "tanh"]
 
@@ -83,7 +83,7 @@ class ActorCritic(hk.Module):
         )(actor_mean)
         actor_mean = activation(actor_mean)
         actor_mean = hk.Linear(
-            self.action_dim
+            self.num_actions
         )(actor_mean)
 
         critic = hk.Linear(
