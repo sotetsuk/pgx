@@ -30,6 +30,7 @@ class PPOConfig(BaseModel):
         "minatar-seaquest", 
         "play2048",
         ] = "minatar-breakout"
+    SEED: int = 0
     LR: float = 2.5e-4
     NUM_ENVS: int = 64
     NUM_STEPS: int = 256
@@ -369,7 +370,7 @@ if __name__ == "__main__":
     if args.ENV_NAME == "play2048":
         args.ENV_NAME = "2048"
     print("training of", args.ENV_NAME)
-    rng = jax.random.PRNGKey(0)
+    rng = jax.random.PRNGKey(args.SEED)
     sta = time.time()
     out = train(rng)
     end = time.time()
