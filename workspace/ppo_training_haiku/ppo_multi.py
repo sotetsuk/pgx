@@ -23,14 +23,6 @@ import wandb
 
 class PPOConfig(BaseModel):
     ENV_NAME: Literal[ 
-        "leduc_holdem", 
-        "kuhn_poker", 
-        "minatar-breakout", 
-        "minatar-freeway", 
-        "minatar-space_invaders", 
-        "minatar-asterix", 
-        "minatar-seaquest", 
-        "play2048",
         "backgammon",
         "sparrow_mahjong"
         ] = "backgammon"
@@ -55,8 +47,6 @@ class PPOConfig(BaseModel):
     MAKE_ANCHOR: bool = True
 
 args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
-if args.ENV_NAME == "play2048":
-    args.ENV_NAME = "2048"
 env = pgx.make(args.ENV_NAME)
 
 
