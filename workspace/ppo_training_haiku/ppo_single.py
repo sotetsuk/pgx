@@ -359,7 +359,7 @@ def train(rng):
 
 
 if __name__ == "__main__":
-    key = "483ca3866ab4eaa8f523bacae3cb603d27d69c3d" # please specify your wandb key
+    key = "" # please specify your wandb key
     wandb.login(key=key)
     wandb.init(project=f"ppo-haiku", config=args.dict())
     print("training of", args.ENV_NAME)
