@@ -386,7 +386,7 @@ def train(config, rng):
 
 if __name__ == "__main__":
     args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
-    key = "483ca3866ab4eaa8f523bacae3cb603d27d69c3d" # please specify your wandb key
+    key = "" # please specify your wandb key
     wandb.login(key=key)
     mode = "make-anchor" if args.MAKE_ANCHOR else "train"
     wandb.init(project=f"ppo-{mode}", config=args.dict())

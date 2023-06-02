@@ -11,7 +11,7 @@ from flax.linen.initializers import constant, orthogonal
 from typing import Sequence, NamedTuple, Any, Literal
 import distrax
 import pgx
-from utils import auto_reset, single_play_step_vs_policy_in_backgammon, single_play_step_vs_policy_in_two, normal_step, single_play_step_vs_policy_in_sparrow_mahjong
+from utils import auto_reset, single_play_step_vs_policy_in_backgammon, single_play_step_vs_random_in_sparrow_mahjong
 import time
 import os
 
@@ -23,14 +23,6 @@ import wandb
 
 class PPOConfig(BaseModel):
     ENV_NAME: Literal[ 
-        "leduc_holdem", 
-        "kuhn_poker", 
-        "minatar-breakout", 
-        "minatar-freeway", 
-        "minatar-space_invaders", 
-        "minatar-asterix", 
-        "minatar-seaquest", 
-        "play2048",
         "backgammon",
         "sparrow_mahjong"
         ] = "backgammon"
@@ -55,8 +47,6 @@ class PPOConfig(BaseModel):
     MAKE_ANCHOR: bool = True
 
 args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
-if args.ENV_NAME == "play2048":
-    args.ENV_NAME = "2048"
 env = pgx.make(args.ENV_NAME)
 
 
@@ -129,11 +119,9 @@ def _make_step(env_name, params, eval=False):
     if env_name == "backgammon":
         return single_play_step_vs_policy_in_backgammon(step_fn, forward_pass, params)
     elif env_name == "sparrow_mahjong":
-        return single_play_step_vs_policy_in_sparrow_mahjong(step_fn, forward_pass, params)
-    elif env_name in ["kuhn_poker", "leduc_holdem"]:
-        return single_play_step_vs_policy_in_two(step_fn, forward_pass, params)
+        return single_play_step_vs_random_in_sparrow_mahjong(step_fn)  # to make baseline model, random is preferred
     else:
-        return normal_step(step_fn)
+        raise NotImplementedError
 
 
 class Transition(NamedTuple):
@@ -151,7 +139,7 @@ def make_update_fn(config):
     def _update_step(runner_state):
         # COLLECT TRAJECTORIES
         step_fn = _make_step(config["ENV_NAME"], runner_state[0])  # DONE
-        get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker", "sparrow_mahjong"] else _get_zero
+        get_fn = _get
         def _env_step(runner_state, unused):
             model, opt_state, env_state, last_obs, rng = runner_state  # DONE
             model_params, model_state = model
@@ -318,7 +306,7 @@ def evaluate(model, step_fn,  env, rng_key, config):
     subkeys = jax.random.split(sub_key, config["NUM_ENVS"])
     state = jax.vmap(env.init)(subkeys)
     cum_return = jnp.zeros(config["NUM_ENVS"])
-    get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker", "sparrow_mahjong"] else _get_zero
+    get_fn = _get
     i = 0
     states = []
     def cond_fn(tup):
@@ -401,7 +389,7 @@ def train(config, rng):
 
 
 if __name__ == "__main__":
-    key = "483ca3866ab4eaa8f523bacae3cb603d27d69c3d" # please specify your wandb key
+    key = "66c91f7279a3c2b3fe2d306a29e0136e45bf7070" # please specify your wandb key
     wandb.login(key=key)
     mode = "make-anchor" if args.MAKE_ANCHOR else "train"
     wandb.init(project=f"ppo-{mode}-haiku", config=args.dict())
@@ -425,8 +413,6 @@ if __name__ == "__main__":
         "UPDATE_INTERVAL": args.UPDATE_INTERVAL,
         "MAKE_ANCHOR": args.MAKE_ANCHOR
     }
-    if config["ENV_NAME"] == "play2048":
-        config["ENV_NAME"] = "2048"
     print("training of", config["ENV_NAME"])
     rng = jax.random.PRNGKey(0)
     sta = time.time()
