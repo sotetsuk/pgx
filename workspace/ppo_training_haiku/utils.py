@@ -173,7 +173,8 @@ def single_play_step_vs_random_in_sparrow_mahjong(step_fn):
         rewards1 = state.rewards
         terminated1 = state.terminated
         rng, _rng = jax.random.split(rng)
-        logits = jax.log(state.legal_action_mask.astype(jnp.float16))
+        logits = jnp.log(state.legal_action_mask.astype(jnp.float16))
+        logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         action = pi.sample(seed=_rng)
         state = jax.vmap(step_fn)(state, action)  # step by right
@@ -181,7 +182,8 @@ def single_play_step_vs_random_in_sparrow_mahjong(step_fn):
         terminated2 = state.terminated
 
         rng, _rng = jax.random.split(rng)
-        logits = jax.log(state.legal_action_mask.astype(jnp.float16))
+        logits = jnp.log(state.legal_action_mask.astype(jnp.float16))
+        logits = logits + jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         action = pi.sample(seed=_rng)
         state = jax.vmap(step_fn)(state, action)   # step by left

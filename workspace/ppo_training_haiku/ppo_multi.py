@@ -119,7 +119,7 @@ def _make_step(env_name, params, eval=False):
     if env_name == "backgammon":
         return single_play_step_vs_policy_in_backgammon(step_fn, forward_pass, params)
     elif env_name == "sparrow_mahjong":
-        return single_play_step_vs_random_in_sparrow_mahjong(step_fn, forward_pass, params)  # to make baseline model, random is preferred
+        return single_play_step_vs_random_in_sparrow_mahjong(step_fn)  # to make baseline model, random is preferred
     else:
         raise NotImplementedError
 
@@ -389,7 +389,7 @@ def train(config, rng):
 
 
 if __name__ == "__main__":
-    key = "" # please specify your wandb key
+    key = "66c91f7279a3c2b3fe2d306a29e0136e45bf7070" # please specify your wandb key
     wandb.login(key=key)
     mode = "make-anchor" if args.MAKE_ANCHOR else "train"
     wandb.init(project=f"ppo-{mode}-haiku", config=args.dict())
