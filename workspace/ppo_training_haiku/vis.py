@@ -4,7 +4,7 @@ import haiku as hk
 import pgx
 import time
 import pickle
-from ppo import ActorCritic
+from ppo_multi import ActorCritic
 import distrax
 import argparse
 TRUE = jnp.bool_(True)
