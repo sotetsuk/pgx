@@ -46,8 +46,6 @@ class PPOConfig(BaseModel):
     VF_COEF: float = 0.5
     MAX_GRAD_NORM: float = 0.5
     ACTIVATION: str = "tanh"
-    NUM_UPDATES: int = 10000
-    MINIBATCH_SIZE: int = 32
     ANNEAL_LR: bool = True
 
 
@@ -153,7 +151,7 @@ def make_update_fn():
                 env_state, action
             )
             transition = Transition(
-                env_state.terminated, action, value, env_state.rewards[0], log_prob, last_obs, mask
+                env_state.terminated, action, value, env_state.rewards[:, 0], log_prob, last_obs, mask
             )
             runner_state = (model, opt_state, env_state, env_state.observation, rng)  # DONE
             return runner_state, transition
@@ -316,7 +314,7 @@ def evaluate(model,  env, rng_key):
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
         state = step_fn(state, action)
-        cum_return = cum_return + state.rewards[0]
+        cum_return = cum_return + state.rewards[:, 0]
         return state, cum_return ,rng_key
     state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
     return cum_return.mean()
