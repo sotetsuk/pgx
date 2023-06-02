@@ -362,8 +362,6 @@ if __name__ == "__main__":
     key = "483ca3866ab4eaa8f523bacae3cb603d27d69c3d" # please specify your wandb key
     wandb.login(key=key)
     wandb.init(project=f"ppo-haiku", config=args.dict())
-    if args.ENV_NAME == "play2048":
-        args.ENV_NAME = "2048"
     print("training of", args.ENV_NAME)
     rng = jax.random.PRNGKey(args.SEED)
     sta = time.time()
