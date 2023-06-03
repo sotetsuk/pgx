@@ -19,7 +19,7 @@ def visualize(forward_pass, model, env,  rng_key):
     states.append(state)
     step_fn = jax.jit(jax.vmap(env.step))
     while not state.terminated.all():
-        (logits, value), _ = forward_pass.apply(model_params,model_state, state.observation, is_eval=True)
+        (logits, value), _ = forward_pass.apply(model_params,model_state, state.observation.astype(jnp.float32), is_eval=True)
         logits = logits +  jnp.finfo(jnp.float64).min * (~state.legal_action_mask)
         pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
