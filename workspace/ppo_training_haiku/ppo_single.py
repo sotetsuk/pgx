@@ -23,21 +23,20 @@ import wandb
 
 class PPOConfig(BaseModel):
     ENV_NAME: Literal[ 
-        "leduc_holdem", 
-        "kuhn_poker", 
         "minatar-breakout", 
         "minatar-freeway", 
         "minatar-space_invaders", 
         "minatar-asterix", 
         "minatar-seaquest", 
         "play2048",
-        "backgammon",
-        "sparrow_mahjong"
-        ] = "backgammon"
+        ] = "minatar-breakout"
+    SEED: int = 0
     LR: float = 2.5e-4
     NUM_ENVS: int = 64
     NUM_STEPS: int = 256
     TOTAL_TIMESTEPS: int = 5000000
+    NUM_UPDATES: int = 5000000 // 64 // 256  # TOTAL_TIMESTEPS // NUM_ENVS // NUM_STEPS
+    MINIBATCH_SIZE: int = 64 * 256 // 8  # NUM_ENVS * NUM_STEPS // NUM_MINIBATCHES
     UPDATE_EPOCHS: int = 30
     NUM_MINIBATCHES: int = 8
     GAMMA: float = 0.99
@@ -47,12 +46,8 @@ class PPOConfig(BaseModel):
     VF_COEF: float = 0.5
     MAX_GRAD_NORM: float = 0.5
     ACTIVATION: str = "tanh"
-    NUM_UPDATES: int = 10000
-    MINIBATCH_SIZE: int = 32
     ANNEAL_LR: bool = True
-    VS_RANDOM: bool = False
-    UPDATE_INTERVAL:int = 5
-    MAKE_ANCHOR: bool = True
+
 
 args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
 if args.ENV_NAME == "play2048":
@@ -61,22 +56,21 @@ env = pgx.make(args.ENV_NAME)
 
 
 class ActorCritic(hk.Module):
-    def __init__(self, action_dim, activation="tanh", env_name="backgammon"):
+    def __init__(self, num_actions, activation="tanh"):
         super().__init__()
-        self.action_dim = action_dim
+        self.num_actions = num_actions
         self.activation = activation
-        self.env_name = env_name
+        assert activation in ["relu", "tanh"]
 
     def __call__(self, x, is_training, test_local_stats):
         if self.activation == "relu":
             activation = jax.nn.relu
         else:
             activation = jax.nn.tanh
-        if self.env_name not in ["backgammon", "kuhn_poker", "leduc_holdem"]:
-            x = hk.Conv2D(32, kernel_shape=2)(x)
-            x = jax.nn.relu(x)
-            x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2), padding="VALID")
-            x = x.reshape((x.shape[0], -1))  # flatten
+        x = hk.Conv2D(32, kernel_shape=2)(x)
+        x = jax.nn.relu(x)
+        x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2), padding="VALID")
+        x = x.reshape((x.shape[0], -1))  # flatten
         x = hk.Linear(64)(x)
         x = jax.nn.relu(x)
         actor_mean = hk.Linear(
@@ -88,7 +82,7 @@ class ActorCritic(hk.Module):
         )(actor_mean)
         actor_mean = activation(actor_mean)
         actor_mean = hk.Linear(
-            self.action_dim
+            self.num_actions
         )(actor_mean)
 
         critic = hk.Linear(
@@ -106,14 +100,14 @@ class ActorCritic(hk.Module):
         return actor_mean, jnp.squeeze(critic, axis=-1)
 
 def forward_pass(x, is_eval=False):
-    net = ActorCritic(env.num_actions, activation="tanh", env_name=env.id)
+    net = ActorCritic(env.num_actions, activation="tanh")
     logits, value = net(x, is_training=not is_eval, test_local_stats=False)
     return logits, value
 forward_pass = hk.without_apply_rng(hk.transform_with_state(forward_pass))
 
 def linear_schedule(count):
-    frac = 1.0 - (count // (config["NUM_MINIBATCHES"] * config["UPDATE_EPOCHS"])) / config["NUM_UPDATES"]
-    return config["LR"] * frac
+    frac = 1.0 - (count // (args.NUM_MINIBATCHES * args.UPDATE_EPOCHS)) / args.NUM_UPDATES
+    return args.LR * frac
 if args.ANNEAL_LR:
     optimizer = optax.chain(
         optax.clip_by_global_norm(args.MAX_GRAD_NORM),
@@ -121,19 +115,6 @@ if args.ANNEAL_LR:
     )
 else:
     optimizer = optax.chain(optax.clip_by_global_norm(args.MAX_GRAD_NORM), optax.adam(args.LR, eps=1e-5))
-
-
-def _make_step(env_name, params, eval=False):
-    env = pgx.make(env_name)
-    step_fn = auto_reset(env.step, env.init) if not eval else env.step
-    if env_name == "backgammon":
-        return single_play_step_vs_policy_in_backgammon(step_fn, forward_pass, params)
-    elif env_name == "sparrow_mahjong":
-        return single_play_step_vs_policy_in_sparrow_mahjong(step_fn, forward_pass, params)
-    elif env_name in ["kuhn_poker", "leduc_holdem"]:
-        return single_play_step_vs_policy_in_two(step_fn, forward_pass, params)
-    else:
-        return normal_step(step_fn)
 
 
 class Transition(NamedTuple):
@@ -146,12 +127,11 @@ class Transition(NamedTuple):
     legal_action_mask: jnp.ndarray
 
 
-def make_update_fn(config):
+def make_update_fn():
      # TRAIN LOOP
     def _update_step(runner_state):
         # COLLECT TRAJECTORIES
-        step_fn = _make_step(config["ENV_NAME"], runner_state[0])  # DONE
-        get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker", "sparrow_mahjong"] else _get_zero
+        step_fn = jax.vmap(auto_reset(env.step, env.init))
         def _env_step(runner_state, unused):
             model, opt_state, env_state, last_obs, rng = runner_state  # DONE
             model_params, model_state = model
@@ -168,16 +148,16 @@ def make_update_fn(config):
             # STEP ENV
             rng, _rng = jax.random.split(rng)
             env_state = step_fn(
-                env_state, action, _rng
+                env_state, action
             )
             transition = Transition(
-                env_state.terminated, action, value, jax.vmap(get_fn)(env_state.rewards, actor), log_prob, last_obs, mask
+                env_state.terminated, action, value, env_state.rewards[:, 0], log_prob, last_obs, mask
             )
             runner_state = (model, opt_state, env_state, env_state.observation, rng)  # DONE
             return runner_state, transition
 
         runner_state, traj_batch = jax.lax.scan(
-            _env_step, runner_state, None, config["NUM_STEPS"]
+            _env_step, runner_state, None, args.NUM_STEPS
         )
 
         # CALCULATE ADVANTAGE
@@ -193,10 +173,10 @@ def make_update_fn(config):
                     transition.value,
                     transition.reward,
                 )
-                delta = reward + config["GAMMA"] * next_value * (1 - done) - value
+                delta = reward + args.GAMMA * next_value * (1 - done) - value
                 gae = (
                     delta
-                    + config["GAMMA"] * config["GAE_LAMBDA"] * (1 - done) * gae
+                    + args.GAMMA * args.GAE_LAMBDA * (1 - done) * gae
                 )
                 return (gae, value), gae
 
@@ -229,7 +209,7 @@ def make_update_fn(config):
                     # CALCULATE VALUE LOSS
                     value_pred_clipped = traj_batch.value + (
                         value - traj_batch.value
-                    ).clip(-config["CLIP_EPS"], config["CLIP_EPS"])
+                    ).clip(-args.CLIP_EPS, args.CLIP_EPS)
                     value_losses = jnp.square(value - targets)
                     value_losses_clipped = jnp.square(value_pred_clipped - targets)
                     value_loss = (
@@ -243,8 +223,8 @@ def make_update_fn(config):
                     loss_actor2 = (
                         jnp.clip(
                             ratio,
-                            1.0 - config["CLIP_EPS"],
-                            1.0 + config["CLIP_EPS"],
+                            1.0 - args.CLIP_EPS,
+                            1.0 + args.CLIP_EPS,
                         )
                         * gae
                     )
@@ -254,8 +234,8 @@ def make_update_fn(config):
 
                     total_loss = (
                         loss_actor
-                        + config["VF_COEF"] * value_loss
-                        - config["ENT_COEF"] * entropy
+                        + args.VF_COEF * value_loss
+                        - args.ENT_COEF * entropy
                     )
                     return total_loss, (value_loss, loss_actor, entropy)
 
@@ -269,9 +249,9 @@ def make_update_fn(config):
 
             model, opt_state, traj_batch, advantages, targets, rng = update_state  # DONE
             rng, _rng = jax.random.split(rng)
-            batch_size = config["MINIBATCH_SIZE"] * config["NUM_MINIBATCHES"]
+            batch_size = args.MINIBATCH_SIZE * args.NUM_MINIBATCHES
             assert (
-                batch_size == config["NUM_STEPS"] * config["NUM_ENVS"]
+                batch_size == args.NUM_STEPS * args.NUM_ENVS
             ), "batch size must be equal to number of steps * number of envs"
             permutation = jax.random.permutation(_rng, batch_size)
             batch = (traj_batch, advantages, targets)
@@ -283,7 +263,7 @@ def make_update_fn(config):
             )
             minibatches = jax.tree_util.tree_map(
                 lambda x: jnp.reshape(
-                    x, [config["NUM_MINIBATCHES"], -1] + list(x.shape[1:])
+                    x, [args.NUM_MINIBATCHES, -1] + list(x.shape[1:])
                 ),
                 shuffled_batch,
             )
@@ -295,7 +275,7 @@ def make_update_fn(config):
 
         update_state = (model, opt_state, traj_batch, advantages, targets, rng)  # DONE
         update_state, loss_info = jax.lax.scan(
-            _update_epoch, update_state, None, config["UPDATE_EPOCHS"]
+            _update_epoch, update_state, None, args.UPDATE_EPOCHS
         )
         model, opt_state , _, _, _, rng = update_state  # DONE
 
@@ -312,13 +292,13 @@ def _get_zero(x, i):
     return x[0]
 
 
-def evaluate(model, step_fn,  env, rng_key, config):
+def evaluate(model,  env, rng_key):
     model_params, model_state = model
+    step_fn = jax.vmap(env.step)
     rng_key, sub_key = jax.random.split(rng_key)
-    subkeys = jax.random.split(sub_key, config["NUM_ENVS"])
+    subkeys = jax.random.split(sub_key, args.NUM_ENVS)
     state = jax.vmap(env.init)(subkeys)
-    cum_return = jnp.zeros(config["NUM_ENVS"])
-    get_fn = _get if config["ENV_NAME"] in ["backgammon", "leduc_holdem", "kuhn_poker", "sparrow_mahjong"] else _get_zero
+    cum_return = jnp.zeros(args.NUM_ENVS)
     i = 0
     states = []
     def cond_fn(tup):
@@ -333,21 +313,14 @@ def evaluate(model, step_fn,  env, rng_key, config):
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
-        state = step_fn(state, action, _rng)
-        cum_return = cum_return + jax.vmap(get_fn)(state.rewards, actor)
+        state = step_fn(state, action)
+        cum_return = cum_return + state.rewards[:, 0]
         return state, cum_return ,rng_key
     state, cum_return, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, cum_return, rng_key))
     return cum_return.mean()
 
 
-def train(config, rng):
-    config["NUM_UPDATES"] = (
-        config["TOTAL_TIMESTEPS"] // config["NUM_STEPS"] // config["NUM_ENVS"]
-    )
-    config["MINIBATCH_SIZE"] = (
-        config["NUM_ENVS"] * config["NUM_STEPS"] // config["NUM_MINIBATCHES"]
-    )
-
+def train(rng):
     # INIT NETWORK
     rng, _rng = jax.random.split(rng)
     init_x = jnp.zeros((1, ) + env.observation_shape)
@@ -355,81 +328,43 @@ def train(config, rng):
     opt_state = optimizer.init(params=model[0])  # DONE
 
     # INIT UPDATE FUNCTION
-    _update_step = make_update_fn(config)  # DONE
+    _update_step = make_update_fn()  # DONE
     jitted_update_step = jax.jit(_update_step)
 
     # INIT ENV
     rng, _rng = jax.random.split(rng)
-    reset_rng= jax.random.split(_rng, config["NUM_ENVS"])
+    reset_rng= jax.random.split(_rng, args.NUM_ENVS)
     env_state = jax.vmap(env.init)(reset_rng)
 
     rng, _rng = jax.random.split(rng)
     runner_state = (model, opt_state, env_state, env_state.observation, _rng)  # DONE
 
-    anchor_model = None
-    ckpt_filename = f'checkpoints/{config["ENV_NAME"]}/model.ckpt'
-    anchor_filename = f'checkpoints/{config["ENV_NAME"]}/anchor.ckpt'
-    if anchor_filename != "" and os.path.isfile(anchor_filename):
-        with open(ckpt_filename, "rb") as reader:
-            dic = pickle.load(reader)
-        anchor_model = dic["model"]
-    
+    ckpt_filename = f'checkpoints/{args.ENV_NAME}/model.ckpt'
     steps = 0
-    for i in range(config["NUM_UPDATES"]):
-        if anchor_model is not None and not config["MAKE_ANCHOR"]:
-            step_fn = _make_step(config["ENV_NAME"],  anchor_model, eval=True)  # DONE
-            eval_R = evaluate(runner_state[0] , step_fn, env, rng, config)   # DONE
-        else:
-            step_fn = _make_step(config["ENV_NAME"],runner_state[0], eval=True)  # DONE
-            eval_R = evaluate(runner_state[0], step_fn, env, rng, config) # DONE
+    for i in range(args.NUM_UPDATES):
+        eval_R = evaluate(runner_state[0], env, rng) # DONE
         log = {
-            f"eval_R_{config['ENV_NAME']}": float(eval_R),
+            f"eval_R_{args.ENV_NAME}": float(eval_R),
             "steps": steps,
         }
         print(log)
         wandb.log(log)
         runner_state, loss_info = jitted_update_step(runner_state)  # DONE
-        steps += config["NUM_ENVS"] * config["NUM_STEPS"]
-        if config["MAKE_ANCHOR"]:
-            with open(f"checkpoints/{config['ENV_NAME']}/anchor.ckpt", "wb") as writer:
-                pickle.dump({"model": runner_state[0], "opt_state": runner_state[1]}, writer)
+        steps += args.NUM_ENVS * args.NUM_STEPS
         if i % 10 == 0:
-            with open(f"checkpoints/{config['ENV_NAME']}/model.ckpt", "wb") as writer:
+            with open(f"checkpoints/{args.ENV_NAME}/model.ckpt", "wb") as writer:
                 pickle.dump({"model": runner_state[0], "opt_state": runner_state[1]}, writer)
         _, (value_loss, loss_actor, entropy) = loss_info
     return runner_state
 
 
 if __name__ == "__main__":
-    key = "483ca3866ab4eaa8f523bacae3cb603d27d69c3d" # please specify your wandb key
+    key = "" # please specify your wandb key
     wandb.login(key=key)
-    mode = "make-anchor" if args.MAKE_ANCHOR else "train"
-    wandb.init(project=f"ppo-{mode}-haiku", config=args.dict())
-    config = {
-        "LR": args.LR,
-        "NUM_ENVS": args.NUM_ENVS,
-        "NUM_STEPS": args.NUM_STEPS,
-        "TOTAL_TIMESTEPS": args.TOTAL_TIMESTEPS,
-        "UPDATE_EPOCHS": args.UPDATE_EPOCHS,
-        "NUM_MINIBATCHES": args.NUM_MINIBATCHES,
-        "GAMMA": args.GAMMA,
-        "GAE_LAMBDA": args.GAE_LAMBDA,
-        "CLIP_EPS": args.CLIP_EPS,
-        "ENT_COEF": args.ENT_COEF,
-        "VF_COEF": args.VF_COEF,
-        "MAX_GRAD_NORM": args.MAX_GRAD_NORM,
-        "ACTIVATION": args.ACTIVATION,
-        "ENV_NAME": args.ENV_NAME,
-        "ANNEAL_LR": True,
-        "VS_RANDOM": args.VS_RANDOM,
-        "UPDATE_INTERVAL": args.UPDATE_INTERVAL,
-        "MAKE_ANCHOR": args.MAKE_ANCHOR
-    }
-    if config["ENV_NAME"] == "play2048":
-        config["ENV_NAME"] = "2048"
-    print("training of", config["ENV_NAME"])
-    rng = jax.random.PRNGKey(0)
+    wandb.init(project=f"ppo-haiku", config=args.dict())
+    print("training of", args.ENV_NAME)
+    rng = jax.random.PRNGKey(args.SEED)
     sta = time.time()
-    out = train(config, rng)
+    out = train(rng)
     end = time.time()
     print("training: time", end - sta)
