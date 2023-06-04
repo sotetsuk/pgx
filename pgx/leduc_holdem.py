@@ -147,18 +147,20 @@ def _step(state: State, action):
 
 
 def _check_round_over(state, action):
-    round_over = (action == FOLD) | (
-        (state._last_action != INVALID_ACTION) & (action == CALL)
-    )
-    terminated = round_over & (state._round == 1)
+    fold = action == FOLD
+    call = (state._last_action != INVALID_ACTION) & (action == CALL)
+    _continue = (state._round == 0) & call
+
+    round_over = fold | call
+    terminated = round_over & (~_continue)
 
     reward = jax.lax.select(
-        terminated & (action == FOLD),
+        fold,
         jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
         jnp.float32([0, 0]),
     )
     reward = jax.lax.select(
-        terminated & (action != FOLD),
+        terminated & call,
         _get_unit_reward(state),
         reward,
     )
