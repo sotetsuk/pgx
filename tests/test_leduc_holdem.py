@@ -18,6 +18,46 @@ def test_init():
 def test_step():
     key = jax.random.PRNGKey(1)
 
+    # =================
+    state = init(key)
+    assert state.current_player == 1
+    # cards = [1 0]
+    # player 1 is the first
+
+    # first round
+    state = step(state, RAISE)
+    state = step(state, FOLD)
+    assert state.terminated
+    assert (state.rewards == jnp.float32([-1, 1])).all()
+
+    # =================
+    state = init(key)
+    assert state.current_player == 1
+    # cards = [1 0]
+    # player 1 is the first
+
+    # first round
+    state = step(state, RAISE)  # +2(3)
+    state = step(state, RAISE)  # +2(5)
+    state = step(state, FOLD)
+    assert state.terminated
+    assert (state.rewards == jnp.float32([3, -3])).all()
+
+    # =================
+    state = init(key)
+    assert state.current_player == 1
+    # cards = [1 0]
+    # player 1 is the first
+
+    # first round
+    state = step(state, CALL)
+    state = step(state, RAISE)  # +2(3)
+    state = step(state, RAISE)  # +2(5)
+    state = step(state, FOLD)
+    assert state.terminated
+    assert (state.rewards == jnp.float32([-3, 3])).all()
+
+    # =================
     state = init(key)
     assert state.current_player == 1
     # cards = [1 0]
@@ -38,6 +78,7 @@ def test_step():
     assert state.terminated
     assert (state.rewards == jnp.float32([11, -11])).all()
 
+    # =================
     state = init(key)
     assert state.current_player == 1
     # cards = [1 0]
