@@ -120,7 +120,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     )  # type:ignore
 
 
-def _step(state: State, action: jnp.ndarray, player) -> State:
+def _step(state: State, action: jnp.ndarray, player=0) -> State:
     # TODO
     # - Actionの処理
     #   - meld
