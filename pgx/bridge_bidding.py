@@ -142,7 +142,6 @@ class BridgeBidding(v1.Env):
         return -7600.0
 
 
-@jax.jit
 def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
@@ -169,7 +168,6 @@ def init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-@jax.jit
 def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
@@ -196,7 +194,6 @@ def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     return state
 
 
-@jax.jit
 def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     """Randomly arranges player IDs in a list in NESW order.
 
@@ -241,7 +238,6 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     )
 
 
-@jax.jit
 def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
     return jax.lax.cond(
         player != -1,
@@ -252,7 +248,6 @@ def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
     )
 
 
-@jax.jit
 def _step(
     state: State,
     action: int,
@@ -282,7 +277,6 @@ def _step(
     )
 
 
-@jax.jit
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     """Returns the observation of a given player"""
     # make vul of observation
@@ -321,7 +315,6 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     return jnp.concatenate((vul, obs_history, hand))
 
 
-@jax.jit
 def _make_obs_history(turn, vuls):
     state, player_id, last_bid, obs_history = vuls
     action = state._bidding_history[turn]
@@ -372,7 +365,6 @@ def _make_obs_history(turn, vuls):
     return state, player_id, last_bid, obs_history
 
 
-@jax.jit
 def _convert_card_pgx_to_openspiel(card: int) -> jnp.ndarray:
     """Convert numerical representation of cards from pgx to openspiel"""
     OPEN_SPIEL_SUIT_NUM = jnp.array([3, 2, 1, 0], dtype=jnp.int32)
@@ -384,7 +376,6 @@ def _convert_card_pgx_to_openspiel(card: int) -> jnp.ndarray:
     return suit + rank * 4
 
 
-@jax.jit
 def duplicate(
     init_state: State,
 ) -> State:
@@ -400,7 +391,6 @@ def duplicate(
     return duplicated_state
 
 
-@jax.jit
 def _terminated_step(
     state: State,
     hash_keys: jnp.ndarray,
@@ -414,7 +404,6 @@ def _terminated_step(
     # fmt: on
 
 
-@jax.jit
 def _continue_step(
     state: State,
 ) -> State:
@@ -434,7 +423,6 @@ def _continue_step(
     # fmt: on
 
 
-@jax.jit
 def _is_terminated(state: State) -> bool:
     """Check if the game is finished
     Four consecutive passes if not bid (pass out), otherwise three consecutive passes
@@ -447,7 +435,6 @@ def _is_terminated(state: State) -> bool:
     )
 
 
-@jax.jit
 def _reward(
     state: State,
     hash_keys: jnp.ndarray,
@@ -465,7 +452,6 @@ def _reward(
     )
 
 
-@jax.jit
 def _make_reward(
     state: State,
     hash_keys: jnp.ndarray,
@@ -502,7 +488,6 @@ def _make_reward(
     return jnp.where(partners, score, -score)
 
 
-@jax.jit
 def _calc_score(
     denomination: jnp.ndarray,
     level: jnp.ndarray,
@@ -522,7 +507,6 @@ def _calc_score(
     )
 
 
-@jax.jit
 def _down_score(
     level: jnp.ndarray,
     vul: jnp.ndarray,
@@ -565,7 +549,6 @@ def _down_score(
     )
 
 
-@jax.jit
 def _make_score(
     denomination: jnp.ndarray,
     level: jnp.ndarray,
@@ -670,7 +653,6 @@ def _make_score(
     return score + over_trick_score_per_trick * over_trick
 
 
-@jax.jit
 def _contract(
     state: State,
 ) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
@@ -695,7 +677,6 @@ def _contract(
     return declare_position, denomination, level, vul
 
 
-@jax.jit
 def _state_pass(
     state: State,
 ) -> State:
@@ -703,19 +684,16 @@ def _state_pass(
     return state.replace(_pass_num=state._pass_num + 1)  # type: ignore
 
 
-@jax.jit
 def _state_X(state: State) -> State:
     """Change state if double(X) is taken"""
     return state.replace(_call_x=jnp.bool_(True), _pass_num=jnp.int32(0))  # type: ignore
 
 
-@jax.jit
 def _state_XX(state: State) -> State:
     """Change state if double(XX) is taken"""
     return state.replace(_call_xx=jnp.bool_(True), _pass_num=jnp.int32(0))  # type: ignore
 
 
-@jax.jit
 def _state_bid(state: State, action: int) -> State:
     """Change state if bid is taken"""
     # 最後のbidとそのプレイヤーを保存
@@ -748,13 +726,11 @@ def _state_bid(state: State, action: int) -> State:
     )
 
 
-@jax.jit
 def _bid_to_denomination(bid: int) -> int:
     """Calcularete denomination of bid"""
     return bid % 5
 
 
-@jax.jit
 def _position_to_team(position: jnp.ndarray) -> jnp.ndarray:
     """Determine which team from the position
     0: NS team, 1: EW team
@@ -762,7 +738,6 @@ def _position_to_team(position: jnp.ndarray) -> jnp.ndarray:
     return position % 2
 
 
-@jax.jit
 def _update_legal_action_X_XX(
     state: State,
 ) -> Tuple[bool, bool]:
@@ -774,7 +749,6 @@ def _update_legal_action_X_XX(
     )
 
 
-@jax.jit
 def _is_legal_X(state: State) -> bool:
     return jax.lax.cond(
         (state._call_x == 0)
@@ -791,7 +765,6 @@ def _is_legal_X(state: State) -> bool:
     )
 
 
-@jax.jit
 def _is_legal_XX(state: State) -> bool:
     return jax.lax.cond(
         state._call_x
@@ -807,7 +780,6 @@ def _is_legal_XX(state: State) -> bool:
     )
 
 
-@jax.jit
 def _is_partner(position1: jnp.ndarray, position2: jnp.ndarray) -> jnp.ndarray:
     """Determine if positon1 and position2 belong to the same team"""
     return (abs(position1 - position2) + 1) % 2
@@ -833,7 +805,6 @@ def _state_to_pbn(state: State) -> str:
     return pbn
 
 
-@jax.jit
 def _state_to_key(state: State) -> jnp.ndarray:
     """Convert state to key of dds table"""
     hand = state._hand
@@ -857,7 +828,6 @@ def _pbn_to_key(pbn: str) -> jnp.ndarray:
     return _to_binary(key)
 
 
-@jax.jit
 def _to_binary(x: jnp.ndarray) -> jnp.ndarray:
     bases = jnp.array([4**i for i in range(13)], dtype=jnp.int32)[::-1]
     return (x * bases).sum(axis=1)  # shape = (4, )
@@ -878,7 +848,6 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
-@jax.jit
 def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
     """Convert key to hand"""
 
@@ -900,7 +869,6 @@ def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
     return hand.flatten()
 
 
-@jax.jit
 def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
     """Convert values to dds tricks
     >>> value = jnp.array([4160, 904605, 4160, 904605])
@@ -918,7 +886,6 @@ def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
     return jnp.array(hex_digits, dtype=jnp.int32)
 
 
-@jax.jit
 def _calculate_dds_tricks(
     state: State,
     hash_keys: jnp.ndarray,
@@ -930,7 +897,6 @@ def _calculate_dds_tricks(
     )
 
 
-@jax.jit
 def _find_value_from_key(
     key: jnp.ndarray, hash_keys: jnp.ndarray, hash_values: jnp.ndarray
 ):
