@@ -120,21 +120,33 @@ def _init(rng: jax.random.KeyArray) -> State:
     )  # type:ignore
 
 
-def _step(state: State, action: jnp.ndarray) -> State:
+def _step(state: State, action: jnp.ndarray, player) -> State:
     # TODO
     # - Actionの処理
     #   - meld
     #   - riichi
     #   - ron, tsumo
     # - 勝利条件確認
+    # - playerどうするか
 
     discard = action < 34
     ankan = (34 <= action) & (action < 68)
-    state = jax.lax.cond(
-        discard, lambda: _discard(state, action), lambda: state
+    minkan = action == Action.MINKAN
+    play = True
+    state, play = jax.lax.cond(
+        discard,
+        lambda: (_discard(state, action), FALSE),
+        lambda: (state, TRUE),
     )
-    state = jax.lax.cond(
-        ~discard & ankan, lambda: _selfkan(state, action), lambda: state
+    state, play = jax.lax.cond(
+        play & ankan,
+        lambda: (_selfkan(state, action), FALSE),
+        lambda: (state, TRUE),
+    )
+    state, play = jax.lax.cond(
+        play & minkan,
+        lambda: (_minkan(state, player), FALSE),
+        lambda: (state, TRUE),
     )
 
     return state
@@ -219,6 +231,35 @@ def _kakan(state: State, target, pon_src, pon_idx):
     # TODO: 槍槓の受付
 
     return state.replace(melds=melds, hand=hand, pon=pon)
+
+
+def _accept_riichi(state: State) -> State:
+    state.riichi = state.riichi.at[state.current_player].set(
+        state.riichi[state.current_player] | state.riichi_declared
+    )
+    state.riichi_declared = FALSE
+    return state
+
+
+def _minkan(state: State, player):
+    state = _accept_riichi(state)
+    meld = Meld.init(Action.MINKAN, state.target, (state.turn - player) % 4)
+    state = _append_meld(state, meld, player)
+    hand = state.hand.at[player].set(
+        Hand.minkan(state.hand[player], state.target)
+    )
+    state.target = -1
+    state.current_player = player
+    state.is_menzen = state.is_menzen.at[player].set(FALSE)
+
+    rinshan_tile = state.deck[state.next_deck_ix]
+    next_deck_ix = state.next_deck_ix - 1
+    hand = hand.at[state.current_player].set(
+        Hand.add(state.hand[state.current_player], rinshan_tile)
+    )
+    return state.replace(
+        next_deck_ix=next_deck_ix, last_draw=rinshan_tile, hand=hand
+    )
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
