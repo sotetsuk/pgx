@@ -117,7 +117,7 @@ class BridgeBidding(v1.Env):
         key1, key2, key3 = jax.random.split(key, num=3)
         return _init_by_key(jax.random.choice(key2, self.hash_keys), key3)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: int) -> State:
         assert isinstance(state, State)
         return _step(state, action, self.hash_keys, self.hash_values)
 
@@ -365,7 +365,7 @@ def _make_obs_history(turn, vuls):
     return state, player_id, last_bid, obs_history
 
 
-def _convert_card_pgx_to_openspiel(card: int) -> jnp.ndarray:
+def _convert_card_pgx_to_openspiel(card: jnp.ndarray) -> jnp.ndarray:
     """Convert numerical representation of cards from pgx to openspiel"""
     OPEN_SPIEL_SUIT_NUM = jnp.array([3, 2, 1, 0], dtype=jnp.int32)
     OPEN_SPIEL_RANK_NUM = jnp.array(
@@ -846,28 +846,6 @@ def _card_str_to_int(card: str) -> int:
         return 0
     else:
         return int(card) - 1
-
-
-''' def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
-    """Convert key to hand"""
-
-    def _convert_quat(j):
-        shifts = jnp.arange(24, -1, step=-2)
-        quat_digits = (j >> shifts) & 0b11
-        return quat_digits
-
-    cards = jax.vmap(_convert_quat)(key).flatten()
-    hand = jnp.zeros((4, 13), dtype=jnp.int32)
-
-    for i in range(4):
-        count = 0
-        for j in range(52):
-            hand, count = jax.lax.cond(
-                cards[j] == i,
-                lambda: (hand.at[i, count].set(j), count + 1),
-                lambda: (hand, count),
-            )
-    return hand.flatten() '''
 
 
 def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
