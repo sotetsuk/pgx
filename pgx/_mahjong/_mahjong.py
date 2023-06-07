@@ -54,7 +54,7 @@ class State(v1.State):
     riichi_declared: jnp.ndarray = FALSE
 
     # 各playerのリーチが成立しているかどうか
-    riichi: jnp.ndarray = FALSE
+    riichi: jnp.ndarray = jnp.zeros(4, dtype=jnp.bool_)
 
     # 各playerの副露回数
     n_meld: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
@@ -62,7 +62,7 @@ class State(v1.State):
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
     melds: jnp.ndarray = jnp.zeros((4, 4))
 
-    is_menzen: jnp.ndarray = FALSE
+    is_menzen: jnp.ndarray = jnp.zeros(4, dtype=jnp.bool_)
 
     # pon[i][j]: player i がjをポンを所有している場合, src << 2 | index. or 0
     pon: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int32)
@@ -120,7 +120,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     )  # type:ignore
 
 
-def _step(state: State, action: jnp.ndarray, player=0) -> State:
+def _step(state: State, action: jnp.ndarray, player=jnp.int8(0)) -> State:
     # TODO
     # - Actionの処理
     #   - meld
@@ -207,15 +207,12 @@ def _selfkan(state: State, action):
 
 def _ankan(state: State, target):
     curr_player = state.current_player
-    print(target + 34, target)
     meld = Meld.init(target + 34, target, src=0)
-    print("meld=", meld)
     state = _append_meld(state, meld, curr_player)
     hand = state.hand.at[curr_player].set(
         Hand.ankan(state.hand[curr_player], target)
     )
     # TODO: 国士無双ロンの受付
-    print("state.melds=", state.melds)
 
     return state.replace(hand=hand)  # type:ignore
 
@@ -234,11 +231,10 @@ def _kakan(state: State, target, pon_src, pon_idx):
 
 
 def _accept_riichi(state: State) -> State:
-    state.riichi = state.riichi.at[state.current_player].set(
+    riichi = state.riichi.at[state.current_player].set(
         state.riichi[state.current_player] | state.riichi_declared
     )
-    state.riichi_declared = FALSE
-    return state
+    return state.replace(riichi=riichi, riichi_declared=FALSE)  # type:ignore
 
 
 def _minkan(state: State, player):
@@ -250,9 +246,7 @@ def _minkan(state: State, player):
     hand = state.hand.at[player].set(
         Hand.minkan(state.hand[player], state.target)
     )
-    state.target = -1
-    state.current_player = player
-    state.is_menzen = state.is_menzen.at[player].set(FALSE)
+    is_menzen = state.is_menzen.at[player].set(FALSE)
 
     rinshan_tile = state.deck[state.next_deck_ix]
     next_deck_ix = state.next_deck_ix - 1
@@ -260,7 +254,12 @@ def _minkan(state: State, player):
         Hand.add(state.hand[state.current_player], rinshan_tile)
     )
     return state.replace(  # type:ignore
-        next_deck_ix=next_deck_ix, last_draw=rinshan_tile, hand=hand
+        current_player=player,
+        target=jnp.int8(-1),
+        is_menzen=is_menzen,
+        next_deck_ix=next_deck_ix,
+        last_draw=rinshan_tile,
+        hand=hand,
     )
 
 
