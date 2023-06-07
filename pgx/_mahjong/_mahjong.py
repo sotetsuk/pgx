@@ -65,7 +65,7 @@ class State(v1.State):
     is_menzen: jnp.ndarray = FALSE
 
     # pon[i][j]: player i がjをポンを所有している場合, src << 2 | index. or 0
-    pon: jnp.ndarray = jnp.zeros((4, 4), dtype=jnp.int8)
+    pon: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int32)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -129,12 +129,12 @@ def _step(state: State, action: jnp.ndarray) -> State:
     # - 勝利条件確認
 
     discard = action < 34
-    ankan = 34 <= action < 68
+    ankan = (34 <= action) & (action < 68)
     state = jax.lax.cond(
         discard, lambda: _discard(state, action), lambda: state
     )
     state = jax.lax.cond(
-        ~discard & ankan, lambda: _selfkan(state, action - 34), lambda: state
+        ~discard & ankan, lambda: _selfkan(state, action), lambda: state
     )
 
     return state
@@ -169,7 +169,7 @@ def _discard(state: State, tile: jnp.ndarray):
 
 def _append_meld(state: State, meld, player):
     melds = state.melds.at[(player, state.n_meld[player])].set(meld)
-    n_meld = state.n_meld.at[player].set(state.n_meld[player] + 1)
+    n_meld = state.n_meld.at[player].add(1)
     return state.replace(melds=melds, n_meld=n_meld)
 
 
@@ -195,12 +195,15 @@ def _selfkan(state: State, action):
 
 def _ankan(state: State, target):
     curr_player = state.current_player
+    print(target + 34, target)
     meld = Meld.init(target + 34, target, src=0)
+    print("meld=", meld)
     state = _append_meld(state, meld, curr_player)
     hand = state.hand.at[curr_player].set(
         Hand.ankan(state.hand[curr_player], target)
     )
     # TODO: 国士無双ロンの受付
+    print("state.melds=", state.melds)
 
     return state.replace(hand=hand)
 

@@ -6,6 +6,10 @@ import jax.numpy as jnp
 from jax import jit
 import jax
 
+env = Mahjong()
+init = jit(env.init)
+step = jit(env.step)
+
 
 def test_ron():
     # fmt:off
@@ -186,10 +190,8 @@ def test_shanten():
 
 
 def test_discard():
-
-    env = Mahjong()
     key = jax.random.PRNGKey(0)
-    state = env.init(key=key)
+    state = init(key=key)
     assert state.current_player == 0
     assert state.deck[state.next_deck_ix] == 8
     # fmt:off
@@ -200,7 +202,7 @@ def test_discard():
         [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]])).all()
     # fmt:on
 
-    state = env.step(state, 4)
+    state = step(state, 4)
     assert state.current_player == 1
     assert state.deck[state.next_deck_ix] == 31
     # fmt:off
@@ -211,7 +213,7 @@ def test_discard():
          [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]]])).all()
     # fmt:on
 
-    state = env.step(state, 0)
+    state = step(state, 0)
     assert state.current_player == 2
     assert state.deck[state.next_deck_ix] == 16
     # fmt:off
@@ -221,3 +223,25 @@ def test_discard():
          [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 2, 1, 0],
          [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]]])).all()
     # fmt:on
+
+
+def test_ankan():
+    key = jax.random.PRNGKey(87)
+    state = env.init(key=key)
+    assert state.current_player == 0
+    """
+    [[0 0 0 1 0 1 1 1 0 1 0 0 1 0 0 0 0 1 0 0 0 0 0 0 4 0 0 0 0 1 1 1 0 0]
+     [1 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 3 0 0 2 0 0 1 0 0 1 1 0 0 1 0 0 0 1]
+     [0 1 0 0 0 0 1 0 2 0 1 1 0 1 1 0 0 0 0 0 0 1 0 1 0 0 0 1 0 0 1 0 1 0]
+     [0 0 2 0 0 0 0 0 0 0 1 2 1 0 1 1 0 0 2 0 0 0 0 0 0 1 0 0 0 1 0 1 0 0]]
+    """
+    state = env.step(state, 58)
+
+    # fmt:off
+    assert (state.hand==jnp.int8(
+        [[1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]
+        ,[1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 2, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]
+        ,[0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0]
+        ,[0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0]])).all()
+    # fmt:on
+    assert state.melds[0, 0] == 3130
