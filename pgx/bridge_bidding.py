@@ -808,9 +808,8 @@ def _state_to_pbn(state: State) -> str:
 def _state_to_key(state: State) -> jnp.ndarray:
     """Convert state to key of dds table"""
     hand = state._hand
-    key = jnp.zeros(52, dtype=jnp.int8)
-    for i in range(52):  # N: 0, E: 1, S: 2, W: 3
-        key = key.at[hand[i]].set(i // 13)
+    key = jnp.zeros(52, dtype=jnp.int32)
+    key = key.at[hand].set(jnp.arange(52, dtype=jnp.int32) // 13)
     key = key.reshape(4, 13)
     return _to_binary(key)
 
@@ -829,7 +828,8 @@ def _pbn_to_key(pbn: str) -> jnp.ndarray:
 
 
 def _to_binary(x: jnp.ndarray) -> jnp.ndarray:
-    bases = jnp.array([4**i for i in range(13)], dtype=jnp.int32)[::-1]
+    # bases = jnp.array([4**i for i in range(13)], dtype=jnp.int32)[::-1]
+    bases = (4 ** jnp.arange(13))[::-1]
     return (x * bases).sum(axis=1)  # shape = (4, )
 
 
@@ -848,6 +848,28 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
+''' def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
+    """Convert key to hand"""
+
+    def _convert_quat(j):
+        shifts = jnp.arange(24, -1, step=-2)
+        quat_digits = (j >> shifts) & 0b11
+        return quat_digits
+
+    cards = jax.vmap(_convert_quat)(key).flatten()
+    hand = jnp.zeros((4, 13), dtype=jnp.int32)
+
+    for i in range(4):
+        count = 0
+        for j in range(52):
+            hand, count = jax.lax.cond(
+                cards[j] == i,
+                lambda: (hand.at[i, count].set(j), count + 1),
+                lambda: (hand, count),
+            )
+    return hand.flatten() '''
+
+
 def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
     """Convert key to hand"""
 
@@ -858,14 +880,21 @@ def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
 
     cards = jax.vmap(_convert_quat)(key).flatten()
     hand = jnp.zeros((4, 13), dtype=jnp.int32)
-    for i in range(4):
-        count = 0
-        for j in range(52):
-            hand, count = jax.lax.cond(
-                cards[j] == i,
-                lambda: (hand.at[i, count].set(j), count + 1),
-                lambda: (hand, count),
-            )
+
+    def loop_j(j, val):
+        i, count, (hand, card) = val
+        hand, count = jax.lax.cond(
+            cards[j] == i,
+            lambda: (hand.at[i, count].set(j), count + 1),
+            lambda: (hand, count),
+        )
+        return i, count, (hand, card)
+
+    def loop_i(i, val):
+        i, count, val = jax.lax.fori_loop(0, 52, loop_j, (i, 0, val))
+        return val
+
+    hand, _ = jax.lax.fori_loop(0, 4, loop_i, (hand, cards))
     return hand.flatten()
 
 
