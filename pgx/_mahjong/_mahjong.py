@@ -182,7 +182,7 @@ def _discard(state: State, tile: jnp.ndarray):
 def _append_meld(state: State, meld, player):
     melds = state.melds.at[(player, state.n_meld[player])].set(meld)
     n_meld = state.n_meld.at[player].add(1)
-    return state.replace(melds=melds, n_meld=n_meld)
+    return state.replace(melds=melds, n_meld=n_meld)  # type:ignore
 
 
 def _selfkan(state: State, action):
@@ -200,7 +200,7 @@ def _selfkan(state: State, action):
     hand = state.hand.at[state.current_player].set(
         Hand.add(state.hand[state.current_player], rinshan_tile)
     )
-    return state.replace(
+    return state.replace(  # type:ignore
         next_deck_ix=next_deck_ix, last_draw=rinshan_tile, hand=hand
     )
 
@@ -217,7 +217,7 @@ def _ankan(state: State, target):
     # TODO: 国士無双ロンの受付
     print("state.melds=", state.melds)
 
-    return state.replace(hand=hand)
+    return state.replace(hand=hand)  # type:ignore
 
 
 def _kakan(state: State, target, pon_src, pon_idx):
@@ -230,7 +230,7 @@ def _kakan(state: State, target, pon_src, pon_idx):
     pon = state.pon.at[(state.current_player, target)].set(0)
     # TODO: 槍槓の受付
 
-    return state.replace(melds=melds, hand=hand, pon=pon)
+    return state.replace(melds=melds, hand=hand, pon=pon)  # type:ignore
 
 
 def _accept_riichi(state: State) -> State:
@@ -243,7 +243,9 @@ def _accept_riichi(state: State) -> State:
 
 def _minkan(state: State, player):
     state = _accept_riichi(state)
-    meld = Meld.init(Action.MINKAN, state.target, (state.turn - player) % 4)
+    meld = Meld.init(
+        Action.MINKAN, state.target, (state.current_player - player) % 4
+    )
     state = _append_meld(state, meld, player)
     hand = state.hand.at[player].set(
         Hand.minkan(state.hand[player], state.target)
@@ -257,7 +259,7 @@ def _minkan(state: State, player):
     hand = hand.at[state.current_player].set(
         Hand.add(state.hand[state.current_player], rinshan_tile)
     )
-    return state.replace(
+    return state.replace(  # type:ignore
         next_deck_ix=next_deck_ix, last_draw=rinshan_tile, hand=hand
     )
 
