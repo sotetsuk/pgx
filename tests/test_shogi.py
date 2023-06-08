@@ -492,10 +492,89 @@ def test_repetition():
     s = step(s, dlshogi_action2)
     s = step(s, dlshogi_action3)
     s = step(s, dlshogi_action4)
-    # 4 time(draw)
+    # 4 time(white win)
     # assert s.terminated
     #assert s.rewards[s.current_player] == -1
     #assert s.rewards[1 - s.current_player] == 1.
+
+    # different hands
+    sfen  = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b 8G 1"
+    s = State._from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/repetition_016.svg")
+    dlshogi_action1 = 2106 + 37  # 5二金打
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_017.svg")
+    dlshogi_action2 = 243 + 43  # 52飛(82)
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_018.svg")
+    dlshogi_action3 = 2106 + 64  # 82金打
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_019.svg")
+    dlshogi_action4 = 324 + 16  # 82飛(52)
+    s = step(s, dlshogi_action4)
+    # 2 time
+    visualize(s, "tests/assets/shogi/repetition_020.svg")
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_021.svg")
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_022.svg")
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_023.svg")
+    s = step(s, dlshogi_action4)
+    visualize(s, "tests/assets/shogi/repetition_024.svg")
+    # 3 time
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_025.svg")
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_026.svg")
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_027.svg")
+    s = step(s, dlshogi_action4)
+    # 4 time(not repetition)
+    assert not s.terminated
+
+    # different turn
+    sfen = "lnsgkgsnl/1r5b1/ppppppppp/9/9/9/PPPPPPPPP/1B5R1/LNSGKGSNL b - 1"
+    s = State._from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/repetition_028.svg")
+    dlshogi_action1 = 243 + 34  # 48飛(28)
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_029.svg")
+    dlshogi_action2 = 324 + 7  # 92飛(82)
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_030.svg")
+    dlshogi_action3 = 324 + 25  # 38飛(48)
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_031.svg")
+    dlshogi_action4 = 243 + 16  # 82飛(92)
+    s = step(s, dlshogi_action4)
+    visualize(s, "tests/assets/shogi/repetition_032.svg")
+    dlshogi_action5 = 324 + 16  # 38飛(28)
+    s = step(s, dlshogi_action5)
+    # 2 time
+    visualize(s, "tests/assets/shogi/repetition_033.svg")
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_034.svg")
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_035.svg")
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_036.svg")
+    s = step(s, dlshogi_action4)
+    visualize(s, "tests/assets/shogi/repetition_037.svg")
+    s = step(s, dlshogi_action5)
+    visualize(s, "tests/assets/shogi/repetition_038.svg")
+    # 3 time
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_039.svg")
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_040.svg")
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_041.svg")
+    s = step(s, dlshogi_action4)
+    visualize(s, "tests/assets/shogi/repetition_042.svg")
+    s = step(s, dlshogi_action5)
+    # 4 time (not repetition)
+    assert not s.terminated
 
 
 
