@@ -405,6 +405,42 @@ def test_sfen():
     assert s._to_sfen() == sfen
 
 
+def test_repetition():
+    # without check
+    sfen = "l2+B2knl/1r4g2/2n1gpsp1/p1pps1p1p/1p5P1/P1P1SPP1P/1PSPP4/2G2G3/LNK4RL b Pbn 1"
+    s = State._from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/repetition_001.svg")
+    dlshogi_action1 = 243 + 54
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_002.svg")
+    dlshogi_action2 = 243 + 43
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_003.svg")
+    dlshogi_action3 = 324 + 45
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_004.svg")
+    dlshogi_action4 = 324 + 16
+    s = step(s, dlshogi_action4)
+    # 2 time
+    visualize(s, "tests/assets/shogi/repetition_005.svg")
+    s = step(s, dlshogi_action1)
+    s = step(s, dlshogi_action2)
+    s = step(s, dlshogi_action3)
+    s = step(s, dlshogi_action4)
+    # 3 time
+    s = step(s, dlshogi_action1)
+    s = step(s, dlshogi_action2)
+    s = step(s, dlshogi_action3)
+    s = step(s, dlshogi_action4)
+    # 4 time(draw)
+    assert s.terminated
+    assert s.rewards[0] == s.rewards[1]
+
+    # with check repetition
+
+
+
+
 def test_api():
     import pgx
     env = pgx.make("shogi")
