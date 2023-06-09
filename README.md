@@ -54,6 +54,12 @@ while not (state.terminated | state.truncated).all():
     state = step(state, action)  # state.reward (2,)
 ```
 
+Pgx is a library that focuses on faster implementations rather than just the API itself. 
+However, the API itself is also sufficiently general. For example, all environments in Pgx can be converted to the AEC API of [PettingZoo](https://github.com/Farama-Foundation/PettingZoo), and you can run Pgx environments through the PettingZoo API.
+You can see the demonstration in Google Colab:
+
+<a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
 <!---
 ### Limitations (for the simplicity)
 * Does **NOT** support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
