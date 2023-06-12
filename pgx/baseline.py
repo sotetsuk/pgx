@@ -1,18 +1,18 @@
 import os
-import sys
 import pickle
+import sys
 from typing import Literal
 
 import jax
 import jax.numpy as jnp
-# from _src.utils import download
 
 from pgx._src.utils import download
 
+# from _src.utils import download
 
-BaselineModel = Literal[
-    "animal_shogi_v0"
-]
+
+
+BaselineModel = Literal["animal_shogi_v0"]
 
 
 def make_create_model_fn(baseline_model: BaselineModel):
@@ -22,7 +22,9 @@ def make_create_model_fn(baseline_model: BaselineModel):
         assert False
 
 
-def load_baseline_model(baseline_model: BaselineModel, basedir: str = "baselines"):
+def load_baseline_model(
+    baseline_model: BaselineModel, basedir: str = "baselines"
+):
     os.makedirs(basedir, exist_ok=True)
 
     # download baseline model if not exists
@@ -31,7 +33,7 @@ def load_baseline_model(baseline_model: BaselineModel, basedir: str = "baselines
         url = _get_download_url(baseline_model)
         download(url, filename)
 
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         d = pickle.load(f)
 
     return d["args"], d["params"], d["state"]
@@ -39,7 +41,7 @@ def load_baseline_model(baseline_model: BaselineModel, basedir: str = "baselines
 
 def _get_download_url(baseline_model: BaselineModel) -> str:
     urls = {
-            "animal_shogi_v0": "https://drive.google.com/uc?id=1HpP5GLf9b6zkJL8FKUFfKS8Zycs-gzZg"
+        "animal_shogi_v0": "https://drive.google.com/uc?id=1HpP5GLf9b6zkJL8FKUFfKS8Zycs-gzZg"
     }
     assert baseline_model in urls
     return urls[baseline_model]
@@ -49,7 +51,7 @@ def _create_az_model_v0(
     num_actions,
     num_channels: int = 128,
     num_layers: int = 6,
-    resnet_v2: bool = True
+    resnet_v2: bool = True,
 ):
     # We referred to Haiku's ResNet implementation:
     # https://github.com/deepmind/dm-haiku/blob/main/haiku/_src/nets/resnet.py
@@ -87,12 +89,14 @@ def _create_az_model_v0(
     class AZNet(hk.Module):
         """AlphaZero NN architecture."""
 
-        def __init__(self,
-                     num_actions,
-                     num_channels: int,
-                     num_layers: int,
-                     resnet_v2: bool,
-                     name="az_net"):
+        def __init__(
+            self,
+            num_actions,
+            num_channels: int,
+            num_layers: int,
+            resnet_v2: bool,
+            name="az_net",
+        ):
             super().__init__(name=name)
             self.num_actions = num_actions
             self.num_channels = num_channels
@@ -106,22 +110,26 @@ def _create_az_model_v0(
 
             if not self.resnet_v2:
                 x = hk.BatchNorm(True, True, 0.9)(
-                    x, is_training, test_local_stats)
+                    x, is_training, test_local_stats
+                )
                 x = jax.nn.relu(x)
 
             for i in range(self.num_layers):
                 x = self.resnet_cls(self.num_channels, name=f"block_{i}")(
-                    x, is_training, test_local_stats)
+                    x, is_training, test_local_stats
+                )
 
             if self.resnet_v2:
                 x = hk.BatchNorm(True, True, 0.9)(
-                    x, is_training, test_local_stats)
+                    x, is_training, test_local_stats
+                )
                 x = jax.nn.relu(x)
 
             # policy head
             logits = hk.Conv2D(output_channels=2, kernel_shape=1)(x)
             logits = hk.BatchNorm(True, True, 0.9)(
-                logits, is_training, test_local_stats)
+                logits, is_training, test_local_stats
+            )
             logits = jax.nn.relu(logits)
             logits = hk.Flatten()(logits)
             logits = hk.Linear(self.num_actions)(logits)
@@ -129,7 +137,8 @@ def _create_az_model_v0(
             # value head
             value = hk.Conv2D(output_channels=1, kernel_shape=1)(x)
             value = hk.BatchNorm(True, True, 0.9)(
-                value, is_training, test_local_stats)
+                value, is_training, test_local_stats
+            )
             value = jax.nn.relu(value)
             value = hk.Flatten()(value)
             value = hk.Linear(self.num_channels)(value)
