@@ -8,6 +8,7 @@ def download(url, filename):
         data = urlopen(url).read()
         with open(filename, mode="wb") as f:
             f.write(data)
-    except:
+    except Exception as e:
         print(f"Failed to downalod the data from {url}", file=sys.stderr)
+        print(e, file=sys.stderr)
         sys.exit(1)
