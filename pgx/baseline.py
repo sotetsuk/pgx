@@ -11,7 +11,6 @@ from pgx._src.utils import download
 # from _src.utils import download
 
 
-
 BaselineModel = Literal["animal_shogi_v0"]
 
 
