@@ -9,7 +9,9 @@ def test_az_basline():
     batch_size = 2
     test_cases = (
         ("animal_shogi", "animal_shogi_v0"),
-        ("gardner_chess", "gardner_chess_v0")
+        ("gardner_chess", "gardner_chess_v0"),
+        ("go_9x9", "go_9x9_v0"),
+        ("hex", "hex_v0")
     )
 
     for env_id, baseline_model in test_cases:
