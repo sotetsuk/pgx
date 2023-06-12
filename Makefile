@@ -7,7 +7,8 @@ install-dev:
 		matplotlib \
 		ipython \
 		git+https://github.com/sotetsuk/MinAtar.git \
-		jax[cpu]
+		jax[cpu] \
+		haiku
 
 install-fmt:
 	python3 -m pip install \
