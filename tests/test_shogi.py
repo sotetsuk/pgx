@@ -770,8 +770,61 @@ def test_repetition():
     # 4 time
     # assert s.terminated
 
+    sfen = "9/9/9/9/9/9/K8/1G7/k8 b - 1"
+    s = State._from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/repetition_078.svg")
+    dlshogi_action1 = 243 + 79
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_079.svg")
+    dlshogi_action2 = 243 + 9
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_080.svg")
+    dlshogi_action3 = 324 + 70
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_081.svg")
+    dlshogi_action4 = 324
+    s = step(s, dlshogi_action4)
+    visualize(s, "tests/assets/shogi/repetition_082.svg")
+    s = step(s, dlshogi_action1)
+    s = step(s, dlshogi_action2)
+    s = step(s, dlshogi_action3)
+    s = step(s, dlshogi_action4)
+    s = step(s, dlshogi_action1)
+    s = step(s, dlshogi_action2)
+    s = step(s, dlshogi_action3)
+    s = step(s, dlshogi_action4)
+    # 4 time
+    # assert s.terminated
+    # assert s.rewards[s.current_player] == -1
+    # assert s.rewards[1 - s.current_player] == 1.
 
-
+    sfen = "8K/7g1/8k/9/9/9/9/9/9 w - 1"
+    s = State._from_sfen(sfen)
+    visualize(s, "tests/assets/shogi/repetition_083.svg")
+    dlshogi_action1 = 243 + 79
+    s = step(s, dlshogi_action1)
+    visualize(s, "tests/assets/shogi/repetition_084.svg")
+    dlshogi_action2 = 243 + 9
+    s = step(s, dlshogi_action2)
+    visualize(s, "tests/assets/shogi/repetition_085.svg")
+    dlshogi_action3 = 324 + 70
+    s = step(s, dlshogi_action3)
+    visualize(s, "tests/assets/shogi/repetition_086.svg")
+    dlshogi_action4 = 324
+    s = step(s, dlshogi_action4)
+    visualize(s, "tests/assets/shogi/repetition_087.svg")
+    s = step(s, dlshogi_action1)
+    s = step(s, dlshogi_action2)
+    s = step(s, dlshogi_action3)
+    s = step(s, dlshogi_action4)
+    s = step(s, dlshogi_action1)
+    s = step(s, dlshogi_action2)
+    s = step(s, dlshogi_action3)
+    s = step(s, dlshogi_action4)
+    # 4 time
+    # assert s.terminated
+    # assert s.rewards[s.current_player] == -1
+    # assert s.rewards[1 - s.current_player] == 1.
 
 
 def test_api():
