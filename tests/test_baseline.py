@@ -11,7 +11,7 @@ def test_az_basline():
         ("animal_shogi", "animal_shogi_v0"),
         ("gardner_chess", "gardner_chess_v0"),
         ("go_9x9", "go_9x9_v0"),
-        ("hex", "hex_v0")
+        ("hex", "hex_v0"),
         ("othello", "othello_v0")
     )
 
