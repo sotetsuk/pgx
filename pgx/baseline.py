@@ -54,6 +54,7 @@ def _get_download_url(baseline_model: BaselineModel) -> str:
     urls = {
         "animal_shogi_v0": "https://drive.google.com/uc?id=1HpP5GLf9b6zkJL8FKUFfKS8Zycs-gzZg",
         "gardner_chess_v0": "https://drive.google.com/uc?id=1RUdrxhYseG-FliskVdemNYYM5YYmfwU7",
+        "go_9x9_v0": "https://drive.google.com/uc?id=1hXMicBALW3WU43NquDoX4zthY4-KjiVu",
     }
     assert baseline_model in urls
     return urls[baseline_model]
