@@ -8,7 +8,7 @@ install-dev:
 		ipython \
 		git+https://github.com/sotetsuk/MinAtar.git \
 		jax[cpu] \
-		haiku
+		dm-haiku
 
 install-fmt:
 	python3 -m pip install \
