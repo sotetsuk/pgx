@@ -31,6 +31,14 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 pip install pgx
 ```
 
+Note that the [MinAtar](https://github.com/kenjyoung/MinAtar) suite is provided as a separate extension for Pgx ([`pgx-minatar`](https://github.com/sotetsuk/pgx-minatar)). Therefore, please run the following command additionaly to use the MinAtar suite in Pgx:
+
+```sh
+pip install pgx-minatar
+```
+
+Pgx is provided under the Apache 2.0 License, but the original MinAtar suite follows the GPL 3.0 License. Therefore, please note that the separated MinAtar extension for Pgx also adheres to the GPL 3.0 License.
+
 ## Usage
 
 

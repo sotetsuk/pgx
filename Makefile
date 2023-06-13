@@ -6,7 +6,6 @@ install-dev:
 		pytest==7.1.2 \
 		matplotlib \
 		ipython \
-		git+https://github.com/sotetsuk/MinAtar.git \
 		jax[cpu] \
 		dm-haiku
 
