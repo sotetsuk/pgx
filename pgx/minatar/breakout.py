@@ -52,7 +52,13 @@ class State(v1.State):
     def env_id(self) -> v1.EnvId:
         return "minatar-breakout"
 
-    def _repr_html_(self) -> str:
+    def to_svg(
+        self,
+        *,
+        color_theme: Optional[Literal["light", "dark"]] = None,
+        scale: Optional[float] = None,
+    ) -> str:
+        del color_theme, scale
         from pgx.minatar.utils import visualize_minatar
 
         return visualize_minatar(self)

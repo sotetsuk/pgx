@@ -653,15 +653,18 @@ class Visualizer:
 
 
 def save_svg(
-    states: State,
+    state: State,
     filename: Union[str, Path],
     *,
     color_theme: Optional[Literal["light", "dark"]] = None,
     scale: Optional[float] = None,
 ) -> None:
     assert str(filename).endswith(".svg")
-    v = Visualizer(color_theme=color_theme, scale=scale)
-    v.get_dwg(states=states).saveas(filename)
+    if state.env_id.startswith("minatar"):
+        state.save_svg(filename=filename)
+    else:
+        v = Visualizer(color_theme=color_theme, scale=scale)
+        v.get_dwg(states=state).saveas(filename)
 
 
 def save_svg_animation(
@@ -672,6 +675,9 @@ def save_svg_animation(
     scale: Optional[float] = None,
     frame_duration_seconds: Optional[float] = None,
 ) -> None:
+    assert not states[0].env_id.startswith(
+        "minatar"
+    ), "MinAtar does not support svg animation."
     assert str(filename).endswith(".svg")
     v = Visualizer(color_theme=color_theme, scale=scale)
 
