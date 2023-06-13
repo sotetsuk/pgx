@@ -389,7 +389,7 @@ def make(env_id: EnvId):  # noqa: C901
         return LeducHoldem()
     elif env_id == "minatar-asterix":
         try:
-            from pgx_minatar.asterix import MinAtarAsterix
+            from pgx_minatar.asterix import MinAtarAsterix  # type: ignore
 
             return MinAtarAsterix()
         except ModuleNotFoundError:
@@ -400,7 +400,7 @@ def make(env_id: EnvId):  # noqa: C901
 
     elif env_id == "minatar-breakout":
         try:
-            from pgx_minatar.breakout import MinAtarBreakout
+            from pgx_minatar.breakout import MinAtarBreakout  # type: ignore
 
             return MinAtarBreakout()
         except ModuleNotFoundError:
@@ -410,7 +410,7 @@ def make(env_id: EnvId):  # noqa: C901
             )
     elif env_id == "minatar-freeway":
         try:
-            from pgx_minatar.freeway import MinAtarFreeway
+            from pgx_minatar.freeway import MinAtarFreeway  # type: ignore
 
             return MinAtarFreeway()
         except ModuleNotFoundError:
@@ -420,7 +420,7 @@ def make(env_id: EnvId):  # noqa: C901
             )
     elif env_id == "minatar-seaquest":
         try:
-            from pgx_minatar.seaquest import MinAtarSeaquest
+            from pgx_minatar.seaquest import MinAtarSeaquest  # type: ignore
 
             return MinAtarSeaquest()
         except ModuleNotFoundError:
@@ -430,7 +430,7 @@ def make(env_id: EnvId):  # noqa: C901
             )
     elif env_id == "minatar-space_invaders":
         try:
-            from pgx_minatar.space_invaders import MinAtarSpaceInvaders
+            from pgx_minatar.space_invaders import MinAtarSpaceInvaders  # type: ignore
 
             return MinAtarSpaceInvaders()
         except ModuleNotFoundError:
