@@ -225,15 +225,10 @@ def _step_det(
     alien_shot_timer -= 1
     ramping = True
     is_enemy_zero = jnp.count_nonzero(alien_map) == 0
-    enemy_move_interval = lax.cond(
+    enemy_move_interval, ramp_index = lax.cond(
         is_enemy_zero & (enemy_move_interval > 6) & ramping,
-        lambda: enemy_move_interval - 1,
-        lambda: enemy_move_interval,
-    )
-    ramp_index = lax.cond(
-        is_enemy_zero & (enemy_move_interval > 6) & ramping,
-        lambda: ramp_index + 1,
-        lambda: ramp_index,
+        lambda: (enemy_move_interval - 1, ramp_index + 1),
+        lambda: (enemy_move_interval, ramp_index),
     )
     alien_map = lax.cond(
         is_enemy_zero,
