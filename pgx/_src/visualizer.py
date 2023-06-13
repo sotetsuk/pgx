@@ -675,6 +675,7 @@ def save_svg_animation(
     scale: Optional[float] = None,
     frame_duration_seconds: Optional[float] = None,
 ) -> None:
+    assert not states[0].env_id.startswith("minatar"), "MinAtar does not support svg animation."
     assert str(filename).endswith(".svg")
     v = Visualizer(color_theme=color_theme, scale=scale)
 
