@@ -430,7 +430,9 @@ def make(env_id: EnvId):  # noqa: C901
             )
     elif env_id == "minatar-space_invaders":
         try:
-            from pgx_minatar.space_invaders import MinAtarSpaceInvaders  # type: ignore
+            from pgx_minatar.space_invaders import (
+                MinAtarSpaceInvaders,  # type: ignore
+            )
 
             return MinAtarSpaceInvaders()
         except ModuleNotFoundError:
