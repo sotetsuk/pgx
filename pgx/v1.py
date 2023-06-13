@@ -397,7 +397,7 @@ def make(env_id: EnvId):  # noqa: C901
                 '"minatar-asterix" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
                 file=sys.stderr,
             )
-
+            sys.exit(1)
     elif env_id == "minatar-breakout":
         try:
             from pgx_minatar.breakout import MinAtarBreakout  # type: ignore
@@ -408,6 +408,7 @@ def make(env_id: EnvId):  # noqa: C901
                 '"minatar-breakout" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
                 file=sys.stderr,
             )
+            sys.exit(1)
     elif env_id == "minatar-freeway":
         try:
             from pgx_minatar.freeway import MinAtarFreeway  # type: ignore
@@ -418,6 +419,7 @@ def make(env_id: EnvId):  # noqa: C901
                 '"minatar-freeway" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
                 file=sys.stderr,
             )
+            sys.exit(1)
     elif env_id == "minatar-seaquest":
         try:
             from pgx_minatar.seaquest import MinAtarSeaquest  # type: ignore
@@ -428,6 +430,7 @@ def make(env_id: EnvId):  # noqa: C901
                 '"minatar-seaquest" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
                 file=sys.stderr,
             )
+            sys.exit(1)
     elif env_id == "minatar-space_invaders":
         try:
             from pgx_minatar.space_invaders import (  # type: ignore
@@ -440,6 +443,7 @@ def make(env_id: EnvId):  # noqa: C901
                 '"minatar-space_invaders" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
                 file=sys.stderr,
             )
+            sys.exit(1)
     elif env_id == "othello":
         from pgx.othello import Othello
 
