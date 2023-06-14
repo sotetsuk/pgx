@@ -245,3 +245,20 @@ def test_ankan():
         ,[0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0]])).all()
     # fmt:on
     assert state.melds[0, 0] == 3130
+
+
+def test_random_play():
+    from pgx.experimental.utils import act_randomly
+
+    key = jax.random.PRNGKey(0)
+
+    state = init(key=key)
+    rng = jax.random.PRNGKey(0)
+
+    for _ in range(20):
+        rng, subkey = jax.random.split(rng)
+        a = act_randomly(subkey, state)
+        state = step(state, a)
+
+        assert state.hand[state.current_player].sum() in [13, 14]
+        assert (state.hand >= 0).all()

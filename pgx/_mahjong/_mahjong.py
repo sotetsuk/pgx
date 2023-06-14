@@ -23,16 +23,17 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
+NUM_ACTION = 78
 
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)  # 手牌が3n+2枚, もしくは直前に牌を捨てたplayer
+    current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
     observation: jnp.ndarray = jnp.int8(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0, 0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
@@ -49,6 +50,8 @@ class State(v1.State):
 
     # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
     last_draw: jnp.ndarray = jnp.int8(0)
+
+    last_player: jnp.ndarray = jnp.int8(0)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi_declared: jnp.ndarray = FALSE
@@ -105,19 +108,17 @@ class Mahjong(v1.Env):
 def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
+    last_player = jnp.int8(-1)
     deck = jax.random.permutation(rng, jnp.arange(136) // 4)
-    first_tile = deck[135 - 13 * 4]
     init_hand = Hand.make_init_hand(deck)
-    init_hand = init_hand.at[current_player].set(
-        Hand.add(init_hand[current_player], first_tile)
-    )
-    return State(
+    state = State(  # type:ignore
         current_player=current_player,
+        last_player=last_player,
         deck=deck,
         hand=init_hand,
-        next_deck_ix=135 - 13 * 4 - 1,
-        last_draw=first_tile,
-    )  # type:ignore
+        next_deck_ix=135 - 13 * 4,
+    )
+    return _draw(state)
 
 
 def _step(state: State, action: jnp.ndarray, player=jnp.int8(0)) -> State:
@@ -128,8 +129,9 @@ def _step(state: State, action: jnp.ndarray, player=jnp.int8(0)) -> State:
     #   - ron, tsumo
     # - 勝利条件確認
     # - playerどうするか
+    # - lax.switch使った方が良いんだろうけど、簡単なうちはcondで分岐させる
 
-    discard = action < 34
+    discard = (action < 34) | (action == 68)
     ankan = (34 <= action) & (action < 68)
     minkan = action == Action.MINKAN
     play = True
@@ -153,19 +155,30 @@ def _step(state: State, action: jnp.ndarray, player=jnp.int8(0)) -> State:
 
 
 def _draw(state: State):
-    current_player = (state.current_player + 1) % 4
     new_tile = state.deck[state.next_deck_ix]
     next_deck_ix = state.next_deck_ix - 1
-    hand = state.hand.at[current_player].set(
-        Hand.add(state.hand[current_player], new_tile)
+    hand = state.hand.at[state.current_player].set(
+        Hand.add(state.hand[state.current_player], new_tile)
     )
 
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(
+        hand[state.current_player] > 0
+    )
+    legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
+    legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
+
     return state.replace(  # type:ignore
-        current_player=current_player, next_deck_ix=next_deck_ix, hand=hand
+        current_player=state.current_player,
+        next_deck_ix=next_deck_ix,
+        hand=hand,
+        last_draw=new_tile,
+        legal_action_mask=legal_action_mask,
     )
 
 
 def _discard(state: State, tile: jnp.ndarray):
+    tile = jax.lax.select(tile == 68, state.last_draw, tile)
     hand = state.hand.at[state.current_player].set(
         Hand.sub(state.hand[state.current_player], tile)
     )
@@ -173,10 +186,41 @@ def _discard(state: State, tile: jnp.ndarray):
         target=jnp.int8(tile), last_draw=-1, hand=hand
     )
 
-    # ポンとかチーとかない場合はdrawへ
-    state = _draw(state)
+    # ポンとかチーとかがあるか
+    meld_player = state.current_player
+    for i in range(3):
+        player = (state.current_player + 1 + i) % 4
+        meld_player = jnp.where(
+            Hand.can_pon(state.hand[player], tile), player, meld_player
+        )
 
-    return state
+    def meld(state):
+        legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+        legal_action_mask = (
+            legal_action_mask.at[Action.PON]
+            .set(TRUE)
+            .at[Action.PASS]
+            .set(TRUE)
+        )
+        state = state.replace(  # type:ignore
+            current_player=meld_player,
+            last_player=state.current_player,
+            legal_action_mask=legal_action_mask,
+        )
+        return state
+
+    # ポンとかチーとかない場合はdrawへ
+    def draw(state):
+        state = state.replace(  # type:ignore
+            current_player=(state.current_player + 1) % 4
+        )
+        return _draw(state)
+
+    return jax.lax.cond(
+        meld_player == state.current_player,
+        lambda: draw(state),
+        lambda: meld(state),
+    )
 
 
 def _append_meld(state: State, meld, player):
