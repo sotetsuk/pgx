@@ -149,6 +149,7 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 - [google/evojax](https://github.com/google/evojax): Hardware-Accelerated neuroevolution
 - [RobertTLange/evosax](https://github.com/RobertTLange/evosax): JAX-native evolution strategy (ES) implementations
 - [adaptive-intelligent-robotics/QDax](https://github.com/adaptive-intelligent-robotics/QDax): JAX-native Quality-Diversity (QD) algorithms
+- [luchris429/purejaxrl](https://github.com/luchris429/purejaxrl): Jax-native RL implementations
 
 ## Citation
 
