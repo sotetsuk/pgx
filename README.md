@@ -25,6 +25,12 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 - 🖼️ **Beautiful visualization** in SVG format
 
 
+## Colab
+
+- [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
+- [Pgx baselines](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
+- [PettingZoo API export](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb)
+
 ## Installation
 
 ```sh
