@@ -58,9 +58,16 @@ def download_dds_results(download_dir="dds_results"):
             for i in range(m):
                 fname = os.path.join(download_dir, f"train_{i:03d}.npy")
                 with open(fname, "wb") as f:
-                    print(f"saving {fname} ... [{i * n}, {(i + 1) * n})", file=sys.stderr)
+                    print(
+                        f"saving {fname} ... [{i * n}, {(i + 1) * n})",
+                        file=sys.stderr,
+                    )
                     jnp.save(
-                        f, (keys[i * n: (i + 1) * n], values[i * n: (i + 1) * n])
+                        f,
+                        (
+                            keys[i * n : (i + 1) * n],
+                            values[i * n : (i + 1) * n],
+                        ),
                     )
 
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
@@ -73,9 +80,16 @@ def download_dds_results(download_dir="dds_results"):
             for i in range(m):
                 fname = os.path.join(download_dir, f"test_{i:03d}.npy")
                 with open(fname, "wb") as f:
-                    print(f"saving {fname} ... [{i * n}, {(i + 1) * n})", file=sys.stderr)
+                    print(
+                        f"saving {fname} ... [{i * n}, {(i + 1) * n})",
+                        file=sys.stderr,
+                    )
                     jnp.save(
-                        f, (keys[i * n: (i + 1) * n], values[i * n: (i + 1) * n])
+                        f,
+                        (
+                            keys[i * n : (i + 1) * n],
+                            values[i * n : (i + 1) * n],
+                        ),
                     )
 
 
@@ -151,7 +165,8 @@ class BridgeBidding(v1.Env):
         except Exception as e:
             print(e, file=sys.stderr)
             print(
-                "BrdigeBidding environment requires pre-computed DDS results."
+                "BrdigeBidding environment requires pre-computed DDS results.",
+                file=sys.stderr,
             )
             print(
                 f"However, failed to load dds results from {dds_results_table_path}",
@@ -848,7 +863,7 @@ def _state_to_pbn(state: State) -> str:
     """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
-        hand = jnp.sort(state._hand[i * 13: (i + 1) * 13])
+        hand = jnp.sort(state._hand[i * 13 : (i + 1) * 13])
         for j in range(4):  # suit
             card = [
                 TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13
