@@ -1,14 +1,14 @@
+from typing import Callable, Optional, Tuple
+
 import jax
 import jax.numpy as jnp
-import pgx
-from typing import Tuple, Callable, Optional
 
+import pgx
 
 FALSE = jnp.bool_(False)
 
 
 class Wrapper(pgx.Env):
-
     def __init__(self, env: pgx.Env):
         self.env: pgx.Env = env
 
@@ -73,13 +73,18 @@ class AutoReset(Wrapper):
         return state
 
 
-class SpecifyFirstPlayer(Wrapper): 
+class SpecifyFirstPlayer(Wrapper):
     """SpecifyFirstPlayer wrapper specifies the first player to act."""
+
     def __init__(self, env: pgx.Env):
-        assert env.num_players <= 2, "SpecifyFirstPlayer wrapper only supports 1 or 2 players."
+        assert (
+            env.num_players <= 2
+        ), "SpecifyFirstPlayer wrapper only supports 1 or 2 players."
         super().__init__(env)
 
-    def init(self, key: jax.random.KeyArray, first_player_id: jnp.ndarray) -> pgx.State:
+    def init(
+        self, key: jax.random.KeyArray, first_player_id: jnp.ndarray
+    ) -> pgx.State:
         state = self.env.init(key).replace(  # type: ignore
             current_player=first_player_id
         )
@@ -90,19 +95,13 @@ class SpecifyFirstPlayer(Wrapper):
 
 
 class ToSingle(Wrapper):
-
     def __init__(self, env: pgx.Env):
         self.__init__(env)
 
     def init(self, key: jax.random.KeyArray) -> pgx.State:
         state = self.env.init(key)
-        return state.replace(  # type: ignore
-            rewards=state.rewards[:, 0]
-        )
+        return state.replace(rewards=state.rewards[:, 0])  # type: ignore
 
     def step(self, state: pgx.State, action: jnp.ndarray) -> pgx.State:
         state = self.env.step(state, action)
-        return state.replace(  # type: ignore
-            rewards=state.rewards[:, 0]
-        )
-
+        return state.replace(rewards=state.rewards[:, 0])  # type: ignore
