@@ -40,11 +40,6 @@ def make_baseline_model(model_id: BaselineModelId):
     return apply
 
 
-def make_create_model_fn(baseline_model: BaselineModelId):
-    print("make_create_model_fn is deprecated and will be remoed in the future release.", file=sys.stderr)
-    return _make_create_model_fn(baseline_model)
-
-
 def _make_create_model_fn(baseline_model: BaselineModelId):
     if baseline_model in (
         "animal_shogi_v0",
@@ -56,13 +51,6 @@ def _make_create_model_fn(baseline_model: BaselineModelId):
         return _create_az_model_v0
     else:
         assert False
-
-
-def load_baseline_model(
-    baseline_model: BaselineModelId, basedir: str = "baselines"
-):
-    print("load_baseline_model is deprecated and will be remoed in the future release.", file=sys.stderr)
-    return _load_baseline_model(baseline_model, basedir)
 
 
 def _load_baseline_model(
