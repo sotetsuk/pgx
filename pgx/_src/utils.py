@@ -2,7 +2,7 @@ import sys
 from urllib.request import urlopen
 
 
-def download(url, filename):
+def _download(url, filename):
     try:
         print(f"Downloading from {url} ...", file=sys.stderr)
         data = urlopen(url).read()

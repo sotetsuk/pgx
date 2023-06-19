@@ -5,7 +5,7 @@ from typing import Literal
 import jax
 import jax.numpy as jnp
 
-from pgx._src.utils import download
+from pgx._src.utils import _download
 
 BaselineModelId = Literal[
     "animal_shogi_v0",
@@ -66,7 +66,7 @@ def _load_baseline_model(
     filename = os.path.join(basedir, baseline_model + ".ckpt")
     if not os.path.exists(filename):
         url = _get_download_url(baseline_model)
-        download(url, filename)
+        _download(url, filename)
 
     with open(filename, "rb") as f:
         d = pickle.load(f)

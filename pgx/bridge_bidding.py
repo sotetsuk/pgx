@@ -23,7 +23,7 @@ import numpy as np
 
 import pgx.v1 as v1
 from pgx._src.struct import dataclass
-from pgx._src.utils import download
+from pgx._src.utils import _download
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -50,7 +50,7 @@ def download_dds_results(download_dir="dds_results"):
     os.makedirs(download_dir, exist_ok=True)
     train_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
     if not os.path.exists(train_fname):
-        download(DDS_RESULTS_TRAIN_URL, train_fname)
+        _download(DDS_RESULTS_TRAIN_URL, train_fname)
         with open(train_fname, "rb") as f:
             keys, values = jnp.load(f)
             n = 100_000
@@ -72,7 +72,7 @@ def download_dds_results(download_dir="dds_results"):
 
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
     if not os.path.exists(test_fname):
-        download(DDS_RESULTS_TEST_URL, test_fname)
+        _download(DDS_RESULTS_TEST_URL, test_fname)
         with open(test_fname, "rb") as f:
             keys, values = jnp.load(f)
             n = 100_000
