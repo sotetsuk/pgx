@@ -9,8 +9,5 @@ venv
 .venv
 pythonenv*
 .DS_Store
-workspace/ppo_training_haiku/vis/*
-workspace/ppo_training_haiku/wandb/*
-workspace/ppo_training_flax/vis/*
-workspace/ppo_training_flax/wandb/*
 baselines
+dds_results

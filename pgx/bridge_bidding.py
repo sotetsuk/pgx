@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import os
+import copy
 import sys
 from typing import Optional, Tuple
 
@@ -23,6 +23,7 @@ import numpy as np
 
 import pgx.v1 as v1
 from pgx._src.struct import dataclass
+from pgx._src.utils import download
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -35,6 +36,17 @@ PASS_ACTION_NUM = 0
 DOUBLE_ACTION_NUM = 1
 REDOUBLE_ACTION_NUM = 2
 BID_OFFSET_NUM = 3
+
+DDS_RESULTS_TRAIN_URL = "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
+DDS_RESULTS_TEST_URL = "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
+DDS_RESULTS_TRAIN_FNAME = "dds_results_2.5M.npy"
+DDS_RESULTS_TEST_FNAME = "dds_results_500K.npy"
+
+
+def download_dds_results(download_dir="dds_results"):
+    os.makedirs(download_dir, exist_ok=True)
+    download(DDS_RESULTS_TRAIN_URL, os.path.join(download_dir, DDS_RESULTS_TRAIN_FNAME))
+    download(DDS_RESULTS_TEST_URL, os.path.join(download_dir, DDS_RESULTS_TEST_FNAME))
 
 
 @dataclass
