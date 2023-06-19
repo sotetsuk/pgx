@@ -16,11 +16,15 @@ BaselineModelId = Literal[
 ]
 
 
-def make_baseline_model(model_id: BaselineModelId):
+def make_baseline_model(
+    model_id: BaselineModelId, download_dir: str = "baselines"
+):
     import haiku as hk
 
     create_model_fn = _make_create_model_fn(model_id)
-    model_args, model_params, model_state = _load_baseline_model(model_id)
+    model_args, model_params, model_state = _load_baseline_model(
+        model_id, download_dir
+    )
 
     def forward_fn(x, is_eval=False):
         net = create_model_fn(**model_args)
