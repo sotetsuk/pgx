@@ -1,12 +1,13 @@
 import jax
 import jax.numpy as jnp
 import pgx
+from typing import Tuple
 
 
 FALSE = jnp.bool_(False)
 
 
-class Wrapper:
+class Wrapper(pgx.Env):
 
     def __init__(self, env: pgx.Env):
         self.env: pgx.Env = env
@@ -16,6 +17,29 @@ class Wrapper:
 
     def step(self, state: pgx.State, action: jnp.ndarray) -> pgx.State:
         return self.env.step(state, action)
+
+    def observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
+        return self.env.observe(state, player_id)
+
+    @property
+    def id(self) -> pgx.EnvId:
+        return self.env.id
+
+    @property
+    def version(self) -> str:
+        return self.env.version
+
+    @property
+    def num_players(self) -> int:
+        return self.env.num_players
+
+    @property
+    def num_actions(self) -> int:
+        return self.env.num_actions
+
+    @property
+    def observation_shape(self) -> Tuple[int, ...]:
+        return self.env.observation_shape
 
 
 class AutoReset(Wrapper):
