@@ -33,7 +33,8 @@ def make_baseline_model(model_id: BaselineModelId):
 
     def apply(obs):
         (logits, value), _ = forward.apply(
-            model_params, model_state, obs, is_eval=True)
+            model_params, model_state, obs, is_eval=True
+        )
         return logits, value
 
     return apply
