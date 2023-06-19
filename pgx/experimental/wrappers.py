@@ -95,8 +95,7 @@ class SpecifyFirstPlayer(Wrapper):
 
 
 class ToSingle(Wrapper):
-    def __init__(self, env: pgx.Env):
-        self.__init__(env)
+    """Flatten rewards to (batch_size,) assuming only <player_id=0> plays."""
 
     def init(self, key: jax.random.KeyArray) -> pgx.State:
         state = self.env.init(key)
