@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from typing import Tuple
+from typing import Tuple, Callable, Optional
 
 
 FALSE = jnp.bool_(False)
@@ -87,3 +87,22 @@ class SpecifyFirstPlayer(Wrapper):
             observations=self.observe(state, state.current_player)
         )
         return state
+
+
+class ToSingle(Wrapper):
+
+    def __init__(self, env: pgx.Env):
+        self.__init__(env)
+
+    def init(self, key: jax.random.KeyArray) -> pgx.State:
+        state = self.env.init(key)
+        return state.replace(  # type: ignore
+            rewards=state.rewards[:, 0]
+        )
+
+    def step(self, state: pgx.State, action: jnp.ndarray) -> pgx.State:
+        state = self.env.step(state, action)
+        return state.replace(  # type: ignore
+            rewards=state.rewards[:, 0]
+        )
+
