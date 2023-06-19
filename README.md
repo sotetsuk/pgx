@@ -28,8 +28,8 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 ## Colab
 
 - [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
-- [Pgx baselines](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
-- [PPO example on MinAtar](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/ppo.ipynb)
+- [Pgx baseline models](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
+- [PPO example](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/ppo.ipynb)
 - (Optional) [PettingZoo API export](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb)
 
 ## Installation
