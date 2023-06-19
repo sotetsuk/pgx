@@ -73,11 +73,10 @@ class AutoReset(Wrapper):
         return state
 
 
-# 初期状態のcurrent_playerを指定するラッパークラス
 class SpecifyFirstPlayer(Wrapper): 
     """SpecifyFirstPlayer wrapper specifies the first player to act."""
     def __init__(self, env: pgx.Env):
-        assert env.num_players <= 2,  "SpecifyFirstPlayer wrapper only supports 1 or 2 players."
+        assert env.num_players <= 2, "SpecifyFirstPlayer wrapper only supports 1 or 2 players."
         super().__init__(env)
 
     def init(self, key: jax.random.KeyArray, first_player_id: jnp.ndarray) -> pgx.State:
