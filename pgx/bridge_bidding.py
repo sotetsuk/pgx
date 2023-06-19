@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import copy
+import os
 import sys
 from typing import Optional, Tuple
 
@@ -37,8 +37,12 @@ DOUBLE_ACTION_NUM = 1
 REDOUBLE_ACTION_NUM = 2
 BID_OFFSET_NUM = 3
 
-DDS_RESULTS_TRAIN_URL = "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
-DDS_RESULTS_TEST_URL = "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
+DDS_RESULTS_TRAIN_URL = (
+    "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
+)
+DDS_RESULTS_TEST_URL = (
+    "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
+)
 
 
 def download_dds_results(download_dir="dds_results"):
@@ -53,8 +57,9 @@ def download_dds_results(download_dir="dds_results"):
         for i in range(m):
             fname = os.path.join(download_dir, f"train_{i:03d}.npy")
             with open(fname, "wb") as f:
-                jnp.save(f, (keys[m * n: (m + 1) * n]),
-                         values[m * n: (m + 1) * n])
+                jnp.save(
+                    f, (keys[m * n : (m + 1) * n]), values[m * n : (m + 1) * n]
+                )
 
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
     download(DDS_RESULTS_TEST_URL, test_fname)
@@ -65,11 +70,12 @@ def download_dds_results(download_dir="dds_results"):
         for i in range(m):
             fname = os.path.join(download_dir, f"test_{i:03d}.npy")
             with open(fname, "wb") as f:
-                jnp.save(f, (keys[m * n: (m + 1) * n]),
-                         values[m * n: (m + 1) * n])
+                jnp.save(
+                    f, (keys[m * n : (m + 1) * n]), values[m * n : (m + 1) * n]
+                )
 
 
-@ dataclass
+@dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(-1)
     observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
@@ -122,27 +128,46 @@ class State(v1.State):
     # passの回数
     _pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
-    @ property
+    @property
     def env_id(self) -> v1.EnvId:
         return "bridge_bidding"
 
 
 class BridgeBidding(v1.Env):
-    def __init__(self, dds_results_table_path: str = "dds_results/train_000.npy"):
+    def __init__(
+        self, dds_results_table_path: str = "dds_results/train_000.npy"
+    ):
         super().__init__()
-        print(f"Loading dds results from {dds_results_table_path} ...", file=sys.stderr)
+        print(
+            f"Loading dds results from {dds_results_table_path} ...",
+            file=sys.stderr,
+        )
         try:
             self.lut_keys, self.lut_values = jnp.load(dds_results_table_path)
         except Exception as e:
             print(e, file=sys.stderr)
-            print("BrdigeBidding environment requires pre-computed DDS results.")
-            print(f"However, failed to load dds results from {dds_results_table_path}", file=sys.stderr)
-            print("Please run the following command to download the DDS results provided by Pgx: ", file=sys.stderr)
+            print(
+                "BrdigeBidding environment requires pre-computed DDS results."
+            )
+            print(
+                f"However, failed to load dds results from {dds_results_table_path}",
+                file=sys.stderr,
+            )
+            print(
+                "Please run the following command to download the DDS results provided by Pgx: ",
+                file=sys.stderr,
+            )
             print("", file=sys.stderr)
-            print("  from pgx.bridge_bidding import download_dds_results", file=sys.stderr)
+            print(
+                "  from pgx.bridge_bidding import download_dds_results",
+                file=sys.stderr,
+            )
             print("  download_dds_results()", file=sys.stderr)
             print("", file=sys.stderr)
-            print("Do NOT forget to exchange the DDS results when you run the evaluation.", file=sys.stderr)
+            print(
+                "Do NOT forget to exchange the DDS results when you run the evaluation.",
+                file=sys.stderr,
+            )
             sys.exit(1)
 
     def _init(self, key: jax.random.KeyArray) -> State:
@@ -157,19 +182,19 @@ class BridgeBidding(v1.Env):
         assert isinstance(state, State)
         return _observe(state, player_id)
 
-    @ property
+    @property
     def id(self) -> v1.EnvId:
         return "bridge_bidding"
 
-    @ property
+    @property
     def version(self) -> str:
         return "beta"
 
-    @ property
+    @property
     def num_players(self) -> int:
         return 4
 
-    @ property
+    @property
     def _illegal_action_penalty(self) -> float:
         return -7600.0
 
@@ -478,9 +503,7 @@ def _reward(
     return jax.lax.cond(
         (state._last_bid == -1) & (state._pass_num == 4),
         lambda: jnp.zeros(4, dtype=jnp.float32),  # pass out
-        lambda: _make_reward(  # caluculate reward
-            state, lut_keys, lut_values
-        ),
+        lambda: _make_reward(state, lut_keys, lut_values),  # caluculate reward
     )
 
 
@@ -821,7 +844,7 @@ def _state_to_pbn(state: State) -> str:
     """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
-        hand = jnp.sort(state._hand[i * 13: (i + 1) * 13])
+        hand = jnp.sort(state._hand[i * 13 : (i + 1) * 13])
         for j in range(4):  # suit
             card = [
                 TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13
