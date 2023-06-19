@@ -9,7 +9,7 @@ import jax.numpy as jnp
 from pgx._src.utils import download
 
 
-BaselineModel = Literal[
+BaselineModelId = Literal[
     "animal_shogi_v0",
     "gardner_chess_v0",
     "go_9x9_v0",
@@ -18,7 +18,7 @@ BaselineModel = Literal[
 ]
 
 
-def make_baseline_model(model_id):
+def make_baseline_model(model_id: BaselineModelId):
     import haiku as hk
 
     create_model_fn = _make_create_model_fn(model_id)
@@ -40,12 +40,12 @@ def make_baseline_model(model_id):
     return apply
 
 
-def make_create_model_fn(baseline_model: BaselineModel):
+def make_create_model_fn(baseline_model: BaselineModelId):
     print("make_create_model_fn is deprecated and will be remoed in the future release.", file=sys.stderr)
     return _make_create_model_fn(baseline_model)
 
 
-def _make_create_model_fn(baseline_model: BaselineModel):
+def _make_create_model_fn(baseline_model: BaselineModelId):
     if baseline_model in (
         "animal_shogi_v0",
         "gardner_chess_v0",
@@ -59,14 +59,14 @@ def _make_create_model_fn(baseline_model: BaselineModel):
 
 
 def load_baseline_model(
-    baseline_model: BaselineModel, basedir: str = "baselines"
+    baseline_model: BaselineModelId, basedir: str = "baselines"
 ):
     print("load_baseline_model is deprecated and will be remoed in the future release.", file=sys.stderr)
     return _load_baseline_model(baseline_model, basedir)
 
 
 def _load_baseline_model(
-    baseline_model: BaselineModel, basedir: str = "baselines"
+    baseline_model: BaselineModelId, basedir: str = "baselines"
 ):
     os.makedirs(basedir, exist_ok=True)
 
@@ -82,7 +82,7 @@ def _load_baseline_model(
     return d["args"], d["params"], d["state"]
 
 
-def _get_download_url(baseline_model: BaselineModel) -> str:
+def _get_download_url(baseline_model: BaselineModelId) -> str:
     urls = {
         "animal_shogi_v0": "https://drive.google.com/uc?id=1HpP5GLf9b6zkJL8FKUFfKS8Zycs-gzZg",
         "gardner_chess_v0": "https://drive.google.com/uc?id=1RUdrxhYseG-FliskVdemNYYM5YYmfwU7",
