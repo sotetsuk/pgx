@@ -33,7 +33,7 @@ BID_OFFSET_NUM = 3
 DDS_HASH_TABLE_PATH = os.path.join(
     os.path.dirname(__file__), "assets/dds_hash_table.npy"
 )
-env = BridgeBidding(dds_hash_table_path=DDS_HASH_TABLE_PATH)
+env = BridgeBidding(DDS_HASH_TABLE_PATH)
 
 init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
@@ -2234,9 +2234,7 @@ def test_value_to_dds_tricks():
 def test_api():
     import pgx
 
-    env = pgx.bridge_bidding.BridgeBidding(
-        dds_hash_table_path=DDS_HASH_TABLE_PATH
-    )
+    env = pgx.bridge_bidding.BridgeBidding(DDS_HASH_TABLE_PATH)
     pgx.v1_api_test(env, 10)
 
 
