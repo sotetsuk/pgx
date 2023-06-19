@@ -86,3 +86,4 @@ class SpecifyFirstPlayer(Wrapper):
         state = state.replace(
             observations=self.observe(state, state.current_player)
         )
+        return state
