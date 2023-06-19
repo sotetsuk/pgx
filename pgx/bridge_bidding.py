@@ -15,7 +15,7 @@
 import copy
 import os
 import sys
-from typing import Optional, Tuple
+from typing import Tuple
 
 import jax
 import jax.numpy as jnp
