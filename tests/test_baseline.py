@@ -17,13 +17,11 @@ def test_az_basline():
 
     for env_id, model_id in test_cases:
         env = pgx.make(env_id)
-        model pgx.make_baseline_model(model_id)
+        model = pgx.make_baseline_model(model_id)
         state = jax.jit(jax.vmap(env.init))(
             jax.random.split(jax.random.PRNGKey(0), batch_size)
         )
 
-        (logits, value), model_state = forward.apply(
-            model_params, model_state, state.observation, is_eval=True
-        )
+        logits, value = model(state.observation)
         assert logits.shape == (batch_size, env.num_actions)
         assert value.shape == (batch_size,)

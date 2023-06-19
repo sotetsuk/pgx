@@ -32,7 +32,9 @@ def make_baseline_model(model_id: BaselineModelId):
     forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
 
     def apply(obs):
-        return forward.apply(model_params, model_state, obs, is_eval=True)
+        (logits, value), _ = forward.apply(
+            model_params, model_state, obs, is_eval=True)
+        return logits, value
 
     return apply
 
