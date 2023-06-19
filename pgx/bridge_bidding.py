@@ -49,30 +49,34 @@ def download_dds_results(download_dir="dds_results"):
     """Download and split the results into 100K chunks."""
     os.makedirs(download_dir, exist_ok=True)
     train_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
-    download(DDS_RESULTS_TRAIN_URL, train_fname)
-    with open(train_fname, "rb") as f:
-        keys, values = jnp.load(f)
-        n = 100_000
-        m = keys.shape[0] // n
-        for i in range(m):
-            fname = os.path.join(download_dir, f"train_{i:03d}.npy")
-            with open(fname, "wb") as f:
-                jnp.save(
-                    f, (keys[m * n : (m + 1) * n]), values[m * n : (m + 1) * n]
-                )
+    if not os.path.exists(train_fname):
+        download(DDS_RESULTS_TRAIN_URL, train_fname)
+        with open(train_fname, "rb") as f:
+            keys, values = jnp.load(f)
+            n = 100_000
+            m = keys.shape[0] // n
+            for i in range(m):
+                fname = os.path.join(download_dir, f"train_{i:03d}.npy")
+                with open(fname, "wb") as f:
+                    print(f"saving {fname} ... [{i * n}, {(i + 1) * n})", file=sys.stderr)
+                    jnp.save(
+                        f, (keys[i * n: (i + 1) * n], values[i * n: (i + 1) * n])
+                    )
 
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
-    download(DDS_RESULTS_TEST_URL, test_fname)
-    with open(test_fname, "rb") as f:
-        keys, values = jnp.load(f)
-        n = 100_000
-        m = keys.shape[0] // n
-        for i in range(m):
-            fname = os.path.join(download_dir, f"test_{i:03d}.npy")
-            with open(fname, "wb") as f:
-                jnp.save(
-                    f, (keys[m * n : (m + 1) * n]), values[m * n : (m + 1) * n]
-                )
+    if not os.path.exists(test_fname):
+        download(DDS_RESULTS_TEST_URL, test_fname)
+        with open(test_fname, "rb") as f:
+            keys, values = jnp.load(f)
+            n = 100_000
+            m = keys.shape[0] // n
+            for i in range(m):
+                fname = os.path.join(download_dir, f"test_{i:03d}.npy")
+                with open(fname, "wb") as f:
+                    print(f"saving {fname} ... [{i * n}, {(i + 1) * n})", file=sys.stderr)
+                    jnp.save(
+                        f, (keys[i * n: (i + 1) * n], values[i * n: (i + 1) * n])
+                    )
 
 
 @dataclass
@@ -844,7 +848,7 @@ def _state_to_pbn(state: State) -> str:
     """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
-        hand = jnp.sort(state._hand[i * 13 : (i + 1) * 13])
+        hand = jnp.sort(state._hand[i * 13: (i + 1) * 13])
         for j in range(4):  # suit
             card = [
                 TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13
