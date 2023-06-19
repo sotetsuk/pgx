@@ -7,7 +7,6 @@ import jax.numpy as jnp
 
 from pgx._src.utils import download
 
-
 BaselineModelId = Literal[
     "animal_shogi_v0",
     "gardner_chess_v0",
@@ -26,15 +25,14 @@ def make_baseline_model(model_id: BaselineModelId):
     def forward_fn(x, is_eval=False):
         net = create_model_fn(**model_args)
         policy_out, value_out = net(
-            x, is_training=not is_eval, test_local_stats=False)
+            x, is_training=not is_eval, test_local_stats=False
+        )
         return policy_out, value_out
 
     forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
 
     def apply(obs):
-        return forward.apply(
-            model_params, model_state, obs, is_eval=True
-        )
+        return forward.apply(model_params, model_state, obs, is_eval=True)
 
     return apply
 
