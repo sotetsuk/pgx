@@ -73,27 +73,6 @@ class AutoReset(Wrapper):
         return state
 
 
-class SpecifyFirstPlayer(Wrapper):
-    """SpecifyFirstPlayer wrapper specifies the first player to act."""
-
-    def __init__(self, env: pgx.Env):
-        assert (
-            env.num_players <= 2
-        ), "SpecifyFirstPlayer wrapper only supports 1 or 2 players."
-        super().__init__(env)
-
-    def init(
-        self, key: jax.random.KeyArray, first_player_id: jnp.ndarray
-    ) -> pgx.State:
-        state = self.env.init(key).replace(  # type: ignore
-            current_player=first_player_id
-        )
-        state = state.replace(
-            observations=self.observe(state, state.current_player)
-        )
-        return state
-
-
 class ToSingle(Wrapper):
     """Flatten rewards to (batch_size,) assuming only <player_id=0> plays."""
 
