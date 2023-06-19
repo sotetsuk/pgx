@@ -7,7 +7,7 @@ import jax.numpy as jnp
 
 from pgx._src.utils import download
 
-BaselineModel = Literal[
+BaselineModelId = Literal[
     "animal_shogi_v0",
     "gardner_chess_v0",
     "go_9x9_v0",
@@ -16,7 +16,31 @@ BaselineModel = Literal[
 ]
 
 
-def make_create_model_fn(baseline_model: BaselineModel):
+def make_baseline_model(model_id: BaselineModelId):
+    import haiku as hk
+
+    create_model_fn = _make_create_model_fn(model_id)
+    model_args, model_params, model_state = _load_baseline_model(model_id)
+
+    def forward_fn(x, is_eval=False):
+        net = create_model_fn(**model_args)
+        policy_out, value_out = net(
+            x, is_training=not is_eval, test_local_stats=False
+        )
+        return policy_out, value_out
+
+    forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
+
+    def apply(obs):
+        (logits, value), _ = forward.apply(
+            model_params, model_state, obs, is_eval=True
+        )
+        return logits, value
+
+    return apply
+
+
+def _make_create_model_fn(baseline_model: BaselineModelId):
     if baseline_model in (
         "animal_shogi_v0",
         "gardner_chess_v0",
@@ -29,8 +53,8 @@ def make_create_model_fn(baseline_model: BaselineModel):
         assert False
 
 
-def load_baseline_model(
-    baseline_model: BaselineModel, basedir: str = "baselines"
+def _load_baseline_model(
+    baseline_model: BaselineModelId, basedir: str = "baselines"
 ):
     os.makedirs(basedir, exist_ok=True)
 
@@ -46,7 +70,7 @@ def load_baseline_model(
     return d["args"], d["params"], d["state"]
 
 
-def _get_download_url(baseline_model: BaselineModel) -> str:
+def _get_download_url(baseline_model: BaselineModelId) -> str:
     urls = {
         "animal_shogi_v0": "https://drive.google.com/uc?id=1HpP5GLf9b6zkJL8FKUFfKS8Zycs-gzZg",
         "gardner_chess_v0": "https://drive.google.com/uc?id=1RUdrxhYseG-FliskVdemNYYM5YYmfwU7",

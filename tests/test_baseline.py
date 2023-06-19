@@ -1,6 +1,6 @@
 import jax
 import pgx
-from pgx.baseline import make_create_model_fn, load_baseline_model, BaselineModel
+import pgx
 
 import haiku as hk
 
@@ -15,26 +15,13 @@ def test_az_basline():
         ("othello", "othello_v0")
     )
 
-    for env_id, baseline_model in test_cases:
-        create_model_fn = make_create_model_fn(baseline_model)
-        model_args, model_params, model_state = load_baseline_model(baseline_model)
-        print(model_args)
-
-        def forward_fn(x, is_eval=False):
-            net = create_model_fn(**model_args)
-            policy_out, value_out = net(
-                x, is_training=not is_eval, test_local_stats=False)
-            return policy_out, value_out
-
-        forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
-
+    for env_id, model_id in test_cases:
         env = pgx.make(env_id)
+        model = pgx.make_baseline_model(model_id)
         state = jax.jit(jax.vmap(env.init))(
             jax.random.split(jax.random.PRNGKey(0), batch_size)
         )
 
-        (logits, value), model_state = forward.apply(
-            model_params, model_state, state.observation, is_eval=True
-        )
+        logits, value = model(state.observation)
         assert logits.shape == (batch_size, env.num_actions)
         assert value.shape == (batch_size,)
