@@ -19,6 +19,10 @@ class Wrapper:
 
 
 class AutoReset(Wrapper):
+    """AutoReset wrapper resets the state to the initial state immediately just after termination or truncation.
+    Note that the state before reset is required when truncation occurs,
+    but Pgx does not have such an environment at present, so it is not a practical problem.
+    """
 
     def step(self, state: pgx.State, action: jnp.ndarray) -> pgx.State:
         state = jax.lax.cond(
