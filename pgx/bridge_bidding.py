@@ -39,17 +39,37 @@ BID_OFFSET_NUM = 3
 
 DDS_RESULTS_TRAIN_URL = "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
 DDS_RESULTS_TEST_URL = "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
-DDS_RESULTS_TRAIN_FNAME = "dds_results_2.5M.npy"
-DDS_RESULTS_TEST_FNAME = "dds_results_500K.npy"
 
 
 def download_dds_results(download_dir="dds_results"):
+    """Download and split the results into 100K chunks."""
     os.makedirs(download_dir, exist_ok=True)
-    download(DDS_RESULTS_TRAIN_URL, os.path.join(download_dir, DDS_RESULTS_TRAIN_FNAME))
-    download(DDS_RESULTS_TEST_URL, os.path.join(download_dir, DDS_RESULTS_TEST_FNAME))
+    train_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
+    download(DDS_RESULTS_TRAIN_URL, train_fname)
+    with open(train_fname, "rb") as f:
+        keys, values = jnp.load(f)
+        n = 100_000
+        m = keys.shape[0] // n
+        for i in range(m):
+            fname = os.path.join(download_dir, f"train_{i:03d}.npy")
+            with open(fname, "wb") as f:
+                jnp.save(f, (keys[m * n: (m + 1) * n]),
+                         values[m * n: (m + 1) * n])
+
+    test_fname = os.path.join(download_dir, "dds_results_500K.npy")
+    download(DDS_RESULTS_TEST_URL, test_fname)
+    with open(test_fname, "rb") as f:
+        keys, values = jnp.load(f)
+        n = 100_000
+        m = keys.shape[0] // n
+        for i in range(m):
+            fname = os.path.join(download_dir, f"test_{i:03d}.npy")
+            with open(fname, "wb") as f:
+                jnp.save(f, (keys[m * n: (m + 1) * n]),
+                         values[m * n: (m + 1) * n])
 
 
-@dataclass
+@ dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(-1)
     observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
@@ -102,7 +122,7 @@ class State(v1.State):
     # passの回数
     _pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
-    @property
+    @ property
     def env_id(self) -> v1.EnvId:
         return "bridge_bidding"
 
@@ -137,19 +157,19 @@ class BridgeBidding(v1.Env):
         assert isinstance(state, State)
         return _observe(state, player_id)
 
-    @property
+    @ property
     def id(self) -> v1.EnvId:
         return "bridge_bidding"
 
-    @property
+    @ property
     def version(self) -> str:
         return "beta"
 
-    @property
+    @ property
     def num_players(self) -> int:
         return 4
 
-    @property
+    @ property
     def _illegal_action_penalty(self) -> float:
         return -7600.0
 
@@ -801,7 +821,7 @@ def _state_to_pbn(state: State) -> str:
     """Convert state to pbn format"""
     pbn = "N:"
     for i in range(4):  # player
-        hand = jnp.sort(state._hand[i * 13 : (i + 1) * 13])
+        hand = jnp.sort(state._hand[i * 13: (i + 1) * 13])
         for j in range(4):  # suit
             card = [
                 TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13
