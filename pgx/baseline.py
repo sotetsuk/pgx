@@ -1,4 +1,5 @@
 import os
+import sys
 import pickle
 from typing import Literal
 
@@ -6,6 +7,7 @@ import jax
 import jax.numpy as jnp
 
 from pgx._src.utils import download
+
 
 BaselineModel = Literal[
     "animal_shogi_v0",
@@ -16,7 +18,34 @@ BaselineModel = Literal[
 ]
 
 
+def make_baseline_model(model_id):
+    import haiku as hk
+
+    create_model_fn = _make_create_model_fn(model_id)
+    model_args, model_params, model_state = _load_baseline_model(model_id)
+
+    def forward_fn(x, is_eval=False):
+        net = create_model_fn(**model_args)
+        policy_out, value_out = net(
+            x, is_training=not is_eval, test_local_stats=False)
+        return policy_out, value_out
+
+    forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
+
+    def apply(obs):
+        return forward.apply(
+            model_params, model_state, obs, is_eval=True
+        )
+
+    return apply
+
+
 def make_create_model_fn(baseline_model: BaselineModel):
+    print("make_create_model_fn is deprecated and will be remoed in the future release.", file=sys.stderr)
+    return _make_create_model_fn(baseline_model)
+
+
+def _make_create_model_fn(baseline_model: BaselineModel):
     if baseline_model in (
         "animal_shogi_v0",
         "gardner_chess_v0",
@@ -30,6 +59,13 @@ def make_create_model_fn(baseline_model: BaselineModel):
 
 
 def load_baseline_model(
+    baseline_model: BaselineModel, basedir: str = "baselines"
+):
+    print("load_baseline_model is deprecated and will be remoed in the future release.", file=sys.stderr)
+    return _load_baseline_model(baseline_model, basedir)
+
+
+def _load_baseline_model(
     baseline_model: BaselineModel, basedir: str = "baselines"
 ):
     os.makedirs(basedir, exist_ok=True)
