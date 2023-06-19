@@ -128,30 +128,30 @@ class State(v1.State):
 
 
 class BridgeBidding(v1.Env):
-    def __init__(self, *, dds_hash_table_path: Optional[str] = None):
+    def __init__(self, dds_results_table_path: str = "dds_results/train_000.npy"):
         super().__init__()
-        if dds_hash_table_path is None:
-            dds_hash_table_path = os.path.join(
-                os.getcwd(), "dds_hash_table.npz"
-            )
+        print(f"Loading dds results from {dds_results_table_path} ...", file=sys.stderr)
         try:
-            self.hash_keys, self.hash_values = jnp.load(dds_hash_table_path)
-        except FileNotFoundError as e:
-            print(e)
-            print("Try the following methods")
-            print(
-                "1. Place the 'keys.npy' and 'values.npy' you created or downloaded in 'current_directry/dds_hash_table'"
-            )
-            print("2. Give the path of the dds hash table as an argument")
+            self.lut_keys, self.lut_values = jnp.load(dds_results_table_path)
+        except Exception as e:
+            print(e, file=sys.stderr)
+            print("BrdigeBidding environment requires pre-computed DDS results.")
+            print(f"However, failed to load dds results from {dds_results_table_path}", file=sys.stderr)
+            print("Please run the following command to download the DDS results provided by Pgx: ", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("  from pgx.bridge_bidding import download_dds_results", file=sys.stderr)
+            print("  download_dds_results()", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("Do NOT forget to exchange the DDS results when you run the evaluation.", file=sys.stderr)
             sys.exit(1)
 
     def _init(self, key: jax.random.KeyArray) -> State:
         key1, key2, key3 = jax.random.split(key, num=3)
-        return _init_by_key(jax.random.choice(key2, self.hash_keys), key3)
+        return _init_by_key(jax.random.choice(key2, self.lut_keys), key3)
 
     def _step(self, state: v1.State, action: int) -> State:
         assert isinstance(state, State)
-        return _step(state, action, self.hash_keys, self.hash_values)
+        return _step(state, action, self.lut_keys, self.lut_values)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -283,8 +283,8 @@ def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
 def _step(
     state: State,
     action: int,
-    hash_keys: jnp.ndarray,
-    hash_values: jnp.ndarray,
+    lut_keys: jnp.ndarray,
+    lut_values: jnp.ndarray,
 ) -> State:
     # fmt: off
     state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
@@ -297,7 +297,7 @@ def _step(
                 lambda: jax.lax.cond(
                     _is_terminated(_state_pass(state)),
                     lambda: _terminated_step(
-                        _state_pass(state), hash_keys, hash_values
+                        _state_pass(state), lut_keys, lut_values
                     ),
                     lambda: _continue_step(_state_pass(state)),
                 ),
@@ -425,12 +425,12 @@ def duplicate(
 
 def _terminated_step(
     state: State,
-    hash_keys: jnp.ndarray,
-    hash_values: jnp.ndarray,
+    lut_keys: jnp.ndarray,
+    lut_values: jnp.ndarray,
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
-    reward = _reward(state, hash_keys, hash_values)
+    reward = _reward(state, lut_keys, lut_values)
     # fmt: off
     return state.replace(terminated=terminated, rewards=reward)  # type: ignore
     # fmt: on
@@ -469,8 +469,8 @@ def _is_terminated(state: State) -> bool:
 
 def _reward(
     state: State,
-    hash_keys: jnp.ndarray,
-    hash_values: jnp.ndarray,
+    lut_keys: jnp.ndarray,
+    lut_values: jnp.ndarray,
 ) -> jnp.ndarray:
     """Return reward
     If pass out, 0 reward for everyone; if bid, calculate and return reward
@@ -479,15 +479,15 @@ def _reward(
         (state._last_bid == -1) & (state._pass_num == 4),
         lambda: jnp.zeros(4, dtype=jnp.float32),  # pass out
         lambda: _make_reward(  # caluculate reward
-            state, hash_keys, hash_values
+            state, lut_keys, lut_values
         ),
     )
 
 
 def _make_reward(
     state: State,
-    hash_keys: jnp.ndarray,
-    hash_values: jnp.ndarray,
+    lut_keys: jnp.ndarray,
+    lut_values: jnp.ndarray,
 ) -> jnp.ndarray:
     """Calculate rewards for each player by dds results
 
@@ -497,7 +497,7 @@ def _make_reward(
     # Extract contract from state
     declare_position, denomination, level, vul = _contract(state)
     # Calculate trick table from hash table
-    dds_tricks = _calculate_dds_tricks(state, hash_keys, hash_values)
+    dds_tricks = _calculate_dds_tricks(state, lut_keys, lut_values)
     # Calculate the tricks you could have accomplished with this contraption
     dds_trick = dds_tricks[declare_position * 5 + denomination]
     # Clculate score
@@ -927,17 +927,17 @@ def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
 
 def _calculate_dds_tricks(
     state: State,
-    hash_keys: jnp.ndarray,
-    hash_values: jnp.ndarray,
+    lut_keys: jnp.ndarray,
+    lut_values: jnp.ndarray,
 ) -> jnp.ndarray:
     key = _state_to_key(state)
     return _value_to_dds_tricks(
-        _find_value_from_key(key, hash_keys, hash_values)
+        _find_value_from_key(key, lut_keys, lut_values)
     )
 
 
 def _find_value_from_key(
-    key: jnp.ndarray, hash_keys: jnp.ndarray, hash_values: jnp.ndarray
+    key: jnp.ndarray, lut_keys: jnp.ndarray, lut_values: jnp.ndarray
 ):
     """Find a value matching key without batch processing
     >>> VALUES = jnp.arange(20).reshape(5, 4)
@@ -947,12 +947,12 @@ def _find_value_from_key(
     Array([4, 5, 6, 7], dtype=int32)
     """
     mask = jnp.where(
-        jnp.all((hash_keys == key), axis=1),
+        jnp.all((lut_keys == key), axis=1),
         jnp.ones(1, dtype=np.bool_),
         jnp.zeros(1, dtype=np.bool_),
     )
     ix = jnp.argmax(mask)
-    return hash_values[ix]
+    return lut_values[ix]
 
 
 def _load_sample_hash() -> Tuple[jnp.ndarray, jnp.ndarray]:
