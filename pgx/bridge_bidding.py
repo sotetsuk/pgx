@@ -161,7 +161,7 @@ class BridgeBidding(v1.Env):
             file=sys.stderr,
         )
         try:
-            self.lut_keys, self.lut_values = jnp.load(dds_results_table_path)
+            self._lut_keys, self._lut_values = jnp.load(dds_results_table_path)
         except Exception as e:
             print(e, file=sys.stderr)
             print(
@@ -191,11 +191,11 @@ class BridgeBidding(v1.Env):
 
     def _init(self, key: jax.random.KeyArray) -> State:
         key1, key2, key3 = jax.random.split(key, num=3)
-        return _init_by_key(jax.random.choice(key2, self.lut_keys), key3)
+        return _init_by_key(jax.random.choice(key2, self._lut_keys), key3)
 
     def _step(self, state: v1.State, action: int) -> State:
         assert isinstance(state, State)
-        return _step(state, action, self.lut_keys, self.lut_values)
+        return _step(state, action, self._lut_keys, self._lut_values)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
