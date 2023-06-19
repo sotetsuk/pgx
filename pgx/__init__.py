@@ -4,9 +4,10 @@ from pgx._src.visualizer import (
     save_svg_animation,
     set_visualization_config,
 )
+from pgx._src.baseline import BaselineModelId, make_baseline_model
 from pgx.v1 import Env, EnvId, State, available_envs, make
 
-__version__ = "0.9.0"
+__version__ = "1.0.0"
 
 __all__ = [
     # v1 api components
@@ -19,6 +20,9 @@ __all__ = [
     "set_visualization_config",
     "save_svg",
     "save_svg_animation",
+    # baseline model
+    "BaselineModelId",
+    "make_baseline_model",
     # api tests
     "v1_api_test",
 ]
