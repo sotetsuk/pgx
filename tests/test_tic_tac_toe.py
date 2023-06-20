@@ -188,6 +188,18 @@ def test_observe():
     assert (obs == init_obs.at[0, 1, 0].set(1)).all(), obs
 
 
+def test_init_with_first_player():
+    import pgx
+    env = pgx.make("tic_tac_toe")
+    keys = jax.random.split(jax.random.PRNGKey(0), 10)
+    first_player = jnp.arange(10) % 2
+
+    state1 = jax.jit(jax.vmap(env.init))(keys)
+    state2 = jax.jit(jax.vmap(env.init_with_first_player))(keys, first_player)  # type: ignore
+    assert (state1.observation == state2.observation).all()
+    assert (state1.current_player != state2.current_player).any()
+    assert (state2.current_player == jnp.arange(10) % 2).all()
+
 
 def test_api():
     import pgx
