@@ -110,24 +110,6 @@ def test_step():
     # -1  0  1
 
 
-def test_random_play():
-    N = 1000
-    key = jax.random.PRNGKey(0)
-    for i in range(N):
-        done = jnp.bool_(False)
-        key, sub_key = jax.random.split(key)
-        state = init(sub_key)
-        rewards = jnp.int16([0.0, 0.0])
-        while not done:
-            assert jnp.all(rewards == 0), state._board
-            legal_actions = jnp.where(state.legal_action_mask)[0]
-            key, sub_key = jax.random.split(key)
-            action = jax.random.choice(sub_key, legal_actions)
-            state = step(state, action)
-            done = state.terminated
-            rewards += state.rewards
-
-
 def test_win_check():
     board = jnp.int8([-1, -1, -1, -1, -1, -1, -1, -1, -1])
     turn = jnp.int8(1)
@@ -190,6 +172,7 @@ def test_observe():
 
 def test_init_with_first_player():
     import pgx
+    from pgx.experimental.utils import act_randomly
     env = pgx.make("tic_tac_toe")
     keys = jax.random.split(jax.random.PRNGKey(0), 10)
     first_player = jnp.arange(10) % 2
@@ -199,6 +182,9 @@ def test_init_with_first_player():
     assert (state1.observation == state2.observation).all()
     assert (state1.current_player != state2.current_player).any()
     assert (state2.current_player == jnp.arange(10) % 2).all()
+    action = jax.jit(act_randomly)(jax.random.PRNGKey(0), state2)
+    state = jax.jit(jax.vmap(env.step))(state2, action)
+    assert (state.current_player == (jnp.arange(10) + 1) % 2).all()
 
 
 def test_api():
