@@ -37,7 +37,7 @@ env = Go(size=19, komi=6.5)
 
 ## Rules
 
-The rule implemented in Pgx follows [Tromp-Taylor Rules](https://webdocs.cs.ualberta.ca/~hayward/396/hoven/tromptaylor.pdf).
+The rule implemented in Pgx follows [Tromp-Taylor Rules](https://tromp.github.io/go.html).
 
 !!! note "Komi"
 
