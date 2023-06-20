@@ -20,7 +20,9 @@ class Wrapper(pgx.Env):
         """Implement game-specific step function here."""
         return self.env._step(state, action)
 
-    def _observe(self, state: pgx.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: pgx.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         """Implement game-specific observe function here."""
         return self.env._observe(state, player_id)
 
@@ -89,10 +91,11 @@ class ToSingle(Wrapper):
 
 
 class SpecifyFirstPlayer(Wrapper):
-
     def __init__(self, env: pgx.Env):
         super().__init__(env)
-        assert self.num_players == 2, "SpecifyFirstPlayer is only for two-player game."
+        assert (
+            self.num_players == 2
+        ), "SpecifyFirstPlayer is only for two-player game."
 
     def init_with_first_player(
         self, key: jax.random.KeyArray, first_player_id: jnp.ndarray
