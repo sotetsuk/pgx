@@ -22,9 +22,34 @@ from pgx.bridge_bidding import (
     _state_to_pbn,
     _to_binary,
     _value_to_dds_tricks,
-    duplicate,
-    init,
 )
+
+
+def init(rng: jax.random.KeyArray) -> State:
+    rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
+    hand = jnp.arange(0, 52)
+    hand = jax.random.permutation(rng2, hand)
+    vul_NS = jax.random.choice(rng3, jnp.bool_([False, True]))
+    vul_EW = jax.random.choice(rng4, jnp.bool_([False, True]))
+    dealer = jax.random.randint(rng5, (1,), 0, 4, dtype=jnp.int8)[0]
+    # shuffled players and arrange in order of NESW
+    shuffled_players = _shuffle_players(rng6)
+    current_player = shuffled_players[dealer]
+    legal_actions = jnp.ones(38, dtype=jnp.bool_)
+    # 最初はdable, redoubleできない
+    legal_actions = legal_actions.at[DOUBLE_ACTION_NUM].set(False)
+    legal_actions = legal_actions.at[REDOUBLE_ACTION_NUM].set(False)
+    state = State(  # type: ignore
+        _shuffled_players=shuffled_players,
+        current_player=current_player,
+        _hand=hand,
+        _dealer=dealer,
+        _vul_NS=vul_NS,
+        _vul_EW=vul_EW,
+        legal_action_mask=legal_actions,
+    )
+    return state
+
 
 PASS_ACTION_NUM = 0
 DOUBLE_ACTION_NUM = 1
@@ -50,7 +75,6 @@ _shuffle_players = jax.jit(_shuffle_players)
 _state_to_key = jax.jit(_state_to_key)
 _to_binary = jax.jit(_to_binary)
 _value_to_dds_tricks = jax.jit(_value_to_dds_tricks)
-duplicate = jax.jit(duplicate)
 init = jax.jit(init)
 
 
@@ -76,34 +100,6 @@ def test_init():
     assert not state.legal_action_mask[DOUBLE_ACTION_NUM]
     assert not state.legal_action_mask[REDOUBLE_ACTION_NUM]
     assert state.legal_action_mask[BID_OFFSET_NUM:].all()
-
-
-def test_duplicate():
-    key = jax.random.PRNGKey(0)
-    for i in range(1000):
-        key, subkey = jax.random.split(key)
-        init_state = init(subkey)
-        duplicated_state = duplicate(init_state)
-        assert (
-            duplicated_state.current_player
-            == duplicated_state._shuffled_players[duplicated_state._dealer]
-        )
-        assert (
-            init_state._shuffled_players[0]
-            == duplicated_state._shuffled_players[1]
-        )
-        assert (
-            init_state._shuffled_players[1]
-            == duplicated_state._shuffled_players[0]
-        )
-        assert (
-            init_state._shuffled_players[2]
-            == duplicated_state._shuffled_players[3]
-        )
-        assert (
-            init_state._shuffled_players[3]
-            == duplicated_state._shuffled_players[2]
-        )
 
 
 def test_illegal_action_penalty():
