@@ -83,3 +83,23 @@ class ToSingle(Wrapper):
     def step(self, state: pgx.State, action: jnp.ndarray) -> pgx.State:
         state = self.env.step(state, action)
         return state.replace(rewards=state.rewards[:, 0])  # type: ignore
+
+
+class SpecifyFirstPlayer(Wrapper):
+
+    def __init__(self, env: pgx.Env):
+        super().__init__(env)
+        assert self.num_players == 2, "SpecifyFirstPlayer is only for two-player game."
+
+    def init_with_first_player(
+        self, key: jax.random.KeyArray, first_player_id: jnp.ndarray
+    ) -> pgx.State:
+        """Special init function for two-player perfect information game.
+        Args:
+            key: pseudo-random generator key in JAX
+            first_player_id: zero or one
+        Returns:
+            State: initial state of environment
+        """
+        state = self.init(key=key)
+        return state.replace(current_player=jnp.int8(first_player_id))  # type: ignore
