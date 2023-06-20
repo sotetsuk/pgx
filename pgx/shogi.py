@@ -154,7 +154,9 @@ class Shogi(v1.Env):
     def num_players(self) -> int:
         return 2
 
-    def init_with_first_player(self, key: jax.random.KeyArray, first_player_id: jnp.ndarray) -> State:
+    def init_with_first_player(
+        self, key: jax.random.KeyArray, first_player_id: jnp.ndarray
+    ) -> State:
         """Special init function for two-player perfect information game.
 
         Args:
