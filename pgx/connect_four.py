@@ -76,6 +76,20 @@ class ConnectFour(v1.Env):
     def num_players(self) -> int:
         return 2
 
+    def init_with_first_player(self, key: jax.random.KeyArray, first_player_id: jnp.ndarray) -> State:
+        """Special init function for two-player perfect information game.
+
+        Args:
+            key: pseudo-random generator key in JAX
+            first_player_id: zero or one
+
+        Returns:
+            State: initial state of environment
+
+        """
+        state = self.init(key=key)
+        return state.replace(current_player=jnp.int8(first_player_id))  # type: ignore
+
 
 def _make_win_cache():
     idx = []
