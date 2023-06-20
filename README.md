@@ -11,6 +11,8 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 <img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
 </div>
 
+🎉 **`v1.0.0`** is released! (2023.6.20)
+
 ## Why Pgx?
 
 <!--- 
