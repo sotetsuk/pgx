@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import copy
 import os
 import sys
 from typing import Tuple
@@ -207,7 +206,7 @@ class BridgeBidding(v1.Env):
 
     @property
     def version(self) -> str:
-        return "beta"
+        return "v0"
 
     @property
     def num_players(self) -> int:
@@ -216,32 +215,6 @@ class BridgeBidding(v1.Env):
     @property
     def _illegal_action_penalty(self) -> float:
         return -7600.0
-
-
-def init(rng: jax.random.KeyArray) -> State:
-    rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
-    hand = jnp.arange(0, 52)
-    hand = jax.random.permutation(rng2, hand)
-    vul_NS = jax.random.choice(rng3, jnp.bool_([False, True]))
-    vul_EW = jax.random.choice(rng4, jnp.bool_([False, True]))
-    dealer = jax.random.randint(rng5, (1,), 0, 4, dtype=jnp.int8)[0]
-    # shuffled players and arrange in order of NESW
-    shuffled_players = _shuffle_players(rng6)
-    current_player = shuffled_players[dealer]
-    legal_actions = jnp.ones(38, dtype=jnp.bool_)
-    # 最初はdable, redoubleできない
-    legal_actions = legal_actions.at[DOUBLE_ACTION_NUM].set(False)
-    legal_actions = legal_actions.at[REDOUBLE_ACTION_NUM].set(False)
-    state = State(  # type: ignore
-        _shuffled_players=shuffled_players,
-        current_player=current_player,
-        _hand=hand,
-        _dealer=dealer,
-        _vul_NS=vul_NS,
-        _vul_EW=vul_EW,
-        legal_action_mask=legal_actions,
-    )
-    return state
 
 
 def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
@@ -450,21 +423,6 @@ def _convert_card_pgx_to_openspiel(card: jnp.ndarray) -> jnp.ndarray:
     suit = OPEN_SPIEL_SUIT_NUM[card // 13]
     rank = OPEN_SPIEL_RANK_NUM[card % 13]
     return suit + rank * 4
-
-
-def duplicate(
-    init_state: State,
-) -> State:
-    """Make duplicated state where NSplayer and EWplayer are swapped"""
-    duplicated_state = copy.deepcopy(init_state)
-    ix = jnp.array([1, 0, 3, 2])
-    # fmt: off
-    duplicated_state = duplicated_state.replace(  # type: ignore
-        _shuffled_players=duplicated_state._shuffled_players[ix],
-        current_player=duplicated_state._shuffled_players[ix][duplicated_state._dealer]
-    )
-    # fmt: on
-    return duplicated_state
 
 
 def _terminated_step(
