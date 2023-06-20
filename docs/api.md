@@ -1,4 +1,4 @@
-# API
+# Pgx API
 
 This is the list of all public APIs of Pgx.
 Two important components in Pgx are `State` and `Env`.
@@ -50,6 +50,18 @@ Two important components in Pgx are `State` and `Env`.
       show_source: true
 
 ::: pgx.save_svg_animation
+    handler: python
+    options:
+      show_root_heading: true
+      show_source: true
+
+::: pgx.BaselineModelId
+    handler: python
+    options:
+      show_root_heading: true
+      show_source: true
+
+::: pgx.make_baseline_model
     handler: python
     options:
       show_root_heading: true
