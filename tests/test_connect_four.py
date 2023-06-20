@@ -134,6 +134,24 @@ def test_observe():
     )).all()
     assert obs[:, :, 1].sum() == 0
 
+
+def test_init_with_first_player():
+    import pgx
+    from pgx.experimental.utils import act_randomly
+    env = pgx.make("connect_four")
+    keys = jax.random.split(jax.random.PRNGKey(0), 10)
+    first_player = jnp.arange(10) % 2
+
+    state1 = jax.jit(jax.vmap(env.init))(keys)
+    state2 = jax.jit(jax.vmap(env.init_with_first_player))(keys, first_player)  # type: ignore
+    assert (state1.observation == state2.observation).all()
+    assert (state1.current_player != state2.current_player).any()
+    assert (state2.current_player == jnp.arange(10) % 2).all()
+    action = jax.jit(act_randomly)(jax.random.PRNGKey(0), state2)
+    state = jax.jit(jax.vmap(env.step))(state2, action)
+    assert (state.current_player == (jnp.arange(10) + 1) % 2).all()
+
+
 def test_api():
     import pgx
     env = pgx.make("connect_four")
