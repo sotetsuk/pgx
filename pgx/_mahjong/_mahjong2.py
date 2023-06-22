@@ -49,13 +49,12 @@ class State(v1.State):
 
     num_kan: jnp.ndarray = jnp.int8(0)
 
-    # 直前に捨てられてron,pon,chi,kanの対象になっている牌. 存在しなければ-1
+    # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
     target: jnp.ndarray = jnp.int8(0)
 
     # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
     last_draw: jnp.ndarray = jnp.int8(0)
 
-    # 最後にプレイしたプレイヤ（ron,pon,chi,kanの対象）.
     last_player: jnp.ndarray = jnp.int8(0)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
@@ -88,11 +87,9 @@ class Mahjong(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(
-        self, state: v1.State, action: jnp.ndarray, player: jnp.ndarray
-    ) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return _step(state, action, player)
+        return _step(state, action)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -128,7 +125,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     return _draw(state)
 
 
-def _step(state: State, action: jnp.ndarray, player: jnp.ndarray) -> State:
+def _step(state: State, action: Action) -> State:
     # TODO
     # - Actionの処理
     #   - meld
@@ -136,12 +133,9 @@ def _step(state: State, action: jnp.ndarray, player: jnp.ndarray) -> State:
     #   - ron, tsumo
     # - 勝利条件確認
     # - playerどうするか
-    # - lax.switch使った方が良いんだろうけど、簡単なうちはcondで分岐させる
-
-    state = state.replace(current_player=player)  # type:ignore
 
     discard = (action < 34) | (action == 68)
-    self_kan = ~discard & (action < 68)
+    self_kan = (34 <= action) & (action < 68)
     state = jax.lax.cond(
         discard,
         lambda: _discard(state, action),
@@ -155,18 +149,17 @@ def _step(state: State, action: jnp.ndarray, player: jnp.ndarray) -> State:
     state = jax.lax.cond(
         (~discard) & (~self_kan),
         lambda: jax.lax.switch(
-            action - 68,
+            action - 69,
             [
-                lambda: _discard(state, action),
                 lambda: _riichi(state),
                 lambda: _tsumo(state),
                 lambda: _ron(state),
                 lambda: _pon(state),
                 lambda: _minkan(state),
-                lambda: _chi(state, player, Action.CHI_L),
-                lambda: _chi(state, player, Action.CHI_M),
-                lambda: _chi(state, player, Action.CHI_R),
-                lambda: _try_draw(state),
+                lambda: _chi(state, Action.CHI_L),
+                lambda: _chi(state, Action.CHI_M),
+                lambda: _chi(state, Action.CHI_R),
+                lambda: _draw(state),
             ],
         ),
         lambda: state,
@@ -207,8 +200,38 @@ def _discard(state: State, tile: jnp.ndarray):
         target=jnp.int8(tile), last_draw=-1, hand=hand
     )
 
+    # ポンとかチーとかがあるか
+    pon_player = state.current_player
+    for i in range(3):
+        player = (state.current_player + 1 + i) % 4
+        pon_player = jnp.where(
+            Hand.can_pon(state.hand[player], tile), player, pon_player
+        )
+
+    def meld(state):
+        legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+        legal_action_mask = (
+            legal_action_mask.at[Action.PON]
+            .set(TRUE)
+            .at[Action.PASS]
+            .set(TRUE)
+        )
+        state = state.replace(  # type:ignore
+            current_player=pon_player,
+            last_player=state.current_player,
+            legal_action_mask=legal_action_mask,
+        )
+        return state
+
+    # ポンとかチーとかない場合はdrawへ
+    def draw(state):
+        state = state.replace(  # type:ignore
+            current_player=(state.current_player + 1) % 4
+        )
+        return _draw(state)
+
     return jax.lax.cond(
-        meld_player == state.current_player,
+        pon_player == state.current_player,
         lambda: draw(state),
         lambda: meld(state),
     )
@@ -248,8 +271,13 @@ def _ankan(state: State, target):
         Hand.ankan(state.hand[curr_player], target)
     )
     # TODO: 国士無双ロンの受付
-
-    return state.replace(hand=hand)  # type:ignore
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(
+        hand[state.current_player] > 0
+    )
+    return state.replace(  # type:ignore
+        hand=hand, legal_action_mask=legal_action_mask
+    )
 
 
 def _kakan(state: State, target, pon_src, pon_idx):
@@ -262,7 +290,14 @@ def _kakan(state: State, target, pon_src, pon_idx):
     pon = state.pon.at[(state.current_player, target)].set(0)
     # TODO: 槍槓の受付
 
-    return state.replace(melds=melds, hand=hand, pon=pon)  # type:ignore
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(
+        hand[state.current_player] > 0
+    )
+
+    return state.replace(  # type:ignore
+        melds=melds, hand=hand, pon=pon, legal_action_mask=legal_action_mask
+    )
 
 
 def _accept_riichi(state: State) -> State:
@@ -287,12 +322,18 @@ def _minkan(state: State):
     hand = hand.at[state.current_player].set(
         Hand.add(state.hand[state.current_player], rinshan_tile)
     )
+
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(
+        hand[state.current_player] > 0
+    )
     return state.replace(  # type:ignore
         target=jnp.int8(-1),
         is_menzen=is_menzen,
         next_deck_ix=next_deck_ix,
         last_draw=rinshan_tile,
         hand=hand,
+        legal_action_mask=legal_action_mask,
     )
 
 
@@ -309,11 +350,38 @@ def _pon(state: State):
         src << 2 | state.n_meld[state.current_player] - 1
     )
 
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(
+        hand[state.current_player] > 0
+    )
+
     return state.replace(  # type:ignore
         target=jnp.int8(-1),
         is_menzen=is_menzen,
         pon=pon,
         hand=hand,
+        legal_action_mask=legal_action_mask,
+    )
+
+
+def _chi(state: State, action: int):
+    state = _accept_riichi(state)
+    meld = Meld.init(action, state.target, src=3)
+    state = _append_meld(state, meld, state.current_player)
+    hand = state.hand.at[state.current_player].set(
+        Hand.chi(state.hand[state.current_player], state.target, action)
+    )
+    is_menzen = state.is_menzen.at[state.current_player].set(False)
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(
+        hand[state.current_player] > 0
+    )
+
+    return state.replace(  # type:ignore
+        target=jnp.int8(-1),
+        is_menzen=is_menzen,
+        hand=hand,
+        legal_action_mask=legal_action_mask,
     )
 
 
@@ -326,19 +394,19 @@ def _pass(state: State):
 
     # kanでpassした場合
 
-    ...
+    return state
 
 
 def _riichi(state: State):
-    ...
+    return state
 
 
 def _tsumo(state: State):
-    ...
+    return state
 
 
 def _ron(state: State):
-    ...
+    return state
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
