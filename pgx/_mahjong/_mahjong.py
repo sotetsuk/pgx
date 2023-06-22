@@ -88,11 +88,9 @@ class Mahjong(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(
-        self, state: v1.State, action: jnp.ndarray, player: jnp.ndarray
-    ) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
         assert isinstance(state, State)
-        return _step(state, action, player)
+        return _step(state, action, player=state.current_player)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -166,7 +164,7 @@ def _step(state: State, action: jnp.ndarray, player: jnp.ndarray) -> State:
                 lambda: _chi(state, player, Action.CHI_L),
                 lambda: _chi(state, player, Action.CHI_M),
                 lambda: _chi(state, player, Action.CHI_R),
-                lambda: _try_draw(state),
+                lambda: _draw(state),
             ],
         ),
         lambda: state,
@@ -207,11 +205,7 @@ def _discard(state: State, tile: jnp.ndarray):
         target=jnp.int8(tile), last_draw=-1, hand=hand
     )
 
-    return jax.lax.cond(
-        meld_player == state.current_player,
-        lambda: draw(state),
-        lambda: meld(state),
-    )
+    return _draw(state)
 
 
 def _append_meld(state: State, meld, player):
@@ -314,6 +308,26 @@ def _pon(state: State):
         is_menzen=is_menzen,
         pon=pon,
         hand=hand,
+    )
+
+
+def _chi(state: State, player, action: int):
+    state = _accept_riichi(state)
+    meld = Meld.init(action, state.target, src=3)
+    state = _append_meld(state, meld, player)
+    hand = state.hand.at[player].set(
+        Hand.chi(state.hand[player], state.target, action)
+    )
+    is_menzen = state.is_menzen.at[player].set(False)
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(hand[player] > 0)
+
+    return state.replace(  # type:ignore
+        current_player=player,
+        target=jnp.int8(-1),
+        is_menzen=is_menzen,
+        hand=hand,
+        legal_action_mask=legal_action_mask,
     )
 
 

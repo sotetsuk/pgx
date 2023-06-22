@@ -45,18 +45,22 @@ class State(v1.State):
     # 各プレイヤーの手牌. 長さ34で、数字は持っている牌の数
     hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int8)
 
+    # ドラ
     doras: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
 
+    # カンの回数=追加ドラ枚数
     num_kan: jnp.ndarray = jnp.int8(0)
 
-    # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
+    # 直前に捨てられてron,pon,chiの対象になっている牌. 存在しなければ-1
     target: jnp.ndarray = jnp.int8(-1)
 
     # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
     last_draw: jnp.ndarray = jnp.int8(0)
 
+    # 最後のプレイヤー.  ron,pon,chiの対象
     last_player: jnp.ndarray = jnp.int8(0)
 
+    # 最後のアクション. ponの次のchi判定などで使用
     last_action: jnp.ndarray = jnp.int8(-1)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
@@ -127,7 +131,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     return _draw(state)
 
 
-def _step(state: State, action: Action) -> State:
+def _step(state: State, action) -> State:
 
     # TODO
     # - Actionの処理
@@ -162,7 +166,7 @@ def _step(state: State, action: Action) -> State:
         ),
     )
 
-    return state.replace(last_action=jnp.int8(action))
+    return state.replace(last_action=jnp.int8(action))  # type:ignore
 
 
 def _draw(state: State):
@@ -243,7 +247,9 @@ def _discard(state: State, tile: jnp.ndarray):
         meld_type,
         [
             lambda: _draw(
-                state.replace(current_player=(state.current_player + 1) % 4)
+                state.replace(  # type:ignore
+                    current_player=(state.current_player + 1) % 4
+                )
             ),
             lambda: state.replace(  # type:ignore
                 current_player=chi_player,
@@ -441,7 +447,9 @@ def _pass(state: State):
     # TODO
     # ron -> pon/kan -> chiへの遷移
 
-    state = state.replace(current_player=(state.current_player + 1) % 4)
+    state = state.replace(  # type:ignore
+        current_player=(state.current_player + 1) % 4
+    )
     return _draw(state)
 
 
