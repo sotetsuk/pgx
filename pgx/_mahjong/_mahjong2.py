@@ -50,12 +50,14 @@ class State(v1.State):
     num_kan: jnp.ndarray = jnp.int8(0)
 
     # 直前に捨てられてron,pon,chi の対象になっている牌. 存在しなければ-1
-    target: jnp.ndarray = jnp.int8(0)
+    target: jnp.ndarray = jnp.int8(-1)
 
     # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
     last_draw: jnp.ndarray = jnp.int8(0)
 
     last_player: jnp.ndarray = jnp.int8(0)
+
+    last_action: jnp.ndarray = jnp.int8(-1)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi_declared: jnp.ndarray = FALSE
@@ -126,6 +128,7 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action: Action) -> State:
+
     # TODO
     # - Actionの処理
     #   - meld
@@ -139,33 +142,27 @@ def _step(state: State, action: Action) -> State:
     state = jax.lax.cond(
         discard,
         lambda: _discard(state, action),
-        lambda: state,
-    )
-    state = jax.lax.cond(
-        self_kan,
-        lambda: _selfkan(state, action),
-        lambda: state,
-    )
-    state = jax.lax.cond(
-        (~discard) & (~self_kan),
-        lambda: jax.lax.switch(
-            action - 69,
-            [
-                lambda: _riichi(state),
-                lambda: _tsumo(state),
-                lambda: _ron(state),
-                lambda: _pon(state),
-                lambda: _minkan(state),
-                lambda: _chi(state, Action.CHI_L),
-                lambda: _chi(state, Action.CHI_M),
-                lambda: _chi(state, Action.CHI_R),
-                lambda: _draw(state),
-            ],
+        lambda: jax.lax.cond(
+            self_kan,
+            lambda: _selfkan(state, action),
+            lambda: jax.lax.switch(
+                (action - 69),
+                [
+                    lambda: _riichi(state),
+                    lambda: _tsumo(state),
+                    lambda: _ron(state),
+                    lambda: _pon(state),
+                    lambda: _minkan(state),
+                    lambda: _chi(state, Action.CHI_L),
+                    lambda: _chi(state, Action.CHI_M),
+                    lambda: _chi(state, Action.CHI_R),
+                    lambda: _draw(state),
+                ],
+            ),
         ),
-        lambda: state,
     )
 
-    return state
+    return state.replace(last_action=jnp.int8(action))
 
 
 def _draw(state: State):
@@ -181,9 +178,15 @@ def _draw(state: State):
     )
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
+    legal_action_mask = legal_action_mask.at[new_tile + 34].set(
+        Hand.can_ankan(hand[state.current_player], new_tile)
+        | Hand.can_kakan(hand[state.current_player], new_tile)
+    )
+    legal_action_mask = legal_action_mask.at[Action.MINKAN].set(
+        Hand.can_minkan(hand[state.current_player], new_tile)
+    )
 
     return state.replace(  # type:ignore
-        current_player=state.current_player,
         next_deck_ix=next_deck_ix,
         hand=hand,
         last_draw=new_tile,
@@ -201,39 +204,88 @@ def _discard(state: State, tile: jnp.ndarray):
     )
 
     # ポンとかチーとかがあるか
-    pon_player = state.current_player
-    for i in range(3):
+    meld_type = 0  # none < chi_L = chi_M = chi_R < pon = kan < ron の中で最大のものを探す
+    pon_player = kan_player = ron_player = state.current_player
+    chi_player = (state.current_player + 1) % 4
+    meld_type = jax.lax.cond(
+        Hand.can_chi(state.hand[chi_player], tile, Action.CHI_L)
+        | Hand.can_chi(state.hand[chi_player], tile, Action.CHI_M)
+        | Hand.can_chi(state.hand[chi_player], tile, Action.CHI_R),
+        lambda: jnp.max(jnp.array([1, meld_type])),
+        lambda: meld_type,
+    )
+
+    def search(i, tpl):
+        meld_type, pon_player, kan_player, ron_player = tpl
         player = (state.current_player + 1 + i) % 4
-        pon_player = jnp.where(
-            Hand.can_pon(state.hand[player], tile), player, pon_player
+        pon_player, meld_type = jax.lax.cond(
+            Hand.can_pon(state.hand[player], tile),
+            lambda: (player, jnp.max(jnp.array([2, meld_type]))),
+            lambda: (pon_player, meld_type),
         )
+        kan_player, meld_type = jax.lax.cond(
+            Hand.can_minkan(state.hand[player], tile),
+            lambda: (player, jnp.max(jnp.array([3, meld_type]))),
+            lambda: (kan_player, meld_type),
+        )
+        ron_player, meld_type = jax.lax.cond(
+            Hand.can_ron(state.hand[player], tile),
+            lambda: (player, jnp.max(jnp.array([4, meld_type]))),
+            lambda: (ron_player, meld_type),
+        )
+        return (meld_type, pon_player, kan_player, ron_player)
 
-    def meld(state):
-        legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-        legal_action_mask = (
-            legal_action_mask.at[Action.PON]
-            .set(TRUE)
-            .at[Action.PASS]
-            .set(TRUE)
-        )
-        state = state.replace(  # type:ignore
-            current_player=pon_player,
-            last_player=state.current_player,
-            legal_action_mask=legal_action_mask,
-        )
-        return state
+    meld_type, pon_player, kan_player, ron_player = jax.lax.fori_loop(
+        0, 3, search, (meld_type, pon_player, kan_player, ron_player)
+    )
 
-    # ポンとかチーとかない場合はdrawへ
-    def draw(state):
-        state = state.replace(  # type:ignore
-            current_player=(state.current_player + 1) % 4
-        )
-        return _draw(state)
-
-    return jax.lax.cond(
-        pon_player == state.current_player,
-        lambda: draw(state),
-        lambda: meld(state),
+    return jax.lax.switch(
+        meld_type,
+        [
+            lambda: _draw(
+                state.replace(current_player=(state.current_player + 1) % 4)
+            ),
+            lambda: state.replace(  # type:ignore
+                current_player=chi_player,
+                last_player=state.current_player,
+                legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+                .at[Action.CHI_L]
+                .set(Hand.can_chi(state.hand[chi_player], tile, Action.CHI_L))
+                .at[Action.CHI_M]
+                .set(Hand.can_chi(state.hand[chi_player], tile, Action.CHI_M))
+                .at[Action.CHI_R]
+                .set(Hand.can_chi(state.hand[chi_player], tile, Action.CHI_R))
+                .at[Action.PASS]
+                .set(TRUE),
+            ),
+            lambda: state.replace(  # type:ignore
+                current_player=pon_player,
+                last_player=state.current_player,
+                legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+                .at[Action.PON]
+                .set(TRUE)
+                .at[Action.PASS]
+                .set(TRUE),
+            ),
+            lambda: state.replace(  # type:ignore
+                current_player=kan_player,
+                last_player=state.current_player,
+                legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+                .at[Action.MINKAN]
+                .set(TRUE)
+                .at[Action.PASS]
+                .set(TRUE),
+            ),
+            lambda: state.replace(  # type:ignore
+                current_player=ron_player,
+                last_player=state.current_player,
+                legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+                .at[Action.RON]
+                .set(TRUE)
+                .at[Action.PASS]
+                .set(TRUE),
+            ),
+        ],
     )
 
 
@@ -258,8 +310,18 @@ def _selfkan(state: State, action):
     hand = state.hand.at[state.current_player].set(
         Hand.add(state.hand[state.current_player], rinshan_tile)
     )
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[0:34].set(
+        hand[state.current_player] > 0
+    )
+    legal_action_mask = legal_action_mask.at[rinshan_tile].set(FALSE)
+    legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
+
     return state.replace(  # type:ignore
-        next_deck_ix=next_deck_ix, last_draw=rinshan_tile, hand=hand
+        next_deck_ix=next_deck_ix,
+        last_draw=rinshan_tile,
+        hand=hand,
+        legal_action_mask=legal_action_mask,
     )
 
 
@@ -271,13 +333,8 @@ def _ankan(state: State, target):
         Hand.ankan(state.hand[curr_player], target)
     )
     # TODO: 国士無双ロンの受付
-    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[:34].set(
-        hand[state.current_player] > 0
-    )
-    return state.replace(  # type:ignore
-        hand=hand, legal_action_mask=legal_action_mask
-    )
+
+    return state.replace(hand=hand)  # type:ignore
 
 
 def _kakan(state: State, target, pon_src, pon_idx):
@@ -290,14 +347,7 @@ def _kakan(state: State, target, pon_src, pon_idx):
     pon = state.pon.at[(state.current_player, target)].set(0)
     # TODO: 槍槓の受付
 
-    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[:34].set(
-        hand[state.current_player] > 0
-    )
-
-    return state.replace(  # type:ignore
-        melds=melds, hand=hand, pon=pon, legal_action_mask=legal_action_mask
-    )
+    return state.replace(melds=melds, hand=hand, pon=pon)  # type:ignore
 
 
 def _accept_riichi(state: State) -> State:
@@ -324,9 +374,11 @@ def _minkan(state: State):
     )
 
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[:34].set(
+    legal_action_mask = legal_action_mask.at[0:34].set(
         hand[state.current_player] > 0
     )
+    legal_action_mask = legal_action_mask.at[rinshan_tile].set(FALSE)
+    legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
     return state.replace(  # type:ignore
         target=jnp.int8(-1),
         is_menzen=is_menzen,
@@ -386,28 +438,47 @@ def _chi(state: State, action: int):
 
 
 def _pass(state: State):
-    # pon -> chi
+    # TODO
+    # ron -> pon/kan -> chiへの遷移
 
-    # ponでpassした場合
-
-    # chiでpassした場合
-
-    # kanでpassした場合
-
-    return state
+    state = state.replace(current_player=(state.current_player + 1) % 4)
+    return _draw(state)
 
 
 def _riichi(state: State):
-    return state
+    # TODO
+    return _pass(state)
 
 
 def _tsumo(state: State):
-    return state
+    # TODO
+    return _pass(state)
 
 
 def _ron(state: State):
-    return state
+    # TODO
+    return _pass(state)
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     ...
+
+
+# For debug
+def _show_legal_action(legal_action):
+    S = ["F", "T"]
+    m = "m:  " + " ".join([S[int(tf)] for tf in legal_action[0:9]]) + "\n"
+    p = "p:  " + " ".join([S[int(tf)] for tf in legal_action[9:18]]) + "\n"
+    s = "s:  " + " ".join([S[int(tf)] for tf in legal_action[18:27]]) + "\n"
+    z = "z:  " + " ".join([S[int(tf)] for tf in legal_action[27:34]]) + "\n"
+    km = "km: " + " ".join([S[int(tf)] for tf in legal_action[34:43]]) + "\n"
+    kp = "kp: " + " ".join([S[int(tf)] for tf in legal_action[43:52]]) + "\n"
+    ks = "ks: " + " ".join([S[int(tf)] for tf in legal_action[52:61]]) + "\n"
+    kz = "kz: " + " ".join([S[int(tf)] for tf in legal_action[61:68]]) + "\n"
+    other = (
+        f"TSUOGIRI: {S[int(legal_action[68])]}  RIICHI = {S[int(legal_action[69])]}  TSUMO = {S[int(legal_action[70])]}  "
+        f"RON: {S[int(legal_action[71])]}  PON = {S[int(legal_action[72])]}  MINKAN = {S[int(legal_action[73])]}  "
+        f"CHI_L: {S[int(legal_action[74])]}  CHI_M = {S[int(legal_action[75])]}  CHI_R = {S[int(legal_action[76])]}  "
+        f"PASS: {S[int(legal_action[77])]}"
+    )
+    print(s + m + p + s + z + km + kp + ks + kz + other)
