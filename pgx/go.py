@@ -58,6 +58,10 @@ class State(v1.State):
             size = int(self._size[0].item())
         return f"go_{size}x{size}"  # type: ignore
 
+    @staticmethod
+    def _from_sgf(sgf: str):
+        return _from_sgf(sgf)
+
 
 class Go(v1.Env):
     def __init__(
@@ -549,3 +553,34 @@ def _show(state: State) -> None:
 
         if xy % state._size == state._size - 1:
             print()
+
+
+# load sgf
+def _from_sgf(sgf: str):
+    indexes = "abcdefghijklmnopqrs"
+    infos = sgf.split(';')
+    game_info = infos[1]
+    game_record = infos[2:]
+    # check game type
+    assert game_info[game_info.find('GM') + 3] == "1"
+    sz = game_info[game_info.find('SZ') + 3: game_info.find('SZ') + 5]
+    if sz[1] == "]":
+        sz = sz[0]
+    size = int(sz)
+    env = Go(size=size)
+    init = jax.jit(env.init)
+    step = jax.jit(env.step)
+    key = jax.random.PRNGKey(0)
+    state = init(key=key)
+    for reco in game_record:
+        if reco[2] == "]":
+            state = step(state, size*size)
+            continue
+        pos = reco[2:4]
+        print(pos)
+        yoko = indexes.index(pos[0])
+        tate = indexes.index(pos[1])
+        action = yoko + size * tate
+        state = step(state, action)
+    return state
+
