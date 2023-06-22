@@ -577,7 +577,6 @@ def _from_sgf(sgf: str):
             state = step(state, size*size)
             continue
         pos = reco[2:4]
-        print(pos)
         yoko = indexes.index(pos[0])
         tate = indexes.index(pos[1])
         action = yoko + size * tate
