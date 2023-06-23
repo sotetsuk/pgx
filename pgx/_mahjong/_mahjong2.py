@@ -60,8 +60,9 @@ class State(v1.State):
     # 最後のプレイヤー.  ron,pon,chiの対象
     last_player: jnp.ndarray = jnp.int8(0)
 
-    # 最後のアクション. ponの次のchi判定などで使用
-    last_action: jnp.ndarray = jnp.int8(-1)
+    # 打牌の後に競合する副露が生じた場合、どこまで調べたかを保存
+    # 0:none 1:ron判定済み 2:pon/kan判定済み
+    furo_check_num: jnp.ndarray = jnp.int8(0)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi_declared: jnp.ndarray = FALSE
@@ -143,7 +144,7 @@ def _step(state: State, action) -> State:
 
     discard = (action < 34) | (action == 68)
     self_kan = (34 <= action) & (action < 68)
-    state = jax.lax.cond(
+    return jax.lax.cond(
         discard,
         lambda: _discard(state, action),
         lambda: jax.lax.cond(
@@ -165,8 +166,6 @@ def _step(state: State, action) -> State:
             ),
         ),
     )
-
-    return state.replace(last_action=jnp.int8(action))  # type:ignore
 
 
 def _draw(state: State):
@@ -484,9 +483,9 @@ def _show_legal_action(legal_action):
     ks = "ks: " + " ".join([S[int(tf)] for tf in legal_action[52:61]]) + "\n"
     kz = "kz: " + " ".join([S[int(tf)] for tf in legal_action[61:68]]) + "\n"
     other = (
-        f"TSUOGIRI: {S[int(legal_action[68])]}  RIICHI = {S[int(legal_action[69])]}  TSUMO = {S[int(legal_action[70])]}  "
-        f"RON: {S[int(legal_action[71])]}  PON = {S[int(legal_action[72])]}  MINKAN = {S[int(legal_action[73])]}  "
-        f"CHI_L: {S[int(legal_action[74])]}  CHI_M = {S[int(legal_action[75])]}  CHI_R = {S[int(legal_action[76])]}  "
-        f"PASS: {S[int(legal_action[77])]}"
+        f"TSUOGIRI:{S[int(legal_action[68])]}  RIICHI:{S[int(legal_action[69])]}  TSUMO:{S[int(legal_action[70])]}  "
+        f"RON:{S[int(legal_action[71])]}  PON:{S[int(legal_action[72])]}  MINKAN:{S[int(legal_action[73])]}  "
+        f"CHI_L:{S[int(legal_action[74])]}  CHI_M:{S[int(legal_action[75])]}  CHI_R:{S[int(legal_action[76])]}  "
+        f"PASS:{S[int(legal_action[77])]}"
     )
     print(s + m + p + s + z + km + kp + ks + kz + other)
