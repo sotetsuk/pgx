@@ -562,16 +562,26 @@ def _from_sgf(sgf: str):
     game_info = infos[1]
     game_record = infos[2:]
     # check game type
-    assert game_info[game_info.find('GM') + 3] == "1"
-    sz = game_info[game_info.find('SZ') + 3: game_info.find('SZ') + 5]
-    if sz[1] == "]":
-        sz = sz[0]
-    size = int(sz)
+    # ないパターンもあるらしい
+    # assert game_info[game_info.find('GM') + 3] == "1"
+    # check board size
+    # ないパターンもあるらしい
+    # defaultを19に設定
+    size = 19
+    if game_info.find('SZ') != -1:
+        sz = game_info[game_info.find('SZ') + 3: game_info.find('SZ') + 5]
+        if sz[1] == "]":
+            sz = sz[0]
+        size = int(sz)
     env = Go(size=size)
     init = jax.jit(env.init)
     step = jax.jit(env.step)
     key = jax.random.PRNGKey(0)
-    state = init(key=key)
+    state = init(key)
+    # 初手から分岐している場合はここで切る
+    if game_info[-1] == "(":
+        print("cannot load branching sgf")
+        return state
     for reco in game_record:
         if reco[2] == "]":
             state = step(state, size*size)
@@ -581,5 +591,9 @@ def _from_sgf(sgf: str):
         tate = indexes.index(pos[1])
         action = yoko + size * tate
         state = step(state, action)
+        # 検討譜は読み込めない
+        if reco[-1] == "(":
+            print("cannot load branching sgf")
+            return state
     return state
 
