@@ -1,5 +1,6 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
 
+
 <div align="center">
 <img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/logo.svg" width="40%">
 </div>
@@ -27,12 +28,40 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 - 🖼️ **Beautiful visualization** in SVG format
 
 
-## Colab
+## Quick start
 
 - [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
 - [Pgx baseline models](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
 - [PPO example](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/ppo.ipynb)
 - [Export to PettingZoo API](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb)
+
+## Usage
+
+The following code snippet shows a simple example of using Pgx.
+You can try it out in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb).
+Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
+Please refer to the [documentation](https://sotetsuk.github.io/pgx) for more details.
+
+```py
+import jax
+import pgx
+
+env = pgx.make("go_19x19")
+init = jax.jit(jax.vmap(env.init))
+step = jax.jit(jax.vmap(env.step))
+
+batch_size = 1024
+keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
+state = init(keys)  # vectorized states
+while not (state.terminated | state.truncated).all():
+    action = model(state.current_player, state.observation, state.legal_action_mask)
+    state = step(state, action)  # state.reward (2,)
+```
+
+Pgx is a library that focuses on faster implementations rather than just the API itself. 
+However, the API itself is also sufficiently general. For example, all environments in Pgx can be converted to the AEC API of [PettingZoo](https://github.com/Farama-Foundation/PettingZoo), and you can run Pgx environments through the PettingZoo API.
+You can see the demonstration in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb).
+
 
 ## Installation
 
@@ -47,53 +76,6 @@ pip install pgx-minatar
 ```
 
 Pgx is provided under the Apache 2.0 License, but the original MinAtar suite follows the GPL 3.0 License. Therefore, please note that the separated MinAtar extension for Pgx also adheres to the GPL 3.0 License.
-
-## Usage
-
-
-Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
-
-<a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
-```py
-import jax
-import pgx
-
-env = pgx.make("go_19x19")
-init = jax.jit(jax.vmap(env.init))  # vectorize and JIT-compile
-step = jax.jit(jax.vmap(env.step))
-
-batch_size = 1024
-keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
-state = init(keys)  # vectorized states
-while not (state.terminated | state.truncated).all():
-    action = model(state.current_player, state.observation, state.legal_action_mask)
-    state = step(state, action)  # state.reward (2,)
-```
-
-Pgx is a library that focuses on faster implementations rather than just the API itself. 
-However, the API itself is also sufficiently general. For example, all environments in Pgx can be converted to the AEC API of [PettingZoo](https://github.com/Farama-Foundation/PettingZoo), and you can run Pgx environments through the PettingZoo API.
-You can see the demonstration in Google Colab:
-
-<a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
-
-<!---
-### Limitations (for the simplicity)
-* Does **NOT** support agent death and creation, which dynmically changes the array size. It does not well suit to GPU-accelerated computation.
-* Does **NOT** support Chance player (Nature player) with action selection.
-* Does **NOT** support OpenAI Gym API.
-    * OpenAI Gym is for single-agent environment. Most of Pgx environments are multi-player games. Just defining opponents is not enough for converting multi-agent environemnts to OpenAI Gym environment. E.g., in the game of go, the next state s' is defined as the state just after placing a stone in AlhaGo paper. However, s' becomes the state after the opponents' play. This changes the definition of V(s').
-* Does **NOT** support PettingZoo API.
-    * PettingZoo is *Gym for multi-agent RL*. As far as we know, PettingZoo does not support vectorized environments (like VectorEnv in OpenAI Gym). As Pgx's main feature is highly vectorized environment via GPU/TPU support, We do not currently support PettingZoo API. 
-
-### `skip_chance`
-* We prepare skip_chance=True option for some environments. This makes it possible to consider value function for "post-decision states" (See AlgoRL book). However, we do not allow chance agent to choose action like OpenSpiel. This is because the action space of chance agent and usual agent are different. Thus, when the chance player is chosen (`current_player=-1`), `action=-1` must be returned to step function. Use `shuffle` to make `step` stochastic.
-
-### truncatation and auto_reset
-* supported by `make(env_id="...", auto_reset=True, max_episode_length=64)`
-* `auto_reset` will replace the terminal state by initial state (but `is_terminal=True` is set)
-* `is_truncated=True` is also set to state
---->
 
 ## Supported games
 

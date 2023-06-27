@@ -35,13 +35,22 @@ env = Hex()
 > 
 > [Wikipedia](https://en.wikipedia.org/wiki/Hex_(board_game))
 
+## Rules
+
+As the first player to move has a distinct advantage, the swap rule is used to compensate for this.
+The detailed swap rule used in Pgx follows *swap pieces*:
+
+> **"Swap pieces":** The players perform the swap by switching pieces. This means the initial red piece is replaced by a blue piece in the mirror image position, where the mirroring takes place with respect to the board's long diagonal. For example, a red piece at a3 becomes a blue piece at c1. The players do not switch colours: Red stays Red and Blue stays Blue. After the swap, it is Red's turn.
+> 
+> [Hex Wiki - Swap rule](https://www.hexwiki.net/index.php/Swap_rule)
+
 ## Specs
 
 | Name | Value |
 |:---|:----:|
 | Version | `v0` |
 | Number of players | `2` |
-| Number of actions | `121 (= 11 x 11)` |
+| Number of actions | `122 (= 11 x 11) + 1` |
 | Observation shape | `(11, 11, 3)` |
 | Observation type | `bool` |
 | Rewards | `{-1, 1}` |
@@ -56,7 +65,8 @@ env = Hex()
 | `[:, :, 2]` | represents whether `player_id` is black or white|
 
 ## Action
-Each action represents the cell index to be filled.
+Each action (`{0, ... 120}`) represents the cell index to be filled.
+The final action `121` is the swap action available only at the second turn.
 
 ## Rewards
 Non-zero rewards are given only at the terminal states.
@@ -67,12 +77,11 @@ The reward at terminal state is described in this table:
 | Win | `+1` |
 | Lose | `-1` |
 
+Note that there is no draw in Hex.
+
 ## Termination
 
-Termination happens when 
-
-1. either one player connect opposite sides of the board, or 
-2. all `121 (= 11 x 11)` cells are filled.
+Termination happens when either one player connect opposite sides of the board.
 
 
 ## Version History

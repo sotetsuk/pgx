@@ -7,16 +7,27 @@ repo_url: https://github.com/sotetsuk/pgx
 copyright: Copyright &copy Pgx Authors
 nav:
   - API Reference: api.md
-  - Examples: examples.md
   - Available Games:
     - 2048: play2048.md
     - Animal Shogi: animal_shogi.md
     - Backgammon: backgammon.md
+    - Bridge bidding: bridge_bidding.md
+    - Chess: chess.md
     - Connect four: connect_four.md
-    - Tic-tac-toe: tic_tac_toe.md
+    - Gardner chess: gardner_chess.md
     - Go: go.md
     - Hex: hex.md
+    - Kuhn poker: kuhn_poker.md
+    - Leduc hold’em: leduc_holdem.md
+    - MinAtar Asterix: minatar_asterix.md
+    - MinAtar Breakout: minatar_breakout.md
+    - MinAtar Freeway: minatar_freeway.md
+    - MinAtar Seaquest: minatar_seaquest.md
+    - MinAtar Space Invaders: minatar_space_invaders.md
     - Othello: othello.md
+    - Shogi: shogi.md
+    - Sparrow mahjong: sparrow_mahjong.md
+    - Tic-tac-toe: tic_tac_toe.md
 theme:
   name: material
   language: en

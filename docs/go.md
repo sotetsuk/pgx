@@ -37,7 +37,7 @@ env = Go(size=19, komi=6.5)
 
 ## Rules
 
-The rule implemented in Pgx follows [Tromp-Taylor Rules](https://webdocs.cs.ualberta.ca/~hayward/396/hoven/tromptaylor.pdf).
+The rule implemented in Pgx follows [Tromp-Taylor Rules](https://tromp.github.io/go.html).
 
 !!! note "Komi"
 
@@ -83,7 +83,7 @@ Let `N` be the board size (e.g., `19`).
 | Number of actions | `N x N + 1` |
 | Observation shape | `(N, N, 17)` |
 | Observation type | `bool` |
-| Rewards | `{-1, 0, 1}` |
+| Rewards | `{-1, 1}` |
 
 ## Observation
 We follow the observation design of AlphaGo Zero `[Silver+17]`.
@@ -129,7 +129,6 @@ The reward at terminal state is described in this table:
 |:---|:----:|
 | Win | `+1` |
 | Lose | `-1` |
-| Draw | `0` |
 
 ## Termination
 

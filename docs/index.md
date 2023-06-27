@@ -14,7 +14,7 @@ import jax
 import pgx
 
 env = pgx.make("go_19x19")
-init = jax.jit(jax.vmap(env.init))  # vectorize and JIT-compile
+init = jax.jit(jax.vmap(env.init))
 step = jax.jit(jax.vmap(env.step))
 
 batch_size = 1024
