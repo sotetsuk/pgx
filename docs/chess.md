@@ -23,9 +23,9 @@ env = pgx.make("chess")
 or you can directly load `Chess` class
 
 ```py
-from pgx.chess import chess
+from pgx.chess import Chess
 
-env = chess()
+env = Chess()
 ```
 
 ## Description
