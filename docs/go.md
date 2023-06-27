@@ -129,7 +129,6 @@ The reward at terminal state is described in this table:
 |:---|:----:|
 | Win | `+1` |
 | Lose | `-1` |
-| Draw | `0` |
 
 ## Termination
 
