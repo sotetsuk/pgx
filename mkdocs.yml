@@ -19,6 +19,11 @@ nav:
     - Go: go.md
     - Hex: hex.md
     - Kuhn poker: kuhn_poker.md
+    - MinAtar Asterix: minatar_asterix.md
+    - MinAtar Breakout: minatar_breakout.md
+    - MinAtar Freeway: minatar_freeway.md
+    - MinAtar Seaquest: minatar_seaquest.md
+    - MinAtar Space Invaders: minatar_space_invaders.md
     - Leduc hold’em: leduc_holdem.md
     - Othello: othello.md
     - Shogi: shogi.md
