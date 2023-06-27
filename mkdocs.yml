@@ -7,7 +7,6 @@ repo_url: https://github.com/sotetsuk/pgx
 copyright: Copyright &copy Pgx Authors
 nav:
   - API Reference: api.md
-  - Examples: examples.md
   - Available Games:
     - 2048: play2048.md
     - Animal Shogi: animal_shogi.md
