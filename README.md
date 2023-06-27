@@ -1,5 +1,6 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
 
+
 <div align="center">
 <img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/logo.svg" width="40%">
 </div>
@@ -27,7 +28,7 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 - 🖼️ **Beautiful visualization** in SVG format
 
 
-## Colab
+## Quick start
 
 - [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
 - [Pgx baseline models](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
@@ -50,17 +51,17 @@ Pgx is provided under the Apache 2.0 License, but the original MinAtar suite fol
 
 ## Usage
 
+Pgx API is inspired by Brax and PettingZoo API. 
+You can try it out in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb).
+Please refer to the [documentation](https://sotetsuk.github.io/pgx) for more details.
 
-Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
-
-<a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
 ```py
 import jax
 import pgx
 
 env = pgx.make("go_19x19")
-init = jax.jit(jax.vmap(env.init))  # vectorize and JIT-compile
+init = jax.jit(jax.vmap(env.init))
 step = jax.jit(jax.vmap(env.step))
 
 batch_size = 1024
@@ -71,11 +72,10 @@ while not (state.terminated | state.truncated).all():
     state = step(state, action)  # state.reward (2,)
 ```
 
+Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
 Pgx is a library that focuses on faster implementations rather than just the API itself. 
 However, the API itself is also sufficiently general. For example, all environments in Pgx can be converted to the AEC API of [PettingZoo](https://github.com/Farama-Foundation/PettingZoo), and you can run Pgx environments through the PettingZoo API.
-You can see the demonstration in Google Colab:
-
-<a href="https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+You can see the demonstration in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb).
 
 <!---
 ### Limitations (for the simplicity)
