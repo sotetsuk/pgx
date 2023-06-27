@@ -83,7 +83,7 @@ Let `N` be the board size (e.g., `19`).
 | Number of actions | `N x N + 1` |
 | Observation shape | `(N, N, 17)` |
 | Observation type | `bool` |
-| Rewards | `{-1, 0, 1}` |
+| Rewards | `{-1, 1}` |
 
 ## Observation
 We follow the observation design of AlphaGo Zero `[Silver+17]`.
