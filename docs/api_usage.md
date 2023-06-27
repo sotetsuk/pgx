@@ -4,18 +4,38 @@
 
 ```py
 import jax
+import jax.numpy as jnp
 import pgx
 
-env = pgx.make("go_19x19")
-init = jax.jit(jax.vmap(env.init))
-step = jax.jit(jax.vmap(env.step))
+seed = 42
+batch_size = 10
+key = jax.random.PRNGKey(seed)
 
-batch_size = 1024
-keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
-state = init(keys)  # vectorized states
+
+def act_randomly(rng_key, obs, mask):
+    """Ignore observation and choose randomly from legal actions"""
+    del obs
+    probs = mask / mask.sum()
+    logits = jnp.log(probs)
+    logits = jnp.maximum(logits, jnp.finfo(logits.dtype).min)
+    return jax.random.categorical(rng_key, logits=logits, axis=-1)
+
+
+# Prepare env
+env = pgx.make("go_9x9")
+init_fn = jax.jit(jax.vmap(env.init))
+step_fn = jax.jit(jax.vmap(env.step))
+
+# Initialize the states
+key, subkey = jax.random.split(key)
+keys = jax.random.split(subkey, batch_size)
+state = init_fn(keys)
+
+# Run random simulation
 while not (state.terminated | state.truncated).all():
-    action = model(state.current_player, state.observation, state.legal_action_mask)
-    state = step(state, action)  # state.reward (2,)
+    key, subkey = jax.random.split(key)
+    action = act_randomly(subkey, state.observation, state.legal_action_mask)
+    state = step_fn(state, action)  # state.reward (2,)
 ```
 
 ## Example.2: Random agent vs Baseline model
