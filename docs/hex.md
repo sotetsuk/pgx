@@ -35,6 +35,15 @@ env = Hex()
 > 
 > [Wikipedia](https://en.wikipedia.org/wiki/Hex_(board_game))
 
+## Rules
+
+As the first player to move has a distinct advantage, the swap rule is used to compensate for this.
+The detailed swap rule used in Pgx follows *swap pieces*:
+
+> **"Swap pieces":** The players perform the swap by switching pieces. This means the initial red piece is replaced by a blue piece in the mirror image position, where the mirroring takes place with respect to the board's long diagonal. For example, a red piece at a3 becomes a blue piece at c1. The players do not switch colours: Red stays Red and Blue stays Blue. After the swap, it is Red's turn.
+> 
+> [Hex Wiki - Swap rule](https://www.hexwiki.net/index.php/Swap_rule)
+
 ## Specs
 
 | Name | Value |
