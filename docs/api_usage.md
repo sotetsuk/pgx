@@ -16,8 +16,7 @@ def act_randomly(rng_key, obs, mask):
     """Ignore observation and choose randomly from legal actions"""
     del obs
     probs = mask / mask.sum()
-    logits = jnp.log(probs)
-    logits = jnp.maximum(logits, jnp.finfo(logits.dtype).min)
+    logits = jnp.maximum(jnp.log(probs), jnp.finfo(probs.dtype).min)
     return jax.random.categorical(rng_key, logits=logits, axis=-1)
 
 
@@ -35,6 +34,7 @@ state = init_fn(keys)
 while not (state.terminated | state.truncated).all():
     key, subkey = jax.random.split(key)
     action = act_randomly(subkey, state.observation, state.legal_action_mask)
+    print(action)
     state = step_fn(state, action)  # state.reward (2,)
 ```
 
