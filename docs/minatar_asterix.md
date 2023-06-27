@@ -39,7 +39,7 @@ and spawn rate of enemies and treasure.
 |:---|:----:|
 | Version | `v0` |
 | Number of players | `1` |
-| Number of actions | `4672` |
+| Number of actions | `5` |
 | Observation shape | `(10, 10, 4)` |
 | Observation type | `bool` |
 | Rewards | `{0, 1}` |
