@@ -12,11 +12,18 @@ nav:
     - 2048: play2048.md
     - Animal Shogi: animal_shogi.md
     - Backgammon: backgammon.md
+    - Bridge bidding: bridge_bidding.md
+    - Chess: chess.md
     - Connect four: connect_four.md
-    - Tic-tac-toe: tic_tac_toe.md
+    - Gardner chess: gardner_chess.md
     - Go: go.md
     - Hex: hex.md
+    - Kuhn poker: kuhn_poker.md
+    - Leduc hold’em: leduc_holdem.md
     - Othello: othello.md
+    - Shogi: shogi.md
+    - Sparrow mahjong: sparrow_mahjong.md
+    - Tic-tac-toe: tic_tac_toe.md
 theme:
   name: material
   language: en
