@@ -24,7 +24,7 @@ env = pgx.make("minatar-asterix")
 ## Description
 
 MinAtar is originally proposed by `[Young&Tian+19]`. 
-The Pgx implementation is intended to be the exact copy of the original MinAtar implementation in JAX. The Asterix environment is described as follows:
+The Pgx implementation is intended to be the *exact* copy of the original MinAtar implementation in JAX. The Asterix environment is described as follows:
 
 > The player can move freely along the 4 cardinal directions. Enemies and treasure spawn from the sides. A reward of
 +1 is given for picking up treasure. Termination occurs if the player makes contact with an enemy. Enemy and
