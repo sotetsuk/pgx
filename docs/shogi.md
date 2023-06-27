@@ -49,7 +49,7 @@ TBA
 | Rewards | `{-1, 0, 1}` |
 
 ## Observation
-We follow the observation design of [dlshogi](https://github.com/TadaoYamaoka/DeepLearningShogi), a open-source shogi AI.
+We follow the observation design of [dlshogi](https://github.com/TadaoYamaoka/DeepLearningShogi), an open-source shogi AI.
 
 | Index | Description |
 |:---:|:----|
