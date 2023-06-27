@@ -51,10 +51,10 @@ Pgx is provided under the Apache 2.0 License, but the original MinAtar suite fol
 
 ## Usage
 
-Pgx API is inspired by Brax and PettingZoo API. 
+The following code snippet shows a simple example of using Pgx.
 You can try it out in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb).
+Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
 Please refer to the [documentation](https://sotetsuk.github.io/pgx) for more details.
-
 
 ```py
 import jax
@@ -72,7 +72,6 @@ while not (state.terminated | state.truncated).all():
     state = step(state, action)  # state.reward (2,)
 ```
 
-Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
 Pgx is a library that focuses on faster implementations rather than just the API itself. 
 However, the API itself is also sufficiently general. For example, all environments in Pgx can be converted to the AEC API of [PettingZoo](https://github.com/Farama-Foundation/PettingZoo), and you can run Pgx environments through the PettingZoo API.
 You can see the demonstration in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb).
