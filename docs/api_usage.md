@@ -34,7 +34,6 @@ state = init_fn(keys)
 while not (state.terminated | state.truncated).all():
     key, subkey = jax.random.split(key)
     action = act_randomly(subkey, state.observation, state.legal_action_mask)
-    print(action)
     state = step_fn(state, action)  # state.reward (2,)
 ```
 
@@ -51,6 +50,7 @@ This illustrative example helps to understand
 import jax
 import jax.numpy as jnp
 import pgx
+from pgx.experimental.utils import act_randomly
 
 seed = 42
 batch_size = 10
@@ -67,9 +67,6 @@ env = pgx.make("go_9x9")
 init_fn = jax.jit(jax.vmap(env.init))
 step_fn = jax.jit(jax.vmap(env.step))
 
-# Prepare random player
-from pgx.experimental.utils import act_randomly
-act_randomly = jax.jit(act_randomly)
 # Prepare baseline model
 # Note that it additionaly requires Haiku library ($ pip install dm-haiku)
 model_id = "go_9x9_v0"
@@ -85,16 +82,16 @@ print(f"Black player: {state.current_player}")  #  [1 1 0 1 0 0 1 1 1 1]
 print(f"A is black: {state.current_player == A}")  # [False False  True False  True  True False False False False]
 print(f"B is black: {state.current_player == B}")  # [ True  True False  True False False  True  True  True  True]
 
-# Run
+# Run simulation
 R = state.rewards
 while not (state.terminated | state.truncated).all():
     # Action of random player A
     key, subkey = jax.random.split(key)
-    action_A = act_randomly(subkey, state)
+    action_A = jax.jit(act_randomly)(subkey, state)
     # Greedy action of baseline model B
     logits, value = model(state.observation)
     action_B = logits.argmax(axis=-1)
-    
+
     action = jnp.where(state.current_player == A, action_A, action_B)
     state = step_fn(state, action)
     R += state.rewards
@@ -102,3 +99,5 @@ while not (state.terminated | state.truncated).all():
 print(f"Return of agent A = {R[:, A]}")  # [-1. -1. -1. -1. -1. -1. -1. -1. -1. -1.]
 print(f"Return of agent B = {R[:, B]}")  # [1. 1. 1. 1. 1. 1. 1. 1. 1. 1.]
 ```
+
+Note that we can avoid to explicitly deal with the first batch dimension like `[:, A]` by using `vmap` later.
