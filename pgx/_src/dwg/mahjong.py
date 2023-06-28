@@ -146,7 +146,7 @@ def _apply_pon(dwg, g, meld, offset):
         p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
         g.add(p)
         offset += tile_h
-    return g, offset
+    return g, offset + tile_w
 
 
 def _apply_chi(dwg, g, meld, offset):
@@ -206,4 +206,4 @@ def _apply_chi(dwg, g, meld, offset):
         p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
         g.add(p)
         offset += tile_h
-    return g, offset
+    return g, offset + tile_w
