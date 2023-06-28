@@ -14,7 +14,11 @@ class Meld:
         # - 1: 下家
         # - 2: 対面
         # - 3: 上家
-        return (jnp.int32(src) << 13) | (jnp.int32(target) << 7) | jnp.int32(action)
+        return (
+            (jnp.int32(src) << 13)
+            | (jnp.int32(target) << 7)
+            | jnp.int32(action)
+        )
 
     @staticmethod
     def to_str(meld) -> str:

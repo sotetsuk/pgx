@@ -1,8 +1,7 @@
-from pgx._src.dwg.mahjong_tile import TilePath
-
+from pgx._mahjong._action import Action
 from pgx._mahjong._mahjong2 import State as MahjongState
 from pgx._mahjong._meld import Meld
-from pgx._mahjong._action import Action
+from pgx._src.dwg.mahjong_tile import TilePath
 
 path_list = TilePath.str_list
 tile_w = 30
