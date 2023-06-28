@@ -42,11 +42,17 @@ class State(v1.State):
     # 次に引く牌のindex
     next_deck_ix: jnp.ndarray = jnp.int8(135)
 
-    # 各プレイヤーの手牌. 長さ34で、数字は持っている牌の数
+    # 各playerの手牌. 長さ34で、数字は持っている牌の数
     hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int8)
 
+    # 河
+    river: jnp.ndarray = -jnp.ones((4, 4 * 6), dtype=jnp.int8)
+
+    # 各playerの河の数
+    num_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+
     # ドラ
-    doras: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    doras: jnp.ndarray = jnp.zeros(5, dtype=jnp.int8)
 
     # カンの回数=追加ドラ枚数
     num_kan: jnp.ndarray = jnp.int8(0)
@@ -74,7 +80,7 @@ class State(v1.State):
     n_meld: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
 
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
-    melds: jnp.ndarray = jnp.zeros((4, 4), dtype=jnp.int32)
+    melds: jnp.ndarray = jnp.zeros((4, 4), dtype=jnp.uint32)
 
     is_menzen: jnp.ndarray = jnp.zeros(4, dtype=jnp.bool_)
 
@@ -127,7 +133,7 @@ def _init(rng: jax.random.KeyArray) -> State:
         last_player=last_player,
         deck=deck,
         hand=init_hand,
-        next_deck_ix=135 - 13 * 4,
+        next_deck_ix=jnp.int8(135 - 13 * 4),
     )
     return _draw(state)
 
@@ -144,6 +150,7 @@ def _step(state: State, action) -> State:
 
     discard = (action < 34) | (action == 68)
     self_kan = (34 <= action) & (action < 68)
+    _ix = action - 69
     return jax.lax.cond(
         discard,
         lambda: _discard(state, action),
@@ -151,7 +158,7 @@ def _step(state: State, action) -> State:
             self_kan,
             lambda: _selfkan(state, action),
             lambda: jax.lax.switch(
-                (action - 69),
+                _ix,
                 [
                     lambda: _riichi(state),
                     lambda: _tsumo(state),
@@ -169,47 +176,46 @@ def _step(state: State, action) -> State:
 
 
 def _draw(state: State):
+    c_p = state.current_player
     new_tile = state.deck[state.next_deck_ix]
     next_deck_ix = state.next_deck_ix - 1
-    hand = state.hand.at[state.current_player].set(
-        Hand.add(state.hand[state.current_player], new_tile)
-    )
+    hand = state.hand.at[c_p].set(Hand.add(state.hand[c_p], new_tile))
 
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[:34].set(
-        hand[state.current_player] > 0
-    )
+    legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
-    legal_action_mask = legal_action_mask.at[new_tile + 34].set(
-        Hand.can_ankan(hand[state.current_player], new_tile)
-        | Hand.can_kakan(hand[state.current_player], new_tile)
-    )
     legal_action_mask = legal_action_mask.at[Action.MINKAN].set(
-        Hand.can_minkan(hand[state.current_player], new_tile)
+        Hand.can_minkan(hand[c_p], new_tile)
     )
 
     return state.replace(  # type:ignore
+        target=jnp.int8(-1),
         next_deck_ix=next_deck_ix,
         hand=hand,
         last_draw=new_tile,
+        last_player=c_p,
         legal_action_mask=legal_action_mask,
     )
 
 
 def _discard(state: State, tile: jnp.ndarray):
+    c_p = state.current_player
     tile = jax.lax.select(tile == 68, state.last_draw, tile)
-    hand = state.hand.at[state.current_player].set(
-        Hand.sub(state.hand[state.current_player], tile)
-    )
+    river = state.river.at[c_p, state.num_river[c_p]].set(tile)
+    num_river = state.num_river.at[c_p].add(1)
+    hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
     state = state.replace(  # type:ignore
-        target=jnp.int8(tile), last_draw=-1, hand=hand
+        last_draw=-1,
+        hand=hand,
+        river=river,
+        num_river=num_river,
     )
 
     # ポンとかチーとかがあるか
     meld_type = 0  # none < chi_L = chi_M = chi_R < pon = kan < ron の中で最大のものを探す
-    pon_player = kan_player = ron_player = state.current_player
-    chi_player = (state.current_player + 1) % 4
+    pon_player = kan_player = ron_player = c_p
+    chi_player = (c_p + 1) % 4
     meld_type = jax.lax.cond(
         Hand.can_chi(state.hand[chi_player], tile, Action.CHI_L)
         | Hand.can_chi(state.hand[chi_player], tile, Action.CHI_M)
@@ -220,14 +226,18 @@ def _discard(state: State, tile: jnp.ndarray):
 
     def search(i, tpl):
         meld_type, pon_player, kan_player, ron_player = tpl
-        player = (state.current_player + 1 + i) % 4
+        player = (c_p + 1 + i) % 4
         pon_player, meld_type = jax.lax.cond(
             Hand.can_pon(state.hand[player], tile),
             lambda: (player, jnp.max(jnp.array([2, meld_type]))),
             lambda: (pon_player, meld_type),
         )
         kan_player, meld_type = jax.lax.cond(
-            Hand.can_minkan(state.hand[player], tile),
+            Hand.can_ankan(hand[player], tile)
+            | (
+                Hand.can_kakan(hand[player], tile) & state.pon[(player, tile)]
+                > 0
+            ),
             lambda: (player, jnp.max(jnp.array([3, meld_type]))),
             lambda: (kan_player, meld_type),
         )
@@ -247,12 +257,14 @@ def _discard(state: State, tile: jnp.ndarray):
         [
             lambda: _draw(
                 state.replace(  # type:ignore
-                    current_player=(state.current_player + 1) % 4
+                    current_player=(c_p + 1) % 4,
+                    target=jnp.int8(-1),
                 )
             ),
             lambda: state.replace(  # type:ignore
                 current_player=chi_player,
-                last_player=state.current_player,
+                last_player=c_p,
+                target=jnp.int8(tile),
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.CHI_L]
                 .set(Hand.can_chi(state.hand[chi_player], tile, Action.CHI_L))
@@ -265,7 +277,8 @@ def _discard(state: State, tile: jnp.ndarray):
             ),
             lambda: state.replace(  # type:ignore
                 current_player=pon_player,
-                last_player=state.current_player,
+                last_player=c_p,
+                target=jnp.int8(tile),
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.PON]
                 .set(TRUE)
@@ -274,16 +287,18 @@ def _discard(state: State, tile: jnp.ndarray):
             ),
             lambda: state.replace(  # type:ignore
                 current_player=kan_player,
-                last_player=state.current_player,
+                last_player=c_p,
+                target=jnp.int8(tile),
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-                .at[Action.MINKAN]
+                .at[tile + 34]
                 .set(TRUE)
                 .at[Action.PASS]
                 .set(TRUE),
             ),
             lambda: state.replace(  # type:ignore
                 current_player=ron_player,
-                last_player=state.current_player,
+                last_player=c_p,
+                target=jnp.int8(tile),
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.RON]
                 .set(TRUE)
@@ -395,22 +410,19 @@ def _minkan(state: State):
 
 
 def _pon(state: State):
+    c_p = state.current_player
     state = _accept_riichi(state)
-    src = (state.last_player - state.current_player) % 4
+    src = (state.last_player - c_p) % 4
     meld = Meld.init(Action.PON, state.target, src)
-    state = _append_meld(state, meld, state.current_player)
-    hand = state.hand.at[state.current_player].set(
-        Hand.pon(state.hand[state.current_player], state.target)
-    )
-    is_menzen = state.is_menzen.at[state.current_player].set(FALSE)
-    pon = state.pon.at[(state.current_player, state.target)].set(
-        src << 2 | state.n_meld[state.current_player] - 1
+    state = _append_meld(state, meld, c_p)
+    hand = state.hand.at[c_p].set(Hand.pon(state.hand[c_p], state.target))
+    is_menzen = state.is_menzen.at[c_p].set(FALSE)
+    pon = state.pon.at[(c_p, state.target)].set(
+        src << 2 | state.n_meld[c_p] - 1
     )
 
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[:34].set(
-        hand[state.current_player] > 0
-    )
+    legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
 
     return state.replace(  # type:ignore
         target=jnp.int8(-1),
@@ -421,18 +433,16 @@ def _pon(state: State):
     )
 
 
-def _chi(state: State, action: int):
+def _chi(state: State, action):
+    c_p = state.current_player
+    tar = state.target
     state = _accept_riichi(state)
-    meld = Meld.init(action, state.target, src=3)
-    state = _append_meld(state, meld, state.current_player)
-    hand = state.hand.at[state.current_player].set(
-        Hand.chi(state.hand[state.current_player], state.target, action)
-    )
-    is_menzen = state.is_menzen.at[state.current_player].set(False)
+    meld = Meld.init(action, tar, src=jnp.int32(3))
+    state = _append_meld(state, meld, c_p)
+    hand = state.hand.at[c_p].set(Hand.chi(state.hand[c_p], tar, action))
+    is_menzen = state.is_menzen.at[c_p].set(FALSE)
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[:34].set(
-        hand[state.current_player] > 0
-    )
+    legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
 
     return state.replace(  # type:ignore
         target=jnp.int8(-1),
