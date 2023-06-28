@@ -80,7 +80,7 @@ class State(v1.State):
     n_meld: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
 
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
-    melds: jnp.ndarray = jnp.zeros((4, 4), dtype=jnp.uint32)
+    melds: jnp.ndarray = jnp.zeros((4, 4), dtype=jnp.int32)
 
     is_menzen: jnp.ndarray = jnp.zeros(4, dtype=jnp.bool_)
 
@@ -202,7 +202,7 @@ def _draw(state: State):
 def _discard(state: State, tile: jnp.ndarray):
     c_p = state.current_player
     tile = jax.lax.select(tile == 68, state.last_draw, tile)
-    river = state.river.at[c_p, state.num_river[c_p]].set(tile)
+    river = state.river.at[c_p, state.num_river[c_p]].set(jnp.int8(tile))
     num_river = state.num_river.at[c_p].add(1)
     hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
     state = state.replace(  # type:ignore

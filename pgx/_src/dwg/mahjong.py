@@ -6,7 +6,7 @@ from pgx._src.dwg.mahjong_tile import TilePath
 path_list = TilePath.str_list
 tile_w = 30
 tile_h = 45
-hand_x = 120
+hand_x = 150
 hand_y = 640
 
 
