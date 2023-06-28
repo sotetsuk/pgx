@@ -203,7 +203,7 @@ def test_discard():
 
     state = step(state, 8)
     assert state.current_player == 1
-    assert state.target == 8
+    assert state.target == -1
     assert state.deck[state.next_deck_ix] == 31
     # fmt:off
     assert (state.hand==jnp.int8(
@@ -216,7 +216,7 @@ def test_discard():
 
     state = step(state, Action.TSUMOGIRI)
     assert state.current_player == 2
-    assert state.target == 8
+    assert state.target == -1
     assert state.deck[state.next_deck_ix] == 16
     # fmt:off
     assert (state.hand==jnp.int8(
@@ -240,6 +240,7 @@ def test_chi():
     """
     state = env.step(state, 6)
     assert state.current_player == 2
+    assert state.target == 6
     assert state.legal_action_mask[Action.CHI_L]
 
     state1 = env.step(state, Action.CHI_L)
@@ -251,7 +252,7 @@ def test_chi():
          [0, 0, 0, 0, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], 
          [0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 2]]])).all()
     # fmt:on
-    assert state1.melds[2, 0] == 74
+    assert state1.melds[2, 0] == 25418
 
     state2 = env.step(state, Action.PASS)
     assert state2.current_player == 2
