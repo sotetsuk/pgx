@@ -512,8 +512,8 @@ class Visualizer:
             from pgx._src.dwg.mahjong import _make_mahjong_dwg
 
             self.config["GRID_SIZE"] = 10
-            self.config["BOARD_WIDTH"] = 60
-            self.config["BOARD_HEIGHT"] = 60
+            self.config["BOARD_WIDTH"] = 70
+            self.config["BOARD_HEIGHT"] = 70
             self._make_dwg_group = _make_mahjong_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
