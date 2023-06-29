@@ -579,8 +579,7 @@ def _from_sgf(sgf: str):
     key = jax.random.PRNGKey(0)
     state = init(key)
     has_branch = False
-    for i in range(len(game_record)):
-        reco = game_record[i]
+    for reco in game_record:
         if reco[-2] == ")":
             # 主分岐の終わり
             print("this sgf has some branches")
