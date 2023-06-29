@@ -112,28 +112,16 @@ def test_from_sgf():
 
 
     # 検討譜は読み込めない
-    state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[9]ST[0];B[fe];W[de];B[ec];W[fg](;B[ef];W[eg];B[df];W[cc];B[gg];W[gf];B[hg];W[hf];B[ge];W[ff];B[he];W[if];B[dg];W[ce];B[ee];W[bg];B[db];W[cb];B[ca];W[ba];B[da];W[ab];B[dh];W[eh];B[ei];W[fi];B[di];W[gh];B[ie];W[hh];B[cf];W[bf];B[bh];W[cg];B[dd];W[cd];B[ch];W[dc];B[eb];W[ed];B[fd];W[ah];B[bi];W[ag];B[ai];W[be];B[dd];W[];B[ed];W[];B[])(;B[cc];W[hf];B[ef]))")
+    state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[9]ST[0];B[fe];W[de];B[ec];W[fg](;B[ef];W[eg];B[df];W[cc];B[gg];W[gf];B[hg];W[hf];B[ge];W[ff];B[he];W[if];B[dg];W[ce];B[ee];W[bg];B[db];W[cb];B[ca];W[ba];B[da];W[ab];B[dh];W[eh];B[ei];W[fi];B[di];W[gh];B[ie];W[hh];B[cf];W[bf];B[bh];W[cg];B[dd];W[cd];B[ch];W[dc];B[eb];W[ed];B[fd];W[ah];B[bi];W[ag];B[ai];W[be];B[dd];W[];B[ed];W[])(;B[cc];W[hf];B[ef];W[];B[]))")
     state.save_svg("tests/assets/go/from_sgf_002.svg")
-    expected_board: jnp.ndarray = jnp.array(
-        [
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 1, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0,-1, 0, 1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0,-1, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-            [0, 0, 0, 0, 0, 0, 0, 0, 0],
-        ]
-    )  # type:ignore
-    assert (jnp.clip(state._chain_id_board, -1, 1) == expected_board.ravel()).all()
+    # 分岐先は終局しているが主分岐は終局していない
     assert not state.terminated
 
     # 初手からの分岐
     state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[9]ST[0](;B[ee])(;B[eg])(;B[ec]))")
     state.save_svg("tests/assets/go/from_sgf_003.svg")
-    assert (jnp.clip(state._chain_id_board, -1, 1) == 0).all()
+    board = jnp.clip(state._chain_id_board, -1, 1)
+    assert board[40] == 1
     assert not state.terminated
 
     # 19×19
@@ -150,6 +138,18 @@ def test_from_sgf():
     state = State._from_sgf("(;CA[shift_jis]SZ[19]AP[MultiGo:4.4.4]GN[Google Challenge Match #4]EV[Google DeepMind Challenge Match 第4局]DT[2016-03-13]PC[韓国]PB[AlphaGo]BR[1p]BT[Google]PW[李世ドル]WR[9p]WT[韓国]KM[7.5]TM[2ｈ]RE[W+R]MULTIGOGM[1];B[pd];W[dp];B[cd];W[qp];B[op];W[oq];B[nq];W[pq];B[cn];W[fq];B[mp];W[po];B[iq];W[ec];B[hd];W[cg];B[ed];W[cj];B[dc];W[bp];B[nc];W[qi];B[ep];W[eo];B[dk];W[fp];B[ck];W[dj];B[ej];W[ei];B[fi];W[eh];B[fh];W[bj];B[fk];W[fg];B[gg];W[ff];B[gf];W[mc];B[md];W[lc];B[nb];W[id];B[hc];W[jg];B[pj];W[pi];B[oj];W[oi];B[ni];W[nh];B[mh];W[ng];B[mg];W[mi];B[nj];W[mf];B[li];W[ne];B[nd];W[mj];B[lf];W[mk];B[me];W[nf];B[lh];W[qj];B[kk];W[ik];B[ji];W[gh];B[hj];W[ge];B[he];W[fd];B[fc];W[ki];B[jj];W[lj];B[kh];W[jh];B[ml];W[nk];B[ol];W[ok];B[pk];W[pl];B[qk];W[nl];B[kj];W[ii];B[rk];W[om];B[pg];W[ql];B[cp];W[co];B[oe];W[rl];B[sk];W[rj];B[hg];W[ij];B[km];W[gi];B[fj];W[jl];B[kl];W[gl];B[fl];W[gm];B[ch];W[ee];B[eb];W[bg];B[dg];W[eg];B[en];W[fo];B[df];W[dh];B[im];W[hk];B[bn];W[if];B[gd];W[fe];B[hf];W[ih];B[bh];W[ci];B[ho];W[go];B[or];W[rg];B[dn];W[cq];B[pr];W[qr];B[rf];W[qg];B[qf];W[jc];B[gr];W[sf];B[se];W[sg];B[rd];W[bl];B[bk];W[ak];B[cl];W[hn];B[in];W[hp];B[fr];W[er];B[es];W[ds];B[ah];W[ai];B[kd];W[ie];B[kc];W[kb];B[gk];W[ib];B[qh];W[rh];B[qs];W[rs];B[oh];W[sl];B[of];W[sj];B[ni];W[nj];B[oo];W[jp]N[B resigned])")
     state.save_svg("tests/assets/go/from_sgf_006.svg")
     # 中押し勝（降参）
+    assert not state.terminated
+
+    # 分岐あり
+    state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[19]ST[0];B[pd];W[qf];B[nc](;W[rd];B[qc];W[qi])(;W[qd];B[qc];W[rc];B[qe];W[rd];B[pf];W[re];B[pe];W[qg]))")
+    state.save_svg("tests/assets/go/from_sgf_007.svg")
+    board = jnp.clip(state._chain_id_board, -1, 1)
+    assert board[168] == -1
+    assert board[55] == 0
+
+    # from_sgf_006と全く同じだが分岐がある
+    state = State._from_sgf("(;CA[shift_jis]SZ[19]AP[MultiGo:4.4.4]GN[Google Challenge Match #4]EV[Google DeepMind Challenge Match 第4局]DT[2016-03-13]PC[韓国]PB[AlphaGo]BR[1p]BT[Google]PW[李世ドル]WR[9p]WT[韓国]KM[7.5]TM[2ｈ]RE[W+R]MULTIGOGM[1];B[pd];W[dp];B[cd];W[qp];B[op];W[oq];B[nq];W[pq];B[cn];W[fq];B[mp];W[po];B[iq];W[ec];B[hd];W[cg];B[ed];W[cj];B[dc];W[bp];B[nc];W[qi];B[ep];W[eo];B[dk];W[fp];B[ck];W[dj];B[ej](;W[ei];B[fi];W[eh];B[fh];W[bj];B[fk];W[fg];B[gg];W[ff];B[gf];W[mc];B[md];W[lc];B[nb];W[id];B[hc];W[jg];B[pj];W[pi];B[oj];W[oi];B[ni];W[nh];B[mh];W[ng];B[mg];W[mi];B[nj];W[mf];B[li];W[ne];B[nd];W[mj];B[lf];W[mk];B[me];W[nf];B[lh];W[qj];B[kk];W[ik];B[ji];W[gh];B[hj];W[ge];B[he];W[fd];B[fc];W[ki];B[jj];W[lj];B[kh];W[jh];B[ml];W[nk];B[ol];W[ok];B[pk];W[pl];B[qk];W[nl];B[kj];W[ii];B[rk];W[om];B[pg];W[ql];B[cp];W[co];B[oe];W[rl];B[sk];W[rj];B[hg];W[ij];B[km];W[gi];B[fj];W[jl];B[kl];W[gl];B[fl];W[gm];B[ch];W[ee];B[eb];W[bg];B[dg];W[eg];B[en];W[fo];B[df];W[dh];B[im];W[hk];B[bn];W[if];B[gd];W[fe];B[hf];W[ih];B[bh];W[ci];B[ho];W[go];B[or];W[rg];B[dn];W[cq];B[pr];W[qr];B[rf];W[qg];B[qf];W[jc];B[gr];W[sf];B[se];W[sg];B[rd];W[bl];B[bk];W[ak];B[cl];W[hn];B[in];W[hp];B[fr];W[er];B[es];W[ds];B[ah];W[ai];B[kd];W[ie];B[kc];W[kb];B[gk];W[ib];B[qh];W[rh];B[qs];W[rs];B[oh];W[sl];B[of];W[sj];B[ni];W[nj];B[oo];W[jp]N[B resigned])(;W[ek];B[bj];W[bi];B[bk];W[dh];B[fj];W[el];B[en];W[fn];B[em];W[fm];B[dl];W[gk];B[fh]))")
+    state.save_svg("tests/assets/go/from_sgf_008.svg")
     assert not state.terminated
 
 

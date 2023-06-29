@@ -558,7 +558,7 @@ def _show(state: State) -> None:
 # load sgf
 def _from_sgf(sgf: str):
     indexes = "abcdefghijklmnopqrs"
-    infos = sgf.split(';')
+    infos = sgf.split(";")
     game_info = infos[1]
     game_record = infos[2:]
     # check game type
@@ -568,8 +568,8 @@ def _from_sgf(sgf: str):
     # ないパターンもあるらしい
     # defaultを19に設定
     size = 19
-    if game_info.find('SZ') != -1:
-        sz = game_info[game_info.find('SZ') + 3: game_info.find('SZ') + 5]
+    if game_info.find("SZ") != -1:
+        sz = game_info[game_info.find("SZ") + 3 : game_info.find("SZ") + 5]
         if sz[1] == "]":
             sz = sz[0]
         size = int(sz)
@@ -578,22 +578,28 @@ def _from_sgf(sgf: str):
     step = jax.jit(env.step)
     key = jax.random.PRNGKey(0)
     state = init(key)
-    # 初手から分岐している場合はここで切る
-    if game_info[-1] == "(":
-        print("cannot load branching sgf")
-        return state
-    for reco in game_record:
+    has_branch = False
+    for i in range(len(game_record)):
+        reco = game_record[i]
+        if reco[-2] == ")":
+            # 主分岐の終わり
+            print("this sgf has some branches")
+            print("loaded main branch")
+            has_branch = True
         if reco[2] == "]":
-            state = step(state, size*size)
+            # pass
+            state = step(state, size * size)
+            # 分岐チェック
+            if has_branch:
+                return state
             continue
         pos = reco[2:4]
         yoko = indexes.index(pos[0])
         tate = indexes.index(pos[1])
         action = yoko + size * tate
         state = step(state, action)
-        # 検討譜は読み込めない
-        if reco[-1] == "(":
-            print("cannot load branching sgf")
+        # 検討譜は主分岐を辿る
+        # 主分岐の終わりでreturn
+        if has_branch:
             return state
     return state
-
