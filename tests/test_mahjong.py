@@ -283,18 +283,18 @@ def test_ankan():
 def test_random_play():
     from pgx.experimental.utils import act_randomly
 
-    key = jax.random.PRNGKey(0)
+    for i in range(10):
+        rng = jax.random.PRNGKey(i)
+        state = init(key=rng)
 
-    state = init(key=key)
-    rng = jax.random.PRNGKey(0)
+        for _ in range(70):
+            rng, subkey = jax.random.split(rng)
+            a = act_randomly(subkey, state)
+            state = step(state, a)
 
-    for _ in range(20):
-        rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
-        state = step(state, a)
-
-        assert state.hand[state.current_player].sum() + jnp.count_nonzero(
-            state.melds[state.current_player]
-        ) * 3 in [13, 14]
-        assert (0 <= state.hand).all()
-        assert (state.hand <= 4).all()
+            assert state.hand[state.current_player].sum() + jnp.count_nonzero(
+                state.melds[state.current_player]
+            ) * 3 in [13, 14]
+            assert (0 <= state.hand).all()
+            assert (state.hand <= 4).all()
+            assert (0 <= state.melds).all()
