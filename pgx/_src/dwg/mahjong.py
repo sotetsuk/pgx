@@ -55,7 +55,7 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
         offset = 0
         hand = state.hand[i]
         for tile, num in enumerate(hand):
-            if num > 0:
+            for _ in range(num):
                 p = dwg.path(d=path_list[tile])
                 p.translate(hand_x + offset, hand_y)
                 players_g[i].add(p)
@@ -77,6 +77,18 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
                 or (Meld.action(meld) == Action.CHI_R)
             ):
                 players_g[i], offset = _apply_chi(
+                    dwg, players_g[i], meld, offset
+                )
+            elif (34 <= Meld.action(meld) <= 67) and Meld.src(meld) == 0:
+                players_g[i], offset = _apply_ankan(
+                    dwg, players_g[i], meld, offset
+                )
+            elif 34 <= Meld.action(meld) <= 67:
+                players_g[i], offset = _apply_kakan(
+                    dwg, players_g[i], meld, offset
+                )
+            elif Meld.action(meld) == Action.MINKAN:
+                players_g[i], offset = _apply_minkan(
                     dwg, players_g[i], meld, offset
                 )
 
@@ -156,13 +168,13 @@ def _apply_chi(dwg, g, meld, offset):
         tile2 = tile + 1
         tile3 = tile + 2
     elif Meld.action(meld) == Action.CHI_M:
-        tile1 = tile - 1
-        tile2 = tile
+        tile1 = tile
+        tile2 = tile - 1
         tile3 = tile + 1
     else:
-        tile1 = tile - 2
+        tile1 = tile
         tile2 = tile - 1
-        tile3 = tile
+        tile3 = tile - 2
 
     if Meld.src(meld) == 3:
         p = dwg.path(d=path_list[tile1])
@@ -179,11 +191,11 @@ def _apply_chi(dwg, g, meld, offset):
         g.add(p)
         offset += tile_w
     elif Meld.src(meld) == 2:
-        p = dwg.path(d=path_list[tile1])
+        p = dwg.path(d=path_list[tile2])
         p.translate(hand_x + offset, hand_y)
         g.add(p)
         offset += tile_w
-        p = dwg.path(d=path_list[tile2])
+        p = dwg.path(d=path_list[tile1])
         p.rotate(-90, center=(hand_x + offset, hand_y))
         p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
         g.add(p)
@@ -193,7 +205,7 @@ def _apply_chi(dwg, g, meld, offset):
         g.add(p)
         offset += tile_w
     elif Meld.src(meld) == 1:
-        p = dwg.path(d=path_list[tile1])
+        p = dwg.path(d=path_list[tile3])
         p.translate(hand_x + offset, hand_y)
         g.add(p)
         offset += tile_w
@@ -201,7 +213,147 @@ def _apply_chi(dwg, g, meld, offset):
         p.translate(hand_x + offset, hand_y)
         g.add(p)
         offset += tile_w
-        p = dwg.path(d=path_list[tile3])
+        p = dwg.path(d=path_list[tile1])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
+        g.add(p)
+        offset += tile_h
+    return g, offset + tile_w
+
+
+def _apply_ankan(dwg, g, meld, offset):
+    tile = Meld.target(meld)
+    p = dwg.path(d=path_list[tile])
+    p.translate(hand_x + offset, hand_y)
+    g.add(p)
+    offset += tile_w
+    p = dwg.path(d=TilePath.back)
+    p.translate(hand_x + offset, hand_y)
+    g.add(p)
+    offset += tile_w
+    p = dwg.path(d=TilePath.back)
+    p.translate(hand_x + offset, hand_y)
+    g.add(p)
+    offset += tile_w
+    p = dwg.path(d=path_list[tile])
+    p.translate(hand_x + offset, hand_y)
+    g.add(p)
+    offset += tile_w
+
+    return g, offset + tile_w
+
+
+def _apply_kakan(dwg, g, meld, offset):
+    tile = Meld.target(meld)
+    if Meld.src(meld) == 3:
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
+        g.add(p)
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, 0)
+        g.add(p)
+        offset += tile_h
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+    elif Meld.src(meld) == 2:
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
+        g.add(p)
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, 0)
+        g.add(p)
+        offset += tile_h
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+    elif Meld.src(meld) == 1:
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
+        g.add(p)
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, 0)
+        g.add(p)
+        offset += tile_h
+    return g, offset + tile_w
+
+
+def _apply_minkan(dwg, g, meld, offset):
+    tile = Meld.target(meld)
+    if Meld.src(meld) == 3:
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
+        g.add(p)
+        offset += tile_h
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+    elif Meld.src(meld) == 2:
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.rotate(-90, center=(hand_x + offset, hand_y))
+        p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
+        g.add(p)
+        offset += tile_h
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+    elif Meld.src(meld) == 1:
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
+        p.translate(hand_x + offset, hand_y)
+        g.add(p)
+        offset += tile_w
+        p = dwg.path(d=path_list[tile])
         p.rotate(-90, center=(hand_x + offset, hand_y))
         p.translate(hand_x + offset - tile_h + 4, hand_y + 1)
         g.add(p)

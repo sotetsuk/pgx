@@ -185,8 +185,12 @@ def _draw(state: State):
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
-    legal_action_mask = legal_action_mask.at[Action.MINKAN].set(
-        Hand.can_minkan(hand[c_p], new_tile)
+    legal_action_mask = legal_action_mask.at[new_tile + 34].set(
+        Hand.can_ankan(hand[c_p], new_tile)
+        | (
+            Hand.can_kakan(hand[c_p], new_tile) & state.pon[(c_p, new_tile)]
+            > 0
+        )
     )
 
     return state.replace(  # type:ignore
@@ -233,11 +237,7 @@ def _discard(state: State, tile: jnp.ndarray):
             lambda: (pon_player, meld_type),
         )
         kan_player, meld_type = jax.lax.cond(
-            Hand.can_ankan(hand[player], tile)
-            | (
-                Hand.can_kakan(hand[player], tile) & state.pon[(player, tile)]
-                > 0
-            ),
+            Hand.can_minkan(hand[player], tile),
             lambda: (player, jnp.max(jnp.array([3, meld_type]))),
             lambda: (kan_player, meld_type),
         )
@@ -290,8 +290,8 @@ def _discard(state: State, tile: jnp.ndarray):
                 last_player=c_p,
                 target=jnp.int8(tile),
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-                .at[tile + 34]
-                .set(TRUE)
+                .at[Action.MINKAN]
+                .set(Hand.can_minkan(hand[kan_player], tile))
                 .at[Action.PASS]
                 .set(TRUE),
             ),
