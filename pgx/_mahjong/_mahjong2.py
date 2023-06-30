@@ -87,6 +87,8 @@ class State(v1.State):
     # pon[i][j]: player i がjをポンを所有している場合, src << 2 | index. or 0
     pon: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int32)
 
+    _test: jnp.ndarray = jnp.int8(0)
+
     @property
     def env_id(self) -> v1.EnvId:
         # TODO add envid
@@ -378,25 +380,21 @@ def _accept_riichi(state: State) -> State:
 
 
 def _minkan(state: State):
+    c_p = state.current_player
     state = _accept_riichi(state)
-    src = (state.last_player - state.current_player) % 4
+    src = (state.last_player - c_p) % 4
     meld = Meld.init(Action.MINKAN, state.target, src)
-    state = _append_meld(state, meld, state.current_player)
-    hand = state.hand.at[state.current_player].set(
-        Hand.minkan(state.hand[state.current_player], state.target)
-    )
-    is_menzen = state.is_menzen.at[state.current_player].set(FALSE)
+    state = _append_meld(state, meld, c_p)
+    hand = state.hand.at[c_p].set(Hand.minkan(state.hand[c_p], state.target))
+    state = state.replace(hand=hand)  # type:ignore
+    is_menzen = state.is_menzen.at[c_p].set(FALSE)
 
     rinshan_tile = state.deck[state.next_deck_ix]
     next_deck_ix = state.next_deck_ix - 1
-    hand = hand.at[state.current_player].set(
-        Hand.add(state.hand[state.current_player], rinshan_tile)
-    )
+    hand = state.hand.at[c_p].set(Hand.add(state.hand[c_p], rinshan_tile))
 
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[0:34].set(
-        hand[state.current_player] > 0
-    )
+    legal_action_mask = legal_action_mask.at[0:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[rinshan_tile].set(FALSE)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
     return state.replace(  # type:ignore
