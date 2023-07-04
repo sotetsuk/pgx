@@ -33,10 +33,6 @@ env = Shogi()
 TBA
 
 
-## Rules
-
-TBA
-
 ## Specs
 
 | Name | Value |
@@ -49,11 +45,57 @@ TBA
 | Rewards | `{-1, 0, 1}` |
 
 ## Observation
-We follow the observation design of [dlshogi](https://github.com/TadaoYamaoka/DeepLearningShogi), an open-source shogi AI.
+We follow the observation design of [dlshogi](https://github.com/TadaoYamaoka/DeepLearningShogi), an open-source shogi AI. 
+Ther original dlshogi implementations are [here](https://github.com/TadaoYamaoka/DeepLearningShogi/blob/1053b87e73c5eb69b66c9937c984d02afe8d1a3b/cppshogi/cppshogi.cpp#L39-L123).
+Pgx implementation has `[9, 9, 119]` shape and `[:, :, x]` denotes:
 
-| Index | Description |
+| `x` | Description |
 |:---:|:----|
-| TBA | TBA |
+| `0:14` | Where my piece `x` exists |
+| `14:28` | Where my pieces `x` are attacking |
+| `28:31` | Where the number of my attacking pieces are `>= 1,2,3` respectively|
+| `31:45` | Where opponent's piece `x` exists |
+| `45:59` | Where opponent's pieces `x` are attacking |
+| `59:62` | Where the number of opponent's attacking pieces are `>= 1,2,3` respectively|
+
+The following planes are all ones ore zeros
+
+| `x` | Description |
+|:---:|:----|
+| `62:70`   | My hand has `>= 1, ..., 8` Pawn |
+| `70:74`   | My hand has `>= 1, 2, 3, 4` Lance |
+| `74:78`   | My hand has `>= 1, 2, 3, 4` Knight |
+| `78:82`   | My hand has `>= 1, 2, 3, 4` Silver |
+| `82:86`   | My hand has `>= 1, 2, 3, 4` Gold |
+| `86:88`   | My hand has `>= 1, 2` Bishop |
+| `88:90`   | My hand has `>= 1, 2` Rook |
+| `90:98`   | Oppnent's hand has `>= 1, ..., 8` Pawn |
+| `98:102`  | Oppnent's hand has `>= 1, 2, 3, 4` Lance |
+| `102:106` | Oppnent's hand has `>= 1, 2, 3, 4` Knight |
+| `106:110` | Oppnent's hand has `>= 1, 2, 3, 4` Silver |
+| `110:114` | Oppnent's hand has `>= 1, 2, 3, 4` Gold |
+| `114:116` | Oppnent's hand has `>= 1, 2` Bishop |
+| `116:118` | Oppnent's hand has `>= 1, 2` Rook |
+| `118` | Ones if checked |
+
+Note that piece ids are
+
+| Piece | Id |
+| :--- | ---: |
+| 歩　 `PAWN`  | `0` |
+| 香　 `LANCE`  | `1` |
+| 桂　 `KNIGHT`  | `2` |
+| 銀　 `SILVER`  | `3` |
+| 角　 `BISHOP`  | `4` |
+| 飛　 `ROOK` | `5` | 
+| 金　 `GOLD` | `6` | 
+| 玉　 `KING` | `7` | 
+| と　 `PRO_PAWN` | `8` |
+| 成香 `PRO_LANCE` | `9` | 
+| 成桂 `PRO_KNIGHT` | `10` | 
+| 成銀 `PRO_SILVER` | `11` | 
+| 馬　 `HORSE` | `12` | 
+| 龍　 `DRAGON` | `13` | 
 
 ## Action
 
