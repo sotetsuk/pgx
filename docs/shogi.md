@@ -41,7 +41,7 @@ TBA
 | Number of players | `2` |
 | Number of actions | `2187` |
 | Observation shape | `(9, 9, 119)` |
-| Observation type | `float` |
+| Observation type | `bool` |
 | Rewards | `{-1, 0, 1}` |
 
 ## Observation
