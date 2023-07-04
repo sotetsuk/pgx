@@ -99,7 +99,46 @@ Note that piece ids are
 
 ## Action
 
-TBA
+The design of action also follows that of dlshogi.
+There are `2187 = 81 x 27` distinct actions.
+The action can be decomposed into 
+
+- `direction` from which the piece moves and
+- `destination` to which the piece moves
+
+by `direction, destination = action // 81, action % 81`.
+The `direction` is encoded by
+
+| id | direction |
+| ---: | :--- |
+|  0 | Up |
+|  1 | Up left |
+|  2 | Up right |
+|  3 | Left |
+|  4 | Right |
+|  5 | Down |
+|  6 | Down left |
+|  7 | Down right |
+|  8 | Up2 left |
+|  9 | Up2 right |
+| 10 | Promote + Up |
+| 11 | Promote + Up left |
+| 12 | Promote + Up right |
+| 13 | Promote + Left |
+| 14 | Promote + Right |
+| 15 | Promote + Down |
+| 16 | Promote + Down left |
+| 17 | Promote + Down right |
+| 18 | Promote + Up2 left |
+| 19 | Promote + Up2 right |
+| 20 | Drop Pawn |
+| 21 | Drop Lance |
+| 22 | Drop Knight |
+| 23 | Drop Silver |
+| 24 | Drop Bishop |
+| 25 | Drop Rook |
+| 26 | Drop Gold |
+
 
 ## Rewards
 Non-zero rewards are given only at the terminal states.
