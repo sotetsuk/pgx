@@ -50,7 +50,7 @@ Ther original dlshogi implementations are [here](https://github.com/TadaoYamaoka
 Pgx implementation has `[9, 9, 119]` shape and `[:, :, x]` denotes:
 
 | `x` | Description |
-|:---:|:----|
+|---:|:----|
 | `0:14` | Where my piece `x` exists |
 | `14:28` | Where my pieces `x` are attacking |
 | `28:31` | Where the number of my attacking pieces are `>= 1,2,3` respectively|
@@ -61,7 +61,7 @@ Pgx implementation has `[9, 9, 119]` shape and `[:, :, x]` denotes:
 The following planes are all ones ore zeros
 
 | `x` | Description |
-|:---:|:----|
+|---:|:----|
 | `62:70`   | My hand has `>= 1, ..., 8` Pawn |
 | `70:74`   | My hand has `>= 1, 2, 3, 4` Lance |
 | `74:78`   | My hand has `>= 1, 2, 3, 4` Knight |
