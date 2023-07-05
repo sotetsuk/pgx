@@ -36,6 +36,49 @@ round in poker with a two-bet maximum. Leaf nodes with
 open boxes continue to the next round, while closed boxes
 end the hand.
 
+## Specs
+
+| Name | Value |
+|:---|:----:|
+| Version | `v0` |
+| Number of players | `2` |
+| Number of actions | `4` |
+| Observation shape | `(7,)` |
+| Observation type | `bool` |
+| Rewards | `{-13, -12, ... 0, ..., 12, 13}` |
+
+## Observation
+
+| Index | Description |
+|:---:|:----|
+| `0`  | True if J in hand |
+| `1`  | True if Q in hand |
+| `2`  | True if K in hand |
+| `3`  | True if J is the public card | 
+| `4`  | True if J is the public card | 
+| `5`  | True if J is the public card | 
+| `6:19` | represent my chip count (0, ..., 13) |
+| `20:33`| represent opponent's chip count (0, ..., 13) |
+
+## Action
+
+There are four distinct actions.
+
+| Index | Action | 
+|:---|----:|
+| 0 | Call  |
+| 1 | Raise |
+| 2 | Fold  |
+
+## Rewards
+The reward is the payoff of the game.
+
+## Termination
+Follows the rules above.
+
+## Version History
+
+- `v0` : Initial release (v1.0.0)
 
 ## References
 
