@@ -51,14 +51,14 @@ end the hand.
 
 | Index | Description |
 |:---:|:----|
-| `0`  | True if J in hand |
-| `1`  | True if Q in hand |
-| `2`  | True if K in hand |
-| `3`  | True if J is the public card | 
-| `4`  | True if J is the public card | 
-| `5`  | True if J is the public card | 
-| `6:19` | represent my chip count (0, ..., 13) |
-| `20:33`| represent opponent's chip count (0, ..., 13) |
+| `[0]`  | True if J in hand |
+| `[1]`  | True if Q in hand |
+| `[2]`  | True if K in hand |
+| `[3]`  | True if J is the public card | 
+| `[4]`  | True if J is the public card | 
+| `[5]`  | True if J is the public card | 
+| `[6:19]` | represent my chip count (0, ..., 13) |
+| `[20:33]`| represent opponent's chip count (0, ..., 13) |
 
 ## Action
 
