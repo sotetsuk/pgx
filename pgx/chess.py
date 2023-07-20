@@ -361,7 +361,7 @@ def _apply_move(state: State, a: Action):
             (piece == KING) & (a.from_ == 32) & (a.to == 16),
             lambda: state._possible_piece_positions.at[0, 0].set(24),
             lambda: state._possible_piece_positions,
-        )
+        ),
     )
     # right
     state = state.replace(  # type: ignore
@@ -375,7 +375,7 @@ def _apply_move(state: State, a: Action):
             (piece == KING) & (a.from_ == 32) & (a.to == 48),
             lambda: state._possible_piece_positions.at[0, 14].set(40),
             lambda: state._possible_piece_positions,
-        )
+        ),
     )
     # update my can_castle_xxx_side
     state = state.replace(  # type: ignore
