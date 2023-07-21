@@ -85,6 +85,10 @@ Termination occurs when one of the following conditions are satisfied:
 - `v1` : Bug fix when castling by [@HongruiTang](https://github.com/HongruiTang) in [#983](https://github.com/sotetsuk/pgx/pull/983) (v1.1.0) 
 - `v0` : Initial release (v1.0.0)
 
+!!! success "Well-tested"
+
+    Pgx chess implementation is well-tested. You can confirm that its behavior is identical to the throughly-tested [OpenSpiel](https://github.com/deepmind/open_spiel) implementation by [this colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/check_chess.ipynb).
+
 ## Reference
 
 - `[Silver+18]` "A general reinforcement learning algorithm that masters chess, shogi, and Go through self-play" Science
