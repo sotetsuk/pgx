@@ -715,6 +715,16 @@ def test_buggy_samples():
     expected_legal_actions = [16, 17, 263, 652, 654, 656, 701, 714, 715, 1517, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 2000, 2001, 3154, 3182, 3197, 3853]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
+    # wrong rook position when castling
+    state = State._from_fen("r1b1k2r/2q2pp1/p1pbpn1p/2p5/2P2P2/1PNP4/P5PP/R1BQNR1K b kq - 0 15")
+    state.save_svg("tests/assets/chess/buggy_samples_012.svg")
+    state = step(state, jnp.int32(2367))
+    state.save_svg("tests/assets/chess/buggy_samples_013.svg")
+    state = step(state, jnp.int32(1796))
+    state.save_svg("tests/assets/chess/buggy_samples_014.svg")
+    expected_legal_actions = [16, 30, 162, 1212, 1225, 1269, 1270, 1271, 1272, 1284, 1297, 1298, 1299, 1942, 1943, 1956, 2498, 2948, 2949, 3131, 3132, 3133, 3134, 3135, 3136, 3138, 3534, 3548, 3593, 3594, 4250]
+    assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
+
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))

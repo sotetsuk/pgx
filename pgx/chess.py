@@ -62,7 +62,7 @@ KING = jnp.int8(6)
 # 3  2 10 18 26 34 42 50 58
 # 2  1  9 17 25 33 41 49 57
 # 1  0  8 16 24 32 40 48 56
-#    a  b  c  d  e  f  g  f
+#    a  b  c  d  e  f  g  h
 # board index (flipped black view)
 # 8  0  8 16 24 32 40 48 56
 # 7  1  9 17 25 33 41 49 57
@@ -355,7 +355,13 @@ def _apply_move(state: State, a: Action):
             (piece == KING) & (a.from_ == 32) & (a.to == 16),
             lambda: state._board.at[0].set(EMPTY).at[24].set(ROOK),
             lambda: state._board,
-        )
+        ),
+        # update rook position
+        _possible_piece_positions=jax.lax.cond(
+            (piece == KING) & (a.from_ == 32) & (a.to == 16),
+            lambda: state._possible_piece_positions.at[0, 0].set(24),
+            lambda: state._possible_piece_positions,
+        ),
     )
     # right
     state = state.replace(  # type: ignore
@@ -363,7 +369,13 @@ def _apply_move(state: State, a: Action):
             (piece == KING) & (a.from_ == 32) & (a.to == 48),
             lambda: state._board.at[56].set(EMPTY).at[40].set(ROOK),
             lambda: state._board,
-        )
+        ),
+        # update rook position
+        _possible_piece_positions=jax.lax.cond(
+            (piece == KING) & (a.from_ == 32) & (a.to == 48),
+            lambda: state._possible_piece_positions.at[0, 14].set(40),
+            lambda: state._possible_piece_positions,
+        ),
     )
     # update my can_castle_xxx_side
     state = state.replace(  # type: ignore
