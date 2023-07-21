@@ -82,6 +82,7 @@ Termination occurs when one of the following conditions are satisfied:
 
 ## Version History
 
+- `v1` : Bug fix when castling by [@HongruiTang](https://github.com/HongruiTang) in [#983](https://github.com/sotetsuk/pgx/pull/983) (v1.1.0) 
 - `v0` : Initial release (v1.0.0)
 
 ## Reference
