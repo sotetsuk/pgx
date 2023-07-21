@@ -40,7 +40,16 @@ def _make_backgammon_dwg(dwg, state: BackgammonState, config):  # noqa: C901
             p2 = ((i + 2 - 12) * GRID_SIZE, 14 * GRID_SIZE)
             p3 = ((i + 1.5 - 12) * GRID_SIZE, 8 * GRID_SIZE)
 
-        fill_color = color_set.p1_color if i % 2 == 0 else color_set.text_color
+        if i < 12:
+            if i % 2 == 0:
+                fill_color = color_set.p1_color
+            else:
+                fill_color = color_set.text_color
+        else:
+            if i % 2 == 1:
+                fill_color = color_set.p1_color
+            else:
+                fill_color = color_set.text_color
 
         board_g.add(
             dwg.polygon(
