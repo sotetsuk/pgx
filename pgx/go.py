@@ -58,6 +58,10 @@ class State(v1.State):
             size = int(self._size[0].item())
         return f"go_{size}x{size}"  # type: ignore
 
+    @staticmethod
+    def _from_sgf(sgf: str):
+        return _from_sgf(sgf)
+
 
 class Go(v1.Env):
     def __init__(
@@ -549,3 +553,52 @@ def _show(state: State) -> None:
 
         if xy % state._size == state._size - 1:
             print()
+
+
+# load sgf
+def _from_sgf(sgf: str):
+    indexes = "abcdefghijklmnopqrs"
+    infos = sgf.split(";")
+    game_info = infos[1]
+    game_record = infos[2:]
+    # check game type
+    # ないパターンもあるらしい
+    # assert game_info[game_info.find('GM') + 3] == "1"
+    # check board size
+    # ないパターンもあるらしい
+    # defaultを19に設定
+    size = 19
+    if game_info.find("SZ") != -1:
+        sz = game_info[game_info.find("SZ") + 3 : game_info.find("SZ") + 5]
+        if sz[1] == "]":
+            sz = sz[0]
+        size = int(sz)
+    env = Go(size=size)
+    init = jax.jit(env.init)
+    step = jax.jit(env.step)
+    key = jax.random.PRNGKey(0)
+    state = init(key)
+    has_branch = False
+    for reco in game_record:
+        if reco[-2] == ")":
+            # 主分岐の終わり
+            print("this sgf has some branches")
+            print("loaded main branch")
+            has_branch = True
+        if reco[2] == "]":
+            # pass
+            state = step(state, size * size)
+            # 分岐チェック
+            if has_branch:
+                return state
+            continue
+        pos = reco[2:4]
+        yoko = indexes.index(pos[0])
+        tate = indexes.index(pos[1])
+        action = yoko + size * tate
+        state = step(state, action)
+        # 検討譜は主分岐を辿る
+        # 主分岐の終わりでreturn
+        if has_branch:
+            return state
+    return state
