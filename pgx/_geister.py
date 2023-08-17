@@ -102,7 +102,7 @@ class Action:
         return jnp.int32(self.from_) + jnp.int32(36 * direction)
 
 
-class GardnerChess(v1.Env):
+class Geister(v1.Env):
     def __init__(self):
         super().__init__()
 
@@ -127,9 +127,9 @@ class GardnerChess(v1.Env):
     #     assert isinstance(state, State)
     #     return _observe(state, player_id)
 
-    @property
-    def id(self) -> v1.EnvId:
-        return "geister"
+    # @property
+    # def id(self) -> v1.EnvId:
+    #     return "geister"
 
     @property
     def version(self) -> str:
