@@ -66,7 +66,9 @@ class State(v1.State):
     # --- geister specific ---
     _turn: jnp.ndarray = jnp.int8(0)
     _board: jnp.ndarray = INIT_BOARD
-    # -2(opponent bad ghost), -1 (opponennt good ghost), 0(empty), 1 (my good ghost), 2(my bad ghost)
+    # -2(opponent bad ghost), -1 (opponent good ghost), 0(empty), 1 (my good ghost), 2(my bad ghost)
+    _num_good_ghost = jnp.int8([4, 4])
+    _num_bad_ghost = jnp.int8([4, 4])
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -113,16 +115,9 @@ class Geister(v1.Env):
         return _init(key)
 
     def _step(self, state: v1.State, action: jnp.ndarray) -> State:
-        return state
-    #     assert isinstance(state, State)
-    #     state = _step(state, action)
-    #     state = jax.lax.cond(
-    #         MAX_TERMINATION_STEPS <= state._step_count,
-    #         # end with tie
-    #         lambda: state.replace(terminated=TRUE),  # type: ignore
-    #         lambda: state,
-    #     )
-    #     return state  # type: ignore
+        assert isinstance(state, State)
+        state = _step(state, action)
+        return state  # type: ignore
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         return jnp.zeros((6, 6, 5), dtype=jnp.bool_)
@@ -147,3 +142,78 @@ def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(current_player=current_player)  # type:ignore
+
+
+def _step(state: State, action: jnp.ndarray):
+    a = Action._from_label(action)
+    state = _apply_move(state, a)
+    state = _flip(state)
+    #state = state.replace(  # type: ignore
+    #    legal_action_mask=_legal_action_mask(state)
+    #)
+    state = _check_termination(state)
+    return state
+
+
+def _apply_move(state: State, action: Action):
+    piece = state._board.at[action.from_]
+    # TODO: 脱出時の処理
+    if state._board.at[action.to] == -1:
+        state = state.replace(  # type: ignore
+            _num_good_ghost=state._num_good_ghost.at[1].set(state._num_good_ghost.at[1] - 1)
+        )
+    if state._board.at[action.to] == -2:
+        state = state.replace(  # type: ignore
+            _num_bad_ghost=state._num_bad_ghost.at[1].set(state._num_bad_ghost.at[1] - 1)
+        )
+    state = state.replace(  # type: ignore
+        _board=state._board.at[action.from_].set(EMPTY).at[action.to].set(piece)
+    )
+    # TODO: 取った駒がある場合減らす
+    return state
+
+
+def _check_termination(state: State) -> jnp.ndarray:
+    reward = state.rewards
+    if state._num_bad_ghosts[0] == 0 or state._num_good_ghosts[1] == 0:
+        reward = jnp.float32([-1, -1]).at[state.current_player].set(1)
+    elif state._num_bad_ghosts[1] == 0 or state._num_good_ghosts[0] == 0:
+        reward = jnp.float32([-1, -1]).at[1 - state.current_player].set(1)
+    return state.replace(  # type: ignore
+        rewards=reward,
+    )
+
+#def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+#    @jax.vmap
+#    def plane(i):
+#        return (state._board == i).reshape((3, 3))
+
+#    # flip if player_id is opposite
+#    x = jax.lax.cond(
+#        state.current_player == player_id,
+#        lambda: jnp.int8([state._turn, 1 - state._turn]),
+#        lambda: jnp.int8([1 - state._turn, state._turn]),
+#    )
+
+#    return jnp.stack(plane(x), -1)
+
+def _flip_pos(x):
+    """
+    >>> _flip_pos(jnp.int8(0))
+    Array(5, dtype=int8)
+    >>> _flip_pos(jnp.int8(4))
+    Array(1, dtype=int8)
+    >>> _flip_pos(jnp.int8(-1))
+    Array(-1, dtype=int8)
+    """
+    return jax.lax.select(x == -1, x, (x // 6) * 6 + (5 - (x % 6)))
+
+
+def _flip(state: State) -> State:
+    return state.replace(  # type: ignore
+        current_player=(state.current_player + 1) % 2,
+        _board=-jnp.flip(state._board.reshape(6, 6), axis=1).flatten(),
+        _turn=(state._turn + 1) % 2,
+        _num_good_ghost=jnp.flip(state._num_good_ghost),
+        _num_bad_ghost=jnp.flip(state._num_bad_ghost)
+    )
