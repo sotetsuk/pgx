@@ -68,6 +68,10 @@ class State(v1.State):
     _board: jnp.ndarray = INIT_BOARD
     # -2(opponent bad ghost), -1 (opponennt good ghost), 0(empty), 1 (my good ghost), 2(my bad ghost)
 
+    @property
+    def env_id(self) -> v1.EnvId:
+        return "geister"
+
 
 # DOWN, UP, LEFT, RIGHT
 DISTANCE = jnp.int8([-1, 1, -6, 6])
@@ -78,7 +82,6 @@ DISTANCE = jnp.int8([-1, 1, -6, 6])
 class Action:
     from_: jnp.ndarray = jnp.int8(-1)
     to: jnp.ndarray = jnp.int8(-1)
-
 
     @staticmethod
     def _from_label(label: jnp.ndarray):
@@ -107,12 +110,10 @@ class Geister(v1.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        rng, subkey = jax.random.split(key)
-        current_player = jnp.int8(jax.random.bernoulli(subkey))
-        state = State(current_player=current_player)  # type: ignore
-        return state
+        return _init(key)
 
-    # def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+        return state
     #     assert isinstance(state, State)
     #     state = _step(state, action)
     #     state = jax.lax.cond(
@@ -123,13 +124,15 @@ class Geister(v1.Env):
     #     )
     #     return state  # type: ignore
 
-    # def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+        return jnp.zeros((6, 6, 5), dtype=jnp.bool_)
     #     assert isinstance(state, State)
     #     return _observe(state, player_id)
 
-    # @property
-    # def id(self) -> v1.EnvId:
-    #     return "geister"
+    @property
+    def id(self) -> v1.EnvId:
+        # need new id
+        return "geister"
 
     @property
     def version(self) -> str:
@@ -138,3 +141,9 @@ class Geister(v1.Env):
     @property
     def num_players(self) -> int:
         return 2
+
+
+def _init(rng: jax.random.KeyArray) -> State:
+    rng, subkey = jax.random.split(rng)
+    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    return State(current_player=current_player)  # type:ignore

@@ -60,6 +60,7 @@ EnvId = Literal[
     "shogi",
     "sparrow_mahjong",
     "tic_tac_toe",
+    "geister"
 ]
 
 
@@ -460,6 +461,10 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.tic_tac_toe import TicTacToe
 
         return TicTacToe()
+    elif env_id == "geister":
+        from pgx._geister import Geister
+
+        return Geister()
     else:
         envs = "\n".join(available_envs())
         raise ValueError(
