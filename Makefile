@@ -7,7 +7,8 @@ install-dev:
 		matplotlib \
 		ipython \
 		jax[cpu] \
-		dm-haiku
+		dm-haiku \
+		pytest-cov
 
 install-fmt:
 	python3 -m pip install \

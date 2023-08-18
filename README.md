@@ -2,8 +2,7 @@
 [![Python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org/)
 [![PyPI version](https://badge.fury.io/py/pgx.svg)](https://pypi.org/project/pgx/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
-
-
+[![codecov](https://codecov.io/github/sotetsuk/pgx/graph/badge.svg?token=JNJIQ83JYG)](https://codecov.io/github/sotetsuk/pgx)
 
 
 <div align="center">
