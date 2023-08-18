@@ -1,4 +1,5 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org/)
 
 
 <div align="center">
