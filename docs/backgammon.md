@@ -50,9 +50,10 @@ env = Backgammon()
 
 The first `28` observation dimensions follow `[Antonoglou+22]`:
 
-> An action in our implementation consists of 4 micro-actions, the same as the maximum number
-of dice a player can play at each turn. Each micro-action encodes the source position of a chip
-along with the value of the die used. We consider 26 possible source positions, with the 0-th position corresponding to a no-op, the 1st to retrieving a chip from the hit pile, and the remaining to selecting a chip in one of the 24 possible points. Each micro-action is encoded as a single integer with micro-action = `src · 6 + die`.
+> In our backgammon experiments, the board was represented using a vector of size 28, with the first
+24 positions representing the number of chips for each player in the 24 possible points on the board,
+and the last four representing the number of hit chips and born off chips for each of the two players.
+We used positive numbers for the current player’s chips and negative ones for her opponent.
 
 | Index | Description |
 |:---:|:----|
@@ -76,4 +77,4 @@ along with the value of the die used. We consider 26 possible source positions, 
 
 ## Reference
 
-1. `[Antonoglou+22]` "Planning in Stochastic Environments with a Learned Modell", ICLR
+1. `[Antonoglou+22]` "Planning in Stochastic Environments with a Learned Model", ICLR
