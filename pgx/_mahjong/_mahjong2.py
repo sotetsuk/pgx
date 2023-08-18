@@ -214,6 +214,7 @@ def _draw(state: State):
 def _discard(state: State, tile: jnp.ndarray):
     c_p = state.current_player
     tile = jax.lax.select(tile == 68, state.last_draw, tile)
+    # tile = jax.lax.select(state.riichi_declared, tile & 0b01000000, tile)
     river = state.river.at[c_p, state.num_river[c_p]].set(jnp.int8(tile))
     num_river = state.num_river.at[c_p].add(1)
     hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
