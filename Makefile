@@ -7,7 +7,8 @@ install-dev:
 		matplotlib \
 		ipython \
 		jax[cpu] \
-		dm-haiku
+		dm-haiku \
+		pytest-cov
 
 install-fmt:
 	python3 -m pip install \
@@ -43,7 +44,7 @@ uninstall:
 	python3 -m pip uninstall pgx -y
 
 test:
-	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental
+	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental --cov=./ --cov-report=term-missing --cov-report=xml
 
 test-modified:
 	./test_modified.sh
