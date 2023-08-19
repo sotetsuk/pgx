@@ -85,7 +85,7 @@ def make_test_state(
     dice: jnp.ndarray,
     playable_dice: jnp.ndarray,
     played_dice_num: jnp.ndarray,
-    legal_action_mask=jnp.zeros(6 * 26 + 6, dtype=jnp.bool_),
+    legal_action_mask=jnp.zeros(6 * 26, dtype=jnp.bool_),
 ):
     return State(
         current_player=current_player,
@@ -227,7 +227,7 @@ def test_step():
         legal_action_mask=legal_action_mask,
     )
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (1) + 0
@@ -250,7 +250,7 @@ def test_step():
     assert state._turn == 1  # turnが変わっていないか.
     assert state._board.at[1].get() == 4 and state._board.at[24].get() == 3
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (1) + 0
@@ -280,7 +280,7 @@ def test_step():
         legal_action_mask=legal_action_mask,
     )
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (19 + 2) + 5
@@ -495,7 +495,7 @@ def test_legal_action():
     # 黒
     playable_dice = jnp.array([3, 2, -1, -1], dtype=jnp.int16)
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (19 + 2) + 3
@@ -523,7 +523,7 @@ def test_legal_action():
     assert (expected_legal_action_mask == legal_action_mask).all()
 
     playable_dice = jnp.array([5, 5, 5, 5], dtype=jnp.int16)
-    expected_legal_action_mask = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
+    expected_legal_action_mask = jnp.zeros(6 * 26, dtype=jnp.bool_)
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (19 + 2) + 5
     ].set(True)
@@ -534,7 +534,7 @@ def test_legal_action():
     board = _flip_board(board)
     playable_dice = jnp.array([4, 1, -1, -1], dtype=jnp.int16)
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[6 * 1 + 1].set(
         True
@@ -544,7 +544,7 @@ def test_legal_action():
 
     playable_dice = jnp.array([4, 4, 4, 4], dtype=jnp.int16)
     expected_legal_action_mask = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )  # dance
     expected_legal_action_mask = expected_legal_action_mask.at[0:6].set(
         True
