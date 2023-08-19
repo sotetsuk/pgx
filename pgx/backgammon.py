@@ -32,7 +32,7 @@ class State(v1.State):
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     # micro action = 6 * src + die
-    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
+    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Backgammon specific ---
@@ -479,9 +479,11 @@ def _move(board: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
     src, _, tgt = _decompose_action(action)
     board = board.at[_bar_idx() + 1].add(
         -1 * (board[tgt] == -1)
-    )  # targetに相手のcheckerが一枚だけある時, それを相手のbarに移動
+    )  # If there is an opponent's checker on the target, hit it
     board = board.at[src].add(-1)
-    board = board.at[tgt].add(1 + (board[tgt] == -1))  # hitした際は符号が変わるので余分に+1
+    board = board.at[tgt].add(
+        1 + (board[tgt] == -1)
+    )  # If hit, the sign changes, so add 1
     return board
 
 
@@ -512,18 +514,18 @@ def _is_gammon(board: jnp.ndarray) -> bool:
 
 def _remains_at_inner(board: jnp.ndarray) -> bool:
     """
-    (1)If there is no opponent's checker on off and (2) there is at least one opponent's checker on inner, the player wins backgammon.
+    (1) If there is no opponent's checker on off and (2) there is at least one opponent's checker on inner, the player wins backgammon.
     """
     return jnp.take(board, _home_board()).sum() != 0  # type: ignore
 
 
 def _legal_action_mask(board: jnp.ndarray, dice: jnp.ndarray) -> jnp.ndarray:
-    no_op_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_).at[0:6].set(TRUE)
+    no_op_mask = jnp.zeros(26 * 6, dtype=jnp.bool_).at[0:6].set(TRUE)
     legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board)
     )(die=dice).any(
         axis=0
-    )  # (26*6 + 6)
+    )  # (26 * 6)
     legal_action_exists = ~(legal_action_mask.sum() == 0)
     return (
         legal_action_exists * legal_action_mask
@@ -535,7 +537,7 @@ def _legal_action_mask_for_single_die(board: jnp.ndarray, die) -> jnp.ndarray:
     """
     Legal action mask for a single die.
     """
-    return (die == -1) * jnp.zeros(26 * 6 + 6, dtype=jnp.bool_) + (
+    return (die == -1) * jnp.zeros(26 * 6, dtype=jnp.bool_) + (
         die != -1
     ) * _legal_action_mask_for_valid_single_dice(board, die)
 
@@ -548,11 +550,11 @@ def _legal_action_mask_for_valid_single_dice(
     """
     src_indices = jnp.arange(
         26, dtype=jnp.int16
-    )  # 26パターンのsrcに対してlegal_actionを求める.
+    )  # calc legal action for all src indices
 
     def _is_legal(idx: jnp.ndarray):
         action = idx * 6 + die
-        legal_action_mask = jnp.zeros(26 * 6 + 6, dtype=jnp.bool_)
+        legal_action_mask = jnp.zeros(26 * 6, dtype=jnp.bool_)
         legal_action_mask = legal_action_mask.at[action].set(
             _is_action_legal(board, action)
         )
@@ -560,7 +562,7 @@ def _legal_action_mask_for_valid_single_dice(
 
     legal_action_mask = jax.vmap(_is_legal)(src_indices).any(
         axis=0
-    )  # (26*6 + 6)
+    )  # (26 * 6)
     return legal_action_mask
 
 
