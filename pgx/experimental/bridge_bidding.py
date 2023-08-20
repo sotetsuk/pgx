@@ -112,7 +112,7 @@ def _duplicate_init(
     shuffled_players = state._shuffled_players[ix]
     current_player = shuffled_players[state._dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
-    # 最初はdable, redoubleできない
+    # cannot double, redouble at first
     legal_actions = legal_actions.at[36].set(False)
     legal_actions = legal_actions.at[37].set(False)
     duplicated_state = State(  # type: ignore
