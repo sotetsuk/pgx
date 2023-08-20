@@ -105,7 +105,7 @@ class State(v1.State):
     _turn: jnp.ndarray = jnp.int16(0)
     _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
     # Hand of each player
-    #   0  ~ 12: Hand of N 
+    #   0  ~ 12: Hand of N
     #   13 ~ 25: Hand of E
     #   26 ~ 38: Hand of S
     #   39 ~ 51: Hand of W
@@ -131,8 +131,8 @@ class State(v1.State):
     # vul_EW: Is EW team vul?
     # 0 = non vul, 1 = vul
     _vul_EW: jnp.ndarray = jnp.bool_(False)
-    # last_bid 
-    # last_bidder 
+    # last_bid
+    # last_bidder
     # call_x: Was the last bid doubled?
     # call_xx: Was the last bid redoubled?
     _last_bid: jnp.ndarray = jnp.int32(-1)
@@ -292,9 +292,7 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
 def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
     return jax.lax.cond(
         player != -1,
-        lambda: jnp.int8(
-            jnp.argmax(state._shuffled_players == player)
-        ),
+        lambda: jnp.int8(jnp.argmax(state._shuffled_players == player)),
         lambda: jnp.int8(-1),
     )
 

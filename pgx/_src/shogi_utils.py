@@ -176,7 +176,7 @@ def _to_sfen(state):
         - If the square is empty, the number of consecutive spaces is entered and shifted to the next piece (e.g., P3R for P _ _ _ R)
         - From the upper left corner to the right
         - When the row changes, insert /
-    - Turn (b/w) after board 
+    - Turn (b/w) after board
     - Hand piece (prisoners) are in order of RBGSNLP
     - Step count (fixed to 1 here)
 

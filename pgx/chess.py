@@ -748,7 +748,9 @@ def _update_zobrist_hash(state: State, action: Action):
     to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
     hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # Remove the piece from source
     hash_ ^= ZOBRIST_BOARD[from_, 6]  # Make source empty
-    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # Remove the piece at target pos (including empty)
+    hash_ ^= ZOBRIST_BOARD[
+        to, destination_piece
+    ]  # Remove the piece at target pos (including empty)
     # underpromotion
     source_piece = jax.lax.select(
         action.underpromotion >= 0,
@@ -868,7 +870,7 @@ def _to_fen(state: State):
         - If empty, the number of consecutive spaces is inserted and shifted to the next piece. (e.g., P Empty Empty Empty R is P3R)
         - Starts from the upper left and looks to the right
         - When the row changes, insert /
-    - Turn (w/b) comes after the board 
+    - Turn (w/b) comes after the board
     - Castling availability. K for King side, Q for Queen side. If both are not available, -
     - The place where en passant is possible. If the pawn moves 2 squares, record the position where the pawn passed
     - At last, the number of moves since the last pawn move or capture and the normal number of moves (fixed at 0 and 1 here)

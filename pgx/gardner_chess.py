@@ -440,9 +440,13 @@ def _update_zobrist_hash(state: State, action: Action):
         state._turn == 0, action.from_, _flip_pos(action.from_)
     )
     to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
-    hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # remove the piece from the source pos
+    hash_ ^= ZOBRIST_BOARD[
+        from_, source_piece
+    ]  # remove the piece from the source pos
     hash_ ^= ZOBRIST_BOARD[from_, 6]  # make the source pos empty
-    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # remove the piece from the target pos (including empty)
+    hash_ ^= ZOBRIST_BOARD[
+        to, destination_piece
+    ]  # remove the piece from the target pos (including empty)
     # underpromotion
     source_piece = jax.lax.select(
         action.underpromotion >= 0,
@@ -589,8 +593,8 @@ def _from_fen(fen: str):
 
 
 def _to_fen(state: State):
-    """Convert state into FEN expression. 
-    
+    """Convert state into FEN expression.
+
     See chess.py for the explanation of FEN.
 
     >>> s = State()

@@ -41,7 +41,7 @@ CAN_MOVE = -jnp.ones((7, 25, 16), jnp.int8)
 # usage: CAN_MOVE[piece, from_x, from_y]
 # CAN_MOVE[0, :, :] are all -1
 # Note that the board is not symmetric about the center (different from shogi)
-# You can imagine that the viewpoint is always from the white side. 
+# You can imagine that the viewpoint is always from the white side.
 # Except PAWN, the moves are symmetric about the center.
 # We define PAWN as a piece that can move up, down, and diagonally, and filter it according to the turn.
 
