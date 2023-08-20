@@ -88,7 +88,7 @@ class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
     _turn: jnp.ndarray = jnp.int8(0)
-    _board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
+    _board: jnp.ndarray = INIT_BOARD  # From top left, like FEN
     # # of moves since the last piece capture or pawn move
     _halfmove_count: jnp.ndarray = jnp.int32(0)
     _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
@@ -440,9 +440,9 @@ def _update_zobrist_hash(state: State, action: Action):
         state._turn == 0, action.from_, _flip_pos(action.from_)
     )
     to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
-    hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # 移動元駒を消す
-    hash_ ^= ZOBRIST_BOARD[from_, 6]  # 移動元をemptyに
-    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # 移動先の駒（empty含む）を消す
+    hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # remove the piece from the source pos
+    hash_ ^= ZOBRIST_BOARD[from_, 6]  # make the source pos empty
+    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # remove the piece from the target pos (including empty)
     # underpromotion
     source_piece = jax.lax.select(
         action.underpromotion >= 0,
@@ -453,7 +453,7 @@ def _update_zobrist_hash(state: State, action: Action):
         ),
         source_piece,
     )
-    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # 移動先を動かした駒に
+    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # put the piece to the target pos
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _zobrist_hash=hash_,
@@ -589,17 +589,9 @@ def _from_fen(fen: str):
 
 
 def _to_fen(state: State):
-    """Convert state into FEN expression.
-
-    - ポーン:P ナイト:N ビショップ:B ルーク:R クイーン:Q キング:K
-    - 先手の駒は大文字、後手の駒は小文字で表現
-    - 空白の場合、連続する空白の数を入れて次の駒にシフトする。P空空空RならP3R
-    - 左上から開始して右に見ていく
-    - 段が変わるときは/を挿入
-    - 盤面の記入が終わったら手番（w/b）
-    - キャスリングの可否。できる場合はQまたはqを先後それぞれ書く(キングサイドのキャスリングは不可)。全部不可なら-
-    - アンパッサン可能な位置。ポーンが2マス動いた場合はそのポーンが通過した位置を記録
-    - 最後にポーンの移動および駒取りが発生してからの手数と通常の手数
+    """Convert state into FEN expression. 
+    
+    See chess.py for the explanation of FEN.
 
     >>> s = State()
     >>> _to_fen(s)
@@ -611,7 +603,7 @@ def _to_fen(state: State):
     if state._turn == 1:
         pb = -jnp.flip(pb, axis=0)
     fen = ""
-    # 盤面
+    # board
     for i in range(5):
         space_length = 0
         for j in range(5):
@@ -632,9 +624,9 @@ def _to_fen(state: State):
             fen += "/"
         else:
             fen += " "
-    # 手番
+    # turn
     fen += "w " if state._turn == 0 else "b "
-    # キャスリング、アンパッサン(なし)
+    # castling and em passant
     fen += "- - "
     fen += str(state._halfmove_count.item())
     fen += " "
