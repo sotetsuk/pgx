@@ -123,7 +123,7 @@ class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
     _turn: jnp.ndarray = jnp.int8(0)
-    _board: jnp.ndarray = INIT_BOARD  # 左上からFENと同じ形式で埋めていく
+    _board: jnp.ndarray = INIT_BOARD  # From top left. like FEN
     # (curr, opp) Flips every turn
     _can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
     _can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
@@ -348,7 +348,8 @@ def _apply_move(state: State, a: Action):
         _fullmove_count=state._fullmove_count + jnp.int32(state._turn == 1),
     )
     # castling
-    # 可能かどうかの判断はここでは行わない。castlingがlegalでない場合はフィルタされている前提
+    # Whether castling is possible or not is not checked here.
+    # We assume that if castling is not possible, it is filtered out.
     # left
     state = state.replace(  # type: ignore
         _board=jax.lax.cond(
@@ -745,9 +746,9 @@ def _update_zobrist_hash(state: State, action: Action):
         state._turn == 0, action.from_, _flip_pos(action.from_)
     )
     to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
-    hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # 移動元駒を消す
-    hash_ ^= ZOBRIST_BOARD[from_, 6]  # 移動元をemptyに
-    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # 移動先の駒（empty含む）を消す
+    hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # Remove the piece from source
+    hash_ ^= ZOBRIST_BOARD[from_, 6]  # Make source empty
+    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # Remove the piece at target pos (including empty)
     # underpromotion
     source_piece = jax.lax.select(
         action.underpromotion >= 0,
@@ -758,7 +759,7 @@ def _update_zobrist_hash(state: State, action: Action):
         ),
         source_piece,
     )
-    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # 移動先を動かした駒に
+    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # Put the piece to the target pos
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _zobrist_hash=hash_,
@@ -861,15 +862,16 @@ def _from_fen(fen: str):
 def _to_fen(state: State):
     """Convert state into FEN expression.
 
-    - ポーン:P ナイト:N ビショップ:B ルーク:R クイーン:Q キング:K
-    - 先手の駒は大文字、後手の駒は小文字で表現
-    - 空白の場合、連続する空白の数を入れて次の駒にシフトする。P空空空RならP3R
-    - 左上から開始して右に見ていく
-    - 段が変わるときは/を挿入
-    - 盤面の記入が終わったら手番（w/b）
-    - キャスリングの可否。キングサイドにできる場合はK, クイーンサイドにできる場合はQを先後それぞれ書く。全部不可なら-
-    - アンパッサン可能な位置。ポーンが2マス動いた場合はそのポーンが通過した位置を記録
-    - 最後にポーンの移動および駒取りが発生してからの手数と通常の手数（0, 1で固定にする）
+    - Board
+        - Pawn:P Knight:N Bishop:B ROok:R Queen:Q King:K
+        - The pice of th first player is capitalized
+        - If empty, the number of consecutive spaces is inserted and shifted to the next piece. (e.g., P Empty Empty Empty R is P3R)
+        - Starts from the upper left and looks to the right
+        - When the row changes, insert /
+    - Turn (w/b) comes after the board 
+    - Castling availability. K for King side, Q for Queen side. If both are not available, -
+    - The place where en passant is possible. If the pawn moves 2 squares, record the position where the pawn passed
+    - At last, the number of moves since the last pawn move or capture and the normal number of moves (fixed at 0 and 1 here)
 
     >>> s = State(_en_passant=jnp.int8(34))
     >>> _to_fen(s)
@@ -885,7 +887,7 @@ def _to_fen(state: State):
     if state._turn == 1:
         pb = -jnp.flip(pb, axis=0)
     fen = ""
-    # 盤面
+    # board
     for i in range(8):
         space_length = 0
         for j in range(8):
@@ -906,9 +908,9 @@ def _to_fen(state: State):
             fen += "/"
         else:
             fen += " "
-    # 手番
+    # turn
     fen += "w " if state._turn == 0 else "b "
-    # キャスリング
+    # castling
     can_castle_queen_side = state._can_castle_queen_side
     can_castle_king_side = state._can_castle_king_side
     if state._turn == 1:
@@ -926,7 +928,7 @@ def _to_fen(state: State):
         if can_castle_queen_side[1]:
             fen += "q"
     fen += " "
-    # アンパッサン
+    # em passant
     en_passant = state._en_passant
     if state._turn == 1:
         en_passant = _flip_pos(en_passant)
