@@ -303,7 +303,7 @@ def _merge_chain(state: State, xy, adj_xy):
     small_id = jnp.minimum(new_id, adj_chain_id) * my_color
     large_id = jnp.maximum(new_id, adj_chain_id) * my_color
 
-    # 大きいidの連を消し、小さいidの連と繋げる
+    # Keep larger chain ID and connect to the chain with smaller ID
     chain_id_board = jnp.where(
         state._chain_id_board == large_id, small_id, state._chain_id_board
     )
@@ -561,12 +561,8 @@ def _from_sgf(sgf: str):
     infos = sgf.split(";")
     game_info = infos[1]
     game_record = infos[2:]
-    # check game type
-    # ないパターンもあるらしい
     # assert game_info[game_info.find('GM') + 3] == "1"
-    # check board size
-    # ないパターンもあるらしい
-    # defaultを19に設定
+    # set default to 19
     size = 19
     if game_info.find("SZ") != -1:
         sz = game_info[game_info.find("SZ") + 3 : game_info.find("SZ") + 5]
@@ -581,14 +577,14 @@ def _from_sgf(sgf: str):
     has_branch = False
     for reco in game_record:
         if reco[-2] == ")":
-            # 主分岐の終わり
+            # The end of main branch
             print("this sgf has some branches")
             print("loaded main branch")
             has_branch = True
         if reco[2] == "]":
             # pass
             state = step(state, size * size)
-            # 分岐チェック
+            # check branches
             if has_branch:
                 return state
             continue
@@ -597,8 +593,8 @@ def _from_sgf(sgf: str):
         tate = indexes.index(pos[1])
         action = yoko + size * tate
         state = step(state, action)
-        # 検討譜は主分岐を辿る
-        # 主分岐の終わりでreturn
+        # We only follow the main branch
+        # Return when the main branch ends
         if has_branch:
             return state
     return state
