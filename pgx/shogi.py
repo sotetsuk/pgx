@@ -53,20 +53,21 @@ PRO_KNIGHT = jnp.int8(10)  # 成桂
 PRO_SILVER = jnp.int8(11)  # 成銀
 HORSE = jnp.int8(12)  # 馬
 DRAGON = jnp.int8(13)  # 龍
-OPP_PAWN = jnp.int8(14)  # 相手歩
-OPP_LANCE = jnp.int8(15)  # 相手香
-OPP_KNIGHT = jnp.int8(16)  # 相手桂
-OPP_SILVER = jnp.int8(17)  # 相手銀
-OPP_BISHOP = jnp.int8(18)  # 相手角
-OPP_ROOK = jnp.int8(19)  # 相手飛
-OPP_GOLD = jnp.int8(20)  # 相手金
-OPP_KING = jnp.int8(21)  # 相手玉
-OPP_PRO_PAWN = jnp.int8(22)  # 相手と
-OPP_PRO_LANCE = jnp.int8(23)  # 相手成香
-OPP_PRO_KNIGHT = jnp.int8(24)  # 相手成桂
-OPP_PRO_SILVER = jnp.int8(25)  # 相手成銀
-OPP_HORSE = jnp.int8(26)  # 相手馬
-OPP_DRAGON = jnp.int8(27)  # 相手龍
+# --- opponent pieces ---
+OPP_PAWN = jnp.int8(14)  # 歩
+OPP_LANCE = jnp.int8(15)  # 香
+OPP_KNIGHT = jnp.int8(16)  # 桂
+OPP_SILVER = jnp.int8(17)  # 銀
+OPP_BISHOP = jnp.int8(18)  # 角
+OPP_ROOK = jnp.int8(19)  # 飛
+OPP_GOLD = jnp.int8(20)  # 金
+OPP_KING = jnp.int8(21)  # 玉
+OPP_PRO_PAWN = jnp.int8(22)  # と
+OPP_PRO_LANCE = jnp.int8(23)  # 成香
+OPP_PRO_KNIGHT = jnp.int8(24)  # 成桂
+OPP_PRO_SILVER = jnp.int8(25)  # 成銀
+OPP_HORSE = jnp.int8(26)  # 馬
+OPP_DRAGON = jnp.int8(27)  # 龍
 
 ALL_SQ = jnp.arange(81)
 
@@ -83,8 +84,8 @@ class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Shogi specific ---
     _turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
-    _board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) 後手のときにはflipする
-    _hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # 後手のときにはflipする
+    _board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) flip in turn
+    _hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # flip in turn
     # cache
     # Redundant information used only in _is_checked for speeding-up
     _cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
@@ -358,7 +359,9 @@ def _is_drop_pawn_mate(state: State):
     flip_state = _flip(
         state.replace(_board=state._board.at[to].set(PAWN))  # type: ignore
     )
-    # 玉頭の歩を取るか玉が逃げられれば詰みでない
+    # Not checkmate if
+    #   (1) can capture checking pawn, or
+    #   (2) king can escape
     # fmt: off
     flipped_to = 80 - to
     flip_state = _set_cache(flip_state)
@@ -459,8 +462,8 @@ def _is_no_promotion_legal(
     # source is not my piece
     piece = state._board[from_]
     # promotion
-    is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # 必ず成る
-    is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # 必ず成る
+    is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # Must promote
+    is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # Must promote
     return ~is_illegal
 
 
@@ -472,8 +475,8 @@ def _is_promotion_legal(
     # source is not my piece
     piece = state._board[from_]
     # promotion
-    is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # 成れない駒
-    is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # 相手陣地と関係がない
+    is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # Pieces cannot promote
+    is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # irrelevant to the opponent's territory
     return ~is_illegal
 
 
@@ -566,7 +569,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     )
 
     def pieces(state):
-        # 駒の場所
+        # piece positions
         my_pieces = jnp.arange(OPP_PAWN)
         my_piece_feat = jax.vmap(lambda p: state._board == p)(my_pieces)
         return my_piece_feat
