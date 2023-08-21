@@ -39,7 +39,7 @@ env = Backgammon()
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `2` |
 | Number of actions | `162 (= 6 * 26 + 6)` |
 | Observation shape | `(34,)` |
