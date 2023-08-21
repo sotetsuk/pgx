@@ -70,7 +70,7 @@ active in their previous location to reduce partial observability.
 
 ## Action
 
-TBA
+No-op (0), up (1), down (2), left (3), right (4), or fire (5).
 
 ## Version History
 

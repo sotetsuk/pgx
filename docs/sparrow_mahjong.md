@@ -19,7 +19,7 @@ It was developed for those unfamiliar with Mahjong,
 and requires similar strategic thinking to standard Japanese Mahjong.
 
 
-### Rules
+### Rules of Sparrow Mahjong
 
 <!---
 すずめ雀のルールの概略は以下のようなものです。
@@ -51,11 +51,50 @@ The original rules of Sparrow Mahjong ([すずめ雀](https://sugorokuya.jp/p/su
     * one red dora for each banboo tile type (9 tiles)
 * Furiten: you cannot *ron* with a tile you have discarded, but you can ron with other tiles
 
-### Modifications in Pgx
+### Specifications in Pgx
 
 Pgx implementation is simplified as follows:
 
 * Only for 3 players
-* If players can win, they automatically win
-* Players always keep red doras in their hands (i.e., red doras are not discarded if they have same but non-dora tiles)
+* Actions are only for discarding tiles (11 discrete actions)
+  * If players can win, they automatically win
+  * Players always keep red doras in their hands (i.e., red doras are not discarded if they have same but non-dora tiles)
 * No [Heavenly hand](https://riichi.wiki/Tenhou_and_chiihou) (Tenhou/天和) to avoid the game ends without any action from players
+
+## Specs
+
+| Name | Value |
+|:---|:----:|
+| Version | `v0` |
+| Number of players | `3` |
+| Number of actions | `11` |
+| Observation shape | `(15, 11)` |
+| Observation type | `bool` |
+| Rewards | `[-1, 1]` |
+
+## Observation
+There are 15 planes in the observation and each plane consists of 11 tiles.
+
+| Planes | Description |
+|:---:|:----|
+| 4 | P1 hand | 
+| 1 | Red dora in P1 hand | 
+| 1 | Dora | 
+| 1 | All discarded tiles by P1 |
+| 1 | All discarded tiles by P2 |
+| 1 | All discarded tiles by P3 | 
+| 3 | Discarded tiles in the last 3 steps by P2 | 
+| 3 | Discarded tiles in the last 3 steps by P3 |
+
+## Action
+Tile to discard.
+
+## Rewards
+Game payoff normalized to `[-1, 1]`
+
+## Termination
+Terminates when either player wins or the wall becomes empty.
+
+## Version History
+
+- `v0` : Initial release (v1.0.0)
