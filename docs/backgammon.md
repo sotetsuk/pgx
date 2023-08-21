@@ -83,7 +83,7 @@ Continues until either player wins.
 
 ## Version History
 
-- `v1`: Remove the redundant actions (From `162` to `156`) by [@nissymori](https://github.com/nissymori) in [#1004](https://github.com/sotetsuk/pgx/pull/1004)
+- `v1`: Remove redundant actions (From `162` to `156`) by [@nissymori](https://github.com/nissymori) in [#1004](https://github.com/sotetsuk/pgx/pull/1004)
 - `v0` : Initial release (v1.0.0)
 
 ## Reference
