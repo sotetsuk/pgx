@@ -162,7 +162,7 @@ class SparrowMahjong(v1.Env):
 
     @property
     def version(self) -> str:
-        return "v0"
+        return "v1"
 
     @property
     def num_players(self) -> int:
@@ -498,7 +498,7 @@ def _observe(state: State, player_id: jnp.ndarray):
         ),
         lambda: obs,
     )
-    return obs
+    return jnp.transpose(obs)
 
 
 def _tile_type_to_str(tile_type) -> str:

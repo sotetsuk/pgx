@@ -65,10 +65,10 @@ Pgx implementation is simplified as follows:
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `3` |
 | Number of actions | `11` |
-| Observation shape | `(15, 11)` |
+| Observation shape | `(11, 15)` |
 | Observation type | `bool` |
 | Rewards | `[-1, 1]` |
 
@@ -97,4 +97,4 @@ Terminates when either player wins or the wall becomes empty.
 
 ## Version History
 
-- `v0` : Initial release (v1.0.0)
+- `v1` : Initial release (v1.0.0)
