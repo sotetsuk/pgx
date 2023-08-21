@@ -60,8 +60,7 @@ after 2500 frames have elapsed.
 | `[:, :, 5]` | Speed 4 |
 
 ## Action
-
-TBA
+No-op (0), up (1), down (2).
 
 ## Version History
 
