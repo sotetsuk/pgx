@@ -26,7 +26,8 @@ from pgx.bridge_bidding import BridgeBidding
 env = BridgeBidding()
 ```
 
-Note that `BrdigeBidding` environment requires pre-computed Double Dummy Solver (DDS) results.
+In Pgx, we follow `[Tian+20]` and use pre-computed Double Dummy Solver (DDS) dataset for each hand.
+So, `BrdigeBidding` environment requires to load pre-computed DDS dataset by `env = BridgeBidding("<path_to_dataset>")`.
 Please run the following command to download the DDS results provided by Pgx.
 
 ```py
@@ -34,10 +35,21 @@ from pgx.bridge_bidding import download_dds_results
 download_dds_results()
 ```
 
-You can specify which pre-coumpted DDS results to use by passing argument to `BridgeBidding` constructor.
-Typically, you have to use different DDS results for training and testing (evaluation).
+You can specify which pre-coumpted DDS dataset to use by passing argument to `BridgeBidding` constructor.
+Typically, you have to use different DDS datasets for training and testing (evaluation).
 
 ## Description
+
+> Contract bridge, or simply bridge, is a trick-taking card game using a standard 52-card deck. In its basic format, it is played by four players in two competing partnerships,[1] with partners sitting opposite each other around a table. Millions of people play bridge worldwide in clubs, tournaments, online and with friends at home, making it one of the world's most popular card games, particularly among seniors.
+> 
+> ...
+> 
+The game consists of a number of deals, each progressing through four phases. The cards are dealt to the players; then the players call (or bid) in an auction seeking to take the contract, specifying how many tricks the partnership receiving the contract (the declaring side) needs to take to receive points for the deal. During the auction, partners use their bids to exchange information about their hands, including overall strength and distribution of the suits; no other means of conveying or implying any information is permitted. The cards are then played, the declaring side trying to fulfill the contract, and the defenders trying to stop the declaring side from achieving its goal. The deal is scored based on the number of tricks taken, the contract, and various other factors which depend to some extent on the variation of the game being played.
+> 
+> [Contract bridge](https://en.wikipedia.org/wiki/Contract_bridge)
+
+We follow the previous works `[Rong+19,Gong+19,Tian+20,Lockhart+20]` and focus only on the bidding phase of contract bridge.
+Therefore, we approximate the playing phase of bridge by using the results of DDS (Double Dummy Solver).
 
 ## Specs
 
@@ -49,8 +61,6 @@ Typically, you have to use different DDS results for training and testing (evalu
 | Observation shape | `(480,)` |
 | Observation type | `bool` |
 | Rewards | Game payoff |
-
-## Observation
 
 ## Observation
 We follow the observation design of `[Lockhart+20]`, OpenSpiel.
@@ -77,8 +87,10 @@ Each action `(0, ..., 37)` corresponds to `(Pass, Double, Redouble, 1♧, 1♢, 
 | `33, ..., 37`  | `7♧, 7♢, 7♡, 7♤, 7NT` |
 
 ## Rewards
+Players get the game payoff at the end of the game.
 
 ## Termination
+Terminates by three consecutive passes after the last bid.
 
 ## Version History
 
