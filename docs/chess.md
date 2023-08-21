@@ -91,9 +91,9 @@ Termination occurs when one of the following conditions are satisfied:
 1. checkmate
 2. stalemate
 3. no sufficient pieces to checkmate
-4. `50` halfmoves are elapsed without any captures or pawn moves
-4. `512` steps are elapsed (from AlphaZero `[Silver+18]`)
-
+4. Threefold repetition
+5. `50` halfmoves are elapsed without any captures or pawn moves
+6. `512` steps are elapsed (from AlphaZero `[Silver+18]`)
 
 ## Version History
 
