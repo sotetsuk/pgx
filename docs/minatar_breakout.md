@@ -56,7 +56,7 @@ the ball hits the bottom of the screen. The balls direction is indicated by a tr
 
 ## Action
 
-TBA
+No-op (0), left (1), right (2).
 
 ## Version History
 
