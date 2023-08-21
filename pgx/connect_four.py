@@ -79,18 +79,18 @@ class ConnectFour(v1.Env):
 
 def _make_win_cache():
     idx = []
-    # 縦
+    # Vertical
     for i in range(3):
         for j in range(7):
             a = i * 7 + j
             idx.append([a, a + 7, a + 14, a + 21])
-    # 横
+    # Horizontal
     for i in range(6):
         for j in range(4):
             a = i * 7 + j
             idx.append([a, a + 1, a + 2, a + 3])
 
-    # 斜め
+    # Diagonal
     for i in range(3):
         for j in range(4):
             a = i * 7 + j

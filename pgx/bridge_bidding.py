@@ -27,9 +27,9 @@ from pgx._src.utils import _download
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
-# カードと数字の対応
+# The card and number correspondence
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
-# それぞれのsuitにおいて以下の順で数字が並ぶ
+# For each suit, the numbers are arranged in the following order
 TO_CARD = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "T", "J", "Q", "K"]
 PASS_ACTION_NUM = 0
 DOUBLE_ACTION_NUM = 1
@@ -102,47 +102,49 @@ class State(v1.State):
     legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-    # turn 現在のターン数
     _turn: jnp.ndarray = jnp.int16(0)
-    # シャッフルされたプレイヤーの並び
     _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
-    # hand 各プレイヤーの手札
-    # index = 0 ~ 12がN, 13 ~ 25がE, 26 ~ 38がS, 39 ~ 51がWの持つ手札
-    # 各要素にはカードを表す0 ~ 51の整数が格納される
+    # Hand of each player
+    #   0  ~ 12: Hand of N
+    #   13 ~ 25: Hand of E
+    #   26 ~ 38: Hand of S
+    #   39 ~ 51: Hand of W
+    # Each element contains an integer from 0 to 51 representing a card
     _hand: jnp.ndarray = jnp.zeros(52, dtype=jnp.int32)
-    # bidding_history 各プレイヤーのbidを時系列順に記憶
-    # 最大の行動系列長 = 319
-    # 各要素には、行動を表す整数が格納される
-    # bidを表す0 ~ 34, passを表す35, doubleを表す36, redoubleを表す37, 行動が行われていない-1
-    # TODO pass = 0, double = 1, redouble = 2, bid = 3 ~ 37に変更
-    # 各ビッドがどのプレイヤーにより行われたかは、要素のindexから分かる（ix % 4）
+    # bidding_history stores the bid of each player in chronological order
+    # Maximum length = 319
+    # Each element contains an integer representing an action:
+    #   bid: 0 ~ 34
+    #   pass: 35
+    #   double: 36
+    #   redouble: 37
+    #   no action: -1
+    # TODO: change to  pass = 0, double = 1, redouble = 2, bid = 3 ~ 37
+    # We can identify which player made each bid from the index of the element (ix % 4)
     _bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
-    # dealer どのプレイヤーがdealerかを表す
+    # dealer: a player who starts bidding
     # 0 = N, 1 = E, 2 = S, 3 = W
-    # dealerは最初にbidを行うプレイヤー
     _dealer: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
-    # vul_NS NSチームがvulかどうかを表す
+    # vul_NS: Is NS team vul?
     # 0 = non vul, 1 = vul
     _vul_NS: jnp.ndarray = jnp.bool_(False)
-    # vul_EW EWチームがvulかどうかを表す
+    # vul_EW: Is EW team vul?
     # 0 = non vul, 1 = vul
     _vul_EW: jnp.ndarray = jnp.bool_(False)
-    # last_bid 最後にされたbid
-    # last_bidder 最後にbidをしたプレイヤー
-    # call_x 最後にされたbidがdoubleされているか
-    # call_xx 最後にされたbidがredoubleされているか
+    # last_bid
+    # last_bidder
+    # call_x: Was the last bid doubled?
+    # call_xx: Was the last bid redoubled?
     _last_bid: jnp.ndarray = jnp.int32(-1)
     _last_bidder: jnp.ndarray = jnp.int8(-1)
     _call_x: jnp.ndarray = jnp.bool_(False)
     _call_xx: jnp.ndarray = jnp.bool_(False)
-    # first_denominaton_NS NSチームにおいて、各denominationをどのプレイヤー
-    # が最初にbidしたかを表す
-    # デノミネーションの順番は C, D, H, S, NT = 0, 1, 2, 3, 4
+    # In NS team, which player first bid each denomination
+    # Denomination order: C, D, H, S, NT = 0, 1, 2, 3, 4
     _first_denomination_NS: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
-    # first_denominaton_EW EWチームにおいて、各denominationをどのプレイヤー
-    # が最初にbidしたかを表す
+    # In EW team, which player first bid each denomination
     _first_denomination_EW: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
-    # passの回数
+    # Number of pass
     _pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
     @property
@@ -290,9 +292,7 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
 def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
     return jax.lax.cond(
         player != -1,
-        lambda: jnp.int8(
-            jnp.argmax(state._shuffled_players == player)
-        ),  # playerと同じ要素のstate.shuffle_playersのindexを返す
+        lambda: jnp.int8(jnp.argmax(state._shuffled_players == player)),
         lambda: jnp.int8(-1),
     )
 
@@ -443,12 +443,10 @@ def _continue_step(
 ) -> State:
     """Return state when the game continues"""
     # fmt: off
-    # 次ターンのプレイヤー、ターン数
     state = state.replace(  # type: ignore
         current_player=state._shuffled_players[(state._dealer + state._turn + 1) % 4],
         _turn=state._turn + 1
     )
-    # 次のターンにX, XXが合法手か判断
     x_mask, xx_mask = _update_legal_action_X_XX(state)
     return state.replace(  # type: ignore
         legal_action_mask=state.legal_action_mask.at[PASS_ACTION_NUM].set(True).at[DOUBLE_ACTION_NUM].set(x_mask).at[REDOUBLE_ACTION_NUM].set(xx_mask),
@@ -728,25 +726,25 @@ def _state_XX(state: State) -> State:
 
 def _state_bid(state: State, action: int) -> State:
     """Change state if bid is taken"""
-    # 最後のbidとそのプレイヤーを保存
+    # Store the last bid and the player who made it
     bid = action - BID_OFFSET_NUM
     # fmt: off
     state = state.replace(_last_bid=bid, _last_bidder=state.current_player)  # type: ignore
     # fmt: on
-    # チーム内で各denominationを最初にbidしたプレイヤー
+    # The player who first bid each denomination within the team
     denomination = _bid_to_denomination(bid)
     team = _position_to_team(_player_position(state._last_bidder, state))
     # fmt: off
-    # team = 1ならEWチーム
+    # team = 1 denotes the EW team
     state = jax.lax.cond(team & (state._first_denomination_EW[denomination] == -1),
                          lambda: state.replace(_first_denomination_EW=state._first_denomination_EW.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
                          lambda: state)  # type: ignore
-    # team = 0ならNSチーム
+    # team = 0 denotes the NS team
     state = jax.lax.cond((team == 0) & (state._first_denomination_NS[denomination] == -1),
                          lambda: state.replace(_first_denomination_NS=state._first_denomination_NS.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
                          lambda: state)  # type: ignore
     # fmt: on
-    # pass, double, redouble, 小さいbidを一旦全て非合法手にする
+    # pass, double, redouble, make the small bid illegal temporarily
     mask = jnp.arange(38) < action + 1
     return state.replace(  # type: ignore
         legal_action_mask=jnp.where(
