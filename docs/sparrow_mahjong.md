@@ -97,4 +97,5 @@ Terminates when either player wins or the wall becomes empty.
 
 ## Version History
 
-- `v1` : Initial release (v1.0.0)
+- `v1` : Change observation shape from `(15, 11)` to `(11, 15)` by [@sotetsuk](https://github.com/sotetsuk) in [#1010](https://github.com/sotetsuk/pgx/pull/1010) (v1.3.0)
+- `v0` : Initial release (v1.0.0)
