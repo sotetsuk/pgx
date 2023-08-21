@@ -19,7 +19,7 @@ It was developed for those unfamiliar with Mahjong,
 and requires similar strategic thinking to standard Japanese Mahjong.
 
 
-### Rules
+### Rules of Sparrow Mahjong
 
 <!---
 すずめ雀のルールの概略は以下のようなものです。
@@ -51,11 +51,12 @@ The original rules of Sparrow Mahjong ([すずめ雀](https://sugorokuya.jp/p/su
     * one red dora for each banboo tile type (9 tiles)
 * Furiten: you cannot *ron* with a tile you have discarded, but you can ron with other tiles
 
-### Modifications in Pgx
+### Specifications in Pgx
 
 Pgx implementation is simplified as follows:
 
 * Only for 3 players
-* If players can win, they automatically win
-* Players always keep red doras in their hands (i.e., red doras are not discarded if they have same but non-dora tiles)
+* Actions are only for discarding tiles (11 discrete actions)
+  * If players can win, they automatically win
+  * Players always keep red doras in their hands (i.e., red doras are not discarded if they have same but non-dora tiles)
 * No [Heavenly hand](https://riichi.wiki/Tenhou_and_chiihou) (Tenhou/天和) to avoid the game ends without any action from players
