@@ -54,7 +54,7 @@ and spawn rate of enemies and treasure.
 | `[:, :, 3]` | Gold |
 
 ## Action
-No-op (0), left (1), right (2), up (3), down (4).
+No-op (0), left (1), right (2), up (3), or down (4).
 
 ## Version History
 

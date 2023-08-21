@@ -60,8 +60,7 @@ hits the player.
 | `[:, :, 5]` | Enemy bullet |
 
 ## Action
-
-TBA
+No op (0), left (1), right (2), or fire (3).
 
 ## Version History
 
