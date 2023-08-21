@@ -152,7 +152,12 @@ The reward at terminal state is described in this table:
 
 ## Termination
 
-TBA
+Termination occurs when 
+
+1. either player checkmates the opponent, or
+2. `512` steps are elapsed (from AlphaZero `[Silver+18]`)
+
+Fourfold repetition is not implemented in `v0`.
 
 ## Version History
 
