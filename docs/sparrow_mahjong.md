@@ -60,3 +60,41 @@ Pgx implementation is simplified as follows:
   * If players can win, they automatically win
   * Players always keep red doras in their hands (i.e., red doras are not discarded if they have same but non-dora tiles)
 * No [Heavenly hand](https://riichi.wiki/Tenhou_and_chiihou) (Tenhou/天和) to avoid the game ends without any action from players
+
+## Specs
+
+| Name | Value |
+|:---|:----:|
+| Version | `v0` |
+| Number of players | `3` |
+| Number of actions | `11` |
+| Observation shape | `(15, 11)` |
+| Observation type | `bool` |
+| Rewards | `[-1, 1]` |
+
+## Observation
+There are 15 planes in the observation and each plane consists of 11 tiles.
+
+| Planes | Description |
+|:---:|:----|
+| 4 | P1 hand | 
+| 1 | Red dora in P1 hand | 
+| 1 | Dora | 
+| 1 | All discarded tiles by P1 |
+| 1 | All discarded tiles by P2 |
+| 1 | All discarded tiles by P3 | 
+| 3 | Discarded tiles in the last 3 steps by P2 | 
+| 3 | Discarded tiles in the last 3 steps by P3 |
+
+## Action
+Tile to discard.
+
+## Rewards
+Game payoff normalized to `[-1, 1]`
+
+## Termination
+Terminates when either player wins or the wall becomes empty.
+
+## Version History
+
+- `v0` : Initial release (v1.0.0)
