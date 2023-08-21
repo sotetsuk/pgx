@@ -33,10 +33,6 @@ env = GardnerChess()
 TBA
 
 
-## Rules
-
-TBA
-
 ## Specs
 
 | Name | Value |
@@ -50,14 +46,27 @@ TBA
 
 ## Observation
 We follow the observation design of AlphaZero `[Silver+18]`.
+P1 denotes the current player, and P2 denotes the opponent.
 
 | Index | Description |
 |:---:|:----|
-| TBA | TBA |
+| `[:, :, 0:6]` | P1 board @ 0-steps before |
+| `[:, :, 6:12]` | P2 board @ 0-steps before |
+| `[:, :, 12:14]` | Repetitions @ 0-steps before |
+| ... | (@ 1-7 steps before) |
+| `[:, :, 112]` | Color | 
+| `[:, :, 113]` | Total move count | 
+| `[:, :, 114]` | No progress count | 
 
 ## Action
+We also follow the action design of AlphaZero `[Silver+18]`.
+There are `1225 = 25 x 49` possible actions.
+Each action represents
 
-TBA
+- 25 source position (`action // 49`), and
+- 49 moves (`action % 49`)
+
+Moves are defined by 32 queen moves, 8 knight moves, and 9 underpromotions.
 
 ## Rewards
 Non-zero rewards are given only at the terminal states.
