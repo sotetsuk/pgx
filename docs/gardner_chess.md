@@ -30,8 +30,11 @@ env = GardnerChess()
 
 ## Description
 
-TBA
+> A board needs to be five squares wide to contain all kinds of chess pieces on the first row. In 1969, Martin Gardner suggested a chess variant on 5×5 board in which all chess moves, including pawn double-move, en-passant capture as well as castling can be made. Later AISE (Associazione Italiana Scacchi Eterodossi, "Italian Heterodox Chess Association") abandoned pawn double-move and castling. The game was largely played in Italy (including by correspondence) and opening theory was developed. 
+> 
+> [Minichess - Wikipedia](https://en.wikipedia.org/wiki/Minichess#5%C3%975_chess)
 
+Pgx implementation does not support pawn double-move, en-passant and castling.
 
 ## Specs
 
@@ -85,8 +88,9 @@ Termination occurs when one of the following conditions are satisfied:
 1. checkmate
 2. stalemate
 3. no sufficient pieces to checkmate
-4. `50` halfmoves are elapsed without any captures or pawn moves
-4. `256` steps are elapsed (`512` in full-size chess experiments in AlphaZero `[Silver+18]`)
+4. threefold repetition
+5. `50` halfmoves are elapsed without any captures or pawn moves
+6. `256` steps are elapsed (`512` in full-size chess experiments in AlphaZero `[Silver+18]`)
 
 
 ## Version History
