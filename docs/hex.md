@@ -51,7 +51,7 @@ The detailed swap rule used in Pgx follows *swap pieces*:
 | Version | `v0` |
 | Number of players | `2` |
 | Number of actions | `122 (= 11 x 11) + 1` |
-| Observation shape | `(11, 11, 3)` |
+| Observation shape | `(11, 11, 4)` |
 | Observation type | `bool` |
 | Rewards | `{-1, 1}` |
 
@@ -62,7 +62,8 @@ The detailed swap rule used in Pgx follows *swap pieces*:
 |:---:|:----|
 | `[:, :, 0]` | represents `(11, 11)` cells filled by `player_ix` |
 | `[:, :, 1]` | represents `(11, 11)` cells filled by the opponent player of `player_id` |
-| `[:, :, 2]` | represents whether `player_id` is black or white|
+| `[:, :, 2]` | represents whether `player_id` is black or white |
+| `[:, :, 3]` | represents whether swap is legal or not |
 
 ## Action
 Each action (`{0, ... 120}`) represents the cell index to be filled.
