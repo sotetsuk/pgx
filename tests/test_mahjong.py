@@ -6,10 +6,15 @@ from pgx._mahjong._mahjong2 import Mahjong
 import jax.numpy as jnp
 from jax import jit
 import jax
+from pgx.experimental.utils import act_randomly
 
 env = Mahjong()
 init = jit(env.init)
 step = jit(env.step)
+
+
+def visualize(state, fname="tests/assets/mahjong/xxx.svg"):
+    state.save_svg(fname, color_theme="dark")
 
 
 def test_hand():
@@ -193,7 +198,7 @@ def test_discard():
     assert state.target == -1
     assert state.deck[state.next_deck_ix] == 8
     # fmt:off
-    assert (state.hand==jnp.int8(
+    assert (state.hand == jnp.int8(
         [[0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
          [1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
          [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
@@ -206,7 +211,7 @@ def test_discard():
     assert state.target == -1
     assert state.deck[state.next_deck_ix] == 31
     # fmt:off
-    assert (state.hand==jnp.int8(
+    assert (state.hand == jnp.int8(
         [[0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
          [1, 0, 0, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
          [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
@@ -219,7 +224,7 @@ def test_discard():
     assert state.target == -1
     assert state.deck[state.next_deck_ix] == 16
     # fmt:off
-    assert (state.hand==jnp.int8(
+    assert (state.hand == jnp.int8(
         [[0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
          [1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
          [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 2, 1, 0],
@@ -246,7 +251,7 @@ def test_chi():
     state1 = env.step(state, Action.CHI_L)
     assert state1.current_player == 2
     # fmt:off
-    assert (state1.hand==jnp.int8([
+    assert (state1.hand == jnp.int8([
         [[0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0], 
          [2, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], 
          [0, 0, 0, 0, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], 
@@ -271,7 +276,7 @@ def test_ankan():
     state = env.step(state, 58)
 
     # fmt:off
-    assert (state.hand==jnp.int8(
+    assert (state.hand == jnp.int8(
         [[1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]
         ,[1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 2, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]
         ,[0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0]
@@ -280,9 +285,28 @@ def test_ankan():
     assert state.melds[0, 0] == 3130
 
 
-def test_random_play():
-    from pgx.experimental.utils import act_randomly
+def test_riichi():
+    rng = jax.random.PRNGKey(38)
+    state = init(key=rng)
+    for _ in range(32):
+        rng, subkey = jax.random.split(rng)
+        a = act_randomly(subkey, state)
+        state = step(state, a)
 
+    visualize(state, "tests/assets/mahjong/before_riichi.svg")
+
+    assert state.legal_action_mask[Action.RIICHI]
+    state = step(state, Action.RIICHI)
+
+    for i in range(12):
+        visualize(state, f"tests/assets/mahjong/after_riichi_{i}.svg")
+
+        rng, subkey = jax.random.split(rng)
+        a = act_randomly(subkey, state)
+        state = step(state, a)
+
+
+def test_random_play():
     for i in range(10):
         rng = jax.random.PRNGKey(i)
         state = init(key=rng)
