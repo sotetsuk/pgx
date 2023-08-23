@@ -6,7 +6,7 @@ from pgx._src.dwg.mahjong_tile import TilePath
 path_list = TilePath.str_list
 tile_w = 30
 tile_h = 45
-hand_x = 150
+hand_x = 120
 hand_y = 640
 
 
@@ -93,25 +93,29 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
                 )
 
         # river
-        offset = 0
+        x = BOARD_WIDTH * GRID_SIZE / 2 - 3 * tile_w
+        y = 450
+
         river = state.river[i]
-        for tile in river:
+        for river_ix, tile in enumerate(river):
             if (tile >> 6) & 0b1:
-                p = dwg.path(d=TilePath.back)
-                p.translate(
-                    BOARD_WIDTH * GRID_SIZE / 2 + (offset % 6 - 3) * tile_w,
-                    450 + (offset // 6) * tile_h,
-                )
+                # riichi
+                p = dwg.path(d=path_list[tile & 0b10111111])
+                p.rotate(angle=-90, center=(x, y))
+                p.translate(x - tile_h + 4, y + 2)
                 players_g[i].add(p)
-                offset += 1
+                x += tile_h
+
             elif tile < 34:
                 p = dwg.path(d=path_list[tile])
-                p.translate(
-                    BOARD_WIDTH * GRID_SIZE / 2 + (offset % 6 - 3) * tile_w,
-                    450 + (offset // 6) * tile_h,
-                )
+                p.translate(x, y)
                 players_g[i].add(p)
-                offset += 1
+                x += tile_w
+
+            if river_ix % 6 == 5:
+                x = BOARD_WIDTH * GRID_SIZE / 2 - 3 * tile_w
+                y += tile_h
+
         players_g[i].rotate(
             angle=-90 * i,
             center=(BOARD_WIDTH * GRID_SIZE / 2, BOARD_WIDTH * GRID_SIZE / 2),
