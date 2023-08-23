@@ -49,7 +49,7 @@ class State(v1.State):
     # int8
     # 0x  0     0    0 0 0 0 0 0
     #    灰色|半透明|   牌(0-33)
-    river: jnp.ndarray = -jnp.ones((4, 4 * 6), dtype=jnp.int8)
+    river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
 
     # 各playerの河の数
     num_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
@@ -155,7 +155,7 @@ def _step(state: State, action) -> State:
 
     discard = (action < 34) | (action == 68)
     self_kan = (34 <= action) & (action < 68)
-    _ix = action - 69
+    action_ix = action - 69
     return jax.lax.cond(
         discard,
         lambda: _discard(state, action),
@@ -163,7 +163,7 @@ def _step(state: State, action) -> State:
             self_kan,
             lambda: _selfkan(state, action),
             lambda: jax.lax.switch(
-                _ix,
+                action_ix,
                 [
                     lambda: _riichi(state),
                     lambda: _tsumo(state),
@@ -181,6 +181,7 @@ def _step(state: State, action) -> State:
 
 
 def _draw(state: State):
+    state = _accept_riichi(state)
     c_p = state.current_player
     new_tile = state.deck[state.next_deck_ix]
     next_deck_ix = state.next_deck_ix - 1
@@ -213,9 +214,11 @@ def _draw(state: State):
 
 def _discard(state: State, tile: jnp.ndarray):
     c_p = state.current_player
-    tile = jax.lax.select(tile == 68, state.last_draw, tile)
-    # tile = jax.lax.select(state.riichi_declared, tile & 0b01000000, tile)
-    river = state.river.at[c_p, state.num_river[c_p]].set(jnp.int8(tile))
+    tile = jnp.where(tile == 68, state.last_draw, tile)
+    _tile = jnp.where(
+        state.riichi_declared, tile | jnp.uint8(0b01000000), tile
+    )
+    river = state.river.at[c_p, state.num_river[c_p]].set(jnp.uint8(_tile))
     num_river = state.num_river.at[c_p].add(1)
     hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
     state = state.replace(  # type:ignore

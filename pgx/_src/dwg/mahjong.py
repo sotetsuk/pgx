@@ -96,7 +96,15 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
         offset = 0
         river = state.river[i]
         for tile in river:
-            if tile >= 0:
+            if (tile >> 6) & 0b1:
+                p = dwg.path(d=TilePath.back)
+                p.translate(
+                    BOARD_WIDTH * GRID_SIZE / 2 + (offset % 6 - 3) * tile_w,
+                    450 + (offset // 6) * tile_h,
+                )
+                players_g[i].add(p)
+                offset += 1
+            elif tile < 34:
                 p = dwg.path(d=path_list[tile])
                 p.translate(
                     BOARD_WIDTH * GRID_SIZE / 2 + (offset % 6 - 3) * tile_w,
