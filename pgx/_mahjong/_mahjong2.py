@@ -147,8 +147,6 @@ def _step(state: State, action) -> State:
 
     # TODO
     # - Actionの処理
-    #   - meld
-    #   - riichi
     #   - ron, tsumo
     # - 勝利条件確認
     # - playerどうするか
@@ -187,6 +185,23 @@ def _draw(state: State):
     next_deck_ix = state.next_deck_ix - 1
     hand = state.hand.at[c_p].set(Hand.add(state.hand[c_p], new_tile))
 
+    legal_action_mask = jax.lax.select(
+        state.riichi[c_p],
+        _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile),
+        _make_legal_action_mask(state, hand, c_p, new_tile),
+    )
+
+    return state.replace(  # type:ignore
+        target=jnp.int8(-1),
+        next_deck_ix=next_deck_ix,
+        hand=hand,
+        last_draw=new_tile,
+        last_player=c_p,
+        legal_action_mask=legal_action_mask,
+    )
+
+
+def _make_legal_action_mask(state, hand, c_p, new_tile):
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
@@ -201,15 +216,19 @@ def _draw(state: State):
     legal_action_mask = legal_action_mask.at[Action.RIICHI].set(
         Hand.can_riichi(hand[c_p])
     )
-
-    return state.replace(  # type:ignore
-        target=jnp.int8(-1),
-        next_deck_ix=next_deck_ix,
-        hand=hand,
-        last_draw=new_tile,
-        last_player=c_p,
-        legal_action_mask=legal_action_mask,
+    legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
+        Hand.can_tsumo(hand[c_p])
     )
+    return legal_action_mask
+
+
+def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
+    legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
+        Hand.can_tsumo(hand[c_p])
+    )
+    return legal_action_mask
 
 
 def _discard(state: State, tile: jnp.ndarray):
