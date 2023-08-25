@@ -46,7 +46,10 @@ class State(v1.State):
     hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int8)
 
     # 河
-    river: jnp.ndarray = -jnp.ones((4, 4 * 6), dtype=jnp.int8)
+    # int8
+    # 0x  0     0    0 0 0 0 0 0
+    #    灰色|半透明|   牌(0-33)
+    river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
 
     # 各playerの河の数
     num_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
@@ -144,15 +147,13 @@ def _step(state: State, action) -> State:
 
     # TODO
     # - Actionの処理
-    #   - meld
-    #   - riichi
     #   - ron, tsumo
     # - 勝利条件確認
     # - playerどうするか
 
     discard = (action < 34) | (action == 68)
     self_kan = (34 <= action) & (action < 68)
-    _ix = action - 69
+    action_ix = action - 69
     return jax.lax.cond(
         discard,
         lambda: _discard(state, action),
@@ -160,7 +161,7 @@ def _step(state: State, action) -> State:
             self_kan,
             lambda: _selfkan(state, action),
             lambda: jax.lax.switch(
-                _ix,
+                action_ix,
                 [
                     lambda: _riichi(state),
                     lambda: _tsumo(state),
@@ -178,21 +179,16 @@ def _step(state: State, action) -> State:
 
 
 def _draw(state: State):
+    state = _accept_riichi(state)
     c_p = state.current_player
     new_tile = state.deck[state.next_deck_ix]
     next_deck_ix = state.next_deck_ix - 1
     hand = state.hand.at[c_p].set(Hand.add(state.hand[c_p], new_tile))
 
-    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
-    legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
-    legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
-    legal_action_mask = legal_action_mask.at[new_tile + 34].set(
-        Hand.can_ankan(hand[c_p], new_tile)
-        | (
-            Hand.can_kakan(hand[c_p], new_tile) & state.pon[(c_p, new_tile)]
-            > 0
-        )
+    legal_action_mask = jax.lax.select(
+        state.riichi[c_p],
+        _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile),
+        _make_legal_action_mask(state, hand, c_p, new_tile),
     )
 
     return state.replace(  # type:ignore
@@ -205,10 +201,43 @@ def _draw(state: State):
     )
 
 
+def _make_legal_action_mask(state, hand, c_p, new_tile):
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
+    legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
+    legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
+    legal_action_mask = legal_action_mask.at[new_tile + 34].set(
+        Hand.can_ankan(hand[c_p], new_tile)
+        | (
+            Hand.can_kakan(hand[c_p], new_tile) & state.pon[(c_p, new_tile)]
+            > 0
+        )
+    )
+    legal_action_mask = legal_action_mask.at[Action.RIICHI].set(
+        Hand.can_riichi(hand[c_p])
+    )
+    legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
+        Hand.can_tsumo(hand[c_p])
+    )
+    return legal_action_mask
+
+
+def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
+    legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
+    legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
+        Hand.can_tsumo(hand[c_p])
+    )
+    return legal_action_mask
+
+
 def _discard(state: State, tile: jnp.ndarray):
     c_p = state.current_player
-    tile = jax.lax.select(tile == 68, state.last_draw, tile)
-    river = state.river.at[c_p, state.num_river[c_p]].set(jnp.int8(tile))
+    tile = jnp.where(tile == 68, state.last_draw, tile)
+    _tile = jnp.where(
+        state.riichi_declared, tile | jnp.uint8(0b01000000), tile
+    )
+    river = state.river.at[c_p, state.num_river[c_p]].set(jnp.uint8(_tile))
     num_river = state.num_river.at[c_p].add(1)
     hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
     state = state.replace(  # type:ignore
@@ -373,8 +402,8 @@ def _kakan(state: State, target, pon_src, pon_idx):
 
 
 def _accept_riichi(state: State) -> State:
-    riichi = state.riichi.at[state.current_player].set(
-        state.riichi[state.current_player] | state.riichi_declared
+    riichi = state.riichi.at[state.last_player].set(
+        state.riichi[state.last_player] | state.riichi_declared
     )
     return state.replace(riichi=riichi, riichi_declared=FALSE)  # type:ignore
 
@@ -461,8 +490,28 @@ def _pass(state: State):
 
 
 def _riichi(state: State):
-    # TODO
-    return _pass(state)
+    c_p = state.current_player
+    # リーチ宣言直後の打牌
+    legal_action_mask = (
+        jax.lax.fori_loop(
+            0,
+            34,
+            lambda i, arr: arr.at[i].set(
+                jax.lax.cond(
+                    state.hand[c_p][i] > (i == state.last_draw),
+                    lambda: Hand.is_tenpai(Hand.sub(state.hand[c_p], i)),
+                    lambda: FALSE,
+                )
+            ),
+            jnp.zeros(NUM_ACTION, dtype=jnp.bool_),
+        )
+        .at[Action.TSUMOGIRI]
+        .set(Hand.is_tenpai(Hand.sub(state.hand[c_p], state.last_draw)))
+    )
+
+    return state.replace(  # type:ignore
+        riichi_declared=TRUE, legal_action_mask=legal_action_mask
+    )
 
 
 def _tsumo(state: State):
