@@ -98,16 +98,21 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
 
         river = state.river[i]
         for river_ix, tile in enumerate(river):
+            fill = "black"
+            if (tile >> 7) & 0b1:
+                fill = "gray"
+                tile &= 0b01111111
+
             if (tile >> 6) & 0b1:
                 # riichi
-                p = dwg.path(d=path_list[tile & 0b10111111])
+                p = dwg.path(d=path_list[tile & 0b10111111], fill=fill)
                 p.rotate(angle=-90, center=(x, y))
                 p.translate(x - tile_h + 4, y + 2)
                 players_g[i].add(p)
                 x += tile_h
 
             elif tile < 34:
-                p = dwg.path(d=path_list[tile])
+                p = dwg.path(d=path_list[tile], fill=fill)
                 p.translate(x, y)
                 players_g[i].add(p)
                 x += tile_w
