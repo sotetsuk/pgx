@@ -43,6 +43,7 @@ class PPOConfig(BaseModel):
     ent_coef: float = 0.01
     vf_coef: float = 0.5
     max_grad_norm: float = 0.5
+    wandb_project: str = "pgx-minatar-ppo"
     save_model: bool = False
 
 
@@ -351,7 +352,7 @@ def train(rng):
 
 
 if __name__ == "__main__":
-    wandb.init(project="pgx-minatar-dev", config=args.dict())
+    wandb.init(project=args.wandb_project, config=args.dict())
     rng = jax.random.PRNGKey(args.seed)
     out = train(rng)
     if args.save_model:
