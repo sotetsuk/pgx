@@ -8,7 +8,7 @@ For more details, please see the Appendix of [our paper](https://arxiv.org/abs/2
 
 ||||||
 |:---:|:---:|:---:|:---:|:---:|
-|![](assets/asterix.png)|![](assets/breakout.png)|![](assets/freeway.png)|![](assets/seauest.png)|![](assets/sapve_invaders.png)|
+|![](assets/asterix.png)|![](assets/breakout.png)|![](assets/freeway.png)|![](assets/seaquest.png)|![](assets/sapce_invaders.png)|
 
 See [wandb report](https://api.wandb.ai/links/sotetsuk/kvd3fzge) for more details.
 
