@@ -8,7 +8,7 @@ For more details, please see the Appendix of [our paper](https://arxiv.org/abs/2
 
 |Asterix|Breakout|Freeway|Seaquest|Space Invaders|
 |:---:|:---:|:---:|:---:|:---:|
-|<img src="assets/asterix.png" width="100px">|<img src="assets/breakout.png" width="100px">|<img src="assets/freeway.png" width="100px">|<img src="assets/seaquest.png" width="100px">|<img src="assets/space_invaders.png" width="100px">|
+|<img src="assets/asterix.png" width="200px">|<img src="assets/breakout.png" width="200px">|<img src="assets/freeway.png" width="200px">|<img src="assets/seaquest.png" width="200px">|<img src="assets/space_invaders.png" width="200px">|
 
 See [wandb report](https://api.wandb.ai/links/sotetsuk/kvd3fzge) for more details.
 
