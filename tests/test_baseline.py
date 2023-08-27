@@ -15,7 +15,7 @@ def test_az_basline():
         ("othello", "othello_v0"),
         ("minatar-asterix", "minatar-asterix_v0"),
         ("minatar-breakout", "minatar-breakout_v0"),
-        ("minatar-freeway", "minatar-breakout_v0"),
+        ("minatar-freeway", "minatar-freeway_v0"),
         ("minatar-seaquest", "minatar-seaquest_v0"),
         ("minatar-space_invaders", "minatar-space_invaders_v0")
     )
