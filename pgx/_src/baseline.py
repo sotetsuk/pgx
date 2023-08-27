@@ -19,15 +19,29 @@ BaselineModelId = Literal[
 def make_baseline_model(
     model_id: BaselineModelId, download_dir: str = "baselines"
 ):
+    if model_id in (
+        "animal_shogi_v0",
+        "gardner_chess_v0",
+        "go_9x9_v0",
+        "hex_v0",
+        "othello_v0",
+    ):
+        return _make_az_baseline_model(model_id, download_dir)
+    else:
+        assert False
+
+
+def _make_az_baseline_model(
+    model_id: BaselineModelId, download_dir: str = "baselines"
+):
     import haiku as hk
 
-    create_model_fn = _make_create_model_fn(model_id)
     model_args, model_params, model_state = _load_baseline_model(
         model_id, download_dir
     )
 
     def forward_fn(x, is_eval=False):
-        net = create_model_fn(**model_args)
+        net = _create_az_model_v0(**model_args)
         policy_out, value_out = net(
             x, is_training=not is_eval, test_local_stats=False
         )
@@ -42,19 +56,6 @@ def make_baseline_model(
         return logits, value
 
     return apply
-
-
-def _make_create_model_fn(baseline_model: BaselineModelId):
-    if baseline_model in (
-        "animal_shogi_v0",
-        "gardner_chess_v0",
-        "go_9x9_v0",
-        "hex_v0",
-        "othello_v0",
-    ):
-        return _create_az_model_v0
-    else:
-        assert False
 
 
 def _load_baseline_model(
@@ -81,6 +82,7 @@ def _get_download_url(baseline_model: BaselineModelId) -> str:
         "go_9x9_v0": "https://drive.google.com/uc?id=1hXMicBALW3WU43NquDoX4zthY4-KjiVu",
         "hex_v0": "https://drive.google.com/uc?id=11qpLAT4_0NgPrKRcJCPE7RdN92VP8Ws3",
         "othello_v0": "https://drive.google.com/uc?id=1mY40mWoPuYCOrlfMQk_6DPGEFaQcvNAM",
+        "minatar-asterix_v0": "https://drive.google.com/uc?id=1ohUxhZTYQCwyH-WJRH_Ma9BV3M1WoY0N"
     }
     assert baseline_model in urls
     return urls[baseline_model]
