@@ -54,4 +54,5 @@ def auto_reset(step_fn, init_fn):
             lambda: state,
         )
         return state
+
     return wrapped_step_fn
