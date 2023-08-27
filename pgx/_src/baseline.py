@@ -82,7 +82,7 @@ def _make_minatar_baseline_model(
             self.num_actions = num_actions
             self.activation = activation
             assert activation in ["relu", "tanh"]
-    
+
         def __call__(self, x):
             x = x.astype(jnp.float32)
             if self.activation == "relu":
@@ -91,8 +91,9 @@ def _make_minatar_baseline_model(
                 activation = jax.nn.tanh
             x = hk.Conv2D(32, kernel_shape=2)(x)
             x = jax.nn.relu(x)
-            x = hk.avg_pool(x, window_shape=(2, 2),
-                            strides=(2, 2), padding="VALID")
+            x = hk.avg_pool(
+                x, window_shape=(2, 2), strides=(2, 2), padding="VALID"
+            )
             x = x.reshape((x.shape[0], -1))  # flatten
             x = hk.Linear(64)(x)
             x = jax.nn.relu(x)
@@ -101,27 +102,26 @@ def _make_minatar_baseline_model(
             actor_mean = hk.Linear(64)(actor_mean)
             actor_mean = activation(actor_mean)
             actor_mean = hk.Linear(self.num_actions)(actor_mean)
-    
+
             critic = hk.Linear(64)(x)
             critic = activation(critic)
             critic = hk.Linear(64)(critic)
             critic = activation(critic)
             critic = hk.Linear(1)(critic)
-    
+
             return actor_mean, jnp.squeeze(critic, axis=-1)
-    
-    
+
     def forward_fn(x):
         net = ActorCritic(**model_args)
         logits, value = net(x)
         return logits, value
-    
+
     forward = hk.without_apply_rng(hk.transform(forward_fn))
 
     def apply(obs):
         logits, value = forward.apply(model_params, obs)
         return logits, value
-    
+
     return apply
 
 
