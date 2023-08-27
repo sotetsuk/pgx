@@ -27,7 +27,13 @@ def make_baseline_model(
         "othello_v0",
     ):
         return _make_az_baseline_model(model_id, download_dir)
-    elif model_id in ("minatar-asterix_v0",):
+    elif model_id in (
+        "minatar-asterix_v0",
+        "minatar-breakout_v0",
+        "minatar-freeway_v0",
+        "minatar-seaquest_v0",
+        "minatar-space_invaders_v0",
+    ):
         return _make_minatar_baseline_model(model_id, download_dir)
     else:
         assert False
