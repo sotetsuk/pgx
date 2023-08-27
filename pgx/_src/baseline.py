@@ -143,7 +143,11 @@ def _get_download_url(baseline_model: BaselineModelId) -> str:
         "go_9x9_v0": "https://drive.google.com/uc?id=1hXMicBALW3WU43NquDoX4zthY4-KjiVu",
         "hex_v0": "https://drive.google.com/uc?id=11qpLAT4_0NgPrKRcJCPE7RdN92VP8Ws3",
         "othello_v0": "https://drive.google.com/uc?id=1mY40mWoPuYCOrlfMQk_6DPGEFaQcvNAM",
-        "minatar-asterix_v0": "https://drive.google.com/uc?id=1ohUxhZTYQCwyH-WJRH_Ma9BV3M1WoY0N"
+        "minatar-asterix_v0": "https://drive.google.com/uc?id=1ohUxhZTYQCwyH-WJRH_Ma9BV3M1WoY0N",
+        "minatar-breakout_v0": "https://drive.google.com/uc?id=1ED1-p3Gmi4PZEH3hF-9NZzPyNkiPCnvT",
+        "minatar-freeway_v0": "https://drive.google.com/uc?id=1rbnJGxlzAWkt5DtF7tiYwoNkSqk0l2kD",
+        "minatar-seaquest_v0": "https://drive.google.com/uc?id=1740nIi00Z8fQWRbA-52GiSGkW7rcqM8o",
+        "minatar-space_invaders_v0": "https://drive.google.com/uc?id=1I7kJ8GEhY9K3rAFnbnYtlI5KQusFReq9",
     }
     assert baseline_model in urls
     return urls[baseline_model]
