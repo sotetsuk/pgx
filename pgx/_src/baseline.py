@@ -76,7 +76,7 @@ def _make_minatar_baseline_model(
     )
     del model_state
 
-    class ActorCritic(hk.Module):
+    class MinAtarNet(hk.Module):
         def __init__(self, num_actions, activation="tanh"):
             super().__init__()
             self.num_actions = num_actions
@@ -112,7 +112,7 @@ def _make_minatar_baseline_model(
             return actor_mean, jnp.squeeze(critic, axis=-1)
 
     def forward_fn(x):
-        net = ActorCritic(**model_args)
+        net = MinAtarNet(**model_args)
         logits, value = net(x)
         return logits, value
 
