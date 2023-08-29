@@ -262,8 +262,8 @@ if __name__ == "__main__":
     # Initialize logging dict
     iteration: int = 0
     hours: float = 0.0
-    training_steps: int = 0
-    log = {"iteration": iteration, "hours": hours, "training_steps": training_steps}
+    frames: int = 0
+    log = {"iteration": iteration, "hours": hours, "frames": frames}
 
     rng_key = jax.random.PRNGKey(config.seed)
     while True:
@@ -290,7 +290,7 @@ if __name__ == "__main__":
                     "model": jax.device_get(model_0),
                     "opt_state": jax.device_get(opt_state_0),
                     "iteration": iteration,
-                    "training_steps": training_steps,
+                    "frames": frames,
                     "hours": hours,
                     "pgx.__version__": pgx.__version__,
                     "env_id": env.id,
@@ -315,6 +315,7 @@ if __name__ == "__main__":
 
         # Shuffle samples and make minibatches
         samples = jax.device_get(samples)  # (#devices, batch, max_num_steps, ...)
+        frames += samples.obs.shape[0] * samples.obs.shape[1] * samples.obs.shape[2]
         samples = jax.tree_util.tree_map(lambda x: x.reshape((-1, *x.shape[3:])), samples)
         rng_key, subkey = jax.random.split(rng_key)
         ixs = jax.random.permutation(subkey, jnp.arange(samples.obs.shape[0]))
@@ -333,7 +334,6 @@ if __name__ == "__main__":
             value_losses.append(value_loss.mean().item())
         policy_loss = sum(policy_losses) / len(policy_losses)
         value_loss = sum(value_losses) / len(value_losses)
-        training_steps += num_updates
 
         et = time.time()
         hours += (et - st) / 3600
@@ -342,6 +342,6 @@ if __name__ == "__main__":
                 "train/policy_loss": policy_loss,
                 "train/value_loss": value_loss,
                 "hours": hours,
-                "training_steps": training_steps,
+                "frames": frames,
             }
         )
