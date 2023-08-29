@@ -1,7 +1,6 @@
 # AlphaZero example
 
 A simple (Gumbel) AlphaZero [Silver+18,Danihelka+22] example using [Mctx](https://github.com/deepmind/mctx) library.
-For more details, please see [our paper](https://arxiv.org/abs/2303.17503).
 
 ## Usage
 
