@@ -46,6 +46,9 @@ class PPOConfig(BaseModel):
     wandb_project: str = "pgx-minatar-ppo"
     save_model: bool = False
 
+    class Config:
+        extra = "forbid"
+
 
 args = PPOConfig(**OmegaConf.to_object(OmegaConf.from_cli()))
 print(args, file=sys.stderr)
