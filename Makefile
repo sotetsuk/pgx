@@ -8,7 +8,8 @@ install-dev:
 		ipython \
 		jax[cpu] \
 		dm-haiku \
-		pytest-cov
+		pytest-cov \
+		pgx-minatar
 
 install-fmt:
 	python3 -m pip install \
