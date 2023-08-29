@@ -40,6 +40,9 @@ class Config(BaseModel):
     # eval params
     eval_interval: int = 5
 
+    class Config:
+        extra = "forbid"
+
 
 conf_dict = OmegaConf.from_cli()
 config: Config = Config(**conf_dict)
