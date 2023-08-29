@@ -1,4 +1,4 @@
-# Ref.
+# We referred to Haiku's ResNet implementation:
 # https://github.com/deepmind/dm-haiku/blob/main/haiku/_src/nets/resnet.py
 
 import haiku as hk
