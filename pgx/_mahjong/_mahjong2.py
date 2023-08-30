@@ -52,7 +52,7 @@ class State(v1.State):
     river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
 
     # 各playerの河の数
-    num_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    n_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
 
     # ドラ
     doras: jnp.ndarray = jnp.zeros(5, dtype=jnp.int8)
@@ -89,8 +89,6 @@ class State(v1.State):
 
     # pon[i][j]: player i がjをポンを所有している場合, src << 2 | index. or 0
     pon: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int32)
-
-    _test: jnp.ndarray = jnp.int8(0)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -237,14 +235,14 @@ def _discard(state: State, tile: jnp.ndarray):
     _tile = jnp.where(
         state.riichi_declared, tile | jnp.uint8(0b01000000), tile
     )
-    river = state.river.at[c_p, state.num_river[c_p]].set(jnp.uint8(_tile))
-    num_river = state.num_river.at[c_p].add(1)
+    river = state.river.at[c_p, state.n_river[c_p]].set(jnp.uint8(_tile))
+    n_river = state.n_river.at[c_p].add(1)
     hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
     state = state.replace(  # type:ignore
         last_draw=-1,
         hand=hand,
         river=river,
-        num_river=num_river,
+        n_river=n_river,
     )
 
     # ポンとかチーとかがあるか
@@ -410,8 +408,9 @@ def _accept_riichi(state: State) -> State:
 
 def _minkan(state: State):
     c_p = state.current_player
+    l_p = state.last_player
     state = _accept_riichi(state)
-    src = (state.last_player - c_p) % 4
+    src = (l_p - c_p) % 4
     meld = Meld.init(Action.MINKAN, state.target, src)
     state = _append_meld(state, meld, c_p)
     hand = state.hand.at[c_p].set(Hand.minkan(state.hand[c_p], state.target))
@@ -426,6 +425,12 @@ def _minkan(state: State):
     legal_action_mask = legal_action_mask.at[0:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[rinshan_tile].set(FALSE)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
+
+    # 半透明処理
+    river = state.river.at[l_p, state.n_river[l_p] - 1].set(
+        state.river[l_p, state.n_river[l_p] - 1] | jnp.uint8(0b10000000)
+    )
+
     return state.replace(  # type:ignore
         target=jnp.int8(-1),
         is_menzen=is_menzen,
@@ -433,19 +438,26 @@ def _minkan(state: State):
         last_draw=rinshan_tile,
         hand=hand,
         legal_action_mask=legal_action_mask,
+        river=river,
     )
 
 
 def _pon(state: State):
     c_p = state.current_player
+    l_p = state.last_player
     state = _accept_riichi(state)
-    src = (state.last_player - c_p) % 4
+    src = (l_p - c_p) % 4
     meld = Meld.init(Action.PON, state.target, src)
     state = _append_meld(state, meld, c_p)
     hand = state.hand.at[c_p].set(Hand.pon(state.hand[c_p], state.target))
     is_menzen = state.is_menzen.at[c_p].set(FALSE)
     pon = state.pon.at[(c_p, state.target)].set(
         src << 2 | state.n_meld[c_p] - 1
+    )
+
+    # 半透明処理
+    river = state.river.at[l_p, state.n_river[l_p] - 1].set(
+        state.river[l_p, state.n_river[l_p] - 1] | jnp.uint8(0b10000000)
     )
 
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
@@ -457,11 +469,13 @@ def _pon(state: State):
         pon=pon,
         hand=hand,
         legal_action_mask=legal_action_mask,
+        river=river,
     )
 
 
 def _chi(state: State, action):
     c_p = state.current_player
+    tar_p = (c_p + 3) % 4
     tar = state.target
     state = _accept_riichi(state)
     meld = Meld.init(action, tar, src=jnp.int32(3))
@@ -471,11 +485,17 @@ def _chi(state: State, action):
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
 
+    # 半透明処理
+    river = state.river.at[tar_p, state.n_river[tar_p] - 1].set(
+        state.river[tar_p, state.n_river[tar_p] - 1] | jnp.uint8(0b10000000)
+    )
+
     return state.replace(  # type:ignore
         target=jnp.int8(-1),
         is_menzen=is_menzen,
         hand=hand,
         legal_action_mask=legal_action_mask,
+        river=river,
     )
 
 

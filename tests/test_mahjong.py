@@ -306,6 +306,17 @@ def test_riichi():
         state = step(state, a)
 
 
+def test_transparent():
+    rng = jax.random.PRNGKey(31)
+    state = init(key=rng)
+    for _ in range(65):
+        rng, subkey = jax.random.split(rng)
+        a = act_randomly(subkey, state)
+        state = step(state, a)
+
+    visualize(state, "tests/assets/mahjong/transparent.svg")
+
+
 def test_random_play():
     for i in range(10):
         rng = jax.random.PRNGKey(i)
