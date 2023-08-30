@@ -475,6 +475,7 @@ def _pon(state: State):
 
 def _chi(state: State, action):
     c_p = state.current_player
+    tar_p = (c_p + 3) % 4
     tar = state.target
     state = _accept_riichi(state)
     meld = Meld.init(action, tar, src=jnp.int32(3))
@@ -485,8 +486,8 @@ def _chi(state: State, action):
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
 
     # 半透明処理
-    river = state.river.at[tar, state.n_river[tar] - 1].set(
-        state.river[tar, state.n_river[tar] - 1] | jnp.uint8(0b10000000)
+    river = state.river.at[tar_p, state.n_river[tar_p] - 1].set(
+        state.river[tar_p, state.n_river[tar_p] - 1] | jnp.uint8(0b10000000)
     )
 
     return state.replace(  # type:ignore
