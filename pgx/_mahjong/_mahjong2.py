@@ -30,13 +30,19 @@ NUM_ACTION = 78
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
     observation: jnp.ndarray = jnp.int8(0)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0, 0.0, 0.0])
+    rewards: jnp.ndarray = jnp.full(4, 0, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
+    round: jnp.ndarray = jnp.int8(0)
+
+    honba: jnp.ndarray = jnp.int8(0)
+    oya: jnp.ndarray = jnp.int8(0)
+    score: jnp.ndarray = jnp.full(4, 250, dtype=jnp.float32)
+
     deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int8)
 
     # 次に引く牌のindex
@@ -47,8 +53,8 @@ class State(v1.State):
 
     # 河
     # int8
-    # 0x  0     0    0 0 0 0 0 0
-    #    灰色|半透明|   牌(0-33)
+    # 0b  0     0    0 0 0 0 0 0
+    #    灰色|リーチ|   牌(0-33)
     river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
 
     # 各playerの河の数
@@ -58,7 +64,7 @@ class State(v1.State):
     doras: jnp.ndarray = jnp.zeros(5, dtype=jnp.int8)
 
     # カンの回数=追加ドラ枚数
-    num_kan: jnp.ndarray = jnp.int8(0)
+    n_kan: jnp.ndarray = jnp.int8(0)
 
     # 直前に捨てられてron,pon,chiの対象になっている牌. 存在しなければ-1
     target: jnp.ndarray = jnp.int8(-1)
@@ -133,6 +139,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     init_hand = Hand.make_init_hand(deck)
     state = State(  # type:ignore
         current_player=current_player,
+        oya=current_player,
         last_player=last_player,
         deck=deck,
         hand=init_hand,

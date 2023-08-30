@@ -8,6 +8,7 @@ tile_w = 30
 tile_h = 45
 hand_x = 120
 hand_y = 640
+wind = ["東", "南", "西", "北"]
 
 
 def _make_mahjong_dwg(dwg, state: MahjongState, config):
@@ -15,9 +16,10 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
     BOARD_WIDTH = config["BOARD_WIDTH"]
     BOARD_HEIGHT = config["BOARD_HEIGHT"]
     color_set = config["COLOR_SET"]
+    board_g = dwg.g()
 
     # background
-    dwg.add(
+    board_g.add(
         dwg.rect(
             (0, 0),
             (
@@ -27,10 +29,44 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
             fill=color_set.background_color,
         )
     )
+    # central info
+    width = 180
+    board_g.add(
+        dwg.rect(
+            (
+                (BOARD_WIDTH * GRID_SIZE - width) / 2,
+                (BOARD_HEIGHT * GRID_SIZE - width) / 2,
+            ),
+            (width, width),
+            fill=color_set.background_color,
+            stroke=color_set.grid_color,
+            stroke_width="2px",
+            rx="3px",
+            ry="3px",
+        )
+    )
+    kanji = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
+    ro = state.round
+    round = f"{wind[ro//4]}{kanji[ro%4+1]}局"
+    if state.honba > 0:
+        round += f"{kanji[state.honba]}本場"
+
+    fontsize = 20
+    board_g.add(
+        dwg.text(
+            text=round,
+            insert=(
+                (BOARD_WIDTH * GRID_SIZE) / 2 - len(round) * fontsize / 2,
+                (BOARD_HEIGHT * GRID_SIZE) / 2 - 10,
+            ),
+            fill=color_set.text_color,
+            font_size=f"{fontsize}px",
+            font_family="serif",
+        )
+    )
 
     # board
     # grid
-    board_g = dwg.g()
     players_g = [
         dwg.g(
             style="stroke:#000000;stroke-width:0.01mm;fill:#000000",
@@ -50,6 +86,64 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
         ),
     ]
     for i in range(4):
+        # wind
+        x = 265
+        y = 435
+        fontsize = 22
+        players_g[i].add(
+            dwg.text(
+                text=wind[(i - state.oya) % 4],
+                insert=(x, y),
+                fill=color_set.text_color,
+                font_size=f"{fontsize}px",
+                font_family="serif",
+            )
+        )
+
+        # score
+        fontsize = 20
+        score = str(int(state.score[i]) * 100)
+        players_g[i].add(
+            dwg.text(
+                text=score,
+                insert=(
+                    (BOARD_WIDTH * GRID_SIZE) / 2 - len(score) * fontsize / 4,
+                    BOARD_HEIGHT * GRID_SIZE / 2 + 55,
+                ),
+                fill=color_set.text_color,
+                font_size=f"{fontsize}px",
+                font_family="serif",
+            )
+        )
+
+        # riichi
+        width = 100
+        height = 15
+        if state.riichi[i]:
+            players_g[i].add(
+                dwg.rect(
+                    (
+                        (BOARD_WIDTH * GRID_SIZE - width) / 2,
+                        BOARD_HEIGHT * GRID_SIZE / 2 + 65,
+                    ),
+                    (width, height),
+                    fill=color_set.background_color,
+                    stroke=color_set.grid_color,
+                    stroke_width="1px",
+                    rx="3px",
+                    ry="3px",
+                )
+            )
+            players_g[i].add(
+                dwg.circle(
+                    center=(
+                        BOARD_HEIGHT * GRID_SIZE / 2,
+                        BOARD_HEIGHT * GRID_SIZE / 2 + 65 + height / 2,
+                    ),
+                    r="5px",
+                    fill="red",
+                )
+            )
 
         # hand
         offset = 0
@@ -126,7 +220,6 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
             center=(BOARD_WIDTH * GRID_SIZE / 2, BOARD_WIDTH * GRID_SIZE / 2),
         )
         board_g.add(players_g[i])
-    # pieces
 
     return board_g
 
