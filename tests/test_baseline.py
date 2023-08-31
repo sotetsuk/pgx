@@ -12,7 +12,12 @@ def test_az_basline():
         ("gardner_chess", "gardner_chess_v0"),
         ("go_9x9", "go_9x9_v0"),
         ("hex", "hex_v0"),
-        ("othello", "othello_v0")
+        ("othello", "othello_v0"),
+        ("minatar-asterix", "minatar-asterix_v0"),
+        ("minatar-breakout", "minatar-breakout_v0"),
+        ("minatar-freeway", "minatar-freeway_v0"),
+        ("minatar-seaquest", "minatar-seaquest_v0"),
+        ("minatar-space_invaders", "minatar-space_invaders_v0")
     )
 
     for env_id, model_id in test_cases:
