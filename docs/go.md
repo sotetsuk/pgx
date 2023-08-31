@@ -145,3 +145,12 @@ Termination happens when
 ## Reference
 
 1. `[Silver+17]` "Mastering the game of go without human knowledge" Nature
+
+## Baseline models
+
+Pgx offers a baseline model for Go (9x9). Users can use it for an anchor opponent in evaluation.
+See [our paper](https://arxiv.org/abs/2303.17503) for more details. See [this colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb) for how to use it.
+
+| Model ID | Description |
+|:---:|:----|
+| `go_9x9_v0`| See [our paper](https://arxiv.org/abs/2303.17503) for the training details. |
