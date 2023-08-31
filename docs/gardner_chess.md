@@ -97,6 +97,15 @@ Termination occurs when one of the following conditions are satisfied:
 
 - `v0` : Initial release (v1.0.0)
 
+## Baseline models
+
+Pgx offers a baseline model for Gardner Chess. Users can use it for an anchor opponent in evaluation.
+See [our paper](https://arxiv.org/abs/2303.17503) for more details. See [this colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb) for how to use it.
+
+| Model ID | Description |
+|:---:|:----|
+| `gardner_chess_v0`| See [our paper](https://arxiv.org/abs/2303.17503) for the training details. |
+
 ## Reference
 
 - `[Silver+18]` "A general reinforcement learning algorithm that masters chess, shogi, and Go through self-play" Science 
