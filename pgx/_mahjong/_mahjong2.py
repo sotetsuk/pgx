@@ -23,7 +23,7 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-NUM_ACTION = 78
+NUM_ACTION = 79
 
 
 @dataclass
@@ -38,8 +38,10 @@ class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
     round: jnp.ndarray = jnp.int8(0)
-
     honba: jnp.ndarray = jnp.int8(0)
+
+    # 東1局の親
+    # 各局の親は (oya+round)%4
     oya: jnp.ndarray = jnp.int8(0)
 
     # 点数（百の位から）
@@ -48,7 +50,7 @@ class State(v1.State):
     deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int8)
 
     # 次に引く牌のindex
-    next_deck_ix: jnp.ndarray = jnp.int8(135)
+    next_deck_ix: jnp.ndarray = jnp.int8(135 - 13 * 4)
 
     # 各playerの手牌. 長さ34で、数字は持っている牌の数
     hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int8)
@@ -135,11 +137,11 @@ class Mahjong(v1.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    current_player = jnp.int8(jax.random.bernoulli(rng))
     last_player = jnp.int8(-1)
     deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
     init_hand = Hand.make_init_hand(deck)
-    doras = jnp.array([deck[124], -1, -1, -1, -1], dtype=jnp.int8)
+    doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
     state = State(  # type:ignore
         current_player=current_player,
         oya=current_player,
@@ -147,7 +149,31 @@ def _init(rng: jax.random.KeyArray) -> State:
         deck=deck,
         doras=doras,
         hand=init_hand,
-        next_deck_ix=jnp.int8(135 - 13 * 4),
+        _rng_key=subkey,
+    )
+    return _draw(state)
+
+
+def _next_round(state: State):
+    pass
+
+
+def _next_honba(state: State):
+    rng, subkey = jax.random.split(state._rng_key)
+    current_player = (state.oya + state.round) % 4
+    last_player = jnp.int8(-1)
+    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
+    init_hand = Hand.make_init_hand(deck)
+    doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
+    state = State(
+        honba=state.honba + jnp.int8(1),
+        oya=state.oya,
+        current_player=current_player,
+        last_player=last_player,
+        deck=deck,
+        doras=doras,
+        hand=init_hand,
+        _rng_key=subkey,
     )
     return _draw(state)
 
@@ -180,7 +206,8 @@ def _step(state: State, action) -> State:
                     lambda: _chi(state, Action.CHI_L),
                     lambda: _chi(state, Action.CHI_M),
                     lambda: _chi(state, Action.CHI_R),
-                    lambda: _draw(state),
+                    lambda: _pass(state),
+                    lambda: _next_game(state),
                 ],
             ),
         ),
@@ -200,17 +227,13 @@ def _draw(state: State):
         _make_legal_action_mask(state, hand, c_p, new_tile),
     )
 
-    return jax.lax.cond(
-        next_deck_ix == 124,
-        lambda: state.replace(terminated=TRUE),  # type:ignore
-        lambda: state.replace(  # type:ignore
-            target=jnp.int8(-1),
-            next_deck_ix=next_deck_ix,
-            hand=hand,
-            last_draw=new_tile,
-            last_player=c_p,
-            legal_action_mask=legal_action_mask,
-        ),
+    return state.replace(  # type:ignore
+        target=jnp.int8(-1),
+        next_deck_ix=next_deck_ix,
+        hand=hand,
+        last_draw=new_tile,
+        last_player=c_p,
+        legal_action_mask=legal_action_mask,
     )
 
 
@@ -296,15 +319,25 @@ def _discard(state: State, tile: jnp.ndarray):
         0, 3, search, (meld_type, pon_player, kan_player, ron_player)
     )
 
+    no_meld_state = jax.lax.cond(
+        _is_ryukyoku(state),
+        lambda: state.replace(  # type:ignore
+            legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+            .at[Action.NONE]
+            .set(TRUE)
+        ),
+        lambda: _draw(
+            state.replace(  # type:ignore
+                current_player=(c_p + 1) % 4,
+                target=jnp.int8(-1),
+            )
+        ),
+    )
+
     return jax.lax.switch(
         meld_type,
         [
-            lambda: _draw(
-                state.replace(  # type:ignore
-                    current_player=(c_p + 1) % 4,
-                    target=jnp.int8(-1),
-                )
-            ),
+            lambda: no_meld_state,
             lambda: state.replace(  # type:ignore
                 current_player=chi_player,
                 last_player=c_p,
@@ -565,8 +598,16 @@ def _ron(state: State):
     return _pass(state)
 
 
+def _is_ryukyoku(state: State):
+    return state.next_deck_ix == 13
+
+
+def _next_game(state: State):
+    return _next_honba(state)
+
+
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    ...
+    return jnp.int8(0)
 
 
 # For debug
