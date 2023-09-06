@@ -165,7 +165,7 @@ def _next_honba(state: State):
     deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
     init_hand = Hand.make_init_hand(deck)
     doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
-    state = State(
+    state = State(  # type:ignore
         honba=state.honba + jnp.int8(1),
         oya=state.oya,
         current_player=current_player,
