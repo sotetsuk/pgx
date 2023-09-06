@@ -52,18 +52,31 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
         round += f"{kanji[state.honba]}本場"
 
     fontsize = 20
+    y = -30
     board_g.add(
         dwg.text(
             text=round,
             insert=(
                 (BOARD_WIDTH * GRID_SIZE) / 2 - len(round) * fontsize / 2,
-                (BOARD_HEIGHT * GRID_SIZE) / 2 - 10,
+                (BOARD_HEIGHT * GRID_SIZE) / 2 + y,
             ),
             fill=color_set.text_color,
             font_size=f"{fontsize}px",
             font_family="serif",
         )
     )
+
+    # dora
+    dora_scale = 0.6
+    x = (BOARD_WIDTH * GRID_SIZE) / 2 - tile_w * dora_scale * 2.5
+    y = (BOARD_WIDTH * GRID_SIZE) / 2 - 25
+    for _x, dora in enumerate(state.doras):
+        if dora == -1:
+            dora = 34
+        p = dwg.path(d=path_list[dora])
+        p.translate(x + _x * tile_w * dora_scale, y)
+        p.scale(dora_scale)
+        board_g.add(p)
 
     # board
     # grid
@@ -103,12 +116,13 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
         # score
         fontsize = 20
         score = str(int(state.score[i]) * 100)
+        y = 70
         players_g[i].add(
             dwg.text(
                 text=score,
                 insert=(
                     (BOARD_WIDTH * GRID_SIZE) / 2 - len(score) * fontsize / 4,
-                    BOARD_HEIGHT * GRID_SIZE / 2 + 55,
+                    BOARD_HEIGHT * GRID_SIZE / 2 + y,
                 ),
                 fill=color_set.text_color,
                 font_size=f"{fontsize}px",
@@ -116,15 +130,16 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
             )
         )
 
-        # riichi
+        # riichi bou
         width = 100
-        height = 15
+        height = 10
+        y = 75
         if state.riichi[i]:
             players_g[i].add(
                 dwg.rect(
                     (
                         (BOARD_WIDTH * GRID_SIZE - width) / 2,
-                        BOARD_HEIGHT * GRID_SIZE / 2 + 65,
+                        BOARD_HEIGHT * GRID_SIZE / 2 + y,
                     ),
                     (width, height),
                     fill=color_set.background_color,
@@ -138,9 +153,9 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
                 dwg.circle(
                     center=(
                         BOARD_HEIGHT * GRID_SIZE / 2,
-                        BOARD_HEIGHT * GRID_SIZE / 2 + 65 + height / 2,
+                        BOARD_HEIGHT * GRID_SIZE / 2 + y + height / 2,
                     ),
-                    r="5px",
+                    r="3px",
                     fill="red",
                 )
             )

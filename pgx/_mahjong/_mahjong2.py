@@ -41,6 +41,8 @@ class State(v1.State):
 
     honba: jnp.ndarray = jnp.int8(0)
     oya: jnp.ndarray = jnp.int8(0)
+
+    # 点数（百の位から）
     score: jnp.ndarray = jnp.full(4, 250, dtype=jnp.float32)
 
     deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int8)
@@ -135,13 +137,15 @@ def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
     last_player = jnp.int8(-1)
-    deck = jax.random.permutation(rng, jnp.arange(136) // 4)
+    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
     init_hand = Hand.make_init_hand(deck)
+    doras = jnp.array([deck[124], -1, -1, -1, -1], dtype=jnp.int8)
     state = State(  # type:ignore
         current_player=current_player,
         oya=current_player,
         last_player=last_player,
         deck=deck,
+        doras=doras,
         hand=init_hand,
         next_deck_ix=jnp.int8(135 - 13 * 4),
     )
@@ -196,13 +200,17 @@ def _draw(state: State):
         _make_legal_action_mask(state, hand, c_p, new_tile),
     )
 
-    return state.replace(  # type:ignore
-        target=jnp.int8(-1),
-        next_deck_ix=next_deck_ix,
-        hand=hand,
-        last_draw=new_tile,
-        last_player=c_p,
-        legal_action_mask=legal_action_mask,
+    return jax.lax.cond(
+        next_deck_ix == 124,
+        lambda: state.replace(terminated=TRUE),  # type:ignore
+        lambda: state.replace(  # type:ignore
+            target=jnp.int8(-1),
+            next_deck_ix=next_deck_ix,
+            hand=hand,
+            last_draw=new_tile,
+            last_player=c_p,
+            legal_action_mask=legal_action_mask,
+        ),
     )
 
 
@@ -246,7 +254,7 @@ def _discard(state: State, tile: jnp.ndarray):
     n_river = state.n_river.at[c_p].add(1)
     hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
     state = state.replace(  # type:ignore
-        last_draw=-1,
+        last_draw=jnp.int8(-1),
         hand=hand,
         river=river,
         n_river=n_river,
@@ -407,10 +415,16 @@ def _kakan(state: State, target, pon_src, pon_idx):
 
 
 def _accept_riichi(state: State) -> State:
-    riichi = state.riichi.at[state.last_player].set(
-        state.riichi[state.last_player] | state.riichi_declared
+    l_p = state.last_player
+    score = state.score.at[l_p].add(
+        jnp.where(~state.riichi[l_p] & state.riichi_declared, -10, 0)
     )
-    return state.replace(riichi=riichi, riichi_declared=FALSE)  # type:ignore
+    riichi = state.riichi.at[l_p].set(
+        state.riichi[l_p] | state.riichi_declared
+    )
+    return state.replace(  # type:ignore
+        riichi=riichi, riichi_declared=FALSE, score=score
+    )
 
 
 def _minkan(state: State):
