@@ -23,32 +23,42 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-NUM_ACTION = 78
+NUM_ACTION = 79
 
 
 @dataclass
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
     observation: jnp.ndarray = jnp.int8(0)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0, 0.0, 0.0])
+    rewards: jnp.ndarray = jnp.full(4, 0, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
+    round: jnp.ndarray = jnp.int8(0)
+    honba: jnp.ndarray = jnp.int8(0)
+
+    # 東1局の親
+    # 各局の親は (oya+round)%4
+    oya: jnp.ndarray = jnp.int8(0)
+
+    # 点数（百の位から）
+    score: jnp.ndarray = jnp.full(4, 250, dtype=jnp.float32)
+
     deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int8)
 
     # 次に引く牌のindex
-    next_deck_ix: jnp.ndarray = jnp.int8(135)
+    next_deck_ix: jnp.ndarray = jnp.int8(135 - 13 * 4)
 
     # 各playerの手牌. 長さ34で、数字は持っている牌の数
     hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int8)
 
     # 河
     # int8
-    # 0x  0     0    0 0 0 0 0 0
-    #    灰色|半透明|   牌(0-33)
+    # 0b  0     0    0 0 0 0 0 0
+    #    灰色|リーチ|   牌(0-33)
     river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
 
     # 各playerの河の数
@@ -58,7 +68,7 @@ class State(v1.State):
     doras: jnp.ndarray = jnp.zeros(5, dtype=jnp.int8)
 
     # カンの回数=追加ドラ枚数
-    num_kan: jnp.ndarray = jnp.int8(0)
+    n_kan: jnp.ndarray = jnp.int8(0)
 
     # 直前に捨てられてron,pon,chiの対象になっている牌. 存在しなければ-1
     target: jnp.ndarray = jnp.int8(-1)
@@ -127,16 +137,43 @@ class Mahjong(v1.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    current_player = jnp.int8(jax.random.bernoulli(rng))
     last_player = jnp.int8(-1)
-    deck = jax.random.permutation(rng, jnp.arange(136) // 4)
+    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
     init_hand = Hand.make_init_hand(deck)
+    doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
     state = State(  # type:ignore
+        current_player=current_player,
+        oya=current_player,
+        last_player=last_player,
+        deck=deck,
+        doras=doras,
+        hand=init_hand,
+        _rng_key=subkey,
+    )
+    return _draw(state)
+
+
+def _next_round(state: State):
+    pass
+
+
+def _next_honba(state: State):
+    rng, subkey = jax.random.split(state._rng_key)
+    current_player = (state.oya + state.round) % 4
+    last_player = jnp.int8(-1)
+    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
+    init_hand = Hand.make_init_hand(deck)
+    doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
+    state = State(  # type:ignore
+        honba=state.honba + jnp.int8(1),
+        oya=state.oya,
         current_player=current_player,
         last_player=last_player,
         deck=deck,
+        doras=doras,
         hand=init_hand,
-        next_deck_ix=jnp.int8(135 - 13 * 4),
+        _rng_key=subkey,
     )
     return _draw(state)
 
@@ -169,7 +206,8 @@ def _step(state: State, action) -> State:
                     lambda: _chi(state, Action.CHI_L),
                     lambda: _chi(state, Action.CHI_M),
                     lambda: _chi(state, Action.CHI_R),
-                    lambda: _draw(state),
+                    lambda: _pass(state),
+                    lambda: _next_game(state),
                 ],
             ),
         ),
@@ -239,7 +277,7 @@ def _discard(state: State, tile: jnp.ndarray):
     n_river = state.n_river.at[c_p].add(1)
     hand = state.hand.at[c_p].set(Hand.sub(state.hand[c_p], tile))
     state = state.replace(  # type:ignore
-        last_draw=-1,
+        last_draw=jnp.int8(-1),
         hand=hand,
         river=river,
         n_river=n_river,
@@ -281,15 +319,25 @@ def _discard(state: State, tile: jnp.ndarray):
         0, 3, search, (meld_type, pon_player, kan_player, ron_player)
     )
 
+    no_meld_state = jax.lax.cond(
+        _is_ryukyoku(state),
+        lambda: state.replace(  # type:ignore
+            legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+            .at[Action.NONE]
+            .set(TRUE)
+        ),
+        lambda: _draw(
+            state.replace(  # type:ignore
+                current_player=(c_p + 1) % 4,
+                target=jnp.int8(-1),
+            )
+        ),
+    )
+
     return jax.lax.switch(
         meld_type,
         [
-            lambda: _draw(
-                state.replace(  # type:ignore
-                    current_player=(c_p + 1) % 4,
-                    target=jnp.int8(-1),
-                )
-            ),
+            lambda: no_meld_state,
             lambda: state.replace(  # type:ignore
                 current_player=chi_player,
                 last_player=c_p,
@@ -400,10 +448,16 @@ def _kakan(state: State, target, pon_src, pon_idx):
 
 
 def _accept_riichi(state: State) -> State:
-    riichi = state.riichi.at[state.last_player].set(
-        state.riichi[state.last_player] | state.riichi_declared
+    l_p = state.last_player
+    score = state.score.at[l_p].add(
+        jnp.where(~state.riichi[l_p] & state.riichi_declared, -10, 0)
     )
-    return state.replace(riichi=riichi, riichi_declared=FALSE)  # type:ignore
+    riichi = state.riichi.at[l_p].set(
+        state.riichi[l_p] | state.riichi_declared
+    )
+    return state.replace(  # type:ignore
+        riichi=riichi, riichi_declared=FALSE, score=score
+    )
 
 
 def _minkan(state: State):
@@ -503,9 +557,6 @@ def _pass(state: State):
     # TODO
     # ron -> pon/kan -> chiへの遷移
 
-    state = state.replace(  # type:ignore
-        current_player=(state.current_player + 1) % 4
-    )
     return _draw(state)
 
 
@@ -544,8 +595,16 @@ def _ron(state: State):
     return _pass(state)
 
 
+def _is_ryukyoku(state: State):
+    return state.next_deck_ix == 13
+
+
+def _next_game(state: State):
+    return _next_honba(state)
+
+
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    ...
+    return jnp.int8(0)
 
 
 # For debug

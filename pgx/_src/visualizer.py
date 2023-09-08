@@ -526,7 +526,7 @@ class Visualizer:
                     "black",
                     "white",
                     "black",
-                    "",
+                    "black",
                 )
             else:
                 self.config["COLOR_SET"] = ColorSet(
@@ -536,7 +536,7 @@ class Visualizer:
                     "black",
                     "white",
                     "black",
-                    "",
+                    "black",
                 )
         elif _state.env_id == "othello":
             from pgx._src.dwg.othello import _make_othello_dwg

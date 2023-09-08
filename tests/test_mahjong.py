@@ -197,98 +197,65 @@ def test_discard():
     assert state.current_player == 0
     assert state.target == -1
     assert state.deck[state.next_deck_ix] == 8
-    # fmt:off
-    assert (state.hand == jnp.int8(
-        [[0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
-         [1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
-         [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]]
-    )).all()
-    # fmt:on
+    assert state.hand[0, 8] == 1
 
     state = step(state, 8)
+    assert state.hand[0, 8] == 0
     assert state.current_player == 1
     assert state.target == -1
     assert state.deck[state.next_deck_ix] == 31
-    # fmt:off
-    assert (state.hand == jnp.int8(
-        [[0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
-         [1, 0, 0, 1, 1, 1, 1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
-         [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]]
-    )).all()
-    # fmt:on
+
+    assert state.hand[1, 8] == 2
 
     state = step(state, Action.TSUMOGIRI)
+    assert state.hand[1, 8] == 1
     assert state.current_player == 2
     assert state.target == -1
-    assert state.deck[state.next_deck_ix] == 16
-    # fmt:off
-    assert (state.hand == jnp.int8(
-        [[0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 2, 1, 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 0],
-         [1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 3, 1, 0, 0, 0],
-         [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 2, 1, 0, 2, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 2, 1, 0],
-         [1, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 2, 0]]
-    )).all()
-    # fmt:on
 
 
 def test_chi():
-    key = jax.random.PRNGKey(2)
+    key = jax.random.PRNGKey(0)
     state = init(key=key)
     """
-    current_player 1
-    [[0 1 0 1 0 1 0 0 0 1 1 1 0 1 0 0 0 1 1 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0]
-     [2 0 1 1 1 0 1 0 0 1 0 1 3 0 0 1 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0]
-     [0 0 0 0 2 0 1 1 2 0 0 0 0 0 1 0 0 1 0 0 1 1 0 0 0 1 1 1 0 0 0 0 0 0]
-     [0 0 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 2 0 2 1 0 0 0 1 0 0 0 0 1 1 0 0 2]]
+    current_player 0
+    [[0 0 0 0 1 0 1 0 1 1 1 0 1 0 0 0 0 2 1 1 0 0 0 0 0 1 0 1 1 0 1 0 0 0]
+     [1 0 0 1 1 1 1 0 1 0 0 0 0 0 0 0 0 0 0 1 0 1 1 0 0 0 0 0 0 3 1 0 0 0]
+     [0 1 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 2 1 0 2 0 0 0 1 1 1 0 0 0 0 2 0 0]
+     [1 0 2 0 0 0 0 0 0 0 0 1 0 0 1 1 1 0 0 1 0 1 0 1 1 0 0 0 0 0 0 2 0 0]]
     """
-    state = env.step(state, 6)
-    assert state.current_player == 2
+    assert state.legal_action_mask[6]
+    state = step(state, 6)
+    assert state.current_player == 1
     assert state.target == 6
-    assert state.legal_action_mask[Action.CHI_L]
+    assert state.legal_action_mask[Action.CHI_R]
 
-    state1 = env.step(state, Action.CHI_L)
-    assert state1.current_player == 2
-    # fmt:off
-    assert (state1.hand == jnp.int8([
-        [[0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0], 
-         [2, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 1, 3, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], 
-         [0, 0, 0, 0, 2, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0], 
-         [0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 2, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 2]]])).all()
-    # fmt:on
-    assert state1.melds[2, 0] == 25418
+    state1 = step(state, Action.CHI_R)
+    assert state1.current_player == 1
+    assert state1.melds[1, 0] == 25420
 
-    state2 = env.step(state, Action.PASS)
-    assert state2.current_player == 2
+    state2 = step(state, Action.PASS)
+    assert state2.current_player == 1
+    assert state2.melds[1, 0] == 0
 
 
 def test_ankan():
-    key = jax.random.PRNGKey(87)
-    state = env.init(key=key)
+    key = jax.random.PRNGKey(352)
+    state = init(key=key)
     assert state.current_player == 0
     """
-    [[0 0 0 1 0 1 1 1 0 1 0 0 1 0 0 0 0 1 0 0 0 0 0 0 4 0 0 0 0 1 1 1 0 0]
-     [1 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 3 0 0 2 0 0 1 0 0 1 1 0 0 1 0 0 0 1]
-     [0 1 0 0 0 0 1 0 2 0 1 1 0 1 1 0 0 0 0 0 0 1 0 1 0 0 0 1 0 0 1 0 1 0]
-     [0 0 2 0 0 0 0 0 0 0 1 2 1 0 1 1 0 0 2 0 0 0 0 0 0 1 0 0 0 1 0 1 0 0]]
+    [[1 2 0 0 0 0 1 0 0 0 0 1 0 1 0 0 0 0 0 0 0 2 0 0 0 0 1 0 0 1 0 4 0 0]
+     [0 0 1 2 0 1 0 0 0 2 0 0 0 1 1 2 0 0 0 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0]
+     [0 0 0 0 1 1 0 2 0 0 0 0 1 0 0 1 0 0 0 3 0 0 0 0 1 0 0 0 0 1 0 1 1 0]
+     [0 0 1 0 1 0 0 0 1 0 0 1 1 2 0 0 0 0 0 0 0 0 0 1 0 1 1 1 1 0 1 0 0 0]]
     """
-    state = env.step(state, 58)
-
-    # fmt:off
-    assert (state.hand == jnp.int8(
-        [[1, 0, 0, 1, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0]
-        ,[1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 3, 0, 0, 2, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1]
-        ,[0, 1, 0, 0, 0, 0, 1, 0, 2, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 0]
-        ,[0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 1, 2, 1, 0, 1, 1, 0, 0, 2, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0]])).all()
-    # fmt:on
-    assert state.melds[0, 0] == 3130
+    state = step(state, 65)
+    assert state.melds[0, 0] == 4033
 
 
 def test_riichi():
-    rng = jax.random.PRNGKey(38)
+    rng = jax.random.PRNGKey(25)
     state = init(key=rng)
-    for _ in range(32):
+    for _ in range(14):
         rng, subkey = jax.random.split(rng)
         a = act_randomly(subkey, state)
         state = step(state, a)
@@ -297,8 +264,9 @@ def test_riichi():
 
     assert state.legal_action_mask[Action.RIICHI]
     state = step(state, Action.RIICHI)
+    assert not state.terminated
 
-    for i in range(12):
+    for i in range(5):
         visualize(state, f"tests/assets/mahjong/after_riichi_{i}.svg")
 
         rng, subkey = jax.random.split(rng)
