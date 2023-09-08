@@ -214,41 +214,42 @@ def test_discard():
 
 
 def test_chi():
-    key = jax.random.PRNGKey(2)
+    key = jax.random.PRNGKey(0)
     state = init(key=key)
     """
-    current_player 1
-    [[0 1 0 1 0 1 0 0 0 1 1 1 0 1 0 0 0 1 1 0 1 0 0 0 1 0 0 0 1 0 0 0 1 0]
-     [2 0 1 1 1 0 1 0 0 1 0 1 3 0 0 1 0 0 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0 0]
-     [0 0 0 0 2 0 1 1 2 0 0 0 0 0 1 0 0 1 0 0 1 1 0 0 0 1 1 1 0 0 0 0 0 0]
-     [0 0 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 2 0 2 1 0 0 0 1 0 0 0 0 1 1 0 0 2]]
+    current_player 0
+    [[0 0 0 0 1 0 1 0 1 1 1 0 1 0 0 0 0 2 1 1 0 0 0 0 0 1 0 1 1 0 1 0 0 0]
+     [1 0 0 1 1 1 1 0 1 0 0 0 0 0 0 0 0 0 0 1 0 1 1 0 0 0 0 0 0 3 1 0 0 0]
+     [0 1 0 0 0 0 0 0 0 0 0 0 0 1 1 0 0 2 1 0 2 0 0 0 1 1 1 0 0 0 0 2 0 0]
+     [1 0 2 0 0 0 0 0 0 0 0 1 0 0 1 1 1 0 0 1 0 1 0 1 1 0 0 0 0 0 0 2 0 0]]
     """
+    assert state.legal_action_mask[6]
     state = step(state, 6)
-    assert state.current_player == 2
+    assert state.current_player == 1
     assert state.target == 6
-    assert state.legal_action_mask[Action.CHI_L]
+    assert state.legal_action_mask[Action.CHI_R]
 
-    state1 = env.step(state, Action.CHI_L)
-    assert state1.current_player == 2
-    assert state1.melds[2, 0] == 25418
+    state1 = step(state, Action.CHI_R)
+    assert state1.current_player == 1
+    assert state1.melds[1, 0] == 25420
 
     state2 = step(state, Action.PASS)
-    assert state2.current_player == 2
-    assert state2.melds[2, 0] == 0
+    assert state2.current_player == 1
+    assert state2.melds[1, 0] == 0
 
 
 def test_ankan():
-    key = jax.random.PRNGKey(87)
+    key = jax.random.PRNGKey(352)
     state = init(key=key)
     assert state.current_player == 0
     """
-    [[0 0 0 1 0 1 1 1 0 1 0 0 1 0 0 0 0 1 0 0 0 0 0 0 4 0 0 0 0 1 1 1 0 0]
-     [1 0 0 1 0 0 0 0 0 1 0 0 0 0 0 0 3 0 0 2 0 0 1 0 0 1 1 0 0 1 0 0 0 1]
-     [0 1 0 0 0 0 1 0 2 0 1 1 0 1 1 0 0 0 0 0 0 1 0 1 0 0 0 1 0 0 1 0 1 0]
-     [0 0 2 0 0 0 0 0 0 0 1 2 1 0 1 1 0 0 2 0 0 0 0 0 0 1 0 0 0 1 0 1 0 0]]
+    [[1 2 0 0 0 0 1 0 0 0 0 1 0 1 0 0 0 0 0 0 0 2 0 0 0 0 1 0 0 1 0 4 0 0]
+     [0 0 1 2 0 1 0 0 0 2 0 0 0 1 1 2 0 0 0 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0]
+     [0 0 0 0 1 1 0 2 0 0 0 0 1 0 0 1 0 0 0 3 0 0 0 0 1 0 0 0 0 1 0 1 1 0]
+     [0 0 1 0 1 0 0 0 1 0 0 1 1 2 0 0 0 0 0 0 0 0 0 1 0 1 1 1 1 0 1 0 0 0]]
     """
-    state = step(state, 58)
-    assert state.melds[0, 0] == 3130
+    state = step(state, 65)
+    assert state.melds[0, 0] == 4033
 
 
 def test_riichi():
