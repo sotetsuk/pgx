@@ -557,9 +557,6 @@ def _pass(state: State):
     # TODO
     # ron -> pon/kan -> chiへの遷移
 
-    state = state.replace(  # type:ignore
-        current_player=(state.current_player + 1) % 4
-    )
     return _draw(state)
 
 
