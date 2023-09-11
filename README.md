@@ -36,8 +36,12 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 
 - [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
 - [Pgx baseline models](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
-- [PPO example](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/ppo.ipynb)
 - [Export to PettingZoo API](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb)
+
+## Training examples
+
+- [AlphaZero](https://github.com/sotetsuk/pgx/tree/main/examples/alphazero)
+- [PPO](https://github.com/sotetsuk/pgx/tree/main/examples/minatar-ppo)
 
 ## Usage
 
