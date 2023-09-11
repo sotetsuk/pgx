@@ -66,10 +66,27 @@ No op (0), left (1), right (2), or fire (3).
 
 - `v0` : Initial release (v1.0.0)
 
+## Training example
+
+For MinAtar environments, we provide a [PPO training example](https://github.com/sotetsuk/pgx/tree/main/examples/minatar-ppo), which takes only 1 min to train on a single GPU.
+
+
+## Baseline models
+
+We provide a baseline model for the MinAtar Space Invaders environment, which reasonably plays the game.
+
+```py
+model = pgx.make_baseline("minatar-space_invaders_v0")
+
+logits, value = model(state.observation)
+```
+
+We trained the model with PPO for 20M steps. 
+See [wandb report](https://api.wandb.ai/links/sotetsuk/k5cfwe17) for the details of the training.
+
 ## Reference
 
 - `[Young&Tian+19]` "Minatar: An atari-inspired testbed for thorough and reproducible reinforcement learning experiments" [arXiv:1903.03176](https://arxiv.org/abs/1903.03176)
-
 
 ## LICENSE
 
