@@ -13,6 +13,11 @@ BaselineModelId = Literal[
     "go_9x9_v0",
     "hex_v0",
     "othello_v0",
+    "minatar-asterix_v0",
+    "minatar-breakout_v0",
+    "minatar-freeway_v0",
+    "minatar-seaquest_v0",
+    "minatar-space_invaders_v0",
 ]
 
 
