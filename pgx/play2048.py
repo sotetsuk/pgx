@@ -21,7 +21,7 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-ZERO = jnp.int8(0)
+ZERO = jnp.int32(0)
 
 
 @dataclass
@@ -35,13 +35,12 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- 2048 specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
     # 4x4 board
     # [[ 0,  1,  2,  3],
     #  [ 4,  5,  6,  7],
     #  [ 8,  9, 10, 11],
     #  [12, 13, 14, 15]]
-    _board: jnp.ndarray = jnp.zeros(16, jnp.int8)
+    _board: jnp.ndarray = jnp.zeros(16, jnp.int32)
     #  Board is expressed as a power of 2.
     # e.g.
     # [[ 0,  0,  1,  1],
@@ -80,7 +79,7 @@ class Play2048(v1.Env):
 
     @property
     def version(self) -> str:
-        return "v0"
+        return "v1"
 
     @property
     def num_players(self) -> int:
@@ -89,7 +88,7 @@ class Play2048(v1.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
-    board = _add_random_num(jnp.zeros((4, 4), jnp.int8), rng1)
+    board = _add_random_num(jnp.zeros((4, 4), jnp.int32), rng1)
     board = _add_random_num(board, rng2)
     return State(_board=board.ravel())  # type:ignore
 
@@ -156,7 +155,7 @@ def _add_random_num(board_2d, key):
     key, sub_key = jax.random.split(key)
     pos = jax.random.choice(key, jnp.arange(16), p=(board_2d.ravel() == 0))
     set_num = jax.random.choice(
-        sub_key, jnp.int8([1, 2]), p=jnp.array([0.9, 0.1])
+        sub_key, jnp.int32([1, 2]), p=jnp.array([0.9, 0.1])
     )
     board_2d = board_2d.at[pos // 4, pos % 4].set(set_num)
     return board_2d

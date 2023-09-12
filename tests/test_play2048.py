@@ -16,27 +16,27 @@ def test_init():
 
 
 def test_slide_and_merge():
-    line = jnp.int8([0, 2, 0, 2])
-    assert (slide_and_merge(line)[0] == jnp.int8([3, 0, 0, 0])).all()
+    line = jnp.int32([0, 2, 0, 2])
+    assert (slide_and_merge(line)[0] == jnp.int32([3, 0, 0, 0])).all()
 
-    line = jnp.int8([0, 2, 0, 1])
-    assert (slide_and_merge(line)[0] == jnp.int8([2, 1, 0, 0])).all()
+    line = jnp.int32([0, 2, 0, 1])
+    assert (slide_and_merge(line)[0] == jnp.int32([2, 1, 0, 0])).all()
 
-    line = jnp.int8([2, 2, 2, 2])
-    assert (slide_and_merge(line)[0] == jnp.int8([3, 3, 0, 0])).all()
+    line = jnp.int32([2, 2, 2, 2])
+    assert (slide_and_merge(line)[0] == jnp.int32([3, 3, 0, 0])).all()
 
-    line = jnp.int8([2, 0, 0, 2])
-    assert (slide_and_merge(line)[0] == jnp.int8([3, 0, 0, 0])).all()
+    line = jnp.int32([2, 0, 0, 2])
+    assert (slide_and_merge(line)[0] == jnp.int32([3, 0, 0, 0])).all()
 
-    line = jnp.int8([1, 4, 4, 5])
-    assert (slide_and_merge(line)[0] == jnp.int8([1, 5, 5, 0])).all()
+    line = jnp.int32([1, 4, 4, 5])
+    assert (slide_and_merge(line)[0] == jnp.int32([1, 5, 5, 0])).all()
 
-    board = jnp.int8([0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2])
+    board = jnp.int32([0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2])
     board_2d = board.reshape((4, 4))
     board_2d = jax.vmap(_slide_and_merge)(board_2d)[0]
     board_1d = board_2d.ravel()
     assert (
-        board_1d == jnp.int8([3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0])
+        board_1d == jnp.int32([3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0])
     ).all()
 
 
@@ -51,7 +51,7 @@ def test_step():
     """
     assert (
         state._board
-        == jnp.int8([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0])
+        == jnp.int32([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0])
     ).all()
 
     state = step(state, 3)  # down
@@ -63,12 +63,12 @@ def test_step():
     """
     assert (
         state._board
-        == jnp.int8([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0])
+        == jnp.int32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0])
     ).all()
 
 
 def test_legal_action():
-    board = jnp.int8([0, 1, 2, 3, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 0])
+    board = jnp.int32([0, 1, 2, 3, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 0])
     state = State(_board=board)
     state = step(state, 0)
     """
@@ -82,7 +82,7 @@ def test_legal_action():
 
 
 def test_terminated():
-    board = jnp.int8([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
+    board = jnp.int32([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
     state = State(_board=board)
     state = step(state, 0)
     """
@@ -116,16 +116,18 @@ def test_observe():
 
 
 def test_random_play():
-    key = jax.random.PRNGKey(0)
-    done = jnp.bool_(False)
-    key, sub_key = jax.random.split(key)
-    state = init(sub_key)
-    while not done:
-        legal_actions = jnp.where(state.legal_action_mask)[0]
+    for i in range(10):
+        key = jax.random.PRNGKey(i)
+        done = jnp.bool_(False)
         key, sub_key = jax.random.split(key)
-        action = jax.random.choice(sub_key, legal_actions)
-        state = step(state, jnp.int16(action))
-        done = state.terminated
+        state = init(sub_key)
+        while not done:
+            legal_actions = jnp.where(state.legal_action_mask)[0]
+            key, sub_key = jax.random.split(key)
+            action = jax.random.choice(sub_key, legal_actions)
+            state = step(state, jnp.int16(action))
+            assert (state.rewards >= 0).all()
+            done = state.terminated
 
 
 def test_api():
