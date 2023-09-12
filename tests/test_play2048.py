@@ -125,6 +125,7 @@ def test_random_play():
         key, sub_key = jax.random.split(key)
         action = jax.random.choice(sub_key, legal_actions)
         state = step(state, jnp.int16(action))
+        assert (state.rewards >= 0).all()
         done = state.terminated
 
 
