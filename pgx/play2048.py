@@ -21,7 +21,7 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-ZERO = jnp.int8(0)
+ZERO = jnp.int32(0)
 
 
 @dataclass
