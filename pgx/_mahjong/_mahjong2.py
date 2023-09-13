@@ -322,9 +322,7 @@ def _discard(state: State, tile: jnp.ndarray):
     no_meld_state = jax.lax.cond(
         _is_ryukyoku(state),
         lambda: state.replace(  # type:ignore
-            legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-            .at[Action.NONE]
-            .set(TRUE)
+            terminated=TRUE,
         ),
         lambda: _draw(
             state.replace(  # type:ignore
