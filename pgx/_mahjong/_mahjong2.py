@@ -19,6 +19,7 @@ import pgx.v1 as v1
 from pgx._mahjong._action import Action
 from pgx._mahjong._hand import Hand
 from pgx._mahjong._meld import Meld
+from pgx._mahjong._yaku import Yaku
 from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -41,7 +42,7 @@ class State(v1.State):
     honba: jnp.ndarray = jnp.int8(0)
 
     # 東1局の親
-    # 各局の親は (oya+round)%4
+    # 各局の親は (state.oya+round)%4
     oya: jnp.ndarray = jnp.int8(0)
 
     # 点数（百の位から）
@@ -567,8 +568,35 @@ def _tsumo(state: State):
 
 
 def _ron(state: State):
-    # TODO
-    return _pass(state)
+    c_p = state.current_player
+    score = Yaku.score(
+        state.hand[c_p],
+        state.melds[c_p],
+        state.n_meld[c_p],
+        state.target,
+        state.riichi[c_p],
+        is_ron=TRUE,
+    )
+    score = jax.lax.cond(
+        (state.oya + state.round) % 4 == c_p,
+        lambda: score * 6,
+        lambda: score * 4,
+    )
+    score += -score % 100
+    reward = (
+        jnp.zeros(4, dtype=jnp.int32)
+        .at[c_p]
+        .set(score)
+        .at[state.last_player]
+        .set(-score)
+    )
+
+    # 供託
+    reward -= 1000 * state.riichi
+    reward = reward.at[c_p].set(reward[c_p] + 1000 * jnp.sum(state.riichi))
+    return state.replace(
+        terminated=TRUE, rewards=jnp.float32(reward)
+    )  # type:ignore
 
 
 def _is_ryukyoku(state: State):
