@@ -154,10 +154,6 @@ def _init(rng: jax.random.KeyArray) -> State:
     return _draw(state)
 
 
-def _next_round(state: State):
-    pass
-
-
 def _next_honba(state: State):
     rng, subkey = jax.random.split(state._rng_key)
     current_player = (state.oya + state.round) % 4
@@ -323,6 +319,7 @@ def _discard(state: State, tile: jnp.ndarray):
         _is_ryukyoku(state),
         lambda: state.replace(  # type:ignore
             terminated=TRUE,
+            rewards=[Hand.is_tenpai(hand) for hand in state.hand] * 1000,
         ),
         lambda: _draw(
             state.replace(  # type:ignore
@@ -598,7 +595,8 @@ def _is_ryukyoku(state: State):
 
 
 def _next_game(state: State):
-    return _next_honba(state)
+    # TODO
+    return _pass(state)
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
