@@ -594,9 +594,9 @@ def _ron(state: State):
     # 供託
     reward -= 1000 * state.riichi
     reward = reward.at[c_p].set(reward[c_p] + 1000 * jnp.sum(state.riichi))
-    return state.replace(
+    return state.replace(  # type:ignore
         terminated=TRUE, rewards=jnp.float32(reward)
-    )  # type:ignore
+    )
 
 
 def _is_ryukyoku(state: State):
