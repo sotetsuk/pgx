@@ -30,7 +30,7 @@ NUM_ACTION = 79
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
     observation: jnp.ndarray = jnp.int8(0)
-    rewards: jnp.ndarray = jnp.full(4, 0, dtype=jnp.float32)
+    rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
@@ -295,11 +295,12 @@ def _discard(state: State, tile: jnp.ndarray):
         0, 3, search, (meld_type, pon_player, kan_player, ron_player)
     )
 
+    rewards = jnp.float32([Hand.is_tenpai(hand) * 100 for hand in state.hand])
     no_meld_state = jax.lax.cond(
         _is_ryukyoku(state),
         lambda: state.replace(  # type:ignore
             terminated=TRUE,
-            rewards=[Hand.is_tenpai(hand) for hand in state.hand] * 1000,
+            rewards=rewards,
         ),
         lambda: _draw(
             state.replace(  # type:ignore
