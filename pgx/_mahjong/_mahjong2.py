@@ -563,8 +563,36 @@ def _riichi(state: State):
 
 
 def _tsumo(state: State):
-    # TODO
-    return _pass(state)
+    c_p = state.current_player
+
+    score = Yaku.score(
+        state.hand[c_p],
+        state.melds[c_p],
+        state.n_meld[c_p],
+        state.target,
+        state.riichi[c_p],
+        is_ron=FALSE,
+    )
+    s1 = score + (-score) % 100
+    s2 = (score * 2) + (-(score * 2)) % 100
+
+    oya = (state.oya + state.round) % 4
+    reward = jax.lax.cond(
+        oya == c_p,
+        lambda: jnp.full(4, -s2, dtype=jnp.int32).at[c_p].set(s2 * 3),
+        lambda: jnp.full(4, -s1, dtype=jnp.int32)
+        .at[oya]
+        .set(-s2)
+        .at[c_p]
+        .set(s1 * 2 + s2),
+    )
+
+    # 供託
+    reward -= 1000 * state.riichi
+    reward = reward.at[c_p].set(reward[c_p] + 1000 * jnp.sum(state.riichi))
+    return state.replace(  # type:ignore
+        terminated=TRUE, rewards=jnp.float32(reward)
+    )
 
 
 def _ron(state: State):
