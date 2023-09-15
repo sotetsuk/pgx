@@ -30,7 +30,7 @@ NUM_ACTION = 79
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
     observation: jnp.ndarray = jnp.int8(0)
-    rewards: jnp.ndarray = jnp.full(4, 0, dtype=jnp.float32)
+    rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
@@ -145,30 +145,6 @@ def _init(rng: jax.random.KeyArray) -> State:
     state = State(  # type:ignore
         current_player=current_player,
         oya=current_player,
-        last_player=last_player,
-        deck=deck,
-        doras=doras,
-        hand=init_hand,
-        _rng_key=subkey,
-    )
-    return _draw(state)
-
-
-def _next_round(state: State):
-    pass
-
-
-def _next_honba(state: State):
-    rng, subkey = jax.random.split(state._rng_key)
-    current_player = (state.oya + state.round) % 4
-    last_player = jnp.int8(-1)
-    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
-    init_hand = Hand.make_init_hand(deck)
-    doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
-    state = State(  # type:ignore
-        honba=state.honba + jnp.int8(1),
-        oya=state.oya,
-        current_player=current_player,
         last_player=last_player,
         deck=deck,
         doras=doras,
@@ -319,12 +295,12 @@ def _discard(state: State, tile: jnp.ndarray):
         0, 3, search, (meld_type, pon_player, kan_player, ron_player)
     )
 
+    rewards = jnp.float32([Hand.is_tenpai(hand) * 100 for hand in state.hand])
     no_meld_state = jax.lax.cond(
         _is_ryukyoku(state),
         lambda: state.replace(  # type:ignore
-            legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-            .at[Action.NONE]
-            .set(TRUE)
+            terminated=TRUE,
+            rewards=rewards,
         ),
         lambda: _draw(
             state.replace(  # type:ignore
@@ -600,7 +576,8 @@ def _is_ryukyoku(state: State):
 
 
 def _next_game(state: State):
-    return _next_honba(state)
+    # TODO
+    return _pass(state)
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
