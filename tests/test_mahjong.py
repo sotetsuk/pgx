@@ -116,10 +116,10 @@ def test_score():
         jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
-            n_meld=0,
-            last=0,
-            riichi=False,
-            is_ron=False,
+            n_meld=jnp.int8(0),
+            last=jnp.int8(0),
+            riichi=jnp.bool_(False),
+            is_ron=jnp.bool_(False),
         )
         == 320
     )
@@ -137,10 +137,10 @@ def test_score():
         jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
-            n_meld=0,
-            last=33,
-            riichi=False,
-            is_ron=False,
+            n_meld=jnp.int8(0),
+            last=jnp.int8(33),
+            riichi=jnp.bool_(False),
+            is_ron=jnp.bool_(False),
         )
         == 8000
     )
@@ -159,10 +159,10 @@ def test_score():
         jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
-            n_meld=0,
-            last=27,
-            riichi=False,
-            is_ron=False,
+            n_meld=jnp.int8(0),
+            last=jnp.int8(27),
+            riichi=jnp.bool_(False),
+            is_ron=jnp.bool_(False),
         )
         == 800
     )
@@ -272,6 +272,23 @@ def test_riichi():
         rng, subkey = jax.random.split(rng)
         a = act_randomly(subkey, state)
         state = step(state, a)
+
+
+def test_ron():
+    rng = jax.random.PRNGKey(2)
+    state = init(key=rng)
+
+    for i in range(89):
+        rng, subkey = jax.random.split(rng)
+        a = act_randomly(subkey, state)
+        state = step(state, a)
+
+    assert not state.terminated
+    assert state.legal_action_mask[Action.RON]
+
+    state = step(state, Action.RON)
+    assert state.terminated
+    visualize(state, "tests/assets/mahjong/ron.svg")
 
 
 def test_transparent():
