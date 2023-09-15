@@ -154,26 +154,6 @@ def _init(rng: jax.random.KeyArray) -> State:
     return _draw(state)
 
 
-def _next_honba(state: State):
-    rng, subkey = jax.random.split(state._rng_key)
-    current_player = (state.oya + state.round) % 4
-    last_player = jnp.int8(-1)
-    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
-    init_hand = Hand.make_init_hand(deck)
-    doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
-    state = State(  # type:ignore
-        honba=state.honba + jnp.int8(1),
-        oya=state.oya,
-        current_player=current_player,
-        last_player=last_player,
-        deck=deck,
-        doras=doras,
-        hand=init_hand,
-        _rng_key=subkey,
-    )
-    return _draw(state)
-
-
 def _step(state: State, action) -> State:
 
     # TODO
