@@ -214,7 +214,7 @@ def _draw(state: State):
     )
 
 
-def _make_legal_action_mask(state, hand, c_p, new_tile):
+def _make_legal_action_mask(state: State, hand, c_p, new_tile):
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
@@ -227,7 +227,13 @@ def _make_legal_action_mask(state, hand, c_p, new_tile):
         )
     )
     legal_action_mask = legal_action_mask.at[Action.RIICHI].set(
-        Hand.can_riichi(hand[c_p])
+        jax.lax.cond(
+            state.riichi[c_p]
+            | (state.is_menzen[c_p] == 0)
+            | (state.next_deck_ix < 13 + 4),
+            lambda: False,
+            lambda: Hand.can_riichi(hand[c_p]),
+        )
     )
     legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
         Hand.can_tsumo(hand[c_p])
