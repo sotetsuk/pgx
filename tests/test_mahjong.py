@@ -288,7 +288,32 @@ def test_ron():
 
     state = step(state, Action.RON)
     assert state.terminated
+    assert (
+        state.rewards
+        == jnp.array([0.0, 2000.0, -2000.0, 0.0], dtype=jnp.float32)
+    ).all()
     visualize(state, "tests/assets/mahjong/ron.svg")
+
+
+def test_tsumo():
+    rng = jax.random.PRNGKey(25)
+    state = init(key=rng)
+
+    for i in range(91):
+        rng, subkey = jax.random.split(rng)
+        a = act_randomly(subkey, state)
+        state = step(state, a)
+
+    assert not state.terminated
+    assert state.legal_action_mask[Action.TSUMO]
+
+    state = step(state, Action.TSUMO)
+    assert state.terminated
+    assert (
+        state.rewards
+        == jnp.array([1200.0, -400.0, -400.0, -400.0], dtype=jnp.float32)
+    ).all()
+    visualize(state, "tests/assets/mahjong/tsumo.svg")
 
 
 def test_transparent():
