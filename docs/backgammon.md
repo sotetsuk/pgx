@@ -64,7 +64,7 @@ We used positive numbers for the current player’s chips and negative ones for 
 | `[:24]` | Number of checkers on each position |
 | `[24:26]` | Number of checkers on bar |
 | `[26:28]` | Number of checkers brone off |
-| `[28:34]` | One-hot vector of playable dice |
+| `[28:34]` | Count of available moves for each number |
 
 ## Action
 
