@@ -38,7 +38,7 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
-    round: jnp.ndarray = jnp.int8(0)
+    _round: jnp.ndarray = jnp.int8(0)
     honba: jnp.ndarray = jnp.int8(0)
 
     # 東1局の親
@@ -594,7 +594,7 @@ def _tsumo(state: State):
     s1 = score + (-score) % 100
     s2 = (score * 2) + (-(score * 2)) % 100
 
-    oya = (state.oya + state.round) % 4
+    oya = (state.oya + state._round) % 4
     reward = jax.lax.cond(
         oya == c_p,
         lambda: jnp.full(4, -s2, dtype=jnp.int32).at[c_p].set(s2 * 3),
@@ -624,7 +624,7 @@ def _ron(state: State):
         is_ron=TRUE,
     )
     score = jax.lax.cond(
-        (state.oya + state.round) % 4 == c_p,
+        (state.oya + state._round) % 4 == c_p,
         lambda: score * 6,
         lambda: score * 4,
     )
@@ -676,3 +676,47 @@ def _show_legal_action(legal_action):
         f"PASS:{S[int(legal_action[77])]}"
     )
     print(s + m + p + s + z + km + kp + ks + kz + other)
+
+
+def from_json(path):
+    import json
+
+    def decode_state(data: dict):
+        return State(
+            current_player=jnp.int8(data["current_player"]),
+            observation=jnp.int8(data["observation"]),
+            rewards=jnp.array(data["rewards"], dtype=jnp.float32),
+            terminated=jnp.bool_(data["terminated"]),
+            truncated=jnp.bool_(data["truncated"]),
+            legal_action_mask=jnp.array(
+                data["legal_action_mask"], dtype=jnp.bool_
+            ),
+            _rng_key=jnp.array(data["_rng_key"]),
+            _step_count=jnp.int32(data["_step_count"]),
+            _round=jnp.int8(data["_round"]),
+            honba=jnp.int8(data["honba"]),
+            oya=jnp.int8(data["oya"]),
+            score=jnp.array(data["score"], dtype=jnp.float32),
+            deck=jnp.array(data["deck"], dtype=jnp.int8),
+            next_deck_ix=jnp.int8(data["next_deck_ix"]),
+            hand=jnp.array(data["hand"], dtype=jnp.int8),
+            river=jnp.array(data["river"], dtype=jnp.uint8),
+            n_river=jnp.array(data["n_river"], dtype=jnp.int8),
+            doras=jnp.array(data["doras"], dtype=jnp.int8),
+            n_kan=jnp.int8(data["n_kan"]),
+            target=jnp.int8(data["target"]),
+            last_draw=jnp.int8(data["last_draw"]),
+            last_player=jnp.int8(data["last_player"]),
+            furo_check_num=jnp.int8(data["furo_check_num"]),
+            riichi_declared=jnp.bool_(data["riichi_declared"]),
+            riichi=jnp.array(data["riichi"], dtype=jnp.bool_),
+            n_meld=jnp.array(data["n_meld"], dtype=jnp.int8),
+            melds=jnp.array(data["melds"], dtype=jnp.int32),
+            is_menzen=jnp.array(data["is_menzen"], dtype=jnp.bool_),
+            pon=jnp.array(data["pon"], dtype=jnp.int32),
+        )
+
+    with open(path, "r") as f:
+        state = json.load(f, object_hook=decode_state)
+
+    return state
