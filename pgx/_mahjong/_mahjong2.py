@@ -124,6 +124,83 @@ class State(v1.State):
 
         return json.dumps(self.__dict__, cls=NumpyEncoder)
 
+    @classmethod
+    def from_json(cls, path):
+        import json
+
+        def decode_state(data: dict):
+            return cls(
+                current_player=jnp.int8(data["current_player"]),
+                observation=jnp.int8(data["observation"]),
+                rewards=jnp.array(data["rewards"], dtype=jnp.float32),
+                terminated=jnp.bool_(data["terminated"]),
+                truncated=jnp.bool_(data["truncated"]),
+                legal_action_mask=jnp.array(
+                    data["legal_action_mask"], dtype=jnp.bool_
+                ),
+                _rng_key=jnp.array(data["_rng_key"]),
+                _step_count=jnp.int32(data["_step_count"]),
+                _round=jnp.int8(data["_round"]),
+                honba=jnp.int8(data["honba"]),
+                oya=jnp.int8(data["oya"]),
+                score=jnp.array(data["score"], dtype=jnp.float32),
+                deck=jnp.array(data["deck"], dtype=jnp.int8),
+                next_deck_ix=jnp.int8(data["next_deck_ix"]),
+                hand=jnp.array(data["hand"], dtype=jnp.int8),
+                river=jnp.array(data["river"], dtype=jnp.uint8),
+                n_river=jnp.array(data["n_river"], dtype=jnp.int8),
+                doras=jnp.array(data["doras"], dtype=jnp.int8),
+                n_kan=jnp.int8(data["n_kan"]),
+                target=jnp.int8(data["target"]),
+                last_draw=jnp.int8(data["last_draw"]),
+                last_player=jnp.int8(data["last_player"]),
+                furo_check_num=jnp.int8(data["furo_check_num"]),
+                riichi_declared=jnp.bool_(data["riichi_declared"]),
+                riichi=jnp.array(data["riichi"], dtype=jnp.bool_),
+                n_meld=jnp.array(data["n_meld"], dtype=jnp.int8),
+                melds=jnp.array(data["melds"], dtype=jnp.int32),
+                is_menzen=jnp.array(data["is_menzen"], dtype=jnp.bool_),
+                pon=jnp.array(data["pon"], dtype=jnp.int32),
+            )
+
+        with open(path, "r") as f:
+            state = json.load(f, object_hook=decode_state)
+
+        return state
+
+    def __eq__(self, b):
+        a = self
+        return (
+            a.current_player == b.current_player
+            and a.observation == b.observation
+            and (a.rewards == b.rewards).all()
+            and a.terminated == b.terminated
+            and a.truncated == b.truncated
+            and (a.legal_action_mask == b.legal_action_mask).all()
+            and (a._rng_key == b._rng_key).all()
+            and a._step_count == b._step_count
+            and a._round == b._round
+            and a.honba == b.honba
+            and a.oya == b.oya
+            and (a.score == b.score).all()
+            and (a.deck == b.deck).all()
+            and a.next_deck_ix == b.next_deck_ix
+            and (a.hand == b.hand).all()
+            and (a.river == b.river).all()
+            and (a.doras == b.doras).all()
+            and a.n_kan == b.n_kan
+            and a.target == b.target
+            and a.last_draw == b.last_draw
+            and a.last_player == b.last_player
+            and a.furo_check_num == b.furo_check_num
+            and a.riichi_declared == b.riichi_declared
+            and (a.riichi == b.riichi).all()
+            and (a.n_meld == b.n_meld).all()
+            and (a.melds == b.melds).all()
+            and (a.is_menzen == b.is_menzen).all()
+            and (a.pon == b.pon).all()
+        )
+
 
 class Mahjong(v1.Env):
     def __init__(self):
@@ -676,47 +753,3 @@ def _show_legal_action(legal_action):
         f"PASS:{S[int(legal_action[77])]}"
     )
     print(s + m + p + s + z + km + kp + ks + kz + other)
-
-
-def from_json(path):
-    import json
-
-    def decode_state(data: dict):
-        return State(
-            current_player=jnp.int8(data["current_player"]),
-            observation=jnp.int8(data["observation"]),
-            rewards=jnp.array(data["rewards"], dtype=jnp.float32),
-            terminated=jnp.bool_(data["terminated"]),
-            truncated=jnp.bool_(data["truncated"]),
-            legal_action_mask=jnp.array(
-                data["legal_action_mask"], dtype=jnp.bool_
-            ),
-            _rng_key=jnp.array(data["_rng_key"]),
-            _step_count=jnp.int32(data["_step_count"]),
-            _round=jnp.int8(data["_round"]),
-            honba=jnp.int8(data["honba"]),
-            oya=jnp.int8(data["oya"]),
-            score=jnp.array(data["score"], dtype=jnp.float32),
-            deck=jnp.array(data["deck"], dtype=jnp.int8),
-            next_deck_ix=jnp.int8(data["next_deck_ix"]),
-            hand=jnp.array(data["hand"], dtype=jnp.int8),
-            river=jnp.array(data["river"], dtype=jnp.uint8),
-            n_river=jnp.array(data["n_river"], dtype=jnp.int8),
-            doras=jnp.array(data["doras"], dtype=jnp.int8),
-            n_kan=jnp.int8(data["n_kan"]),
-            target=jnp.int8(data["target"]),
-            last_draw=jnp.int8(data["last_draw"]),
-            last_player=jnp.int8(data["last_player"]),
-            furo_check_num=jnp.int8(data["furo_check_num"]),
-            riichi_declared=jnp.bool_(data["riichi_declared"]),
-            riichi=jnp.array(data["riichi"], dtype=jnp.bool_),
-            n_meld=jnp.array(data["n_meld"], dtype=jnp.int8),
-            melds=jnp.array(data["melds"], dtype=jnp.int32),
-            is_menzen=jnp.array(data["is_menzen"], dtype=jnp.bool_),
-            pon=jnp.array(data["pon"], dtype=jnp.int32),
-        )
-
-    with open(path, "r") as f:
-        state = json.load(f, object_hook=decode_state)
-
-    return state
