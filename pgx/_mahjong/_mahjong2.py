@@ -106,6 +106,24 @@ class State(v1.State):
         # TODO add envid
         return "mahjong"  # type:ignore
 
+    @property
+    def json(self):
+        import json
+
+        class NumpyEncoder(json.JSONEncoder):
+            """Special json encoder for numpy types"""
+
+            def default(self, obj):
+                if isinstance(obj, jnp.integer):
+                    return int(obj)
+                elif isinstance(obj, jnp.floating):
+                    return float(obj)
+                elif isinstance(obj, jnp.ndarray):
+                    return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
+        return json.dumps(self.__dict__, cls=NumpyEncoder)
+
 
 class Mahjong(v1.Env):
     def __init__(self):
