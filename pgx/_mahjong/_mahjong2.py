@@ -231,12 +231,20 @@ def _make_legal_action_mask(state: State, hand, c_p, new_tile):
             state.riichi[c_p]
             | (state.is_menzen[c_p] == 0)
             | (state.next_deck_ix < 13 + 4),
-            lambda: False,
+            lambda: FALSE,
             lambda: Hand.can_riichi(hand[c_p]),
         )
     )
     legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
         Hand.can_tsumo(hand[c_p])
+        & Yaku.judge(
+            state.hand[c_p],
+            state.melds[c_p],
+            state.n_meld[c_p],
+            state.last_draw,
+            state.riichi[c_p],
+            FALSE,
+        )[0].any()
     )
     return legal_action_mask
 
@@ -246,6 +254,14 @@ def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
     legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
         Hand.can_tsumo(hand[c_p])
+        & Yaku.judge(
+            state.hand[c_p],
+            state.melds[c_p],
+            state.n_meld[c_p],
+            state.last_draw,
+            state.riichi[c_p],
+            FALSE,
+        )[0].any()
     )
     return legal_action_mask
 
@@ -292,7 +308,15 @@ def _discard(state: State, tile: jnp.ndarray):
             lambda: (kan_player, meld_type),
         )
         ron_player, meld_type = jax.lax.cond(
-            Hand.can_ron(state.hand[player], tile),
+            Hand.can_ron(state.hand[player], tile)
+            & Yaku.judge(
+                state.hand[c_p],
+                state.melds[c_p],
+                state.n_meld[c_p],
+                state.last_draw,
+                state.riichi[c_p],
+                FALSE,
+            )[0].any(),
             lambda: (player, jnp.max(jnp.array([4, meld_type]))),
             lambda: (ron_player, meld_type),
         )

@@ -253,9 +253,9 @@ def test_ankan():
 
 
 def test_riichi():
-    rng = jax.random.PRNGKey(25)
+    rng = jax.random.PRNGKey(0)
     state = init(key=rng)
-    for _ in range(14):
+    for _ in range(89):
         rng, subkey = jax.random.split(rng)
         a = act_randomly(subkey, state)
         state = step(state, a)
@@ -275,13 +275,14 @@ def test_riichi():
 
 
 def test_ron():
-    rng = jax.random.PRNGKey(2)
+    rng = jax.random.PRNGKey(1)
     state = init(key=rng)
 
-    for i in range(89):
+    for i in range(96):
         rng, subkey = jax.random.split(rng)
         a = act_randomly(subkey, state)
         state = step(state, a)
+    visualize(state, "tests/assets/mahjong/before_ron.svg")
 
     assert not state.terminated
     assert state.legal_action_mask[Action.RON]
@@ -292,17 +293,18 @@ def test_ron():
         state.rewards
         == jnp.array([0.0, 2000.0, -2000.0, 0.0], dtype=jnp.float32)
     ).all()
-    visualize(state, "tests/assets/mahjong/ron.svg")
+    visualize(state, "tests/assets/mahjong/after_ron.svg")
 
 
 def test_tsumo():
-    rng = jax.random.PRNGKey(25)
+    rng = jax.random.PRNGKey(0)
     state = init(key=rng)
 
-    for i in range(91):
+    for i in range(89):
         rng, subkey = jax.random.split(rng)
         a = act_randomly(subkey, state)
         state = step(state, a)
+    visualize(state, "tests/assets/mahjong/before_tsumo.svg")
 
     assert not state.terminated
     assert state.legal_action_mask[Action.TSUMO]
@@ -313,7 +315,7 @@ def test_tsumo():
         state.rewards
         == jnp.array([1200.0, -400.0, -400.0, -400.0], dtype=jnp.float32)
     ).all()
-    visualize(state, "tests/assets/mahjong/tsumo.svg")
+    visualize(state, "tests/assets/mahjong/after_tsumo.svg")
 
 
 def test_transparent():
