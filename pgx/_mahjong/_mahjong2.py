@@ -129,7 +129,7 @@ class State(v1.State):
         import json
 
         def decode_state(data: dict):
-            return cls(
+            return cls(  # type:ignore
                 current_player=jnp.int8(data["current_player"]),
                 observation=jnp.int8(data["observation"]),
                 rewards=jnp.array(data["rewards"], dtype=jnp.float32),
