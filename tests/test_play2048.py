@@ -79,6 +79,18 @@ def test_legal_action():
     """
     assert (state.legal_action_mask == jnp.bool_([0, 0, 1, 1])).all()
     assert not state.terminated
+    board = jnp.int32([1, 1, 0, 0, 2, 0, 0, 0, 3, 0, 0, 0, 4, 0, 0, 0])
+    state = State(_board=board)
+    state = step(state, 0)
+    """
+    [[ 4  0  0  0]
+     [ 4  0  0  0]
+     [ 8  0  0  0]
+     [16  0  0  0]]
+    """
+    assert (state.legal_action_mask == jnp.bool_([0, 1, 1, 1])).all()
+    assert not state.terminated
+
 
 
 def test_terminated():
