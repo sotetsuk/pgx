@@ -31,11 +31,11 @@ NUM_ACTION = 79
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
     observation: jnp.ndarray = jnp.int8(0)
-    rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)
+    rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)  # （百の位から）
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _rng_key: jax.Array = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
     _round: jnp.ndarray = jnp.int8(0)
@@ -206,7 +206,7 @@ class Mahjong(v1.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
     def _step(self, state: v1.State, action: jnp.ndarray) -> State:
@@ -231,7 +231,7 @@ class Mahjong(v1.Env):
         return 4
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.Array) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(rng))
     last_player = jnp.int8(-1)
@@ -324,7 +324,7 @@ def _make_legal_action_mask(state: State, hand, c_p, new_tile):
     legal_action_mask = legal_action_mask.at[Action.RIICHI].set(
         jax.lax.cond(
             state.riichi[c_p]
-            | (state.is_menzen[c_p] == 0)
+            | state.is_menzen[c_p]
             | (state.next_deck_ix < 13 + 4),
             lambda: FALSE,
             lambda: Hand.can_riichi(hand[c_p]),

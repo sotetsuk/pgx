@@ -194,23 +194,23 @@ def test_shanten():
 def test_discard():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
-    assert state.current_player == 0
-    assert state.target == -1
-    assert state.deck[state.next_deck_ix] == 8
-    assert state.hand[0, 8] == 1
+    assert state.current_player == jnp.int8(0)
+    assert state.target == jnp.int8(-1)
+    assert state.deck[state.next_deck_ix] == jnp.int8(8)
+    assert state.hand[0, 8] == jnp.int8(1)
 
     state = step(state, 8)
-    assert state.hand[0, 8] == 0
-    assert state.current_player == 1
-    assert state.target == -1
-    assert state.deck[state.next_deck_ix] == 31
+    assert state.hand[0, 8] == jnp.int8(0)
+    assert state.current_player == jnp.int8(1)
+    assert state.target == jnp.int8(-1)
+    assert state.deck[state.next_deck_ix] == jnp.int8(31)
 
-    assert state.hand[1, 8] == 2
+    assert state.hand[1, 8] == jnp.int8(2)
 
     state = step(state, Action.TSUMOGIRI)
-    assert state.hand[1, 8] == 1
-    assert state.current_player == 2
-    assert state.target == -1
+    assert state.hand[1, 8] == jnp.int8(1)
+    assert state.current_player == jnp.int8(2)
+    assert state.target == jnp.int8(-1)
 
 
 def test_chi():
@@ -286,6 +286,7 @@ def test_ron():
     assert state.legal_action_mask[Action.RON]
 
     state = step(state, Action.RON)
+
     assert state.terminated
     assert (
         state.rewards
@@ -295,23 +296,21 @@ def test_ron():
 
 
 def test_tsumo():
-    rng = jax.random.PRNGKey(0)
-    state = init(key=rng)
+    from pgx._mahjong._mahjong2 import State
 
-    for i in range(89):
-        rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
-        state = step(state, a)
+    state = State.from_json("tests/assets/mahjong/tsumo_test.json")
     visualize(state, "tests/assets/mahjong/before_tsumo.svg")
+    assert state.current_player == 0
+    state = step(state, 30)
 
-    assert not state.terminated
     assert state.legal_action_mask[Action.TSUMO]
 
     state = step(state, Action.TSUMO)
+
     assert state.terminated
     assert (
         state.rewards
-        == jnp.array([1200.0, -400.0, -400.0, -400.0], dtype=jnp.float32)
+        == jnp.array([-500.0, 1100.0, -300.0, -300.0], dtype=jnp.float32)
     ).all()
     visualize(state, "tests/assets/mahjong/after_tsumo.svg")
 
