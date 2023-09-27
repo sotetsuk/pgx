@@ -266,32 +266,30 @@ def test_riichi():
     state = step(state, Action.RIICHI)
     assert not state.terminated
 
-    for i in range(5):
-        visualize(state, f"tests/assets/mahjong/after_riichi_{i}.svg")
-
+    N = 10
+    for _ in range(N):
         rng, subkey = jax.random.split(rng)
         a = act_randomly(subkey, state)
         state = step(state, a)
+    visualize(state, f"tests/assets/mahjong/after_riichi_{N}.svg")
 
 
 def test_ron():
-    rng = jax.random.PRNGKey(1)
-    state = init(key=rng)
+    from pgx._mahjong._mahjong2 import State
 
-    for i in range(96):
-        rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
-        state = step(state, a)
+    state = State.from_json("tests/assets/mahjong/ron_test.json")
     visualize(state, "tests/assets/mahjong/before_ron.svg")
 
-    assert not state.terminated
+    assert state.current_player == 0
+    state = step(state, 30)  # 北
+
     assert state.legal_action_mask[Action.RON]
 
     state = step(state, Action.RON)
     assert state.terminated
     assert (
         state.rewards
-        == jnp.array([0.0, 2000.0, -2000.0, 0.0], dtype=jnp.float32)
+        == jnp.array([-500.0, 500.0, 0.0, 0.0], dtype=jnp.float32)
     ).all()
     visualize(state, "tests/assets/mahjong/after_ron.svg")
 
