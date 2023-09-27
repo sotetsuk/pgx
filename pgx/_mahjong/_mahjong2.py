@@ -38,7 +38,7 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
-    round: jnp.ndarray = jnp.int8(0)
+    _round: jnp.ndarray = jnp.int8(0)
     honba: jnp.ndarray = jnp.int8(0)
 
     # 東1局の親
@@ -105,6 +105,101 @@ class State(v1.State):
     def env_id(self) -> v1.EnvId:
         # TODO add envid
         return "mahjong"  # type:ignore
+
+    @property
+    def json(self):
+        import json
+
+        class NumpyEncoder(json.JSONEncoder):
+            """Special json encoder for numpy types"""
+
+            def default(self, obj):
+                if isinstance(obj, jnp.integer):
+                    return int(obj)
+                elif isinstance(obj, jnp.floating):
+                    return float(obj)
+                elif isinstance(obj, jnp.ndarray):
+                    return obj.tolist()
+                return json.JSONEncoder.default(self, obj)
+
+        return json.dumps(self.__dict__, cls=NumpyEncoder)
+
+    @classmethod
+    def from_json(cls, path):
+        import json
+
+        def decode_state(data: dict):
+            return cls(  # type:ignore
+                current_player=jnp.int8(data["current_player"]),
+                observation=jnp.int8(data["observation"]),
+                rewards=jnp.array(data["rewards"], dtype=jnp.float32),
+                terminated=jnp.bool_(data["terminated"]),
+                truncated=jnp.bool_(data["truncated"]),
+                legal_action_mask=jnp.array(
+                    data["legal_action_mask"], dtype=jnp.bool_
+                ),
+                _rng_key=jnp.array(data["_rng_key"]),
+                _step_count=jnp.int32(data["_step_count"]),
+                _round=jnp.int8(data["_round"]),
+                honba=jnp.int8(data["honba"]),
+                oya=jnp.int8(data["oya"]),
+                score=jnp.array(data["score"], dtype=jnp.float32),
+                deck=jnp.array(data["deck"], dtype=jnp.int8),
+                next_deck_ix=jnp.int8(data["next_deck_ix"]),
+                hand=jnp.array(data["hand"], dtype=jnp.int8),
+                river=jnp.array(data["river"], dtype=jnp.uint8),
+                n_river=jnp.array(data["n_river"], dtype=jnp.int8),
+                doras=jnp.array(data["doras"], dtype=jnp.int8),
+                n_kan=jnp.int8(data["n_kan"]),
+                target=jnp.int8(data["target"]),
+                last_draw=jnp.int8(data["last_draw"]),
+                last_player=jnp.int8(data["last_player"]),
+                furo_check_num=jnp.int8(data["furo_check_num"]),
+                riichi_declared=jnp.bool_(data["riichi_declared"]),
+                riichi=jnp.array(data["riichi"], dtype=jnp.bool_),
+                n_meld=jnp.array(data["n_meld"], dtype=jnp.int8),
+                melds=jnp.array(data["melds"], dtype=jnp.int32),
+                is_menzen=jnp.array(data["is_menzen"], dtype=jnp.bool_),
+                pon=jnp.array(data["pon"], dtype=jnp.int32),
+            )
+
+        with open(path, "r") as f:
+            state = json.load(f, object_hook=decode_state)
+
+        return state
+
+    def __eq__(self, b):
+        a = self
+        return (
+            a.current_player == b.current_player
+            and a.observation == b.observation
+            and (a.rewards == b.rewards).all()
+            and a.terminated == b.terminated
+            and a.truncated == b.truncated
+            and (a.legal_action_mask == b.legal_action_mask).all()
+            and (a._rng_key == b._rng_key).all()
+            and a._step_count == b._step_count
+            and a._round == b._round
+            and a.honba == b.honba
+            and a.oya == b.oya
+            and (a.score == b.score).all()
+            and (a.deck == b.deck).all()
+            and a.next_deck_ix == b.next_deck_ix
+            and (a.hand == b.hand).all()
+            and (a.river == b.river).all()
+            and (a.doras == b.doras).all()
+            and a.n_kan == b.n_kan
+            and a.target == b.target
+            and a.last_draw == b.last_draw
+            and a.last_player == b.last_player
+            and a.furo_check_num == b.furo_check_num
+            and a.riichi_declared == b.riichi_declared
+            and (a.riichi == b.riichi).all()
+            and (a.n_meld == b.n_meld).all()
+            and (a.melds == b.melds).all()
+            and (a.is_menzen == b.is_menzen).all()
+            and (a.pon == b.pon).all()
+        )
 
 
 class Mahjong(v1.Env):
@@ -576,7 +671,7 @@ def _tsumo(state: State):
     s1 = score + (-score) % 100
     s2 = (score * 2) + (-(score * 2)) % 100
 
-    oya = (state.oya + state.round) % 4
+    oya = (state.oya + state._round) % 4
     reward = jax.lax.cond(
         oya == c_p,
         lambda: jnp.full(4, -s2, dtype=jnp.int32).at[c_p].set(s2 * 3),
@@ -606,7 +701,7 @@ def _ron(state: State):
         is_ron=TRUE,
     )
     score = jax.lax.cond(
-        (state.oya + state.round) % 4 == c_p,
+        (state.oya + state._round) % 4 == c_p,
         lambda: score * 6,
         lambda: score * 4,
     )

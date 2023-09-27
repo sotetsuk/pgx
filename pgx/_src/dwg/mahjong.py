@@ -49,7 +49,7 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
         )
     )
     kanji = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
-    ro = state.round
+    ro = state._round
     round = f"{wind[ro//4]}{kanji[ro%4+1]}局"
     if state.honba > 0:
         round += f"{kanji[state.honba]}本場"
