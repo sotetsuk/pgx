@@ -225,23 +225,23 @@ def test_chi():
     """
     assert state.legal_action_mask[6]
     state = step(state, 6)
-    assert state.current_player == 1
-    assert state.target == 6
+    assert state.current_player == jnp.int8(1)
+    assert state.target == jnp.int8(6)
     assert state.legal_action_mask[Action.CHI_R]
 
     state1 = step(state, Action.CHI_R)
-    assert state1.current_player == 1
-    assert state1.melds[1, 0] == 25420
+    assert state1.current_player == jnp.int8(1)
+    assert state1.melds[1, 0] == jnp.int32(25420)
 
     state2 = step(state, Action.PASS)
-    assert state2.current_player == 1
-    assert state2.melds[1, 0] == 0
+    assert state2.current_player == jnp.int8(1)
+    assert state2.melds[1, 0] == jnp.int8(0)
 
 
 def test_ankan():
     key = jax.random.PRNGKey(352)
     state = init(key=key)
-    assert state.current_player == 0
+    assert state.current_player == jnp.int8(0)
     """
     [[1 2 0 0 0 0 1 0 0 0 0 1 0 1 0 0 0 0 0 0 0 2 0 0 0 0 1 0 0 1 0 4 0 0]
      [0 0 1 2 0 1 0 0 0 2 0 0 0 1 1 2 0 0 0 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0]
@@ -249,7 +249,7 @@ def test_ankan():
      [0 0 1 0 1 0 0 0 1 0 0 1 1 2 0 0 0 0 0 0 0 0 0 1 0 1 1 1 1 0 1 0 0 0]]
     """
     state = step(state, 65)
-    assert state.melds[0, 0] == 4033
+    assert state.melds[0, 0] == jnp.int32(4033)
 
 
 def test_riichi():
@@ -259,7 +259,7 @@ def test_riichi():
     state = State.from_json("tests/assets/mahjong/riichi_test.json")
     visualize(state, "tests/assets/mahjong/before_riichi.svg")
 
-    assert state.current_player == 0
+    assert state.current_player == jnp.int8(0)
     state = step(state, 9)
 
     assert state.legal_action_mask[Action.RIICHI]
@@ -280,7 +280,7 @@ def test_ron():
     state = State.from_json("tests/assets/mahjong/ron_test.json")
     visualize(state, "tests/assets/mahjong/before_ron.svg")
 
-    assert state.current_player == 0
+    assert state.current_player == jnp.int8(0)
     state = step(state, 30)  # 北
 
     assert state.legal_action_mask[Action.RON]
@@ -300,7 +300,7 @@ def test_tsumo():
 
     state = State.from_json("tests/assets/mahjong/tsumo_test.json")
     visualize(state, "tests/assets/mahjong/before_tsumo.svg")
-    assert state.current_player == 0
+    assert state.current_player == jnp.int8(0)
     state = step(state, 30)
 
     assert state.legal_action_mask[Action.TSUMO]
