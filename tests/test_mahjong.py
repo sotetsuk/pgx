@@ -253,14 +253,14 @@ def test_ankan():
 
 
 def test_riichi():
-    rng = jax.random.PRNGKey(0)
-    state = init(key=rng)
-    for _ in range(89):
-        rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
-        state = step(state, a)
+    from pgx._mahjong._mahjong2 import State
 
+    rng = jax.random.PRNGKey(0)
+    state = State.from_json("tests/assets/mahjong/riichi_test.json")
     visualize(state, "tests/assets/mahjong/before_riichi.svg")
+
+    assert state.current_player == 0
+    state = step(state, 9)
 
     assert state.legal_action_mask[Action.RIICHI]
     state = step(state, Action.RIICHI)
