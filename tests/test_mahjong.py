@@ -329,6 +329,26 @@ def test_transparent():
     visualize(state, "tests/assets/mahjong/transparent.svg")
 
 
+def test_json():
+    from pgx._mahjong._mahjong2 import State
+    import os
+
+    rng = jax.random.PRNGKey(0)
+    state = init(key=rng)
+    for _ in range(50):
+        rng, subkey = jax.random.split(rng)
+        a = act_randomly(subkey, state)
+        state = step(state, a)
+
+    path = "temp.json"
+    with open(path, mode="w") as f:
+        f.write(state.json)
+
+    state2 = State.from_json(path=path)
+    assert state == state2
+    os.remove(path)
+
+
 def test_random_play():
     for i in range(10):
         rng = jax.random.PRNGKey(i)
