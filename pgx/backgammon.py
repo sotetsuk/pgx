@@ -125,7 +125,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     board: jnp.ndarray = state._board
     playable_dice_count_vec: jnp.ndarray = _to_playable_dice_count(
         state._playable_dice
-    )
+    )  # 6 dim vec which represents the count of playable die.
     return jax.lax.cond(
         player_id == state.current_player,
         lambda: jnp.concatenate((board, playable_dice_count_vec), axis=None),  # type: ignore
@@ -138,6 +138,12 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 def _to_playable_dice_count(playable_dice: jnp.ndarray) -> jnp.ndarray:
     """
     Return 6 dim vec which represents the number of playable die
+    Examples
+    Playable dice: 2, 3
+    Return: [0, 1, 1, 0, 0, 0]
+
+    Playable dice: 4, 4, 4, 4
+    Return: [0, 0, 0, 0, 4, 0]
     """
     dice_indices: jnp.ndarray = jnp.array(
         [0, 1, 2, 3], dtype=jnp.int8
