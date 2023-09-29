@@ -48,6 +48,9 @@ class State(v1.State):
     # 点数（百の位から）
     score: jnp.ndarray = jnp.full(4, 250, dtype=jnp.float32)
 
+    #      嶺上 ドラ  カンドラ
+    # ... 13 11  9  7  5  3  1
+    # ... 12 10  8  6  4  2  0
     deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int8)
 
     # 次に引く牌のindex
@@ -238,7 +241,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     last_player = jnp.int8(-1)
     deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
     init_hand = Hand.make_init_hand(deck)
-    doras = jnp.array([deck[0], -1, -1, -1, -1], dtype=jnp.int8)
+    doras = jnp.array([deck[9], -1, -1, -1, -1], dtype=jnp.int8)
     state = State(  # type:ignore
         current_player=current_player,
         oya=current_player,
@@ -540,6 +543,10 @@ def _selfkan(state: State, action):
         last_draw=rinshan_tile,
         hand=hand,
         legal_action_mask=legal_action_mask,
+        n_kan=state.n_kan + 1,
+        doras=state.doras.at[state.n_kan + 1].set(
+            state.deck[9 - 2 * (state.n_kan + 1)]
+        ),
     )
 
 
@@ -552,7 +559,9 @@ def _ankan(state: State, target):
     )
     # TODO: 国士無双ロンの受付
 
-    return state.replace(hand=hand)  # type:ignore
+    return state.replace(  # type:ignore
+        hand=hand,
+    )
 
 
 def _kakan(state: State, target, pon_src, pon_idx):
@@ -614,6 +623,10 @@ def _minkan(state: State):
         hand=hand,
         legal_action_mask=legal_action_mask,
         river=river,
+        n_kan=state.n_kan + 1,
+        doras=state.doras.at[state.n_kan + 1].set(
+            state.deck[9 - 2 * (state.n_kan + 1)]
+        ),
     )
 
 
