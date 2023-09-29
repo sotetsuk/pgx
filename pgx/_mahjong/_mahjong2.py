@@ -81,8 +81,11 @@ class State(v1.State):
     last_player: jnp.ndarray = jnp.int8(0)
 
     # 打牌の後に競合する副露が生じた場合、どこまで調べたかを保存
-    # 0:none 1:ron判定済み 2:pon/kan判定済み
-    furo_check_num: jnp.ndarray = jnp.int8(0)
+    # [0]: 打牌したプレイヤー
+    # [1]: 下
+    # [2]: 打牌したプレイヤー
+    # [3]: 打牌したプレイヤー
+    furo_check_num: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi_declared: jnp.ndarray = FALSE
@@ -154,7 +157,7 @@ class State(v1.State):
                 target=jnp.int8(data["target"]),
                 last_draw=jnp.int8(data["last_draw"]),
                 last_player=jnp.int8(data["last_player"]),
-                furo_check_num=jnp.int8(data["furo_check_num"]),
+                furo_check_num=jnp.uint8(data["furo_check_num"]),
                 riichi_declared=jnp.bool_(data["riichi_declared"]),
                 riichi=jnp.array(data["riichi"], dtype=jnp.bool_),
                 n_meld=jnp.array(data["n_meld"], dtype=jnp.int8),
