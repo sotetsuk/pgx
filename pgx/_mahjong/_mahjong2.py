@@ -31,7 +31,7 @@ NUM_ACTION = 79
 class State(v1.State):
     current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
     observation: jnp.ndarray = jnp.int8(0)
-    rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)
+    rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)  # （百の位から）
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
@@ -206,7 +206,7 @@ class Mahjong(v1.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
     def _step(self, state: v1.State, action: jnp.ndarray) -> State:
@@ -309,7 +309,7 @@ def _draw(state: State):
     )
 
 
-def _make_legal_action_mask(state, hand, c_p, new_tile):
+def _make_legal_action_mask(state: State, hand, c_p, new_tile):
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
@@ -322,10 +322,24 @@ def _make_legal_action_mask(state, hand, c_p, new_tile):
         )
     )
     legal_action_mask = legal_action_mask.at[Action.RIICHI].set(
-        Hand.can_riichi(hand[c_p])
+        jax.lax.cond(
+            state.riichi[c_p]
+            | state.is_menzen[c_p]
+            | (state.next_deck_ix < 13 + 4),
+            lambda: FALSE,
+            lambda: Hand.can_riichi(hand[c_p]),
+        )
     )
     legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
         Hand.can_tsumo(hand[c_p])
+        & Yaku.judge(
+            state.hand[c_p],
+            state.melds[c_p],
+            state.n_meld[c_p],
+            state.last_draw,
+            state.riichi[c_p],
+            FALSE,
+        )[0].any()
     )
     return legal_action_mask
 
@@ -335,6 +349,14 @@ def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
     legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
         Hand.can_tsumo(hand[c_p])
+        & Yaku.judge(
+            state.hand[c_p],
+            state.melds[c_p],
+            state.n_meld[c_p],
+            state.last_draw,
+            state.riichi[c_p],
+            FALSE,
+        )[0].any()
     )
     return legal_action_mask
 
@@ -381,7 +403,15 @@ def _discard(state: State, tile: jnp.ndarray):
             lambda: (kan_player, meld_type),
         )
         ron_player, meld_type = jax.lax.cond(
-            Hand.can_ron(state.hand[player], tile),
+            Hand.can_ron(state.hand[player], tile)
+            & Yaku.judge(
+                state.hand[c_p],
+                state.melds[c_p],
+                state.n_meld[c_p],
+                state.last_draw,
+                state.riichi[c_p],
+                FALSE,
+            )[0].any(),
             lambda: (player, jnp.max(jnp.array([4, meld_type]))),
             lambda: (ron_player, meld_type),
         )

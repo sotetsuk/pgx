@@ -194,23 +194,23 @@ def test_shanten():
 def test_discard():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
-    assert state.current_player == 0
-    assert state.target == -1
-    assert state.deck[state.next_deck_ix] == 8
-    assert state.hand[0, 8] == 1
+    assert state.current_player == jnp.int8(0)
+    assert state.target == jnp.int8(-1)
+    assert state.deck[state.next_deck_ix] == jnp.int8(8)
+    assert state.hand[0, 8] == jnp.int8(1)
 
     state = step(state, 8)
-    assert state.hand[0, 8] == 0
-    assert state.current_player == 1
-    assert state.target == -1
-    assert state.deck[state.next_deck_ix] == 31
+    assert state.hand[0, 8] == jnp.int8(0)
+    assert state.current_player == jnp.int8(1)
+    assert state.target == jnp.int8(-1)
+    assert state.deck[state.next_deck_ix] == jnp.int8(31)
 
-    assert state.hand[1, 8] == 2
+    assert state.hand[1, 8] == jnp.int8(2)
 
     state = step(state, Action.TSUMOGIRI)
-    assert state.hand[1, 8] == 1
-    assert state.current_player == 2
-    assert state.target == -1
+    assert state.hand[1, 8] == jnp.int8(1)
+    assert state.current_player == jnp.int8(2)
+    assert state.target == jnp.int8(-1)
 
 
 def test_chi():
@@ -225,23 +225,23 @@ def test_chi():
     """
     assert state.legal_action_mask[6]
     state = step(state, 6)
-    assert state.current_player == 1
-    assert state.target == 6
+    assert state.current_player == jnp.int8(1)
+    assert state.target == jnp.int8(6)
     assert state.legal_action_mask[Action.CHI_R]
 
     state1 = step(state, Action.CHI_R)
-    assert state1.current_player == 1
-    assert state1.melds[1, 0] == 25420
+    assert state1.current_player == jnp.int8(1)
+    assert state1.melds[1, 0] == jnp.int32(25420)
 
     state2 = step(state, Action.PASS)
-    assert state2.current_player == 1
-    assert state2.melds[1, 0] == 0
+    assert state2.current_player == jnp.int8(1)
+    assert state2.melds[1, 0] == jnp.int8(0)
 
 
 def test_ankan():
     key = jax.random.PRNGKey(352)
     state = init(key=key)
-    assert state.current_player == 0
+    assert state.current_player == jnp.int8(0)
     """
     [[1 2 0 0 0 0 1 0 0 0 0 1 0 1 0 0 0 0 0 0 0 2 0 0 0 0 1 0 0 1 0 4 0 0]
      [0 0 1 2 0 1 0 0 0 2 0 0 0 1 1 2 0 0 0 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0]
@@ -249,71 +249,70 @@ def test_ankan():
      [0 0 1 0 1 0 0 0 1 0 0 1 1 2 0 0 0 0 0 0 0 0 0 1 0 1 1 1 1 0 1 0 0 0]]
     """
     state = step(state, 65)
-    assert state.melds[0, 0] == 4033
+    assert state.melds[0, 0] == jnp.int32(4033)
 
 
 def test_riichi():
-    rng = jax.random.PRNGKey(25)
-    state = init(key=rng)
-    for _ in range(14):
-        rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
-        state = step(state, a)
+    from pgx._mahjong._mahjong2 import State
 
+    rng = jax.random.PRNGKey(0)
+    state = State.from_json("tests/assets/mahjong/riichi_test.json")
     visualize(state, "tests/assets/mahjong/before_riichi.svg")
+
+    assert state.current_player == jnp.int8(0)
+    state = step(state, 9)
 
     assert state.legal_action_mask[Action.RIICHI]
     state = step(state, Action.RIICHI)
     assert not state.terminated
 
-    for i in range(5):
-        visualize(state, f"tests/assets/mahjong/after_riichi_{i}.svg")
-
+    N = 10
+    for _ in range(N):
         rng, subkey = jax.random.split(rng)
         a = act_randomly(subkey, state)
         state = step(state, a)
+    visualize(state, f"tests/assets/mahjong/after_riichi_{N}.svg")
 
 
 def test_ron():
-    rng = jax.random.PRNGKey(2)
-    state = init(key=rng)
+    from pgx._mahjong._mahjong2 import State
 
-    for i in range(89):
-        rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
-        state = step(state, a)
+    state = State.from_json("tests/assets/mahjong/ron_test.json")
+    visualize(state, "tests/assets/mahjong/before_ron.svg")
 
-    assert not state.terminated
+    assert state.current_player == jnp.int8(0)
+    state = step(state, 30)  # 北
+
     assert state.legal_action_mask[Action.RON]
 
     state = step(state, Action.RON)
+
     assert state.terminated
     assert (
         state.rewards
-        == jnp.array([0.0, 2000.0, -2000.0, 0.0], dtype=jnp.float32)
+        == jnp.array([-500.0, 500.0, 0.0, 0.0], dtype=jnp.float32)
     ).all()
-    visualize(state, "tests/assets/mahjong/ron.svg")
+    visualize(state, "tests/assets/mahjong/after_ron.svg")
 
 
 def test_tsumo():
-    rng = jax.random.PRNGKey(25)
-    state = init(key=rng)
+    from pgx._mahjong._mahjong2 import State
 
-    for i in range(91):
-        rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
-        state = step(state, a)
+    state = State.from_json("tests/assets/mahjong/tsumo_test.json")
+    visualize(state, "tests/assets/mahjong/before_tsumo.svg")
+    assert state.current_player == jnp.int8(0)
+    state = step(state, 30)
 
-    assert not state.terminated
     assert state.legal_action_mask[Action.TSUMO]
 
     state = step(state, Action.TSUMO)
+
     assert state.terminated
     assert (
         state.rewards
-        == jnp.array([1200.0, -400.0, -400.0, -400.0], dtype=jnp.float32)
+        == jnp.array([-500.0, 1100.0, -300.0, -300.0], dtype=jnp.float32)
     ).all()
-    visualize(state, "tests/assets/mahjong/tsumo.svg")
+    visualize(state, "tests/assets/mahjong/after_tsumo.svg")
 
 
 def test_transparent():
