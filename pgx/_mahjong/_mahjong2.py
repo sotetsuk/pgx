@@ -83,7 +83,7 @@ class State(v1.State):
     # 打牌の後に競合する副露が生じた場合用
     #     pon player, kan player, chi player
     # b0       00         00         00
-    furo_check_num: jnp.ndarray = jnp.int8(0)
+    furo_check_num: jnp.ndarray = jnp.uint8(0)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
     riichi_declared: jnp.ndarray = FALSE
@@ -427,7 +427,9 @@ def _discard(state: State, tile: jnp.ndarray):
         search,
         (meld_type, pon_player, kan_player, ron_player),
     )
-    furo_num = c_p << 6 | kan_player << 4 | pon_player << 2 | chi_player
+    furo_num = jnp.uint8(
+        c_p << 6 | kan_player << 4 | pon_player << 2 | chi_player
+    )
     pon_player, kan_player, ron_player = (
         (c_p + 1 + pon_player) % 4,
         (c_p + 1 + kan_player) % 4,
@@ -457,7 +459,7 @@ def _discard(state: State, tile: jnp.ndarray):
                 current_player=chi_player,
                 last_player=c_p,
                 target=jnp.int8(tile),
-                furo_check_num=furo_num,
+                furo_check_num=furo_num & 0b11111100,
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.CHI_L]
                 .set(Hand.can_chi(state.hand[chi_player], tile, Action.CHI_L))
@@ -472,7 +474,7 @@ def _discard(state: State, tile: jnp.ndarray):
                 current_player=pon_player,
                 last_player=c_p,
                 target=jnp.int8(tile),
-                furo_check_num=furo_num,
+                furo_check_num=furo_num & 0b11110011,
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.PON]
                 .set(TRUE)
@@ -483,7 +485,7 @@ def _discard(state: State, tile: jnp.ndarray):
                 current_player=kan_player,
                 last_player=c_p,
                 target=jnp.int8(tile),
-                furo_check_num=furo_num,
+                furo_check_num=furo_num & 0b11001111,
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.MINKAN]
                 .set(Hand.can_minkan(hand[kan_player], tile))
@@ -673,42 +675,44 @@ def _chi(state: State, action):
 
 
 def _pass(state: State):
-    c_p = state.furo_check_num >> 6
+    last_player = (state.furo_check_num & 0b11000000) >> 6
     kan_player = (state.furo_check_num & 0b00110000) >> 4
     pon_player = (state.furo_check_num & 0b00001100) >> 2
     chi_player = state.furo_check_num & 0b00000011
     return jax.lax.cond(
         kan_player > 0,
         lambda: state.replace(  # type:ignore
-            current_player=(c_p + 1 + kan_player) % 4,
-            furo_check_num=state.furo_check_num & 0b00110000,
+            current_player=jnp.int8(last_player + 1 + kan_player) % 4,
+            furo_check_num=jnp.uint8(state.furo_check_num & 0b11001111),
             legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
             .at[Action.MINKAN]
-            .set(TRUE)
+            .set(Hand.can_minkan(state.hand[kan_player], state.target))
             .at[Action.PASS]
             .set(TRUE),
         ),
         lambda: jax.lax.cond(
             pon_player > 0,
             lambda: state.replace(  # type:ignore
-                current_player=(c_p + 1 + pon_player) % 4,
-                furo_check_num=state.furo_check_num & 0b00001100,
+                current_player=jnp.int8(last_player + 1 + pon_player) % 4,
+                furo_check_num=jnp.uint8(state.furo_check_num & 0b11110011),
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.PON]
-                .set(TRUE)
+                .set(Hand.can_pon(state.hand[pon_player], state.target))
                 .at[Action.PASS]
                 .set(TRUE),
             ),
             lambda: jax.lax.cond(
                 chi_player > 0,
                 lambda: state.replace(  # type:ignore
-                    current_player=(c_p + 1 + chi_player) % 4,
-                    furo_check_num=state.furo_check_num & 0b00000011,
+                    current_player=jnp.int8(last_player + 1 + chi_player) % 4,
+                    furo_check_num=jnp.uint8(
+                        state.furo_check_num & 0b11111100
+                    ),
                     legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                     .at[Action.CHI_L]
                     .set(
                         Hand.can_chi(
-                            state.hand[(c_p + 1 + chi_player) % 4],
+                            state.hand[(last_player + 1 + chi_player) % 4],
                             state.target,
                             Action.CHI_L,
                         )
@@ -716,7 +720,7 @@ def _pass(state: State):
                     .at[Action.CHI_M]
                     .set(
                         Hand.can_chi(
-                            state.hand[(c_p + 1 + chi_player) % 4],
+                            state.hand[(last_player + 1 + chi_player) % 4],
                             state.target,
                             Action.CHI_M,
                         )
@@ -724,7 +728,7 @@ def _pass(state: State):
                     .at[Action.CHI_R]
                     .set(
                         Hand.can_chi(
-                            state.hand[(c_p + 1 + chi_player) % 4],
+                            state.hand[(last_player + 1 + chi_player) % 4],
                             state.target,
                             Action.CHI_R,
                         )
@@ -734,7 +738,7 @@ def _pass(state: State):
                 ),
                 lambda: _draw(
                     state.replace(  # type: ignore
-                        current_player=(c_p + 1 + chi_player) % 4,
+                        current_player=jnp.int8(last_player + 1) % 4,
                     )
                 ),
             ),
