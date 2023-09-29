@@ -26,7 +26,7 @@ jobs:
     - name: test
       run: |
         make install-dev
-        python3 -m pytest --doctest-modules --verbose pgx tests/test_mahjong.py --ignore=pgx/experimental --cov=pgx --cov-report=term-missing --cov-report=html
+        python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental --cov=pgx --cov-report=term-missing --cov-report=html
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
       env:
