@@ -39,6 +39,9 @@ class Config(BaseModel):
     learning_rate: float = 0.001
     # eval params
     eval_interval: int = 5
+    # Gumbel Alphazero Parameters
+    rescale_values: bool = True  # default = True
+    value_scale: float = 0.1  # default = 0.1
 
     class Config:
         extra = "forbid"
@@ -133,7 +136,8 @@ def selfplay(
             invalid_actions=~state.legal_action_mask,
             qtransform=partial(
                 mctx.qtransform_completed_by_mix_value,
-                rescale_values=False,
+                value_scale=config.value_scale,
+                rescale_values=config.rescale_values,
             ),
             gumbel_scale=1.0,
         )
