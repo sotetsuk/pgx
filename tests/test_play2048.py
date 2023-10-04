@@ -54,23 +54,18 @@ def test_step():
         == jnp.int32([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0])
     ).all()
 
-    state = step(state, 3)  # down
-    """
-    [[0 0 0 0]
-     [0 0 0 0]
-     [0 0 0 2]
-     [0 0 4 0]]
-    """
-    assert (
-        state._board
-        == jnp.int32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0])
-    ).all()
+    key1, key2 = jax.random.split(key)
+    state1 = step(state, 3, key1)  # down
+    state2 = step(state, 3, key2)  # down
+    assert state1._board[14] == 2
+    assert state2._board[14] == 2
+    assert not (state1._board == state2._board).all()
 
 
 def test_legal_action():
     board = jnp.int32([0, 1, 2, 3, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 0])
     state = State(_board=board)
-    state = step(state, 0)
+    state = step(state, 0, jax.random.PRNGKey(0))
     """
     [[ 2  4  8  2]
      [ 4  8 16 32]
@@ -84,7 +79,7 @@ def test_legal_action():
 def test_terminated():
     board = jnp.int32([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
     state = State(_board=board)
-    state = step(state, 0)
+    state = step(state, 0, jax.random.PRNGKey(0))
     """
     [[ 2  4  8 16]
      [ 4  8 16 32]
@@ -125,7 +120,8 @@ def test_random_play():
             legal_actions = jnp.where(state.legal_action_mask)[0]
             key, sub_key = jax.random.split(key)
             action = jax.random.choice(sub_key, legal_actions)
-            state = step(state, jnp.int16(action))
+            key, sub_key = jax.random.split(key)
+            state = step(state, jnp.int16(action), sub_key)
             assert (state.rewards >= 0).all()
             done = state.terminated
 

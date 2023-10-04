@@ -64,9 +64,9 @@ class Play2048(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
         assert isinstance(state, State)
-        return _step(state, action)
+        return _step(state, action, key)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -92,7 +92,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     return State(_board=board.ravel())  # type:ignore
 
 
-def _step(state: State, action):
+def _step(state: State, action, key):
     """action: 0(left), 1(up), 2(right), 3(down)"""
     board_2d = state._board.reshape((4, 4))
     board_2d = jax.lax.switch(
@@ -115,8 +115,7 @@ def _step(state: State, action):
         ],
     )
 
-    _rng_key, sub_key = jax.random.split(state._rng_key)
-    board_2d = _add_random_num(board_2d, sub_key)
+    board_2d = _add_random_num(board_2d, key)
 
     legal_action = jax.vmap(_can_slide_left)(
         jnp.array(
@@ -130,7 +129,6 @@ def _step(state: State, action):
     )
 
     return state.replace(  # type:ignore
-        _rng_key=_rng_key,
         _board=board_2d.ravel(),
         rewards=jnp.float32([reward.sum()]),
         legal_action_mask=legal_action.ravel(),

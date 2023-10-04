@@ -69,7 +69,8 @@ def api_test_single(env: Env, num: int = 100):
         while True:
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
-            state = step(state, action)
+            rng, subkey = jax.random.split(rng)
+            state = step(state, action, subkey)
             assert (
                 state._step_count == curr_steps + 1
             ), f"{state._step_count}, {curr_steps}"
@@ -106,7 +107,9 @@ def api_test_batch(env: Env, num: int = 100):
         while not state.terminated.all():
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state)
-            state = step(state, action)
+            rng, subkey = jax.random.split(rng)
+            keys = jax.random.split(subkey, batch_size)
+            state = step(state, action, keys)
 
     # check visualization
     filename = "/tmp/tmp.svg"
@@ -119,7 +122,8 @@ def _validate_taking_action_after_terminal(state: State, step_fn):
     if not state.terminated:
         return
     action = 0
-    state = step_fn(state, action)
+    key = jax.random.PRNGKey(0)
+    state = step_fn(state, action, key)
     assert (state.rewards == 0).all()
     for field in fields(state):
         if field.name in ["rewards", "steps"]:
