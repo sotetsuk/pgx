@@ -30,7 +30,6 @@ class State(v1.State):
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Tic-tac-toe specific ---
     _turn: jnp.ndarray = jnp.int8(0)
@@ -51,7 +50,8 @@ class TicTacToe(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key: jax.random.PRNGKey) -> State:
+        del key
         assert isinstance(state, State)
         return _step(state, action)
 

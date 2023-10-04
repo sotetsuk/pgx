@@ -34,7 +34,6 @@ class State(v1.State):
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Kuhn poker specific ---
     _cards: jnp.ndarray = jnp.int8([-1, -1])

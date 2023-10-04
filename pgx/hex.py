@@ -34,7 +34,6 @@ class State(v1.State):
     legal_action_mask: jnp.ndarray = (
         jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
     )
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Hex specific ---
     _size: jnp.ndarray = jnp.int8(11)
