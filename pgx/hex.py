@@ -90,7 +90,7 @@ class Hex(v1.Env):
         return 2
 
 
-def _init(rng: jax.random.KeyArray, size: int) -> State:
+def _init(rng: jnp.ndarray, size: int) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(_size=size, current_player=current_player)  # type:ignore

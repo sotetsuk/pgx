@@ -76,7 +76,7 @@ class KuhnPoker(v1.Env):
         return 2
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jnp.ndarray) -> State:
     rng1, rng2 = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(rng1))
     init_card = jax.random.choice(

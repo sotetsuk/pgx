@@ -105,7 +105,7 @@ def _make_win_cache():
 IDX = _make_win_cache()
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jnp.ndarray) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(subkey))
     return State(current_player=current_player)  # type:ignore
