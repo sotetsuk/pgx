@@ -113,7 +113,8 @@ class SparrowMahjong(v1.Env):
         )
         return state
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         # discard tile
         hands = state._hands.at[state._turn % N_PLAYER, action].add(-1)
