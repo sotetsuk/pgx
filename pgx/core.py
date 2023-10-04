@@ -199,7 +199,7 @@ class Env(abc.ABC):
         self,
         state: State,
         action: jnp.ndarray,
-        key: Optional[jax.random.PRNGKey] = None,
+        key: Optional[jax.Array] = None,
     ) -> State:
         """Step function."""
         is_illegal = ~state.legal_action_mask[action]
