@@ -25,7 +25,7 @@ from pgx.bridge_bidding import (
 )
 
 
-def init(rng) -> State:
+def init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
     hand = jax.random.permutation(rng2, hand)
