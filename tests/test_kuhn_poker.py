@@ -98,7 +98,6 @@ def test_legal_action():
 
 def test_observation():
     key = jax.random.PRNGKey(0)
-    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     """
     Player 0: K

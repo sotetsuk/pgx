@@ -10,7 +10,6 @@ observe = jax.jit(env.observe)
 
 def test_init():
     key = jax.random.PRNGKey(0)
-    _, key = jax.random.split(key)  # due to API update
     state = init(key=key)
     assert state.current_player == 0
 
@@ -135,7 +134,6 @@ def test_observe():
       . . . . .
     """
     key = jax.random.PRNGKey(0)
-    _, key = jax.random.split(key)  # due to API update
     state = init(key=key)
     assert state.current_player == 0
     assert state.observation[:, :, 0].sum() == 0

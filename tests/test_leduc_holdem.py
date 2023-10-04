@@ -127,7 +127,6 @@ def test_legal_action():
 
 def test_draw():
     key = jax.random.PRNGKey(0)
-    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     # cards = [1 1]
     state = step(state, RAISE)
@@ -144,7 +143,6 @@ def test_draw():
 
 def test_observe():
     key = jax.random.PRNGKey(5)
-    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     """
     player 1 is the First.
