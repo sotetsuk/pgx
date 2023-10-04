@@ -64,7 +64,8 @@ class Hex(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(_init, size=self.size)(rng=key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         return jax.lax.cond(
             action != self.size * self.size,
