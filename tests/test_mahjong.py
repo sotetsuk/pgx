@@ -193,6 +193,7 @@ def test_shanten():
 
 def test_discard():
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key=key)
     assert state.current_player == jnp.int8(0)
     assert state.target == jnp.int8(-1)

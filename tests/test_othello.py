@@ -10,6 +10,7 @@ observe = jax.jit(env.observe)
 
 def test_init():
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key=key)
     assert state.current_player == 0
 
@@ -41,6 +42,7 @@ def test_step():
 def test_terminated():
     # wipe out
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     for i in [37, 43, 34, 29, 52, 45, 38, 44]:
         state = step(state, i)
@@ -53,6 +55,7 @@ def test_terminated():
 def test_legal_action():
     # cannot put
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     assert state.current_player == 0
     for i in [37, 29, 18, 44, 53, 46, 30, 60, 62, 38, 39]:
@@ -71,6 +74,7 @@ def test_legal_action():
 
 def test_observe():
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     assert state.current_player == 0
 
