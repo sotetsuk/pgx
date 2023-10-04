@@ -57,7 +57,7 @@ class LeducHoldem(v1.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jnp.ndarray) -> State:
+    def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
     def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:

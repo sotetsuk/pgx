@@ -81,7 +81,7 @@ class Backgammon(v1.Env):
         return -3.0
 
 
-def _init(rng: jnp.ndarray) -> State:
+def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
     current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
     board: jnp.ndarray = _make_init_board()

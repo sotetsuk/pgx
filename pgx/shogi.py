@@ -120,7 +120,7 @@ class Shogi(v1.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jnp.ndarray) -> State:
+    def _init(self, key: jax.random.KeyArray) -> State:
         state = _init_board()
         rng, subkey = jax.random.split(key)
         current_player = jnp.int8(jax.random.bernoulli(subkey))

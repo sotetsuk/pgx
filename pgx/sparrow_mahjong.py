@@ -169,7 +169,7 @@ class SparrowMahjong(v1.Env):
         return 3
 
 
-def _init(rng: jnp.ndarray):
+def _init(rng: jax.random.KeyArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
     shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int8)
