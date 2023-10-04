@@ -248,8 +248,14 @@ def test_ankan():
      [0 0 0 0 1 1 0 2 0 0 0 0 1 0 0 1 0 0 0 3 0 0 0 0 1 0 0 0 0 1 0 1 1 0]
      [0 0 1 0 1 0 0 0 1 0 0 1 1 2 0 0 0 0 0 0 0 0 0 1 0 1 1 1 1 0 1 0 0 0]]
     """
+    assert state.legal_action_mask[65]
+    assert (state.doras == jnp.int32([28, -1, -1, -1, -1])).all()
+    assert state.n_kan == jnp.int8(0)
+
     state = step(state, 65)
     assert state.melds[0, 0] == jnp.int32(4033)
+    assert (state.doras == jnp.int32([28, 23, -1, -1, -1])).all()
+    assert state.n_kan == jnp.int8(1)
 
 
 def test_riichi():
