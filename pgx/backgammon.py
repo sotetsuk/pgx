@@ -56,9 +56,9 @@ class Backgammon(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
         assert isinstance(state, State)
-        return _step(state, action)
+        return _step(state, action, key)
 
     def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
@@ -93,7 +93,6 @@ def _init(rng: jax.random.KeyArray) -> State:
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     state = State(  # type: ignore
         current_player=current_player,
-        _rng_key=rng3,
         _board=board,
         terminated=terminated,
         _dice=dice,
@@ -105,7 +104,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def _step(state: State, action: jnp.ndarray) -> State:
+def _step(state: State, action: jnp.ndarray, key) -> State:
     """
     Step when not terminated
     """
@@ -113,7 +112,7 @@ def _step(state: State, action: jnp.ndarray) -> State:
     return jax.lax.cond(
         _is_all_off(state._board),
         lambda: _winning_step(state),
-        lambda: _no_winning_step(state, action),
+        lambda: _no_winning_step(state, action, key),
     )
 
 
@@ -177,13 +176,13 @@ def _winning_step(
     return state.replace(rewards=reward)  # type: ignore
 
 
-def _no_winning_step(state: State, action: jnp.ndarray) -> State:
+def _no_winning_step(state: State, action: jnp.ndarray, key) -> State:
     """
     Step with no winner. Change turn if turn end condition is satisfied.
     """
     return jax.lax.cond(
         (_is_turn_end(state) | (action // 6 == 0)),
-        lambda: _change_turn(state),
+        lambda: _change_turn(state, key),
         lambda: state,
     )
 
@@ -193,7 +192,6 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     Update state by action
     """
     is_no_op = action // 6 == 0
-    rng_key = state._rng_key
     current_player: jnp.ndarray = state.current_player
     terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state._board, action)
@@ -207,7 +205,6 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
         lambda: state,
         lambda: state.replace(  # type: ignore
             current_player=current_player,
-            _rng_key=rng_key,
             terminated=terminated,
             _board=board,
             _turn=state._turn,
@@ -245,22 +242,20 @@ def _is_turn_end(state: State) -> bool:
     return state._playable_dice.sum() == -4  # type: ignore
 
 
-def _change_turn(state: State) -> State:
+def _change_turn(state: State, key) -> State:
     """
     Change turn and return new state.
     """
-    rng1, rng2 = jax.random.split(state._rng_key)
     board: jnp.ndarray = _flip_board(state._board)
     turn: jnp.ndarray = (state._turn + 1) % 2
     current_player: jnp.ndarray = (state.current_player + 1) % 2
     terminated: jnp.ndarray = state.terminated
-    dice: jnp.ndarray = _roll_dice(rng1)
+    dice: jnp.ndarray = _roll_dice(key)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
     played_dice_num: jnp.ndarray = jnp.int16(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
         current_player=current_player,
-        _rng_key=rng2,
         _board=board,
         terminated=terminated,
         _turn=turn,
