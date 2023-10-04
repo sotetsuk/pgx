@@ -173,7 +173,8 @@ class GardnerChess(v1.Env):
         state = State(current_player=current_player)  # type: ignore
         return state
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         state = _step(state, action)
         state = jax.lax.cond(
