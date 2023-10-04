@@ -80,7 +80,8 @@ class Go(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(_init, size=self.size, komi=self.komi)(key=key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         state = partial(_step, size=self.size)(state, action)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
