@@ -55,7 +55,8 @@ class ConnectFour(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         return _step(state, action)
 
