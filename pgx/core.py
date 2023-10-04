@@ -239,7 +239,7 @@ class Env(abc.ABC):
         return jax.lax.stop_gradient(obs)
 
     @abc.abstractmethod
-    def _init(self, key: jnp.ndarray) -> State:
+    def _init(self, key: jax.random.KeyArray) -> State:
         """Implement game-specific init function here."""
         ...
 

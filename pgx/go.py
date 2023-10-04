@@ -167,7 +167,7 @@ def _observe(state: State, player_id, size, history_length):
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def _init(key: jnp.ndarray, size: int, komi: float = 7.5) -> State:
+def _init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
     black_player = jnp.int8(jax.random.bernoulli(key))
     current_player = black_player
     return State(  # type:ignore

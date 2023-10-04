@@ -85,7 +85,7 @@ class Play2048(v1.Env):
         return 1
 
 
-def _init(rng: jnp.ndarray) -> State:
+def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
     board = _add_random_num(jnp.zeros((4, 4), jnp.int32), rng1)
     board = _add_random_num(board, rng2)
