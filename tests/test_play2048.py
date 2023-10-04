@@ -42,6 +42,7 @@ def test_slide_and_merge():
 
 def test_step():
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     """
     [[0 0 0 0]
@@ -91,6 +92,7 @@ def test_terminated():
 
 def test_observe():
     key = jax.random.PRNGKey(2)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     """
     [[0 0 2 2]
