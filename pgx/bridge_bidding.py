@@ -193,7 +193,8 @@ class BridgeBidding(v1.Env):
         key1, key2, key3 = jax.random.split(key, num=3)
         return _init_by_key(jax.random.choice(key2, self._lut_keys), key3)
 
-    def _step(self, state: v1.State, action: int) -> State:
+    def _step(self, state: v1.State, action: int, key) -> State:
+        del key
         assert isinstance(state, State)
         return _step(state, action, self._lut_keys, self._lut_values)
 
