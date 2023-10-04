@@ -60,7 +60,8 @@ class LeducHoldem(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         return _step(state, action)
 
@@ -88,7 +89,6 @@ def _init(rng: jax.random.KeyArray) -> State:
         rng2, jnp.int8([0, 0, 1, 1, 2, 2]), independent=True
     )
     return State(  # type:ignore
-        _rng_key=rng3,
         _first_player=current_player,
         current_player=current_player,
         _cards=init_card[:3],
