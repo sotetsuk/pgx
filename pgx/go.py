@@ -77,7 +77,7 @@ class Go(v1.Env):
         self.history_length = history_length
         self.max_termination_steps = self.size * self.size * 2
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jnp.ndarray) -> State:
         return partial(_init, size=self.size, komi=self.komi)(key=key)
 
     def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:

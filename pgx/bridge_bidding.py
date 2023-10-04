@@ -189,7 +189,7 @@ class BridgeBidding(v1.Env):
             )
             sys.exit(1)
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jnp.ndarray) -> State:
         key1, key2, key3 = jax.random.split(key, num=3)
         return _init_by_key(jax.random.choice(key2, self._lut_keys), key3)
 

@@ -177,7 +177,7 @@ class Env(abc.ABC):
     def __init__(self):
         ...
 
-    def init(self, key: jax.random.KeyArray) -> State:
+    def init(self, key: jnp.ndarray) -> State:
         """Return the initial state. Note that no internal state of
         environment changes.
 
@@ -196,7 +196,7 @@ class Env(abc.ABC):
         self,
         state: State,
         action: jnp.ndarray,
-        key: Optional[jax.Array] = None,
+        key: Optional[jnp.ndarray] = None,
     ) -> State:
         """Step function."""
         is_illegal = ~state.legal_action_mask[action]
