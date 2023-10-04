@@ -20,7 +20,7 @@ from typing import Literal, Optional, Sequence, Union
 import jax
 import svgwrite  # type: ignore
 
-from pgx.v1 import State
+from pgx.core import State
 
 ColorTheme = Literal["light", "dark"]
 

@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.v1 as v1
+import pgx.core as v1
 from pgx._mahjong._action import Action
 from pgx._mahjong._hand import Hand
 from pgx._mahjong._meld import Meld

@@ -20,7 +20,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-import pgx.v1 as v1
+import pgx.core as v1
 from pgx._src.struct import dataclass
 from pgx._src.utils import _download
 

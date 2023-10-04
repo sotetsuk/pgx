@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.v1 import State
+from pgx.core import State
 
 
 def act_randomly(rng: jax.random.KeyArray, state: State) -> jnp.ndarray:

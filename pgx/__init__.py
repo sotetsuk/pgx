@@ -5,7 +5,7 @@ from pgx._src.visualizer import (
     save_svg_animation,
     set_visualization_config,
 )
-from pgx.v1 import Env, EnvId, State, available_envs, make
+from pgx.core import Env, EnvId, State, available_envs, make
 
 __version__ = "1.4.0"
 

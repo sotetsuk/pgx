@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.v1 as v1
+import pgx.core as v1
 from pgx._src.chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,

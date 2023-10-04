@@ -20,7 +20,7 @@ import jax
 import jax.numpy as jnp
 
 from pgx.experimental.utils import act_randomly
-from pgx.v1 import Env, EnvId, State
+from pgx.core import Env, EnvId, State
 
 act_randomly = jax.jit(act_randomly)
 
