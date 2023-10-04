@@ -126,7 +126,8 @@ class Shogi(v1.Env):
         current_player = jnp.int8(jax.random.bernoulli(subkey))
         return state.replace(current_player=current_player)  # type: ignore
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
         state = _step(state, action)
