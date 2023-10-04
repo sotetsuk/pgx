@@ -83,7 +83,7 @@ class LeducHoldem(v1.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    rng1, rng2, rng3 = jax.random.split(rng, 3)
+    rng1, rng2 = jax.random.split(rng, 2)
     current_player = jnp.int8(jax.random.bernoulli(rng1))
     init_card = jax.random.permutation(
         rng2, jnp.int8([0, 0, 1, 1, 2, 2]), independent=True

@@ -190,8 +190,8 @@ class BridgeBidding(v1.Env):
             sys.exit(1)
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        key1, key2, key3 = jax.random.split(key, num=3)
-        return _init_by_key(jax.random.choice(key2, self._lut_keys), key3)
+        key1, key2 = jax.random.split(key, num=2)
+        return _init_by_key(jax.random.choice(key1, self._lut_keys), key2)
 
     def _step(self, state: v1.State, action: int, key) -> State:
         del key
@@ -221,13 +221,13 @@ class BridgeBidding(v1.Env):
 
 def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     """Make init state from key"""
-    rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
+    rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
-    vul_NS = jax.random.choice(rng2, jnp.bool_([False, True]))
-    vul_EW = jax.random.choice(rng3, jnp.bool_([False, True]))
-    dealer = jax.random.randint(rng4, (1,), 0, 4, dtype=jnp.int8)[0]
+    vul_NS = jax.random.choice(rng1, jnp.bool_([False, True]))
+    vul_EW = jax.random.choice(rng2, jnp.bool_([False, True]))
+    dealer = jax.random.randint(rng3, (1,), 0, 4, dtype=jnp.int8)[0]
     # shuffled players and arrange in order of NESW
-    shuffled_players = _shuffle_players(rng5)
+    shuffled_players = _shuffle_players(rng4)
     current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない

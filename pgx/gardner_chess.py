@@ -168,8 +168,7 @@ class GardnerChess(v1.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        rng, subkey = jax.random.split(key)
-        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        current_player = jnp.int8(jax.random.bernoulli(key))
         state = State(current_player=current_player)  # type: ignore
         return state
 

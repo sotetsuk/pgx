@@ -122,8 +122,7 @@ class Shogi(v1.Env):
 
     def _init(self, key: jax.random.KeyArray) -> State:
         state = _init_board()
-        rng, subkey = jax.random.split(key)
-        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        current_player = jnp.int8(jax.random.bernoulli(key))
         return state.replace(current_player=current_player)  # type: ignore
 
     def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:

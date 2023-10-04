@@ -73,8 +73,7 @@ class TicTacToe(v1.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    rng, subkey = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    current_player = jnp.int8(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 
