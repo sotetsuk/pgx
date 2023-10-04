@@ -188,12 +188,19 @@ class Env(abc.ABC):
             State: initial state of environment
 
         """
-        key, subkey = jax.random.split(key)  # not necessary but exists due to v1 API
+        key, subkey = jax.random.split(
+            key
+        )  # not necessary but exists due to v1 API
         state = self._init(subkey)
         observation = self.observe(state, state.current_player)
         return state.replace(observation=observation)  # type: ignore
 
-    def step(self, state: State, action: jnp.ndarray, key: Optional[jax.random.PRNGKey] = None) -> State:
+    def step(
+        self,
+        state: State,
+        action: jnp.ndarray,
+        key: Optional[jax.random.PRNGKey] = None,
+    ) -> State:
         """Step function."""
         is_illegal = ~state.legal_action_mask[action]
         current_player = state.current_player

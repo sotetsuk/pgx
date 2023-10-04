@@ -19,8 +19,8 @@ from typing import get_args
 import jax
 import jax.numpy as jnp
 
-from pgx.experimental.utils import act_randomly
 from pgx.core import Env, EnvId, State
+from pgx.experimental.utils import act_randomly
 
 act_randomly = jax.jit(act_randomly)
 
