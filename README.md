@@ -160,10 +160,10 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 If you use Pgx in your work, please cite the following paper:
 
 ```
-@article{koyamada2023pgx,
-  title={Pgx: Hardware-accelerated Parallel Game Simulators for Reinforcement Learning},
+@inproceedings{koyamada2023pgx,
+  title={Pgx: Hardware-Accelerated Parallel Game Simulators for Reinforcement Learning},
   author={Koyamada, Sotetsu and Okano, Shinri and Nishimori, Soichiro and Murata, Yu and Habara, Keigo and Kita, Haruka and Ishii, Shin},
-  journal={arXiv preprint arXiv:2303.17503},
+  booktitle={Advances in Neural Information Processing Systems},
   year={2023}
 }
 ```
