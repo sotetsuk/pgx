@@ -465,7 +465,6 @@ class Yaku:
         )
 
         fan = Yaku.FAN[jax.lax.cond(is_menzen, lambda: 1, lambda: 0)]
-        fan = fan + jnp.dot(flatten, dora)
 
         best_pattern = jnp.argmax(jnp.dot(fan, yaku) * 200 + fu)
 
@@ -548,7 +547,11 @@ class Yaku:
         return jax.lax.cond(
             jnp.any(yakuman),
             lambda: (yakuman, 0, 0),
-            lambda: (yaku_best, jnp.dot(fan, yaku_best), fu_best),
+            lambda: (
+                yaku_best,
+                jnp.dot(fan, yaku_best) + jnp.dot(flatten, dora),
+                fu_best,
+            ),
         )
 
     @staticmethod

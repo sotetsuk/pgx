@@ -868,22 +868,33 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
 
 def _dora_array(state: State, riichi):
+    def next(tile):
+        return jax.lax.cond(
+            tile < 27,
+            lambda: tile // 9 + (tile + 1) % 9,
+            lambda: jax.lax.cond(
+                tile < 31,
+                lambda: 27 + (tile + 1) % 4,
+                lambda: 31 + (tile + 1) % 3,
+            ),
+        )
+
     dora = jnp.zeros(34, dtype=jnp.bool_)
     return jax.lax.cond(
         riichi,
         lambda: jax.lax.fori_loop(
             0,
             state.n_kan + 1,
-            lambda i, arr: arr.at[state.deck[5 + 2 * i]]
+            lambda i, arr: arr.at[next(state.deck[5 + 2 * i])]
             .set(TRUE)
-            .at[state.doras[4 + 2 * i]]
+            .at[next(state.doras[4 + 2 * i])]
             .set(TRUE),
             dora,
         ),
         lambda: jax.lax.fori_loop(
             0,
             state.n_kan + 1,
-            lambda i, arr: arr.at[state.doras[5 + 2 * i]].set(TRUE),
+            lambda i, arr: arr.at[next(state.doras[5 + 2 * i])].set(TRUE),
             dora,
         ),
     )
