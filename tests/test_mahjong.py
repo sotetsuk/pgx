@@ -8,6 +8,9 @@ from jax import jit
 import jax
 from pgx.experimental.utils import act_randomly
 
+TRUE = jnp.bool_(True)
+FALSE = jnp.bool_(False)
+
 env = Mahjong()
 init = jit(env.init)
 step = jit(env.step)
@@ -103,7 +106,10 @@ def test_hand():
 
 
 def test_score():
-    # 平和ツモ
+    # 平和ツモドラ1
+    # 参考:
+    # tobakushi.net/mahjang/cgi-bin/keisan.cgi?hai=02,03,04,05,06,11,12,13,14,15,16,21,21&naki=,,,&agari=01&dora=06,,,,,,,,,&tsumoron=0&honba=0&jifu=32&bafu=31&reach=0
+
     # fmt:off
     hand = jnp.int32([
         1, 1, 1, 1, 1, 1, 0, 0, 0,
@@ -120,8 +126,9 @@ def test_score():
             last=jnp.int8(0),
             riichi=jnp.bool_(False),
             is_ron=jnp.bool_(False),
+            dora=jnp.zeros(34, dtype=jnp.bool_).at[5].set(TRUE),
         )
-        == 320
+        == 640
     )
     # 国士無双
     # fmt:off
@@ -141,6 +148,7 @@ def test_score():
             last=jnp.int8(33),
             riichi=jnp.bool_(False),
             is_ron=jnp.bool_(False),
+            dora=jnp.zeros(34, dtype=jnp.bool_).at[5].set(TRUE),
         )
         == 8000
     )
@@ -163,6 +171,7 @@ def test_score():
             last=jnp.int8(27),
             riichi=jnp.bool_(False),
             is_ron=jnp.bool_(False),
+            dora=jnp.zeros(34, dtype=jnp.bool_).at[5].set(TRUE),
         )
         == 800
     )
