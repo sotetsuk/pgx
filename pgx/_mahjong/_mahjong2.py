@@ -255,7 +255,6 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action) -> State:
-
     # TODO
     # - Actionの処理
     #   - ron, tsumo
@@ -343,6 +342,7 @@ def _make_legal_action_mask(state: State, hand, c_p, new_tile):
             state.last_draw,
             state.riichi[c_p],
             FALSE,
+            _dora_array(state, state.riichi[c_p]),
         )[0].any()
     )
     return legal_action_mask
@@ -360,6 +360,7 @@ def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
             state.last_draw,
             state.riichi[c_p],
             FALSE,
+            _dora_array(state, state.riichi[c_p]),
         )[0].any()
     )
     return legal_action_mask
@@ -397,8 +398,9 @@ def _discard(state: State, tile: jnp.ndarray):
     )
 
     def search(i, tpl):
+        # iは相対位置
         meld_type, pon_player, kan_player, ron_player = tpl
-        player = (c_p + 1 + i) % 4
+        player = (c_p + 1 + i) % 4  # 絶対位置
         pon_player, meld_type = jax.lax.cond(
             Hand.can_pon(state.hand[player], tile),
             lambda: (i, jnp.max(jnp.array([2, meld_type]))),
@@ -412,12 +414,13 @@ def _discard(state: State, tile: jnp.ndarray):
         ron_player, meld_type = jax.lax.cond(
             Hand.can_ron(state.hand[player], tile)
             & Yaku.judge(
-                state.hand[c_p],
-                state.melds[c_p],
-                state.n_meld[c_p],
+                state.hand[player],
+                state.melds[player],
+                state.n_meld[player],
                 state.last_draw,
-                state.riichi[c_p],
+                state.riichi[player],
                 FALSE,
+                _dora_array(state, state.riichi[player]),
             )[0].any(),
             lambda: (i, jnp.max(jnp.array([4, meld_type]))),
             lambda: (ron_player, meld_type),
@@ -794,6 +797,7 @@ def _tsumo(state: State):
         state.target,
         state.riichi[c_p],
         is_ron=FALSE,
+        dora=_dora_array(state, state.riichi[c_p]),
     )
     s1 = score + (-score) % 100
     s2 = (score * 2) + (-(score * 2)) % 100
@@ -826,6 +830,7 @@ def _ron(state: State):
         state.target,
         state.riichi[c_p],
         is_ron=TRUE,
+        dora=_dora_array(state, state.riichi[c_p]),
     )
     score = jax.lax.cond(
         (state.oya + state._round) % 4 == c_p,
@@ -860,6 +865,28 @@ def _next_game(state: State):
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     return jnp.int8(0)
+
+
+def _dora_array(state: State, riichi):
+    dora = jnp.zeros(34, dtype=jnp.bool_)
+    return jax.lax.cond(
+        riichi,
+        lambda: jax.lax.fori_loop(
+            0,
+            state.n_kan + 1,
+            lambda i, arr: arr.at[state.deck[5 + 2 * i]]
+            .set(TRUE)
+            .at[state.doras[4 + 2 * i]]
+            .set(TRUE),
+            dora,
+        ),
+        lambda: jax.lax.fori_loop(
+            0,
+            state.n_kan + 1,
+            lambda i, arr: arr.at[state.doras[5 + 2 * i]].set(TRUE),
+            dora,
+        ),
+    )
 
 
 # For debug
