@@ -387,6 +387,10 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.leduc_holdem import LeducHoldem
 
         return LeducHoldem()
+    elif env_id == "mahjong":
+        from pgx.mahjong import Mahjong
+
+        return Mahjong()
     elif env_id == "minatar-asterix":
         try:
             from pgx_minatar.asterix import MinAtarAsterix  # type: ignore
