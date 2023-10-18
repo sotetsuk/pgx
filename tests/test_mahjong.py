@@ -1,8 +1,8 @@
-from pgx._mahjong._hand import Hand
-from pgx._mahjong._yaku import Yaku
-from pgx._mahjong._action import Action
-from pgx._mahjong._shanten import Shanten
-from pgx._mahjong._mahjong2 import Mahjong
+from pgx.mahjong.hand import Hand
+from pgx.mahjong.yaku import Yaku
+from pgx.mahjong.action import Action
+from pgx.mahjong.shanten import Shanten
+from pgx.mahjong.env import Mahjong
 import jax.numpy as jnp
 from jax import jit
 import jax
@@ -92,7 +92,7 @@ def test_hand():
 
     assert jit(Hand.can_riichi)(hand)
 
-    from pgx._mahjong._action import Action
+    from pgx.mahjong.action import Action
 
     # fmt:off
     hand = jnp.int8([
@@ -268,7 +268,7 @@ def test_ankan():
 
 
 def test_riichi():
-    from pgx._mahjong._mahjong2 import State
+    from pgx.mahjong.env import State
 
     rng = jax.random.PRNGKey(0)
     state = State.from_json("tests/assets/mahjong/riichi_test.json")
@@ -290,7 +290,7 @@ def test_riichi():
 
 
 def test_ron():
-    from pgx._mahjong._mahjong2 import State
+    from pgx.mahjong.env import State
 
     state = State.from_json("tests/assets/mahjong/ron_test.json")
     visualize(state, "tests/assets/mahjong/before_ron.svg")
@@ -311,7 +311,7 @@ def test_ron():
 
 
 def test_tsumo():
-    from pgx._mahjong._mahjong2 import State
+    from pgx.mahjong.env import State
 
     state = State.from_json("tests/assets/mahjong/tsumo_test.json")
     visualize(state, "tests/assets/mahjong/before_tsumo.svg")
@@ -342,7 +342,7 @@ def test_transparent():
 
 
 def test_json():
-    from pgx._mahjong._mahjong2 import State
+    from pgx.mahjong.env import State
     import os
 
     rng = jax.random.PRNGKey(0)

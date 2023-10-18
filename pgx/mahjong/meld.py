@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx._mahjong._action import Action
+from pgx.mahjong.action import Action
 
 
 class Meld:
