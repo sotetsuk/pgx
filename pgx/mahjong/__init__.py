@@ -1,2 +1,2 @@
-from env import Mahjong
-from action import Action
+from .action import Action
+from .env import Mahjong

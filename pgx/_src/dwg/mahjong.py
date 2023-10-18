@@ -1,7 +1,7 @@
+from pgx._src.dwg.mahjong_tile import TilePath
 from pgx.mahjong.action import Action
 from pgx.mahjong.env import State as MahjongState
 from pgx.mahjong.meld import Meld
-from pgx._src.dwg.mahjong_tile import TilePath
 
 path_list = TilePath.str_list
 tile_w = 30
@@ -51,8 +51,8 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
     kanji = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
     ro = state._round
     round = f"{wind[ro//4]}{kanji[ro%4+1]}局"
-    if state.honba > 0:
-        round += f"{kanji[state.honba]}本場"
+    if state._honba > 0:
+        round += f"{kanji[state._honba]}本場"
 
     fontsize = 20
     y = -25
@@ -73,7 +73,7 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
     dora_scale = 0.6
     x = (BOARD_WIDTH * GRID_SIZE) / 2 - tile_w * dora_scale * 2.5
     y = (BOARD_WIDTH * GRID_SIZE) / 2 - 15
-    for _x, dora in enumerate(state.doras):
+    for _x, dora in enumerate(state._doras):
         if dora == -1:
             dora = 34
         p = dwg.path(d=path_list[dora])
@@ -92,7 +92,7 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
     board_g.add(p)
     board_g.add(
         dwg.text(
-            text=f"x {state.next_deck_ix-14+1}",
+            text=f"x {state._next_deck_ix-14+1}",
             insert=(x + tile_w * yama_scale + 5, y + tile_h * yama_scale - 5),
             fill=color_set.text_color,
             font_size=f"{fontsize}px",
@@ -115,7 +115,13 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
 
 
 def _make_players_dwg(
-    dwg, state, i, color_set, BOARD_WIDTH, BOARD_HEIGHT, GRID_SIZE
+    dwg,
+    state: MahjongState,
+    i,
+    color_set,
+    BOARD_WIDTH,
+    BOARD_HEIGHT,
+    GRID_SIZE,
 ):
     players_g = dwg.g(
         style="stroke:#000000;stroke-width:0.01mm;fill:#000000",
@@ -128,7 +134,7 @@ def _make_players_dwg(
     fontsize = 22
     players_g.add(
         dwg.text(
-            text=wind[(i - state.oya) % 4],
+            text=wind[(i - state._oya) % 4],
             insert=(x, y),
             fill=color_set.text_color,
             font_size=f"{fontsize}px",
@@ -138,7 +144,7 @@ def _make_players_dwg(
 
     # score
     fontsize = 20
-    score = str(int(state.score[i]) * 100)
+    score = str(int(state._score[i]) * 100)
     y = 70
     players_g.add(
         dwg.text(
@@ -157,7 +163,7 @@ def _make_players_dwg(
     width = 100
     height = 10
     y = 75
-    if state.riichi[i]:
+    if state._riichi[i]:
         players_g.add(
             dwg.rect(
                 (
@@ -185,7 +191,7 @@ def _make_players_dwg(
 
     # hand
     offset = 0
-    hand = state.hand[i]
+    hand = state._hand[i]
     for tile, num in enumerate(hand):
         for _ in range(num):
             p = dwg.path(d=path_list[tile])
@@ -196,7 +202,7 @@ def _make_players_dwg(
     offset += tile_w
 
     # meld
-    for meld in state.melds[i]:
+    for meld in state._melds[i]:
         if meld == 0:
             continue
         if Meld.action(meld) == Action.PON:
@@ -218,7 +224,7 @@ def _make_players_dwg(
     x = BOARD_WIDTH * GRID_SIZE / 2 - 3 * tile_w
     y = 450
 
-    river = state.river[i]
+    river = state._river[i]
     for river_ix, tile in enumerate(river):
         fill = "black"
         if (tile >> 7) & 0b1:

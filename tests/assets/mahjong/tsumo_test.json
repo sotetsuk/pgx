@@ -96,15 +96,15 @@
     ],
     "_step_count": 0,
     "_round": 0,
-    "honba": 0,
-    "oya": 0,
-    "score": [
+    "_honba": 0,
+    "_oya": 0,
+    "_score": [
         250.0,
         250.0,
         250.0,
         250.0
     ],
-    "deck": [
+    "_deck": [
         7,
         13,
         7,
@@ -242,8 +242,8 @@
         30,
         10
     ],
-    "next_deck_ix": 82,
-    "hand": [
+    "_next_deck_ix": 82,
+    "_hand": [
         [
             0,
             0,
@@ -389,7 +389,7 @@
             0
         ]
     ],
-    "river": [
+    "_river": [
         [
             34,
             34,
@@ -495,38 +495,38 @@
             34
         ]
     ],
-    "n_river": [
+    "_n_river": [
         0,
         0,
         0,
         0
     ],
-    "doras": [
+    "_doras": [
         7,
         -1,
         -1,
         -1,
         -1
     ],
-    "n_kan": 0,
-    "target": -1,
-    "last_draw": 28,
-    "last_player": 0,
-    "furo_check_num": 0,
-    "riichi_declared": false,
-    "riichi": [
+    "_n_kan": 0,
+    "_target": -1,
+    "_last_draw": 28,
+    "_last_player": 0,
+    "_furo_check_num": 0,
+    "_riichi_declared": false,
+    "_riichi": [
         false,
         false,
         false,
         false
     ],
-    "n_meld": [
+    "_n_meld": [
         0,
         0,
         0,
         0
     ],
-    "melds": [
+    "_melds": [
         [
             0,
             0,
@@ -552,13 +552,13 @@
             0
         ]
     ],
-    "is_menzen": [
+    "_is_menzen": [
         false,
         false,
         false,
         false
     ],
-    "pon": [
+    "_pon": [
         [
             0,
             0,
