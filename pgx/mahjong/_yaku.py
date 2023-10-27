@@ -4,9 +4,9 @@ import os
 import jax
 import jax.numpy as jnp
 
-from pgx.mahjong.action import Action
-from pgx.mahjong.hand import Hand
-from pgx.mahjong.meld import Meld
+from pgx.mahjong._action import Action
+from pgx.mahjong._hand import Hand
+from pgx.mahjong._meld import Meld
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")
 

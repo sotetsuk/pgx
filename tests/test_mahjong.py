@@ -1,4 +1,9 @@
-from pgx.mahjong import Mahjong, State, Hand, Yaku, Shanten, Action
+from pgx.mahjong import Mahjong
+from pgx.mahjong._env import State
+from pgx.mahjong._hand import Hand
+from pgx.mahjong._yaku import Yaku
+from pgx.mahjong._shanten import Shanten
+from pgx.mahjong._action import Action
 import jax.numpy as jnp
 from jax import jit
 import jax
@@ -88,7 +93,7 @@ def test_hand():
 
     assert jit(Hand.can_riichi)(hand)
 
-    from pgx.mahjong.action import Action
+    from pgx.mahjong._action import Action
 
     # fmt:off
     hand = jnp.int8([

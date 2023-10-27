@@ -17,10 +17,10 @@ import jax.numpy as jnp
 
 import pgx.v1 as v1
 from pgx._src.struct import dataclass
-from pgx.mahjong.action import Action
-from pgx.mahjong.hand import Hand
-from pgx.mahjong.meld import Meld
-from pgx.mahjong.yaku import Yaku
+from pgx.mahjong._action import Action
+from pgx.mahjong._hand import Hand
+from pgx.mahjong._meld import Meld
+from pgx.mahjong._yaku import Yaku
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
