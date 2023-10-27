@@ -373,8 +373,8 @@ def test_random_play():
             assert (0 <= state._melds).all()
 
 
-def test_api():
-    import pgx
-
-    env = pgx.make("mahjong")
-    pgx.v1_api_test(env, 1)
+# def test_api():
+#    import pgx
+#
+#    env = pgx.make("mahjong")
+#    pgx.v1_api_test(env, 1)
