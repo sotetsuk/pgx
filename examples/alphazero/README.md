@@ -16,3 +16,9 @@ $ python3 train.py env_id=go_9x9 selfplay_batch_size=1024 seed=0
 - [[Silver+18](https://www.science.org/doi/10.1126/science.aar6404)] "A general reinforcement learning algorithm that masters
 chess, shogi, and go through self-play"
 - [[Danihelka+22](https://openreview.net/forum?id=bERaNdoegnO)] "Policy improvement by planning with Gumbel"
+
+
+## Change history
+
+- **[1c1532c](https://github.com/sotetsuk/pgx/commit/1c1532cfcee7bd85eca8c83204d7f488d2e49315)** Initial version. Supposed to reproduce the Pgx paper results ([wandb report](https://api.wandb.ai/links/sotetsuk/5q30e5n9)).
+
