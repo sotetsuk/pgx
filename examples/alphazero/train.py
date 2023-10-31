@@ -145,10 +145,7 @@ def selfplay(
             recurrent_fn=recurrent_fn,
             num_simulations=config.num_simulations,
             invalid_actions=~state.legal_action_mask,
-            qtransform=partial(
-                mctx.qtransform_completed_by_mix_value,
-                rescale_values=False,
-            ),
+            qtransform=mctx.qtransform_completed_by_mix_value,
             gumbel_scale=1.0,
         )
         actor = state.current_player

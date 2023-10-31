@@ -20,5 +20,5 @@ chess, shogi, and go through self-play"
 
 ## Change history
 
-- **[1c1532c](https://github.com/sotetsuk/pgx/commit/1c1532cfcee7bd85eca8c83204d7f488d2e49315)** Initial version. Supposed to reproduce the Pgx paper results ([wandb report](https://api.wandb.ai/links/sotetsuk/5q30e5n9)).
-
+- **[#1055](https://github.com/sotetsuk/pgx/pull/1055)** Use default Gumbel AlphaZero hyperparameters ([wandb report](https://api.wandb.ai/links/sotetsuk/o8752t54)).
+- **[#1026](https://github.com/sotetsuk/pgx/pull/1026)** Initial version. Supposed to reproduce the Pgx paper results ([wandb report](https://api.wandb.ai/links/sotetsuk/5q30e5n9)).
