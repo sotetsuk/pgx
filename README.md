@@ -3,6 +3,7 @@
 [![PyPI version](https://badge.fury.io/py/pgx.svg)](https://pypi.org/project/pgx/)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
 [![codecov](https://codecov.io/github/sotetsuk/pgx/graph/badge.svg?token=JNJIQ83JYG)](https://codecov.io/github/sotetsuk/pgx)
+[![arXiv](https://img.shields.io/badge/arXiv-2303.17503-b31b1b.svg)](https://arxiv.org/abs/2303.17503)
 
 
 <div align="center">
@@ -160,10 +161,10 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 If you use Pgx in your work, please cite the following paper:
 
 ```
-@article{koyamada2023pgx,
-  title={Pgx: Hardware-accelerated Parallel Game Simulators for Reinforcement Learning},
+@inproceedings{koyamada2023pgx,
+  title={Pgx: Hardware-Accelerated Parallel Game Simulators for Reinforcement Learning},
   author={Koyamada, Sotetsu and Okano, Shinri and Nishimori, Soichiro and Murata, Yu and Habara, Keigo and Kita, Haruka and Ishii, Shin},
-  journal={arXiv preprint arXiv:2303.17503},
+  booktitle={Advances in Neural Information Processing Systems},
   year={2023}
 }
 ```
