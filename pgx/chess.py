@@ -38,13 +38,13 @@ MAX_TERMINATION_STEPS = 512  # from AZ paper
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
-EMPTY = jnp.int8(0)
-PAWN = jnp.int8(1)
-KNIGHT = jnp.int8(2)
-BISHOP = jnp.int8(3)
-ROOK = jnp.int8(4)
-QUEEN = jnp.int8(5)
-KING = jnp.int8(6)
+EMPTY = jnp.int32(0)
+PAWN = jnp.int32(1)
+KNIGHT = jnp.int32(2)
+BISHOP = jnp.int32(3)
+ROOK = jnp.int32(4)
+QUEEN = jnp.int32(5)
+KING = jnp.int32(6)
 # OPP_PAWN = -1
 # OPP_KNIGHT = -2
 # OPP_BISHOP = -3
@@ -74,7 +74,7 @@ KING = jnp.int8(6)
 # 1  7 15 23 31 39 47 55 63
 #    a  b  c  d  e  f  g  h
 # fmt: off
-INIT_BOARD = jnp.int8([
+INIT_BOARD = jnp.int32([
     4, 1, 0, 0, 0, 0, -1, -4,
     2, 1, 0, 0, 0, 0, -1, -2,
     3, 1, 0, 0, 0, 0, -1, -3,
@@ -113,7 +113,7 @@ INIT_BOARD = jnp.int8([
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -122,12 +122,12 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     _board: jnp.ndarray = INIT_BOARD  # From top left. like FEN
     # (curr, opp) Flips every turn
     _can_castle_queen_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
     _can_castle_king_side: jnp.ndarray = jnp.ones(2, dtype=jnp.bool_)
-    _en_passant: jnp.ndarray = jnp.int8(-1)  # En passant target. Flips.
+    _en_passant: jnp.ndarray = jnp.int32(-1)  # En passant target. Flips.
     # # of moves since the last piece capture or pawn move
     _halfmove_count: jnp.ndarray = jnp.int32(0)
     _fullmove_count: jnp.ndarray = jnp.int32(1)  # increase every black move
@@ -138,7 +138,7 @@ class State(v1.State):
         .set(INIT_ZOBRIST_HASH)
     )
     _board_history: jnp.ndarray = (
-        jnp.zeros((8, 64), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
+        jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     )
     # index to possible piece positions for speeding up. Flips every turn.
     _possible_piece_positions: jnp.ndarray = INIT_POSSIBLE_PIECE_POSITIONS
@@ -157,9 +157,9 @@ class State(v1.State):
 
 @dataclass
 class Action:
-    from_: jnp.ndarray = jnp.int8(-1)
-    to: jnp.ndarray = jnp.int8(-1)
-    underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
+    from_: jnp.ndarray = jnp.int32(-1)
+    to: jnp.ndarray = jnp.int32(-1)
+    underpromotion: jnp.ndarray = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
     def _from_label(label: jnp.ndarray):
@@ -183,7 +183,7 @@ class Action:
             from_=from_,
             to=TO_MAP[from_, plane],  # -1 if impossible move
             underpromotion=jax.lax.select(
-                plane >= 9, jnp.int8(-1), jnp.int8(plane // 3)
+                plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)
             ),
         )
 
@@ -199,7 +199,7 @@ class Chess(v1.Env):
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
-        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        current_player = jnp.int32(jax.random.bernoulli(subkey))
         state = State(current_player=current_player)  # type: ignore
         return state
 
@@ -335,8 +335,8 @@ def _apply_move(state: State, a: Action):
     state = state.replace(  # type: ignore
         _en_passant=jax.lax.select(
             (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2),
-            jnp.int8((a.to + a.from_) // 2),
-            jnp.int8(-1),
+            jnp.int32((a.to + a.from_) // 2),
+            jnp.int32(-1),
         )
     )
     # update counters
@@ -422,7 +422,7 @@ def _apply_move(state: State, a: Action):
     piece = jax.lax.select(
         a.underpromotion < 0,
         piece,
-        jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
+        jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
     # actually move
     state = state.replace(  # type: ignore
@@ -440,12 +440,12 @@ def _apply_move(state: State, a: Action):
 
 def _flip_pos(x):
     """
-    >>> _flip_pos(jnp.int8(34))
-    Array(37, dtype=int8)
-    >>> _flip_pos(jnp.int8(37))
-    Array(34, dtype=int8)
-    >>> _flip_pos(jnp.int8(-1))
-    Array(-1, dtype=int8)
+    >>> _flip_pos(jnp.int32(34))
+    Array(37, dtype=int32)
+    >>> _flip_pos(jnp.int32(37))
+    Array(34, dtype=int32)
+    >>> _flip_pos(jnp.int32(-1))
+    Array(-1, dtype=int32)
     """
     return jax.lax.select(x == -1, x, (x // 8) * 8 + (7 - (x % 8)))
 
@@ -632,11 +632,11 @@ def _is_pseudo_legal(state: State, a: Action):
 
 def _possible_piece_positions(state):
     my_pos = jnp.nonzero(state._board > 0, size=16, fill_value=-1)[0].astype(
-        jnp.int8
+        jnp.int32
     )
     opp_pos = jnp.nonzero(_flip(state)._board > 0, size=16, fill_value=-1)[
         0
-    ].astype(jnp.int8)
+    ].astype(jnp.int32)
     return jnp.vstack((my_pos, opp_pos))
 
 
@@ -782,9 +782,9 @@ def _from_fen(fen: str):
            [ 0,  0,  0,  0,  0,  0,  0,  0],
            [ 1,  0,  0,  0,  0,  0,  0,  0],
            [ 0,  1,  1,  1,  1,  1,  1,  1],
-           [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int8)
+           [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int32)
     >>> state._en_passant
-    Array(34, dtype=int8)
+    Array(34, dtype=int32)
     >>> state = _from_fen(
     ...     "rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1"
     ... )
@@ -796,9 +796,9 @@ def _from_fen(fen: str):
            [ 0,  0,  0,  0,  0,  0,  0,  0],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
            [ 1,  1,  1,  1,  1,  1,  1,  1],
-           [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int8)
+           [ 4,  2,  3,  5,  6,  3,  2,  4]], dtype=int32)
     >>> state._en_passant
-    Array(37, dtype=int8)
+    Array(37, dtype=int32)
     """
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     arr = []
@@ -825,13 +825,13 @@ def _from_fen(fen: str):
     if turn == "b":
         can_castle_queen_side = can_castle_queen_side[::-1]
         can_castle_king_side = can_castle_king_side[::-1]
-    mat = jnp.int8(arr).reshape(8, 8)
+    mat = jnp.int32(arr).reshape(8, 8)
     if turn == "b":
         mat = -jnp.flip(mat, axis=0)
     ep = (
-        jnp.int8(-1)
+        jnp.int32(-1)
         if en_passant == "-"
-        else jnp.int8(
+        else jnp.int32(
             "abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1
         )
     )
@@ -839,7 +839,7 @@ def _from_fen(fen: str):
         ep = _flip_pos(ep)
     state = State(  # type: ignore
         _board=jnp.rot90(mat, k=3).flatten(),
-        _turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
+        _turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
         _can_castle_queen_side=can_castle_queen_side,
         _can_castle_king_side=can_castle_king_side,
         _en_passant=ep,
@@ -875,7 +875,7 @@ def _to_fen(state: State):
     - The place where en passant is possible. If the pawn moves 2 squares, record the position where the pawn passed
     - At last, the number of moves since the last pawn move or capture and the normal number of moves (fixed at 0 and 1 here)
 
-    >>> s = State(_en_passant=jnp.int8(34))
+    >>> s = State(_en_passant=jnp.int32(34))
     >>> _to_fen(s)
     'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq e3 0 1'
     >>> _to_fen(

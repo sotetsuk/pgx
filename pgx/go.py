@@ -26,7 +26,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -35,20 +35,20 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Go specific ---
-    _size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int8
+    _size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int32
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
-    # require at least 19 * 19 > int8, idx_squared_sum can be 361^2 > int16
+    # require at least 19 * 19 > int32, idx_squared_sum can be 361^2 > int16
     _chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
-    _board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int8)
-    _turn: jnp.ndarray = jnp.int8(0)  # 0 = black's turn, 1 = white's turn
+    _board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
+    _turn: jnp.ndarray = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
     _num_captured_stones: jnp.ndarray = jnp.zeros(
         2, dtype=jnp.int32
     )  # [0]=black, [1]=white
     _passed: jnp.ndarray = FALSE  # TRUE if last action is pass
     _ko: jnp.ndarray = jnp.int32(-1)  # by SSK
     _komi: jnp.ndarray = jnp.float32(7.5)
-    _black_player: jnp.ndarray = jnp.int8(0)
+    _black_player: jnp.ndarray = jnp.int32(0)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -158,7 +158,7 @@ def _observe(state: State, player_id, size, history_length):
 
     @jax.vmap
     def _make(i):
-        color = jnp.int8([1, -1])[i % 2] * my_color
+        color = jnp.int32([1, -1])[i % 2] * my_color
         return state._board_history[i // 2] == color
 
     log = _make(jnp.arange(history_length * 2))
@@ -168,13 +168,13 @@ def _observe(state: State, player_id, size, history_length):
 
 
 def _init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
-    black_player = jnp.int8(jax.random.bernoulli(key))
+    black_player = jnp.int32(jax.random.bernoulli(key))
     current_player = black_player
     return State(  # type:ignore
         _size=jnp.int32(size),
         _chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-        _board_history=jnp.full((8, size**2), 2, dtype=jnp.int8),
+        _board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
         current_player=current_player,
         _komi=jnp.float32(komi),
         _black_player=black_player,
@@ -205,7 +205,7 @@ def _step(state: State, action: int, size: int) -> State:
     # update board history
     board_history = jnp.roll(state._board_history, size**2)
     board_history = board_history.at[0].set(
-        jnp.clip(state._chain_id_board, -1, 1).astype(jnp.int8)
+        jnp.clip(state._chain_id_board, -1, 1).astype(jnp.int32)
     )
     state = state.replace(_board_history=board_history)  # type:ignore
 
@@ -450,7 +450,7 @@ def _get_reward(state: State, size: int) -> jnp.ndarray:
     reward = jax.lax.cond(
         state._black_player == 0,
         lambda: reward_bw,
-        lambda: reward_bw[jnp.int8([1, 0])],
+        lambda: reward_bw[jnp.int32([1, 0])],
     )
     return reward
 

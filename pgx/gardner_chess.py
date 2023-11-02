@@ -34,13 +34,13 @@ MAX_TERMINATION_STEPS = 256
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
-EMPTY = jnp.int8(0)
-PAWN = jnp.int8(1)
-KNIGHT = jnp.int8(2)
-BISHOP = jnp.int8(3)
-ROOK = jnp.int8(4)
-QUEEN = jnp.int8(5)
-KING = jnp.int8(6)
+EMPTY = jnp.int32(0)
+PAWN = jnp.int32(1)
+KNIGHT = jnp.int32(2)
+BISHOP = jnp.int32(3)
+ROOK = jnp.int32(4)
+QUEEN = jnp.int32(5)
+KING = jnp.int32(6)
 # OPP_PAWN = -1
 # OPP_KNIGHT = -2
 # OPP_BISHOP = -3
@@ -64,7 +64,7 @@ KING = jnp.int8(6)
 # 1  4  9 14 19 24
 #    a  b  c  d  e
 # fmt: off
-INIT_BOARD = jnp.int8([
+INIT_BOARD = jnp.int32([
     4, 1, 0, -1, -4,
     2, 1, 0, -1, -2,
     3, 1, 0, -1, -3,
@@ -78,7 +78,7 @@ INIT_ZOBRIST_HASH = jnp.uint32([2025569903, 1172890342])
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -87,7 +87,7 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     _board: jnp.ndarray = INIT_BOARD  # From top left, like FEN
     # # of moves since the last piece capture or pawn move
     _halfmove_count: jnp.ndarray = jnp.int32(0)
@@ -99,9 +99,9 @@ class State(v1.State):
         .set(jnp.uint32(INIT_ZOBRIST_HASH))
     )
     _board_history: jnp.ndarray = (
-        jnp.zeros((8, 25), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
+        jnp.zeros((8, 25), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     )
-    _possible_piece_positions: jnp.ndarray = jnp.int8(
+    _possible_piece_positions: jnp.ndarray = jnp.int32(
         [
             [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
             [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
@@ -139,9 +139,9 @@ class State(v1.State):
 # 25           9          40
 @dataclass
 class Action:
-    from_: jnp.ndarray = jnp.int8(-1)
-    to: jnp.ndarray = jnp.int8(-1)
-    underpromotion: jnp.ndarray = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
+    from_: jnp.ndarray = jnp.int32(-1)
+    to: jnp.ndarray = jnp.int32(-1)
+    underpromotion: jnp.ndarray = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
     def _from_label(label: jnp.ndarray):
@@ -154,7 +154,7 @@ class Action:
             from_=from_,
             to=TO_MAP[from_, plane],  # -1 if impossible move
             underpromotion=jax.lax.select(
-                plane >= 9, jnp.int8(-1), jnp.int8(plane // 3)
+                plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)
             ),
         )
 
@@ -170,7 +170,7 @@ class GardnerChess(v1.Env):
 
     def _init(self, key: jax.random.KeyArray) -> State:
         rng, subkey = jax.random.split(key)
-        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        current_player = jnp.int32(jax.random.bernoulli(subkey))
         state = State(current_player=current_player)  # type: ignore
         return state
 
@@ -250,7 +250,7 @@ def _apply_move(state: State, a: Action):
     piece = jax.lax.select(
         a.underpromotion < 0,
         piece,
-        jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion],
+        jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
 
     # actually move
@@ -502,22 +502,22 @@ def _observe(state: State, player_id: jnp.ndarray):
 
 def _possible_piece_positions(state: State):
     my_pos = jnp.nonzero(state._board > 0, size=10, fill_value=-1)[0].astype(
-        jnp.int8
+        jnp.int32
     )
     opp_pos = jnp.nonzero(_flip(state)._board > 0, size=10, fill_value=-1)[
         0
-    ].astype(jnp.int8)
+    ].astype(jnp.int32)
     return jnp.vstack((my_pos, opp_pos))
 
 
 def _flip_pos(x):
     """
-    >>> _flip_pos(jnp.int8(0))
-    Array(4, dtype=int8)
-    >>> _flip_pos(jnp.int8(4))
-    Array(0, dtype=int8)
-    >>> _flip_pos(jnp.int8(-1))
-    Array(-1, dtype=int8)
+    >>> _flip_pos(jnp.int32(0))
+    Array(4, dtype=int32)
+    >>> _flip_pos(jnp.int32(4))
+    Array(0, dtype=int32)
+    >>> _flip_pos(jnp.int32(-1))
+    Array(-1, dtype=int32)
     """
     return jax.lax.select(x == -1, x, (x // 5) * 5 + (4 - (x % 5)))
 
@@ -547,14 +547,14 @@ def _from_fen(fen: str):
            [-1, -1, -1, -1, -1],
            [ 0,  0,  0,  0,  0],
            [ 1,  1,  1,  1,  1],
-           [ 4,  2,  3,  5,  6]], dtype=int8)
+           [ 4,  2,  3,  5,  6]], dtype=int32)
     >>> state = _from_fen("bbkqr/Ppppp/5/1PPP1/RNBQK b - - 0 1")
     >>> _rotate(state._board.reshape(5, 5))
     Array([[-4, -2, -3, -5, -6],
            [ 0, -1, -1, -1,  0],
            [ 0,  0,  0,  0,  0],
            [-1,  1,  1,  1,  1],
-           [ 3,  3,  6,  5,  4]], dtype=int8)
+           [ 3,  3,  6,  5,  4]], dtype=int32)
     """
     board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     arr = []
@@ -568,12 +568,12 @@ def _from_fen(fen: str):
                 if str.islower(c):
                     ix *= -1
                 arr.append(ix)
-    mat = jnp.int8(arr).reshape(5, 5)
+    mat = jnp.int32(arr).reshape(5, 5)
     if turn == "b":
         mat = -jnp.flip(mat, axis=0)
     state = State(  # type: ignore
         _board=jnp.rot90(mat, k=3).flatten(),
-        _turn=jnp.int8(0) if turn == "w" else jnp.int8(1),
+        _turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
         _halfmove_count=jnp.int32(halfmove_cnt),
         _fullmove_count=jnp.int32(fullmove_cnt),
     )

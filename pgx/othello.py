@@ -24,7 +24,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -33,7 +33,7 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Othello specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     # 8x8 board
     # [[ 0,  1,  2,  3,  4,  5,  6,  7],
     #  [ 8,  9, 10, 11, 12, 13, 14, 15],
@@ -43,7 +43,7 @@ class State(v1.State):
     #  [40, 41, 42, 43, 44, 45, 46, 47],
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
-    _board: jnp.ndarray = jnp.zeros(64, jnp.int8)  # -1(opp), 0(empty), 1(self)
+    _board: jnp.ndarray = jnp.zeros(64, jnp.int32)  # -1(opp), 0(empty), 1(self)
     _passed: jnp.ndarray = FALSE
 
     @property
@@ -104,10 +104,10 @@ SIDE_MASK = LR_MASK & UD_MASK
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(subkey))
+    current_player = jnp.int32(jax.random.bernoulli(subkey))
     return State(
         current_player=current_player,
-        _board=jnp.zeros(64, dtype=jnp.int8)
+        _board=jnp.zeros(64, dtype=jnp.int32)
         .at[28]
         .set(1)
         .at[35]
@@ -195,7 +195,7 @@ def _step(state, action):
         .set(~legal_action.any()),
         rewards=reward,
         terminated=terminated,
-        _board=-jnp.where(jnp.int8(opp), -1, jnp.int8(my)),
+        _board=-jnp.where(jnp.int32(opp), -1, jnp.int32(my)),
         _passed=action == 64,
     )
 
@@ -234,7 +234,7 @@ def _observe(state, player_id) -> jnp.ndarray:
     def make(color):
         return board * color > 0
 
-    return jnp.stack(jax.vmap(make)(jnp.int8([1, -1])), -1)
+    return jnp.stack(jax.vmap(make)(jnp.int32([1, -1])), -1)
 
 
 def _get_abs_board(state):

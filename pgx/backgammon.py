@@ -26,8 +26,8 @@ FALSE = jnp.bool_(False)
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
-    observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int8)
+    current_player: jnp.ndarray = jnp.int32(0)
+    observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int32)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -37,13 +37,13 @@ class State(v1.State):
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Backgammon specific ---
     # points(24) bar(2) off(2). black+, white-
-    _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+    _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int32)
     _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)  # 0~5: 1~6
     _playable_dice: jnp.ndarray = jnp.zeros(
         4, dtype=jnp.int16
     )  # playable dice -1 for empty
     _played_dice_num: jnp.ndarray = jnp.int16(0)  # the number of dice played
-    _turn: jnp.ndarray = jnp.int8(1)  # black: 0 white:1
+    _turn: jnp.ndarray = jnp.int32(1)  # black: 0 white:1
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -84,7 +84,7 @@ class Backgammon(v1.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2, rng3 = jax.random.split(rng, num=3)
-    current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int8)
+    current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int32)
     board: jnp.ndarray = _make_init_board()
     terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_init_dice(rng2)
@@ -130,7 +130,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         player_id == state.current_player,
         lambda: jnp.concatenate((board, playable_dice_count_vec), axis=None),  # type: ignore
         lambda: jnp.concatenate(
-            (board, jnp.zeros(6, dtype=jnp.int8)), axis=None  # type: ignore
+            (board, jnp.zeros(6, dtype=jnp.int32)), axis=None  # type: ignore
         ),
     )
 
@@ -146,20 +146,20 @@ def _to_playable_dice_count(playable_dice: jnp.ndarray) -> jnp.ndarray:
     Return: [0, 0, 0, 0, 4, 0]
     """
     dice_indices: jnp.ndarray = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int8
+        [0, 1, 2, 3], dtype=jnp.int32
     )  # maximum number of playable dice is 4
 
     def _insert_dice_num(
         idx: jnp.ndarray, playable_dice: jnp.ndarray
     ) -> jnp.ndarray:
-        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int8)
+        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int32)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
         ) + (playable_dice[idx] == -1) * vec
 
     return jax.vmap(_insert_dice_num)(
         dice_indices, jnp.tile(playable_dice, (4, 1))
-    ).sum(axis=0, dtype=jnp.int8)
+    ).sum(axis=0, dtype=jnp.int32)
 
 
 def _winning_step(
@@ -235,7 +235,7 @@ def _make_init_board() -> jnp.ndarray:
     """
     Initialize the board based on black's perspective.
     """
-    board: jnp.ndarray = jnp.array([2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0, 0], dtype=jnp.int8)  # type: ignore
+    board: jnp.ndarray = jnp.array([2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0, 0], dtype=jnp.int32)  # type: ignore
     return board
 
 
@@ -294,7 +294,7 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     Begin with those who have bigger dice
     """
     diff = dice[1] - dice[0]
-    return jnp.int8(diff > 0)
+    return jnp.int32(diff > 0)
 
 
 def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
@@ -338,7 +338,7 @@ def _home_board() -> jnp.ndarray:
     """
     black: [18~23], white: [0~5]: Always black's perspective
     """
-    return jnp.arange(18, 24, dtype=jnp.int8)  # type: ignore
+    return jnp.arange(18, 24, dtype=jnp.int32)  # type: ignore
 
 
 def _off_idx() -> int:

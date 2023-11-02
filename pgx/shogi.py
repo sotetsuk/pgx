@@ -38,43 +38,43 @@ MAX_TERMINATION_STEPS = 512  # From AZ paper
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
-EMPTY = jnp.int8(-1)  # 空白
-PAWN = jnp.int8(0)  # 歩
-LANCE = jnp.int8(1)  # 香
-KNIGHT = jnp.int8(2)  # 桂
-SILVER = jnp.int8(3)  # 銀
-BISHOP = jnp.int8(4)  # 角
-ROOK = jnp.int8(5)  # 飛
-GOLD = jnp.int8(6)  # 金
-KING = jnp.int8(7)  # 玉
-PRO_PAWN = jnp.int8(8)  # と
-PRO_LANCE = jnp.int8(9)  # 成香
-PRO_KNIGHT = jnp.int8(10)  # 成桂
-PRO_SILVER = jnp.int8(11)  # 成銀
-HORSE = jnp.int8(12)  # 馬
-DRAGON = jnp.int8(13)  # 龍
+EMPTY = jnp.int32(-1)  # 空白
+PAWN = jnp.int32(0)  # 歩
+LANCE = jnp.int32(1)  # 香
+KNIGHT = jnp.int32(2)  # 桂
+SILVER = jnp.int32(3)  # 銀
+BISHOP = jnp.int32(4)  # 角
+ROOK = jnp.int32(5)  # 飛
+GOLD = jnp.int32(6)  # 金
+KING = jnp.int32(7)  # 玉
+PRO_PAWN = jnp.int32(8)  # と
+PRO_LANCE = jnp.int32(9)  # 成香
+PRO_KNIGHT = jnp.int32(10)  # 成桂
+PRO_SILVER = jnp.int32(11)  # 成銀
+HORSE = jnp.int32(12)  # 馬
+DRAGON = jnp.int32(13)  # 龍
 # --- opponent pieces ---
-OPP_PAWN = jnp.int8(14)  # 歩
-OPP_LANCE = jnp.int8(15)  # 香
-OPP_KNIGHT = jnp.int8(16)  # 桂
-OPP_SILVER = jnp.int8(17)  # 銀
-OPP_BISHOP = jnp.int8(18)  # 角
-OPP_ROOK = jnp.int8(19)  # 飛
-OPP_GOLD = jnp.int8(20)  # 金
-OPP_KING = jnp.int8(21)  # 玉
-OPP_PRO_PAWN = jnp.int8(22)  # と
-OPP_PRO_LANCE = jnp.int8(23)  # 成香
-OPP_PRO_KNIGHT = jnp.int8(24)  # 成桂
-OPP_PRO_SILVER = jnp.int8(25)  # 成銀
-OPP_HORSE = jnp.int8(26)  # 馬
-OPP_DRAGON = jnp.int8(27)  # 龍
+OPP_PAWN = jnp.int32(14)  # 歩
+OPP_LANCE = jnp.int32(15)  # 香
+OPP_KNIGHT = jnp.int32(16)  # 桂
+OPP_SILVER = jnp.int32(17)  # 銀
+OPP_BISHOP = jnp.int32(18)  # 角
+OPP_ROOK = jnp.int32(19)  # 飛
+OPP_GOLD = jnp.int32(20)  # 金
+OPP_KING = jnp.int32(21)  # 玉
+OPP_PRO_PAWN = jnp.int32(22)  # と
+OPP_PRO_LANCE = jnp.int32(23)  # 成香
+OPP_PRO_KNIGHT = jnp.int32(24)  # 成桂
+OPP_PRO_SILVER = jnp.int32(25)  # 成銀
+OPP_HORSE = jnp.int32(26)  # 馬
+OPP_DRAGON = jnp.int32(27)  # 龍
 
 ALL_SQ = jnp.arange(81)
 
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -83,12 +83,12 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Shogi specific ---
-    _turn: jnp.ndarray = jnp.int8(0)  # 0 or 1
+    _turn: jnp.ndarray = jnp.int32(0)  # 0 or 1
     _board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) flip in turn
-    _hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int8)  # flip in turn
+    _hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int32)  # flip in turn
     # cache
     # Redundant information used only in _is_checked for speeding-up
-    _cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int8)
+    _cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int32)
     _cache_king: jnp.ndarray = jnp.int32(44)
 
     @property
@@ -124,7 +124,7 @@ class Shogi(v1.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         state = _init_board()
         rng, subkey = jax.random.split(key)
-        current_player = jnp.int8(jax.random.bernoulli(subkey))
+        current_player = jnp.int32(jax.random.bernoulli(subkey))
         return state.replace(current_player=current_player)  # type: ignore
 
     def _step(self, state: v1.State, action: jnp.ndarray) -> State:
@@ -162,7 +162,7 @@ class Action:
     piece: jnp.ndarray
     to: jnp.ndarray
     # --- Optional (only for move action) ---
-    from_: jnp.ndarray = jnp.int8(0)
+    from_: jnp.ndarray = jnp.int32(0)
     is_promotion: jnp.ndarray = FALSE
 
     @staticmethod
@@ -212,7 +212,7 @@ class Action:
         26 Drop 金
         """
         action = jnp.int32(action)
-        direction, to = jnp.int8(action // 81), jnp.int8(action % 81)
+        direction, to = jnp.int32(action // 81), jnp.int32(action % 81)
         is_drop = direction >= 20
         is_promotion = (10 <= direction) & (direction < 20)
         # LEGAL_FROM_IDX[UP, 19] = [20, 21, ... -1]
@@ -529,7 +529,7 @@ def _flip(state):
     pb = pb[::-1]
     return state.replace(  # type: ignore
         _board=pb,
-        _hand=state._hand[jnp.int8((1, 0))],
+        _hand=state._hand[jnp.int32((1, 0))],
     )
 
 
@@ -550,7 +550,7 @@ def _is_major_piece(piece):
 
 def _major_piece_ix(piece):
     ixs = (
-        (-jnp.ones(28, dtype=jnp.int8))
+        (-jnp.ones(28, dtype=jnp.int32))
         .at[LANCE]
         .set(0)
         .at[BISHOP]
@@ -562,7 +562,7 @@ def _major_piece_ix(piece):
         .at[DRAGON]
         .set(2)
     )
-    return jax.lax.select(piece >= 0, ixs[piece], jnp.int8(-1))
+    return jax.lax.select(piece >= 0, ixs[piece], jnp.int32(-1))
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
