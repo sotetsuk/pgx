@@ -87,7 +87,9 @@ for from_ in range(64):
         ):
             legal_dst.append(to)
     assert len(legal_dst) <= 8
-    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -99,7 +101,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 2 and jnp.abs(c1 - c0) == 1:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # BISHOP
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -111,7 +115,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # ROOK
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -123,7 +129,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # QUEEN
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -137,7 +145,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # KING
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -154,7 +164,9 @@ for from_ in range(64):
     # if from_ == 39:
     #     legal_dst += [23, 55]
     assert len(legal_dst) <= 8
-    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 
 assert (CAN_MOVE[0, :, :] == -1).all()
 

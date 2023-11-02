@@ -43,7 +43,9 @@ class State(v1.State):
     #  [40, 41, 42, 43, 44, 45, 46, 47],
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
-    _board: jnp.ndarray = jnp.zeros(64, jnp.int32)  # -1(opp), 0(empty), 1(self)
+    _board: jnp.ndarray = jnp.zeros(
+        64, jnp.int32
+    )  # -1(opp), 0(empty), 1(self)
     _passed: jnp.ndarray = FALSE
 
     @property
