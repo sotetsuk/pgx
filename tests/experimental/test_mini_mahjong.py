@@ -16,7 +16,7 @@ def test_deck():
 
 
 def test_hand():
-    hand = jnp.zeros(34, dtype=jnp.uint8)
+    hand = jnp.zeros(34, dtype=jnp.uint32)
     hand = Hand.add(hand, 0)
     assert Hand.can_ron(hand, 0)
     assert not Hand.can_ron(hand, 1)

@@ -46,7 +46,7 @@ def test_deck():
 
 
 def test_hand():
-    hand = np.zeros(34, dtype=np.uint8)
+    hand = np.zeros(34, dtype=np.uint32)
     red = np.full(3, False)
     hand, red = Hand.add(hand, red, 0)
     assert Hand.can_ron(hand, 0)
@@ -458,7 +458,7 @@ def score(
         is_ron: bool = False
         ) -> int:
     hand, red = Hand.from_str(hand_s)
-    dora = np.zeros(34, dtype=np.uint8)
+    dora = np.zeros(34, dtype=np.uint32)
     melds = np.zeros(4, dtype=np.int32)
     n_meld=0
     for s in melds_s.split(","):

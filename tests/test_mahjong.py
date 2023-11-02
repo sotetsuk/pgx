@@ -23,7 +23,7 @@ def visualize(state, fname="tests/assets/mahjong/xxx.svg"):
 
 def test_hand():
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         0, 1, 1, 1, 1, 1, 1, 1, 1,
         3, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -36,7 +36,7 @@ def test_hand():
 
     # 国士無双
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         1, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -49,7 +49,7 @@ def test_hand():
 
     # 七対子
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         1, 0, 0, 0, 0, 0, 0, 0, 0,
         2, 2, 0, 0, 0, 0, 0, 0, 0,
         2, 2, 0, 0, 0, 0, 0, 0, 0,
@@ -61,7 +61,7 @@ def test_hand():
     assert ~jit(Hand.can_ron)(hand, 1)
 
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         1, 1, 1, 1, 1, 1, 1, 1, 0,
         3, 0, 0, 0, 0, 0, 0, 0, 1,
         0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -72,7 +72,7 @@ def test_hand():
     assert jit(Hand.can_riichi)(hand)
 
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         1, 1, 1, 1, 1, 1, 1, 0, 0,
         3, 0, 0, 0, 0, 0, 0, 1, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -83,7 +83,7 @@ def test_hand():
     assert ~jit(Hand.can_riichi)(hand)
 
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         1, 1, 1, 1, 1, 1, 1, 1, 1,
         3, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -96,7 +96,7 @@ def test_hand():
     from pgx.mahjong._action import Action
 
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         0, 1, 1, 1, 1, 1, 1, 1, 1,
         3, 0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -123,8 +123,8 @@ def test_score():
         jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
-            n_meld=jnp.int8(0),
-            last=jnp.int8(0),
+            n_meld=jnp.int32(0),
+            last=jnp.int32(0),
             riichi=jnp.bool_(False),
             is_ron=jnp.bool_(False),
             dora=jnp.zeros(34, dtype=jnp.bool_).at[5].set(TRUE),
@@ -133,7 +133,7 @@ def test_score():
     )
     # 国士無双
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         1, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 0, 1,
         1, 0, 0, 0, 0, 0, 0, 0, 1,
@@ -145,8 +145,8 @@ def test_score():
         jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
-            n_meld=jnp.int8(0),
-            last=jnp.int8(33),
+            n_meld=jnp.int32(0),
+            last=jnp.int32(33),
             riichi=jnp.bool_(False),
             is_ron=jnp.bool_(False),
             dora=jnp.zeros(34, dtype=jnp.bool_).at[5].set(TRUE),
@@ -156,7 +156,7 @@ def test_score():
 
     # 七対子
     # fmt:off
-    hand = jnp.int8([
+    hand = jnp.int32([
         2, 0, 0, 0, 0, 0, 0, 0, 0,
         2, 2, 0, 0, 0, 0, 0, 0, 0,
         2, 2, 0, 0, 0, 0, 0, 0, 0,
@@ -168,8 +168,8 @@ def test_score():
         jit(Yaku.score)(
             hand=hand,
             melds=jnp.zeros(4, dtype=jnp.int32),
-            n_meld=jnp.int8(0),
-            last=jnp.int8(27),
+            n_meld=jnp.int32(0),
+            last=jnp.int32(27),
             riichi=jnp.bool_(False),
             is_ron=jnp.bool_(False),
             dora=jnp.zeros(34, dtype=jnp.bool_).at[5].set(TRUE),
@@ -204,23 +204,23 @@ def test_shanten():
 def test_discard():
     key = jax.random.PRNGKey(0)
     state: State = init(key=key)
-    assert state.current_player == jnp.int8(0)
-    assert state._target == jnp.int8(-1)
-    assert state._deck[state._next_deck_ix] == jnp.int8(8)
-    assert state._hand[0, 8] == jnp.int8(1)
+    assert state.current_player == jnp.int32(0)
+    assert state._target == jnp.int32(-1)
+    assert state._deck[state._next_deck_ix] == jnp.int32(8)
+    assert state._hand[0, 8] == jnp.int32(1)
 
     state: State = step(state, 8)
-    assert state._hand[0, 8] == jnp.int8(0)
-    assert state.current_player == jnp.int8(1)
-    assert state._target == jnp.int8(-1)
-    assert state._deck[state._next_deck_ix] == jnp.int8(31)
+    assert state._hand[0, 8] == jnp.int32(0)
+    assert state.current_player == jnp.int32(1)
+    assert state._target == jnp.int32(-1)
+    assert state._deck[state._next_deck_ix] == jnp.int32(31)
 
-    assert state._hand[1, 8] == jnp.int8(2)
+    assert state._hand[1, 8] == jnp.int32(2)
 
     state: State = step(state, Action.TSUMOGIRI)
-    assert state._hand[1, 8] == jnp.int8(1)
-    assert state.current_player == jnp.int8(2)
-    assert state._target == jnp.int8(-1)
+    assert state._hand[1, 8] == jnp.int32(1)
+    assert state.current_player == jnp.int32(2)
+    assert state._target == jnp.int32(-1)
 
 
 def test_chi():
@@ -235,23 +235,23 @@ def test_chi():
     """
     assert state.legal_action_mask[6]
     state: State = step(state, 6)
-    assert state.current_player == jnp.int8(1)
-    assert state._target == jnp.int8(6)
+    assert state.current_player == jnp.int32(1)
+    assert state._target == jnp.int32(6)
     assert state.legal_action_mask[Action.CHI_R]
 
     state1 = step(state, Action.CHI_R)
-    assert state1.current_player == jnp.int8(1)
+    assert state1.current_player == jnp.int32(1)
     assert state1._melds[1, 0] == jnp.int32(25420)
 
     state2 = step(state, Action.PASS)
-    assert state2.current_player == jnp.int8(1)
-    assert state2._melds[1, 0] == jnp.int8(0)
+    assert state2.current_player == jnp.int32(1)
+    assert state2._melds[1, 0] == jnp.int32(0)
 
 
 def test_ankan():
     key = jax.random.PRNGKey(352)
     state: State = init(key=key)
-    assert state.current_player == jnp.int8(0)
+    assert state.current_player == jnp.int32(0)
     """
     [[1 2 0 0 0 0 1 0 0 0 0 1 0 1 0 0 0 0 0 0 0 2 0 0 0 0 1 0 0 1 0 4 0 0]
      [0 0 1 2 0 1 0 0 0 2 0 0 0 1 1 2 0 0 0 0 0 0 0 0 0 0 1 2 0 0 0 0 0 0]
@@ -260,12 +260,12 @@ def test_ankan():
     """
     assert state.legal_action_mask[65]
     assert (state._doras == jnp.int32([28, -1, -1, -1, -1])).all()
-    assert state._n_kan == jnp.int8(0)
+    assert state._n_kan == jnp.int32(0)
 
     state: State = step(state, 65)
     assert state._melds[0, 0] == jnp.int32(4033)
     assert (state._doras == jnp.int32([28, 23, -1, -1, -1])).all()
-    assert state._n_kan == jnp.int8(1)
+    assert state._n_kan == jnp.int32(1)
 
 
 def test_riichi():
@@ -273,7 +273,7 @@ def test_riichi():
     state = State.from_json("tests/assets/mahjong/riichi_test.json")
     visualize(state, "tests/assets/mahjong/before_riichi.svg")
 
-    assert state.current_player == jnp.int8(0)
+    assert state.current_player == jnp.int32(0)
     state: State = step(state, 9)
 
     assert state.legal_action_mask[Action.RIICHI]
@@ -292,7 +292,7 @@ def test_ron():
     state = State.from_json("tests/assets/mahjong/ron_test.json")
     visualize(state, "tests/assets/mahjong/before_ron.svg")
 
-    assert state.current_player == jnp.int8(0)
+    assert state.current_player == jnp.int32(0)
     state: State = step(state, 30)  # 北
 
     assert state.legal_action_mask[Action.RON]
@@ -310,7 +310,7 @@ def test_ron():
 def test_tsumo():
     state = State.from_json("tests/assets/mahjong/tsumo_test.json")
     visualize(state, "tests/assets/mahjong/before_tsumo.svg")
-    assert state.current_player == jnp.int8(0)
+    assert state.current_player == jnp.int32(0)
     state: State = step(state, 30)
 
     assert state.legal_action_mask[Action.TSUMO]
