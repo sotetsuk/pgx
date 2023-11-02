@@ -119,7 +119,9 @@ def _step(state: State, action):
         round_over, state._first_player, 1 - state.current_player
     )
     raise_count = jax.lax.select(
-        round_over, jnp.int32(0), state._raise_count + jnp.int32(action == RAISE)
+        round_over,
+        jnp.int32(0),
+        state._raise_count + jnp.int32(action == RAISE),
     )
 
     reward *= jnp.min(chips)

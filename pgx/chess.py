@@ -159,7 +159,9 @@ class State(v1.State):
 class Action:
     from_: jnp.ndarray = jnp.int32(-1)
     to: jnp.ndarray = jnp.int32(-1)
-    underpromotion: jnp.ndarray = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
+    underpromotion: jnp.ndarray = jnp.int32(
+        -1
+    )  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
     def _from_label(label: jnp.ndarray):
