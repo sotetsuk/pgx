@@ -360,7 +360,7 @@ def test_observe():
     # + + + + +
     # + + + + +
     # fmt: off
-    curr_board = jnp.int8(
+    curr_board = jnp.int32(
         [[ 0, -1,  0, -1, 1],
          [-1,  1, -1,  0, 0],
          [ 0,  0,  0,  0, 0],

@@ -499,7 +499,7 @@ def test_observe():
     state = _init(jax.random.PRNGKey(1))
     state = step(state, jnp.int32(1))
     print(_to_str(state))
-    obs = observe(state, player_id=jnp.int8(2))
+    obs = observe(state, player_id=jnp.int32(2))
     assert obs.shape[0] == 11
     assert obs.shape[1] == 15
     assert jnp.all(obs[:, 0] == jnp.bool_([0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0]))
@@ -528,7 +528,7 @@ def test_observe():
      [2] 4 6*8 9*9   : 3 3 _ _ _ _ _ _ _ _  
      [1] 1 2*3 4 5   : r*_ _ _ _ _ _ _ _ _  
     """
-    obs = observe(state, player_id=jnp.int8(0))
+    obs = observe(state, player_id=jnp.int32(0))
     assert obs.shape[0] == 11
     assert obs.shape[1] == 15
     assert jnp.all(obs[:, 0] == jnp.bool_([1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0]))
@@ -546,7 +546,7 @@ def test_observe():
     assert jnp.all(obs[:, 12] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]))
     assert jnp.all(obs[:, 13] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
     assert jnp.all(obs[:, 14] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
-    obs = observe(state, player_id=jnp.int8(1))
+    obs = observe(state, player_id=jnp.int32(1))
     assert obs.shape[0] == 11
     assert obs.shape[1] == 15
     assert jnp.all(obs[:, 0] == jnp.bool_([1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0]))
@@ -564,7 +564,7 @@ def test_observe():
     assert jnp.all(obs[:, 12] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
     assert jnp.all(obs[:, 13] == jnp.bool_([0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0]))
     assert jnp.all(obs[:, 14] == jnp.bool_([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]))
-    obs = observe(state, player_id=jnp.int8(2))
+    obs = observe(state, player_id=jnp.int32(2))
     assert obs.shape[0] == 11
     assert obs.shape[1] == 15
     assert jnp.all(obs[:, 0] == jnp.bool_([0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0]))

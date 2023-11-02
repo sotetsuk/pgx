@@ -25,7 +25,7 @@ def test_step():
     state = step(state, 34)
     state = step(state, 17)
     # fmt: off
-    expected = jnp.int8([
+    expected = jnp.int32([
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0,
         0, -1, -1, -1, -1, -1, 0, 0,

@@ -31,7 +31,7 @@ def init(rng: jax.random.KeyArray) -> State:
     hand = jax.random.permutation(rng2, hand)
     vul_NS = jax.random.choice(rng3, jnp.bool_([False, True]))
     vul_EW = jax.random.choice(rng4, jnp.bool_([False, True]))
-    dealer = jax.random.randint(rng5, (1,), 0, 4, dtype=jnp.int8)[0]
+    dealer = jax.random.randint(rng5, (1,), 0, 4, dtype=jnp.int32)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng6)
     current_player = shuffled_players[dealer]
@@ -134,18 +134,18 @@ def test_step():
     state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
-        _dealer=jnp.int8(1),
-        current_player=jnp.int8(3),
-        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        _dealer=jnp.int32(1),
+        current_player=jnp.int32(3),
+        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int32),
         _vul_NS=jnp.bool_(0),
         _vul_EW=jnp.bool_(0),
     )
-    bidding_history = jnp.full(319, -1, dtype=jnp.int8)
+    bidding_history = jnp.full(319, -1, dtype=jnp.int32)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[DOUBLE_ACTION_NUM].set(False)
     legal_action_mask = legal_action_mask.at[REDOUBLE_ACTION_NUM].set(False)
-    first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
-    first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
+    first_denomination_NS = jnp.full(5, -1, dtype=jnp.int32)
+    first_denomination_EW = jnp.full(5, -1, dtype=jnp.int32)
 
     action = next(actions)
     state = step(state, action)
@@ -1008,19 +1008,19 @@ def test_pass_out():
     state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
     state = state.replace(
-        _dealer=jnp.int8(1),
-        current_player=jnp.int8(3),
-        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        _dealer=jnp.int32(1),
+        current_player=jnp.int32(3),
+        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int32),
         _vul_NS=jnp.bool_(0),
         _vul_EW=jnp.bool_(0),
     )
 
-    bidding_history = jnp.full(319, -1, dtype=jnp.int8)
+    bidding_history = jnp.full(319, -1, dtype=jnp.int32)
     legal_action_mask = jnp.ones(38, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[DOUBLE_ACTION_NUM].set(False)
     legal_action_mask = legal_action_mask.at[REDOUBLE_ACTION_NUM].set(False)
-    first_denomination_NS = jnp.full(5, -1, dtype=jnp.int8)
-    first_denomination_EW = jnp.full(5, -1, dtype=jnp.int8)
+    first_denomination_NS = jnp.full(5, -1, dtype=jnp.int32)
+    first_denomination_EW = jnp.full(5, -1, dtype=jnp.int32)
 
     action = next(actions)
     state = step(state, action)
@@ -1148,9 +1148,9 @@ def test_observe():
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
     state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
-        _dealer=jnp.int8(1),
-        current_player=jnp.int8(3),
-        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        _dealer=jnp.int32(1),
+        current_player=jnp.int32(3),
+        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int32),
         _vul_NS=jnp.bool_(0),
         _vul_EW=jnp.bool_(0),
     )
@@ -1179,9 +1179,9 @@ def test_observe():
     # dealer team: EW
     # non dealer team: NS
     state = state.replace(
-        _dealer=jnp.int8(1),
-        current_player=jnp.int8(3),
-        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        _dealer=jnp.int32(1),
+        current_player=jnp.int32(3),
+        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int32),
         _vul_NS=jnp.bool_(1),
         _vul_EW=jnp.bool_(0),
     )
@@ -1196,9 +1196,9 @@ def test_observe():
     assert jnp.all(obs == init_obs)
 
     state = state.replace(
-        _dealer=jnp.int8(1),
-        current_player=jnp.int8(3),
-        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        _dealer=jnp.int32(1),
+        current_player=jnp.int32(3),
+        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int32),
         _vul_NS=jnp.bool_(0),
         _vul_EW=jnp.bool_(1),
     )
@@ -1214,9 +1214,9 @@ def test_observe():
     assert jnp.all(obs == init_obs)
 
     state = state.replace(
-        _dealer=jnp.int8(1),
-        current_player=jnp.int8(3),
-        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        _dealer=jnp.int32(1),
+        current_player=jnp.int32(3),
+        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int32),
         _vul_NS=jnp.bool_(1),
         _vul_EW=jnp.bool_(1),
     )
@@ -1255,9 +1255,9 @@ def test_observe():
     history = jnp.zeros(424, dtype=jnp.bool_)
 
     state = state.replace(
-        _dealer=jnp.int8(1),
-        current_player=jnp.int8(3),
-        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int8),
+        _dealer=jnp.int32(1),
+        current_player=jnp.int32(3),
+        _shuffled_players=jnp.array([0, 3, 1, 2], dtype=jnp.int32),
         _vul_NS=jnp.bool_(0),
         _vul_EW=jnp.bool_(0),
     )
@@ -2045,7 +2045,7 @@ def test_calc_score():
 
 
 def test_to_binary():
-    x = jnp.arange(52, dtype=jnp.int8)[::-1].reshape((4, 13)) % 4
+    x = jnp.arange(52, dtype=jnp.int32)[::-1].reshape((4, 13)) % 4
     y = _to_binary(x)
 
     assert jnp.all(
@@ -2053,13 +2053,13 @@ def test_to_binary():
         == jnp.array([60003219, 38686286, 20527417, 15000804], dtype=jnp.int32)
     )
 
-    x = jnp.arange(52, dtype=jnp.int8).reshape((4, 13)) // 13
+    x = jnp.arange(52, dtype=jnp.int32).reshape((4, 13)) // 13
     y = _to_binary(x)
     assert jnp.all(
         y == jnp.array([0, 22369621, 44739242, 67108863], dtype=jnp.int32)
     )
 
-    x = jnp.arange(52, dtype=jnp.int8)[::-1].reshape((4, 13)) // 13
+    x = jnp.arange(52, dtype=jnp.int32)[::-1].reshape((4, 13)) // 13
     y = _to_binary(x)
     assert jnp.all(
         y == jnp.array([67108863, 44739242, 22369621, 0], dtype=jnp.int32)
@@ -2069,14 +2069,14 @@ def test_to_binary():
 def test_state_to_pbn():
     key = jax.random.PRNGKey(0)
     state = init(key)
-    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int8))
+    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int32))
     pbn = _state_to_pbn(state)
     assert (
         pbn
         == "N:AKQJT98765432... .AKQJT98765432.. ..AKQJT98765432. ...AKQJT98765432"
     )
 
-    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int8)[::-1])
+    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int32)[::-1])
     pbn = _state_to_pbn(state)
     assert (
         pbn
@@ -2104,13 +2104,13 @@ def test_state_to_key():
     rng = jax.random.PRNGKey(0)
     state = init(rng)
 
-    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int8))
+    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int32))
     key = _state_to_key(state)
     assert jnp.all(
         key == jnp.array([0, 22369621, 44739242, 67108863], dtype=jnp.int32)
     )
 
-    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int8)[::-1])
+    state = state.replace(_hand=jnp.arange(52, dtype=jnp.int32)[::-1])
     key = _state_to_key(state)
     assert jnp.all(
         key == jnp.array([67108863, 44739242, 22369621, 0], dtype=jnp.int32)
@@ -2136,11 +2136,11 @@ def test_state_to_key():
 def test_key_to_hand():
     key = jnp.array([0, 22369621, 44739242, 67108863], dtype=jnp.int32)
     hand = _key_to_hand(key)
-    assert jnp.all(hand == jnp.arange(52, dtype=jnp.int8))
+    assert jnp.all(hand == jnp.arange(52, dtype=jnp.int32))
 
     key = jnp.array([67108863, 44739242, 22369621, 0], dtype=jnp.int32)
     hand = _key_to_hand(key)
-    correct_hand = jnp.arange(52, dtype=jnp.int8)[::-1]
+    correct_hand = jnp.arange(52, dtype=jnp.int32)[::-1]
     sorted_correct_hand = jnp.concatenate(
         [
             jnp.sort(correct_hand[:13]),
@@ -2199,7 +2199,7 @@ def test_calcurate_dds_tricks():
     with open("tests/assets/contractbridge-ddstable-sample100.csv", "r") as f:
         reader = csv.reader(f, delimiter=",")
         for i in reader:
-            samples.append([i[0], np.array(i[1:]).astype(np.int8)])
+            samples.append([i[0], np.array(i[1:]).astype(np.int32)])
     key = jax.random.PRNGKey(0)
     for i in range(len(HASH_TABLE_SAMPLE_KEYS)):
         key, subkey = jax.random.split(key)
@@ -2221,7 +2221,7 @@ def test_value_to_dds_tricks():
         == jnp.array(
             [ 0,  1,  0,  4,  0, 13, 12, 13,  9, 13,  0,  1,  0,  4,  0, 13, 12,
            13,  9, 13],
-            dtype=jnp.int8,
+            dtype=jnp.int32,
         )
     )
     # fmt: on
@@ -2240,7 +2240,7 @@ def to_value(sample: list) -> jnp.ndarray:
     >>> to_value(sample)
     Array([  4160, 904605,   4160, 904605], dtype=int32)
     """
-    jnp_sample = jnp.array([int(s) for s in sample], dtype=np.int8).reshape(
+    jnp_sample = jnp.array([int(s) for s in sample], dtype=np.int32).reshape(
         4, 5
     )
     return to_binary(jnp_sample)
