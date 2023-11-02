@@ -266,7 +266,7 @@ class Hand:
     @staticmethod
     def from_str(s: str) -> jnp.ndarray:
         base = 0
-        hand = jnp.zeros(34, dtype=jnp.uint8)
+        hand = jnp.zeros(34, dtype=jnp.uint32)
         for c in reversed(s):
             if c == "m":
                 base = 0
@@ -310,7 +310,7 @@ class Deck:
     @staticmethod
     @jit
     def deal(deck: Deck) -> tuple[Deck, jnp.ndarray, int]:
-        hand = jnp.zeros((4, 34), dtype=jnp.uint8)
+        hand = jnp.zeros((4, 34), dtype=jnp.uint32)
         for i in range(3):
             for j in range(4):
                 hand = hand.at[j].set(

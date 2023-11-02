@@ -425,7 +425,7 @@ class Hand:
     @staticmethod
     def from_str(s: str) -> tuple[np.ndarray, np.ndarray]:
         suit = ""
-        hand = np.zeros(34, dtype=np.uint8)
+        hand = np.zeros(34, dtype=np.uint32)
         red = np.full(3, False)
         for c in reversed(s):
             if c in ["m", "p", "s", "z"]:
@@ -469,7 +469,7 @@ class Deck:
         return self.idx - self.end
 
     def dora(self, is_riichi: bool) -> np.ndarray:
-        dora = np.zeros(34, dtype=np.uint8)
+        dora = np.zeros(34, dtype=np.uint32)
         for i in range(self.n_dora):
             dora[Tile.next(self.arr[5 + 2 * i])] += 1
 
@@ -485,7 +485,7 @@ class Deck:
 
     @staticmethod
     def deal(deck: Deck) -> tuple[Deck, np.ndarray, np.ndarray, int]:
-        hand = np.zeros((4, 34), dtype=np.uint8)
+        hand = np.zeros((4, 34), dtype=np.uint32)
         red = np.full((4, 3), False)
         for i in range(3):
             for j in range(4):

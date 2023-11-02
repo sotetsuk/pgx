@@ -77,30 +77,30 @@ def _duplicate_init(
     >>> state = env.init(key)
     >>> duplicate_state = _duplicate_init(state)
     >>> duplicate_state._shuffled_players
-    Array([0, 2, 1, 3], dtype=int8)
+    Array([0, 2, 1, 3], dtype=int32)
     >>> duplicate_state._dealer
     Array(1, dtype=int32)
     >>> duplicate_state.current_player
-    Array(2, dtype=int8)
+    Array(2, dtype=int32)
     >>> state = env.step(state, 35)
     >>> duplicate_state = _duplicate_init(state)
     >>> duplicate_state._shuffled_players
-    Array([0, 2, 1, 3], dtype=int8)
+    Array([0, 2, 1, 3], dtype=int32)
     >>> duplicate_state._dealer
     Array(1, dtype=int32)
     >>> duplicate_state.current_player
-    Array(2, dtype=int8)
+    Array(2, dtype=int32)
     >>> duplicate_state._pass_num
     Array(0, dtype=int32)
 
     >>> state = env.step(state, 0)
     >>> duplicate_state = _duplicate_init(state)
     >>> duplicate_state._shuffled_players
-    Array([0, 2, 1, 3], dtype=int8)
+    Array([0, 2, 1, 3], dtype=int32)
     >>> duplicate_state._dealer
     Array(1, dtype=int32)
     >>> duplicate_state.current_player
-    Array(2, dtype=int8)
+    Array(2, dtype=int32)
     >>> duplicate_state.legal_action_mask
     Array([ True,  True,  True,  True,  True,  True,  True,  True,  True,
             True,  True,  True,  True,  True,  True,  True,  True,  True,

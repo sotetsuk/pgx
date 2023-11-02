@@ -29,8 +29,8 @@ NUM_ACTION = 79
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
-    observation: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)  # actionを行うplayer
+    observation: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)  # （百の位から）
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -38,12 +38,12 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Mahjong specific ---
-    _round: jnp.ndarray = jnp.int8(0)
-    _honba: jnp.ndarray = jnp.int8(0)
+    _round: jnp.ndarray = jnp.int32(0)
+    _honba: jnp.ndarray = jnp.int32(0)
 
     # 東1局の親
     # 各局の親は (state._oya+round)%4
-    _oya: jnp.ndarray = jnp.int8(0)
+    _oya: jnp.ndarray = jnp.int32(0)
 
     # 点数（百の位から）
     _score: jnp.ndarray = jnp.full(4, 250, dtype=jnp.float32)
@@ -51,42 +51,42 @@ class State(v1.State):
     #      嶺上 ドラ  カンドラ
     # ... 13 11  9  7  5  3  1
     # ... 12 10  8  6  4  2  0
-    _deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int8)
+    _deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int32)
 
     # 次に引く牌のindex
-    _next_deck_ix: jnp.ndarray = jnp.int8(135 - 13 * 4)
+    _next_deck_ix: jnp.ndarray = jnp.int32(135 - 13 * 4)
 
     # 各playerの手牌. 長さ34で、数字は持っている牌の数
-    _hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int8)
+    _hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int32)
 
     # 河
-    # int8
+    # int32
     # 0b  0     0    0 0 0 0 0 0
     #    灰色|リーチ|   牌(0-33)
-    _river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
+    _river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint32)
 
     # 各playerの河の数
-    _n_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    _n_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
 
     # ドラ
-    _doras: jnp.ndarray = jnp.zeros(5, dtype=jnp.int8)
+    _doras: jnp.ndarray = jnp.zeros(5, dtype=jnp.int32)
 
     # カンの回数=追加ドラ枚数
-    _n_kan: jnp.ndarray = jnp.int8(0)
+    _n_kan: jnp.ndarray = jnp.int32(0)
 
     # 直前に捨てられてron,pon,chiの対象になっている牌. 存在しなければ-1
-    _target: jnp.ndarray = jnp.int8(-1)
+    _target: jnp.ndarray = jnp.int32(-1)
 
     # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
-    _last_draw: jnp.ndarray = jnp.int8(0)
+    _last_draw: jnp.ndarray = jnp.int32(0)
 
     # 最後のプレイヤー.  ron,pon,chiの対象
-    _last_player: jnp.ndarray = jnp.int8(0)
+    _last_player: jnp.ndarray = jnp.int32(0)
 
     # 打牌の後に競合する副露が生じた場合用
     #     pon player, kan player, chi player
     # b0       00         00         00
-    _furo_check_num: jnp.ndarray = jnp.uint8(0)
+    _furo_check_num: jnp.ndarray = jnp.uint32(0)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
     _riichi_declared: jnp.ndarray = FALSE
@@ -95,7 +95,7 @@ class State(v1.State):
     _riichi: jnp.ndarray = jnp.zeros(4, dtype=jnp.bool_)
 
     # 各playerの副露回数
-    _n_meld: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    _n_meld: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
 
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
     _melds: jnp.ndarray = jnp.zeros((4, 4), dtype=jnp.int32)
@@ -134,8 +134,8 @@ class State(v1.State):
 
         def decode_state(data: dict):
             return cls(  # type:ignore
-                current_player=jnp.int8(data["current_player"]),
-                observation=jnp.int8(data["observation"]),
+                current_player=jnp.int32(data["current_player"]),
+                observation=jnp.int32(data["observation"]),
                 rewards=jnp.array(data["rewards"], dtype=jnp.float32),
                 terminated=jnp.bool_(data["terminated"]),
                 truncated=jnp.bool_(data["truncated"]),
@@ -144,24 +144,24 @@ class State(v1.State):
                 ),
                 _rng_key=jnp.array(data["_rng_key"]),
                 _step_count=jnp.int32(data["_step_count"]),
-                _round=jnp.int8(data["_round"]),
-                _honba=jnp.int8(data["_honba"]),
-                _oya=jnp.int8(data["_oya"]),
+                _round=jnp.int32(data["_round"]),
+                _honba=jnp.int32(data["_honba"]),
+                _oya=jnp.int32(data["_oya"]),
                 _score=jnp.array(data["_score"], dtype=jnp.float32),
-                _deck=jnp.array(data["_deck"], dtype=jnp.int8),
-                _next_deck_ix=jnp.int8(data["_next_deck_ix"]),
-                _hand=jnp.array(data["_hand"], dtype=jnp.int8),
-                _river=jnp.array(data["_river"], dtype=jnp.uint8),
-                _n_river=jnp.array(data["_n_river"], dtype=jnp.int8),
-                _doras=jnp.array(data["_doras"], dtype=jnp.int8),
-                _n_kan=jnp.int8(data["_n_kan"]),
-                _target=jnp.int8(data["_target"]),
-                _last_draw=jnp.int8(data["_last_draw"]),
-                _last_player=jnp.int8(data["_last_player"]),
-                _furo_check_num=jnp.uint8(data["_furo_check_num"]),
+                _deck=jnp.array(data["_deck"], dtype=jnp.int32),
+                _next_deck_ix=jnp.int32(data["_next_deck_ix"]),
+                _hand=jnp.array(data["_hand"], dtype=jnp.int32),
+                _river=jnp.array(data["_river"], dtype=jnp.uint32),
+                _n_river=jnp.array(data["_n_river"], dtype=jnp.int32),
+                _doras=jnp.array(data["_doras"], dtype=jnp.int32),
+                _n_kan=jnp.int32(data["_n_kan"]),
+                _target=jnp.int32(data["_target"]),
+                _last_draw=jnp.int32(data["_last_draw"]),
+                _last_player=jnp.int32(data["_last_player"]),
+                _furo_check_num=jnp.uint32(data["_furo_check_num"]),
                 _riichi_declared=jnp.bool_(data["_riichi_declared"]),
                 _riichi=jnp.array(data["_riichi"], dtype=jnp.bool_),
-                _n_meld=jnp.array(data["_n_meld"], dtype=jnp.int8),
+                _n_meld=jnp.array(data["_n_meld"], dtype=jnp.int32),
                 _melds=jnp.array(data["_melds"], dtype=jnp.int32),
                 _is_menzen=jnp.array(data["_is_menzen"], dtype=jnp.bool_),
                 _pon=jnp.array(data["_pon"], dtype=jnp.int32),
@@ -237,11 +237,11 @@ class Mahjong(v1.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng, subkey = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(rng))
-    last_player = jnp.int8(-1)
-    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int8) // 4)
+    current_player = jnp.int32(jax.random.bernoulli(rng))
+    last_player = jnp.int32(-1)
+    deck = jax.random.permutation(rng, jnp.arange(136, dtype=jnp.int32) // 4)
     init_hand = Hand.make_init_hand(deck)
-    doras = jnp.array([deck[9], -1, -1, -1, -1], dtype=jnp.int8)
+    doras = jnp.array([deck[9], -1, -1, -1, -1], dtype=jnp.int32)
     state = State(  # type:ignore
         current_player=current_player,
         _oya=current_player,
@@ -303,7 +303,7 @@ def _draw(state: State):
     )
 
     return state.replace(  # type:ignore
-        _target=jnp.int8(-1),
+        _target=jnp.int32(-1),
         _next_deck_ix=next_deck_ix,
         _hand=hand,
         _last_draw=new_tile,
@@ -370,13 +370,13 @@ def _discard(state: State, tile: jnp.ndarray):
     c_p = state.current_player
     tile = jnp.where(tile == 68, state._last_draw, tile)
     _tile = jnp.where(
-        state._riichi_declared, tile | jnp.uint8(0b01000000), tile
+        state._riichi_declared, tile | jnp.uint32(0b01000000), tile
     )
-    river = state._river.at[c_p, state._n_river[c_p]].set(jnp.uint8(_tile))
+    river = state._river.at[c_p, state._n_river[c_p]].set(jnp.uint32(_tile))
     n_river = state._n_river.at[c_p].add(1)
     hand = state._hand.at[c_p].set(Hand.sub(state._hand[c_p], tile))
     state = state.replace(  # type:ignore
-        _last_draw=jnp.int8(-1),
+        _last_draw=jnp.int32(-1),
         _hand=hand,
         _river=river,
         _n_river=n_river,
@@ -428,12 +428,12 @@ def _discard(state: State, tile: jnp.ndarray):
         return (meld_type, pon_player, kan_player, ron_player)
 
     meld_type, pon_player, kan_player, ron_player = jax.lax.fori_loop(
-        jnp.int8(0),
-        jnp.int8(3),
+        jnp.int32(0),
+        jnp.int32(3),
         search,
         (meld_type, pon_player, kan_player, ron_player),
     )
-    furo_num = jnp.uint8(
+    furo_num = jnp.uint32(
         c_p << 6 | kan_player << 4 | pon_player << 2 | chi_player
     )
     pon_player, kan_player, ron_player = (
@@ -454,7 +454,7 @@ def _discard(state: State, tile: jnp.ndarray):
         lambda: _draw(
             state.replace(  # type:ignore
                 current_player=(c_p + 1) % 4,
-                _target=jnp.int8(-1),
+                _target=jnp.int32(-1),
             )
         ),
     )
@@ -466,7 +466,7 @@ def _discard(state: State, tile: jnp.ndarray):
             lambda: state.replace(  # type:ignore
                 current_player=chi_player,
                 _last_player=c_p,
-                _target=jnp.int8(tile),
+                _target=jnp.int32(tile),
                 _furo_check_num=furo_num & 0b11111100,
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.CHI_L]
@@ -481,7 +481,7 @@ def _discard(state: State, tile: jnp.ndarray):
             lambda: state.replace(  # type:ignore
                 current_player=pon_player,
                 _last_player=c_p,
-                _target=jnp.int8(tile),
+                _target=jnp.int32(tile),
                 _furo_check_num=furo_num & 0b11110011,
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.PON]
@@ -492,7 +492,7 @@ def _discard(state: State, tile: jnp.ndarray):
             lambda: state.replace(  # type:ignore
                 current_player=kan_player,
                 _last_player=c_p,
-                _target=jnp.int8(tile),
+                _target=jnp.int32(tile),
                 _furo_check_num=furo_num & 0b11001111,
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.MINKAN]
@@ -503,7 +503,7 @@ def _discard(state: State, tile: jnp.ndarray):
             lambda: state.replace(  # type:ignore
                 current_player=ron_player,
                 _last_player=c_p,
-                _target=jnp.int8(tile),
+                _target=jnp.int32(tile),
                 _furo_check_num=furo_num,
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.RON]
@@ -619,11 +619,11 @@ def _minkan(state: State):
 
     # 半透明処理
     river = state._river.at[l_p, state._n_river[l_p] - 1].set(
-        state._river[l_p, state._n_river[l_p] - 1] | jnp.uint8(0b10000000)
+        state._river[l_p, state._n_river[l_p] - 1] | jnp.uint32(0b10000000)
     )
 
     return state.replace(  # type:ignore
-        _target=jnp.int8(-1),
+        _target=jnp.int32(-1),
         _is_menzen=is_menzen,
         _next_deck_ix=_next_deck_ix,
         _last_draw=rinshan_tile,
@@ -652,14 +652,14 @@ def _pon(state: State):
 
     # 半透明処理
     river = state._river.at[l_p, state._n_river[l_p] - 1].set(
-        state._river[l_p, state._n_river[l_p] - 1] | jnp.uint8(0b10000000)
+        state._river[l_p, state._n_river[l_p] - 1] | jnp.uint32(0b10000000)
     )
 
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
 
     return state.replace(  # type:ignore
-        _target=jnp.int8(-1),
+        _target=jnp.int32(-1),
         _is_menzen=is_menzen,
         _pon=pon,
         _hand=hand,
@@ -682,11 +682,11 @@ def _chi(state: State, action):
 
     # 半透明処理
     river = state._river.at[tar_p, state._n_river[tar_p] - 1].set(
-        state._river[tar_p, state._n_river[tar_p] - 1] | jnp.uint8(0b10000000)
+        state._river[tar_p, state._n_river[tar_p] - 1] | jnp.uint32(0b10000000)
     )
 
     return state.replace(  # type:ignore
-        _target=jnp.int8(-1),
+        _target=jnp.int32(-1),
         _is_menzen=is_menzen,
         _hand=hand,
         legal_action_mask=legal_action_mask,
@@ -702,8 +702,8 @@ def _pass(state: State):
     return jax.lax.cond(
         kan_player > 0,
         lambda: state.replace(  # type:ignore
-            current_player=jnp.int8(last_player + 1 + kan_player) % 4,
-            _furo_check_num=jnp.uint8(state._furo_check_num & 0b11001111),
+            current_player=jnp.int32(last_player + 1 + kan_player) % 4,
+            _furo_check_num=jnp.uint32(state._furo_check_num & 0b11001111),
             legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
             .at[Action.MINKAN]
             .set(Hand.can_minkan(state._hand[kan_player], state._target))
@@ -713,8 +713,8 @@ def _pass(state: State):
         lambda: jax.lax.cond(
             pon_player > 0,
             lambda: state.replace(  # type:ignore
-                current_player=jnp.int8(last_player + 1 + pon_player) % 4,
-                _furo_check_num=jnp.uint8(state._furo_check_num & 0b11110011),
+                current_player=jnp.int32(last_player + 1 + pon_player) % 4,
+                _furo_check_num=jnp.uint32(state._furo_check_num & 0b11110011),
                 legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
                 .at[Action.PON]
                 .set(Hand.can_pon(state._hand[pon_player], state._target))
@@ -724,8 +724,8 @@ def _pass(state: State):
             lambda: jax.lax.cond(
                 chi_player > 0,
                 lambda: state.replace(  # type:ignore
-                    current_player=jnp.int8(last_player + 1 + chi_player) % 4,
-                    _furo_check_num=jnp.uint8(
+                    current_player=jnp.int32(last_player + 1 + chi_player) % 4,
+                    _furo_check_num=jnp.uint32(
                         state._furo_check_num & 0b11111100
                     ),
                     legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
@@ -758,7 +758,7 @@ def _pass(state: State):
                 ),
                 lambda: _draw(
                     state.replace(  # type: ignore
-                        current_player=jnp.int8(last_player + 1) % 4,
+                        current_player=jnp.int32(last_player + 1) % 4,
                     )
                 ),
             ),
@@ -868,7 +868,7 @@ def _next_game(state: State):
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    return jnp.int8(0)
+    return jnp.int32(0)
 
 
 def _dora_array(state: State, riichi):

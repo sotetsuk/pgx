@@ -94,7 +94,7 @@ def download_dds_results(download_dir="dds_results"):
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(-1)
+    current_player: jnp.ndarray = jnp.int32(-1)
     observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0, 0, 0, 0])
     terminated: jnp.ndarray = FALSE
@@ -103,7 +103,7 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     _turn: jnp.ndarray = jnp.int16(0)
-    _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
     # Hand of each player
     #   0  ~ 12: Hand of N
     #   13 ~ 25: Hand of E
@@ -124,7 +124,7 @@ class State(v1.State):
     _bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
     # dealer: a player who starts bidding
     # 0 = N, 1 = E, 2 = S, 3 = W
-    _dealer: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    _dealer: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
     # vul_NS: Is NS team vul?
     # 0 = non vul, 1 = vul
     _vul_NS: jnp.ndarray = jnp.bool_(False)
@@ -136,14 +136,14 @@ class State(v1.State):
     # call_x: Was the last bid doubled?
     # call_xx: Was the last bid redoubled?
     _last_bid: jnp.ndarray = jnp.int32(-1)
-    _last_bidder: jnp.ndarray = jnp.int8(-1)
+    _last_bidder: jnp.ndarray = jnp.int32(-1)
     _call_x: jnp.ndarray = jnp.bool_(False)
     _call_xx: jnp.ndarray = jnp.bool_(False)
     # In NS team, which player first bid each denomination
     # Denomination order: C, D, H, S, NT = 0, 1, 2, 3, 4
-    _first_denomination_NS: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
+    _first_denomination_NS: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int32)
     # In EW team, which player first bid each denomination
-    _first_denomination_EW: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int8)
+    _first_denomination_EW: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int32)
     # Number of pass
     _pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
@@ -225,7 +225,7 @@ def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     hand = _key_to_hand(key)
     vul_NS = jax.random.choice(rng2, jnp.bool_([False, True]))
     vul_EW = jax.random.choice(rng3, jnp.bool_([False, True]))
-    dealer = jax.random.randint(rng4, (1,), 0, 4, dtype=jnp.int8)[0]
+    dealer = jax.random.randint(rng4, (1,), 0, 4, dtype=jnp.int32)[0]
     # shuffled players and arrange in order of NESW
     shuffled_players = _shuffle_players(rng5)
     current_player = shuffled_players[dealer]
@@ -254,16 +254,16 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     Example:
         >>> key = jax.random.PRNGKey(0)
         >>> _shuffle_players(key)
-        Array([0, 3, 1, 2], dtype=int8)
+        Array([0, 3, 1, 2], dtype=int32)
     """
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     # player_id = 0, 1 -> team a
     team_a_players = jax.random.permutation(
-        rng2, jnp.arange(2, dtype=jnp.int8)
+        rng2, jnp.arange(2, dtype=jnp.int32)
     )
     # player_id = 2, 3 -> team b
     team_b_players = jax.random.permutation(
-        rng3, jnp.arange(2, 4, dtype=jnp.int8)
+        rng3, jnp.arange(2, 4, dtype=jnp.int32)
     )
     # decide which team is on
     # Randomly determine NSteam and EWteam
@@ -292,8 +292,8 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
 def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
     return jax.lax.cond(
         player != -1,
-        lambda: jnp.int8(jnp.argmax(state._shuffled_players == player)),
-        lambda: jnp.int8(-1),
+        lambda: jnp.int32(jnp.argmax(state._shuffled_players == player)),
+        lambda: jnp.int32(-1),
     )
 
 
@@ -737,11 +737,11 @@ def _state_bid(state: State, action: int) -> State:
     # fmt: off
     # team = 1 denotes the EW team
     state = jax.lax.cond(team & (state._first_denomination_EW[denomination] == -1),
-                         lambda: state.replace(_first_denomination_EW=state._first_denomination_EW.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
+                         lambda: state.replace(_first_denomination_EW=state._first_denomination_EW.at[denomination].set(state._last_bidder.astype(jnp.int32))),  # type: ignore
                          lambda: state)  # type: ignore
     # team = 0 denotes the NS team
     state = jax.lax.cond((team == 0) & (state._first_denomination_NS[denomination] == -1),
-                         lambda: state.replace(_first_denomination_NS=state._first_denomination_NS.at[denomination].set(state._last_bidder.astype(jnp.int8))),  # type: ignore
+                         lambda: state.replace(_first_denomination_NS=state._first_denomination_NS.at[denomination].set(state._last_bidder.astype(jnp.int32))),  # type: ignore
                          lambda: state)  # type: ignore
     # fmt: on
     # pass, double, redouble, make the small bid illegal temporarily
@@ -846,7 +846,7 @@ def _state_to_key(state: State) -> jnp.ndarray:
 
 def _pbn_to_key(pbn: str) -> jnp.ndarray:
     """Convert pbn to key of dds table"""
-    key = jnp.zeros(52, dtype=jnp.int8)
+    key = jnp.zeros(52, dtype=jnp.int32)
     hands = pbn[2:]
     for player, hand in enumerate(list(hands.split())):  # for each player
         for suit, cards in enumerate(list(hand.split("."))):  # for each suit

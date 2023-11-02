@@ -259,7 +259,7 @@ class State:
     @jit
     def init(key) -> State:
         deck = Deck.init(key)
-        hand = jnp.zeros((4, 34), dtype=jnp.uint8)
+        hand = jnp.zeros((4, 34), dtype=jnp.uint32)
         for i in range(4):
             for _ in range(13):
                 deck, tile = Deck.draw(deck)

@@ -260,7 +260,7 @@ class Yaku:
         dora,
     ):
         is_menzen = jax.lax.fori_loop(
-            jnp.int8(0),
+            jnp.int32(0),
             n_meld,
             lambda i, menzen: menzen
             & (
@@ -282,7 +282,7 @@ class Yaku:
         is_outside = jnp.full(
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
-                jnp.int8(0),
+                jnp.int32(0),
                 n_meld,
                 lambda i, valid: valid & Meld.is_outside(melds[i]),
                 True,
@@ -293,7 +293,7 @@ class Yaku:
         all_chow = jnp.full(
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
-                jnp.int8(0),
+                jnp.int32(0),
                 n_meld,
                 lambda i, chow: chow | Meld.chow(melds[i]),
                 0,
@@ -302,7 +302,7 @@ class Yaku:
         all_pung = jnp.full(
             Yaku.MAX_PATTERNS,
             jax.lax.fori_loop(
-                jnp.int8(0),
+                jnp.int32(0),
                 n_meld,
                 lambda i, pung: pung | Meld.suited_pung(melds[i]),
                 0,
@@ -316,7 +316,7 @@ class Yaku:
             Yaku.MAX_PATTERNS,
             2 * (is_ron == 0)
             + jax.lax.fori_loop(
-                jnp.int8(0), n_meld, lambda i, sum: sum + Meld.fu(melds[i]), 0
+                jnp.int32(0), n_meld, lambda i, sum: sum + Meld.fu(melds[i]), 0
             )
             + (hand[27] == 2) * 4
             + jnp.any(hand[31:] == 2) * 2
@@ -557,7 +557,7 @@ class Yaku:
     @staticmethod
     def flatten(hand: jnp.ndarray, melds: jnp.ndarray, n_meld) -> jnp.ndarray:
         return jax.lax.fori_loop(
-            jnp.int8(0),
+            jnp.int32(0),
             n_meld,
             lambda i, arr: Yaku._flatten(arr, melds[i]),
             hand,
