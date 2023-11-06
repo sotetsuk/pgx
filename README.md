@@ -1,4 +1,9 @@
 [![ci](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg)](https://github.com/sotetsuk/pgx/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10-blue)](https://www.python.org/)
+[![PyPI version](https://badge.fury.io/py/pgx.svg)](https://pypi.org/project/pgx/)
+[![License](https://img.shields.io/badge/license-Apache%202.0-green.svg)](https://opensource.org/licenses/Apache-2.0)
+[![codecov](https://codecov.io/github/sotetsuk/pgx/graph/badge.svg?token=JNJIQ83JYG)](https://codecov.io/github/sotetsuk/pgx)
+[![arXiv](https://img.shields.io/badge/arXiv-2303.17503-b31b1b.svg)](https://arxiv.org/abs/2303.17503)
 
 
 <div align="center">
@@ -32,8 +37,12 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 
 - [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
 - [Pgx baseline models](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
-- [PPO example](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/ppo.ipynb)
 - [Export to PettingZoo API](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb)
+
+## Training examples
+
+- [AlphaZero](https://github.com/sotetsuk/pgx/tree/main/examples/alphazero)
+- [PPO](https://github.com/sotetsuk/pgx/tree/main/examples/minatar-ppo)
 
 ## Usage
 
@@ -92,9 +101,9 @@ Use `pgx.available_envs() -> Tuple[EnvId]` to see the list of currently availabl
 
 | Game/EnvId | Visualization | Version | Five-word description |
 |:---:|:---:|:---:|:---:|
-|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a> <br> `"2048"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_light.gif" width="60px">| `v0` | *Merge tiles to create 2048.* |
+|<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a> <br> `"2048"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_light.gif" width="60px">| `v1` | *Merge tiles to create 2048.* |
 |<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a><br>`"animal_shogi"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_light.gif" width="60px">|  `v0` | *Animal-themed child-friendly shogi.* |
-|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a><br>`"backgammon"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_light.gif" width="60px">| `v0` | *Luck aids bearing off checkers.* |
+|<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a><br>`"backgammon"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_light.gif" width="60px">| `v1` | *Luck aids bearing off checkers.* |
 |<a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge bidding</a><br>`"bridge_bidding"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/bridge_bidding_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/bridge_bidding_light.gif" width="60px">| `v0` | *Partners exchange information via bids.* |
 |<a href="https://en.wikipedia.org/wiki/Chess">Chess</a><br>`"chess"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_light.gif" width="60px">| `v1` | *Checkmate opponent's king to win.* |
 |<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a><br>`"connect_four"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/connect_four_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/connect_four_light.gif" width="60px">| `v0` | *Connect discs, win with four.* |
@@ -110,7 +119,7 @@ Use `pgx.available_envs() -> Tuple[EnvId]` to see the list of currently availabl
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/SpaceInvaders</a><br>`"minatar-space_invaders"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-space_invaders.gif" width="50px">| `v0` | *Alien shooter game, dodge bullets.* |
 |<a href="https://en.wikipedia.org/wiki/Reversi">Othello</a><br>`"othello"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/othello_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/othello_light.gif" width="60px">| `v0` | *Flip and conquer opponent's pieces.* |
 |<a href="https://en.wikipedia.org/wiki/Shogi">Shogi</a><br>`"shogi"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/shogi_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/shogi_light.gif" width="60px"> | `v0` | *Japanese chess with captured pieces.* |
-|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a><br>`"sparrow_mahjong"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_dark.svg" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_light.svg" width="60px">|  `v0` | *A simplified, children-friendly Mahjong.* |
+|<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a><br>`"sparrow_mahjong"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_dark.svg" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_light.svg" width="60px">|  `v1` | *A simplified, children-friendly Mahjong.* |
 |<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a><br>`"tic_tac_toe"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/tic_tac_toe_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/tic_tac_toe_light.gif" width="60px">| `v0` | *Three in a row wins.* |
 
 - <a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a> environments are under development 🚧 If you have any requests for new environments, please let us know by [opening an issue](https://github.com/sotetsuk/pgx/issues/new)
@@ -152,10 +161,10 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 If you use Pgx in your work, please cite the following paper:
 
 ```
-@article{koyamada2023pgx,
-  title={Pgx: Hardware-accelerated Parallel Game Simulators for Reinforcement Learning},
+@inproceedings{koyamada2023pgx,
+  title={Pgx: Hardware-Accelerated Parallel Game Simulators for Reinforcement Learning},
   author={Koyamada, Sotetsu and Okano, Shinri and Nishimori, Soichiro and Murata, Yu and Habara, Keigo and Kita, Haruka and Ishii, Shin},
-  journal={arXiv preprint arXiv:2303.17503},
+  booktitle={Advances in Neural Information Processing Systems},
   year={2023}
 }
 ```

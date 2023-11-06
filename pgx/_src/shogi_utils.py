@@ -19,7 +19,7 @@ import jax.numpy as jnp
 import numpy as np
 
 # fmt: off
-INIT_PIECE_BOARD = jnp.int8([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
+INIT_PIECE_BOARD = jnp.int32([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
                              [16, 18, 14, -1, -1, -1, 0,  5, 2],  # noqa: E241
                              [17, -1, 14, -1, -1, -1, 0, -1, 3],  # noqa: E241
                              [20, -1, 14, -1, -1, -1, 0, -1, 6],  # noqa: E241
@@ -148,8 +148,8 @@ assert INIT_LEGAL_ACTION_MASK.sum() == 30
 
 def _around(c):
     x, y = c // 9, c % 9
-    dx = jnp.int8([-1, -1, 0, +1, +1, +1, 0, -1])
-    dy = jnp.int8([0, -1, -1, -1, 0, +1, +1, +1])
+    dx = jnp.int32([-1, -1, 0, +1, +1, +1, 0, -1])
+    dy = jnp.int32([0, -1, -1, -1, 0, +1, +1, +1])
 
     def f(i):
         new_x, new_y = x + dx[i], y + dy[i]
@@ -168,15 +168,17 @@ AROUND_IX = jax.vmap(_around)(jnp.arange(81))
 def _to_sfen(state):
     """Convert state into sfen expression.
 
-    - 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
-    - 成駒なら駒の前に+をつける（と金なら+P）
-    - 先手の駒は大文字、後手の駒は小文字で表現
-    - 空白の場合、連続する空白の数を入れて次の駒にシフトする。歩空空空飛ならP3R
-    - 左上から開始して右に見ていく
-    - 段が変わるときは/を挿入
-    - 盤面の記入が終わったら手番（b/w）
-    - 持ち駒は先手の物から順番はRBGSNLPの順
-    - 最後に手数（1で固定）
+    - Board
+        - 歩:P 香車:L 桂馬:N 銀:S 角:B 飛車:R 金:G 王:K
+        - + before promoted piece（と金 = +P）
+        - The first player's pieces are capitalized
+        - 空白の場合、連続する空白の数を入れて次の駒にシフトする。歩空空空飛ならP3R
+        - If the square is empty, the number of consecutive spaces is entered and shifted to the next piece (e.g., P3R for P _ _ _ R)
+        - From the upper left corner to the right
+        - When the row changes, insert /
+    - Turn (b/w) after board
+    - Hand piece (prisoners) are in order of RBGSNLP
+    - Step count (fixed to 1 here)
 
     """
     # NOTE: input must be flipped if white turn
@@ -188,7 +190,7 @@ def _to_sfen(state):
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     hand_dir = [5, 4, 6, 3, 2, 1, 0, 12, 11, 13, 10, 9, 8, 7]
     # fmt: on
-    # 盤面
+    # Board
     for i in range(9):
         space_length = 0
         for j in range(9):
@@ -206,12 +208,12 @@ def _to_sfen(state):
             sfen += "/"
         else:
             sfen += " "
-    # 手番
+    # Turn
     if state._turn == 0:
         sfen += "b "
     else:
         sfen += "w "
-    # 持ち駒
+    # Hand (prisoners)
     if jnp.all(state._hand == 0):
         sfen += "-"
     else:
@@ -235,7 +237,7 @@ def _from_sfen(sfen):
     # fmt: on
     board, turn, hand, step_count = sfen.split()
     board_ranks = board.split("/")
-    piece_board = jnp.zeros(81, dtype=jnp.int8)
+    piece_board = jnp.zeros(81, dtype=jnp.int32)
     for i in range(9):
         file = board_ranks[i]
         rank = []
@@ -253,7 +255,7 @@ def _from_sfen(sfen):
                 piece = 0
         for j in range(9):
             piece_board = piece_board.at[9 * i + j].set(rank[j])
-    s_hand = jnp.zeros(14, dtype=jnp.int8)
+    s_hand = jnp.zeros(14, dtype=jnp.int32)
     if hand != "-":
         num_piece = 1
         for char in hand:
@@ -264,5 +266,5 @@ def _from_sfen(sfen):
                 num_piece = 1
     piece_board = jnp.rot90(piece_board.reshape((9, 9)), k=1).flatten()
     hand = jnp.reshape(s_hand, (2, 7))
-    turn = jnp.int8(0) if turn == "b" else jnp.int8(1)
+    turn = jnp.int32(0) if turn == "b" else jnp.int32(1)
     return turn, piece_board, hand, int(step_count) - 1

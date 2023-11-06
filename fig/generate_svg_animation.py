@@ -17,7 +17,7 @@ states.append(state)
 # while not state.terminated.all():
 for _ in range(18):
     rng, subkey = jax.random.split(rng)
-    action = act_randomly(subkey, state)
+    action = act_randomly(subkey, state.legal_action_mask)
     state = step(state, action)
     states.append(state)
 

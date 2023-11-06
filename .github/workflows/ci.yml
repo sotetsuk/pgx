@@ -1,6 +1,9 @@
 name: ci
 
-on: [pull_request]
+on:
+  push:
+    branches:
+      - main
 
 jobs:
   test:
@@ -22,4 +25,8 @@ jobs:
     - name: test
       run: |
         make install-dev
-        make test
+        python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental --cov=pgx --cov-report=term-missing --cov-report=html
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}

@@ -1,0 +1,8 @@
+pgx>=1.3.1
+pgx-minatar
+dm-haiku
+optax
+distrax
+omegaconf
+pydantic
+wandb

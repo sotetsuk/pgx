@@ -22,7 +22,7 @@ for game in games:
     s = init(subkeys)
     for i in range(100):
         rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, s)
+        a = act_randomly(subkey, s.legal_action_mask)
         s = step(s, a)
     for tm in ("dark", "light"):
         s.save_svg(f"svgs/{game}_{tm}.svg", color_theme=tm)

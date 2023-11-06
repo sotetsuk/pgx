@@ -93,3 +93,13 @@ In cases 3 and 4, the game is declared a draw.
 ## Version History
 
 - `v0` : Initial release (v1.0.0)
+
+
+## Baseline models
+
+Pgx offers a baseline model for Animal Shogi. Users can use it for an anchor opponent in evaluation.
+See [our paper](https://arxiv.org/abs/2303.17503) for more details. See [this colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb) for how to use it.
+
+| Model ID | Description |
+|:---:|:----|
+| `animal_shogi_v0`| See [our paper](https://arxiv.org/abs/2303.17503) for the training details. |

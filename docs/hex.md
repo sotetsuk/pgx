@@ -51,7 +51,7 @@ The detailed swap rule used in Pgx follows *swap pieces*:
 | Version | `v0` |
 | Number of players | `2` |
 | Number of actions | `122 (= 11 x 11) + 1` |
-| Observation shape | `(11, 11, 3)` |
+| Observation shape | `(11, 11, 4)` |
 | Observation type | `bool` |
 | Rewards | `{-1, 1}` |
 
@@ -62,7 +62,8 @@ The detailed swap rule used in Pgx follows *swap pieces*:
 |:---:|:----|
 | `[:, :, 0]` | represents `(11, 11)` cells filled by `player_ix` |
 | `[:, :, 1]` | represents `(11, 11)` cells filled by the opponent player of `player_id` |
-| `[:, :, 2]` | represents whether `player_id` is black or white|
+| `[:, :, 2]` | represents whether `player_id` is black or white |
+| `[:, :, 3]` | represents whether swap is legal or not |
 
 ## Action
 Each action (`{0, ... 120}`) represents the cell index to be filled.
@@ -87,3 +88,12 @@ Termination happens when either one player connect opposite sides of the board.
 ## Version History
 
 - `v0` : Initial release (v1.0.0)
+
+## Baseline models
+
+Pgx offers a baseline model for Hex. Users can use it for an anchor opponent in evaluation.
+See [our paper](https://arxiv.org/abs/2303.17503) for more details. See [this colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb) for how to use it.
+
+| Model ID | Description |
+|:---:|:----|
+| `hex_v0`| See [our paper](https://arxiv.org/abs/2303.17503) for the training details. |

@@ -42,7 +42,7 @@ _exists = jax.jit(_exists)
 
 
 def make_test_boad():
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int32)
     # 黒
     board = board.at[19].set(5)
     board = board.at[20].set(1)
@@ -85,7 +85,7 @@ def make_test_state(
     dice: jnp.ndarray,
     playable_dice: jnp.ndarray,
     played_dice_num: jnp.ndarray,
-    legal_action_mask=jnp.zeros(6 * 26 + 6, dtype=jnp.bool_),
+    legal_action_mask=jnp.zeros(6 * 26, dtype=jnp.bool_),
 ):
     return State(
         current_player=current_player,
@@ -101,7 +101,7 @@ def make_test_state(
 
 def test_flip_board():
     test_board = make_test_boad()
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int32)
     board = board.at[4].set(-5)
     board = board.at[3].set(-1)
     board = board.at[2].set(-2)
@@ -132,29 +132,29 @@ def test_is_turn_end():
     state = init(rng)
     assert not _is_turn_end(state)
 
-    # 白のdance
+    # white dance
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(1),
-        dice=jnp.array([2, 2], dtype=jnp.int16),
-        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(1),
+        dice=jnp.array([2, 2], dtype=jnp.int32),
+        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
     )
     assert _is_turn_end(state)
 
-    # playable diceがない場合
+    # No playable dice
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(1),
-        dice=jnp.array([2, 2], dtype=jnp.int16),
-        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(2),
+        turn=jnp.int32(1),
+        dice=jnp.array([2, 2], dtype=jnp.int32),
+        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(2),
     )
     assert _is_turn_end(state)
 
@@ -166,7 +166,7 @@ def test_change_turn():
     assert state._turn == (_turn + 1) % 2
 
     test_board: jnp.ndarray = make_test_boad()
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int8)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int32)
     board = board.at[4].set(-5)
     board = board.at[3].set(-1)
     board = board.at[2].set(-2)
@@ -177,57 +177,57 @@ def test_change_turn():
     board = board.at[1].set(3)
     board = board.at[24].set(4)
     state = make_test_state(
-        current_player=jnp.int8(0),
+        current_player=jnp.int32(0),
         rng=rng,
         board=test_board,
-        turn=jnp.int8(0),
-        dice=jnp.array([2, 2], dtype=jnp.int16),
-        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(2),
+        turn=jnp.int32(0),
+        dice=jnp.array([2, 2], dtype=jnp.int32),
+        playable_dice=jnp.array([-1, -1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(2),
     )
     state = _change_turn(state)
     print(state._board, board)
-    assert state._turn == jnp.int8(1)  # ターンが変わっている.
-    assert (state._board == board).all()  # 反転している.
+    assert state._turn == jnp.int32(1)  # Turn changed
+    assert (state._board == board).all()  # Flipped.
 
 def test_no_op():
     board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(
-        board, jnp.array([0, 1, -1, -1], dtype=jnp.int16)
+        board, jnp.array([0, 1, -1, -1], dtype=jnp.int32)
     )
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(1),
-        dice=jnp.array([0, 1], dtype=jnp.int16),
-        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(1),
+        dice=jnp.array([0, 1], dtype=jnp.int32),
+        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
         legal_action_mask=legal_action_mask,
     )
     state = step(state, 0)  # execute no-op action
-    assert state._turn == jnp.int8(0)  # no-opの後はturnが変わっていることを確認.
+    assert state._turn == jnp.int32(0)  # Turn changes after no-op.
 
 
 def test_step():
     # 白
     board: jnp.ndarray = make_test_boad()
-    board = _flip_board(board)  # 反転
+    board = _flip_board(board)  # Flipped
     legal_action_mask = _legal_action_mask(
-        board, jnp.array([0, 1, -1, -1], dtype=jnp.int16)
+        board, jnp.array([0, 1, -1, -1], dtype=jnp.int32)
     )
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(1),
-        dice=jnp.array([0, 1], dtype=jnp.int16),
-        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(1),
+        dice=jnp.array([0, 1], dtype=jnp.int32),
+        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
         legal_action_mask=legal_action_mask,
     )
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (1) + 0
@@ -239,48 +239,48 @@ def test_step():
     ].set(
         True
     )  # 24(bar)->1
-    assert (expected_legal_action_mask == state.legal_action_mask).all()  # legal_actionが正しいかtest
+    assert (expected_legal_action_mask == state.legal_action_mask).all()  # Test legal action
 
-    # 白がサイコロ2をplay 24(bar)->1
+    # White plays die=2 24(bar)->1
     state = step(state=state, action=(1) * 6 + 1)
     assert (
-            state._playable_dice == jnp.array([0, -1, -1, -1], dtype=jnp.int16)
-    ).all()  # playable diceが正しく更新されているか
-    assert state._played_dice_num == 1  # played diceが増えているか.
-    assert state._turn == 1  # turnが変わっていないか.
+            state._playable_dice == jnp.array([0, -1, -1, -1], dtype=jnp.int32)
+    ).all()  # Is playable dice updated correctly?
+    assert state._played_dice_num == 1  # played dice increased?
+    assert state._turn == 1  # turn is not changed?
     assert state._board.at[1].get() == 4 and state._board.at[24].get() == 3
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (1) + 0
     ].set(
         True
     )  # 24(bar)->0
-    assert (expected_legal_action_mask == state.legal_action_mask).all()  # legal_actionが正しく更新されているか
-    # 白がサイコロ1をplay 24(off)->0
+    assert (expected_legal_action_mask == state.legal_action_mask).all()  # test legal action
+    # White plays die=1 24(off)->0
     state = step(state=state, action=(1) * 6 + 0)
     assert state._played_dice_num == 0
-    assert state._turn == 0  # turn が黒に変わっているか.
+    assert state._turn == 0  # turn changed to black?
     assert state._board.at[23].get() == -1 and state._board.at[25].get() == -2
     
-    # 黒
+    # black
     board: jnp.ndarray = make_test_boad()
     legal_action_mask = _legal_action_mask(
-        board, jnp.array([4, 5, -1, -1], dtype=jnp.int16)
+        board, jnp.array([4, 5, -1, -1], dtype=jnp.int32)
     )
     state = make_test_state(
-        current_player=jnp.int8(0),
+        current_player=jnp.int32(0),
         rng=rng,
         board=board,
-        turn=jnp.int8(0),
-        dice=jnp.array([4, 5], dtype=jnp.int16),
-        playable_dice=jnp.array([4, 5, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(0),
+        dice=jnp.array([4, 5], dtype=jnp.int32),
+        playable_dice=jnp.array([4, 5, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
         legal_action_mask=legal_action_mask,
     )
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (19 + 2) + 5
@@ -299,73 +299,73 @@ def test_step():
 def test_observe():
     board: jnp.ndarray = make_test_boad()
 
-    # current_playerが白で, playできるdiceが{1, 2}の場合
+    # current_player = white, playable_dice = (1, 2)
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(1),
-        dice=jnp.array([0, 1], dtype=jnp.int16),
-        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(1),
+        dice=jnp.array([0, 1], dtype=jnp.int32),
+        playable_dice=jnp.array([0, 1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
     )
     expected_obs = jnp.concatenate(
         (board, jnp.array([1, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int8(1)) == expected_obs).all()
+    assert (observe(state, jnp.int32(1)) == expected_obs).all()
 
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(1),
-        dice=jnp.array([0, 1], dtype=jnp.int16),
-        playable_dice=jnp.array([1, 1, 1, 1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(1),
+        dice=jnp.array([0, 1], dtype=jnp.int32),
+        playable_dice=jnp.array([1, 1, 1, 1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
     )
     expected_obs = jnp.concatenate(
         (board, jnp.array([0, 4, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int8(1)) == expected_obs).all()
+    assert (observe(state, jnp.int32(1)) == expected_obs).all()
 
-    # current_playerが黒で, playできるdiceが(2)のみの場合
+    # current_player = black, playabl_dice = (2)
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(-1),
-        dice=jnp.array([0, 1], dtype=jnp.int16),
-        playable_dice=jnp.array([-1, 1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(-1),
+        dice=jnp.array([0, 1], dtype=jnp.int32),
+        playable_dice=jnp.array([-1, 1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
     )
     expected_obs = jnp.concatenate(
         (board, jnp.array([0, 1, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int8(1)) == expected_obs).all()
+    assert (observe(state, jnp.int32(1)) == expected_obs).all()
 
     state = make_test_state(
-        current_player=jnp.int8(1),
+        current_player=jnp.int32(1),
         rng=rng,
         board=board,
-        turn=jnp.int8(-1),
-        dice=jnp.array([0, 1], dtype=jnp.int16),
-        playable_dice=jnp.array([-1, 1, -1, -1], dtype=jnp.int16),
-        played_dice_num=jnp.int16(0),
+        turn=jnp.int32(-1),
+        dice=jnp.array([0, 1], dtype=jnp.int32),
+        playable_dice=jnp.array([-1, 1, -1, -1], dtype=jnp.int32),
+        played_dice_num=jnp.int32(0),
     )
     expected_obs = jnp.concatenate(
         (1 * board, jnp.array([0, 0, 0, 0, 0, 0])), axis=None
     )
-    assert (observe(state, jnp.int8(0)) == expected_obs).all()
+    assert (observe(state, jnp.int32(0)) == expected_obs).all()
 
 
 def test_is_open():
     board = make_test_boad()
-    # 黒
+    # Black
     assert _is_open(board, 9)
     assert _is_open(board, 19)
     assert _is_open(board, 4)
     assert not _is_open(board, 10)
-    # 白
+    # White
     board = _flip_board(board)
     assert _is_open(board, 9)
     assert _is_open(board, 8)
@@ -375,11 +375,11 @@ def test_is_open():
 
 def test_exists():
     board = make_test_boad()
-    # 黒
+    # Black
     assert _exists(board, 19)
     assert _exists(board, 20)
     assert not _exists(board, 4)
-    # 白
+    # White
     board = _flip_board(board)
     assert _exists(board, 19)
     assert _exists(board, 20)
@@ -388,34 +388,33 @@ def test_exists():
 
 def test_is_all_on_home_boad():
     board: jnp.ndarray = make_test_boad()
-    # 黒
+    # Black
     assert _is_all_on_home_board(board)
-    # 白
+    # White
     board = _flip_board(board)
     assert not _is_all_on_home_board(board)
 
 
 def test_rear_distance():
     board = make_test_boad()
-    turn = jnp.int8(-1)
-    # 黒
+    turn = jnp.int32(-1)
+    # Black
     assert _rear_distance(board) == 5
-    # 白
+    # White
     board = _flip_board(board)
     assert _rear_distance(board) == 23
 
 
 def test_distance_to_goal():
     board = make_test_boad()
-    # 黒
-    turn = jnp.int8(-1)
+    # Black
+    turn = jnp.int32(-1)
     src = 23
     assert _distance_to_goal(src) == 1
     src = 10
     assert _distance_to_goal(src) == 14
-    # rear_istanceと同じはずのsrcでテスト
+    # Teat at the src where rear_distance is same
     assert _rear_distance(board) == _distance_to_goal(19)
-    # 白もロジックは同様
 
 
 def test_calc_src():
@@ -436,25 +435,25 @@ def test_is_action_legal():
     assert not _is_action_legal(board, (19 + 2) * 6 + 2)  # 19 -> 22
     assert not _is_action_legal(
         board, (19 + 2) * 6 + 2
-    )  # 19 -> 22: 22に白が複数ある.
+    )  # 19 -> 22: Some whites on 22
     assert not _is_action_legal(
         board, (22 + 2) * 6 + 2
-    )  # 22 -> 25: 22に黒がない
+    )  # 22 -> 25: No black on 22 
     assert _is_action_legal(board, (19 + 2) * 6 + 5)  # bear off
     assert not _is_action_legal(
         board, (20 + 2) * 6 + 5
-    )  # 後ろにまだ黒があるためbear offできない.
-    # 白
+    )  # cannot bear off as some blacks behind
+    # white
     board = _flip_board(board)
     assert not _is_action_legal(
         board, (20 + 2) * 6 + 0
-    )  # 20->21(反転後): barにcheckerが残っているので動かせない.
-    assert _is_action_legal(board, (1) * 6 + 0)  # bar -> 1(反転後)
-    assert not _is_action_legal(board, (1) * 6 + 2)  # bar -> 2(反転後)
+    )  # 20->21(after flipped): cannot move checkers as some left on bar
+    assert _is_action_legal(board, (1) * 6 + 0)  # bar -> 1(after flipped)
+    assert not _is_action_legal(board, (1) * 6 + 2)  # bar -> 2(after flipped)
 
 
 def test_move():
-    # point to point 黒
+    # point to point black
     board = make_test_boad()
     board = _move(board, (19 + 2) * 6 + 1)  # 19->21
     assert (
@@ -462,7 +461,7 @@ def test_move():
         and board.at[21].get() == 3
         and board.at[25].get() == -4
     )
-    # point to off 黒
+    # point to off black
     board = make_test_boad()
     board = _move(board, (19 + 2) * 6 + 5)  # 19->26
     assert (
@@ -470,7 +469,7 @@ def test_move():
         and board.at[26].get() == 8
         and board.at[25].get() == -4
     )
-    # enter 白
+    # enter white
     board = make_test_boad()
     board = _flip_board(board)
     board = _move(board, (1) * 6 + 0)  # 25 -> 0
@@ -478,7 +477,7 @@ def test_move():
         board.at[24].get() == 3
         and board.at[0].get() == 1
     )
-    # hit 白
+    # hit white
     board = make_test_boad()
     board = _flip_board(board)
     board = _move(board, (1 + 2) * 6 + 1)  # 1 -> 3
@@ -492,10 +491,10 @@ def test_move():
 
 def test_legal_action():
     board = make_test_boad()
-    # 黒
-    playable_dice = jnp.array([3, 2, -1, -1], dtype=jnp.int16)
+    # black
+    playable_dice = jnp.array([3, 2, -1, -1], dtype=jnp.int32)
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (19 + 2) + 3
@@ -522,19 +521,19 @@ def test_legal_action():
     print(jnp.where(expected_legal_action_mask != 0)[0])
     assert (expected_legal_action_mask == legal_action_mask).all()
 
-    playable_dice = jnp.array([5, 5, 5, 5], dtype=jnp.int16)
-    expected_legal_action_mask = jnp.zeros(6 * 26 + 6, dtype=jnp.bool_)
+    playable_dice = jnp.array([5, 5, 5, 5], dtype=jnp.int32)
+    expected_legal_action_mask = jnp.zeros(6 * 26, dtype=jnp.bool_)
     expected_legal_action_mask = expected_legal_action_mask.at[
         6 * (19 + 2) + 5
     ].set(True)
     legal_action_mask = _legal_action_mask(board, playable_dice)
     assert (expected_legal_action_mask == legal_action_mask).all()
 
-    # 白
+    # white
     board = _flip_board(board)
-    playable_dice = jnp.array([4, 1, -1, -1], dtype=jnp.int16)
+    playable_dice = jnp.array([4, 1, -1, -1], dtype=jnp.int32)
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )
     expected_legal_action_mask = expected_legal_action_mask.at[6 * 1 + 1].set(
         True
@@ -542,33 +541,33 @@ def test_legal_action():
     legal_action_mask = _legal_action_mask(board, playable_dice)
     assert (expected_legal_action_mask == legal_action_mask).all()
 
-    playable_dice = jnp.array([4, 4, 4, 4], dtype=jnp.int16)
+    playable_dice = jnp.array([4, 4, 4, 4], dtype=jnp.int32)
     expected_legal_action_mask = jnp.zeros(
-        6 * 26 + 6, dtype=jnp.bool_
+        6 * 26, dtype=jnp.bool_
     )  # dance
     expected_legal_action_mask = expected_legal_action_mask.at[0:6].set(
         True
-    )  # no-opのみ
+    )  # only no-op
     legal_action_mask = _legal_action_mask(board, playable_dice)
     assert (expected_legal_action_mask == legal_action_mask).all()
 
 
 def test_calc_win_score():
-    # 黒のバックギャモン勝ち
-    back_gammon_board = jnp.zeros(28, dtype=jnp.int16)
+    # backgammon win by black
+    back_gammon_board = jnp.zeros(28, dtype=jnp.int32)
     back_gammon_board = back_gammon_board.at[26].set(15)
-    back_gammon_board = back_gammon_board.at[23].set(-15)  # 黒のhome boardに残っている.
+    back_gammon_board = back_gammon_board.at[23].set(-15)  # black on home board
     print(_calc_win_score(back_gammon_board))
     assert _calc_win_score(back_gammon_board) == 3
 
-    # 黒のギャモン勝ち
-    gammon_board = jnp.zeros(28, dtype=jnp.int16)
+    # gammon win by black
+    gammon_board = jnp.zeros(28, dtype=jnp.int32)
     gammon_board = gammon_board.at[26].set(15)
     gammon_board = gammon_board.at[7].set(-15)
     assert _calc_win_score(gammon_board) == 2
 
-    # 黒のシングル勝ち
-    single_board = jnp.zeros(28, dtype=jnp.int16)
+    # single win by black
+    single_board = jnp.zeros(28, dtype=jnp.int32)
     single_board = single_board.at[26].set(15)
     single_board = single_board.at[27].set(-3)
     single_board = single_board.at[3].set(-12)
@@ -576,7 +575,7 @@ def test_calc_win_score():
 
 
 def test_black_off():
-    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int16)
+    board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int32)
     board = board.at[0].set(15)
     playable_dice = jnp.array([3, 2, -1, -1])
     legal_action_mask = _legal_action_mask(board, playable_dice)

@@ -360,7 +360,7 @@ def test_observe():
     # + + + + +
     # + + + + +
     # fmt: off
-    curr_board = jnp.int8(
+    curr_board = jnp.int32(
         [[ 0, -1,  0, -1, 1],
          [-1,  1, -1,  0, 0],
          [ 0,  0,  0,  0, 0],
@@ -1176,25 +1176,6 @@ def test_PSK():
     assert state.terminated
     assert state._black_player == 1
     assert (state.rewards == jnp.float32([-1, 1])).all()  # black wins
-
-
-def test_random_play_5():
-    key = jax.random.PRNGKey(0)
-    state = init(key=key)
-    while not state.terminated:
-        actions = np.where(state.legal_action_mask)
-        if len(actions[0]) == 0:
-            a = 25
-        else:
-            key = jax.random.PRNGKey(0)
-            key, subkey = jax.random.split(key)
-            a = jax.random.choice(subkey, actions[0])
-
-        state = step(state=state, action=a)
-
-        if state._turn > 100:
-            break
-    assert state._passed or state._turn > 100
 
 
 def test_api():

@@ -70,16 +70,33 @@ active in their previous location to reduce partial observability.
 
 ## Action
 
-TBA
+No-op (0), up (1), down (2), left (3), right (4), or fire (5).
 
 ## Version History
 
 - `v0` : Initial release (v1.0.0)
 
+## Training example
+
+For MinAtar environments, we provide a [PPO training example](https://github.com/sotetsuk/pgx/tree/main/examples/minatar-ppo), which takes only 1 min to train on a single GPU.
+
+
+## Baseline models
+
+We provide a baseline model for the MinAtar Seaquest environment, which reasonably plays the game.
+
+```py
+model = pgx.make_baseline("minatar-seaquest_v0")
+
+logits, value = model(state.observation)
+```
+
+We trained the model with PPO for 20M steps. 
+See [wandb report](https://api.wandb.ai/links/sotetsuk/k5cfwe17) for the details of the training.
+
 ## Reference
 
 - `[Young&Tian+19]` "Minatar: An atari-inspired testbed for thorough and reproducible reinforcement learning experiments" [arXiv:1903.03176](https://arxiv.org/abs/1903.03176)
-
 
 ## LICENSE
 

@@ -45,6 +45,7 @@ def field(pytree_node=True, **kwargs):
     return dataclasses.field(metadata={"pytree_node": pytree_node}, **kwargs)
 
 
+# flake8: noqa: C901
 @dataclass_transform(field_descriptors=(field,))  # type: ignore[literal-required]
 def dataclass(clz: _T) -> _T:
     """Create a class which can be passed to functional transformations.
@@ -111,6 +112,12 @@ def dataclass(clz: _T) -> _T:
     # check if already a flax dataclass
     if "_flax_dataclass" in clz.__dict__:
         return clz
+
+    for name in clz.__annotations__.keys():
+        if hasattr(clz, name):
+            obj = getattr(clz, name)
+            if obj.__hash__ is None:
+                setattr(clz, name, field(default_factory=lambda x=obj: x))
 
     data_clz = dataclasses.dataclass(frozen=True)(clz)  # type: ignore
     meta_fields = []

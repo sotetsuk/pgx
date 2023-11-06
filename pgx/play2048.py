@@ -21,12 +21,12 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-ZERO = jnp.int8(0)
+ZERO = jnp.int32(0)
 
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0])
     terminated: jnp.ndarray = FALSE
@@ -35,13 +35,12 @@ class State(v1.State):
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- 2048 specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
     # 4x4 board
     # [[ 0,  1,  2,  3],
     #  [ 4,  5,  6,  7],
     #  [ 8,  9, 10, 11],
     #  [12, 13, 14, 15]]
-    _board: jnp.ndarray = jnp.zeros(16, jnp.int8)
+    _board: jnp.ndarray = jnp.zeros(16, jnp.int32)
     #  Board is expressed as a power of 2.
     # e.g.
     # [[ 0,  0,  1,  1],
@@ -80,7 +79,7 @@ class Play2048(v1.Env):
 
     @property
     def version(self) -> str:
-        return "v0"
+        return "v1"
 
     @property
     def num_players(self) -> int:
@@ -89,9 +88,12 @@ class Play2048(v1.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
-    board = _add_random_num(jnp.zeros((4, 4), jnp.int8), rng1)
+    board = _add_random_num(jnp.zeros((4, 4), jnp.int32), rng1)
     board = _add_random_num(board, rng2)
-    return State(_board=board.ravel())  # type:ignore
+    return State(
+        _board=board.ravel(),
+        legal_action_mask=_legal_action_mask(board.reshape((4, 4))),
+    )  # type:ignore
 
 
 def _step(state: State, action):
@@ -120,7 +122,18 @@ def _step(state: State, action):
     _rng_key, sub_key = jax.random.split(state._rng_key)
     board_2d = _add_random_num(board_2d, sub_key)
 
-    legal_action = jax.vmap(_can_slide_left)(
+    legal_action_mask = _legal_action_mask(board_2d)
+    return state.replace(  # type:ignore
+        _rng_key=_rng_key,
+        _board=board_2d.ravel(),
+        rewards=jnp.float32([reward.sum()]),
+        legal_action_mask=legal_action_mask,
+        terminated=~legal_action_mask.any(),
+    )
+
+
+def _legal_action_mask(board_2d):
+    return jax.vmap(_can_slide_left)(
         jnp.array(
             [
                 board_2d,
@@ -129,14 +142,6 @@ def _step(state: State, action):
                 jnp.rot90(board_2d, 3),
             ]
         )
-    )
-
-    return state.replace(  # type:ignore
-        _rng_key=_rng_key,
-        _board=board_2d.ravel(),
-        rewards=jnp.float32([reward.sum()]),
-        legal_action_mask=legal_action.ravel(),
-        terminated=~legal_action.any(),
     )
 
 
@@ -156,7 +161,7 @@ def _add_random_num(board_2d, key):
     key, sub_key = jax.random.split(key)
     pos = jax.random.choice(key, jnp.arange(16), p=(board_2d.ravel() == 0))
     set_num = jax.random.choice(
-        sub_key, jnp.int8([1, 2]), p=jnp.array([0.9, 0.1])
+        sub_key, jnp.int32([1, 2]), p=jnp.array([0.9, 0.1])
     )
     board_2d = board_2d.at[pos // 4, pos % 4].set(set_num)
     return board_2d
@@ -222,10 +227,12 @@ def _slide_left(line):
 def _can_slide_left(board_2d):
     def _can_slide(line):
         """Judge if it can be moved to the left."""
-        can_slide = (line[:3] == 0).any()
-        can_slide |= (
-            (line[0] == line[1]) | (line[1] == line[2]) | (line[2] == line[3])
-        )
+        can_slide = (line[0] == 0) & (line[1] > 0)
+        can_slide |= (line[1] == 0) & (line[2] > 0)
+        can_slide |= (line[2] == 0) & (line[3] > 0)
+        can_slide |= (line[0] > 0) & (line[0] == line[1])
+        can_slide |= (line[1] > 0) & (line[1] == line[2])
+        can_slide |= (line[2] > 0) & (line[2] == line[3])
         can_slide &= ~(line == 0).all()
         return can_slide
 
