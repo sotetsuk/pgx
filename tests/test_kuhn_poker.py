@@ -111,21 +111,6 @@ def test_observation():
     assert (obs == jnp.bool_([1, 0, 0, 1, 0, 0, 1])).all()
 
 
-def test_random_play():
-    N = 100
-    key = jax.random.PRNGKey(0)
-    for _ in range(N):
-        done = jnp.bool_(False)
-        key, sub_key = jax.random.split(key)
-        state = init(sub_key)
-        while not done:
-            legal_actions = jnp.where(state.legal_action_mask)[0]
-            key, sub_key = jax.random.split(key)
-            action = jax.random.choice(sub_key, legal_actions)
-            state = step(state, action)
-            done = state.terminated
-
-
 def test_api():
     import pgx
 

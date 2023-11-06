@@ -45,7 +45,7 @@ def api_test_single(env: Env, num: int = 100):
     - observe
       - Returns different observations when player_ids are different (except the initial state)
     - TODO: reward must be zero when step is called after terminated
-    - TODO: observation type (bool, int8 or int16) for efficiency; https://jax.readthedocs.io/en/latest/type_promotion.html
+    - TODO: observation type (bool, int32 or int32) for efficiency; https://jax.readthedocs.io/en/latest/type_promotion.html
     """
 
     init = jax.jit(env.init)
@@ -136,14 +136,14 @@ def _validate_init_reward(state: State):
 def _validate_state(state: State):
     """validate_state checks these items:
 
-    - current_player is int8
+    - current_player is int32
     - terminated is bool_
     - reward is float
     - legal_action_mask is bool_
-    - TODO: observation is bool_ or int8 (can promote to any other types)
+    - TODO: observation is bool_ or int32 (can promote to any other types)
     """
     assert state.env_id in get_args(EnvId)
-    assert state.current_player.dtype == jnp.int8, state.current_player.dtype
+    assert state.current_player.dtype == jnp.int32, state.current_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
     assert state.rewards.dtype == jnp.float32, state.rewards.dtype
     assert (
