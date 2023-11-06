@@ -6,10 +6,14 @@ from pgx._src.visualizer import (
     set_visualization_config,
 )
 from pgx.core import Env, EnvId, State, available_envs, make
+from pgx.types import Array, PRNGKey
 
 __version__ = "2.0.0"
 
 __all__ = [
+    # types
+    "Array",
+    "PRNGKey",
     # v1 api components
     "State",
     "Env",
