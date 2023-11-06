@@ -92,7 +92,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     board = _add_random_num(board, rng2)
     return State(
         _board=board.ravel(),
-        legal_action_mask=_legal_action_mask(board.reshape((4, 4)))
+        legal_action_mask=_legal_action_mask(board.reshape((4, 4))),
     )  # type:ignore
 
 
@@ -134,14 +134,14 @@ def _step(state: State, action):
 
 def _legal_action_mask(board_2d):
     return jax.vmap(_can_slide_left)(
-            jnp.array(
-                [
-                    board_2d,
-                    jnp.rot90(board_2d, 1),
-                    jnp.rot90(board_2d, 2),
-                    jnp.rot90(board_2d, 3),
-                ]
-            )
+        jnp.array(
+            [
+                board_2d,
+                jnp.rot90(board_2d, 1),
+                jnp.rot90(board_2d, 2),
+                jnp.rot90(board_2d, 3),
+            ]
+        )
     )
 
 
