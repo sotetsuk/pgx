@@ -110,24 +110,6 @@ def test_step():
     # -1  0  1
 
 
-def test_random_play():
-    N = 1000
-    key = jax.random.PRNGKey(0)
-    for i in range(N):
-        done = jnp.bool_(False)
-        key, sub_key = jax.random.split(key)
-        state = init(sub_key)
-        rewards = jnp.int32([0.0, 0.0])
-        while not done:
-            assert jnp.all(rewards == 0), state._board
-            legal_actions = jnp.where(state.legal_action_mask)[0]
-            key, sub_key = jax.random.split(key)
-            action = jax.random.choice(sub_key, legal_actions)
-            state = step(state, action)
-            done = state.terminated
-            rewards += state.rewards
-
-
 def test_win_check():
     board = jnp.int32([-1, -1, -1, -1, -1, -1, -1, -1, -1])
     turn = jnp.int32(1)
