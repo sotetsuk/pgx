@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx._src.types import Array
+from pgx._src.types import Array, PRNGKey
 
 
 def act_randomly(rng: PRNGKey, legal_action_mask: Array) -> Array:
