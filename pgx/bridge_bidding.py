@@ -94,22 +94,22 @@ def download_dds_results(download_dir="dds_results"):
 
 @dataclass
 class State(core.State):
-    current_player: jax.Array = jnp.int32(-1)
-    observation: jax.Array = jnp.zeros(478, dtype=jnp.bool_)
-    rewards: jax.Array = jnp.float32([0, 0, 0, 0])
-    terminated: jax.Array = FALSE
-    truncated: jax.Array = FALSE
-    legal_action_mask: jax.Array = jnp.ones(38, dtype=jnp.bool_)
-    _step_count: jax.Array = jnp.int32(0)
-    _turn: jax.Array = jnp.int32(0)
-    _shuffled_players: jax.Array = jnp.zeros(4, dtype=jnp.int32)
+    current_player: Array = jnp.int32(-1)
+    observation: Array = jnp.zeros(478, dtype=jnp.bool_)
+    rewards: Array = jnp.float32([0, 0, 0, 0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.ones(38, dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
+    _turn: Array = jnp.int32(0)
+    _shuffled_players: Array = jnp.zeros(4, dtype=jnp.int32)
     # Hand of each player
     #   0  ~ 12: Hand of N
     #   13 ~ 25: Hand of E
     #   26 ~ 38: Hand of S
     #   39 ~ 51: Hand of W
     # Each element contains an integer from 0 to 51 representing a card
-    _hand: jax.Array = jnp.zeros(52, dtype=jnp.int32)
+    _hand: Array = jnp.zeros(52, dtype=jnp.int32)
     # bidding_history stores the bid of each player in chronological order
     # Maximum length = 319
     # Each element contains an integer representing an action:
@@ -120,31 +120,31 @@ class State(core.State):
     #   no action: -1
     # TODO: change to  pass = 0, double = 1, redouble = 2, bid = 3 ~ 37
     # We can identify which player made each bid from the index of the element (ix % 4)
-    _bidding_history: jax.Array = jnp.full(319, -1, dtype=jnp.int32)
+    _bidding_history: Array = jnp.full(319, -1, dtype=jnp.int32)
     # dealer: a player who starts bidding
     # 0 = N, 1 = E, 2 = S, 3 = W
-    _dealer: jax.Array = jnp.zeros(4, dtype=jnp.int32)
+    _dealer: Array = jnp.zeros(4, dtype=jnp.int32)
     # vul_NS: Is NS team vul?
     # 0 = non vul, 1 = vul
-    _vul_NS: jax.Array = jnp.bool_(False)
+    _vul_NS: Array = jnp.bool_(False)
     # vul_EW: Is EW team vul?
     # 0 = non vul, 1 = vul
-    _vul_EW: jax.Array = jnp.bool_(False)
+    _vul_EW: Array = jnp.bool_(False)
     # last_bid
     # last_bidder
     # call_x: Was the last bid doubled?
     # call_xx: Was the last bid redoubled?
-    _last_bid: jax.Array = jnp.int32(-1)
-    _last_bidder: jax.Array = jnp.int32(-1)
-    _call_x: jax.Array = jnp.bool_(False)
-    _call_xx: jax.Array = jnp.bool_(False)
+    _last_bid: Array = jnp.int32(-1)
+    _last_bidder: Array = jnp.int32(-1)
+    _call_x: Array = jnp.bool_(False)
+    _call_xx: Array = jnp.bool_(False)
     # In NS team, which player first bid each denomination
     # Denomination order: C, D, H, S, NT = 0, 1, 2, 3, 4
-    _first_denomination_NS: jax.Array = jnp.full(5, -1, dtype=jnp.int32)
+    _first_denomination_NS: Array = jnp.full(5, -1, dtype=jnp.int32)
     # In EW team, which player first bid each denomination
-    _first_denomination_EW: jax.Array = jnp.full(5, -1, dtype=jnp.int32)
+    _first_denomination_EW: Array = jnp.full(5, -1, dtype=jnp.int32)
     # Number of pass
-    _pass_num: jax.Array = jnp.array(0, dtype=jnp.int32)
+    _pass_num: Array = jnp.array(0, dtype=jnp.int32)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -189,7 +189,7 @@ class BridgeBidding(core.Env):
             )
             sys.exit(1)
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, key: Array) -> State:
         key1, key2 = jax.random.split(key, num=2)
         return _init_by_key(jax.random.choice(key1, self._lut_keys), key2)
 
@@ -198,7 +198,7 @@ class BridgeBidding(core.Env):
         assert isinstance(state, State)
         return _step(state, action, self._lut_keys, self._lut_values)
 
-    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -219,7 +219,7 @@ class BridgeBidding(core.Env):
         return -7600.0
 
 
-def _init_by_key(key: jax.Array, rng: jax.Array) -> State:
+def _init_by_key(key: Array, rng: Array) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
@@ -245,7 +245,7 @@ def _init_by_key(key: jax.Array, rng: jax.Array) -> State:
     return state
 
 
-def _shuffle_players(rng: jax.Array) -> jax.Array:
+def _shuffle_players(rng: Array) -> jax.Array:
     """Randomly arranges player IDs in a list in NESW order.
 
     Returns:
@@ -289,7 +289,7 @@ def _shuffle_players(rng: jax.Array) -> jax.Array:
     )
 
 
-def _player_position(player: jax.Array, state: State) -> jax.Array:
+def _player_position(player: Array, state: State) -> jax.Array:
     return jax.lax.cond(
         player != -1,
         lambda: jnp.int32(jnp.argmax(state._shuffled_players == player)),
@@ -300,8 +300,8 @@ def _player_position(player: jax.Array, state: State) -> jax.Array:
 def _step(
     state: State,
     action: int,
-    lut_keys: jax.Array,
-    lut_values: jax.Array,
+    lut_keys: Array,
+    lut_values: Array,
 ) -> State:
     # fmt: off
     state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
@@ -326,7 +326,7 @@ def _step(
     )
 
 
-def _observe(state: State, player_id: jax.Array) -> jax.Array:
+def _observe(state: State, player_id: Array) -> jax.Array:
     """Returns the observation of a given player"""
     # make vul of observation
     is_player_vul, is_non_player_vul = jax.lax.cond(
@@ -414,7 +414,7 @@ def _make_obs_history(turn, vuls):
     return state, player_id, last_bid, obs_history
 
 
-def _convert_card_pgx_to_openspiel(card: jax.Array) -> jax.Array:
+def _convert_card_pgx_to_openspiel(card: Array) -> jax.Array:
     """Convert numerical representation of cards from pgx to openspiel"""
     OPEN_SPIEL_SUIT_NUM = jnp.array([3, 2, 1, 0], dtype=jnp.int32)
     OPEN_SPIEL_RANK_NUM = jnp.array(
@@ -427,8 +427,8 @@ def _convert_card_pgx_to_openspiel(card: jax.Array) -> jax.Array:
 
 def _terminated_step(
     state: State,
-    lut_keys: jax.Array,
-    lut_values: jax.Array,
+    lut_keys: Array,
+    lut_values: Array,
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
@@ -469,8 +469,8 @@ def _is_terminated(state: State) -> bool:
 
 def _reward(
     state: State,
-    lut_keys: jax.Array,
-    lut_values: jax.Array,
+    lut_keys: Array,
+    lut_values: Array,
 ) -> jax.Array:
     """Return reward
     If pass out, 0 reward for everyone; if bid, calculate and return reward
@@ -484,8 +484,8 @@ def _reward(
 
 def _make_reward(
     state: State,
-    lut_keys: jax.Array,
-    lut_values: jax.Array,
+    lut_keys: Array,
+    lut_values: Array,
 ) -> jax.Array:
     """Calculate rewards for each player by dds results
 
@@ -519,12 +519,12 @@ def _make_reward(
 
 
 def _calc_score(
-    denomination: jax.Array,
-    level: jax.Array,
-    vul: jax.Array,
-    call_x: jax.Array,
-    call_xx: jax.Array,
-    trick: jax.Array,
+    denomination: Array,
+    level: Array,
+    vul: Array,
+    call_x: Array,
+    call_xx: Array,
+    trick: Array,
 ) -> jax.Array:
     """Calculate score from contract and trick
     Returns:
@@ -538,11 +538,11 @@ def _calc_score(
 
 
 def _down_score(
-    level: jax.Array,
-    vul: jax.Array,
-    call_x: jax.Array,
-    call_xx: jax.Array,
-    trick: jax.Array,
+    level: Array,
+    vul: Array,
+    call_x: Array,
+    call_xx: Array,
+    trick: Array,
 ) -> jax.Array:
     """Calculate down score from contract and trick
     Returns:
@@ -580,12 +580,12 @@ def _down_score(
 
 
 def _make_score(
-    denomination: jax.Array,
-    level: jax.Array,
-    vul: jax.Array,
-    call_x: jax.Array,
-    call_xx: jax.Array,
-    trick: jax.Array,
+    denomination: Array,
+    level: Array,
+    vul: Array,
+    call_x: Array,
+    call_xx: Array,
+    trick: Array,
 ) -> jax.Array:
     """Calculate make score from contract and trick
     Returns:
@@ -761,7 +761,7 @@ def _bid_to_denomination(bid: int) -> int:
     return bid % 5
 
 
-def _position_to_team(position: jax.Array) -> jax.Array:
+def _position_to_team(position: Array) -> jax.Array:
     """Determine which team from the position
     0: NS team, 1: EW team
     """
@@ -810,7 +810,7 @@ def _is_legal_XX(state: State) -> bool:
     )
 
 
-def _is_partner(position1: jax.Array, position2: jax.Array) -> jax.Array:
+def _is_partner(position1: Array, position2: Array) -> jax.Array:
     """Determine if positon1 and position2 belong to the same team"""
     return (abs(position1 - position2) + 1) % 2
 
@@ -857,7 +857,7 @@ def _pbn_to_key(pbn: str) -> jax.Array:
     return _to_binary(key)
 
 
-def _to_binary(x: jax.Array) -> jax.Array:
+def _to_binary(x: Array) -> jax.Array:
     # bases = jnp.array([4**i for i in range(13)], dtype=jnp.int32)[::-1]
     bases = (4 ** jnp.arange(13))[::-1]
     return (x * bases).sum(axis=1)  # shape = (4, )
@@ -878,7 +878,7 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
-def _key_to_hand(key: jax.Array) -> jax.Array:
+def _key_to_hand(key: Array) -> jax.Array:
     """Convert key to hand"""
 
     def _convert_quat(j):
@@ -906,7 +906,7 @@ def _key_to_hand(key: jax.Array) -> jax.Array:
     return hand.flatten()
 
 
-def _value_to_dds_tricks(value: jax.Array) -> jax.Array:
+def _value_to_dds_tricks(value: Array) -> jax.Array:
     """Convert values to dds tricks
     >>> value = jnp.array([4160, 904605, 4160, 904605])
     >>> _value_to_dds_tricks(value)
@@ -925,8 +925,8 @@ def _value_to_dds_tricks(value: jax.Array) -> jax.Array:
 
 def _calculate_dds_tricks(
     state: State,
-    lut_keys: jax.Array,
-    lut_values: jax.Array,
+    lut_keys: Array,
+    lut_values: Array,
 ) -> jax.Array:
     key = _state_to_key(state)
     return _value_to_dds_tricks(
@@ -935,7 +935,7 @@ def _calculate_dds_tricks(
 
 
 def _find_value_from_key(
-    key: jax.Array, lut_keys: jax.Array, lut_values: jax.Array
+    key: Array, lut_keys: Array, lut_values: Array
 ):
     """Find a value matching key without batch processing
     >>> VALUES = jnp.arange(20).reshape(5, 4)

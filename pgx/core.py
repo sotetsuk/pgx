@@ -97,17 +97,17 @@ class State(abc.ABC):
             the game will terminate immediately with the penalty to the palyer.
     """
 
-    current_player: jax.Array
-    observation: jax.Array
-    rewards: jax.Array
-    terminated: jax.Array
-    truncated: jax.Array
-    legal_action_mask: jax.Array
+    current_player: Array
+    observation: Array
+    rewards: Array
+    terminated: Array
+    truncated: Array
+    legal_action_mask: Array
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
     #   - updated only when actually used
     #   - supposed NOT to be used by agent
-    _step_count: jax.Array
+    _step_count: Array
 
     @property
     @abc.abstractmethod
@@ -177,7 +177,7 @@ class Env(abc.ABC):
     def __init__(self):
         ...
 
-    def init(self, key: jax.Array) -> State:
+    def init(self, key: Array) -> State:
         """Return the initial state. Note that no internal state of
         environment changes.
 
@@ -195,7 +195,7 @@ class Env(abc.ABC):
     def step(
         self,
         state: State,
-        action: jax.Array,
+        action: Array,
         key: Optional[jax.Array] = None,
     ) -> State:
         """Step function."""
@@ -233,13 +233,13 @@ class Env(abc.ABC):
 
         return state
 
-    def observe(self, state: State, player_id: jax.Array) -> jax.Array:
+    def observe(self, state: State, player_id: Array) -> jax.Array:
         """Observation function."""
         obs = self._observe(state, player_id)
         return jax.lax.stop_gradient(obs)
 
     @abc.abstractmethod
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, key: Array) -> State:
         """Implement game-specific init function here."""
         ...
 
@@ -249,7 +249,7 @@ class Env(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _observe(self, state: State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: State, player_id: Array) -> jax.Array:
         """Implement game-specific observe function here."""
         ...
 
@@ -292,7 +292,7 @@ class Env(abc.ABC):
         return -1.0
 
     def _step_with_illegal_action(
-        self, state: State, loser: jax.Array
+        self, state: State, loser: Array
     ) -> State:
         penalty = self._illegal_action_penalty
         reward = (

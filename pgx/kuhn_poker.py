@@ -28,19 +28,19 @@ CHECK = jnp.int32(3)
 
 @dataclass
 class State(core.State):
-    current_player: jax.Array = jnp.int32(0)
-    observation: jax.Array = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
-    rewards: jax.Array = jnp.float32([0.0, 0.0])
-    terminated: jax.Array = FALSE
-    truncated: jax.Array = FALSE
-    legal_action_mask: jax.Array = jnp.ones(4, dtype=jnp.bool_)
-    _step_count: jax.Array = jnp.int32(0)
+    current_player: Array = jnp.int32(0)
+    observation: Array = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
+    rewards: Array = jnp.float32([0.0, 0.0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.ones(4, dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
     # --- Kuhn poker specific ---
-    _cards: jax.Array = jnp.int32([-1, -1])
+    _cards: Array = jnp.int32([-1, -1])
     # [(player 0),(player 1)]
-    _last_action: jax.Array = jnp.int32(-1)
+    _last_action: Array = jnp.int32(-1)
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
-    _pot: jax.Array = jnp.int32([0, 0])
+    _pot: Array = jnp.int32([0, 0])
 
     @property
     def env_id(self) -> core.EnvId:
@@ -51,15 +51,15 @@ class KuhnPoker(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, key: Array) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jax.Array, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -76,7 +76,7 @@ class KuhnPoker(core.Env):
         return 2
 
 
-def _init(rng: jax.Array) -> State:
+def _init(rng: Array) -> State:
     rng1, rng2 = jax.random.split(rng)
     current_player = jnp.int32(jax.random.bernoulli(rng1))
     init_card = jax.random.choice(
