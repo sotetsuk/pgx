@@ -122,7 +122,7 @@ class State(core.State):
                     return int(obj)
                 elif isinstance(obj, jnp.floating):
                     return float(obj)
-                elif isinstance(obj, jax.Array):
+                elif isinstance(obj, jnp.ndarray):
                     return obj.tolist()
                 return json.JSONEncoder.default(self, obj)
 
