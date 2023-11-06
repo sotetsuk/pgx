@@ -252,6 +252,7 @@ def test_chi():
 
 def test_ankan():
     key = jax.random.PRNGKey(352)
+    _, key = jax.random.split(key)
     state: State = init(key=key)
     assert state.current_player == jnp.int8(0)
     """
