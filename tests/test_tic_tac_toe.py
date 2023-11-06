@@ -103,7 +103,7 @@ def test_step():
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(state._board == jnp.int32([1, 0, -1, -1, 0, -1, -1, 0, 1]))
-    assert jnp.all(state.rewards == jnp.int16([-1, 1]))  # fmt: ignore
+    assert jnp.all(state.rewards == jnp.int32([-1, 1]))  # fmt: ignore
     assert state.terminated
     #  1  0 -1
     # -1  0 -1
@@ -117,7 +117,7 @@ def test_random_play():
         done = jnp.bool_(False)
         key, sub_key = jax.random.split(key)
         state = init(sub_key)
-        rewards = jnp.int16([0.0, 0.0])
+        rewards = jnp.int32([0.0, 0.0])
         while not done:
             assert jnp.all(rewards == 0), state._board
             legal_actions = jnp.where(state.legal_action_mask)[0]

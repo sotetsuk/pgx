@@ -120,12 +120,12 @@ def test_random_play():
     done = jnp.bool_(False)
     key, sub_key = jax.random.split(key)
     state = init(sub_key)
-    rewards = jnp.int16([0.0, 0.0])
+    rewards = jnp.int32([0.0, 0.0])
     while not done:
         legal_actions = jnp.where(state.legal_action_mask)[0]
         key, sub_key = jax.random.split(key)
         action = jax.random.choice(sub_key, legal_actions)
-        state = step(state, jnp.int16(action))
+        state = step(state, jnp.int32(action))
         done = state.terminated
         rewards += state.rewards
 

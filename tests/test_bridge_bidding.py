@@ -932,7 +932,7 @@ def test_step():
     assert state._pass_num == 3
     assert state.rewards.shape == (4,)
     assert jnp.all(
-        state.rewards == jnp.array([-600, -600, 600, 600], dtype=jnp.int16)
+        state.rewards == jnp.array([-600, -600, 600, 600], dtype=jnp.int32)
     )
     declare_position, denomination, level, vul = _contract(state)
     assert declare_position == 0
@@ -2006,12 +2006,12 @@ def test_calc_score():
                                 ]
 
                             actural_score = _calc_score(
-                                jnp.int16(denomination),
-                                jnp.int16(level),
-                                jnp.int16(vul),
-                                jnp.int16(call_x),
-                                jnp.int16(call_xx),
-                                jnp.int16(trick),
+                                jnp.int32(denomination),
+                                jnp.int32(level),
+                                jnp.int32(vul),
+                                jnp.int32(call_x),
+                                jnp.int32(call_xx),
+                                jnp.int32(trick),
                             )
                             assert actural_score == expected_score
                             assert actural_score.shape == ()
