@@ -763,6 +763,9 @@ def _update_zobrist_hash(state: State, action: Action):
         ),
         source_piece,
     )
+    to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
+    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # Put the piece to the target pos
+    
     # en_passant
     piece = state._board[action.from_]
     is_en_passant = (
@@ -776,8 +779,6 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= jax.lax.select(is_en_passant, ZOBRIST_BOARD[removed_pawn_pos, opp_pawn], jnp.uint32([0, 0]))  # Remove the pawn
     hash_ ^= jax.lax.select(is_en_passant, ZOBRIST_BOARD[removed_pawn_pos, 6], jnp.uint32([0, 0]))  # empty
  
-    to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
-    hash_ ^= ZOBRIST_BOARD[to, source_piece]  # Put the piece to the target pos
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _zobrist_hash=hash_,
