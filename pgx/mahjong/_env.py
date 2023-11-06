@@ -218,7 +218,9 @@ class Mahjong(core.Env):
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
