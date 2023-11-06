@@ -775,7 +775,6 @@ def _update_zobrist_hash(state: State, action: Action):
         source_piece,
     )
 
-    to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
     hash_ ^= ZOBRIST_BOARD[to, source_piece]  # Put the piece to the target pos
 
     # en_passant
