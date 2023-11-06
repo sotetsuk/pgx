@@ -1,6 +1,8 @@
 import jax
 import jax.numpy as jnp
 
+from pgx._src.types import Array
+
 
 def act_randomly(rng: Array, legal_action_mask: Array) -> Array:
     logits = jnp.log(legal_action_mask.astype(jnp.float32))

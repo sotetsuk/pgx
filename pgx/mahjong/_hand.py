@@ -4,6 +4,7 @@ import os
 import jax
 import jax.numpy as jnp
 
+from pgx._src.types import Array
 from pgx.mahjong._action import Action  # type: ignore
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")

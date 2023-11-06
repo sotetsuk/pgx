@@ -17,6 +17,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 from pgx.mahjong._action import Action
 from pgx.mahjong._hand import Hand
 from pgx.mahjong._meld import Meld

@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx
+from pgx._src.types import Array
 from pgx.bridge_bidding import BridgeBidding, State
 
 env = BridgeBidding()

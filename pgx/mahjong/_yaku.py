@@ -4,6 +4,7 @@ import os
 import jax
 import jax.numpy as jnp
 
+from pgx._src.types import Array
 from pgx.mahjong._action import Action
 from pgx.mahjong._hand import Hand
 from pgx.mahjong._meld import Meld
