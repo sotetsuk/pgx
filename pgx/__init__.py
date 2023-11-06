@@ -6,7 +6,7 @@ from pgx._src.visualizer import (
     set_visualization_config,
 )
 from pgx.core import Env, EnvId, State, available_envs, make
-from pgx.types import Array, PRNGKey
+from pgx._src.types import Array, PRNGKey
 
 __version__ = "2.0.0"
 

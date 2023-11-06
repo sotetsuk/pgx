@@ -31,7 +31,7 @@ from pgx._src.chess_utils import (  # type: ignore
     ZOBRIST_SIDE,
 )
 from pgx._src.struct import dataclass
-from pgx.types import Array, PRNGKey
+from pgx._src.types import Array, PRNGKey
 
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper

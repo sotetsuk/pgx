@@ -19,7 +19,7 @@ from jax import numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
-from pgx.types import Array, PRNGKey
+from pgx._src.types import Array, PRNGKey
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)

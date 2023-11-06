@@ -32,7 +32,7 @@ from pgx._src.shogi_utils import (
     _to_sfen,
 )
 from pgx._src.struct import dataclass
-from pgx.types import Array, PRNGKey
+from pgx._src.types import Array, PRNGKey
 
 MAX_TERMINATION_STEPS = 512  # From AZ paper
 
