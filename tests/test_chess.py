@@ -725,6 +725,20 @@ def test_buggy_samples():
     expected_legal_actions = [16, 30, 162, 1212, 1225, 1269, 1270, 1271, 1272, 1284, 1297, 1298, 1299, 1942, 1943, 1956, 2498, 2948, 2949, 3131, 3132, 3133, 3134, 3135, 3136, 3138, 3534, 3548, 3593, 3594, 4250]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
+    # wrong zobrist hash when a pawn is removed by en passant #1078
+    state = State._from_fen("1nbqkb1r/rp1p1pp1/8/p1pPp3/4P1n1/5Pp1/PPPBK1PP/RN1Q1B1R w k e6 0 11")
+    state.save_svg("tests/assets/chess/buggy_samples_015.svg")
+    state = step(state, jnp.int32(2088))
+    state.save_svg("tests/assets/chess/buggy_samples_016.svg")
+    assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+
+    # wrong zobrist hash due to queen promotion #1078
+    state = State._from_fen("B7/8/8/1P6/1k3K2/5P2/6p1/1B6 b - - 1 102")
+    state.save_svg("tests/assets/chess/buggy_samples_017.svg")
+    state = step(state, jnp.int32(3958))
+    state.save_svg("tests/assets/chess/buggy_samples_018.svg")
+    assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
