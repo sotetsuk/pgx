@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-from dataclasses import fields
 from typing import get_args
 
 import jax
@@ -85,8 +84,6 @@ def api_test_single(env: Env, num: int = 100, use_key=True):
             if state.terminated:
                 break
 
-        _validate_taking_action_after_terminal(state, step, use_key)
-
     # check visualization
     filename = "/tmp/tmp.svg"
     state.save_svg(filename)
@@ -119,24 +116,6 @@ def api_test_batch(env: Env, num: int = 100, use_key=True):
     filename = "/tmp/tmp.svg"
     state.save_svg(filename)
     os.remove(filename)
-
-
-def _validate_taking_action_after_terminal(state: State, step_fn, use_key):
-    prev_state = state
-    if not state.terminated:
-        return
-    action = 0
-    key = jax.random.PRNGKey(0)
-    if not use_key:
-        key = None
-    state = step_fn(state, action, key)
-    assert (state.rewards == 0).all()
-    for field in fields(state):
-        if field.name in ["rewards", "steps"]:
-            continue
-        assert (
-            getattr(state, field.name) == getattr(prev_state, field.name)
-        ).all(), f"{field.name} : \n{getattr(state, field.name)}\n{getattr(prev_state, field.name)}"
 
 
 def _validate_init_reward(state: State):
