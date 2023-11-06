@@ -2,6 +2,7 @@
 
 
 install-dev:
+	python3 -m pip install -U pip
 	python3 -m pip install -U \
 		pytest \
 		matplotlib \
@@ -12,6 +13,7 @@ install-dev:
 		pgx-minatar
 
 install-fmt:
+	python3 -m pip install -U pip
 	python3 -m pip install -U \
 		black \
 		blackdoc \
