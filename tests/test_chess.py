@@ -1104,4 +1104,5 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("chess")
-    pgx.api_test(env, 5)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)

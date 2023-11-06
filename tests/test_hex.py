@@ -166,4 +166,5 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("hex")
-    pgx.api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)

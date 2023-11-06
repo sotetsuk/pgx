@@ -25,12 +25,12 @@ from pgx.experimental.utils import act_randomly
 act_randomly = jax.jit(act_randomly)
 
 
-def api_test(env: Env, num: int = 100):
-    api_test_single(env, num)
-    api_test_batch(env, num)
+def api_test(env: Env, num: int = 100, use_key=True):
+    api_test_single(env, num, use_key)
+    api_test_batch(env, num, use_key)
 
 
-def api_test_single(env: Env, num: int = 100):
+def api_test_single(env: Env, num: int = 100, use_key=True):
     """validate checks these items:
 
     - init
@@ -70,6 +70,8 @@ def api_test_single(env: Env, num: int = 100):
             rng, subkey = jax.random.split(rng)
             action = act_randomly(subkey, state.legal_action_mask)
             rng, subkey = jax.random.split(rng)
+            if not use_key:
+                subkey = None
             state = step(state, action, subkey)
             assert (
                 state._step_count == curr_steps + 1
@@ -83,7 +85,7 @@ def api_test_single(env: Env, num: int = 100):
             if state.terminated:
                 break
 
-        _validate_taking_action_after_terminal(state, step)
+        _validate_taking_action_after_terminal(state, step, use_key)
 
     # check visualization
     filename = "/tmp/tmp.svg"
@@ -91,7 +93,7 @@ def api_test_single(env: Env, num: int = 100):
     os.remove(filename)
 
 
-def api_test_batch(env: Env, num: int = 100):
+def api_test_batch(env: Env, num: int = 100, use_key=True):
     init = jax.jit(jax.vmap(env.init))
     step = jax.jit(jax.vmap(env.step))
 
@@ -109,6 +111,8 @@ def api_test_batch(env: Env, num: int = 100):
             action = act_randomly(subkey, state.legal_action_mask)
             rng, subkey = jax.random.split(rng)
             keys = jax.random.split(subkey, batch_size)
+            if not use_key:
+                subkey = None
             state = step(state, action, keys)
 
     # check visualization
@@ -117,12 +121,14 @@ def api_test_batch(env: Env, num: int = 100):
     os.remove(filename)
 
 
-def _validate_taking_action_after_terminal(state: State, step_fn):
+def _validate_taking_action_after_terminal(state: State, step_fn, use_key):
     prev_state = state
     if not state.terminated:
         return
     action = 0
     key = jax.random.PRNGKey(0)
+    if not use_key:
+        key = None
     state = step_fn(state, action, key)
     assert (state.rewards == 0).all()
     for field in fields(state):

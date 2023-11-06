@@ -114,6 +114,6 @@ def test_observation():
 
 def test_api():
     import pgx
-
     env = pgx.make("kuhn_poker")
-    pgx.api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)

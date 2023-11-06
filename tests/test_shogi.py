@@ -408,4 +408,5 @@ def test_sfen():
 def test_api():
     import pgx
     env = pgx.make("shogi")
-    pgx.api_test(env, 1)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)
