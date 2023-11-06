@@ -24,19 +24,19 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_playerArray = jnp.int32(0)
-    observationArray = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
-    rewardsArray = jnp.float32([0.0, 0.0])
-    terminatedArray = FALSE
-    truncatedArray = FALSE
-    legal_action_maskArray = jnp.ones(9, dtype=jnp.bool_)
-    _step_countArray = jnp.int32(0)
+    current_player: jax.Array = jnp.int32(0)
+    observation: jax.Array = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
+    rewards: jax.Array = jnp.float32([0.0, 0.0])
+    terminated: jax.Array = FALSE
+    truncated: jax.Array = FALSE
+    legal_action_mask: jax.Array = jnp.ones(9, dtype=jnp.bool_)
+    _step_count: jax.Array = jnp.int32(0)
     # --- Tic-tac-toe specific ---
-    _turnArray = jnp.int32(0)
+    _turn: jax.Array = jnp.int32(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
-    _boardArray = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
+    _board: jax.Array = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
 
     @property
     def env_id(self) -> core.EnvId:
@@ -47,15 +47,15 @@ class TicTacToe(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, keyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, actionArray, key) -> State:
+    def _step(self, state: core.State, action: jax.Array, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_idArray) -> jax.Array:
+    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -72,12 +72,12 @@ class TicTacToe(core.Env):
         return 2
 
 
-def _init(rngArray) -> State:
+def _init(rng: jax.Array) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 
-def _step(state: State, actionArray) -> State:
+def _step(state: State, action: jax.Array) -> State:
     state = state.replace(_board=state._board.at[action].set(state._turn))  # type: ignore
     won = _win_check(state._board, state._turn)
     reward = jax.lax.cond(
@@ -99,7 +99,7 @@ def _win_check(board, turn) -> jax.Array:
     return ((board[idx] == turn).all(axis=1)).any()
 
 
-def _observe(state: State, player_idArray) -> jax.Array:
+def _observe(state: State, player_id: jax.Array) -> jax.Array:
     @jax.vmap
     def plane(i):
         return (state._board == i).reshape((3, 3))

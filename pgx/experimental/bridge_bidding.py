@@ -8,7 +8,7 @@ env = BridgeBidding()
 
 
 def _imp_reward(
-    table_a_rewardArray, table_b_rewardArray
+    table_a_reward: jax.Array, table_b_reward: jax.Array
 ) -> jax.Array:
     """Convert score reward to IMP reward
 

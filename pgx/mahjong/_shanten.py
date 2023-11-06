@@ -19,7 +19,7 @@ class Shanten:
     CACHE = load_shanten_cache()
 
     @staticmethod
-    def discard(handArray) -> jax.Array:
+    def discard(hand: jax.Array) -> jax.Array:
         return jax.vmap(
             lambda i: jax.lax.cond(
                 hand[i] == 0,
@@ -29,7 +29,7 @@ class Shanten:
         )(jnp.arange(34))
 
     @staticmethod
-    def number(handArray):
+    def number(hand: jax.Array):
         return jnp.min(
             jnp.array(
                 [
@@ -41,13 +41,13 @@ class Shanten:
         )
 
     @staticmethod
-    def seven_pairs(handArray):
+    def seven_pairs(hand: jax.Array):
         n_pair = jnp.sum(hand >= 2)
         n_kind = jnp.sum(hand > 0)
         return 7 - n_pair + jax.lax.max(7 - n_kind, 0)
 
     @staticmethod
-    def thirteen_orphan(handArray):
+    def thirteen_orphan(hand: jax.Array):
         n_pair = (
             (hand[0] >= 2).astype(int)
             + (hand[8] >= 2).astype(int)
@@ -67,7 +67,7 @@ class Shanten:
         return 14 - n_kind - (n_pair > 0)
 
     @staticmethod
-    def normal(handArray):
+    def normal(hand: jax.Array):
         code = jax.vmap(
             lambda suit: jax.lax.cond(
                 suit == 3,
@@ -96,7 +96,7 @@ class Shanten:
         )
 
     @staticmethod
-    def _normal(codeArray, n_set, head_suit) -> int:
+    def _normal(code: jax.Array, n_set, head_suit) -> int:
         cost = Shanten.CACHE[code[head_suit]][4]
         idx = jnp.full(4, 0).at[head_suit].set(5)
         cost, idx = jax.lax.fori_loop(
@@ -108,7 +108,7 @@ class Shanten:
         return cost
 
     @staticmethod
-    def _update(codeArray, cost: int, idxArray):
+    def _update(code: jax.Array, cost: int, idx: jax.Array):
         i = jnp.argmin(Shanten.CACHE[code][[0, 1, 2, 3], idx])
         cost += Shanten.CACHE[code][i][idx[i]]
         idx = idx.at[i].set(idx[i] + 1)

@@ -24,15 +24,15 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_playerArray = jnp.int32(0)
-    observationArray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
-    rewardsArray = jnp.float32([0.0, 0.0])
-    terminatedArray = FALSE
-    truncatedArray = FALSE
-    legal_action_maskArray = jnp.ones(64 + 1, dtype=jnp.bool_)
-    _step_countArray = jnp.int32(0)
+    current_player: jax.Array = jnp.int32(0)
+    observation: jax.Array = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
+    rewards: jax.Array = jnp.float32([0.0, 0.0])
+    terminated: jax.Array = FALSE
+    truncated: jax.Array = FALSE
+    legal_action_mask: jax.Array = jnp.ones(64 + 1, dtype=jnp.bool_)
+    _step_count: jax.Array = jnp.int32(0)
     # --- Othello specific ---
-    _turnArray = jnp.int32(0)
+    _turn: jax.Array = jnp.int32(0)
     # 8x8 board
     # [[ 0,  1,  2,  3,  4,  5,  6,  7],
     #  [ 8,  9, 10, 11, 12, 13, 14, 15],
@@ -42,8 +42,8 @@ class State(core.State):
     #  [40, 41, 42, 43, 44, 45, 46, 47],
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
-    _boardArray = jnp.zeros(64, jnp.int32)  # -1(opp), 0(empty), 1(self)
-    _passedArray = FALSE
+    _board: jax.Array = jnp.zeros(64, jnp.int32)  # -1(opp), 0(empty), 1(self)
+    _passed: jax.Array = FALSE
 
     @property
     def env_id(self) -> core.EnvId:
@@ -54,15 +54,15 @@ class Othello(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, keyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, actionArray, key) -> State:
+    def _step(self, state: core.State, action: jax.Array, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_idArray) -> jax.Array:
+    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -102,7 +102,7 @@ UD_MASK = jnp.array([
 SIDE_MASK = LR_MASK & UD_MASK
 
 
-def _init(rngArray) -> State:
+def _init(rng: jax.Array) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(
         current_player=current_player,

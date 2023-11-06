@@ -66,13 +66,13 @@ class Yaku:
 
     @staticmethod
     def score(
-        handArray,
-        meldsArray,
-        n_meldArray,
-        lastArray,
-        riichiArray,
-        is_ronArray,
-        doraArray,
+        hand: jax.Array,
+        melds: jax.Array,
+        n_meld: jax.Array,
+        last: jax.Array,
+        riichi: jax.Array,
+        is_ron: jax.Array,
+        dora: jax.Array,
     ) -> int:
         """handはlast_tileを加えたもの"""
         yaku, fan, fu = Yaku.judge(
@@ -136,7 +136,7 @@ class Yaku:
         return Yaku.CACHE[code] >> 26
 
     @staticmethod
-    def is_pure_straight(chowArray) -> jax.Array:
+    def is_pure_straight(chow: jax.Array) -> jax.Array:
         return (
             ((chow & 0b1001001) == 0b1001001)
             | ((chow >> 9 & 0b1001001) == 0b1001001)
@@ -144,7 +144,7 @@ class Yaku:
         ) == 1
 
     @staticmethod
-    def is_triple_chow(chowArray) -> jax.Array:
+    def is_triple_chow(chow: jax.Array) -> jax.Array:
         return (
             ((chow & 0b1000000001000000001) == 0b1000000001000000001)
             | ((chow >> 1 & 0b1000000001000000001) == 0b1000000001000000001)
@@ -156,7 +156,7 @@ class Yaku:
         ) == 1
 
     @staticmethod
-    def is_triple_pung(pungArray) -> jax.Array:
+    def is_triple_pung(pung: jax.Array) -> jax.Array:
         return (
             ((pung & 0b1000000001000000001) == 0b1000000001000000001)
             | ((pung >> 1 & 0b1000000001000000001) == 0b1000000001000000001)
@@ -171,14 +171,14 @@ class Yaku:
 
     @staticmethod
     def update(
-        is_pinfuArray,
-        is_outsideArray,
-        n_double_chowArray,
-        all_chowArray,
-        all_pungArray,
-        n_concealed_pungArray,
-        nine_gatesArray,
-        fuArray,
+        is_pinfu: jax.Array,
+        is_outside: jax.Array,
+        n_double_chow: jax.Array,
+        all_chow: jax.Array,
+        all_pung: jax.Array,
+        n_concealed_pung: jax.Array,
+        nine_gates: jax.Array,
+        fu: jax.Array,
         code: int,
         suit: int,
         last: int,
@@ -251,9 +251,9 @@ class Yaku:
 
     @staticmethod
     def judge(
-        handArray,
-        meldsArray,
-        n_meldArray,
+        hand: jax.Array,
+        melds: jax.Array,
+        n_meld: jax.Array,
         last,
         riichi,
         is_ron,
@@ -555,7 +555,7 @@ class Yaku:
         )
 
     @staticmethod
-    def flatten(handArray, meldsArray, n_meld) -> jax.Array:
+    def flatten(hand: jax.Array, melds: jax.Array, n_meld) -> jax.Array:
         return jax.lax.fori_loop(
             jnp.int8(0),
             n_meld,
@@ -564,7 +564,7 @@ class Yaku:
         )
 
     @staticmethod
-    def _flatten(handArray, meld) -> jax.Array:
+    def _flatten(hand: jax.Array, meld) -> jax.Array:
         target, action = Meld.target(meld), Meld.action(meld)
         return jax.lax.switch(
             action - Action.PON + 1,
