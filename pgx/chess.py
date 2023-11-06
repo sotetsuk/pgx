@@ -753,15 +753,17 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= ZOBRIST_BOARD[
         to, destination_piece
     ]  # Remove the piece at target pos (including empty)
-    
+
     # promotion to queen
     piece = state._board[action.from_]
     source_piece = jax.lax.select(
-        (piece == PAWN) & (action.from_ % 8 == 6) & (action.underpromotion < 0),
+        (piece == PAWN)
+        & (action.from_ % 8 == 6)
+        & (action.underpromotion < 0),
         jax.lax.select(state._turn == 0, QUEEN + 6, (QUEEN * -1) + 6),
         source_piece,
     )
-    
+
     # underpromotion
     source_piece = jax.lax.select(
         action.underpromotion >= 0,
@@ -775,7 +777,7 @@ def _update_zobrist_hash(state: State, action: Action):
 
     to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
     hash_ ^= ZOBRIST_BOARD[to, source_piece]  # Put the piece to the target pos
-    
+
     # en_passant
     is_en_passant = (
         (state._en_passant >= 0)
@@ -783,11 +785,19 @@ def _update_zobrist_hash(state: State, action: Action):
         & (state._en_passant == action.to)
     )
     removed_pawn_pos = action.to - 1
-    removed_pawn_pos = jax.lax.select(state._turn == 0, removed_pawn_pos, _flip_pos(removed_pawn_pos))
+    removed_pawn_pos = jax.lax.select(
+        state._turn == 0, removed_pawn_pos, _flip_pos(removed_pawn_pos)
+    )
     opp_pawn = jax.lax.select(state._turn == 0, (PAWN * -1) + 6, PAWN + 6)
-    hash_ ^= jax.lax.select(is_en_passant, ZOBRIST_BOARD[removed_pawn_pos, opp_pawn], jnp.uint32([0, 0]))  # Remove the pawn
-    hash_ ^= jax.lax.select(is_en_passant, ZOBRIST_BOARD[removed_pawn_pos, 6], jnp.uint32([0, 0]))  # empty
- 
+    hash_ ^= jax.lax.select(
+        is_en_passant,
+        ZOBRIST_BOARD[removed_pawn_pos, opp_pawn],
+        jnp.uint32([0, 0]),
+    )  # Remove the pawn
+    hash_ ^= jax.lax.select(
+        is_en_passant, ZOBRIST_BOARD[removed_pawn_pos, 6], jnp.uint32([0, 0])
+    )  # empty
+
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _zobrist_hash=hash_,
