@@ -725,6 +725,11 @@ def test_buggy_samples():
     expected_legal_actions = [16, 30, 162, 1212, 1225, 1269, 1270, 1271, 1272, 1284, 1297, 1298, 1299, 1942, 1943, 1956, 2498, 2948, 2949, 3131, 3132, 3133, 3134, 3135, 3136, 3138, 3534, 3548, 3593, 3594, 4250]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
+    # wrong zobrist hash when a pawn is removed by en passant
+    state = State._from_fen("1nbqkb1r/rp1p1pp1/8/p1pPp3/4P1n1/5Pp1/PPPBK1PP/RN1Q1B1R w k e6 0 11")
+    state = step(state, jnp.int32(2088))
+    assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
