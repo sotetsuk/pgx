@@ -23,6 +23,7 @@ import numpy as np
 import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.utils import _download
+from pgx.types import Array, PRNGKey
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)

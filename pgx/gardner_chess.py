@@ -27,6 +27,7 @@ from pgx._src.gardner_chess_utils import (  # type: ignore
     ZOBRIST_SIDE,
 )
 from pgx._src.struct import dataclass
+from pgx.types import Array, PRNGKey
 
 MAX_TERMINATION_STEPS = 256
 
