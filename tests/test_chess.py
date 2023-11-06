@@ -730,7 +730,6 @@ def test_buggy_samples():
     state = step(state, jnp.int32(2088))
     assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
 
-    
     # wrong zobrist hash due to queen promotion
     state = State._from_fen("B7/8/8/1P6/1k3K2/5P2/6p1/1B6 b - - 1 102")
     state = step(state, jnp.int32(2526))
