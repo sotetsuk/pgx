@@ -219,4 +219,4 @@ def test_api():
     import pgx
 
     env = pgx.make("leduc_holdem")
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 10)

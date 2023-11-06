@@ -1,4 +1,4 @@
-from pgx._src.api_test import v1_api_test
+from pgx._src.api_test import api_test
 from pgx._src.baseline import BaselineModelId, make_baseline_model
 from pgx._src.visualizer import (
     save_svg,
@@ -24,5 +24,5 @@ __all__ = [
     "BaselineModelId",
     "make_baseline_model",
     # api tests
-    "v1_api_test",
+    "api_test",
 ]

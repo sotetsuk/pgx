@@ -25,7 +25,7 @@ from pgx.experimental.utils import act_randomly
 act_randomly = jax.jit(act_randomly)
 
 
-def v1_api_test(env: Env, num: int = 100):
+def api_test(env: Env, num: int = 100):
     api_test_single(env, num)
     api_test_batch(env, num)
 

@@ -2231,7 +2231,7 @@ def test_api():
     import pgx
 
     env = pgx.bridge_bidding.BridgeBidding(DDS_HASH_TABLE_PATH)
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 10)
 
 
 def to_value(sample: list) -> jnp.ndarray:

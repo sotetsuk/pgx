@@ -945,4 +945,4 @@ def test_buggy_samples():
 def test_api():
     import pgx
     env = pgx.make("gardner_chess")
-    pgx.v1_api_test(env, 3)
+    pgx.api_test(env, 3)
