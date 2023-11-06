@@ -24,7 +24,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((6, 7, 2), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -32,7 +32,7 @@ class State(v1.State):
     legal_action_mask: jnp.ndarray = jnp.ones(7, dtype=jnp.bool_)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Connect Four specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     # 6x7 board
     # [[ 0,  1,  2,  3,  4,  5,  6],
     #  [ 7,  8,  9, 10, 11, 12, 13],
@@ -40,7 +40,7 @@ class State(v1.State):
     #  [21, 22, 23, 24, 25, 26, 27],
     #  [28, 29, 30, 31, 32, 33, 34],
     #  [35, 36, 37, 38, 39, 40, 41]]
-    _board: jnp.ndarray = -jnp.ones(42, jnp.int8)  # -1 (empty), 0, 1
+    _board: jnp.ndarray = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
     _blank_row: jnp.ndarray = jnp.full(7, 5)
 
     @property
@@ -99,14 +99,14 @@ def _make_win_cache():
         for j in range(3, 7):
             a = i * 7 + j
             idx.append([a, a + 6, a + 12, a + 18])
-    return jnp.int8(idx)
+    return jnp.int32(idx)
 
 
 IDX = _make_win_cache()
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    current_player = jnp.int8(jax.random.bernoulli(rng))
+    current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 
@@ -141,7 +141,7 @@ def _win_check(board, turn) -> jnp.ndarray:
 
 
 def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
-    turns = jnp.int8([state._turn, 1 - state._turn])
+    turns = jnp.int32([state._turn, 1 - state._turn])
     turns = jax.lax.cond(
         player_id == state.current_player,
         lambda: turns,

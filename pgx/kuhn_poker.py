@@ -20,15 +20,15 @@ from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-CALL = jnp.int8(0)
-BET = jnp.int8(1)
-FOLD = jnp.int8(2)
-CHECK = jnp.int8(3)
+CALL = jnp.int32(0)
+BET = jnp.int32(1)
+FOLD = jnp.int32(2)
+CHECK = jnp.int32(3)
 
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -36,11 +36,11 @@ class State(v1.State):
     legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Kuhn poker specific ---
-    _cards: jnp.ndarray = jnp.int8([-1, -1])
+    _cards: jnp.ndarray = jnp.int32([-1, -1])
     # [(player 0),(player 1)]
-    _last_action: jnp.ndarray = jnp.int8(-1)
+    _last_action: jnp.ndarray = jnp.int32(-1)
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
-    _pot: jnp.ndarray = jnp.int8([0, 0])
+    _pot: jnp.ndarray = jnp.int32([0, 0])
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -78,9 +78,9 @@ class KuhnPoker(v1.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
-    current_player = jnp.int8(jax.random.bernoulli(rng1))
+    current_player = jnp.int32(jax.random.bernoulli(rng1))
     init_card = jax.random.choice(
-        rng2, jnp.int8([[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]])
+        rng2, jnp.int32([[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]])
     )
     return State(  # type:ignore
         current_player=current_player,
@@ -90,7 +90,7 @@ def _init(rng: jax.random.KeyArray) -> State:
 
 
 def _step(state: State, action):
-    action = jnp.int8(action)
+    action = jnp.int32(action)
     pot = jax.lax.cond(
         (action == BET) | (action == CALL),
         lambda: state._pot.at[state.current_player].add(1),

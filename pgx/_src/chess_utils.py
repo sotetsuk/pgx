@@ -2,8 +2,8 @@
 import jax.numpy as jnp
 import jax.random
 
-TO_MAP = -jnp.ones((64, 73), dtype=jnp.int8)
-PLANE_MAP = -jnp.ones((64, 64), dtype=jnp.int8)  # ignores underpromotion
+TO_MAP = -jnp.ones((64, 73), dtype=jnp.int32)
+PLANE_MAP = -jnp.ones((64, 64), dtype=jnp.int32)  # ignores underpromotion
 # underpromotiona
 for from_ in range(64):
     if (from_ % 8) not in (1, 6):
@@ -18,7 +18,7 @@ for from_ in range(64):
             # black
             # 2  6 14 22 30 38 46 54 62
             # 1  7 15 23 31 39 47 55 63
-            to = from_ + jnp.int8([+1, +9, -7])[dir_]
+            to = from_ + jnp.int32([+1, +9, -7])[dir_]
         if not (0 <= to < 64):
             continue
         TO_MAP = TO_MAP.at[from_, plane].set(to)
@@ -59,12 +59,12 @@ for from_ in range(64):
         c = c + dc[plane - 9]
         if r < 0 or r >= 8 or c < 0 or c >= 8:
             continue
-        to = jnp.int8(c * 8 + r)
+        to = jnp.int32(c * 8 + r)
         TO_MAP = TO_MAP.at[from_, plane].set(to)
-        PLANE_MAP = PLANE_MAP.at[from_, to].set(jnp.int8(plane))
+        PLANE_MAP = PLANE_MAP.at[from_, to].set(jnp.int32(plane))
 
 
-CAN_MOVE = -jnp.ones((7, 64, 27), jnp.int8)
+CAN_MOVE = -jnp.ones((7, 64, 27), jnp.int32)
 # usage: CAN_MOVE[piece, from_x, from_y]
 # CAN_MOVE[0, :, :] are all -1
 # Note that the board is not symmetric about the center (different from shogi)
@@ -87,7 +87,9 @@ for from_ in range(64):
         ):
             legal_dst.append(to)
     assert len(legal_dst) <= 8
-    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -99,7 +101,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 2 and jnp.abs(c1 - c0) == 1:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # BISHOP
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -111,7 +115,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # ROOK
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -123,7 +129,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # QUEEN
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -137,7 +145,9 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 # KING
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -154,11 +164,13 @@ for from_ in range(64):
     # if from_ == 39:
     #     legal_dst += [23, 55]
     assert len(legal_dst) <= 8
-    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(jnp.int8(legal_dst))
+    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(
+        jnp.int32(legal_dst)
+    )
 
 assert (CAN_MOVE[0, :, :] == -1).all()
 
-CAN_MOVE_ANY = -jnp.ones((64, 35), jnp.int8)
+CAN_MOVE_ANY = -jnp.ones((64, 35), jnp.int32)
 for from_ in range(64):
     legal_dst = []
     for i in range(27):
@@ -170,12 +182,12 @@ for from_ in range(64):
         if to >= 0:
             legal_dst.append(to)
     CAN_MOVE_ANY = CAN_MOVE_ANY.at[from_, : len(legal_dst)].set(
-        jnp.int8(legal_dst)
+        jnp.int32(legal_dst)
     )
 
 
 # Between
-BETWEEN = -jnp.ones((64, 64, 6), dtype=jnp.int8)
+BETWEEN = -jnp.ones((64, 64, 6), dtype=jnp.int32)
 for from_ in range(64):
     for to in range(64):
         r0, c0 = from_ % 8, from_ // 8
@@ -197,7 +209,7 @@ for from_ in range(64):
                 break
             bet.append(c * 8 + r)
         assert len(bet) <= 6
-        BETWEEN = BETWEEN.at[from_, to, : len(bet)].set(jnp.int8(bet))
+        BETWEEN = BETWEEN.at[from_, to, : len(bet)].set(jnp.int32(bet))
 
 INIT_LEGAL_ACTION_MASK = jnp.zeros(64 * 73, dtype=jnp.bool_)
 # fmt: off
@@ -208,7 +220,7 @@ for ix in ixs:
 assert INIT_LEGAL_ACTION_MASK.shape == (64 * 73,)
 assert INIT_LEGAL_ACTION_MASK.sum() == 20
 
-INIT_POSSIBLE_PIECE_POSITIONS = jnp.int8(
+INIT_POSSIBLE_PIECE_POSITIONS = jnp.int32(
     [
         [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
         [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],

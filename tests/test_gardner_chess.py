@@ -32,7 +32,7 @@ def test_zobrist_hash():
     prev_hash = state._zobrist_hash
     while not state.terminated:
         key, subkey = jax.random.split(key)
-        action = act_randomly(subkey, state)
+        action = act_randomly(subkey, state.legal_action_mask)
         state = step(state, action)
         assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
         assert not (state._zobrist_hash == prev_hash).all()

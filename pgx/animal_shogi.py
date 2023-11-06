@@ -23,19 +23,19 @@ TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
 
-EMPTY = jnp.int8(-1)
-PAWN = jnp.int8(0)
-BISHOP = jnp.int8(1)
-ROOK = jnp.int8(2)
-KING = jnp.int8(3)
-GOLD = jnp.int8(4)
+EMPTY = jnp.int32(-1)
+PAWN = jnp.int32(0)
+BISHOP = jnp.int32(1)
+ROOK = jnp.int32(2)
+KING = jnp.int32(3)
+GOLD = jnp.int32(4)
 #  5: OPP_PAWN
 #  6: OPP_ROOK
 #  7: OPP_BISHOP
 #  8: OPP_KING
 #  9: OPP_GOLD
 # fmt: off
-INIT_BOARD = jnp.int8(
+INIT_BOARD = jnp.int32(
     [6, -1, -1, 2,
      8, 5, 0, 3,
      7, -1, -1, 1]
@@ -69,7 +69,7 @@ MAX_TERMINATION_STEPS = 256
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
@@ -77,9 +77,9 @@ class State(v1.State):
     observation: jnp.ndarray = jnp.zeros((4, 3, 22), dtype=jnp.bool_)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Animal Shogi specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     _board: jnp.ndarray = INIT_BOARD  # (12,)
-    _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int8)
+    _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int32)
     _zobrist_hash: jnp.ndarray = jnp.uint32([233882788, 593924309])
     _hash_history: jnp.ndarray = (
         jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
@@ -87,10 +87,10 @@ class State(v1.State):
         .set(jnp.uint32([233882788, 593924309]))
     )
     _board_history: jnp.ndarray = (
-        (-jnp.ones((8, 12), dtype=jnp.int8)).at[0, :].set(INIT_BOARD)
+        (-jnp.ones((8, 12), dtype=jnp.int32)).at[0, :].set(INIT_BOARD)
     )
-    _hand_history: jnp.ndarray = jnp.zeros((8, 6), dtype=jnp.int8)
-    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int8)
+    _hand_history: jnp.ndarray = jnp.zeros((8, 6), dtype=jnp.int32)
+    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int32)
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -100,9 +100,9 @@ class State(v1.State):
 @dataclass
 class Action:
     is_drop: jnp.ndarray = FALSE
-    from_: jnp.ndarray = jnp.int8(-1)
-    to: jnp.ndarray = jnp.int8(-1)
-    drop_piece: jnp.ndarray = jnp.int8(-1)
+    from_: jnp.ndarray = jnp.int32(-1)
+    to: jnp.ndarray = jnp.int32(-1)
+    drop_piece: jnp.ndarray = jnp.int32(-1)
 
     @staticmethod
     def _from_label(a: jnp.ndarray):
@@ -110,7 +110,7 @@ class Action:
         # 132 labels =
         #   [Move] 8 (direction) * 12 (from_) +
         #   [Drop] 3 (piece_type) * 12 (to)
-        x, sq = jnp.int8(a // 12), jnp.int8(a % 12)
+        x, sq = jnp.int32(a // 12), jnp.int32(a % 12)
         is_drop = 8 <= x
         return jax.lax.cond(
             is_drop,
@@ -124,7 +124,7 @@ class AnimalShogi(v1.Env):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        current_player = jnp.int8(jax.random.bernoulli(key))
+        current_player = jnp.int32(jax.random.bernoulli(key))
         state = State(current_player=current_player)  # type: ignore
         state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
         return state
@@ -162,7 +162,7 @@ def _step(state: State, action: jnp.ndarray):
     a = Action._from_label(action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
-    is_try = (state._board[jnp.int8([0, 4, 8])] == KING).any()
+    is_try = (state._board[jnp.int32([0, 4, 8])] == KING).any()
 
     # update board/hand history
     board_history = jnp.roll(state._board_history, 8)
@@ -181,7 +181,7 @@ def _step(state: State, action: jnp.ndarray):
 
     rep = (state._hash_history == state._zobrist_hash).any(
         axis=1
-    ).sum().astype(jnp.int8) - 1
+    ).sum().astype(jnp.int32) - 1
     is_rep_draw = rep >= 2
     legal_action_mask = _legal_action_mask(state)  # TODO: fix me
     terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
@@ -403,12 +403,12 @@ def _to(from_, dir):
     # 6 x 1
     # 7 4 2
     x, y = from_ // 4, from_ % 4
-    dx = jnp.int8([-1, -1, -1, 0, 0, 1, 1, 1])
-    dy = jnp.int8([-1, 0, 1, -1, 1, -1, 0, 1])
+    dx = jnp.int32([-1, -1, -1, 0, 0, 1, 1, 1])
+    dy = jnp.int32([-1, 0, 1, -1, 1, -1, 0, 1])
     new_x = x + dx[dir]
     new_y = y + dy[dir]
     return jax.lax.select(
         (new_x < 0) | (new_x >= 3) | (new_y < 0) | (new_y >= 4),
-        jnp.int8(-1),
+        jnp.int32(-1),
         new_x * 4 + new_y,
     )

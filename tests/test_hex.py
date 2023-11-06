@@ -28,7 +28,7 @@ def test_merge():
     state = step(state, 2)
     state = step(state, 22)
     # fmt: off
-    expected = jnp.int16([
+    expected = jnp.int32([
           3,   3,   3,   3,   0,   0,   0,   0,   0,   0,   0,
         -23, -23, -23,   0,   0,   0,   0,   0,   0,   0,   0,
         -23,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
@@ -161,21 +161,6 @@ def test_observe():
         == observe(state, 1)
     ).all()
     assert (state.observation[:, :, -1] == 0).all()
-
-
-def test_random_play():
-    key = jax.random.PRNGKey(0)
-    done = jnp.bool_(False)
-    key, sub_key = jax.random.split(key)
-    state = init(sub_key)
-    rewards = jnp.int16([0.0, 0.0])
-    while not done:
-        legal_actions = jnp.where(state.legal_action_mask)[0]
-        key, sub_key = jax.random.split(key)
-        action = jax.random.choice(sub_key, legal_actions)
-        state = step(state, jnp.int16(action))
-        done = state.terminated
-        rewards += state.rewards
 
 
 def test_api():

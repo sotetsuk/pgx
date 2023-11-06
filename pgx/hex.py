@@ -26,7 +26,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((11, 11, 2), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -36,9 +36,9 @@ class State(v1.State):
     )
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Hex specific ---
-    _size: jnp.ndarray = jnp.int8(11)
+    _size: jnp.ndarray = jnp.int32(11)
     # 0(black), 1(white)
-    _turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     # 11x11 board
     # [[  0,  1,  2,  ...,  8,  9, 10],
     #  [ 11,  12, 13, ..., 19, 20, 21],
@@ -91,7 +91,7 @@ class Hex(v1.Env):
 
 
 def _init(rng: jax.random.KeyArray, size: int) -> State:
-    current_player = jnp.int8(jax.random.bernoulli(rng))
+    current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(_size=size, current_player=current_player)  # type:ignore
 
 

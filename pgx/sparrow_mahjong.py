@@ -57,7 +57,7 @@ MAX_SCORE = (
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((15, 11), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.zeros(3, dtype=jnp.float32)
     terminated: jnp.ndarray = FALSE
@@ -84,7 +84,7 @@ class State(v1.State):
     )  # tile id (0~43) is set
     _draw_ix: jnp.ndarray = jnp.int32(N_PLAYER * 5)
     _shuffled_players: jnp.ndarray = jnp.zeros(
-        N_PLAYER, dtype=jnp.int8
+        N_PLAYER, dtype=jnp.int32
     )  # 0: dealer, ...
     _dora: jnp.ndarray = jnp.int32(0)  # tile type (0~10) is set
     _scores: jnp.ndarray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
@@ -172,7 +172,7 @@ class SparrowMahjong(v1.Env):
 def _init(rng: jax.random.KeyArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
-    shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int8)
+    shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int32)
     shuffled_players = jax.random.permutation(
         key1, shuffled_players, independent=True
     )

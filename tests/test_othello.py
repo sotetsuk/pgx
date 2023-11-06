@@ -27,7 +27,7 @@ def test_step():
     state = step(state, 34)
     state = step(state, 17)
     # fmt: off
-    expected = jnp.int8([
+    expected = jnp.int32([
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0,
         0, -1, -1, -1, -1, -1, 0, 0,
@@ -121,21 +121,6 @@ def test_observe():
     assert obs[4, 4, 1]
     assert obs[4, 5, 1]
     assert not obs[0, 0, 0]
-
-
-def test_random_play():
-    key = jax.random.PRNGKey(0)
-    done = jnp.bool_(False)
-    key, sub_key = jax.random.split(key)
-    state = init(sub_key)
-    rewards = jnp.int16([0.0, 0.0])
-    while not done:
-        legal_actions = jnp.where(state.legal_action_mask)[0]
-        key, sub_key = jax.random.split(key)
-        action = jax.random.choice(sub_key, legal_actions)
-        state = step(state, jnp.int16(action))
-        done = state.terminated
-        rewards += state.rewards
 
 
 def test_api():

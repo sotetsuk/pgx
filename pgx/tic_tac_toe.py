@@ -24,7 +24,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -32,11 +32,11 @@ class State(v1.State):
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Tic-tac-toe specific ---
-    _turn: jnp.ndarray = jnp.int8(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
-    _board: jnp.ndarray = -jnp.ones(9, jnp.int8)  # -1 (empty), 0, 1
+    _board: jnp.ndarray = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
 
     @property
     def env_id(self) -> v1.EnvId:
@@ -73,7 +73,7 @@ class TicTacToe(v1.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    current_player = jnp.int8(jax.random.bernoulli(rng))
+    current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 
@@ -95,7 +95,7 @@ def _step(state: State, action: jnp.ndarray) -> State:
 
 
 def _win_check(board, turn) -> jnp.ndarray:
-    idx = jnp.int8([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
+    idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
     return ((board[idx] == turn).all(axis=1)).any()
 
 
@@ -107,8 +107,8 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     # flip if player_id is opposite
     x = jax.lax.cond(
         state.current_player == player_id,
-        lambda: jnp.int8([state._turn, 1 - state._turn]),
-        lambda: jnp.int8([1 - state._turn, state._turn]),
+        lambda: jnp.int32([state._turn, 1 - state._turn]),
+        lambda: jnp.int32([1 - state._turn, state._turn]),
     )
 
     return jnp.stack(plane(x), -1)
