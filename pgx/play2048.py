@@ -90,7 +90,10 @@ def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng)
     board = _add_random_num(jnp.zeros((4, 4), jnp.int32), rng1)
     board = _add_random_num(board, rng2)
-    return State(_board=board.ravel())  # type:ignore
+    return State(
+        _board=board.ravel(),
+        legal_action_mask=_legal_action_mask(board.reshape((4, 4)))
+    )  # type:ignore
 
 
 def _step(state: State, action):
@@ -119,23 +122,26 @@ def _step(state: State, action):
     _rng_key, sub_key = jax.random.split(state._rng_key)
     board_2d = _add_random_num(board_2d, sub_key)
 
-    legal_action = jax.vmap(_can_slide_left)(
-        jnp.array(
-            [
-                board_2d,
-                jnp.rot90(board_2d, 1),
-                jnp.rot90(board_2d, 2),
-                jnp.rot90(board_2d, 3),
-            ]
-        )
-    )
-
+    legal_action_mask = _legal_action_mask(board_2d)
     return state.replace(  # type:ignore
         _rng_key=_rng_key,
         _board=board_2d.ravel(),
         rewards=jnp.float32([reward.sum()]),
-        legal_action_mask=legal_action.ravel(),
-        terminated=~legal_action.any(),
+        legal_action_mask=legal_action_mask,
+        terminated=~legal_action_mask.any(),
+    )
+
+
+def _legal_action_mask(board_2d):
+    return jax.vmap(_can_slide_left)(
+            jnp.array(
+                [
+                    board_2d,
+                    jnp.rot90(board_2d, 1),
+                    jnp.rot90(board_2d, 2),
+                    jnp.rot90(board_2d, 3),
+                ]
+            )
     )
 
 
