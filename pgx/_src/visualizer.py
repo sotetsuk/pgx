@@ -723,7 +723,7 @@ def save_svg_animation(
                 [
                     e
                     for e in dwg.elements
-                    if isinstance(e, svgwrite.container.Group)
+                    if type(e) is svgwrite.container.Group
                 ]
             )
             == 1
