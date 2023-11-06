@@ -25,14 +25,14 @@ def test_step():
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(
-        state._board == jnp.int8([-1, -1, -1, -1, -1, -1, -1, -1, -1])
+        state._board == jnp.int32([-1, -1, -1, -1, -1, -1, -1, -1, -1])
     )
     assert not state.terminated
     # -1 -1 -1
     # -1 -1 -1
     # -1 -1 -1
 
-    action = jnp.int8(4)
+    action = jnp.int32(4)
     state = step(state, action)
     assert state.current_player == 0
     assert state._turn == 1
@@ -41,7 +41,7 @@ def test_step():
         == jnp.array([1, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(
-        state._board == jnp.int8([-1, -1, -1, -1, 0, -1, -1, -1, -1])
+        state._board == jnp.int32([-1, -1, -1, -1, 0, -1, -1, -1, -1])
     )
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
@@ -49,7 +49,7 @@ def test_step():
     # -1  0 -1
     # -1 -1 -1
 
-    action = jnp.int8(0)
+    action = jnp.int32(0)
     state = step(state, action)
     assert state.current_player == 1
     assert state._turn == 0
@@ -57,14 +57,14 @@ def test_step():
         state.legal_action_mask
         == jnp.array([0, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._board == jnp.int8([1, -1, -1, -1, 0, -1, -1, -1, -1]))
+    assert jnp.all(state._board == jnp.int32([1, -1, -1, -1, 0, -1, -1, -1, -1]))
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1 -1 -1
     # -1  0 -1
     # -1 -1 -1
 
-    action = jnp.int8(1)
+    action = jnp.int32(1)
     state = step(state, action)
     assert state.current_player == 0
     assert state._turn == 1
@@ -72,14 +72,14 @@ def test_step():
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, -1]))
+    assert jnp.all(state._board == jnp.int32([1, 0, -1, -1, 0, -1, -1, -1, -1]))
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1  0 -1
     # -1  0 -1
     # -1 -1 -1
 
-    action = jnp.int8(8)
+    action = jnp.int32(8)
     state = step(state, action)
     assert state.current_player == 1
     assert state._turn == 0
@@ -87,14 +87,14 @@ def test_step():
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 0], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._board == jnp.int8([1, 0, -1, -1, 0, -1, -1, -1, 1]))
+    assert jnp.all(state._board == jnp.int32([1, 0, -1, -1, 0, -1, -1, -1, 1]))
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1  0 -1
     # -1  0 -1
     # -1 -1  1
 
-    action = jnp.int8(7)
+    action = jnp.int32(7)
     state = step(state, action)
     assert state.current_player == 0
     assert state._turn == 1
@@ -102,8 +102,8 @@ def test_step():
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._board == jnp.int8([1, 0, -1, -1, 0, -1, -1, 0, 1]))
-    assert jnp.all(state.rewards == jnp.int16([-1, 1]))  # fmt: ignore
+    assert jnp.all(state._board == jnp.int32([1, 0, -1, -1, 0, -1, -1, 0, 1]))
+    assert jnp.all(state.rewards == jnp.int32([-1, 1]))  # fmt: ignore
     assert state.terminated
     #  1  0 -1
     # -1  0 -1
@@ -117,7 +117,7 @@ def test_random_play():
         done = jnp.bool_(False)
         key, sub_key = jax.random.split(key)
         state = init(sub_key)
-        rewards = jnp.int16([0.0, 0.0])
+        rewards = jnp.int32([0.0, 0.0])
         while not done:
             assert jnp.all(rewards == 0), state._board
             legal_actions = jnp.where(state.legal_action_mask)[0]
@@ -129,48 +129,48 @@ def test_random_play():
 
 
 def test_win_check():
-    board = jnp.int8([-1, -1, -1, -1, -1, -1, -1, -1, -1])
-    turn = jnp.int8(1)
+    board = jnp.int32([-1, -1, -1, -1, -1, -1, -1, -1, -1])
+    turn = jnp.int32(1)
     assert not _win_check(board, turn)
 
-    board = jnp.int8([1, -1, -1, -1, 1, -1, 0, -1, 0])
-    turn = jnp.int8(1)
+    board = jnp.int32([1, -1, -1, -1, 1, -1, 0, -1, 0])
+    turn = jnp.int32(1)
     assert not _win_check(board, turn)
 
-    board = jnp.int8([1, -1, -1, -1, 1, -1, -1, -1, 1])
-    turn = jnp.int8(1)
+    board = jnp.int32([1, -1, -1, -1, 1, -1, -1, -1, 1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([-1, -1, 1, -1, 1, -1, 1, -1, -1])
-    turn = jnp.int8(1)
+    board = jnp.int32([-1, -1, 1, -1, 1, -1, 1, -1, -1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([1, 1, 1, -1, -1, -1, -1, -1, -1])
-    turn = jnp.int8(1)
+    board = jnp.int32([1, 1, 1, -1, -1, -1, -1, -1, -1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([-1, -1, -1, 1, 1, 1, -1, -1, -1])
-    turn = jnp.int8(1)
+    board = jnp.int32([-1, -1, -1, 1, 1, 1, -1, -1, -1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([-1, -1, -1, -1, -1, -1, 1, 1, 1])
-    turn = jnp.int8(1)
+    board = jnp.int32([-1, -1, -1, -1, -1, -1, 1, 1, 1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([1, -1, -1, 1, -1, -1, 1, -1, -1])
-    turn = jnp.int8(1)
+    board = jnp.int32([1, -1, -1, 1, -1, -1, 1, -1, -1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([-1, 1, -1, -1, 1, -1, -1, 1, -1])
-    turn = jnp.int8(1)
+    board = jnp.int32([-1, 1, -1, -1, 1, -1, -1, 1, -1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([-1, -1, 1, -1, -1, 1, -1, -1, 1])
-    turn = jnp.int8(1)
+    board = jnp.int32([-1, -1, 1, -1, -1, 1, -1, -1, 1])
+    turn = jnp.int32(1)
     assert _win_check(board, turn)
 
-    board = jnp.int8([-1, 0, -1, -1, 0, -1, -1, 0, -1])
-    turn = jnp.int8(0)
+    board = jnp.int32([-1, 0, -1, -1, 0, -1, -1, 0, -1])
+    turn = jnp.int32(0)
     assert _win_check(board, turn)
 
 
