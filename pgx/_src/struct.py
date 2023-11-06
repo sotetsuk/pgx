@@ -45,6 +45,7 @@ def field(pytree_node=True, **kwargs):
     return dataclasses.field(metadata={"pytree_node": pytree_node}, **kwargs)
 
 
+# flake8: noqa: C901
 @dataclass_transform(field_descriptors=(field,))  # type: ignore[literal-required]
 def dataclass(clz: _T) -> _T:
     """Create a class which can be passed to functional transformations.
