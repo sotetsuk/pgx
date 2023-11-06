@@ -15,7 +15,6 @@ def test_init():
     assert jnp.count_nonzero(state._board == 1) == 2
     key = jax.random.PRNGKey(2)
     state = init(key=key)
-    print(state._board.reshape((4, 4)))
     assert state.legal_action_mask.shape == (4,)
     assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 1])).all()
 
