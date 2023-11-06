@@ -103,7 +103,7 @@ UD_MASK = jnp.array([
 SIDE_MASK = LR_MASK & UD_MASK
 
 
-def _init(rng: Array) -> State:
+def _init(rng: PRNGKey) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(
         current_player=current_player,

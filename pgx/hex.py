@@ -91,7 +91,7 @@ class Hex(core.Env):
         return 2
 
 
-def _init(rng: Array, size: int) -> State:
+def _init(rng: PRNGKey, size: int) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(_size=size, current_player=current_player)  # type:ignore
 

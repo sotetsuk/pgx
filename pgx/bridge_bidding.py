@@ -220,7 +220,7 @@ class BridgeBidding(core.Env):
         return -7600.0
 
 
-def _init_by_key(key: PRNGKey, rng: Array) -> State:
+def _init_by_key(key: PRNGKey, rng: PRNGKey) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
@@ -246,7 +246,7 @@ def _init_by_key(key: PRNGKey, rng: Array) -> State:
     return state
 
 
-def _shuffle_players(rng: Array) -> Array:
+def _shuffle_players(rng: PRNGKey) -> Array:
     """Randomly arranges player IDs in a list in NESW order.
 
     Returns:

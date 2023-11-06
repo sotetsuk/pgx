@@ -83,7 +83,7 @@ class LeducHoldem(core.Env):
         return 2
 
 
-def _init(rng: Array) -> State:
+def _init(rng: PRNGKey) -> State:
     rng1, rng2 = jax.random.split(rng, 2)
     current_player = jnp.int32(jax.random.bernoulli(rng1))
     init_card = jax.random.permutation(

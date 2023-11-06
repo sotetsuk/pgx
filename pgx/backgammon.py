@@ -82,7 +82,7 @@ class Backgammon(core.Env):
         return -3.0
 
 
-def _init(rng: Array) -> State:
+def _init(rng: PRNGKey) -> State:
     rng1, rng2 = jax.random.split(rng, num=2)
     current_player: Array = jax.random.bernoulli(rng1).astype(jnp.int32)
     board: Array = _make_init_board()
@@ -265,7 +265,7 @@ def _change_turn(state: State, key) -> State:
     )
 
 
-def _roll_init_dice(rng: Array) -> Array:
+def _roll_init_dice(rng: PRNGKey) -> Array:
     """
     Roll till the dice are different.
     """
@@ -274,7 +274,7 @@ def _roll_init_dice(rng: Array) -> Array:
     return jax.random.choice(rng, init_dice_pattern)
 
 
-def _roll_dice(rng: Array) -> Array:
+def _roll_dice(rng: PRNGKey) -> Array:
     roll: Array = jax.random.randint(
         rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int32
     )

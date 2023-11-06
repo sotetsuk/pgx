@@ -237,7 +237,7 @@ class Mahjong(core.Env):
         return 4
 
 
-def _init(rng: Array) -> State:
+def _init(rng: PRNGKey) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(rng))
     last_player = jnp.int8(-1)
