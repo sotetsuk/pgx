@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as v1
+import pgx.core as core
 from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -23,7 +23,7 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -39,28 +39,28 @@ class State(v1.State):
     _board: jnp.ndarray = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "tic_tac_toe"
 
 
-class TicTacToe(v1.Env):
+class TicTacToe(core.Env):
     def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "tic_tac_toe"
 
     @property

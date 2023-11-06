@@ -17,7 +17,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-import pgx.core as v1
+import pgx.core as core
 from pgx._src.struct import dataclass
 
 TRUE = jnp.bool_(True)
@@ -25,7 +25,7 @@ FALSE = jnp.bool_(False)
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int32)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
@@ -45,27 +45,27 @@ class State(v1.State):
     _turn: jnp.ndarray = jnp.int32(1)  # black: 0 white:1
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "backgammon"
 
 
-class Backgammon(v1.Env):
+class Backgammon(core.Env):
     def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
         assert isinstance(state, State)
         return _step(state, action, key)
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "backgammon"
 
     @property

@@ -18,7 +18,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-import pgx.core as v1
+import pgx.core as core
 from pgx._src.shogi_utils import (
     AROUND_IX,
     BETWEEN_IX,
@@ -73,7 +73,7 @@ ALL_SQ = jnp.arange(81)
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -91,7 +91,7 @@ class State(v1.State):
     _cache_king: jnp.ndarray = jnp.int32(44)
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "shogi"
 
     @staticmethod
@@ -116,7 +116,7 @@ class State(v1.State):
         return _to_sfen(state)
 
 
-class Shogi(v1.Env):
+class Shogi(core.Env):
     def __init__(self):
         super().__init__()
 
@@ -125,7 +125,7 @@ class Shogi(v1.Env):
         current_player = jnp.int32(jax.random.bernoulli(key))
         return state.replace(current_player=current_player)  # type: ignore
 
-    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
         del key
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
@@ -138,12 +138,12 @@ class Shogi(v1.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "shogi"
 
     @property

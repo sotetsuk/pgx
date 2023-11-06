@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.core as v1
+import pgx.core as core
 from pgx._src.gardner_chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
@@ -77,7 +77,7 @@ INIT_ZOBRIST_HASH = jnp.uint32([2025569903, 1172890342])
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
@@ -115,7 +115,7 @@ class State(v1.State):
         return _to_fen(self)
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "gardner_chess"
 
 
@@ -165,7 +165,7 @@ class Action:
         return jnp.int32(self.from_) * 49 + jnp.int32(plane)
 
 
-class GardnerChess(v1.Env):
+class GardnerChess(core.Env):
     def __init__(self):
         super().__init__()
 
@@ -174,7 +174,7 @@ class GardnerChess(v1.Env):
         state = State(current_player=current_player)  # type: ignore
         return state
 
-    def _step(self, state: v1.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
         del key
         assert isinstance(state, State)
         state = _step(state, action)
@@ -186,12 +186,12 @@ class GardnerChess(v1.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "gardner_chess"
 
     @property
