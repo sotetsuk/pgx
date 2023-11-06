@@ -97,7 +97,6 @@ def test_legal_action():
     assert not state.terminated
 
 
-
 def test_terminated():
     board = jnp.int32([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
     state = State(_board=board)
