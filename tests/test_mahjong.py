@@ -15,6 +15,7 @@ FALSE = jnp.bool_(False)
 env = Mahjong()
 init = jit(env.init)
 step = jit(env.step)
+act_randomly = jit(act_randomly)
 
 
 def visualize(state, fname="tests/assets/mahjong/xxx.svg"):
@@ -362,7 +363,7 @@ def test_random_play():
 
         for _ in range(70):
             rng, subkey = jax.random.split(rng)
-            a = act_randomly(subkey, state)
+            a = act_randomly(subkey, state.legal_action_mask)
             state: State = step(state, a)
 
             assert state._hand[state.current_player].sum() + jnp.count_nonzero(
