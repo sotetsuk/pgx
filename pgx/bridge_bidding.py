@@ -20,7 +20,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-import pgx.v1 as v1
+import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.utils import _download
 
@@ -93,14 +93,13 @@ def download_dds_results(download_dir="dds_results"):
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(-1)
     observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0, 0, 0, 0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     _turn: jnp.ndarray = jnp.int32(0)
     _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
@@ -148,11 +147,11 @@ class State(v1.State):
     _pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "bridge_bidding"
 
 
-class BridgeBidding(v1.Env):
+class BridgeBidding(core.Env):
     def __init__(
         self, dds_results_table_path: str = "dds_results/train_000.npy"
     ):
@@ -191,19 +190,22 @@ class BridgeBidding(v1.Env):
             sys.exit(1)
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        key1, key2, key3 = jax.random.split(key, num=3)
-        return _init_by_key(jax.random.choice(key2, self._lut_keys), key3)
+        key1, key2 = jax.random.split(key, num=2)
+        return _init_by_key(jax.random.choice(key1, self._lut_keys), key2)
 
-    def _step(self, state: v1.State, action: int) -> State:
+    def _step(self, state: core.State, action: int, key) -> State:
+        del key
         assert isinstance(state, State)
         return _step(state, action, self._lut_keys, self._lut_values)
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "bridge_bidding"
 
     @property
@@ -221,13 +223,13 @@ class BridgeBidding(v1.Env):
 
 def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     """Make init state from key"""
-    rng1, rng2, rng3, rng4, rng5 = jax.random.split(rng, num=5)
+    rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
-    vul_NS = jax.random.choice(rng2, jnp.bool_([False, True]))
-    vul_EW = jax.random.choice(rng3, jnp.bool_([False, True]))
-    dealer = jax.random.randint(rng4, (1,), 0, 4, dtype=jnp.int32)[0]
+    vul_NS = jax.random.choice(rng1, jnp.bool_([False, True]))
+    vul_EW = jax.random.choice(rng2, jnp.bool_([False, True]))
+    dealer = jax.random.randint(rng3, (1,), 0, 4, dtype=jnp.int32)[0]
     # shuffled players and arrange in order of NESW
-    shuffled_players = _shuffle_players(rng5)
+    shuffled_players = _shuffle_players(rng4)
     current_player = shuffled_players[dealer]
     legal_actions = jnp.ones(38, dtype=jnp.bool_)
     # 最初はdable, redoubleできない

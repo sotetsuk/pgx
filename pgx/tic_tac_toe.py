@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.v1 as v1
+import pgx.core as core
 from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -23,14 +23,13 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Tic-tac-toe specific ---
     _turn: jnp.ndarray = jnp.int32(0)
@@ -40,27 +39,30 @@ class State(v1.State):
     _board: jnp.ndarray = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "tic_tac_toe"
 
 
-class TicTacToe(v1.Env):
+class TicTacToe(core.Env):
     def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "tic_tac_toe"
 
     @property
@@ -73,8 +75,7 @@ class TicTacToe(v1.Env):
 
 
 def _init(rng: jax.random.KeyArray) -> State:
-    rng, subkey = jax.random.split(rng)
-    current_player = jnp.int32(jax.random.bernoulli(subkey))
+    current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 

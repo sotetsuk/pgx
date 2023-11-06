@@ -1,11 +1,28 @@
 import jax
 import jax.numpy as jnp
-from pgx.leduc_holdem import LeducHoldem, CALL, RAISE, FOLD, TRUE
+from pgx.leduc_holdem import LeducHoldem, CALL, RAISE, FOLD, TRUE, State
 
 env = LeducHoldem()
 init = jax.jit(env.init)
 step = jax.jit(env.step)
 observe = jax.jit(env.observe)
+
+def make_test_state(key):
+    # due to API update
+    _, key = jax.random.split(key)
+    rng1, rng2, rng3 = jax.random.split(key, 3)
+    current_player = jnp.int8(jax.random.bernoulli(rng1))
+    init_card = jax.random.permutation(
+        rng2, jnp.int8([0, 0, 1, 1, 2, 2]), independent=True
+    )
+    return State(  # type:ignore
+        _first_player=current_player,
+        current_player=current_player,
+        _cards=init_card[:3],
+        legal_action_mask=jnp.bool_([1, 1, 0]),
+        _chips=jnp.ones(2, dtype=jnp.int8),
+    )
+
 
 
 def test_init():
@@ -58,7 +75,7 @@ def test_step():
     assert (state.rewards == jnp.float32([-3, 3])).all()
 
     # =================
-    state = init(key)
+    state = make_test_state(key)
     assert state.current_player == 1
     # cards = [1 0]
     # player 1 is the first
@@ -127,7 +144,7 @@ def test_legal_action():
 
 def test_draw():
     key = jax.random.PRNGKey(0)
-    state = init(key)
+    state = make_test_state(key)
     # cards = [1 1]
     state = step(state, RAISE)
     state = step(state, RAISE)
@@ -143,7 +160,7 @@ def test_draw():
 
 def test_observe():
     key = jax.random.PRNGKey(5)
-    state = init(key)
+    state = make_test_state(key)
     """
     player 1 is the First.
     cards = [0 1]
@@ -200,6 +217,6 @@ def test_observe():
 
 def test_api():
     import pgx
-
     env = pgx.make("leduc_holdem")
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)

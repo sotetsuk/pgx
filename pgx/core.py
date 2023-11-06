@@ -107,7 +107,6 @@ class State(abc.ABC):
     #   - used for stochastic env and auto reset
     #   - updated only when actually used
     #   - supposed NOT to be used by agent
-    _rng_key: jax.random.KeyArray
     _step_count: jnp.ndarray
 
     @property
@@ -183,19 +182,22 @@ class Env(abc.ABC):
         environment changes.
 
         Args:
-            key: pseudo-random generator key in JAX
+            key: pseudo-random generator key in JAX. Consumed in this function.
 
         Returns:
             State: initial state of environment
 
         """
-        key, subkey = jax.random.split(key)
-        state = self._init(subkey)
-        state = state.replace(_rng_key=key)  # type: ignore
+        state = self._init(key)
         observation = self.observe(state, state.current_player)
         return state.replace(observation=observation)  # type: ignore
 
-    def step(self, state: State, action: jnp.ndarray) -> State:
+    def step(
+        self,
+        state: State,
+        action: jnp.ndarray,
+        key: Optional[jax.Array] = None,
+    ) -> State:
         """Step function."""
         is_illegal = ~state.legal_action_mask[action]
         current_player = state.current_player
@@ -205,7 +207,7 @@ class Env(abc.ABC):
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(rewards=jnp.zeros_like(state.rewards)),  # type: ignore
-            lambda: self._step(state.replace(_step_count=state._step_count + 1), action),  # type: ignore
+            lambda: self._step(state.replace(_step_count=state._step_count + 1), action, key),  # type: ignore
         )
 
         # Taking illegal action leads to immediate game terminal with negative reward
@@ -242,7 +244,7 @@ class Env(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _step(self, state, action) -> State:
+    def _step(self, state, action, key) -> State:
         """Implement game-specific step function here."""
         ...
 

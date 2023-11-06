@@ -204,7 +204,8 @@ def test_shanten():
 
 def test_discard():
     key = jax.random.PRNGKey(0)
-    state: State = init(key=key)
+    _, key = jax.random.split(key)  # due to API update
+    state = init(key=key)
     assert state.current_player == jnp.int8(0)
     assert state._target == jnp.int8(-1)
     assert state._deck[state._next_deck_ix] == jnp.int8(8)
@@ -251,6 +252,7 @@ def test_chi():
 
 def test_ankan():
     key = jax.random.PRNGKey(352)
+    _, key = jax.random.split(key)
     state: State = init(key=key)
     assert state.current_player == jnp.int8(0)
     """
@@ -376,6 +378,6 @@ def test_random_play():
 
 # def test_api():
 #    import pgx
-#
 #    env = pgx.make("mahjong")
-#    pgx.v1_api_test(env, 1)
+#    pgx.api_test(env, 3, use_key=False)
+#    pgx.api_test(env, 3, use_key=True)

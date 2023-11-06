@@ -16,7 +16,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.v1 as v1
+import pgx.core as core
 from pgx._src.struct import dataclass
 
 FALSE = jnp.bool_(False)
@@ -25,14 +25,13 @@ ZERO = jnp.int32(0)
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- 2048 specific ---
     # 4x4 board
@@ -54,27 +53,29 @@ class State(v1.State):
     #  [ 8, 64,128,512]]
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "2048"
 
 
-class Play2048(v1.Env):
+class Play2048(core.Env):
     def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
         assert isinstance(state, State)
-        return _step(state, action)
+        return _step(state, action, key)
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "2048"
 
     @property
@@ -96,7 +97,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     )  # type:ignore
 
 
-def _step(state: State, action):
+def _step(state: State, action, key):
     """action: 0(left), 1(up), 2(right), 3(down)"""
     board_2d = state._board.reshape((4, 4))
     board_2d = jax.lax.switch(
@@ -119,12 +120,10 @@ def _step(state: State, action):
         ],
     )
 
-    _rng_key, sub_key = jax.random.split(state._rng_key)
-    board_2d = _add_random_num(board_2d, sub_key)
+    board_2d = _add_random_num(board_2d, key)
 
     legal_action_mask = _legal_action_mask(board_2d)
     return state.replace(  # type:ignore
-        _rng_key=_rng_key,
         _board=board_2d.ravel(),
         rewards=jnp.float32([reward.sum()]),
         legal_action_mask=legal_action_mask,

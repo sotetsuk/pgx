@@ -1181,6 +1181,8 @@ def test_PSK():
 def test_api():
     import pgx
     env = pgx.make("go_9x9")
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)
     env = pgx.make("go_19x19")
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)

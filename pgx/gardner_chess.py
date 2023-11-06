@@ -15,7 +15,7 @@
 import jax
 import jax.numpy as jnp
 
-import pgx.v1 as v1
+import pgx.core as core
 from pgx._src.gardner_chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
@@ -77,14 +77,13 @@ INIT_ZOBRIST_HASH = jnp.uint32([2025569903, 1172890342])
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK
     observation: jnp.ndarray = jnp.zeros((5, 5, 19), dtype=jnp.float32)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Chess specific ---
     _turn: jnp.ndarray = jnp.int32(0)
@@ -116,7 +115,7 @@ class State(v1.State):
         return _to_fen(self)
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "gardner_chess"
 
 
@@ -166,17 +165,17 @@ class Action:
         return jnp.int32(self.from_) * 49 + jnp.int32(plane)
 
 
-class GardnerChess(v1.Env):
+class GardnerChess(core.Env):
     def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
-        rng, subkey = jax.random.split(key)
-        current_player = jnp.int32(jax.random.bernoulli(subkey))
+        current_player = jnp.int32(jax.random.bernoulli(key))
         state = State(current_player=current_player)  # type: ignore
         return state
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         state = _step(state, action)
         state = jax.lax.cond(
@@ -187,12 +186,14 @@ class GardnerChess(v1.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "gardner_chess"
 
     @property

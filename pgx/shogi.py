@@ -18,7 +18,7 @@ from functools import partial
 import jax
 import jax.numpy as jnp
 
-import pgx.v1 as v1
+import pgx.core as core
 from pgx._src.shogi_utils import (
     AROUND_IX,
     BETWEEN_IX,
@@ -73,14 +73,13 @@ ALL_SQ = jnp.arange(81)
 
 
 @dataclass
-class State(v1.State):
+class State(core.State):
     current_player: jnp.ndarray = jnp.int32(0)
     rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
     terminated: jnp.ndarray = FALSE
     truncated: jnp.ndarray = FALSE
     legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK  # (27 * 81,)
     observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
     # --- Shogi specific ---
     _turn: jnp.ndarray = jnp.int32(0)  # 0 or 1
@@ -92,7 +91,7 @@ class State(v1.State):
     _cache_king: jnp.ndarray = jnp.int32(44)
 
     @property
-    def env_id(self) -> v1.EnvId:
+    def env_id(self) -> core.EnvId:
         return "shogi"
 
     @staticmethod
@@ -117,17 +116,17 @@ class State(v1.State):
         return _to_sfen(state)
 
 
-class Shogi(v1.Env):
+class Shogi(core.Env):
     def __init__(self):
         super().__init__()
 
     def _init(self, key: jax.random.KeyArray) -> State:
         state = _init_board()
-        rng, subkey = jax.random.split(key)
-        current_player = jnp.int32(jax.random.bernoulli(subkey))
+        current_player = jnp.int32(jax.random.bernoulli(key))
         return state.replace(current_player=current_player)  # type: ignore
 
-    def _step(self, state: v1.State, action: jnp.ndarray) -> State:
+    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+        del key
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
         state = _step(state, action)
@@ -139,12 +138,14 @@ class Shogi(v1.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: v1.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
     @property
-    def id(self) -> v1.EnvId:
+    def id(self) -> core.EnvId:
         return "shogi"
 
     @property

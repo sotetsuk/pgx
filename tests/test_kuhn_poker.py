@@ -98,6 +98,7 @@ def test_legal_action():
 
 def test_observation():
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     """
     Player 0: K
@@ -113,6 +114,6 @@ def test_observation():
 
 def test_api():
     import pgx
-
     env = pgx.make("kuhn_poker")
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)

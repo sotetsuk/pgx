@@ -14,6 +14,7 @@ def test_init():
     state = init(key=key)
     assert jnp.count_nonzero(state._board == 1) == 2
     key = jax.random.PRNGKey(2)
+    _, key = jax.random.split(key)  # for test compatibility
     state = init(key=key)
     assert state.legal_action_mask.shape == (4,)
     assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 1])).all()
@@ -46,6 +47,7 @@ def test_slide_and_merge():
 
 def test_step():
     key = jax.random.PRNGKey(0)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     """
     [[0 0 0 0]
@@ -58,23 +60,18 @@ def test_step():
         == jnp.int32([0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0])
     ).all()
 
-    state = step(state, 3)  # down
-    """
-    [[0 0 0 0]
-     [0 0 0 0]
-     [0 0 0 2]
-     [0 0 4 0]]
-    """
-    assert (
-        state._board
-        == jnp.int32([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0])
-    ).all()
+    key1, key2 = jax.random.split(key)
+    state1 = step(state, 3, key1)  # down
+    state2 = step(state, 3, key2)  # down
+    assert state1._board[14] == 2
+    assert state2._board[14] == 2
+    assert not (state1._board == state2._board).all()
 
 
 def test_legal_action():
     board = jnp.int32([0, 1, 2, 3, 2, 3, 4, 5, 3, 4, 5, 6, 4, 5, 6, 0])
     state = State(_board=board)
-    state = step(state, 0)
+    state = step(state, 0, jax.random.PRNGKey(0))
     """
     [[ 2  4  8  2]
      [ 4  8 16 32]
@@ -83,12 +80,13 @@ def test_legal_action():
     """
     assert (state.legal_action_mask == jnp.bool_([0, 0, 1, 1])).all()
     assert not state.terminated
+    
     board = jnp.int32([2, 2, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0])
     state = State(_board=board)
-    state = step(state, 0)
+    state = step(state, 0, jax.random.PRNGKey(3))
     """
-    [[ 8  2  0  0]
-     [ 8  0  0  0]
+    [[ 8  0  0  0]
+     [ 8  2  0  0]
      [ 8  0  0  0]
      [ 8  0  0  0]]
     """
@@ -99,7 +97,7 @@ def test_legal_action():
 def test_terminated():
     board = jnp.int32([1, 2, 3, 4, 2, 3, 4, 5, 3, 4, 5, 6, 0, 4, 5, 6])
     state = State(_board=board)
-    state = step(state, 0)
+    state = step(state, 0, jax.random.PRNGKey(0))
     """
     [[ 2  4  8 16]
      [ 4  8 16 32]
@@ -111,6 +109,7 @@ def test_terminated():
 
 def test_observe():
     key = jax.random.PRNGKey(2)
+    _, key = jax.random.split(key)  # due to API update
     state = init(key)
     """
     [[0 0 2 2]
@@ -132,6 +131,5 @@ def test_observe():
 
 def test_api():
     import pgx
-
     env = pgx.make("2048")
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 3, use_key=True)

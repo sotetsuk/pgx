@@ -2229,9 +2229,9 @@ def test_value_to_dds_tricks():
 
 def test_api():
     import pgx
-
     env = pgx.bridge_bidding.BridgeBidding(DDS_HASH_TABLE_PATH)
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)
 
 
 def to_value(sample: list) -> jnp.ndarray:

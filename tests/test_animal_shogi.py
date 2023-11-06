@@ -227,4 +227,5 @@ def test_repetition():
 def test_api():
     import pgx
     env = pgx.make("animal_shogi")
-    pgx.v1_api_test(env, 5)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)

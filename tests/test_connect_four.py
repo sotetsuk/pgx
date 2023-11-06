@@ -56,9 +56,8 @@ def test_legal_action():
 
 
 def test_win_check():
-    key = jax.random.PRNGKey(0)
-    key, sub_key = jax.random.split(key)
-    state = init(sub_key)
+    key = jax.random.PRNGKey(6)
+    state = init(key)
     assert state.current_player == 0
 
     for _ in range(3):
@@ -68,7 +67,7 @@ def test_win_check():
     assert state.terminated
     assert (state.rewards == jnp.array([1.0, -1.0])).all()
 
-    state = init(sub_key)
+    state = init(key)
     for i in range(3):
         state = step(state, i)
         state = step(state, i)
@@ -76,7 +75,7 @@ def test_win_check():
     assert state.terminated
     assert (state.rewards == jnp.array([1.0, -1.0])).all()
 
-    state = init(sub_key)
+    state = init(key)
     for i in [1, 2, 2, 3, 3, 4, 3, 4, 4, 6, 4]:
         state = step(state, i)
     """
@@ -124,4 +123,5 @@ def test_observe():
 def test_api():
     import pgx
     env = pgx.make("connect_four")
-    pgx.v1_api_test(env, 10)
+    pgx.api_test(env, 3, use_key=False)
+    pgx.api_test(env, 3, use_key=True)
