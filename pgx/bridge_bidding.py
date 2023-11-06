@@ -22,6 +22,7 @@ import numpy as np
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 from pgx._src.utils import _download
 
 TRUE = jnp.bool_(True)
@@ -94,22 +95,22 @@ def download_dds_results(download_dir="dds_results"):
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(-1)
-    observation: jnp.ndarray = jnp.zeros(478, dtype=jnp.bool_)
-    rewards: jnp.ndarray = jnp.float32([0, 0, 0, 0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
-    _turn: jnp.ndarray = jnp.int32(0)
-    _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
+    current_player: Array = jnp.int32(-1)
+    observation: Array = jnp.zeros(478, dtype=jnp.bool_)
+    rewards: Array = jnp.float32([0, 0, 0, 0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.ones(38, dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
+    _turn: Array = jnp.int32(0)
+    _shuffled_players: Array = jnp.zeros(4, dtype=jnp.int32)
     # Hand of each player
     #   0  ~ 12: Hand of N
     #   13 ~ 25: Hand of E
     #   26 ~ 38: Hand of S
     #   39 ~ 51: Hand of W
     # Each element contains an integer from 0 to 51 representing a card
-    _hand: jnp.ndarray = jnp.zeros(52, dtype=jnp.int32)
+    _hand: Array = jnp.zeros(52, dtype=jnp.int32)
     # bidding_history stores the bid of each player in chronological order
     # Maximum length = 319
     # Each element contains an integer representing an action:
@@ -120,31 +121,31 @@ class State(core.State):
     #   no action: -1
     # TODO: change to  pass = 0, double = 1, redouble = 2, bid = 3 ~ 37
     # We can identify which player made each bid from the index of the element (ix % 4)
-    _bidding_history: jnp.ndarray = jnp.full(319, -1, dtype=jnp.int32)
+    _bidding_history: Array = jnp.full(319, -1, dtype=jnp.int32)
     # dealer: a player who starts bidding
     # 0 = N, 1 = E, 2 = S, 3 = W
-    _dealer: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
+    _dealer: Array = jnp.zeros(4, dtype=jnp.int32)
     # vul_NS: Is NS team vul?
     # 0 = non vul, 1 = vul
-    _vul_NS: jnp.ndarray = jnp.bool_(False)
+    _vul_NS: Array = jnp.bool_(False)
     # vul_EW: Is EW team vul?
     # 0 = non vul, 1 = vul
-    _vul_EW: jnp.ndarray = jnp.bool_(False)
+    _vul_EW: Array = jnp.bool_(False)
     # last_bid
     # last_bidder
     # call_x: Was the last bid doubled?
     # call_xx: Was the last bid redoubled?
-    _last_bid: jnp.ndarray = jnp.int32(-1)
-    _last_bidder: jnp.ndarray = jnp.int32(-1)
-    _call_x: jnp.ndarray = jnp.bool_(False)
-    _call_xx: jnp.ndarray = jnp.bool_(False)
+    _last_bid: Array = jnp.int32(-1)
+    _last_bidder: Array = jnp.int32(-1)
+    _call_x: Array = jnp.bool_(False)
+    _call_xx: Array = jnp.bool_(False)
     # In NS team, which player first bid each denomination
     # Denomination order: C, D, H, S, NT = 0, 1, 2, 3, 4
-    _first_denomination_NS: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int32)
+    _first_denomination_NS: Array = jnp.full(5, -1, dtype=jnp.int32)
     # In EW team, which player first bid each denomination
-    _first_denomination_EW: jnp.ndarray = jnp.full(5, -1, dtype=jnp.int32)
+    _first_denomination_EW: Array = jnp.full(5, -1, dtype=jnp.int32)
     # Number of pass
-    _pass_num: jnp.ndarray = jnp.array(0, dtype=jnp.int32)
+    _pass_num: Array = jnp.array(0, dtype=jnp.int32)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -189,7 +190,7 @@ class BridgeBidding(core.Env):
             )
             sys.exit(1)
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         key1, key2 = jax.random.split(key, num=2)
         return _init_by_key(jax.random.choice(key1, self._lut_keys), key2)
 
@@ -198,9 +199,7 @@ class BridgeBidding(core.Env):
         assert isinstance(state, State)
         return _step(state, action, self._lut_keys, self._lut_values)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -221,7 +220,7 @@ class BridgeBidding(core.Env):
         return -7600.0
 
 
-def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
+def _init_by_key(key: PRNGKey, rng: PRNGKey) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
@@ -247,11 +246,11 @@ def _init_by_key(key: jnp.ndarray, rng: jax.random.KeyArray) -> State:
     return state
 
 
-def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
+def _shuffle_players(rng: PRNGKey) -> Array:
     """Randomly arranges player IDs in a list in NESW order.
 
     Returns:
-        jnp.ndarray: A list of 4 player IDs randomly arranged in NESW order.
+        Array : A list of 4 player IDs randomly arranged in NESW order.
 
     Example:
         >>> key = jax.random.PRNGKey(0)
@@ -291,7 +290,7 @@ def _shuffle_players(rng: jax.random.KeyArray) -> jnp.ndarray:
     )
 
 
-def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
+def _player_position(player: Array, state: State) -> Array:
     return jax.lax.cond(
         player != -1,
         lambda: jnp.int32(jnp.argmax(state._shuffled_players == player)),
@@ -302,8 +301,8 @@ def _player_position(player: jnp.ndarray, state: State) -> jnp.ndarray:
 def _step(
     state: State,
     action: int,
-    lut_keys: jnp.ndarray,
-    lut_values: jnp.ndarray,
+    lut_keys: Array,
+    lut_values: Array,
 ) -> State:
     # fmt: off
     state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
@@ -328,7 +327,7 @@ def _step(
     )
 
 
-def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: Array) -> Array:
     """Returns the observation of a given player"""
     # make vul of observation
     is_player_vul, is_non_player_vul = jax.lax.cond(
@@ -416,7 +415,7 @@ def _make_obs_history(turn, vuls):
     return state, player_id, last_bid, obs_history
 
 
-def _convert_card_pgx_to_openspiel(card: jnp.ndarray) -> jnp.ndarray:
+def _convert_card_pgx_to_openspiel(card: Array) -> Array:
     """Convert numerical representation of cards from pgx to openspiel"""
     OPEN_SPIEL_SUIT_NUM = jnp.array([3, 2, 1, 0], dtype=jnp.int32)
     OPEN_SPIEL_RANK_NUM = jnp.array(
@@ -429,8 +428,8 @@ def _convert_card_pgx_to_openspiel(card: jnp.ndarray) -> jnp.ndarray:
 
 def _terminated_step(
     state: State,
-    lut_keys: jnp.ndarray,
-    lut_values: jnp.ndarray,
+    lut_keys: Array,
+    lut_values: Array,
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
@@ -471,9 +470,9 @@ def _is_terminated(state: State) -> bool:
 
 def _reward(
     state: State,
-    lut_keys: jnp.ndarray,
-    lut_values: jnp.ndarray,
-) -> jnp.ndarray:
+    lut_keys: Array,
+    lut_values: Array,
+) -> Array:
     """Return reward
     If pass out, 0 reward for everyone; if bid, calculate and return reward
     """
@@ -486,9 +485,9 @@ def _reward(
 
 def _make_reward(
     state: State,
-    lut_keys: jnp.ndarray,
-    lut_values: jnp.ndarray,
-) -> jnp.ndarray:
+    lut_keys: Array,
+    lut_values: Array,
+) -> Array:
     """Calculate rewards for each player by dds results
 
     Returns:
@@ -521,13 +520,13 @@ def _make_reward(
 
 
 def _calc_score(
-    denomination: jnp.ndarray,
-    level: jnp.ndarray,
-    vul: jnp.ndarray,
-    call_x: jnp.ndarray,
-    call_xx: jnp.ndarray,
-    trick: jnp.ndarray,
-) -> jnp.ndarray:
+    denomination: Array,
+    level: Array,
+    vul: Array,
+    call_x: Array,
+    call_xx: Array,
+    trick: Array,
+) -> Array:
     """Calculate score from contract and trick
     Returns:
         np.ndarray: A score of declarer team
@@ -540,12 +539,12 @@ def _calc_score(
 
 
 def _down_score(
-    level: jnp.ndarray,
-    vul: jnp.ndarray,
-    call_x: jnp.ndarray,
-    call_xx: jnp.ndarray,
-    trick: jnp.ndarray,
-) -> jnp.ndarray:
+    level: Array,
+    vul: Array,
+    call_x: Array,
+    call_xx: Array,
+    trick: Array,
+) -> Array:
     """Calculate down score from contract and trick
     Returns:
         np.ndarray: A score of declarer team
@@ -582,13 +581,13 @@ def _down_score(
 
 
 def _make_score(
-    denomination: jnp.ndarray,
-    level: jnp.ndarray,
-    vul: jnp.ndarray,
-    call_x: jnp.ndarray,
-    call_xx: jnp.ndarray,
-    trick: jnp.ndarray,
-) -> jnp.ndarray:
+    denomination: Array,
+    level: Array,
+    vul: Array,
+    call_x: Array,
+    call_xx: Array,
+    trick: Array,
+) -> Array:
     """Calculate make score from contract and trick
     Returns:
         np.ndarray: A score of declarer team
@@ -687,7 +686,7 @@ def _make_score(
 
 def _contract(
     state: State,
-) -> Tuple[jnp.ndarray, jnp.ndarray, jnp.ndarray, jnp.ndarray]:
+) -> Tuple[Array, Array, Array, Array]:
     """Return Contract which has position of declare ,denomination, level"""
     denomination = state._last_bid % 5
     level = state._last_bid // 5 + 1
@@ -763,7 +762,7 @@ def _bid_to_denomination(bid: int) -> int:
     return bid % 5
 
 
-def _position_to_team(position: jnp.ndarray) -> jnp.ndarray:
+def _position_to_team(position: Array) -> Array:
     """Determine which team from the position
     0: NS team, 1: EW team
     """
@@ -812,7 +811,7 @@ def _is_legal_XX(state: State) -> bool:
     )
 
 
-def _is_partner(position1: jnp.ndarray, position2: jnp.ndarray) -> jnp.ndarray:
+def _is_partner(position1: Array, position2: Array) -> Array:
     """Determine if positon1 and position2 belong to the same team"""
     return (abs(position1 - position2) + 1) % 2
 
@@ -837,7 +836,7 @@ def _state_to_pbn(state: State) -> str:
     return pbn
 
 
-def _state_to_key(state: State) -> jnp.ndarray:
+def _state_to_key(state: State) -> Array:
     """Convert state to key of dds table"""
     hand = state._hand
     key = jnp.zeros(52, dtype=jnp.int32)
@@ -846,7 +845,7 @@ def _state_to_key(state: State) -> jnp.ndarray:
     return _to_binary(key)
 
 
-def _pbn_to_key(pbn: str) -> jnp.ndarray:
+def _pbn_to_key(pbn: str) -> Array:
     """Convert pbn to key of dds table"""
     key = jnp.zeros(52, dtype=jnp.int32)
     hands = pbn[2:]
@@ -859,7 +858,7 @@ def _pbn_to_key(pbn: str) -> jnp.ndarray:
     return _to_binary(key)
 
 
-def _to_binary(x: jnp.ndarray) -> jnp.ndarray:
+def _to_binary(x: Array) -> Array:
     # bases = jnp.array([4**i for i in range(13)], dtype=jnp.int32)[::-1]
     bases = (4 ** jnp.arange(13))[::-1]
     return (x * bases).sum(axis=1)  # shape = (4, )
@@ -880,7 +879,7 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
-def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
+def _key_to_hand(key: PRNGKey) -> Array:
     """Convert key to hand"""
 
     def _convert_quat(j):
@@ -908,7 +907,7 @@ def _key_to_hand(key: jnp.ndarray) -> jnp.ndarray:
     return hand.flatten()
 
 
-def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
+def _value_to_dds_tricks(value: Array) -> Array:
     """Convert values to dds tricks
     >>> value = jnp.array([4160, 904605, 4160, 904605])
     >>> _value_to_dds_tricks(value)
@@ -927,18 +926,16 @@ def _value_to_dds_tricks(value: jnp.ndarray) -> jnp.ndarray:
 
 def _calculate_dds_tricks(
     state: State,
-    lut_keys: jnp.ndarray,
-    lut_values: jnp.ndarray,
-) -> jnp.ndarray:
+    lut_keys: Array,
+    lut_values: Array,
+) -> Array:
     key = _state_to_key(state)
     return _value_to_dds_tricks(
         _find_value_from_key(key, lut_keys, lut_values)
     )
 
 
-def _find_value_from_key(
-    key: jnp.ndarray, lut_keys: jnp.ndarray, lut_values: jnp.ndarray
-):
+def _find_value_from_key(key: PRNGKey, lut_keys: Array, lut_values: Array):
     """Find a value matching key without batch processing
     >>> VALUES = jnp.arange(20).reshape(5, 4)
     >>> KEYS = jnp.arange(20).reshape(5, 4)
@@ -955,7 +952,7 @@ def _find_value_from_key(
     return lut_values[ix]
 
 
-def _load_sample_hash() -> Tuple[jnp.ndarray, jnp.ndarray]:
+def _load_sample_hash() -> Tuple[Array, Array]:
     # fmt: off
     return jnp.array([[19556549, 61212362, 52381660, 50424958], [53254536, 21854346, 37287883, 14009558], [44178585, 6709002, 23279217, 16304124], [36635659, 48114215, 13583653, 26208086], [44309474, 39388022, 28376136, 59735189], [61391908, 52173479, 29276467, 31670621], [34786519, 13802254, 57433417, 43152306], [48319039, 55845612, 44614774, 58169152], [47062227, 32289487, 12941848, 21338650], [36579116, 15643926, 64729756, 18678099], [62136384, 37064817, 59701038, 39188202], [13417016, 56577539, 25995845, 27248037], [61125047, 43238281, 23465183, 20030494], [7139188, 31324229, 58855042, 14296487], [2653767, 47502150, 35507905, 43823846], [31453323, 11605145, 6716808, 41061859], [21294711, 49709, 26110952, 50058629], [48130172, 3340423, 60445890, 7686579], [16041939, 27817393, 37167847, 9605779], [61154057, 17937858, 12254613, 12568801], [13796245, 46546127, 49123920, 51772041], [7195005, 45581051, 41076865, 17429796], [20635965, 14642724, 7001617, 45370595], [35616421, 19938131, 45131030, 16524847], [14559399, 15413729, 39188470, 535365], [48743216, 39672069, 60203571, 60210880], [63862780, 2462075, 23267370, 36595020], [11229980, 11616119, 20292263, 3695004], [24135854, 37532826, 54421444, 14130249], [42798085, 33026223, 2460251, 18566823], [49558558, 65537599, 14768519, 31103243], [44321156, 20075251, 42663767, 11615602], [20186726, 42678073, 11763300, 56739471], [57534601, 16703645, 6039937, 17088125], [50795278, 17350238, 11955835, 21538127], [45919621, 5520088, 27736513, 52674927], [13928720, 57324148, 28222453, 15480785], [910719, 47238830, 26345802, 56166394], [58841430, 1098476, 61890558, 26907706], [10379825, 8624220, 39701822, 29045990], [54444873, 50000486, 48563308, 55867521], [47291672, 22084522, 45484828, 32878832], [55350706, 23903891, 46142039, 11499952], [4708326, 27588734, 31010458, 11730972], [27078872, 59038086, 62842566, 51147874], [28922172, 32377861, 9109075, 10154350], [26104086, 62786977, 224865, 14335943], [20448626, 33187645, 34338784, 26382893], [29194006, 19635744, 24917755, 8532577], [64047742, 34885257, 5027048, 58399668], [27603972, 26820121, 44837703, 63748595], [60038456, 19611050, 7928914, 38555047], [13583610, 19626473, 22239272, 19888268], [28521006, 1743692, 31319264, 15168920], [64585849, 63931241, 57019799, 14189800], [2632453, 7269809, 60404342, 57986125], [1996183, 49918209, 49490468, 47760867], [6233580, 15318425, 51356120, 55074857], [15769884, 61654638, 8374039, 43685186], [44162419, 47272176, 62693156, 35359329], [36345796, 15667465, 53341561, 2978505], [1664472, 12761950, 34145519, 55197543], [37567005, 3228834, 6198166, 15646487], [63233399, 42640049, 12969011, 41620641], [22090925, 3386355, 56655568, 31631004], [16442787, 9420273, 48595545, 29770176], [49404288, 37823218, 58551818, 6772527], [36575583, 53847347, 32379432, 1630009], [9004247, 12999580, 48379959, 14252211], [25850203, 26136823, 64934025, 29362603], [10214276, 43557352, 33387586, 55512773], [45810841, 49561478, 41130845, 27034816], [34460081, 16560450, 57722793, 41007718], [53414778, 6845803, 15340368, 16647575], [30535873, 5193469, 43608154, 11391114], [20622004, 34424126, 31475211, 29619615], [10428836, 49656416, 7912677, 33427787], [57600861, 18251799, 46147432, 58946294], [6760779, 14675737, 42952146, 5480498], [46037552, 39969058, 30103468, 55330772], [64466305, 29376674, 49914839, 55269895], [36494113, 27010567, 65752150, 12395385], [49385632, 19550767, 39809394, 58806235], [20987521, 37444597, 49290126, 42326125], [37150229, 37487849, 28254397, 32949826], [9724895, 53813417, 19431235, 27438556], [42132748, 47073733, 19396568, 10026137], [3961481, 27204521, 62087205, 37602005], [22178323, 17505521, 42006207, 44143605], [12753258, 63063515, 61993175, 8920985], [10998000, 64833190, 6446892, 63676805], [66983817, 63684932, 18378359, 39946382], [63476803, 60000436, 19442420, 66417845], [38004446, 64752157, 42570179, 52844512], [1270809, 23735482, 17543294, 18795903], [4862706, 16352249, 57100612, 6219870], [63203206, 25630930, 35608240, 51357885], [59819625, 64662579, 50925335, 55670434], [29216830, 26446697, 52243336, 58475666], [43138915, 30592834, 43931516, 50628002]], dtype=jnp.int32), jnp.array([[71233, 771721, 71505, 706185], [289177, 484147, 358809, 484147], [359355, 549137, 359096, 549137], [350631, 558133, 350630, 554037], [370087, 538677, 370087, 538677], [4432, 899725, 4432, 904077], [678487, 229987, 678487, 229987], [423799, 480614, 423799, 480870], [549958, 284804, 549958, 280708], [423848, 480565, 423848, 480549], [489129, 283940, 554921, 283940], [86641, 822120, 86641, 822120], [206370, 702394, 206370, 567209], [500533, 407959, 500533, 407959], [759723, 79137, 759723, 79137], [563305, 345460, 559209, 345460], [231733, 611478, 231733, 611478], [502682, 406082, 498585, 406082], [554567, 288662, 554567, 288662], [476823, 427846, 476823, 427846], [488823, 415846, 488823, 415846], [431687, 477078, 431687, 477078], [419159, 424070, 415062, 424070], [493399, 345734, 493143, 345718], [678295, 230451, 678295, 230451], [496520, 342596, 496520, 346709], [567109, 276116, 567109, 276116], [624005, 284758, 624005, 284758], [420249, 484420, 420248, 484420], [217715, 621418, 217715, 621418], [344884, 493977, 344884, 493977], [550841, 292132, 550841, 292132], [284262, 558967, 284006, 558967], [152146, 756616, 152146, 756616], [144466, 698763, 144466, 694667], [284261, 624504, 284261, 624504], [288406, 620102, 288405, 620358], [301366, 607383, 301366, 607382], [468771, 435882, 468771, 435882], [555688, 283444, 555688, 283444], [485497, 414820, 485497, 414820], [633754, 275010, 633754, 275010], [419141, 489608, 419157, 489608], [694121, 214387, 694121, 214387], [480869, 427639, 481125, 427639], [489317, 419447, 489301, 419447], [152900, 747672, 152900, 747672], [348516, 494457, 348516, 494457], [534562, 370088, 534562, 370088], [371272, 537475, 371274, 537475], [144194, 760473, 144194, 760473], [567962, 275011, 567962, 275011], [493161, 350052, 493161, 350052], [490138, 348979, 490138, 348979], [328450, 506552, 328450, 506552], [148882, 759593, 148626, 755497], [642171, 266593, 642171, 266593], [685894, 218774, 685894, 218774], [674182, 234548, 674214, 234548], [756347, 152146, 690811, 86353], [612758, 291894, 612758, 291894], [296550, 612214, 296550, 612214], [363130, 475730, 363130, 475730], [691559, 16496, 691559, 16496], [340755, 502202, 336659, 502218], [632473, 210499, 628377, 210483], [564410, 266513, 564410, 266513], [427366, 481399, 427366, 481399], [493159, 349797, 493159, 415605], [331793, 576972, 331793, 576972], [416681, 492084, 416681, 492084], [813496, 95265, 813496, 91153], [695194, 213571, 695194, 213571], [436105, 407124, 436105, 407124], [836970, 6243, 902506, 6243], [160882, 747882, 160882, 747882], [493977, 414788, 489624, 414788], [29184, 551096, 29184, 616888], [903629, 4880, 899517, 4880], [351419, 553250, 351419, 553250], [75554, 767671, 75554, 767671], [279909, 563304, 279909, 563304], [215174, 628054, 215174, 628054], [361365, 481864, 361365, 481864], [424022, 484743, 358486, 484725], [271650, 633018, 271650, 633018], [681896, 226867, 616088, 226867], [222580, 686184, 222564, 686184], [144451, 698778, 209987, 698778], [532883, 310086, 532883, 310086], [628872, 279893, 628872, 279893], [533797, 374951, 533797, 374951], [91713, 817036, 91713, 817036], [427605, 477046, 431718, 477046], [145490, 689529, 145490, 689529], [551098, 291875, 551098, 291875], [349781, 558984, 349781, 558983], [205378, 703115, 205378, 703115], [362053, 546456, 362053, 546456], [612248, 226371, 678040, 226371]], dtype=jnp.int32)
     # fmt: on

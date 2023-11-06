@@ -32,6 +32,7 @@ from pgx._src.shogi_utils import (
     _to_sfen,
 )
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 
 MAX_TERMINATION_STEPS = 512  # From AZ paper
 
@@ -74,28 +75,28 @@ ALL_SQ = jnp.arange(81)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = INIT_LEGAL_ACTION_MASK  # (27 * 81,)
-    observation: jnp.ndarray = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: Array = jnp.int32(0)
+    rewards: Array = jnp.float32([0.0, 0.0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = INIT_LEGAL_ACTION_MASK  # (27 * 81,)
+    observation: Array = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
     # --- Shogi specific ---
-    _turn: jnp.ndarray = jnp.int32(0)  # 0 or 1
-    _board: jnp.ndarray = INIT_PIECE_BOARD  # (81,) flip in turn
-    _hand: jnp.ndarray = jnp.zeros((2, 7), dtype=jnp.int32)  # flip in turn
+    _turn: Array = jnp.int32(0)  # 0 or 1
+    _board: Array = INIT_PIECE_BOARD  # (81,) flip in turn
+    _hand: Array = jnp.zeros((2, 7), dtype=jnp.int32)  # flip in turn
     # cache
     # Redundant information used only in _is_checked for speeding-up
-    _cache_m2b: jnp.ndarray = -jnp.ones(8, dtype=jnp.int32)
-    _cache_king: jnp.ndarray = jnp.int32(44)
+    _cache_m2b: Array = -jnp.ones(8, dtype=jnp.int32)
+    _cache_king: Array = jnp.int32(44)
 
     @property
     def env_id(self) -> core.EnvId:
         return "shogi"
 
     @staticmethod
-    def _from_board(turn, piece_board: jnp.ndarray, hand: jnp.ndarray):
+    def _from_board(turn, piece_board: Array, hand: Array):
         """Mainly for debugging purpose.
         terminated, reward, and current_player are not changed"""
         state = State(_turn=turn, _board=piece_board, _hand=hand)  # type: ignore
@@ -120,12 +121,12 @@ class Shogi(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         state = _init_board()
         current_player = jnp.int32(jax.random.bernoulli(key))
         return state.replace(current_player=current_player)  # type: ignore
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
@@ -138,9 +139,7 @@ class Shogi(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -159,12 +158,12 @@ class Shogi(core.Env):
 
 @dataclass
 class Action:
-    is_drop: jnp.ndarray
-    piece: jnp.ndarray
-    to: jnp.ndarray
+    is_drop: Array
+    piece: Array
+    to: Array
     # --- Optional (only for move action) ---
-    from_: jnp.ndarray = jnp.int32(0)
-    is_promotion: jnp.ndarray = FALSE
+    from_: Array = jnp.int32(0)
+    is_promotion: Array = FALSE
 
     @staticmethod
     def make_move(piece, from_, to, is_promotion=FALSE):
@@ -181,7 +180,7 @@ class Action:
         return Action(is_drop=TRUE, piece=piece, to=to)
 
     @staticmethod
-    def _from_dlshogi_action(state: State, action: jnp.ndarray):
+    def _from_dlshogi_action(state: State, action: Array):
         """Direction (from github.com/TadaoYamaoka/cshogi)
 
          0 Up
@@ -235,7 +234,7 @@ def _init_board():
     return State()
 
 
-def _step(state: State, action: jnp.ndarray):
+def _step(state: State, action: Array):
     a = Action._from_dlshogi_action(state, action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
@@ -378,7 +377,7 @@ def _is_drop_pawn_mate(state: State):
     return is_pawn_mate, to
 
 
-def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
+def _is_legal_drop_wo_piece(to: Array, state: State):
     is_illegal = state._board[to] != EMPTY
     is_illegal |= _is_checked(
         state.replace(_board=state._board.at[to].set(PAWN))  # type: ignore
@@ -386,9 +385,7 @@ def _is_legal_drop_wo_piece(to: jnp.ndarray, state: State):
     return ~is_illegal
 
 
-def _is_legal_drop_wo_ignoring_check(
-    piece: jnp.ndarray, to: jnp.ndarray, state: State
-):
+def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: State):
     is_illegal = state._board[to] != EMPTY
     # don't have the piece
     is_illegal |= state._hand[0, piece] <= 0
@@ -403,8 +400,8 @@ def _is_legal_drop_wo_ignoring_check(
 
 
 def _is_legal_move_wo_pro(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
+    from_: Array,
+    to: Array,
     state: State,
 ):
     ok = _is_pseudo_legal_move(from_, to, state)
@@ -425,8 +422,8 @@ def _is_legal_move_wo_pro(
 
 
 def _is_pseudo_legal_move(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
+    from_: Array,
+    to: Array,
     state: State,
 ):
     ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
@@ -440,8 +437,8 @@ def _is_pseudo_legal_move(
 
 
 def _is_pseudo_legal_move_wo_obstacles(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
+    from_: Array,
+    to: Array,
     state: State,
 ):
     board = state._board
@@ -456,8 +453,8 @@ def _is_pseudo_legal_move_wo_obstacles(
 
 
 def _is_no_promotion_legal(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
+    from_: Array,
+    to: Array,
     state: State,
 ):
     # source is not my piece
@@ -471,8 +468,8 @@ def _is_no_promotion_legal(
 
 
 def _is_promotion_legal(
-    from_: jnp.ndarray,
-    to: jnp.ndarray,
+    from_: Array,
+    to: Array,
     state: State,
 ):
     # source is not my piece
@@ -519,7 +516,7 @@ def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
 
 
-def _rotate(board: jnp.ndarray) -> jnp.ndarray:
+def _rotate(board: Array) -> Array:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
 
@@ -566,7 +563,7 @@ def _major_piece_ix(piece):
     return jax.lax.select(piece >= 0, ixs[piece], jnp.int32(-1))
 
 
-def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: Array) -> Array:
     state, flip_state = jax.lax.cond(
         state.current_player == player_id,
         lambda: (state, _flip(state)),
@@ -613,7 +610,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
         my_effect_sum = my_effect.sum(axis=0)
 
         @jax.vmap
-        def effect_sum(n) -> jnp.ndarray:
+        def effect_sum(n) -> Array:
             return my_effect_sum >= n  # type: ignore
 
         effect_sum_feat = effect_sum(jnp.arange(1, 4))

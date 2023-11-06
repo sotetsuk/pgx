@@ -18,6 +18,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -26,20 +27,20 @@ ZERO = jnp.int32(0)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
-    rewards: jnp.ndarray = jnp.float32([0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: Array = jnp.int32(0)
+    observation: Array = jnp.zeros(16, dtype=jnp.bool_)
+    rewards: Array = jnp.float32([0.0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.ones(4, dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
     # --- 2048 specific ---
     # 4x4 board
     # [[ 0,  1,  2,  3],
     #  [ 4,  5,  6,  7],
     #  [ 8,  9, 10, 11],
     #  [12, 13, 14, 15]]
-    _board: jnp.ndarray = jnp.zeros(16, jnp.int32)
+    _board: Array = jnp.zeros(16, jnp.int32)
     #  Board is expressed as a power of 2.
     # e.g.
     # [[ 0,  0,  1,  1],
@@ -61,16 +62,14 @@ class Play2048(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         assert isinstance(state, State)
         return _step(state, action, key)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -87,7 +86,7 @@ class Play2048(core.Env):
         return 1
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: PRNGKey) -> State:
     rng1, rng2 = jax.random.split(rng)
     board = _add_random_num(jnp.zeros((4, 4), jnp.int32), rng1)
     board = _add_random_num(board, rng2)
@@ -144,7 +143,7 @@ def _legal_action_mask(board_2d):
     )
 
 
-def _observe(state: State, player_id) -> jnp.ndarray:
+def _observe(state: State, player_id) -> Array:
     obs = jnp.zeros((16, 31), dtype=jnp.bool_)
     obs = jax.lax.fori_loop(
         0, 16, lambda i, obs: obs.at[i, state._board[i]].set(TRUE), obs

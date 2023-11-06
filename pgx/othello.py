@@ -17,6 +17,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -24,15 +25,15 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    observation: jnp.ndarray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(64 + 1, dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: Array = jnp.int32(0)
+    observation: Array = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
+    rewards: Array = jnp.float32([0.0, 0.0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.ones(64 + 1, dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
     # --- Othello specific ---
-    _turn: jnp.ndarray = jnp.int32(0)
+    _turn: Array = jnp.int32(0)
     # 8x8 board
     # [[ 0,  1,  2,  3,  4,  5,  6,  7],
     #  [ 8,  9, 10, 11, 12, 13, 14, 15],
@@ -42,10 +43,8 @@ class State(core.State):
     #  [40, 41, 42, 43, 44, 45, 46, 47],
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
-    _board: jnp.ndarray = jnp.zeros(
-        64, jnp.int32
-    )  # -1(opp), 0(empty), 1(self)
-    _passed: jnp.ndarray = FALSE
+    _board: Array = jnp.zeros(64, jnp.int32)  # -1(opp), 0(empty), 1(self)
+    _passed: Array = FALSE
 
     @property
     def env_id(self) -> core.EnvId:
@@ -56,17 +55,15 @@ class Othello(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -106,7 +103,7 @@ UD_MASK = jnp.array([
 SIDE_MASK = LR_MASK & UD_MASK
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: PRNGKey) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(
         current_player=current_player,
@@ -227,7 +224,7 @@ def _get_reward(my, opp, curr_player):
     )
 
 
-def _observe(state, player_id) -> jnp.ndarray:
+def _observe(state, player_id) -> Array:
     board = jax.lax.cond(
         player_id == state.current_player,
         lambda: state._board.reshape((8, 8)),

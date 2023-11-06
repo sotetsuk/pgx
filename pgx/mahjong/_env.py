@@ -17,6 +17,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 from pgx.mahjong._action import Action
 from pgx.mahjong._hand import Hand
 from pgx.mahjong._meld import Meld
@@ -29,81 +30,81 @@ NUM_ACTION = 79
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int8(0)  # actionを行うplayer
-    observation: jnp.ndarray = jnp.int8(0)
-    rewards: jnp.ndarray = jnp.zeros(4, dtype=jnp.float32)  # （百の位から）
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: Array = jnp.int8(0)  # actionを行うplayer
+    observation: Array = jnp.int8(0)
+    rewards: Array = jnp.zeros(4, dtype=jnp.float32)  # （百の位から）
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+    _rng_key: PRNGKey = jax.random.PRNGKey(0)
+    _step_count: Array = jnp.int32(0)
     # --- Mahjong specific ---
-    _round: jnp.ndarray = jnp.int8(0)
-    _honba: jnp.ndarray = jnp.int8(0)
+    _round: Array = jnp.int8(0)
+    _honba: Array = jnp.int8(0)
 
     # 東1局の親
     # 各局の親は (state._oya+round)%4
-    _oya: jnp.ndarray = jnp.int8(0)
+    _oya: Array = jnp.int8(0)
 
     # 点数（百の位から）
-    _score: jnp.ndarray = jnp.full(4, 250, dtype=jnp.float32)
+    _score: Array = jnp.full(4, 250, dtype=jnp.float32)
 
     #      嶺上 ドラ  カンドラ
     # ... 13 11  9  7  5  3  1
     # ... 12 10  8  6  4  2  0
-    _deck: jnp.ndarray = jnp.zeros(136, dtype=jnp.int8)
+    _deck: Array = jnp.zeros(136, dtype=jnp.int8)
 
     # 次に引く牌のindex
-    _next_deck_ix: jnp.ndarray = jnp.int8(135 - 13 * 4)
+    _next_deck_ix: Array = jnp.int8(135 - 13 * 4)
 
     # 各playerの手牌. 長さ34で、数字は持っている牌の数
-    _hand: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int8)
+    _hand: Array = jnp.zeros((4, 34), dtype=jnp.int8)
 
     # 河
     # int8
     # 0b  0     0    0 0 0 0 0 0
     #    灰色|リーチ|   牌(0-33)
-    _river: jnp.ndarray = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
+    _river: Array = 34 * jnp.ones((4, 4 * 6), dtype=jnp.uint8)
 
     # 各playerの河の数
-    _n_river: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    _n_river: Array = jnp.zeros(4, dtype=jnp.int8)
 
     # ドラ
-    _doras: jnp.ndarray = jnp.zeros(5, dtype=jnp.int8)
+    _doras: Array = jnp.zeros(5, dtype=jnp.int8)
 
     # カンの回数=追加ドラ枚数
-    _n_kan: jnp.ndarray = jnp.int8(0)
+    _n_kan: Array = jnp.int8(0)
 
     # 直前に捨てられてron,pon,chiの対象になっている牌. 存在しなければ-1
-    _target: jnp.ndarray = jnp.int8(-1)
+    _target: Array = jnp.int8(-1)
 
     # 手牌が3n+2枚のplayerが直前に引いた牌. 存在しなければ-1
-    _last_draw: jnp.ndarray = jnp.int8(0)
+    _last_draw: Array = jnp.int8(0)
 
     # 最後のプレイヤー.  ron,pon,chiの対象
-    _last_player: jnp.ndarray = jnp.int8(0)
+    _last_player: Array = jnp.int8(0)
 
     # 打牌の後に競合する副露が生じた場合用
     #     pon player, kan player, chi player
     # b0       00         00         00
-    _furo_check_num: jnp.ndarray = jnp.uint8(0)
+    _furo_check_num: Array = jnp.uint8(0)
 
     # state.current_player がリーチ宣言してから, その直後の打牌が通るまでTrue
-    _riichi_declared: jnp.ndarray = FALSE
+    _riichi_declared: Array = FALSE
 
     # 各playerのリーチが成立しているかどうか
-    _riichi: jnp.ndarray = jnp.zeros(4, dtype=jnp.bool_)
+    _riichi: Array = jnp.zeros(4, dtype=jnp.bool_)
 
     # 各playerの副露回数
-    _n_meld: jnp.ndarray = jnp.zeros(4, dtype=jnp.int8)
+    _n_meld: Array = jnp.zeros(4, dtype=jnp.int8)
 
     # melds[i][j]: player i のj回目の副露(j=1,2,3,4). 存在しなければ0
-    _melds: jnp.ndarray = jnp.zeros((4, 4), dtype=jnp.int32)
+    _melds: Array = jnp.zeros((4, 4), dtype=jnp.int32)
 
-    _is_menzen: jnp.ndarray = jnp.zeros(4, dtype=jnp.bool_)
+    _is_menzen: Array = jnp.zeros(4, dtype=jnp.bool_)
 
     # pon[i][j]: player i がjをポンを所有している場合, src << 2 | index. or 0
-    _pon: jnp.ndarray = jnp.zeros((4, 34), dtype=jnp.int32)
+    _pon: Array = jnp.zeros((4, 34), dtype=jnp.int32)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -210,17 +211,15 @@ class Mahjong(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -238,7 +237,7 @@ class Mahjong(core.Env):
         return 4
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: PRNGKey) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(rng))
     last_player = jnp.int8(-1)
@@ -369,7 +368,7 @@ def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
     return legal_action_mask
 
 
-def _discard(state: State, tile: jnp.ndarray):
+def _discard(state: State, tile: Array):
     c_p = state.current_player
     tile = jnp.where(tile == 68, state._last_draw, tile)
     _tile = jnp.where(
@@ -870,7 +869,7 @@ def _next_game(state: State):
     return _pass(state)
 
 
-def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: Array) -> Array:
     return jnp.int8(0)
 
 

@@ -2,14 +2,13 @@ import jax
 import jax.numpy as jnp
 
 import pgx
+from pgx._src.types import Array
 from pgx.bridge_bidding import BridgeBidding, State
 
 env = BridgeBidding()
 
 
-def _imp_reward(
-    table_a_reward: jnp.ndarray, table_b_reward: jnp.ndarray
-) -> jnp.ndarray:
+def _imp_reward(table_a_reward: Array, table_b_reward: Array) -> Array:
     """Convert score reward to IMP reward
 
     >>> table_a_reward = jnp.array([0, 0, 0, 0])

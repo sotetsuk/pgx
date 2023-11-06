@@ -19,6 +19,7 @@ from jax import numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -26,28 +27,28 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
-    observation: jnp.ndarray = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: Array = jnp.int32(0)
+    rewards: Array = jnp.float32([0.0, 0.0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
+    observation: Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
     # --- Go specific ---
-    _size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int32
+    _size: Array = jnp.int32(19)  # NOTE: require 19 * 19 > int32
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
     # require at least 19 * 19 > int32, idx_squared_sum can be 361^2 > int32
-    _chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
-    _board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
-    _turn: jnp.ndarray = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
-    _num_captured_stones: jnp.ndarray = jnp.zeros(
+    _chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
+    _board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
+    _turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
+    _num_captured_stones: Array = jnp.zeros(
         2, dtype=jnp.int32
     )  # [0]=black, [1]=white
-    _passed: jnp.ndarray = FALSE  # TRUE if last action is pass
-    _ko: jnp.ndarray = jnp.int32(-1)  # by SSK
-    _komi: jnp.ndarray = jnp.float32(7.5)
-    _black_player: jnp.ndarray = jnp.int32(0)
+    _passed: Array = FALSE  # TRUE if last action is pass
+    _ko: Array = jnp.int32(-1)  # by SSK
+    _komi: Array = jnp.float32(7.5)
+    _black_player: Array = jnp.int32(0)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -77,10 +78,10 @@ class Go(core.Env):
         self.history_length = history_length
         self.max_termination_steps = self.size * self.size * 2
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return partial(_init, size=self.size, komi=self.komi)(key=key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         state = partial(_step, size=self.size)(state, action)
@@ -96,9 +97,7 @@ class Go(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return partial(
             _observe, size=self.size, history_length=self.history_length
@@ -169,7 +168,7 @@ def _observe(state: State, player_id, size, history_length):
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def _init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
+def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
     black_player = jnp.int32(jax.random.bernoulli(key))
     current_player = black_player
     return State(  # type:ignore
@@ -333,7 +332,7 @@ def _remove_stones(
     )
 
 
-def legal_actions(state: State, size: int) -> jnp.ndarray:
+def legal_actions(state: State, size: int) -> Array:
     """Logic is highly inspired by OpenSpiel's Go implementation"""
     is_empty = state._chain_id_board == 0
 
@@ -418,7 +417,7 @@ def _opponent_color(state: State):
     return jnp.int32([-1, 1])[state._turn]
 
 
-def _ko_may_occur(state: State, xy: int) -> jnp.ndarray:
+def _ko_may_occur(state: State, xy: int) -> Array:
     size = state._size
     x = xy // size
     y = xy % size
@@ -442,7 +441,7 @@ def _count_point(state, size):
     )
 
 
-def _get_reward(state: State, size: int) -> jnp.ndarray:
+def _get_reward(state: State, size: int) -> Array:
     score = _count_point(state, size)
     reward_bw = jax.lax.cond(
         score[0] - state._komi > score[1],

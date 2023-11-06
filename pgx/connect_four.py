@@ -17,6 +17,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -24,15 +25,15 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    observation: jnp.ndarray = jnp.zeros((6, 7, 2), dtype=jnp.bool_)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(7, dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: Array = jnp.int32(0)
+    observation: Array = jnp.zeros((6, 7, 2), dtype=jnp.bool_)
+    rewards: Array = jnp.float32([0.0, 0.0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.ones(7, dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
     # --- Connect Four specific ---
-    _turn: jnp.ndarray = jnp.int32(0)
+    _turn: Array = jnp.int32(0)
     # 6x7 board
     # [[ 0,  1,  2,  3,  4,  5,  6],
     #  [ 7,  8,  9, 10, 11, 12, 13],
@@ -40,8 +41,8 @@ class State(core.State):
     #  [21, 22, 23, 24, 25, 26, 27],
     #  [28, 29, 30, 31, 32, 33, 34],
     #  [35, 36, 37, 38, 39, 40, 41]]
-    _board: jnp.ndarray = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
-    _blank_row: jnp.ndarray = jnp.full(7, 5)
+    _board: Array = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
+    _blank_row: Array = jnp.full(7, 5)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -52,17 +53,15 @@ class ConnectFour(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -107,12 +106,12 @@ def _make_win_cache():
 IDX = _make_win_cache()
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: PRNGKey) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 
-def _step(state: State, action: jnp.ndarray) -> State:
+def _step(state: State, action: Array) -> State:
     board = state._board
     row = state._blank_row[action]
     blank_row = state._blank_row.at[action].set(row - 1)
@@ -138,11 +137,11 @@ def _to_idx(row, col):
     return row * 7 + col
 
 
-def _win_check(board, turn) -> jnp.ndarray:
+def _win_check(board, turn) -> Array:
     return ((board[IDX] == turn).all(axis=1)).any()
 
 
-def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: Array) -> Array:
     turns = jnp.int32([state._turn, 1 - state._turn])
     turns = jax.lax.cond(
         player_id == state.current_player,

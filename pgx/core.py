@@ -20,6 +20,7 @@ import jax
 import jax.numpy as jnp
 
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -78,36 +79,36 @@ class State(abc.ABC):
     There are 6 common attributes over all games:
 
     Attributes:
-        current_player (jnp.ndarray): id of agent to play.
+        current_player (Array): id of agent to play.
             Note that this does NOT represent the turn (e.g., black/white in Go).
             This ID is consistent over the parallel vmapped states.
-        observation (jnp.ndarray): observation for the current state.
+        observation (Array): observation for the current state.
             `Env.observe` is called to compute.
-        rewards (jnp.ndarray): the `i`-th element indicates the intermediate reward for
+        rewards (Array): the `i`-th element indicates the intermediate reward for
             the agent with player-id `i`. If `Env.step` is called for a terminal state,
             the following `state.rewards` is zero for all players.
-        terminated (jnp.ndarray): denotes that the state is terminal state. Note that
+        terminated (Array): denotes that the state is terminal state. Note that
             some environments (e.g., Go) have an `max_termination_steps` parameter inside
             and will terminate within a limited number of states (following AlphaGo).
-        truncated (jnp.ndarray): indicates that the episode ends with the reason other than termination.
+        truncated (Array): indicates that the episode ends with the reason other than termination.
             Note that current Pgx environments do not invoke truncation but users can use `TimeLimit` wrapper
             to truncate the environment. In Pgx environments, some MinAtar games may not terminate within a finite timestep.
             However, the other environments are supposed to terminate within a finite timestep with probability one.
-        legal_action_mask (jnp.ndarray): Boolean array of legal actions. If illegal action is taken,
+        legal_action_mask (Array): Boolean array of legal actions. If illegal action is taken,
             the game will terminate immediately with the penalty to the palyer.
     """
 
-    current_player: jnp.ndarray
-    observation: jnp.ndarray
-    rewards: jnp.ndarray
-    terminated: jnp.ndarray
-    truncated: jnp.ndarray
-    legal_action_mask: jnp.ndarray
+    current_player: Array
+    observation: Array
+    rewards: Array
+    terminated: Array
+    truncated: Array
+    legal_action_mask: Array
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
     #   - updated only when actually used
     #   - supposed NOT to be used by agent
-    _step_count: jnp.ndarray
+    _step_count: Array
 
     @property
     @abc.abstractmethod
@@ -177,7 +178,7 @@ class Env(abc.ABC):
     def __init__(self):
         ...
 
-    def init(self, key: jax.random.KeyArray) -> State:
+    def init(self, key: PRNGKey) -> State:
         """Return the initial state. Note that no internal state of
         environment changes.
 
@@ -195,8 +196,8 @@ class Env(abc.ABC):
     def step(
         self,
         state: State,
-        action: jnp.ndarray,
-        key: Optional[jax.Array] = None,
+        action: Array,
+        key: Optional[Array] = None,
     ) -> State:
         """Step function."""
         is_illegal = ~state.legal_action_mask[action]
@@ -233,13 +234,13 @@ class Env(abc.ABC):
 
         return state
 
-    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(self, state: State, player_id: Array) -> Array:
         """Observation function."""
         obs = self._observe(state, player_id)
         return jax.lax.stop_gradient(obs)
 
     @abc.abstractmethod
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         """Implement game-specific init function here."""
         ...
 
@@ -249,7 +250,7 @@ class Env(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: State, player_id: Array) -> Array:
         """Implement game-specific observe function here."""
         ...
 
@@ -291,9 +292,7 @@ class Env(abc.ABC):
         """Negative reward given when illegal action is selected."""
         return -1.0
 
-    def _step_with_illegal_action(
-        self, state: State, loser: jnp.ndarray
-    ) -> State:
+    def _step_with_illegal_action(self, state: State, loser: Array) -> State:
         penalty = self._illegal_action_penalty
         reward = (
             jnp.ones_like(state.rewards)

@@ -4,6 +4,7 @@ import os
 import jax
 import jax.numpy as jnp
 
+from pgx._src.types import Array
 from pgx.mahjong._action import Action
 from pgx.mahjong._hand import Hand
 from pgx.mahjong._meld import Meld
@@ -66,13 +67,13 @@ class Yaku:
 
     @staticmethod
     def score(
-        hand: jnp.ndarray,
-        melds: jnp.ndarray,
-        n_meld: jnp.ndarray,
-        last: jnp.ndarray,
-        riichi: jnp.ndarray,
-        is_ron: jnp.ndarray,
-        dora: jnp.ndarray,
+        hand: Array,
+        melds: Array,
+        n_meld: Array,
+        last: Array,
+        riichi: Array,
+        is_ron: Array,
+        dora: Array,
     ) -> int:
         """handはlast_tileを加えたもの"""
         yaku, fan, fu = Yaku.judge(
@@ -108,35 +109,35 @@ class Yaku:
         )
 
     @staticmethod
-    def head(code) -> jnp.ndarray:
+    def head(code) -> Array:
         return Yaku.CACHE[code] & 0b1111
 
     @staticmethod
-    def chow(code) -> jnp.ndarray:
+    def chow(code) -> Array:
         return Yaku.CACHE[code] >> 4 & 0b1111111
 
     @staticmethod
-    def pung(code) -> jnp.ndarray:
+    def pung(code) -> Array:
         return Yaku.CACHE[code] >> 11 & 0b111111111
 
     @staticmethod
-    def n_pung(code) -> jnp.ndarray:
+    def n_pung(code) -> Array:
         return Yaku.CACHE[code] >> 20 & 0b111
 
     @staticmethod
-    def n_double_chow(code) -> jnp.ndarray:
+    def n_double_chow(code) -> Array:
         return Yaku.CACHE[code] >> 23 & 0b11
 
     @staticmethod
-    def outside(code) -> jnp.ndarray:
+    def outside(code) -> Array:
         return Yaku.CACHE[code] >> 25 & 1
 
     @staticmethod
-    def nine_gates(code) -> jnp.ndarray:
+    def nine_gates(code) -> Array:
         return Yaku.CACHE[code] >> 26
 
     @staticmethod
-    def is_pure_straight(chow: jnp.ndarray) -> jnp.ndarray:
+    def is_pure_straight(chow: Array) -> Array:
         return (
             ((chow & 0b1001001) == 0b1001001)
             | ((chow >> 9 & 0b1001001) == 0b1001001)
@@ -144,7 +145,7 @@ class Yaku:
         ) == 1
 
     @staticmethod
-    def is_triple_chow(chow: jnp.ndarray) -> jnp.ndarray:
+    def is_triple_chow(chow: Array) -> Array:
         return (
             ((chow & 0b1000000001000000001) == 0b1000000001000000001)
             | ((chow >> 1 & 0b1000000001000000001) == 0b1000000001000000001)
@@ -156,7 +157,7 @@ class Yaku:
         ) == 1
 
     @staticmethod
-    def is_triple_pung(pung: jnp.ndarray) -> jnp.ndarray:
+    def is_triple_pung(pung: Array) -> Array:
         return (
             ((pung & 0b1000000001000000001) == 0b1000000001000000001)
             | ((pung >> 1 & 0b1000000001000000001) == 0b1000000001000000001)
@@ -171,14 +172,14 @@ class Yaku:
 
     @staticmethod
     def update(
-        is_pinfu: jnp.ndarray,
-        is_outside: jnp.ndarray,
-        n_double_chow: jnp.ndarray,
-        all_chow: jnp.ndarray,
-        all_pung: jnp.ndarray,
-        n_concealed_pung: jnp.ndarray,
-        nine_gates: jnp.ndarray,
-        fu: jnp.ndarray,
+        is_pinfu: Array,
+        is_outside: Array,
+        n_double_chow: Array,
+        all_chow: Array,
+        all_pung: Array,
+        n_concealed_pung: Array,
+        nine_gates: Array,
+        fu: Array,
         code: int,
         suit: int,
         last: int,
@@ -251,9 +252,9 @@ class Yaku:
 
     @staticmethod
     def judge(
-        hand: jnp.ndarray,
-        melds: jnp.ndarray,
-        n_meld: jnp.ndarray,
+        hand: Array,
+        melds: Array,
+        n_meld: Array,
         last,
         riichi,
         is_ron,
@@ -555,7 +556,7 @@ class Yaku:
         )
 
     @staticmethod
-    def flatten(hand: jnp.ndarray, melds: jnp.ndarray, n_meld) -> jnp.ndarray:
+    def flatten(hand: Array, melds: Array, n_meld) -> Array:
         return jax.lax.fori_loop(
             jnp.int8(0),
             n_meld,
@@ -564,7 +565,7 @@ class Yaku:
         )
 
     @staticmethod
-    def _flatten(hand: jnp.ndarray, meld) -> jnp.ndarray:
+    def _flatten(hand: Array, meld) -> Array:
         target, action = Meld.target(meld), Meld.action(meld)
         return jax.lax.switch(
             action - Action.PON + 1,

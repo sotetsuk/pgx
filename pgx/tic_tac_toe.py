@@ -17,6 +17,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.struct import dataclass
+from pgx._src.types import Array, PRNGKey
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -24,19 +25,19 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    observation: jnp.ndarray = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(9, dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: Array = jnp.int32(0)
+    observation: Array = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
+    rewards: Array = jnp.float32([0.0, 0.0])
+    terminated: Array = FALSE
+    truncated: Array = FALSE
+    legal_action_mask: Array = jnp.ones(9, dtype=jnp.bool_)
+    _step_count: Array = jnp.int32(0)
     # --- Tic-tac-toe specific ---
-    _turn: jnp.ndarray = jnp.int32(0)
+    _turn: Array = jnp.int32(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
-    _board: jnp.ndarray = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
+    _board: Array = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
 
     @property
     def env_id(self) -> core.EnvId:
@@ -47,17 +48,15 @@ class TicTacToe(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -74,12 +73,12 @@ class TicTacToe(core.Env):
         return 2
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: PRNGKey) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 
-def _step(state: State, action: jnp.ndarray) -> State:
+def _step(state: State, action: Array) -> State:
     state = state.replace(_board=state._board.at[action].set(state._turn))  # type: ignore
     won = _win_check(state._board, state._turn)
     reward = jax.lax.cond(
@@ -96,12 +95,12 @@ def _step(state: State, action: jnp.ndarray) -> State:
     )
 
 
-def _win_check(board, turn) -> jnp.ndarray:
+def _win_check(board, turn) -> Array:
     idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
     return ((board[idx] == turn).all(axis=1)).any()
 
 
-def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: Array) -> Array:
     @jax.vmap
     def plane(i):
         return (state._board == i).reshape((3, 3))

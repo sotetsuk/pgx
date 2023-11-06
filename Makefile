@@ -2,8 +2,9 @@
 
 
 install-dev:
-	python3 -m pip install \
-		pytest==7.1.2 \
+	python3 -m pip install -U pip
+	python3 -m pip install -U \
+		pytest \
 		matplotlib \
 		ipython \
 		jax[cpu] \
@@ -12,12 +13,13 @@ install-dev:
 		pgx-minatar
 
 install-fmt:
-	python3 -m pip install \
-		black==22.6.0 \
-		blackdoc==0.3.6 \
-		isort==5.10.1 \
-		flake8==5.0.4 \
-		mypy==0.971
+	python3 -m pip install -U pip
+	python3 -m pip install -U \
+		black \
+		blackdoc \
+		isort \
+		flake8 \
+		mypy
 
 clean:
 	rm -rf build
