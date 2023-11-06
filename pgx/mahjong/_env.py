@@ -35,7 +35,7 @@ class State(core.State):
     terminated: jax.Array = FALSE
     truncated: jax.Array = FALSE
     legal_action_mask: jax.Array = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
+    _rng_key: jax.Array = jax.random.PRNGKey(0)
     _step_count: jax.Array = jnp.int32(0)
     # --- Mahjong specific ---
     _round: jax.Array = jnp.int8(0)
@@ -238,7 +238,7 @@ class Mahjong(core.Env):
         return 4
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.Array) -> State:
     rng, subkey = jax.random.split(rng)
     current_player = jnp.int8(jax.random.bernoulli(rng))
     last_player = jnp.int8(-1)
