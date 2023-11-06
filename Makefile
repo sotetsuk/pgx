@@ -2,7 +2,7 @@
 
 
 install-dev:
-	python3 -m pip install \
+	python3 -m pip install -U \
 		pytest \
 		matplotlib \
 		ipython \
@@ -12,7 +12,7 @@ install-dev:
 		pgx-minatar
 
 install-fmt:
-	python3 -m pip install \
+	python3 -m pip install -U \
 		black \
 		blackdoc \
 		isort \
