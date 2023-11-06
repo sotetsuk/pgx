@@ -145,12 +145,7 @@ def test_is_turn_end():
     # No playable dice
     board: jnp.ndarray = make_test_boad()
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(1),
-=======
         current_player=jnp.int32(1),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(1),
         dice=jnp.array([2, 2], dtype=jnp.int32),
@@ -178,12 +173,7 @@ def test_change_turn():
     board = board.at[1].set(3)
     board = board.at[24].set(4)
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(0),
-=======
         current_player=jnp.int32(0),
-        rng=rng,
->>>>>>> main
         board=test_board,
         turn=jnp.int32(0),
         dice=jnp.array([2, 2], dtype=jnp.int32),
@@ -202,12 +192,7 @@ def test_no_op():
         board, jnp.array([0, 1, -1, -1], dtype=jnp.int32)
     )
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(1),
-=======
         current_player=jnp.int32(1),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(1),
         dice=jnp.array([0, 1], dtype=jnp.int32),
@@ -215,13 +200,8 @@ def test_no_op():
         played_dice_num=jnp.int32(0),
         legal_action_mask=legal_action_mask,
     )
-<<<<<<< HEAD
     state = step(state, 0, jax.random.PRNGKey(0))  # execute no-op action
-    assert state._turn == jnp.int8(0)  # Turn changes after no-op.
-=======
-    state = step(state, 0)  # execute no-op action
     assert state._turn == jnp.int32(0)  # Turn changes after no-op.
->>>>>>> main
 
 
 def test_step():
@@ -232,12 +212,7 @@ def test_step():
         board, jnp.array([0, 1, -1, -1], dtype=jnp.int32)
     )
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(1),
-=======
         current_player=jnp.int32(1),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(1),
         dice=jnp.array([0, 1], dtype=jnp.int32),
@@ -289,12 +264,7 @@ def test_step():
         board, jnp.array([4, 5, -1, -1], dtype=jnp.int32)
     )
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(0),
-=======
         current_player=jnp.int32(0),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(0),
         dice=jnp.array([4, 5], dtype=jnp.int32),
@@ -324,12 +294,7 @@ def test_observe():
 
     # current_player = white, playable_dice = (1, 2)
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(1),
-=======
         current_player=jnp.int32(1),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(1),
         dice=jnp.array([0, 1], dtype=jnp.int32),
@@ -342,12 +307,7 @@ def test_observe():
     assert (observe(state, jnp.int32(1)) == expected_obs).all()
 
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(1),
-=======
         current_player=jnp.int32(1),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(1),
         dice=jnp.array([0, 1], dtype=jnp.int32),
@@ -361,12 +321,7 @@ def test_observe():
 
     # current_player = black, playabl_dice = (2)
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(1),
-=======
         current_player=jnp.int32(1),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(-1),
         dice=jnp.array([0, 1], dtype=jnp.int32),
@@ -379,12 +334,7 @@ def test_observe():
     assert (observe(state, jnp.int32(1)) == expected_obs).all()
 
     state = make_test_state(
-<<<<<<< HEAD
-        current_player=jnp.int8(1),
-=======
         current_player=jnp.int32(1),
-        rng=rng,
->>>>>>> main
         board=board,
         turn=jnp.int32(-1),
         dice=jnp.array([0, 1], dtype=jnp.int32),
