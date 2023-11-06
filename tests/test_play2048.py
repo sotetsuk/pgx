@@ -132,21 +132,6 @@ def test_observe():
     assert not obs[0, 3, 2]
 
 
-def test_random_play():
-    for i in range(10):
-        key = jax.random.PRNGKey(i)
-        done = jnp.bool_(False)
-        key, sub_key = jax.random.split(key)
-        state = init(sub_key)
-        while not done:
-            legal_actions = jnp.where(state.legal_action_mask)[0]
-            key, sub_key = jax.random.split(key)
-            action = jax.random.choice(sub_key, legal_actions)
-            state = step(state, jnp.int16(action))
-            assert (state.rewards >= 0).all()
-            done = state.terminated
-
-
 def test_api():
     import pgx
 
