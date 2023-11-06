@@ -61,7 +61,7 @@ class Hex(core.Env):
         assert isinstance(size, int)
         self.size = size
 
-    def _init(self, key: Array) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return partial(_init, size=self.size)(rng=key)
 
     def _step(self, state: core.State, action: Array, key) -> State:

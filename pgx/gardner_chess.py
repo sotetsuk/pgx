@@ -167,7 +167,7 @@ class GardnerChess(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: Array) -> State:
+    def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
         state = State(current_player=current_player)  # type: ignore
         return state

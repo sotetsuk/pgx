@@ -47,7 +47,7 @@ class TicTacToe(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: Array) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return _init(key)
 
     def _step(self, state: core.State, action: Array, key) -> State:

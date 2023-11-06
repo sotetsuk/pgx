@@ -189,7 +189,7 @@ class BridgeBidding(core.Env):
             )
             sys.exit(1)
 
-    def _init(self, key: Array) -> State:
+    def _init(self, key: PRNGKey) -> State:
         key1, key2 = jax.random.split(key, num=2)
         return _init_by_key(jax.random.choice(key1, self._lut_keys), key2)
 
@@ -219,7 +219,7 @@ class BridgeBidding(core.Env):
         return -7600.0
 
 
-def _init_by_key(key: Array, rng: Array) -> State:
+def _init_by_key(key: PRNGKey, rng: Array) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
@@ -878,7 +878,7 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
-def _key_to_hand(key: Array) -> Array:
+def _key_to_hand(key: PRNGKey) -> Array:
     """Convert key to hand"""
 
     def _convert_quat(j):
@@ -935,7 +935,7 @@ def _calculate_dds_tricks(
 
 
 def _find_value_from_key(
-    key: Array, lut_keys: Array, lut_values: Array
+    key: PRNGKey, lut_keys: Array, lut_values: Array
 ):
     """Find a value matching key without batch processing
     >>> VALUES = jnp.arange(20).reshape(5, 4)

@@ -35,7 +35,7 @@ class State(core.State):
     terminated: Array = FALSE
     truncated: Array = FALSE
     legal_action_mask: Array = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    _rng_key: Array = jax.random.PRNGKey(0)
+    _rng_key: PRNGKey = jax.random.PRNGKey(0)
     _step_count: Array = jnp.int32(0)
     # --- Mahjong specific ---
     _round: Array = jnp.int8(0)
@@ -210,7 +210,7 @@ class Mahjong(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: Array) -> State:
+    def _init(self, key: PRNGKey) -> State:
         return _init(key)
 
     def _step(self, state: core.State, action: Array, key) -> State:
