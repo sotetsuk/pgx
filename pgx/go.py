@@ -38,7 +38,7 @@ class State(v1.State):
     _size: jnp.ndarray = jnp.int32(19)  # NOTE: require 19 * 19 > int32
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
-    # require at least 19 * 19 > int32, idx_squared_sum can be 361^2 > int16
+    # require at least 19 * 19 > int32, idx_squared_sum can be 361^2 > int32
     _chain_id_board: jnp.ndarray = jnp.zeros(19 * 19, dtype=jnp.int32)
     _board_history: jnp.ndarray = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
     _turn: jnp.ndarray = jnp.int32(0)  # 0 = black's turn, 1 = white's turn

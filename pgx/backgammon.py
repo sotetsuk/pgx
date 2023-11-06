@@ -38,11 +38,11 @@ class State(v1.State):
     # --- Backgammon specific ---
     # points(24) bar(2) off(2). black+, white-
     _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int32)
-    _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int16)  # 0~5: 1~6
+    _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)  # 0~5: 1~6
     _playable_dice: jnp.ndarray = jnp.zeros(
-        4, dtype=jnp.int16
+        4, dtype=jnp.int32
     )  # playable dice -1 for empty
-    _played_dice_num: jnp.ndarray = jnp.int16(0)  # the number of dice played
+    _played_dice_num: jnp.ndarray = jnp.int32(0)  # the number of dice played
     _turn: jnp.ndarray = jnp.int32(1)  # black: 0 white:1
 
     @property
@@ -89,7 +89,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     terminated: jnp.ndarray = FALSE
     dice: jnp.ndarray = _roll_init_dice(rng2)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
-    played_dice_num: jnp.ndarray = jnp.int16(0)
+    played_dice_num: jnp.ndarray = jnp.int32(0)
     turn: jnp.ndarray = _init_turn(dice)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
     state = State(  # type: ignore
@@ -198,7 +198,7 @@ def _update_by_action(state: State, action: jnp.ndarray) -> State:
     current_player: jnp.ndarray = state.current_player
     terminated: jnp.ndarray = state.terminated
     board: jnp.ndarray = _move(state._board, action)
-    played_dice_num: jnp.ndarray = jnp.int16(state._played_dice_num + 1)
+    played_dice_num: jnp.ndarray = jnp.int32(state._played_dice_num + 1)
     playable_dice: jnp.ndarray = _update_playable_dice(
         state._playable_dice, state._played_dice_num, state._dice, action
     )
@@ -257,7 +257,7 @@ def _change_turn(state: State) -> State:
     terminated: jnp.ndarray = state.terminated
     dice: jnp.ndarray = _roll_dice(rng1)
     playable_dice: jnp.ndarray = _set_playable_dice(dice)
-    played_dice_num: jnp.ndarray = jnp.int16(0)
+    played_dice_num: jnp.ndarray = jnp.int32(0)
     legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
         current_player=current_player,
@@ -277,13 +277,13 @@ def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     Roll till the dice are different.
     """
 
-    init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 5], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]], dtype=jnp.int16)  # type: ignore
+    init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 5], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]], dtype=jnp.int32)  # type: ignore
     return jax.random.choice(rng, init_dice_pattern)
 
 
 def _roll_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
     roll: jnp.ndarray = jax.random.randint(
-        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int16
+        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int32
     )
     return roll[0]
 
@@ -301,9 +301,9 @@ def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
     """
     -1 for empty
     """
-    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int16) + (
+    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int32) + (
         dice[0] != dice[1]
-    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int16)
+    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int32)
 
 
 def _update_playable_dice(
@@ -313,9 +313,9 @@ def _update_playable_dice(
     action: jnp.ndarray,
 ) -> jnp.ndarray:
     _n = played_dice_num
-    die_array = jnp.array([action % 6] * 4, dtype=jnp.int16)
+    die_array = jnp.array([action % 6] * 4, dtype=jnp.int32)
     dice_indices: jnp.ndarray = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int16
+        [0, 1, 2, 3], dtype=jnp.int32
     )  # maximum number of playable dice is 4
 
     def _update_for_diff_dice(
@@ -330,7 +330,7 @@ def _update_playable_dice(
     ) * jax.vmap(_update_for_diff_dice)(
         die_array, dice_indices, jnp.tile(playable_dice, (4, 1))
     ).astype(
-        jnp.int16
+        jnp.int32
     )
 
 
@@ -361,7 +361,7 @@ def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
     """
     b = board[:24]
     exists = jnp.where((b > 0), size=24, fill_value=jnp.nan)[0]  # type: ignore
-    return 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int16(100)))
+    return 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int32(100)))
 
 
 def _is_all_on_home_board(board: jnp.ndarray) -> bool:
@@ -395,7 +395,7 @@ def _calc_src(src: jnp.ndarray) -> int:
     """
     Translate src to board index.
     """
-    return (src == 1) * jnp.int16(_bar_idx()) + (src != 1) * jnp.int16(
+    return (src == 1) * jnp.int32(_bar_idx()) + (src != 1) * jnp.int32(
         src - 2
     )  # type: ignore
 
@@ -404,14 +404,14 @@ def _calc_tgt(src: int, die) -> int:
     """
     Translate tgt to board index.
     """
-    return (src >= 24) * (jnp.int16(die) - 1) + (src < 24) * jnp.int16(
+    return (src >= 24) * (jnp.int32(die) - 1) + (src < 24) * jnp.int32(
         _from_board(src, die)
     )  # type: ignore
 
 
 def _from_board(src: int, die: int) -> int:
     _is_to_board = (src + die >= 0) & (src + die <= 23)
-    return _is_to_board * jnp.int16(src + die) + ((~_is_to_board)) * jnp.int16(
+    return _is_to_board * jnp.int32(src + die) + ((~_is_to_board)) * jnp.int32(
         _off_idx()
     )  # type: ignore
 
@@ -555,7 +555,7 @@ def _legal_action_mask_for_valid_single_dice(
     Legal action mask for a single die when the die is valid.
     """
     src_indices = jnp.arange(
-        26, dtype=jnp.int16
+        26, dtype=jnp.int32
     )  # calc legal action for all src indices
 
     def _is_legal(idx: jnp.ndarray):

@@ -45,7 +45,7 @@ def api_test_single(env: Env, num: int = 100):
     - observe
       - Returns different observations when player_ids are different (except the initial state)
     - TODO: reward must be zero when step is called after terminated
-    - TODO: observation type (bool, int32 or int16) for efficiency; https://jax.readthedocs.io/en/latest/type_promotion.html
+    - TODO: observation type (bool, int32 or int32) for efficiency; https://jax.readthedocs.io/en/latest/type_promotion.html
     """
 
     init = jax.jit(env.init)

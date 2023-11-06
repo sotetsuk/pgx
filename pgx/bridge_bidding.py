@@ -102,7 +102,7 @@ class State(v1.State):
     legal_action_mask: jnp.ndarray = jnp.ones(38, dtype=jnp.bool_)
     _rng_key: jax.random.KeyArray = jax.random.PRNGKey(0)
     _step_count: jnp.ndarray = jnp.int32(0)
-    _turn: jnp.ndarray = jnp.int16(0)
+    _turn: jnp.ndarray = jnp.int32(0)
     _shuffled_players: jnp.ndarray = jnp.zeros(4, dtype=jnp.int32)
     # Hand of each player
     #   0  ~ 12: Hand of N
@@ -342,7 +342,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
 
     # make hand of observation
     hand = jnp.zeros(52, dtype=jnp.bool_)
-    position = _player_position(player_id, state).astype(jnp.int16)
+    position = _player_position(player_id, state).astype(jnp.int32)
     hand = jax.lax.fori_loop(
         position * 13,
         (position + 1) * 13,
