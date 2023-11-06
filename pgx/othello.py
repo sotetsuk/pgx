@@ -42,9 +42,7 @@ class State(core.State):
     #  [40, 41, 42, 43, 44, 45, 46, 47],
     #  [48, 49, 50, 51, 52, 53, 54, 55],
     #  [56, 57, 58, 59, 60, 61, 62, 63]]
-    _board: jax.Array = jnp.zeros(
-        64, jnp.int32
-    )  # -1(opp), 0(empty), 1(self)
+    _board: jax.Array = jnp.zeros(64, jnp.int32)  # -1(opp), 0(empty), 1(self)
     _passed: jax.Array = FALSE
 
     @property
@@ -64,9 +62,7 @@ class Othello(core.Env):
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(
-        self, state: core.State, player_id: jax.Array
-    ) -> jax.Array:
+    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 

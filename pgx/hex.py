@@ -73,9 +73,7 @@ class Hex(core.Env):
             lambda: partial(_swap, size=self.size)(state),
         )
 
-    def _observe(
-        self, state: core.State, player_id: jax.Array
-    ) -> jax.Array:
+    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
         assert isinstance(state, State)
         return partial(_observe, size=self.size)(state, player_id)
 

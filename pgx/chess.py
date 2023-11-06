@@ -158,9 +158,7 @@ class State(core.State):
 class Action:
     from_: jax.Array = jnp.int32(-1)
     to: jax.Array = jnp.int32(-1)
-    underpromotion: jax.Array = jnp.int32(
-        -1
-    )  # 0: rook, 1: bishop, 2: knight
+    underpromotion: jax.Array = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
     def _from_label(label: jax.Array):
@@ -215,9 +213,7 @@ class Chess(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jax.Array
-    ) -> jax.Array:
+    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 

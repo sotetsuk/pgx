@@ -198,9 +198,7 @@ class BridgeBidding(core.Env):
         assert isinstance(state, State)
         return _step(state, action, self._lut_keys, self._lut_values)
 
-    def _observe(
-        self, state: core.State, player_id: jax.Array
-    ) -> jax.Array:
+    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 

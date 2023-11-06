@@ -96,9 +96,7 @@ class Go(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(
-        self, state: core.State, player_id: jax.Array
-    ) -> jax.Array:
+    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
         assert isinstance(state, State)
         return partial(
             _observe, size=self.size, history_length=self.history_length
