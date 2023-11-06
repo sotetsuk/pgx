@@ -69,28 +69,28 @@ MAX_TERMINATION_STEPS = 256
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(132, dtype=jnp.bool_)  # (132,)
-    observation: jnp.ndarray = jnp.zeros((4, 3, 22), dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: jax.Array = jnp.int32(0)
+    rewards: jax.Array = jnp.float32([0.0, 0.0])
+    terminated: jax.Array = FALSE
+    truncated: jax.Array = FALSE
+    legal_action_mask: jax.Array = jnp.ones(132, dtype=jnp.bool_)  # (132,)
+    observation: jax.Array = jnp.zeros((4, 3, 22), dtype=jnp.bool_)
+    _step_count: jax.Array = jnp.int32(0)
     # --- Animal Shogi specific ---
-    _turn: jnp.ndarray = jnp.int32(0)
-    _board: jnp.ndarray = INIT_BOARD  # (12,)
-    _hand: jnp.ndarray = jnp.zeros((2, 3), dtype=jnp.int32)
-    _zobrist_hash: jnp.ndarray = jnp.uint32([233882788, 593924309])
-    _hash_history: jnp.ndarray = (
+    _turn: jax.Array = jnp.int32(0)
+    _board: jax.Array = INIT_BOARD  # (12,)
+    _hand: jax.Array = jnp.zeros((2, 3), dtype=jnp.int32)
+    _zobrist_hash: jax.Array = jnp.uint32([233882788, 593924309])
+    _hash_history: jax.Array = (
         jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
         .at[0]
         .set(jnp.uint32([233882788, 593924309]))
     )
-    _board_history: jnp.ndarray = (
+    _board_history: jax.Array = (
         (-jnp.ones((8, 12), dtype=jnp.int32)).at[0, :].set(INIT_BOARD)
     )
-    _hand_history: jnp.ndarray = jnp.zeros((8, 6), dtype=jnp.int32)
-    _rep_history: jnp.ndarray = jnp.zeros((8,), dtype=jnp.int32)
+    _hand_history: jax.Array = jnp.zeros((8, 6), dtype=jnp.int32)
+    _rep_history: jax.Array = jnp.zeros((8,), dtype=jnp.int32)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -99,13 +99,13 @@ class State(core.State):
 
 @dataclass
 class Action:
-    is_drop: jnp.ndarray = FALSE
-    from_: jnp.ndarray = jnp.int32(-1)
-    to: jnp.ndarray = jnp.int32(-1)
-    drop_piece: jnp.ndarray = jnp.int32(-1)
+    is_drop: jax.Array = FALSE
+    from_: jax.Array = jnp.int32(-1)
+    to: jax.Array = jnp.int32(-1)
+    drop_piece: jax.Array = jnp.int32(-1)
 
     @staticmethod
-    def _from_label(a: jnp.ndarray):
+    def _from_label(a: jax.Array):
         # Implements AlphaZero like action label:
         # 132 labels =
         #   [Move] 8 (direction) * 12 (from_) +
@@ -129,7 +129,7 @@ class AnimalShogi(core.Env):
         state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
         return state
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jax.Array, key) -> State:
         del key
         assert isinstance(state, State)
         state = _step(state, action)
@@ -142,8 +142,8 @@ class AnimalShogi(core.Env):
         return state  # type: ignore
 
     def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+        self, state: core.State, player_id: jax.Array
+    ) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -160,7 +160,7 @@ class AnimalShogi(core.Env):
         return 2
 
 
-def _step(state: State, action: jnp.ndarray):
+def _step(state: State, action: jax.Array):
     a = Action._from_label(action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
@@ -205,7 +205,7 @@ def _step(state: State, action: jnp.ndarray):
     )
 
 
-def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jax.Array) -> jax.Array:
     # player_id's color
     color = jax.lax.select(
         state.current_player == player_id, state._turn, 1 - state._turn
@@ -308,7 +308,7 @@ def _step_drop(state: State, action: Action) -> State:
 
 
 def _legal_action_mask(state: State):
-    def is_legal(label: jnp.ndarray):
+    def is_legal(label: jax.Array):
         action = Action._from_label(label)
         return jax.lax.cond(
             action.is_drop, is_legal_drop, is_legal_move, action

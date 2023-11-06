@@ -8,8 +8,8 @@ env = BridgeBidding()
 
 
 def _imp_reward(
-    table_a_reward: jnp.ndarray, table_b_reward: jnp.ndarray
-) -> jnp.ndarray:
+    table_a_reward: jax.Array, table_b_reward: jax.Array
+) -> jax.Array:
     """Convert score reward to IMP reward
 
     >>> table_a_reward = jnp.array([0, 0, 0, 0])

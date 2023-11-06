@@ -26,23 +26,23 @@ FALSE = jnp.bool_(False)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    observation: jnp.ndarray = jnp.zeros(34, dtype=jnp.int32)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
+    current_player: jax.Array = jnp.int32(0)
+    observation: jax.Array = jnp.zeros(34, dtype=jnp.int32)
+    rewards: jax.Array = jnp.float32([0.0, 0.0])
+    terminated: jax.Array = FALSE
+    truncated: jax.Array = FALSE
     # micro action = 6 * src + die
-    legal_action_mask: jnp.ndarray = jnp.zeros(6 * 26, dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    legal_action_mask: jax.Array = jnp.zeros(6 * 26, dtype=jnp.bool_)
+    _step_count: jax.Array = jnp.int32(0)
     # --- Backgammon specific ---
     # points(24) bar(2) off(2). black+, white-
-    _board: jnp.ndarray = jnp.zeros(28, dtype=jnp.int32)
-    _dice: jnp.ndarray = jnp.zeros(2, dtype=jnp.int32)  # 0~5: 1~6
-    _playable_dice: jnp.ndarray = jnp.zeros(
+    _board: jax.Array = jnp.zeros(28, dtype=jnp.int32)
+    _dice: jax.Array = jnp.zeros(2, dtype=jnp.int32)  # 0~5: 1~6
+    _playable_dice: jax.Array = jnp.zeros(
         4, dtype=jnp.int32
     )  # playable dice -1 for empty
-    _played_dice_num: jnp.ndarray = jnp.int32(0)  # the number of dice played
-    _turn: jnp.ndarray = jnp.int32(1)  # black: 0 white:1
+    _played_dice_num: jax.Array = jnp.int32(0)  # the number of dice played
+    _turn: jax.Array = jnp.int32(1)  # black: 0 white:1
 
     @property
     def env_id(self) -> core.EnvId:
@@ -56,13 +56,13 @@ class Backgammon(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jax.Array, key) -> State:
         assert isinstance(state, State)
         return _step(state, action, key)
 
     def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+        self, state: core.State, player_id: jax.Array
+    ) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -85,14 +85,14 @@ class Backgammon(core.Env):
 
 def _init(rng: jax.random.KeyArray) -> State:
     rng1, rng2 = jax.random.split(rng, num=2)
-    current_player: jnp.ndarray = jax.random.bernoulli(rng1).astype(jnp.int32)
-    board: jnp.ndarray = _make_init_board()
-    terminated: jnp.ndarray = FALSE
-    dice: jnp.ndarray = _roll_init_dice(rng2)
-    playable_dice: jnp.ndarray = _set_playable_dice(dice)
-    played_dice_num: jnp.ndarray = jnp.int32(0)
-    turn: jnp.ndarray = _init_turn(dice)
-    legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
+    current_player: jax.Array = jax.random.bernoulli(rng1).astype(jnp.int32)
+    board: jax.Array = _make_init_board()
+    terminated: jax.Array = FALSE
+    dice: jax.Array = _roll_init_dice(rng2)
+    playable_dice: jax.Array = _set_playable_dice(dice)
+    played_dice_num: jax.Array = jnp.int32(0)
+    turn: jax.Array = _init_turn(dice)
+    legal_action_mask: jax.Array = _legal_action_mask(board, playable_dice)
     state = State(  # type: ignore
         current_player=current_player,
         _board=board,
@@ -106,7 +106,7 @@ def _init(rng: jax.random.KeyArray) -> State:
     return state
 
 
-def _step(state: State, action: jnp.ndarray, key) -> State:
+def _step(state: State, action: jax.Array, key) -> State:
     """
     Step when not terminated
     """
@@ -118,12 +118,12 @@ def _step(state: State, action: jnp.ndarray, key) -> State:
     )
 
 
-def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+def _observe(state: State, player_id: jax.Array) -> jax.Array:
     """
     Return observation for player_id
     """
-    board: jnp.ndarray = state._board
-    playable_dice_count_vec: jnp.ndarray = _to_playable_dice_count(
+    board: jax.Array = state._board
+    playable_dice_count_vec: jax.Array = _to_playable_dice_count(
         state._playable_dice
     )  # 6 dim vec which represents the count of playable die.
     return jax.lax.cond(
@@ -135,7 +135,7 @@ def _observe(state: State, player_id: jnp.ndarray) -> jnp.ndarray:
     )
 
 
-def _to_playable_dice_count(playable_dice: jnp.ndarray) -> jnp.ndarray:
+def _to_playable_dice_count(playable_dice: jax.Array) -> jax.Array:
     """
     Return 6 dim vec which represents the number of playable die
     Examples
@@ -145,14 +145,14 @@ def _to_playable_dice_count(playable_dice: jnp.ndarray) -> jnp.ndarray:
     Playable dice: 4, 4, 4, 4
     Return: [0, 0, 0, 0, 4, 0]
     """
-    dice_indices: jnp.ndarray = jnp.array(
+    dice_indices: jax.Array = jnp.array(
         [0, 1, 2, 3], dtype=jnp.int32
     )  # maximum number of playable dice is 4
 
     def _insert_dice_num(
-        idx: jnp.ndarray, playable_dice: jnp.ndarray
-    ) -> jnp.ndarray:
-        vec: jnp.ndarray = jnp.zeros(6, dtype=jnp.int32)
+        idx: jax.Array, playable_dice: jax.Array
+    ) -> jax.Array:
+        vec: jax.Array = jnp.zeros(6, dtype=jnp.int32)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
         ) + (playable_dice[idx] == -1) * vec
@@ -178,7 +178,7 @@ def _winning_step(
     return state.replace(rewards=reward)  # type: ignore
 
 
-def _no_winning_step(state: State, action: jnp.ndarray, key) -> State:
+def _no_winning_step(state: State, action: jax.Array, key) -> State:
     """
     Step with no winner. Change turn if turn end condition is satisfied.
     """
@@ -189,19 +189,19 @@ def _no_winning_step(state: State, action: jnp.ndarray, key) -> State:
     )
 
 
-def _update_by_action(state: State, action: jnp.ndarray) -> State:
+def _update_by_action(state: State, action: jax.Array) -> State:
     """
     Update state by action
     """
     is_no_op = action // 6 == 0
-    current_player: jnp.ndarray = state.current_player
-    terminated: jnp.ndarray = state.terminated
-    board: jnp.ndarray = _move(state._board, action)
-    played_dice_num: jnp.ndarray = jnp.int32(state._played_dice_num + 1)
-    playable_dice: jnp.ndarray = _update_playable_dice(
+    current_player: jax.Array = state.current_player
+    terminated: jax.Array = state.terminated
+    board: jax.Array = _move(state._board, action)
+    played_dice_num: jax.Array = jnp.int32(state._played_dice_num + 1)
+    playable_dice: jax.Array = _update_playable_dice(
         state._playable_dice, state._played_dice_num, state._dice, action
     )
-    legal_action_mask: jnp.ndarray = _legal_action_mask(board, playable_dice)
+    legal_action_mask: jax.Array = _legal_action_mask(board, playable_dice)
     return jax.lax.cond(
         is_no_op,
         lambda: state,
@@ -229,11 +229,11 @@ def _flip_board(board):
     return -1 * board
 
 
-def _make_init_board() -> jnp.ndarray:
+def _make_init_board() -> jax.Array:
     """
     Initialize the board based on black's perspective.
     """
-    board: jnp.ndarray = jnp.array([2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0, 0], dtype=jnp.int32)  # type: ignore
+    board: jax.Array = jnp.array([2, 0, 0, 0, 0, -5, 0, -3, 0, 0, 0, 5, -5, 0, 0, 0, 3, 0, 5, 0, 0, 0, 0, -2, 0, 0, 0, 0], dtype=jnp.int32)  # type: ignore
     return board
 
 
@@ -248,14 +248,14 @@ def _change_turn(state: State, key) -> State:
     """
     Change turn and return new state.
     """
-    board: jnp.ndarray = _flip_board(state._board)
-    turn: jnp.ndarray = (state._turn + 1) % 2
-    current_player: jnp.ndarray = (state.current_player + 1) % 2
-    terminated: jnp.ndarray = state.terminated
-    dice: jnp.ndarray = _roll_dice(key)
-    playable_dice: jnp.ndarray = _set_playable_dice(dice)
-    played_dice_num: jnp.ndarray = jnp.int32(0)
-    legal_action_mask: jnp.ndarray = _legal_action_mask(board, dice)
+    board: jax.Array = _flip_board(state._board)
+    turn: jax.Array = (state._turn + 1) % 2
+    current_player: jax.Array = (state.current_player + 1) % 2
+    terminated: jax.Array = state.terminated
+    dice: jax.Array = _roll_dice(key)
+    playable_dice: jax.Array = _set_playable_dice(dice)
+    played_dice_num: jax.Array = jnp.int32(0)
+    legal_action_mask: jax.Array = _legal_action_mask(board, dice)
     return state.replace(  # type: ignore
         current_player=current_player,
         _board=board,
@@ -268,23 +268,23 @@ def _change_turn(state: State, key) -> State:
     )
 
 
-def _roll_init_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
+def _roll_init_dice(rng: jax.random.KeyArray) -> jax.Array:
     """
     Roll till the dice are different.
     """
 
-    init_dice_pattern: jnp.ndarray = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 5], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]], dtype=jnp.int32)  # type: ignore
+    init_dice_pattern: jax.Array = jnp.array([[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [1, 0], [1, 2], [1, 3], [1, 4], [1, 5], [2, 0], [2, 1], [2, 3], [2, 4], [2, 5], [3, 0], [3, 1], [3, 2], [3, 4], [3, 5], [4, 0], [4, 1], [4, 2], [4, 3], [4, 5], [5, 0], [5, 1], [5, 2], [5, 3], [5, 4]], dtype=jnp.int32)  # type: ignore
     return jax.random.choice(rng, init_dice_pattern)
 
 
-def _roll_dice(rng: jax.random.KeyArray) -> jnp.ndarray:
-    roll: jnp.ndarray = jax.random.randint(
+def _roll_dice(rng: jax.random.KeyArray) -> jax.Array:
+    roll: jax.Array = jax.random.randint(
         rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int32
     )
     return roll[0]
 
 
-def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
+def _init_turn(dice: jax.Array) -> jax.Array:
     """
     Decide turn at the beginning of the game.
     Begin with those who have bigger dice
@@ -293,7 +293,7 @@ def _init_turn(dice: jnp.ndarray) -> jnp.ndarray:
     return jnp.int32(diff > 0)
 
 
-def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
+def _set_playable_dice(dice: jax.Array) -> jax.Array:
     """
     -1 for empty
     """
@@ -303,19 +303,19 @@ def _set_playable_dice(dice: jnp.ndarray) -> jnp.ndarray:
 
 
 def _update_playable_dice(
-    playable_dice: jnp.ndarray,
-    played_dice_num: jnp.ndarray,
-    dice: jnp.ndarray,
-    action: jnp.ndarray,
-) -> jnp.ndarray:
+    playable_dice: jax.Array,
+    played_dice_num: jax.Array,
+    dice: jax.Array,
+    action: jax.Array,
+) -> jax.Array:
     _n = played_dice_num
     die_array = jnp.array([action % 6] * 4, dtype=jnp.int32)
-    dice_indices: jnp.ndarray = jnp.array(
+    dice_indices: jax.Array = jnp.array(
         [0, 1, 2, 3], dtype=jnp.int32
     )  # maximum number of playable dice is 4
 
     def _update_for_diff_dice(
-        die: jnp.ndarray, idx: jnp.ndarray, playable_dice: jnp.ndarray
+        die: jax.Array, idx: jax.Array, playable_dice: jax.Array
     ):
         return (die == playable_dice[idx]) * -1 + (
             die != playable_dice[idx]
@@ -330,7 +330,7 @@ def _update_playable_dice(
     )
 
 
-def _home_board() -> jnp.ndarray:
+def _home_board() -> jax.Array:
     """
     black: [18~23], white: [0~5]: Always black's perspective
     """
@@ -351,7 +351,7 @@ def _bar_idx() -> int:
     return 24  # type: ignore
 
 
-def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
+def _rear_distance(board: jax.Array) -> jax.Array:
     """
     The distance from the farthest checker to the goal: Always black's perspective
     """
@@ -360,17 +360,17 @@ def _rear_distance(board: jnp.ndarray) -> jnp.ndarray:
     return 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int32(100)))
 
 
-def _is_all_on_home_board(board: jnp.ndarray) -> bool:
+def _is_all_on_home_board(board: jax.Array) -> bool:
     """
     One can bear off if all checkers are on home board.
     """
-    home_board: jnp.ndarray = _home_board()
+    home_board: jax.Array = _home_board()
     on_home_board: int = jnp.clip(board[home_board], a_min=0, a_max=15).sum()
     off: int = board[_off_idx()]  # type: ignore
     return (15 - off) == on_home_board
 
 
-def _is_open(board: jnp.ndarray, point: int) -> bool:
+def _is_open(board: jax.Array, point: int) -> bool:
     """
     Check if the point is open for the current player: Always black's perspective
     One can move to the point if there is no more than one opponent's checker.
@@ -379,7 +379,7 @@ def _is_open(board: jnp.ndarray, point: int) -> bool:
     return checkers >= -1  # type: ignore
 
 
-def _exists(board: jnp.ndarray, point: int) -> bool:
+def _exists(board: jax.Array, point: int) -> bool:
     """
     Check if the point has the current player's checker: Always black's perspective
     """
@@ -387,7 +387,7 @@ def _exists(board: jnp.ndarray, point: int) -> bool:
     return checkers >= 1  # type: ignore
 
 
-def _calc_src(src: jnp.ndarray) -> int:
+def _calc_src(src: jax.Array) -> int:
     """
     Translate src to board index.
     """
@@ -412,7 +412,7 @@ def _from_board(src: int, die: int) -> int:
     )  # type: ignore
 
 
-def _decompose_action(action: jnp.ndarray):
+def _decompose_action(action: jax.Array):
     """
     Decompose action to src, die, tgt.
     action = src*6 + die
@@ -423,7 +423,7 @@ def _decompose_action(action: jnp.ndarray):
     return src, die, tgt
 
 
-def _is_action_legal(board: jnp.ndarray, action: jnp.ndarray) -> bool:
+def _is_action_legal(board: jax.Array, action: jax.Array) -> bool:
     """
     Check if the action is legal.
     action = src * 6 + die
@@ -445,7 +445,7 @@ def _distance_to_goal(src: int) -> int:
     return 24 - src  # type: ignore
 
 
-def _is_to_off_legal(board: jnp.ndarray, src: int, tgt: int, die: int):
+def _is_to_off_legal(board: jax.Array, src: int, tgt: int, die: int):
     """
     Check if the action is legal when the target is off.
     The conditions are:
@@ -463,7 +463,7 @@ def _is_to_off_legal(board: jnp.ndarray, src: int, tgt: int, die: int):
     )  # type: ignore
 
 
-def _is_to_point_legal(board: jnp.ndarray, src: int, tgt: int) -> bool:
+def _is_to_point_legal(board: jax.Array, src: int, tgt: int) -> bool:
     """
     Check if the action is legal when the target is point.
     """
@@ -474,7 +474,7 @@ def _is_to_point_legal(board: jnp.ndarray, src: int, tgt: int) -> bool:
     )  # type: ignore
 
 
-def _move(board: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
+def _move(board: jax.Array, action: jax.Array) -> jax.Array:
     """
     Move checkers based on the action.
     """
@@ -489,7 +489,7 @@ def _move(board: jnp.ndarray, action: jnp.ndarray) -> jnp.ndarray:
     return board
 
 
-def _is_all_off(board: jnp.ndarray) -> bool:
+def _is_all_off(board: jax.Array) -> bool:
     """
     手番のプレイヤーのチェッカーが全てoffにあれば勝利となる. 常に黒視点
     If all checkers are off, the player wins. Always black's perspective.
@@ -497,7 +497,7 @@ def _is_all_off(board: jnp.ndarray) -> bool:
     return board[_off_idx()] == 15  # type: ignore
 
 
-def _calc_win_score(board: jnp.ndarray) -> int:
+def _calc_win_score(board: jax.Array) -> int:
     """
     Normal win: 1 point
     Gammon win: 2 points
@@ -507,21 +507,21 @@ def _calc_win_score(board: jnp.ndarray) -> int:
     return 1 + g + (g & _remains_at_inner(board))
 
 
-def _is_gammon(board: jnp.ndarray) -> bool:
+def _is_gammon(board: jax.Array) -> bool:
     """
     If there is no opponent's checker on off, the player wins gammon.
     """
     return board[_off_idx() + 1] == 0  # type: ignore
 
 
-def _remains_at_inner(board: jnp.ndarray) -> bool:
+def _remains_at_inner(board: jax.Array) -> bool:
     """
     (1) If there is no opponent's checker on off and (2) there is at least one opponent's checker on inner, the player wins backgammon.
     """
     return jnp.take(board, _home_board()).sum() != 0  # type: ignore
 
 
-def _legal_action_mask(board: jnp.ndarray, dice: jnp.ndarray) -> jnp.ndarray:
+def _legal_action_mask(board: jax.Array, dice: jax.Array) -> jax.Array:
     no_op_mask = jnp.zeros(26 * 6, dtype=jnp.bool_).at[0:6].set(TRUE)
     legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board)
@@ -535,7 +535,7 @@ def _legal_action_mask(board: jnp.ndarray, dice: jnp.ndarray) -> jnp.ndarray:
     )  # if there is no legal action, no-op is legal
 
 
-def _legal_action_mask_for_single_die(board: jnp.ndarray, die) -> jnp.ndarray:
+def _legal_action_mask_for_single_die(board: jax.Array, die) -> jax.Array:
     """
     Legal action mask for a single die.
     """
@@ -545,8 +545,8 @@ def _legal_action_mask_for_single_die(board: jnp.ndarray, die) -> jnp.ndarray:
 
 
 def _legal_action_mask_for_valid_single_dice(
-    board: jnp.ndarray, die
-) -> jnp.ndarray:
+    board: jax.Array, die
+) -> jax.Array:
     """
     Legal action mask for a single die when the die is valid.
     """
@@ -554,7 +554,7 @@ def _legal_action_mask_for_valid_single_dice(
         26, dtype=jnp.int32
     )  # calc legal action for all src indices
 
-    def _is_legal(idx: jnp.ndarray):
+    def _is_legal(idx: jax.Array):
         action = idx * 6 + die
         legal_action_mask = jnp.zeros(26 * 6, dtype=jnp.bool_)
         legal_action_mask = legal_action_mask.at[action].set(
@@ -568,10 +568,10 @@ def _legal_action_mask_for_valid_single_dice(
     return legal_action_mask
 
 
-def _get_abs_board(state: State) -> jnp.ndarray:
+def _get_abs_board(state: State) -> jax.Array:
     """
     For visualization.
     """
-    board: jnp.ndarray = state._board
-    turn: jnp.ndarray = state._turn
+    board: jax.Array = state._board
+    turn: jax.Array = state._turn
     return jax.lax.cond(turn == 0, lambda: board, lambda: _flip_board(board))

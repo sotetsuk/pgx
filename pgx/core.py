@@ -97,17 +97,17 @@ class State(abc.ABC):
             the game will terminate immediately with the penalty to the palyer.
     """
 
-    current_player: jnp.ndarray
-    observation: jnp.ndarray
-    rewards: jnp.ndarray
-    terminated: jnp.ndarray
-    truncated: jnp.ndarray
-    legal_action_mask: jnp.ndarray
+    current_player: jax.Array
+    observation: jax.Array
+    rewards: jax.Array
+    terminated: jax.Array
+    truncated: jax.Array
+    legal_action_mask: jax.Array
     # NOTE: _rng_key is
     #   - used for stochastic env and auto reset
     #   - updated only when actually used
     #   - supposed NOT to be used by agent
-    _step_count: jnp.ndarray
+    _step_count: jax.Array
 
     @property
     @abc.abstractmethod
@@ -195,7 +195,7 @@ class Env(abc.ABC):
     def step(
         self,
         state: State,
-        action: jnp.ndarray,
+        action: jax.Array,
         key: Optional[jax.Array] = None,
     ) -> State:
         """Step function."""
@@ -233,7 +233,7 @@ class Env(abc.ABC):
 
         return state
 
-    def observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def observe(self, state: State, player_id: jax.Array) -> jax.Array:
         """Observation function."""
         obs = self._observe(state, player_id)
         return jax.lax.stop_gradient(obs)
@@ -249,7 +249,7 @@ class Env(abc.ABC):
         ...
 
     @abc.abstractmethod
-    def _observe(self, state: State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(self, state: State, player_id: jax.Array) -> jax.Array:
         """Implement game-specific observe function here."""
         ...
 
@@ -292,7 +292,7 @@ class Env(abc.ABC):
         return -1.0
 
     def _step_with_illegal_action(
-        self, state: State, loser: jnp.ndarray
+        self, state: State, loser: jax.Array
     ) -> State:
         penalty = self._illegal_action_penalty
         reward = (

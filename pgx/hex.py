@@ -26,19 +26,19 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    observation: jnp.ndarray = jnp.zeros((11, 11, 2), dtype=jnp.bool_)
-    rewards: jnp.ndarray = jnp.float32([0.0, 0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = (
+    current_player: jax.Array = jnp.int32(0)
+    observation: jax.Array = jnp.zeros((11, 11, 2), dtype=jnp.bool_)
+    rewards: jax.Array = jnp.float32([0.0, 0.0])
+    terminated: jax.Array = FALSE
+    truncated: jax.Array = FALSE
+    legal_action_mask: jax.Array = (
         jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
     )
-    _step_count: jnp.ndarray = jnp.int32(0)
+    _step_count: jax.Array = jnp.int32(0)
     # --- Hex specific ---
-    _size: jnp.ndarray = jnp.int32(11)
+    _size: jax.Array = jnp.int32(11)
     # 0(black), 1(white)
-    _turn: jnp.ndarray = jnp.int32(0)
+    _turn: jax.Array = jnp.int32(0)
     # 11x11 board
     # [[  0,  1,  2,  ...,  8,  9, 10],
     #  [ 11,  12, 13, ..., 19, 20, 21],
@@ -46,7 +46,7 @@ class State(core.State):
     #  .
     #  .
     #  [110, 111, 112, ...,  119, 120]]
-    _board: jnp.ndarray = jnp.zeros(
+    _board: jax.Array = jnp.zeros(
         11 * 11, jnp.int32
     )  # <0(oppo), 0(empty), 0<(self)
 
@@ -64,7 +64,7 @@ class Hex(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return partial(_init, size=self.size)(rng=key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jax.Array, key) -> State:
         del key
         assert isinstance(state, State)
         return jax.lax.cond(
@@ -74,8 +74,8 @@ class Hex(core.Env):
         )
 
     def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+        self, state: core.State, player_id: jax.Array
+    ) -> jax.Array:
         assert isinstance(state, State)
         return partial(_observe, size=self.size)(state, player_id)
 
@@ -97,7 +97,7 @@ def _init(rng: jax.random.KeyArray, size: int) -> State:
     return State(_size=size, current_player=current_player)  # type:ignore
 
 
-def _step(state: State, action: jnp.ndarray, size: int) -> State:
+def _step(state: State, action: jax.Array, size: int) -> State:
     set_place_id = action + 1
     board = state._board.at[action].set(set_place_id)
     neighbour = _neighbour(action, size)
@@ -151,7 +151,7 @@ def _swap(state: State, size: int) -> State:
     )
 
 
-def _observe(state: State, player_id: jnp.ndarray, size) -> jnp.ndarray:
+def _observe(state: State, player_id: jax.Array, size) -> jax.Array:
     board = jax.lax.select(
         player_id == state.current_player,
         state._board.reshape((size, size)),

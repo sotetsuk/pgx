@@ -26,20 +26,20 @@ ZERO = jnp.int32(0)
 
 @dataclass
 class State(core.State):
-    current_player: jnp.ndarray = jnp.int32(0)
-    observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
-    rewards: jnp.ndarray = jnp.float32([0.0])
-    terminated: jnp.ndarray = FALSE
-    truncated: jnp.ndarray = FALSE
-    legal_action_mask: jnp.ndarray = jnp.ones(4, dtype=jnp.bool_)
-    _step_count: jnp.ndarray = jnp.int32(0)
+    current_player: jax.Array = jnp.int32(0)
+    observation: jax.Array = jnp.zeros(16, dtype=jnp.bool_)
+    rewards: jax.Array = jnp.float32([0.0])
+    terminated: jax.Array = FALSE
+    truncated: jax.Array = FALSE
+    legal_action_mask: jax.Array = jnp.ones(4, dtype=jnp.bool_)
+    _step_count: jax.Array = jnp.int32(0)
     # --- 2048 specific ---
     # 4x4 board
     # [[ 0,  1,  2,  3],
     #  [ 4,  5,  6,  7],
     #  [ 8,  9, 10, 11],
     #  [12, 13, 14, 15]]
-    _board: jnp.ndarray = jnp.zeros(16, jnp.int32)
+    _board: jax.Array = jnp.zeros(16, jnp.int32)
     #  Board is expressed as a power of 2.
     # e.g.
     # [[ 0,  0,  1,  1],
@@ -64,13 +64,13 @@ class Play2048(core.Env):
     def _init(self, key: jax.random.KeyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jnp.ndarray, key) -> State:
+    def _step(self, state: core.State, action: jax.Array, key) -> State:
         assert isinstance(state, State)
         return _step(state, action, key)
 
     def _observe(
-        self, state: core.State, player_id: jnp.ndarray
-    ) -> jnp.ndarray:
+        self, state: core.State, player_id: jax.Array
+    ) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -144,7 +144,7 @@ def _legal_action_mask(board_2d):
     )
 
 
-def _observe(state: State, player_id) -> jnp.ndarray:
+def _observe(state: State, player_id) -> jax.Array:
     obs = jnp.zeros((16, 31), dtype=jnp.bool_)
     obs = jax.lax.fori_loop(
         0, 16, lambda i, obs: obs.at[i, state._board[i]].set(TRUE), obs
