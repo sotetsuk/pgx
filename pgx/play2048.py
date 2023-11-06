@@ -26,7 +26,7 @@ ZERO = jnp.int32(0)
 
 @dataclass
 class State(v1.State):
-    current_player: jnp.ndarray = jnp.int8(0)
+    current_player: jnp.ndarray = jnp.int32(0)
     observation: jnp.ndarray = jnp.zeros(16, dtype=jnp.bool_)
     rewards: jnp.ndarray = jnp.float32([0.0])
     terminated: jnp.ndarray = FALSE

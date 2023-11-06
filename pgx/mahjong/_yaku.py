@@ -4,9 +4,9 @@ import os
 import jax
 import jax.numpy as jnp
 
-from pgx._mahjong._action import Action
-from pgx._mahjong._hand import Hand
-from pgx._mahjong._meld import Meld
+from pgx.mahjong._action import Action
+from pgx.mahjong._hand import Hand
+from pgx.mahjong._meld import Meld
 
 DIR = os.path.join(os.path.dirname(__file__), "cache")
 
@@ -72,9 +72,12 @@ class Yaku:
         last: jnp.ndarray,
         riichi: jnp.ndarray,
         is_ron: jnp.ndarray,
+        dora: jnp.ndarray,
     ) -> int:
         """handはlast_tileを加えたもの"""
-        yaku, fan, fu = Yaku.judge(hand, melds, n_meld, last, riichi, is_ron)
+        yaku, fan, fu = Yaku.judge(
+            hand, melds, n_meld, last, riichi, is_ron, dora
+        )
         score = fu << (fan + 2)
         return jax.lax.cond(
             fu == 0,
@@ -250,10 +253,11 @@ class Yaku:
     def judge(
         hand: jnp.ndarray,
         melds: jnp.ndarray,
-        n_meld,
+        n_meld: jnp.ndarray,
         last,
         riichi,
         is_ron,
+        dora,
     ):
         is_menzen = jax.lax.fori_loop(
             jnp.int8(0),
@@ -543,7 +547,11 @@ class Yaku:
         return jax.lax.cond(
             jnp.any(yakuman),
             lambda: (yakuman, 0, 0),
-            lambda: (yaku_best, jnp.dot(fan, yaku_best), fu_best),
+            lambda: (
+                yaku_best,
+                jnp.dot(fan, yaku_best) + jnp.dot(flatten, dora),
+                fu_best,
+            ),
         )
 
     @staticmethod
