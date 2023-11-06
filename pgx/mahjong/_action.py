@@ -1,8 +1,7 @@
-from pgx._src.struct import dataclass
+from typing import NamedTuple
 
 
-@dataclass
-class Action:
+class Action(NamedTuple):
     # 手出し: 0~33
     # 暗/加槓: 34~67
     TSUMOGIRI = 68
