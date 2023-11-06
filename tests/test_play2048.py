@@ -13,6 +13,11 @@ def test_init():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
     assert jnp.count_nonzero(state._board == 1) == 2
+    key = jax.random.PRNGKey(2)
+    state = init(key=key)
+    print(state._board.reshape((4, 4)))
+    assert state.legal_action_mask.shape == (4,)
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 1])).all()
 
 
 def test_slide_and_merge():
@@ -125,6 +130,21 @@ def test_observe():
     assert not obs[0, 3, 0]
     assert obs[0, 3, 1]
     assert not obs[0, 3, 2]
+
+
+def test_random_play():
+    for i in range(10):
+        key = jax.random.PRNGKey(i)
+        done = jnp.bool_(False)
+        key, sub_key = jax.random.split(key)
+        state = init(sub_key)
+        while not done:
+            legal_actions = jnp.where(state.legal_action_mask)[0]
+            key, sub_key = jax.random.split(key)
+            action = jax.random.choice(sub_key, legal_actions)
+            state = step(state, jnp.int16(action))
+            assert (state.rewards >= 0).all()
+            done = state.terminated
 
 
 def test_api():
