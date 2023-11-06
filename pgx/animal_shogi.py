@@ -141,7 +141,7 @@ class AnimalShogi(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -203,7 +203,7 @@ def _step(state: State, action: Array):
     )
 
 
-def _observe(state: State, player_id: Array) -> jax.Array:
+def _observe(state: State, player_id: Array) -> Array:
     # player_id's color
     color = jax.lax.select(
         state.current_player == player_id, state._turn, 1 - state._turn

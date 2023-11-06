@@ -138,7 +138,7 @@ class Shogi(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -517,7 +517,7 @@ def _flip_piece(piece):
     return jax.lax.select(piece >= 0, (piece + 14) % 28, piece)
 
 
-def _rotate(board: Array) -> jax.Array:
+def _rotate(board: Array) -> Array:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
 
@@ -564,7 +564,7 @@ def _major_piece_ix(piece):
     return jax.lax.select(piece >= 0, ixs[piece], jnp.int32(-1))
 
 
-def _observe(state: State, player_id: Array) -> jax.Array:
+def _observe(state: State, player_id: Array) -> Array:
     state, flip_state = jax.lax.cond(
         state.current_player == player_id,
         lambda: (state, _flip(state)),
@@ -611,7 +611,7 @@ def _observe(state: State, player_id: Array) -> jax.Array:
         my_effect_sum = my_effect.sum(axis=0)
 
         @jax.vmap
-        def effect_sum(n) -> jax.Array:
+        def effect_sum(n) -> Array:
             return my_effect_sum >= n  # type: ignore
 
         effect_sum_feat = effect_sum(jnp.arange(1, 4))

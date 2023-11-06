@@ -65,7 +65,7 @@ class LeducHoldem(core.Env):
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -198,7 +198,7 @@ def _raise_chips(state):
     return (state._round + 1) * 2
 
 
-def _observe(state: State, player_id) -> jax.Array:
+def _observe(state: State, player_id) -> Array:
     """
     Index   Meaning
     0~2     J ~ K in hand

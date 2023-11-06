@@ -19,7 +19,7 @@ class Shanten:
     CACHE = load_shanten_cache()
 
     @staticmethod
-    def discard(hand: Array) -> jax.Array:
+    def discard(hand: Array) -> Array:
         return jax.vmap(
             lambda i: jax.lax.cond(
                 hand[i] == 0,

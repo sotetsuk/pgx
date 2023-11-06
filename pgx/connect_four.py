@@ -60,7 +60,7 @@ class ConnectFour(core.Env):
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -136,11 +136,11 @@ def _to_idx(row, col):
     return row * 7 + col
 
 
-def _win_check(board, turn) -> jax.Array:
+def _win_check(board, turn) -> Array:
     return ((board[IDX] == turn).all(axis=1)).any()
 
 
-def _observe(state: State, player_id: Array) -> jax.Array:
+def _observe(state: State, player_id: Array) -> Array:
     turns = jnp.int32([state._turn, 1 - state._turn])
     turns = jax.lax.cond(
         player_id == state.current_player,

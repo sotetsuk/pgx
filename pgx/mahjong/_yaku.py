@@ -108,35 +108,35 @@ class Yaku:
         )
 
     @staticmethod
-    def head(code) -> jax.Array:
+    def head(code) -> Array:
         return Yaku.CACHE[code] & 0b1111
 
     @staticmethod
-    def chow(code) -> jax.Array:
+    def chow(code) -> Array:
         return Yaku.CACHE[code] >> 4 & 0b1111111
 
     @staticmethod
-    def pung(code) -> jax.Array:
+    def pung(code) -> Array:
         return Yaku.CACHE[code] >> 11 & 0b111111111
 
     @staticmethod
-    def n_pung(code) -> jax.Array:
+    def n_pung(code) -> Array:
         return Yaku.CACHE[code] >> 20 & 0b111
 
     @staticmethod
-    def n_double_chow(code) -> jax.Array:
+    def n_double_chow(code) -> Array:
         return Yaku.CACHE[code] >> 23 & 0b11
 
     @staticmethod
-    def outside(code) -> jax.Array:
+    def outside(code) -> Array:
         return Yaku.CACHE[code] >> 25 & 1
 
     @staticmethod
-    def nine_gates(code) -> jax.Array:
+    def nine_gates(code) -> Array:
         return Yaku.CACHE[code] >> 26
 
     @staticmethod
-    def is_pure_straight(chow: Array) -> jax.Array:
+    def is_pure_straight(chow: Array) -> Array:
         return (
             ((chow & 0b1001001) == 0b1001001)
             | ((chow >> 9 & 0b1001001) == 0b1001001)
@@ -144,7 +144,7 @@ class Yaku:
         ) == 1
 
     @staticmethod
-    def is_triple_chow(chow: Array) -> jax.Array:
+    def is_triple_chow(chow: Array) -> Array:
         return (
             ((chow & 0b1000000001000000001) == 0b1000000001000000001)
             | ((chow >> 1 & 0b1000000001000000001) == 0b1000000001000000001)
@@ -156,7 +156,7 @@ class Yaku:
         ) == 1
 
     @staticmethod
-    def is_triple_pung(pung: Array) -> jax.Array:
+    def is_triple_pung(pung: Array) -> Array:
         return (
             ((pung & 0b1000000001000000001) == 0b1000000001000000001)
             | ((pung >> 1 & 0b1000000001000000001) == 0b1000000001000000001)
@@ -555,7 +555,7 @@ class Yaku:
         )
 
     @staticmethod
-    def flatten(hand: Array, melds: Array, n_meld) -> jax.Array:
+    def flatten(hand: Array, melds: Array, n_meld) -> Array:
         return jax.lax.fori_loop(
             jnp.int8(0),
             n_meld,
@@ -564,7 +564,7 @@ class Yaku:
         )
 
     @staticmethod
-    def _flatten(hand: Array, meld) -> jax.Array:
+    def _flatten(hand: Array, meld) -> Array:
         target, action = Meld.target(meld), Meld.action(meld)
         return jax.lax.switch(
             action - Action.PON + 1,

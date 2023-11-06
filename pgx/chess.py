@@ -213,7 +213,7 @@ class Chess(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 

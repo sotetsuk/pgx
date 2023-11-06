@@ -68,7 +68,7 @@ class Play2048(core.Env):
         assert isinstance(state, State)
         return _step(state, action, key)
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -142,7 +142,7 @@ def _legal_action_mask(board_2d):
     )
 
 
-def _observe(state: State, player_id) -> jax.Array:
+def _observe(state: State, player_id) -> Array:
     obs = jnp.zeros((16, 31), dtype=jnp.bool_)
     obs = jax.lax.fori_loop(
         0, 16, lambda i, obs: obs.at[i, state._board[i]].set(TRUE), obs

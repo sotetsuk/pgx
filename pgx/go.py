@@ -96,7 +96,7 @@ class Go(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return partial(
             _observe, size=self.size, history_length=self.history_length
@@ -331,7 +331,7 @@ def _remove_stones(
     )
 
 
-def legal_actions(state: State, size: int) -> jax.Array:
+def legal_actions(state: State, size: int) -> Array:
     """Logic is highly inspired by OpenSpiel's Go implementation"""
     is_empty = state._chain_id_board == 0
 
@@ -416,7 +416,7 @@ def _opponent_color(state: State):
     return jnp.int32([-1, 1])[state._turn]
 
 
-def _ko_may_occur(state: State, xy: int) -> jax.Array:
+def _ko_may_occur(state: State, xy: int) -> Array:
     size = state._size
     x = xy // size
     y = xy % size
@@ -440,7 +440,7 @@ def _count_point(state, size):
     )
 
 
-def _get_reward(state: State, size: int) -> jax.Array:
+def _get_reward(state: State, size: int) -> Array:
     score = _count_point(state, size)
     reward_bw = jax.lax.cond(
         score[0] - state._komi > score[1],

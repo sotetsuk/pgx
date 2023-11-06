@@ -62,7 +62,7 @@ class Othello(core.Env):
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -223,7 +223,7 @@ def _get_reward(my, opp, curr_player):
     )
 
 
-def _observe(state, player_id) -> jax.Array:
+def _observe(state, player_id) -> Array:
     board = jax.lax.cond(
         player_id == state.current_player,
         lambda: state._board.reshape((8, 8)),

@@ -73,7 +73,7 @@ class Hex(core.Env):
             lambda: partial(_swap, size=self.size)(state),
         )
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return partial(_observe, size=self.size)(state, player_id)
 
@@ -149,7 +149,7 @@ def _swap(state: State, size: int) -> State:
     )
 
 
-def _observe(state: State, player_id: Array, size) -> jax.Array:
+def _observe(state: State, player_id: Array, size) -> Array:
     board = jax.lax.select(
         player_id == state.current_player,
         state._board.reshape((size, size)),

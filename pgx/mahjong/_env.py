@@ -218,7 +218,7 @@ class Mahjong(core.Env):
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -868,7 +868,7 @@ def _next_game(state: State):
     return _pass(state)
 
 
-def _observe(state: State, player_id: Array) -> jax.Array:
+def _observe(state: State, player_id: Array) -> Array:
     return jnp.int8(0)
 
 

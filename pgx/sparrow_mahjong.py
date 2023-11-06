@@ -152,7 +152,7 @@ class SparrowMahjong(core.Env):
             ),
         )
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -239,7 +239,7 @@ def _hand_to_score(hand: Array):
     return BASE_SCORES[ix], YAKU_SCORES[ix]
 
 
-def _hands_to_score(state: State) -> jax.Array:
+def _hands_to_score(state: State) -> Array:
     scores = jnp.zeros(3, dtype=jnp.int32)
     for i in range(N_PLAYER):
         hand = state._hands[i]
@@ -262,7 +262,7 @@ def _hands_to_score(state: State) -> jax.Array:
     return scores
 
 
-def _check_ron(state: State, scores) -> jax.Array:
+def _check_ron(state: State, scores) -> Array:
     winning_players = jax.lax.fori_loop(
         0,
         N_PLAYER,
@@ -278,7 +278,7 @@ def _check_ron(state: State, scores) -> jax.Array:
     return winning_players
 
 
-def _check_tsumo(state: State, scores) -> jax.Array:
+def _check_tsumo(state: State, scores) -> Array:
     return _is_completed(state._hands[state._turn]) & (
         scores[state._turn] >= 0
     )

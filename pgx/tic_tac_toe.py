@@ -55,7 +55,7 @@ class TicTacToe(core.Env):
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -94,12 +94,12 @@ def _step(state: State, action: Array) -> State:
     )
 
 
-def _win_check(board, turn) -> jax.Array:
+def _win_check(board, turn) -> Array:
     idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
     return ((board[idx] == turn).all(axis=1)).any()
 
 
-def _observe(state: State, player_id: Array) -> jax.Array:
+def _observe(state: State, player_id: Array) -> Array:
     @jax.vmap
     def plane(i):
         return (state._board == i).reshape((3, 3))

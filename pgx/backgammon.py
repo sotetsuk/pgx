@@ -60,7 +60,7 @@ class Backgammon(core.Env):
         assert isinstance(state, State)
         return _step(state, action, key)
 
-    def _observe(self, state: core.State, player_id: Array) -> jax.Array:
+    def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -116,7 +116,7 @@ def _step(state: State, action: Array, key) -> State:
     )
 
 
-def _observe(state: State, player_id: Array) -> jax.Array:
+def _observe(state: State, player_id: Array) -> Array:
     """
     Return observation for player_id
     """
@@ -133,7 +133,7 @@ def _observe(state: State, player_id: Array) -> jax.Array:
     )
 
 
-def _to_playable_dice_count(playable_dice: Array) -> jax.Array:
+def _to_playable_dice_count(playable_dice: Array) -> Array:
     """
     Return 6 dim vec which represents the number of playable die
     Examples
@@ -149,7 +149,7 @@ def _to_playable_dice_count(playable_dice: Array) -> jax.Array:
 
     def _insert_dice_num(
         idx: Array, playable_dice: Array
-    ) -> jax.Array:
+    ) -> Array:
         vec: Array = jnp.zeros(6, dtype=jnp.int32)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
@@ -227,7 +227,7 @@ def _flip_board(board):
     return -1 * board
 
 
-def _make_init_board() -> jax.Array:
+def _make_init_board() -> Array:
     """
     Initialize the board based on black's perspective.
     """
@@ -266,7 +266,7 @@ def _change_turn(state: State, key) -> State:
     )
 
 
-def _roll_init_dice(rng: Array) -> jax.Array:
+def _roll_init_dice(rng: Array) -> Array:
     """
     Roll till the dice are different.
     """
@@ -275,14 +275,14 @@ def _roll_init_dice(rng: Array) -> jax.Array:
     return jax.random.choice(rng, init_dice_pattern)
 
 
-def _roll_dice(rng: Array) -> jax.Array:
+def _roll_dice(rng: Array) -> Array:
     roll: Array = jax.random.randint(
         rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int32
     )
     return roll[0]
 
 
-def _init_turn(dice: Array) -> jax.Array:
+def _init_turn(dice: Array) -> Array:
     """
     Decide turn at the beginning of the game.
     Begin with those who have bigger dice
@@ -291,7 +291,7 @@ def _init_turn(dice: Array) -> jax.Array:
     return jnp.int32(diff > 0)
 
 
-def _set_playable_dice(dice: Array) -> jax.Array:
+def _set_playable_dice(dice: Array) -> Array:
     """
     -1 for empty
     """
@@ -305,7 +305,7 @@ def _update_playable_dice(
     played_dice_num: Array,
     dice: Array,
     action: Array,
-) -> jax.Array:
+) -> Array:
     _n = played_dice_num
     die_array = jnp.array([action % 6] * 4, dtype=jnp.int32)
     dice_indices: Array = jnp.array(
@@ -328,7 +328,7 @@ def _update_playable_dice(
     )
 
 
-def _home_board() -> jax.Array:
+def _home_board() -> Array:
     """
     black: [18~23], white: [0~5]: Always black's perspective
     """
@@ -349,7 +349,7 @@ def _bar_idx() -> int:
     return 24  # type: ignore
 
 
-def _rear_distance(board: Array) -> jax.Array:
+def _rear_distance(board: Array) -> Array:
     """
     The distance from the farthest checker to the goal: Always black's perspective
     """
@@ -472,7 +472,7 @@ def _is_to_point_legal(board: Array, src: int, tgt: int) -> bool:
     )  # type: ignore
 
 
-def _move(board: Array, action: Array) -> jax.Array:
+def _move(board: Array, action: Array) -> Array:
     """
     Move checkers based on the action.
     """
@@ -519,7 +519,7 @@ def _remains_at_inner(board: Array) -> bool:
     return jnp.take(board, _home_board()).sum() != 0  # type: ignore
 
 
-def _legal_action_mask(board: Array, dice: Array) -> jax.Array:
+def _legal_action_mask(board: Array, dice: Array) -> Array:
     no_op_mask = jnp.zeros(26 * 6, dtype=jnp.bool_).at[0:6].set(TRUE)
     legal_action_mask = jax.vmap(
         partial(_legal_action_mask_for_single_die, board=board)
@@ -533,7 +533,7 @@ def _legal_action_mask(board: Array, dice: Array) -> jax.Array:
     )  # if there is no legal action, no-op is legal
 
 
-def _legal_action_mask_for_single_die(board: Array, die) -> jax.Array:
+def _legal_action_mask_for_single_die(board: Array, die) -> Array:
     """
     Legal action mask for a single die.
     """
@@ -544,7 +544,7 @@ def _legal_action_mask_for_single_die(board: Array, die) -> jax.Array:
 
 def _legal_action_mask_for_valid_single_dice(
     board: Array, die
-) -> jax.Array:
+) -> Array:
     """
     Legal action mask for a single die when the die is valid.
     """
@@ -566,7 +566,7 @@ def _legal_action_mask_for_valid_single_dice(
     return legal_action_mask
 
 
-def _get_abs_board(state: State) -> jax.Array:
+def _get_abs_board(state: State) -> Array:
     """
     For visualization.
     """

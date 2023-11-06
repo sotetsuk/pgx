@@ -158,31 +158,31 @@ class Hand:
         )
 
     @staticmethod
-    def add(hand: Array, tile, x=1) -> jax.Array:
+    def add(hand: Array, tile, x=1) -> Array:
         return hand.at[tile].set(hand[tile] + x)
 
     @staticmethod
-    def sub(hand: Array, tile, x=1) -> jax.Array:
+    def sub(hand: Array, tile, x=1) -> Array:
         return Hand.add(hand, tile, -x)
 
     @staticmethod
-    def pon(hand: Array, tile) -> jax.Array:
+    def pon(hand: Array, tile) -> Array:
         return Hand.sub(hand, tile, 2)
 
     @staticmethod
-    def minkan(hand: Array, tile) -> jax.Array:
+    def minkan(hand: Array, tile) -> Array:
         return Hand.sub(hand, tile, 3)
 
     @staticmethod
-    def kakan(hand: Array, tile) -> jax.Array:
+    def kakan(hand: Array, tile) -> Array:
         return Hand.sub(hand, tile)
 
     @staticmethod
-    def ankan(hand: Array, tile) -> jax.Array:
+    def ankan(hand: Array, tile) -> Array:
         return Hand.sub(hand, tile, 4)
 
     @staticmethod
-    def chi(hand: Array, tile, action) -> jax.Array:
+    def chi(hand: Array, tile, action) -> Array:
         return jax.lax.switch(
             action - Action.CHI_L,
             [
@@ -205,7 +205,7 @@ class Hand:
         return s
 
     @staticmethod
-    def from_str(s: str) -> jax.Array:
+    def from_str(s: str) -> Array:
         base = 0
         hand = jnp.zeros(34, dtype=jnp.uint8)
         for c in reversed(s):
