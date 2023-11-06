@@ -73,7 +73,9 @@ class Hex(core.Env):
             lambda: partial(_swap, size=self.size)(state),
         )
 
-    def _observe(self, state: core.State, player_id: jnp.ndarray) -> jnp.ndarray:
+    def _observe(
+        self, state: core.State, player_id: jnp.ndarray
+    ) -> jnp.ndarray:
         assert isinstance(state, State)
         return partial(_observe, size=self.size)(state, player_id)
 
