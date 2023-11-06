@@ -14,6 +14,7 @@ def test_init():
     state = init(key=key)
     assert jnp.count_nonzero(state._board == 1) == 2
     key = jax.random.PRNGKey(2)
+    _, key = jax.random.split(key)  # for test compatibility
     state = init(key=key)
     assert state.legal_action_mask.shape == (4,)
     assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 1])).all()
@@ -79,12 +80,13 @@ def test_legal_action():
     """
     assert (state.legal_action_mask == jnp.bool_([0, 0, 1, 1])).all()
     assert not state.terminated
+    
     board = jnp.int32([2, 2, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0])
     state = State(_board=board)
-    state = step(state, 0)
+    state = step(state, 0, jax.random.PRNGKey(3))
     """
-    [[ 8  2  0  0]
-     [ 8  0  0  0]
+    [[ 8  0  0  0]
+     [ 8  2  0  0]
      [ 8  0  0  0]
      [ 8  0  0  0]]
     """
