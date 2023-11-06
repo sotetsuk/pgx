@@ -112,6 +112,12 @@ def dataclass(clz: _T) -> _T:
     if "_flax_dataclass" in clz.__dict__:
         return clz
 
+    for name in clz.__annotations__.keys():
+        if hasattr(clz, name):
+            obj = getattr(clz, name)
+            if obj.__hash__ is None:
+                setattr(clz, name, field(default_factory=lambda x=obj: x))
+
     data_clz = dataclasses.dataclass(frozen=True)(clz)  # type: ignore
     meta_fields = []
     data_fields = []
