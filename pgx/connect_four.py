@@ -24,15 +24,15 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_player: jax.Array = jnp.int32(0)
-    observation: jax.Array = jnp.zeros((6, 7, 2), dtype=jnp.bool_)
-    rewards: jax.Array = jnp.float32([0.0, 0.0])
-    terminated: jax.Array = FALSE
-    truncated: jax.Array = FALSE
-    legal_action_mask: jax.Array = jnp.ones(7, dtype=jnp.bool_)
-    _step_count: jax.Array = jnp.int32(0)
+    current_playerArray = jnp.int32(0)
+    observationArray = jnp.zeros((6, 7, 2), dtype=jnp.bool_)
+    rewardsArray = jnp.float32([0.0, 0.0])
+    terminatedArray = FALSE
+    truncatedArray = FALSE
+    legal_action_maskArray = jnp.ones(7, dtype=jnp.bool_)
+    _step_countArray = jnp.int32(0)
     # --- Connect Four specific ---
-    _turn: jax.Array = jnp.int32(0)
+    _turnArray = jnp.int32(0)
     # 6x7 board
     # [[ 0,  1,  2,  3,  4,  5,  6],
     #  [ 7,  8,  9, 10, 11, 12, 13],
@@ -40,8 +40,8 @@ class State(core.State):
     #  [21, 22, 23, 24, 25, 26, 27],
     #  [28, 29, 30, 31, 32, 33, 34],
     #  [35, 36, 37, 38, 39, 40, 41]]
-    _board: jax.Array = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
-    _blank_row: jax.Array = jnp.full(7, 5)
+    _boardArray = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
+    _blank_rowArray = jnp.full(7, 5)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -52,15 +52,15 @@ class ConnectFour(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, keyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jax.Array, key) -> State:
+    def _step(self, state: core.State, actionArray, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: core.State, player_idArray) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -105,12 +105,12 @@ def _make_win_cache():
 IDX = _make_win_cache()
 
 
-def _init(rng: jax.Array) -> State:
+def _init(rngArray) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 
 
-def _step(state: State, action: jax.Array) -> State:
+def _step(state: State, actionArray) -> State:
     board = state._board
     row = state._blank_row[action]
     blank_row = state._blank_row.at[action].set(row - 1)
@@ -140,7 +140,7 @@ def _win_check(board, turn) -> jax.Array:
     return ((board[IDX] == turn).all(axis=1)).any()
 
 
-def _observe(state: State, player_id: jax.Array) -> jax.Array:
+def _observe(state: State, player_idArray) -> jax.Array:
     turns = jnp.int32([state._turn, 1 - state._turn])
     turns = jax.lax.cond(
         player_id == state.current_player,

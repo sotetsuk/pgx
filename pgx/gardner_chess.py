@@ -78,29 +78,29 @@ INIT_ZOBRIST_HASH = jnp.uint32([2025569903, 1172890342])
 
 @dataclass
 class State(core.State):
-    current_player: jax.Array = jnp.int32(0)
-    rewards: jax.Array = jnp.float32([0.0, 0.0])
-    terminated: jax.Array = FALSE
-    truncated: jax.Array = FALSE
-    legal_action_mask: jax.Array = INIT_LEGAL_ACTION_MASK
-    observation: jax.Array = jnp.zeros((5, 5, 19), dtype=jnp.float32)
-    _step_count: jax.Array = jnp.int32(0)
+    current_playerArray = jnp.int32(0)
+    rewardsArray = jnp.float32([0.0, 0.0])
+    terminatedArray = FALSE
+    truncatedArray = FALSE
+    legal_action_maskArray = INIT_LEGAL_ACTION_MASK
+    observationArray = jnp.zeros((5, 5, 19), dtype=jnp.float32)
+    _step_countArray = jnp.int32(0)
     # --- Chess specific ---
-    _turn: jax.Array = jnp.int32(0)
-    _board: jax.Array = INIT_BOARD  # From top left, like FEN
+    _turnArray = jnp.int32(0)
+    _boardArray = INIT_BOARD  # From top left, like FEN
     # # of moves since the last piece capture or pawn move
-    _halfmove_count: jax.Array = jnp.int32(0)
-    _fullmove_count: jax.Array = jnp.int32(1)  # increase every black move
-    _zobrist_hash: jax.Array = jnp.uint32(INIT_ZOBRIST_HASH)
-    _hash_history: jax.Array = (
+    _halfmove_countArray = jnp.int32(0)
+    _fullmove_countArray = jnp.int32(1)  # increase every black move
+    _zobrist_hashArray = jnp.uint32(INIT_ZOBRIST_HASH)
+    _hash_historyArray = (
         jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
         .at[0]
         .set(jnp.uint32(INIT_ZOBRIST_HASH))
     )
-    _board_history: jax.Array = (
+    _board_historyArray = (
         jnp.zeros((8, 25), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     )
-    _possible_piece_positions: jax.Array = jnp.int32(
+    _possible_piece_positionsArray = jnp.int32(
         [
             [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
             [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
@@ -138,12 +138,12 @@ class State(core.State):
 # 25           9          40
 @dataclass
 class Action:
-    from_: jax.Array = jnp.int32(-1)
-    to: jax.Array = jnp.int32(-1)
-    underpromotion: jax.Array = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
+    from_Array = jnp.int32(-1)
+    toArray = jnp.int32(-1)
+    underpromotionArray = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
-    def _from_label(label: jax.Array):
+    def _from_label(labelArray):
         """We use AlphaZero style label with channel-last representation: (5, 5, 49)
 
         49 = queen moves (32) + knight moves (8) + underpromotions (3 * 3)
@@ -167,12 +167,12 @@ class GardnerChess(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, keyArray) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
         state = State(current_player=current_player)  # type: ignore
         return state
 
-    def _step(self, state: core.State, action: jax.Array, key) -> State:
+    def _step(self, state: core.State, actionArray, key) -> State:
         del key
         assert isinstance(state, State)
         state = _step(state, action)
@@ -184,7 +184,7 @@ class GardnerChess(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: core.State, player_idArray) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -201,7 +201,7 @@ class GardnerChess(core.Env):
         return 2
 
 
-def _step(state: State, action: jax.Array):
+def _step(state: State, actionArray):
     a = Action._from_label(action)
     state = _update_zobrist_hash(state, a)
     state = _apply_move(state, a)
@@ -463,7 +463,7 @@ def _update_zobrist_hash(state: State, action: Action):
     )
 
 
-def _observe(state: State, player_id: jax.Array):
+def _observe(state: State, player_idArray):
     color = jax.lax.select(
         state.current_player == player_id, state._turn, 1 - state._turn
     )

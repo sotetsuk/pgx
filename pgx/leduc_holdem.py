@@ -31,22 +31,22 @@ MAX_RAISE = jnp.int32(2)
 
 @dataclass
 class State(core.State):
-    current_player: jax.Array = jnp.int32(0)
-    observation: jax.Array = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
-    rewards: jax.Array = jnp.float32([0.0, 0.0])
-    terminated: jax.Array = FALSE
-    truncated: jax.Array = FALSE
-    legal_action_mask: jax.Array = jnp.ones(3, dtype=jnp.bool_)
-    _step_count: jax.Array = jnp.int32(0)
+    current_playerArray = jnp.int32(0)
+    observationArray = jnp.zeros((8, 8, 2), dtype=jnp.bool_)
+    rewardsArray = jnp.float32([0.0, 0.0])
+    terminatedArray = FALSE
+    truncatedArray = FALSE
+    legal_action_maskArray = jnp.ones(3, dtype=jnp.bool_)
+    _step_countArray = jnp.int32(0)
     # --- Leduc Hold'Em specific ---
-    _first_player: jax.Array = jnp.int32(0)
+    _first_playerArray = jnp.int32(0)
     # [(player 0), (player 1), (public)]
-    _cards: jax.Array = jnp.int32([-1, -1, -1])
+    _cardsArray = jnp.int32([-1, -1, -1])
     # 0(Call)  1(Bet)  2(Fold)  3(Check)
-    _last_action: jax.Array = INVALID_ACTION
-    _chips: jax.Array = jnp.ones(2, dtype=jnp.int32)
-    _round: jax.Array = jnp.int32(0)
-    _raise_count: jax.Array = jnp.int32(0)
+    _last_actionArray = INVALID_ACTION
+    _chipsArray = jnp.ones(2, dtype=jnp.int32)
+    _roundArray = jnp.int32(0)
+    _raise_countArray = jnp.int32(0)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -57,15 +57,15 @@ class LeducHoldem(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, keyArray) -> State:
         return _init(key)
 
-    def _step(self, state: core.State, action: jax.Array, key) -> State:
+    def _step(self, state: core.State, actionArray, key) -> State:
         del key
         assert isinstance(state, State)
         return _step(state, action)
 
-    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: core.State, player_idArray) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -82,7 +82,7 @@ class LeducHoldem(core.Env):
         return 2
 
 
-def _init(rng: jax.Array) -> State:
+def _init(rngArray) -> State:
     rng1, rng2 = jax.random.split(rng, 2)
     current_player = jnp.int32(jax.random.bernoulli(rng1))
     init_card = jax.random.permutation(

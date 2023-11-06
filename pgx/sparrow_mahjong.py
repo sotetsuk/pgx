@@ -57,37 +57,37 @@ MAX_SCORE = (
 
 @dataclass
 class State(core.State):
-    current_player: jax.Array = jnp.int32(0)
-    observation: jax.Array = jnp.zeros((15, 11), dtype=jnp.bool_)
-    rewards: jax.Array = jnp.zeros(3, dtype=jnp.float32)
-    terminated: jax.Array = FALSE
-    truncated: jax.Array = FALSE
-    legal_action_mask: jax.Array = jnp.zeros(9, dtype=jnp.bool_)
-    _step_count: jax.Array = jnp.int32(0)
+    current_playerArray = jnp.int32(0)
+    observationArray = jnp.zeros((15, 11), dtype=jnp.bool_)
+    rewardsArray = jnp.zeros(3, dtype=jnp.float32)
+    terminatedArray = FALSE
+    truncatedArray = FALSE
+    legal_action_maskArray = jnp.zeros(9, dtype=jnp.bool_)
+    _step_countArray = jnp.int32(0)
     # --- Sparrow Mahjong specific ---
-    _turn: jax.Array = jnp.int32(0)  # 0 = dealer
-    _rivers: jax.Array = -jnp.ones(
+    _turnArray = jnp.int32(0)  # 0 = dealer
+    _riversArray = -jnp.ones(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.int32
     )  # tile type (0~10) is set
-    _last_discard: jax.Array = jnp.int32(-1)  # tile type (0~10) is set
-    _hands: jax.Array = jnp.zeros(
+    _last_discardArray = jnp.int32(-1)  # tile type (0~10) is set
+    _handsArray = jnp.zeros(
         (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int32
     )  # tile type (0~10) is set
-    _n_red_in_hands: jax.Array = jnp.zeros(
+    _n_red_in_handsArray = jnp.zeros(
         (N_PLAYER, NUM_TILE_TYPES), dtype=jnp.int32
     )
-    _is_red_in_river: jax.Array = jnp.zeros(
+    _is_red_in_riverArray = jnp.zeros(
         (N_PLAYER, MAX_RIVER_LENGTH), dtype=jnp.bool_
     )
-    _wall: jax.Array = jnp.zeros(
+    _wallArray = jnp.zeros(
         NUM_TILES, dtype=jnp.int32
     )  # tile id (0~43) is set
-    _draw_ix: jax.Array = jnp.int32(N_PLAYER * 5)
-    _shuffled_players: jax.Array = jnp.zeros(
+    _draw_ixArray = jnp.int32(N_PLAYER * 5)
+    _shuffled_playersArray = jnp.zeros(
         N_PLAYER, dtype=jnp.int32
     )  # 0: dealer, ...
-    _dora: jax.Array = jnp.int32(0)  # tile type (0~10) is set
-    _scores: jax.Array = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
+    _doraArray = jnp.int32(0)  # tile type (0~10) is set
+    _scoresArray = jnp.zeros(3, dtype=jnp.int32)  # 0 = dealer
 
     @property
     def env_id(self) -> core.EnvId:
@@ -98,7 +98,7 @@ class SparrowMahjong(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, keyArray) -> State:
         key, subkey = jax.random.split(key)
         state = _init(subkey)
 
@@ -113,7 +113,7 @@ class SparrowMahjong(core.Env):
         )
         return state
 
-    def _step(self, state: core.State, action: jax.Array, key) -> State:
+    def _step(self, state: core.State, actionArray, key) -> State:
         del key
         assert isinstance(state, State)
         # discard tile
@@ -152,7 +152,7 @@ class SparrowMahjong(core.Env):
             ),
         )
 
-    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: core.State, player_idArray) -> jax.Array:
         assert isinstance(state, State)
         return _observe(state, player_id)
 
@@ -169,7 +169,7 @@ class SparrowMahjong(core.Env):
         return 3
 
 
-def _init(rng: jax.Array):
+def _init(rngArray):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
     shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int32)
@@ -222,18 +222,18 @@ def _init(rng: jax.Array):
     return state
 
 
-def _to_base5(hand: jax.Array):
+def _to_base5(handArray):
     b = jnp.int32(
         [9765625, 1953125, 390625, 78125, 15625, 3125, 625, 125, 25, 5, 1]
     )
     return (hand * b).sum()
 
 
-def _is_completed(hand: jax.Array):
+def _is_completed(handArray):
     return jnp.any(_to_base5(hand) == WIN_HANDS)
 
 
-def _hand_to_score(hand: jax.Array):
+def _hand_to_score(handArray):
     # behavior for incomplete hand is undefined
     ix = jnp.argmin(jnp.abs(WIN_HANDS - _to_base5(hand)))
     return BASE_SCORES[ix], YAKU_SCORES[ix]
@@ -381,7 +381,7 @@ def _step_non_tied(state: State, scores):
     )
 
 
-def _observe(state: State, player_id: jax.Array):
+def _observe(state: State, player_idArray):
     """
     * [binary 4x11] tile type in the player's hand (private info)
     * [binary 1x11] has red doras
@@ -511,7 +511,7 @@ def _tile_type_to_str(tile_type) -> str:
     return s
 
 
-def _hand_to_str(hand: jax.Array, n_red_in_hands: jax.Array) -> str:
+def _hand_to_str(handArray, n_red_in_handsArray) -> str:
     s = ""
     for i in range(NUM_TILE_TYPES):
         for j in range(hand[i]):
@@ -523,7 +523,7 @@ def _hand_to_str(hand: jax.Array, n_red_in_hands: jax.Array) -> str:
     return s.ljust(12)
 
 
-def _river_to_str(river: jax.Array, is_red_in_river: jax.Array) -> str:
+def _river_to_str(riverArray, is_red_in_riverArray) -> str:
     s = ""
     for i in range(MAX_RIVER_LENGTH):
         tile_type = river[i]

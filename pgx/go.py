@@ -26,28 +26,28 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class State(core.State):
-    current_player: jax.Array = jnp.int32(0)
-    rewards: jax.Array = jnp.float32([0.0, 0.0])
-    terminated: jax.Array = FALSE
-    truncated: jax.Array = FALSE
-    legal_action_mask: jax.Array = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
-    observation: jax.Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
-    _step_count: jax.Array = jnp.int32(0)
+    current_playerArray = jnp.int32(0)
+    rewardsArray = jnp.float32([0.0, 0.0])
+    terminatedArray = FALSE
+    truncatedArray = FALSE
+    legal_action_maskArray = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
+    observationArray = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
+    _step_countArray = jnp.int32(0)
     # --- Go specific ---
-    _size: jax.Array = jnp.int32(19)  # NOTE: require 19 * 19 > int32
+    _sizeArray = jnp.int32(19)  # NOTE: require 19 * 19 > int32
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
     # require at least 19 * 19 > int32, idx_squared_sum can be 361^2 > int32
-    _chain_id_board: jax.Array = jnp.zeros(19 * 19, dtype=jnp.int32)
-    _board_history: jax.Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
-    _turn: jax.Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
-    _num_captured_stones: jax.Array = jnp.zeros(
+    _chain_id_boardArray = jnp.zeros(19 * 19, dtype=jnp.int32)
+    _board_historyArray = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
+    _turnArray = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
+    _num_captured_stonesArray = jnp.zeros(
         2, dtype=jnp.int32
     )  # [0]=black, [1]=white
-    _passed: jax.Array = FALSE  # TRUE if last action is pass
-    _ko: jax.Array = jnp.int32(-1)  # by SSK
-    _komi: jax.Array = jnp.float32(7.5)
-    _black_player: jax.Array = jnp.int32(0)
+    _passedArray = FALSE  # TRUE if last action is pass
+    _koArray = jnp.int32(-1)  # by SSK
+    _komiArray = jnp.float32(7.5)
+    _black_playerArray = jnp.int32(0)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -77,10 +77,10 @@ class Go(core.Env):
         self.history_length = history_length
         self.max_termination_steps = self.size * self.size * 2
 
-    def _init(self, key: jax.Array) -> State:
+    def _init(self, keyArray) -> State:
         return partial(_init, size=self.size, komi=self.komi)(key=key)
 
-    def _step(self, state: core.State, action: jax.Array, key) -> State:
+    def _step(self, state: core.State, actionArray, key) -> State:
         del key
         assert isinstance(state, State)
         state = partial(_step, size=self.size)(state, action)
@@ -96,7 +96,7 @@ class Go(core.Env):
         )
         return state  # type: ignore
 
-    def _observe(self, state: core.State, player_id: jax.Array) -> jax.Array:
+    def _observe(self, state: core.State, player_idArray) -> jax.Array:
         assert isinstance(state, State)
         return partial(
             _observe, size=self.size, history_length=self.history_length
@@ -167,7 +167,7 @@ def _observe(state: State, player_id, size, history_length):
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def _init(key: jax.Array, size: int, komi: float = 7.5) -> State:
+def _init(keyArray, size: int, komi: float = 7.5) -> State:
     black_player = jnp.int32(jax.random.bernoulli(key))
     current_player = black_player
     return State(  # type:ignore
