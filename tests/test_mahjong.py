@@ -284,7 +284,7 @@ def test_riichi():
     N = 10
     for _ in range(N):
         rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
+        a = act_randomly(subkey, state.legal_action_mask)
         state: State = step(state, a)
     visualize(state, f"tests/assets/mahjong/after_riichi_{N}.svg")
 
@@ -331,7 +331,7 @@ def test_transparent():
     state = init(key=rng)
     for _ in range(65):
         rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
+        a = act_randomly(subkey, state.legal_action_mask)
         state: State = step(state, a)
 
     visualize(state, "tests/assets/mahjong/transparent.svg")
@@ -344,7 +344,7 @@ def test_json():
     state = init(key=rng)
     for _ in range(50):
         rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
+        a = act_randomly(subkey, state.legal_action_mask)
         state: State = step(state, a)
 
     path = "temp.json"
