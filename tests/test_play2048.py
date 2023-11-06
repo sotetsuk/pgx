@@ -13,6 +13,10 @@ def test_init():
     key = jax.random.PRNGKey(0)
     state = init(key=key)
     assert jnp.count_nonzero(state._board == 1) == 2
+    key = jax.random.PRNGKey(2)
+    state = init(key=key)
+    assert state.legal_action_mask.shape == (4,)
+    assert (state.legal_action_mask == jnp.bool_([1, 0, 1, 1])).all()
 
 
 def test_slide_and_merge():
@@ -78,6 +82,17 @@ def test_legal_action():
      [16 32 64  0]]
     """
     assert (state.legal_action_mask == jnp.bool_([0, 0, 1, 1])).all()
+    assert not state.terminated
+    board = jnp.int32([2, 2, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0])
+    state = State(_board=board)
+    state = step(state, 0)
+    """
+    [[ 8  2  0  0]
+     [ 8  0  0  0]
+     [ 8  0  0  0]
+     [ 8  0  0  0]]
+    """
+    assert (state.legal_action_mask == jnp.bool_([0, 1, 1, 1])).all()
     assert not state.terminated
 
 
