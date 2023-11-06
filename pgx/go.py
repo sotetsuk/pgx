@@ -77,7 +77,7 @@ class Go(core.Env):
         self.history_length = history_length
         self.max_termination_steps = self.size * self.size * 2
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return partial(_init, size=self.size, komi=self.komi)(key=key)
 
     def _step(self, state: core.State, action: jax.Array, key) -> State:
@@ -169,7 +169,7 @@ def _observe(state: State, player_id, size, history_length):
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def _init(key: jax.random.KeyArray, size: int, komi: float = 7.5) -> State:
+def _init(key: jax.Array, size: int, komi: float = 7.5) -> State:
     black_player = jnp.int32(jax.random.bernoulli(key))
     current_player = black_player
     return State(  # type:ignore

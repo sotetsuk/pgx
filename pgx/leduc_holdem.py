@@ -57,7 +57,7 @@ class LeducHoldem(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
     def _step(self, state: core.State, action: jax.Array, key) -> State:
@@ -84,7 +84,7 @@ class LeducHoldem(core.Env):
         return 2
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.Array) -> State:
     rng1, rng2 = jax.random.split(rng, 2)
     current_player = jnp.int32(jax.random.bernoulli(rng1))
     init_card = jax.random.permutation(

@@ -61,7 +61,7 @@ class Play2048(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
     def _step(self, state: core.State, action: jax.Array, key) -> State:
@@ -87,7 +87,7 @@ class Play2048(core.Env):
         return 1
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.Array) -> State:
     rng1, rng2 = jax.random.split(rng)
     board = _add_random_num(jnp.zeros((4, 4), jnp.int32), rng1)
     board = _add_random_num(board, rng2)

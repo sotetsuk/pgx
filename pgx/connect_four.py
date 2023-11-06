@@ -52,7 +52,7 @@ class ConnectFour(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
     def _step(self, state: core.State, action: jax.Array, key) -> State:
@@ -107,7 +107,7 @@ def _make_win_cache():
 IDX = _make_win_cache()
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.Array) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(current_player=current_player)  # type:ignore
 

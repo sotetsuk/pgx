@@ -177,7 +177,7 @@ class Env(abc.ABC):
     def __init__(self):
         ...
 
-    def init(self, key: jax.random.KeyArray) -> State:
+    def init(self, key: jax.Array) -> State:
         """Return the initial state. Note that no internal state of
         environment changes.
 
@@ -239,7 +239,7 @@ class Env(abc.ABC):
         return jax.lax.stop_gradient(obs)
 
     @abc.abstractmethod
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         """Implement game-specific init function here."""
         ...
 

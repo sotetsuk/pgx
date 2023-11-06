@@ -56,7 +56,7 @@ class Othello(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return _init(key)
 
     def _step(self, state: core.State, action: jax.Array, key) -> State:
@@ -106,7 +106,7 @@ UD_MASK = jnp.array([
 SIDE_MASK = LR_MASK & UD_MASK
 
 
-def _init(rng: jax.random.KeyArray) -> State:
+def _init(rng: jax.Array) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(
         current_player=current_player,

@@ -98,7 +98,7 @@ class SparrowMahjong(core.Env):
     def __init__(self):
         super().__init__()
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         key, subkey = jax.random.split(key)
         state = _init(subkey)
 
@@ -171,7 +171,7 @@ class SparrowMahjong(core.Env):
         return 3
 
 
-def _init(rng: jax.random.KeyArray):
+def _init(rng: jax.Array):
     # shuffle players and wall
     key1, key2 = jax.random.split(rng)
     shuffled_players = jnp.arange(N_PLAYER, dtype=jnp.int32)

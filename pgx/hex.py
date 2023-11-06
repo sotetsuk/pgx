@@ -61,7 +61,7 @@ class Hex(core.Env):
         assert isinstance(size, int)
         self.size = size
 
-    def _init(self, key: jax.random.KeyArray) -> State:
+    def _init(self, key: jax.Array) -> State:
         return partial(_init, size=self.size)(rng=key)
 
     def _step(self, state: core.State, action: jax.Array, key) -> State:
@@ -92,7 +92,7 @@ class Hex(core.Env):
         return 2
 
 
-def _init(rng: jax.random.KeyArray, size: int) -> State:
+def _init(rng: jax.Array, size: int) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(_size=size, current_player=current_player)  # type:ignore
 
