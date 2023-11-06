@@ -15,6 +15,7 @@ FALSE = jnp.bool_(False)
 env = Mahjong()
 init = jit(env.init)
 step = jit(env.step)
+act_randomly = jit(act_randomly)
 
 
 def visualize(state, fname="tests/assets/mahjong/xxx.svg"):
@@ -283,7 +284,7 @@ def test_riichi():
     N = 10
     for _ in range(N):
         rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
+        a = act_randomly(subkey, state.legal_action_mask)
         state: State = step(state, a)
     visualize(state, f"tests/assets/mahjong/after_riichi_{N}.svg")
 
@@ -330,7 +331,7 @@ def test_transparent():
     state = init(key=rng)
     for _ in range(65):
         rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
+        a = act_randomly(subkey, state.legal_action_mask)
         state: State = step(state, a)
 
     visualize(state, "tests/assets/mahjong/transparent.svg")
@@ -343,7 +344,7 @@ def test_json():
     state = init(key=rng)
     for _ in range(50):
         rng, subkey = jax.random.split(rng)
-        a = act_randomly(subkey, state)
+        a = act_randomly(subkey, state.legal_action_mask)
         state: State = step(state, a)
 
     path = "temp.json"
@@ -362,7 +363,7 @@ def test_random_play():
 
         for _ in range(70):
             rng, subkey = jax.random.split(rng)
-            a = act_randomly(subkey, state)
+            a = act_randomly(subkey, state.legal_action_mask)
             state: State = step(state, a)
 
             assert state._hand[state.current_player].sum() + jnp.count_nonzero(

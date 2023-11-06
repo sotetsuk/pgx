@@ -68,7 +68,7 @@ def api_test_single(env: Env, num: int = 100):
 
         while True:
             rng, subkey = jax.random.split(rng)
-            action = act_randomly(subkey, state)
+            action = act_randomly(subkey, state.legal_action_mask)
             state = step(state, action)
             assert (
                 state._step_count == curr_steps + 1
@@ -105,7 +105,7 @@ def api_test_batch(env: Env, num: int = 100):
         state = init(keys)
         while not state.terminated.all():
             rng, subkey = jax.random.split(rng)
-            action = act_randomly(subkey, state)
+            action = act_randomly(subkey, state.legal_action_mask)
             state = step(state, action)
 
     # check visualization
