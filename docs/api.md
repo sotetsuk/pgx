@@ -67,7 +67,7 @@ Two important components in Pgx are `State` and `Env`.
       show_root_heading: true
       show_source: true
 
-::: pgx.v1_api_test
+::: pgx.api_test
     handler: python
     options:
       show_root_heading: true
