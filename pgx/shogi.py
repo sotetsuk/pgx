@@ -385,9 +385,7 @@ def _is_legal_drop_wo_piece(to: Array, state: State):
     return ~is_illegal
 
 
-def _is_legal_drop_wo_ignoring_check(
-    piece: Array, to: Array, state: State
-):
+def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: State):
     is_illegal = state._board[to] != EMPTY
     # don't have the piece
     is_illegal |= state._hand[0, piece] <= 0

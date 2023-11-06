@@ -291,9 +291,7 @@ class Env(abc.ABC):
         """Negative reward given when illegal action is selected."""
         return -1.0
 
-    def _step_with_illegal_action(
-        self, state: State, loser: Array
-    ) -> State:
+    def _step_with_illegal_action(self, state: State, loser: Array) -> State:
         penalty = self._illegal_action_penalty
         reward = (
             jnp.ones_like(state.rewards)

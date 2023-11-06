@@ -1,12 +1,12 @@
 from pgx._src.api_test import api_test
 from pgx._src.baseline import BaselineModelId, make_baseline_model
+from pgx._src.types import Array, PRNGKey
 from pgx._src.visualizer import (
     save_svg,
     save_svg_animation,
     set_visualization_config,
 )
 from pgx.core import Env, EnvId, State, available_envs, make
-from pgx._src.types import Array, PRNGKey
 
 __version__ = "2.0.0"
 

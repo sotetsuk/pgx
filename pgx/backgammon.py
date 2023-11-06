@@ -148,9 +148,7 @@ def _to_playable_dice_count(playable_dice: Array) -> Array:
         [0, 1, 2, 3], dtype=jnp.int32
     )  # maximum number of playable dice is 4
 
-    def _insert_dice_num(
-        idx: Array, playable_dice: Array
-    ) -> Array:
+    def _insert_dice_num(idx: Array, playable_dice: Array) -> Array:
         vec: Array = jnp.zeros(6, dtype=jnp.int32)
         return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
             1
@@ -313,9 +311,7 @@ def _update_playable_dice(
         [0, 1, 2, 3], dtype=jnp.int32
     )  # maximum number of playable dice is 4
 
-    def _update_for_diff_dice(
-        die: Array, idx: Array, playable_dice: Array
-    ):
+    def _update_for_diff_dice(die: Array, idx: Array, playable_dice: Array):
         return (die == playable_dice[idx]) * -1 + (
             die != playable_dice[idx]
         ) * playable_dice[idx]
@@ -543,9 +539,7 @@ def _legal_action_mask_for_single_die(board: Array, die) -> Array:
     ) * _legal_action_mask_for_valid_single_dice(board, die)
 
 
-def _legal_action_mask_for_valid_single_dice(
-    board: Array, die
-) -> Array:
+def _legal_action_mask_for_valid_single_dice(board: Array, die) -> Array:
     """
     Legal action mask for a single die when the die is valid.
     """

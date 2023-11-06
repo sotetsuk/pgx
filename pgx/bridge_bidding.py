@@ -22,8 +22,8 @@ import numpy as np
 
 import pgx.core as core
 from pgx._src.struct import dataclass
-from pgx._src.utils import _download
 from pgx._src.types import Array, PRNGKey
+from pgx._src.utils import _download
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
@@ -935,9 +935,7 @@ def _calculate_dds_tricks(
     )
 
 
-def _find_value_from_key(
-    key: PRNGKey, lut_keys: Array, lut_values: Array
-):
+def _find_value_from_key(key: PRNGKey, lut_keys: Array, lut_values: Array):
     """Find a value matching key without batch processing
     >>> VALUES = jnp.arange(20).reshape(5, 4)
     >>> KEYS = jnp.arange(20).reshape(5, 4)
