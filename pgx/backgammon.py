@@ -358,13 +358,13 @@ def _rear_distance(board: jax.Array) -> jax.Array:
     return 24 - jnp.min(jnp.nan_to_num(exists, nan=jnp.int32(100)))
 
 
-def _is_all_on_home_board(board: jax.Array) -> bool:
+def _is_all_on_home_board(board: jax.Array):
     """
     One can bear off if all checkers are on home board.
     """
     home_board: jax.Array = _home_board()
-    on_home_board: int = jnp.clip(board[home_board], a_min=0, a_max=15).sum()
-    off: int = board[_off_idx()]  # type: ignore
+    on_home_board = jnp.clip(board[home_board], a_min=0, a_max=15).sum()
+    off = board[_off_idx()]  # type: ignore
     return (15 - off) == on_home_board
 
 
