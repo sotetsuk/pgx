@@ -1,0 +1,12 @@
+jaxlib
+pytest
+matplotlib
+ipython
+dm-haiku
+pytest-cov
+pgx-minatar
+black
+blackdoc
+isort
+flake8
+mypy
