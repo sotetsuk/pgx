@@ -20,7 +20,7 @@ setup(
     install_requires=[
         "jax>=0.4.1",
         "svgwrite",
-        "typing_extensions",
+        "typing_extensions>=4.2.0",
     ],
     classifiers=[
         "Programming Language :: Python :: 3.8",

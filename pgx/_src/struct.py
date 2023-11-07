@@ -46,7 +46,7 @@ def field(pytree_node=True, **kwargs):
 
 
 # flake8: noqa: C901
-@dataclass_transform(field_descriptors=(field,))  # type: ignore[literal-required]
+@dataclass_transform(field_specifiers=(field,))  # type: ignore[literal-required]
 def dataclass(clz: _T) -> _T:
     """Create a class which can be passed to functional transformations.
 
@@ -101,7 +101,7 @@ def dataclass(clz: _T) -> _T:
         @classmethod
         def create(cls, kernel):
           scale = jax.numpy.linalg.norm(kernel, axis=0, keepdims=True)
-          directin = direction / scale
+          direction = direction / scale
           return cls(direction, scale)
 
     Args:
@@ -219,7 +219,7 @@ def dataclass(clz: _T) -> _T:
 TNode = TypeVar("TNode", bound="PyTreeNode")
 
 
-@dataclass_transform(field_descriptors=(field,))  # type: ignore[literal-required]
+@dataclass_transform(field_specifiers=(field,))  # type: ignore[literal-required]
 class PyTreeNode:
     """Base class for dataclasses that should act like a JAX pytree node.
 
