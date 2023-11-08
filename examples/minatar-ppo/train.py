@@ -133,9 +133,8 @@ def make_update_fn():
 
             # STEP ENV
             rng, _rng = jax.random.split(rng)
-            env_state = step_fn(
-                env_state, action
-            )
+            keys = jax.random.split(_rng, env_state.observation.shape[0])
+            env_state = step_fn(env_state, action, keys)
             transition = Transition(
                 env_state.terminated,
                 action,
