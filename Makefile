@@ -3,23 +3,7 @@
 
 install-dev:
 	python3 -m pip install -U pip
-	python3 -m pip install -U \
-		pytest \
-		matplotlib \
-		ipython \
-		jax[cpu] \
-		dm-haiku \
-		pytest-cov \
-		pgx-minatar
-
-install-fmt:
-	python3 -m pip install -U pip
-	python3 -m pip install -U \
-		black \
-		blackdoc \
-		isort \
-		flake8 \
-		mypy
+	python3 -m pip install -r requirements/requirements-dev.txt
 
 clean:
 	rm -rf build
@@ -48,6 +32,3 @@ uninstall:
 
 test:
 	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental
-
-test-modified:
-	./test_modified.sh

@@ -1,7 +1,14 @@
 from setuptools import find_packages, setup
 from pathlib import Path
 
-long_description = (Path(__file__).parent / "README.md").read_text()
+curr_dir = Path(__file__).parent
+long_description = Path(curr_dir / "README.md").read_text()
+
+
+def _read_requirements(fname):
+    with open(Path(curr_dir / "requirements" / fname)) as f:
+        return [l.strip() for l in f if not (l.isspace() or l.startswith('#'))]
+
 
 setup(
     name="pgx",
@@ -17,11 +24,7 @@ setup(
         "": ["LICENSE", "*.svg", "_src/assets/*.npy"]
     },
     include_package_data=True,
-    install_requires=[
-        "jax>=0.4.1",
-        "svgwrite",
-        "typing_extensions>=4.2.0",
-    ],
+    install_requires=_read_requirements("requirements.txt"),
     classifiers=[
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",

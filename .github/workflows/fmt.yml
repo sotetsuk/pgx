@@ -14,5 +14,4 @@ jobs:
     - name: check 
       run: |
         make install-dev
-        make install-fmt
         make check
