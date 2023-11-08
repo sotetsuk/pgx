@@ -21,7 +21,7 @@ setup(
     keywords="",
     packages=find_packages(),
     package_data={
-        "": ["LICENSE", "*.svg", "_src/assets/*.npy", "mahjong/cache/*.json"]
+        "": ["LICENSE", "*.svg", "_src/assets/*.npy"]
     },
     include_package_data=True,
     install_requires=_read_requirements("requirements.txt"),
