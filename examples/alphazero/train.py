@@ -122,6 +122,7 @@ def selfplay(
     rng_key: jnp.ndarray,
 ) -> Sample:
     model_params, model_state = model
+    batch_size = config.selfplay_batch_size // num_devices
 
     class StepFnOutput(NamedTuple):
         obs: jnp.ndarray
@@ -150,7 +151,8 @@ def selfplay(
             gumbel_scale=1.0,
         )
         actor = state.current_player
-        state = jax.vmap(auto_reset(env.step, env.init))(state, policy_output.action, key2)
+        keys = jax.random.split(key2, batch_size)
+        state = jax.vmap(auto_reset(env.step, env.init))(state, policy_output.action, keys)
         discount = -1.0 * jnp.ones_like(value)
         discount = jnp.where(state.terminated, 0.0, discount)
         return state, StepFnOutput(
@@ -162,7 +164,6 @@ def selfplay(
         )
 
     # Run selfplay for max_num_steps by batch
-    batch_size = config.selfplay_batch_size // num_devices
     rng_key, sub_key = jax.random.split(rng_key)
     keys = jax.random.split(sub_key, batch_size)
     state = jax.vmap(env.init)(keys)
