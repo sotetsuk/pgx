@@ -71,7 +71,7 @@ However, the API itself is also sufficiently general. For example, all environme
 You can see the demonstration in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb).
 
 
-### API V2
+### API v2
 
 Pgx has been updated from API **v1** to **v2** as of November 8, 2023 (release **`v2.0.0`**). As a result, the signature for `Env.step` has changed as follows:
 
