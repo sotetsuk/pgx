@@ -20,3 +20,8 @@ Note that you need to install `jax` and `jaxlib` in addition to the packages wri
 $ pip install -r requirements.txt
 $ python3 train.py env_name=minatar-breakout seed=9999
 ```
+
+## Change history
+
+- **[1098](https://github.com/sotetsuk/pgx/pull/1098)** Adjust to API v2 ([wandb report](https://api.wandb.ai/links/sotetsuk/1j4a32aq)).
+- **[1020](https://github.com/sotetsuk/pgx/pull/1020)** Initial version ([wandb report](https://api.wandb.ai/links/sotetsuk/kvd3fzge)).
