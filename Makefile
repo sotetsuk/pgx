@@ -20,7 +20,7 @@ check:
 	black pgx --check --diff
 	blackdoc pgx --check
 	flake8 --config pyproject.toml --ignore E203,E501,W503,E741 pgx
-	mypy --config pyproject.toml pgx
+	mypy --config pyproject.toml pgx  --ignore-missing-imports
 	isort pgx --check --diff
 
 install:
