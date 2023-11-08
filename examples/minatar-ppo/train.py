@@ -294,7 +294,8 @@ def evaluate(params, rng_key):
         rng_key, _rng = jax.random.split(rng_key)
         action = pi.sample(seed=_rng)
         rng_key, _rng = jax.random.split(rng_key)
-        state = step_fn(state, action)
+        keys = jax.random.split(_rng, state.observation.shape[0])
+        state = step_fn(state, action, keys)
         return state, R + state.rewards, rng_key
     state, R, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, R, rng_key))
     return R.mean()
