@@ -58,6 +58,7 @@ No-op (0), left (1), right (2), up (3), or down (4).
 
 ## Version History
 
+- `v1`: Specify rng key explicitly (API v2) by [@sotetsuk](https://github.com/sotetsuk) in [#1058](https://github.com/sotetsuk/pgx/pull/1058) (v2.0.0)
 - `v0` : Initial release (v1.0.0)
 
 ## Training example
