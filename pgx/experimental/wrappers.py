@@ -1,4 +1,4 @@
-from typing import overload, Optional
+from typing import Optional, overload
 
 import jax
 import jax.numpy as jnp
@@ -30,8 +30,13 @@ def auto_reset(step_fn, init_fn):
 
     2. Performance
     """
-    def wrapped_step_fn(state: State, action: Array, key: Optional[PRNGKey] = None):
-        assert key is not None, "v2.0.0 changes the signature of auto reset. Please specify PRNGKey at the third argument:\n\n  * <  v2.0.0: step_fn(state, action)\n  * >= v2.0.0: step_fn(state, action, key)\n\nNote that codes under pgx.experimental are subject to change without notice."
+
+    def wrapped_step_fn(
+        state: State, action: Array, key: Optional[PRNGKey] = None
+    ):
+        assert (
+            key is not None
+        ), "v2.0.0 changes the signature of auto reset. Please specify PRNGKey at the third argument:\n\n  * <  v2.0.0: step_fn(state, action)\n  * >= v2.0.0: step_fn(state, action, key)\n\nNote that codes under pgx.experimental are subject to change without notice."
 
         key1, key2 = jax.random.split(key)
         state = jax.lax.cond(
