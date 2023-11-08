@@ -1,8 +1,7 @@
 # Copyright 2023 The Pgx Authors. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# you may not use this file except in compliance with the License.  # You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
@@ -200,11 +199,7 @@ def loss_fn(model_params, model_state, data: Sample):
         model_params, model_state, data.obs, is_eval=False
     )
 
-    logits = jax.nn.log_softmax(logits, axis=-1)
-    min_val = jnp.finfo(logits.dtype).min
-    policy_loss = jnp.sum(
-        data.policy_tgt * (jnp.maximum(jnp.log(data.policy_tgt), min_val) - logits), axis=-1
-    )
+    policy_loss = optax.softmax_cross_entropy(logits, data.policy_tgt)
     policy_loss = jnp.mean(policy_loss)
 
     value_loss = optax.l2_loss(value, data.value_tgt)
