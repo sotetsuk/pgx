@@ -1,11 +1,8 @@
-from typing import Optional
 import jax
 import jax.numpy as jnp
 
-
-from pgx.core import State
 from pgx._src.types import Array, PRNGKey
-
+from pgx.core import State
 
 FALSE = jnp.bool_(False)
 
