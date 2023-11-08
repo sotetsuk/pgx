@@ -131,6 +131,7 @@ def selfplay(
         discount: jnp.ndarray
 
     def step_fn(state, key) -> StepFnOutput:
+        key1, key2 = jax.random.split(key)
         observation = state.observation
 
         (logits, value), _ = forward.apply(
@@ -140,7 +141,7 @@ def selfplay(
 
         policy_output = mctx.gumbel_muzero_policy(
             params=model,
-            rng_key=key,
+            rng_key=key1,
             root=root,
             recurrent_fn=recurrent_fn,
             num_simulations=config.num_simulations,
@@ -149,7 +150,7 @@ def selfplay(
             gumbel_scale=1.0,
         )
         actor = state.current_player
-        state = jax.vmap(auto_reset(env.step, env.init))(state, policy_output.action)
+        state = jax.vmap(auto_reset(env.step, env.init))(state, policy_output.action, key2)
         discount = -1.0 * jnp.ones_like(value)
         discount = jnp.where(state.terminated, 0.0, discount)
         return state, StepFnOutput(
