@@ -32,11 +32,8 @@ def auto_reset(step_fn, init_fn):
     2. Performance
     """
 
-    def wrapped_step_fn(state: State, action: Array, key: Optional[PRNGKey] = None):
-        if key is None:
-            key1, key2 = None, None
-        else:
-            key1, key2 = jax.random.split(key)
+    def wrapped_step_fn(state: State, action: Array, key: PRNGKey):
+        key1, key2 = jax.random.split(key)
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
