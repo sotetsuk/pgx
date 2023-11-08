@@ -71,6 +71,20 @@ However, the API itself is also sufficiently general. For example, all environme
 You can see the demonstration in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb).
 
 
+### API V2
+
+Pgx has been updated from API **v1** to **v2** as of November 8, 2023 (release **`v2.0.0`**). As a result, the signature for `Env.step` has changed as follows:
+
+- **v1**: `step(state: State, action: Array)`
+- **v2**: `step(state: State, action: Array, key: Optional[PRNGKey] = None)`
+
+Also, `pgx.experimental.auto_reset` are changed to specify `key` as the third argument.
+
+**Purpose of the update:** In API v1, even in environments with stochastic state transitions, the state transitions were deterministic, determined by the `_rng_key` inside the `state`. This was intentional, with the aim of increasing reproducibility. However, when using planning algorithms in this environment, there is a risk that information about the underlying true randomness could "leak." To make it easier for users to conduct correct experiments, `Env.step` has been changed to explicitly specify a key.
+
+**Impact of the update**: Since the `key` is optional, it is still possible to execute as `env.step(state, action)` like API v1 in deterministic environments like Go and chess, so there is no impact on these games. As of `v2.0.0`, **only 2048, backgammon, and MinAtar suite are affected by this change.**
+
+
 ## Installation
 
 ```sh
