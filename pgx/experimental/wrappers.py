@@ -1,8 +1,12 @@
-# I personally don't prefer env = Wrapper(env) style.
+from typing import Optional
 import jax
 import jax.numpy as jnp
 
-TRUE = jnp.bool_(True)
+
+from pgx.core import State
+from pgx._src.types import Array, PRNGKey
+
+
 FALSE = jnp.bool_(False)
 
 
@@ -26,12 +30,14 @@ def auto_reset(step_fn, init_fn):
     Note that chess, shogi, and Go have `max_termination_steps` as AlphaZero.
     So, this implementation is enough (so far).
 
-    2. Performance:
-    Might harm the performance as it always generates new state.
-    Memory usage might be doubled. Need to check.
+    2. Performance
     """
 
-    def wrapped_step_fn(state, action):
+    def wrapped_step_fn(state: State, action: Array, key: Optional[PRNGKey] = None):
+        if key is None:
+            key1, key2 = None, None
+        else:
+            key1, key2 = jax.random.split(key)
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             lambda: state.replace(  # type: ignore
@@ -41,12 +47,12 @@ def auto_reset(step_fn, init_fn):
             ),
             lambda: state,
         )
-        state = step_fn(state, action)
+        state = step_fn(state, action, key1)
         state = jax.lax.cond(
             (state.terminated | state.truncated),
             # state is replaced by initial state,
             # but preserve (terminated, truncated, reward)
-            lambda: init_fn(state._rng_key).replace(  # type: ignore
+            lambda: init_fn(key2).replace(  # type: ignore
                 terminated=state.terminated,
                 truncated=state.truncated,
                 rewards=state.rewards,
