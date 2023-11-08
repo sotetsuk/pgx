@@ -410,9 +410,9 @@ def make(env_id: EnvId):  # noqa: C901
         return MinAtarSeaquest()
     elif env_id == "minatar-space_invaders":
         from pgx.minatar.space_invaders import (  # type: ignore
-                MinAtarSpaceInvaders,
-            )
-        
+            MinAtarSpaceInvaders,
+        )
+
         return MinAtarSpaceInvaders()
     elif env_id == "othello":
         from pgx.othello import Othello
