@@ -83,6 +83,7 @@ Continues until either player wins.
 
 ## Version History
 
+- `v2`: Specify rng key explicitly (API v2) by [@sotetsuk](https://github.com/sotetsuk) in [#1058](https://github.com/sotetsuk/pgx/pull/1058) (v2.0.0)
 - `v1`: Remove redundant actions (From `162` to `156`) by [@nissymori](https://github.com/nissymori) in [#1004](https://github.com/sotetsuk/pgx/pull/1004) (v1.2.0)
 - `v0` : Initial release (v1.0.0)
 
