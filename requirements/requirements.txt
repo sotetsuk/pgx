@@ -2,3 +2,4 @@
 jax>=0.4.1
 typing_extensions>=4.2.0
 svgwrite
+pgx_minatar==0.3.0

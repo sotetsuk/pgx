@@ -393,62 +393,27 @@ def make(env_id: EnvId):  # noqa: C901
 
         return Mahjong()
     elif env_id == "minatar-asterix":
-        try:
-            from pgx_minatar.asterix import MinAtarAsterix  # type: ignore
+        from pgx.minatar.asterix import MinAtarAsterix  # type: ignore
 
-            return MinAtarAsterix()
-        except ModuleNotFoundError:
-            print(
-                '"minatar-asterix" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        return MinAtarAsterix()
     elif env_id == "minatar-breakout":
-        try:
-            from pgx_minatar.breakout import MinAtarBreakout  # type: ignore
+        from pgx.minatar.breakout import MinAtarBreakout  # type: ignore
 
-            return MinAtarBreakout()
-        except ModuleNotFoundError:
-            print(
-                '"minatar-breakout" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        return MinAtarBreakout()
     elif env_id == "minatar-freeway":
-        try:
-            from pgx_minatar.freeway import MinAtarFreeway  # type: ignore
+        from pgx.minatar.freeway import MinAtarFreeway  # type: ignore
 
-            return MinAtarFreeway()
-        except ModuleNotFoundError:
-            print(
-                '"minatar-freeway" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        return MinAtarFreeway()
     elif env_id == "minatar-seaquest":
-        try:
-            from pgx_minatar.seaquest import MinAtarSeaquest  # type: ignore
+        from pgx.minatar.seaquest import MinAtarSeaquest  # type: ignore
 
-            return MinAtarSeaquest()
-        except ModuleNotFoundError:
-            print(
-                '"minatar-seaquest" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        return MinAtarSeaquest()
     elif env_id == "minatar-space_invaders":
-        try:
-            from pgx_minatar.space_invaders import (  # type: ignore
+        from pgx.minatar.space_invaders import (  # type: ignore
                 MinAtarSpaceInvaders,
             )
-
-            return MinAtarSpaceInvaders()
-        except ModuleNotFoundError:
-            print(
-                '"minatar-space_invaders" environment is provided as a separate plugin of Pgx.\nPlease run `$ pip install pgx-minatar` to use this environment in Pgx.',
-                file=sys.stderr,
-            )
-            sys.exit(1)
+        
+        return MinAtarSpaceInvaders()
     elif env_id == "othello":
         from pgx.othello import Othello
 
