@@ -8,7 +8,7 @@ Note that you need to install `jax` and `jaxlib` in addition to the packages wri
 
 ```sh
 $ pip install -r requirements.txt
-$ python3 train.py env_id=go_9x9 selfplay_batch_size=1024 seed=0
+$ python3 train.py env_id=go_9x9 seed=0
 ```
 
 ## Reference
