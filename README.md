@@ -17,6 +17,7 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 <img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
 </div>
 
+**📣 [`v2.0.0`](https://github.com/sotetsuk/pgx/releases/tag/v2.0.0) is released! It breaks compatibility in stochastic environments (e.g., 2048) and `auto_reset`.**
 
 ## Why Pgx?
 
@@ -45,6 +46,12 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 
 ## Usage
 
+Pgx is available on [PyPI](https://pypi.org/project/pgx/). Note that your Python environment has `jax` and `jaxlib` installed, depending on your hardware specification.
+
+```sh
+$ pip install pgx
+```
+
 The following code snippet shows a simple example of using Pgx.
 You can try it out in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb).
 Note that all `step` functions in Pgx environments are **JAX-native.**, i.e., they are all *JIT-able*.
@@ -63,7 +70,8 @@ keys = jax.random.split(jax.random.PRNGKey(42), batch_size)
 state = init(keys)  # vectorized states
 while not (state.terminated | state.truncated).all():
     action = model(state.current_player, state.observation, state.legal_action_mask)
-    state = step(state, action)  # state.reward (2,)
+    # step(state, action, keys) for stochastic envs
+    state = step(state, action)  # state.rewards with shape (1024, 2)
 ```
 
 Pgx is a library that focuses on faster implementations rather than just the API itself. 
@@ -71,7 +79,8 @@ However, the API itself is also sufficiently general. For example, all environme
 You can see the demonstration in [this Colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb).
 
 
-### API v2
+<details>
+<summary>📣 API v2 (v2.0.0)</summary>
 
 Pgx has been updated from API **v1** to **v2** as of November 8, 2023 (release **`v2.0.0`**). As a result, the signature for `Env.step` has changed as follows:
 
@@ -83,21 +92,7 @@ Also, `pgx.experimental.auto_reset` are changed to specify `key` as the third ar
 **Purpose of the update:** In API v1, even in environments with stochastic state transitions, the state transitions were deterministic, determined by the `_rng_key` inside the `state`. This was intentional, with the aim of increasing reproducibility. However, when using planning algorithms in this environment, there is a risk that information about the underlying true randomness could "leak." To make it easier for users to conduct correct experiments, `Env.step` has been changed to explicitly specify a key.
 
 **Impact of the update**: Since the `key` is optional, it is still possible to execute as `env.step(state, action)` like API v1 in deterministic environments like Go and chess, so there is no impact on these games. As of `v2.0.0`, **only 2048, backgammon, and MinAtar suite are affected by this change.**
-
-
-## Installation
-
-```sh
-pip install pgx
-```
-
-Note that the [MinAtar](https://github.com/kenjyoung/MinAtar) suite is provided as a separate extension for Pgx ([`pgx-minatar`](https://github.com/sotetsuk/pgx-minatar)). Therefore, please run the following command additionaly to use the MinAtar suite in Pgx:
-
-```sh
-pip install pgx-minatar
-```
-
-Pgx is provided under the Apache 2.0 License, but the original MinAtar suite follows the GPL 3.0 License. Therefore, please note that the separated MinAtar extension for Pgx also adheres to the GPL 3.0 License.
+</details>
 
 ## Supported games
 
@@ -112,7 +107,7 @@ Use `pgx.available_envs() -> Tuple[EnvId]` to see the list of currently availabl
 >>> env = pgx.make(<EnvId>)
 ```
 
-| Game/EnvId | Visualization | Version | Five-word description |
+| Game/EnvId | Visualization | Version | Five-word description by [ChatGPT](https://chat.openai.com/) |
 |:---:|:---:|:---:|:---:|
 |<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a> <br> `"2048"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_light.gif" width="60px">| `v2` | *Merge tiles to create 2048.* |
 |<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a><br>`"animal_shogi"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_light.gif" width="60px">|  `v0` | *Animal-themed child-friendly shogi.* |
@@ -135,10 +130,8 @@ Use `pgx.available_envs() -> Tuple[EnvId]` to see the list of currently availabl
 |<a href="https://sugorokuya.jp/p/suzume-jong">Sparrow Mahjong</a><br>`"sparrow_mahjong"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_dark.svg" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/sparrow_mahjong_light.svg" width="60px">|  `v1` | *A simplified, children-friendly Mahjong.* |
 |<a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Tic-tac-toe</a><br>`"tic_tac_toe"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/tic_tac_toe_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/tic_tac_toe_light.gif" width="60px">| `v0` | *Three in a row wins.* |
 
-- <a href="https://en.wikipedia.org/wiki/Japanese_mahjong">Mahjong</a> environments are under development 🚧 If you have any requests for new environments, please let us know by [opening an issue](https://github.com/sotetsuk/pgx/issues/new)
-- Five-word descriptions were generated by [ChatGPT](https://chat.openai.com/) 🤖
 
-### Versioning policy
+<details><summary>Versioning policy</summary>
 
 Each environment is versioned, and the version is incremented when there are changes that affect the performance of agents or when there are changes that are not backward compatible with the API.
 If you want to pursue complete reproducibility, we recommend that you check the version of Pgx and each environment as follows:
@@ -149,6 +142,8 @@ If you want to pursue complete reproducibility, we recommend that you check the 
 >>> env.version
 'v0'
 ```
+
+</details>
 
 ## See also
 
