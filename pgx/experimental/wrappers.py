@@ -13,13 +13,12 @@ FALSE = jnp.bool_(False)
 def auto_reset(step_fn, init_fn):
     """Auto reset wrapper.
 
-    There are several concerns before staging this wrapper:
+    We have a concern about the final state before staging this wrapper:
 
-    1. Final state (observation)
     When auto-reset happens, the termianl (or truncated) state/observation is
     replaced by initial state/observation, It's ok if it's termination.
     However, when truncation happens, value of truncated state/observation
-    might be used by agents. So its must be stored somewhere.
+    might be used by agents (by bootstrap). So it must be stored somewhere.
     For example,
 
     https://github.com/Farama-Foundation/Gymnasium/blob/main/gymnasium/wrappers/autoreset.py#L59
