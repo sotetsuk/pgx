@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import abc
-import sys
 from typing import Literal, Optional, Tuple, get_args
 
 import jax

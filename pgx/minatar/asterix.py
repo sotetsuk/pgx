@@ -1,1 +1,1 @@
-from pgx_minatar.asterix import MinAtarAsterix
+from pgx_minatar.asterix import MinAtarAsterix  # noqa: F401

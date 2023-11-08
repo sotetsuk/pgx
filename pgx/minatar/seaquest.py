@@ -1,1 +1,1 @@
-from pgx_minatar.seaquest import MinAtarSeaquest
+from pgx_minatar.seaquest import MinAtarSeaquest  # noqa: F401
