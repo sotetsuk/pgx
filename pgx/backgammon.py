@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
 from functools import partial
+from typing import Optional
 
 import jax
 import jax.numpy as jnp
@@ -54,7 +54,7 @@ class State(core.State):
 class Backgammon(core.Env):
     def __init__(self):
         super().__init__()
-    
+
     def step(
         self, state: core.State, action: Array, key: Optional[Array] = None
     ) -> core.State:
