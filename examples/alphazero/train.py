@@ -199,16 +199,16 @@ def compute_loss_input(data: SelfplayOutput) -> Sample:
     )
 
 
-def loss_fn(model_params, model_state, data: Sample):
+def loss_fn(model_params, model_state, samples: Sample):
     (logits, value), model_state = forward.apply(
-        model_params, model_state, data.obs, is_eval=False
+        model_params, model_state, samples.obs, is_eval=False
     )
 
-    policy_loss = optax.softmax_cross_entropy(logits, data.policy_tgt)
+    policy_loss = optax.softmax_cross_entropy(logits, samples.policy_tgt)
     policy_loss = jnp.mean(policy_loss)
 
-    value_loss = optax.l2_loss(value, data.value_tgt)
-    value_loss = jnp.mean(value_loss * data.mask)  # mask if the episode is truncated
+    value_loss = optax.l2_loss(value, samples.value_tgt)
+    value_loss = jnp.mean(value_loss * samples.mask)  # mask if the episode is truncated
 
     return policy_loss + value_loss, (model_state, policy_loss, value_loss)
 
