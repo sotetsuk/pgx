@@ -172,7 +172,7 @@ class Sample(NamedTuple):
 
 
 @jax.pmap
-def compute_loss_input(data) -> Sample:
+def compute_loss_input(data: SelfplayOutput) -> Sample:
     batch_size = config.selfplay_batch_size // num_devices
     # If episode is truncated, there is no value target
     # So when we compute value loss, we need to mask it
