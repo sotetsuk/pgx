@@ -109,27 +109,18 @@ def recurrent_fn(model, rng_key: jnp.ndarray, action: jnp.ndarray, state: pgx.St
     return recurrent_fn_output, state
 
 
-class Sample(NamedTuple):
+class StepFnOutput(NamedTuple):
     obs: jnp.ndarray
-    policy_tgt: jnp.ndarray
-    value_tgt: jnp.ndarray
-    mask: jnp.ndarray
+    reward: jnp.ndarray
+    terminated: jnp.ndarray
+    action_weights: jnp.ndarray
+    discount: jnp.ndarray
 
 
 @jax.pmap
-def selfplay(
-    model,
-    rng_key: jnp.ndarray,
-) -> Sample:
+def selfplay(model, rng_key: jnp.ndarray) -> StepFnOutput:
     model_params, model_state = model
     batch_size = config.selfplay_batch_size // num_devices
-
-    class StepFnOutput(NamedTuple):
-        obs: jnp.ndarray
-        reward: jnp.ndarray
-        terminated: jnp.ndarray
-        action_weights: jnp.ndarray
-        discount: jnp.ndarray
 
     def step_fn(state, key) -> StepFnOutput:
         key1, key2 = jax.random.split(key)
@@ -170,6 +161,19 @@ def selfplay(
     key_seq = jax.random.split(rng_key, config.max_num_steps)
     _, data = jax.lax.scan(step_fn, state, key_seq)
 
+    return data
+
+
+class Sample(NamedTuple):
+    obs: jnp.ndarray
+    policy_tgt: jnp.ndarray
+    value_tgt: jnp.ndarray
+    mask: jnp.ndarray
+
+
+@jax.pmap
+def compute_loss_input(data) -> Sample:
+    batch_size = config.selfplay_batch_size // num_devices
     # If episode is truncated, there is no value target
     # So when we compute value loss, we need to mask it
     value_mask = jnp.cumsum(data.terminated[::-1, :], axis=0)[::-1, :] >= 1
@@ -323,7 +327,8 @@ if __name__ == "__main__":
         # Selfplay
         rng_key, subkey = jax.random.split(rng_key)
         keys = jax.random.split(subkey, num_devices)
-        samples: Sample = selfplay(model, keys)
+        data: StepFnOutput = selfplay(model, keys)
+        samples: Sample = compute_loss_input(data)
 
         # Shuffle samples and make minibatches
         samples = jax.device_get(samples)  # (#devices, batch, max_num_steps, ...)
