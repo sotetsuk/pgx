@@ -109,7 +109,7 @@ def recurrent_fn(model, rng_key: jnp.ndarray, action: jnp.ndarray, state: pgx.St
     return recurrent_fn_output, state
 
 
-class StepFnOutput(NamedTuple):
+class SelfplayOutput(NamedTuple):
     obs: jnp.ndarray
     reward: jnp.ndarray
     terminated: jnp.ndarray
@@ -118,11 +118,11 @@ class StepFnOutput(NamedTuple):
 
 
 @jax.pmap
-def selfplay(model, rng_key: jnp.ndarray) -> StepFnOutput:
+def selfplay(model, rng_key: jnp.ndarray) -> SelfplayOutput:
     model_params, model_state = model
     batch_size = config.selfplay_batch_size // num_devices
 
-    def step_fn(state, key) -> StepFnOutput:
+    def step_fn(state, key) -> SelfplayOutput:
         key1, key2 = jax.random.split(key)
         observation = state.observation
 
@@ -146,7 +146,7 @@ def selfplay(model, rng_key: jnp.ndarray) -> StepFnOutput:
         state = jax.vmap(auto_reset(env.step, env.init))(state, policy_output.action, keys)
         discount = -1.0 * jnp.ones_like(value)
         discount = jnp.where(state.terminated, 0.0, discount)
-        return state, StepFnOutput(
+        return state, SelfplayOutput(
             obs=observation,
             action_weights=policy_output.action_weights,
             reward=state.rewards[jnp.arange(state.rewards.shape[0]), actor],
@@ -327,7 +327,7 @@ if __name__ == "__main__":
         # Selfplay
         rng_key, subkey = jax.random.split(rng_key)
         keys = jax.random.split(subkey, num_devices)
-        data: StepFnOutput = selfplay(model, keys)
+        data: SelfplayOutput = selfplay(model, keys)
         samples: Sample = compute_loss_input(data)
 
         # Shuffle samples and make minibatches
