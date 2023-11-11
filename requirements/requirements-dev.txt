@@ -2,7 +2,8 @@ jaxlib
 pytest
 matplotlib
 ipython
-dm-haiku
+# hot fix. to avoid errors in Py3.8
+dm-haiku==0.0.10
 pytest-cov
 pgx-minatar
 black
