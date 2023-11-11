@@ -4,13 +4,14 @@ on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
   test:
     runs-on: "${{ matrix.os }}"
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+        python-version: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && ['3.8', '3.9', '3.10', '3.11', '3.12'] || ['3.12'] }}
         os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v2
@@ -20,7 +21,6 @@ jobs:
         architecture: 'x64'
     - name: install
       run: |
-        pip3 install --upgrade pip
         make install
     - name: test
       run: |
