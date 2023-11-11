@@ -21,7 +21,6 @@ jobs:
         architecture: 'x64'
     - name: install
       run: |
-        pip3 install --upgrade pip
         make install
     - name: test
       run: |
