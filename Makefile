@@ -32,3 +32,6 @@ uninstall:
 
 test:
 	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental
+
+test-with-codecov:
+	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental --cov=pgx --cov-report=term-missing --cov-report=html
