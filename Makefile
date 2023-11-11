@@ -24,7 +24,7 @@ check:
 	isort pgx --check --diff
 
 install:
-	python3 -m pip install --upgrade pip setuptools
+	python3 -m pip install -U pip setuptools
 	python3 -m pip install .
 
 uninstall:
@@ -32,3 +32,6 @@ uninstall:
 
 test:
 	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental
+
+test-with-codecov:
+	python3 -m pytest --doctest-modules --verbose pgx tests/test_*.py --ignore=pgx/experimental --cov=pgx --cov-report=term-missing --cov-report=html
