@@ -204,7 +204,8 @@ def loss_fn(model_params, model_state, samples: Sample):
     policy_loss = jnp.mean(policy_loss)
 
     value_loss = optax.l2_loss(value, samples.value_tgt)
-    value_loss = jnp.mean(value_loss * samples.mask)  # mask if the episode is truncated
+    # mask if the episode is truncated
+    value_loss = jnp.sum(value_loss * samples.mask) / samples.mask.sum()
 
     return policy_loss + value_loss, (model_state, policy_loss, value_loss)
 
