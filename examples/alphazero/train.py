@@ -279,7 +279,9 @@ if __name__ == "__main__":
 
     rng_key = jax.random.PRNGKey(config.seed)
     rng_key, sub_key = jax.random.split(rng_key)
-    keys = jax.random.split(sub_key, (num_devices, config.selfplay_batch_size // num_devices))
+    keys = jax.random.split(sub_key, config.selfplay_batch_size).reshape(
+            (num_devices, config.selfplay_batch_size // num_devices, -1)
+    )
     state = jax.pmap(jax.vmap(env.init))(keys)
     while True:
         if iteration % config.eval_interval == 0:
