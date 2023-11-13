@@ -17,7 +17,7 @@ import os
 import pickle
 import time
 from functools import partial
-from typing import NamedTuple
+from typing import NamedTuple, Tuple
 
 import haiku as hk
 import jax
@@ -118,7 +118,7 @@ class SelfplayOutput(NamedTuple):
 
 
 @jax.pmap
-def selfplay(model, rng_key: jnp.ndarray) -> SelfplayOutput:
+def selfplay(rng_key: jnp.ndarray, state: pgx.State, model) -> Tuple[pgx.State, SelfplayOutput]:
     model_params, model_state = model
     batch_size = config.selfplay_batch_size // num_devices
 
@@ -155,13 +155,9 @@ def selfplay(model, rng_key: jnp.ndarray) -> SelfplayOutput:
         )
 
     # Run selfplay for max_num_steps by batch
-    rng_key, sub_key = jax.random.split(rng_key)
-    keys = jax.random.split(sub_key, batch_size)
-    state = jax.vmap(env.init)(keys)
     key_seq = jax.random.split(rng_key, config.max_num_steps)
-    _, data = jax.lax.scan(step_fn, state, key_seq)
-
-    return data
+    state, data = jax.lax.scan(step_fn, state, key_seq)
+    return state, data
 
 
 class Sample(NamedTuple):
@@ -282,6 +278,9 @@ if __name__ == "__main__":
     log = {"iteration": iteration, "hours": hours, "frames": frames}
 
     rng_key = jax.random.PRNGKey(config.seed)
+    rng_key, sub_key = jax.random.split(rng_key)
+    keys = jax.random.split(sub_key, (num_devices, config.selfplay_batch_size // num_devices))
+    state = jax.pmap(jax.vmap(env.init))(keys)
     while True:
         if iteration % config.eval_interval == 0:
             # Evaluation
@@ -327,7 +326,7 @@ if __name__ == "__main__":
         # Selfplay
         rng_key, subkey = jax.random.split(rng_key)
         keys = jax.random.split(subkey, num_devices)
-        data: SelfplayOutput = selfplay(model, keys)
+        state, data = selfplay(keys, state, model)
         samples: Sample = compute_loss_input(data)
 
         # Shuffle samples and make minibatches
