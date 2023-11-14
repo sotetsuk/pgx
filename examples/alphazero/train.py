@@ -360,6 +360,7 @@ if __name__ == "__main__":
             {
                 "train/policy_loss": policy_loss,
                 "train/value_loss": value_loss,
+                "train/mask_ratio": float((samples.mask.sum() / samples.mask.size).item()),
                 "hours": hours,
                 "frames": frames,
             }
