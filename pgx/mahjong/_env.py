@@ -501,10 +501,10 @@ def _get_next_player_after_pass(state, c_p, tile):
     )
     """
     ex.
-    pon kan ron
-    [F,  F,  F],
-    [T,  F,  F],
-    [F,  T,  T]
+     pon kan ron
+    [[F,  F,  F],
+     [T,  F,  F],
+     [F,  T,  T]]
     """
     NONE_PLAYER = jnp.int8(-1)
 
