@@ -330,6 +330,7 @@ if __name__ == "__main__":
         rng_key, subkey = jax.random.split(rng_key)
         keys = jax.random.split(subkey, num_devices)
         state, data = selfplay(keys, state, model)
+        state = jax.pmap(jax.vmap(env.init))(keys)  # initialize the states
         samples: Sample = compute_loss_input(data)
 
         # Shuffle samples and make minibatches
