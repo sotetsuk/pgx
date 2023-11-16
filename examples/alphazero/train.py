@@ -33,10 +33,10 @@ from config import Config
 from network import AZNet
 
 devices = jax.local_devices()
-num_devices = len(devices)
 
 
 conf_dict = OmegaConf.from_cli()
+conf_dict["num_devices"] = len(devices)
 config: Config = Config(**conf_dict)
 print(config)
 
@@ -98,7 +98,7 @@ class SelfplayOutput(NamedTuple):
 @jax.pmap
 def selfplay(model, rng_key: jnp.ndarray) -> SelfplayOutput:
     model_params, model_state = model
-    batch_size = config.selfplay_batch_size // num_devices
+    batch_size = config.selfplay_batch_size // config.num_devices
 
     def step_fn(state, key) -> SelfplayOutput:
         key1, key2 = jax.random.split(key)
@@ -151,7 +151,7 @@ class Sample(NamedTuple):
 
 @jax.pmap
 def compute_loss_input(data: SelfplayOutput) -> Sample:
-    batch_size = config.selfplay_batch_size // num_devices
+    batch_size = config.selfplay_batch_size // config.num_devices
     # If episode is truncated, there is no value target
     # So when we compute value loss, we need to mask it
     value_mask = jnp.cumsum(data.terminated[::-1, :], axis=0)[::-1, :] >= 1
@@ -212,7 +212,7 @@ def evaluate(rng_key, my_model):
     my_model_parmas, my_model_state = my_model
 
     key, subkey = jax.random.split(rng_key)
-    batch_size = config.selfplay_batch_size // num_devices
+    batch_size = config.selfplay_batch_size // config.num_devices
     keys = jax.random.split(subkey, batch_size)
     state = jax.vmap(env.init)(keys)
 
@@ -264,7 +264,7 @@ if __name__ == "__main__":
         if iteration % config.eval_interval == 0:
             # Evaluation
             rng_key, subkey = jax.random.split(rng_key)
-            keys = jax.random.split(subkey, num_devices)
+            keys = jax.random.split(subkey, config.num_devices)
             R = evaluate(keys, model)
             log.update(
                 {
@@ -304,7 +304,7 @@ if __name__ == "__main__":
 
         # Selfplay
         rng_key, subkey = jax.random.split(rng_key)
-        keys = jax.random.split(subkey, num_devices)
+        keys = jax.random.split(subkey, config.num_devices)
         data: SelfplayOutput = selfplay(model, keys)
         samples: Sample = compute_loss_input(data)
 
@@ -317,7 +317,7 @@ if __name__ == "__main__":
         samples = jax.tree_map(lambda x: x[ixs], samples)  # shuffle
         num_updates = samples.obs.shape[0] // config.training_batch_size
         minibatches = jax.tree_map(
-            lambda x: x.reshape((num_updates, num_devices, -1) + x.shape[1:]), samples
+            lambda x: x.reshape((num_updates, config.num_devices, -1) + x.shape[1:]), samples
         )
 
         # Training

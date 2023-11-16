@@ -20,6 +20,8 @@ class Config(BaseModel):
     learning_rate: float = 0.001
     # eval params
     eval_interval: int = 5
+    # hardware
+    num_devices: int = 1
 
     class Config:
         extra = "forbid"
