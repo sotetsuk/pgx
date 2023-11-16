@@ -43,7 +43,7 @@ env = pgx.make(config.env_id)
 baseline = pgx.make_baseline_model(config.env_id + "_v0")
 
 
-forward = make_forward_fn(config)
+forward_fn = make_forward_fn(config)
 optimizer = optax.adam(learning_rate=config.learning_rate)
 
 
@@ -56,7 +56,7 @@ def recurrent_fn(model, rng_key: jnp.ndarray, action: jnp.ndarray, state: pgx.St
     current_player = state.current_player
     state = jax.vmap(env.step)(state, action)
 
-    (logits, value), _ = forward.apply(model_params, model_state, state.observation, is_eval=True)
+    (logits, value), _ = forward_fn.apply(model_params, model_state, state.observation, is_eval=True)
     # mask invalid actions
     logits = logits - jnp.max(logits, axis=-1, keepdims=True)
     logits = jnp.where(state.legal_action_mask, logits, jnp.finfo(logits.dtype).min)
@@ -92,7 +92,7 @@ def selfplay(model, rng_key: jnp.ndarray) -> SelfplayOutput:
         key1, key2 = jax.random.split(key)
         observation = state.observation
 
-        (logits, value), _ = forward.apply(
+        (logits, value), _ = forward_fn.apply(
             model_params, model_state, state.observation, is_eval=True
         )
         root = mctx.RootFnOutput(prior_logits=logits, value=value, embedding=state)
@@ -166,7 +166,7 @@ def compute_loss_input(data: SelfplayOutput) -> Sample:
 
 
 def loss_fn(model_params, model_state, samples: Sample):
-    (logits, value), model_state = forward.apply(
+    (logits, value), model_state = forward_fn.apply(
         model_params, model_state, samples.obs, is_eval=False
     )
 
@@ -206,7 +206,7 @@ def evaluate(rng_key, my_model):
 
     def body_fn(val):
         key, state, R = val
-        (my_logits, _), _ = forward.apply(
+        (my_logits, _), _ = forward_fn.apply(
             my_model_parmas, my_model_state, state.observation, is_eval=True
         )
         opp_logits, _ = baseline(state.observation)
@@ -230,7 +230,7 @@ if __name__ == "__main__":
     # Initialize model and opt_state
     dummy_state = jax.vmap(env.init)(jax.random.split(jax.random.PRNGKey(0), 2))
     dummy_input = dummy_state.observation
-    model = forward.init(jax.random.PRNGKey(0), dummy_input)  # (params, state)
+    model = forward_fn.init(jax.random.PRNGKey(0), dummy_input)  # (params, state)
     opt_state = optimizer.init(params=model[0])
     # replicates to all devices
     model, opt_state = jax.device_put_replicated((model, opt_state), devices)
