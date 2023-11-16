@@ -19,7 +19,6 @@ import time
 from functools import partial
 from typing import NamedTuple
 
-import haiku as hk
 import jax
 import jax.numpy as jnp
 import mctx
@@ -30,7 +29,7 @@ from omegaconf import OmegaConf
 from pgx.experimental import auto_reset
 
 from config import Config
-from network import AZNet
+from network import make_forward_fn
 
 devices = jax.local_devices()
 
@@ -44,18 +43,7 @@ env = pgx.make(config.env_id)
 baseline = pgx.make_baseline_model(config.env_id + "_v0")
 
 
-def forward_fn(x, is_eval=False):
-    net = AZNet(
-        num_actions=env.num_actions,
-        num_channels=config.num_channels,
-        num_blocks=config.num_layers,
-        resnet_v2=config.resnet_v2,
-    )
-    policy_out, value_out = net(x, is_training=not is_eval, test_local_stats=False)
-    return policy_out, value_out
-
-
-forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
+forward = make_forward_fn(config)
 optimizer = optax.adam(learning_rate=config.learning_rate)
 
 

@@ -1,9 +1,26 @@
 # We referred to Haiku's ResNet implementation:
 # https://github.com/deepmind/dm-haiku/blob/main/haiku/_src/nets/resnet.py
 
-import haiku as hk
 import jax
 import jax.numpy as jnp
+import haiku as hk
+import pgx
+
+
+def make_forward_fn(config):
+
+    def forward_fn(x, is_eval=False):
+        net = AZNet(
+            num_actions=pgx.make(config.env_id).num_actions,
+            num_channels=config.num_channels,
+            num_blocks=config.num_layers,
+            resnet_v2=config.resnet_v2,
+        )
+        policy_out, value_out = net(x, is_training=not is_eval, test_local_stats=False)
+        return policy_out, value_out
+
+    forward_fn = hk.without_apply_rng(hk.transform_with_state(forward_fn))
+    return forward_fn
 
 
 class BlockV1(hk.Module):
