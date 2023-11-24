@@ -701,6 +701,7 @@ def _pass(state: State):
     kan_player = (state._furo_check_num & 0b00110000) >> 4
     pon_player = (state._furo_check_num & 0b00001100) >> 2
     chi_player = state._furo_check_num & 0b00000011
+    _state = state
 
     state = jax.lax.cond(
         chi_player > 0,
@@ -736,19 +737,19 @@ def _pass(state: State):
             .set(TRUE),
         ),
         lambda: _draw(
-            state.replace(  # type: ignore
+            _state.replace(  # type: ignore
                 current_player=jnp.int8(last_player + 1) % 4,
             )
         ),
     )
     state = jax.lax.cond(
         pon_player > 0,
-        lambda: state.replace(  # type:ignore
+        lambda: _state.replace(  # type:ignore
             current_player=jnp.int8(last_player + 1 + pon_player) % 4,
-            _furo_check_num=jnp.uint8(state._furo_check_num & 0b11110011),
+            _furo_check_num=jnp.uint8(_state._furo_check_num & 0b11110011),
             legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
             .at[Action.PON]
-            .set(Hand.can_pon(state._hand[pon_player], state._target))
+            .set(Hand.can_pon(_state._hand[pon_player], _state._target))
             .at[Action.PASS]
             .set(TRUE),
         ),
@@ -756,12 +757,12 @@ def _pass(state: State):
     )
     state = jax.lax.cond(
         kan_player > 0,
-        lambda: state.replace(  # type:ignore
+        lambda: _state.replace(  # type:ignore
             current_player=jnp.int8(last_player + 1 + kan_player) % 4,
-            _furo_check_num=jnp.uint8(state._furo_check_num & 0b11001111),
+            _furo_check_num=jnp.uint8(_state._furo_check_num & 0b11001111),
             legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
             .at[Action.MINKAN]
-            .set(Hand.can_minkan(state._hand[kan_player], state._target))
+            .set(Hand.can_minkan(_state._hand[kan_player], _state._target))
             .at[Action.PASS]
             .set(TRUE),
         ),
