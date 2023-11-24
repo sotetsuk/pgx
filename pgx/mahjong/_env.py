@@ -701,71 +701,74 @@ def _pass(state: State):
     kan_player = (state._furo_check_num & 0b00110000) >> 4
     pon_player = (state._furo_check_num & 0b00001100) >> 2
     chi_player = state._furo_check_num & 0b00000011
-    return jax.lax.cond(
-        kan_player > 0,
+    _state = state
+
+    state = jax.lax.cond(
+        chi_player > 0,
         lambda: state.replace(  # type:ignore
-            current_player=jnp.int8(last_player + 1 + kan_player) % 4,
-            _furo_check_num=jnp.uint8(state._furo_check_num & 0b11001111),
+            current_player=jnp.int8(last_player + 1 + chi_player) % 4,
+            _furo_check_num=jnp.uint8(state._furo_check_num & 0b11111100),
             legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-            .at[Action.MINKAN]
-            .set(Hand.can_minkan(state._hand[kan_player], state._target))
+            .at[Action.CHI_L]
+            .set(
+                Hand.can_chi(
+                    state._hand[(last_player + 1 + chi_player) % 4],
+                    state._target,
+                    Action.CHI_L,
+                )
+            )
+            .at[Action.CHI_M]
+            .set(
+                Hand.can_chi(
+                    state._hand[(last_player + 1 + chi_player) % 4],
+                    state._target,
+                    Action.CHI_M,
+                )
+            )
+            .at[Action.CHI_R]
+            .set(
+                Hand.can_chi(
+                    state._hand[(last_player + 1 + chi_player) % 4],
+                    state._target,
+                    Action.CHI_R,
+                )
+            )
             .at[Action.PASS]
             .set(TRUE),
         ),
-        lambda: jax.lax.cond(
-            pon_player > 0,
-            lambda: state.replace(  # type:ignore
-                current_player=jnp.int8(last_player + 1 + pon_player) % 4,
-                _furo_check_num=jnp.uint8(state._furo_check_num & 0b11110011),
-                legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-                .at[Action.PON]
-                .set(Hand.can_pon(state._hand[pon_player], state._target))
-                .at[Action.PASS]
-                .set(TRUE),
-            ),
-            lambda: jax.lax.cond(
-                chi_player > 0,
-                lambda: state.replace(  # type:ignore
-                    current_player=jnp.int8(last_player + 1 + chi_player) % 4,
-                    _furo_check_num=jnp.uint8(
-                        state._furo_check_num & 0b11111100
-                    ),
-                    legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-                    .at[Action.CHI_L]
-                    .set(
-                        Hand.can_chi(
-                            state._hand[(last_player + 1 + chi_player) % 4],
-                            state._target,
-                            Action.CHI_L,
-                        )
-                    )
-                    .at[Action.CHI_M]
-                    .set(
-                        Hand.can_chi(
-                            state._hand[(last_player + 1 + chi_player) % 4],
-                            state._target,
-                            Action.CHI_M,
-                        )
-                    )
-                    .at[Action.CHI_R]
-                    .set(
-                        Hand.can_chi(
-                            state._hand[(last_player + 1 + chi_player) % 4],
-                            state._target,
-                            Action.CHI_R,
-                        )
-                    )
-                    .at[Action.PASS]
-                    .set(TRUE),
-                ),
-                lambda: _draw(
-                    state.replace(  # type: ignore
-                        current_player=jnp.int8(last_player + 1) % 4,
-                    )
-                ),
-            ),
+        lambda: _draw(
+            _state.replace(  # type: ignore
+                current_player=jnp.int8(last_player + 1) % 4,
+            )
         ),
     )
+    state = jax.lax.cond(
+        pon_player > 0,
+        lambda: _state.replace(  # type:ignore
+            current_player=jnp.int8(last_player + 1 + pon_player) % 4,
+            _furo_check_num=jnp.uint8(_state._furo_check_num & 0b11110011),
+            legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+            .at[Action.PON]
+            .set(Hand.can_pon(_state._hand[pon_player], _state._target))
+            .at[Action.PASS]
+            .set(TRUE),
+        ),
+        lambda: state,
+    )
+    state = jax.lax.cond(
+        kan_player > 0,
+        lambda: _state.replace(  # type:ignore
+            current_player=jnp.int8(last_player + 1 + kan_player) % 4,
+            _furo_check_num=jnp.uint8(_state._furo_check_num & 0b11001111),
+            legal_action_mask=jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
+            .at[Action.MINKAN]
+            .set(Hand.can_minkan(_state._hand[kan_player], _state._target))
+            .at[Action.PASS]
+            .set(TRUE),
+        ),
+        lambda: state,
+    )
+    return state
 
 
 def _riichi(state: State):
