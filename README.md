@@ -153,6 +153,7 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
 - [google/brax](https://github.com/google/brax): Rigidbody physics simulation in JAX and continuous-space RL tasks (ant, fetch, humanoid, etc)
 - [instadeepai/jumanji](https://github.com/instadeepai/jumanji): A suite of diverse and challenging
     RL environments in JAX (bin-packing, routing problems, etc)
+- [flairox/jaxmarl](https://github.com/flairox/jaxmarl): Multi-Agent RL environments in JAX (simplified StarCraft, etc)
 
 Combining Pgx with these **JAX-native algorithms/implementations** might be an interesting direction:
 
