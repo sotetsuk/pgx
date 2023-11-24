@@ -384,14 +384,14 @@ def _discard(state: State, tile: Array):
         _n_river=n_river,
     )
 
-    # (
-    #    meld_type,
-    #    furo_num,
-    #    chi_player,
-    #    pon_player,
-    #    kan_player,
-    #    ron_player,
-    # ) = _get_next_player_after_pass(state, c_p, tile)
+    (
+        meld_type,
+        furo_num,
+        chi_player,
+        pon_player,
+        kan_player,
+        ron_player,
+    ) = _get_next_player_after_pass(state, c_p, tile)
 
     no_meld_state = jax.lax.cond(
         _is_ryukyoku(state),
@@ -408,7 +408,6 @@ def _discard(state: State, tile: Array):
             )
         ),
     )
-    return no_meld_state
 
     return jax.lax.switch(
         meld_type,
@@ -467,6 +466,13 @@ def _discard(state: State, tile: Array):
 
 
 def _get_next_player_after_pass(state, c_p, tile):
+    """
+    discardの後にron,kan,pon,chiなどが可能なプレイヤーが複数いる場合、
+    次にそのプレイヤーに手番を変えて、実行するかパスするかを選択させる
+    パスした場合にはその次にron,kan,pon,chiが可能なプレイヤーを探索しないといけない
+    それを予め探索して、Stateに保持しておく実装
+    """
+
     # ポンとかチーとかがあるかを探索する
     # 結果はfuro_check_numに保管
     chi_player = (c_p + 1) % 4
@@ -715,6 +721,11 @@ def _chi(state: State, action):
 
 
 def _pass(state: State):
+    """
+    ron,kan,pon,chi可能なプレイヤーがパスした場合、
+    次にron,kan,pon,chi可能なプレイヤーがいるか調べる
+    (予めStateに保持してある探索データから読み取る)
+    """
     last_player = (state._furo_check_num & 0b11000000) >> 6
     kan_player = (state._furo_check_num & 0b00110000) >> 4
     pon_player = (state._furo_check_num & 0b00001100) >> 2
