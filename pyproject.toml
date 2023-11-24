@@ -1,6 +1,6 @@
 [project]
 name = "pgx"
-dynamic = ["version"]
+dynamic = ["version", "authors", "dependencies", "classifiers", "keywords", "readme"]
 
 [tool.setuptools.dynamic]
 version = {attr = "pgx.__version__"}
