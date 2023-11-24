@@ -384,14 +384,14 @@ def _discard(state: State, tile: Array):
         _n_river=n_river,
     )
 
-    (
-        meld_type,
-        furo_num,
-        chi_player,
-        pon_player,
-        kan_player,
-        ron_player,
-    ) = _get_next_player_after_pass(state, c_p, tile)
+    # (
+    #    meld_type,
+    #    furo_num,
+    #    chi_player,
+    #    pon_player,
+    #    kan_player,
+    #    ron_player,
+    # ) = _get_next_player_after_pass(state, c_p, tile)
 
     no_meld_state = jax.lax.cond(
         _is_ryukyoku(state),
@@ -408,6 +408,7 @@ def _discard(state: State, tile: Array):
             )
         ),
     )
+    return no_meld_state
 
     return jax.lax.switch(
         meld_type,
@@ -476,7 +477,7 @@ def _get_next_player_after_pass(state, c_p, tile):
     )
 
     # none < chi_L = chi_M = chi_R < pon = kan < ron の中で最大のものを探す
-    meld_type = jnp.int8(can_chi)
+    meld_type = jnp.uint8(can_chi)
 
     def check_legal_action(player):
         return jnp.array(
@@ -497,7 +498,7 @@ def _get_next_player_after_pass(state, c_p, tile):
         )
 
     action = jax.vmap(check_legal_action)(
-        jnp.array([(c_p + 1) % 4, (c_p + 2) % 4, (c_p + 3) % 4])
+        jnp.int8([(c_p + 1) % 4, (c_p + 2) % 4, (c_p + 3) % 4])
     )
     """
     ex.
@@ -508,29 +509,20 @@ def _get_next_player_after_pass(state, c_p, tile):
     """
     NONE_PLAYER = jnp.int8(-1)
 
-    # pon
-    pon_player = jnp.nonzero(action[:, 0], size=1, fill_value=NONE_PLAYER)[0]
-    meld_type = jax.lax.cond(
-        (pon_player == NONE_PLAYER).all(),
-        lambda: meld_type,
-        lambda: jnp.int8(2),
-    )
+    def _search_player(idx):
+        _player = jnp.nonzero(action[:, idx], size=1, fill_value=NONE_PLAYER)[
+            0
+        ]
+        _meld_type = jax.lax.cond(
+            _player == NONE_PLAYER,
+            lambda: 0,
+            lambda: 1 << (idx + 1),
+        )
+        return _player, _meld_type
 
-    # kan
-    kan_player = jnp.nonzero(action[:, 1], size=1, fill_value=NONE_PLAYER)[0]
-    meld_type = jax.lax.cond(
-        (kan_player == NONE_PLAYER).all(),
-        lambda: meld_type,
-        lambda: jnp.int8(3),
-    )
-
-    # ron
-    ron_player = jnp.nonzero(action[:, 2], size=1, fill_value=NONE_PLAYER)[0]
-    meld_type = jax.lax.cond(
-        (ron_player == NONE_PLAYER).all(),
-        lambda: meld_type,
-        lambda: jnp.int8(4),
-    )
+    players, meld_types = jax.vmap(_search_player)(jnp.int8([0, 1, 2]))
+    pon_player, kan_player, ron_player = players
+    meld_type = meld_types[0] | meld_types[1] | meld_types[2]
 
     # ゲーム内位置に変換
     pon_player = jnp.int8((c_p + pon_player + 1) % 4)
