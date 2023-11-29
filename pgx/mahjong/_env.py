@@ -257,11 +257,10 @@ def _init(rng: PRNGKey) -> State:
 
 
 def _step(state: State, action) -> State:
-    # TODO
-    # - Actionの処理
-    #   - ron, tsumo
-    # - 勝利条件確認
-    # - playerどうするか
+    """
+    actionに応じて処理を分岐
+    actionの種類はmahjong/_action.pyを参照
+    """
 
     discard = (action < 34) | (action == 68)
     self_kan = (34 <= action) & (action < 68)
@@ -292,6 +291,10 @@ def _step(state: State, action) -> State:
 
 
 def _draw(state: State):
+    """
+    - deckから1枚ツモする
+    - ツモしたプレイヤーのlegal_actionを生成する
+    """
     state = _accept_riichi(state)
     c_p = state.current_player
     new_tile = state._deck[state._next_deck_ix]
@@ -300,7 +303,7 @@ def _draw(state: State):
 
     legal_action_mask = jax.lax.select(
         state._riichi[c_p],
-        _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile),
+        _make_legal_action_mask_w_riichi(state, hand, c_p),
         _make_legal_action_mask(state, hand, c_p, new_tile),
     )
 
@@ -315,6 +318,9 @@ def _draw(state: State):
 
 
 def _make_legal_action_mask(state: State, hand, c_p, new_tile):
+    """
+    - ツモ直後のlegal_actionを生成する
+    """
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[:34].set(hand[c_p] > 0)
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
@@ -350,7 +356,10 @@ def _make_legal_action_mask(state: State, hand, c_p, new_tile):
     return legal_action_mask
 
 
-def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
+def _make_legal_action_mask_w_riichi(state, hand, c_p):
+    """
+    - リーチ状態でのツモ直後のlegal_actionを生成する
+    """
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
     legal_action_mask = legal_action_mask.at[Action.TSUMO].set(
@@ -369,6 +378,11 @@ def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
 
 
 def _discard(state: State, tile: Array):
+    """
+    - 手牌から選択された牌を河へ移動させる
+    - 捨てられた牌に対して他のプレイヤーが鳴けるか探索する
+    - もし鳴けるなら、そのプレイヤーを次の手番に設定する
+    """
     c_p = state.current_player
     tile = jnp.where(tile == 68, state._last_draw, tile)
     _tile = jnp.where(
@@ -470,12 +484,13 @@ def _get_next_player_after_pass(state, tile):
     discardの後にron,kan,pon,chiなどが可能なプレイヤーが複数いる場合、
     次にそのプレイヤーに手番を変えて、実行するかパスするかを選択させる
     パスした場合にはその次にron,kan,pon,chiが可能なプレイヤーを探索しないといけない
-    それを予め探索して、Stateに保持しておく実装
+
+    - どのプレイヤーが副露可能か探索する
+    - それぞれの副露が可能なプレイヤーは高々1人なので、8bit整数で上2桁ずつ
+        現在のp kan可能なp pon可能なp chi可能なp
+      を入れて、stateで保持しておく
     """
 
-    # ポンとかチーとかがあるかを探索する
-    # 結果はfuro_check_numに保管
-    # ポンとかチーとかがあるか
     meld_type = 0  # none < chi_L = chi_M = chi_R < pon = kan < ron の中で最大のものを探す
     pon_player = kan_player = ron_player = c_p = state.current_player
     chi_player = (c_p + 1) % 4
@@ -491,7 +506,9 @@ def _get_next_player_after_pass(state, tile):
     )
 
     def search(i, tpl):
-        # iは相対位置
+        """
+        - 相対位置iのプレイヤーがpon/kan/chi可能か確認し、もし可能ならiのプレイヤーを設定する
+        """
         meld_type, pon_player, kan_player, ron_player = tpl
         player = (c_p + 1 + i) % 4  # 絶対位置
         pon_player, meld_type = jax.lax.cond(
@@ -520,6 +537,7 @@ def _get_next_player_after_pass(state, tile):
         )
         return (meld_type, pon_player, kan_player, ron_player)
 
+    # 各プレイヤーについて、どのアクションが可能かforiで調べる
     meld_type, pon_player, kan_player, ron_player = jax.lax.fori_loop(
         jnp.int8(0),
         jnp.int8(3),
@@ -539,12 +557,20 @@ def _get_next_player_after_pass(state, tile):
 
 
 def _append_meld(state: State, meld, player):
+    """
+    - 与えられたmeldをstateに保持させる
+    """
     melds = state._melds.at[(player, state._n_meld[player])].set(meld)
     n_meld = state._n_meld.at[player].add(1)
     return state.replace(_melds=melds, _n_meld=n_meld)  # type:ignore
 
 
 def _selfkan(state: State, action):
+    """
+    - ankanかkakanを判断し、分岐させる
+    - deckから嶺上牌をツモする
+    - 嶺上牌をツモした直後のlegal_actionを設定する
+    """
     target = action - 34
     pon = state._pon[(state.current_player, target)]
     state = jax.lax.cond(
@@ -579,6 +605,10 @@ def _selfkan(state: State, action):
 
 
 def _ankan(state: State, target):
+    """
+    - targetからmeldを生成する
+    - stateのhand,meldを更新する
+    """
     curr_player = state.current_player
     meld = Meld.init(target + 34, target, src=0)
     state = _append_meld(state, meld, curr_player)
@@ -593,6 +623,10 @@ def _ankan(state: State, target):
 
 
 def _kakan(state: State, target, pon_src, pon_idx):
+    """
+    - targetからmeldを生成する
+    - stateのhand,meldを更新する
+    """
     melds = state._melds.at[(state.current_player, pon_idx)].set(
         Meld.init(target + 34, target, pon_src)
     )
@@ -606,6 +640,10 @@ def _kakan(state: State, target, pon_src, pon_idx):
 
 
 def _accept_riichi(state: State) -> State:
+    """
+    - リーチが通ったflagを立てる
+    - 行動したプレイヤーのスコアを減らす
+    """
     l_p = state._last_player
     _score = state._score.at[l_p].add(
         jnp.where(~state._riichi[l_p] & state._riichi_declared, -10, 0)
@@ -619,6 +657,12 @@ def _accept_riichi(state: State) -> State:
 
 
 def _minkan(state: State):
+    """
+    - targetからmeldを生成する
+    - stateのhand,meldを更新する
+    - deckから嶺上牌をツモする
+    - 嶺上牌をツモした直後のlegal_actionを設定する
+    """
     c_p = state.current_player
     l_p = state._last_player
     state = _accept_riichi(state)
@@ -661,6 +705,10 @@ def _minkan(state: State):
 
 
 def _pon(state: State):
+    """
+    - targetからmeldを生成する
+    - stateのhand,meldを更新する
+    """
     c_p = state.current_player
     l_p = state._last_player
     state = _accept_riichi(state)
@@ -692,6 +740,10 @@ def _pon(state: State):
 
 
 def _chi(state: State, action):
+    """
+    - targetからmeldを生成する
+    - stateのhand,meldを更新する
+    """
     c_p = state.current_player
     tar_p = (c_p + 3) % 4
     tar = state._target
@@ -719,9 +771,12 @@ def _chi(state: State, action):
 
 def _pass(state: State):
     """
-    ron,kan,pon,chi可能なプレイヤーがパスした場合、
-    次にron,kan,pon,chi可能なプレイヤーがいるか調べる
-    (予めStateに保持してある探索データから読み取る)
+    discard() を参照
+    ron,kan,pon,chi可能なプレイヤーがパスした場合、予めStateに保持してある探索データから次にron,kan,pon,chi可能なプレイヤーがいるか読み取る
+    state._furo_check_numには8bit整数で上2桁ずつに
+      現在のp kan可能なp pon可能なp chi可能なp
+    を入れてあるので、ここから復元する
+
     """
     last_player = (state._furo_check_num & 0b11000000) >> 6
     kan_player = (state._furo_check_num & 0b00110000) >> 4
