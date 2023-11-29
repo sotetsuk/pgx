@@ -391,7 +391,7 @@ def _discard(state: State, tile: Array):
         pon_player,
         kan_player,
         ron_player,
-    ) = _get_next_player_after_pass(state, c_p, tile)
+    ) = _get_next_player_after_pass(state, tile)
 
     no_meld_state = jax.lax.cond(
         _is_ryukyoku(state),
@@ -465,7 +465,7 @@ def _discard(state: State, tile: Array):
     )
 
 
-def _get_next_player_after_pass(state, c_p, tile):
+def _get_next_player_after_pass(state, tile):
     """
     discardの後にron,kan,pon,chiなどが可能なプレイヤーが複数いる場合、
     次にそのプレイヤーに手番を変えて、実行するかパスするかを選択させる
@@ -475,67 +475,64 @@ def _get_next_player_after_pass(state, c_p, tile):
 
     # ポンとかチーとかがあるかを探索する
     # 結果はfuro_check_numに保管
+    # ポンとかチーとかがあるか
+    meld_type = 0  # none < chi_L = chi_M = chi_R < pon = kan < ron の中で最大のものを探す
+    pon_player = kan_player = ron_player = c_p = state.current_player
     chi_player = (c_p + 1) % 4
     can_chi = (
         Hand.can_chi(state._hand[chi_player], tile, Action.CHI_L)
         | Hand.can_chi(state._hand[chi_player], tile, Action.CHI_M)
         | Hand.can_chi(state._hand[chi_player], tile, Action.CHI_R)
     )
-
-    # none < chi_L = chi_M = chi_R < pon = kan < ron の中で最大のものを探す
-    meld_type = jnp.uint8(can_chi)
-
-    def check_legal_action(player):
-        return jnp.array(
-            [
-                Hand.can_pon(state._hand[player], tile),
-                Hand.can_minkan(state._hand[player], tile),
-                Hand.can_ron(state._hand[player], tile)
-                & Yaku.judge(
-                    state._hand[player],
-                    state._melds[player],
-                    state._n_meld[player],
-                    state._last_draw,
-                    state._riichi[player],
-                    FALSE,
-                    _dora_array(state, state._riichi[player]),
-                )[0].any(),
-            ]
-        )
-
-    action = jax.vmap(check_legal_action)(
-        jnp.int8([(c_p + 1) % 4, (c_p + 2) % 4, (c_p + 3) % 4])
+    meld_type = jax.lax.cond(
+        can_chi,
+        lambda: jnp.max(jnp.array([1, meld_type])),
+        lambda: meld_type,
     )
-    """
-    ex.
-     pon kan ron
-    [[F,  F,  F],
-     [T,  F,  F],
-     [F,  T,  T]]
-    """
-    NONE_PLAYER = jnp.int8(-1)
 
-    def _search_player(idx):
-        _player = jnp.nonzero(action[:, idx], size=1, fill_value=NONE_PLAYER)[
-            0
-        ]
-        _meld_type = jax.lax.cond(
-            _player == NONE_PLAYER,
-            lambda: 0,
-            lambda: 1 << (idx + 1),
+    def search(i, tpl):
+        # iは相対位置
+        meld_type, pon_player, kan_player, ron_player = tpl
+        player = (c_p + 1 + i) % 4  # 絶対位置
+        pon_player, meld_type = jax.lax.cond(
+            Hand.can_pon(state._hand[player], tile),
+            lambda: (i, jnp.max(jnp.array([2, meld_type]))),
+            lambda: (pon_player, meld_type),
         )
-        return _player, _meld_type
+        kan_player, meld_type = jax.lax.cond(
+            Hand.can_minkan(state._hand[player], tile),
+            lambda: (i, jnp.max(jnp.array([3, meld_type]))),
+            lambda: (kan_player, meld_type),
+        )
+        ron_player, meld_type = jax.lax.cond(
+            Hand.can_ron(state._hand[player], tile)
+            & Yaku.judge(
+                state._hand[player],
+                state._melds[player],
+                state._n_meld[player],
+                state._last_draw,
+                state._riichi[player],
+                FALSE,
+                _dora_array(state, state._riichi[player]),
+            )[0].any(),
+            lambda: (i, jnp.max(jnp.array([4, meld_type]))),
+            lambda: (ron_player, meld_type),
+        )
+        return (meld_type, pon_player, kan_player, ron_player)
 
-    players, meld_types = jax.vmap(_search_player)(jnp.int8([0, 1, 2]))
-    pon_player, kan_player, ron_player = players
-    meld_type = meld_types[0] | meld_types[1] | meld_types[2]
-
-    # ゲーム内位置に変換
-    pon_player = jnp.int8((c_p + pon_player + 1) % 4)
-    kan_player = jnp.int8((c_p + kan_player + 1) % 4)
-    ron_player = jnp.int8((c_p + ron_player + 1) % 4)
+    meld_type, pon_player, kan_player, ron_player = jax.lax.fori_loop(
+        jnp.int8(0),
+        jnp.int8(3),
+        search,
+        (meld_type, pon_player, kan_player, ron_player),
+    )
     furo_num = jnp.uint8(
         c_p << 6 | kan_player << 4 | pon_player << 2 | chi_player
+    )
+    pon_player, kan_player, ron_player = (
+        (c_p + 1 + pon_player) % 4,
+        (c_p + 1 + kan_player) % 4,
+        (c_p + 1 + ron_player) % 4,
     )
 
     return meld_type, furo_num, chi_player, pon_player, kan_player, ron_player
