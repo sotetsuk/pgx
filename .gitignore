@@ -11,3 +11,5 @@ pythonenv*
 .DS_Store
 baselines
 dds_results
+wandb
+checkpoints
