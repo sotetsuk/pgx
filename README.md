@@ -154,6 +154,7 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
 - [instadeepai/jumanji](https://github.com/instadeepai/jumanji): A suite of diverse and challenging
     RL environments in JAX (bin-packing, routing problems, etc)
 - [flairox/jaxmarl](https://github.com/flairox/jaxmarl): Multi-Agent RL environments in JAX (simplified StarCraft, etc)
+- [corl-team/xland-minigrid](https://github.com/corl-team/xland-minigrid): Meta-RL gridworld environments in JAX inspired by MiniGrid and XLand
 
 Combining Pgx with these **JAX-native algorithms/implementations** might be an interesting direction:
 
