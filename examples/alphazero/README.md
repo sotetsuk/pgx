@@ -4,6 +4,9 @@ A simple (Gumbel) AlphaZero [[Silver+18](https://www.science.org/doi/10.1126/sci
 
 ![](assets/pgx-az-training.png)
 
+> [!NOTE]
+> While this AlphaZero example is able to learn strong enough policies in environments like 9x9 Go, it differs from the original AlphaZero or Gumbel AlphaZero in some details. We will release a more faithful implementation of AlphaZero in the near future.
+
 ## Usage
 
 Note that you need to install `jax` and `jaxlib` in addition to the packages written in `requirements.txt` according to your execution environment.
