@@ -4,6 +4,9 @@ A simple (Gumbel) AlphaZero [[Silver+18](https://www.science.org/doi/10.1126/sci
 
 ![](assets/pgx-az-training.png)
 
+> [!NOTE]
+> This implementation of AlphaZero demonstrates sufficient learning performance in environments including 9x9 Go, but it has some slight differences in learning details compared to the original AlphaZero and Gumbel AlphaZero. An implementation that addresses these differences and focuses on enhanced efficiency is currently under development and is expected to be released shortly.
+
 ## Usage
 
 Note that you need to install `jax` and `jaxlib` in addition to the packages written in `requirements.txt` according to your execution environment.
