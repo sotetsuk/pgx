@@ -103,10 +103,6 @@ class State(abc.ABC):
     terminated: Array
     truncated: Array
     legal_action_mask: Array
-    # NOTE: _rng_key is
-    #   - used for stochastic env and auto reset
-    #   - updated only when actually used
-    #   - supposed NOT to be used by agent
     _step_count: Array
 
     @property
