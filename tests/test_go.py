@@ -1179,6 +1179,19 @@ def test_PSK():
     assert (state.rewards == jnp.float32([-1, 1])).all()  # black wins
 
 
+def test_max_step_termination():
+    env = Go(size=9)
+    env.max_termination_steps = 10
+    init_fn = jax.jit(env.init)
+    step_fn = jax.jit(env.step)
+    state = init_fn(jax.random.PRNGKey(0))
+    for i in range(10):
+        assert not state.terminated
+        state = step_fn(state, i)
+    assert state.terminated
+    assert not (state.rewards == jnp.float32([0, 0])).all()  # should not tie
+
+
 def test_api():
     import pgx
     env = pgx.make("go_9x9")
