@@ -18,9 +18,16 @@ import jax
 from jax import numpy as jnp
 
 import pgx.core as core
+from pgx._src.games.go import (
+    GameState,
+    _get_reward_bw,
+    _init_game_state,
+    _observe_game_state,
+    _step_game_state,
+    legal_actions,
+)
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.go import GameState, _init_game_state, _observe_game_state, _step_game_state, legal_actions, _get_reward_bw
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)

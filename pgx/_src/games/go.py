@@ -94,6 +94,7 @@ def _step_game_state(x: GameState, action: int, size: int) -> GameState:
 
     return x
 
+
 def _pass_move(state: GameState) -> GameState:
     return jax.lax.cond(
         state._passed,
