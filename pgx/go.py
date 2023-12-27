@@ -332,15 +332,13 @@ def _remove_stones(
         lambda: jnp.int32(rm_stone_xy),
         lambda: state._x._ko,
     )
-    return state.replace(  # type:ignore
-        _x=state._x.replace(
-            _chain_id_board=chain_id_board,
-            _num_captured_stones=state._x._num_captured_stones.at[state._x._turn].add(
-                num_captured_stones
-            ),
-            _ko=ko,
-        )
-    )
+    return state.replace(_x=state._x.replace(  # type:ignore
+        _chain_id_board=chain_id_board,
+        _num_captured_stones=state._x._num_captured_stones.at[state._x._turn].add(
+            num_captured_stones
+        ),
+        _ko=ko,
+    ))
 
 
 def legal_actions(state: State, size: int) -> Array:
