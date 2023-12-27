@@ -76,7 +76,15 @@ class Go(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        state = partial(_step, size=self.size)(state, action)
+        x = go.step(state._x, action, self.size)
+
+        current_player = (state.current_player + 1) % 2  # player to act
+        state = state.replace(  # type:ignore
+            current_player=current_player,
+            terminated=x.is_terminal,
+            legal_action_mask=go.legal_action_mask(x, self.size),
+            _x=x,
+        )
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         # fmt: off
         _terminated = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))
@@ -139,18 +147,6 @@ def _observe(state: State, player_id, size, history_length):
         player_id == state.current_player, state._x._turn, 1 - state._x._turn
     )
     return go.observe(state._x, my_turn, size, history_length)
-
-
-def _step(state: State, action: int, size: int) -> State:
-    x = go.step(state._x, action, size)
-    current_player = (state.current_player + 1) % 2  # player to act
-    state = state.replace(  # type:ignore
-        current_player=current_player,
-        terminated=x.is_terminal,
-        legal_action_mask=go.legal_action_mask(x, size),
-        _x=x,
-    )
-    return state
 
 
 def terminal_values(state: State, size) -> Array:
