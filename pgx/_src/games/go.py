@@ -407,9 +407,4 @@ def _get_reward_bw(x: GameState, size: int):
         jnp.float32([-1, -1]).at[to_play].set(1.0),
         reward_bw
     )
-    reward_bw = jax.lax.select(  # TODO: when teminated by max steps
-        x.is_terminal,
-        reward_bw,
-        jnp.zeros_like(reward_bw),
-    )
     return reward_bw
