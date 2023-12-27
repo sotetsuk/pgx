@@ -194,7 +194,7 @@ def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
     )
 
 
-def _step_game_step(x: GameState, action: int, size: int) -> GameState:
+def _step_game_state(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(_ko=jnp.int32(-1))  # type: ignore
 
     # update state
@@ -222,7 +222,7 @@ def _step_game_step(x: GameState, action: int, size: int) -> GameState:
 
 
 def _step(state: State, action: int, size: int) -> State:
-    x = _step_game_step(state._x, action, size)
+    x = _step_game_state(state._x, action, size)
 
     # update env state
     current_player = (state.current_player + 1) % 2  # player to act
