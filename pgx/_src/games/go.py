@@ -241,7 +241,7 @@ def legal_actions(state: GameState, size: int) -> Array:
         )
 
     neighbor_ok = is_neighbor_ok(jnp.arange(size**2))
-    legal_action_mask = is_empty & neighbor_ok
+    legal_action_mask = jnp.append(is_empty & neighbor_ok, TRUE)  # -1 = pass
 
     return jax.lax.cond(
         (state._ko == -1),
