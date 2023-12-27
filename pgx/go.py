@@ -212,6 +212,13 @@ def _step(state: State, action: int, size: int) -> State:
     # increment turns
     x = x.replace(_turn=(state._x._turn + 1) % 2)  # type: ignore
 
+    # update board history
+    board_history = jnp.roll(x._board_history, size**2)
+    board_history = board_history.at[0].set(
+        jnp.clip(x._chain_id_board, -1, 1).astype(jnp.int32)
+    )
+    x = x.replace(_board_history=board_history)  # type: ignore
+
     state = state.replace(  # type:ignore
         current_player=(state.current_player + 1) % 2,
         terminated=x.is_terminal,
@@ -221,15 +228,6 @@ def _step(state: State, action: int, size: int) -> State:
         .at[-1]
         .set(TRUE),
         _x=x,
-    )
-
-    # update board history
-    board_history = jnp.roll(state._x._board_history, size**2)
-    board_history = board_history.at[0].set(
-        jnp.clip(state._x._chain_id_board, -1, 1).astype(jnp.int32)
-    )
-    state = state.replace(  # type:ignore
-        _x=state._x.replace(_board_history=board_history)  # type: ignore
     )
 
     # check PSK up to 8-steps before
