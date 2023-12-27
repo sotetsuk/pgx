@@ -18,14 +18,7 @@ import jax
 from jax import numpy as jnp
 
 import pgx.core as core
-from pgx._src.games.go import (
-    GameState,
-    _init_game_state,
-    _observe_game_state,
-    _step_game_state,
-    _terminal_values,
-    legal_actions,
-)
+import pgx._src.games.go as go
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
 
@@ -42,7 +35,7 @@ class State(core.State):
     legal_action_mask: Array = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
-    _x: GameState = GameState()
+    _x: go.GameState = go.GameState()
 
     @property
     def env_id(self) -> core.EnvId:
@@ -144,7 +137,7 @@ def _observe(state: State, player_id, size, history_length):
     my_turn = jax.lax.select(
         player_id == state.current_player, state._x._turn, 1 - state._x._turn
     )
-    return _observe_game_state(state._x, my_turn, size, history_length)
+    return go._observe_game_state(state._x, my_turn, size, history_length)
 
 
 def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
@@ -152,18 +145,18 @@ def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
     return State(  # type:ignore
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         current_player=current_player,
-        _x=_init_game_state(size, komi),
+        _x=go._init_game_state(size, komi),
     )
 
 
 def _step(state: State, action: int, size: int) -> State:
-    x = _step_game_state(state._x, action, size)
+    x = go._step_game_state(state._x, action, size)
 
     current_player = (state.current_player + 1) % 2  # player to act
     state = state.replace(  # type:ignore
         current_player=current_player,
         terminated=x.is_terminal,
-        legal_action_mask=legal_actions(x, size),
+        legal_action_mask=go.legal_actions(x, size),
         _x=x,
     )
 
@@ -175,7 +168,7 @@ def _step(state: State, action: int, size: int) -> State:
 
 
 def terminal_values(state: State, size) -> Array:
-    reward_bw = _terminal_values(state._x, size)
+    reward_bw = go._terminal_values(state._x, size)
     should_flip = state.current_player == state._x._turn
     reward = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
     return reward
