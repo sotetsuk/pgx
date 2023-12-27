@@ -372,14 +372,14 @@ class Visualizer:
             self.config["GRID_SIZE"] = 25
             try:
                 self.config["BOARD_WIDTH"] = int(
-                    _state._size[0]  # type:ignore
+                    _state._game_state._size[0]  # type:ignore
                 )
                 self.config["BOARD_HEIGHT"] = int(
-                    _state._size[0]  # type:ignore
+                    _state._game_state._size[0]  # type:ignore
                 )
             except IndexError:
-                self.config["BOARD_WIDTH"] = int(_state._size)  # type:ignore
-                self.config["BOARD_HEIGHT"] = int(_state._size)  # type:ignore
+                self.config["BOARD_WIDTH"] = int(_state._game_state._size)  # type:ignore
+                self.config["BOARD_HEIGHT"] = int(_state._game_state._size)  # type:ignore
             self._make_dwg_group = _make_go_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
