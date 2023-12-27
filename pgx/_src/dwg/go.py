@@ -86,7 +86,7 @@ def _make_go_dwg(dwg, state: GoState, config):
     board_g.add(hoshi_g)
 
     # stones
-    board = jnp.clip(state._game_state._chain_id_board, -1, 1)
+    board = jnp.clip(state._x._chain_id_board, -1, 1)
     for xy, stone in enumerate(board):
         if stone == 0:
             continue
