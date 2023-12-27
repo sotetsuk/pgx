@@ -73,16 +73,19 @@ class Go(core.Env):
         assert isinstance(state, State)
         state = partial(_step, size=self.size)(state, action)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
-        state = jax.lax.cond(
-            (0 <= self.max_termination_steps)
-            & (self.max_termination_steps <= state._step_count),
-            lambda: state.replace(  # type: ignore
-                terminated=TRUE,
-                rewards=partial(terminal_values, size=self.size)(state),
-            ),
-            lambda: state,
+        # fmt: off
+        terminated = jax.lax.select(
+            (0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count),
+            TRUE,
+            state.terminated,
         )
-        return state  # type: ignore
+        # fmt: on
+        rewards = jax.lax.select(
+            terminated,
+            terminal_values(state, self.size),
+            jnp.zeros_like(state.rewards),
+        )
+        return state.replace(terminated=terminated, rewards=rewards)  # type:ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
@@ -159,12 +162,13 @@ def _step(state: State, action: int, size: int) -> State:
         legal_action_mask=go.legal_action_mask(x, size),
         _x=x,
     )
+    return state
 
-    rewards = terminal_values(state, size)
-    rewards = jax.lax.select(
-        state._x.is_terminal, rewards, jnp.zeros_like(rewards)
-    )
-    return state.replace(rewards=rewards)  # type:ignore
+    # rewards = terminal_values(state, size)
+    # rewards = jax.lax.select(
+    #     state._x.is_terminal, rewards, jnp.zeros_like(rewards)
+    # )
+    # return state.replace(rewards=rewards)  # type:ignore
 
 
 def terminal_values(state: State, size) -> Array:
