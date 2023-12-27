@@ -224,7 +224,6 @@ def _step_game_state(x: GameState, action: int, size: int) -> GameState:
 def _step(state: State, action: int, size: int) -> State:
     x = _step_game_state(state._x, action, size)
 
-    # update env state
     current_player = (state.current_player + 1) % 2  # player to act
 
     rewards = jax.lax.cond(
