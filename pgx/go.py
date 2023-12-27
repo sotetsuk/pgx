@@ -160,6 +160,15 @@ def _step(state: State, action: int, size: int) -> State:
     x = _step_game_state(state._x, action, size)
 
     current_player = (state.current_player + 1) % 2  # player to act
+    state = state.replace(  # type:ignore
+        current_player=current_player,
+        terminated=x.is_terminal,
+        legal_action_mask=state.legal_action_mask.at[:-1]
+        .set(legal_actions(x, size))
+        .at[-1]
+        .set(TRUE),
+        _x=x,
+    )
 
     rewards = jax.lax.cond(
         x.is_terminal,
@@ -171,16 +180,8 @@ def _step(state: State, action: int, size: int) -> State:
         x.is_psk, jnp.float32([-1, -1]).at[current_player].set(1.0), rewards
     )
 
-    return state.replace(  # type:ignore
-        current_player=current_player,
-        terminated=x.is_terminal,
-        rewards=rewards,
-        legal_action_mask=state.legal_action_mask.at[:-1]
-        .set(legal_actions(x, size))
-        .at[-1]
-        .set(TRUE),
-        _x=x,
-    )
+    return state.replace(rewards=rewards)  # type:ignore
+
 
 
 def _get_reward(state: State, size: int) -> Array:
