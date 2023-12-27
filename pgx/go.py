@@ -41,6 +41,7 @@ class GameState:
     _ko: Array = jnp.int32(-1)  # by SSK
     _komi: Array = jnp.float32(7.5)
     _black_player: Array = jnp.int32(0)
+    is_terminal: Array = FALSE
 
 
 @dataclass
@@ -195,14 +196,19 @@ def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
 def _step(state: State, action: int, size: int) -> State:
     x = state._x
     x = x.replace(_ko=jnp.int32(-1))  # type: ignore
-    state = state.replace(_x=x)  # type:ignore
 
     # update state
-    state = jax.lax.cond(
+    x = jax.lax.cond(
         (action < size * size),
-        lambda: _not_pass_move(state, action, size),
-        lambda: _pass_move(state, size),
+        lambda: _not_pass_move(x, action, size),
+        lambda: _pass_move(x),
     )
+    rewards = jax.lax.cond(
+        x.is_terminal,
+        lambda: _get_reward(state, size),
+        lambda: jnp.zeros_like(state.rewards)
+    )
+    state = state.replace(_x=x, terminated=x.is_terminal, rewards=rewards)  # type:ignore
 
     # increment turns
     state = state.replace(_x=state._x.replace(_turn=(state._x._turn + 1) % 2))  # type: ignore
@@ -230,28 +236,28 @@ def _step(state: State, action: int, size: int) -> State:
     return state
 
 
-def _pass_move(state: State, size) -> State:
+def _pass_move(state: GameState) -> State:
     return jax.lax.cond(
-        state._x._passed,
+        state._passed,
         # consecutive passes results in the game end
-        lambda: state.replace(terminated=TRUE, rewards=_get_reward(state, size)),  # type: ignore
+        lambda: state.replace(is_terminal=TRUE),  # type: ignore
         # One pass continues the game
-        lambda: state.replace(_x=state._x.replace(_passed=TRUE), rewards=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
+        lambda: state.replace(_passed=TRUE)
     )
 
 
-def _not_pass_move(state: State, action, size) -> State:
-    state = state.replace(_x=state._x.replace(_passed=FALSE))  # type: ignore
+def _not_pass_move(state: GameState, action, size) -> State:
+    state = state.replace(_passed=FALSE)  # type: ignore
     xy = action
-    num_captured_stones_before = state._x._num_captured_stones[state._x._turn]
+    num_captured_stones_before = state._num_captured_stones[state._turn]
 
     ko_may_occur = _ko_may_occur(state, xy)
 
     # Remove killed stones
     adj_xy = _neighbour(xy, size)
-    oppo_color = _opponent_color(state._x)
-    chain_id = state._x._chain_id_board[adj_xy]
-    num_pseudo, idx_sum, idx_squared_sum = _count(state._x, size)
+    oppo_color = _opponent_color(state)
+    chain_id = state._chain_id_board[adj_xy]
+    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(chain_id) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[
         chain_ix
@@ -283,20 +289,20 @@ def _not_pass_move(state: State, action, size) -> State:
     # Check Ko
     # fmt: off
     state = jax.lax.cond(
-        state._x._num_captured_stones[state._x._turn] - num_captured_stones_before == 1,
+        state._num_captured_stones[state._turn] - num_captured_stones_before == 1,
         lambda: state,
-        lambda: state.replace(_x=state._x.replace(_ko=jnp.int32(-1)))  # type:ignore
+        lambda: state.replace(_ko=jnp.int32(-1))  # type:ignore
     )
     # fmt: on
 
-    return state.replace(rewards=jnp.zeros(2, dtype=jnp.float32))  # type: ignore
+    return state
 
 
-def _merge_around_xy(i, state: State, xy, size):
-    my_color = _my_color(state._x)
+def _merge_around_xy(i, state: GameState, xy, size):
+    my_color = _my_color(state)
     adj_xy = _neighbour(xy, size)[i]
     is_off = adj_xy == -1
-    is_my_chain = state._x._chain_id_board[adj_xy] * my_color > 0
+    is_my_chain = state._chain_id_board[adj_xy] * my_color > 0
     state = jax.lax.cond(
         ((~is_off) & is_my_chain),
         lambda: _merge_chain(state, xy, adj_xy),
@@ -305,53 +311,49 @@ def _merge_around_xy(i, state: State, xy, size):
     return state
 
 
-def _set_stone(state: State, xy) -> State:
-    my_color = _my_color(state._x)
+def _set_stone(state: GameState, xy) -> State:
+    my_color = _my_color(state)
     return state.replace(  # type: ignore
-        _x=state._x.replace(  # type:ignore
-            _chain_id_board=state._x._chain_id_board.at[xy].set(
-                (xy + 1) * my_color
-            ),
-        )
+        _chain_id_board=state._chain_id_board.at[xy].set(
+            (xy + 1) * my_color
+        ),
     )
 
 
-def _merge_chain(state: State, xy, adj_xy):
-    my_color = _my_color(state._x)
-    new_id = jnp.abs(state._x._chain_id_board[xy])
-    adj_chain_id = jnp.abs(state._x._chain_id_board[adj_xy])
+def _merge_chain(state: GameState, xy, adj_xy):
+    my_color = _my_color(state)
+    new_id = jnp.abs(state._chain_id_board[xy])
+    adj_chain_id = jnp.abs(state._chain_id_board[adj_xy])
     small_id = jnp.minimum(new_id, adj_chain_id) * my_color
     large_id = jnp.maximum(new_id, adj_chain_id) * my_color
 
     # Keep larger chain ID and connect to the chain with smaller ID
     chain_id_board = jnp.where(
-        state._x._chain_id_board == large_id,
+        state._chain_id_board == large_id,
         small_id,
-        state._x._chain_id_board,
+        state._chain_id_board,
     )
 
-    return state.replace(_x=state._x.replace(_chain_id_board=chain_id_board))  # type: ignore
+    return state.replace(_chain_id_board=chain_id_board)  # type: ignore
 
 
 def _remove_stones(
-    state: State, rm_chain_id, rm_stone_xy, ko_may_occur
+    state: GameState, rm_chain_id, rm_stone_xy, ko_may_occur
 ) -> State:
-    surrounded_stones = state._x._chain_id_board == rm_chain_id
+    surrounded_stones = state._chain_id_board == rm_chain_id
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
-    chain_id_board = jnp.where(surrounded_stones, 0, state._x._chain_id_board)
+    chain_id_board = jnp.where(surrounded_stones, 0, state._chain_id_board)
     ko = jax.lax.cond(
         ko_may_occur & (num_captured_stones == 1),
         lambda: jnp.int32(rm_stone_xy),
-        lambda: state._x._ko,
+        lambda: state._ko,
     )
     return state.replace(  # type: ignore
-        _x=state._x.replace(  # type:ignore
-            _chain_id_board=chain_id_board,
-            _num_captured_stones=state._x._num_captured_stones.at[
-                state._x._turn
-            ].add(num_captured_stones),
-            _ko=ko,
-        )
+        _chain_id_board=chain_id_board,
+        _num_captured_stones=state._num_captured_stones.at[
+            state._turn
+        ].add(num_captured_stones),
+        _ko=ko,
     )
 
 
@@ -440,14 +442,14 @@ def _opponent_color(state: GameState):
     return jnp.int32([-1, 1])[state._turn]
 
 
-def _ko_may_occur(state: State, xy: int) -> Array:
-    size = state._x._size
+def _ko_may_occur(state: GameState, xy: int) -> Array:
+    size = state._size
     x = xy // size
     y = xy % size
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
-    oppo_color = _opponent_color(state._x)
+    oppo_color = _opponent_color(state)
     is_occupied_by_opp = (
-        state._x._chain_id_board[_neighbour(xy, size)] * oppo_color > 0
+        state._chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     )
     return (oob | is_occupied_by_opp).all()
 
