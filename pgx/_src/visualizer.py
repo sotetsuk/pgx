@@ -378,10 +378,8 @@ class Visualizer:
                     _state._x._size[0]  # type:ignore
                 )
             except IndexError:
-                # fmt: off
                 self.config["BOARD_WIDTH"] = int(_state._x._size)  # type:ignore
                 self.config["BOARD_HEIGHT"] = int(_state._x._size)  # type:ignore
-                # fmt: on
             self._make_dwg_group = _make_go_dwg  # type:ignore
             if (
                 self.config["COLOR_THEME"] is None
