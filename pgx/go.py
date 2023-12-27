@@ -216,15 +216,11 @@ def _step(state: State, action: int, size: int) -> State:
         current_player=(state.current_player + 1) % 2,
         terminated=x.is_terminal,
         rewards=rewards,
-        _x=x,
-    )
-
-    # add legal action mask
-    state = state.replace(  # type:ignore
         legal_action_mask=state.legal_action_mask.at[:-1]
-        .set(legal_actions(state._x, size))
+        .set(legal_actions(x, size))
         .at[-1]
-        .set(TRUE)
+        .set(TRUE),
+        _x=x,
     )
 
     # update board history
