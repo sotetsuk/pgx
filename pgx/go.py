@@ -42,6 +42,7 @@ class GameState:
     _komi: Array = jnp.float32(7.5)
     _black_player: Array = jnp.int32(0)
     is_terminal: Array = FALSE
+    is_psk: Array = FALSE
 
 
 @dataclass
@@ -219,6 +220,9 @@ def _step(state: State, action: int, size: int) -> State:
     )
     x = x.replace(_board_history=board_history)  # type: ignore
 
+    # PSK
+    x = x.replace(is_psk=_check_PSK(x))
+
     state = state.replace(  # type:ignore
         current_player=(state.current_player + 1) % 2,
         terminated=x.is_terminal,
@@ -230,8 +234,18 @@ def _step(state: State, action: int, size: int) -> State:
         _x=x,
     )
 
-    # check PSK up to 8-steps before
-    state = _check_PSK(state)
+    # fmt: off
+    winner = state.current_player
+    state = jax.lax.cond(
+        x.is_psk,
+        lambda: state.replace(  # type: ignore
+            terminated=TRUE,
+            rewards=jnp.float32([-1, -1]).at[winner].set(1.0),
+        ),
+        lambda: state,
+    )
+    # fmt: on
+
     return state
 
 
@@ -520,7 +534,7 @@ def _count_ji(state: State, color: int, size: int):
     return (b == 0).sum()
 
 
-def _check_PSK(state):
+def _check_PSK(state: GameState):
     """On PSK implementations.
 
     Tromp-Taylor rule employ PSK. However, implementing strict PSK is inefficient because
@@ -547,19 +561,7 @@ def _check_PSK(state):
 
     Anyway, we believe it's effect is very small as PSK rarely happens, especially in 19x19 board.
     """
-    # fmt: off
-    is_psk = ~state._x._passed & (jnp.abs(state._x._board_history[0] - state._x._board_history[1:]).sum(axis=1) == 0).any()
-    winner = state.current_player
-    state = jax.lax.cond(
-        is_psk,
-        lambda: state.replace(  # type: ignore
-            terminated=TRUE,
-            rewards=jnp.float32([-1, -1]).at[winner].set(1.0),
-        ),
-        lambda: state,
-    )
-    # fmt: on
-    return state
+    return ~state._passed & (jnp.abs(state._board_history[0] - state._board_history[1:]).sum(axis=1) == 0).any()
 
 
 # only for debug
