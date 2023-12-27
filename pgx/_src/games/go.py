@@ -354,3 +354,42 @@ def _check_PSK(state: GameState):
     is_psk = ~state._passed & (jnp.abs(state._board_history[0] - state._board_history[1:]).sum(axis=1) == 0).any()
     # fmt: on
     return is_psk
+
+
+def _count_point(state: GameState, size):
+    return jnp.array(
+        [
+            _count_ji(state, 1, size)
+            + jnp.count_nonzero(state._chain_id_board > 0),
+            _count_ji(state, -1, size)
+            + jnp.count_nonzero(state._chain_id_board < 0),
+        ],
+        dtype=jnp.float32,
+    )
+
+
+def _count_ji(state: GameState, color: int, size: int):
+    board = jnp.zeros_like(state._chain_id_board)
+    board = jnp.where(state._chain_id_board * color > 0, 1, board)
+    board = jnp.where(state._chain_id_board * color < 0, -1, board)
+    # 0 = empty, 1 = mine, -1 = opponent's
+
+    neighbours = _neighbours(size)
+
+    def is_opp_neighbours(b):
+        # True if empty and any of neighbours is opponent
+        return (b == 0) & (
+            (b[neighbours.flatten()] == -1).reshape(size**2, 4)
+            & (neighbours != -1)
+        ).any(axis=1)
+
+    def fill_opp(x):
+        b, _ = x
+        mask = is_opp_neighbours(b)
+        return jnp.where(mask, -1, b), mask.any()
+
+    # fmt off
+    b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, TRUE))
+    # fmt on
+
+    return (b == 0).sum()

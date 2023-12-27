@@ -20,7 +20,7 @@ from jax import numpy as jnp
 import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.go import GameState, _init_game_state, _observe_game_state, _step_game_state, legal_actions, _neighbours
+from pgx._src.games.go import GameState, _init_game_state, _observe_game_state, _step_game_state, legal_actions, _count_point
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -177,20 +177,8 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
 
-def _count_point(state, size):
-    return jnp.array(
-        [
-            _count_ji(state, 1, size)
-            + jnp.count_nonzero(state._x._chain_id_board > 0),
-            _count_ji(state, -1, size)
-            + jnp.count_nonzero(state._x._chain_id_board < 0),
-        ],
-        dtype=jnp.float32,
-    )
-
-
 def _get_reward(state: State, size: int) -> Array:
-    score = _count_point(state, size)
+    score = _count_point(state._x, size)
     reward_bw = jax.lax.cond(
         score[0] - state._x._komi > score[1],
         lambda: jnp.array([1, -1], dtype=jnp.float32),
@@ -202,33 +190,6 @@ def _get_reward(state: State, size: int) -> Array:
         lambda: reward_bw[jnp.int32([1, 0])],
     )
     return reward
-
-
-def _count_ji(state: State, color: int, size: int):
-    board = jnp.zeros_like(state._x._chain_id_board)
-    board = jnp.where(state._x._chain_id_board * color > 0, 1, board)
-    board = jnp.where(state._x._chain_id_board * color < 0, -1, board)
-    # 0 = empty, 1 = mine, -1 = opponent's
-
-    neighbours = _neighbours(size)
-
-    def is_opp_neighbours(b):
-        # True if empty and any of neighbours is opponent
-        return (b == 0) & (
-            (b[neighbours.flatten()] == -1).reshape(size**2, 4)
-            & (neighbours != -1)
-        ).any(axis=1)
-
-    def fill_opp(x):
-        b, _ = x
-        mask = is_opp_neighbours(b)
-        return jnp.where(mask, -1, b), mask.any()
-
-    # fmt off
-    b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, TRUE))
-    # fmt on
-
-    return (b == 0).sum()
 
 
 # only for debug
