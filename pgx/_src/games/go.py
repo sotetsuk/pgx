@@ -401,4 +401,9 @@ def _get_reward_bw(x: GameState, size: int):
         lambda: jnp.array([1, -1], dtype=jnp.float32),
         lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
+    reward_bw = jax.lax.cond(
+        x.is_terminal,
+        lambda: reward_bw,
+        lambda: jnp.zeros_like(reward_bw),
+    )
     return reward_bw

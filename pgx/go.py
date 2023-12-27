@@ -170,12 +170,7 @@ def _step(state: State, action: int, size: int) -> State:
         _x=x,
     )
 
-    rewards = jax.lax.cond(
-        x.is_terminal,
-        lambda: _get_reward(state, size),
-        lambda: jnp.zeros_like(state.rewards),
-    )
-
+    rewards = _get_reward(state, size)
     rewards = jax.lax.select(
         x.is_psk, jnp.float32([-1, -1]).at[current_player].set(1.0), rewards
     )
