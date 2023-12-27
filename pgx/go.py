@@ -211,11 +211,13 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
     # update board history
-    board_history = jnp.roll(state._x._board_history, size ** 2)
+    board_history = jnp.roll(state._x._board_history, size**2)
     board_history = board_history.at[0].set(
         jnp.clip(state._x._chain_id_board, -1, 1).astype(jnp.int32)
     )
-    state = state.replace(_x=state._x.replace(_board_history=board_history))  # type:ignore
+    state = state.replace(
+        _x=state._x.replace(_board_history=board_history)
+    )  # type:ignore
 
     # check PSK up to 8-steps before
     state = _check_PSK(state)
@@ -299,9 +301,13 @@ def _merge_around_xy(i, state: State, xy, size):
 
 def _set_stone(state: State, xy) -> State:
     my_color = _my_color(state)
-    return state.replace(_x=state._x.replace(  # type:ignore
-        _chain_id_board=state._x._chain_id_board.at[xy].set((xy + 1) * my_color),
-    ))
+    return state.replace(
+        _x=state._x.replace(  # type:ignore
+            _chain_id_board=state._x._chain_id_board.at[xy].set(
+                (xy + 1) * my_color
+            ),
+        )
+    )
 
 
 def _merge_chain(state: State, xy, adj_xy):
@@ -313,7 +319,9 @@ def _merge_chain(state: State, xy, adj_xy):
 
     # Keep larger chain ID and connect to the chain with smaller ID
     chain_id_board = jnp.where(
-        state._x._chain_id_board == large_id, small_id, state._x._chain_id_board
+        state._x._chain_id_board == large_id,
+        small_id,
+        state._x._chain_id_board,
     )
 
     return state.replace(_x=state._x.replace(_chain_id_board=chain_id_board))  # type: ignore
@@ -330,13 +338,15 @@ def _remove_stones(
         lambda: jnp.int32(rm_stone_xy),
         lambda: state._x._ko,
     )
-    return state.replace(_x=state._x.replace(  # type:ignore
-        _chain_id_board=chain_id_board,
-        _num_captured_stones=state._x._num_captured_stones.at[state._x._turn].add(
-            num_captured_stones
-        ),
-        _ko=ko,
-    ))
+    return state.replace(
+        _x=state._x.replace(  # type:ignore
+            _chain_id_board=chain_id_board,
+            _num_captured_stones=state._x._num_captured_stones.at[
+                state._x._turn
+            ].add(num_captured_stones),
+            _ko=ko,
+        )
+    )
 
 
 def legal_actions(state: State, size: int) -> Array:
