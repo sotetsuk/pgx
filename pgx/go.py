@@ -559,15 +559,10 @@ def _check_PSK(state: GameState):
 
     Anyway, we believe it's effect is very small as PSK rarely happens, especially in 19x19 board.
     """
-    return (
-        ~state._passed
-        & (
-            jnp.abs(state._board_history[0] - state._board_history[1:]).sum(
-                axis=1
-            )
-            == 0
-        ).any()
-    )
+    # fmt: off
+    is_psk = ~state._passed & (jnp.abs(state._board_history[0] - state._board_history[1:]).sum(axis=1) == 0).any()
+    # fmt: on
+    return is_psk
 
 
 # only for debug
