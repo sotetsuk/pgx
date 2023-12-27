@@ -93,6 +93,58 @@ def step(x: GameState, action: int, size: int) -> GameState:
     return x
 
 
+def legal_action_mask(state: GameState, size: int) -> Array:
+    """Logic is highly inspired by OpenSpiel's Go implementation"""
+    is_empty = state._chain_id_board == 0
+
+    my_color = _my_color(state)
+    opp_color = _opponent_color(state)
+    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
+
+    chain_ix = jnp.abs(state._chain_id_board) - 1
+    # fmt: off
+    in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
+    # fmt: on
+    has_liberty = (state._chain_id_board * my_color > 0) & ~in_atari
+    kills_opp = (state._chain_id_board * opp_color > 0) & in_atari
+
+    @jax.vmap
+    def is_neighbor_ok(xy):
+        neighbors = _neighbour(xy, size)
+        on_board = neighbors != -1
+        _has_empty = is_empty[neighbors]
+        _has_liberty = has_liberty[neighbors]
+        _kills_opp = kills_opp[neighbors]
+        return (
+            (on_board & _has_empty).any()
+            | (on_board & _kills_opp).any()
+            | (on_board & _has_liberty).any()
+        )
+
+    neighbor_ok = is_neighbor_ok(jnp.arange(size**2))
+    legal_action_mask = jnp.append(is_empty & neighbor_ok, TRUE)  # -1 = pass
+
+    return jax.lax.cond(
+        (state._ko == -1),
+        lambda: legal_action_mask,
+        lambda: legal_action_mask.at[state._ko].set(FALSE),
+    )
+
+
+def terminal_values(x: GameState, size: int):
+    score = _count_point(x, size)
+    reward_bw = jax.lax.select(
+        score[0] - x._komi > score[1],
+        jnp.array([1, -1], dtype=jnp.float32),
+        jnp.array([-1, 1], dtype=jnp.float32),
+    )
+    to_play = x._turn
+    reward_bw = jax.lax.select(
+        x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
+    )
+    return reward_bw
+
+
 def _pass_move(state: GameState) -> GameState:
     return jax.lax.cond(
         state._passed,
@@ -209,44 +261,6 @@ def _remove_stones(
             num_captured_stones
         ),
         _ko=ko,
-    )
-
-
-def legal_action_mask(state: GameState, size: int) -> Array:
-    """Logic is highly inspired by OpenSpiel's Go implementation"""
-    is_empty = state._chain_id_board == 0
-
-    my_color = _my_color(state)
-    opp_color = _opponent_color(state)
-    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
-
-    chain_ix = jnp.abs(state._chain_id_board) - 1
-    # fmt: off
-    in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
-    # fmt: on
-    has_liberty = (state._chain_id_board * my_color > 0) & ~in_atari
-    kills_opp = (state._chain_id_board * opp_color > 0) & in_atari
-
-    @jax.vmap
-    def is_neighbor_ok(xy):
-        neighbors = _neighbour(xy, size)
-        on_board = neighbors != -1
-        _has_empty = is_empty[neighbors]
-        _has_liberty = has_liberty[neighbors]
-        _kills_opp = kills_opp[neighbors]
-        return (
-            (on_board & _has_empty).any()
-            | (on_board & _kills_opp).any()
-            | (on_board & _has_liberty).any()
-        )
-
-    neighbor_ok = is_neighbor_ok(jnp.arange(size**2))
-    legal_action_mask = jnp.append(is_empty & neighbor_ok, TRUE)  # -1 = pass
-
-    return jax.lax.cond(
-        (state._ko == -1),
-        lambda: legal_action_mask,
-        lambda: legal_action_mask.at[state._ko].set(FALSE),
     )
 
 
@@ -392,17 +406,3 @@ def _count_ji(state: GameState, color: int, size: int):
     # fmt on
 
     return (b == 0).sum()
-
-
-def terminal_values(x: GameState, size: int):
-    score = _count_point(x, size)
-    reward_bw = jax.lax.select(
-        score[0] - x._komi > score[1],
-        jnp.array([1, -1], dtype=jnp.float32),
-        jnp.array([-1, 1], dtype=jnp.float32),
-    )
-    to_play = x._turn
-    reward_bw = jax.lax.select(
-        x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
-    )
-    return reward_bw
