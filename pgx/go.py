@@ -194,8 +194,7 @@ def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
     )
 
 
-def _step(state: State, action: int, size: int) -> State:
-    x = state._x
+def _step_game_step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(_ko=jnp.int32(-1))  # type: ignore
 
     # update state
@@ -206,7 +205,7 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
     # increment turns
-    x = x.replace(_turn=(state._x._turn + 1) % 2)  # type: ignore
+    x = x.replace(_turn=(x._turn + 1) % 2)  # type: ignore
 
     # update board history
     board_history = jnp.roll(x._board_history, size**2)
@@ -218,6 +217,12 @@ def _step(state: State, action: int, size: int) -> State:
     # PSK
     is_psk = _check_PSK(x)
     x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))
+
+    return x
+
+
+def _step(state: State, action: int, size: int) -> State:
+    x = _step_game_step(state._x, action, size)
 
     # update env state
     current_player = (state.current_player + 1) % 2  # player to act
