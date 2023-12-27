@@ -193,7 +193,10 @@ def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
 
 
 def _step(state: State, action: int, size: int) -> State:
-    state = state.replace(_x=state._x.replace(_ko=jnp.int32(-1)))  # type: ignore
+    x = state._x
+    x = x.replace(_ko=jnp.int32(-1))  # type: ignore
+    state = state.replace(_x=x)  # type:ignore
+
     # update state
     state = jax.lax.cond(
         (action < size * size),
