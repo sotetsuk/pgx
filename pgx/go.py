@@ -172,20 +172,23 @@ def _observe(state: State, player_id, size, history_length):
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
-    black_player = jnp.int32(jax.random.bernoulli(key))
-    current_player = black_player
-    _x = GameState(
+def _init_game_state(size: int, komi: float, black_player: Array) -> GameState:
+    return GameState(
         _size=jnp.int32(size),
         _chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         _board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
         _komi=jnp.float32(komi),
         _black_player=black_player,
     )
+
+
+def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
+    black_player = jnp.int32(jax.random.bernoulli(key))
+    current_player = black_player
     return State(  # type:ignore
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         current_player=current_player,
-        _x=_x,
+        _x=_init_game_state(size, komi, black_player),
     )
 
 
