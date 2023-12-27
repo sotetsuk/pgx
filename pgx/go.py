@@ -299,11 +299,9 @@ def _merge_around_xy(i, state: State, xy, size):
 
 def _set_stone(state: State, xy) -> State:
     my_color = _my_color(state)
-    return state.replace(  # type:ignore
-        _x=state._x.replace(
+    return state.replace(_x=state._x.replace(  # type:ignore
             _chain_id_board=state._x._chain_id_board.at[xy].set((xy + 1) * my_color),
-        )
-    )
+    ))
 
 
 def _merge_chain(state: State, xy, adj_xy):
