@@ -52,20 +52,6 @@ def init(size: int, komi: float) -> GameState:
     )
 
 
-def observe(x: GameState, my_turn, size, history_length):
-    my_color = jnp.int32([1, -1])[my_turn]
-
-    @jax.vmap
-    def _make(i):
-        color = jnp.int32([1, -1])[i % 2] * my_color
-        return x._board_history[i // 2] == color
-
-    log = _make(jnp.arange(history_length * 2))
-    color = jnp.full_like(log[0], my_turn)  # black=0, white=1
-
-    return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
-
-
 def step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(_ko=jnp.int32(-1))  # type: ignore
 
@@ -91,6 +77,20 @@ def step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))  # type: ignore
 
     return x
+
+
+def observe(x: GameState, my_turn, size, history_length):
+    my_color = jnp.int32([1, -1])[my_turn]
+
+    @jax.vmap
+    def _make(i):
+        color = jnp.int32([1, -1])[i % 2] * my_color
+        return x._board_history[i // 2] == color
+
+    log = _make(jnp.arange(history_length * 2))
+    color = jnp.full_like(log[0], my_turn)  # black=0, white=1
+
+    return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
 def legal_action_mask(state: GameState, size: int) -> Array:
