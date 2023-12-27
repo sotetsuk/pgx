@@ -17,8 +17,8 @@ from functools import partial
 import jax
 from jax import numpy as jnp
 
-import pgx.core as core
 import pgx._src.games.go as go
+import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
 
