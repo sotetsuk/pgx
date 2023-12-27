@@ -66,7 +66,12 @@ class Go(core.Env):
         self.max_termination_steps = self.size * self.size * 2
 
     def _init(self, key: PRNGKey) -> State:
-        return partial(_init, size=self.size, komi=self.komi)(key=key)
+        current_player = jnp.int32(jax.random.bernoulli(key))
+        return State(  # type:ignore
+            legal_action_mask=jnp.ones(self.size**2 + 1, dtype=jnp.bool_),
+            current_player=current_player,
+            _x=go.init(self.size, self.komi),
+        )
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
@@ -136,18 +141,8 @@ def _observe(state: State, player_id, size, history_length):
     return go.observe(state._x, my_turn, size, history_length)
 
 
-def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
-    current_player = jnp.int32(jax.random.bernoulli(key))
-    return State(  # type:ignore
-        legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-        current_player=current_player,
-        _x=go.init(size, komi),
-    )
-
-
 def _step(state: State, action: int, size: int) -> State:
     x = go.step(state._x, action, size)
-
     current_player = (state.current_player + 1) % 2  # player to act
     state = state.replace(  # type:ignore
         current_player=current_player,
