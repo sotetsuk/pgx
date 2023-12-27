@@ -156,9 +156,13 @@ def _observe(state: State, player_id, size, history_length):
     my_turn = jax.lax.select(
         player_id == state.current_player, state._x._turn, 1 - state._x._turn
     )
-    current_player_color = _my_color(state._x)  # -1 or 1
+    return _observe_game_state(state._x, my_turn, size, history_length)
+
+
+def _observe_game_state(x: GameState, my_turn, size, history_length):
+    current_player_color = _my_color(x)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
-        my_turn == state._x._turn,
+        my_turn == x._turn,
         lambda: (current_player_color, -1 * current_player_color),
         lambda: (-1 * current_player_color, current_player_color),
     )
@@ -166,7 +170,7 @@ def _observe(state: State, player_id, size, history_length):
     @jax.vmap
     def _make(i):
         color = jnp.int32([1, -1])[i % 2] * my_color
-        return state._x._board_history[i // 2] == color
+        return x._board_history[i // 2] == color
 
     log = _make(jnp.arange(history_length * 2))
     color = jnp.full_like(log[0], my_turn)  # black=0, white=1
