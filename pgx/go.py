@@ -20,10 +20,10 @@ from jax import numpy as jnp
 import pgx.core as core
 from pgx._src.games.go import (
     GameState,
-    _terminal_values,
     _init_game_state,
     _observe_game_state,
     _step_game_state,
+    _terminal_values,
     legal_actions,
 )
 from pgx._src.struct import dataclass
@@ -171,7 +171,9 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
     rewards = terminal_values(state, size)
-    rewards = jax.lax.select(state._x.is_terminal, rewards, jnp.zeros_like(rewards))
+    rewards = jax.lax.select(
+        state._x.is_terminal, rewards, jnp.zeros_like(rewards)
+    )
     return state.replace(rewards=rewards)  # type:ignore
 
 

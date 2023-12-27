@@ -403,8 +403,6 @@ def _terminal_values(x: GameState, size: int):
     )
     to_play = x._turn
     reward_bw = jax.lax.select(
-        x.is_psk,
-        jnp.float32([-1, -1]).at[to_play].set(1.0),
-        reward_bw
+        x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
     )
     return reward_bw
