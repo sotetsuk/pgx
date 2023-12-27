@@ -396,10 +396,10 @@ def _count_ji(state: GameState, color: int, size: int):
 
 def _get_reward_bw(x: GameState, size: int):
     score = _count_point(x, size)
-    reward_bw = jax.lax.cond(
+    reward_bw = jax.lax.select(
         score[0] - x._komi > score[1],
-        lambda: jnp.array([1, -1], dtype=jnp.float32),
-        lambda: jnp.array([-1, 1], dtype=jnp.float32),
+        jnp.array([1, -1], dtype=jnp.float32),
+        jnp.array([-1, 1], dtype=jnp.float32),
     )
     to_play = x._turn
     reward_bw = jax.lax.select(
@@ -407,9 +407,9 @@ def _get_reward_bw(x: GameState, size: int):
         jnp.float32([-1, -1]).at[to_play].set(1.0),
         reward_bw
     )
-    reward_bw = jax.lax.cond(
+    reward_bw = jax.lax.select(  # TODO: when teminated by max steps
         x.is_terminal,
-        lambda: reward_bw,
-        lambda: jnp.zeros_like(reward_bw),
+        reward_bw,
+        jnp.zeros_like(reward_bw),
     )
     return reward_bw

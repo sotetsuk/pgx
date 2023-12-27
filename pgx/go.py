@@ -175,13 +175,12 @@ def _step(state: State, action: int, size: int) -> State:
     return state.replace(rewards=rewards)  # type:ignore
 
 
-
 def _get_reward(state: State, size: int) -> Array:
     reward_bw = _get_reward_bw(state._x, size)
-    reward = jax.lax.cond(
+    reward = jax.lax.select(
         state.current_player == state._x._turn,
-        lambda: reward_bw,
-        lambda: reward_bw[jnp.int32([1, 0])],
+        reward_bw,
+        reward_bw[jnp.int32([1, 0])],
     )
     return reward
 
