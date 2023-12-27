@@ -74,18 +74,11 @@ class Go(core.Env):
         state = partial(_step, size=self.size)(state, action)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         # fmt: off
-        terminated = jax.lax.select(
-            (0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count),
-            TRUE,
-            state.terminated,
-        )
+        _terminated = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))
+        state = state.replace(terminated=(state.terminated | _terminated))
         # fmt: on
-        rewards = jax.lax.select(
-            terminated,
-            terminal_values(state, self.size),
-            jnp.zeros_like(state.rewards),
-        )
-        return state.replace(terminated=terminated, rewards=rewards)  # type:ignore
+        rewards = terminal_values(state, self.size)
+        return state.replace(rewards=rewards)  # type:ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
@@ -175,6 +168,7 @@ def terminal_values(state: State, size) -> Array:
     reward_bw = go.terminal_values(state._x, size)
     should_flip = state.current_player == state._x._turn
     reward = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
+    reward = jax.lax.select(state.terminated, reward, jnp.zeros_like(reward))
     return reward
 
 
