@@ -154,7 +154,7 @@ def _observe(state: State, player_id, size, history_length):
     my_turn = jax.lax.select(
         player_id == state.current_player, state._x._turn, 1 - state._x._turn
     )
-    current_player_color = _my_color(state)  # -1 or 1
+    current_player_color = _my_color(state._x)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
         player_id == state.current_player,
         lambda: (current_player_color, -1 * current_player_color),
@@ -208,7 +208,7 @@ def _step(state: State, action: int, size: int) -> State:
     # add legal action mask
     state = state.replace(  # type:ignore
         legal_action_mask=state.legal_action_mask.at[:-1]
-        .set(legal_actions(state, size))
+        .set(legal_actions(state._x, size))
         .at[-1]
         .set(TRUE)
     )
@@ -246,9 +246,9 @@ def _not_pass_move(state: State, action, size) -> State:
 
     # Remove killed stones
     adj_xy = _neighbour(xy, size)
-    oppo_color = _opponent_color(state)
+    oppo_color = _opponent_color(state._x)
     chain_id = state._x._chain_id_board[adj_xy]
-    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
+    num_pseudo, idx_sum, idx_squared_sum = _count(state._x, size)
     chain_ix = jnp.abs(chain_id) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[
         chain_ix
@@ -290,7 +290,7 @@ def _not_pass_move(state: State, action, size) -> State:
 
 
 def _merge_around_xy(i, state: State, xy, size):
-    my_color = _my_color(state)
+    my_color = _my_color(state._x)
     adj_xy = _neighbour(xy, size)[i]
     is_off = adj_xy == -1
     is_my_chain = state._x._chain_id_board[adj_xy] * my_color > 0
@@ -303,7 +303,7 @@ def _merge_around_xy(i, state: State, xy, size):
 
 
 def _set_stone(state: State, xy) -> State:
-    my_color = _my_color(state)
+    my_color = _my_color(state._x)
     return state.replace(  # type: ignore
         _x=state._x.replace(  # type:ignore
             _chain_id_board=state._x._chain_id_board.at[xy].set(
@@ -314,7 +314,7 @@ def _set_stone(state: State, xy) -> State:
 
 
 def _merge_chain(state: State, xy, adj_xy):
-    my_color = _my_color(state)
+    my_color = _my_color(state._x)
     new_id = jnp.abs(state._x._chain_id_board[xy])
     adj_chain_id = jnp.abs(state._x._chain_id_board[adj_xy])
     small_id = jnp.minimum(new_id, adj_chain_id) * my_color
@@ -352,20 +352,20 @@ def _remove_stones(
     )
 
 
-def legal_actions(state: State, size: int) -> Array:
+def legal_actions(state: GameState, size: int) -> Array:
     """Logic is highly inspired by OpenSpiel's Go implementation"""
-    is_empty = state._x._chain_id_board == 0
+    is_empty = state._chain_id_board == 0
 
     my_color = _my_color(state)
     opp_color = _opponent_color(state)
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
 
-    chain_ix = jnp.abs(state._x._chain_id_board) - 1
+    chain_ix = jnp.abs(state._chain_id_board) - 1
     # fmt: off
     in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     # fmt: on
-    has_liberty = (state._x._chain_id_board * my_color > 0) & ~in_atari
-    kills_opp = (state._x._chain_id_board * opp_color > 0) & in_atari
+    has_liberty = (state._chain_id_board * my_color > 0) & ~in_atari
+    kills_opp = (state._chain_id_board * opp_color > 0) & in_atari
 
     @jax.vmap
     def is_neighbor_ok(xy):
@@ -384,15 +384,15 @@ def legal_actions(state: State, size: int) -> Array:
     legal_action_mask = is_empty & neighbor_ok
 
     return jax.lax.cond(
-        (state._x._ko == -1),
+        (state._ko == -1),
         lambda: legal_action_mask,
-        lambda: legal_action_mask.at[state._x._ko].set(FALSE),
+        lambda: legal_action_mask.at[state._ko].set(FALSE),
     )
 
 
-def _count(state: State, size):
+def _count(state: GameState, size):
     ZERO = jnp.int32(0)
-    chain_id_board = jnp.abs(state._x._chain_id_board)
+    chain_id_board = jnp.abs(state._chain_id_board)
     is_empty = chain_id_board == 0
     idx_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1), ZERO)
     idx_squared_sum = jnp.where(
@@ -429,12 +429,12 @@ def _count(state: State, size):
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
 
-def _my_color(state: State):
-    return jnp.int32([1, -1])[state._x._turn]
+def _my_color(state: GameState):
+    return jnp.int32([1, -1])[state._turn]
 
 
-def _opponent_color(state: State):
-    return jnp.int32([-1, 1])[state._x._turn]
+def _opponent_color(state: GameState):
+    return jnp.int32([-1, 1])[state._turn]
 
 
 def _ko_may_occur(state: State, xy: int) -> Array:
@@ -442,7 +442,7 @@ def _ko_may_occur(state: State, xy: int) -> Array:
     x = xy // size
     y = xy % size
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
-    oppo_color = _opponent_color(state)
+    oppo_color = _opponent_color(state._x)
     is_occupied_by_opp = (
         state._x._chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     )
