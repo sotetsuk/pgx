@@ -20,7 +20,7 @@ from jax import numpy as jnp
 import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.go import GameState, _init_game_state, _observe_game_state, _step_game_state, legal_actions, _count_point
+from pgx._src.games.go import GameState, _init_game_state, _observe_game_state, _step_game_state, legal_actions, _get_reward_bw
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -178,12 +178,7 @@ def _step(state: State, action: int, size: int) -> State:
 
 
 def _get_reward(state: State, size: int) -> Array:
-    score = _count_point(state._x, size)
-    reward_bw = jax.lax.cond(
-        score[0] - state._x._komi > score[1],
-        lambda: jnp.array([1, -1], dtype=jnp.float32),
-        lambda: jnp.array([-1, 1], dtype=jnp.float32),
-    )
+    reward_bw = _get_reward_bw(state._x, size)
     reward = jax.lax.cond(
         state._x._black_player == 0,
         lambda: reward_bw,

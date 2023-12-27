@@ -393,3 +393,13 @@ def _count_ji(state: GameState, color: int, size: int):
     # fmt on
 
     return (b == 0).sum()
+
+
+def _get_reward_bw(x: GameState, size: int):
+    score = _count_point(x, size)
+    reward_bw = jax.lax.cond(
+        score[0] - x._komi > score[1],
+        lambda: jnp.array([1, -1], dtype=jnp.float32),
+        lambda: jnp.array([-1, 1], dtype=jnp.float32),
+    )
+    return reward_bw
