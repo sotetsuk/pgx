@@ -177,11 +177,8 @@ def _step(state: State, action: int, size: int) -> State:
 
 def terminal_values(state: State, size) -> Array:
     reward_bw = _terminal_values(state._x, size)
-    reward = jax.lax.select(
-        state.current_player == state._x._turn,
-        reward_bw,
-        reward_bw[jnp.int32([1, 0])],
-    )
+    should_flip = state.current_player == state._x._turn
+    reward = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw),)
     return reward
 
 
