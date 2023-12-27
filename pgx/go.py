@@ -215,9 +215,9 @@ def _step(state: State, action: int, size: int) -> State:
     board_history = board_history.at[0].set(
         jnp.clip(state._x._chain_id_board, -1, 1).astype(jnp.int32)
     )
-    state = state.replace(
-        _x=state._x.replace(_board_history=board_history)
-    )  # type:ignore
+    state = state.replace(  # type:ignore
+        _x=state._x.replace(_board_history=board_history)  # type: ignore
+    )
 
     # check PSK up to 8-steps before
     state = _check_PSK(state)
@@ -301,7 +301,7 @@ def _merge_around_xy(i, state: State, xy, size):
 
 def _set_stone(state: State, xy) -> State:
     my_color = _my_color(state)
-    return state.replace(
+    return state.replace(  # type: ignore
         _x=state._x.replace(  # type:ignore
             _chain_id_board=state._x._chain_id_board.at[xy].set(
                 (xy + 1) * my_color
@@ -338,7 +338,7 @@ def _remove_stones(
         lambda: jnp.int32(rm_stone_xy),
         lambda: state._x._ko,
     )
-    return state.replace(
+    return state.replace(  # type: ignore
         _x=state._x.replace(  # type:ignore
             _chain_id_board=chain_id_board,
             _num_captured_stones=state._x._num_captured_stones.at[

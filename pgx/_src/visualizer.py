@@ -379,10 +379,10 @@ class Visualizer:
                 )
             except IndexError:
                 self.config["BOARD_WIDTH"] = int(
-                    _state._x._size
+                    _state._x._size  # type: ignore
                 )  # type:ignore
                 self.config["BOARD_HEIGHT"] = int(
-                    _state._x._size
+                    _state._x._size  # type: ignore
                 )  # type:ignore
             self._make_dwg_group = _make_go_dwg  # type:ignore
             if (
