@@ -394,7 +394,7 @@ def _count_ji(state: GameState, color: int, size: int):
     return (b == 0).sum()
 
 
-def _get_reward_bw(x: GameState, size: int):
+def _terminal_values(x: GameState, size: int):
     score = _count_point(x, size)
     reward_bw = jax.lax.select(
         score[0] - x._komi > score[1],

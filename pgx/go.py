@@ -20,7 +20,7 @@ from jax import numpy as jnp
 import pgx.core as core
 from pgx._src.games.go import (
     GameState,
-    _get_reward_bw,
+    _terminal_values,
     _init_game_state,
     _observe_game_state,
     _step_game_state,
@@ -176,7 +176,7 @@ def _step(state: State, action: int, size: int) -> State:
 
 
 def terminal_values(state: State, size) -> Array:
-    reward_bw = _get_reward_bw(state._x, size)
+    reward_bw = _terminal_values(state._x, size)
     reward = jax.lax.select(
         state.current_player == state._x._turn,
         reward_bw,
