@@ -204,11 +204,6 @@ def _step(state: State, action: int, size: int) -> State:
         lambda: _not_pass_move(x, action, size),
         lambda: _pass_move(x),
     )
-    rewards = jax.lax.cond(
-        x.is_terminal,
-        lambda: _get_reward(state, size),
-        lambda: jnp.zeros_like(state.rewards)
-    )
 
     # increment turns
     x = x.replace(_turn=(state._x._turn + 1) % 2)  # type: ignore
@@ -223,6 +218,12 @@ def _step(state: State, action: int, size: int) -> State:
     # PSK
     is_psk = _check_PSK(x)
     x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))
+
+    rewards = jax.lax.cond(
+        x.is_terminal,
+        lambda: _get_reward(state, size),
+        lambda: jnp.zeros_like(state.rewards)
+    )
 
     state = state.replace(  # type:ignore
         current_player=(state.current_player + 1) % 2,
