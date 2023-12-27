@@ -171,9 +171,6 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
     rewards = _get_reward(state, size)
-    rewards = jax.lax.select(
-        x.is_psk, jnp.float32([-1, -1]).at[current_player].set(1.0), rewards
-    )
 
     return state.replace(rewards=rewards)  # type:ignore
 

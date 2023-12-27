@@ -401,6 +401,12 @@ def _get_reward_bw(x: GameState, size: int):
         lambda: jnp.array([1, -1], dtype=jnp.float32),
         lambda: jnp.array([-1, 1], dtype=jnp.float32),
     )
+    to_play = x._turn
+    reward_bw = jax.lax.select(
+        x.is_psk,
+        jnp.float32([-1, -1]).at[to_play].set(1.0),
+        reward_bw
+    )
     reward_bw = jax.lax.cond(
         x.is_terminal,
         lambda: reward_bw,
