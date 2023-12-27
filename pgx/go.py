@@ -324,7 +324,7 @@ def _merge_around_xy(i, state: GameState, xy, size):
     return state
 
 
-def _set_stone(state: GameState, xy) -> State:
+def _set_stone(state: GameState, xy) -> GameState:
     my_color = _my_color(state)
     return state.replace(  # type: ignore
         _chain_id_board=state._chain_id_board.at[xy].set((xy + 1) * my_color),
