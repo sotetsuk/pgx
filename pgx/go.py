@@ -148,12 +148,11 @@ def _observe(state: State, player_id, size, history_length):
 
 
 def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
-    black_player = jnp.int32(jax.random.bernoulli(key))
-    current_player = black_player
+    current_player = jnp.int32(jax.random.bernoulli(key))
     return State(  # type:ignore
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         current_player=current_player,
-        _x=_init_game_state(size, komi, black_player),
+        _x=_init_game_state(size, komi),
     )
 
 
@@ -187,7 +186,7 @@ def _step(state: State, action: int, size: int) -> State:
 def _get_reward(state: State, size: int) -> Array:
     reward_bw = _get_reward_bw(state._x, size)
     reward = jax.lax.cond(
-        state._x._black_player == 0,
+        state.current_player == state._x._turn,
         lambda: reward_bw,
         lambda: reward_bw[jnp.int32([1, 0])],
     )

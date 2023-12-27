@@ -39,18 +39,16 @@ class GameState:
     _passed: Array = FALSE  # TRUE if last action is pass
     _ko: Array = jnp.int32(-1)  # by SSK
     _komi: Array = jnp.float32(7.5)
-    _black_player: Array = jnp.int32(0)
     is_terminal: Array = FALSE
     is_psk: Array = FALSE
 
 
-def _init_game_state(size: int, komi: float, black_player: Array) -> GameState:
+def _init_game_state(size: int, komi: float) -> GameState:
     return GameState(
         _size=jnp.int32(size),
         _chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         _board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
         _komi=jnp.float32(komi),
-        _black_player=black_player,
     )
 
 
