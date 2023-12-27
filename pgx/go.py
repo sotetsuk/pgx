@@ -211,7 +211,7 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
     # update board history
-    board_history = jnp.roll(state._x._board_history, size**2)
+    board_history = jnp.roll(state._x._board_history, size ** 2)
     board_history = board_history.at[0].set(
         jnp.clip(state._x._chain_id_board, -1, 1).astype(jnp.int32)
     )
