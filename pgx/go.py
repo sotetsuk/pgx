@@ -85,7 +85,7 @@ class Go(core.Env):
             & (self.max_termination_steps <= state._step_count),
             lambda: state.replace(  # type: ignore
                 terminated=TRUE,
-                rewards=_flip(state, partial(_get_reward_bw, size=self.size)(state._x)),
+                rewards=partial(terminal_values, size=self.size)(state),
             ),
             lambda: state,
         )
@@ -170,12 +170,13 @@ def _step(state: State, action: int, size: int) -> State:
         _x=x,
     )
 
-    rewards = _flip(state, _get_reward_bw(state._x, size))
+    rewards = terminal_values(state, size)
     rewards = jax.lax.select(state._x.is_terminal, rewards, jnp.zeros_like(rewards))
     return state.replace(rewards=rewards)  # type:ignore
 
 
-def _flip(state: State, reward_bw) -> Array:
+def terminal_values(state: State, size) -> Array:
+    reward_bw = _get_reward_bw(state._x, size)
     reward = jax.lax.select(
         state.current_player == state._x._turn,
         reward_bw,
