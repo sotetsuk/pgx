@@ -208,11 +208,16 @@ def _step(state: State, action: int, size: int) -> State:
         lambda: _get_reward(state, size),
         lambda: jnp.zeros_like(state.rewards)
     )
-    state = state.replace(_x=x, terminated=x.is_terminal, rewards=rewards)  # type:ignore
 
     # increment turns
-    state = state.replace(_x=state._x.replace(_turn=(state._x._turn + 1) % 2))  # type: ignore
-    state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
+    x = x.replace(_turn=(state._x._turn + 1) % 2)  # type: ignore
+
+    state = state.replace(  # type:ignore
+        current_player=(state.current_player + 1) % 2,
+        terminated=x.is_terminal,
+        rewards=rewards,
+        _x=x,
+    )
 
     # add legal action mask
     state = state.replace(  # type:ignore
