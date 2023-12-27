@@ -163,10 +163,7 @@ def _step(state: State, action: int, size: int) -> State:
     state = state.replace(  # type:ignore
         current_player=current_player,
         terminated=x.is_terminal,
-        legal_action_mask=state.legal_action_mask.at[:-1]
-        .set(legal_actions(x, size))
-        .at[-1]
-        .set(TRUE),
+        legal_action_mask=jnp.append(legal_actions(x, size), TRUE),
         _x=x,
     )
 
