@@ -157,12 +157,6 @@ def _step(state: State, action: int, size: int) -> State:
     )
     return state
 
-    # rewards = terminal_values(state, size)
-    # rewards = jax.lax.select(
-    #     state._x.is_terminal, rewards, jnp.zeros_like(rewards)
-    # )
-    # return state.replace(rewards=rewards)  # type:ignore
-
 
 def terminal_values(state: State, size) -> Array:
     reward_bw = go.terminal_values(state._x, size)
