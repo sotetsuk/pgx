@@ -158,7 +158,7 @@ def _observe(state: State, player_id, size, history_length):
     )
     current_player_color = _my_color(state._x)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
-        player_id == state.current_player,
+        my_turn == state._x._turn,
         lambda: (current_player_color, -1 * current_player_color),
         lambda: (-1 * current_player_color, current_player_color),
     )
