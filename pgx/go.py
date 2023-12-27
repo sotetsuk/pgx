@@ -221,7 +221,8 @@ def _step(state: State, action: int, size: int) -> State:
     x = x.replace(_board_history=board_history)  # type: ignore
 
     # PSK
-    x = x.replace(is_psk=_check_PSK(x))
+    is_psk = _check_PSK(x)
+    x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))
 
     state = state.replace(  # type:ignore
         current_player=(state.current_player + 1) % 2,
@@ -239,7 +240,6 @@ def _step(state: State, action: int, size: int) -> State:
     state = jax.lax.cond(
         x.is_psk,
         lambda: state.replace(  # type: ignore
-            terminated=TRUE,
             rewards=jnp.float32([-1, -1]).at[winner].set(1.0),
         ),
         lambda: state,
