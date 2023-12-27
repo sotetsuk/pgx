@@ -219,14 +219,23 @@ def _step(state: State, action: int, size: int) -> State:
     is_psk = _check_PSK(x)
     x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))
 
+    # update env state
+    current_player = (state.current_player + 1) % 2  # player to act
+
     rewards = jax.lax.cond(
         x.is_terminal,
         lambda: _get_reward(state, size),
         lambda: jnp.zeros_like(state.rewards)
     )
 
-    state = state.replace(  # type:ignore
-        current_player=(state.current_player + 1) % 2,
+    rewards = jax.lax.select(
+        x.is_psk,
+        jnp.float32([-1, -1]).at[current_player].set(1.0),
+        rewards
+    )
+
+    return state.replace(  # type:ignore
+        current_player=current_player,
         terminated=x.is_terminal,
         rewards=rewards,
         legal_action_mask=state.legal_action_mask.at[:-1]
@@ -235,19 +244,6 @@ def _step(state: State, action: int, size: int) -> State:
         .set(TRUE),
         _x=x,
     )
-
-    # fmt: off
-    winner = state.current_player
-    state = jax.lax.cond(
-        x.is_psk,
-        lambda: state.replace(  # type: ignore
-            rewards=jnp.float32([-1, -1]).at[winner].set(1.0),
-        ),
-        lambda: state,
-    )
-    # fmt: on
-
-    return state
 
 
 def _pass_move(state: GameState) -> State:
