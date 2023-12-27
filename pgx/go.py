@@ -137,7 +137,7 @@ def _observe(state: State, player_id, size, history_length):
     my_turn = jax.lax.select(
         player_id == state.current_player, state._x._turn, 1 - state._x._turn
     )
-    return go._observe_game_state(state._x, my_turn, size, history_length)
+    return go.observe(state._x, my_turn, size, history_length)
 
 
 def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
@@ -145,18 +145,18 @@ def _init(key: PRNGKey, size: int, komi: float = 7.5) -> State:
     return State(  # type:ignore
         legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
         current_player=current_player,
-        _x=go._init_game_state(size, komi),
+        _x=go.init(size, komi),
     )
 
 
 def _step(state: State, action: int, size: int) -> State:
-    x = go._step_game_state(state._x, action, size)
+    x = go.step(state._x, action, size)
 
     current_player = (state.current_player + 1) % 2  # player to act
     state = state.replace(  # type:ignore
         current_player=current_player,
         terminated=x.is_terminal,
-        legal_action_mask=go.legal_actions(x, size),
+        legal_action_mask=go.legal_action_mask(x, size),
         _x=x,
     )
 
@@ -168,7 +168,7 @@ def _step(state: State, action: int, size: int) -> State:
 
 
 def terminal_values(state: State, size) -> Array:
-    reward_bw = go._terminal_values(state._x, size)
+    reward_bw = go.terminal_values(state._x, size)
     should_flip = state.current_player == state._x._turn
     reward = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
     return reward

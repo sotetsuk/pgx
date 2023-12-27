@@ -43,7 +43,7 @@ class GameState:
     is_psk: Array = FALSE
 
 
-def _init_game_state(size: int, komi: float) -> GameState:
+def init(size: int, komi: float) -> GameState:
     return GameState(
         _size=jnp.int32(size),
         _chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
@@ -52,7 +52,7 @@ def _init_game_state(size: int, komi: float) -> GameState:
     )
 
 
-def _observe_game_state(x: GameState, my_turn, size, history_length):
+def observe(x: GameState, my_turn, size, history_length):
     my_color = jnp.int32([1, -1])[my_turn]
 
     @jax.vmap
@@ -66,7 +66,7 @@ def _observe_game_state(x: GameState, my_turn, size, history_length):
     return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
 
 
-def _step_game_state(x: GameState, action: int, size: int) -> GameState:
+def step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(_ko=jnp.int32(-1))  # type: ignore
 
     # update state
@@ -212,7 +212,7 @@ def _remove_stones(
     )
 
 
-def legal_actions(state: GameState, size: int) -> Array:
+def legal_action_mask(state: GameState, size: int) -> Array:
     """Logic is highly inspired by OpenSpiel's Go implementation"""
     is_empty = state._chain_id_board == 0
 
@@ -394,7 +394,7 @@ def _count_ji(state: GameState, color: int, size: int):
     return (b == 0).sum()
 
 
-def _terminal_values(x: GameState, size: int):
+def terminal_values(x: GameState, size: int):
     score = _count_point(x, size)
     reward_bw = jax.lax.select(
         score[0] - x._komi > score[1],
