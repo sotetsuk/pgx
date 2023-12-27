@@ -433,7 +433,7 @@ def _ko_may_occur(state: State, xy: int) -> Array:
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
     oppo_color = _opponent_color(state)
     is_occupied_by_opp = (
-            state._x._chain_id_board[_neighbour(xy, size)] * oppo_color > 0
+        state._x._chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     )
     return (oob | is_occupied_by_opp).all()
 
