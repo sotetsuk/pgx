@@ -199,11 +199,7 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
     # increment turns
-    state = state.replace(
-        _x=state._x.replace(
-            _turn=(state._x._turn + 1) % 2
-        )
-    )  # type: ignore
+    state = state.replace(_x=state._x.replace(_turn=(state._x._turn + 1) % 2))  # type: ignore
     state = state.replace(current_player=(state.current_player + 1) % 2)  # type: ignore
 
     # add legal action mask
@@ -219,11 +215,7 @@ def _step(state: State, action: int, size: int) -> State:
     board_history = board_history.at[0].set(
         jnp.clip(state._x._chain_id_board, -1, 1).astype(jnp.int32)
     )
-    state = state.replace(
-        _x=state._x.replace(
-            _board_history=board_history
-        )
-    )  # type:ignore
+    state = state.replace(_x=state._x.replace(_board_history=board_history))  # type:ignore
 
     # check PSK up to 8-steps before
     state = _check_PSK(state)
@@ -236,12 +228,7 @@ def _pass_move(state: State, size) -> State:
         # consecutive passes results in the game end
         lambda: state.replace(terminated=TRUE, rewards=_get_reward(state, size)),  # type: ignore
         # One pass continues the game
-        lambda: state.replace(
-            _x=state._x.replace(
-                _passed=TRUE,
-            ),
-            rewards=jnp.zeros(2, dtype=jnp.float32)
-        ),  # type: ignore
+        lambda: state.replace(_x=state._x.replace(_passed=TRUE), rewards=jnp.zeros(2, dtype=jnp.float32)),  # type: ignore
     )
 
 
