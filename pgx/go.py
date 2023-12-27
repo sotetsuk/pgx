@@ -216,7 +216,7 @@ def _step_game_step(x: GameState, action: int, size: int) -> GameState:
 
     # PSK
     is_psk = _check_PSK(x)
-    x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))
+    x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))  # type: ignore
 
     return x
 
@@ -230,13 +230,11 @@ def _step(state: State, action: int, size: int) -> State:
     rewards = jax.lax.cond(
         x.is_terminal,
         lambda: _get_reward(state, size),
-        lambda: jnp.zeros_like(state.rewards)
+        lambda: jnp.zeros_like(state.rewards),
     )
 
     rewards = jax.lax.select(
-        x.is_psk,
-        jnp.float32([-1, -1]).at[current_player].set(1.0),
-        rewards
+        x.is_psk, jnp.float32([-1, -1]).at[current_player].set(1.0), rewards
     )
 
     return state.replace(  # type:ignore
@@ -251,17 +249,17 @@ def _step(state: State, action: int, size: int) -> State:
     )
 
 
-def _pass_move(state: GameState) -> State:
+def _pass_move(state: GameState) -> GameState:
     return jax.lax.cond(
         state._passed,
         # consecutive passes results in the game end
         lambda: state.replace(is_terminal=TRUE),  # type: ignore
         # One pass continues the game
-        lambda: state.replace(_passed=TRUE)
+        lambda: state.replace(_passed=TRUE),  # type: ignore
     )
 
 
-def _not_pass_move(state: GameState, action, size) -> State:
+def _not_pass_move(state: GameState, action, size) -> GameState:
     state = state.replace(_passed=FALSE)  # type: ignore
     xy = action
     num_captured_stones_before = state._num_captured_stones[state._turn]
@@ -329,9 +327,7 @@ def _merge_around_xy(i, state: GameState, xy, size):
 def _set_stone(state: GameState, xy) -> State:
     my_color = _my_color(state)
     return state.replace(  # type: ignore
-        _chain_id_board=state._chain_id_board.at[xy].set(
-            (xy + 1) * my_color
-        ),
+        _chain_id_board=state._chain_id_board.at[xy].set((xy + 1) * my_color),
     )
 
 
@@ -354,7 +350,7 @@ def _merge_chain(state: GameState, xy, adj_xy):
 
 def _remove_stones(
     state: GameState, rm_chain_id, rm_stone_xy, ko_may_occur
-) -> State:
+) -> GameState:
     surrounded_stones = state._chain_id_board == rm_chain_id
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
     chain_id_board = jnp.where(surrounded_stones, 0, state._chain_id_board)
@@ -365,9 +361,9 @@ def _remove_stones(
     )
     return state.replace(  # type: ignore
         _chain_id_board=chain_id_board,
-        _num_captured_stones=state._num_captured_stones.at[
-            state._turn
-        ].add(num_captured_stones),
+        _num_captured_stones=state._num_captured_stones.at[state._turn].add(
+            num_captured_stones
+        ),
         _ko=ko,
     )
 
@@ -563,7 +559,15 @@ def _check_PSK(state: GameState):
 
     Anyway, we believe it's effect is very small as PSK rarely happens, especially in 19x19 board.
     """
-    return ~state._passed & (jnp.abs(state._board_history[0] - state._board_history[1:]).sum(axis=1) == 0).any()
+    return (
+        ~state._passed
+        & (
+            jnp.abs(state._board_history[0] - state._board_history[1:]).sum(
+                axis=1
+            )
+            == 0
+        ).any()
+    )
 
 
 # only for debug
