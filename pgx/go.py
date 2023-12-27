@@ -233,11 +233,7 @@ def _pass_move(state: State, size) -> State:
 
 
 def _not_pass_move(state: State, action, size) -> State:
-    state = state.replace(
-        _x=state._x.replace(
-            _passed=FALSE
-        )
-    )  # type: ignore
+    state = state.replace(_x=state._x.replace(_passed=FALSE))  # type: ignore
     xy = action
     num_captured_stones_before = state._x._num_captured_stones[state._x._turn]
 
@@ -281,10 +277,7 @@ def _not_pass_move(state: State, action, size) -> State:
     state = jax.lax.cond(
         state._x._num_captured_stones[state._x._turn] - num_captured_stones_before == 1,
         lambda: state,
-        lambda: state.replace(
-            _x=state._x.replace(
-                _ko=jnp.int32(-1)),
-            )  # type:ignore
+        lambda: state.replace(_x=state._x.replace(_ko=jnp.int32(-1)))  # type:ignore
     )
     # fmt: on
 
@@ -325,11 +318,7 @@ def _merge_chain(state: State, xy, adj_xy):
         state._x._chain_id_board == large_id, small_id, state._x._chain_id_board
     )
 
-    return state.replace(
-        _x=state._x.replace(
-            _chain_id_board=chain_id_board
-        )
-    )  # type: ignore
+    return state.replace(_x=state._x.replace(_chain_id_board=chain_id_board))  # type: ignore
 
 
 def _remove_stones(
