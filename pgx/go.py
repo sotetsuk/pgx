@@ -160,6 +160,11 @@ def _observe(state: State, player_id, size, history_length):
 
 
 def _observe_game_state(x: GameState, my_turn, size, history_length):
+    #  my_turn  x._turn  my_color  opp_color
+    #     0        0        1         -1
+    #     0        1       -1          1
+    #     1        0        1         -1
+    #     1        1       -1          1
     current_player_color = _my_color(x)  # -1 or 1
     my_color, opp_color = jax.lax.cond(
         my_turn == x._turn,
