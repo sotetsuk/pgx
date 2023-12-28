@@ -43,9 +43,7 @@ def _imp_reward(table_a_reward: Array, table_b_reward: Array) -> Array:
                           1300, 1500, 1750, 2000, 2250,
                           2500, 3000, 3500, 4000], dtype=jnp.float32)
     # fmt: on
-    win = jax.lax.cond(
-        table_a_reward[0] + table_b_reward[0] >= 0, lambda: 1, lambda: -1
-    )
+    win = jax.lax.cond(table_a_reward[0] + table_b_reward[0] >= 0, lambda: 1, lambda: -1)
 
     def condition_fun(imp_diff):
         imp, difference_point = imp_diff
@@ -61,9 +59,7 @@ def _imp_reward(table_a_reward: Array, table_b_reward: Array) -> Array:
         body_fun,
         (0, abs(table_a_reward[0] + table_b_reward[0])),
     )
-    return jnp.array(
-        [imp * win, imp * win, -imp * win, -imp * win], dtype=jnp.float32
-    )
+    return jnp.array([imp * win, imp * win, -imp * win, -imp * win], dtype=jnp.float32)
 
 
 @jax.jit
@@ -127,9 +123,7 @@ def _duplicate_init(
 
 
 @jax.jit
-def duplicate_step(
-    state: pgx.State, action, table_a_reward, has_duplicate_result
-):
+def duplicate_step(state: pgx.State, action, table_a_reward, has_duplicate_result):
     """step function to perform a DUPLICATE match"""
     state = env.step(state=state, action=action)
     return jax.lax.cond(
@@ -138,9 +132,7 @@ def duplicate_step(
         lambda: jax.lax.cond(
             has_duplicate_result,
             lambda: (
-                state.replace(  # type: ignore
-                    reward=_imp_reward(table_a_reward, state.rewards)
-                ),
+                state.replace(reward=_imp_reward(table_a_reward, state.rewards)),  # type: ignore
                 jnp.zeros(4, dtype=jnp.float32),
                 jnp.bool_(True),
             ),

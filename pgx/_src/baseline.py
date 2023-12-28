@@ -21,9 +21,7 @@ BaselineModelId = Literal[
 ]
 
 
-def make_baseline_model(
-    model_id: BaselineModelId, download_dir: str = "baselines"
-):
+def make_baseline_model(model_id: BaselineModelId, download_dir: str = "baselines"):
     if model_id in (
         "animal_shogi_v0",
         "gardner_chess_v0",
@@ -44,41 +42,29 @@ def make_baseline_model(
         assert False
 
 
-def _make_az_baseline_model(
-    model_id: BaselineModelId, download_dir: str = "baselines"
-):
+def _make_az_baseline_model(model_id: BaselineModelId, download_dir: str = "baselines"):
     import haiku as hk
 
-    model_args, model_params, model_state = _load_baseline_model(
-        model_id, download_dir
-    )
+    model_args, model_params, model_state = _load_baseline_model(model_id, download_dir)
 
     def forward_fn(x, is_eval=False):
         net = _create_az_model_v0(**model_args)
-        policy_out, value_out = net(
-            x, is_training=not is_eval, test_local_stats=False
-        )
+        policy_out, value_out = net(x, is_training=not is_eval, test_local_stats=False)
         return policy_out, value_out
 
     forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
 
     def apply(obs):
-        (logits, value), _ = forward.apply(
-            model_params, model_state, obs, is_eval=True
-        )
+        (logits, value), _ = forward.apply(model_params, model_state, obs, is_eval=True)
         return logits, value
 
     return apply
 
 
-def _make_minatar_baseline_model(
-    model_id: BaselineModelId, download_dir: str = "baselines"
-):
+def _make_minatar_baseline_model(model_id: BaselineModelId, download_dir: str = "baselines"):
     import haiku as hk
 
-    model_args, model_params, model_state = _load_baseline_model(
-        model_id, download_dir
-    )
+    model_args, model_params, model_state = _load_baseline_model(model_id, download_dir)
     del model_state
 
     class ActorCritic(hk.Module):
@@ -96,9 +82,7 @@ def _make_minatar_baseline_model(
                 activation = jax.nn.tanh
             x = hk.Conv2D(32, kernel_shape=2)(x)
             x = jax.nn.relu(x)
-            x = hk.avg_pool(
-                x, window_shape=(2, 2), strides=(2, 2), padding="VALID"
-            )
+            x = hk.avg_pool(x, window_shape=(2, 2), strides=(2, 2), padding="VALID")
             x = x.reshape((x.shape[0], -1))  # flatten
             x = hk.Linear(64)(x)
             x = jax.nn.relu(x)
@@ -130,9 +114,7 @@ def _make_minatar_baseline_model(
     return apply
 
 
-def _load_baseline_model(
-    baseline_model: BaselineModelId, basedir: str = "baselines"
-):
+def _load_baseline_model(baseline_model: BaselineModelId, basedir: str = "baselines"):
     os.makedirs(basedir, exist_ok=True)
 
     # download baseline model if not exists
@@ -226,36 +208,26 @@ def _create_az_model_v0(
             x = hk.Conv2D(self.num_channels, kernel_shape=3)(x)
 
             if not self.resnet_v2:
-                x = hk.BatchNorm(True, True, 0.9)(
-                    x, is_training, test_local_stats
-                )
+                x = hk.BatchNorm(True, True, 0.9)(x, is_training, test_local_stats)
                 x = jax.nn.relu(x)
 
             for i in range(self.num_layers):
-                x = self.resnet_cls(self.num_channels, name=f"block_{i}")(
-                    x, is_training, test_local_stats
-                )
+                x = self.resnet_cls(self.num_channels, name=f"block_{i}")(x, is_training, test_local_stats)
 
             if self.resnet_v2:
-                x = hk.BatchNorm(True, True, 0.9)(
-                    x, is_training, test_local_stats
-                )
+                x = hk.BatchNorm(True, True, 0.9)(x, is_training, test_local_stats)
                 x = jax.nn.relu(x)
 
             # policy head
             logits = hk.Conv2D(output_channels=2, kernel_shape=1)(x)
-            logits = hk.BatchNorm(True, True, 0.9)(
-                logits, is_training, test_local_stats
-            )
+            logits = hk.BatchNorm(True, True, 0.9)(logits, is_training, test_local_stats)
             logits = jax.nn.relu(logits)
             logits = hk.Flatten()(logits)
             logits = hk.Linear(self.num_actions)(logits)
 
             # value head
             value = hk.Conv2D(output_channels=1, kernel_shape=1)(x)
-            value = hk.BatchNorm(True, True, 0.9)(
-                value, is_training, test_local_stats
-            )
+            value = hk.BatchNorm(True, True, 0.9)(value, is_training, test_local_stats)
             value = jax.nn.relu(value)
             value = hk.Flatten()(value)
             value = hk.Linear(self.num_channels)(value)

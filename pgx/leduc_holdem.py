@@ -86,9 +86,7 @@ class LeducHoldem(core.Env):
 def _init(rng: PRNGKey) -> State:
     rng1, rng2 = jax.random.split(rng, 2)
     current_player = jnp.int32(jax.random.bernoulli(rng1))
-    init_card = jax.random.permutation(
-        rng2, jnp.int32([0, 0, 1, 1, 2, 2]), independent=True
-    )
+    init_card = jax.random.permutation(rng2, jnp.int32([0, 0, 1, 1, 2, 2]), independent=True)
     return State(  # type:ignore
         _first_player=current_player,
         current_player=current_player,
@@ -103,21 +101,15 @@ def _step(state: State, action):
     chips = jax.lax.switch(
         action,
         [
-            lambda: state._chips.at[state.current_player].set(
-                state._chips[1 - state.current_player]
-            ),  # CALL
-            lambda: state._chips.at[state.current_player].set(
-                jnp.max(state._chips) + _raise_chips(state)
-            ),  # RAISE
+            lambda: state._chips.at[state.current_player].set(state._chips[1 - state.current_player]),  # CALL
+            lambda: state._chips.at[state.current_player].set(jnp.max(state._chips) + _raise_chips(state)),  # RAISE
             lambda: state._chips,  # FOLD
         ],
     )
 
     round_over, terminated, reward = _check_round_over(state, action)
     last_action = jax.lax.select(round_over, INVALID_ACTION, action)
-    current_player = jax.lax.select(
-        round_over, state._first_player, 1 - state.current_player
-    )
+    current_player = jax.lax.select(round_over, state._first_player, 1 - state.current_player)
     raise_count = jax.lax.select(
         round_over,
         jnp.int32(0),
@@ -171,15 +163,9 @@ def _check_round_over(state, action):
 
 def _get_unit_reward(state: State):
     win_by_one_pair = state._cards[state.current_player] == state._cards[2]
-    lose_by_one_pair = (
-        state._cards[1 - state.current_player] == state._cards[2]
-    )
+    lose_by_one_pair = state._cards[1 - state.current_player] == state._cards[2]
     win = win_by_one_pair | (
-        ~lose_by_one_pair
-        & (
-            state._cards[state.current_player]
-            > state._cards[1 - state.current_player]
-        )
+        ~lose_by_one_pair & (state._cards[state.current_player] > state._cards[1 - state.current_player])
     )
     reward = jax.lax.select(
         win,
@@ -187,8 +173,7 @@ def _get_unit_reward(state: State):
         jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
     )
     return jax.lax.select(
-        state._cards[state.current_player]
-        == state._cards[1 - state.current_player],  # Draw
+        state._cards[state.current_player] == state._cards[1 - state.current_player],  # Draw
         jnp.float32([0, 0]),
         reward,
     )
@@ -209,9 +194,7 @@ def _observe(state: State, player_id) -> Array:
     """
     obs = jnp.zeros(34, dtype=jnp.bool_)
     obs = obs.at[state._cards[player_id]].set(TRUE)
-    obs = jax.lax.select(
-        state._round == 1, obs.at[3 + state._cards[2]].set(TRUE), obs
-    )
+    obs = jax.lax.select(state._round == 1, obs.at[3 + state._cards[2]].set(TRUE), obs)
     obs = obs.at[6 + state._chips[player_id]].set(TRUE)
     obs = obs.at[20 + state._chips[1 - player_id]].set(TRUE)
 

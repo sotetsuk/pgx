@@ -70,11 +70,7 @@ class Visualizer:
         color_theme: Optional[ColorTheme] = None,
         scale: Optional[float] = None,
     ) -> None:
-        color_theme = (
-            color_theme
-            if color_theme is not None
-            else global_config.color_theme
-        )
+        color_theme = color_theme if color_theme is not None else global_config.color_theme
         scale = scale if scale is not None else global_config.scale
 
         self.config = {
@@ -193,10 +189,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 4
             self.config["BOARD_HEIGHT"] = 4
             self._make_dwg_group = _make_animalshogi_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "dimgray",
                     "black",
@@ -223,10 +218,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 17
             self.config["BOARD_HEIGHT"] = 14
             self._make_dwg_group = _make_backgammon_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "darkgray",
@@ -253,10 +247,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 14
             self.config["BOARD_HEIGHT"] = 10
             self._make_dwg_group = _make_bridge_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "gray",
                     "black",
@@ -283,10 +276,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
             self._make_dwg_group = _make_chess_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "none",
                     "none",
@@ -313,10 +305,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 5
             self.config["BOARD_HEIGHT"] = 5
             self._make_dwg_group = _make_gardner_chess_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "none",
                     "none",
@@ -343,10 +334,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 7
             self.config["BOARD_HEIGHT"] = 7
             self._make_dwg_group = _make_connect_four_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "darkgray",
@@ -385,10 +375,9 @@ class Visualizer:
                     _state._x.size  # type: ignore
                 )  # type:ignore
             self._make_dwg_group = _make_go_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "darkgray",
@@ -429,10 +418,9 @@ class Visualizer:
                     _state._size * jnp.sqrt(3) / 2  # type:ignore
                 )
             self._make_dwg_group = _make_hex_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "darkgray",
                     "black",
@@ -459,10 +447,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
             self._make_dwg_group = _make_kuhnpoker_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "lightgray",
@@ -489,10 +476,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
             self._make_dwg_group = _make_leducHoldem_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "gray",
                     "lightgray",
@@ -519,10 +505,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 70
             self.config["BOARD_HEIGHT"] = 70
             self._make_dwg_group = _make_mahjong_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "white",
@@ -549,10 +534,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 8
             self.config["BOARD_HEIGHT"] = 8
             self._make_dwg_group = _make_othello_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "black",
                     "darkgray",
@@ -579,10 +563,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 4
             self.config["BOARD_HEIGHT"] = 4
             self._make_dwg_group = _make_2048_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "lightgray",
                     "",
@@ -609,13 +592,10 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 10
             self.config["BOARD_HEIGHT"] = 9
             self._make_dwg_group = _make_shogi_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
-                self.config["COLOR_SET"] = ColorSet(
-                    "gray", "black", "gray", "gray", "#1e1e1e", "gray", ""
-                )
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
+                self.config["COLOR_SET"] = ColorSet("gray", "black", "gray", "gray", "#1e1e1e", "gray", "")
             else:
                 self.config["COLOR_SET"] = ColorSet(
                     "white",
@@ -633,10 +613,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 15
             self.config["BOARD_HEIGHT"] = 10
             self._make_dwg_group = _make_sparrowmahjong_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "lightgray",
                     "dimgray",
@@ -663,10 +642,9 @@ class Visualizer:
             self.config["BOARD_WIDTH"] = 3
             self.config["BOARD_HEIGHT"] = 3
             self._make_dwg_group = _make_tictactoe_dwg  # type:ignore
-            if (
-                self.config["COLOR_THEME"] is None
-                and self.config["COLOR_THEME"] == "dark"
-            ) or self.config["COLOR_THEME"] == "dark":
+            if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
+                "COLOR_THEME"
+            ] == "dark":
                 self.config["COLOR_SET"] = ColorSet(
                     "gray",
                     "black",
@@ -676,9 +654,7 @@ class Visualizer:
                     "gainsboro",
                 )
             else:
-                self.config["COLOR_SET"] = ColorSet(
-                    "white", "black", "lightgray", "white", "white", "black"
-                )
+                self.config["COLOR_SET"] = ColorSet("white", "black", "lightgray", "white", "white", "black")
         else:
             assert False
 
@@ -709,9 +685,7 @@ def save_svg_animation(
     scale: Optional[float] = None,
     frame_duration_seconds: Optional[float] = None,
 ) -> None:
-    assert not states[0].env_id.startswith(
-        "minatar"
-    ), "MinAtar does not support svg animation."
+    assert not states[0].env_id.startswith("minatar"), "MinAtar does not support svg animation."
     assert str(filename).endswith(".svg")
     v = Visualizer(color_theme=color_theme, scale=scale)
 
@@ -723,14 +697,7 @@ def save_svg_animation(
     for i, state in enumerate(states):
         dwg = v.get_dwg(states=state)
         assert (
-            len(
-                [
-                    e
-                    for e in dwg.elements
-                    if type(e) is svgwrite.container.Group
-                ]
-            )
-            == 1
+            len([e for e in dwg.elements if type(e) is svgwrite.container.Group]) == 1
         ), "Drawing must contain only one group"
         group: svgwrite.container.Group = dwg.elements[-1]
         group["id"] = f"_fr{i:x}"  # hex frame number
@@ -746,8 +713,6 @@ def save_svg_animation(
 
     for i, group in enumerate(frame_groups):
         dwg.add(group)
-        style += (
-            f"#{group['id']}{{animation-delay:{i * frame_duration_seconds}s}}"
-        )
+        style += f"#{group['id']}{{animation-delay:{i * frame_duration_seconds}s}}"
     dwg.defs.add(svgwrite.container.Style(content=style))
     dwg.saveas(filename)

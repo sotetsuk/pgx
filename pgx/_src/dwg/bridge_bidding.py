@@ -64,11 +64,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
             )
 
             # card
-            card = [
-                TO_CARD[i % NUM_CARD_TYPE]
-                for i in hand
-                if j * NUM_CARD_TYPE <= i < (j + 1) * NUM_CARD_TYPE
-            ][::-1]
+            card = [TO_CARD[i % NUM_CARD_TYPE] for i in hand if j * NUM_CARD_TYPE <= i < (j + 1) * NUM_CARD_TYPE][::-1]
             if card != [] and card[-1] == "A":
                 card = card[-1:] + card[:-1]
             card_str = " ".join(card)
@@ -81,9 +77,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
                             x_offset[i] + 40,
                             y_offset[i] + 30 * (j + 1) + newline_offset,
                         ),
-                        fill="orangered"
-                        if 0 < j < 3
-                        else color_set.text_color,
+                        fill="orangered" if 0 < j < 3 else color_set.text_color,
                         font_size="24px",
                         font_family="Courier",
                         font_weight="bold",
@@ -97,9 +91,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
                             x_offset[i] + 40,
                             y_offset[i] + 30 * (j + 1) + newline_offset,
                         ),
-                        fill="orangered"
-                        if 0 < j < 3
-                        else color_set.text_color,
+                        fill="orangered" if 0 < j < 3 else color_set.text_color,
                         font_size="24px",
                         font_family="Courier",
                         font_weight="bold",
@@ -131,9 +123,7 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
                             x_offset[i] + 40,
                             y_offset[i] + 30 * (j + 1) + newline_offset,
                         ),
-                        fill="orangered"
-                        if 0 < j < 3
-                        else color_set.text_color,
+                        fill="orangered" if 0 < j < 3 else color_set.text_color,
                         font_size="24px",
                         font_family="Courier",
                         font_weight="bold",
@@ -211,20 +201,13 @@ def _make_bridge_dwg(dwg, state: BridgeBiddingState, config):
         if act == -1:
             break
         act_str = (
-            str((act - BID_OFFSET_NUM) // 5 + 1)
-            + DENOMINATIONS[(act - BID_OFFSET_NUM) % 5]
+            str((act - BID_OFFSET_NUM) // 5 + 1) + DENOMINATIONS[(act - BID_OFFSET_NUM) % 5]
             if BID_OFFSET_NUM <= act < 35 + BID_OFFSET_NUM
             else ACT[act]
         )
         color = (
             "orangered"
-            if (
-                (act > BID_OFFSET_NUM)
-                and (
-                    (act - BID_OFFSET_NUM) % 5 == 1
-                    or (act - BID_OFFSET_NUM) % 5 == 2
-                )
-            )
+            if ((act > BID_OFFSET_NUM) and ((act - BID_OFFSET_NUM) % 5 == 1 or (act - BID_OFFSET_NUM) % 5 == 2))
             or act == 1
             or act == 2
             else color_set.text_color

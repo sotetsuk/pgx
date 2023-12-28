@@ -27,9 +27,7 @@ class Hand:
                     jax.lax.fori_loop(
                         0,
                         4,
-                        lambda k, h: Hand.add(
-                            h, deck[-(16 * i + 4 * j + k + 1)]  # type: ignore
-                        ),
+                        lambda k, h: Hand.add(h, deck[-(16 * i + 4 * j + k + 1)]),  # type: ignore
                         hand[j],
                     )
                 )
@@ -49,16 +47,12 @@ class Hand:
     @staticmethod
     def can_riichi(hand: Array):
         """手牌は14枚"""
-        return jax.vmap(
-            lambda i: (hand[i] != 0) & Hand.is_tenpai(Hand.sub(hand, i))
-        )(jnp.arange(34)).any()
+        return jax.vmap(lambda i: (hand[i] != 0) & Hand.is_tenpai(Hand.sub(hand, i)))(jnp.arange(34)).any()
 
     @staticmethod
     def is_tenpai(hand: Array):
         """手牌は13枚"""
-        return jax.vmap(
-            lambda tile: (hand[tile] != 4) & Hand.can_ron(hand, tile)
-        )(jnp.arange(34)).any()
+        return jax.vmap(lambda tile: (hand[tile] != 4) & Hand.can_ron(hand, tile))(jnp.arange(34)).any()
 
     @staticmethod
     def can_tsumo(hand: Array):
@@ -69,17 +63,7 @@ class Hand:
             & (hand[17] > 0)
             & (hand[18] > 0)
             & jnp.all(hand[26:] > 0)
-            & (
-                (
-                    hand[0]
-                    + hand[8]
-                    + hand[9]
-                    + hand[17]
-                    + hand[18]
-                    + jnp.sum(hand[26:])
-                )
-                == 14
-            )
+            & ((hand[0] + hand[8] + hand[9] + hand[17] + hand[18] + jnp.sum(hand[26:])) == 14)
         )
         seven_pairs = jnp.sum(hand == 2) == 7
 
@@ -142,18 +126,9 @@ class Hand:
             lambda: jax.lax.switch(
                 action - Action.CHI_L,
                 [
-                    lambda: (tile % 9 < 7)
-                    & (hand[tile + 1] > 0)
-                    & (hand[tile + 2] > 0),
-                    lambda: (
-                        (tile % 9 < 8)
-                        & (tile % 9 > 0)
-                        & (hand[tile - 1] > 0)
-                        & (hand[tile + 1] > 0)
-                    ),
-                    lambda: (tile % 9 > 1)
-                    & (hand[tile - 2] > 0)
-                    & (hand[tile - 1] > 0),
+                    lambda: (tile % 9 < 7) & (hand[tile + 1] > 0) & (hand[tile + 2] > 0),
+                    lambda: ((tile % 9 < 8) & (tile % 9 > 0) & (hand[tile - 1] > 0) & (hand[tile + 1] > 0)),
+                    lambda: (tile % 9 > 1) & (hand[tile - 2] > 0) & (hand[tile - 1] > 0),
                 ],
             ),
         )

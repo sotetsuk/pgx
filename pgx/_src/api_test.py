@@ -54,9 +54,7 @@ def api_test_single(env: Env, num: int = 100, use_key=True):
     for _ in range(num):
         rng, subkey = jax.random.split(rng)
         state = init(subkey)
-        assert (
-            state.legal_action_mask.sum() != 0
-        ), "legal_action_mask at init state cannot be zero."
+        assert state.legal_action_mask.sum() != 0, "legal_action_mask at init state cannot be zero."
 
         assert state._step_count == 0
         curr_steps = state._step_count
@@ -72,9 +70,7 @@ def api_test_single(env: Env, num: int = 100, use_key=True):
             if not use_key:
                 subkey = None
             state = step(state, action, subkey)
-            assert (
-                state._step_count == curr_steps + 1
-            ), f"{state._step_count}, {curr_steps}"
+            assert state._step_count == curr_steps + 1, f"{state._step_count}, {curr_steps}"
             curr_steps += 1
 
             _validate_state(state)
@@ -135,9 +131,7 @@ def _validate_state(state: State):
     assert state.current_player.dtype == jnp.int32, state.current_player.dtype
     assert state.terminated.dtype == jnp.bool_, state.terminated.dtype
     assert state.rewards.dtype == jnp.float32, state.rewards.dtype
-    assert (
-        state.legal_action_mask.dtype == jnp.bool_
-    ), state.legal_action_mask.dtype
+    assert state.legal_action_mask.dtype == jnp.bool_, state.legal_action_mask.dtype
 
     # check public attributes
     public_attributes = [
@@ -158,9 +152,7 @@ def _validate_legal_actions(state: State):
     if state.terminated:
         # Agent can take any action at terminal state (but give no effect to the next state)
         # This is to avoid zero-division error by normalizing action probability by legal actions
-        assert (
-            state.legal_action_mask == jnp.ones_like(state.legal_action_mask)
-        ).all(), state.legal_action_mask
+        assert (state.legal_action_mask == jnp.ones_like(state.legal_action_mask)).all(), state.legal_action_mask
     else:
         ...
 

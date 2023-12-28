@@ -40,9 +40,7 @@ class State(core.State):
     # points(24) bar(2) off(2). black+, white-
     _board: Array = jnp.zeros(28, dtype=jnp.int32)
     _dice: Array = jnp.zeros(2, dtype=jnp.int32)  # 0~5: 1~6
-    _playable_dice: Array = jnp.zeros(
-        4, dtype=jnp.int32
-    )  # playable dice -1 for empty
+    _playable_dice: Array = jnp.zeros(4, dtype=jnp.int32)  # playable dice -1 for empty
     _played_dice_num: Array = jnp.int32(0)  # the number of dice played
     _turn: Array = jnp.int32(1)  # black: 0 white:1
 
@@ -55,9 +53,7 @@ class Backgammon(core.Env):
     def __init__(self):
         super().__init__()
 
-    def step(
-        self, state: core.State, action: Array, key: Optional[Array] = None
-    ) -> core.State:
+    def step(self, state: core.State, action: Array, key: Optional[Array] = None) -> core.State:
         assert key is not None, (
             "v2.0.0 changes the signature of step. Please specify PRNGKey at the third argument:\n\n"
             "  * <  v2.0.0: step(state, action)\n"
@@ -141,9 +137,7 @@ def _observe(state: State, player_id: Array) -> Array:
     return jax.lax.cond(
         player_id == state.current_player,
         lambda: jnp.concatenate((board, playable_dice_count_vec), axis=None),  # type: ignore
-        lambda: jnp.concatenate(
-            (board, jnp.zeros(6, dtype=jnp.int32)), axis=None  # type: ignore
-        ),
+        lambda: jnp.concatenate((board, jnp.zeros(6, dtype=jnp.int32)), axis=None),  # type: ignore
     )
 
 
@@ -157,19 +151,13 @@ def _to_playable_dice_count(playable_dice: Array) -> Array:
     Playable dice: 4, 4, 4, 4
     Return: [0, 0, 0, 0, 4, 0]
     """
-    dice_indices: Array = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int32
-    )  # maximum number of playable dice is 4
+    dice_indices: Array = jnp.array([0, 1, 2, 3], dtype=jnp.int32)  # maximum number of playable dice is 4
 
     def _insert_dice_num(idx: Array, playable_dice: Array) -> Array:
         vec: Array = jnp.zeros(6, dtype=jnp.int32)
-        return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(
-            1
-        ) + (playable_dice[idx] == -1) * vec
+        return (playable_dice[idx] != -1) * vec.at[playable_dice[idx]].set(1) + (playable_dice[idx] == -1) * vec
 
-    return jax.vmap(_insert_dice_num)(
-        dice_indices, jnp.tile(playable_dice, (4, 1))
-    ).sum(axis=0, dtype=jnp.int32)
+    return jax.vmap(_insert_dice_num)(dice_indices, jnp.tile(playable_dice, (4, 1))).sum(axis=0, dtype=jnp.int32)
 
 
 def _winning_step(
@@ -208,9 +196,7 @@ def _update_by_action(state: State, action: Array) -> State:
     terminated: Array = state.terminated
     board: Array = _move(state._board, action)
     played_dice_num: Array = jnp.int32(state._played_dice_num + 1)
-    playable_dice: Array = _update_playable_dice(
-        state._playable_dice, state._played_dice_num, state._dice, action
-    )
+    playable_dice: Array = _update_playable_dice(state._playable_dice, state._played_dice_num, state._dice, action)
     legal_action_mask: Array = _legal_action_mask(board, playable_dice)
     return jax.lax.cond(
         is_no_op,
@@ -288,9 +274,7 @@ def _roll_init_dice(rng: PRNGKey) -> Array:
 
 
 def _roll_dice(rng: PRNGKey) -> Array:
-    roll: Array = jax.random.randint(
-        rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int32
-    )
+    roll: Array = jax.random.randint(rng, shape=(1, 2), minval=0, maxval=6, dtype=jnp.int32)
     return roll[0]
 
 
@@ -307,9 +291,9 @@ def _set_playable_dice(dice: Array) -> Array:
     """
     -1 for empty
     """
-    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int32) + (
-        dice[0] != dice[1]
-    ) * jnp.array([dice[0], dice[1], -1, -1], dtype=jnp.int32)
+    return (dice[0] == dice[1]) * jnp.array([dice[0]] * 4, dtype=jnp.int32) + (dice[0] != dice[1]) * jnp.array(
+        [dice[0], dice[1], -1, -1], dtype=jnp.int32
+    )
 
 
 def _update_playable_dice(
@@ -320,22 +304,14 @@ def _update_playable_dice(
 ) -> Array:
     _n = played_dice_num
     die_array = jnp.array([action % 6] * 4, dtype=jnp.int32)
-    dice_indices: Array = jnp.array(
-        [0, 1, 2, 3], dtype=jnp.int32
-    )  # maximum number of playable dice is 4
+    dice_indices: Array = jnp.array([0, 1, 2, 3], dtype=jnp.int32)  # maximum number of playable dice is 4
 
     def _update_for_diff_dice(die: Array, idx: Array, playable_dice: Array):
-        return (die == playable_dice[idx]) * -1 + (
-            die != playable_dice[idx]
-        ) * playable_dice[idx]
+        return (die == playable_dice[idx]) * -1 + (die != playable_dice[idx]) * playable_dice[idx]
 
-    return (dice[0] == dice[1]) * playable_dice.at[3 - _n].set(-1) + (
-        dice[0] != dice[1]
-    ) * jax.vmap(_update_for_diff_dice)(
-        die_array, dice_indices, jnp.tile(playable_dice, (4, 1))
-    ).astype(
-        jnp.int32
-    )
+    return (dice[0] == dice[1]) * playable_dice.at[3 - _n].set(-1) + (dice[0] != dice[1]) * jax.vmap(
+        _update_for_diff_dice
+    )(die_array, dice_indices, jnp.tile(playable_dice, (4, 1))).astype(jnp.int32)
 
 
 def _home_board() -> Array:
@@ -399,25 +375,19 @@ def _calc_src(src: Array) -> int:
     """
     Translate src to board index.
     """
-    return (src == 1) * jnp.int32(_bar_idx()) + (src != 1) * jnp.int32(
-        src - 2
-    )  # type: ignore
+    return (src == 1) * jnp.int32(_bar_idx()) + (src != 1) * jnp.int32(src - 2)  # type: ignore
 
 
 def _calc_tgt(src: int, die) -> int:
     """
     Translate tgt to board index.
     """
-    return (src >= 24) * (jnp.int32(die) - 1) + (src < 24) * jnp.int32(
-        _from_board(src, die)
-    )  # type: ignore
+    return (src >= 24) * (jnp.int32(die) - 1) + (src < 24) * jnp.int32(_from_board(src, die))  # type: ignore
 
 
 def _from_board(src: int, die: int) -> int:
     _is_to_board = (src + die >= 0) & (src + die <= 23)
-    return _is_to_board * jnp.int32(src + die) + ((~_is_to_board)) * jnp.int32(
-        _off_idx()
-    )  # type: ignore
+    return _is_to_board * jnp.int32(src + die) + ((~_is_to_board)) * jnp.int32(_off_idx())  # type: ignore
 
 
 def _decompose_action(action: Array):
@@ -439,9 +409,7 @@ def _is_action_legal(board: Array, action: Array) -> bool:
     """
     src, die, tgt = _decompose_action(action)
     _is_to_point = (0 <= tgt) & (tgt <= 23) & (src >= 0)
-    return _is_to_point & _is_to_point_legal(board, src, tgt) | (
-        ~_is_to_point
-    ) & _is_to_off_legal(
+    return _is_to_point & _is_to_point_legal(board, src, tgt) | (~_is_to_point) & _is_to_off_legal(
         board, src, tgt, die
     )  # type: ignore
 
@@ -464,10 +432,7 @@ def _is_to_off_legal(board: Array, src: int, tgt: int, die: int):
     r = _rear_distance(board)
     d = _distance_to_goal(src)
     return (
-        (src >= 0)
-        & _exists(board, src)
-        & _is_all_on_home_board(board)
-        & ((d == die) | ((r <= die) & (r == d)))
+        (src >= 0) & _exists(board, src) & _is_all_on_home_board(board) & ((d == die) | ((r <= die) & (r == d)))
     )  # type: ignore
 
 
@@ -477,9 +442,7 @@ def _is_to_point_legal(board: Array, src: int, tgt: int) -> bool:
     """
     e = _exists(board, src)
     o = _is_open(board, tgt)
-    return ((src >= 24) & e & o) | (
-        (src < 24) & e & o & (board[_bar_idx()] == 0)
-    )  # type: ignore
+    return ((src >= 24) & e & o) | ((src < 24) & e & o & (board[_bar_idx()] == 0))  # type: ignore
 
 
 def _move(board: Array, action: Array) -> Array:
@@ -491,9 +454,7 @@ def _move(board: Array, action: Array) -> Array:
         -1 * (board[tgt] == -1)
     )  # If there is an opponent's checker on the target, hit it
     board = board.at[src].add(-1)
-    board = board.at[tgt].add(
-        1 + (board[tgt] == -1)
-    )  # If hit, the sign changes, so add 1
+    board = board.at[tgt].add(1 + (board[tgt] == -1))  # If hit, the sign changes, so add 1
     return board
 
 
@@ -531,15 +492,12 @@ def _remains_at_inner(board: Array) -> bool:
 
 def _legal_action_mask(board: Array, dice: Array) -> Array:
     no_op_mask = jnp.zeros(26 * 6, dtype=jnp.bool_).at[0:6].set(TRUE)
-    legal_action_mask = jax.vmap(
-        partial(_legal_action_mask_for_single_die, board=board)
-    )(die=dice).any(
+    legal_action_mask = jax.vmap(partial(_legal_action_mask_for_single_die, board=board))(die=dice).any(
         axis=0
     )  # (26 * 6)
     legal_action_exists = ~(legal_action_mask.sum() == 0)
     return (
-        legal_action_exists * legal_action_mask
-        + ~legal_action_exists * no_op_mask
+        legal_action_exists * legal_action_mask + ~legal_action_exists * no_op_mask
     )  # if there is no legal action, no-op is legal
 
 
@@ -547,30 +505,24 @@ def _legal_action_mask_for_single_die(board: Array, die) -> Array:
     """
     Legal action mask for a single die.
     """
-    return (die == -1) * jnp.zeros(26 * 6, dtype=jnp.bool_) + (
-        die != -1
-    ) * _legal_action_mask_for_valid_single_dice(board, die)
+    return (die == -1) * jnp.zeros(26 * 6, dtype=jnp.bool_) + (die != -1) * _legal_action_mask_for_valid_single_dice(
+        board, die
+    )
 
 
 def _legal_action_mask_for_valid_single_dice(board: Array, die) -> Array:
     """
     Legal action mask for a single die when the die is valid.
     """
-    src_indices = jnp.arange(
-        26, dtype=jnp.int32
-    )  # calc legal action for all src indices
+    src_indices = jnp.arange(26, dtype=jnp.int32)  # calc legal action for all src indices
 
     def _is_legal(idx: Array):
         action = idx * 6 + die
         legal_action_mask = jnp.zeros(26 * 6, dtype=jnp.bool_)
-        legal_action_mask = legal_action_mask.at[action].set(
-            _is_action_legal(board, action)
-        )
+        legal_action_mask = legal_action_mask.at[action].set(_is_action_legal(board, action))
         return legal_action_mask
 
-    legal_action_mask = jax.vmap(_is_legal)(src_indices).any(
-        axis=0
-    )  # (26 * 6)
+    legal_action_mask = jax.vmap(_is_legal)(src_indices).any(axis=0)  # (26 * 6)
     return legal_action_mask
 
 

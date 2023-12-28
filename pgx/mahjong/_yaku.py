@@ -76,9 +76,7 @@ class Yaku:
         dora: Array,
     ) -> int:
         """handはlast_tileを加えたもの"""
-        yaku, fan, fu = Yaku.judge(
-            hand, melds, n_meld, last, riichi, is_ron, dora
-        )
+        yaku, fan, fu = Yaku.judge(hand, melds, n_meld, last, riichi, is_ron, dora)
         score = fu << (fan + 2)
         return jax.lax.cond(
             fu == 0,
@@ -208,12 +206,7 @@ class Yaku:
 
         chow_range = chow | chow << 1 | chow << 2
 
-        loss = (
-            is_ron
-            & in_range
-            & ((chow_range >> pos & 1) == 0)
-            & (pung >> pos & 1)
-        )
+        loss = is_ron & in_range & ((chow_range >> pos & 1) == 0) & (pung >> pos & 1)
         # ロンして明刻扱いになってしまう場合
 
         n_concealed_pung += n_pung - loss
@@ -222,17 +215,7 @@ class Yaku:
 
         outside_pung = pung & 0b100000001
 
-        strong = (
-            in_range
-            & (
-                (1 << Yaku.head(code))
-                | ((chow & 1) << 2)
-                | (chow & 0b1000000)
-                | (chow << 1)
-            )
-            >> pos
-            & 1
-        )
+        strong = in_range & ((1 << Yaku.head(code)) | ((chow & 1) << 2) | (chow & 0b1000000) | (chow << 1)) >> pos & 1
         # 強い待ち(カンチャン, ペンチャン, 単騎)にできるか
 
         loss <<= outside_pung >> pos & 1
@@ -263,20 +246,13 @@ class Yaku:
         is_menzen = jax.lax.fori_loop(
             jnp.int8(0),
             n_meld,
-            lambda i, menzen: menzen
-            & (
-                Action.is_selfkan(Meld.action(melds[i]))
-                & (Meld.src(melds[i]) == 0)
-            ),
+            lambda i, menzen: menzen & (Action.is_selfkan(Meld.action(melds[i])) & (Meld.src(melds[i]) == 0)),
             True,
         )
 
         is_pinfu = jnp.full(
             Yaku.MAX_PATTERNS,
-            is_menzen
-            & jnp.all(hand[28:31] < 3)
-            & (hand[27] == 0)
-            & jnp.all(hand[31:34] == 0),
+            is_menzen & jnp.all(hand[28:31] < 3) & (hand[27] == 0) & jnp.all(hand[31:34] == 0),
         )
         # NOTE: 東場東家
 
@@ -316,9 +292,7 @@ class Yaku:
         fu = jnp.full(
             Yaku.MAX_PATTERNS,
             2 * (is_ron == 0)
-            + jax.lax.fori_loop(
-                jnp.int8(0), n_meld, lambda i, sum: sum + Meld.fu(melds[i]), 0
-            )
+            + jax.lax.fori_loop(jnp.int8(0), n_meld, lambda i, sum: sum + Meld.fu(melds[i]), 0)
             + (hand[27] == 2) * 4
             + jnp.any(hand[31:] == 2) * 2
             + (hand[27] == 3) * 4 * (2 - (is_ron & (27 == last)))
@@ -407,9 +381,7 @@ class Yaku:
         #        is_ron,
         #    )
 
-        n_concealed_pung += jnp.sum(hand[27:] >= 3) - (
-            is_ron & (last >= 27) & (hand[last] >= 3)
-        )
+        n_concealed_pung += jnp.sum(hand[27:] >= 3) - (is_ron & (last >= 27) & (hand[last] >= 3))
 
         fu *= is_pinfu == 0
         fu += 20 + 10 * (is_menzen & is_ron)
@@ -420,11 +392,7 @@ class Yaku:
         four_winds = jnp.sum(flatten[27:31] >= 3)
         three_dragons = jnp.sum(flatten[31:34] >= 3)
 
-        has_tanyao = (
-            jnp.any(flatten[1:8])
-            | jnp.any(flatten[10:17])
-            | jnp.any(flatten[19:26])
-        )
+        has_tanyao = jnp.any(flatten[1:8]) | jnp.any(flatten[10:17]) | jnp.any(flatten[19:26])
         has_honor = jnp.any(flatten[27:] > 0)
         is_flush = (
             jnp.any(flatten[0:9] > 0).astype(int)
@@ -573,14 +541,8 @@ class Yaku:
                 lambda: Hand.add(hand, target, 4),
                 lambda: Hand.add(hand, target, 3),
                 lambda: Hand.add(hand, target, 4),
-                lambda: Hand.add(
-                    Hand.add(Hand.add(hand, target + 1), target + 2), target
-                ),
-                lambda: Hand.add(
-                    Hand.add(Hand.add(hand, target - 1), target + 1), target
-                ),
-                lambda: Hand.add(
-                    Hand.add(Hand.add(hand, target - 2), target - 1), target
-                ),
+                lambda: Hand.add(Hand.add(Hand.add(hand, target + 1), target + 2), target),
+                lambda: Hand.add(Hand.add(Hand.add(hand, target - 1), target + 1), target),
+                lambda: Hand.add(Hand.add(Hand.add(hand, target - 2), target - 1), target),
             ],
         )

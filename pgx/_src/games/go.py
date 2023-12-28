@@ -65,9 +65,7 @@ class Game:
 
         # update board history
         board_history = jnp.roll(x.board_history, self.size**2)
-        board_history = board_history.at[0].set(
-            jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
-        )
+        board_history = board_history.at[0].set(jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32))
         x = x._replace(board_history=board_history)
 
         # check PSK
@@ -86,11 +84,7 @@ class Game:
         log = _make(jnp.arange(history_length * 2))
         color = jnp.full_like(log[0], my_turn)  # black=0, white=1
 
-        return (
-            jnp.vstack([log, color])
-            .transpose()
-            .reshape((self.size, self.size, -1))
-        )
+        return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
     def legal_action_mask(self, state: GameState) -> Array:
         """Logic is highly inspired by OpenSpiel's Go implementation"""
@@ -114,11 +108,7 @@ class Game:
             _has_empty = is_empty[neighbors]
             _has_liberty = has_liberty[neighbors]
             _kills_opp = kills_opp[neighbors]
-            return (
-                (on_board & _has_empty).any()
-                | (on_board & _kills_opp).any()
-                | (on_board & _has_liberty).any()
-            )
+            return (on_board & _has_empty).any() | (on_board & _kills_opp).any() | (on_board & _has_liberty).any()
 
         neighbor_ok = is_neighbor_ok(jnp.arange(self.size**2))
         legal_action_mask = is_empty & neighbor_ok
@@ -142,16 +132,12 @@ class Game:
             jnp.array([-1, 1], dtype=jnp.float32),
         )
         to_play = x.turn
-        reward_bw = jax.lax.select(
-            x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
-        )
+        reward_bw = jax.lax.select(x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw)
         return reward_bw
 
 
 def _pass_move(state: GameState) -> GameState:
-    return state._replace(
-        consecutive_pass_count=state.consecutive_pass_count + 1
-    )
+    return state._replace(consecutive_pass_count=state.consecutive_pass_count + 1)
 
 
 def _not_pass_move(state: GameState, action, size) -> GameState:
@@ -167,16 +153,9 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     chain_id = state.chain_id_board[adj_xy]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(chain_id) - 1
-    is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[
-        chain_ix
-    ] * num_pseudo[chain_ix]
+    is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
-    is_killed = (
-        (adj_xy != -1)
-        & (chain_id * oppo_color > 0)
-        & is_atari
-        & (single_liberty == xy)
-    )
+    is_killed = (adj_xy != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == xy)
     state = jax.lax.fori_loop(
         0,
         4,
@@ -190,9 +169,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     state = _set_stone(state, xy)
 
     # Merge neighbours
-    state = jax.lax.fori_loop(
-        0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state
-    )
+    state = jax.lax.fori_loop(0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state)
 
     # Check Ko
     # fmt: off
@@ -243,9 +220,7 @@ def _merge_chain(state: GameState, xy, adj_xy):
     return state._replace(chain_id_board=chain_id_board)
 
 
-def _remove_stones(
-    state: GameState, rm_chain_id, rm_stone_xy, ko_may_occur
-) -> GameState:
+def _remove_stones(state: GameState, rm_chain_id, rm_stone_xy, ko_may_occur) -> GameState:
     surrounded_stones = state.chain_id_board == rm_chain_id
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
     chain_id_board = jnp.where(surrounded_stones, 0, state.chain_id_board)
@@ -256,9 +231,7 @@ def _remove_stones(
     )
     return state._replace(
         chain_id_board=chain_id_board,
-        num_captured_stones=state.num_captured_stones.at[state.turn].add(
-            num_captured_stones
-        ),
+        num_captured_stones=state.num_captured_stones.at[state.turn].add(num_captured_stones),
         ko=ko,
     )
 
@@ -268,9 +241,7 @@ def _count(state: GameState, size):
     chain_id_board = jnp.abs(state.chain_id_board)
     is_empty = chain_id_board == 0
     idx_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1), ZERO)
-    idx_squared_sum = jnp.where(
-        is_empty, jnp.arange(1, size**2 + 1) ** 2, ZERO
-    )
+    idx_squared_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1) ** 2, ZERO)
 
     @jax.vmap
     def _count_neighbor(xy):
@@ -295,9 +266,7 @@ def _count(state: GameState, size):
 
     @jax.vmap
     def _idx_squared_sum(x):
-        return jnp.where(
-            chain_id_board == (x + 1), idx_squared_sum, ZERO
-        ).sum()
+        return jnp.where(chain_id_board == (x + 1), idx_squared_sum, ZERO).sum()
 
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
@@ -316,9 +285,7 @@ def _ko_may_occur(state: GameState, xy: int) -> Array:
     y = xy % size
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
     oppo_color = _opponent_color(state)
-    is_occupied_by_opp = (
-        state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
-    )
+    is_occupied_by_opp = state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     return (oob | is_occupied_by_opp).all()
 
 
@@ -372,10 +339,8 @@ def _check_PSK(state: GameState):
 def _count_point(state: GameState, size):
     return jnp.array(
         [
-            _count_ji(state, 1, size)
-            + jnp.count_nonzero(state.chain_id_board > 0),
-            _count_ji(state, -1, size)
-            + jnp.count_nonzero(state.chain_id_board < 0),
+            _count_ji(state, 1, size) + jnp.count_nonzero(state.chain_id_board > 0),
+            _count_ji(state, -1, size) + jnp.count_nonzero(state.chain_id_board < 0),
         ],
         dtype=jnp.float32,
     )
@@ -391,10 +356,7 @@ def _count_ji(state: GameState, color: int, size: int):
 
     def is_opp_neighbours(b):
         # True if empty and any of neighbours is opponent
-        return (b == 0) & (
-            (b[neighbours.flatten()] == -1).reshape(size**2, 4)
-            & (neighbours != -1)
-        ).any(axis=1)
+        return (b == 0) & ((b[neighbours.flatten()] == -1).reshape(size**2, 4) & (neighbours != -1)).any(axis=1)
 
     def fill_opp(x):
         b, _ = x

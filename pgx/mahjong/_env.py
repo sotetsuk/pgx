@@ -140,9 +140,7 @@ class State(core.State):
                 rewards=jnp.array(data["rewards"], dtype=jnp.float32),
                 terminated=jnp.bool_(data["terminated"]),
                 truncated=jnp.bool_(data["truncated"]),
-                legal_action_mask=jnp.array(
-                    data["legal_action_mask"], dtype=jnp.bool_
-                ),
+                legal_action_mask=jnp.array(data["legal_action_mask"], dtype=jnp.bool_),
                 _rng_key=jnp.array(data["_rng_key"]),
                 _step_count=jnp.int32(data["_step_count"]),
                 _round=jnp.int8(data["_round"]),
@@ -320,17 +318,11 @@ def _make_legal_action_mask(state: State, hand, c_p, new_tile):
     legal_action_mask = legal_action_mask.at[new_tile].set(FALSE)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
     legal_action_mask = legal_action_mask.at[new_tile + 34].set(
-        Hand.can_ankan(hand[c_p], new_tile)
-        | (
-            Hand.can_kakan(hand[c_p], new_tile) & state._pon[(c_p, new_tile)]
-            > 0
-        )
+        Hand.can_ankan(hand[c_p], new_tile) | (Hand.can_kakan(hand[c_p], new_tile) & state._pon[(c_p, new_tile)] > 0)
     )
     legal_action_mask = legal_action_mask.at[Action.RIICHI].set(
         jax.lax.cond(
-            state._riichi[c_p]
-            | state._is_menzen[c_p]
-            | (state._next_deck_ix < 13 + 4),
+            state._riichi[c_p] | state._is_menzen[c_p] | (state._next_deck_ix < 13 + 4),
             lambda: FALSE,
             lambda: Hand.can_riichi(hand[c_p]),
         )
@@ -371,9 +363,7 @@ def _make_legal_action_mask_w_riichi(state, hand, c_p, new_tile):
 def _discard(state: State, tile: Array):
     c_p = state.current_player
     tile = jnp.where(tile == 68, state._last_draw, tile)
-    _tile = jnp.where(
-        state._riichi_declared, tile | jnp.uint8(0b01000000), tile
-    )
+    _tile = jnp.where(state._riichi_declared, tile | jnp.uint8(0b01000000), tile)
     river = state._river.at[c_p, state._n_river[c_p]].set(jnp.uint8(_tile))
     n_river = state._n_river.at[c_p].add(1)
     hand = state._hand.at[c_p].set(Hand.sub(state._hand[c_p], tile))
@@ -435,18 +425,14 @@ def _discard(state: State, tile: Array):
         search,
         (meld_type, pon_player, kan_player, ron_player),
     )
-    furo_num = jnp.uint8(
-        c_p << 6 | kan_player << 4 | pon_player << 2 | chi_player
-    )
+    furo_num = jnp.uint8(c_p << 6 | kan_player << 4 | pon_player << 2 | chi_player)
     pon_player, kan_player, ron_player = (
         (c_p + 1 + pon_player) % 4,
         (c_p + 1 + kan_player) % 4,
         (c_p + 1 + ron_player) % 4,
     )
 
-    rewards = jnp.float32(
-        [Hand.is_tenpai(_hand) * 100 for _hand in state._hand]
-    )
+    rewards = jnp.float32([Hand.is_tenpai(_hand) * 100 for _hand in state._hand])
     no_meld_state = jax.lax.cond(
         _is_ryukyoku(state),
         lambda: state.replace(  # type:ignore
@@ -535,13 +521,9 @@ def _selfkan(state: State, action):
     # 嶺上牌
     rinshan_tile = state._deck[state._next_deck_ix]
     next_deck_ix = state._next_deck_ix - 1
-    hand = state._hand.at[state.current_player].set(
-        Hand.add(state._hand[state.current_player], rinshan_tile)
-    )
+    hand = state._hand.at[state.current_player].set(Hand.add(state._hand[state.current_player], rinshan_tile))
     legal_action_mask = jnp.zeros(NUM_ACTION, dtype=jnp.bool_)
-    legal_action_mask = legal_action_mask.at[0:34].set(
-        hand[state.current_player] > 0
-    )
+    legal_action_mask = legal_action_mask.at[0:34].set(hand[state.current_player] > 0)
     legal_action_mask = legal_action_mask.at[rinshan_tile].set(FALSE)
     legal_action_mask = legal_action_mask.at[Action.TSUMOGIRI].set(TRUE)
 
@@ -551,9 +533,7 @@ def _selfkan(state: State, action):
         _hand=hand,
         legal_action_mask=legal_action_mask,
         _n_kan=state._n_kan + 1,
-        _doras=state._doras.at[state._n_kan + 1].set(
-            state._deck[9 - 2 * (state._n_kan + 1)]
-        ),
+        _doras=state._doras.at[state._n_kan + 1].set(state._deck[9 - 2 * (state._n_kan + 1)]),
     )
 
 
@@ -561,9 +541,7 @@ def _ankan(state: State, target):
     curr_player = state.current_player
     meld = Meld.init(target + 34, target, src=0)
     state = _append_meld(state, meld, curr_player)
-    hand = state._hand.at[curr_player].set(
-        Hand.ankan(state._hand[curr_player], target)
-    )
+    hand = state._hand.at[curr_player].set(Hand.ankan(state._hand[curr_player], target))
     # TODO: 国士無双ロンの受付
 
     return state.replace(  # type:ignore
@@ -572,12 +550,8 @@ def _ankan(state: State, target):
 
 
 def _kakan(state: State, target, pon_src, pon_idx):
-    melds = state._melds.at[(state.current_player, pon_idx)].set(
-        Meld.init(target + 34, target, pon_src)
-    )
-    hand = state._hand.at[state.current_player].set(
-        Hand.kakan(state._hand[state.current_player], target)
-    )
+    melds = state._melds.at[(state.current_player, pon_idx)].set(Meld.init(target + 34, target, pon_src))
+    hand = state._hand.at[state.current_player].set(Hand.kakan(state._hand[state.current_player], target))
     pon = state._pon.at[(state.current_player, target)].set(0)
     # TODO: 槍槓の受付
 
@@ -586,12 +560,8 @@ def _kakan(state: State, target, pon_src, pon_idx):
 
 def _accept_riichi(state: State) -> State:
     l_p = state._last_player
-    _score = state._score.at[l_p].add(
-        jnp.where(~state._riichi[l_p] & state._riichi_declared, -10, 0)
-    )
-    riichi = state._riichi.at[l_p].set(
-        state._riichi[l_p] | state._riichi_declared
-    )
+    _score = state._score.at[l_p].add(jnp.where(~state._riichi[l_p] & state._riichi_declared, -10, 0))
+    riichi = state._riichi.at[l_p].set(state._riichi[l_p] | state._riichi_declared)
     return state.replace(  # type:ignore
         _riichi=riichi, _riichi_declared=FALSE, _score=_score
     )
@@ -604,9 +574,7 @@ def _minkan(state: State):
     src = (l_p - c_p) % 4
     meld = Meld.init(Action.MINKAN, state._target, src)
     state = _append_meld(state, meld, c_p)
-    hand = state._hand.at[c_p].set(
-        Hand.minkan(state._hand[c_p], state._target)
-    )
+    hand = state._hand.at[c_p].set(Hand.minkan(state._hand[c_p], state._target))
     state = state.replace(_hand=hand)  # type:ignore
     is_menzen = state._is_menzen.at[c_p].set(FALSE)
 
@@ -633,9 +601,7 @@ def _minkan(state: State):
         legal_action_mask=legal_action_mask,
         _river=river,
         _n_kan=state._n_kan + 1,
-        _doras=state._doras.at[state._n_kan + 1].set(
-            state._deck[9 - 2 * (state._n_kan + 1)]
-        ),
+        _doras=state._doras.at[state._n_kan + 1].set(state._deck[9 - 2 * (state._n_kan + 1)]),
     )
 
 
@@ -648,9 +614,7 @@ def _pon(state: State):
     state = _append_meld(state, meld, c_p)
     hand = state._hand.at[c_p].set(Hand.pon(state._hand[c_p], state._target))
     is_menzen = state._is_menzen.at[c_p].set(FALSE)
-    pon = state._pon.at[(c_p, state._target)].set(
-        src << 2 | state._n_meld[c_p] - 1
-    )
+    pon = state._pon.at[(c_p, state._target)].set(src << 2 | state._n_meld[c_p] - 1)
 
     # 半透明処理
     river = state._river.at[l_p, state._n_river[l_p] - 1].set(
@@ -815,11 +779,7 @@ def _tsumo(state: State):
     reward = jax.lax.cond(
         _oya == c_p,
         lambda: jnp.full(4, -s2, dtype=jnp.int32).at[c_p].set(s2 * 3),
-        lambda: jnp.full(4, -s1, dtype=jnp.int32)
-        .at[_oya]
-        .set(-s2)
-        .at[c_p]
-        .set(s1 * 2 + s2),
+        lambda: jnp.full(4, -s1, dtype=jnp.int32).at[_oya].set(-s2).at[c_p].set(s1 * 2 + s2),
     )
 
     # 供託
@@ -847,13 +807,7 @@ def _ron(state: State):
         lambda: score * 4,
     )
     score += -score % 100
-    reward = (
-        jnp.zeros(4, dtype=jnp.int32)
-        .at[c_p]
-        .set(score)
-        .at[state._last_player]
-        .set(-score)
-    )
+    reward = jnp.zeros(4, dtype=jnp.int32).at[c_p].set(score).at[state._last_player].set(-score)
 
     # 供託
     reward -= 1000 * state._riichi
@@ -894,10 +848,7 @@ def _dora_array(state: State, riichi):
         lambda: jax.lax.fori_loop(
             0,
             state._n_kan + 1,
-            lambda i, arr: arr.at[next(state._deck[5 + 2 * i])]
-            .set(TRUE)
-            .at[next(state._doras[4 + 2 * i])]
-            .set(TRUE),
+            lambda i, arr: arr.at[next(state._deck[5 + 2 * i])].set(TRUE).at[next(state._doras[4 + 2 * i])].set(TRUE),
             dora,
         ),
         lambda: jax.lax.fori_loop(

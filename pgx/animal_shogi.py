@@ -44,9 +44,7 @@ INIT_BOARD = jnp.int32(
 # fmt: on
 
 ZOBRIST_KEY = jax.random.PRNGKey(23279)
-ZOBRIST_SIDE = jax.random.randint(
-    ZOBRIST_KEY, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
-)
+ZOBRIST_SIDE = jax.random.randint(ZOBRIST_KEY, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 ZOBRIST_KEY, ZOBRIST_SUBKEY = jax.random.split(ZOBRIST_KEY)
 ZOBRIST_BOARD = jax.random.randint(
     ZOBRIST_SUBKEY,
@@ -83,13 +81,9 @@ class State(core.State):
     _hand: Array = jnp.zeros((2, 3), dtype=jnp.int32)
     _zobrist_hash: Array = jnp.uint32([233882788, 593924309])
     _hash_history: Array = (
-        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
-        .at[0]
-        .set(jnp.uint32([233882788, 593924309]))
+        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(jnp.uint32([233882788, 593924309]))
     )
-    _board_history: Array = (
-        (-jnp.ones((8, 12), dtype=jnp.int32)).at[0, :].set(INIT_BOARD)
-    )
+    _board_history: Array = (-jnp.ones((8, 12), dtype=jnp.int32)).at[0, :].set(INIT_BOARD)
     _hand_history: Array = jnp.zeros((8, 6), dtype=jnp.int32)
     _rep_history: Array = jnp.zeros((8,), dtype=jnp.int32)
 
@@ -175,14 +169,10 @@ def _step(state: State, action: Array):
 
     state = _flip(state)
     state = state.replace(  # type: ignore
-        _hash_history=state._hash_history.at[state._step_count].set(
-            state._zobrist_hash
-        ),
+        _hash_history=state._hash_history.at[state._step_count].set(state._zobrist_hash),
     )
 
-    rep = (state._hash_history == state._zobrist_hash).any(
-        axis=1
-    ).sum().astype(jnp.int32) - 1
+    rep = (state._hash_history == state._zobrist_hash).any(axis=1).sum().astype(jnp.int32) - 1
     is_rep_draw = rep >= 2
     legal_action_mask = _legal_action_mask(state)  # TODO: fix me
     terminated = (~legal_action_mask.any()) | is_try | is_rep_draw
@@ -206,9 +196,7 @@ def _step(state: State, action: Array):
 
 def _observe(state: State, player_id: Array) -> Array:
     # player_id's color
-    color = jax.lax.select(
-        state.current_player == player_id, state._turn, 1 - state._turn
-    )
+    color = jax.lax.select(state.current_player == player_id, state._turn, 1 - state._turn)
 
     state = jax.lax.cond(
         state.current_player == player_id,
@@ -236,13 +224,9 @@ def _observe(state: State, player_id: Array) -> Array:
         rep1 = ones * (state._rep_history[i] == 1)
         return jnp.vstack((piece_feat, hand_feat, rep0, rep1))  # (24, 12)
 
-    obs = (
-        jax.vmap(make)(jnp.arange(8)).reshape(-1, 12).astype(jnp.float32)
-    )  # (192 = 8 * 24, 12)
+    obs = jax.vmap(make)(jnp.arange(8)).reshape(-1, 12).astype(jnp.float32)  # (192 = 8 * 24, 12)
     ones = jnp.ones((1, 12), dtype=jnp.float32)
-    obs = jnp.vstack(
-        [obs, ones * color, ones * state._step_count / MAX_TERMINATION_STEPS]
-    )  # (193, 12)
+    obs = jnp.vstack([obs, ones * color, ones * state._step_count / MAX_TERMINATION_STEPS])  # (193, 12)
     obs = obs.reshape(-1, 3, 4).transpose((2, 1, 0))  # channel last
     return jnp.flip(obs, axis=1)
 
@@ -251,9 +235,7 @@ def _step_move(state: State, action: Action) -> State:
     piece = state._board[action.from_]
     # remove piece from the original position
     board = state._board.at[action.from_].set(EMPTY)
-    zb_from_ = jax.lax.select(
-        state._turn == 0, action.from_, 11 - action.from_
-    )
+    zb_from_ = jax.lax.select(state._turn == 0, action.from_, 11 - action.from_)
     zb_piece = jax.lax.select(state._turn == 0, piece, (piece + 5) % 10)
     zobrist_hash = state._zobrist_hash ^ ZOBRIST_BOARD[zb_from_, zb_piece]
     # capture the opponent if exists
@@ -294,9 +276,7 @@ def _step_drop(state: State, action: Action) -> State:
     # add piece to board
     board = state._board.at[action.to].set(action.drop_piece)
     zb_to_ = jax.lax.select(state._turn == 0, action.to, 11 - action.to)
-    zb_piece = jax.lax.select(
-        state._turn == 0, action.drop_piece, (action.drop_piece + 5) % 10
-    )
+    zb_piece = jax.lax.select(state._turn == 0, action.drop_piece, (action.drop_piece + 5) % 10)
     zobrist_hash = state._zobrist_hash ^ ZOBRIST_BOARD[zb_to_, zb_piece]
     # remove piece from hand
     hand = state._hand.at[0, action.drop_piece].add(-1)
@@ -309,17 +289,13 @@ def _step_drop(state: State, action: Action) -> State:
 def _legal_action_mask(state: State):
     def is_legal(label: Array):
         action = Action._from_label(label)
-        return jax.lax.cond(
-            action.is_drop, is_legal_drop, is_legal_move, action
-        )
+        return jax.lax.cond(action.is_drop, is_legal_drop, is_legal_move, action)
 
     def is_legal_move(action: Action):
         piece = state._board[action.from_]
         ok = (PAWN <= piece) & (piece <= GOLD)
         ok &= action.to != -1
-        ok &= (state._board[action.to] == EMPTY) | (
-            GOLD < state._board[action.to]
-        )
+        ok &= (state._board[action.to] == EMPTY) | (GOLD < state._board[action.to])
         ok &= _can_move(piece, action.from_, action.to)
         ok &= ~_is_checked(_step_move(state, action))
         return ok
@@ -343,9 +319,7 @@ def _is_checked(state):
         is_opp = piece >= 5
         return is_opp & _can_move(state._board[from_] % 5, king_pos, from_)
 
-    return can_capture_king(
-        jnp.arange(12)
-    ).any()  # TODO: King neighbours are enough
+    return can_capture_king(jnp.arange(12)).any()  # TODO: King neighbours are enough
 
 
 def _flip(state):
@@ -375,9 +349,7 @@ def _can_move(piece, from_, to):
         x1, y1 = to // 4, to % 4
         dx = x1 - x0
         dy = y1 - y0
-        is_neighbour = (
-            ((dx != 0) | (dy != 0)) & (jnp.abs(dx) <= 1) & (jnp.abs(dy) <= 1)
-        )
+        is_neighbour = ((dx != 0) | (dy != 0)) & (jnp.abs(dx) <= 1) & (jnp.abs(dy) <= 1)
         return jax.lax.switch(
             piece,
             [

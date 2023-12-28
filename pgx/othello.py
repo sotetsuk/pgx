@@ -107,15 +107,7 @@ def _init(rng: PRNGKey) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
     return State(
         current_player=current_player,
-        _board=jnp.zeros(64, dtype=jnp.int32)
-        .at[28]
-        .set(1)
-        .at[35]
-        .set(1)
-        .at[27]
-        .set(-1)
-        .at[36]
-        .set(-1),
+        _board=jnp.zeros(64, dtype=jnp.int32).at[28].set(1).at[35].set(1).at[27].set(-1).at[36].set(-1),
         legal_action_mask=jnp.zeros(64 + 1, dtype=jnp.bool_)
         .at[19]
         .set(TRUE)
@@ -172,16 +164,10 @@ def _step(state, action):
         tmp = jnp.roll(tmp, shifts[i]) & emp
         return legal | tmp
 
-    legal_action = jax.lax.fori_loop(
-        0, 8, _make_legal, jnp.zeros(64, dtype=jnp.bool_)
-    )
+    legal_action = jax.lax.fori_loop(0, 8, _make_legal, jnp.zeros(64, dtype=jnp.bool_))
 
     reward, terminated = jax.lax.cond(
-        (
-            (jnp.count_nonzero(my | opp) == 64)
-            | ~opp.any()
-            | (state._passed & (action == 64))
-        ),
+        ((jnp.count_nonzero(my | opp) == 64) | ~opp.any() | (state._passed & (action == 64))),
         lambda: (_get_reward(my, opp, state.current_player), TRUE),
         lambda: (jnp.zeros(2, jnp.float32), FALSE),
     )
@@ -189,10 +175,7 @@ def _step(state, action):
     return state.replace(
         current_player=1 - state.current_player,
         _turn=1 - state._turn,
-        legal_action_mask=state.legal_action_mask.at[:64]
-        .set(legal_action)
-        .at[64]
-        .set(~legal_action.any()),
+        legal_action_mask=state.legal_action_mask.at[:64].set(legal_action).at[64].set(~legal_action.any()),
         rewards=reward,
         terminated=terminated,
         _board=-jnp.where(jnp.int32(opp), -1, jnp.int32(my)),
@@ -214,9 +197,7 @@ def _check_line(pos, opp, shift, mask):
 def _get_reward(my, opp, curr_player):
     my = jnp.count_nonzero(my)
     opp = jnp.count_nonzero(opp)
-    winner = jax.lax.cond(
-        my > opp, lambda: curr_player, lambda: 1 - curr_player
-    )
+    winner = jax.lax.cond(my > opp, lambda: curr_player, lambda: 1 - curr_player)
     return jax.lax.cond(
         my == opp,
         lambda: jnp.zeros(2, jnp.float32),
@@ -238,6 +219,4 @@ def _observe(state, player_id) -> Array:
 
 
 def _get_abs_board(state):
-    return jax.lax.cond(
-        state._turn == 0, lambda: state._board, lambda: state._board * -1
-    )
+    return jax.lax.cond(state._turn == 0, lambda: state._board, lambda: state._board * -1)
