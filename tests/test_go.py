@@ -370,7 +370,7 @@ def test_observe():
     )
     # fmt: on
     assert state.current_player == 1
-    assert state._x.turn % 2 == 0  # black turn
+    assert state._x.color % 2 == 0  # black turn
     obs = observe(state, 0)   # white
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == -1)).all()
