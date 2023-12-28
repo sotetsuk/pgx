@@ -59,7 +59,7 @@ class Game:
         # increment turns
         state = state._replace(color=(state.color + 1) % 2)
         # update board history
-        board_history = jnp.roll(state.board_history, self.size ** 2)
+        board_history = jnp.roll(state.board_history, self.size**2)
         board_history = board_history.at[0].set(jnp.clip(state.chain_id_board, -1, 1).astype(jnp.int32))
         state = state._replace(board_history=board_history)
         # check PSK
