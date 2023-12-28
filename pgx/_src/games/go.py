@@ -33,7 +33,6 @@ class GameState(NamedTuple):
     num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
     consecutive_pass_count: Array = jnp.int32(0)
     ko: Array = jnp.int32(-1)  # by SSK
-    komi: Array = jnp.float32(7.5)
     is_psk: Array = FALSE
 
 
@@ -47,7 +46,6 @@ class Game:
             size=jnp.int32(self.size),
             chain_id_board=jnp.zeros(self.size**2, dtype=jnp.int32),
             board_history=jnp.full((8, self.size**2), 2, dtype=jnp.int32),
-            komi=jnp.float32(self.komi),
         )
 
     def step(self, x: GameState, action: int) -> GameState:
@@ -127,7 +125,7 @@ class Game:
     def terminal_values(self, x: GameState):
         score = _count_point(x, self.size)
         reward_bw = jax.lax.select(
-            score[0] - x.komi > score[1],
+            score[0] - self.komi > score[1],
             jnp.array([1, -1], dtype=jnp.float32),
             jnp.array([-1, 1], dtype=jnp.float32),
         )
