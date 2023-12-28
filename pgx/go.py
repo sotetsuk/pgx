@@ -38,9 +38,9 @@ class State(core.State):
     @property
     def env_id(self) -> core.EnvId:
         try:
-            size = int(self._x._size.item())
+            size = int(self._x.size.item())
         except TypeError:
-            size = int(self._x._size[0].item())
+            size = int(self._x.size[0].item())
         return f"go_{size}x{size}"  # type: ignore
 
     @staticmethod
@@ -90,7 +90,7 @@ class Go(core.Env):
         # fmt: on
         assert isinstance(state, State)
         reward_bw = go.terminal_values(state._x, self.size)
-        should_flip = state.current_player == state._x._turn
+        should_flip = state.current_player == state._x.turn
         rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
         rewards = jax.lax.select(
             state.terminated, rewards, jnp.zeros_like(rewards)
@@ -131,8 +131,8 @@ class Go(core.Env):
         assert isinstance(state, State)
         my_turn = jax.lax.select(
             player_id == state.current_player,
-            state._x._turn,
-            1 - state._x._turn,
+            state._x.turn,
+            1 - state._x.turn,
         )
         return go.observe(state._x, my_turn, self.size, self.history_length)
 
@@ -155,15 +155,15 @@ def _show(state: State) -> None:
     WHITE_CHAR = "O"
     POINT_CHAR = "+"
     print("===========")
-    for xy in range(state._x._size * state._x._size):
-        if state._x._chain_id_board[xy] > 0:
+    for xy in range(state._x.size * state._x.size):
+        if state._x.chain_id_board[xy] > 0:
             print(" " + BLACK_CHAR, end="")
-        elif state._x._chain_id_board[xy] < 0:
+        elif state._x.chain_id_board[xy] < 0:
             print(" " + WHITE_CHAR, end="")
         else:
             print(" " + POINT_CHAR, end="")
 
-        if xy % state._x._size == state._x._size - 1:
+        if xy % state._x.size == state._x.size - 1:
             print()
 
 

@@ -24,16 +24,16 @@ def test_end_by_pass():
 
     state = init(key=key)
     state = step(state=state, action=25)
-    assert state._x._consecutive_pass_count == 1
+    assert state._x.consecutive_pass_count == 1
     assert not state.terminated
     state = step(state=state, action=0)
-    assert state._x._consecutive_pass_count == 0
+    assert state._x.consecutive_pass_count == 0
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state._x._consecutive_pass_count == 1
+    assert state._x.consecutive_pass_count == 1
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state._x._consecutive_pass_count == 2
+    assert state._x.consecutive_pass_count == 2
     assert state.terminated
 
 
@@ -85,7 +85,7 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (jnp.clip(state._x._chain_id_board, -1, 1) == expected_board.ravel()).all()
+    assert (jnp.clip(state._x.chain_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
     # 同点なのでコミの分 黒 == player_1 の負け
@@ -108,7 +108,7 @@ def test_from_sgf():
             [ 1,  0,  1,  1, -1,  0,  0,  0,  0],
         ]
     )  # type:ignore
-    assert (jnp.clip(state._x._chain_id_board, -1, 1) == expected_board.ravel()).all()
+    assert (jnp.clip(state._x.chain_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
 
@@ -121,7 +121,7 @@ def test_from_sgf():
     # 初手からの分岐
     state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[9]ST[0](;B[ee])(;B[eg])(;B[ec]))")
     state.save_svg("tests/assets/go/from_sgf_003.svg")
-    board = jnp.clip(state._x._chain_id_board, -1, 1)
+    board = jnp.clip(state._x.chain_id_board, -1, 1)
     assert board[40] == 1
     assert not state.terminated
 
@@ -144,7 +144,7 @@ def test_from_sgf():
     # 分岐あり
     state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[19]ST[0];B[pd];W[qf];B[nc](;W[rd];B[qc];W[qi])(;W[qd];B[qc];W[rc];B[qe];W[rd];B[pf];W[re];B[pe];W[qg]))")
     state.save_svg("tests/assets/go/from_sgf_007.svg")
-    board = jnp.clip(state._x._chain_id_board, -1, 1)
+    board = jnp.clip(state._x.chain_id_board, -1, 1)
     assert board[168] == -1
     assert board[55] == 0
 
@@ -184,7 +184,7 @@ def test_ko():
     + + O + +
     + + + + +
     """
-    assert state._x._ko == 12
+    assert state._x.ko == 12
 
     loser = state.current_player
     state1: State = step(
@@ -198,7 +198,7 @@ def test_ko():
     state2: State = step(state=state, action=0)  # BLACK
     # 回避した場合
     assert not state2.terminated
-    assert state2._x._ko == -1
+    assert state2._x.ko == -1
 
     # see #468
     state: State = init(key=key)
@@ -233,7 +233,7 @@ def test_ko():
     state = step(state, action=14)
     state = step(state, action=23)
     state = step(state, action=0)
-    assert state._x._ko == -1
+    assert state._x.ko == -1
 
     # see #468
     state: State = init(key=key)
@@ -265,7 +265,7 @@ def test_ko():
     state = step(state, action=25)
     state = step(state, action=3)
     state = step(state, action=20)
-    assert state._x._ko == -1
+    assert state._x.ko == -1
 
     # Ko after pass
     state: State = init(key=key)
@@ -307,7 +307,7 @@ def test_ko():
     state = step(state, action=13)
     state = step(state, action=24)
     state = step(state, action=25)  # pass
-    assert state._x._ko == -1
+    assert state._x.ko == -1
 
     # see #479
     actions = [107, 11, 56, 41, 300, 19, 228, 231, 344, 257, 35, 32, 57, 276, 0, 277, 164, 15, 187, 179, 357, 255, 150, 211, 256,
@@ -333,7 +333,7 @@ def test_ko():
     state = env.init(jax.random.PRNGKey(0))
     for a in actions:
         state = env.step(state, a)
-    assert state._x._ko == -1
+    assert state._x.ko == -1
     assert state.legal_action_mask[231]
 
 def test_observe():
@@ -370,7 +370,7 @@ def test_observe():
     )
     # fmt: on
     assert state.current_player == 1
-    assert state._x._turn % 2 == 0  # black turn
+    assert state._x.turn % 2 == 0  # black turn
     obs = observe(state, 0)   # white
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == -1)).all()
