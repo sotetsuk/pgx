@@ -39,8 +39,8 @@ class GameState:
     is_psk: Array = FALSE
 
 
-class Go:
-    def __init__(self, size: int, komi: float = 7.5):
+class Game:
+    def __init__(self, size: int = 19, komi: float = 7.5):
         self.size = size
         self.komi = komi
 

@@ -62,7 +62,7 @@ class Go(core.Env):
         self.komi = komi
         self.history_length = history_length
         self.max_termination_steps = self.size * self.size * 2
-        self._game = go.Go(size=size, komi=komi)
+        self._game = go.Game(size=size, komi=komi)
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
