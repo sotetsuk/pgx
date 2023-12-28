@@ -120,13 +120,14 @@ def legal_action_mask(state: GameState, size: int) -> Array:
         )
 
     neighbor_ok = is_neighbor_ok(jnp.arange(size**2))
-    legal_action_mask = jnp.append(is_empty & neighbor_ok, TRUE)  # -1 = pass
+    legal_action_mask = is_empty & neighbor_ok
 
-    return jax.lax.cond(
+    legal_action_mask = jax.lax.cond(
         (state._ko == -1),
         lambda: legal_action_mask,
         lambda: legal_action_mask.at[state._ko].set(FALSE),
     )
+    return jnp.append(legal_action_mask, TRUE)  # pass is always legal
 
 
 def is_terminal(x: GameState):
