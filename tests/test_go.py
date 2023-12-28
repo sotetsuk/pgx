@@ -3,7 +3,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx.go import _count_ji, _count_point, Go, State, _show
+from pgx._src.games.go import _count_ji, _count_point
+from pgx.go import Go, State, _show
 
 BOARD_SIZE = 5
 env = Go(size=BOARD_SIZE)
@@ -23,16 +24,16 @@ def test_end_by_pass():
 
     state = init(key=key)
     state = step(state=state, action=25)
-    assert state._x._passed
+    assert state._x._consecutive_pass_count == 1
     assert not state.terminated
     state = step(state=state, action=0)
-    assert not state._x._passed
+    assert state._x._consecutive_pass_count == 0
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state._x._passed
+    assert state._x._consecutive_pass_count == 1
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state._x._passed
+    assert state._x._consecutive_pass_count == 2
     assert state.terminated
 
 
@@ -652,11 +653,11 @@ def test_counting_ji():
     state = step(state=state, action=12)
     state = step(state=state, action=25)
     state = step(state=state, action=14)  # BLACK
-    assert count_ji(state, BLACK, BOARD_SIZE) == 17
-    assert count_ji(state, WHITE, BOARD_SIZE) == 0
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 17
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 0
     state = step(state=state, action=24)  # WHITE
-    assert count_ji(state, BLACK, BOARD_SIZE) == 5
-    assert count_ji(state, WHITE, BOARD_SIZE) == 0
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 5
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 0
 
     # =====
     # + @ @ @ +
@@ -682,8 +683,8 @@ def test_counting_ji():
     state = step(state=state, action=13)
     state = step(state=state, action=8)
     state = step(state=state, action=25)  # BLACK
-    assert count_ji(state, BLACK, BOARD_SIZE) == 14
-    assert count_ji(state, WHITE, BOARD_SIZE) == 0
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 14
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 0
 
     # =====
     # + + O + +
@@ -708,8 +709,8 @@ def test_counting_ji():
     state = step(state=state, action=18)
     state = step(state=state, action=25)
     state = step(state=state, action=22)  # WHITE
-    assert count_ji(state, BLACK, BOARD_SIZE) == 1
-    assert count_ji(state, WHITE, BOARD_SIZE) == 12
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 1
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 12
 
     # =====
     # + @ @ @ +
@@ -746,11 +747,11 @@ def test_counting_ji():
     state = step(state=state, action=25)
     state = step(state=state, action=20)
     state = step(state=state, action=25)
-    assert count_ji(state, BLACK, BOARD_SIZE) == 2
-    assert count_ji(state, WHITE, BOARD_SIZE) == 0
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 2
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 0
     state = step(state=state, action=8)
-    assert count_ji(state, BLACK, BOARD_SIZE) == 10
-    assert count_ji(state, WHITE, BOARD_SIZE) == 0
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 10
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 0
 
     # セキ判定
     # =====
@@ -776,8 +777,8 @@ def test_counting_ji():
     state = step(state=state, action=17)
     state = step(state=state, action=25)
     state = step(state=state, action=22)
-    assert count_ji(state, BLACK, BOARD_SIZE) == 0
-    assert count_ji(state, WHITE, BOARD_SIZE) == 10
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 0
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 10
 
     # =====
     # O O O O +
@@ -812,8 +813,8 @@ def test_counting_ji():
     state = step(state=state, action=22)
     state = step(state=state, action=25)
     state = step(state=state, action=23)
-    assert count_ji(state, BLACK, BOARD_SIZE) == 1
-    assert count_ji(state, WHITE, BOARD_SIZE) == 3
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 1
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 3
 
     # =====
     # + + + + +
@@ -848,8 +849,8 @@ def test_counting_ji():
     state = step(state=state, action=25)
     state = step(state=state, action=18)
     state = step(state=state, action=25)
-    assert count_ji(state, BLACK, BOARD_SIZE) == 17
-    assert count_ji(state, WHITE, BOARD_SIZE) == 0
+    assert count_ji(state._x, BLACK, BOARD_SIZE) == 17
+    assert count_ji(state._x, WHITE, BOARD_SIZE) == 0
 
 
 def test_counting_point():
@@ -877,9 +878,9 @@ def test_counting_point():
     state = step(state=state, action=12)
     state = step(state=state, action=25)
     state = step(state=state, action=14)  # BLACK
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
     state = step(state=state, action=24)  # WHITE
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([13, 1], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([13, 1], dtype=jnp.float32))
 
     # =====
     # + @ @ @ +
@@ -905,7 +906,7 @@ def test_counting_point():
     state = step(state=state, action=13)
     state = step(state=state, action=8)
     state = step(state=state, action=25)  # BLACK
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([22, 2], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([22, 2], dtype=jnp.float32))
 
     # =====
     # + + O + +
@@ -930,7 +931,7 @@ def test_counting_point():
     state = step(state=state, action=18)
     state = step(state=state, action=25)
     state = step(state=state, action=22)  # WHITE
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([5, 20], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([5, 20], dtype=jnp.float32))
 
     # =====
     # + @ @ @ +
@@ -967,9 +968,9 @@ def test_counting_point():
     state = step(state=state, action=25)
     state = step(state=state, action=20)
     state = step(state=state, action=25)
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([16, 8], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([16, 8], dtype=jnp.float32))
     state = step(state=state, action=8)
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
 
     # セキ判定
     # =====
@@ -995,7 +996,7 @@ def test_counting_point():
     state = step(state=state, action=17)
     state = step(state=state, action=25)
     state = step(state=state, action=22)
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([5, 18], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([5, 18], dtype=jnp.float32))
 
     # =====
     # O O O O +
@@ -1030,7 +1031,7 @@ def test_counting_point():
     state = step(state=state, action=22)
     state = step(state=state, action=25)
     state = step(state=state, action=23)
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([9, 16], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([9, 16], dtype=jnp.float32))
 
     # =====
     # + + + + +
@@ -1040,7 +1041,7 @@ def test_counting_point():
     # + + + + +
     state = init(key=key)
     # 本当は[0, 0]
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 25], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 25], dtype=jnp.float32))
 
     # =====
     # + + + + +
@@ -1065,7 +1066,7 @@ def test_counting_point():
     state = step(state=state, action=25)
     state = step(state=state, action=18)
     state = step(state=state, action=25)
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
     # =====
     # + @ @ O +
     # + + @ O +
@@ -1091,7 +1092,7 @@ def test_counting_point():
     state = step(state=state, action=23)
     state = step(state=state, action=25)
     state = step(state=state, action=24)
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
 
     # =====
     # + @ @ O +
@@ -1123,7 +1124,7 @@ def test_counting_point():
     state = step(state=state, action=0)
     state = step(state=state, action=5)
     state = step(state=state, action=25)
-    assert jnp.all(count_point(state, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
+    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
 
 
 def test_PSK():
@@ -1174,8 +1175,21 @@ def test_PSK():
     #  + @ O O O
     #  @ @ @ O +
     assert state.terminated
-    assert state._x._black_player == 1
+    # assert state._x._black_player == 1
     assert (state.rewards == jnp.float32([-1, 1])).all()  # black wins
+
+
+def test_max_step_termination():
+    env = Go(size=9)
+    env.max_termination_steps = 10
+    init_fn = jax.jit(env.init)
+    step_fn = jax.jit(env.step)
+    state = init_fn(jax.random.PRNGKey(0))
+    for i in range(10):
+        assert not state.terminated
+        state = step_fn(state, i)
+    assert state.terminated
+    assert not (state.rewards == jnp.float32([0, 0])).all()  # should not tie
 
 
 def test_api():
