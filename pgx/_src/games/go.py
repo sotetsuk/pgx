@@ -62,7 +62,7 @@ def step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(turn=(x.turn + 1) % 2)  # type: ignore
 
     # update board history
-    board_history = jnp.roll(x.board_history, size ** 2)
+    board_history = jnp.roll(x.board_history, size**2)
     board_history = board_history.at[0].set(
         jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
     )
@@ -313,7 +313,7 @@ def _ko_may_occur(state: GameState, xy: int) -> Array:
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
     oppo_color = _opponent_color(state)
     is_occupied_by_opp = (
-            state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
+        state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     )
     return (oob | is_occupied_by_opp).all()
 
