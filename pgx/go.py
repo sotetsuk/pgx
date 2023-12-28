@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
-
 import jax
 from jax import numpy as jnp
 
@@ -88,8 +86,9 @@ class Go(core.Env):
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         # fmt: off
         _terminated = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))
-        state = state.replace(terminated=(state.terminated | _terminated))
+        state = state.replace(terminated=(state.terminated | _terminated))  # type:ignore
         # fmt: on
+        assert isinstance(state, State)
         rewards = terminal_values(state, self.size)
         return state.replace(rewards=rewards)  # type:ignore
 
@@ -126,7 +125,9 @@ class Go(core.Env):
         """
         assert isinstance(state, State)
         my_turn = jax.lax.select(
-            player_id == state.current_player, state._x._turn, 1 - state._x._turn
+            player_id == state.current_player,
+            state._x._turn,
+            1 - state._x._turn,
         )
         return go.observe(state._x, my_turn, self.size, self.history_length)
 
