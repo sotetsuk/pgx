@@ -79,7 +79,7 @@ class Go(core.Env):
         current_player = (state.current_player + 1) % 2  # player to act
         state = state.replace(  # type:ignore
             current_player=current_player,
-            terminated=x.is_terminal,
+            terminated=go.is_terminal(x),
             legal_action_mask=go.legal_action_mask(x, self.size),
             _x=x,
         )

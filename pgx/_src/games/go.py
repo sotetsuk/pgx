@@ -39,7 +39,6 @@ class GameState:
     _consecutive_pass_count: Array = jnp.int32(0)
     _ko: Array = jnp.int32(-1)  # by SSK
     _komi: Array = jnp.float32(7.5)
-    is_terminal: Array = FALSE
     is_psk: Array = FALSE
 
 
@@ -72,9 +71,8 @@ def step(x: GameState, action: int, size: int) -> GameState:
     )
     x = x.replace(_board_history=board_history)  # type: ignore
 
-    # PSK
-    is_psk = _check_PSK(x)
-    x = x.replace(is_psk=is_psk, is_terminal=(x.is_terminal | is_psk))  # type: ignore
+    # check PSK
+    x = x.replace(is_psk=_check_PSK(x))  # type: ignore
 
     return x
 
@@ -131,6 +129,11 @@ def legal_action_mask(state: GameState, size: int) -> Array:
     )
 
 
+def is_terminal(x: GameState):
+    two_consecutive_pass = x._consecutive_pass_count >= 2
+    return two_consecutive_pass | x.is_psk
+
+
 def terminal_values(x: GameState, size: int):
     score = _count_point(x, size)
     reward_bw = jax.lax.select(
@@ -146,9 +149,7 @@ def terminal_values(x: GameState, size: int):
 
 
 def _pass_move(state: GameState) -> GameState:
-    state = state.replace(_consecutive_pass_count=state._consecutive_pass_count + 1)  # type: ignore
-    terminated = state._consecutive_pass_count == 2
-    return state.replace(is_terminal=terminated)  # type: ignore
+    return state.replace(_consecutive_pass_count=state._consecutive_pass_count + 1)  # type: ignore
 
 
 def _not_pass_move(state: GameState, action, size) -> GameState:
