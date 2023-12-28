@@ -34,9 +34,9 @@ class GameState:
     turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
     num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
     consecutive_pass_count: Array = jnp.int32(0)
-    _ko: Array = jnp.int32(-1)  # by SSK
-    _komi: Array = jnp.float32(7.5)
-    _is_psk: Array = FALSE
+    ko: Array = jnp.int32(-1)  # by SSK
+    komi: Array = jnp.float32(7.5)
+    is_psk: Array = FALSE
 
 
 def init(size: int, komi: float) -> GameState:
@@ -44,12 +44,12 @@ def init(size: int, komi: float) -> GameState:
         size=jnp.int32(size),
         chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
-        _komi=jnp.float32(komi),
+        komi=jnp.float32(komi),
     )
 
 
 def step(x: GameState, action: int, size: int) -> GameState:
-    x = x.replace(_ko=jnp.int32(-1))  # type: ignore
+    x = x.replace(ko=jnp.int32(-1))  # type: ignore
 
     # update state
     x = jax.lax.cond(
@@ -69,7 +69,7 @@ def step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(board_history=board_history)  # type: ignore
 
     # check PSK
-    x = x.replace(_is_psk=_check_PSK(x))  # type: ignore
+    x = x.replace(is_psk=_check_PSK(x))  # type: ignore
 
     return x
 
@@ -120,28 +120,28 @@ def legal_action_mask(state: GameState, size: int) -> Array:
     legal_action_mask = is_empty & neighbor_ok
 
     legal_action_mask = jax.lax.cond(
-        (state._ko == -1),
+        (state.ko == -1),
         lambda: legal_action_mask,
-        lambda: legal_action_mask.at[state._ko].set(FALSE),
+        lambda: legal_action_mask.at[state.ko].set(FALSE),
     )
     return jnp.append(legal_action_mask, TRUE)  # pass is always legal
 
 
 def is_terminal(x: GameState):
     two_consecutive_pass = x.consecutive_pass_count >= 2
-    return two_consecutive_pass | x._is_psk
+    return two_consecutive_pass | x.is_psk
 
 
 def terminal_values(x: GameState, size: int):
     score = _count_point(x, size)
     reward_bw = jax.lax.select(
-        score[0] - x._komi > score[1],
+        score[0] - x.komi > score[1],
         jnp.array([1, -1], dtype=jnp.float32),
         jnp.array([-1, 1], dtype=jnp.float32),
     )
     to_play = x.turn
     reward_bw = jax.lax.select(
-        x._is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
+        x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
     )
     return reward_bw
 
@@ -195,7 +195,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     state = jax.lax.cond(
         state.num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
-        lambda: state.replace(_ko=jnp.int32(-1))  # type:ignore
+        lambda: state.replace(ko=jnp.int32(-1))  # type:ignore
     )
     # fmt: on
 
@@ -248,14 +248,14 @@ def _remove_stones(
     ko = jax.lax.cond(
         ko_may_occur & (num_captured_stones == 1),
         lambda: jnp.int32(rm_stone_xy),
-        lambda: state._ko,
+        lambda: state.ko,
     )
     return state.replace(  # type: ignore
         chain_id_board=chain_id_board,
         num_captured_stones=state.num_captured_stones.at[state.turn].add(
             num_captured_stones
         ),
-        _ko=ko,
+        ko=ko,
     )
 
 
