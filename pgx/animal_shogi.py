@@ -166,7 +166,7 @@ def _step(state: State, action: Array):
     is_try = (state._board[jnp.int32([0, 4, 8])] == KING).any()
 
     # update board/hand history
-    board_history = jnp.roll(state.board_history, 8)
+    board_history = jnp.roll(state._board_history, 8)
     board_history = board_history.at[0].set(state._board)
     state = state.replace(_board_history=board_history)  # type:ignore
     hand_history = jnp.roll(state._hand_history, 8)
@@ -218,7 +218,7 @@ def _observe(state: State, player_id: Array) -> Array:
 
     def make(i):
         def is_piece(p, state):
-            return state.board_history[i] == p
+            return state._board_history[i] == p
 
         def num_hand(p, n, state):
             return state._hand_history[i, p] >= n
@@ -353,13 +353,13 @@ def _flip(state):
     board = (state._board + 5) % 10
     board = jnp.where(empty_mask, EMPTY, board)
     board = board[::-1]
-    empty_mask_hist = state.board_history == EMPTY
-    board_history = (state.board_history + 5) % 10
+    empty_mask_hist = state._board_history == EMPTY
+    board_history = (state._board_history + 5) % 10
     board_history = jnp.where(empty_mask_hist, EMPTY, board_history)
     board_history = board_history[:, ::-1]
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        _turn=(state.turn + 1) % 2,
+        _turn=(state._turn + 1) % 2,
         _board=board,
         _hand=state._hand[::-1],
         _zobrist_hash=state._zobrist_hash ^ ZOBRIST_SIDE,

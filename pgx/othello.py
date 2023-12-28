@@ -188,7 +188,7 @@ def _step(state, action):
 
     return state.replace(
         current_player=1 - state.current_player,
-        _turn=1 - state.turn,
+        _turn=1 - state._turn,
         legal_action_mask=state.legal_action_mask.at[:64]
         .set(legal_action)
         .at[64]
@@ -239,5 +239,5 @@ def _observe(state, player_id) -> Array:
 
 def _get_abs_board(state):
     return jax.lax.cond(
-        state.turn == 0, lambda: state._board, lambda: state._board * -1
+        state._turn == 0, lambda: state._board, lambda: state._board * -1
     )

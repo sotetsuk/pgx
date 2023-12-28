@@ -200,5 +200,5 @@ def _is_game_end(board, size, turn):
 
 def _get_abs_board(state):
     return jax.lax.cond(
-        state.turn == 0, lambda: state._board, lambda: state._board * -1
+        state._turn == 0, lambda: state._board, lambda: state._board * -1
     )

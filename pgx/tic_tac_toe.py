@@ -80,7 +80,7 @@ def _init(rng: PRNGKey) -> State:
 
 def _step(state: State, action: Array) -> State:
     state = state.replace(_board=state._board.at[action].set(state._turn))  # type: ignore
-    won = _win_check(state._board, state.turn)
+    won = _win_check(state._board, state._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -91,7 +91,7 @@ def _step(state: State, action: Array) -> State:
         legal_action_mask=state._board < 0,
         rewards=reward,
         terminated=won | jnp.all(state._board != -1),
-        _turn=(state.turn + 1) % 2,
+        _turn=(state._turn + 1) % 2,
     )
 
 
