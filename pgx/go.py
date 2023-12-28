@@ -37,10 +37,7 @@ class State(core.State):
 
     @property
     def env_id(self) -> core.EnvId:
-        try:
-            size = int(self._x.size.item())
-        except TypeError:
-            size = int(self._x.size[0].item())
+        size = int(jnp.sqrt(self._x.chain_id_board.shape[-1]).astype(jnp.int32).item())
         return f"go_{size}x{size}"  # type: ignore
 
     @staticmethod

@@ -1192,6 +1192,32 @@ def test_max_step_termination():
     assert not (state.rewards == jnp.float32([0, 0])).all()  # should not tie
 
 
+def test_env_id():
+    env = Go(size=9)
+    init_fn = jax.jit(env.init)
+    state = init_fn(jax.random.PRNGKey(0))
+    assert state.env_id == "go_9x9"
+    init_fn = jax.jit(jax.vmap(env.init))
+    state = init_fn(jax.random.split(jax.random.PRNGKey(0)))
+    assert state.env_id == "go_9x9"
+
+    env = Go(size=19)
+    init_fn = jax.jit(env.init)
+    state = init_fn(jax.random.PRNGKey(0))
+    assert state.env_id == "go_19x19"
+    init_fn = jax.jit(jax.vmap(env.init))
+    state = init_fn(jax.random.split(jax.random.PRNGKey(0)))
+    assert state.env_id == "go_19x19"
+
+    env = Go(size=5)
+    init_fn = jax.jit(env.init)
+    state = init_fn(jax.random.PRNGKey(0))
+    assert state.env_id == "go_5x5"
+    init_fn = jax.jit(jax.vmap(env.init))
+    state = init_fn(jax.random.split(jax.random.PRNGKey(0)))
+    assert state.env_id == "go_5x5"
+
+
 def test_api():
     import pgx
     env = pgx.make("go_9x9")
