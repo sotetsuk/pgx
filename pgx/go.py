@@ -88,6 +88,7 @@ class Go(core.Env):
         _terminated = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))
         state = state.replace(terminated=(state.terminated | _terminated))  # type:ignore
         # fmt: on
+        assert isinstance(state, State)
         reward_bw = go.terminal_values(state._x, self.size)
         should_flip = state.current_player == state._x._turn
         rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
