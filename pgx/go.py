@@ -88,8 +88,10 @@ class Go(core.Env):
         _terminated = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))
         state = state.replace(terminated=(state.terminated | _terminated))  # type:ignore
         # fmt: on
-        assert isinstance(state, State)
-        rewards = terminal_values(state, self.size)
+        reward_bw = go.terminal_values(state._x, self.size)
+        should_flip = state.current_player == state._x._turn
+        rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
+        rewards = jax.lax.select(state.terminated, rewards, jnp.zeros_like(rewards))
         return state.replace(rewards=rewards)  # type:ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
@@ -142,14 +144,6 @@ class Go(core.Env):
     @property
     def num_players(self) -> int:
         return 2
-
-
-def terminal_values(state: State, size) -> Array:
-    reward_bw = go.terminal_values(state._x, size)
-    should_flip = state.current_player == state._x._turn
-    reward = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
-    reward = jax.lax.select(state.terminated, reward, jnp.zeros_like(reward))
-    return reward
 
 
 # only for debug
