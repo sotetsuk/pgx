@@ -13,19 +13,17 @@
 # limitations under the License.
 
 from functools import partial
+from typing import NamedTuple
 
 import jax
 from jax import Array
 from jax import numpy as jnp
 
-from pgx._src.struct import dataclass
-
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
-@dataclass
-class GameState:
+class GameState(NamedTuple):
     size: Array = jnp.int32(19)
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
@@ -53,7 +51,7 @@ class Game:
         )
 
     def step(self, x: GameState, action: int) -> GameState:
-        x = x.replace(ko=jnp.int32(-1))  # type: ignore
+        x = x._replace(ko=jnp.int32(-1))
 
         # update state
         x = jax.lax.cond(
@@ -63,17 +61,17 @@ class Game:
         )
 
         # increment turns
-        x = x.replace(turn=(x.turn + 1) % 2)  # type: ignore
+        x = x._replace(turn=(x.turn + 1) % 2)  # type: ignore
 
         # update board history
         board_history = jnp.roll(x.board_history, self.size**2)
         board_history = board_history.at[0].set(
             jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
         )
-        x = x.replace(board_history=board_history)  # type: ignore
+        x = x._replace(board_history=board_history)  # type: ignore
 
         # check PSK
-        x = x.replace(is_psk=_check_PSK(x))  # type: ignore
+        x = x._replace(is_psk=_check_PSK(x))  # type: ignore
 
         return x
 
@@ -151,11 +149,11 @@ class Game:
 
 
 def _pass_move(state: GameState) -> GameState:
-    return state.replace(consecutive_pass_count=state.consecutive_pass_count + 1)  # type: ignore
+    return state._replace(consecutive_pass_count=state.consecutive_pass_count + 1)  # type: ignore
 
 
 def _not_pass_move(state: GameState, action, size) -> GameState:
-    state = state.replace(consecutive_pass_count=0)  # type: ignore
+    state = state._replace(consecutive_pass_count=0)  # type: ignore
     xy = action
     num_captured_stones_before = state.num_captured_stones[state.turn]
 
@@ -199,7 +197,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     state = jax.lax.cond(
         state.num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
-        lambda: state.replace(ko=jnp.int32(-1))  # type:ignore
+        lambda: state._replace(ko=jnp.int32(-1))  # type:ignore
     )
     # fmt: on
 
@@ -221,7 +219,7 @@ def _merge_around_xy(i, state: GameState, xy, size):
 
 def _set_stone(state: GameState, xy) -> GameState:
     my_color = _my_color(state)
-    return state.replace(  # type: ignore
+    return state._replace(  # type: ignore
         chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
     )
 
@@ -240,7 +238,7 @@ def _merge_chain(state: GameState, xy, adj_xy):
         state.chain_id_board,
     )
 
-    return state.replace(chain_id_board=chain_id_board)  # type: ignore
+    return state._replace(chain_id_board=chain_id_board)  # type: ignore
 
 
 def _remove_stones(
@@ -254,7 +252,7 @@ def _remove_stones(
         lambda: jnp.int32(rm_stone_xy),
         lambda: state.ko,
     )
-    return state.replace(  # type: ignore
+    return state._replace(  # type: ignore
         chain_id_board=chain_id_board,
         num_captured_stones=state.num_captured_stones.at[state.turn].add(
             num_captured_stones
