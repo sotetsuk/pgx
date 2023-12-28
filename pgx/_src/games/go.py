@@ -95,9 +95,7 @@ class Game:
         num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
 
         chain_ix = jnp.abs(state.chain_id_board) - 1
-        # fmt: off
         in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
-        # fmt: on
         has_liberty = (state.chain_id_board * my_color > 0) & ~in_atari
         kills_opp = (state.chain_id_board * opp_color > 0) & in_atari
 
@@ -172,13 +170,11 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     state = jax.lax.fori_loop(0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state)
 
     # Check Ko
-    # fmt: off
     state = jax.lax.cond(
         state.num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
         lambda: state._replace(ko=jnp.int32(-1))
     )
-    # fmt: on
 
     return state
 
@@ -247,11 +243,9 @@ def _count(state: GameState, size):
     def _count_neighbor(xy):
         neighbors = _neighbour(xy, size)
         on_board = neighbors != -1
-        # fmt: off
         return (jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
                 jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
                 jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum())
-        # fmt: on
 
     idx = jnp.arange(size**2)
     num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(idx)
@@ -328,10 +322,8 @@ def _check_PSK(state: GameState):
 
     Anyway, we believe it's effect is very small as PSK rarely happens, especially in 19x19 board.
     """
-    # fmt: off
     not_passed = state.consecutive_pass_count == 0
     is_psk = not_passed & (jnp.abs(state.board_history[0] - state.board_history[1:]).sum(axis=1) == 0).any()
-    # fmt: on
     return is_psk
 
 
@@ -362,8 +354,6 @@ def _count_ji(state: GameState, color: int, size: int):
         mask = is_opp_neighbours(b)
         return jnp.where(mask, -1, b), mask.any()
 
-    # fmt off
     b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, TRUE))
-    # fmt on
 
     return (b == 0).sum()
