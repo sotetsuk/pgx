@@ -40,7 +40,6 @@ class GameState:
 
 
 class Go:
-
     def __init__(self, size: int, komi: float = 7.5):
         self.size = size
         self.komi = komi
@@ -78,7 +77,6 @@ class Go:
 
         return x
 
-
     def observe(self, x: GameState, my_turn, history_length):
         my_color = jnp.int32([1, -1])[my_turn]
 
@@ -90,8 +88,11 @@ class Go:
         log = _make(jnp.arange(history_length * 2))
         color = jnp.full_like(log[0], my_turn)  # black=0, white=1
 
-        return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
-
+        return (
+            jnp.vstack([log, color])
+            .transpose()
+            .reshape((self.size, self.size, -1))
+        )
 
     def legal_action_mask(self, state: GameState) -> Array:
         """Logic is highly inspired by OpenSpiel's Go implementation"""
@@ -131,11 +132,9 @@ class Go:
         )
         return jnp.append(legal_action_mask, TRUE)  # pass is always legal
 
-
     def is_terminal(self, x: GameState):
         two_consecutive_pass = x.consecutive_pass_count >= 2
         return two_consecutive_pass | x.is_psk
-
 
     def terminal_values(self, x: GameState):
         score = _count_point(x, self.size)
