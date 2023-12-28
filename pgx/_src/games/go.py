@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from functools import partial
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import jax
 from jax import Array
@@ -66,7 +66,10 @@ class Game:
         state = state._replace(is_psk=_check_PSK(state))
         return state
 
-    def observe(self, state: GameState, color: Array):
+    def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
+        if color is None:
+            color = state.color
+
         my_color_sign = jnp.int32([1, -1])[color]
 
         @jax.vmap
