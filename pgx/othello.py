@@ -180,7 +180,7 @@ def _step(state, action):
         (
             (jnp.count_nonzero(my | opp) == 64)
             | ~opp.any()
-            | (state._consecutive_pass_count & (action == 64))
+            | (state._passed & (action == 64))
         ),
         lambda: (_get_reward(my, opp, state.current_player), TRUE),
         lambda: (jnp.zeros(2, jnp.float32), FALSE),
