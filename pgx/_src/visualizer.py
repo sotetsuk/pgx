@@ -372,17 +372,17 @@ class Visualizer:
             self.config["GRID_SIZE"] = 25
             try:
                 self.config["BOARD_WIDTH"] = int(
-                    _state._x._size[0]  # type:ignore
+                    _state._x.size[0]  # type:ignore
                 )
                 self.config["BOARD_HEIGHT"] = int(
-                    _state._x._size[0]  # type:ignore
+                    _state._x.size[0]  # type:ignore
                 )
             except IndexError:
                 self.config["BOARD_WIDTH"] = int(
-                    _state._x._size  # type: ignore
+                    _state._x.size  # type: ignore
                 )  # type:ignore
                 self.config["BOARD_HEIGHT"] = int(
-                    _state._x._size  # type: ignore
+                    _state._x.size  # type: ignore
                 )  # type:ignore
             self._make_dwg_group = _make_go_dwg  # type:ignore
             if (

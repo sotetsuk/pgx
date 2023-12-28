@@ -38,9 +38,9 @@ class State(core.State):
     @property
     def env_id(self) -> core.EnvId:
         try:
-            size = int(self._x._size.item())
+            size = int(self._x.size.item())
         except TypeError:
-            size = int(self._x._size[0].item())
+            size = int(self._x.size[0].item())
         return f"go_{size}x{size}"  # type: ignore
 
     @staticmethod
@@ -155,7 +155,7 @@ def _show(state: State) -> None:
     WHITE_CHAR = "O"
     POINT_CHAR = "+"
     print("===========")
-    for xy in range(state._x._size * state._x._size):
+    for xy in range(state._x.size * state._x.size):
         if state._x._chain_id_board[xy] > 0:
             print(" " + BLACK_CHAR, end="")
         elif state._x._chain_id_board[xy] < 0:
@@ -163,7 +163,7 @@ def _show(state: State) -> None:
         else:
             print(" " + POINT_CHAR, end="")
 
-        if xy % state._x._size == state._x._size - 1:
+        if xy % state._x.size == state._x.size - 1:
             print()
 
 

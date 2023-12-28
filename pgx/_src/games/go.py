@@ -26,7 +26,7 @@ TRUE = jnp.bool_(True)
 
 @dataclass
 class GameState:
-    _size: Array = jnp.int32(19)
+    size: Array = jnp.int32(19)
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
     _chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
@@ -41,7 +41,7 @@ class GameState:
 
 def init(size: int, komi: float) -> GameState:
     return GameState(
-        _size=jnp.int32(size),
+        size=jnp.int32(size),
         _chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         _board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
         _komi=jnp.float32(komi),
@@ -307,7 +307,7 @@ def _opponent_color(state: GameState):
 
 
 def _ko_may_occur(state: GameState, xy: int) -> Array:
-    size = state._size
+    size = state.size
     x = xy // size
     y = xy % size
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
