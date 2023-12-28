@@ -102,9 +102,7 @@ def _make_mahjong_dwg(dwg, state: MahjongState, config):
 
     # board
     for i in range(4):
-        players_g = _make_players_dwg(
-            dwg, state, i, color_set, BOARD_WIDTH, BOARD_HEIGHT, GRID_SIZE
-        )
+        players_g = _make_players_dwg(dwg, state, i, color_set, BOARD_WIDTH, BOARD_HEIGHT, GRID_SIZE)
         players_g.rotate(
             angle=-90 * i,
             center=(BOARD_WIDTH * GRID_SIZE / 2, BOARD_WIDTH * GRID_SIZE / 2),

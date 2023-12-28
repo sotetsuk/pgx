@@ -28,9 +28,7 @@ import dataclasses
 from typing import TypeVar
 
 import jax
-from typing_extensions import (  # pytype: disable=not-supported-yet
-    dataclass_transform,
-)
+from typing_extensions import dataclass_transform  # pytype: disable=not-supported-yet
 
 has_flax = True
 try:
@@ -142,10 +140,7 @@ def dataclass(clz: _T) -> _T:
 
     def iterate_clz_with_keys(x):
         meta = tuple(getattr(x, name) for name in meta_fields)
-        data = tuple(
-            (jax.tree_util.GetAttrKey(name), getattr(x, name))
-            for name in data_fields
-        )
+        data = tuple((jax.tree_util.GetAttrKey(name), getattr(x, name)) for name in data_fields)
         return data, meta
 
     def clz_from_iterable(meta, data):
@@ -155,34 +150,22 @@ def dataclass(clz: _T) -> _T:
         return data_clz(**kwargs)
 
     if hasattr(jax.tree_util, "register_pytree_with_keys"):
-        jax.tree_util.register_pytree_with_keys(
-            data_clz, iterate_clz_with_keys, clz_from_iterable
-        )
+        jax.tree_util.register_pytree_with_keys(data_clz, iterate_clz_with_keys, clz_from_iterable)
     else:
-        jax.tree_util.register_pytree_node(
-            data_clz, iterate_clz, clz_from_iterable
-        )
+        jax.tree_util.register_pytree_node(data_clz, iterate_clz, clz_from_iterable)
 
         def keypaths(_):
-            return [
-                jax.tree_util.AttributeKeyPathEntry(name)
-                for name in data_fields
-            ]
+            return [jax.tree_util.AttributeKeyPathEntry(name) for name in data_fields]
 
         jax.tree_util.register_keypaths(data_clz, keypaths)
 
     def to_state_dict(x):
-        state_dict = {
-            name: serialization.to_state_dict(getattr(x, name))
-            for name in data_fields
-        }
+        state_dict = {name: serialization.to_state_dict(getattr(x, name)) for name in data_fields}
         return state_dict
 
     def from_state_dict(x, state):
         """Restore the state of a data class."""
-        state = (
-            state.copy()
-        )  # copy the state so we can pop the restored fields.
+        state = state.copy()  # copy the state so we can pop the restored fields.
         updates = {}
         for name in data_fields:
             if name not in state:
@@ -193,9 +176,7 @@ def dataclass(clz: _T) -> _T:
                 )
             value = getattr(x, name)
             value_state = state.pop(name)
-            updates[name] = serialization.from_state_dict(
-                value, value_state, name=name
-            )
+            updates[name] = serialization.from_state_dict(value, value_state, name=name)
         if state:
             names = ",".join(state.keys())
             raise ValueError(
@@ -206,9 +187,7 @@ def dataclass(clz: _T) -> _T:
         return x.replace(**updates)
 
     if has_flax:
-        serialization.register_serialization_state(
-            data_clz, to_state_dict, from_state_dict
-        )
+        serialization.register_serialization_state(data_clz, to_state_dict, from_state_dict)
 
     # add a _flax_dataclass flag to distinguish from regular dataclasses
     data_clz._flax_dataclass = True  # type: ignore[attr-defined]

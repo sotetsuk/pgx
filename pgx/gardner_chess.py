@@ -94,13 +94,9 @@ class State(core.State):
     _fullmove_count: Array = jnp.int32(1)  # increase every black move
     _zobrist_hash: Array = jnp.uint32(INIT_ZOBRIST_HASH)
     _hash_history: Array = (
-        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32)
-        .at[0]
-        .set(jnp.uint32(INIT_ZOBRIST_HASH))
+        jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(jnp.uint32(INIT_ZOBRIST_HASH))
     )
-    _board_history: Array = (
-        jnp.zeros((8, 25), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
-    )
+    _board_history: Array = jnp.zeros((8, 25), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     _possible_piece_positions: Array = jnp.int32(
         [
             [0, 1, 5, 6, 10, 11, 15, 16, 20, 21],
@@ -153,9 +149,7 @@ class Action:
         return Action(  # type: ignore
             from_=from_,
             to=TO_MAP[from_, plane],  # -1 if impossible move
-            underpromotion=jax.lax.select(
-                plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)
-            ),
+            underpromotion=jax.lax.select(plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)),
         )
 
     def _to_label(self):
@@ -208,9 +202,7 @@ def _step(state: State, action: Array):
     state = _apply_move(state, a)
     state = _flip(state)
     state = _update_history(state)
-    state = state.replace(  # type: ignore
-        legal_action_mask=_legal_action_mask(state)
-    )
+    state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
     state = _check_termination(state)
     return state
 
@@ -234,9 +226,7 @@ def _apply_move(state: State, a: Action):
     # update counters
     captured = state._board[a.to] < 0
     state = state.replace(  # type: ignore
-        _halfmove_count=jax.lax.select(
-            captured | (piece == PAWN), 0, state._halfmove_count + 1
-        ),
+        _halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state._halfmove_count + 1),
         _fullmove_count=state._fullmove_count + jnp.int32(state._turn == 1),
     )
 
@@ -254,17 +244,11 @@ def _apply_move(state: State, a: Action):
     )
 
     # actually move
-    state = state.replace(  # type: ignore
-        _board=state._board.at[a.from_].set(EMPTY).at[a.to].set(piece)
-    )
+    state = state.replace(_board=state._board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
 
     # update possible piece positions
     ix = jnp.argmin(jnp.abs(state._possible_piece_positions[0, :] - a.from_))
-    state = state.replace(  # type: ignore
-        _possible_piece_positions=state._possible_piece_positions.at[
-            0, ix
-        ].set(a.to)
-    )
+    state = state.replace(_possible_piece_positions=state._possible_piece_positions.at[0, ix].set(a.to))  # type: ignore
     return state
 
 
@@ -294,9 +278,7 @@ def has_insufficient_pieces(state: State):
     # Uses the same condition as OpenSpiel.
     # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/chess/chess_board.cc#L724
     num_pieces = (state._board != EMPTY).sum()
-    num_pawn_rook_queen = (
-        (jnp.abs(state._board) >= ROOK) | (jnp.abs(state._board) == PAWN)
-    ).sum() - 2  # two kings
+    num_pawn_rook_queen = ((jnp.abs(state._board) >= ROOK) | (jnp.abs(state._board) == PAWN)).sum() - 2  # two kings
     num_bishop = (jnp.abs(state._board) == 3).sum()
     # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
     black_coords = jnp.arange(0, 25, 2)
@@ -309,9 +291,7 @@ def has_insufficient_pieces(state: State):
     # King + Bishop* vs King + Bishop* (Bishops are on same color tile)
     is_bishop_all_on_black = num_bishop_on_black == num_bishop
     is_bishop_all_on_white = num_bishop_on_black == 0
-    is_insufficient |= (num_pieces == num_bishop + 2) & (
-        is_bishop_all_on_black | is_bishop_all_on_white
-    )
+    is_insufficient |= (num_pieces == num_bishop + 2) & (is_bishop_all_on_black | is_bishop_all_on_white)
 
     return is_insufficient
 
@@ -358,9 +338,7 @@ def _legal_action_mask(state):
         ok_labels = legal_labels(labels)
         return ok_labels.flatten()
 
-    actions = legal_normal_moves(
-        state._possible_piece_positions[0]
-    ).flatten()  # include -1
+    actions = legal_normal_moves(state._possible_piece_positions[0]).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(25 * 49 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
@@ -394,16 +372,8 @@ def _is_pseudo_legal(state: State, a: Action):
     between_ixs = BETWEEN[a.from_, a.to]
     ok &= ((between_ixs < 0) | (state._board[between_ixs] == EMPTY)).all()
     # filter pawn move
-    ok &= ~(
-        (piece == PAWN)
-        & (a.to // 5 == a.from_ // 5)
-        & (state._board[a.to] < 0)
-    )
-    ok &= ~(
-        (piece == PAWN)
-        & (a.to // 5 != a.from_ // 5)
-        & (state._board[a.to] >= 0)
-    )
+    ok &= ~((piece == PAWN) & (a.to // 5 == a.from_ // 5) & (state._board[a.to] < 0))
+    ok &= ~((piece == PAWN) & (a.to // 5 != a.from_ // 5) & (state._board[a.to] >= 0))
     return (a.to >= 0) & ok
 
 
@@ -429,24 +399,14 @@ def _zobrist_hash(state):
 def _update_zobrist_hash(state: State, action: Action):
     hash_ = state._zobrist_hash
     source_piece = state._board[action.from_]
-    source_piece = jax.lax.select(
-        state._turn == 0, source_piece + 6, (source_piece * -1) + 6
-    )
+    source_piece = jax.lax.select(state._turn == 0, source_piece + 6, (source_piece * -1) + 6)
     destination_piece = state._board[action.to]
-    destination_piece = jax.lax.select(
-        state._turn == 0, destination_piece + 6, (destination_piece * -1) + 6
-    )
-    from_ = jax.lax.select(
-        state._turn == 0, action.from_, _flip_pos(action.from_)
-    )
+    destination_piece = jax.lax.select(state._turn == 0, destination_piece + 6, (destination_piece * -1) + 6)
+    from_ = jax.lax.select(state._turn == 0, action.from_, _flip_pos(action.from_))
     to = jax.lax.select(state._turn == 0, action.to, _flip_pos(action.to))
-    hash_ ^= ZOBRIST_BOARD[
-        from_, source_piece
-    ]  # remove the piece from the source pos
+    hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # remove the piece from the source pos
     hash_ ^= ZOBRIST_BOARD[from_, 6]  # make the source pos empty
-    hash_ ^= ZOBRIST_BOARD[
-        to, destination_piece
-    ]  # remove the piece from the target pos (including empty)
+    hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # remove the piece from the target pos (including empty)
     # underpromotion
     source_piece = jax.lax.select(
         action.underpromotion >= 0,
@@ -465,14 +425,10 @@ def _update_zobrist_hash(state: State, action: Action):
 
 
 def _observe(state: State, player_id: Array):
-    color = jax.lax.select(
-        state.current_player == player_id, state._turn, 1 - state._turn
-    )
+    color = jax.lax.select(state.current_player == player_id, state._turn, 1 - state._turn)
     ones = jnp.ones((1, 5, 5), dtype=jnp.float32)
 
-    state = jax.lax.cond(
-        state.current_player == player_id, lambda: state, lambda: _flip(state)
-    )
+    state = jax.lax.cond(state.current_player == player_id, lambda: state, lambda: _flip(state))
 
     def make(i):
         board = _rotate(state._board_history[i].reshape((5, 5)))
@@ -495,18 +451,12 @@ def _observe(state: State, player_id: Array):
     total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones
     no_prog_cnt = (state._halfmove_count.astype(jnp.float32) / 100.0) * ones
 
-    return jnp.vstack(
-        [board_feat, color, total_move_cnt, no_prog_cnt]
-    ).transpose((1, 2, 0))
+    return jnp.vstack([board_feat, color, total_move_cnt, no_prog_cnt]).transpose((1, 2, 0))
 
 
 def _possible_piece_positions(state: State):
-    my_pos = jnp.nonzero(state._board > 0, size=10, fill_value=-1)[0].astype(
-        jnp.int32
-    )
-    opp_pos = jnp.nonzero(_flip(state)._board > 0, size=10, fill_value=-1)[
-        0
-    ].astype(jnp.int32)
+    my_pos = jnp.nonzero(state._board > 0, size=10, fill_value=-1)[0].astype(jnp.int32)
+    opp_pos = jnp.nonzero(_flip(state)._board > 0, size=10, fill_value=-1)[0].astype(jnp.int32)
     return jnp.vstack((my_pos, opp_pos))
 
 
@@ -527,9 +477,7 @@ def _flip(state: State) -> State:
         current_player=(state.current_player + 1) % 2,
         _board=-jnp.flip(state._board.reshape(5, 5), axis=1).flatten(),
         _turn=(state._turn + 1) % 2,
-        _board_history=-jnp.flip(
-            state._board_history.reshape(8, 5, 5), axis=-1
-        ).reshape(-1, 25),
+        _board_history=-jnp.flip(state._board_history.reshape(8, 5, 5), axis=-1).reshape(-1, 25),
         _possible_piece_positions=state._possible_piece_positions[::-1],
     )
 
@@ -577,18 +525,14 @@ def _from_fen(fen: str):
         _halfmove_count=jnp.int32(halfmove_cnt),
         _fullmove_count=jnp.int32(fullmove_cnt),
     )
-    state = state.replace(  # type: ignore
-        _possible_piece_positions=jax.jit(_possible_piece_positions)(state)
-    )
+    state = state.replace(_possible_piece_positions=jax.jit(_possible_piece_positions)(state))  # type: ignore
     state = state.replace(  # type: ignore
         legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
     state = state.replace(_zobrist_hash=_zobrist_hash(state))  # type: ignore
     state = _update_history(state)
     state = jax.jit(_check_termination)(state)
-    state = state.replace(  # type: ignore
-        observation=jax.jit(_observe)(state, state.current_player)
-    )
+    state = state.replace(observation=jax.jit(_observe)(state, state.current_player))  # type: ignore
     return state
 
 

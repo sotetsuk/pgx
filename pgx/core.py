@@ -218,9 +218,7 @@ class Env(abc.ABC):
         # Taking any action at terminal state does not give any effect to the state
         state = jax.lax.cond(
             state.terminated,
-            lambda: state.replace(  # type: ignore
-                legal_action_mask=jnp.ones_like(state.legal_action_mask)
-            ),
+            lambda: state.replace(legal_action_mask=jnp.ones_like(state.legal_action_mask)),  # type: ignore
             lambda: state,
         )
 
@@ -289,11 +287,7 @@ class Env(abc.ABC):
 
     def _step_with_illegal_action(self, state: State, loser: Array) -> State:
         penalty = self._illegal_action_penalty
-        reward = (
-            jnp.ones_like(state.rewards)
-            * (-1 * penalty)
-            * (self.num_players - 1)
-        )
+        reward = jnp.ones_like(state.rewards) * (-1 * penalty) * (self.num_players - 1)
         reward = reward.at[loser].set(penalty)
         return state.replace(rewards=reward, terminated=TRUE)  # type: ignore
 
@@ -404,9 +398,7 @@ def make(env_id: EnvId):  # noqa: C901
 
         return MinAtarSeaquest()
     elif env_id == "minatar-space_invaders":
-        from pgx.minatar.space_invaders import (  # type: ignore
-            MinAtarSpaceInvaders,
-        )
+        from pgx.minatar.space_invaders import MinAtarSpaceInvaders  # type: ignore
 
         return MinAtarSpaceInvaders()
     elif env_id == "othello":
@@ -427,6 +419,4 @@ def make(env_id: EnvId):  # noqa: C901
         return TicTacToe()
     else:
         envs = "\n".join(available_envs())
-        raise ValueError(
-            f"Wrong env_id '{env_id}' is passed. Available ids are: \n{envs}"
-        )
+        raise ValueError(f"Wrong env_id '{env_id}' is passed. Available ids are: \n{envs}")

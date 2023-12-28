@@ -82,14 +82,10 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 1 and jnp.abs(c1 - c0) <= 1:
             legal_dst.append(to)
         # init move
-        if (r0 == 1 or r0 == 6) and (
-            jnp.abs(c1 - c0) == 0 and jnp.abs(r1 - r0) == 2
-        ):
+        if (r0 == 1 or r0 == 6) and (jnp.abs(c1 - c0) == 0 and jnp.abs(r1 - r0) == 2):
             legal_dst.append(to)
     assert len(legal_dst) <= 8
-    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(
-        jnp.int32(legal_dst)
-    )
+    CAN_MOVE = CAN_MOVE.at[1, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -101,9 +97,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 2 and jnp.abs(c1 - c0) == 1:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(
-        jnp.int32(legal_dst)
-    )
+    CAN_MOVE = CAN_MOVE.at[2, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
 # BISHOP
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -115,9 +109,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(
-        jnp.int32(legal_dst)
-    )
+    CAN_MOVE = CAN_MOVE.at[3, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
 # ROOK
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -129,9 +121,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(
-        jnp.int32(legal_dst)
-    )
+    CAN_MOVE = CAN_MOVE.at[4, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
 # QUEEN
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -145,9 +135,7 @@ for from_ in range(64):
         if jnp.abs(r1 - r0) == jnp.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(
-        jnp.int32(legal_dst)
-    )
+    CAN_MOVE = CAN_MOVE.at[5, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
 # KING
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -164,9 +152,7 @@ for from_ in range(64):
     # if from_ == 39:
     #     legal_dst += [23, 55]
     assert len(legal_dst) <= 8
-    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(
-        jnp.int32(legal_dst)
-    )
+    CAN_MOVE = CAN_MOVE.at[6, from_, : len(legal_dst)].set(jnp.int32(legal_dst))
 
 assert (CAN_MOVE[0, :, :] == -1).all()
 
@@ -181,9 +167,7 @@ for from_ in range(64):
         to = CAN_MOVE[2, from_, i]  # KNIGHT
         if to >= 0:
             legal_dst.append(to)
-    CAN_MOVE_ANY = CAN_MOVE_ANY.at[from_, : len(legal_dst)].set(
-        jnp.int32(legal_dst)
-    )
+    CAN_MOVE_ANY = CAN_MOVE_ANY.at[from_, : len(legal_dst)].set(jnp.int32(legal_dst))
 
 
 # Between
@@ -192,10 +176,7 @@ for from_ in range(64):
     for to in range(64):
         r0, c0 = from_ % 8, from_ // 8
         r1, c1 = to % 8, to // 8
-        if not (
-            (jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0)
-            or (jnp.abs(r1 - r0) == jnp.abs(c1 - c0))
-        ):
+        if not ((jnp.abs(r1 - r0) == 0 or jnp.abs(c1 - c0) == 0) or (jnp.abs(r1 - r0) == jnp.abs(c1 - c0))):
             continue
         dr = max(min(r1 - r0, 1), -1)
         dc = max(min(c1 - c0, 1), -1)
@@ -229,22 +210,14 @@ INIT_POSSIBLE_PIECE_POSITIONS = jnp.int32(
 
 key = jax.random.PRNGKey(238290)
 key, subkey = jax.random.split(key)
-ZOBRIST_BOARD = jax.random.randint(
-    subkey, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
-)
+ZOBRIST_BOARD = jax.random.randint(subkey, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 key, subkey = jax.random.split(key)
-ZOBRIST_SIDE = jax.random.randint(
-    subkey, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
-)
+ZOBRIST_SIDE = jax.random.randint(subkey, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 
 key, subkey = jax.random.split(key)
-ZOBRIST_CASTLING_QUEEN = jax.random.randint(
-    subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
-)
+ZOBRIST_CASTLING_QUEEN = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 key, subkey = jax.random.split(key)
-ZOBRIST_CASTLING_KING = jax.random.randint(
-    subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
-)
+ZOBRIST_CASTLING_KING = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 key, subkey = jax.random.split(key)
 ZOBRIST_EN_PASSANT = jax.random.randint(
     subkey,

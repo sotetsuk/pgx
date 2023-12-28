@@ -108,9 +108,7 @@ class State(core.State):
     @staticmethod
     def _from_sfen(sfen):
         turn, pb, hand, step_count = _from_sfen(sfen)
-        return jax.jit(State._from_board)(turn, pb, hand).replace(  # type: ignore
-            _step_count=jnp.int32(step_count)
-        )
+        return jax.jit(State._from_board)(turn, pb, hand).replace(_step_count=jnp.int32(step_count))  # type: ignore
 
     def _to_sfen(self):
         state = self if self._turn % 2 == 0 else _flip(self)
@@ -218,11 +216,7 @@ class Action:
         # LEGAL_FROM_IDX[UP, 19] = [20, 21, ... -1]
         legal_from_idx = LEGAL_FROM_IDX[direction % 10, to]  # (81,)
         from_cand = state._board[legal_from_idx]  # (8,)
-        mask = (
-            (legal_from_idx >= 0)
-            & (PAWN <= from_cand)
-            & (from_cand < OPP_PAWN)
-        )
+        mask = (legal_from_idx >= 0) & (PAWN <= from_cand) & (from_cand < OPP_PAWN)
         i = jnp.argmax(mask)
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
         piece = jax.lax.select(is_drop, direction - 20, state._board[from_])
@@ -292,9 +286,7 @@ def _step_drop(state: State, action: Action) -> State:
 
 def _set_cache(state: State):
     return state.replace(  # type: ignore
-        _cache_m2b=jnp.nonzero(
-            jax.vmap(_is_major_piece)(state._board), size=8, fill_value=-1
-        )[0],
+        _cache_m2b=jnp.nonzero(jax.vmap(_is_major_piece)(state._board), size=8, fill_value=-1)[0],
         _cache_king=jnp.argmin(jnp.abs(state._board - KING)),
     )
 
@@ -303,9 +295,7 @@ def _legal_action_mask(state: State):
     # update cache
     state = _set_cache(state)
 
-    a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(
-        action=jnp.arange(27 * 81)
-    )
+    a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(action=jnp.arange(27 * 81))
 
     @jax.vmap
     def is_legal_move_wo_pro(i):
@@ -321,17 +311,12 @@ def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal_move(i):
         return pseudo_legal_moves[i % (10 * 81)] & jax.lax.cond(
-            a.is_promotion[i],
-            _is_promotion_legal,
-            _is_no_promotion_legal,
-            *(a.from_[i], a.to[i], state)
+            a.is_promotion[i], _is_promotion_legal, _is_no_promotion_legal, *(a.from_[i], a.to[i], state)
         )
 
     @jax.vmap
     def is_legal_drop(i):
-        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(
-            a.piece[i], a.to[i], state
-        )
+        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(a.piece[i], a.to[i], state)
 
     legal_action_mask = jnp.hstack(
         (
@@ -345,9 +330,7 @@ def _legal_action_mask(state: State):
     direction = 20
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     can_drop_pawn &= ~is_drop_pawn_mate
-    legal_action_mask = legal_action_mask.at[direction * 81 + to].set(
-        can_drop_pawn
-    )
+    legal_action_mask = legal_action_mask.at[direction * 81 + to].set(can_drop_pawn)
 
     return legal_action_mask
 
@@ -356,9 +339,7 @@ def _is_drop_pawn_mate(state: State):
     # check pawn drop mate
     opp_king_pos = jnp.argmin(jnp.abs(state._board - OPP_KING))
     to = opp_king_pos + 1
-    flip_state = _flip(
-        state.replace(_board=state._board.at[to].set(PAWN))  # type: ignore
-    )
+    flip_state = _flip(state.replace(_board=state._board.at[to].set(PAWN)))  # type: ignore
     # Not checkmate if
     #   (1) can capture checking pawn, or
     #   (2) king can escape
@@ -379,9 +360,7 @@ def _is_drop_pawn_mate(state: State):
 
 def _is_legal_drop_wo_piece(to: Array, state: State):
     is_illegal = state._board[to] != EMPTY
-    is_illegal |= _is_checked(
-        state.replace(_board=state._board.at[to].set(PAWN))  # type: ignore
-    )
+    is_illegal |= _is_checked(state.replace(_board=state._board.at[to].set(PAWN)))  # type: ignore
     return ~is_illegal
 
 
@@ -390,9 +369,7 @@ def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: State):
     # don't have the piece
     is_illegal |= state._hand[0, piece] <= 0
     # double pawn
-    is_illegal |= (piece == PAWN) & (
-        (state._board == PAWN).reshape(9, 9).sum(axis=1) > 0
-    )[to // 9]
+    is_illegal |= (piece == PAWN) & ((state._board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
@@ -407,10 +384,7 @@ def _is_legal_move_wo_pro(
     ok = _is_pseudo_legal_move(from_, to, state)
     ok &= ~_is_checked(
         state.replace(  # type: ignore
-            _board=state._board.at[from_]
-            .set(EMPTY)
-            .at[to]
-            .set(state._board[from_]),
+            _board=state._board.at[from_].set(EMPTY).at[to].set(state._board[from_]),
             _cache_king=jax.lax.select(  # update cache
                 state._board[from_] == KING,
                 jnp.int32(to),
@@ -430,9 +404,7 @@ def _is_pseudo_legal_move(
     # there is an obstacle between from_ and to
     i = _major_piece_ix(state._board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
-    is_illegal = (i >= 0) & (
-        (between_ix >= 0) & (state._board[between_ix] != EMPTY)
-    ).any()
+    is_illegal = (i >= 0) & ((between_ix >= 0) & (state._board[between_ix] != EMPTY)).any()
     return ok & ~is_illegal
 
 
@@ -460,9 +432,7 @@ def _is_no_promotion_legal(
     # source is not my piece
     piece = state._board[from_]
     # promotion
-    is_illegal = ((piece == PAWN) | (piece == LANCE)) & (
-        to % 9 == 0
-    )  # Must promote
+    is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # Must promote
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # Must promote
     return ~is_illegal
 
@@ -476,9 +446,7 @@ def _is_promotion_legal(
     piece = state._board[from_]
     # promotion
     is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # Pieces cannot promote
-    is_illegal |= (from_ % 9 >= 3) & (
-        to % 9 >= 3
-    )  # irrelevant to the opponent's territory
+    is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # irrelevant to the opponent's territory
     return ~is_illegal
 
 
@@ -490,15 +458,11 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king(from_):
-        return _is_pseudo_legal_move(
-            from_=from_, to=flipped_king_pos, state=_flip(state)
-        )
+        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=_flip(state))
 
     @jax.vmap
     def can_capture_king_local(from_):
-        return _is_pseudo_legal_move_wo_obstacles(
-            from_=from_, to=flipped_king_pos, state=_flip(state)
-        )
+        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state))
 
     # Simpler implementation without cache of major piece places
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
@@ -506,10 +470,7 @@ def _is_checked(state):
     from_ = 80 - state._cache_m2b
     from_ = jnp.where(from_ == 81, -1, from_)
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
-    return (
-        can_capture_king(from_).any()
-        | can_capture_king_local(neighbours).any()
-    )
+    return can_capture_king(from_).any() | can_capture_king_local(neighbours).any()
 
 
 def _flip_piece(piece):
@@ -584,16 +545,12 @@ def _observe(state: State, player_id: Array) -> Array:
             between_ix = BETWEEN_IX[major_piece_ix, from_, to, :]
             has_obstacles = jax.lax.select(
                 major_piece_ix >= 0,
-                (
-                    (between_ix >= 0) & (state._board[between_ix] != EMPTY)
-                ).any(),
+                ((between_ix >= 0) & (state._board[between_ix] != EMPTY)).any(),
                 FALSE,
             )
             return can_move & ~has_obstacles
 
-        effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(
-            ALL_SQ, ALL_SQ
-        )
+        effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(ALL_SQ, ALL_SQ)
         mine = (PAWN <= state._board) & (state._board < OPP_PAWN)
         return jnp.where(mine.reshape(81, 1), effects, FALSE)
 

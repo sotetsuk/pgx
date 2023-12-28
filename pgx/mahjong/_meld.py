@@ -12,11 +12,7 @@ class Meld:
         # - 1: 下家
         # - 2: 対面
         # - 3: 上家
-        return (
-            (jnp.int32(src) << 13)
-            | (jnp.int32(target) << 7)
-            | jnp.int32(action)
-        )
+        return (jnp.int32(src) << 13) | (jnp.int32(target) << 7) | jnp.int32(action)
 
     @staticmethod
     def to_str(meld) -> str:
@@ -27,47 +23,27 @@ class Meld:
 
         if action == Action.PON:
             if src == 1:
-                return "{}{}[{}]{}".format(
-                    num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "{}{}[{}]{}".format(num, num, num, ["m", "p", "s", "z"][suit])
             elif src == 2:
-                return "{}[{}]{}{}".format(
-                    num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "{}[{}]{}{}".format(num, num, num, ["m", "p", "s", "z"][suit])
             elif src == 3:
-                return "[{}]{}{}{}".format(
-                    num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "[{}]{}{}{}".format(num, num, num, ["m", "p", "s", "z"][suit])
         elif Action.is_selfkan(action):
             if src == 0:
-                return "{}{}{}{}{}".format(
-                    num, num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "{}{}{}{}{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
             if src == 1:
-                return "{}{}[{}{}]{}".format(
-                    num, num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "{}{}[{}{}]{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
             elif src == 2:
-                return "{}[{}{}]{}{}".format(
-                    num, num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "{}[{}{}]{}{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
             elif src == 3:
-                return "[{}{}]{}{}{}".format(
-                    num, num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "[{}{}]{}{}{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
         elif action == Action.MINKAN:
             if src == 1:
-                return "{}{}{}[{}]{}".format(
-                    num, num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "{}{}{}[{}]{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
             elif src == 2:
-                return "{}[{}]{}{}{}".format(
-                    num, num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "{}[{}]{}{}{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
             elif src == 3:
-                return "[{}]{}{}{}{}".format(
-                    num, num, num, num, ["m", "p", "s", "z"][suit]
-                )
+                return "[{}]{}{}{}{}".format(num, num, num, num, ["m", "p", "s", "z"][suit])
         elif Action.CHI_L <= action <= Action.CHI_R:
             assert src == 3
             pos = action - Action.CHI_L
@@ -92,11 +68,7 @@ class Meld:
     def suited_pung(meld) -> int:
         action = Meld.action(meld)
         target = Meld.target(meld)
-        is_pung = (
-            (action == Action.PON)
-            | (action == Action.MINKAN)
-            | Action.is_selfkan(action)
-        )
+        is_pung = (action == Action.PON) | (action == Action.MINKAN) | Action.is_selfkan(action)
         is_suited_pon = is_pung & (target < 27)
 
         return is_suited_pon << target
@@ -105,9 +77,7 @@ class Meld:
     def chow(meld) -> int:
         action = Meld.action(meld)
         is_chi = (Action.CHI_L <= action) & (action <= Action.CHI_R)
-        pos = Meld.target(meld) - (
-            action - Action.CHI_L
-        )  # WARNING: may be negative
+        pos = Meld.target(meld) - (action - Action.CHI_L)  # WARNING: may be negative
 
         pos *= is_chi
         return is_chi << pos
