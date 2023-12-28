@@ -40,9 +40,10 @@ class GameState(NamedTuple):
 
 
 class Game:
-    def __init__(self, size: int = 19, komi: float = 7.5):
+    def __init__(self, size: int = 19, komi: float = 7.5, history_length: int = 8):
         self.size = size
         self.komi = komi
+        self.history_length = history_length
 
     def init(self) -> GameState:
         return GameState(
@@ -73,7 +74,7 @@ class Game:
 
         return x
 
-    def observe(self, x: GameState, my_turn, history_length):
+    def observe(self, x: GameState, my_turn):
         my_color = jnp.int32([1, -1])[my_turn]
 
         @jax.vmap
@@ -81,7 +82,7 @@ class Game:
             color = jnp.int32([1, -1])[i % 2] * my_color
             return x.board_history[i // 2] == color
 
-        log = _make(jnp.arange(history_length * 2))
+        log = _make(jnp.arange(self.history_length * 2))
         color = jnp.full_like(log[0], my_turn)  # black=0, white=1
 
         return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
