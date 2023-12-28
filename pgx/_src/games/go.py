@@ -32,13 +32,11 @@ class GameState:
     _chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
     _board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
     _turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
-    _num_captured_stones: Array = jnp.zeros(
-        2, dtype=jnp.int32
-    )  # [0]=black, [1]=white
+    _num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
     _consecutive_pass_count: Array = jnp.int32(0)
     _ko: Array = jnp.int32(-1)  # by SSK
     _komi: Array = jnp.float32(7.5)
-    is_psk: Array = FALSE
+    _is_psk: Array = FALSE
 
 
 def init(size: int, komi: float) -> GameState:
@@ -71,7 +69,7 @@ def step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(_board_history=board_history)  # type: ignore
 
     # check PSK
-    x = x.replace(is_psk=_check_PSK(x))  # type: ignore
+    x = x.replace(_is_psk=_check_PSK(x))  # type: ignore
 
     return x
 
@@ -131,7 +129,7 @@ def legal_action_mask(state: GameState, size: int) -> Array:
 
 def is_terminal(x: GameState):
     two_consecutive_pass = x._consecutive_pass_count >= 2
-    return two_consecutive_pass | x.is_psk
+    return two_consecutive_pass | x._is_psk
 
 
 def terminal_values(x: GameState, size: int):
@@ -143,7 +141,7 @@ def terminal_values(x: GameState, size: int):
     )
     to_play = x._turn
     reward_bw = jax.lax.select(
-        x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
+        x._is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
     )
     return reward_bw
 
