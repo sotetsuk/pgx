@@ -53,25 +53,20 @@ class Game:
 
     def step(self, x: GameState, action: Array) -> GameState:
         x = x._replace(ko=jnp.int32(-1))
-
         # update state
         x = jax.lax.cond(
             (action < self.size * self.size),
             lambda: _not_pass_move(x, action, self.size),
             lambda: _pass_move(x),
         )
-
         # increment turns
         x = x._replace(color=(x.color + 1) % 2)
-
         # update board history
         board_history = jnp.roll(x.board_history, self.size**2)
         board_history = board_history.at[0].set(jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32))
         x = x._replace(board_history=board_history)
-
         # check PSK
         x = x._replace(is_psk=_check_PSK(x))
-
         return x
 
     def observe(self, x: GameState, color: Array):
