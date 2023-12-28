@@ -74,16 +74,16 @@ class Game:
 
         return x
 
-    def observe(self, x: GameState, my_turn):
-        my_color = jnp.int32([1, -1])[my_turn]
+    def observe(self, x: GameState, color: Array):
+        my_color_sign = jnp.int32([1, -1])[color]
 
         @jax.vmap
         def _make(i):
-            color = jnp.int32([1, -1])[i % 2] * my_color
-            return x.board_history[i // 2] == color
+            c = jnp.int32([1, -1])[i % 2] * my_color_sign
+            return x.board_history[i // 2] == c
 
         log = _make(jnp.arange(self.history_length * 2))
-        color = jnp.full_like(log[0], my_turn)  # black=0, white=1
+        color = jnp.full_like(log[0], color)  # black=0, white=1
 
         return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
