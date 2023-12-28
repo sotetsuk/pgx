@@ -209,7 +209,7 @@ def _to_sfen(state):
         else:
             sfen += " "
     # Turn
-    if state.turn == 0:
+    if state._turn == 0:
         sfen += "b "
     else:
         sfen += "w "
