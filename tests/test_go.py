@@ -370,7 +370,7 @@ def test_observe():
     )
     # fmt: on
     assert state.current_player == 1
-    assert state._x.turn % 2 == 0  # black turn
+    assert state._x.color % 2 == 0  # black turn
     obs = observe(state, 0)   # white
     assert obs.shape == (5, 5, 17)
     assert (obs[:, :, 0] == (curr_board == -1)).all()
@@ -1190,6 +1190,32 @@ def test_max_step_termination():
         state = step_fn(state, i)
     assert state.terminated
     assert not (state.rewards == jnp.float32([0, 0])).all()  # should not tie
+
+
+def test_env_id():
+    env = Go(size=9)
+    init_fn = jax.jit(env.init)
+    state = init_fn(jax.random.PRNGKey(0))
+    assert state.env_id == "go_9x9"
+    init_fn = jax.jit(jax.vmap(env.init))
+    state = init_fn(jax.random.split(jax.random.PRNGKey(0)))
+    assert state.env_id == "go_9x9"
+
+    env = Go(size=19)
+    init_fn = jax.jit(env.init)
+    state = init_fn(jax.random.PRNGKey(0))
+    assert state.env_id == "go_19x19"
+    init_fn = jax.jit(jax.vmap(env.init))
+    state = init_fn(jax.random.split(jax.random.PRNGKey(0)))
+    assert state.env_id == "go_19x19"
+
+    env = Go(size=5)
+    init_fn = jax.jit(env.init)
+    state = init_fn(jax.random.PRNGKey(0))
+    assert state.env_id == "go_5x5"
+    init_fn = jax.jit(jax.vmap(env.init))
+    state = init_fn(jax.random.split(jax.random.PRNGKey(0)))
+    assert state.env_id == "go_5x5"
 
 
 def test_api():

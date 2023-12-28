@@ -37,11 +37,7 @@ class State(core.State):
 
     @property
     def env_id(self) -> core.EnvId:
-        try:
-            size = int(self._x.size.item())
-        except TypeError:
-            size = int(self._x.size[0].item())
-        return f"go_{size}x{size}"  # type: ignore
+        return f"go_{self._x.size}x{self._x.size}"  # type: ignore
 
     @staticmethod
     def _from_sgf(sgf: str):
@@ -58,16 +54,14 @@ class Go(core.Env):
     ):
         super().__init__()
         assert isinstance(size, int)
-        self.size = size
-        self.komi = komi
-        self.history_length = history_length
-        self.max_termination_steps = self.size * self.size * 2
-        self._game = go.Game(size=size, komi=komi)
+        self.max_termination_steps = size * size * 2
+        self._game = go.Game(size=size, komi=komi, history_length=history_length)
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
+        size = self._game.size
         return State(  # type:ignore
-            legal_action_mask=jnp.ones(self.size**2 + 1, dtype=jnp.bool_),
+            legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
             current_player=current_player,
             _x=self._game.init(),
         )
@@ -91,7 +85,7 @@ class Go(core.Env):
         # fmt: on
         assert isinstance(state, State)
         reward_bw = self._game.terminal_values(state._x)
-        should_flip = state.current_player == state._x.turn
+        should_flip = state.current_player == state._x.color
         rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
         rewards = jax.lax.select(state.terminated, rewards, jnp.zeros_like(rewards))
         return state.replace(rewards=rewards)  # type:ignore
@@ -130,10 +124,10 @@ class Go(core.Env):
         assert isinstance(state, State)
         my_turn = jax.lax.select(
             player_id == state.current_player,
-            state._x.turn,
-            1 - state._x.turn,
+            state._x.color,
+            1 - state._x.color,
         )
-        return self._game.observe(state._x, my_turn, self.history_length)
+        return self._game.observe(state._x, my_turn)
 
     @property
     def id(self) -> core.EnvId:
