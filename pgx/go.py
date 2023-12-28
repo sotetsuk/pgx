@@ -93,9 +93,7 @@ class Go(core.Env):
         reward_bw = self._game.terminal_values(state._x)
         should_flip = state.current_player == state._x.turn
         rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
-        rewards = jax.lax.select(
-            state.terminated, rewards, jnp.zeros_like(rewards)
-        )
+        rewards = jax.lax.select(state.terminated, rewards, jnp.zeros_like(rewards))
         return state.replace(rewards=rewards)  # type:ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:

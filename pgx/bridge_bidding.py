@@ -37,12 +37,8 @@ DOUBLE_ACTION_NUM = 1
 REDOUBLE_ACTION_NUM = 2
 BID_OFFSET_NUM = 3
 
-DDS_RESULTS_TRAIN_URL = (
-    "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
-)
-DDS_RESULTS_TEST_URL = (
-    "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
-)
+DDS_RESULTS_TRAIN_URL = "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
+DDS_RESULTS_TEST_URL = "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
 
 
 def download_dds_results(download_dir="dds_results"):
@@ -153,9 +149,7 @@ class State(core.State):
 
 
 class BridgeBidding(core.Env):
-    def __init__(
-        self, dds_results_table_path: str = "dds_results/train_000.npy"
-    ):
+    def __init__(self, dds_results_table_path: str = "dds_results/train_000.npy"):
         super().__init__()
         print(
             f"Loading dds results from {dds_results_table_path} ...",
@@ -259,13 +253,9 @@ def _shuffle_players(rng: PRNGKey) -> Array:
     """
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     # player_id = 0, 1 -> team a
-    team_a_players = jax.random.permutation(
-        rng2, jnp.arange(2, dtype=jnp.int32)
-    )
+    team_a_players = jax.random.permutation(rng2, jnp.arange(2, dtype=jnp.int32))
     # player_id = 2, 3 -> team b
-    team_b_players = jax.random.permutation(
-        rng3, jnp.arange(2, 4, dtype=jnp.int32)
-    )
+    team_b_players = jax.random.permutation(rng3, jnp.arange(2, 4, dtype=jnp.int32))
     # decide which team is on
     # Randomly determine NSteam and EWteam
     # Arrange in order of NESW
@@ -314,9 +304,7 @@ def _step(
             [
                 lambda: jax.lax.cond(
                     _is_terminated(_state_pass(state)),
-                    lambda: _terminated_step(
-                        _state_pass(state), lut_keys, lut_values
-                    ),
+                    lambda: _terminated_step(_state_pass(state), lut_keys, lut_values),
                     lambda: _continue_step(_state_pass(state)),
                 ),
                 lambda: _continue_step(_state_X(state)),
@@ -331,8 +319,7 @@ def _observe(state: State, player_id: Array) -> Array:
     """Returns the observation of a given player"""
     # make vul of observation
     is_player_vul, is_non_player_vul = jax.lax.cond(
-        (_player_position(state.current_player, state) == 0)
-        | (_player_position(state.current_player, state) == 2),
+        (_player_position(state.current_player, state) == 0) | (_player_position(state.current_player, state) == 2),
         lambda: (state._vul_NS, state._vul_EW),
         lambda: (state._vul_EW, state._vul_NS),
     )
@@ -347,9 +334,7 @@ def _observe(state: State, player_id: Array) -> Array:
     hand = jax.lax.fori_loop(
         position * 13,
         (position + 1) * 13,
-        lambda i, hand: hand.at[
-            _convert_card_pgx_to_openspiel(state._hand[i])
-        ].set(True),
+        lambda i, hand: hand.at[_convert_card_pgx_to_openspiel(state._hand[i])].set(True),
         hand,
     )
 
@@ -369,8 +354,7 @@ def _make_obs_history(turn, vuls):
     state, player_id, last_bid, obs_history = vuls
     action = state._bidding_history[turn]
     relative_bidder = (
-        (turn + state._dealer.astype(jnp.int32)) % 4
-        + (4 - _player_position(player_id, state).astype(jnp.int32))
+        (turn + state._dealer.astype(jnp.int32)) % 4 + (4 - _player_position(player_id, state).astype(jnp.int32))
     ) % 4
     last_bid, obs_history = jax.lax.cond(
         action <= 2,
@@ -387,29 +371,17 @@ def _make_obs_history(turn, vuls):
                 ),
                 lambda: (
                     last_bid,
-                    obs_history.at[
-                        4
-                        + (last_bid - BID_OFFSET_NUM) * 4 * 3
-                        + 4
-                        + relative_bidder
-                    ].set(True),
+                    obs_history.at[4 + (last_bid - BID_OFFSET_NUM) * 4 * 3 + 4 + relative_bidder].set(True),
                 ),
                 lambda: (
                     last_bid,
-                    obs_history.at[
-                        4
-                        + (last_bid - BID_OFFSET_NUM) * 4 * 3
-                        + 4 * 2
-                        + relative_bidder
-                    ].set(True),
+                    obs_history.at[4 + (last_bid - BID_OFFSET_NUM) * 4 * 3 + 4 * 2 + relative_bidder].set(True),
                 ),
             ],
         ),
         lambda: (
             action,
-            obs_history.at[
-                4 + (action - BID_OFFSET_NUM) * 4 * 3 + relative_bidder
-            ].set(True),
+            obs_history.at[4 + (action - BID_OFFSET_NUM) * 4 * 3 + relative_bidder].set(True),
         ),
     )
     return state, player_id, last_bid, obs_history
@@ -418,9 +390,7 @@ def _make_obs_history(turn, vuls):
 def _convert_card_pgx_to_openspiel(card: Array) -> Array:
     """Convert numerical representation of cards from pgx to openspiel"""
     OPEN_SPIEL_SUIT_NUM = jnp.array([3, 2, 1, 0], dtype=jnp.int32)
-    OPEN_SPIEL_RANK_NUM = jnp.array(
-        [12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], dtype=jnp.int32
-    )
+    OPEN_SPIEL_RANK_NUM = jnp.array([12, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], dtype=jnp.int32)
     suit = OPEN_SPIEL_SUIT_NUM[card // 13]
     rank = OPEN_SPIEL_RANK_NUM[card % 13]
     return suit + rank * 4
@@ -461,8 +431,7 @@ def _is_terminated(state: State) -> bool:
     Four consecutive passes if not bid (pass out), otherwise three consecutive passes
     """
     return jax.lax.cond(
-        ((state._last_bid == -1) & (state._pass_num == 4))
-        | ((state._last_bid != -1) & (state._pass_num == 3)),
+        ((state._last_bid == -1) & (state._pass_num == 4)) | ((state._last_bid != -1) & (state._pass_num == 3)),
         lambda: True,
         lambda: False,
     )
@@ -509,12 +478,8 @@ def _make_reward(
         dds_trick,
     )
     # Make reward array in playerID order
-    player_positions = jax.vmap(lambda i: _player_position(i, state))(
-        jnp.arange(4)
-    )
-    partners = jax.vmap(lambda pos: _is_partner(pos, declare_position))(
-        player_positions
-    )
+    player_positions = jax.vmap(lambda i: _player_position(i, state))(jnp.arange(4))
+    partners = jax.vmap(lambda pos: _is_partner(pos, declare_position))(player_positions)
 
     return jnp.where(partners, score, -score)
 
@@ -643,35 +608,19 @@ def _make_score(
     score = jax.lax.cond(
         call_xx,
         lambda: score * jnp.float32(4),
-        lambda: jax.lax.cond(
-            call_x, lambda: score * jnp.float32(2), lambda: score
-        ),
+        lambda: jax.lax.cond(call_x, lambda: score * jnp.float32(2), lambda: score),
     )
     game_bonus = jax.lax.cond(vul, lambda: _GAME_VUL, lambda: _GAME)
-    small_slam_bonus = jax.lax.cond(
-        vul, lambda: _SMALL_SLAM_VUL, lambda: _SMALL_SLAM
-    )
-    grand_slam_bonus = jax.lax.cond(
-        vul, lambda: _GRAND_SLAM_VUL, lambda: _GRAND_SLAM
-    )
+    small_slam_bonus = jax.lax.cond(vul, lambda: _SMALL_SLAM_VUL, lambda: _SMALL_SLAM)
+    grand_slam_bonus = jax.lax.cond(vul, lambda: _GRAND_SLAM_VUL, lambda: _GRAND_SLAM)
 
-    score = jax.lax.cond(
-        score >= 100, lambda: score + game_bonus, lambda: score
-    )
-    score = jax.lax.cond(
-        level >= 6, lambda: score + small_slam_bonus, lambda: score
-    )
-    score = jax.lax.cond(
-        level == 7, lambda: score + grand_slam_bonus, lambda: score
-    )
+    score = jax.lax.cond(score >= 100, lambda: score + game_bonus, lambda: score)
+    score = jax.lax.cond(level >= 6, lambda: score + small_slam_bonus, lambda: score)
+    score = jax.lax.cond(level == 7, lambda: score + grand_slam_bonus, lambda: score)
     score += _MAKE  # make bonus
 
-    overtrick_x = jax.lax.cond(
-        vul, lambda: _OVERTRICK_X_VUL, lambda: _OVERTRICK_X
-    )
-    overtrick_xx = jax.lax.cond(
-        vul, lambda: _OVERTRICK_XX_VUL, lambda: _OVERTRICK_XX
-    )
+    overtrick_x = jax.lax.cond(vul, lambda: _OVERTRICK_X_VUL, lambda: _OVERTRICK_X)
+    overtrick_xx = jax.lax.cond(vul, lambda: _OVERTRICK_XX_VUL, lambda: _OVERTRICK_XX)
     score, over_trick_score_per_trick = jax.lax.cond(
         call_x | call_xx,
         lambda: jax.lax.cond(
@@ -693,15 +642,11 @@ def _contract(
     declare_position, vul = jax.lax.cond(
         _position_to_team(_player_position(state._last_bidder, state)) == 0,
         lambda: (
-            _player_position(
-                state._first_denomination_NS[denomination], state
-            ),
+            _player_position(state._first_denomination_NS[denomination], state),
             state._vul_NS,
         ),
         lambda: (
-            _player_position(
-                state._first_denomination_EW[denomination], state
-            ),
+            _player_position(state._first_denomination_EW[denomination], state),
             state._vul_EW,
         ),
     )
@@ -748,9 +693,7 @@ def _state_bid(state: State, action: int) -> State:
     # pass, double, redouble, make the small bid illegal temporarily
     mask = jnp.arange(38) < action + 1
     return state.replace(  # type: ignore
-        legal_action_mask=jnp.where(
-            mask, jnp.bool_(0), state.legal_action_mask
-        ),
+        legal_action_mask=jnp.where(mask, jnp.bool_(0), state.legal_action_mask),
         _call_x=jnp.bool_(False),
         _call_xx=jnp.bool_(False),
         _pass_num=jnp.int32(0),
@@ -822,9 +765,7 @@ def _state_to_pbn(state: State) -> str:
     for i in range(4):  # player
         hand = jnp.sort(state._hand[i * 13 : (i + 1) * 13])
         for j in range(4):  # suit
-            card = [
-                TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13
-            ][::-1]
+            card = [TO_CARD[i % 13] for i in hand if j * 13 <= i < (j + 1) * 13][::-1]
             if card != [] and card[-1] == "A":
                 card = card[-1:] + card[:-1]
             pbn += "".join(card)
@@ -930,9 +871,7 @@ def _calculate_dds_tricks(
     lut_values: Array,
 ) -> Array:
     key = _state_to_key(state)
-    return _value_to_dds_tricks(
-        _find_value_from_key(key, lut_keys, lut_values)
-    )
+    return _value_to_dds_tricks(_find_value_from_key(key, lut_keys, lut_values))
 
 
 def _find_value_from_key(key: PRNGKey, lut_keys: Array, lut_values: Array):

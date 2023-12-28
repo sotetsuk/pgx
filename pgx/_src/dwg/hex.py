@@ -89,9 +89,7 @@ def _make_hex_dwg(dwg, state: HexState, config):
     b_points = []
     w_points = []
     x1, y1 = (BOARD_SIZE - 1) * GRID_SIZE * r3, 0
-    x2, y2 = ((BOARD_SIZE - 1) / 2) * GRID_SIZE * r3, (
-        BOARD_SIZE - 1
-    ) * GRID_SIZE * 3 / 2
+    x2, y2 = ((BOARD_SIZE - 1) / 2) * GRID_SIZE * r3, (BOARD_SIZE - 1) * GRID_SIZE * 3 / 2
     cx, cy = four_dig((x1 + x2) / 2), four_dig((y1 + y2) / 2)
     # fmt:off
     for i in range(BOARD_SIZE):

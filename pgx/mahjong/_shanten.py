@@ -91,11 +91,7 @@ class Shanten:
 
         n_set = jnp.sum(hand).astype(int) // 3
 
-        return jnp.min(
-            jax.vmap(lambda suit: Shanten._normal(code, n_set, suit))(
-                jnp.arange(4)
-            )
-        )
+        return jnp.min(jax.vmap(lambda suit: Shanten._normal(code, n_set, suit))(jnp.arange(4)))
 
     @staticmethod
     def _normal(code: Array, n_set, head_suit) -> int:

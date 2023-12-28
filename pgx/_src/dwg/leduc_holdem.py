@@ -107,9 +107,7 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
             (3 * GRID_SIZE, 0),
             (2 * GRID_SIZE, 3 * GRID_SIZE),
             fill=color_set.background_color,
-            stroke=color_set.p1_color
-            if state._round == 0
-            else color_set.p2_color,
+            stroke=color_set.p1_color if state._round == 0 else color_set.p2_color,
             stroke_width="2px",
             rx="5px",
             ry="5px",
@@ -119,9 +117,7 @@ def _make_leducHoldem_dwg(dwg, state: LeducHoldemState, config):
         dwg.text(
             text=CARD[state._cards[2]],
             insert=(4 * GRID_SIZE, GRID_SIZE),
-            fill=color_set.p1_color
-            if state._round == 0
-            else color_set.p2_color,
+            fill=color_set.p1_color if state._round == 0 else color_set.p2_color,
             font_size="40px",
             font_family="Courier",
             # font_weight="bold",

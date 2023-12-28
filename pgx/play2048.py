@@ -64,9 +64,7 @@ class Play2048(core.Env):
     def __init__(self):
         super().__init__()
 
-    def step(
-        self, state: core.State, action: Array, key: Optional[Array] = None
-    ) -> core.State:
+    def step(self, state: core.State, action: Array, key: Optional[Array] = None) -> core.State:
         assert key is not None, (
             "v2.0.0 changes the signature of step. Please specify PRNGKey at the third argument:\n\n"
             "  * <  v2.0.0: step(state, action)\n"
@@ -159,9 +157,7 @@ def _legal_action_mask(board_2d):
 
 def _observe(state: State, player_id) -> Array:
     obs = jnp.zeros((16, 31), dtype=jnp.bool_)
-    obs = jax.lax.fori_loop(
-        0, 16, lambda i, obs: obs.at[i, state._board[i]].set(TRUE), obs
-    )
+    obs = jax.lax.fori_loop(0, 16, lambda i, obs: obs.at[i, state._board[i]].set(TRUE), obs)
     return obs.reshape((4, 4, 31))
 
 
@@ -172,9 +168,7 @@ def _add_random_num(board_2d, key):
     """
     key, sub_key = jax.random.split(key)
     pos = jax.random.choice(key, jnp.arange(16), p=(board_2d.ravel() == 0))
-    set_num = jax.random.choice(
-        sub_key, jnp.int32([1, 2]), p=jnp.array([0.9, 0.1])
-    )
+    set_num = jax.random.choice(sub_key, jnp.int32([1, 2]), p=jnp.array([0.9, 0.1]))
     board_2d = board_2d.at[pos // 4, pos % 4].set(set_num)
     return board_2d
 

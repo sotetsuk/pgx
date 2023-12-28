@@ -25,11 +25,7 @@ def _make_2048_dwg(dwg, state: Play2048State, config):
             exp2 = 11
         x = (i % 4) * GRID_SIZE
         y = (i // 4) * GRID_SIZE
-        _color = (
-            f"{(242-exp2*22):02x}"
-            if color_set.background_color == "white"
-            else f"{(35+exp2*20):02x}"
-        )
+        _color = f"{(242-exp2*22):02x}" if color_set.background_color == "white" else f"{(35+exp2*20):02x}"
         board_g.add(
             dwg.rect(
                 (x + 2, y + 2),

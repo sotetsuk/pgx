@@ -35,15 +35,8 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
         type_str = _tile_type_to_str(_type)
         if _is_red and type_str != "g" and type_str != "r":
             type_str += "r"
-        PATH = {
-            f"{i+1}": f"images/sparrow_mahjong/{i+1}p.svg" for i in range(9)
-        }
-        PATH.update(
-            {
-                f"{i+1}r": f"images/sparrow_mahjong/{i+1}pr.svg"
-                for i in range(9)
-            }
-        )
+        PATH = {f"{i+1}": f"images/sparrow_mahjong/{i+1}p.svg" for i in range(9)}
+        PATH.update({f"{i+1}r": f"images/sparrow_mahjong/{i+1}pr.svg" for i in range(9)})
         PATH["0"] = "images/sparrow_mahjong/b.svg"
         PATH["g"] = "images/sparrow_mahjong/gd.svg"
         PATH["r"] = "images/sparrow_mahjong/rd.svg"
@@ -83,9 +76,7 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
     p3_g = dwg.g()
 
     # pieces
-    for player_id, pieces_g in zip(
-        state._shuffled_players, [p1_g, p2_g, p3_g]
-    ):
+    for player_id, pieces_g in zip(state._shuffled_players, [p1_g, p2_g, p3_g]):
         pieces_g = dwg.g()
 
         # border
@@ -129,9 +120,7 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
         x = 270
         y = 220
         river_count = 0
-        for type, is_red in zip(
-            state._rivers[player_id], state._is_red_in_river[player_id]
-        ):
+        for type, is_red in zip(state._rivers[player_id], state._is_red_in_river[player_id]):
             if type >= 0:
                 pieces_g = _set_piece(
                     x,
@@ -150,14 +139,10 @@ def _make_sparrowmahjong_dwg(dwg, state: SparrowMahjongState, config):
                     y += 60
 
         if player_id == state._shuffled_players[1]:
-            pieces_g.rotate(
-                angle=90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
-            )
+            pieces_g.rotate(angle=90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100))
 
         elif player_id == state._shuffled_players[2]:
-            pieces_g.rotate(
-                angle=-90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100)
-            )
+            pieces_g.rotate(angle=-90, center=(BOARD_WIDTH * GRID_SIZE / 2, 100))
 
         board_g.add(pieces_g)
 

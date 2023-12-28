@@ -32,9 +32,7 @@ class State(core.State):
     rewards: Array = jnp.float32([0.0, 0.0])
     terminated: Array = FALSE
     truncated: Array = FALSE
-    legal_action_mask: Array = (
-        jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
-    )
+    legal_action_mask: Array = jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
     _step_count: Array = jnp.int32(0)
     # --- Hex specific ---
     _size: Array = jnp.int32(11)
@@ -47,9 +45,7 @@ class State(core.State):
     #  .
     #  .
     #  [110, 111, 112, ...,  119, 120]]
-    _board: Array = jnp.zeros(
-        11 * 11, jnp.int32
-    )  # <0(oppo), 0(empty), 0<(self)
+    _board: Array = jnp.zeros(11 * 11, jnp.int32)  # <0(oppo), 0(empty), 0<(self)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -123,10 +119,7 @@ def _step(state: State, action: Array, size: int) -> State:
         _board=board * -1,
         rewards=reward,
         terminated=won,
-        legal_action_mask=state.legal_action_mask.at[:-1]
-        .set(board == 0)
-        .at[-1]
-        .set(state._step_count == 1),
+        legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(state._step_count == 1),
     )
 
     return state
@@ -143,10 +136,7 @@ def _swap(state: State, size: int) -> State:
         current_player=1 - state.current_player,
         _turn=1 - state._turn,
         _board=board * -1,
-        legal_action_mask=state.legal_action_mask.at[:-1]
-        .set(board == 0)
-        .at[-1]
-        .set(FALSE),
+        legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(FALSE),
     )
 
 
@@ -160,15 +150,11 @@ def _observe(state: State, player_id: Array, size) -> Array:
     my_board = board * 1 > 0
     opp_board = board * -1 > 0
     ones = jnp.ones_like(my_board)
-    color = jax.lax.select(
-        player_id == state.current_player, state._turn, 1 - state._turn
-    )
+    color = jax.lax.select(player_id == state.current_player, state._turn, 1 - state._turn)
     color = color * ones
     can_swap = state.legal_action_mask[-1] * ones
 
-    return jnp.stack(
-        [my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_
-    )
+    return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
 
 
 def _neighbour(xy, size):
@@ -199,6 +185,4 @@ def _is_game_end(board, size, turn):
 
 
 def _get_abs_board(state):
-    return jax.lax.cond(
-        state._turn == 0, lambda: state._board, lambda: state._board * -1
-    )
+    return jax.lax.cond(state._turn == 0, lambda: state._board, lambda: state._board * -1)
