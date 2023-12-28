@@ -45,7 +45,7 @@ class Game:
     def init(self) -> GameState:
         return GameState(
             chain_id_board=jnp.zeros(self.size**2, dtype=jnp.int32),
-            board_history=jnp.full((8, self.size**2), 2, dtype=jnp.int32),
+            board_history=jnp.full((self.history_length, self.size**2), 2, dtype=jnp.int32),
         )
 
     def step(self, state: GameState, action: Array) -> GameState:
@@ -311,7 +311,7 @@ def _check_PSK(state: GameState):
     Note that the strict rule is "PSK for legal actions, and PSK action leads to immediate lose."
     So, we also compromise at this point, our approach is
 
-    - Pgx employs SSK for legal actions, PSK is approximated by up to 8-steps before board, and approximate PSK action leads to immediate lose
+    - Pgx employs SSK for legal actions, PSK is approximated by up to history-length-steps (8-steps) before board, and approximate PSK action leads to immediate lose
       - Pros: Agent may be able to avoid PSK (as it observes board history up to 8-steps in AlphaGo Zero feature)
       - Cons: Ignoring the old same boards
 
