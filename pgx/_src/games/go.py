@@ -24,7 +24,6 @@ TRUE = jnp.bool_(True)
 
 
 class GameState(NamedTuple):
-    size: Array = jnp.int32(19)
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
     chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
@@ -35,6 +34,10 @@ class GameState(NamedTuple):
     ko: Array = jnp.int32(-1)  # by SSK
     is_psk: Array = FALSE
 
+    @property
+    def size(self) -> int:
+        return int(jnp.sqrt(self.chain_id_board.shape[-1]).astype(jnp.int32).item())
+
 
 class Game:
     def __init__(self, size: int = 19, komi: float = 7.5):
@@ -43,7 +46,6 @@ class Game:
 
     def init(self) -> GameState:
         return GameState(
-            size=jnp.int32(self.size),
             chain_id_board=jnp.zeros(self.size**2, dtype=jnp.int32),
             board_history=jnp.full((8, self.size**2), 2, dtype=jnp.int32),
         )
@@ -143,7 +145,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     xy = action
     num_captured_stones_before = state.num_captured_stones[state.turn]
 
-    ko_may_occur = _ko_may_occur(state, xy)
+    ko_may_occur = _ko_may_occur(state, xy, size)
 
     # Remove killed stones
     adj_xy = _neighbour(xy, size)
@@ -277,8 +279,7 @@ def _opponent_color(state: GameState):
     return jnp.int32([-1, 1])[state.turn]
 
 
-def _ko_may_occur(state: GameState, xy: int) -> Array:
-    size = state.size
+def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
     x = xy // size
     y = xy % size
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])

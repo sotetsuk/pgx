@@ -37,8 +37,7 @@ class State(core.State):
 
     @property
     def env_id(self) -> core.EnvId:
-        size = int(jnp.sqrt(self._x.chain_id_board.shape[-1]).astype(jnp.int32).item())
-        return f"go_{size}x{size}"  # type: ignore
+        return f"go_{self._x.size}x{self._x.size}"  # type: ignore
 
     @staticmethod
     def _from_sgf(sgf: str):
