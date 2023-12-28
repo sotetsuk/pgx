@@ -48,31 +48,31 @@ class Game:
             board_history=jnp.full((8, self.size**2), 2, dtype=jnp.int32),
         )
 
-    def step(self, x: GameState, action: Array) -> GameState:
-        x = x._replace(ko=jnp.int32(-1))
+    def step(self, state: GameState, action: Array) -> GameState:
+        state = state._replace(ko=jnp.int32(-1))
         # update state
-        x = jax.lax.cond(
+        state = jax.lax.cond(
             (action < self.size * self.size),
-            lambda: _apply_action(x, action, self.size),
-            lambda: _apply_pass(x),
+            lambda: _apply_action(state, action, self.size),
+            lambda: _apply_pass(state),
         )
         # increment turns
-        x = x._replace(color=(x.color + 1) % 2)
+        state = state._replace(color=(state.color + 1) % 2)
         # update board history
-        board_history = jnp.roll(x.board_history, self.size**2)
-        board_history = board_history.at[0].set(jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32))
-        x = x._replace(board_history=board_history)
+        board_history = jnp.roll(state.board_history, self.size ** 2)
+        board_history = board_history.at[0].set(jnp.clip(state.chain_id_board, -1, 1).astype(jnp.int32))
+        state = state._replace(board_history=board_history)
         # check PSK
-        x = x._replace(is_psk=_check_PSK(x))
-        return x
+        state = state._replace(is_psk=_check_PSK(state))
+        return state
 
-    def observe(self, x: GameState, color: Array):
+    def observe(self, state: GameState, color: Array):
         my_color_sign = jnp.int32([1, -1])[color]
 
         @jax.vmap
         def _make(i):
             c = jnp.int32([1, -1])[i % 2] * my_color_sign
-            return x.board_history[i // 2] == c
+            return state.board_history[i // 2] == c
 
         log = _make(jnp.arange(self.history_length * 2))
         color = jnp.full_like(log[0], color)  # black=0, white=1
@@ -111,19 +111,19 @@ class Game:
         )
         return jnp.append(legal_action_mask, True)  # pass is always legal
 
-    def is_terminal(self, x: GameState):
-        two_consecutive_pass = x.consecutive_pass_count >= 2
-        return two_consecutive_pass | x.is_psk
+    def is_terminal(self, state: GameState):
+        two_consecutive_pass = state.consecutive_pass_count >= 2
+        return two_consecutive_pass | state.is_psk
 
-    def terminal_values(self, x: GameState):
-        score = _count_point(x, self.size)
+    def terminal_values(self, state: GameState):
+        score = _count_point(state, self.size)
         reward_bw = jax.lax.select(
             score[0] - self.komi > score[1],
             jnp.array([1, -1], dtype=jnp.float32),
             jnp.array([-1, 1], dtype=jnp.float32),
         )
-        to_play = x.color
-        reward_bw = jax.lax.select(x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw)
+        to_play = state.color
+        reward_bw = jax.lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw)
         return reward_bw
 
 
