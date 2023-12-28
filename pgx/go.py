@@ -54,16 +54,14 @@ class Go(core.Env):
     ):
         super().__init__()
         assert isinstance(size, int)
-        self.size = size
-        self.komi = komi
-        self.history_length = history_length
-        self.max_termination_steps = self.size * self.size * 2
+        self.max_termination_steps = size * size * 2
         self._game = go.Game(size=size, komi=komi, history_length=history_length)
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
+        size = self._game.size
         return State(  # type:ignore
-            legal_action_mask=jnp.ones(self.size**2 + 1, dtype=jnp.bool_),
+            legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
             current_player=current_player,
             _x=self._game.init(),
         )
