@@ -61,17 +61,17 @@ class Game:
         )
 
         # increment turns
-        x = x._replace(turn=(x.turn + 1) % 2)  # type: ignore
+        x = x._replace(turn=(x.turn + 1) % 2)
 
         # update board history
         board_history = jnp.roll(x.board_history, self.size**2)
         board_history = board_history.at[0].set(
             jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
         )
-        x = x._replace(board_history=board_history)  # type: ignore
+        x = x._replace(board_history=board_history)
 
         # check PSK
-        x = x._replace(is_psk=_check_PSK(x))  # type: ignore
+        x = x._replace(is_psk=_check_PSK(x))
 
         return x
 
@@ -149,11 +149,11 @@ class Game:
 
 
 def _pass_move(state: GameState) -> GameState:
-    return state._replace(consecutive_pass_count=state.consecutive_pass_count + 1)  # type: ignore
+    return state._replace(consecutive_pass_count=state.consecutive_pass_count + 1)
 
 
 def _not_pass_move(state: GameState, action, size) -> GameState:
-    state = state._replace(consecutive_pass_count=0)  # type: ignore
+    state = state._replace(consecutive_pass_count=0)
     xy = action
     num_captured_stones_before = state.num_captured_stones[state.turn]
 
@@ -197,7 +197,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     state = jax.lax.cond(
         state.num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
-        lambda: state._replace(ko=jnp.int32(-1))  # type:ignore
+        lambda: state._replace(ko=jnp.int32(-1))
     )
     # fmt: on
 
@@ -219,7 +219,7 @@ def _merge_around_xy(i, state: GameState, xy, size):
 
 def _set_stone(state: GameState, xy) -> GameState:
     my_color = _my_color(state)
-    return state._replace(  # type: ignore
+    return state._replace(
         chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
     )
 
@@ -238,7 +238,7 @@ def _merge_chain(state: GameState, xy, adj_xy):
         state.chain_id_board,
     )
 
-    return state._replace(chain_id_board=chain_id_board)  # type: ignore
+    return state._replace(chain_id_board=chain_id_board)
 
 
 def _remove_stones(
@@ -252,7 +252,7 @@ def _remove_stones(
         lambda: jnp.int32(rm_stone_xy),
         lambda: state.ko,
     )
-    return state._replace(  # type: ignore
+    return state._replace(
         chain_id_board=chain_id_board,
         num_captured_stones=state.num_captured_stones.at[state.turn].add(
             num_captured_stones
