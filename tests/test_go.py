@@ -85,7 +85,7 @@ def test_step():
     [3] O O @ + @
     [4] O O O @ +
     """
-    assert (jnp.clip(state._x._chain_id_board, -1, 1) == expected_board.ravel()).all()
+    assert (jnp.clip(state._x.chain_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
     # 同点なのでコミの分 黒 == player_1 の負け
@@ -108,7 +108,7 @@ def test_from_sgf():
             [ 1,  0,  1,  1, -1,  0,  0,  0,  0],
         ]
     )  # type:ignore
-    assert (jnp.clip(state._x._chain_id_board, -1, 1) == expected_board.ravel()).all()
+    assert (jnp.clip(state._x.chain_id_board, -1, 1) == expected_board.ravel()).all()
     assert state.terminated
 
 
@@ -121,7 +121,7 @@ def test_from_sgf():
     # 初手からの分岐
     state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[9]ST[0](;B[ee])(;B[eg])(;B[ec]))")
     state.save_svg("tests/assets/go/from_sgf_003.svg")
-    board = jnp.clip(state._x._chain_id_board, -1, 1)
+    board = jnp.clip(state._x.chain_id_board, -1, 1)
     assert board[40] == 1
     assert not state.terminated
 
@@ -144,7 +144,7 @@ def test_from_sgf():
     # 分岐あり
     state = State._from_sgf("(;FF[4]GM[1]CA[UTF-8]AP[besogo:0.0.0-alpha]SZ[19]ST[0];B[pd];W[qf];B[nc](;W[rd];B[qc];W[qi])(;W[qd];B[qc];W[rc];B[qe];W[rd];B[pf];W[re];B[pe];W[qg]))")
     state.save_svg("tests/assets/go/from_sgf_007.svg")
-    board = jnp.clip(state._x._chain_id_board, -1, 1)
+    board = jnp.clip(state._x.chain_id_board, -1, 1)
     assert board[168] == -1
     assert board[55] == 0
 

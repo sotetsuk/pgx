@@ -156,9 +156,9 @@ def _show(state: State) -> None:
     POINT_CHAR = "+"
     print("===========")
     for xy in range(state._x.size * state._x.size):
-        if state._x._chain_id_board[xy] > 0:
+        if state._x.chain_id_board[xy] > 0:
             print(" " + BLACK_CHAR, end="")
-        elif state._x._chain_id_board[xy] < 0:
+        elif state._x.chain_id_board[xy] < 0:
             print(" " + WHITE_CHAR, end="")
         else:
             print(" " + POINT_CHAR, end="")

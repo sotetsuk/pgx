@@ -29,7 +29,7 @@ class GameState:
     size: Array = jnp.int32(19)
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
-    _chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
+    chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
     _board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
     _turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
     _num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
@@ -42,7 +42,7 @@ class GameState:
 def init(size: int, komi: float) -> GameState:
     return GameState(
         size=jnp.int32(size),
-        _chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
+        chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
         _board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
         _komi=jnp.float32(komi),
     )
@@ -64,7 +64,7 @@ def step(x: GameState, action: int, size: int) -> GameState:
     # update board history
     board_history = jnp.roll(x._board_history, size**2)
     board_history = board_history.at[0].set(
-        jnp.clip(x._chain_id_board, -1, 1).astype(jnp.int32)
+        jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
     )
     x = x.replace(_board_history=board_history)  # type: ignore
 
@@ -90,18 +90,18 @@ def observe(x: GameState, my_turn, size, history_length):
 
 def legal_action_mask(state: GameState, size: int) -> Array:
     """Logic is highly inspired by OpenSpiel's Go implementation"""
-    is_empty = state._chain_id_board == 0
+    is_empty = state.chain_id_board == 0
 
     my_color = _my_color(state)
     opp_color = _opponent_color(state)
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
 
-    chain_ix = jnp.abs(state._chain_id_board) - 1
+    chain_ix = jnp.abs(state.chain_id_board) - 1
     # fmt: off
     in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     # fmt: on
-    has_liberty = (state._chain_id_board * my_color > 0) & ~in_atari
-    kills_opp = (state._chain_id_board * opp_color > 0) & in_atari
+    has_liberty = (state.chain_id_board * my_color > 0) & ~in_atari
+    kills_opp = (state.chain_id_board * opp_color > 0) & in_atari
 
     @jax.vmap
     def is_neighbor_ok(xy):
@@ -160,7 +160,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     # Remove killed stones
     adj_xy = _neighbour(xy, size)
     oppo_color = _opponent_color(state)
-    chain_id = state._chain_id_board[adj_xy]
+    chain_id = state.chain_id_board[adj_xy]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(chain_id) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[
@@ -206,7 +206,7 @@ def _merge_around_xy(i, state: GameState, xy, size):
     my_color = _my_color(state)
     adj_xy = _neighbour(xy, size)[i]
     is_off = adj_xy == -1
-    is_my_chain = state._chain_id_board[adj_xy] * my_color > 0
+    is_my_chain = state.chain_id_board[adj_xy] * my_color > 0
     state = jax.lax.cond(
         ((~is_off) & is_my_chain),
         lambda: _merge_chain(state, xy, adj_xy),
@@ -218,40 +218,40 @@ def _merge_around_xy(i, state: GameState, xy, size):
 def _set_stone(state: GameState, xy) -> GameState:
     my_color = _my_color(state)
     return state.replace(  # type: ignore
-        _chain_id_board=state._chain_id_board.at[xy].set((xy + 1) * my_color),
+        chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
     )
 
 
 def _merge_chain(state: GameState, xy, adj_xy):
     my_color = _my_color(state)
-    new_id = jnp.abs(state._chain_id_board[xy])
-    adj_chain_id = jnp.abs(state._chain_id_board[adj_xy])
+    new_id = jnp.abs(state.chain_id_board[xy])
+    adj_chain_id = jnp.abs(state.chain_id_board[adj_xy])
     small_id = jnp.minimum(new_id, adj_chain_id) * my_color
     large_id = jnp.maximum(new_id, adj_chain_id) * my_color
 
     # Keep larger chain ID and connect to the chain with smaller ID
     chain_id_board = jnp.where(
-        state._chain_id_board == large_id,
+        state.chain_id_board == large_id,
         small_id,
-        state._chain_id_board,
+        state.chain_id_board,
     )
 
-    return state.replace(_chain_id_board=chain_id_board)  # type: ignore
+    return state.replace(chain_id_board=chain_id_board)  # type: ignore
 
 
 def _remove_stones(
     state: GameState, rm_chain_id, rm_stone_xy, ko_may_occur
 ) -> GameState:
-    surrounded_stones = state._chain_id_board == rm_chain_id
+    surrounded_stones = state.chain_id_board == rm_chain_id
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
-    chain_id_board = jnp.where(surrounded_stones, 0, state._chain_id_board)
+    chain_id_board = jnp.where(surrounded_stones, 0, state.chain_id_board)
     ko = jax.lax.cond(
         ko_may_occur & (num_captured_stones == 1),
         lambda: jnp.int32(rm_stone_xy),
         lambda: state._ko,
     )
     return state.replace(  # type: ignore
-        _chain_id_board=chain_id_board,
+        chain_id_board=chain_id_board,
         _num_captured_stones=state._num_captured_stones.at[state._turn].add(
             num_captured_stones
         ),
@@ -261,7 +261,7 @@ def _remove_stones(
 
 def _count(state: GameState, size):
     ZERO = jnp.int32(0)
-    chain_id_board = jnp.abs(state._chain_id_board)
+    chain_id_board = jnp.abs(state.chain_id_board)
     is_empty = chain_id_board == 0
     idx_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1), ZERO)
     idx_squared_sum = jnp.where(
@@ -313,7 +313,7 @@ def _ko_may_occur(state: GameState, xy: int) -> Array:
     oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
     oppo_color = _opponent_color(state)
     is_occupied_by_opp = (
-        state._chain_id_board[_neighbour(xy, size)] * oppo_color > 0
+            state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
     )
     return (oob | is_occupied_by_opp).all()
 
@@ -369,18 +369,18 @@ def _count_point(state: GameState, size):
     return jnp.array(
         [
             _count_ji(state, 1, size)
-            + jnp.count_nonzero(state._chain_id_board > 0),
+            + jnp.count_nonzero(state.chain_id_board > 0),
             _count_ji(state, -1, size)
-            + jnp.count_nonzero(state._chain_id_board < 0),
+            + jnp.count_nonzero(state.chain_id_board < 0),
         ],
         dtype=jnp.float32,
     )
 
 
 def _count_ji(state: GameState, color: int, size: int):
-    board = jnp.zeros_like(state._chain_id_board)
-    board = jnp.where(state._chain_id_board * color > 0, 1, board)
-    board = jnp.where(state._chain_id_board * color < 0, -1, board)
+    board = jnp.zeros_like(state.chain_id_board)
+    board = jnp.where(state.chain_id_board * color > 0, 1, board)
+    board = jnp.where(state.chain_id_board * color < 0, -1, board)
     # 0 = empty, 1 = mine, -1 = opponent's
 
     neighbours = _neighbours(size)
