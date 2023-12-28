@@ -173,7 +173,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     state = jax.lax.cond(
         state.num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
-        lambda: state._replace(ko=jnp.int32(-1))
+        lambda: state._replace(ko=jnp.int32(-1)),
     )
 
     return state
@@ -243,9 +243,11 @@ def _count(state: GameState, size):
     def _count_neighbor(xy):
         neighbors = _neighbour(xy, size)
         on_board = neighbors != -1
-        return (jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
-                jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
-                jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum())
+        return (
+            jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
+            jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
+            jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum(),
+        )
 
     idx = jnp.arange(size**2)
     num_pseudo, idx_sum, idx_squared_sum = _count_neighbor(idx)
