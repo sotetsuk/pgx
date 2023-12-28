@@ -19,9 +19,6 @@ import jax
 from jax import Array
 from jax import numpy as jnp
 
-FALSE = jnp.bool_(False)
-TRUE = jnp.bool_(True)
-
 
 class GameState(NamedTuple):
     # ids of representative stone id (smallest) in the connected stones
@@ -32,7 +29,7 @@ class GameState(NamedTuple):
     num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
     consecutive_pass_count: Array = jnp.int32(0)
     ko: Array = jnp.int32(-1)  # by SSK
-    is_psk: Array = FALSE
+    is_psk: Array = jnp.bool_(False)
 
     @property
     def size(self) -> int:
@@ -110,9 +107,9 @@ class Game:
         legal_action_mask = jax.lax.cond(
             (state.ko == -1),
             lambda: legal_action_mask,
-            lambda: legal_action_mask.at[state.ko].set(FALSE),
+            lambda: legal_action_mask.at[state.ko].set(False),
         )
-        return jnp.append(legal_action_mask, TRUE)  # pass is always legal
+        return jnp.append(legal_action_mask, True)  # pass is always legal
 
     def is_terminal(self, x: GameState):
         two_consecutive_pass = x.consecutive_pass_count >= 2
@@ -352,6 +349,6 @@ def _count_ji(state: GameState, color: int, size: int):
         mask = is_opp_neighbours(b)
         return jnp.where(mask, -1, b), mask.any()
 
-    b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, TRUE))
+    b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, True))
 
     return (b == 0).sum()
