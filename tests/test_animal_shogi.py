@@ -16,12 +16,12 @@ def test_step():
     state = init(jax.random.PRNGKey(0))
     visualize(state, "tests/assets/animal_shogi/test_step_000.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
 
     state = step(state, 3 * 12 + 6)  # Up PAWN
     visualize(state, "tests/assets/animal_shogi/test_step_001.svg")
     assert not state.terminated
-    assert state.turn == 1
+    assert state._turn == 1
     assert state._board[6] == 5
     assert state._hand[0, 0] == 0
     assert state._hand[1, 0] == 1
@@ -30,7 +30,7 @@ def test_step():
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
     visualize(state, "tests/assets/animal_shogi/test_step_002.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
     assert state._board[5] == 6
     assert state._hand[0, 0] == 1
     assert state._hand[1, 0] == 1
@@ -39,7 +39,7 @@ def test_step():
     state = step(state, 8 * 12 + 6)  # Drop PAWN to 6
     visualize(state, "tests/assets/animal_shogi/test_step_003.svg")
     assert not state.terminated
-    assert state.turn == 1
+    assert state._turn == 1
     assert state._board[5] == 5
     assert state._hand[0, 0] == 1
     assert state._hand[1, 0] == 0
@@ -66,7 +66,7 @@ def test_observe():
          [False, False, False],
          [True , False, False]]
     )
-    print(state.board_history[0])
+    print(state._board_history[0])
     assert (state.observation[:, :, 1] == expected).all()
 
     # opp king
@@ -111,25 +111,25 @@ def test_repetition():
     # first
     visualize(state, "tests/assets/animal_shogi/test_repetition_000.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
     assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 3 * 12 + 3)  # Up Rook
     visualize(state, "tests/assets/animal_shogi/test_repetition_002.svg")
     assert not state.terminated
-    assert state.turn == 1
+    assert state._turn == 1
     assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 3 * 12 + 3)  # Up Rook
     visualize(state, "tests/assets/animal_shogi/test_repetition_003.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
     assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 4 * 12 + 2)  # Down Rook
     visualize(state, "tests/assets/animal_shogi/test_repetition_004.svg")
     assert not state.terminated
-    assert state.turn == 1
+    assert state._turn == 1
     assert (state.observation[:, :, 22] == 1).all()  # rep = 0
 
     state = step(state, 4 * 12 + 2)  # Down Rook
@@ -138,7 +138,7 @@ def test_repetition():
     assert not state.terminated
     assert (state.observation[:, :, 22] == 0).all()  # rep = 0
     assert (state.observation[:, :, 23] == 1).all()  # rep = 1
-    assert state.turn == 0
+    assert state._turn == 0
 
     # same repetition
     state1 = step(state, 3 * 12 + 3)  # Up Rook
@@ -157,15 +157,15 @@ def test_repetition():
     state2 = step(state, 0 * 12 + 7)  # Right Up King
     visualize(state2, "tests/assets/animal_shogi/test_repetition_006.svg")
     assert not state2.terminated
-    assert state2.turn == 1
+    assert state2._turn == 1
     state2 = step(state2, 0 * 12 + 7)  # Right Up King
     visualize(state2, "tests/assets/animal_shogi/test_repetition_007.svg")
     assert not state2.terminated
-    assert state2.turn == 0
+    assert state2._turn == 0
     state2 = step(state2, 7 * 12 + 2)  # Left Down King
     visualize(state2, "tests/assets/animal_shogi/test_repetition_008.svg")
     assert not state2.terminated
-    assert state2.turn == 1
+    assert state2._turn == 1
     state2 = step(state2, 7 * 12 + 2)  # Left Down King
     visualize(state2, "tests/assets/animal_shogi/test_repetition_009.svg")
     # third
@@ -176,32 +176,32 @@ def test_repetition():
     state = init(jax.random.PRNGKey(0))
     visualize(state, "tests/assets/animal_shogi/test_repetition_010.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
     state = step(state, 3 * 12 + 6)  # Up PAWN
     visualize(state, "tests/assets/animal_shogi/test_repetition_011.svg")
     assert not state.terminated
-    assert state.turn == 1
+    assert state._turn == 1
 
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
     # first
     visualize(state, "tests/assets/animal_shogi/test_repetition_012.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
 
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
     visualize(state, "tests/assets/animal_shogi/test_repetition_013.svg")
     assert not state.terminated
-    assert state.turn == 1
+    assert state._turn == 1
 
     state = step(state, 7 * 12 + 6)  # Left Down Bishop
     visualize(state, "tests/assets/animal_shogi/test_repetition_014.svg")
     assert not state.terminated
-    assert state.turn == 0
+    assert state._turn == 0
 
     state = step(state, 7 * 12 + 6)  # Left Down Bishop
     visualize(state, "tests/assets/animal_shogi/test_repetition_015.svg")
     assert not state.terminated
-    assert state.turn == 1
+    assert state._turn == 1
 
     state = step(state, 0 * 12 + 11)  # Right Up Bishop
     visualize(state, "tests/assets/animal_shogi/test_repetition_016.svg")

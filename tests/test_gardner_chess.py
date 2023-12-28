@@ -173,12 +173,12 @@ def test_observe():
     assert state.observation[0, 4, 11] == 1.
     assert (state.observation[:, :, 12] == 1).all()
     assert (state.observation[:, :, 13] == 0).all()
-    assert state.turn == 0
+    assert state._turn == 0
     assert (state.observation[:, :, 112] == 0).all()
 
     state = step(state, jnp.nonzero(state.legal_action_mask, size=1)[0][0])
     state.save_svg("tests/assets/gardner_chess/observe_001.svg")
-    assert state.turn == 1
+    assert state._turn == 1
     assert (state.observation[:, :, 112] == 1).all()
     assert (state.observation[:, :, 0] == expected_wpawn1).all()
 

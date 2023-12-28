@@ -117,7 +117,7 @@ def test_flip_board():
 
 def test_init():
     state = init(rng)
-    assert state.turn == 0 or state.turn == 1
+    assert state._turn == 0 or state._turn == 1
 
 
 def test_init_roll():
@@ -157,7 +157,7 @@ def test_is_turn_end():
 
 def test_change_turn():
     state = init(rng)
-    _turn = state.turn
+    _turn = state._turn
     state = _change_turn(state, jax.random.PRNGKey(0))
     assert state._turn == (_turn + 1) % 2
 
@@ -201,7 +201,7 @@ def test_no_op():
         legal_action_mask=legal_action_mask,
     )
     state = step(state, 0, jax.random.PRNGKey(0))  # execute no-op action
-    assert state.turn == jnp.int32(0)  # Turn changes after no-op.
+    assert state._turn == jnp.int32(0)  # Turn changes after no-op.
 
 
 def test_step():
@@ -241,7 +241,7 @@ def test_step():
             state._playable_dice == jnp.array([0, -1, -1, -1], dtype=jnp.int32)
     ).all()  # Is playable dice updated correctly?
     assert state._played_dice_num == 1  # played dice increased?
-    assert state.turn == 1  # turn is not changed?
+    assert state._turn == 1  # turn is not changed?
     assert state._board.at[1].get() == 4 and state._board.at[24].get() == 3
     expected_legal_action_mask: jnp.ndarray = jnp.zeros(
         6 * 26, dtype=jnp.bool_
@@ -255,7 +255,7 @@ def test_step():
     # White plays die=1 24(off)->0
     state = step(state=state, action=(1) * 6 + 0, key=jax.random.PRNGKey(0))
     assert state._played_dice_num == 0
-    assert state.turn == 0  # turn changed to black?
+    assert state._turn == 0  # turn changed to black?
     assert state._board.at[23].get() == -1 and state._board.at[25].get() == -2
     
     # black
