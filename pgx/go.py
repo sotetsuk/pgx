@@ -90,7 +90,7 @@ class Go(core.Env):
         # fmt: on
         assert isinstance(state, State)
         reward_bw = go.terminal_values(state._x, self.size)
-        should_flip = state.current_player == state._x._turn
+        should_flip = state.current_player == state._x.turn
         rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
         rewards = jax.lax.select(
             state.terminated, rewards, jnp.zeros_like(rewards)
@@ -131,8 +131,8 @@ class Go(core.Env):
         assert isinstance(state, State)
         my_turn = jax.lax.select(
             player_id == state.current_player,
-            state._x._turn,
-            1 - state._x._turn,
+            state._x.turn,
+            1 - state._x.turn,
         )
         return go.observe(state._x, my_turn, self.size, self.history_length)
 

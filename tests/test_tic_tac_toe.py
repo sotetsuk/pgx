@@ -19,7 +19,7 @@ def test_step():
     key = jax.random.PRNGKey(1)
     state = init(key=key)
     assert state.current_player == 1
-    assert state._turn == 0
+    assert state.turn == 0
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
@@ -35,7 +35,7 @@ def test_step():
     action = jnp.int32(4)
     state = step(state, action)
     assert state.current_player == 0
-    assert state._turn == 1
+    assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
@@ -52,7 +52,7 @@ def test_step():
     action = jnp.int32(0)
     state = step(state, action)
     assert state.current_player == 1
-    assert state._turn == 0
+    assert state.turn == 0
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([0, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
@@ -67,7 +67,7 @@ def test_step():
     action = jnp.int32(1)
     state = step(state, action)
     assert state.current_player == 0
-    assert state._turn == 1
+    assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
@@ -82,7 +82,7 @@ def test_step():
     action = jnp.int32(8)
     state = step(state, action)
     assert state.current_player == 1
-    assert state._turn == 0
+    assert state.turn == 0
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 0], jnp.bool_)
@@ -97,7 +97,7 @@ def test_step():
     action = jnp.int32(7)
     state = step(state, action)
     assert state.current_player == 0
-    assert state._turn == 1
+    assert state.turn == 1
     assert jnp.all(
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)

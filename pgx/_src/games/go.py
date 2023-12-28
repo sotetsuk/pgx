@@ -31,7 +31,7 @@ class GameState:
     # positive for black, negative for white, and zero for empty.
     chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
     board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
-    _turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
+    turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
     _num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
     _consecutive_pass_count: Array = jnp.int32(0)
     _ko: Array = jnp.int32(-1)  # by SSK
@@ -43,7 +43,7 @@ def init(size: int, komi: float) -> GameState:
     return GameState(
         size=jnp.int32(size),
         chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
-        _board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
+        board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
         _komi=jnp.float32(komi),
     )
 
@@ -59,14 +59,14 @@ def step(x: GameState, action: int, size: int) -> GameState:
     )
 
     # increment turns
-    x = x.replace(_turn=(x._turn + 1) % 2)  # type: ignore
+    x = x.replace(turn=(x.turn + 1) % 2)  # type: ignore
 
     # update board history
     board_history = jnp.roll(x.board_history, size ** 2)
     board_history = board_history.at[0].set(
         jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
     )
-    x = x.replace(_board_history=board_history)  # type: ignore
+    x = x.replace(board_history=board_history)  # type: ignore
 
     # check PSK
     x = x.replace(_is_psk=_check_PSK(x))  # type: ignore
@@ -139,7 +139,7 @@ def terminal_values(x: GameState, size: int):
         jnp.array([1, -1], dtype=jnp.float32),
         jnp.array([-1, 1], dtype=jnp.float32),
     )
-    to_play = x._turn
+    to_play = x.turn
     reward_bw = jax.lax.select(
         x._is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
     )
@@ -153,7 +153,7 @@ def _pass_move(state: GameState) -> GameState:
 def _not_pass_move(state: GameState, action, size) -> GameState:
     state = state.replace(_consecutive_pass_count=0)  # type: ignore
     xy = action
-    num_captured_stones_before = state._num_captured_stones[state._turn]
+    num_captured_stones_before = state._num_captured_stones[state.turn]
 
     ko_may_occur = _ko_may_occur(state, xy)
 
@@ -193,7 +193,7 @@ def _not_pass_move(state: GameState, action, size) -> GameState:
     # Check Ko
     # fmt: off
     state = jax.lax.cond(
-        state._num_captured_stones[state._turn] - num_captured_stones_before == 1,
+        state._num_captured_stones[state.turn] - num_captured_stones_before == 1,
         lambda: state,
         lambda: state.replace(_ko=jnp.int32(-1))  # type:ignore
     )
@@ -252,7 +252,7 @@ def _remove_stones(
     )
     return state.replace(  # type: ignore
         chain_id_board=chain_id_board,
-        _num_captured_stones=state._num_captured_stones.at[state._turn].add(
+        _num_captured_stones=state._num_captured_stones.at[state.turn].add(
             num_captured_stones
         ),
         _ko=ko,
@@ -299,11 +299,11 @@ def _count(state: GameState, size):
 
 
 def _my_color(state: GameState):
-    return jnp.int32([1, -1])[state._turn]
+    return jnp.int32([1, -1])[state.turn]
 
 
 def _opponent_color(state: GameState):
-    return jnp.int32([-1, 1])[state._turn]
+    return jnp.int32([-1, 1])[state.turn]
 
 
 def _ko_may_occur(state: GameState, xy: int) -> Array:

@@ -359,7 +359,7 @@ def _flip(state):
     board_history = board_history[:, ::-1]
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        _turn=(state._turn + 1) % 2,
+        _turn=(state.turn + 1) % 2,
         _board=board,
         _hand=state._hand[::-1],
         _zobrist_hash=state._zobrist_hash ^ ZOBRIST_SIDE,

@@ -155,7 +155,7 @@ def test_step():
     #  -----------
     #      P
 
-    assert state._turn == 1
+    assert state.turn == 1
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
@@ -179,7 +179,7 @@ def test_step():
     #  -----------
     #      P  P
 
-    assert state._turn == 2
+    assert state.turn == 2
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
@@ -203,7 +203,7 @@ def test_step():
     #  -----------
     #      P  P  P
 
-    assert state._turn == 3
+    assert state.turn == 3
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
@@ -230,7 +230,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, -1, -1, -1])
 
-    assert state._turn == 4
+    assert state.turn == 4
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
@@ -259,7 +259,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
-    assert state._turn == 5
+    assert state.turn == 5
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
@@ -298,7 +298,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
-    assert state._turn == 6
+    assert state.turn == 6
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
@@ -336,7 +336,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
-    assert state._turn == 7
+    assert state.turn == 7
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
@@ -377,7 +377,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
-    assert state._turn == 8
+    assert state.turn == 8
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
@@ -417,7 +417,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
-    assert state._turn == 9
+    assert state.turn == 9
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
@@ -457,7 +457,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, -1, 3, -1])
 
-    assert state._turn == 10
+    assert state.turn == 10
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
@@ -497,7 +497,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, -1, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 11
+    assert state.turn == 11
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
@@ -538,7 +538,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 12
+    assert state.turn == 12
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
@@ -579,7 +579,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 13
+    assert state.turn == 13
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
@@ -620,7 +620,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 14
+    assert state.turn == 14
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
@@ -661,7 +661,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 15
+    assert state.turn == 15
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
@@ -703,7 +703,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 16
+    assert state.turn == 16
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
@@ -745,7 +745,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 17
+    assert state.turn == 17
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
@@ -787,7 +787,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 18
+    assert state.turn == 18
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
@@ -829,7 +829,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 19
+    assert state.turn == 19
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
@@ -872,7 +872,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 20
+    assert state.turn == 20
     assert state.current_player == 3
     assert _player_position(state.current_player, state) == 1
     assert not state.terminated
@@ -917,7 +917,7 @@ def test_step():
     first_denomination_NS = jnp.array([0, -1, -1, 0, -1])
     first_denomination_EW = jnp.array([-1, -1, 2, 3, -1])
 
-    assert state._turn == 20
+    assert state.turn == 20
     assert state.terminated
     bidding_history = bidding_history.at[20].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
@@ -1030,7 +1030,7 @@ def test_pass_out():
     #  -----------
     #      P
 
-    assert state._turn == 1
+    assert state.turn == 1
     assert state.current_player == 1
     assert _player_position(state.current_player, state) == 2
     assert not state.terminated
@@ -1054,7 +1054,7 @@ def test_pass_out():
     #  -----------
     #      P  P
 
-    assert state._turn == 2
+    assert state.turn == 2
     assert state.current_player == 2
     assert _player_position(state.current_player, state) == 3
     assert not state.terminated
@@ -1078,7 +1078,7 @@ def test_pass_out():
     #  -----------
     #      P  P  P
 
-    assert state._turn == 3
+    assert state.turn == 3
     assert state.current_player == 0
     assert _player_position(state.current_player, state) == 0
     assert not state.terminated
@@ -1104,7 +1104,7 @@ def test_pass_out():
     #   P
 
     assert state.terminated == True
-    assert state._turn == 3
+    assert state.turn == 3
     bidding_history = bidding_history.at[3].set(PASS_ACTION_NUM)
     assert jnp.all(state._bidding_history == bidding_history)
     assert jnp.all(state.legal_action_mask == jnp.ones(38, dtype=jnp.bool_))

@@ -345,7 +345,7 @@ def _apply_move(state: State, a: Action):
         _halfmove_count=jax.lax.select(
             captured | (piece == PAWN), 0, state._halfmove_count + 1
         ),
-        _fullmove_count=state._fullmove_count + jnp.int32(state._turn == 1),
+        _fullmove_count=state._fullmove_count + jnp.int32(state.turn == 1),
     )
     # castling
     # Whether castling is possible or not is not checked here.
@@ -696,8 +696,8 @@ def _zobrist_hash(state):
     Array([1172276016, 1112364556], dtype=uint32)
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
-    hash_ = jax.lax.select(state._turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
-    board = jax.lax.select(state._turn == 0, state._board, _flip(state)._board)
+    hash_ = jax.lax.select(state.turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
+    board = jax.lax.select(state.turn == 0, state._board, _flip(state)._board)
 
     def xor(i, h):
         # 0, ..., 12 (white pawn, ..., black king)
