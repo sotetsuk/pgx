@@ -30,7 +30,7 @@ class GameState:
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
     chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
-    _board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
+    board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
     _turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
     _num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
     _consecutive_pass_count: Array = jnp.int32(0)
@@ -62,7 +62,7 @@ def step(x: GameState, action: int, size: int) -> GameState:
     x = x.replace(_turn=(x._turn + 1) % 2)  # type: ignore
 
     # update board history
-    board_history = jnp.roll(x._board_history, size**2)
+    board_history = jnp.roll(x.board_history, size ** 2)
     board_history = board_history.at[0].set(
         jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
     )
@@ -80,7 +80,7 @@ def observe(x: GameState, my_turn, size, history_length):
     @jax.vmap
     def _make(i):
         color = jnp.int32([1, -1])[i % 2] * my_color
-        return x._board_history[i // 2] == color
+        return x.board_history[i // 2] == color
 
     log = _make(jnp.arange(history_length * 2))
     color = jnp.full_like(log[0], my_turn)  # black=0, white=1
@@ -360,7 +360,7 @@ def _check_PSK(state: GameState):
     """
     # fmt: off
     not_passed = state._consecutive_pass_count == 0
-    is_psk = not_passed & (jnp.abs(state._board_history[0] - state._board_history[1:]).sum(axis=1) == 0).any()
+    is_psk = not_passed & (jnp.abs(state.board_history[0] - state.board_history[1:]).sum(axis=1) == 0).any()
     # fmt: on
     return is_psk
 

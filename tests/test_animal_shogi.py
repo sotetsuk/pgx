@@ -66,7 +66,7 @@ def test_observe():
          [False, False, False],
          [True , False, False]]
     )
-    print(state._board_history[0])
+    print(state.board_history[0])
     assert (state.observation[:, :, 1] == expected).all()
 
     # opp king
