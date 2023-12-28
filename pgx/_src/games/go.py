@@ -149,7 +149,9 @@ class Game:
 
 
 def _pass_move(state: GameState) -> GameState:
-    return state._replace(consecutive_pass_count=state.consecutive_pass_count + 1)
+    return state._replace(
+        consecutive_pass_count=state.consecutive_pass_count + 1
+    )
 
 
 def _not_pass_move(state: GameState, action, size) -> GameState:
