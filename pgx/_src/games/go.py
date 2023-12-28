@@ -155,7 +155,7 @@ def _pass_move(state: GameState) -> GameState:
 
 
 def _not_pass_move(state: GameState, action, size) -> GameState:
-    state = state._replace(consecutive_pass_count=0)
+    state = state._replace(consecutive_pass_count=jnp.int32(0))
     xy = action
     num_captured_stones_before = state.num_captured_stones[state.turn]
 
