@@ -56,8 +56,8 @@ class Game:
         # update state
         x = jax.lax.cond(
             (action < self.size * self.size),
-            lambda: _not_pass_move(x, action, self.size),
-            lambda: _pass_move(x),
+            lambda: _apply_action(x, action, self.size),
+            lambda: _apply_pass(x),
         )
         # increment turns
         x = x._replace(color=(x.color + 1) % 2)
@@ -130,11 +130,11 @@ class Game:
         return reward_bw
 
 
-def _pass_move(state: GameState) -> GameState:
+def _apply_pass(state: GameState) -> GameState:
     return state._replace(consecutive_pass_count=state.consecutive_pass_count + 1)
 
 
-def _not_pass_move(state: GameState, action, size) -> GameState:
+def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=jnp.int32(0))
     xy = action
     num_captured_stones_before = state.num_captured_stones[state.color]
