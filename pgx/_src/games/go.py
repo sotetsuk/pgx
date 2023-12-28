@@ -21,13 +21,13 @@ from jax import numpy as jnp
 
 
 class GameState(NamedTuple):
+    color: Array = jnp.int32(0)  # 0 = black, 1 = white
     # ids of representative stone id (smallest) in the connected stones
     # positive for black, negative for white, and zero for empty.
     chain_id_board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
-    board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
-    color: Array = jnp.int32(0)  # 0 = black, 1 = white
+    board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)  # mainly for obs
     num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
-    consecutive_pass_count: Array = jnp.int32(0)
+    consecutive_pass_count: Array = jnp.int32(0)  # two consecutive pass ends the game
     ko: Array = jnp.int32(-1)  # by SSK
     is_psk: Array = jnp.bool_(False)
 
