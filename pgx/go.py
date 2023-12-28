@@ -62,25 +62,26 @@ class Go(core.Env):
         self.komi = komi
         self.history_length = history_length
         self.max_termination_steps = self.size * self.size * 2
+        self._game = go.Go(size=size, komi=komi)
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
         return State(  # type:ignore
             legal_action_mask=jnp.ones(self.size**2 + 1, dtype=jnp.bool_),
             current_player=current_player,
-            _x=go.init(self.size, self.komi),
+            _x=self._game.init(),
         )
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        x = go.step(state._x, action, self.size)
+        x = self._game.step(state._x, action)
 
         current_player = (state.current_player + 1) % 2  # player to act
         state = state.replace(  # type:ignore
             current_player=current_player,
-            terminated=go.is_terminal(x),
-            legal_action_mask=go.legal_action_mask(x, self.size),
+            terminated=self._game.is_terminal(x),
+            legal_action_mask=self._game.legal_action_mask(x),
             _x=x,
         )
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
@@ -89,7 +90,7 @@ class Go(core.Env):
         state = state.replace(terminated=(state.terminated | _terminated))  # type:ignore
         # fmt: on
         assert isinstance(state, State)
-        reward_bw = go.terminal_values(state._x, self.size)
+        reward_bw = self._game.terminal_values(state._x)
         should_flip = state.current_player == state._x.turn
         rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
         rewards = jax.lax.select(
@@ -134,7 +135,7 @@ class Go(core.Env):
             state._x.turn,
             1 - state._x.turn,
         )
-        return go.observe(state._x, my_turn, self.size, self.history_length)
+        return self._game.observe(state._x, my_turn, self.history_length)
 
     @property
     def id(self) -> core.EnvId:

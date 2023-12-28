@@ -39,111 +39,116 @@ class GameState:
     is_psk: Array = FALSE
 
 
-def init(size: int, komi: float) -> GameState:
-    return GameState(
-        size=jnp.int32(size),
-        chain_id_board=jnp.zeros(size**2, dtype=jnp.int32),
-        board_history=jnp.full((8, size**2), 2, dtype=jnp.int32),
-        komi=jnp.float32(komi),
-    )
+class Go:
 
+    def __init__(self, size: int, komi: float = 7.5):
+        self.size = size
+        self.komi = komi
 
-def step(x: GameState, action: int, size: int) -> GameState:
-    x = x.replace(ko=jnp.int32(-1))  # type: ignore
-
-    # update state
-    x = jax.lax.cond(
-        (action < size * size),
-        lambda: _not_pass_move(x, action, size),
-        lambda: _pass_move(x),
-    )
-
-    # increment turns
-    x = x.replace(turn=(x.turn + 1) % 2)  # type: ignore
-
-    # update board history
-    board_history = jnp.roll(x.board_history, size**2)
-    board_history = board_history.at[0].set(
-        jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
-    )
-    x = x.replace(board_history=board_history)  # type: ignore
-
-    # check PSK
-    x = x.replace(is_psk=_check_PSK(x))  # type: ignore
-
-    return x
-
-
-def observe(x: GameState, my_turn, size, history_length):
-    my_color = jnp.int32([1, -1])[my_turn]
-
-    @jax.vmap
-    def _make(i):
-        color = jnp.int32([1, -1])[i % 2] * my_color
-        return x.board_history[i // 2] == color
-
-    log = _make(jnp.arange(history_length * 2))
-    color = jnp.full_like(log[0], my_turn)  # black=0, white=1
-
-    return jnp.vstack([log, color]).transpose().reshape((size, size, -1))
-
-
-def legal_action_mask(state: GameState, size: int) -> Array:
-    """Logic is highly inspired by OpenSpiel's Go implementation"""
-    is_empty = state.chain_id_board == 0
-
-    my_color = _my_color(state)
-    opp_color = _opponent_color(state)
-    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
-
-    chain_ix = jnp.abs(state.chain_id_board) - 1
-    # fmt: off
-    in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
-    # fmt: on
-    has_liberty = (state.chain_id_board * my_color > 0) & ~in_atari
-    kills_opp = (state.chain_id_board * opp_color > 0) & in_atari
-
-    @jax.vmap
-    def is_neighbor_ok(xy):
-        neighbors = _neighbour(xy, size)
-        on_board = neighbors != -1
-        _has_empty = is_empty[neighbors]
-        _has_liberty = has_liberty[neighbors]
-        _kills_opp = kills_opp[neighbors]
-        return (
-            (on_board & _has_empty).any()
-            | (on_board & _kills_opp).any()
-            | (on_board & _has_liberty).any()
+    def init(self) -> GameState:
+        return GameState(
+            size=jnp.int32(self.size),
+            chain_id_board=jnp.zeros(self.size**2, dtype=jnp.int32),
+            board_history=jnp.full((8, self.size**2), 2, dtype=jnp.int32),
+            komi=jnp.float32(self.komi),
         )
 
-    neighbor_ok = is_neighbor_ok(jnp.arange(size**2))
-    legal_action_mask = is_empty & neighbor_ok
+    def step(self, x: GameState, action: int) -> GameState:
+        x = x.replace(ko=jnp.int32(-1))  # type: ignore
 
-    legal_action_mask = jax.lax.cond(
-        (state.ko == -1),
-        lambda: legal_action_mask,
-        lambda: legal_action_mask.at[state.ko].set(FALSE),
-    )
-    return jnp.append(legal_action_mask, TRUE)  # pass is always legal
+        # update state
+        x = jax.lax.cond(
+            (action < self.size * self.size),
+            lambda: _not_pass_move(x, action, self.size),
+            lambda: _pass_move(x),
+        )
+
+        # increment turns
+        x = x.replace(turn=(x.turn + 1) % 2)  # type: ignore
+
+        # update board history
+        board_history = jnp.roll(x.board_history, self.size**2)
+        board_history = board_history.at[0].set(
+            jnp.clip(x.chain_id_board, -1, 1).astype(jnp.int32)
+        )
+        x = x.replace(board_history=board_history)  # type: ignore
+
+        # check PSK
+        x = x.replace(is_psk=_check_PSK(x))  # type: ignore
+
+        return x
 
 
-def is_terminal(x: GameState):
-    two_consecutive_pass = x.consecutive_pass_count >= 2
-    return two_consecutive_pass | x.is_psk
+    def observe(self, x: GameState, my_turn, history_length):
+        my_color = jnp.int32([1, -1])[my_turn]
+
+        @jax.vmap
+        def _make(i):
+            color = jnp.int32([1, -1])[i % 2] * my_color
+            return x.board_history[i // 2] == color
+
+        log = _make(jnp.arange(history_length * 2))
+        color = jnp.full_like(log[0], my_turn)  # black=0, white=1
+
+        return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
 
-def terminal_values(x: GameState, size: int):
-    score = _count_point(x, size)
-    reward_bw = jax.lax.select(
-        score[0] - x.komi > score[1],
-        jnp.array([1, -1], dtype=jnp.float32),
-        jnp.array([-1, 1], dtype=jnp.float32),
-    )
-    to_play = x.turn
-    reward_bw = jax.lax.select(
-        x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
-    )
-    return reward_bw
+    def legal_action_mask(self, state: GameState) -> Array:
+        """Logic is highly inspired by OpenSpiel's Go implementation"""
+        is_empty = state.chain_id_board == 0
+
+        my_color = _my_color(state)
+        opp_color = _opponent_color(state)
+        num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
+
+        chain_ix = jnp.abs(state.chain_id_board) - 1
+        # fmt: off
+        in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
+        # fmt: on
+        has_liberty = (state.chain_id_board * my_color > 0) & ~in_atari
+        kills_opp = (state.chain_id_board * opp_color > 0) & in_atari
+
+        @jax.vmap
+        def is_neighbor_ok(xy):
+            neighbors = _neighbour(xy, self.size)
+            on_board = neighbors != -1
+            _has_empty = is_empty[neighbors]
+            _has_liberty = has_liberty[neighbors]
+            _kills_opp = kills_opp[neighbors]
+            return (
+                (on_board & _has_empty).any()
+                | (on_board & _kills_opp).any()
+                | (on_board & _has_liberty).any()
+            )
+
+        neighbor_ok = is_neighbor_ok(jnp.arange(self.size**2))
+        legal_action_mask = is_empty & neighbor_ok
+
+        legal_action_mask = jax.lax.cond(
+            (state.ko == -1),
+            lambda: legal_action_mask,
+            lambda: legal_action_mask.at[state.ko].set(FALSE),
+        )
+        return jnp.append(legal_action_mask, TRUE)  # pass is always legal
+
+
+    def is_terminal(self, x: GameState):
+        two_consecutive_pass = x.consecutive_pass_count >= 2
+        return two_consecutive_pass | x.is_psk
+
+
+    def terminal_values(self, x: GameState):
+        score = _count_point(x, self.size)
+        reward_bw = jax.lax.select(
+            score[0] - x.komi > score[1],
+            jnp.array([1, -1], dtype=jnp.float32),
+            jnp.array([-1, 1], dtype=jnp.float32),
+        )
+        to_play = x.turn
+        reward_bw = jax.lax.select(
+            x.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw
+        )
+        return reward_bw
 
 
 def _pass_move(state: GameState) -> GameState:
