@@ -24,16 +24,16 @@ def test_end_by_pass():
 
     state = init(key=key)
     state = step(state=state, action=25)
-    assert state._x._consecutive_pass_count == 1
+    assert state._x.consecutive_pass_count == 1
     assert not state.terminated
     state = step(state=state, action=0)
-    assert state._x._consecutive_pass_count == 0
+    assert state._x.consecutive_pass_count == 0
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state._x._consecutive_pass_count == 1
+    assert state._x.consecutive_pass_count == 1
     assert not state.terminated
     state = step(state=state, action=25)
-    assert state._x._consecutive_pass_count == 2
+    assert state._x.consecutive_pass_count == 2
     assert state.terminated
 
 

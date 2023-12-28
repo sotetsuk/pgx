@@ -33,7 +33,7 @@ class GameState:
     board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)
     turn: Array = jnp.int32(0)  # 0 = black's turn, 1 = white's turn
     num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
-    _consecutive_pass_count: Array = jnp.int32(0)
+    consecutive_pass_count: Array = jnp.int32(0)
     _ko: Array = jnp.int32(-1)  # by SSK
     _komi: Array = jnp.float32(7.5)
     _is_psk: Array = FALSE
@@ -128,7 +128,7 @@ def legal_action_mask(state: GameState, size: int) -> Array:
 
 
 def is_terminal(x: GameState):
-    two_consecutive_pass = x._consecutive_pass_count >= 2
+    two_consecutive_pass = x.consecutive_pass_count >= 2
     return two_consecutive_pass | x._is_psk
 
 
@@ -147,11 +147,11 @@ def terminal_values(x: GameState, size: int):
 
 
 def _pass_move(state: GameState) -> GameState:
-    return state.replace(_consecutive_pass_count=state._consecutive_pass_count + 1)  # type: ignore
+    return state.replace(consecutive_pass_count=state.consecutive_pass_count + 1)  # type: ignore
 
 
 def _not_pass_move(state: GameState, action, size) -> GameState:
-    state = state.replace(_consecutive_pass_count=0)  # type: ignore
+    state = state.replace(consecutive_pass_count=0)  # type: ignore
     xy = action
     num_captured_stones_before = state.num_captured_stones[state.turn]
 
@@ -359,7 +359,7 @@ def _check_PSK(state: GameState):
     Anyway, we believe it's effect is very small as PSK rarely happens, especially in 19x19 board.
     """
     # fmt: off
-    not_passed = state._consecutive_pass_count == 0
+    not_passed = state.consecutive_pass_count == 0
     is_psk = not_passed & (jnp.abs(state.board_history[0] - state.board_history[1:]).sum(axis=1) == 0).any()
     # fmt: on
     return is_psk
