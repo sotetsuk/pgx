@@ -50,7 +50,7 @@ class Game:
             board_history=jnp.full((8, self.size**2), 2, dtype=jnp.int32),
         )
 
-    def step(self, x: GameState, action: int) -> GameState:
+    def step(self, x: GameState, action: Array) -> GameState:
         x = x._replace(ko=jnp.int32(-1))
 
         # update state
