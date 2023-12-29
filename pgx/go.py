@@ -84,7 +84,7 @@ class Go(core.Env):
         state = state.replace(terminated=(state.terminated | _terminated))  # type:ignore
         # fmt: on
         assert isinstance(state, State)
-        reward_bw = self._game.terminal_values(state._x)
+        reward_bw = self._game.returns(state._x)
         should_flip = state.current_player == state._x.color
         rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
         rewards = jax.lax.select(state.terminated, rewards, jnp.zeros_like(rewards))

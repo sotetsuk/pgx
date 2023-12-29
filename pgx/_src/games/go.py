@@ -118,7 +118,7 @@ class Game:
         two_consecutive_pass = state.consecutive_pass_count >= 2
         return two_consecutive_pass | state.is_psk
 
-    def terminal_values(self, state: GameState):
+    def returns(self, state: GameState):
         score = _count_point(state, self.size)
         reward_bw = jax.lax.select(
             score[0] - self.komi > score[1],
