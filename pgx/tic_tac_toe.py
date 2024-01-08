@@ -61,7 +61,9 @@ class TicTacToe(core.Env):
         should_flip = state.current_player == state._x._turn
         rewards = jax.lax.select(should_flip, rewards, jnp.flip(rewards))
         rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
-        return state.replace(legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated)  # type: ignore
+        return state.replace(  # type: ignore
+            legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated
+        )
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
