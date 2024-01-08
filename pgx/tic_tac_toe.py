@@ -50,12 +50,14 @@ class TicTacToe(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        x = self._game.step(state._x, action)
-        state = state.replace(current_player=(state.current_player + 1) % 2, _x=x)  # type: ignore
-        legal_action_mask = self._game.legal_action_mask(x)
-        terminated = self._game.is_terminal(x)
-        rewards = self._game.returns(x)
+        state = state.replace(  # type: ignore
+            current_player=(state.current_player + 1) % 2, 
+            _x=self._game.step(state._x, action)
+        )
         assert isinstance(state, State)
+        legal_action_mask = self._game.legal_action_mask(state._x)
+        terminated = self._game.is_terminal(state._x)
+        rewards = self._game.returns(state._x)
         should_flip = state.current_player != state._x.color
         rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
         rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))

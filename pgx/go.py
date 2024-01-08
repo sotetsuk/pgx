@@ -69,13 +69,15 @@ class Go(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        x = self._game.step(state._x, action)
-        state = state.replace(current_player=(state.current_player + 1) % 2, _x=x)  # type: ignore
-        legal_action_mask = self._game.legal_action_mask(x),
-        # terminates if size * size * 2 (722 if size=19) steps are elapsed
-        terminated = self._game.is_terminal(x),
-        terminated |= ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))  # fmt: skip
+        state = state.replace(  # type: ignore
+            current_player=(state.current_player + 1) % 2, 
+            _x=self._game.step(state._x, action)
+        )
         assert isinstance(state, State)
+        legal_action_mask = self._game.legal_action_mask(state._x),
+        # terminates if size * size * 2 (722 if size=19) steps are elapsed
+        terminated = self._game.is_terminal(state._x),
+        terminated |= ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))  # fmt: skip
         rewards = self._game.returns(state._x)
         should_flip = state.current_player != state._x.color
         rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
