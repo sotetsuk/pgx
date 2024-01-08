@@ -73,7 +73,7 @@ class Go(core.Env):
             current_player=(state.current_player + 1) % 2, _x=self._game.step(state._x, action)
         )
         assert isinstance(state, State)
-        legal_action_mask = (self._game.legal_action_mask(state._x),)
+        legal_action_mask = self._game.legal_action_mask(state._x)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
         timeover = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))  # fmt: skip
         terminated = self._game.is_terminal(state._x) | timeover
