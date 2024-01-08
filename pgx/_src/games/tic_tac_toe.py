@@ -17,9 +17,8 @@ from typing import Optional
 import jax
 import jax.numpy as jnp
 
-import pgx.core as core
 from pgx._src.struct import dataclass
-from pgx._src.types import Array, PRNGKey
+from pgx._src.types import Array
 
 
 @dataclass
