@@ -30,6 +30,7 @@ class GameState:
     # 3 4 5
     # 6 7 8
     _board: Array = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
+    winner: Array = jnp.int32(-1)
 
 
 @dataclass
@@ -82,38 +83,64 @@ def _init(rng: PRNGKey) -> State:
     return State(current_player=current_player)  # type:ignore
 
 
-def _step(state: State, action: Array) -> State:
-    state = state.replace(_x=state._x.replace(_board=state._x._board.at[action].set(state._x._turn)))  # type: ignore
-    won = _win_check(state._x._board, state._x._turn)
-    reward = jax.lax.cond(
-        won,
-        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
-        lambda: jnp.zeros(2, jnp.float32),
-    )
-    return state.replace(  # type: ignore
-        current_player=(state.current_player + 1) % 2,
-        legal_action_mask=state._x._board < 0,
-        rewards=reward,
-        terminated=won | jnp.all(state._x._board != -1),
-        _x=state._x.replace(_turn=(state._x._turn + 1) % 2),  # type: ignore
-    )
-
-
-def _win_check(board, turn) -> Array:
+def _step_game_state(state: GameState, action: Array) -> GameState:
+    board = state._board.at[action].set(state._turn)
     idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
-    return ((board[idx] == turn).all(axis=1)).any()
+    won = (board[idx] == state._turn).all(axis=1).any()
+    winner = jax.lax.select(won, state._turn, -1)
+    return state.replace(  # type: ignore
+        _board=state._board.at[action].set(state._turn),
+        _turn=(state._turn + 1) % 2,
+        winner=winner,
+    )
+
+
+def _step(state: State, action: Array) -> State:
+    x = _step_game_state(state._x, action)
+    state = state.replace(  # type: ignore
+        current_player=(state.current_player + 1) % 2,
+        _x=x
+    )
+    legal_action_mask = _legal_action_mask(x)
+    terminated = _is_terminal(x)
+    rewards = _returns(x)
+    should_flip = state.current_player == state._x._turn
+    rewards = jax.lax.select(should_flip, rewards, jnp.flip(rewards))
+    rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
+    return state.replace(  # type: ignore
+        legal_action_mask=legal_action_mask,
+        rewards=rewards,
+        terminated=terminated
+    )
+
+
+def _legal_action_mask(state: GameState) -> Array:
+    return state._board < 0
+
+
+def _is_terminal(state: GameState) -> Array:
+    return (state.winner >= 0) | jnp.all(state._board != -1)
+
+
+def _returns(state: GameState) -> Array:
+    return jax.lax.select(
+        state.winner >= 0,
+        jnp.float32([-1, -1]).at[state.winner].set(1),
+        jnp.zeros(2, jnp.float32),
+    )
 
 
 def _observe(state: State, player_id: Array) -> Array:
+    curr_color = state._x._turn
+    my_color = jax.lax.select(player_id == state.current_player, curr_color, 1 - curr_color)
+    return _observe_game_state(state._x, my_color)
+
+
+def _observe_game_state(state: GameState, color: Array) -> Array:
     @jax.vmap
     def plane(i):
-        return (state._x._board == i).reshape((3, 3))
+        return (state._board == i).reshape((3, 3))
 
     # flip if player_id is opposite
-    x = jax.lax.cond(
-        state.current_player == player_id,
-        lambda: jnp.int32([state._x._turn, 1 - state._x._turn]),
-        lambda: jnp.int32([1 - state._x._turn, state._x._turn]),
-    )
-
+    x = jax.lax.select(color == 0, jnp.int32([0, 1]), jnp.int32([1, 0]))
     return jnp.stack(plane(x), -1)
