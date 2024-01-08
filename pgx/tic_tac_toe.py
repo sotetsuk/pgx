@@ -97,21 +97,14 @@ def _step_game_state(state: GameState, action: Array) -> GameState:
 
 def _step(state: State, action: Array) -> State:
     x = _step_game_state(state._x, action)
-    state = state.replace(  # type: ignore
-        current_player=(state.current_player + 1) % 2,
-        _x=x
-    )
+    state = state.replace(current_player=(state.current_player + 1) % 2, _x=x)  # type: ignore
     legal_action_mask = _legal_action_mask(x)
     terminated = _is_terminal(x)
     rewards = _returns(x)
     should_flip = state.current_player == state._x._turn
     rewards = jax.lax.select(should_flip, rewards, jnp.flip(rewards))
     rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
-    return state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask,
-        rewards=rewards,
-        terminated=terminated
-    )
+    return state.replace(legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated)  # type: ignore
 
 
 def _legal_action_mask(state: GameState) -> Array:
