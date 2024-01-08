@@ -17,7 +17,7 @@ from typing import Optional, NamedTuple
 import jax
 import jax.numpy as jnp
 
-from pgx._src.types import Array
+from jax import Array
 
 
 class GameState(NamedTuple):
