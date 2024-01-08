@@ -18,6 +18,7 @@ import jax.numpy as jnp
 import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
+from pgx._src.games.connect_four import Game, GameState
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -56,18 +57,41 @@ class State(core.State):
 class ConnectFour(core.Env):
     def __init__(self):
         super().__init__()
+        self._game = Game()
 
     def _init(self, key: PRNGKey) -> State:
-        return _init(key)
+        current_player = jnp.int32(jax.random.bernoulli(key))
+        return State(
+            current_player=current_player,
+            _x=self._game.init()
+        )  # type:ignore
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        return _step(state, action)
+        x = self._game.step(state._x, action)
+        state = state.replace(  # type: ignore
+            current_player=1 - state.current_player,
+            _x=x,
+        )
+        assert isinstance(state, State)
+        legal_action_mask = self._game.legal_action_mask(state._x)
+        terminated = self._game.is_terminal(state._x)
+        rewards = self._game.returns(state._x)
+        should_flip = state.current_player != state._x._turn
+        rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
+        rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
+        return state.replace(  # type: ignore
+            legal_action_mask=legal_action_mask,
+            rewards=rewards,
+            terminated=terminated,
+        )
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        return _observe(state, player_id)
+        curr_color = state._x._turn
+        my_color = jax.lax.select(player_id == state.current_player, curr_color, 1 - curr_color)
+        return self._game.observe(state._x, my_color)
 
     @property
     def id(self) -> core.EnvId:
@@ -80,104 +104,3 @@ class ConnectFour(core.Env):
     @property
     def num_players(self) -> int:
         return 2
-
-
-def _make_win_cache():
-    idx = []
-    # Vertical
-    for i in range(3):
-        for j in range(7):
-            a = i * 7 + j
-            idx.append([a, a + 7, a + 14, a + 21])
-    # Horizontal
-    for i in range(6):
-        for j in range(4):
-            a = i * 7 + j
-            idx.append([a, a + 1, a + 2, a + 3])
-
-    # Diagonal
-    for i in range(3):
-        for j in range(4):
-            a = i * 7 + j
-            idx.append([a, a + 8, a + 16, a + 24])
-    for i in range(3):
-        for j in range(3, 7):
-            a = i * 7 + j
-            idx.append([a, a + 6, a + 12, a + 18])
-    return jnp.int32(idx)
-
-
-IDX = _make_win_cache()
-
-
-def _init(rng: PRNGKey) -> State:
-    current_player = jnp.int32(jax.random.bernoulli(rng))
-    return State(current_player=current_player)  # type:ignore
-
-
-def _step_game_state(state: GameState, action: Array) -> GameState:
-    board2d = state._board.reshape(6, 7)
-    num_filled = (board2d[:, action] >= 0).sum()
-    board2d = board2d.at[5 - num_filled, action].set(state._turn)
-    won = _win_check(board2d.flatten(), state._turn)
-    winner = jax.lax.select(won, state._turn, -1)
-    return state.replace(  # type: ignore
-        _turn=1 - state._turn,
-        _board=board2d.flatten(),
-        winner=winner,
-    )
-
-
-def _step(state: State, action: Array) -> State:
-    x = _step_game_state(state._x, action)
-    state = state.replace(  # type: ignore
-        current_player=1 - state.current_player,
-        _x=x,
-    )
-    terminated = is_terminal(state._x)
-    rewards = returns(state._x)
-    should_flip = state.current_player != state._x._turn
-    rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
-    rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
-    return state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask(state._x),
-        rewards=rewards,
-        terminated=terminated,
-    )
-
-
-def returns(state: GameState) -> Array:
-    return jax.lax.cond(
-        state.winner >= 0,
-        lambda: jnp.float32([-1, -1]).at[state.winner].set(1),
-        lambda: jnp.zeros(2, jnp.float32),
-    )
-
-
-def is_terminal(state: GameState) -> Array:
-    board2d = state._board.reshape(6, 7)
-    return (state.winner >= 0) | jnp.all((board2d >= 0).sum(axis=0) == 6)
-
-
-def legal_action_mask(state: GameState) -> Array:
-    board2d = state._board.reshape(6, 7)
-    return (board2d >= 0).sum(axis=0) < 6
-
-
-def _win_check(board, turn) -> Array:
-    return ((board[IDX] == turn).all(axis=1)).any()
-
-
-def _observe_game_state(state: GameState, color: Array) -> Array:
-    turns = jax.lax.select(color == 0, jnp.int32([0, 1]), jnp.int32([1, 0]))
-
-    def make(turn):
-        return state._board.reshape(6, 7) == turn
-
-    return jnp.stack(jax.vmap(make)(turns), -1)
-
-
-def _observe(state: State, player_id: Array) -> Array:
-    curr_color = state._x._turn
-    my_color = jax.lax.select(player_id == state.current_player, curr_color, 1 - curr_color)
-    return _observe_game_state(state._x, my_color)
