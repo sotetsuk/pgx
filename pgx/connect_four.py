@@ -34,6 +34,7 @@ class GameState:
     #  [28, 29, 30, 31, 32, 33, 34],
     #  [35, 36, 37, 38, 39, 40, 41]]
     _board: Array = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
+    winner: Array = jnp.int32(-1)
 
 
 @dataclass
@@ -114,30 +115,53 @@ def _init(rng: PRNGKey) -> State:
     return State(current_player=current_player)  # type:ignore
 
 
-def _step(state: State, action: Array) -> State:
-    board2d = state._x._board.reshape(6, 7)
+def _step_game_state(state: GameState, action: Array) -> GameState:
+    board2d = state._board.reshape(6, 7)
     num_filled = (board2d[:, action] >= 0).sum()
-    board2d = board2d.at[5 - num_filled, action].set(state._x._turn)
-    won = _win_check(board2d.flatten(), state._x._turn)
-    reward = jax.lax.cond(
-        won,
-        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
+    board2d = board2d.at[5 - num_filled, action].set(state._turn)
+    won = _win_check(board2d.flatten(), state._turn)
+    winner = jax.lax.select(won, state._turn, -1)
+    return state.replace(  # type: ignore
+        _turn=1 - state._turn,
+        _board=board2d.flatten(),
+        winner=winner,
+    )
+
+
+def _step(state: State, action: Array) -> State:
+    x = _step_game_state(state._x, action)
+    state = state.replace(  # type: ignore
+        current_player=1 - state.current_player,
+        _x=x,
+    )
+    terminated = is_terminal(state._x)
+    rewards = returns(state._x)
+    should_flip = state.current_player != state._x._turn
+    rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
+    rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
+    return state.replace(  # type: ignore
+        legal_action_mask=legal_action_mask(state._x),
+        rewards=rewards,
+        terminated=terminated,
+    )
+
+
+def returns(state: GameState) -> Array:
+    return jax.lax.cond(
+        state.winner >= 0,
+        lambda: jnp.float32([-1, -1]).at[state.winner].set(1),
         lambda: jnp.zeros(2, jnp.float32),
     )
-    return state.replace(  # type: ignore
-        current_player=1 - state.current_player,
-        legal_action_mask=((board2d >= 0).sum(axis=0) < 6),
-        terminated=won | jnp.all((board2d >= 0).sum(axis=0) == 6),
-        rewards=reward,
-        _x=state._x.replace(  # type: ignore
-            _turn=1 - state._x._turn,
-            _board=board2d.flatten(),
-        ),
-    )
 
 
-def _to_idx(row, col):
-    return row * 7 + col
+def is_terminal(state: GameState) -> Array:
+    board2d = state._board.reshape(6, 7)
+    return (state.winner >= 0) | jnp.all((board2d >= 0).sum(axis=0) == 6)
+
+
+def legal_action_mask(state: GameState) -> Array:
+    board2d = state._board.reshape(6, 7)
+    return ((board2d >= 0).sum(axis=0) < 6)
 
 
 def _win_check(board, turn) -> Array:
