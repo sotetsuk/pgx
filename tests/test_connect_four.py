@@ -31,7 +31,7 @@ def test_step():
     @@.....
     """
     # fmt: off
-    assert (state._board == jnp.array(
+    assert (state._x._board == jnp.array(
         [1, 1, -1, -1, -1, -1, -1,
          0, 0, -1, -1, -1, -1, -1,
          1, 1, -1, -1, -1, -1, -1,
