@@ -25,7 +25,7 @@ def test_step():
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(
-        state._x._board == jnp.int32([-1, -1, -1, -1, -1, -1, -1, -1, -1])
+        state._x.board == jnp.int32([-1, -1, -1, -1, -1, -1, -1, -1, -1])
     )
     assert not state.terminated
     # -1 -1 -1
@@ -41,7 +41,7 @@ def test_step():
         == jnp.array([1, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
     assert jnp.all(
-        state._x._board == jnp.int32([-1, -1, -1, -1, 0, -1, -1, -1, -1])
+        state._x.board == jnp.int32([-1, -1, -1, -1, 0, -1, -1, -1, -1])
     )
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
@@ -57,7 +57,7 @@ def test_step():
         state.legal_action_mask
         == jnp.array([0, 1, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._x._board == jnp.int32([1, -1, -1, -1, 0, -1, -1, -1, -1]))
+    assert jnp.all(state._x.board == jnp.int32([1, -1, -1, -1, 0, -1, -1, -1, -1]))
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1 -1 -1
@@ -72,7 +72,7 @@ def test_step():
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._x._board == jnp.int32([1, 0, -1, -1, 0, -1, -1, -1, -1]))
+    assert jnp.all(state._x.board == jnp.int32([1, 0, -1, -1, 0, -1, -1, -1, -1]))
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1  0 -1
@@ -87,7 +87,7 @@ def test_step():
         state.legal_action_mask
         == jnp.array([0, 0, 1, 1, 0, 1, 1, 1, 0], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._x._board == jnp.int32([1, 0, -1, -1, 0, -1, -1, -1, 1]))
+    assert jnp.all(state._x.board == jnp.int32([1, 0, -1, -1, 0, -1, -1, -1, 1]))
     assert jnp.all(state.rewards == 0)  # fmt: ignore
     assert not state.terminated
     #  1  0 -1
@@ -102,7 +102,7 @@ def test_step():
         state.legal_action_mask
         == jnp.array([1, 1, 1, 1, 1, 1, 1, 1, 1], jnp.bool_)
     )  # fmt: ignore
-    assert jnp.all(state._x._board == jnp.int32([1, 0, -1, -1, 0, -1, -1, 0, 1]))
+    assert jnp.all(state._x.board == jnp.int32([1, 0, -1, -1, 0, -1, -1, 0, 1]))
     assert jnp.all(state.rewards == jnp.int32([-1, 1]))  # fmt: ignore
     assert state.terminated
     #  1  0 -1

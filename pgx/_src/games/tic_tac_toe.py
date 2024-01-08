@@ -27,7 +27,7 @@ class GameState:
     # 0 1 2
     # 3 4 5
     # 6 7 8
-    _board: Array = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
+    board: Array = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
     winner: Array = jnp.int32(-1)
 
 
@@ -36,12 +36,12 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        board = state._board.at[action].set(state.color)
+        board = state.board.at[action].set(state.color)
         idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
         won = (board[idx] == state.color).all(axis=1).any()
         winner = jax.lax.select(won, state.color, -1)
         return state.replace(  # type: ignore
-            _board=state._board.at[action].set(state.color),
+            board=state.board.at[action].set(state.color),
             color=(state.color + 1) % 2,
             winner=winner,
         )
@@ -52,16 +52,16 @@ class Game:
 
         @jax.vmap
         def plane(i):
-            return (state._board == i).reshape((3, 3))
+            return (state.board == i).reshape((3, 3))
 
         x = jax.lax.select(color == 0, jnp.int32([0, 1]), jnp.int32([1, 0]))
         return jnp.stack(plane(x), -1)
 
     def legal_action_mask(self, state: GameState) -> Array:
-        return state._board < 0
+        return state.board < 0
 
     def is_terminal(self, state: GameState) -> Array:
-        return (state.winner >= 0) | jnp.all(state._board != -1)
+        return (state.winner >= 0) | jnp.all(state.board != -1)
 
     def returns(self, state: GameState) -> Array:
         return jax.lax.select(
