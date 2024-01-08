@@ -56,8 +56,8 @@ class TicTacToe(core.Env):
         terminated = self._game.is_terminal(x)
         rewards = self._game.returns(x)
         assert isinstance(state, State)
-        should_flip = state.current_player == state._x.color
-        rewards = jax.lax.select(should_flip, rewards, jnp.flip(rewards))
+        should_flip = state.current_player != state._x.color
+        rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
         rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
         return state.replace(  # type: ignore
             legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated
