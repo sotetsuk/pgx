@@ -18,8 +18,6 @@ A collection of GPU/TPU-accelerated parallel game simulators for reinforcement l
 <img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(270deg);"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_light.gif#gh-light-mode-only" width="30%" style="transform:rotate(90deg);">
 </div>
 
-**📣 [`v2.0.0`](https://github.com/sotetsuk/pgx/releases/tag/v2.0.0) is released! It breaks compatibility in stochastic environments (e.g., 2048) and `auto_reset`.**
-
 ## Why Pgx?
 
 <!--- 
