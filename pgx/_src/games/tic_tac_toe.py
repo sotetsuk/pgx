@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Optional
+
 import jax
 import jax.numpy as jnp
 
@@ -49,14 +50,14 @@ class Game:
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         if color is None:
             color = state._turn
-        
+
         @jax.vmap
         def plane(i):
             return (state._board == i).reshape((3, 3))
 
         x = jax.lax.select(color == 0, jnp.int32([0, 1]), jnp.int32([1, 0]))
         return jnp.stack(plane(x), -1)
-       
+
     def legal_action_mask(self, state: GameState) -> Array:
         return state._board < 0
 
