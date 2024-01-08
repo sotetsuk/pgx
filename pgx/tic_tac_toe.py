@@ -20,17 +20,14 @@ from pgx._src.games.tic_tac_toe import Game, GameState
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
 
-FALSE = jnp.bool_(False)
-TRUE = jnp.bool_(True)
-
 
 @dataclass
 class State(core.State):
     current_player: Array = jnp.int32(0)
     observation: Array = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
     rewards: Array = jnp.float32([0.0, 0.0])
-    terminated: Array = FALSE
-    truncated: Array = FALSE
+    terminated: Array = jnp.bool_(False)
+    truncated: Array = jnp.bool_(False)
     legal_action_mask: Array = jnp.ones(9, dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
     _x: GameState = GameState()
