@@ -20,16 +20,13 @@ import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
 
-FALSE = jnp.bool_(False)
-TRUE = jnp.bool_(True)
-
 
 @dataclass
 class State(core.State):
     current_player: Array = jnp.int32(0)
     rewards: Array = jnp.float32([0.0, 0.0])
-    terminated: Array = FALSE
-    truncated: Array = FALSE
+    terminated: Array = jnp.bool_(False)
+    truncated: Array = jnp.bool_(False)
     legal_action_mask: Array = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
