@@ -12,17 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import Optional
+from typing import Optional, NamedTuple
 
 import jax
 import jax.numpy as jnp
 
-from pgx._src.struct import dataclass
 from pgx._src.types import Array
 
 
-@dataclass
-class GameState:
+class GameState(NamedTuple):
     color: Array = jnp.int32(0)  # 0 = X, 1 = O
     # 0 1 2
     # 3 4 5
@@ -40,7 +38,7 @@ class Game:
         idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
         won = (board[idx] == state.color).all(axis=1).any()
         winner = jax.lax.select(won, state.color, -1)
-        return state.replace(  # type: ignore
+        return state._replace(  # type: ignore
             board=state.board.at[action].set(state.color),
             color=(state.color + 1) % 2,
             winner=winner,
