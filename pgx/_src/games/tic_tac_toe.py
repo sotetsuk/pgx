@@ -23,7 +23,7 @@ from pgx._src.types import Array
 
 @dataclass
 class GameState:
-    _turn: Array = jnp.int32(0)
+    color: Array = jnp.int32(0)
     # 0 1 2
     # 3 4 5
     # 6 7 8
@@ -36,19 +36,19 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        board = state._board.at[action].set(state._turn)
+        board = state._board.at[action].set(state.color)
         idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
-        won = (board[idx] == state._turn).all(axis=1).any()
-        winner = jax.lax.select(won, state._turn, -1)
+        won = (board[idx] == state.color).all(axis=1).any()
+        winner = jax.lax.select(won, state.color, -1)
         return state.replace(  # type: ignore
-            _board=state._board.at[action].set(state._turn),
-            _turn=(state._turn + 1) % 2,
+            _board=state._board.at[action].set(state.color),
+            color=(state.color + 1) % 2,
             winner=winner,
         )
 
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         if color is None:
-            color = state._turn
+            color = state.color
 
         @jax.vmap
         def plane(i):

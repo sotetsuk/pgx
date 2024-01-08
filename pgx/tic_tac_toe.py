@@ -58,7 +58,7 @@ class TicTacToe(core.Env):
         legal_action_mask = self._game.legal_action_mask(x)
         terminated = self._game.is_terminal(x)
         rewards = self._game.returns(x)
-        should_flip = state.current_player == state._x._turn
+        should_flip = state.current_player == state._x.color
         rewards = jax.lax.select(should_flip, rewards, jnp.flip(rewards))
         rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))
         return state.replace(  # type: ignore
@@ -67,7 +67,7 @@ class TicTacToe(core.Env):
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        curr_color = state._x._turn
+        curr_color = state._x.color
         my_color = jax.lax.select(player_id == state.current_player, curr_color, 1 - curr_color)
         return self._game.observe(state._x, my_color)
 
