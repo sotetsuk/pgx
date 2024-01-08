@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from pgx._src.struct import dataclass
 from typing import Optional
 
 import jax
 from jax import Array
 from jax import numpy as jnp
+
+from pgx._src.struct import dataclass
 
 
 @dataclass
@@ -41,7 +42,7 @@ class Game:
             lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
             lambda: jnp.zeros(2, jnp.float32),
         )
-    
+
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         ...
 
@@ -53,7 +54,6 @@ class Game:
 
     def returns(self, state: GameState) -> Array:
         ...
-
 
 
 def _win_check(board, turn) -> Array:
