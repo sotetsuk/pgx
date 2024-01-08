@@ -34,7 +34,6 @@ class GameState:
     #  [28, 29, 30, 31, 32, 33, 34],
     #  [35, 36, 37, 38, 39, 40, 41]]
     _board: Array = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
-    _blank_row: Array = jnp.full(7, 5)
 
 
 @dataclass
@@ -116,11 +115,10 @@ def _init(rng: PRNGKey) -> State:
 
 
 def _step(state: State, action: Array) -> State:
-    board = state._x._board
-    row = state._x._blank_row[action]
-    blank_row = state._x._blank_row.at[action].set(row - 1)
-    board = board.at[_to_idx(row, action)].set(state._x._turn)
-    won = _win_check(board, state._x._turn)
+    board2d = state._x._board.reshape(6, 7)
+    num_filled = (board2d[:, action] >= 0).sum()
+    board2d = board2d.at[5 - num_filled, action].set(state._x._turn)
+    won = _win_check(board2d.flatten(), state._x._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -128,13 +126,12 @@ def _step(state: State, action: Array) -> State:
     )
     return state.replace(  # type: ignore
         current_player=1 - state.current_player,
-        legal_action_mask=blank_row >= 0,
-        terminated=won | jnp.all(blank_row == -1),
+        legal_action_mask=((board2d >= 0).sum(axis=0) < 6),
+        terminated=won | jnp.all((board2d >= 0).sum(axis=0) == 6),
         rewards=reward,
         _x=state._x.replace(  # type: ignore
             _turn=1 - state._x._turn,
-            _board=board,
-            _blank_row=blank_row,
+            _board=board2d.flatten(),
         ),
     )
 
