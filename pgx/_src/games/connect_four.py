@@ -31,7 +31,7 @@ class GameState:
     #  [21, 22, 23, 24, 25, 26, 27],
     #  [28, 29, 30, 31, 32, 33, 34],
     #  [35, 36, 37, 38, 39, 40, 41]]
-    _board: Array = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
+    board: Array = -jnp.ones(42, jnp.int32)  # -1 (empty), 0, 1
     winner: Array = jnp.int32(-1)
 
 
@@ -40,14 +40,14 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        board2d = state._board.reshape(6, 7)
+        board2d = state.board.reshape(6, 7)
         num_filled = (board2d[:, action] >= 0).sum()
         board2d = board2d.at[5 - num_filled, action].set(state.color)
         won = ((board2d.flatten()[IDX] == state.color).all(axis=1)).any()
         winner = jax.lax.select(won, state.color, -1)
         return state.replace(  # type: ignore
             color=1 - state.color,
-            _board=board2d.flatten(),
+            board=board2d.flatten(),
             winner=winner,
         )
 
@@ -55,16 +55,16 @@ class Game:
         turns = jax.lax.select(color == 0, jnp.int32([0, 1]), jnp.int32([1, 0]))
 
         def make(turn):
-            return state._board.reshape(6, 7) == turn
+            return state.board.reshape(6, 7) == turn
 
         return jnp.stack(jax.vmap(make)(turns), -1)
 
     def legal_action_mask(self, state: GameState) -> Array:
-        board2d = state._board.reshape(6, 7)
+        board2d = state.board.reshape(6, 7)
         return (board2d >= 0).sum(axis=0) < 6
 
     def is_terminal(self, state: GameState) -> Array:
-        board2d = state._board.reshape(6, 7)
+        board2d = state.board.reshape(6, 7)
         return (state.winner >= 0) | jnp.all((board2d >= 0).sum(axis=0) == 6)
 
     def returns(self, state: GameState) -> Array:
