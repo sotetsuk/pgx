@@ -16,9 +16,9 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
+from pgx._src.games.connect_four import Game, GameState
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.connect_four import Game, GameState
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
@@ -61,10 +61,7 @@ class ConnectFour(core.Env):
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
-        return State(
-            current_player=current_player,
-            _x=self._game.init()
-        )  # type:ignore
+        return State(current_player=current_player, _x=self._game.init())  # type:ignore
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key

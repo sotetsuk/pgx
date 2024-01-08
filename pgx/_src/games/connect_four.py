@@ -13,9 +13,10 @@
 # limitations under the License.
 
 from typing import Optional
+
 import jax
-from jax import Array
 import jax.numpy as jnp
+from jax import Array
 
 from pgx._src.struct import dataclass
 
