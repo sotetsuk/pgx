@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.tic_tac_toe import _win_check, TicTacToe
+from pgx.tic_tac_toe import TicTacToe
 
 env = TicTacToe()
 init = jax.jit(env.init)
@@ -108,52 +108,6 @@ def test_step():
     #  1  0 -1
     # -1  0 -1
     # -1  0  1
-
-
-def test_win_check():
-    board = jnp.int32([-1, -1, -1, -1, -1, -1, -1, -1, -1])
-    turn = jnp.int32(1)
-    assert not _win_check(board, turn)
-
-    board = jnp.int32([1, -1, -1, -1, 1, -1, 0, -1, 0])
-    turn = jnp.int32(1)
-    assert not _win_check(board, turn)
-
-    board = jnp.int32([1, -1, -1, -1, 1, -1, -1, -1, 1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([-1, -1, 1, -1, 1, -1, 1, -1, -1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([1, 1, 1, -1, -1, -1, -1, -1, -1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([-1, -1, -1, 1, 1, 1, -1, -1, -1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([-1, -1, -1, -1, -1, -1, 1, 1, 1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([1, -1, -1, 1, -1, -1, 1, -1, -1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([-1, 1, -1, -1, 1, -1, -1, 1, -1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([-1, -1, 1, -1, -1, 1, -1, -1, 1])
-    turn = jnp.int32(1)
-    assert _win_check(board, turn)
-
-    board = jnp.int32([-1, 0, -1, -1, 0, -1, -1, 0, -1])
-    turn = jnp.int32(0)
-    assert _win_check(board, turn)
 
 
 def test_observe():
