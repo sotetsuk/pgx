@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import NamedTuple
 import jax
 import jax.numpy as jnp
 
@@ -24,6 +25,15 @@ TRUE = jnp.bool_(True)
 
 
 @dataclass
+class GameState:
+    _turn: Array = jnp.int32(0)
+    # 0 1 2
+    # 3 4 5
+    # 6 7 8
+    _board: Array = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
+
+
+@dataclass
 class State(core.State):
     current_player: Array = jnp.int32(0)
     observation: Array = jnp.zeros((3, 3, 2), dtype=jnp.bool_)
@@ -32,12 +42,7 @@ class State(core.State):
     truncated: Array = FALSE
     legal_action_mask: Array = jnp.ones(9, dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
-    # --- Tic-tac-toe specific ---
-    _turn: Array = jnp.int32(0)
-    # 0 1 2
-    # 3 4 5
-    # 6 7 8
-    _board: Array = -jnp.ones(9, jnp.int32)  # -1 (empty), 0, 1
+    _x: GameState = GameState()
 
     @property
     def env_id(self) -> core.EnvId:
@@ -79,8 +84,8 @@ def _init(rng: PRNGKey) -> State:
 
 
 def _step(state: State, action: Array) -> State:
-    state = state.replace(_board=state._board.at[action].set(state._turn))  # type: ignore
-    won = _win_check(state._board, state._turn)
+    state = state.replace(_x=state._x.replace(_board=state._x._board.at[action].set(state._x._turn)))  # type: ignore
+    won = _win_check(state._x._board, state._x._turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -88,10 +93,10 @@ def _step(state: State, action: Array) -> State:
     )
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        legal_action_mask=state._board < 0,
+        legal_action_mask=state._x._board < 0,
         rewards=reward,
-        terminated=won | jnp.all(state._board != -1),
-        _turn=(state._turn + 1) % 2,
+        terminated=won | jnp.all(state._x._board != -1),
+        _x=state._x.replace(_turn=(state._x._turn + 1) % 2),  # type: ignore
     )
 
 
@@ -103,13 +108,13 @@ def _win_check(board, turn) -> Array:
 def _observe(state: State, player_id: Array) -> Array:
     @jax.vmap
     def plane(i):
-        return (state._board == i).reshape((3, 3))
+        return (state._x._board == i).reshape((3, 3))
 
     # flip if player_id is opposite
     x = jax.lax.cond(
         state.current_player == player_id,
-        lambda: jnp.int32([state._turn, 1 - state._turn]),
-        lambda: jnp.int32([1 - state._turn, state._turn]),
+        lambda: jnp.int32([state._x._turn, 1 - state._x._turn]),
+        lambda: jnp.int32([1 - state._x._turn, state._x._turn]),
     )
 
     return jnp.stack(plane(x), -1)
