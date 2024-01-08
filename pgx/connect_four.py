@@ -168,15 +168,16 @@ def _win_check(board, turn) -> Array:
     return ((board[IDX] == turn).all(axis=1)).any()
 
 
-def _observe(state: State, player_id: Array) -> Array:
-    turns = jnp.int32([state._x._turn, 1 - state._x._turn])
-    turns = jax.lax.cond(
-        player_id == state.current_player,
-        lambda: turns,
-        lambda: jnp.flip(turns),
-    )
+def _observe_game_state(state: GameState, color: Array) -> Array:
+    turns = jax.lax.select(color == 0, jnp.int32([0, 1]), jnp.int32([1, 0]))
 
     def make(turn):
-        return state._x._board.reshape(6, 7) == turn
+        return state._board.reshape(6, 7) == turn
 
     return jnp.stack(jax.vmap(make)(turns), -1)
+
+
+def _observe(state: State, player_id: Array) -> Array:
+    curr_color = state._x._turn
+    my_color = jax.lax.select(player_id == state.current_player, curr_color, 1 - curr_color)
+    return _observe_game_state(state._x, my_color)
