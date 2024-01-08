@@ -161,7 +161,7 @@ def is_terminal(state: GameState) -> Array:
 
 def legal_action_mask(state: GameState) -> Array:
     board2d = state._board.reshape(6, 7)
-    return ((board2d >= 0).sum(axis=0) < 6)
+    return (board2d >= 0).sum(axis=0) < 6
 
 
 def _win_check(board, turn) -> Array:
