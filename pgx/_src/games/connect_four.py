@@ -68,10 +68,10 @@ class Game:
         return (state.winner >= 0) | jnp.all((board2d >= 0).sum(axis=0) == 6)
 
     def returns(self, state: GameState) -> Array:
-        return jax.lax.cond(
+        return jax.lax.select(
             state.winner >= 0,
-            lambda: jnp.float32([-1, -1]).at[state.winner].set(1),
-            lambda: jnp.zeros(2, jnp.float32),
+            jnp.float32([-1, -1]).at[state.winner].set(1),
+            jnp.zeros(2, jnp.float32),
         )
 
 
