@@ -51,8 +51,7 @@ class TicTacToe(core.Env):
         del key
         assert isinstance(state, State)
         state = state.replace(  # type: ignore
-            current_player=(state.current_player + 1) % 2, 
-            _x=self._game.step(state._x, action)
+            current_player=(state.current_player + 1) % 2, _x=self._game.step(state._x, action)
         )
         assert isinstance(state, State)
         legal_action_mask = self._game.legal_action_mask(state._x)
