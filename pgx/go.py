@@ -20,16 +20,13 @@ import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
 
-FALSE = jnp.bool_(False)
-TRUE = jnp.bool_(True)
-
 
 @dataclass
 class State(core.State):
     current_player: Array = jnp.int32(0)
     rewards: Array = jnp.float32([0.0, 0.0])
-    terminated: Array = FALSE
-    truncated: Array = FALSE
+    terminated: Array = jnp.bool_(False)
+    truncated: Array = jnp.bool_(False)
     legal_action_mask: Array = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
@@ -69,26 +66,21 @@ class Go(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        x = self._game.step(state._x, action)
-
-        current_player = (state.current_player + 1) % 2  # player to act
-        state = state.replace(  # type:ignore
-            current_player=current_player,
-            terminated=self._game.is_terminal(x),
-            legal_action_mask=self._game.legal_action_mask(x),
-            _x=x,
+        state = state.replace(  # type: ignore
+            current_player=(state.current_player + 1) % 2, _x=self._game.step(state._x, action)
         )
-        # terminates if size * size * 2 (722 if size=19) steps are elapsed
-        # fmt: off
-        _terminated = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))
-        state = state.replace(terminated=(state.terminated | _terminated))  # type:ignore
-        # fmt: on
         assert isinstance(state, State)
-        reward_bw = self._game.returns(state._x)
-        should_flip = state.current_player == state._x.color
-        rewards = jax.lax.select(should_flip, reward_bw, jnp.flip(reward_bw))
-        rewards = jax.lax.select(state.terminated, rewards, jnp.zeros_like(rewards))
-        return state.replace(rewards=rewards)  # type:ignore
+        legal_action_mask = self._game.legal_action_mask(state._x)
+        # terminates if size * size * 2 (722 if size=19) steps are elapsed
+        timeover = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))  # fmt: skip
+        terminated = self._game.is_terminal(state._x) | timeover
+        rewards = self._game.returns(state._x)
+        should_flip = state.current_player != state._x.color
+        rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
+        rewards = jax.lax.select(terminated, rewards, jnp.zeros_like(rewards))
+        return state.replace(  # type:ignore
+            legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated
+        )
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         """Return AlphaGo Zero [Silver+17] feature
