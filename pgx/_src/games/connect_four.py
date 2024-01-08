@@ -20,9 +20,6 @@ from jax import Array
 
 from pgx._src.struct import dataclass
 
-FALSE = jnp.bool_(False)
-TRUE = jnp.bool_(True)
-
 
 @dataclass
 class GameState:
