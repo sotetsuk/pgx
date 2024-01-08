@@ -114,11 +114,11 @@ class Game:
         )
         return jnp.append(legal_action_mask, True)  # pass is always legal
 
-    def is_terminal(self, state: GameState):
+    def is_terminal(self, state: GameState) -> Array:
         two_consecutive_pass = state.consecutive_pass_count >= 2
         return two_consecutive_pass | state.is_psk
 
-    def returns(self, state: GameState):
+    def returns(self, state: GameState) -> Array:
         score = _count_point(state, self.size)
         reward_bw = jax.lax.select(
             score[0] - self.komi > score[1],
