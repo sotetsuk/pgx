@@ -1,15 +1,14 @@
-from jax import Array
-from typing import Protocol, Optional, TypeVar, runtime_checkable
+from typing import Optional, Protocol, TypeVar, runtime_checkable
 
+from jax import Array
 
 # NOTE: These protocols are WIP and subject to change.
 
-T = TypeVar('T')  # GameState
+T = TypeVar("T")  # GameState
 
 
 @runtime_checkable
 class TwoPlayerPerfectInfoGame(Protocol[T]):
-
     def init(self) -> T:
         ...
 
