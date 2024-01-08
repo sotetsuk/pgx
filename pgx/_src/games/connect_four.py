@@ -23,7 +23,7 @@ from pgx._src.struct import dataclass
 
 @dataclass
 class GameState:
-    _turn: Array = jnp.int32(0)
+    color: Array = jnp.int32(0)
     # 6x7 board
     # [[ 0,  1,  2,  3,  4,  5,  6],
     #  [ 7,  8,  9, 10, 11, 12, 13],
@@ -42,11 +42,11 @@ class Game:
     def step(self, state: GameState, action: Array) -> GameState:
         board2d = state._board.reshape(6, 7)
         num_filled = (board2d[:, action] >= 0).sum()
-        board2d = board2d.at[5 - num_filled, action].set(state._turn)
-        won = ((board2d.flatten()[IDX] == state._turn).all(axis=1)).any()
-        winner = jax.lax.select(won, state._turn, -1)
+        board2d = board2d.at[5 - num_filled, action].set(state.color)
+        won = ((board2d.flatten()[IDX] == state.color).all(axis=1)).any()
+        winner = jax.lax.select(won, state.color, -1)
         return state.replace(  # type: ignore
-            _turn=1 - state._turn,
+            color=1 - state.color,
             _board=board2d.flatten(),
             winner=winner,
         )
