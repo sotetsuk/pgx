@@ -23,7 +23,7 @@ from pgx._src.types import Array
 
 @dataclass
 class GameState:
-    color: Array = jnp.int32(0)
+    color: Array = jnp.int32(0)  # 0 = X, 1 = O
     # 0 1 2
     # 3 4 5
     # 6 7 8
