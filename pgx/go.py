@@ -80,7 +80,6 @@ class Go(core.Env):
         rewards = self._game.returns(state._x)
         should_flip = state.current_player != state._x.color
         rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
-        rewards = jax.lax.select(terminated, rewards, jnp.zeros_like(rewards))
         return state.replace(  # type:ignore
             legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated
         )
