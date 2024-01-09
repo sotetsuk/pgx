@@ -41,7 +41,9 @@ class GameState(NamedTuple):
 
 
 class Game:
-    def __init__(self, size: int = 19, komi: float = 7.5, history_length: int = 8, max_termination_steps: Optional[int] = None):
+    def __init__(
+        self, size: int = 19, komi: float = 7.5, history_length: int = 8, max_termination_steps: Optional[int] = None
+    ):
         self.size = size
         self.komi = komi
         self.history_length = history_length

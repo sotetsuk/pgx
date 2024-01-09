@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from typing import Optional
+
 import jax
 from jax import numpy as jnp
 
@@ -53,7 +54,9 @@ class Go(core.Env):
     ):
         super().__init__()
         assert isinstance(size, int)
-        self._game = go.Game(size=size, komi=komi, history_length=history_length, max_termination_steps=max_terminal_steps)
+        self._game = go.Game(
+            size=size, komi=komi, history_length=history_length, max_termination_steps=max_terminal_steps
+        )
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
