@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import warnings
 import abc
 from typing import Literal, Optional, Tuple, get_args
 
@@ -227,8 +228,16 @@ class Env(abc.ABC):
 
         return state
 
-    def observe(self, state: State, player_id: Array) -> Array:
+    def observe(self, state: State, player_id: Optional[Array] = None) -> Array:
         """Observation function."""
+        if player_id is None:
+            player_id = state.current_player
+        else:
+            warnings.warn(
+                "[Pgx] player_id argument in `Env.observe` is deprecated. Will be removed in the future.",
+                DeprecationWarning,
+            )
+
         obs = self._observe(state, player_id)
         return jax.lax.stop_gradient(obs)
 
