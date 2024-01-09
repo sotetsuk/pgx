@@ -73,7 +73,7 @@ class Go(core.Env):
         return state.replace(  # type:ignore
             current_player=state._player_order[x.color],
             legal_action_mask=self._game.legal_action_mask(x),
-            rewards=self._game.returns(x)[state._player_order],
+            rewards=self._game.rewards(x)[state._player_order],
             terminated=self._game.is_terminal(x),
             _x=x,
         )

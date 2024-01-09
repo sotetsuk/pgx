@@ -8,7 +8,7 @@ T = TypeVar("T")  # GameState
 
 
 @runtime_checkable
-class TwoPlayerPerfectInfoGame(Protocol[T]):
+class GameProtocol(Protocol[T]):
     def init(self) -> T:
         ...
 
@@ -24,5 +24,5 @@ class TwoPlayerPerfectInfoGame(Protocol[T]):
     def is_terminal(self, state: T) -> Array:
         ...
 
-    def returns(self, state: T) -> Array:
+    def rewards(self, state: T) -> Array:
         ...

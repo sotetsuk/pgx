@@ -63,7 +63,7 @@ class Game:
         board2d = state.board.reshape(6, 7)
         return (state.winner >= 0) | jnp.all((board2d >= 0).sum(axis=0) == 6)
 
-    def returns(self, state: GameState) -> Array:
+    def rewards(self, state: GameState) -> Array:
         return jax.lax.select(
             state.winner >= 0,
             jnp.float32([-1, -1]).at[state.winner].set(1),
