@@ -31,6 +31,7 @@ class State(core.State):
     truncated: Array = jnp.bool_(False)
     legal_action_mask: Array = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
     observation: Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
+    _player_order: Array = jnp.int32([0, 1])
     _step_count: Array = jnp.int32(0)
     _x: go.GameState = go.GameState()
 
@@ -59,29 +60,26 @@ class Go(core.Env):
         )
 
     def _init(self, key: PRNGKey) -> State:
-        current_player = jnp.int32(jax.random.bernoulli(key))
+        _player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
+        x = self._game.init()
         size = self._game.size
         return State(  # type:ignore
             legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
-            current_player=current_player,
-            _x=self._game.init(),
+            current_player=_player_order[x.color],
+            _player_order=_player_order,
+            _x=x,
         )
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        state = state.replace(  # type: ignore
-            current_player=(state.current_player + 1) % 2, _x=self._game.step(state._x, action)
-        )
-        assert isinstance(state, State)
-        legal_action_mask = self._game.legal_action_mask(state._x)
-        # terminates if size * size * 2 (722 if size=19) steps are elapsed
-        terminated = self._game.is_terminal(state._x)
-        rewards = self._game.returns(state._x)
-        should_flip = state.current_player != state._x.color
-        rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
+        x = self._game.step(state._x, action)
         return state.replace(  # type:ignore
-            legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated
+            current_player=state._player_order[x.color],
+            legal_action_mask=self._game.legal_action_mask(x), 
+            rewards=self._game.returns(x)[state._player_order], 
+            terminated=self._game.is_terminal(x),
+            _x=x
         )
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
