@@ -29,7 +29,7 @@ class State(core.State):
     rewards: Array = jnp.float32([0.0, 0.0])
     terminated: Array = jnp.bool_(False)
     truncated: Array = jnp.bool_(False)
-    legal_action_mask: Array = jnp.zeros(19 * 19 + 1, dtype=jnp.bool_)
+    legal_action_mask: Array = jnp.ones(19 * 19 + 1, dtype=jnp.bool_)
     observation: Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
     _player_order: Array = jnp.int32([0, 1])
     _step_count: Array = jnp.int32(0)
@@ -58,9 +58,7 @@ class Go(core.Env):
     def _init(self, key: PRNGKey) -> State:
         _player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
         x = self._game.init()
-        size = self._game.size
         return State(  # type:ignore
-            legal_action_mask=jnp.ones(size**2 + 1, dtype=jnp.bool_),
             current_player=_player_order[x.color],
             _player_order=_player_order,
             _x=x,
