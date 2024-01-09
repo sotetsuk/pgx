@@ -123,7 +123,7 @@ class Go(core.Env):
 
     @property
     def id(self) -> core.EnvId:
-        return f"go_{int(self.size)}x{int(self.size)}"  # type: ignore
+        return f"go_{int(self._game.size)}x{int(self._game.size)}"  # type: ignore
 
     @property
     def version(self) -> str:
