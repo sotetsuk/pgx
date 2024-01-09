@@ -31,8 +31,8 @@ class State(core.State):
     truncated: Array = jnp.bool_(False)
     legal_action_mask: Array = jnp.ones(19 * 19 + 1, dtype=jnp.bool_)
     observation: Array = jnp.zeros((19, 19, 17), dtype=jnp.bool_)
-    _player_order: Array = jnp.int32([0, 1])
     _step_count: Array = jnp.int32(0)
+    _player_order: Array = jnp.int32([0, 1])  # [0, 1] or [1, 0]
     _x: go.GameState = go.GameState()
 
     @property
