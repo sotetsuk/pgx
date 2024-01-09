@@ -39,10 +39,6 @@ class State(core.State):
     def env_id(self) -> core.EnvId:
         return f"go_{self._x.size}x{self._x.size}"  # type: ignore
 
-    @staticmethod
-    def _from_sgf(sgf: str):
-        return _from_sgf(sgf)
-
 
 class Go(core.Env):
     def __init__(
@@ -99,66 +95,3 @@ class Go(core.Env):
     @property
     def num_players(self) -> int:
         return 2
-
-
-# only for debug
-def _show(state: State) -> None:
-    BLACK_CHAR = "@"
-    WHITE_CHAR = "O"
-    POINT_CHAR = "+"
-    print("===========")
-    for xy in range(state._x.size * state._x.size):
-        if state._x.chain_id_board[xy] > 0:
-            print(" " + BLACK_CHAR, end="")
-        elif state._x.chain_id_board[xy] < 0:
-            print(" " + WHITE_CHAR, end="")
-        else:
-            print(" " + POINT_CHAR, end="")
-
-        if xy % state._x.size == state._x.size - 1:
-            print()
-
-
-# load sgf
-def _from_sgf(sgf: str):
-    indexes = "abcdefghijklmnopqrs"
-    infos = sgf.split(";")
-    game_info = infos[1]
-    game_record = infos[2:]
-    # assert game_info[game_info.find('GM') + 3] == "1"
-    # set default to 19
-    size = 19
-    if game_info.find("SZ") != -1:
-        sz = game_info[game_info.find("SZ") + 3 : game_info.find("SZ") + 5]
-        if sz[1] == "]":
-            sz = sz[0]
-        size = int(sz)
-    env = Go(size=size)
-    init = jax.jit(env.init)
-    step = jax.jit(env.step)
-    key = jax.random.PRNGKey(0)
-    state = init(key)
-    has_branch = False
-    for reco in game_record:
-        if reco[-2] == ")":
-            # The end of main branch
-            print("this sgf has some branches")
-            print("loaded main branch")
-            has_branch = True
-        if reco[2] == "]":
-            # pass
-            state = step(state, size * size)
-            # check branches
-            if has_branch:
-                return state
-            continue
-        pos = reco[2:4]
-        yoko = indexes.index(pos[0])
-        tate = indexes.index(pos[1])
-        action = yoko + size * tate
-        state = step(state, action)
-        # We only follow the main branch
-        # Return when the main branch ends
-        if has_branch:
-            return state
-    return state
