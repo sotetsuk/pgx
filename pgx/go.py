@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from typing import Optional
+
 import jax
 from jax import numpy as jnp
 
@@ -48,11 +50,13 @@ class Go(core.Env):
         size: int = 19,
         komi: float = 7.5,
         history_length: int = 8,
+        max_terminal_steps: Optional[int] = None,
     ):
         super().__init__()
         assert isinstance(size, int)
-        self.max_termination_steps = size * size * 2
-        self._game = go.Game(size=size, komi=komi, history_length=history_length)
+        self._game = go.Game(
+            size=size, komi=komi, history_length=history_length, max_termination_steps=max_terminal_steps
+        )
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
@@ -72,12 +76,10 @@ class Go(core.Env):
         assert isinstance(state, State)
         legal_action_mask = self._game.legal_action_mask(state._x)
         # terminates if size * size * 2 (722 if size=19) steps are elapsed
-        timeover = ((0 <= self.max_termination_steps) & (self.max_termination_steps <= state._step_count))  # fmt: skip
-        terminated = self._game.is_terminal(state._x) | timeover
+        terminated = self._game.is_terminal(state._x)
         rewards = self._game.returns(state._x)
         should_flip = state.current_player != state._x.color
         rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
-        rewards = jax.lax.select(terminated, rewards, jnp.zeros_like(rewards))
         return state.replace(  # type:ignore
             legal_action_mask=legal_action_mask, rewards=rewards, terminated=terminated
         )

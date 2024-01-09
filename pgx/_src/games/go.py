@@ -41,10 +41,13 @@ class GameState(NamedTuple):
 
 
 class Game:
-    def __init__(self, size: int = 19, komi: float = 7.5, history_length: int = 8):
+    def __init__(
+        self, size: int = 19, komi: float = 7.5, history_length: int = 8, max_termination_steps: Optional[int] = None
+    ):
         self.size = size
         self.komi = komi
         self.history_length = history_length
+        self.max_termination_steps = size * size * 2 if max_termination_steps is None else max_termination_steps
 
     def init(self) -> GameState:
         return GameState(
@@ -120,18 +123,20 @@ class Game:
 
     def is_terminal(self, state: GameState) -> Array:
         two_consecutive_pass = state.consecutive_pass_count >= 2
-        return two_consecutive_pass | state.is_psk
+        timeover = self.max_termination_steps <= state.step_count
+        return two_consecutive_pass | state.is_psk | timeover
 
     def returns(self, state: GameState) -> Array:
         score = _count_point(state, self.size)
-        reward_bw = jax.lax.select(
+        rewards = jax.lax.select(
             score[0] - self.komi > score[1],
             jnp.array([1, -1], dtype=jnp.float32),
             jnp.array([-1, 1], dtype=jnp.float32),
         )
         to_play = state.color
-        reward_bw = jax.lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw)
-        return reward_bw
+        rewards = jax.lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), rewards)
+        rewards = jax.lax.select(self.is_terminal(state), rewards, jnp.zeros(2, dtype=jnp.float32))
+        return rewards
 
 
 def _apply_pass(state: GameState) -> GameState:
