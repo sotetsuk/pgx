@@ -36,8 +36,8 @@ class GameState(NamedTuple):
         return self.step_count % 2
 
     @property
-    def size(self) -> int:
-        return int(jnp.sqrt(self.chain_id_board.shape[-1]).astype(jnp.int32).item())
+    def size(self) -> Array:
+        return jnp.sqrt(self.chain_id_board.shape[-1]).astype(jnp.int32)
 
 
 class Game:
