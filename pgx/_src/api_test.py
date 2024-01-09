@@ -54,6 +54,7 @@ def api_test_single(env: Env, num: int = 100, use_key=True):
     for _ in range(num):
         rng, subkey = jax.random.split(rng)
         state = init(subkey)
+        assert state.env_id == env.id
         assert state.legal_action_mask.sum() != 0, "legal_action_mask at init state cannot be zero."
 
         assert state._step_count == 0
