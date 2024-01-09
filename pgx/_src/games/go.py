@@ -128,15 +128,15 @@ class Game:
 
     def returns(self, state: GameState) -> Array:
         score = _count_point(state, self.size)
-        reward_bw = jax.lax.select(
+        rewards = jax.lax.select(
             score[0] - self.komi > score[1],
             jnp.array([1, -1], dtype=jnp.float32),
             jnp.array([-1, 1], dtype=jnp.float32),
         )
         to_play = state.color
-        reward_bw = jax.lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), reward_bw)
-        reward_bw = jax.lax.select(self.is_terminal(state), reward_bw, jnp.zeros(2, dtype=jnp.float32))
-        return reward_bw
+        rewards = jax.lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), rewards)
+        rewards = jax.lax.select(self.is_terminal(state), rewards, jnp.zeros(2, dtype=jnp.float32))
+        return rewards
 
 
 def _apply_pass(state: GameState) -> GameState:
