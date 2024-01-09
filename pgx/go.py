@@ -58,8 +58,10 @@ class Go(core.Env):
     def _init(self, key: PRNGKey) -> State:
         _player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
         x = self._game.init()
+        size = self._game.size
         return State(  # type:ignore
             current_player=_player_order[x.color],
+            legal_action_mask=jnp.ones(size * size + 1, dtype=jnp.bool_),
             _player_order=_player_order,
             _x=x,
         )
