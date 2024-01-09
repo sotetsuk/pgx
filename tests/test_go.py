@@ -1180,8 +1180,7 @@ def test_PSK():
 
 
 def test_max_step_termination():
-    env = Go(size=9)
-    env.max_termination_steps = 10
+    env = Go(size=9, max_terminal_steps=10)
     init_fn = jax.jit(env.init)
     step_fn = jax.jit(env.step)
     state = init_fn(jax.random.PRNGKey(0))
