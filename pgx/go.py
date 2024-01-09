@@ -76,10 +76,10 @@ class Go(core.Env):
         x = self._game.step(state._x, action)
         return state.replace(  # type:ignore
             current_player=state._player_order[x.color],
-            legal_action_mask=self._game.legal_action_mask(x), 
-            rewards=self._game.returns(x)[state._player_order], 
+            legal_action_mask=self._game.legal_action_mask(x),
+            rewards=self._game.returns(x)[state._player_order],
             terminated=self._game.is_terminal(x),
-            _x=x
+            _x=x,
         )
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
