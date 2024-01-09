@@ -83,42 +83,9 @@ class Go(core.Env):
         )
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
-        """Return AlphaGo Zero [Silver+17] feature
-
-            obs = (size, size, history_length * 2 + 1)
-            e.g., (19, 19, 17) if size=19 and history_length=8 (used in AlphaZero)
-
-            obs[:, :, 0]: stones of `player_id`          @ current board
-            obs[:, :, 1]: stones of `player_id` opponent @ current board
-            obs[:, :, 2]: stones of `player_id`          @ 1-step before
-            obs[:, :, 3]: stones of `player_id` opponent @ 1-step before
-            ...
-            obs[:, :, -1]: color of `player_id`
-
-            NOTE: For the final dimension, there are two possible options:
-
-              - Use the color of current player to play
-              - Use the color of `player_id`
-
-            This ambiguity happens because `observe` function is available even if state.current_player != player_id.
-            In the AlphaGo Zero paper, the final dimension C is explained as:
-
-              > The final feature plane, C, represents the colour to play, and has a constant value of either 1 if black
-        is to play or 0 if white is to play.
-
-            however, it also describes as
-
-              > the colour feature C is necessary because the komi is not observable.
-
-            So, we use player_id's color to let the agent komi information.
-            As long as it's called when state.current_player == player_id, this doesn't matter.
-        """
         assert isinstance(state, State)
-        my_turn = jax.lax.select(
-            player_id == state.current_player,
-            state._x.color,
-            1 - state._x.color,
-        )
+        curr_color = state._x.color
+        my_turn = jax.lax.select(player_id == state.current_player, curr_color, 1 - curr_color)
         return self._game.observe(state._x, my_turn)
 
     @property
