@@ -126,7 +126,7 @@ class Game:
         timeover = self.max_termination_steps <= state.step_count
         return two_consecutive_pass | state.is_psk | timeover
 
-    def returns(self, state: GameState) -> Array:
+    def rewards(self, state: GameState) -> Array:
         score = _count_point(state, self.size)
         rewards = jax.lax.select(
             score[0] - self.komi > score[1],
