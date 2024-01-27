@@ -145,10 +145,20 @@ class State(core.State):
 
     @staticmethod
     def _from_fen(fen: str):
-        return _from_fen(fen)
+        from pgx.experimental.chess import from_fen
+        warnings.warn(
+            "State._from_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.from_fen instead.",
+            DeprecationWarning,
+        )
+        return from_fen(fen)
 
     def _to_fen(self) -> str:
-        return _to_fen(self)
+        from pgx.experimental.chess import to_fen
+        warnings.warn(
+            "State._to_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.to_fen instead.",
+            DeprecationWarning,
+        )
+        return to_fen(self)
 
 
 @dataclass
