@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import warnings
+
 import jax
 import jax.numpy as jnp
 
@@ -718,11 +719,19 @@ def _update_zobrist_hash(state: State, action: Action):
 
 def _from_fen(fen: str):
     from pgx.experimental.chess import from_fen
-    warnings.warn("_from_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.from_fen instead.", DeprecationWarning)
+
+    warnings.warn(
+        "_from_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.from_fen instead.",
+        DeprecationWarning,
+    )
     return from_fen(fen)
 
 
 def _to_fen(state: State):
     from pgx.experimental.chess import to_fen
-    warnings.warn("_to_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.to_fen instead.", DeprecationWarning)
+
+    warnings.warn(
+        "_to_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.to_fen instead.",
+        DeprecationWarning,
+    )
     return to_fen(state)
