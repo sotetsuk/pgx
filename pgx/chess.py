@@ -146,6 +146,7 @@ class State(core.State):
     @staticmethod
     def _from_fen(fen: str):
         from pgx.experimental.chess import from_fen
+
         warnings.warn(
             "State._from_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.from_fen instead.",
             DeprecationWarning,
@@ -154,6 +155,7 @@ class State(core.State):
 
     def _to_fen(self) -> str:
         from pgx.experimental.chess import to_fen
+
         warnings.warn(
             "State._to_fen is deprecated. Will be removed in the future release. Please use pgx.experimental.chess.to_fen instead.",
             DeprecationWarning,
