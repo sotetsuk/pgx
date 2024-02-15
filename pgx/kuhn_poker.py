@@ -21,10 +21,8 @@ from pgx._src.types import Array, PRNGKey
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
-CALL = jnp.int32(0)
-BET = jnp.int32(1)
-FOLD = jnp.int32(2)
-CHECK = jnp.int32(3)
+BET = jnp.int32(0)
+PASS = jnp.int32(1)
 
 
 @dataclass
@@ -34,13 +32,13 @@ class State(core.State):
     rewards: Array = jnp.float32([0.0, 0.0])
     terminated: Array = FALSE
     truncated: Array = FALSE
-    legal_action_mask: Array = jnp.ones(4, dtype=jnp.bool_)
+    legal_action_mask: Array = jnp.ones(2, dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
     # --- Kuhn poker specific ---
     _cards: Array = jnp.int32([-1, -1])
     # [(player 0),(player 1)]
     _last_action: Array = jnp.int32(-1)
-    # 0(Call)  1(Bet)  2(Fold)  3(Check)
+    # 0(Bet) 1(Pass)
     _pot: Array = jnp.int32([0, 0])
 
     @property
@@ -80,24 +78,26 @@ class KuhnPoker(core.Env):
 def _init(rng: PRNGKey) -> State:
     rng1, rng2 = jax.random.split(rng)
     current_player = jnp.int32(jax.random.bernoulli(rng1))
-    init_card = jax.random.choice(rng2, jnp.int32([[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]]))
+    init_card = jax.random.choice(
+        rng2, jnp.int32([[0, 1], [0, 2], [1, 0], [1, 2], [2, 0], [2, 1]])
+    )
     return State(  # type:ignore
         current_player=current_player,
         _cards=init_card,
-        legal_action_mask=jnp.bool_([0, 1, 0, 1]),
+        legal_action_mask=jnp.bool_([1, 1]),
     )
 
 
 def _step(state: State, action):
     action = jnp.int32(action)
     pot = jax.lax.cond(
-        (action == BET) | (action == CALL),
+        (action == BET),
         lambda: state._pot.at[state.current_player].add(1),
         lambda: state._pot,
     )
 
     terminated, reward = jax.lax.cond(
-        action == FOLD,
+        (state._last_action == BET) & (action == PASS),
         lambda: (
             TRUE,
             jnp.float32([-1, -1]).at[1 - state.current_player].set(1),
@@ -105,25 +105,17 @@ def _step(state: State, action):
         lambda: (FALSE, jnp.float32([0, 0])),
     )
     terminated, reward = jax.lax.cond(
-        (state._last_action == BET) & (action == CALL),
+        (state._last_action == BET) & (action == BET),
         lambda: (TRUE, _get_unit_reward(state) * 2),
         lambda: (terminated, reward),
     )
     terminated, reward = jax.lax.cond(
-        (state._last_action == CHECK) & (action == CHECK),
+        (state._last_action == PASS) & (action == PASS),
         lambda: (TRUE, _get_unit_reward(state)),
         lambda: (terminated, reward),
     )
 
-    legal_action = jax.lax.switch(
-        action,
-        [
-            lambda: jnp.bool_([0, 0, 0, 0]),  # CALL
-            lambda: jnp.bool_([1, 0, 1, 0]),  # BET
-            lambda: jnp.bool_([0, 0, 0, 0]),  # FOLD
-            lambda: jnp.bool_([0, 1, 0, 1]),  # CHECK
-        ],
-    )
+    legal_action = jax.lax.select(terminated, jnp.bool_([0, 0]), jnp.bool_([1, 1]))
 
     return state.replace(  # type:ignore
         current_player=1 - state.current_player,
