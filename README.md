@@ -167,13 +167,15 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 
 ## Citation
 
-If you use Pgx in your work, please cite the following paper:
+If you use Pgx in your work, please cite [our paper](https://papers.nips.cc/paper_files/paper/2023/hash/8f153093758af93861a74a1305dfdc18-Abstract-Datasets_and_Benchmarks.html):
 
 ```
 @inproceedings{koyamada2023pgx,
   title={Pgx: Hardware-Accelerated Parallel Game Simulators for Reinforcement Learning},
   author={Koyamada, Sotetsu and Okano, Shinri and Nishimori, Soichiro and Murata, Yu and Habara, Keigo and Kita, Haruka and Ishii, Shin},
   booktitle={Advances in Neural Information Processing Systems},
+  pages={45716--45743},
+  volume={36},
   year={2023}
 }
 ```
