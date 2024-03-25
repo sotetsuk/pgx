@@ -1,4 +1,5 @@
 import jax
+
 from pgx.go import Go
 
 
@@ -44,4 +45,3 @@ def from_sgf(sgf: str):
         if has_branch:
             return state
     return state
-
