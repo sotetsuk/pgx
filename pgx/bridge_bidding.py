@@ -66,17 +66,17 @@ def download_dds_results(download_dir="dds_results"):
                     )
 
     os.makedirs(download_dir, exist_ok=True)
-    
+
     train_small_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
     if not os.path.exists(train_small_fname):
         _download(DDS_RESULTS_TRAIN_SMALL_URL, train_small_fname)
-    split_data(train_small_fname, "train") 
-    
+    split_data(train_small_fname, "train")
+
     train_large_fname = os.path.join(download_dir, "dds_results_10M.npy")
     if not os.path.exists(train_large_fname):
         _download(DDS_RESULTS_TRAIN_LARGE_URL, train_large_fname)
-    split_data(train_large_fname, "train", base_i=25) 
-    
+    split_data(train_large_fname, "train", base_i=25)
+
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
     if not os.path.exists(test_fname):
         _download(DDS_RESULTS_TEST_URL, test_fname)
