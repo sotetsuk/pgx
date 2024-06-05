@@ -37,8 +37,9 @@ DOUBLE_ACTION_NUM = 1
 REDOUBLE_ACTION_NUM = 2
 BID_OFFSET_NUM = 3
 
-DDS_RESULTS_TRAIN_URL = "https://drive.google.com/uc?id=1qINu6uIVLJj95oEK3QodsI3aqvOpEozp"
-DDS_RESULTS_TEST_URL = "https://drive.google.com/uc?id=1fNPdJTPw03QrxyOgo-7PvVi5kRI_IZST"
+DDS_RESULTS_TRAIN_SMALL_URL = "https://huggingface.co/datasets/sotetsuk/dds_dataset/resolve/main/dds_results_2.5M.npy"
+DDS_RESULTS_TRAIN_LARGE_URL = "https://huggingface.co/datasets/sotetsuk/dds_dataset/resolve/main/dds_results_10M.npy"
+DDS_RESULTS_TEST_URL = "https://huggingface.co/datasets/sotetsuk/dds_dataset/resolve/main/dds_results_500K.npy"
 
 
 def download_dds_results(download_dir="dds_results"):
@@ -50,7 +51,7 @@ def download_dds_results(download_dir="dds_results"):
             n = 100_000
             m = keys.shape[0] // n
             for i in range(m):
-                fname = os.path.join(download_dir, f"{prefix}_{i:03d}.npy")
+                fname = os.path.join(download_dir, f"{prefix}_{base_i + i:03d}.npy")
                 with open(fname, "wb") as f:
                     print(
                         f"saving {fname} ... [{i * n}, {(i + 1) * n})",
@@ -66,10 +67,15 @@ def download_dds_results(download_dir="dds_results"):
 
     os.makedirs(download_dir, exist_ok=True)
     
-    train_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
-    if not os.path.exists(train_fname):
-        _download(DDS_RESULTS_TRAIN_URL, train_fname)
-    split_data(train_fname, "train") 
+    train_small_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
+    if not os.path.exists(train_small_fname):
+        _download(DDS_RESULTS_TRAIN_SMALL_URL, train_small_fname)
+    split_data(train_small_fname, "train") 
+    
+    train_large_fname = os.path.join(download_dir, "dds_results_10M.npy")
+    if not os.path.exists(train_large_fname):
+        _download(DDS_RESULTS_TRAIN_LARGE_URL, train_large_fname)
+    split_data(train_large_fname, "train", base_i=25) 
     
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
     if not os.path.exists(test_fname):
