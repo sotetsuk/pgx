@@ -67,5 +67,5 @@ typing-extensions==4.10.0
     # via mkdocstrings
 watchdog==3.0.0
     # via mkdocs
-zipp==3.18.0
+zipp==3.19.1
     # via importlib-metadata
