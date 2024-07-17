@@ -18,7 +18,6 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 
 import pgx.core as core
 from pgx._src.struct import dataclass
