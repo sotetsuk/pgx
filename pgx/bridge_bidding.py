@@ -190,7 +190,7 @@ class BridgeBidding(core.Env):
     def _step(self, state: core.State, action: int, key) -> State:
         del key
         assert isinstance(state, State)
-        return _step(state, action, self._lut_keys, self._lut_values)
+        return _step(state, action)
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
@@ -291,8 +291,6 @@ def _player_position(player: Array, state: State) -> Array:
 def _step(
     state: State,
     action: int,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> State:
     # fmt: off
     state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
@@ -304,7 +302,7 @@ def _step(
             [
                 lambda: jax.lax.cond(
                     _is_terminated(_state_pass(state)),
-                    lambda: _terminated_step(_state_pass(state), lut_keys, lut_values),
+                    lambda: _terminated_step(_state_pass(state)),
                     lambda: _continue_step(_state_pass(state)),
                 ),
                 lambda: _continue_step(_state_X(state)),
@@ -398,12 +396,10 @@ def _convert_card_pgx_to_openspiel(card: Array) -> Array:
 
 def _terminated_step(
     state: State,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
-    reward = _reward(state, lut_keys, lut_values)
+    reward = _reward(state)
     # fmt: off
     return state.replace(terminated=terminated, rewards=reward)  # type: ignore
     # fmt: on
@@ -439,8 +435,6 @@ def _is_terminated(state: State) -> bool:
 
 def _reward(
     state: State,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> Array:
     """Return reward
     If pass out, 0 reward for everyone; if bid, calculate and return reward
@@ -448,14 +442,12 @@ def _reward(
     return jax.lax.cond(
         (state._last_bid == -1) & (state._pass_num == 4),
         lambda: jnp.zeros(4, dtype=jnp.float32),  # pass out
-        lambda: _make_reward(state, lut_keys, lut_values),  # caluculate reward
+        lambda: _make_reward(state),  # caluculate reward
     )
 
 
 def _make_reward(
     state: State,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> Array:
     """Calculate rewards for each player by dds results
 
@@ -465,7 +457,7 @@ def _make_reward(
     # Extract contract from state
     declare_position, denomination, level, vul = _contract(state)
     # Calculate trick table from hash table
-    dds_tricks = _calculate_dds_tricks(state, lut_keys, lut_values)
+    dds_tricks = _value_to_dds_tricks(state._dds_val)
     # Calculate the tricks you could have accomplished with this contraption
     dds_trick = dds_tricks[declare_position * 5 + denomination]
     # Clculate score
@@ -863,32 +855,6 @@ def _value_to_dds_tricks(value: Array) -> Array:
 
     hex_digits = jax.vmap(_convert_hex)(value).flatten()
     return jnp.array(hex_digits, dtype=jnp.int32)
-
-
-def _calculate_dds_tricks(
-    state: State,
-    lut_keys: Array,
-    lut_values: Array,
-) -> Array:
-    key = _state_to_key(state)
-    return _value_to_dds_tricks(state._dds_val)
-
-
-def _find_value_from_key(key: PRNGKey, lut_keys: Array, lut_values: Array):
-    """Find a value matching key without batch processing
-    >>> VALUES = jnp.arange(20).reshape(5, 4)
-    >>> KEYS = jnp.arange(20).reshape(5, 4)
-    >>> key = jnp.arange(4, 8)
-    >>> _find_value_from_key(key, KEYS, VALUES)
-    Array([4, 5, 6, 7], dtype=int32)
-    """
-    mask = jnp.where(
-        jnp.all((lut_keys == key), axis=1),
-        jnp.ones(1, dtype=np.bool_),
-        jnp.zeros(1, dtype=np.bool_),
-    )
-    ix = jnp.argmax(mask)
-    return lut_values[ix]
 
 
 def _load_sample_hash() -> Tuple[Array, Array]:

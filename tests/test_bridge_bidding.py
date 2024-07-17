@@ -10,7 +10,6 @@ from pgx.bridge_bidding import (
     BridgeBidding,
     State,
     _calc_score,
-    _calculate_dds_tricks,
     _contract,
     _init_by_key,
     _key_to_hand,
