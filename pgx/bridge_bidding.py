@@ -138,6 +138,7 @@ class State(core.State):
     _first_denomination_EW: Array = jnp.full(5, -1, dtype=jnp.int32)
     # Number of pass
     _pass_num: Array = jnp.array(0, dtype=jnp.int32)
+    _dds_val: Array = jnp.zeros(4, dtype=jnp.int32)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -182,7 +183,9 @@ class BridgeBidding(core.Env):
 
     def _init(self, key: PRNGKey) -> State:
         key1, key2 = jax.random.split(key, num=2)
-        return _init_by_key(jax.random.choice(key1, self._lut_keys), key2)
+        ix = jax.random.choice(key1, jnp.arange(self._lut_keys.shape[0]))
+        key, val = self._lut_keys[ix], self._lut_values[ix]
+        return _init_by_key(key, val, key2)
 
     def _step(self, state: core.State, action: int, key) -> State:
         del key
@@ -210,7 +213,7 @@ class BridgeBidding(core.Env):
         return -7600.0
 
 
-def _init_by_key(key: HandArray, rng: PRNGKey) -> State:
+def _init_by_key(key: HandArray, val: Array, rng: PRNGKey) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
@@ -232,6 +235,7 @@ def _init_by_key(key: HandArray, rng: PRNGKey) -> State:
         _vul_NS=vul_NS,
         _vul_EW=vul_EW,
         legal_action_mask=legal_actions,
+        _dds_val=val,
     )
     return state
 
@@ -867,7 +871,7 @@ def _calculate_dds_tricks(
     lut_values: Array,
 ) -> Array:
     key = _state_to_key(state)
-    return _value_to_dds_tricks(_find_value_from_key(key, lut_keys, lut_values))
+    return _value_to_dds_tricks(state._dds_val)
 
 
 def _find_value_from_key(key: PRNGKey, lut_keys: Array, lut_values: Array):
