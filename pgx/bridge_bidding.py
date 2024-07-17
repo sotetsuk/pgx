@@ -47,42 +47,19 @@ DDS_RESULTS_TEST_URL = "https://huggingface.co/datasets/sotetsuk/dds_dataset/res
 def download_dds_results(download_dir="dds_results"):
     """Download and split the results into 100K chunks."""
 
-    def split_data(data, prefix, base_i=0):
-        with open(data, "rb") as f:
-            keys, values = jnp.load(f)
-            n = 100_000
-            m = keys.shape[0] // n
-            for i in range(m):
-                fname = os.path.join(download_dir, f"{prefix}_{base_i + i:03d}.npy")
-                with open(fname, "wb") as f:
-                    print(
-                        f"saving {fname} ... [{i * n}, {(i + 1) * n})",
-                        file=sys.stderr,
-                    )
-                    jnp.save(
-                        f,
-                        (
-                            keys[i * n : (i + 1) * n],
-                            values[i * n : (i + 1) * n],
-                        ),
-                    )
-
     os.makedirs(download_dir, exist_ok=True)
 
     train_small_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
     if not os.path.exists(train_small_fname):
         _download(DDS_RESULTS_TRAIN_SMALL_URL, train_small_fname)
-    split_data(train_small_fname, "train")
 
     train_large_fname = os.path.join(download_dir, "dds_results_10M.npy")
     if not os.path.exists(train_large_fname):
         _download(DDS_RESULTS_TRAIN_LARGE_URL, train_large_fname)
-    split_data(train_large_fname, "train", base_i=25)
 
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
     if not os.path.exists(test_fname):
         _download(DDS_RESULTS_TEST_URL, test_fname)
-    split_data(test_fname, "test")
 
 
 @dataclass
@@ -146,7 +123,7 @@ class State(core.State):
 
 
 class BridgeBidding(core.Env):
-    def __init__(self, dds_results_table_path: str = "dds_results/train_000.npy"):
+    def __init__(self, dds_results_table_path: str = "dds_results/dds_results_10M.npy"):
         super().__init__()
         print(
             f"Loading dds results from {dds_results_table_path} ...",
