@@ -28,6 +28,8 @@ from pgx._src.utils import _download
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
 
+HandArray = Array  # (4,) int array
+
 # The card and number correspondence
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
 # For each suit, the numbers are arranged in the following order
@@ -208,7 +210,7 @@ class BridgeBidding(core.Env):
         return -7600.0
 
 
-def _init_by_key(key: PRNGKey, rng: PRNGKey) -> State:
+def _init_by_key(key: HandArray, rng: PRNGKey) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
@@ -814,7 +816,7 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
-def _key_to_hand(key: PRNGKey) -> Array:
+def _key_to_hand(key: HandArray) -> Array:
     """Convert key to hand"""
 
     def _convert_quat(j):
