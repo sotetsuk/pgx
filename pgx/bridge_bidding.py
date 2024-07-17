@@ -18,7 +18,6 @@ from typing import Tuple
 
 import jax
 import jax.numpy as jnp
-import numpy as np
 
 import pgx.core as core
 from pgx._src.struct import dataclass
@@ -27,6 +26,8 @@ from pgx._src.utils import _download
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
+
+HandArray = Array  # (4,) int array
 
 # The card and number correspondence
 # 0~12 spade, 13~25 heart, 26~38 diamond, 39~51 club
@@ -45,42 +46,19 @@ DDS_RESULTS_TEST_URL = "https://huggingface.co/datasets/sotetsuk/dds_dataset/res
 def download_dds_results(download_dir="dds_results"):
     """Download and split the results into 100K chunks."""
 
-    def split_data(data, prefix, base_i=0):
-        with open(data, "rb") as f:
-            keys, values = jnp.load(f)
-            n = 100_000
-            m = keys.shape[0] // n
-            for i in range(m):
-                fname = os.path.join(download_dir, f"{prefix}_{base_i + i:03d}.npy")
-                with open(fname, "wb") as f:
-                    print(
-                        f"saving {fname} ... [{i * n}, {(i + 1) * n})",
-                        file=sys.stderr,
-                    )
-                    jnp.save(
-                        f,
-                        (
-                            keys[i * n : (i + 1) * n],
-                            values[i * n : (i + 1) * n],
-                        ),
-                    )
-
     os.makedirs(download_dir, exist_ok=True)
 
     train_small_fname = os.path.join(download_dir, "dds_results_2.5M.npy")
     if not os.path.exists(train_small_fname):
         _download(DDS_RESULTS_TRAIN_SMALL_URL, train_small_fname)
-    split_data(train_small_fname, "train")
 
     train_large_fname = os.path.join(download_dir, "dds_results_10M.npy")
     if not os.path.exists(train_large_fname):
         _download(DDS_RESULTS_TRAIN_LARGE_URL, train_large_fname)
-    split_data(train_large_fname, "train", base_i=25)
 
     test_fname = os.path.join(download_dir, "dds_results_500K.npy")
     if not os.path.exists(test_fname):
         _download(DDS_RESULTS_TEST_URL, test_fname)
-    split_data(test_fname, "test")
 
 
 @dataclass
@@ -136,6 +114,7 @@ class State(core.State):
     _first_denomination_EW: Array = jnp.full(5, -1, dtype=jnp.int32)
     # Number of pass
     _pass_num: Array = jnp.array(0, dtype=jnp.int32)
+    _dds_val: Array = jnp.zeros(4, dtype=jnp.int32)
 
     @property
     def env_id(self) -> core.EnvId:
@@ -143,7 +122,7 @@ class State(core.State):
 
 
 class BridgeBidding(core.Env):
-    def __init__(self, dds_results_table_path: str = "dds_results/train_000.npy"):
+    def __init__(self, dds_results_table_path: str = "dds_results/dds_results_10M.npy"):
         super().__init__()
         print(
             f"Loading dds results from {dds_results_table_path} ...",
@@ -180,12 +159,14 @@ class BridgeBidding(core.Env):
 
     def _init(self, key: PRNGKey) -> State:
         key1, key2 = jax.random.split(key, num=2)
-        return _init_by_key(jax.random.choice(key1, self._lut_keys), key2)
+        ix = jax.random.choice(key1, jnp.arange(self._lut_keys.shape[0]))
+        key, val = self._lut_keys[ix], self._lut_values[ix]
+        return _init_by_key(key, val, key2)
 
     def _step(self, state: core.State, action: int, key) -> State:
         del key
         assert isinstance(state, State)
-        return _step(state, action, self._lut_keys, self._lut_values)
+        return _step(state, action)
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
@@ -208,7 +189,7 @@ class BridgeBidding(core.Env):
         return -7600.0
 
 
-def _init_by_key(key: PRNGKey, rng: PRNGKey) -> State:
+def _init_by_key(key: HandArray, val: Array, rng: PRNGKey) -> State:
     """Make init state from key"""
     rng1, rng2, rng3, rng4 = jax.random.split(rng, num=4)
     hand = _key_to_hand(key)
@@ -230,6 +211,7 @@ def _init_by_key(key: PRNGKey, rng: PRNGKey) -> State:
         _vul_NS=vul_NS,
         _vul_EW=vul_EW,
         legal_action_mask=legal_actions,
+        _dds_val=val,
     )
     return state
 
@@ -285,8 +267,6 @@ def _player_position(player: Array, state: State) -> Array:
 def _step(
     state: State,
     action: int,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> State:
     # fmt: off
     state = state.replace(_bidding_history=state._bidding_history.at[state._turn].set(action))  # type: ignore
@@ -298,7 +278,7 @@ def _step(
             [
                 lambda: jax.lax.cond(
                     _is_terminated(_state_pass(state)),
-                    lambda: _terminated_step(_state_pass(state), lut_keys, lut_values),
+                    lambda: _terminated_step(_state_pass(state)),
                     lambda: _continue_step(_state_pass(state)),
                 ),
                 lambda: _continue_step(_state_X(state)),
@@ -392,12 +372,10 @@ def _convert_card_pgx_to_openspiel(card: Array) -> Array:
 
 def _terminated_step(
     state: State,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> State:
     """Return state if the game is successfully completed"""
     terminated = jnp.bool_(True)
-    reward = _reward(state, lut_keys, lut_values)
+    reward = _reward(state)
     # fmt: off
     return state.replace(terminated=terminated, rewards=reward)  # type: ignore
     # fmt: on
@@ -433,8 +411,6 @@ def _is_terminated(state: State) -> bool:
 
 def _reward(
     state: State,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> Array:
     """Return reward
     If pass out, 0 reward for everyone; if bid, calculate and return reward
@@ -442,14 +418,12 @@ def _reward(
     return jax.lax.cond(
         (state._last_bid == -1) & (state._pass_num == 4),
         lambda: jnp.zeros(4, dtype=jnp.float32),  # pass out
-        lambda: _make_reward(state, lut_keys, lut_values),  # caluculate reward
+        lambda: _make_reward(state),  # caluculate reward
     )
 
 
 def _make_reward(
     state: State,
-    lut_keys: Array,
-    lut_values: Array,
 ) -> Array:
     """Calculate rewards for each player by dds results
 
@@ -459,7 +433,7 @@ def _make_reward(
     # Extract contract from state
     declare_position, denomination, level, vul = _contract(state)
     # Calculate trick table from hash table
-    dds_tricks = _calculate_dds_tricks(state, lut_keys, lut_values)
+    dds_tricks = _value_to_dds_tricks(state._dds_val)
     # Calculate the tricks you could have accomplished with this contraption
     dds_trick = dds_tricks[declare_position * 5 + denomination]
     # Clculate score
@@ -814,7 +788,7 @@ def _card_str_to_int(card: str) -> int:
         return int(card) - 1
 
 
-def _key_to_hand(key: PRNGKey) -> Array:
+def _key_to_hand(key: HandArray) -> Array:
     """Convert key to hand"""
 
     def _convert_quat(j):
@@ -857,32 +831,6 @@ def _value_to_dds_tricks(value: Array) -> Array:
 
     hex_digits = jax.vmap(_convert_hex)(value).flatten()
     return jnp.array(hex_digits, dtype=jnp.int32)
-
-
-def _calculate_dds_tricks(
-    state: State,
-    lut_keys: Array,
-    lut_values: Array,
-) -> Array:
-    key = _state_to_key(state)
-    return _value_to_dds_tricks(_find_value_from_key(key, lut_keys, lut_values))
-
-
-def _find_value_from_key(key: PRNGKey, lut_keys: Array, lut_values: Array):
-    """Find a value matching key without batch processing
-    >>> VALUES = jnp.arange(20).reshape(5, 4)
-    >>> KEYS = jnp.arange(20).reshape(5, 4)
-    >>> key = jnp.arange(4, 8)
-    >>> _find_value_from_key(key, KEYS, VALUES)
-    Array([4, 5, 6, 7], dtype=int32)
-    """
-    mask = jnp.where(
-        jnp.all((lut_keys == key), axis=1),
-        jnp.ones(1, dtype=np.bool_),
-        jnp.zeros(1, dtype=np.bool_),
-    )
-    ix = jnp.argmax(mask)
-    return lut_values[ix]
 
 
 def _load_sample_hash() -> Tuple[Array, Array]:
