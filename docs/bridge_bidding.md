@@ -37,6 +37,7 @@ download_dds_results()
 
 You can specify which pre-coumpted DDS dataset to use by passing argument to `BridgeBidding` constructor.
 Typically, you have to use different DDS datasets for training and testing (evaluation).
+To make your own DDS datasets, follow the instruction at [sotetsuk/make-dds-dataset](https://github.com/sotetsuk/make-dds-dataset).
 
 ## Description
 
