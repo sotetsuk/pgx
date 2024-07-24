@@ -11,6 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
+      with:
+        submodules: recursive
     - name: Set up Python 3.10
       uses: actions/setup-python@v3
       with:
