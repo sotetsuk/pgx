@@ -11,16 +11,16 @@ def make_test_state(key):
     # due to API update
     _, key = jax.random.split(key)
     rng1, rng2, rng3 = jax.random.split(key, 3)
-    current_player = jnp.int8(jax.random.bernoulli(rng1))
+    current_player = jnp.int32(jax.random.bernoulli(rng1))
     init_card = jax.random.permutation(
-        rng2, jnp.int8([0, 0, 1, 1, 2, 2]), independent=True
+        rng2, jnp.int32([0, 0, 1, 1, 2, 2]), independent=True
     )
     return State(  # type:ignore
         _first_player=current_player,
         current_player=current_player,
         _cards=init_card[:3],
         legal_action_mask=jnp.bool_([1, 1, 0]),
-        _chips=jnp.ones(2, dtype=jnp.int8),
+        _chips=jnp.ones(2, dtype=jnp.int32),
     )
 
 
