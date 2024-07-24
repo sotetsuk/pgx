@@ -31,7 +31,7 @@ There are two actions: *bet* and *pass* and five possible scenarios.
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `2` |
 | Number of actions | `2` |
 | Observation shape | `(7,)` |
@@ -69,3 +69,4 @@ Follows the rules above.
 ## Version History
 
 - `v0` : Initial release (v1.0.0)
+- `v1` : Simplify action space by [Egiob](https://github.com/Egiob) in [#1171](https://github.com/sotetsuk/pgx/pull/1171) (v2.1.1) 
