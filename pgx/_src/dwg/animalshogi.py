@@ -78,13 +78,13 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
 
     # -1: EMPTY
     #  0: PAWN
-    #  1: ROOK
-    #  2: BISHOP
+    #  1: BISHOP
+    #  2: ROOK
     #  3: KING
     #  4: GOLD
     #  5: OPP_PAWN
-    #  6: OPP_ROOK
-    #  7: OPP_BISHOP
+    #  6: OPP_BISHOP
+    #  7: OPP_ROOK
     #  8: OPP_KING
     #  9: OPP_GOLD
 
