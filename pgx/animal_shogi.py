@@ -357,7 +357,7 @@ def _can_move(piece, from_, to):
                 lambda: is_neighbour & ((dx == dy) | (dx == -dy)),  # BISHOP
                 lambda: is_neighbour & ((dx == 0) | (dy == 0)),  # ROOK
                 lambda: is_neighbour,  # KING
-                lambda: is_neighbour & ((dx != 0) | (dy != +1)),  # GOLD
+                lambda: is_neighbour & ((dx == 0) | (dy != +1)),  # GOLD
             ],
         )
 
