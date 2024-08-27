@@ -39,7 +39,7 @@ See also [Wikipedia](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi)
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `2` |
 | Number of actions | `132` |
 | Observation shape | `(4, 3, 194)` |
@@ -92,13 +92,16 @@ In cases 3 and 4, the game is declared a draw.
 
 ## Version History
 
+- `v1` : Fixed visualization [#1208](https://github.com/sotetsuk/pgx/pull/1208) and bug in Gold's move [#1209](https://github.com/sotetsuk/pgx/pull/1209) by [@KazukiOhta](https://github.com/KazukiOhta) (v2.2.0)
 - `v0` : Initial release (v1.0.0)
-
 
 ## Baseline models
 
 Pgx offers a baseline model for Animal Shogi. Users can use it for an anchor opponent in evaluation.
 See [our paper](https://arxiv.org/abs/2303.17503) for more details. See [this colab](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb) for how to use it.
+
+> [!WARNING]
+> Curren latest model (`animal_shogi_v0`) is trained with `v0` environment. It may perform significantly worse in `v1` environment.
 
 | Model ID | Description |
 |:---:|:----|
