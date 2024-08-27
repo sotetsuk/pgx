@@ -223,9 +223,26 @@ def test_repetition():
     assert (state.rewards == 0).all()
 
 
-
 def test_api():
     import pgx
     env = pgx.make("animal_shogi")
     pgx.api_test(env, 3, use_key=False)
     pgx.api_test(env, 3, use_key=True)
+
+
+def test_buggy_samples():
+    # https://github.com/sotetsuk/pgx/pull/1209
+    state = init(jax.random.key(0))
+    state = step(state, 3 * 12 +  6) # White: Up PAWN
+    state = step(state, 0 * 12 + 11) # Black: Right Up Bishop
+    state = step(state, 8 * 12 +  1) # White: Drop PAWN to 1
+    state = step(state, 3 * 12 +  3) # Black: Up Rook
+    state = step(state, 3 * 12 +  1) # White: Up PAWN (Promote to GOLD)
+    state = step(state, 1 * 12 +  7) # Black: Right King
+    DOWN_GOLD      = 4 * 12 +  0
+    DOWN_LEFT_GOLD = 7 * 12 +  0
+    LEFT_GOLD      = 6 * 12 +  0
+    mask = state.legal_action_mask
+    assert mask[DOWN_GOLD]
+    assert not mask[DOWN_LEFT_GOLD]
+    assert mask[LEFT_GOLD]
