@@ -243,6 +243,6 @@ def test_buggy_samples():
     DOWN_LEFT_GOLD = 7 * 12 +  0
     LEFT_GOLD      = 6 * 12 +  0
     mask = state.legal_action_mask
-    assert mask[DOWN_GOLD]      == True
-    assert mask[DOWN_LEFT_GOLD] == False
-    assert mask[LEFT_GOLD]      == True
+    assert mask[DOWN_GOLD]
+    assert not mask[DOWN_LEFT_GOLD]
+    assert mask[LEFT_GOLD]
