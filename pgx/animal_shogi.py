@@ -31,8 +31,8 @@ ROOK = jnp.int32(2)
 KING = jnp.int32(3)
 GOLD = jnp.int32(4)
 #  5: OPP_PAWN
-#  6: OPP_ROOK
-#  7: OPP_BISHOP
+#  6: OPP_BISHOP
+#  7: OPP_ROOK
 #  8: OPP_KING
 #  9: OPP_GOLD
 # fmt: off
