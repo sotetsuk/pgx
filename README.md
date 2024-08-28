@@ -9,6 +9,7 @@
 <a href="https://github.com/sotetsuk/pgx/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg"></a>
 <a href="https://codecov.io/github/sotetsuk/pgx"><img alt="codecov" src="https://codecov.io/github/sotetsuk/pgx/graph/badge.svg?token=JNJIQ83JYG"></a>
 <a href="https://arxiv.org/abs/2303.17503"><img alt="arxiv" src="https://img.shields.io/badge/arXiv-2303.17503-b31b1b.svg"></a>
+<a href="https://sotetsuk.github.io/pgx"><img src="https://img.shields.io/badge/docs-available-8CA1AF?logo=readthedocs&logoColor=fff"></a>
 </p>
 
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
@@ -37,7 +38,9 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 - [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
 - [Pgx baseline models](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
 - [Export to PettingZoo API](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb)
-- [Full Documentation](https://sotets.uk/pgx/)
+
+
+Read the [Full Documentation](https://sotetsuk.github.io/pgx) for more details
 
 ## Training examples
 
