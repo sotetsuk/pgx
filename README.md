@@ -158,6 +158,8 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
     RL environments in JAX (bin-packing, routing problems, etc)
 - [flairox/jaxmarl](https://github.com/flairox/jaxmarl): Multi-Agent RL environments in JAX (simplified StarCraft, etc)
 - [corl-team/xland-minigrid](https://github.com/corl-team/xland-minigrid): Meta-RL gridworld environments in JAX inspired by MiniGrid and XLand
+- [MichaelTMatthews/Craftax](https://github.com/MichaelTMatthews/Craftax): (Crafter + NetHack) in JAX for open-ended RL
+- [epignatelli/navix](https://github.com/epignatelli/navix): Re-implementation of MiniGrid in JAX
 
 Combining Pgx with these **JAX-native algorithms/implementations** might be an interesting direction:
 
