@@ -247,7 +247,7 @@ def test_buggy_samples():
     assert not mask[DOWN_LEFT_GOLD]
     assert mask[LEFT_GOLD]
 
-    # (Add link later)
+    # https://github.com/sotetsuk/pgx/pull/1218
     state = init(jax.random.key(0))
     state = step(state, 3 * 12 +  6) # White: Up PAWN
     state = step(state, 0 * 12 + 11) # Black: Right Up Bishop
