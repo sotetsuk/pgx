@@ -246,3 +246,10 @@ def test_buggy_samples():
     assert mask[DOWN_GOLD]
     assert not mask[DOWN_LEFT_GOLD]
     assert mask[LEFT_GOLD]
+
+    # (Add link later)
+    state = init(jax.random.key(0))
+    state = step(state, 3 * 12 +  6) # White: Up PAWN
+    state = step(state, 0 * 12 + 11) # Black: Right Up Bishop
+    DROP_PAWN_TO_0 = 8 * 12 +  0
+    assert state.legal_action_mask[DROP_PAWN_TO_0]
