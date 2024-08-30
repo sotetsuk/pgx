@@ -303,7 +303,6 @@ def _legal_action_mask(state: State):
     def is_legal_drop(action: Action):
         ok = state._board[action.to] == EMPTY
         ok &= state._hand[0, action.drop_piece] > 0
-        ok &= (action.drop_piece != PAWN) | (action.to % 4 != 0)
         ok &= ~_is_checked(_step_drop(state, action))
         return ok
 
