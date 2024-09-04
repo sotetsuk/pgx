@@ -3,7 +3,7 @@
 </div>
 
 <p align="center">
-<a href="https://www.python.org/"><img alt="python" src="https://img.shields.io/badge/python-3.8+-blue?logo=python&logoColor=ffdd54"></a>
+<a href="https://www.python.org/"><img alt="python" src="https://img.shields.io/badge/python-3.9+-blue?logo=python&logoColor=ffdd54"></a>
 <a href="https://pypi.org/project/pgx/"><img alt="pypi" src="https://badge.fury.io/py/pgx.svg"></a>
 <a href="https://opensource.org/licenses/Apache-2.0"><img alt="license" src="https://img.shields.io/badge/license-Apache%202.0-green.svg"></a>
 <a href="https://github.com/sotetsuk/pgx/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg"></a>
