@@ -39,7 +39,7 @@ See also [Wikipedia](https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi)
 
 | Name | Value |
 |:---|:----:|
-| Version | `v1` |
+| Version | `v2` |
 | Number of players | `2` |
 | Number of actions | `132` |
 | Observation shape | `(4, 3, 194)` |
@@ -92,6 +92,7 @@ In cases 3 and 4, the game is declared a draw.
 
 ## Version History
 
+- `v2` : Fixed a bug in Pawn drop [#1218](https://github.com/sotetsuk/pgx/pull/1218) by [@KazukiOhta](https://github.com/KazukiOhta) (v2.3.0)
 - `v1` : Fixed visualization [#1208](https://github.com/sotetsuk/pgx/pull/1208) and bug in Gold's move [#1209](https://github.com/sotetsuk/pgx/pull/1209) by [@KazukiOhta](https://github.com/KazukiOhta) (v2.2.0)
 - `v0` : Initial release (v1.0.0)
 
