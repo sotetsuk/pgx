@@ -360,6 +360,6 @@ def _count_ji(state: GameState, color: int, size: int):
         mask = is_opp_neighbours(x)
         return jnp.where(mask, -1, x)
 
-    b = jax.lax.fori_loop(0, size + 1, fill_opp, board)
+    b = jax.lax.fori_loop(0, 2 * size - 2, fill_opp, board)
 
     return (b == 0).sum()
