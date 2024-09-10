@@ -173,14 +173,16 @@ def _apply_action(state: GameState, action, size) -> GameState:
     state = _set_stone(state, xy)
 
     # Merge neighbours
+    my_color = _my_color(state)
+    neighbours = _neighbour(xy, size)
+    on_board = neighbours != -1
+    is_my_chain = state.chain_id_board[neighbours] * my_color > 0
+    should_merge = on_board & is_my_chain
+
     def may_merge(i, s):
-        my_color = _my_color(s)
-        adj_xy = _neighbour(xy, size)[i]
-        on_board = adj_xy != -1
-        is_my_chain = s.chain_id_board[adj_xy] * my_color > 0
         s = jax.lax.cond(
-            (on_board & is_my_chain),
-            lambda: _merge_chain(s, xy, adj_xy),
+            should_merge[i],
+            lambda: _merge_chain(s, xy, neighbours[i]),
             lambda: s,
         )
         return s
