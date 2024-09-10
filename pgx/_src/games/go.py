@@ -259,9 +259,7 @@ def _count_point(state: GameState, size):
 
 def _count_ji(state: GameState, color: int, size: int):
     board = jnp.zeros_like(state.chain_id_board)
-    board = jnp.where(state.chain_id_board * color > 0, 1, board)
-    board = jnp.where(state.chain_id_board * color < 0, -1, board)
-    # 0 = empty, 1 = mine, -1 = opponent's
+    board = jnp.clip(state.chain_id_board * color, -1, 1)  # 1 = mine, -1 = opponent's
 
     neighbours = jax.vmap(partial(_neighbour, size=size))(jnp.arange(size**2))
 
