@@ -146,24 +146,23 @@ def _apply_pass(state: GameState) -> GameState:
 
 def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=0)
-    xy = action
 
     my_color = _my_color(state)
     oppo_color = _opponent_color(state)
 
     # Remove killed stones
-    neighbours = _neighbour(xy, size)
+    neighbours = _neighbour(action, size)
     chain_id = state.chain_id_board[neighbours]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(chain_id) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
-    is_killed = (neighbours != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == xy)
+    is_killed = (neighbours != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == action)
     surrounded_stones = (state.chain_id_board[:, None] == chain_id) & (is_killed[None, :])
     chain_id_board = jnp.where(surrounded_stones.any(axis=-1), 0, state.chain_id_board)
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
     ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
-    ko_may_occur = _ko_may_occur(state, xy, size)
+    ko_may_occur = _ko_may_occur(state, action, size)
     ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[ko_ix], -1)
     state = state._replace(
         chain_id_board=chain_id_board,
@@ -173,7 +172,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     # set stone
     state = state._replace(
-        chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
+        chain_id_board=state.chain_id_board.at[action].set((action + 1) * my_color),
     )
 
     # Merge neighbours
@@ -183,7 +182,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     def may_merge(i, b):
         target = neighbours[i]
-        new_id = jnp.abs(b[xy])
+        new_id = jnp.abs(b[action])
         adj_chain_id = jnp.abs(b[target])
         small_id = jnp.minimum(new_id, adj_chain_id) * my_color
         large_id = jnp.maximum(new_id, adj_chain_id) * my_color
