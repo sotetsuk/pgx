@@ -264,7 +264,7 @@ def _count_ji(state: GameState, color: int, size: int):
 
     def is_opp_neighbours(b):
         # True if empty and any of neighbours is opponent
-        return (b == 0) & ((b[neighbours] == -1) & (neighbours != -1)).any(axis=1)
+        return (b == 0) & ((neighbours != -1) & (b[neighbours] == -1)).any(axis=1)
 
     def fill_opp(x):
         b, _ = x
