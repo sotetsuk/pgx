@@ -173,7 +173,19 @@ def _apply_action(state: GameState, action, size) -> GameState:
     state = _set_stone(state, xy)
 
     # Merge neighbours
-    state = jax.lax.fori_loop(0, 4, lambda i, s: _merge_around_xy(i, s, xy, size), state)
+    def may_merge(i, s):
+        my_color = _my_color(s)
+        adj_xy = _neighbour(xy, size)[i]
+        on_board = adj_xy != -1
+        is_my_chain = s.chain_id_board[adj_xy] * my_color > 0
+        s = jax.lax.cond(
+            (on_board & is_my_chain),
+            lambda: _merge_chain(s, xy, adj_xy),
+            lambda: s,
+        )
+        return s
+
+    state = jax.lax.fori_loop(0, 4, may_merge, state)
 
     # Check Ko
     state = jax.lax.cond(
@@ -184,18 +196,6 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     return state
 
-
-def _merge_around_xy(i, state: GameState, xy, size):
-    my_color = _my_color(state)
-    adj_xy = _neighbour(xy, size)[i]
-    on_board = adj_xy != -1
-    is_my_chain = state.chain_id_board[adj_xy] * my_color > 0
-    state = jax.lax.cond(
-        (on_board & is_my_chain),
-        lambda: _merge_chain(state, xy, adj_xy),
-        lambda: state,
-    )
-    return state
 
 
 def _set_stone(state: GameState, xy) -> GameState:
