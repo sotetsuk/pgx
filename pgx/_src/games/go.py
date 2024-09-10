@@ -172,22 +172,17 @@ def _apply_action(state: GameState, action, size) -> GameState:
             lambda: jnp.int32(rm_stone_xy),
             lambda: s.ko,
         )
-        return s._replace(
-            chain_id_board=chain_id_board,
-            num_captured_stones=s.num_captured_stones.at[s.color].add(num_captured_stones),
-            ko=ko,
-        )
-
-    state = jax.lax.fori_loop(
-        0,
-        4,
-        lambda i, s: jax.lax.cond(
+        return jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(i, s),
-            lambda: s,
-        ),
-        state,
-    )
+            lambda: s._replace(
+                chain_id_board=chain_id_board,
+                num_captured_stones=s.num_captured_stones.at[s.color].add(num_captured_stones),
+                ko=ko,
+            ),
+            lambda: s
+        )
+    state = jax.lax.fori_loop(0, 4, _remove_stones, state)
+    
     state = _set_stone(state, xy)
 
     # Merge neighbours
