@@ -164,15 +164,17 @@ def _apply_action(state: GameState, action, size) -> GameState:
     is_killed = (neighbours != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == xy)
     surrounded_stones = (state.chain_id_board[:, None] == chain_id) & (is_killed[None, :])
     chain_id_board = jnp.where(surrounded_stones.any(axis=-1), 0, state.chain_id_board)
-    state = state._replace(chain_id_board=chain_id_board)
+    num_captured_stones = jnp.count_nonzero(surrounded_stones)
+    state = state._replace(
+        chain_id_board=chain_id_board,
+        num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured_stones),
+    )
 
     def _remove_stones(i, s) -> GameState:
-        num_captured_stones = jnp.count_nonzero(surrounded_stones[:, i])
         ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[i], s.ko)
         return jax.lax.cond(
             is_killed[i],
             lambda: s._replace(
-                num_captured_stones=s.num_captured_stones.at[s.color].add(num_captured_stones),
                 ko=ko,
             ),
             lambda: s,
