@@ -118,7 +118,7 @@ class Game:
             _has_empty = is_empty[neighbors]
             _has_liberty = has_liberty[neighbors]
             _kills_opp = kills_opp[neighbors]
-            return (on_board & _has_empty).any() | (on_board & _kills_opp).any() | (on_board & _has_liberty).any()
+            return (on_board & (_has_empty | _kills_opp | _has_liberty)).any()
 
         neighbor_ok = is_neighbor_ok(jnp.arange(self.size**2))
         legal_action_mask = is_empty & neighbor_ok
