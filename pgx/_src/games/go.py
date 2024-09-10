@@ -164,13 +164,13 @@ def _apply_action(state: GameState, action, size) -> GameState:
     surrounded_stones = (state.chain_id_board[:, None] == chain_id) & (is_killed[None, :])
     chain_id_board = jnp.where(surrounded_stones.any(axis=-1), 0, state.chain_id_board)
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
+    ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
+    ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[ko_ix], -1)
     state = state._replace(
         chain_id_board=chain_id_board,
         num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured_stones),
+        ko=ko
     )
-    ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
-    ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[ko_ix], -1)
-    state = state._replace(ko=ko)
 
     # set stone
     state = state._replace(
