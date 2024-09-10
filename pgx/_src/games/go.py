@@ -147,7 +147,6 @@ def _apply_pass(state: GameState) -> GameState:
 def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=jnp.int32(0))
     xy = action
-    num_captured_stones_before = state.num_captured_stones[state.color]
 
     ko_may_occur = _ko_may_occur(state, xy, size)
 
@@ -169,18 +168,9 @@ def _apply_action(state: GameState, action, size) -> GameState:
         chain_id_board=chain_id_board,
         num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured_stones),
     )
-
-    def _remove_stones(i, s) -> GameState:
-        ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[i], s.ko)
-        return jax.lax.cond(
-            is_killed[i],
-            lambda: s._replace(
-                ko=ko,
-            ),
-            lambda: s,
-        )
-
-    state = jax.lax.fori_loop(0, 4, _remove_stones, state)
+    ko_ix = jnp.nonzero(is_killed, size=1)[0].squeeze()
+    ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[ko_ix], -1)
+    state = state._replace(ko=ko)
 
     # set stone
     state = state._replace(
@@ -203,13 +193,6 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     b = jax.lax.fori_loop(0, 4, may_merge, state.chain_id_board)
     state = state._replace(chain_id_board=b)
-
-    # Check Ko
-    state = jax.lax.cond(
-        state.num_captured_stones[state.color] - num_captured_stones_before == 1,
-        lambda: state,
-        lambda: state._replace(ko=jnp.int32(-1)),
-    )
 
     return state
 
