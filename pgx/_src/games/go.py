@@ -259,13 +259,8 @@ def _is_psk(state: GameState):
 
 
 def _count_point(state: GameState, size):
-    return jnp.array(
-        [
-            _count_ji(state, 1, size) + jnp.count_nonzero(state.chain_id_board > 0),
-            _count_ji(state, -1, size) + jnp.count_nonzero(state.chain_id_board < 0),
-        ],
-        dtype=jnp.float32,
-    )
+    f = lambda c: _count_ji(state, c, size) + jnp.count_nonzero(state.chain_id_board * c > 0) 
+    return jax.vmap(f)(jnp.int32([1, -1]))
 
 
 def _count_ji(state: GameState, color: int, size: int):
