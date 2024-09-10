@@ -144,7 +144,6 @@ def _apply_pass(state: GameState) -> GameState:
 
 def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=0)
-
     my_color, opp_color = _colors(state.color)
 
     # Remove killed stones
