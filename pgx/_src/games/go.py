@@ -95,7 +95,6 @@ class Game:
 
         log = _make(jnp.arange(self.history_length * 2))
         color = jnp.full_like(log[0], color)  # black=0, white=1
-
         return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
     def legal_action_mask(self, state: GameState) -> Array:
@@ -189,7 +188,6 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     b = jax.lax.fori_loop(0, 4, may_merge, state.chain_id_board)
     state = state._replace(chain_id_board=b)
-
     return state
 
 
@@ -288,5 +286,4 @@ def _count_ji(state: GameState, color: int, size: int):
         return jnp.where(mask, -1, b), mask.any()
 
     b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, True))
-
     return (b == 0).sum()
