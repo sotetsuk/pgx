@@ -205,13 +205,13 @@ def _count(state: GameState, size):
     num_pseudo, idx_sum, idx_squared_sum = jax.vmap(_count_neighbor)(idx)
 
     def _num_pseudo(x):
-        return jnp.where(chain_id_board == (x + 1), num_pseudo, 0).sum()
+        return jnp.where(chain_id_board == x + 1, num_pseudo, 0).sum()
 
     def _idx_sum(x):
-        return jnp.where(chain_id_board == (x + 1), idx_sum, 0).sum()
+        return jnp.where(chain_id_board == x + 1, idx_sum, 0).sum()
 
     def _idx_squared_sum(x):
-        return jnp.where(chain_id_board == (x + 1), idx_squared_sum, 0).sum()
+        return jnp.where(chain_id_board == x + 1, idx_squared_sum, 0).sum()
 
     return jax.vmap(_num_pseudo)(idx), jax.vmap(_idx_sum)(idx), jax.vmap(_idx_squared_sum)(idx)
 
