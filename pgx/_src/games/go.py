@@ -146,7 +146,7 @@ def _apply_pass(state: GameState) -> GameState:
 def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=0)
 
-    my_color, oppo_color = _colors(state)
+    my_color, opp_color = _colors(state)
 
     # Remove killed stones
     neighbours = _neighbour(action, size)
@@ -155,7 +155,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     chain_ix = jnp.abs(chain_id) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
-    is_killed = (neighbours != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == action)
+    is_killed = (neighbours != -1) & (chain_id * opp_color > 0) & is_atari & (single_liberty == action)
     surrounded_stones = (state.chain_id_board[:, None] == chain_id) & (is_killed[None, :])
     chain_id_board = jnp.where(surrounded_stones.any(axis=-1), 0, state.chain_id_board)
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
@@ -235,8 +235,8 @@ def _colors(state: GameState):
 def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
     neighbours = _neighbour(xy, size)
     on_board = neighbours != -1
-    _, oppo_color = _colors(state)
-    is_occupied_by_opp = state.chain_id_board[neighbours] * oppo_color > 0
+    _, opp_color = _colors(state)
+    is_occupied_by_opp = state.chain_id_board[neighbours] * opp_color > 0
     return (~on_board | is_occupied_by_opp).all()
 
 
