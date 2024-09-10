@@ -188,10 +188,10 @@ def _apply_action(state: GameState, action, size) -> GameState:
 def _merge_around_xy(i, state: GameState, xy, size):
     my_color = _my_color(state)
     adj_xy = _neighbour(xy, size)[i]
-    is_off = adj_xy == -1
+    on_board = adj_xy != -1
     is_my_chain = state.chain_id_board[adj_xy] * my_color > 0
     state = jax.lax.cond(
-        ((~is_off) & is_my_chain),
+        (on_board & is_my_chain),
         lambda: _merge_chain(state, xy, adj_xy),
         lambda: state,
     )
