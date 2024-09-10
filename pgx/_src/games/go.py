@@ -87,12 +87,11 @@ class Game:
             color = state.color
         my_color_sign, _ = _colors(color)
 
-        @jax.vmap
         def _make(i):
             c = jnp.int32([1, -1])[i % 2] * my_color_sign
             return state.board_history[i // 2] == c
 
-        log = _make(jnp.arange(self.history_length * 2))
+        log = jax.vmap(_make)(jnp.arange(self.history_length * 2))
         color = jnp.full_like(log[0], color)  # black=0, white=1
         return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
