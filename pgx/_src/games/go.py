@@ -162,8 +162,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     is_killed = (neighbours != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == xy)
 
     def _remove_stones(i, s) -> GameState:
-        rm_chain_id = chain_id[i]
-        surrounded_stones = s.chain_id_board == rm_chain_id
+        surrounded_stones = s.chain_id_board == chain_id[i]
         num_captured_stones = jnp.count_nonzero(surrounded_stones)
         chain_id_board = jnp.where(surrounded_stones, 0, s.chain_id_board)
         ko = jax.lax.select(
