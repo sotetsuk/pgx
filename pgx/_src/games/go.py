@@ -131,12 +131,9 @@ class Game:
         return two_consecutive_pass | state.is_psk | timeover
 
     def rewards(self, state: GameState) -> Array:
-        score = _count_point(state, self.size)
-        rewards = jax.lax.select(
-            score[0] - self.komi > score[1],
-            jnp.array([1, -1], dtype=jnp.float32),
-            jnp.array([-1, 1], dtype=jnp.float32),
-        )
+        scores = _count_point(state, self.size)
+        is_black_win = scores[0] - self.komi > scores[1]
+        rewards = jax.lax.select(is_black_win, jnp.float32([1, -1]), jnp.float32([-1, 1]))
         to_play = state.color
         rewards = jax.lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), rewards)
         rewards = jax.lax.select(self.is_terminal(state), rewards, jnp.zeros(2, dtype=jnp.float32))
