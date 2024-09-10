@@ -271,5 +271,5 @@ def _count_ji(state: GameState, color: int, size: int):
         mask = is_opp_neighbours(b)
         return jnp.where(mask, -1, b), mask.any()
 
-    b, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, True))
-    return (b == 0).sum()
+    board, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, True))
+    return (board == 0).sum()
