@@ -261,10 +261,11 @@ def _count_ji(state: GameState, color: int, size: int):
     def is_opp_neighbours(b):
         # True if empty and any of neighbours is opponent
         return (b == 0) & ((neighbours != -1) & (b[neighbours] == -1)).any(axis=1)
-    
-    def fill_opp(i, x):
-        mask = is_opp_neighbours(x)
-        return jnp.where(mask, -1, x)
-    
-    board = jax.lax.fori_loop(0, 2 * size - 2, fill_opp, board)
+
+    def fill_opp(x):
+        b, _ = x
+        mask = is_opp_neighbours(b)
+        return jnp.where(mask, -1, b), mask.any()
+
+    board, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, True))
     return (board == 0).sum()
