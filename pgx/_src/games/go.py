@@ -60,6 +60,7 @@ class Game:
         return GameState(
             chain_id_board=jnp.zeros(self.size**2, dtype=jnp.int32),
             board_history=jnp.full((self.history_length, self.size**2), 2, dtype=jnp.int32),
+            hash_history=jnp.zeros((self.max_termination_steps, 2), dtype=jnp.uint32),
         )
 
     def step(self, state: GameState, action: Array) -> GameState:
