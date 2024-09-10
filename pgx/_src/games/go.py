@@ -121,14 +121,9 @@ class Game:
             return (on_board & (_has_empty | _kills_opp | _has_liberty)).any()
 
         neighbor_ok = is_neighbor_ok(jnp.arange(self.size**2))
-        legal_action_mask = is_empty & neighbor_ok
-
-        legal_action_mask = jax.lax.cond(
-            (state.ko == -1),
-            lambda: legal_action_mask,
-            lambda: legal_action_mask.at[state.ko].set(False),
-        )
-        return jnp.append(legal_action_mask, True)  # pass is always legal
+        mask = is_empty & neighbor_ok
+        mask = jax.lax.select(state.ko == -1, mask, mask.at[state.ko].set(False))
+        return jnp.append(mask, True)  # pass is always legal
 
     def is_terminal(self, state: GameState) -> Array:
         two_consecutive_pass = state.consecutive_pass_count >= 2
