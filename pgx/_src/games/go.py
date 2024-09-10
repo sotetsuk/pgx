@@ -256,12 +256,11 @@ def _opponent_color(state: GameState):
 
 
 def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
-    x = xy // size
-    y = xy % size
-    oob = jnp.bool_([x - 1 < 0, x + 1 >= size, y - 1 < 0, y + 1 >= size])
+    neighbours = _neighbour(xy, size)
+    on_board = neighbours != -1
     oppo_color = _opponent_color(state)
-    is_occupied_by_opp = state.chain_id_board[_neighbour(xy, size)] * oppo_color > 0
-    return (oob | is_occupied_by_opp).all()
+    is_occupied_by_opp = state.chain_id_board[neighbours] * oppo_color > 0
+    return (~on_board | is_occupied_by_opp).all()
 
 
 def _neighbour(xy, size):
