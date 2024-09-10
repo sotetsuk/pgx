@@ -160,12 +160,30 @@ def _apply_action(state: GameState, action, size) -> GameState:
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
     is_killed = (neighbours != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == xy)
+
+    def _remove_stones(i, s) -> GameState:
+        rm_chain_id = chain_id[i]
+        rm_stone_xy = neighbours[i]
+        surrounded_stones = s.chain_id_board == rm_chain_id
+        num_captured_stones = jnp.count_nonzero(surrounded_stones)
+        chain_id_board = jnp.where(surrounded_stones, 0, s.chain_id_board)
+        ko = jax.lax.cond(
+            ko_may_occur & (num_captured_stones == 1),
+            lambda: jnp.int32(rm_stone_xy),
+            lambda: s.ko,
+        )
+        return s._replace(
+            chain_id_board=chain_id_board,
+            num_captured_stones=s.num_captured_stones.at[s.color].add(num_captured_stones),
+            ko=ko,
+        )
+
     state = jax.lax.fori_loop(
         0,
         4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(s, chain_id[i], neighbours[i], ko_may_occur),
+            lambda: _remove_stones(i, s),
             lambda: s,
         ),
         state,
@@ -205,23 +223,6 @@ def _set_stone(state: GameState, xy) -> GameState:
     my_color = _my_color(state)
     return state._replace(
         chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
-    )
-
-
-
-def _remove_stones(state: GameState, rm_chain_id, rm_stone_xy, ko_may_occur) -> GameState:
-    surrounded_stones = state.chain_id_board == rm_chain_id
-    num_captured_stones = jnp.count_nonzero(surrounded_stones)
-    chain_id_board = jnp.where(surrounded_stones, 0, state.chain_id_board)
-    ko = jax.lax.cond(
-        ko_may_occur & (num_captured_stones == 1),
-        lambda: jnp.int32(rm_stone_xy),
-        lambda: state.ko,
-    )
-    return state._replace(
-        chain_id_board=chain_id_board,
-        num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured_stones),
-        ko=ko,
     )
 
 
