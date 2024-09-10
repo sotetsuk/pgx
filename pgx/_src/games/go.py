@@ -264,10 +264,8 @@ def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
 
 
 def _neighbour(xy, size):
-    dx = jnp.int32([-1, +1, 0, 0])
-    dy = jnp.int32([0, 0, -1, +1])
-    xs = xy // size + dx
-    ys = xy % size + dy
+    dx, dy = jnp.int32([-1, +1, 0, 0]), jnp.int32([0, 0, -1, +1])
+    xs, ys = xy // size + dx, xy % size + dy
     on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
     return jnp.where(on_board, xs * size + ys, -1)
 
