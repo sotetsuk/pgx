@@ -191,20 +191,19 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
 
 def _count(state: GameState, size):
-    ZERO = jnp.int32(0)
     chain_id_board = jnp.abs(state.chain_id_board)
     is_empty = chain_id_board == 0
-    idx_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1), ZERO)
-    idx_squared_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1) ** 2, ZERO)
+    idx_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1), 0)
+    idx_squared_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1) ** 2, 0)
 
     @jax.vmap
     def _count_neighbor(xy):
         neighbors = _neighbour(xy, size)
         on_board = neighbors != -1
         return (
-            jnp.where(on_board, is_empty[neighbors], ZERO).sum(),
-            jnp.where(on_board, idx_sum[neighbors], ZERO).sum(),
-            jnp.where(on_board, idx_squared_sum[neighbors], ZERO).sum(),
+            jnp.where(on_board, is_empty[neighbors], 0).sum(),
+            jnp.where(on_board, idx_sum[neighbors], 0).sum(),
+            jnp.where(on_board, idx_squared_sum[neighbors], 0).sum(),
         )
 
     idx = jnp.arange(size**2)
@@ -212,15 +211,15 @@ def _count(state: GameState, size):
 
     @jax.vmap
     def _num_pseudo(x):
-        return jnp.where(chain_id_board == (x + 1), num_pseudo, ZERO).sum()
+        return jnp.where(chain_id_board == (x + 1), num_pseudo, 0).sum()
 
     @jax.vmap
     def _idx_sum(x):
-        return jnp.where(chain_id_board == (x + 1), idx_sum, ZERO).sum()
+        return jnp.where(chain_id_board == (x + 1), idx_sum, 0).sum()
 
     @jax.vmap
     def _idx_squared_sum(x):
-        return jnp.where(chain_id_board == (x + 1), idx_squared_sum, ZERO).sum()
+        return jnp.where(chain_id_board == (x + 1), idx_squared_sum, 0).sum()
 
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
