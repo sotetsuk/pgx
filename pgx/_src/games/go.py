@@ -150,7 +150,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     num_captured_stones_before = state.num_captured_stones[state.color]
 
     ko_may_occur = _ko_may_occur(state, xy, size)
-    
+
     my_color = _my_color(state)
     oppo_color = _opponent_color(state)
 
@@ -167,9 +167,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
         surrounded_stones = s.chain_id_board == chain_id[i]
         num_captured_stones = jnp.count_nonzero(surrounded_stones)
         chain_id_board = jnp.where(surrounded_stones, 0, s.chain_id_board)
-        ko = jax.lax.select(
-            ko_may_occur & (num_captured_stones == 1), neighbours[i], s.ko
-        )
+        ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[i], s.ko)
         return jax.lax.cond(
             is_killed[i],
             lambda: s._replace(
@@ -177,10 +175,11 @@ def _apply_action(state: GameState, action, size) -> GameState:
                 num_captured_stones=s.num_captured_stones.at[s.color].add(num_captured_stones),
                 ko=ko,
             ),
-            lambda: s
+            lambda: s,
         )
+
     state = jax.lax.fori_loop(0, 4, _remove_stones, state)
-    
+
     # set stone
     state = state._replace(
         chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
@@ -211,7 +210,6 @@ def _apply_action(state: GameState, action, size) -> GameState:
     )
 
     return state
-
 
 
 def _count(state: GameState, size):
