@@ -85,7 +85,6 @@ class Game:
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         if color is None:
             color = state.color
-
         my_color_sign, _ = _colors(color)
 
         @jax.vmap
@@ -100,10 +99,8 @@ class Game:
     def legal_action_mask(self, state: GameState) -> Array:
         """Logic is highly inspired by OpenSpiel's Go implementation"""
         is_empty = state.chain_id_board == 0
-
         my_color, opp_color = _colors(state.color)
         num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
-
         chain_ix = jnp.abs(state.chain_id_board) - 1
         in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
         has_liberty = (state.chain_id_board * my_color > 0) & ~in_atari
