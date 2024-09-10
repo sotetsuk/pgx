@@ -284,10 +284,11 @@ def _is_psk(state: GameState):
 
 
 def _count_point(state: GameState, size):
+    ji = jax.vmap(_count_ji, in_axes=(None, 0, None))(state, jnp.int32([1, -1]), size)
     return jnp.array(
         [
-            _count_ji(state, 1, size) + jnp.count_nonzero(state.chain_id_board > 0),
-            _count_ji(state, -1, size) + jnp.count_nonzero(state.chain_id_board < 0),
+            ji[0] + jnp.count_nonzero(state.chain_id_board > 0),
+            ji[1] + jnp.count_nonzero(state.chain_id_board < 0),
         ],
         dtype=jnp.float32,
     )
