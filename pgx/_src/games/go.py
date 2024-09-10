@@ -169,7 +169,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(
         chain_id_board=chain_id_board,
         num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured_stones),
-        ko=ko
+        ko=ko,
     )
 
     # set stone
