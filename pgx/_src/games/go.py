@@ -86,7 +86,7 @@ class Game:
         if color is None:
             color = state.color
 
-        my_color_sign = jnp.int32([1, -1])[color]
+        my_color_sign, _ = _colors(state)
 
         @jax.vmap
         def _make(i):
@@ -102,8 +102,7 @@ class Game:
         """Logic is highly inspired by OpenSpiel's Go implementation"""
         is_empty = state.chain_id_board == 0
 
-        my_color = _my_color(state)
-        opp_color = _opponent_color(state)
+        my_color, opp_color = _colors(state)
         num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
 
         chain_ix = jnp.abs(state.chain_id_board) - 1
@@ -147,8 +146,7 @@ def _apply_pass(state: GameState) -> GameState:
 def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=0)
 
-    my_color = _my_color(state)
-    oppo_color = _opponent_color(state)
+    my_color, oppo_color = _colors(state)
 
     # Remove killed stones
     neighbours = _neighbour(action, size)
@@ -230,18 +228,14 @@ def _count(state: GameState, size):
     return _num_pseudo(idx), _idx_sum(idx), _idx_squared_sum(idx)
 
 
-def _my_color(state: GameState):
-    return jnp.int32([1, -1])[state.color]
-
-
-def _opponent_color(state: GameState):
-    return jnp.int32([-1, 1])[state.color]
+def _colors(state: GameState):
+    return jnp.int32([[1, -1], [-1, 1]])[state.color]  # (my_color, opp_color)
 
 
 def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
     neighbours = _neighbour(xy, size)
     on_board = neighbours != -1
-    oppo_color = _opponent_color(state)
+    _, oppo_color = _colors(state)
     is_occupied_by_opp = state.chain_id_board[neighbours] * oppo_color > 0
     return (~on_board | is_occupied_by_opp).all()
 
