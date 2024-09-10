@@ -150,10 +150,12 @@ def _apply_action(state: GameState, action, size) -> GameState:
     num_captured_stones_before = state.num_captured_stones[state.color]
 
     ko_may_occur = _ko_may_occur(state, xy, size)
+    
+    my_color = _my_color(state)
+    oppo_color = _opponent_color(state)
 
     # Remove killed stones
     neighbours = _neighbour(xy, size)
-    oppo_color = _opponent_color(state)
     chain_id = state.chain_id_board[neighbours]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(chain_id) - 1
@@ -179,10 +181,12 @@ def _apply_action(state: GameState, action, size) -> GameState:
         )
     state = jax.lax.fori_loop(0, 4, _remove_stones, state)
     
-    state = _set_stone(state, xy)
+    # set stone
+    state = state._replace(
+        chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
+    )
 
     # Merge neighbours
-    my_color = _my_color(state)
     on_board = neighbours != -1
     is_my_chain = state.chain_id_board[neighbours] * my_color > 0
     should_merge = on_board & is_my_chain
@@ -208,13 +212,6 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     return state
 
-
-
-def _set_stone(state: GameState, xy) -> GameState:
-    my_color = _my_color(state)
-    return state._replace(
-        chain_id_board=state.chain_id_board.at[xy].set((xy + 1) * my_color),
-    )
 
 
 def _count(state: GameState, size):
