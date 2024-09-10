@@ -211,14 +211,9 @@ def _merge_chain(state: GameState, xy, adj_xy):
     adj_chain_id = jnp.abs(state.chain_id_board[adj_xy])
     small_id = jnp.minimum(new_id, adj_chain_id) * my_color
     large_id = jnp.maximum(new_id, adj_chain_id) * my_color
-
-    # Keep larger chain ID and connect to the chain with smaller ID
     chain_id_board = jnp.where(
-        state.chain_id_board == large_id,
-        small_id,
-        state.chain_id_board,
+        state.chain_id_board == large_id, small_id, state.chain_id_board,
     )
-
     return state._replace(chain_id_board=chain_id_board)
 
 
