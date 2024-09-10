@@ -145,7 +145,7 @@ def _apply_pass(state: GameState) -> GameState:
 
 
 def _apply_action(state: GameState, action, size) -> GameState:
-    state = state._replace(consecutive_pass_count=jnp.int32(0))
+    state = state._replace(consecutive_pass_count=0)
     xy = action
 
     my_color = _my_color(state)
