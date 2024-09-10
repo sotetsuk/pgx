@@ -152,20 +152,20 @@ def _apply_action(state: GameState, action, size) -> GameState:
     ko_may_occur = _ko_may_occur(state, xy, size)
 
     # Remove killed stones
-    adj_xy = _neighbour(xy, size)
+    neighbours = _neighbour(xy, size)
     oppo_color = _opponent_color(state)
-    chain_id = state.chain_id_board[adj_xy]
+    chain_id = state.chain_id_board[neighbours]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(chain_id) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
-    is_killed = (adj_xy != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == xy)
+    is_killed = (neighbours != -1) & (chain_id * oppo_color > 0) & is_atari & (single_liberty == xy)
     state = jax.lax.fori_loop(
         0,
         4,
         lambda i, s: jax.lax.cond(
             is_killed[i],
-            lambda: _remove_stones(s, chain_id[i], adj_xy[i], ko_may_occur),
+            lambda: _remove_stones(s, chain_id[i], neighbours[i], ko_may_occur),
             lambda: s,
         ),
         state,
@@ -174,7 +174,6 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     # Merge neighbours
     my_color = _my_color(state)
-    neighbours = _neighbour(xy, size)
     on_board = neighbours != -1
     is_my_chain = state.chain_id_board[neighbours] * my_color > 0
     should_merge = on_board & is_my_chain
