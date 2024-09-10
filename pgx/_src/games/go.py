@@ -168,7 +168,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
         chain_id_board=chain_id_board,
         num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured_stones),
     )
-    ko_ix = jnp.nonzero(is_killed, size=1)[0].squeeze()
+    ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
     ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[ko_ix], -1)
     state = state._replace(ko=ko)
 
