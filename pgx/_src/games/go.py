@@ -148,8 +148,6 @@ def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=jnp.int32(0))
     xy = action
 
-    ko_may_occur = _ko_may_occur(state, xy, size)
-
     my_color = _my_color(state)
     oppo_color = _opponent_color(state)
 
@@ -165,6 +163,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     chain_id_board = jnp.where(surrounded_stones.any(axis=-1), 0, state.chain_id_board)
     num_captured_stones = jnp.count_nonzero(surrounded_stones)
     ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
+    ko_may_occur = _ko_may_occur(state, xy, size)
     ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[ko_ix], -1)
     state = state._replace(
         chain_id_board=chain_id_board,
