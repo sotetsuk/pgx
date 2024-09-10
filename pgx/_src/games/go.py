@@ -272,10 +272,6 @@ def _neighbour(xy, size):
     return jnp.where(on_board, xs * size + ys, -1)
 
 
-def _neighbours(size):
-    return jax.vmap(partial(_neighbour, size=size))(jnp.arange(size**2))
-
-
 def _compute_hash(state: GameState):
     board = jnp.clip(state.chain_id_board, -1, 1)
     to_reduce = ZOBRIST_BOARD[board, jnp.arange(board.shape[-1])]
@@ -305,7 +301,7 @@ def _count_ji(state: GameState, color: int, size: int):
     board = jnp.where(state.chain_id_board * color < 0, -1, board)
     # 0 = empty, 1 = mine, -1 = opponent's
 
-    neighbours = _neighbours(size)
+    neighbours = jax.vmap(partial(_neighbour, size=size))(jnp.arange(size**2))
 
     def is_opp_neighbours(b):
         # True if empty and any of neighbours is opponent
