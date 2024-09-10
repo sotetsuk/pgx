@@ -163,14 +163,11 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     def _remove_stones(i, s) -> GameState:
         rm_chain_id = chain_id[i]
-        rm_stone_xy = neighbours[i]
         surrounded_stones = s.chain_id_board == rm_chain_id
         num_captured_stones = jnp.count_nonzero(surrounded_stones)
         chain_id_board = jnp.where(surrounded_stones, 0, s.chain_id_board)
-        ko = jax.lax.cond(
-            ko_may_occur & (num_captured_stones == 1),
-            lambda: jnp.int32(rm_stone_xy),
-            lambda: s.ko,
+        ko = jax.lax.select(
+            ko_may_occur & (num_captured_stones == 1), neighbours[i], s.ko
         )
         return jax.lax.cond(
             is_killed[i],
