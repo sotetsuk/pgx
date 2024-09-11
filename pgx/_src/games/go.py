@@ -168,21 +168,17 @@ def _apply_action(state: GameState, action, size) -> GameState:
     )
 
     # Merge neighbours
+    board = state.chain_id_board
     on_board = neighbours != -1
-    is_my_chain = state.chain_id_board[neighbours] * my_color > 0
+    is_my_chain = board[neighbours] * my_color > 0
     should_merge = on_board & is_my_chain
-
-    def may_merge(i, b):
-        target = neighbours[i]
-        new_id = jnp.abs(b[action])
-        adj_chain_id = jnp.abs(b[target])
-        small_id = jnp.minimum(new_id, adj_chain_id) * my_color
-        large_id = jnp.maximum(new_id, adj_chain_id) * my_color
-        merged_b = jnp.where(b == large_id, small_id, b)
-        return jax.lax.select(should_merge[i], merged_b, b)
-
-    b = jax.lax.fori_loop(0, 4, may_merge, state.chain_id_board)
-    state = state._replace(chain_id_board=b)
+    new_id = board[action]
+    target_ids = board[neighbours]
+    smallest_id = jnp.min(jnp.where(should_merge, jnp.abs(target_ids), 9999))
+    smallest_id = jnp.minimum(jnp.abs(new_id), smallest_id) * my_color
+    mask = (board == new_id) | (should_merge[None, :] & (board[:, None] == target_ids[None, :])).any(axis=-1)
+    state = state._replace(chain_id_board=jnp.where(mask, smallest_id, board))
+    
     return state
 
 
