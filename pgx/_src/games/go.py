@@ -163,9 +163,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     )
 
     # set stone
-    state = state._replace(
-        board=state.board.at[action].set((action + 1) * my_color),
-    )
+    state = state._replace(board=state.board.at[action].set((action + 1) * my_color))
 
     # Merge neighbours
     board = state.board
