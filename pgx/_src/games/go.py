@@ -248,7 +248,7 @@ def _count_ji(state: GameState, color: int, size: int):
 
     def fill_opp(x):
         b, _ = x
-        # True if empty and any of neighbours is opponent
+        # True if empty and adjacent to opponent's stone
         mask = (b == 0) & ((adj_mat != -1) & (b[adj_mat] == -1)).any(axis=1)
         return jnp.where(mask, -1, b), mask.any()
 
