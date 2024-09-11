@@ -257,16 +257,15 @@ def _count_point(state: GameState, size):
 
 def _count_ji(state: GameState, color: int, size: int):
     board = jnp.clip(state.chain_id_board * color, -1, 1)  # 1 = mine, -1 = opponent's
+    adj_mat = jax.vmap(partial(_neighbour, size=size))(jnp.arange(size**2))  # (size**2, 4)
 
-    neighbours = jax.vmap(partial(_neighbour, size=size))(jnp.arange(size**2))
-
-    def is_opp_neighbours(b):
+    def has_adj_opp(b):
         # True if empty and any of neighbours is opponent
-        return (b == 0) & ((neighbours != -1) & (b[neighbours] == -1)).any(axis=1)
+        return (b == 0) & ((adj_mat != -1) & (b[adj_mat] == -1)).any(axis=1)
 
     def fill_opp(x):
         b, _ = x
-        mask = is_opp_neighbours(b)
+        mask = has_adj_opp(b)
         return jnp.where(mask, -1, b), mask.any()
 
     board, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, True))
