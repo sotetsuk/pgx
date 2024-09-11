@@ -19,7 +19,7 @@ import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.games.chess import GameState, _flip, _is_terminated, _observe, _rewards, _step
-from pgx._src.games.chess_utils import INIT_LEGAL_ACTION_MASK
+from pgx._src.games.chess_utils import INIT_LEGAL_ACTION_MASK  # type: ignore
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
 
