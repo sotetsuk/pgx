@@ -29,14 +29,14 @@ def test_zobrist_hash():
     key = jax.random.PRNGKey(0)
     key, subkey = jax.random.split(key)
     state = init(subkey)
-    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
     # for i in range(5):
     while not state.terminated:
         key, subkey = jax.random.split(key)
         action = act_randomly(subkey, state.legal_action_mask)
         state = step(state, action)
         # state.save_svg("debug.svg")
-        assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+        assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
 
 def test_action():
     # See #704
@@ -731,14 +731,14 @@ def test_buggy_samples():
     state.save_svg("tests/assets/chess/buggy_samples_015.svg")
     state = step(state, jnp.int32(2088))
     state.save_svg("tests/assets/chess/buggy_samples_016.svg")
-    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
 
     # wrong zobrist hash due to queen promotion #1078
     state = from_fen("B7/8/8/1P6/1k3K2/5P2/6p1/1B6 b - - 1 102")
     state.save_svg("tests/assets/chess/buggy_samples_017.svg")
     state = step(state, jnp.int32(3958))
     state.save_svg("tests/assets/chess/buggy_samples_018.svg")
-    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
 
 
 def test_observe():

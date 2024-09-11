@@ -91,7 +91,7 @@ def from_fen(fen: str):
     )
     state = state.replace(legal_action_mask=jax.jit(_legal_action_mask)(state._x))  # type: ignore
     state = state.replace(_x=state._x._replace(has_legal_action=state.legal_action_mask.any()))  # type: ignore
-    state = state.replace(_x=state._x._replace(zobrist_hash=_zobrist_hash(state)))  # type: ignore
+    state = state.replace(_x=state._x._replace(zobrist_hash=_zobrist_hash(state._x)))  # type: ignore
     state = state.replace(_x=_update_history(state._x))  # type: ignore
     state = jax.jit(_check_termination)(state)
     state = state.replace(observation=jax.jit(_observe)(state, state.current_player))  # type: ignore

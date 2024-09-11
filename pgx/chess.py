@@ -660,15 +660,15 @@ def _observe(state: State, player_id: Array):
     ).transpose((1, 2, 0))
 
 
-def _zobrist_hash(state):
+def _zobrist_hash(state: GameState) -> Array:
     """
     >>> state = State()
     >>> _zobrist_hash(state)
     Array([1172276016, 1112364556], dtype=uint32)
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
-    hash_ = jax.lax.select(state._x.turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
-    board = jax.lax.select(state._x.turn == 0, state._x.board, _flip(state._x).board)
+    hash_ = jax.lax.select(state.turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
+    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
 
     def xor(i, h):
         # 0, ..., 12 (white pawn, ..., black king)
@@ -676,7 +676,7 @@ def _zobrist_hash(state):
         return h ^ ZOBRIST_BOARD[i, piece]
 
     hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
-    hash_ ^= _hash_castling_en_passant(state._x)
+    hash_ ^= _hash_castling_en_passant(state)
     return hash_
 
 
