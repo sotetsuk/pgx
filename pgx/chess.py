@@ -130,7 +130,7 @@ class GameState(NamedTuple):
     board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: Array = INIT_POSSIBLE_PIECE_POSITIONS
-    has_legal_action: Array = TRUE
+    legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
 
 
 @dataclass
@@ -265,7 +265,7 @@ def _step(state: State, action: Array):
     legal_action_mask = _legal_action_mask(state._x)
     state = state.replace(  # type: ignore
         legal_action_mask=legal_action_mask, 
-        _x=state._x._replace(has_legal_action=legal_action_mask.any())
+        _x=state._x._replace(legal_action_mask=legal_action_mask)
     )
     state = state.replace(  # type: ignore
         terminated=_is_terminated(state._x),
@@ -287,7 +287,7 @@ def _update_history(state: GameState):
 
 
 def _is_terminated(state: GameState) -> Array:
-    terminated = ~state.has_legal_action
+    terminated = ~state.legal_action_mask.any()
     terminated |= state.halfmove_count >= 100
     terminated |= has_insufficient_pieces(state)
     rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
@@ -296,7 +296,7 @@ def _is_terminated(state: GameState) -> Array:
 
 
 def _rewards(state: GameState) -> Array:
-    is_checkmate = (~state.has_legal_action) & _is_checking(_flip(state))
+    is_checkmate = (~state.legal_action_mask.any()) & _is_checking(_flip(state))
     # fmt: off
     return jax.lax.select(
         is_checkmate,
