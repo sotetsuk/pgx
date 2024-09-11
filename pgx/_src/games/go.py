@@ -178,7 +178,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     smallest_id = jnp.minimum(jnp.abs(new_id), smallest_id) * my_color
     mask = (board == new_id) | (should_merge[None, :] & (board[:, None] == target_ids[None, :])).any(axis=-1)
     state = state._replace(chain_id_board=jnp.where(mask, smallest_id, board))
-    
+
     return state
 
 
