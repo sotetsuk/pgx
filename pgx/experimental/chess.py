@@ -87,7 +87,7 @@ def from_fen(fen: str):
         )
     )
     state = state.replace(  # type: ignore
-        _x=state._x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(state))
+        _x=state._x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(state._x))
     )
     state = state.replace(legal_action_mask=jax.jit(_legal_action_mask)(state._x))  # type: ignore
     state = state.replace(_x=state._x._replace(has_legal_action=state.legal_action_mask.any()))  # type: ignore

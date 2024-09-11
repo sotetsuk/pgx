@@ -607,9 +607,9 @@ def _is_pseudo_legal(state: GameState, a: Action):
     return (a.to >= 0) & ok
 
 
-def _possible_piece_positions(state):
-    my_pos = jnp.nonzero(state._x.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    opp_pos = jnp.nonzero(_flip(state._x).board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
+def _possible_piece_positions(state: GameState):
+    my_pos = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
+    opp_pos = jnp.nonzero(_flip(state).board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
     return jnp.vstack((my_pos, opp_pos))
 
 
