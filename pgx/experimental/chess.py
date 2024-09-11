@@ -1,9 +1,9 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.chess import (
+from pgx.chess import State
+from pgx._src.games.chess import (
     GameState,
-    State,
     _flip_pos,
     _is_terminated,
     _legal_action_mask,
