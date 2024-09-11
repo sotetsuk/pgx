@@ -277,13 +277,16 @@ def _update_history(state: GameState):
     return state
 
 
-def _check_termination(state: State):
-    terminated = ~state._x.has_legal_action
-    terminated |= state._x.halfmove_count >= 100
-    terminated |= has_insufficient_pieces(state._x)
-    rep = (state._x.hash_history == state._x.zobrist_hash).all(axis=1).sum() - 1
+def _is_terminated(state: GameState) -> Array:
+    terminated = ~state.has_legal_action
+    terminated |= state.halfmove_count >= 100
+    terminated |= has_insufficient_pieces(state)
+    rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
     terminated |= rep >= 2
+    return terminated
 
+
+def _check_termination(state: State):
     is_checkmate = (~state._x.has_legal_action) & _is_checking(_flip(state._x))
     # fmt: off
     reward = jax.lax.select(
@@ -293,7 +296,7 @@ def _check_termination(state: State):
     )
     # fmt: on
     return state.replace(  # type: ignore
-        terminated=terminated,
+        terminated=_is_terminated(state._x),
         rewards=reward,
     )
 
