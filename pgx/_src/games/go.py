@@ -119,7 +119,7 @@ class Game:
         return two_consecutive_pass | state.is_psk | timeover
 
     def rewards(self, state: GameState) -> Array:
-        scores = _count_point(state, self.size)
+        scores = _count_scores(state, self.size)
         is_black_win = scores[0] - self.komi > scores[1]
         rewards = jax.lax.select(is_black_win, jnp.float32([1, -1]), jnp.float32([-1, 1]))
         to_play = state.color
@@ -230,7 +230,7 @@ def _is_psk(state: GameState):
     return not_passed & has_same_hash
 
 
-def _count_point(state: GameState, size):
+def _count_scores(state: GameState, size):
     def calc_point(c):
         return _count_ji(state, c, size) + jnp.count_nonzero(state.board * c > 0)
 

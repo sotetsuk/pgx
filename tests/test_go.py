@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx._src.games.go import _count_ji, _count_point
+from pgx._src.games.go import _count_ji, _count_scores
 from pgx.go import Go, State
 from pgx.experimental.go import from_sgf
 
@@ -875,7 +875,7 @@ def test_counting_ji():
 
 def test_counting_point():
     key = jax.random.PRNGKey(0)
-    count_point = jax.jit(_count_point, static_argnums=(1,))
+    count_scores = jax.jit(_count_scores, static_argnums=(1,))
     # =====
     # @ + @ + @
     # + @ + @ +
@@ -898,9 +898,9 @@ def test_counting_point():
     state = step(state=state, action=12)
     state = step(state=state, action=25)
     state = step(state=state, action=14)  # BLACK
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
     state = step(state=state, action=24)  # WHITE
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([13, 1], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([13, 1], dtype=jnp.float32))
 
     # =====
     # + @ @ @ +
@@ -926,7 +926,7 @@ def test_counting_point():
     state = step(state=state, action=13)
     state = step(state=state, action=8)
     state = step(state=state, action=25)  # BLACK
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([22, 2], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([22, 2], dtype=jnp.float32))
 
     # =====
     # + + O + +
@@ -951,7 +951,7 @@ def test_counting_point():
     state = step(state=state, action=18)
     state = step(state=state, action=25)
     state = step(state=state, action=22)  # WHITE
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([5, 20], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([5, 20], dtype=jnp.float32))
 
     # =====
     # + @ @ @ +
@@ -988,9 +988,9 @@ def test_counting_point():
     state = step(state=state, action=25)
     state = step(state=state, action=20)
     state = step(state=state, action=25)
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([16, 8], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([16, 8], dtype=jnp.float32))
     state = step(state=state, action=8)
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
 
     # セキ判定
     # =====
@@ -1016,7 +1016,7 @@ def test_counting_point():
     state = step(state=state, action=17)
     state = step(state=state, action=25)
     state = step(state=state, action=22)
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([5, 18], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([5, 18], dtype=jnp.float32))
 
     # =====
     # O O O O +
@@ -1051,7 +1051,7 @@ def test_counting_point():
     state = step(state=state, action=22)
     state = step(state=state, action=25)
     state = step(state=state, action=23)
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([9, 16], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([9, 16], dtype=jnp.float32))
 
     # =====
     # + + + + +
@@ -1061,7 +1061,7 @@ def test_counting_point():
     # + + + + +
     state = init(key=key)
     # 本当は[0, 0]
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 25], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([25, 25], dtype=jnp.float32))
 
     # =====
     # + + + + +
@@ -1086,7 +1086,7 @@ def test_counting_point():
     state = step(state=state, action=25)
     state = step(state=state, action=18)
     state = step(state=state, action=25)
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([25, 0], dtype=jnp.float32))
     # =====
     # + @ @ O +
     # + + @ O +
@@ -1112,7 +1112,7 @@ def test_counting_point():
     state = step(state=state, action=23)
     state = step(state=state, action=25)
     state = step(state=state, action=24)
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
 
     # =====
     # + @ @ O +
@@ -1144,7 +1144,7 @@ def test_counting_point():
     state = step(state=state, action=0)
     state = step(state=state, action=5)
     state = step(state=state, action=25)
-    assert jnp.all(count_point(state._x, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
+    assert jnp.all(count_scores(state._x, BOARD_SIZE) == jnp.array([15, 10], dtype=jnp.float32))
 
 
 def test_PSK():
