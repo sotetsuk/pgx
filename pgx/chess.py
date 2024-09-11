@@ -254,21 +254,21 @@ def _step(state: State, action: Array):
     hash_ ^= _hash_castling_en_passant(state)
     state = state.replace(_x=state._x._replace(zobrist_hash=hash_))  # type: ignore
 
-    state = _update_history(state)
-    state = state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+    x = _update_history(state._x)
+    state = state.replace(legal_action_mask=_legal_action_mask(state), _x=x)  # type: ignore
     state = _check_termination(state)
     return state
 
 
-def _update_history(state: State):
+def _update_history(state: GameState):
     # board history
-    board_history = jnp.roll(state._x.board_history, 64)
-    board_history = board_history.at[0].set(state._x.board)
-    state = state.replace(_x=state._x._replace(board_history=board_history))  # type:ignore
+    board_history = jnp.roll(state.board_history, 64)
+    board_history = board_history.at[0].set(state.board)
+    state = state._replace(board_history=board_history)
     # hash hist
-    hash_hist = jnp.roll(state._x.hash_history, 2)
-    hash_hist = hash_hist.at[0].set(state._x.zobrist_hash)
-    state = state.replace(_x=state._x._replace(hash_history=hash_hist))  # type: ignore
+    hash_hist = jnp.roll(state.hash_history, 2)
+    hash_hist = hash_hist.at[0].set(state.zobrist_hash)
+    state = state._replace(hash_history=hash_hist)
     return state
 
 
