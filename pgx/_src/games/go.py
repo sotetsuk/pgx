@@ -29,7 +29,7 @@ class GameState(NamedTuple):
     # ids of representative stone (smallest) in the connected stones
     board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)  # b > 0, w < 0, empty = 0
     board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)  # for obs
-    num_captured: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
+    num_captured: Array = jnp.zeros(2, dtype=jnp.int32)  # (b, w)
     consecutive_pass_count: Array = jnp.int32(0)
     ko: Array = jnp.int32(-1)  # by SSK
     is_psk: Array = jnp.bool_(False)
@@ -91,7 +91,7 @@ class Game:
             return state.board_history[i // 2] == c
 
         log = jax.vmap(_make)(jnp.arange(self.history_length * 2))
-        color = jnp.full_like(log[0], color)  # black=0, white=1
+        color = jnp.full_like(log[0], color)  # b = 0, w = 1
         return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
     def legal_action_mask(self, state: GameState) -> Array:
@@ -229,12 +229,12 @@ def _count_scores(state: GameState, size):
 
 
 def _count_ji(state: GameState, color: int, size: int):
-    board = jnp.clip(state.board * color, -1, 1)  # 1 = mine, -1 = opponent's
+    board = jnp.clip(state.board * color, -1, 1)  # my stone: 1, opp stone: -1
     adj_mat = jax.vmap(partial(_adj_ixs, size=size))(jnp.arange(size**2))  # (size**2, 4)
 
     def fill_opp(x):
         b, _ = x
-        # True if empty and adjacent to opponent's stone
+        # true if empty and adjacent to opponent's stone
         mask = (b == 0) & ((adj_mat != -1) & (b[adj_mat] == -1)).any(axis=1)
         return jnp.where(mask, -1, b), mask.any()
 
