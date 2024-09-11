@@ -246,12 +246,12 @@ def _step(state: State, action: Array):
     state = _update_zobrist_hash(state, a)
 
     hash_ = state._x.zobrist_hash
-    hash_ ^= _hash_castling_en_passant(state)
+    hash_ ^= _hash_castling_en_passant(state._x)
 
     state = state.replace(_x=_apply_move(state._x, a))  # type: ignore
     state = state.replace(_x=_flip(state._x), current_player=(state.current_player + 1) % 2)  # type: ignore
 
-    hash_ ^= _hash_castling_en_passant(state)
+    hash_ ^= _hash_castling_en_passant(state._x)
     state = state.replace(_x=state._x._replace(zobrist_hash=hash_))  # type: ignore
 
     state = state.replace(_x=_update_history(state._x))  # type: ignore
@@ -663,19 +663,19 @@ def _zobrist_hash(state):
         return h ^ ZOBRIST_BOARD[i, piece]
 
     hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
-    hash_ ^= _hash_castling_en_passant(state)
+    hash_ ^= _hash_castling_en_passant(state._x)
     return hash_
 
 
-def _hash_castling_en_passant(state):
+def _hash_castling_en_passant(state: GameState):
     # we don't take care side (turn) as it's already taken into account in hash
     zero = jnp.uint32([0, 0])
     hash_ = zero
-    hash_ ^= jax.lax.select(state._x.can_castle_queen_side[0], ZOBRIST_CASTLING_QUEEN[0], zero)
-    hash_ ^= jax.lax.select(state._x.can_castle_queen_side[1], ZOBRIST_CASTLING_QUEEN[1], zero)
-    hash_ ^= jax.lax.select(state._x.can_castle_king_side[0], ZOBRIST_CASTLING_KING[0], zero)
-    hash_ ^= jax.lax.select(state._x.can_castle_king_side[1], ZOBRIST_CASTLING_KING[1], zero)
-    hash_ ^= ZOBRIST_EN_PASSANT[state._x.en_passant]
+    hash_ ^= jax.lax.select(state.can_castle_queen_side[0], ZOBRIST_CASTLING_QUEEN[0], zero)
+    hash_ ^= jax.lax.select(state.can_castle_queen_side[1], ZOBRIST_CASTLING_QUEEN[1], zero)
+    hash_ ^= jax.lax.select(state.can_castle_king_side[0], ZOBRIST_CASTLING_KING[0], zero)
+    hash_ ^= jax.lax.select(state.can_castle_king_side[1], ZOBRIST_CASTLING_KING[1], zero)
+    hash_ ^= ZOBRIST_EN_PASSANT[state.en_passant]
     return hash_
 
 
