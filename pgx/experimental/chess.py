@@ -75,8 +75,7 @@ def from_fen(fen: str):
     ep = jnp.int32(-1) if en_passant == "-" else jnp.int32("abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1)
     if turn == "b" and ep >= 0:
         ep = _flip_pos(ep)
-    state = State(  # type: ignore
-        _x=GameState(
+    x = GameState(
             board=jnp.rot90(mat, k=3).flatten(),
             turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
             can_castle_queen_side=can_castle_queen_side,
@@ -84,15 +83,16 @@ def from_fen(fen: str):
             en_passant=ep,
             halfmove_count=jnp.int32(halfmove_cnt),
             fullmove_count=jnp.int32(fullmove_cnt),
-        )
     )
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(state._x))
+    x = x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(x))
+    legal_action_mask = jax.jit(_legal_action_mask)(x)
+    x = x._replace(has_legal_action=legal_action_mask.any())
+    x = x._replace(zobrist_hash=_zobrist_hash(x))
+    x = _update_history(x)
+    state = State(
+        legal_action_mask=legal_action_mask,
+        _x=x
     )
-    state = state.replace(legal_action_mask=jax.jit(_legal_action_mask)(state._x))  # type: ignore
-    state = state.replace(_x=state._x._replace(has_legal_action=state.legal_action_mask.any()))  # type: ignore
-    state = state.replace(_x=state._x._replace(zobrist_hash=_zobrist_hash(state._x)))  # type: ignore
-    state = state.replace(_x=_update_history(state._x))  # type: ignore
     state = jax.jit(_check_termination)(state)
     state = state.replace(observation=jax.jit(_observe)(state, state.current_player))  # type: ignore
     return state
