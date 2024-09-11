@@ -142,7 +142,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=0)
     my_color, opp_color = _colors(state.color)
 
-    # Remove killed stones
+    # remove killed stones
     neighbours = _neighbour(action, size)
     chain_id = state.board[neighbours]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
@@ -163,7 +163,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     # set stone
     state = state._replace(board=state.board.at[action].set((action + 1) * my_color))
 
-    # Merge neighbours
+    # merge neighbours
     on_board = neighbours != -1
     is_my_chain = state.board[neighbours] * my_color > 0
     should_merge = on_board & is_my_chain
