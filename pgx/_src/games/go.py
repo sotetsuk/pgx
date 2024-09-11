@@ -84,10 +84,10 @@ class Game:
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         if color is None:
             color = state.color
-        my_color_sign, _ = _colors(color)
+        my_sign, _ = _signs(color)
 
         def _make(i):
-            c = jnp.int32([1, -1])[i % 2] * my_color_sign
+            c = jnp.int32([1, -1])[i % 2] * my_sign
             return state.board_history[i // 2] == c
 
         log = jax.vmap(_make)(jnp.arange(self.history_length * 2))
@@ -97,12 +97,12 @@ class Game:
     def legal_action_mask(self, state: GameState) -> Array:
         """Logic is highly inspired by OpenSpiel's Go implementation"""
         is_empty = state.board == 0
-        my_color, opp_color = _colors(state.color)
+        my_sign, opp_sign = _signs(state.color)
         num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
         chain_ix = jnp.abs(state.board) - 1
         in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
-        has_liberty = (state.board * my_color > 0) & ~in_atari
-        kills_opp = (state.board * opp_color > 0) & in_atari
+        has_liberty = (state.board * my_sign > 0) & ~in_atari
+        kills_opp = (state.board * opp_sign > 0) & in_atari
 
         @jax.vmap
         def is_neighbor_ok(xy):
@@ -139,7 +139,7 @@ def _apply_pass(state: GameState) -> GameState:
 
 def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(consecutive_pass_count=0)
-    my_color, opp_color = _colors(state.color)
+    my_sign, opp_sign = _signs(state.color)
 
     # remove killed stones
     neighbours = _neighbour(action, size)
@@ -148,7 +148,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     chain_ix = jnp.abs(chain_id) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
-    is_killed = (neighbours != -1) & (chain_id * opp_color > 0) & is_atari & (single_liberty == action)
+    is_killed = (neighbours != -1) & (chain_id * opp_sign > 0) & is_atari & (single_liberty == action)
     surrounded_stones = (state.board[:, None] == chain_id) & (is_killed[None, :])
     num_captured = jnp.count_nonzero(surrounded_stones)
     ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
@@ -160,15 +160,15 @@ def _apply_action(state: GameState, action, size) -> GameState:
     )
 
     # set stone
-    state = state._replace(board=state.board.at[action].set((action + 1) * my_color))
+    state = state._replace(board=state.board.at[action].set((action + 1) * my_sign))
 
     # merge neighbours
-    is_my_chain = state.board[neighbours] * my_color > 0
+    is_my_chain = state.board[neighbours] * my_sign > 0
     should_merge = (neighbours != -1) & is_my_chain
     new_id = state.board[action]
     tgt_ids = state.board[neighbours]
     smallest_id = jnp.min(jnp.where(should_merge, jnp.abs(tgt_ids), 9999))
-    smallest_id = jnp.minimum(jnp.abs(new_id), smallest_id) * my_color
+    smallest_id = jnp.minimum(jnp.abs(new_id), smallest_id) * my_sign
     mask = (state.board == new_id) | (should_merge[None, :] & (state.board[:, None] == tgt_ids[None, :])).any(axis=-1)
     state = state._replace(board=jnp.where(mask, smallest_id, state.board))
 
@@ -203,15 +203,15 @@ def _count(state: GameState, size):
     return jax.vmap(count_all)(idx)
 
 
-def _colors(color):
-    return jnp.int32([[1, -1], [-1, 1]])[color]  # (my_color, opp_color)
+def _signs(color):
+    return jnp.int32([[1, -1], [-1, 1]])[color]  # (my_sign, opp_sign)
 
 
 def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
     neighbours = _neighbour(xy, size)
     on_board = neighbours != -1
-    _, opp_color = _colors(state.color)
-    is_occupied_by_opp = state.board[neighbours] * opp_color > 0
+    _, opp_sign = _signs(state.color)
+    is_occupied_by_opp = state.board[neighbours] * opp_sign > 0
     return (~on_board | is_occupied_by_opp).all()
 
 
