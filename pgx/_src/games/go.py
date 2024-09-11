@@ -193,16 +193,14 @@ def _count(state: GameState, size):
     idx = jnp.arange(size**2)
     num_pseudo, idx_sum, idx_squared_sum = jax.vmap(_count_neighbor)(idx)
 
-    def _num_pseudo(x):
-        return jnp.where(board == x + 1, num_pseudo, 0).sum()
+    def count_all(x):
+        return (
+            jnp.where(board == x + 1, num_pseudo, 0).sum(),
+            jnp.where(board == x + 1, idx_sum, 0).sum(),
+            jnp.where(board == x + 1, idx_squared_sum, 0).sum(),
+        )
 
-    def _idx_sum(x):
-        return jnp.where(board == x + 1, idx_sum, 0).sum()
-
-    def _idx_squared_sum(x):
-        return jnp.where(board == x + 1, idx_squared_sum, 0).sum()
-
-    return jax.vmap(_num_pseudo)(idx), jax.vmap(_idx_sum)(idx), jax.vmap(_idx_squared_sum)(idx)
+    return jax.vmap(count_all)(idx)
 
 
 def _colors(color):
