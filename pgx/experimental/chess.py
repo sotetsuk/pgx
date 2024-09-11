@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 
 from pgx.chess import (
+    GameState,
     State,
     _check_termination,
     _flip_pos,
@@ -10,7 +11,6 @@ from pgx.chess import (
     _possible_piece_positions,
     _update_history,
     _zobrist_hash,
-    GameState
 )
 
 TRUE = jnp.bool_(True)
@@ -20,7 +20,7 @@ def from_fen(fen: str):
     """Restore state from FEN
 
     >>> state = _from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq e3 0 1")
-    >>> _rotate(state.._xboard.reshape(8, 8))
+    >>> _rotate(state._x.board.reshape(8, 8))
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [-1, -1, -1, -1, -1, -1, -1, -1],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
@@ -77,14 +77,15 @@ def from_fen(fen: str):
         ep = _flip_pos(ep)
     state = State(  # type: ignore
         _x=GameState(
-        board=jnp.rot90(mat, k=3).flatten(),
-        turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
-        can_castle_queen_side=can_castle_queen_side,
-        can_castle_king_side=can_castle_king_side,
-        en_passant=ep,
-        halfmove_count=jnp.int32(halfmove_cnt),
-        fullmove_count=jnp.int32(fullmove_cnt),
-    ))
+            board=jnp.rot90(mat, k=3).flatten(),
+            turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
+            can_castle_queen_side=can_castle_queen_side,
+            can_castle_king_side=can_castle_king_side,
+            en_passant=ep,
+            halfmove_count=jnp.int32(halfmove_cnt),
+            fullmove_count=jnp.int32(fullmove_cnt),
+        )
+    )
     state = state.replace(
         _x=state._x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(state))  # type: ignore
     )

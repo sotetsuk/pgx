@@ -324,23 +324,27 @@ def _apply_move(state: State, a: Action):
     is_en_passant = (state._x.en_passant >= 0) & (piece == PAWN) & (state._x.en_passant == a.to)
     removed_pawn_pos = a.to - 1
     state = state.replace(  # type: ignore
-        _x=state._x._replace(board=state._x.board.at[removed_pawn_pos].set(
-            jax.lax.select(is_en_passant, EMPTY, state._x.board[removed_pawn_pos])
-        )),
+        _x=state._x._replace(
+            board=state._x.board.at[removed_pawn_pos].set(
+                jax.lax.select(is_en_passant, EMPTY, state._x.board[removed_pawn_pos])
+            )
+        ),
     )
     state = state.replace(  # type: ignore
-        _x=state._x._replace(en_passant=jax.lax.select(
-            (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2),
-            jnp.int32((a.to + a.from_) // 2),
-            jnp.int32(-1),
-        ))
+        _x=state._x._replace(
+            en_passant=jax.lax.select(
+                (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2),
+                jnp.int32((a.to + a.from_) // 2),
+                jnp.int32(-1),
+            )
+        )
     )
     # update counters
     captured = (state._x.board[a.to] < 0) | (is_en_passant)
     state = state.replace(  # type: ignore
         _x=state._x._replace(
-        halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state._x.halfmove_count + 1),
-        fullmove_count=state._x.fullmove_count + jnp.int32(state._x.turn == 1),
+            halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state._x.halfmove_count + 1),
+            fullmove_count=state._x.fullmove_count + jnp.int32(state._x.turn == 1),
         )
     )
     # castling
@@ -349,71 +353,71 @@ def _apply_move(state: State, a: Action):
     # left
     state = state.replace(  # type: ignore
         _x=state._x._replace(
-        board=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 16),
-            lambda: state._x.board.at[0].set(EMPTY).at[24].set(ROOK),
-            lambda: state._x.board,
-        ),
-        # update rook position
-        possible_piece_positions=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 16),
-            lambda: state._x.possible_piece_positions.at[0, 0].set(24),
-            lambda: state._x.possible_piece_positions,
-        ),
+            board=jax.lax.cond(
+                (piece == KING) & (a.from_ == 32) & (a.to == 16),
+                lambda: state._x.board.at[0].set(EMPTY).at[24].set(ROOK),
+                lambda: state._x.board,
+            ),
+            # update rook position
+            possible_piece_positions=jax.lax.cond(
+                (piece == KING) & (a.from_ == 32) & (a.to == 16),
+                lambda: state._x.possible_piece_positions.at[0, 0].set(24),
+                lambda: state._x.possible_piece_positions,
+            ),
         )
     )
     # right
     state = state.replace(  # type: ignore
         _x=state._x._replace(
-        board=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 48),
-            lambda: state._x.board.at[56].set(EMPTY).at[40].set(ROOK),
-            lambda: state._x.board,
-        ),
-        # update rook position
-        possible_piece_positions=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 48),
-            lambda: state._x.possible_piece_positions.at[0, 14].set(40),
-            lambda: state._x.possible_piece_positions,
-        ),
+            board=jax.lax.cond(
+                (piece == KING) & (a.from_ == 32) & (a.to == 48),
+                lambda: state._x.board.at[56].set(EMPTY).at[40].set(ROOK),
+                lambda: state._x.board,
+            ),
+            # update rook position
+            possible_piece_positions=jax.lax.cond(
+                (piece == KING) & (a.from_ == 32) & (a.to == 48),
+                lambda: state._x.possible_piece_positions.at[0, 14].set(40),
+                lambda: state._x.possible_piece_positions,
+            ),
         )
     )
     # update my can_castle_xxx_side
     state = state.replace(  # type: ignore
         _x=state._x._replace(
-        can_castle_queen_side=state._x.can_castle_queen_side.at[0].set(
-            jax.lax.select(
-                (a.from_ == 32) | (a.from_ == 0),
-                FALSE,
-                state._x.can_castle_queen_side[0],
-            )
-        ),
-        can_castle_king_side=state._x.can_castle_king_side.at[0].set(
-            jax.lax.select(
-                (a.from_ == 32) | (a.from_ == 56),
-                FALSE,
-                state._x.can_castle_king_side[0],
-            )
-        ),
+            can_castle_queen_side=state._x.can_castle_queen_side.at[0].set(
+                jax.lax.select(
+                    (a.from_ == 32) | (a.from_ == 0),
+                    FALSE,
+                    state._x.can_castle_queen_side[0],
+                )
+            ),
+            can_castle_king_side=state._x.can_castle_king_side.at[0].set(
+                jax.lax.select(
+                    (a.from_ == 32) | (a.from_ == 56),
+                    FALSE,
+                    state._x.can_castle_king_side[0],
+                )
+            ),
         )
     )
     # update opp can_castle_xxx_side
     state = state.replace(  # type: ignore
         _x=state._x._replace(
-        can_castle_queen_side=state._x.can_castle_queen_side.at[1].set(
-            jax.lax.select(
-                (a.to == 7),
-                FALSE,
-                state._x.can_castle_queen_side[1],
-            )
-        ),
-        can_castle_king_side=state._x.can_castle_king_side.at[1].set(
-            jax.lax.select(
-                (a.to == 63),
-                FALSE,
-                state._x.can_castle_king_side[1],
-            )
-        ),
+            can_castle_queen_side=state._x.can_castle_queen_side.at[1].set(
+                jax.lax.select(
+                    (a.to == 7),
+                    FALSE,
+                    state._x.can_castle_queen_side[1],
+                )
+            ),
+            can_castle_king_side=state._x.can_castle_king_side.at[1].set(
+                jax.lax.select(
+                    (a.to == 63),
+                    FALSE,
+                    state._x.can_castle_king_side[1],
+                )
+            ),
         )
     )
     # promotion to queen
@@ -456,14 +460,14 @@ def _flip(state: State) -> State:
     return state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         _x=state._x._replace(
-        board=-jnp.flip(state._x.board.reshape(8, 8), axis=1).flatten(),
-        turn=(state._x.turn + 1) % 2,
-        en_passant=_flip_pos(state._x.en_passant),
-        can_castle_queen_side=state._x.can_castle_queen_side[::-1],
-        can_castle_king_side=state._x.can_castle_king_side[::-1],
-        board_history=-jnp.flip(state._x.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
-        possible_piece_positions=state._x.possible_piece_positions[::-1],
-        )
+            board=-jnp.flip(state._x.board.reshape(8, 8), axis=1).flatten(),
+            turn=(state._x.turn + 1) % 2,
+            en_passant=_flip_pos(state._x.en_passant),
+            can_castle_queen_side=state._x.can_castle_queen_side[::-1],
+            can_castle_king_side=state._x.can_castle_king_side[::-1],
+            board_history=-jnp.flip(state._x.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
+            possible_piece_positions=state._x.possible_piece_positions[::-1],
+        ),
     )
 
 
@@ -742,7 +746,7 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= ZOBRIST_SIDE
     return state.replace(  # type: ignore
         _x=state._x._replace(
-        zobrist_hash=hash_,
+            zobrist_hash=hash_,
         )
     )
 
