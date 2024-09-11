@@ -240,7 +240,11 @@ class Chess(core.Env):
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        return _observe(state, player_id)
+        color = jax.lax.select(state.current_player == player_id, state._x.turn, 1 - state._x.turn)
+        state = state.replace(  # type: ignore
+            _x=jax.lax.cond(state.current_player == player_id, lambda: state._x, lambda: _flip(state._x)),
+        )
+        return _observe(state, color)
 
     @property
     def id(self) -> core.EnvId:
@@ -611,13 +615,8 @@ def _possible_piece_positions(state: GameState):
     return jnp.vstack((my_pos, opp_pos))
 
 
-def _observe(state: State, player_id: Array):
-    color = jax.lax.select(state.current_player == player_id, state._x.turn, 1 - state._x.turn)
+def _observe(state: State, color: Array):   
     ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
-
-    state = state.replace(  # type: ignore
-        _x=jax.lax.cond(state.current_player == player_id, lambda: state._x, lambda: _flip(state._x)),
-    )
 
     def make(i):
         board = _rotate(state._x.board_history[i].reshape((8, 8)))
