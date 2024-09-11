@@ -142,6 +142,7 @@ class State(core.State):
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK  # 64 * 73 = 4672
     observation: Array = jnp.zeros((8, 8, 119), dtype=jnp.float32)
     _step_count: Array = jnp.int32(0)
+    _player_order: Array = jnp.int32([0, 1])  # [0, 1] or [1, 0]
     _x: GameState = GameState()
 
     @property
@@ -209,8 +210,13 @@ class Chess(core.Env):
         super().__init__()
 
     def _init(self, key: PRNGKey) -> State:
-        current_player = jnp.int32(jax.random.bernoulli(key))
-        state = State(current_player=current_player)  # type: ignore
+        x = GameState()
+        _player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
+        state = State(  # type: ignore
+            current_player=_player_order[x.turn],
+            _player_order=_player_order,
+            _x=x,
+        )
         return state
 
     def _step(self, state: core.State, action: Array, key) -> State:
