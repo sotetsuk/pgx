@@ -106,7 +106,7 @@ class Game:
 
         @jax.vmap
         def is_neighbor_ok(xy):
-            neighbors = _neighbour(xy, self.size)
+            neighbors = _adj_ixs(xy, self.size)
             on_board = neighbors != -1
             _has_empty = is_empty[neighbors]
             _has_liberty = has_liberty[neighbors]
@@ -142,7 +142,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     my_sign, opp_sign = _signs(state.color)
 
     # remove killed stones
-    neighbours = _neighbour(action, size)
+    neighbours = _adj_ixs(action, size)
     adj_ids = state.board[neighbours]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(adj_ids) - 1
@@ -182,7 +182,7 @@ def _count(state: GameState, size):
     idx_squared_sum = jnp.where(is_empty, jnp.arange(1, size**2 + 1) ** 2, 0)
 
     def _count_neighbor(xy):
-        neighbors = _neighbour(xy, size)
+        neighbors = _adj_ixs(xy, size)
         on_board = neighbors != -1
         return (
             jnp.where(on_board, is_empty[neighbors], 0).sum(),
@@ -208,18 +208,18 @@ def _signs(color):
 
 
 def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
-    neighbours = _neighbour(xy, size)
+    neighbours = _adj_ixs(xy, size)
     on_board = neighbours != -1
     _, opp_sign = _signs(state.color)
     is_occupied_by_opp = state.board[neighbours] * opp_sign > 0
     return (~on_board | is_occupied_by_opp).all()
 
 
-def _neighbour(xy, size):
+def _adj_ixs(xy, size):
     dx, dy = jnp.int32([-1, +1, 0, 0]), jnp.int32([0, 0, -1, +1])
     xs, ys = xy // size + dx, xy % size + dy
     on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
-    return jnp.where(on_board, xs * size + ys, -1)
+    return jnp.where(on_board, xs * size + ys, -1)  # -1 if out of board
 
 
 def _compute_hash(state: GameState):
@@ -244,7 +244,7 @@ def _count_point(state: GameState, size):
 
 def _count_ji(state: GameState, color: int, size: int):
     board = jnp.clip(state.board * color, -1, 1)  # 1 = mine, -1 = opponent's
-    adj_mat = jax.vmap(partial(_neighbour, size=size))(jnp.arange(size**2))  # (size**2, 4)
+    adj_mat = jax.vmap(partial(_adj_ixs, size=size))(jnp.arange(size**2))  # (size**2, 4)
 
     def fill_opp(x):
         b, _ = x
