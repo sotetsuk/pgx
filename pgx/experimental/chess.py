@@ -4,12 +4,12 @@ import jax.numpy as jnp
 from pgx.chess import (
     GameState,
     State,
-    _is_terminated,
-    _rewards,
     _flip_pos,
+    _is_terminated,
     _legal_action_mask,
     _observe,
     _possible_piece_positions,
+    _rewards,
     _update_history,
     _zobrist_hash,
 )
@@ -77,13 +77,13 @@ def from_fen(fen: str):
     if turn == "b" and ep >= 0:
         ep = _flip_pos(ep)
     x = GameState(
-            board=jnp.rot90(mat, k=3).flatten(),
-            turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
-            can_castle_queen_side=can_castle_queen_side,
-            can_castle_king_side=can_castle_king_side,
-            en_passant=ep,
-            halfmove_count=jnp.int32(halfmove_cnt),
-            fullmove_count=jnp.int32(fullmove_cnt),
+        board=jnp.rot90(mat, k=3).flatten(),
+        turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
+        can_castle_queen_side=can_castle_queen_side,
+        can_castle_king_side=can_castle_king_side,
+        en_passant=ep,
+        halfmove_count=jnp.int32(halfmove_cnt),
+        fullmove_count=jnp.int32(fullmove_cnt),
     )
     x = x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(x))
     legal_action_mask = jax.jit(_legal_action_mask)(x)
@@ -99,7 +99,7 @@ def from_fen(fen: str):
         legal_action_mask=legal_action_mask,
         terminated=jax.jit(_is_terminated)(x),
         rewards=jax.jit(_rewards)(x)[player_order],
-        observation=jax.jit(_observe)(x, x.turn)
+        observation=jax.jit(_observe)(x, x.turn),
     )
     return state
 
