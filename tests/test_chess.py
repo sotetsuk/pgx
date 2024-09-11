@@ -29,14 +29,14 @@ def test_zobrist_hash():
     key = jax.random.PRNGKey(0)
     key, subkey = jax.random.split(key)
     state = init(subkey)
-    assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
     # for i in range(5):
     while not state.terminated:
         key, subkey = jax.random.split(key)
         action = act_randomly(subkey, state.legal_action_mask)
         state = step(state, action)
         # state.save_svg("debug.svg")
-        assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+        assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
 
 def test_action():
     # See #704
@@ -147,23 +147,23 @@ def test_step():
     # normal step
     state = from_fen("1k6/8/8/8/8/8/1Q6/7K w - - 0 1")
     state.save_svg("tests/assets/chess/step_001.svg")
-    assert state._board[p("b1")] == EMPTY
+    assert state._x.board[p("b1")] == EMPTY
     state = step(state, jnp.int32(672))
     state.save_svg("tests/assets/chess/step_002.svg")
-    assert state._board[p("b1", True)] == -QUEEN
+    assert state._x.board[p("b1", True)] == -QUEEN
 
     # promotion
     state = from_fen("r1r4k/1P6/8/8/8/8/P7/7K w - - 0 1")
     state.save_svg("tests/assets/chess/step_002.svg")
-    assert state._board[p("b8")] == EMPTY
+    assert state._x.board[p("b8")] == EMPTY
     # underpromotion
     next_state = step(state, jnp.int32(1022))
     next_state.save_svg("tests/assets/chess/step_003.svg")
-    assert next_state._board[p("b8", True)] == -ROOK
+    assert next_state._x.board[p("b8", True)] == -ROOK
     # promotion to queen
     next_state = step(state, jnp.int32(p("b7") * 73 + 16))
     next_state.save_svg("tests/assets/chess/step_004.svg")
-    assert next_state._board[p("b8", True)] == -QUEEN
+    assert next_state._x.board[p("b8", True)] == -QUEEN
 
     # castling
     state = from_fen("1k6/8/8/8/8/8/8/R3K2R w KQ - 0 1")
@@ -171,34 +171,34 @@ def test_step():
     # left
     next_state = step(state, jnp.int32(p("e1") * 73 + 28))
     next_state.save_svg("tests/assets/chess/step_006.svg")
-    assert next_state._board[p("c1", True)] == -KING
-    assert next_state._board[p("d1", True)] == -ROOK  # castling
-    assert next_state._board[p("a1", True)] == EMPTY  # castling
+    assert next_state._x.board[p("c1", True)] == -KING
+    assert next_state._x.board[p("d1", True)] == -ROOK  # castling
+    assert next_state._x.board[p("a1", True)] == EMPTY  # castling
     # right
     next_state = step(state, jnp.int32(p("e1") * 73 + 31))
     next_state.save_svg("tests/assets/chess/step_007.svg")
-    assert next_state._board[p("g1", True)] == -KING
-    assert next_state._board[p("f1", True)] == -ROOK  # castling
-    assert next_state._board[p("h1", True)] == EMPTY  # castling
+    assert next_state._x.board[p("g1", True)] == -KING
+    assert next_state._x.board[p("f1", True)] == -ROOK  # castling
+    assert next_state._x.board[p("h1", True)] == EMPTY  # castling
 
     # en passant
     state = from_fen("1k6/8/8/8/3pP3/8/8/R3K2R b KQ e3 0 1")
     state.save_svg("tests/assets/chess/step_008.svg")
-    assert state._board[p("e4", True)] == -PAWN
+    assert state._x.board[p("e4", True)] == -PAWN
     next_state = step(state, jnp.int32(p("d4", True) * 73 + 44))
     next_state.save_svg("tests/assets/chess/step_009.svg")
-    assert next_state._board[p("e3")] == -PAWN
-    assert next_state._board[p("e4")] == EMPTY
+    assert next_state._x.board[p("e3")] == -PAWN
+    assert next_state._x.board[p("e4")] == EMPTY
     state = from_fen("1k6/8/8/8/3p4/8/4P3/R3K2R w KQ - 0 1")
     state.save_svg("tests/assets/chess/step_010.svg")
     next_state = step(state, jnp.int32(p("e2") * 73 + 17))  # UP 2
     next_state.save_svg("tests/assets/chess/step_011.svg")
-    assert next_state._en_passant == p("e3", True)
+    assert next_state._x.en_passant == p("e3", True)
     state = from_fen("1k6/p7/8/8/3p4/8/4P3/R3K2R b KQ - 0 1")
     state.save_svg("tests/assets/chess/step_012.svg")
     next_state = step(state, jnp.int32(p("a7", True) * 73 + 17))  # UP 2
     next_state.save_svg("tests/assets/chess/step_013.svg")
-    assert next_state._en_passant == p("a6")  # en passant is always white view
+    assert next_state._x.en_passant == p("a6")  # en passant is always white view
 
 
 def test_legal_action_mask():
@@ -369,7 +369,7 @@ def test_legal_action_mask():
     state.save_svg("tests/assets/chess/legal_action_mask_028.svg")
     state = step(state, jnp.int32(4178))  # BPawn: h7 -> h5
     state.save_svg("tests/assets/chess/legal_action_mask_029.svg")
-    print(state._en_passant)
+    print(state._x.en_passant)
     print(to_fen(state))
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
@@ -379,7 +379,7 @@ def test_legal_action_mask():
     state.save_svg("tests/assets/chess/legal_action_mask_030.svg")
     state = step(state, jnp.int32(90))  # WPawn: a2 -> a4
     state.save_svg("tests/assets/chess/legal_action_mask_031.svg")
-    print(state._en_passant)
+    print(state._x.en_passant)
     print(to_fen(state))
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 5
@@ -389,7 +389,7 @@ def test_legal_action_mask():
     state.save_svg("tests/assets/chess/legal_action_mask_032.svg")
     state = step(state, jnp.int32(2426))  # BPawn: e7 -> e5
     state.save_svg("tests/assets/chess/legal_action_mask_033.svg")
-    print(state._en_passant)
+    print(state._x.en_passant)
     print(to_fen(state))
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 7
@@ -399,7 +399,7 @@ def test_legal_action_mask():
     state.save_svg("tests/assets/chess/legal_action_mask_034.svg")
     state = step(state, jnp.int32(1842))  # WPawn: d2 -> d4
     state.save_svg("tests/assets/chess/legal_action_mask_035.svg")
-    print(state._en_passant)
+    print(state._x.en_passant)
     print(to_fen(state))
     print(jnp.nonzero(state.legal_action_mask))
     assert state.legal_action_mask.sum() == 7
@@ -711,7 +711,7 @@ def test_buggy_samples():
 
     # wrong en passant by pinned pawn
     state = from_fen("rn6/1b6/8/p1Br1k1p/PPp1pPpP/NRp3P1/2B4R/2K5 b - f3 0 54")
-    print(state._en_passant)
+    print(state._x.en_passant)
     state.save_svg("tests/assets/chess/buggy_samples_011.svg")
     expected_legal_actions = [16, 17, 263, 652, 654, 656, 701, 714, 715, 1517, 1984, 1985, 1986, 1987, 1988, 1989, 1990, 2000, 2001, 3154, 3182, 3197, 3853]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
@@ -731,14 +731,14 @@ def test_buggy_samples():
     state.save_svg("tests/assets/chess/buggy_samples_015.svg")
     state = step(state, jnp.int32(2088))
     state.save_svg("tests/assets/chess/buggy_samples_016.svg")
-    assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
 
     # wrong zobrist hash due to queen promotion #1078
     state = from_fen("B7/8/8/1P6/1k3K2/5P2/6p1/1B6 b - - 1 102")
     state.save_svg("tests/assets/chess/buggy_samples_017.svg")
     state = step(state, jnp.int32(3958))
     state.save_svg("tests/assets/chess/buggy_samples_018.svg")
-    assert (state._zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
+    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state)).all()
 
 
 def test_observe():
@@ -808,7 +808,7 @@ def test_observe():
     assert (state.observation[:, :, 13] == 0).all()
 
     # color
-    assert state._turn == 0
+    assert state._x.turn == 0
     assert (state.observation[:, :, 112] == 0).all()
 
 
@@ -849,7 +849,7 @@ def test_observe():
     assert (state.observation[:, :, 13] == 0).all()
 
     # color
-    assert state._turn == 1
+    assert state._x.turn == 1
     assert (state.observation[:, :, 112] == 1).all()
 
     # repetition

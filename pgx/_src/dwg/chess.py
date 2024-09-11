@@ -131,12 +131,12 @@ def _make_chess_dwg(dwg, state: ChessState, config):
             )
         )
 
-    if state._turn == 1:
+    if state._x.turn == 1:
         state = _flip(state)
     # pieces
     pieces_g = dwg.g()
     for i in range(64):
-        pi = int(state._board[i].item())
+        pi = int(state._x.board[i].item())
         if pi == 0:
             continue
         if pi < 0:
