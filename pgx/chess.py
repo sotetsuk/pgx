@@ -131,6 +131,7 @@ class GameState(NamedTuple):
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: Array = INIT_POSSIBLE_PIECE_POSITIONS
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
+    step_count: Array = jnp.int32(0)
 
 
 @dataclass
@@ -230,12 +231,6 @@ class Chess(core.Env):
             rewards=_rewards(x)[state._player_order],
             current_player=state._player_order[x.turn],
         )
-        state = jax.lax.cond(
-            (MAX_TERMINATION_STEPS <= state._step_count),
-            # end with tie
-            lambda: state.replace(terminated=TRUE),  # type: ignore
-            lambda: state,
-        )
         return state  # type: ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
@@ -274,6 +269,7 @@ def _step(state: GameState, action: Array) -> GameState:
 
     state = _update_history(state)
     state = state._replace(legal_action_mask=_legal_action_mask(state))
+    state = state._replace(step_count=state.step_count + 1)
     return state
 
 
@@ -295,6 +291,7 @@ def _is_terminated(state: GameState) -> Array:
     terminated |= has_insufficient_pieces(state)
     rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
     terminated |= rep >= 2
+    terminated |= MAX_TERMINATION_STEPS <= state.step_count
     return terminated
 
 
