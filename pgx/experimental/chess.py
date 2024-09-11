@@ -99,8 +99,8 @@ def from_fen(fen: str):
         legal_action_mask=legal_action_mask,
         terminated=jax.jit(_is_terminated)(x),
         rewards=jax.jit(_rewards)(x)[player_order],
+        observation=jax.jit(_observe)(x, x.turn)
     )
-    state = state.replace(observation=jax.jit(_observe)(state, state.current_player))  # type: ignore
     return state
 
 

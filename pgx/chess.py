@@ -236,10 +236,8 @@ class Chess(core.Env):
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         color = jax.lax.select(state.current_player == player_id, state._x.turn, 1 - state._x.turn)
-        state = state.replace(  # type: ignore
-            _x=jax.lax.cond(state.current_player == player_id, lambda: state._x, lambda: _flip(state._x)),
-        )
-        return _observe(state, color)
+        x = jax.lax.cond(state.current_player == player_id, lambda: state._x, lambda: _flip(state._x))
+        return _observe(x, color)
 
     @property
     def id(self) -> core.EnvId:
@@ -612,11 +610,11 @@ def _possible_piece_positions(state: GameState):
     return jnp.vstack((my_pos, opp_pos))
 
 
-def _observe(state: State, color: Array):   
+def _observe(state: GameState, color: Array) -> Array:   
     ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
 
     def make(i):
-        board = _rotate(state._x.board_history[i].reshape((8, 8)))
+        board = _rotate(state.board_history[i].reshape((8, 8)))
 
         def piece_feat(p):
             return (board == p).astype(jnp.float32)
@@ -624,8 +622,8 @@ def _observe(state: State, color: Array):
         my_pieces = jax.vmap(piece_feat)(jnp.arange(1, 7))
         opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
 
-        h = state._x.hash_history[i, :]
-        rep = (state._x.hash_history == h).all(axis=1).sum() - 1
+        h = state.hash_history[i, :]
+        rep = (state.hash_history == h).all(axis=1).sum() - 1
         rep = jax.lax.select((h == 0).all(), 0, rep)
         rep0 = ones * (rep == 0)
         rep1 = ones * (rep >= 1)
@@ -633,12 +631,12 @@ def _observe(state: State, color: Array):
 
     board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8)
     color = color * ones
-    total_move_cnt = (state._step_count / MAX_TERMINATION_STEPS) * ones
-    my_queen_side_castling_right = ones * state._x.can_castle_queen_side[0]
-    my_king_side_castling_right = ones * state._x.can_castle_king_side[0]
-    opp_queen_side_castling_right = ones * state._x.can_castle_queen_side[1]
-    opp_king_side_castling_right = ones * state._x.can_castle_king_side[1]
-    no_prog_cnt = (state._x.halfmove_count.astype(jnp.float32) / 100.0) * ones
+    total_move_cnt = (state.step_count / MAX_TERMINATION_STEPS) * ones
+    my_queen_side_castling_right = ones * state.can_castle_queen_side[0]
+    my_king_side_castling_right = ones * state.can_castle_king_side[0]
+    opp_queen_side_castling_right = ones * state.can_castle_queen_side[1]
+    opp_king_side_castling_right = ones * state.can_castle_king_side[1]
+    no_prog_cnt = (state.halfmove_count.astype(jnp.float32) / 100.0) * ones
 
     return jnp.vstack(
         [
