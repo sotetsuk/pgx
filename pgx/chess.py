@@ -249,7 +249,7 @@ def _step(state: State, action: Array):
     hash_ ^= _hash_castling_en_passant(state)
 
     state = state.replace(_x=_apply_move(state._x, a))  # type: ignore
-    state = _flip(state)
+    state = state.replace(_x=_flip(state._x), current_player=(state.current_player + 1) % 2)  # type: ignore
 
     hash_ ^= _hash_castling_en_passant(state)
     state = state.replace(_x=state._x._replace(zobrist_hash=hash_))  # type: ignore
@@ -280,7 +280,7 @@ def _check_termination(state: State):
     rep = (state._x.hash_history == state._x.zobrist_hash).all(axis=1).sum() - 1
     terminated |= rep >= 2
 
-    is_checkmate = (~has_legal_action) & _is_checking(_flip(state)._x)
+    is_checkmate = (~has_legal_action) & _is_checking(_flip(state._x))
     # fmt: off
     reward = jax.lax.select(
         is_checkmate,
@@ -317,7 +317,7 @@ def has_insufficient_pieces(state: GameState):
     return is_insufficient
 
 
-def _apply_move(state: GameState, a: Action):
+def _apply_move(state: GameState, a: Action) -> GameState:
     # apply move action
     piece = state.board[a.from_]
     # en passant
@@ -442,26 +442,22 @@ def _rotate(board):
     return jnp.rot90(board, k=1)
 
 
-def _flip(state: State) -> State:
-    return state.replace(  # type: ignore
-        current_player=(state.current_player + 1) % 2,
-        _x=state._x._replace(
-            board=-jnp.flip(state._x.board.reshape(8, 8), axis=1).flatten(),
-            turn=(state._x.turn + 1) % 2,
-            en_passant=_flip_pos(state._x.en_passant),
-            can_castle_queen_side=state._x.can_castle_queen_side[::-1],
-            can_castle_king_side=state._x.can_castle_king_side[::-1],
-            board_history=-jnp.flip(state._x.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
-            possible_piece_positions=state._x.possible_piece_positions[::-1],
-        ),
+def _flip(state: GameState) -> GameState:
+    return state._replace(
+            board=-jnp.flip(state.board.reshape(8, 8), axis=1).flatten(),
+            turn=(state.turn + 1) % 2,
+            en_passant=_flip_pos(state.en_passant),
+            can_castle_queen_side=state.can_castle_queen_side[::-1],
+            can_castle_king_side=state.can_castle_king_side[::-1],
+            board_history=-jnp.flip(state.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
+            possible_piece_positions=state.possible_piece_positions[::-1],
     )
 
 
 def _legal_action_mask(state):
     def is_legal(a: Action):
         ok = _is_pseudo_legal(state._x, a)
-        next_s = _flip(state.replace(_x=_apply_move(state._x, a)))  # type: ignore
-        ok &= ~_is_checking(next_s._x)
+        ok &= ~_is_checking(_flip(_apply_move(state._x, a)))
 
         return ok
 
@@ -512,7 +508,7 @@ def _legal_action_mask(state):
                 & (state._x.board[to - 1] == -PAWN)
             )
             a = Action(from_=from_, to=to)
-            ok &= ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, a)))._x)  # type: ignore
+            ok &= ~_is_checking(_flip(_apply_move(state._x, a)))  # type: ignore
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
@@ -526,9 +522,9 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label))))._x)  # type: ignore
+            return ~_is_checking(_flip(_apply_move(state._x, Action._from_label(label))))
 
-        ok &= ~_is_checking(_flip(state)._x)
+        ok &= ~_is_checking(_flip(state._x))
         ok &= is_ok(jnp.int32([2366, 2367])).all()
 
         return ok
@@ -543,9 +539,9 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label))))._x)  # type: ignore
+            return ~_is_checking(_flip(_apply_move(state._x, Action._from_label(label))))
 
-        ok &= ~_is_checking(_flip(state)._x)
+        ok &= ~_is_checking(_flip(state._x))
         ok &= is_ok(jnp.int32([2364, 2365])).all()
 
         return ok
@@ -600,7 +596,7 @@ def _is_pseudo_legal(state: GameState, a: Action):
 
 def _possible_piece_positions(state):
     my_pos = jnp.nonzero(state._x.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    opp_pos = jnp.nonzero(_flip(state)._x.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
+    opp_pos = jnp.nonzero(_flip(state._x).board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
     return jnp.vstack((my_pos, opp_pos))
 
 
@@ -608,7 +604,9 @@ def _observe(state: State, player_id: Array):
     color = jax.lax.select(state.current_player == player_id, state._x.turn, 1 - state._x.turn)
     ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
 
-    state = jax.lax.cond(state.current_player == player_id, lambda: state, lambda: _flip(state))
+    state = state.replace(  # type: ignore
+        _x=jax.lax.cond(state.current_player == player_id, lambda: state._x, lambda: _flip(state._x)),
+    )
 
     def make(i):
         board = _rotate(state._x.board_history[i].reshape((8, 8)))
@@ -657,7 +655,7 @@ def _zobrist_hash(state):
     """
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
     hash_ = jax.lax.select(state._x.turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
-    board = jax.lax.select(state._x.turn == 0, state._x.board, _flip(state)._x.board)
+    board = jax.lax.select(state._x.turn == 0, state._x.board, _flip(state._x).board)
 
     def xor(i, h):
         # 0, ..., 12 (white pawn, ..., black king)
