@@ -646,7 +646,7 @@ def _observe(state: GameState, color: Array) -> Array:
 
 def _zobrist_hash(state: GameState) -> Array:
     """
-    >>> state = State()
+    >>> state = GameState()
     >>> _zobrist_hash(state)
     Array([1172276016, 1112364556], dtype=uint32)
     """
