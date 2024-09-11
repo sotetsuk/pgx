@@ -222,7 +222,14 @@ class Chess(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        state = _step(state, action)
+        x = _step(state._x, action)
+        state = state.replace(  # type: ignore
+            _x=x,
+            legal_action_mask=x.legal_action_mask,
+            terminated=_is_terminated(x),
+            rewards=_rewards(x)[state._player_order],
+            current_player=state._player_order[x.turn],
+        )
         state = jax.lax.cond(
             (MAX_TERMINATION_STEPS <= state._step_count),
             # end with tie
@@ -248,29 +255,21 @@ class Chess(core.Env):
         return 2
 
 
-def _step(state: State, action: Array):
+def _step(state: GameState, action: Array) -> GameState:
     a = Action._from_label(action)
-    state = state.replace(_x=_update_zobrist_hash(state._x, a))  # type: ignore
+    state = _update_zobrist_hash(state, a)
 
-    hash_ = state._x.zobrist_hash
-    hash_ ^= _hash_castling_en_passant(state._x)
+    hash_ = state.zobrist_hash
+    hash_ ^= _hash_castling_en_passant(state)
 
-    state = state.replace(_x=_apply_move(state._x, a))  # type: ignore
-    state = state.replace(_x=_flip(state._x), current_player=(state.current_player + 1) % 2)  # type: ignore
+    state = _apply_move(state, a)
+    state = _flip(state)
 
-    hash_ ^= _hash_castling_en_passant(state._x)
-    state = state.replace(_x=state._x._replace(zobrist_hash=hash_))  # type: ignore
+    hash_ ^= _hash_castling_en_passant(state)
+    state = state._replace(zobrist_hash=hash_)
 
-    state = state.replace(_x=_update_history(state._x))  # type: ignore
-    legal_action_mask = _legal_action_mask(state._x)
-    state = state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask, 
-        _x=state._x._replace(legal_action_mask=legal_action_mask)
-    )
-    state = state.replace(  # type: ignore
-        terminated=_is_terminated(state._x),
-        rewards=_rewards(state._x)[state._player_order],
-    )
+    state = _update_history(state)
+    state = state._replace(legal_action_mask=_legal_action_mask(state))
     return state
 
 
