@@ -90,7 +90,7 @@ def from_fen(fen: str):
         _x=state._x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(state))
     )
     state = state.replace(  # type: ignore
-        legal_action_mask=jax.jit(_legal_action_mask)(state),
+        legal_action_mask=jax.jit(_legal_action_mask)(state._x),
     )
     state = state.replace(_x=state._x._replace(zobrist_hash=_zobrist_hash(state)))  # type: ignore
     state = state.replace(_x=_update_history(state._x))  # type: ignore

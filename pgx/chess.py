@@ -254,8 +254,8 @@ def _step(state: State, action: Array):
     hash_ ^= _hash_castling_en_passant(state)
     state = state.replace(_x=state._x._replace(zobrist_hash=hash_))  # type: ignore
 
-    x = _update_history(state._x)
-    state = state.replace(legal_action_mask=_legal_action_mask(state), _x=x)  # type: ignore
+    state = state.replace(_x=_update_history(state._x))  # type: ignore
+    state = state.replace(legal_action_mask=_legal_action_mask(state._x))  # type: ignore
     state = _check_termination(state)
     return state
 
@@ -454,16 +454,16 @@ def _flip(state: GameState) -> GameState:
     )
 
 
-def _legal_action_mask(state):
+def _legal_action_mask(state: GameState) -> Array:
     def is_legal(a: Action):
-        ok = _is_pseudo_legal(state._x, a)
-        ok &= ~_is_checking(_flip(_apply_move(state._x, a)))
+        ok = _is_pseudo_legal(state, a)
+        ok &= ~_is_checking(_flip(_apply_move(state, a)))
 
         return ok
 
     @jax.vmap
     def legal_norml_moves(from_):
-        piece = state._x.board[from_]
+        piece = state.board[from_]
 
         @jax.vmap
         def legal_label(to):
@@ -488,7 +488,7 @@ def _legal_action_mask(state):
         @jax.vmap
         def legal_labels(label):
             a = Action._from_label(label)
-            ok = (state._x.board[a.from_] == PAWN) & (a.to >= 0)
+            ok = (state.board[a.from_] == PAWN) & (a.to >= 0)
             ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
             return jax.lax.select(ok, label, -1)
 
@@ -496,7 +496,7 @@ def _legal_action_mask(state):
         return ok_labels.flatten()
 
     def legal_en_passants():
-        to = state._x.en_passant
+        to = state.en_passant
 
         @jax.vmap
         def legal_labels(from_):
@@ -504,49 +504,49 @@ def _legal_action_mask(state):
                 (from_ >= 0)
                 & (from_ < 64)
                 & (to >= 0)
-                & (state._x.board[from_] == PAWN)
-                & (state._x.board[to - 1] == -PAWN)
+                & (state.board[from_] == PAWN)
+                & (state.board[to - 1] == -PAWN)
             )
             a = Action(from_=from_, to=to)
-            ok &= ~_is_checking(_flip(_apply_move(state._x, a)))  # type: ignore
+            ok &= ~_is_checking(_flip(_apply_move(state, a)))  # type: ignore
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
 
     def can_castle_king_side():
-        ok = state._x.board[32] == KING
-        ok &= state._x.board[56] == ROOK
-        ok &= state._x.can_castle_king_side[0]
-        ok &= state._x.board[40] == EMPTY
-        ok &= state._x.board[48] == EMPTY
+        ok = state.board[32] == KING
+        ok &= state.board[56] == ROOK
+        ok &= state.can_castle_king_side[0]
+        ok &= state.board[40] == EMPTY
+        ok &= state.board[48] == EMPTY
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state._x, Action._from_label(label))))
+            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
 
-        ok &= ~_is_checking(_flip(state._x))
+        ok &= ~_is_checking(_flip(state))
         ok &= is_ok(jnp.int32([2366, 2367])).all()
 
         return ok
 
     def can_castle_queen_side():
-        ok = state._x.board[32] == KING
-        ok &= state._x.board[0] == ROOK
-        ok &= state._x.can_castle_queen_side[0]
-        ok &= state._x.board[8] == EMPTY
-        ok &= state._x.board[16] == EMPTY
-        ok &= state._x.board[24] == EMPTY
+        ok = state.board[32] == KING
+        ok &= state.board[0] == ROOK
+        ok &= state.can_castle_queen_side[0]
+        ok &= state.board[8] == EMPTY
+        ok &= state.board[16] == EMPTY
+        ok &= state.board[24] == EMPTY
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state._x, Action._from_label(label))))
+            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
 
-        ok &= ~_is_checking(_flip(state._x))
+        ok &= ~_is_checking(_flip(state))
         ok &= is_ok(jnp.int32([2364, 2365])).all()
 
         return ok
 
-    actions = legal_norml_moves(state._x.possible_piece_positions[0]).flatten()  # include -1
+    actions = legal_norml_moves(state.possible_piece_positions[0]).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
