@@ -2,6 +2,7 @@ import jax
 import jax.numpy as jnp
 
 from pgx.chess import (
+    GameState,
     State,
     _check_termination,
     _flip_pos,
@@ -19,7 +20,7 @@ def from_fen(fen: str):
     """Restore state from FEN
 
     >>> state = _from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq e3 0 1")
-    >>> _rotate(state._board.reshape(8, 8))
+    >>> _rotate(state._x.board.reshape(8, 8))
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [-1, -1, -1, -1, -1, -1, -1, -1],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
@@ -31,7 +32,7 @@ def from_fen(fen: str):
     >>> state._en_passant
     Array(34, dtype=int32)
     >>> state = _from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1")
-    >>> _rotate(state._board.reshape(8, 8))
+    >>> _rotate(state._x.board.reshape(8, 8))
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [ 0, -1, -1, -1, -1, -1, -1, -1],
            [-1,  0,  0,  0,  0,  0,  0,  0],
@@ -75,19 +76,23 @@ def from_fen(fen: str):
     if turn == "b" and ep >= 0:
         ep = _flip_pos(ep)
     state = State(  # type: ignore
-        _board=jnp.rot90(mat, k=3).flatten(),
-        _turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
-        _can_castle_queen_side=can_castle_queen_side,
-        _can_castle_king_side=can_castle_king_side,
-        _en_passant=ep,
-        _halfmove_count=jnp.int32(halfmove_cnt),
-        _fullmove_count=jnp.int32(fullmove_cnt),
+        _x=GameState(
+            board=jnp.rot90(mat, k=3).flatten(),
+            turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
+            can_castle_queen_side=can_castle_queen_side,
+            can_castle_king_side=can_castle_king_side,
+            en_passant=ep,
+            halfmove_count=jnp.int32(halfmove_cnt),
+            fullmove_count=jnp.int32(fullmove_cnt),
+        )
     )
-    state = state.replace(_possible_piece_positions=jax.jit(_possible_piece_positions)(state))  # type: ignore
+    state = state.replace(  # type: ignore
+        _x=state._x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(state))
+    )
     state = state.replace(  # type: ignore
         legal_action_mask=jax.jit(_legal_action_mask)(state),
     )
-    state = state.replace(_zobrist_hash=_zobrist_hash(state))  # type: ignore
+    state = state.replace(_x=state._x._replace(zobrist_hash=_zobrist_hash(state)))  # type: ignore
     state = _update_history(state)
     state = jax.jit(_check_termination)(state)
     state = state.replace(observation=jax.jit(_observe)(state, state.current_player))  # type: ignore
@@ -114,8 +119,8 @@ def to_fen(state: State):
     >>> _to_fen(_from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1"))
     'rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'
     """
-    pb = jnp.rot90(state._board.reshape(8, 8), k=1)
-    if state._turn == 1:
+    pb = jnp.rot90(state._x.board.reshape(8, 8), k=1)
+    if state._x.turn == 1:
         pb = -jnp.flip(pb, axis=0)
     fen = ""
     # board
@@ -140,11 +145,11 @@ def to_fen(state: State):
         else:
             fen += " "
     # turn
-    fen += "w " if state._turn == 0 else "b "
+    fen += "w " if state._x.turn == 0 else "b "
     # castling
-    can_castle_queen_side = state._can_castle_queen_side
-    can_castle_king_side = state._can_castle_king_side
-    if state._turn == 1:
+    can_castle_queen_side = state._x.can_castle_queen_side
+    can_castle_king_side = state._x.can_castle_king_side
+    if state._x.turn == 1:
         can_castle_queen_side = can_castle_queen_side[::-1]
         can_castle_king_side = can_castle_king_side[::-1]
     if not (can_castle_queen_side.any() | can_castle_king_side.any()):
@@ -160,8 +165,8 @@ def to_fen(state: State):
             fen += "q"
     fen += " "
     # em passant
-    en_passant = state._en_passant
-    if state._turn == 1:
+    en_passant = state._x.en_passant
+    if state._x.turn == 1:
         en_passant = _flip_pos(en_passant)
     ep = int(en_passant.item())
     if ep == -1:
@@ -170,7 +175,7 @@ def to_fen(state: State):
         fen += "abcdefgh"[ep // 8]
         fen += str(ep % 8 + 1)
     fen += " "
-    fen += str(state._halfmove_count.item())
+    fen += str(state._x.halfmove_count.item())
     fen += " "
-    fen += str(state._fullmove_count.item())
+    fen += str(state._x.fullmove_count.item())
     return fen
