@@ -147,7 +147,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     surrounded_stones = (state.board[:, None] == adj_ids) & (is_killed[None, :])
     num_captured = jnp.count_nonzero(surrounded_stones)
     ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
-    ko_may_occur = _ko_may_occur(state, action, size)
+    ko_may_occur = ((adj_ixs == -1) | (state.board[adj_ixs] * opp_sign > 0)).all()
     state = state._replace(
         board=jnp.where(surrounded_stones.any(axis=-1), 0, state.board),
         num_captured=state.num_captured.at[state.color].add(num_captured),
@@ -200,14 +200,6 @@ def _count(state: GameState, size):
 
 def _signs(color):
     return jnp.int32([[1, -1], [-1, 1]])[color]  # (my_sign, opp_sign)
-
-
-def _ko_may_occur(state: GameState, xy: int, size: int) -> Array:
-    adj_ixs = _adj_ixs(xy, size)
-    on_board = adj_ixs != -1
-    _, opp_sign = _signs(state.color)
-    is_occupied_by_opp = state.board[adj_ixs] * opp_sign > 0
-    return (~on_board | is_occupied_by_opp).all()
 
 
 def _adj_ixs(xy, size):
