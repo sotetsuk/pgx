@@ -104,8 +104,7 @@ class Game:
         has_liberty = (state.board * my_sign > 0) & ~in_atari
         kills_opp = (state.board * opp_sign > 0) & in_atari
 
-        @jax.vmap
-        def is_neighbor_ok(xy):
+        def is_adj_ok(xy):
             adj_ixs = _adj_ixs(xy, self.size)
             on_board = adj_ixs != -1
             _has_empty = is_empty[adj_ixs]
@@ -113,8 +112,7 @@ class Game:
             _kills_opp = kills_opp[adj_ixs]
             return (on_board & (_has_empty | _kills_opp | _has_liberty)).any()
 
-        neighbor_ok = is_neighbor_ok(jnp.arange(self.size**2))
-        mask = is_empty & neighbor_ok
+        mask = is_empty & jax.vmap(is_adj_ok)(jnp.arange(self.size**2))
         mask = jax.lax.select(state.ko == -1, mask, mask.at[state.ko].set(False))
         return jnp.append(mask, True)  # pass is always legal
 
