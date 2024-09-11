@@ -1,9 +1,8 @@
 import jax
 import jax.numpy as jnp
 
-from pgx.chess import (
+from pgx._src.games.chess import (
     GameState,
-    State,
     _flip_pos,
     _is_terminated,
     _legal_action_mask,
@@ -13,6 +12,7 @@ from pgx.chess import (
     _update_history,
     _zobrist_hash,
 )
+from pgx.chess import State
 
 TRUE = jnp.bool_(True)
 

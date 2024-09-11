@@ -1,7 +1,8 @@
 import jax
 import jax.numpy as jnp
 import pgx
-from pgx.chess import State, Action, KING, _rotate, Chess, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash
+from pgx.chess import State, Chess
+from pgx._src.games.chess import GameState, Action, KING, _rotate, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash
 from pgx.experimental.utils import act_randomly
 from pgx.experimental.chess import from_fen, to_fen
 
