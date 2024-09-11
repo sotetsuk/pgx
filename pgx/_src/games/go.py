@@ -26,12 +26,11 @@ ZOBRIST_BOARD = jax.random.randint(
 
 class GameState(NamedTuple):
     step_count: Array = jnp.int32(0)
-    # ids of representative stone id (smallest) in the connected stones
-    # positive for black, negative for white, and zero for empty.
-    board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
-    board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)  # mainly for obs
+    # ids of representative stone (smallest) in the connected stones
+    board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)  # b > 0, w < 0, empty = 0
+    board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)  # for obs
     num_captured: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
-    consecutive_pass_count: Array = jnp.int32(0)  # two consecutive pass ends the game
+    consecutive_pass_count: Array = jnp.int32(0)
     ko: Array = jnp.int32(-1)  # by SSK
     is_psk: Array = jnp.bool_(False)
     hash: Array = jnp.zeros(2, dtype=jnp.uint32)
