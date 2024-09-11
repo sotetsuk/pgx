@@ -95,7 +95,7 @@ class Game:
         return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
     def legal_action_mask(self, state: GameState) -> Array:
-        """Logic is highly inspired by OpenSpiel's Go implementation"""
+        # some logic is inspired by OpenSpiel's Go implementation
         is_empty = state.board == 0
         my_sign, opp_sign = _signs(state.color)
         num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
