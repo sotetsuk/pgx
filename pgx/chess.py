@@ -267,7 +267,10 @@ def _step(state: State, action: Array):
         legal_action_mask=legal_action_mask, 
         _x=state._x._replace(has_legal_action=legal_action_mask.any())
     )
-    state = _check_termination(state)
+    state = state.replace(  # type: ignore
+        terminated=_is_terminated(state._x),
+        rewards=_rewards(state._x)[state._player_order],
+    )
     return state
 
 
@@ -301,13 +304,6 @@ def _rewards(state: GameState) -> Array:
         jnp.zeros(2, dtype=jnp.float32),
     )
     # fmt: on
-
-
-def _check_termination(state: State):
-    return state.replace(  # type: ignore
-        terminated=_is_terminated(state._x),
-        rewards=_rewards(state._x)[state._player_order],
-    )
 
 
 def has_insufficient_pieces(state: GameState):

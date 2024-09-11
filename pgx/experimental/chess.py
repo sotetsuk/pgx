@@ -4,7 +4,8 @@ import jax.numpy as jnp
 from pgx.chess import (
     GameState,
     State,
-    _check_termination,
+    _is_terminated,
+    _rewards,
     _flip_pos,
     _legal_action_mask,
     _observe,
@@ -93,11 +94,12 @@ def from_fen(fen: str):
     player_order = jnp.int32([0, 1])
     state = State(
         _player_order=player_order,
+        _x=x,
         current_player=player_order[x.turn],
         legal_action_mask=legal_action_mask,
-        _x=x
+        terminated=jax.jit(_is_terminated)(x),
+        rewards=jax.jit(_rewards)(x)[player_order],
     )
-    state = jax.jit(_check_termination)(state)
     state = state.replace(observation=jax.jit(_observe)(state, state.current_player))  # type: ignore
     return state
 
