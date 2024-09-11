@@ -459,7 +459,7 @@ def _flip(state: State) -> State:
 
 def _legal_action_mask(state):
     def is_legal(a: Action):
-        ok = _is_pseudo_legal(state, a)
+        ok = _is_pseudo_legal(state._x, a)
         next_s = _flip(state.replace(_x=_apply_move(state._x, a)))  # type: ignore
         ok &= ~_is_checking(next_s)
 
@@ -574,7 +574,7 @@ def _is_attacking(state: State, pos):
     @jax.vmap
     def can_move(from_):
         a = Action(from_=from_, to=pos)
-        return (from_ != -1) & _is_pseudo_legal(state, a)
+        return (from_ != -1) & _is_pseudo_legal(state._x, a)
 
     return can_move(CAN_MOVE_ANY[pos, :]).any()
 
@@ -585,16 +585,16 @@ def _is_checking(state: State):
     return _is_attacking(state, opp_king_pos)
 
 
-def _is_pseudo_legal(state: State, a: Action):
-    piece = state._x.board[a.from_]
-    ok = (piece >= 0) & (state._x.board[a.to] <= 0)
+def _is_pseudo_legal(state: GameState, a: Action):
+    piece = state.board[a.from_]
+    ok = (piece >= 0) & (state.board[a.to] <= 0)
     ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
     between_ixs = BETWEEN[a.from_, a.to]
-    ok &= ((between_ixs < 0) | (state._x.board[between_ixs] == EMPTY)).all()
+    ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
     # filter pawn move
     ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))
-    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state._x.board[a.to] < 0))
-    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state._x.board[a.to] >= 0))
+    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0))
+    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))
     return (a.to >= 0) & ok
 
 
