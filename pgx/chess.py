@@ -243,7 +243,7 @@ class Chess(core.Env):
 
 def _step(state: State, action: Array):
     a = Action._from_label(action)
-    state = _update_zobrist_hash(state, a)
+    state = state.replace(_x=_update_zobrist_hash(state._x, a))  # type: ignore
 
     hash_ = state._x.zobrist_hash
     hash_ ^= _hash_castling_en_passant(state._x)
@@ -679,26 +679,26 @@ def _hash_castling_en_passant(state: GameState):
     return hash_
 
 
-def _update_zobrist_hash(state: State, action: Action):
+def _update_zobrist_hash(state: GameState, action: Action) -> GameState:
     # do NOT take into account
     #  - en passant, and
     #  - castling
-    hash_ = state._x.zobrist_hash
-    source_piece = state._x.board[action.from_]
-    source_piece = jax.lax.select(state._x.turn == 0, source_piece + 6, (source_piece * -1) + 6)
-    destination_piece = state._x.board[action.to]
-    destination_piece = jax.lax.select(state._x.turn == 0, destination_piece + 6, (destination_piece * -1) + 6)
-    from_ = jax.lax.select(state._x.turn == 0, action.from_, _flip_pos(action.from_))
-    to = jax.lax.select(state._x.turn == 0, action.to, _flip_pos(action.to))
+    hash_ = state.zobrist_hash
+    source_piece = state.board[action.from_]
+    source_piece = jax.lax.select(state.turn == 0, source_piece + 6, (source_piece * -1) + 6)
+    destination_piece = state.board[action.to]
+    destination_piece = jax.lax.select(state.turn == 0, destination_piece + 6, (destination_piece * -1) + 6)
+    from_ = jax.lax.select(state.turn == 0, action.from_, _flip_pos(action.from_))
+    to = jax.lax.select(state.turn == 0, action.to, _flip_pos(action.to))
     hash_ ^= ZOBRIST_BOARD[from_, source_piece]  # Remove the piece from source
     hash_ ^= ZOBRIST_BOARD[from_, 6]  # Make source empty
     hash_ ^= ZOBRIST_BOARD[to, destination_piece]  # Remove the piece at target pos (including empty)
 
     # promotion to queen
-    piece = state._x.board[action.from_]
+    piece = state.board[action.from_]
     source_piece = jax.lax.select(
         (piece == PAWN) & (action.from_ % 8 == 6) & (action.underpromotion < 0),
-        jax.lax.select(state._x.turn == 0, QUEEN + 6, (QUEEN * -1) + 6),
+        jax.lax.select(state.turn == 0, QUEEN + 6, (QUEEN * -1) + 6),
         source_piece,
     )
 
@@ -706,7 +706,7 @@ def _update_zobrist_hash(state: State, action: Action):
     source_piece = jax.lax.select(
         action.underpromotion >= 0,
         jax.lax.select(
-            state._x.turn == 0,
+            state.turn == 0,
             source_piece + 3 - action.underpromotion,
             source_piece - (3 - action.underpromotion),
         ),
@@ -716,10 +716,10 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= ZOBRIST_BOARD[to, source_piece]  # Put the piece to the target pos
 
     # en_passant
-    is_en_passant = (state._x.en_passant >= 0) & (piece == PAWN) & (state._x.en_passant == action.to)
+    is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == action.to)
     removed_pawn_pos = action.to - 1
-    removed_pawn_pos = jax.lax.select(state._x.turn == 0, removed_pawn_pos, _flip_pos(removed_pawn_pos))
-    opp_pawn = jax.lax.select(state._x.turn == 0, (PAWN * -1) + 6, PAWN + 6)
+    removed_pawn_pos = jax.lax.select(state.turn == 0, removed_pawn_pos, _flip_pos(removed_pawn_pos))
+    opp_pawn = jax.lax.select(state.turn == 0, (PAWN * -1) + 6, PAWN + 6)
     hash_ ^= jax.lax.select(
         is_en_passant,
         ZOBRIST_BOARD[removed_pawn_pos, opp_pawn],
@@ -728,10 +728,8 @@ def _update_zobrist_hash(state: State, action: Action):
     hash_ ^= jax.lax.select(is_en_passant, ZOBRIST_BOARD[removed_pawn_pos, 6], jnp.uint32([0, 0]))  # empty
 
     hash_ ^= ZOBRIST_SIDE
-    return state.replace(  # type: ignore
-        _x=state._x._replace(
-            zobrist_hash=hash_,
-        )
+    return state._replace(  # type: ignore
+        zobrist_hash=hash_,
     )
 
 
