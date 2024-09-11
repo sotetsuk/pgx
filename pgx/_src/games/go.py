@@ -143,13 +143,13 @@ def _apply_action(state: GameState, action, size) -> GameState:
 
     # remove killed stones
     neighbours = _neighbour(action, size)
-    chain_id = state.board[neighbours]
+    adj_ids = state.board[neighbours]
     num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
-    chain_ix = jnp.abs(chain_id) - 1
+    chain_ix = jnp.abs(adj_ids) - 1
     is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
-    is_killed = (neighbours != -1) & (chain_id * opp_sign > 0) & is_atari & (single_liberty == action)
-    surrounded_stones = (state.board[:, None] == chain_id) & (is_killed[None, :])
+    is_killed = (neighbours != -1) & (adj_ids * opp_sign > 0) & is_atari & (single_liberty == action)
+    surrounded_stones = (state.board[:, None] == adj_ids) & (is_killed[None, :])
     num_captured = jnp.count_nonzero(surrounded_stones)
     ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
     ko_may_occur = _ko_may_occur(state, action, size)
