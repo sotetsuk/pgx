@@ -166,16 +166,15 @@ def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(board=state.board.at[action].set((action + 1) * my_color))
 
     # Merge neighbours
-    board = state.board
     on_board = neighbours != -1
-    is_my_chain = board[neighbours] * my_color > 0
+    is_my_chain = state.board[neighbours] * my_color > 0
     should_merge = on_board & is_my_chain
-    new_id = board[action]
-    tgt_ids = board[neighbours]
+    new_id = state.board[action]
+    tgt_ids = state.board[neighbours]
     smallest_id = jnp.min(jnp.where(should_merge, jnp.abs(tgt_ids), 9999))
     smallest_id = jnp.minimum(jnp.abs(new_id), smallest_id) * my_color
-    mask = (board == new_id) | (should_merge[None, :] & (board[:, None] == tgt_ids[None, :])).any(axis=-1)
-    state = state._replace(board=jnp.where(mask, smallest_id, board))
+    mask = (state.board == new_id) | (should_merge[None, :] & (state.board[:, None] == tgt_ids[None, :])).any(axis=-1)
+    state = state._replace(board=jnp.where(mask, smallest_id, state.board))
 
     return state
 
