@@ -220,8 +220,7 @@ def _adj_ixs(xy, size):
 def _compute_hash(state: GameState):
     board = jnp.clip(state.board, -1, 1)
     to_reduce = ZOBRIST_BOARD[board, jnp.arange(board.shape[-1])]
-    hash = jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
-    return hash
+    return jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
 
 
 def _is_psk(state: GameState):
