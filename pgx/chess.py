@@ -248,7 +248,7 @@ def _step(state: State, action: Array):
     hash_ = state._x.zobrist_hash
     hash_ ^= _hash_castling_en_passant(state)
 
-    state = _apply_move(state, a)
+    state = state.replace(_x=_apply_move(state._x, a))  # type: ignore
     state = _flip(state)
 
     hash_ ^= _hash_castling_en_passant(state)
@@ -317,109 +317,95 @@ def has_insufficient_pieces(state: GameState):
     return is_insufficient
 
 
-def _apply_move(state: State, a: Action):
+def _apply_move(state: GameState, a: Action):
     # apply move action
-    piece = state._x.board[a.from_]
+    piece = state.board[a.from_]
     # en passant
-    is_en_passant = (state._x.en_passant >= 0) & (piece == PAWN) & (state._x.en_passant == a.to)
+    is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
     removed_pawn_pos = a.to - 1
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(
-            board=state._x.board.at[removed_pawn_pos].set(
-                jax.lax.select(is_en_passant, EMPTY, state._x.board[removed_pawn_pos])
+    state = state._replace(
+            board=state.board.at[removed_pawn_pos].set(
+                jax.lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos])
             )
-        ),
     )
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(
+    state = state._replace(
             en_passant=jax.lax.select(
                 (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2),
                 jnp.int32((a.to + a.from_) // 2),
                 jnp.int32(-1),
             )
-        )
     )
     # update counters
-    captured = (state._x.board[a.to] < 0) | (is_en_passant)
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(
-            halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state._x.halfmove_count + 1),
-            fullmove_count=state._x.fullmove_count + jnp.int32(state._x.turn == 1),
+    captured = (state.board[a.to] < 0) | (is_en_passant)
+    state = state._replace(
+            halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state.halfmove_count + 1),
+            fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
         )
-    )
     # castling
     # Whether castling is possible or not is not checked here.
     # We assume that if castling is not possible, it is filtered out.
     # left
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(
+    state = state._replace(
             board=jax.lax.cond(
                 (piece == KING) & (a.from_ == 32) & (a.to == 16),
-                lambda: state._x.board.at[0].set(EMPTY).at[24].set(ROOK),
-                lambda: state._x.board,
+                lambda: state.board.at[0].set(EMPTY).at[24].set(ROOK),
+                lambda: state.board,
             ),
             # update rook position
             possible_piece_positions=jax.lax.cond(
                 (piece == KING) & (a.from_ == 32) & (a.to == 16),
-                lambda: state._x.possible_piece_positions.at[0, 0].set(24),
-                lambda: state._x.possible_piece_positions,
+                lambda: state.possible_piece_positions.at[0, 0].set(24),
+                lambda: state.possible_piece_positions,
             ),
         )
-    )
     # right
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(
+    state = state._replace(
             board=jax.lax.cond(
                 (piece == KING) & (a.from_ == 32) & (a.to == 48),
-                lambda: state._x.board.at[56].set(EMPTY).at[40].set(ROOK),
-                lambda: state._x.board,
+                lambda: state.board.at[56].set(EMPTY).at[40].set(ROOK),
+                lambda: state.board,
             ),
             # update rook position
             possible_piece_positions=jax.lax.cond(
                 (piece == KING) & (a.from_ == 32) & (a.to == 48),
-                lambda: state._x.possible_piece_positions.at[0, 14].set(40),
-                lambda: state._x.possible_piece_positions,
+                lambda: state.possible_piece_positions.at[0, 14].set(40),
+                lambda: state.possible_piece_positions,
             ),
         )
-    )
     # update my can_castle_xxx_side
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(
-            can_castle_queen_side=state._x.can_castle_queen_side.at[0].set(
+    state = state._replace(
+            can_castle_queen_side=state.can_castle_queen_side.at[0].set(
                 jax.lax.select(
                     (a.from_ == 32) | (a.from_ == 0),
                     FALSE,
-                    state._x.can_castle_queen_side[0],
+                    state.can_castle_queen_side[0],
                 )
             ),
-            can_castle_king_side=state._x.can_castle_king_side.at[0].set(
+            can_castle_king_side=state.can_castle_king_side.at[0].set(
                 jax.lax.select(
                     (a.from_ == 32) | (a.from_ == 56),
                     FALSE,
-                    state._x.can_castle_king_side[0],
+                    state.can_castle_king_side[0],
                 )
             ),
         )
-    )
     # update opp can_castle_xxx_side
-    state = state.replace(  # type: ignore
-        _x=state._x._replace(
-            can_castle_queen_side=state._x.can_castle_queen_side.at[1].set(
+    state = state._replace(
+            can_castle_queen_side=state.can_castle_queen_side.at[1].set(
                 jax.lax.select(
                     (a.to == 7),
                     FALSE,
-                    state._x.can_castle_queen_side[1],
+                    state.can_castle_queen_side[1],
                 )
             ),
-            can_castle_king_side=state._x.can_castle_king_side.at[1].set(
+            can_castle_king_side=state.can_castle_king_side.at[1].set(
                 jax.lax.select(
                     (a.to == 63),
                     FALSE,
-                    state._x.can_castle_king_side[1],
+                    state.can_castle_king_side[1],
                 )
             ),
         )
-    )
     # promotion to queen
     piece = jax.lax.select(
         piece == PAWN & (a.from_ % 8 == 6) & (a.underpromotion < 0),
@@ -433,10 +419,10 @@ def _apply_move(state: State, a: Action):
         jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion],
     )
     # actually move
-    state = state.replace(_x=state._x._replace(board=state._x.board.at[a.from_].set(EMPTY).at[a.to].set(piece)))  # type: ignore
+    state = state._replace(board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
     # update possible piece positions
-    ix = jnp.argmin(jnp.abs(state._x.possible_piece_positions[0, :] - a.from_))
-    state = state.replace(_x=state._x._replace(possible_piece_positions=state._x.possible_piece_positions.at[0, ix].set(a.to)))  # type: ignore
+    ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
+    state = state._replace(possible_piece_positions=state.possible_piece_positions.at[0, ix].set(a.to))
     return state
 
 
@@ -474,7 +460,7 @@ def _flip(state: State) -> State:
 def _legal_action_mask(state):
     def is_legal(a: Action):
         ok = _is_pseudo_legal(state, a)
-        next_s = _flip(_apply_move(state, a))
+        next_s = _flip(state.replace(_x=_apply_move(state._x, a)))  # type: ignore
         ok &= ~_is_checking(next_s)
 
         return ok
@@ -526,7 +512,7 @@ def _legal_action_mask(state):
                 & (state._x.board[to - 1] == -PAWN)
             )
             a = Action(from_=from_, to=to)
-            ok &= ~_is_checking(_flip(_apply_move(state, a)))
+            ok &= ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, a))))  # type: ignore
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
@@ -540,7 +526,7 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
+            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label)))))  # type: ignore
 
         ok &= ~_is_checking(_flip(state))
         ok &= is_ok(jnp.int32([2366, 2367])).all()
@@ -557,7 +543,7 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
+            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label)))))  # type: ignore
 
         ok &= ~_is_checking(_flip(state))
         ok &= is_ok(jnp.int32([2364, 2365])).all()
