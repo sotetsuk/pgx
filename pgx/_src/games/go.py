@@ -151,13 +151,13 @@ def _apply_action(state: GameState, action, size) -> GameState:
     single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
     is_killed = (neighbours != -1) & (chain_id * opp_color > 0) & is_atari & (single_liberty == action)
     surrounded_stones = (state.board[:, None] == chain_id) & (is_killed[None, :])
-    num_captured_stones = jnp.count_nonzero(surrounded_stones)
+    num_captured = jnp.count_nonzero(surrounded_stones)
     ko_ix = jnp.nonzero(is_killed, size=1)[0][0]
     ko_may_occur = _ko_may_occur(state, action, size)
-    ko = jax.lax.select(ko_may_occur & (num_captured_stones == 1), neighbours[ko_ix], -1)
+    ko = jax.lax.select(ko_may_occur & (num_captured == 1), neighbours[ko_ix], -1)
     state = state._replace(
         board=jnp.where(surrounded_stones.any(axis=-1), 0, state.board),
-        num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured_stones),
+        num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured),
         ko=ko,
     )
 
