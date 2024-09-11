@@ -30,7 +30,7 @@ class GameState(NamedTuple):
     # positive for black, negative for white, and zero for empty.
     board: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
     board_history: Array = jnp.full((8, 19 * 19), 2, dtype=jnp.int32)  # mainly for obs
-    num_captured_stones: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
+    num_captured: Array = jnp.zeros(2, dtype=jnp.int32)  # [b, w]
     consecutive_pass_count: Array = jnp.int32(0)  # two consecutive pass ends the game
     ko: Array = jnp.int32(-1)  # by SSK
     is_psk: Array = jnp.bool_(False)
@@ -157,7 +157,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     ko = jax.lax.select(ko_may_occur & (num_captured == 1), neighbours[ko_ix], -1)
     state = state._replace(
         board=jnp.where(surrounded_stones.any(axis=-1), 0, state.board),
-        num_captured_stones=state.num_captured_stones.at[state.color].add(num_captured),
+        num_captured=state.num_captured.at[state.color].add(num_captured),
         ko=ko,
     )
 
