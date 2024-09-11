@@ -102,15 +102,12 @@ class Game:
         chain_ix = jnp.abs(state.board) - 1
         in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
         has_liberty = (state.board * my_sign > 0) & ~in_atari
-        kills_opp = (state.board * opp_sign > 0) & in_atari
+        can_kill = (state.board * opp_sign > 0) & in_atari
 
         def is_adj_ok(xy):
             adj_ixs = _adj_ixs(xy, self.size)
             on_board = adj_ixs != -1
-            _has_empty = is_empty[adj_ixs]
-            _has_liberty = has_liberty[adj_ixs]
-            _kills_opp = kills_opp[adj_ixs]
-            return (on_board & (_has_empty | _kills_opp | _has_liberty)).any()
+            return (on_board & (is_empty[adj_ixs] | can_kill[adj_ixs] | has_liberty[adj_ixs])).any()
 
         mask = is_empty & jax.vmap(is_adj_ok)(jnp.arange(self.size**2))
         mask = jax.lax.select(state.ko == -1, mask, mask.at[state.ko].set(False))
