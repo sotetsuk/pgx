@@ -292,18 +292,21 @@ def _is_terminated(state: GameState) -> Array:
     return terminated
 
 
-def _check_termination(state: State):
-    is_checkmate = (~state._x.has_legal_action) & _is_checking(_flip(state._x))
+def _rewards(state: GameState) -> Array:
+    is_checkmate = (~state.has_legal_action) & _is_checking(_flip(state))
     # fmt: off
-    reward = jax.lax.select(
+    return jax.lax.select(
         is_checkmate,
-        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+        jnp.ones(2, dtype=jnp.float32).at[state.turn].set(-1),
         jnp.zeros(2, dtype=jnp.float32),
     )
     # fmt: on
+
+
+def _check_termination(state: State):
     return state.replace(  # type: ignore
         terminated=_is_terminated(state._x),
-        rewards=reward,
+        rewards=_rewards(state._x)[state._player_order],
     )
 
 
