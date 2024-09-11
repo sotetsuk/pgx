@@ -444,7 +444,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_001.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert state.rewards[state.current_player] == -1
     assert state.rewards[1 - state.current_player] == 1.
 
@@ -453,7 +452,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_002.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # 50-move draw rule
@@ -472,7 +470,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_005.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # K+B vs K
@@ -480,7 +477,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_006.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # K vs K+B
@@ -488,7 +484,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_007.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # K+N vs K
@@ -496,7 +491,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_008.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # K vs K+N
@@ -504,7 +498,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_009.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # K+B vs K+B (Bishop in Black tile)
@@ -512,7 +505,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_010.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # K+B vs K+B (Bishop in White tile)
@@ -520,7 +512,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_011.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # insufficient cases by underpromotion
@@ -583,7 +574,6 @@ def test_terminal():
     state.save_svg("tests/assets/chess/terminal_024.svg")
     print(to_fen(state))
     assert state.terminated
-    assert state.current_player == 0
     assert (state.rewards == 0.0).all()
 
     # perpetual check

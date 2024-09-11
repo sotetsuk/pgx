@@ -89,7 +89,11 @@ def from_fen(fen: str):
     x = x._replace(has_legal_action=legal_action_mask.any())
     x = x._replace(zobrist_hash=_zobrist_hash(x))
     x = _update_history(x)
+
+    player_order = jnp.int32([0, 1])
     state = State(
+        _player_order=player_order,
+        current_player=player_order[x.turn],
         legal_action_mask=legal_action_mask,
         _x=x
     )
