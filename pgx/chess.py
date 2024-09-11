@@ -280,7 +280,7 @@ def _check_termination(state: State):
     rep = (state._x.hash_history == state._x.zobrist_hash).all(axis=1).sum() - 1
     terminated |= rep >= 2
 
-    is_checkmate = (~has_legal_action) & _is_checking(_flip(state))
+    is_checkmate = (~has_legal_action) & _is_checking(_flip(state)._x)
     # fmt: off
     reward = jax.lax.select(
         is_checkmate,
@@ -461,7 +461,7 @@ def _legal_action_mask(state):
     def is_legal(a: Action):
         ok = _is_pseudo_legal(state._x, a)
         next_s = _flip(state.replace(_x=_apply_move(state._x, a)))  # type: ignore
-        ok &= ~_is_checking(next_s)
+        ok &= ~_is_checking(next_s._x)
 
         return ok
 
@@ -512,7 +512,7 @@ def _legal_action_mask(state):
                 & (state._x.board[to - 1] == -PAWN)
             )
             a = Action(from_=from_, to=to)
-            ok &= ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, a))))  # type: ignore
+            ok &= ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, a)))._x)  # type: ignore
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
@@ -526,9 +526,9 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label)))))  # type: ignore
+            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label))))._x)  # type: ignore
 
-        ok &= ~_is_checking(_flip(state))
+        ok &= ~_is_checking(_flip(state)._x)
         ok &= is_ok(jnp.int32([2366, 2367])).all()
 
         return ok
@@ -543,9 +543,9 @@ def _legal_action_mask(state):
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label)))))  # type: ignore
+            return ~_is_checking(_flip(state.replace(_x=_apply_move(state._x, Action._from_label(label))))._x)  # type: ignore
 
-        ok &= ~_is_checking(_flip(state))
+        ok &= ~_is_checking(_flip(state)._x)
         ok &= is_ok(jnp.int32([2364, 2365])).all()
 
         return ok
@@ -579,10 +579,10 @@ def _is_attacking(state: GameState, pos):
     return can_move(CAN_MOVE_ANY[pos, :]).any()
 
 
-def _is_checking(state: State):
+def _is_checking(state: GameState):
     """True if possible to capture the opponent king"""
-    opp_king_pos = jnp.argmin(jnp.abs(state._x.board - -KING))
-    return _is_attacking(state._x, opp_king_pos)
+    opp_king_pos = jnp.argmin(jnp.abs(state.board - -KING))
+    return _is_attacking(state, opp_king_pos)
 
 
 def _is_pseudo_legal(state: GameState, a: Action):
