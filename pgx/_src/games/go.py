@@ -35,6 +35,9 @@ class GameState(NamedTuple):
     is_psk: Array = jnp.bool_(False)
     hash: Array = jnp.zeros(2, dtype=jnp.uint32)
     hash_history: Array = jnp.zeros((19 * 19 * 2, 2), dtype=jnp.uint32)
+    num_pseudo: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
+    idx_sum: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
+    idx_squared_sum: Array = jnp.zeros(19 * 19, dtype=jnp.int32)
 
     @property
     def color(self) -> Array:
@@ -55,11 +58,13 @@ class Game:
         self.max_termination_steps = size * size * 2 if max_termination_steps is None else max_termination_steps
 
     def init(self) -> GameState:
-        return GameState(
+        state = GameState(
             board=jnp.zeros(self.size**2, dtype=jnp.int32),
             board_history=jnp.full((self.history_length, self.size**2), 2, dtype=jnp.int32),
             hash_history=jnp.zeros((self.max_termination_steps, 2), dtype=jnp.uint32),
         )
+        num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
+        return state._replace(num_pseudo=num_pseudo, idx_sum=idx_sum, idx_squared_sum=idx_squared_sum)
 
     def step(self, state: GameState, action: Array) -> GameState:
         state = state._replace(ko=jnp.int32(-1))
@@ -98,9 +103,8 @@ class Game:
         # some logic is inspired by OpenSpiel's Go implementation
         is_empty = state.board == 0
         my_sign, opp_sign = _signs(state.color)
-        num_pseudo, idx_sum, idx_squared_sum = _count(state, self.size)
         chain_ix = jnp.abs(state.board) - 1
-        in_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
+        in_atari = (state.idx_sum[chain_ix] ** 2) == state.idx_squared_sum[chain_ix] * state.num_pseudo[chain_ix]
         has_liberty = (state.board * my_sign > 0) & ~in_atari
         can_kill = (state.board * opp_sign > 0) & in_atari
 
@@ -139,10 +143,9 @@ def _apply_action(state: GameState, action, size) -> GameState:
     # remove killed stones
     adj_ixs = _adj_ixs(action, size)
     adj_ids = state.board[adj_ixs]
-    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
     chain_ix = jnp.abs(adj_ids) - 1
-    is_atari = (idx_sum[chain_ix] ** 2) == idx_squared_sum[chain_ix] * num_pseudo[chain_ix]
-    single_liberty = (idx_squared_sum[chain_ix] // idx_sum[chain_ix]) - 1
+    is_atari = (state.idx_sum[chain_ix] ** 2) == state.idx_squared_sum[chain_ix] * state.num_pseudo[chain_ix]
+    single_liberty = (state.idx_squared_sum[chain_ix] // state.idx_sum[chain_ix]) - 1
     is_killed = (adj_ixs != -1) & (adj_ids * opp_sign > 0) & is_atari & (single_liberty == action)
     surrounded_stones = (state.board[:, None] == adj_ids) & (is_killed[None, :])
     num_captured = jnp.count_nonzero(surrounded_stones)
@@ -166,6 +169,10 @@ def _apply_action(state: GameState, action, size) -> GameState:
     smallest_id = jnp.minimum(jnp.abs(new_id), smallest_id) * my_sign
     mask = (state.board == new_id) | (should_merge[None, :] & (state.board[:, None] == tgt_ids[None, :])).any(axis=-1)
     state = state._replace(board=jnp.where(mask, smallest_id, state.board))
+
+    # update statistics
+    num_pseudo, idx_sum, idx_squared_sum = _count(state, size)
+    state = state._replace(num_pseudo=num_pseudo, idx_sum=idx_sum, idx_squared_sum=idx_squared_sum)
 
     return state
 
