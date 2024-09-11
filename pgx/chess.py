@@ -276,7 +276,7 @@ def _check_termination(state: State):
     has_legal_action = state.legal_action_mask.any()
     terminated = ~has_legal_action
     terminated |= state._x.halfmove_count >= 100
-    terminated |= has_insufficient_pieces(state)
+    terminated |= has_insufficient_pieces(state._x)
     rep = (state._x.hash_history == state._x.zobrist_hash).all(axis=1).sum() - 1
     terminated |= rep >= 2
 
@@ -294,16 +294,16 @@ def _check_termination(state: State):
     )
 
 
-def has_insufficient_pieces(state: State):
+def has_insufficient_pieces(state: GameState):
     # Uses the same condition as OpenSpiel.
     # See https://github.com/deepmind/open_spiel/blob/master/open_spiel/games/chess/chess_board.cc#L724
-    num_pieces = (state._x.board != EMPTY).sum()
-    num_pawn_rook_queen = ((jnp.abs(state._x.board) >= ROOK) | (jnp.abs(state._x.board) == PAWN)).sum() - 2  # two kings
-    num_bishop = (jnp.abs(state._x.board) == 3).sum()
+    num_pieces = (state.board != EMPTY).sum()
+    num_pawn_rook_queen = ((jnp.abs(state.board) >= ROOK) | (jnp.abs(state.board) == PAWN)).sum() - 2  # two kings
+    num_bishop = (jnp.abs(state.board) == 3).sum()
     coords = jnp.arange(64).reshape((8, 8))
     # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
     black_coords = jnp.hstack((coords[::2, ::2].ravel(), coords[1::2, 1::2].ravel()))
-    num_bishop_on_black = (jnp.abs(state._x.board[black_coords]) == BISHOP).sum()
+    num_bishop_on_black = (jnp.abs(state.board[black_coords]) == BISHOP).sum()
     is_insufficient = FALSE
     # King vs King
     is_insufficient |= num_pieces <= 2
