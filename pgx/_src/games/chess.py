@@ -14,11 +14,10 @@
 
 from typing import NamedTuple
 
-from jax import Array
 import jax
 import jax.numpy as jnp
+from jax import Array
 
-from pgx._src.struct import dataclass
 from pgx._src.games.chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
@@ -33,6 +32,7 @@ from pgx._src.games.chess_utils import (  # type: ignore
     ZOBRIST_EN_PASSANT,
     ZOBRIST_SIDE,
 )
+from pgx._src.struct import dataclass
 
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
@@ -644,4 +644,3 @@ def _update_zobrist_hash(state: GameState, action: Action) -> GameState:
     return state._replace(  # type: ignore
         zobrist_hash=hash_,
     )
-
