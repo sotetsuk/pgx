@@ -23,7 +23,6 @@ from pgx._src.games.chess_utils import (  # type: ignore
     CAN_MOVE,
     CAN_MOVE_ANY,
     INIT_LEGAL_ACTION_MASK,
-    INIT_POSSIBLE_PIECE_POSITIONS,
     PLANE_MAP,
     TO_MAP,
     ZOBRIST_BOARD,
@@ -455,8 +454,8 @@ def _legal_action_mask(state: GameState) -> Array:
         return ~_is_checked(_apply_move(state, a))
 
     # normal move and en passant
-    pos = _possible_piece_positions(state)
-    a1 = legal_norml_moves(pos).flatten()
+    possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
+    a1 = legal_norml_moves(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
     actions = jnp.where(is_not_checked(actions), actions, -1)
@@ -519,13 +518,6 @@ def _is_pseudo_legal(state: GameState, a: Action):
         (piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0)
     )  # cannot move diagnally without capturing
     return (a.to >= 0) & ok
-
-
-def _possible_piece_positions(state: GameState):
-    my_pos = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    # opp_pos = jnp.nonzero(_flip(state).board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    return my_pos
-    # return jnp.vstack((my_pos, opp_pos))
 
 
 def _zobrist_hash(state: GameState) -> Array:
