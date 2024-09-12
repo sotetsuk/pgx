@@ -122,13 +122,17 @@ class GameState(NamedTuple):
     # # of moves since the last piece capture or pawn move
     halfmove_count: Array = jnp.int32(0)
     fullmove_count: Array = jnp.int32(1)  # increase every black move
-    zobrist_hash: Array = INIT_ZOBRIST_HASH
+    # zobrist_hash: Array = INIT_ZOBRIST_HASH
     hash_history: Array = jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
     board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     # index to possible piece positions for speeding up. Flips every turn.
     possible_piece_positions: Array = INIT_POSSIBLE_PIECE_POSITIONS
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
+
+    @property
+    def zobrist_hash(self):
+        return _zobrist_hash(self)
 
 
 class Action(NamedTuple):
@@ -172,16 +176,16 @@ class Game:
 
     def step(self, state: GameState, action: Array) -> GameState:
         a = Action._from_label(action)
-        state = _update_zobrist_hash(state, a)
+        # state = _update_zobrist_hash(state, a)
 
-        hash_ = state.zobrist_hash
-        hash_ ^= _hash_castling_en_passant(state)
+        # hash_ = state.zobrist_hash
+        # hash_ ^= _hash_castling_en_passant(state)
 
         state = _apply_move(state, a)
         state = _flip(state)
 
-        hash_ ^= _hash_castling_en_passant(state)
-        state = state._replace(zobrist_hash=hash_)
+        # hash_ ^= _hash_castling_en_passant(state)
+        # state = state._replace(zobrist_hash=hash_)
 
         state = _update_history(state)
         state = state._replace(legal_action_mask=_legal_action_mask(state))
