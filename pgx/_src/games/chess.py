@@ -416,8 +416,8 @@ def _legal_action_mask(state: GameState) -> Array:
             ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (state.board[to] <= 0)
             between_ixs = BETWEEN[from_, to]
             ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-            in_same_col = (to - from_) % 8 == 0
-            pawn_should = (in_same_col & (state.board[to] == EMPTY)) | (~in_same_col & (state.board[to] < 0))
+            r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
+            pawn_should = ((c1 == c0) & (state.board[to] == EMPTY)) | ((c1 != c0) & (state.board[to] < 0))
             ok &= (piece != PAWN) | pawn_should
             return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
