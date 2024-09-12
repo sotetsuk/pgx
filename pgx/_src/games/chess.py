@@ -357,7 +357,6 @@ def _legal_action_mask(state: GameState) -> Array:
 
         return jax.vmap(legal_labels)(jnp.int32([to - 9, to + 7]))
 
-    @jax.vmap
     def is_not_checked(label):
         a = Action._from_label(label)
         return ~_is_checked(_apply_move(state, a))
@@ -367,7 +366,7 @@ def _legal_action_mask(state: GameState) -> Array:
     a1 = jax.vmap(legal_normal_moves)(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
-    actions = jnp.where(is_not_checked(actions), actions, -1)
+    actions = jnp.where(jax.vmap(is_not_checked)(actions), actions, -1)
 
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
