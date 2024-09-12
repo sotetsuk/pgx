@@ -419,9 +419,9 @@ def _legal_action_mask(state: GameState) -> Array:
             between_ixs = BETWEEN[a.from_, a.to]
             ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
             # filter pawn move
-            pawn_should = ((a.to % 8) >= (a.from_ % 8))  # should move forward
+            pawn_should = (a.to % 8) >= (a.from_ % 8)  # should move forward
             pawn_should &= (jnp.abs(a.to - a.from_) > 2) | (state.board[a.to] >= 0)  # cannot move up if occupied by opponent
-            pawn_should &= ~((jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))  # cannot move diagnally without capturing
+            pawn_should &= (jnp.abs(a.to - a.from_) <= 2) | (state.board[a.to] < 0)  # cannot move diagnally without capturing
             ok &= (piece != PAWN) | pawn_should
             return jax.lax.select(ok, a._to_label(), -1)
 
