@@ -389,9 +389,8 @@ def _is_attacked(state: GameState, pos):
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
-        ok &= CAN_MOVE[piece, pos, to]
         between_ixs = BETWEEN[pos, to]
-        ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
