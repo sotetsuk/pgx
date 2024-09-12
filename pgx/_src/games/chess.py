@@ -80,7 +80,7 @@ INIT_BOARD = jnp.int32([
 # Action
 # 0 ... 8: underpromotions
 #   plane // 3 == 0: rook, 1: bishop, 2: knight
-#   plane  % 3 == 0: up  , 1: right,  2: left 
+#   plane  % 3 == 0: up  , 1: right,  2: left
 # 51                   22                   50
 #    52                21                49
 #       53             20             48
