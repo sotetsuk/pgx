@@ -32,7 +32,6 @@ from pgx._src.games.chess_utils import (  # type: ignore
     ZOBRIST_EN_PASSANT,
     ZOBRIST_SIDE,
 )
-from pgx._src.struct import dataclass
 
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
@@ -132,8 +131,7 @@ class GameState(NamedTuple):
     step_count: Array = jnp.int32(0)
 
 
-@dataclass
-class Action:
+class Action(NamedTuple):
     from_: Array = jnp.int32(-1)
     to: Array = jnp.int32(-1)
     underpromotion: Array = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
