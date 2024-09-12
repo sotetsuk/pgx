@@ -72,7 +72,7 @@ CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 # Note that the board is not symmetric about the center (different from shogi)
 # You can imagine that the viewpoint is always from the white side.
 # Except PAWN, the moves are symmetric about the center.
-# We define PAWN as a piece that can move up, down, and diagonally, and filter it according to the turn.
+# We define PAWN as a piece that can move left-up, up, right-up.
 
 
 # PAWN
@@ -81,10 +81,10 @@ for from_ in range(64):
     legal_dst = []
     for to in range(64):
         r1, c1 = to % 8, to // 8
-        if np.abs(r1 - r0) == 1 and np.abs(c1 - c0) <= 1:
+        if r1 - r0 == 1 and np.abs(c1 - c0) <= 1:
             legal_dst.append(to)
         # init move
-        if (r0 == 1 or r0 == 6) and (np.abs(c1 - c0) == 0 and np.abs(r1 - r0) == 2):
+        if r0 == 1 and r1 == 3 and np.abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 8
     LEGAL_DEST[1, from_, : len(legal_dst)] = legal_dst
