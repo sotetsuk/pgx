@@ -176,13 +176,13 @@ class Game:
 
         return jnp.vstack(
             [
-                jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8),    # board feature
-                color * ones,                                       # color
+                jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8),  # board feature
+                color * ones,  # color
                 (state.step_count / MAX_TERMINATION_STEPS) * ones,  # total move count
-                state.can_castle_queen_side[0] * ones,              # my castling right (queen side)
-                state.can_castle_king_side[0] * ones,               # my castling right (king side)
-                state.can_castle_queen_side[1] * ones,              # opp castling right (queen side)
-                state.can_castle_king_side[1] * ones,               # opp castling right (king side)
+                state.can_castle_queen_side[0] * ones,  # my castling right (queen side)
+                state.can_castle_king_side[0] * ones,  # my castling right (king side)
+                state.can_castle_queen_side[1] * ones,  # opp castling right (queen side)
+                state.can_castle_king_side[1] * ones,  # opp castling right (king side)
                 (state.halfmove_count.astype(jnp.float32) / 100.0) * ones,  # no progress count
             ]
         ).transpose((1, 2, 0))
