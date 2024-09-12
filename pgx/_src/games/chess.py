@@ -128,9 +128,7 @@ class Action(NamedTuple):
         return Action(from_=from_, to=TO_MAP[from_, plane], underpromotion=underpromotion)
 
     def _to_label(self):
-        plane = PLANE_MAP[self.from_, self.to]
-        # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
-        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
+        return self.from_ * 73 + PLANE_MAP[self.from_, self.to]
 
 
 class Game:
