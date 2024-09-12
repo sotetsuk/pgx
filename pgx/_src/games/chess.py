@@ -412,26 +412,22 @@ def _flip(state: GameState) -> GameState:
 
 def _legal_action_mask(state: GameState) -> Array:
     @jax.vmap
-    def legal_norml_moves(from_):
+    def legal_normal_moves(from_):
         piece = state.board[from_]
 
         @jax.vmap
         def legal_label(to):
-            a = Action(from_=from_, to=to)
-            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & _is_pseudo_legal(state, a)
-            return jax.lax.select(ok, a._to_label(), -1)
+            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (state.board[to] <= 0)
+            between_ixs = BETWEEN[from_, to]
+            ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+            c0, c1 = from_ // 8, to // 8
+            pawn_should = ((c1 == c0) & (state.board[to] == EMPTY)) | ((c1 != c0) & (state.board[to] < 0))
+            ok &= (piece != PAWN) | pawn_should
+            return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
         return legal_label(LEGAL_DEST[piece, from_])
 
     def legal_underpromotions(mask):
-        # from_ = 6 14 22 30 38 46 54 62
-        # plane = 0 ... 8
-        @jax.vmap
-        def make_labels(from_):
-            return from_ * 73 + jnp.arange(9)
-
-        labels = make_labels(jnp.int32([6, 14, 22, 30, 38, 46, 54, 62])).flatten()
-
         @jax.vmap
         def legal_labels(label):
             a = Action._from_label(label)
@@ -439,8 +435,9 @@ def _legal_action_mask(state: GameState) -> Array:
             ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
             return jax.lax.select(ok, label, -1)
 
-        ok_labels = legal_labels(labels)
-        return ok_labels.flatten()
+        # from_ = 6 14 ... 62, plane = 0 1 ... 8
+        labels = jnp.int32([from_ * 73 + i for i in range(9) for from_ in [6, 14, 22, 30, 38, 46, 54, 62]])
+        return legal_labels(labels)
 
     def legal_en_passants():
         to = state.en_passant
@@ -460,7 +457,7 @@ def _legal_action_mask(state: GameState) -> Array:
 
     # normal move and en passant
     possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    a1 = legal_norml_moves(possible_piece_positions).flatten()
+    a1 = legal_normal_moves(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
     actions = jnp.where(is_not_checked(actions), actions, -1)
@@ -495,7 +492,6 @@ def _is_attacked(state: GameState, pos):
         between_ixs = BETWEEN[pos, to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         # For pawn, it should be the forward diagonal direction
-        ok &= ~((piece == PAWN) & ((to % 8) < (pos % 8)))  # should move forward
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
@@ -506,23 +502,6 @@ def _is_checked(state: GameState):
     """True if possible to capture the opponent king"""
     king_pos = jnp.argmin(jnp.abs(state.board - KING))
     return _is_attacked(state, king_pos)
-
-
-def _is_pseudo_legal(state: GameState, a: Action):
-    piece = state.board[a.from_]
-    ok = (piece >= 0) & (state.board[a.to] <= 0)
-    ok &= CAN_MOVE[piece, a.from_, a.to]
-    between_ixs = BETWEEN[a.from_, a.to]
-    ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-    # filter pawn move
-    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))  # should move forward
-    ok &= ~(
-        (piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0)
-    )  # cannot move up if occupied by opponent
-    ok &= ~(
-        (piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0)
-    )  # cannot move diagnally without capturing
-    return (a.to >= 0) & ok
 
 
 def _zobrist_hash(state: GameState) -> Array:
