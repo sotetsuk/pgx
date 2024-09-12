@@ -8,7 +8,6 @@ from pgx._src.games.chess import (
     _legal_action_mask,
     _possible_piece_positions,
     _update_history,
-    _zobrist_hash,
 )
 from pgx.chess import State
 
@@ -87,7 +86,6 @@ def from_fen(fen: str):
     x = x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(x))
     legal_action_mask = jax.jit(_legal_action_mask)(x)
     x = x._replace(legal_action_mask=legal_action_mask)
-    # x = x._replace(zobrist_hash=_zobrist_hash(x))
     x = _update_history(x)
 
     player_order = jnp.int32([0, 1])
