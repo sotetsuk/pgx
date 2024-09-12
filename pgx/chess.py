@@ -18,7 +18,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._src.games.chess import GameState, _flip, _is_terminated, _observe, _rewards, _step
+from pgx._src.games.chess import Game, GameState, _flip
 from pgx._src.games.chess_utils import INIT_LEGAL_ACTION_MASK  # type: ignore
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
@@ -63,6 +63,7 @@ class State(core.State):
 class Chess(core.Env):
     def __init__(self):
         super().__init__()
+        self.game = Game()
 
     def _init(self, key: PRNGKey) -> State:
         x = GameState()
@@ -77,12 +78,12 @@ class Chess(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        x = _step(state._x, action)
+        x = self.game.step(state._x, action)
         state = state.replace(  # type: ignore
             _x=x,
             legal_action_mask=x.legal_action_mask,
-            terminated=_is_terminated(x),
-            rewards=_rewards(x)[state._player_order],
+            terminated=self.game.is_terminal(x),
+            rewards=self.game.rewards(x)[state._player_order],
             current_player=state._player_order[x.turn],
         )
         return state  # type: ignore
@@ -91,7 +92,7 @@ class Chess(core.Env):
         assert isinstance(state, State)
         color = jax.lax.select(state.current_player == player_id, state._x.turn, 1 - state._x.turn)
         x = jax.lax.cond(state.current_player == player_id, lambda: state._x, lambda: _flip(state._x))
-        return _observe(x, color)
+        return self.game.observe(x, color)
 
     @property
     def id(self) -> core.EnvId:

@@ -2,19 +2,18 @@ import jax
 import jax.numpy as jnp
 
 from pgx._src.games.chess import (
+    Game,
     GameState,
     _flip_pos,
-    _is_terminated,
     _legal_action_mask,
-    _observe,
     _possible_piece_positions,
-    _rewards,
     _update_history,
     _zobrist_hash,
 )
 from pgx.chess import State
 
 TRUE = jnp.bool_(True)
+game = Game()
 
 
 def from_fen(fen: str):
@@ -97,9 +96,9 @@ def from_fen(fen: str):
         _x=x,
         current_player=player_order[x.turn],
         legal_action_mask=legal_action_mask,
-        terminated=jax.jit(_is_terminated)(x),
-        rewards=jax.jit(_rewards)(x)[player_order],
-        observation=jax.jit(_observe)(x, x.turn),
+        terminated=jax.jit(game.is_terminal)(x),
+        rewards=jax.jit(game.rewards)(x)[player_order],
+        observation=jax.jit(game.observe)(x, x.turn),
     )
     return state
 
