@@ -22,7 +22,6 @@ from pgx._src.games.chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
     INIT_LEGAL_ACTION_MASK,
-    INIT_POSSIBLE_PIECE_POSITIONS,
     LEGAL_DEST,
     LEGAL_DEST_ANY,
     PLANE_MAP,
@@ -127,7 +126,6 @@ class GameState(NamedTuple):
     hash_history: Array = jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
     board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     # index to possible piece positions for speeding up. Flips every turn.
-    possible_piece_positions: Array = INIT_POSSIBLE_PIECE_POSITIONS
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
 
@@ -325,12 +323,6 @@ def _apply_move(state: GameState, a: Action) -> GameState:
             lambda: state.board.at[0].set(EMPTY).at[24].set(ROOK),
             lambda: state.board,
         ),
-        # update rook position
-        possible_piece_positions=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 16),
-            lambda: state.possible_piece_positions.at[0, 0].set(24),
-            lambda: state.possible_piece_positions,
-        ),
     )
     # right
     state = state._replace(
@@ -338,12 +330,6 @@ def _apply_move(state: GameState, a: Action) -> GameState:
             (piece == KING) & (a.from_ == 32) & (a.to == 48),
             lambda: state.board.at[56].set(EMPTY).at[40].set(ROOK),
             lambda: state.board,
-        ),
-        # update rook position
-        possible_piece_positions=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 48),
-            lambda: state.possible_piece_positions.at[0, 14].set(40),
-            lambda: state.possible_piece_positions,
         ),
     )
     # update my can_castle_xxx_side
@@ -394,9 +380,6 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     )
     # actually move
     state = state._replace(board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
-    # update possible piece positions
-    ix = jnp.argmin(jnp.abs(state.possible_piece_positions[0, :] - a.from_))
-    state = state._replace(possible_piece_positions=state.possible_piece_positions.at[0, ix].set(a.to))
     return state
 
 
@@ -424,7 +407,6 @@ def _flip(state: GameState) -> GameState:
         can_castle_queen_side=state.can_castle_queen_side[::-1],
         can_castle_king_side=state.can_castle_king_side[::-1],
         board_history=-jnp.flip(state.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
-        possible_piece_positions=state.possible_piece_positions[::-1],
     )
 
 
@@ -477,7 +459,8 @@ def _legal_action_mask(state: GameState) -> Array:
         return ~_is_checked(_apply_move(state, a))
 
     # normal move and en passant
-    a1 = legal_norml_moves(state.possible_piece_positions[0]).flatten()
+    possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
+    a1 = legal_norml_moves(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
     actions = jnp.where(is_not_checked(actions), actions, -1)
@@ -540,12 +523,6 @@ def _is_pseudo_legal(state: GameState, a: Action):
         (piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0)
     )  # cannot move diagnally without capturing
     return (a.to >= 0) & ok
-
-
-def _possible_piece_positions(state: GameState):
-    my_pos = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    opp_pos = jnp.nonzero(_flip(state).board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    return jnp.vstack((my_pos, opp_pos))
 
 
 def _zobrist_hash(state: GameState) -> Array:
