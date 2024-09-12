@@ -334,17 +334,9 @@ def _apply_move(state: GameState, a: Action) -> GameState:
         ),
     )
     # promotion to queen
-    piece = jax.lax.select(
-        piece == PAWN & (a.from_ % 8 == 6) & (a.underpromotion < 0),
-        QUEEN,
-        piece,
-    )
+    piece = jax.lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, piece)
     # underpromotion
-    piece = jax.lax.select(
-        a.underpromotion < 0,
-        piece,
-        jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion],
-    )
+    piece = jax.lax.select(a.underpromotion < 0, piece, jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion])
     # actually move
     state = state._replace(board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
     return state
