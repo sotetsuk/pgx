@@ -257,7 +257,7 @@ def has_insufficient_pieces(state: GameState):
     # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
     black_coords = jnp.hstack((coords[::2, ::2].ravel(), coords[1::2, 1::2].ravel()))
     num_bishop_on_black = (jnp.abs(state.board[black_coords]) == BISHOP).sum()
-    is_insufficient = FALSE
+    is_insufficient = False
     # King vs King
     is_insufficient |= num_pieces <= 2
     # King + X vs King. X == KNIGHT or BISHOP
@@ -297,18 +297,18 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     # update castling rights
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[0].set(
-            jax.lax.select((a.from_ == 32) | (a.from_ == 0), FALSE, state.can_castle_queen_side[0])
+            jax.lax.select((a.from_ == 32) | (a.from_ == 0), False, state.can_castle_queen_side[0])
         ),
         can_castle_king_side=state.can_castle_king_side.at[0].set(
-            jax.lax.select((a.from_ == 32) | (a.from_ == 56), FALSE, state.can_castle_king_side[0])
+            jax.lax.select((a.from_ == 32) | (a.from_ == 56), False, state.can_castle_king_side[0])
         ),
     )
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[1].set(
-            jax.lax.select((a.to == 7), FALSE, state.can_castle_queen_side[1])
+            jax.lax.select((a.to == 7), False, state.can_castle_queen_side[1])
         ),
         can_castle_king_side=state.can_castle_king_side.at[1].set(
-            jax.lax.select((a.to == 63), FALSE, state.can_castle_king_side[1])
+            jax.lax.select((a.to == 63), False, state.can_castle_king_side[1])
         ),
     )
     # promotion to queen
