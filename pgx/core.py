@@ -222,7 +222,7 @@ class Env(abc.ABC):
             lambda: state,
         )
 
-        observation = self.observe(state, state.current_player)
+        observation = self.observe(state)
         state = state.replace(observation=observation)  # type: ignore
 
         return state
