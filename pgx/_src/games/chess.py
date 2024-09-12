@@ -465,12 +465,12 @@ def _legal_action_mask(state: GameState) -> Array:
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
-    
+
     @jax.vmap
     def is_not_checked(label):
-        a = Action._from_label(label) 
+        a = Action._from_label(label)
         return ~_is_checked(_apply_move(state, a))
- 
+
     # normal move and en passant
     a1 = legal_norml_moves(state.possible_piece_positions[0]).flatten()
     a2 = legal_en_passants()
