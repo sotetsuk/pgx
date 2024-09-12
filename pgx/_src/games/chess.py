@@ -424,11 +424,6 @@ def _flip(state: GameState) -> GameState:
 
 
 def _legal_action_mask(state: GameState) -> Array:
-    def is_legal(a: Action):
-        ok = _is_pseudo_legal(state, a)
-
-        return ok
-
     @jax.vmap
     def legal_norml_moves(from_):
         piece = state.board[from_]
@@ -436,11 +431,8 @@ def _legal_action_mask(state: GameState) -> Array:
         @jax.vmap
         def legal_label(to):
             a = Action(from_=from_, to=to)
-            return jax.lax.select(
-                (from_ >= 0) & (piece > 0) & (to >= 0) & is_legal(a),
-                a._to_label(),
-                jnp.int32(-1),
-            )
+            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & _is_pseudo_legal(state, a)
+            return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_label(CAN_MOVE[piece, from_])
 
@@ -473,19 +465,17 @@ def _legal_action_mask(state: GameState) -> Array:
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
-
-    # normal move and en passant
-    a1 = legal_norml_moves(state.possible_piece_positions[0]).flatten()
-    a2 = legal_en_passants()
-    actions = jnp.hstack((a1, a2))  # include -1
-
+    
     @jax.vmap
     def is_not_checked(label):
         a = Action._from_label(label) 
         return ~_is_checked(_apply_move(state, a))
-    
-    ok = is_not_checked(actions)
-    actions = jnp.where(ok, actions, -1)
+ 
+    # normal move and en passant
+    a1 = legal_norml_moves(state.possible_piece_positions[0]).flatten()
+    a2 = legal_en_passants()
+    actions = jnp.hstack((a1, a2))  # include -1
+    actions = jnp.where(is_not_checked(actions), actions, -1)
 
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
