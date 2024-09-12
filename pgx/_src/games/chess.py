@@ -445,8 +445,7 @@ def _legal_action_mask(state: GameState) -> Array:
             ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
             return jax.lax.select(ok, label, -1)
 
-        # from_ = 6 14 22 30 38 46 54 62
-        # plane = 0 ... 8
+        # from_ = 6 14 ... 62, plane = 0 1 ... 8
         labels = jnp.int32([from_ * 73 + i for i in range(9) for from_ in [6, 14, 22, 30, 38, 46, 54, 62]])
         return legal_labels(labels)
 
