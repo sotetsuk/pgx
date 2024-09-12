@@ -132,6 +132,42 @@ class GameState(NamedTuple):
     step_count: Array = jnp.int32(0)
 
 
+@dataclass
+class Action:
+    from_: Array = jnp.int32(-1)
+    to: Array = jnp.int32(-1)
+    underpromotion: Array = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
+
+    @staticmethod
+    def _from_label(label: Array):
+        """We use AlphaZero style label with channel-last representation: (8, 8, 73)
+
+          73 = queen moves (56) + knight moves (8) + underpromotions (3 * 3)
+
+        Note: this representation is reported as
+
+        > We also tried using a flat distribution over moves for chess and shogi;
+        > the final result was almost identical although training was slightly slower.
+
+        Flat representation may have 1858 actions (= 1792 normal moves + (7 + 7 + 8) * 3 underpromotions)
+
+        Also see
+          - https://github.com/LeelaChessZero/lc0/issues/637
+          - https://github.com/LeelaChessZero/lc0/pull/712
+        """
+        from_, plane = label // 73, label % 73
+        return Action(  # type: ignore
+            from_=from_,
+            to=TO_MAP[from_, plane],  # -1 if impossible move
+            underpromotion=jax.lax.select(plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)),
+        )
+
+    def _to_label(self):
+        plane = PLANE_MAP[self.from_, self.to]
+        # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
+        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
+
+
 class Game:
     def init(self) -> GameState:
         return GameState()
@@ -217,42 +253,6 @@ class Game:
             jnp.zeros(2, dtype=jnp.float32),
         )
         # fmt: on
-
-
-@dataclass
-class Action:
-    from_: Array = jnp.int32(-1)
-    to: Array = jnp.int32(-1)
-    underpromotion: Array = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
-
-    @staticmethod
-    def _from_label(label: Array):
-        """We use AlphaZero style label with channel-last representation: (8, 8, 73)
-
-          73 = queen moves (56) + knight moves (8) + underpromotions (3 * 3)
-
-        Note: this representation is reported as
-
-        > We also tried using a flat distribution over moves for chess and shogi;
-        > the final result was almost identical although training was slightly slower.
-
-        Flat representation may have 1858 actions (= 1792 normal moves + (7 + 7 + 8) * 3 underpromotions)
-
-        Also see
-          - https://github.com/LeelaChessZero/lc0/issues/637
-          - https://github.com/LeelaChessZero/lc0/pull/712
-        """
-        from_, plane = label // 73, label % 73
-        return Action(  # type: ignore
-            from_=from_,
-            to=TO_MAP[from_, plane],  # -1 if impossible move
-            underpromotion=jax.lax.select(plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)),
-        )
-
-    def _to_label(self):
-        plane = PLANE_MAP[self.from_, self.to]
-        # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
-        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
 
 
 def _update_history(state: GameState):
