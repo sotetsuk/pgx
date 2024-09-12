@@ -535,16 +535,14 @@ def _is_checked(state: GameState):
     
     @jax.vmap
     def can_move(to):
-        ok = to > 0
-        ok &= state.board[to] < 0  # should be opponent's
+        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
         ok &= (CAN_MOVE[piece, king_pos] == to).any()
         between_ixs = BETWEEN[king_pos, to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-        # TODO: filter pawn move
-        ok &= ~((piece == PAWN) & ((to % 8) < (king_pos % 8)))
-        ok &= ~((piece == PAWN) & (jnp.abs(to - king_pos) <= 2) & (state.board[to] < 0))
-        ok &= ~((piece == PAWN) & (jnp.abs(to - king_pos) > 2) & (state.board[to] >= 0))
+        # For pawn, it should be the forward diagonal direction
+        ok &= ~((piece == PAWN) & ((to % 8) < (king_pos % 8)))  # should move forward
+        ok &= ~((piece == PAWN) & (to // 8 == king_pos // 8))  # should move diagnally to capture the king
         return ok
 
     return can_move(CAN_MOVE_ANY[king_pos, :]).any()
@@ -557,9 +555,9 @@ def _is_pseudo_legal(state: GameState, a: Action):
     between_ixs = BETWEEN[a.from_, a.to]
     ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
     # filter pawn move
-    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))
-    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0))
-    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))
+    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))  # should move forward
+    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0))  # cannot move up if occupied by opponent
+    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))  # cannot move diagnally without capturing
     return (a.to >= 0) & ok
 
 
