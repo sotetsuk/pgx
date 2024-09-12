@@ -297,9 +297,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
         board=state.board.at[removed_pawn_pos].set(jax.lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos]))
     )
     is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
-    state = state._replace(
-        en_passant=jax.lax.select(is_en_passant, (a.to + a.from_) // 2, -1)
-    )
+    state = state._replace(en_passant=jax.lax.select(is_en_passant, (a.to + a.from_) // 2, -1))
     # update counters
     captured = (state.board[a.to] < 0) | is_en_passant
     state = state._replace(
@@ -317,38 +315,22 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     is_king_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 48)
     board = jax.lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
     state = state._replace(board=board)
-    # update my can_castle_xxx_side
+    # update castling rights
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[0].set(
-            jax.lax.select(
-                (a.from_ == 32) | (a.from_ == 0),
-                FALSE,
-                state.can_castle_queen_side[0],
-            )
+            jax.lax.select((a.from_ == 32) | (a.from_ == 0), FALSE, state.can_castle_queen_side[0])
         ),
         can_castle_king_side=state.can_castle_king_side.at[0].set(
-            jax.lax.select(
-                (a.from_ == 32) | (a.from_ == 56),
-                FALSE,
-                state.can_castle_king_side[0],
-            )
+            jax.lax.select((a.from_ == 32) | (a.from_ == 56), FALSE, state.can_castle_king_side[0])
         ),
     )
-    # update opp can_castle_xxx_side
+    # update opp castling rights
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[1].set(
-            jax.lax.select(
-                (a.to == 7),
-                FALSE,
-                state.can_castle_queen_side[1],
-            )
+            jax.lax.select((a.to == 7), FALSE, state.can_castle_queen_side[1])
         ),
         can_castle_king_side=state.can_castle_king_side.at[1].set(
-            jax.lax.select(
-                (a.to == 63),
-                FALSE,
-                state.can_castle_king_side[1],
-            )
+            jax.lax.select((a.to == 63), FALSE, state.can_castle_king_side[1])
         ),
     )
     # promotion to queen
