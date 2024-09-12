@@ -28,7 +28,7 @@ env = BridgeBidding()
 
 In Pgx, we follow `[Tian+20]` and use pre-computed Double Dummy Solver (DDS) dataset for each hand.
 So, `BrdigeBidding` environment requires to load pre-computed DDS dataset by `env = BridgeBidding("<path_to_dataset>")`.
-Please run the following command to download the DDS results provided by Pgx.
+Please run the following command to download the DDS results provided by Pgx from [huggingface](https://huggingface.co/datasets/sotetsuk/dds_dataset).
 
 ```py
 from pgx.bridge_bidding import download_dds_results
@@ -37,6 +37,7 @@ download_dds_results()
 
 You can specify which pre-coumpted DDS dataset to use by passing argument to `BridgeBidding` constructor.
 Typically, you have to use different DDS datasets for training and testing (evaluation).
+To make your own DDS datasets, follow the instruction at [sotetsuk/make-dds-dataset](https://github.com/sotetsuk/make-dds-dataset).
 
 ## Description
 
@@ -55,7 +56,7 @@ Therefore, we approximate the playing phase of bridge by using the results of DD
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `4` |
 | Number of actions | `38` |
 | Observation shape | `(480,)` |
@@ -95,6 +96,7 @@ Terminates by three consecutive passes after the last bid.
 ## Version History
 
 - `v0` : Initial release (v1.0.0)
+- `v1` : Provide larger DDS dataset and improve the efficienct in [#1191](https://github.com/sotetsuk/pgx/pull/1191/files) (v2.1.2)
 
 ## Reference
 

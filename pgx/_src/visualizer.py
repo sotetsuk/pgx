@@ -360,8 +360,8 @@ class Visualizer:
             from pgx._src.dwg.go import _make_go_dwg
 
             self.config["GRID_SIZE"] = 25
-            self.config["BOARD_WIDTH"] = _state._x.size  # type: ignore
-            self.config["BOARD_HEIGHT"] = _state._x.size  # type: ignore
+            self.config["BOARD_WIDTH"] = int(_state._x.size)  # type: ignore
+            self.config["BOARD_HEIGHT"] = int(_state._x.size)  # type: ignore
             self._make_dwg_group = _make_go_dwg  # type:ignore
             if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
                 "COLOR_THEME"

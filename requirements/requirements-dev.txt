@@ -11,3 +11,4 @@ blackdoc
 isort
 flake8
 mypy
+git+https://github.com/sotetsuk/minatar

@@ -171,8 +171,7 @@ class Env(abc.ABC):
 
     """
 
-    def __init__(self):
-        ...
+    def __init__(self): ...
 
     def init(self, key: PRNGKey) -> State:
         """Return the initial state. Note that no internal state of

@@ -11,10 +11,12 @@ jobs:
     runs-on: "${{ matrix.os }}"
     strategy:
       matrix:
-        python-version: ["3.12"]
+        python-version: ["3.9", "3.12"]
         os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v2
+      with:
+        submodules: recursive
     - uses: actions/setup-python@v2
       with:
         python-version: "${{ matrix.python-version }}"

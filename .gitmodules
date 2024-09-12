@@ -1,0 +1,3 @@
+[submodule "pgx/minatar"]
+	path = pgx/minatar
+	url = https://github.com/sotetsuk/pgx-minatar.git

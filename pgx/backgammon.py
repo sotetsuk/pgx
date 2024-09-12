@@ -349,7 +349,7 @@ def _is_all_on_home_board(board: Array):
     One can bear off if all checkers are on home board.
     """
     home_board: Array = _home_board()
-    on_home_board = jnp.clip(board[home_board], a_min=0, a_max=15).sum()
+    on_home_board = jnp.clip(board[home_board], min=0, max=15).sum()
     off = board[_off_idx()]  # type: ignore
     return (15 - off) == on_home_board
 

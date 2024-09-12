@@ -19,21 +19,21 @@ Kuhn poker is a simplified poker with three cards: J, Q, and K.
 ## Rules
 
 Each player is dealt one card and the remaining card is unused.
-There are four actions: *check*, *call*, *bet*, and *fold* and five possible scenarios.
+There are two actions: *bet* and *pass* and five possible scenarios.
 
-1. `bet   (1st) - call  (2nd)` : *Showdown* and the winner takes `+2`
-2. `bet   (1st) - fold  (2nd)` : 1st player takes `+1`
-3. `check (1st) - check (2nd)` : *Showdown* and the winner takes `+1`
-4. `check (1st) - bet   (2nd) - call (1st)` : *Showdown* and the winner takes `+2`
-5. `check (1st) - bet   (2nd) - fold (1st)` : 2nd takes `+1`
+1. `bet (1st) - bet (2nd)` : *Showdown* and the winner takes `+2`
+2. `bet (1st) - pass (2nd)` : 1st player takes `+1`
+3. `pass (1st) - pass (2nd)` : *Showdown* and the winner takes `+1`
+4. `pass (1st) - bet (2nd) - bet (1st)` : *Showdown* and the winner takes `+2`
+5. `pass (1st) - bet (2nd) - pass (1st)` : 2nd takes `+1`
 
 ## Specs
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `2` |
-| Number of actions | `4` |
+| Number of actions | `2` |
 | Observation shape | `(7,)` |
 | Observation type | `bool` |
 | Rewards | `{-2, -1, +1, +2}` |
@@ -55,10 +55,9 @@ There are four distinct actions.
 
 | Action | Index |
 |:---|----:|
-| Call | 0|
-| Bet | 1|
-| Fold | 2|
-| Check | 3|
+| Bet | 0|
+| Pass | 1|
+
 
 ## Rewards
 The winner takes `+2` or `+1` depending on the game payoff.
@@ -70,3 +69,4 @@ Follows the rules above.
 ## Version History
 
 - `v0` : Initial release (v1.0.0)
+- `v1` : Simplify action space by [Egiob](https://github.com/Egiob) in [#1171](https://github.com/sotetsuk/pgx/pull/1171) (v2.1.1) 

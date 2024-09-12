@@ -84,7 +84,7 @@ class State(core.State):
     terminated: Array = FALSE
     truncated: Array = FALSE
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
-    observation: Array = jnp.zeros((5, 5, 19), dtype=jnp.float32)
+    observation: Array = jnp.zeros((5, 5, 115), dtype=jnp.float32)
     _step_count: Array = jnp.int32(0)
     # --- Chess specific ---
     _turn: Array = jnp.int32(0)

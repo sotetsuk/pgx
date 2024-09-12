@@ -57,7 +57,7 @@ class ConnectFour(core.Env):
         assert isinstance(state, State)
         legal_action_mask = self._game.legal_action_mask(state._x)
         terminated = self._game.is_terminal(state._x)
-        rewards = self._game.returns(state._x)
+        rewards = self._game.rewards(state._x)
         should_flip = state.current_player != state._x.color
         rewards = jax.lax.select(should_flip, jnp.flip(rewards), rewards)
         rewards = jax.lax.select(terminated, rewards, jnp.zeros(2, jnp.float32))

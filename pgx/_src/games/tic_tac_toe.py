@@ -60,7 +60,7 @@ class Game:
     def is_terminal(self, state: GameState) -> Array:
         return (state.winner >= 0) | jnp.all(state.board != -1)
 
-    def returns(self, state: GameState) -> Array:
+    def rewards(self, state: GameState) -> Array:
         return jax.lax.select(
             state.winner >= 0,
             jnp.float32([-1, -1]).at[state.winner].set(1),

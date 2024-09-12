@@ -10,7 +10,6 @@ from pgx.bridge_bidding import (
     BridgeBidding,
     State,
     _calc_score,
-    _calculate_dds_tricks,
     _contract,
     _init_by_key,
     _key_to_hand,
@@ -25,7 +24,7 @@ from pgx.bridge_bidding import (
 )
 
 
-def init(rng: jax.random.KeyArray) -> State:
+def init(rng: jax.Array) -> State:
     rng1, rng2, rng3, rng4, rng5, rng6 = jax.random.split(rng, num=6)
     hand = jnp.arange(0, 52)
     hand = jax.random.permutation(rng2, hand)
@@ -64,7 +63,6 @@ init_by_key = jax.jit(env.init)
 step = jax.jit(env.step)
 observe = jax.jit(env.observe)
 _calc_score = jax.jit(_calc_score)
-_calculate_dds_tricks = jax.jit(_calculate_dds_tricks)
 _contract = jax.jit(_contract)
 _init_by_key = jax.jit(_init_by_key)
 _key_to_hand = jax.jit(_key_to_hand)
@@ -131,7 +129,7 @@ def test_step():
     # fmt: on
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], HASH_TABLE_SAMPLE_VALUES[0], key)
     # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
     state = state.replace(
         _dealer=jnp.int32(1),
@@ -957,7 +955,7 @@ def max_action_length_agent(state: State) -> int:
 def test_max_action():
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], HASH_TABLE_SAMPLE_VALUES[0],key)
 
     for i in range(319):
         if i < 318:
@@ -984,7 +982,7 @@ def max_action_length_agent(state: State) -> int:
 def test_max_action():
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], HASH_TABLE_SAMPLE_VALUES[0],key)
 
     for i in range(319):
         if i < 318:
@@ -1005,7 +1003,7 @@ def test_pass_out():
     actions = iter([0, 0, 0, 0])
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], HASH_TABLE_SAMPLE_VALUES[0],key)
     # state = init_by_key(HASH_TABLE_SAMPLE_KEYS[1], key)
     state = state.replace(
         _dealer=jnp.int32(1),
@@ -1146,7 +1144,7 @@ def test_observe():
     )
     key = jax.random.PRNGKey(0)
     HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], key)
+    state = _init_by_key(HASH_TABLE_SAMPLE_KEYS[0], HASH_TABLE_SAMPLE_VALUES[0],key)
     state = state.replace(
         _dealer=jnp.int32(1),
         current_player=jnp.int32(3),
@@ -2191,26 +2189,6 @@ def test_state_to_key_cycle():
         key = _state_to_key(state)
         reconst_hand = _key_to_hand(key)
         assert jnp.all(sorted_hand == reconst_hand)
-
-
-def test_calcurate_dds_tricks():
-    HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES = _load_sample_hash()
-    samples = []
-    with open("tests/assets/contractbridge-ddstable-sample100.csv", "r") as f:
-        reader = csv.reader(f, delimiter=",")
-        for i in reader:
-            samples.append([i[0], np.array(i[1:]).astype(np.int32)])
-    key = jax.random.PRNGKey(0)
-    for i in range(len(HASH_TABLE_SAMPLE_KEYS)):
-        key, subkey = jax.random.split(key)
-        state = init(subkey)
-        state = state.replace(_hand=_key_to_hand(HASH_TABLE_SAMPLE_KEYS[i]))
-        dds_tricks = _calculate_dds_tricks(
-            state, HASH_TABLE_SAMPLE_KEYS, HASH_TABLE_SAMPLE_VALUES
-        )
-        # calculate dds results from hash table made by dample data
-        # check whether the results are conssitent with sample data
-        assert jnp.all(dds_tricks == samples[i][1])
 
 
 def test_value_to_dds_tricks():

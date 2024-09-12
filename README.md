@@ -3,12 +3,13 @@
 </div>
 
 <p align="center">
-<a href="https://www.python.org/"><img alt="python" src="https://img.shields.io/badge/python-3.8%20%7C%203.9%20%7C%203.10%20%7C%203.11%20%7C%203.12-blue"></a>
+<a href="https://www.python.org/"><img alt="python" src="https://img.shields.io/badge/python-3.9+-blue?logo=python&logoColor=ffdd54"></a>
 <a href="https://pypi.org/project/pgx/"><img alt="pypi" src="https://badge.fury.io/py/pgx.svg"></a>
 <a href="https://opensource.org/licenses/Apache-2.0"><img alt="license" src="https://img.shields.io/badge/license-Apache%202.0-green.svg"></a>
 <a href="https://github.com/sotetsuk/pgx/actions/workflows/ci.yml"><img alt="ci" src="https://github.com/sotetsuk/pgx/actions/workflows/ci.yml/badge.svg"></a>
 <a href="https://codecov.io/github/sotetsuk/pgx"><img alt="codecov" src="https://codecov.io/github/sotetsuk/pgx/graph/badge.svg?token=JNJIQ83JYG"></a>
 <a href="https://arxiv.org/abs/2303.17503"><img alt="arxiv" src="https://img.shields.io/badge/arXiv-2303.17503-b31b1b.svg"></a>
+<a href="https://sotetsuk.github.io/pgx"><img src="https://img.shields.io/badge/docs-available-8CA1AF?logo=readthedocs&logoColor=fff"></a>
 </p>
 
 A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
@@ -37,6 +38,9 @@ Then, what about RL in *discrete* state spaces like Chess, Shogi, and Go? **Pgx*
 - [Getting started](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx_hello_world.ipynb)
 - [Pgx baseline models](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/baselines.ipynb)
 - [Export to PettingZoo API](https://colab.research.google.com/github/sotetsuk/pgx/blob/main/colab/pgx2pettingzoo.ipynb)
+
+
+Read the [Full Documentation](https://sotetsuk.github.io/pgx) for more details
 
 ## Training examples
 
@@ -109,15 +113,15 @@ Use `pgx.available_envs() -> Tuple[EnvId]` to see the list of currently availabl
 | Game/EnvId | Visualization | Version | Five-word description by [ChatGPT](https://chat.openai.com/) |
 |:---:|:---:|:---:|:---:|
 |<a href="https://en.wikipedia.org/wiki/2048_(video_game)">2048</a> <br> `"2048"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/2048_light.gif" width="60px">| `v2` | *Merge tiles to create 2048.* |
-|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a><br>`"animal_shogi"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_light.gif" width="60px">|  `v0` | *Animal-themed child-friendly shogi.* |
+|<a href="https://en.wikipedia.org/wiki/D%C5%8Dbutsu_sh%C5%8Dgi">Animal Shogi</a><br>`"animal_shogi"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/animal_shogi_light.gif" width="60px">|  `v2` | *Animal-themed child-friendly shogi.* |
 |<a href="https://en.wikipedia.org/wiki/Backgammon">Backgammon</a><br>`"backgammon"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/backgammon_light.gif" width="60px">| `v2` | *Luck aids bearing off checkers.* |
-|<a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge bidding</a><br>`"bridge_bidding"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/bridge_bidding_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/bridge_bidding_light.gif" width="60px">| `v0` | *Partners exchange information via bids.* |
+|<a href="https://en.wikipedia.org/wiki/Contract_bridge">Bridge bidding</a><br>`"bridge_bidding"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/bridge_bidding_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/bridge_bidding_light.gif" width="60px">| `v1` | *Partners exchange information via bids.* |
 |<a href="https://en.wikipedia.org/wiki/Chess">Chess</a><br>`"chess"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/chess_light.gif" width="60px">| `v2` | *Checkmate opponent's king to win.* |
 |<a href="https://en.wikipedia.org/wiki/Connect_Four">Connect Four</a><br>`"connect_four"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/connect_four_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/connect_four_light.gif" width="60px">| `v0` | *Connect discs, win with four.* |
 |<a href="https://en.wikipedia.org/wiki/Minichess">Gardner Chess</a><br>`"gardner_chess"`|<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/gardner_chess_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/gardner_chess_light.gif" width="60px">| `v0` | *5x5 chess variant, excluding castling.* |
 |<a href="https://en.wikipedia.org/wiki/Go_(game)">Go</a><br>`"go_9x9"` `"go_19x19"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go-19x19_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go-19x19_light.gif" width="60px">| `v0` | *Strategically place stones, claim territory.* |
 |<a href="https://en.wikipedia.org/wiki/Hex_(board_game)">Hex</a><br>`"hex"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/hex_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/hex_light.gif" width="60px">| `v0` | *Connect opposite sides, block opponent.* |
-|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a><br>`"kuhn_poker"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/kuhn_poker_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/kuhn_poker_light.gif" width="60px">| `v0` | *Three-card betting and bluffing game.* |
+|<a href="https://en.wikipedia.org/wiki/Kuhn_poker">Kuhn Poker</a><br>`"kuhn_poker"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/kuhn_poker_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/kuhn_poker_light.gif" width="60px">| `v1` | *Three-card betting and bluffing game.* |
 |<a href="https://arxiv.org/abs/1207.1411">Leduc hold'em</a><br>`"leduc_holdem"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/leduc_holdem_dark.gif" width="60px"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/leduc_holdem_light.gif" width="60px">| `v0` | *Two-suit, limited deck poker.* |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Asterix</a><br>`"minatar-asterix"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-asterix.gif" width="50px">| `v1` | *Avoid enemies, collect treasure, survive.* |
 |<a href="https://github.com/kenjyoung/MinAtar">MinAtar/Breakout</a><br>`"minatar-breakout"` |<img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/minatar-breakout.gif" width="50px">| `v1` | *Paddle, ball, bricks, bounce, clear.* |
@@ -154,6 +158,8 @@ Pgx is intended to complement these **JAX-native environments** with (classic) b
     RL environments in JAX (bin-packing, routing problems, etc)
 - [flairox/jaxmarl](https://github.com/flairox/jaxmarl): Multi-Agent RL environments in JAX (simplified StarCraft, etc)
 - [corl-team/xland-minigrid](https://github.com/corl-team/xland-minigrid): Meta-RL gridworld environments in JAX inspired by MiniGrid and XLand
+- [MichaelTMatthews/Craftax](https://github.com/MichaelTMatthews/Craftax): (Crafter + NetHack) in JAX for open-ended RL
+- [epignatelli/navix](https://github.com/epignatelli/navix): Re-implementation of MiniGrid in JAX
 
 Combining Pgx with these **JAX-native algorithms/implementations** might be an interesting direction:
 
@@ -167,13 +173,15 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 
 ## Citation
 
-If you use Pgx in your work, please cite the following paper:
+If you use Pgx in your work, please cite [our paper](https://papers.nips.cc/paper_files/paper/2023/hash/8f153093758af93861a74a1305dfdc18-Abstract-Datasets_and_Benchmarks.html):
 
 ```
 @inproceedings{koyamada2023pgx,
   title={Pgx: Hardware-Accelerated Parallel Game Simulators for Reinforcement Learning},
   author={Koyamada, Sotetsu and Okano, Shinri and Nishimori, Soichiro and Murata, Yu and Habara, Keigo and Kita, Haruka and Ishii, Shin},
   booktitle={Advances in Neural Information Processing Systems},
+  pages={45716--45743},
+  volume={36},
   year={2023}
 }
 ```

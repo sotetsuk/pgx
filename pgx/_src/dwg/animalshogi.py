@@ -78,13 +78,13 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
 
     # -1: EMPTY
     #  0: PAWN
-    #  1: ROOK
-    #  2: BISHOP
+    #  1: BISHOP
+    #  2: ROOK
     #  3: KING
     #  4: GOLD
     #  5: OPP_PAWN
-    #  6: OPP_ROOK
-    #  7: OPP_BISHOP
+    #  6: OPP_BISHOP
+    #  7: OPP_ROOK
     #  8: OPP_KING
     #  9: OPP_GOLD
 
@@ -170,7 +170,7 @@ def _make_animalshogi_dwg(dwg, state: AnimalShogiState, config: dict):
             )
 
     # # hand
-    for i, piece_num, piece_type in zip(range(6), state._hand.flatten(), ["P", "R", "B", "P", "R", "B"]):
+    for i, piece_num, piece_type in zip(range(6), state._hand.flatten(), ["P", "B", "R", "P", "B", "R"]):
         is_black = i < 3 if state._turn == 0 else 3 <= i  # type: ignore
         _g = p1_pieces_g if is_black else p2_pieces_g
         _g.add(

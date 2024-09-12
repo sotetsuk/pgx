@@ -31,8 +31,8 @@ ROOK = jnp.int32(2)
 KING = jnp.int32(3)
 GOLD = jnp.int32(4)
 #  5: OPP_PAWN
-#  6: OPP_ROOK
-#  7: OPP_BISHOP
+#  6: OPP_BISHOP
+#  7: OPP_ROOK
 #  8: OPP_KING
 #  9: OPP_GOLD
 # fmt: off
@@ -146,7 +146,7 @@ class AnimalShogi(core.Env):
 
     @property
     def version(self) -> str:
-        return "v0"
+        return "v2"
 
     @property
     def num_players(self) -> int:
@@ -303,7 +303,6 @@ def _legal_action_mask(state: State):
     def is_legal_drop(action: Action):
         ok = state._board[action.to] == EMPTY
         ok &= state._hand[0, action.drop_piece] > 0
-        ok &= (action.drop_piece != PAWN) | (action.to % 4 != 0)
         ok &= ~_is_checked(_step_drop(state, action))
         return ok
 
@@ -357,7 +356,7 @@ def _can_move(piece, from_, to):
                 lambda: is_neighbour & ((dx == dy) | (dx == -dy)),  # BISHOP
                 lambda: is_neighbour & ((dx == 0) | (dy == 0)),  # ROOK
                 lambda: is_neighbour,  # KING
-                lambda: is_neighbour & ((dx != 0) | (dy != +1)),  # GOLD
+                lambda: is_neighbour & ((dx == 0) | (dy != +1)),  # GOLD
             ],
         )
 
