@@ -414,7 +414,14 @@ def _legal_action_mask(state: GameState) -> Array:
         @jax.vmap
         def legal_label(to):
             a = Action(from_=from_, to=to)
-            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & _is_pseudo_legal(state, a)
+            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (state.board[to] <= 0)
+            ok &= CAN_MOVE[piece, a.from_, a.to]
+            between_ixs = BETWEEN[a.from_, a.to]
+            ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+            # filter pawn move
+            ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))  # should move forward
+            ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0))  # cannot move up if occupied by opponent
+            ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))  # cannot move diagnally without capturing
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_label(LEGAL_DEST[piece, from_])
@@ -495,23 +502,6 @@ def _is_checked(state: GameState):
     """True if possible to capture the opponent king"""
     king_pos = jnp.argmin(jnp.abs(state.board - KING))
     return _is_attacked(state, king_pos)
-
-
-def _is_pseudo_legal(state: GameState, a: Action):
-    piece = state.board[a.from_]
-    ok = (piece >= 0) & (state.board[a.to] <= 0)
-    ok &= CAN_MOVE[piece, a.from_, a.to]
-    between_ixs = BETWEEN[a.from_, a.to]
-    ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-    # filter pawn move
-    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))  # should move forward
-    ok &= ~(
-        (piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0)
-    )  # cannot move up if occupied by opponent
-    ok &= ~(
-        (piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0)
-    )  # cannot move diagnally without capturing
-    return (a.to >= 0) & ok
 
 
 def _zobrist_hash(state: GameState) -> Array:
