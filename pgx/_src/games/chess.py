@@ -36,20 +36,8 @@ from pgx._src.games.chess_utils import (  # type: ignore
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 
-EMPTY = jnp.int32(0)
-PAWN = jnp.int32(1)
-KNIGHT = jnp.int32(2)
-BISHOP = jnp.int32(3)
-ROOK = jnp.int32(4)
-QUEEN = jnp.int32(5)
-KING = jnp.int32(6)
-# OPP_PAWN = -1
-# OPP_KNIGHT = -2
-# OPP_BISHOP = -3
-# OPP_ROOK = -4
-# OPP_QUEEN = -5
-# OPP_KING = -6
-
+EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
+# OPP_PAWN, OPP_KNIGHT, OPP_BISHOP, OPP_ROOK, OPP_QUEEN, OPP_KING = -1, -2, -3, -4, -5, -6
 
 # board index
 # 8  7 15 23 31 39 47 55 63
