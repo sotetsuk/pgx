@@ -36,23 +36,8 @@ from pgx._src.games.chess_utils import (  # type: ignore
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 
-TRUE = jnp.bool_(True)
-FALSE = jnp.bool_(False)
-
-EMPTY = jnp.int32(0)
-PAWN = jnp.int32(1)
-KNIGHT = jnp.int32(2)
-BISHOP = jnp.int32(3)
-ROOK = jnp.int32(4)
-QUEEN = jnp.int32(5)
-KING = jnp.int32(6)
-# OPP_PAWN = -1
-# OPP_KNIGHT = -2
-# OPP_BISHOP = -3
-# OPP_ROOK = -4
-# OPP_QUEEN = -5
-# OPP_KING = -6
-
+EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
+# OPP_PAWN, OPP_KNIGHT, OPP_BISHOP, OPP_ROOK, OPP_QUEEN, OPP_KING = -1, -2, -3, -4, -5, -6
 
 # board index
 # 8  7 15 23 31 39 47 55 63
@@ -143,16 +128,11 @@ class Action(NamedTuple):
           - https://github.com/LeelaChessZero/lc0/pull/712
         """
         from_, plane = label // 73, label % 73
-        return Action(  # type: ignore
-            from_=from_,
-            to=TO_MAP[from_, plane],  # -1 if impossible move
-            underpromotion=jax.lax.select(plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)),
-        )
+        underpromotion = jax.lax.select(plane >= 9, -1, plane // 3)
+        return Action(from_=from_, to=TO_MAP[from_, plane], underpromotion=underpromotion)
 
     def _to_label(self):
-        plane = PLANE_MAP[self.from_, self.to]
-        # plane = jax.lax.select(self.underpromotion >= 0, ..., plane)
-        return jnp.int32(self.from_) * 73 + jnp.int32(plane)
+        return self.from_ * 73 + PLANE_MAP[self.from_, self.to]
 
 
 class Game:
@@ -174,7 +154,7 @@ class Game:
         ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
 
         def make(i):
-            board = _rotate(state.board_history[i].reshape((8, 8)))
+            board = jnp.rot90(state.board_history[i].reshape((8, 8)), k=1)
 
             def piece_feat(p):
                 return (board == p).astype(jnp.float32)
@@ -189,24 +169,16 @@ class Game:
             rep1 = ones * (rep >= 1)
             return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
 
-        board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8)
-        color = color * ones
-        total_move_cnt = (state.step_count / MAX_TERMINATION_STEPS) * ones
-        my_queen_side_castling_right = ones * state.can_castle_queen_side[0]
-        my_king_side_castling_right = ones * state.can_castle_king_side[0]
-        opp_queen_side_castling_right = ones * state.can_castle_queen_side[1]
-        opp_king_side_castling_right = ones * state.can_castle_king_side[1]
-        no_prog_cnt = (state.halfmove_count.astype(jnp.float32) / 100.0) * ones
         return jnp.vstack(
             [
-                board_feat,
-                color,
-                total_move_cnt,
-                my_queen_side_castling_right,
-                my_king_side_castling_right,
-                opp_queen_side_castling_right,
-                opp_king_side_castling_right,
-                no_prog_cnt,
+                jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8),  # board feature
+                color * ones,  # color
+                (state.step_count / MAX_TERMINATION_STEPS) * ones,  # total move count
+                state.can_castle_queen_side[0] * ones,  # my castling right (queen side)
+                state.can_castle_king_side[0] * ones,  # my castling right (king side)
+                state.can_castle_queen_side[1] * ones,  # opp castling right (queen side)
+                state.can_castle_king_side[1] * ones,  # opp castling right (king side)
+                (state.halfmove_count.astype(jnp.float32) / 100.0) * ones,  # no progress count
             ]
         ).transpose((1, 2, 0))
 
@@ -224,13 +196,11 @@ class Game:
 
     def rewards(self, state: GameState) -> Array:
         is_checkmate = (~state.legal_action_mask.any()) & _is_checked(state)
-        # fmt: off
         return jax.lax.select(
             is_checkmate,
             jnp.ones(2, dtype=jnp.float32).at[state.turn].set(-1),
             jnp.zeros(2, dtype=jnp.float32),
         )
-        # fmt: on
 
 
 def _update_history(state: GameState):
@@ -255,7 +225,7 @@ def has_insufficient_pieces(state: GameState):
     # [ 0  2  4  6 16 18 20 22 32 34 36 38 48 50 52 54 9 11 13 15 25 27 29 31 41 43 45 47 57 59 61 63]
     black_coords = jnp.hstack((coords[::2, ::2].ravel(), coords[1::2, 1::2].ravel()))
     num_bishop_on_black = (jnp.abs(state.board[black_coords]) == BISHOP).sum()
-    is_insufficient = FALSE
+    is_insufficient = False
     # King vs King
     is_insufficient |= num_pieces <= 2
     # King + X vs King. X == KNIGHT or BISHOP
@@ -295,18 +265,18 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     # update castling rights
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[0].set(
-            jax.lax.select((a.from_ == 32) | (a.from_ == 0), FALSE, state.can_castle_queen_side[0])
+            jax.lax.select((a.from_ == 32) | (a.from_ == 0), False, state.can_castle_queen_side[0])
         ),
         can_castle_king_side=state.can_castle_king_side.at[0].set(
-            jax.lax.select((a.from_ == 32) | (a.from_ == 56), FALSE, state.can_castle_king_side[0])
+            jax.lax.select((a.from_ == 32) | (a.from_ == 56), False, state.can_castle_king_side[0])
         ),
     )
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[1].set(
-            jax.lax.select((a.to == 7), FALSE, state.can_castle_queen_side[1])
+            jax.lax.select((a.to == 7), False, state.can_castle_queen_side[1])
         ),
         can_castle_king_side=state.can_castle_king_side.at[1].set(
-            jax.lax.select((a.to == 63), FALSE, state.can_castle_king_side[1])
+            jax.lax.select((a.to == 63), False, state.can_castle_king_side[1])
         ),
     )
     # promotion to queen
@@ -323,10 +293,6 @@ def _flip_pos(x):
     return jax.lax.select(x == -1, x, (x // 8) * 8 + (7 - (x % 8)))
 
 
-def _rotate(board):
-    return jnp.rot90(board, k=1)
-
-
 def _flip(state: GameState) -> GameState:
     return state._replace(
         board=-jnp.flip(state.board.reshape(8, 8), axis=1).flatten(),
@@ -339,11 +305,9 @@ def _flip(state: GameState) -> GameState:
 
 
 def _legal_action_mask(state: GameState) -> Array:
-    @jax.vmap
     def legal_normal_moves(from_):
         piece = state.board[from_]
 
-        @jax.vmap
         def legal_label(to):
             ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (state.board[to] <= 0)
             between_ixs = BETWEEN[from_, to]
@@ -353,10 +317,9 @@ def _legal_action_mask(state: GameState) -> Array:
             ok &= (piece != PAWN) | pawn_should
             return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
-        return legal_label(LEGAL_DEST[piece, from_])
+        return jax.vmap(legal_label)(LEGAL_DEST[piece, from_])
 
     def legal_underpromotions(mask):
-        @jax.vmap
         def legal_labels(label):
             a = Action._from_label(label)
             ok = (state.board[a.from_] == PAWN) & (a.to >= 0)
@@ -365,34 +328,32 @@ def _legal_action_mask(state: GameState) -> Array:
 
         # from_ = 6 14 ... 62, plane = 0 1 ... 8
         labels = jnp.int32([from_ * 73 + i for i in range(9) for from_ in [6, 14, 22, 30, 38, 46, 54, 62]])
-        return legal_labels(labels)
+        return jax.vmap(legal_labels)(labels)
 
     def legal_en_passants():
         to = state.en_passant
 
-        @jax.vmap
         def legal_labels(from_):
             ok = (from_ >= 0) & (from_ < 64) & (to >= 0) & (state.board[from_] == PAWN) & (state.board[to - 1] == -PAWN)
             a = Action(from_=from_, to=to)
             return jax.lax.select(ok, a._to_label(), -1)
 
-        return legal_labels(jnp.int32([to - 9, to + 7]))
+        return jax.vmap(legal_labels)(jnp.int32([to - 9, to + 7]))
 
-    @jax.vmap
     def is_not_checked(label):
         a = Action._from_label(label)
         return ~_is_checked(_apply_move(state, a))
 
     # normal move and en passant
-    possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
-    a1 = legal_normal_moves(possible_piece_positions).flatten()
+    possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0]
+    a1 = jax.vmap(legal_normal_moves)(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
-    actions = jnp.where(is_not_checked(actions), actions, -1)
+    actions = jnp.where(jax.vmap(is_not_checked)(actions), actions, -1)
 
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
-    mask = mask.at[actions].set(TRUE)
+    mask = mask.at[actions].set(True)
 
     # castling
     b = state.board
@@ -406,24 +367,21 @@ def _legal_action_mask(state: GameState) -> Array:
 
     # set underpromotions
     actions = legal_underpromotions(mask)
-    mask = mask.at[actions].set(TRUE)
+    mask = mask.at[actions].set(True)
 
     return mask[:-1]
 
 
 def _is_attacked(state: GameState, pos):
-    @jax.vmap
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
-        ok &= CAN_MOVE[piece, pos, to]
         between_ixs = BETWEEN[pos, to]
-        ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-        # For pawn, it should be the forward diagonal direction
+        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
-    return can_move(LEGAL_DEST_ANY[pos, :]).any()
+    return jax.vmap(can_move)(LEGAL_DEST_ANY[pos, :]).any()
 
 
 def _is_checked(state: GameState):

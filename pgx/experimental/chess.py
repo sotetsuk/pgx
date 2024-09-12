@@ -12,7 +12,7 @@ def from_fen(fen: str):
     """Restore state from FEN
 
     >>> state = _from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR w KQkq e3 0 1")
-    >>> _rotate(state._x.board.reshape(8, 8))
+    >>> jnp.rot90(state._x.board.reshape(8, 8), k=1)
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [-1, -1, -1, -1, -1, -1, -1, -1],
            [ 0,  0,  0,  0,  0,  0,  0,  0],
@@ -24,7 +24,7 @@ def from_fen(fen: str):
     >>> state._en_passant
     Array(34, dtype=int32)
     >>> state = _from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1")
-    >>> _rotate(state._x.board.reshape(8, 8))
+    >>> jnp.rot90(state._x.board.reshape(8, 8), k=1)
     Array([[-4, -2, -3, -5, -6, -3, -2, -4],
            [ 0, -1, -1, -1, -1, -1, -1, -1],
            [-1,  0,  0,  0,  0,  0,  0,  0],
