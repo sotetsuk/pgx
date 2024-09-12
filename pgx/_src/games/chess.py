@@ -476,47 +476,20 @@ def _legal_action_mask(state: GameState) -> Array:
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
 
-    def can_castle_king_side():
-        ok = state.board[32] == KING
-        ok &= state.board[56] == ROOK
-        ok &= state.can_castle_king_side[0]
-        ok &= state.board[40] == EMPTY
-        ok &= state.board[48] == EMPTY
-
-        @jax.vmap
-        def is_ok(label):
-            return ~_is_checked(_apply_move(state, Action._from_label(label)))
-
-        ok &= ~_is_checked(state)
-        ok &= is_ok(jnp.int32([2366, 2367])).all()
-
-        return ok
-
-    def can_castle_queen_side():
-        ok = state.board[32] == KING
-        ok &= state.board[0] == ROOK
-        ok &= state.can_castle_queen_side[0]
-        ok &= state.board[8] == EMPTY
-        ok &= state.board[16] == EMPTY
-        ok &= state.board[24] == EMPTY
-
-        @jax.vmap
-        def is_ok(label):
-            return ~_is_checked(_apply_move(state, Action._from_label(label)))
-
-        ok &= ~_is_checked(state)
-        ok &= is_ok(jnp.int32([2364, 2365])).all()
-
-        return ok
-
     actions = legal_norml_moves(state.possible_piece_positions[0]).flatten()  # include -1
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
 
     # castling
-    mask = mask.at[2364].set(jax.lax.select(can_castle_queen_side(), TRUE, mask[2364]))
-    mask = mask.at[2367].set(jax.lax.select(can_castle_king_side(), TRUE, mask[2367]))
+    b = state.board
+    can_castle_queen_side = state.can_castle_queen_side[0]
+    can_castle_queen_side &= (b[0] == ROOK) & (b[8] == EMPTY) & (b[16] == EMPTY) & (b[24] == EMPTY) & (b[32] == KING)
+    can_castle_king_side = state.can_castle_king_side[0]
+    can_castle_king_side &= (b[32] == KING) & (b[40] == EMPTY) & (b[48] == EMPTY) & (b[56] == ROOK)
+    not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int32([16, 24, 32, 40, 48]))
+    mask = mask.at[2364].set(mask[2364] | (can_castle_queen_side & not_checked[:3].all()))
+    mask = mask.at[2367].set(mask[2367] | (can_castle_king_side & not_checked[2:].all()))
 
     # set en passant
     actions = legal_en_passants()
@@ -529,23 +502,26 @@ def _legal_action_mask(state: GameState) -> Array:
     return mask[:-1]
 
 
-def _is_checked(state: GameState):
-    """True if possible to capture the opponent king"""
-    king_pos = jnp.argmin(jnp.abs(state.board - KING))
-
+def _is_attacked(state: GameState, pos):
     @jax.vmap
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
-        ok &= (CAN_MOVE[piece, king_pos] == to).any()
-        between_ixs = BETWEEN[king_pos, to]
+        ok &= (CAN_MOVE[piece, pos] == to).any()
+        between_ixs = BETWEEN[pos, to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         # For pawn, it should be the forward diagonal direction
-        ok &= ~((piece == PAWN) & ((to % 8) < (king_pos % 8)))  # should move forward
-        ok &= ~((piece == PAWN) & (to // 8 == king_pos // 8))  # should move diagnally to capture the king
+        ok &= ~((piece == PAWN) & ((to % 8) < (pos % 8)))  # should move forward
+        ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
-    return can_move(CAN_MOVE_ANY[king_pos, :]).any()
+    return can_move(CAN_MOVE_ANY[pos, :]).any()
+
+
+def _is_checked(state: GameState):
+    """True if possible to capture the opponent king"""
+    king_pos = jnp.argmin(jnp.abs(state.board - KING))
+    return _is_attacked(state, king_pos)
 
 
 def _is_pseudo_legal(state: GameState, a: Action):
