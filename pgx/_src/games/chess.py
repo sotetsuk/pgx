@@ -367,7 +367,7 @@ def _legal_action_mask(state: GameState) -> Array:
         return ~_is_checked(_apply_move(state, a))
 
     # normal move and en passant
-    possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
+    possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0]
     a1 = legal_normal_moves(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
