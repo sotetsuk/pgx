@@ -226,13 +226,11 @@ class Game:
 
     def rewards(self, state: GameState) -> Array:
         is_checkmate = (~state.legal_action_mask.any()) & _is_checked(state)
-        # fmt: off
         return jax.lax.select(
             is_checkmate,
             jnp.ones(2, dtype=jnp.float32).at[state.turn].set(-1),
             jnp.zeros(2, dtype=jnp.float32),
         )
-        # fmt: on
 
 
 def _update_history(state: GameState):
