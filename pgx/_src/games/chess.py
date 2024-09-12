@@ -395,7 +395,6 @@ def _legal_action_mask(state: GameState) -> Array:
 
 
 def _is_attacked(state: GameState, pos):
-    @jax.vmap
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
@@ -405,7 +404,7 @@ def _is_attacked(state: GameState, pos):
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
-    return can_move(LEGAL_DEST_ANY[pos, :]).any()
+    return jax.vmap(can_move)(LEGAL_DEST_ANY[pos, :]).any()
 
 
 def _is_checked(state: GameState):
