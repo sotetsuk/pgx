@@ -243,7 +243,7 @@ class Game:
         return terminated
 
     def rewards(self, state: GameState) -> Array:
-        is_checkmate = (~state.legal_action_mask.any()) & _is_checking(_flip(state))
+        is_checkmate = (~state.legal_action_mask.any()) & _is_checked(state)
         # fmt: off
         return jax.lax.select(
             is_checkmate,
@@ -426,7 +426,7 @@ def _flip(state: GameState) -> GameState:
 def _legal_action_mask(state: GameState) -> Array:
     def is_legal(a: Action):
         ok = _is_pseudo_legal(state, a)
-        ok &= ~_is_checking(_flip(_apply_move(state, a)))
+        ok &= ~_is_checked(_apply_move(state, a))
 
         return ok
 
@@ -471,7 +471,7 @@ def _legal_action_mask(state: GameState) -> Array:
         def legal_labels(from_):
             ok = (from_ >= 0) & (from_ < 64) & (to >= 0) & (state.board[from_] == PAWN) & (state.board[to - 1] == -PAWN)
             a = Action(from_=from_, to=to)
-            ok &= ~_is_checking(_flip(_apply_move(state, a)))  # type: ignore
+            ok &= ~_is_checked(_apply_move(state, a))  # type: ignore
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
@@ -485,9 +485,9 @@ def _legal_action_mask(state: GameState) -> Array:
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
+            return ~_is_checked(_apply_move(state, Action._from_label(label)))
 
-        ok &= ~_is_checking(_flip(state))
+        ok &= ~_is_checked(state)
         ok &= is_ok(jnp.int32([2366, 2367])).all()
 
         return ok
@@ -502,9 +502,9 @@ def _legal_action_mask(state: GameState) -> Array:
 
         @jax.vmap
         def is_ok(label):
-            return ~_is_checking(_flip(_apply_move(state, Action._from_label(label))))
+            return ~_is_checked(_apply_move(state, Action._from_label(label)))
 
-        ok &= ~_is_checking(_flip(state))
+        ok &= ~_is_checked(state)
         ok &= is_ok(jnp.int32([2364, 2365])).all()
 
         return ok
@@ -529,19 +529,23 @@ def _legal_action_mask(state: GameState) -> Array:
     return mask[:-1]
 
 
-def _is_attacking(state: GameState, pos):
-    @jax.vmap
-    def can_move(from_):
-        a = Action(from_=from_, to=pos)
-        return (from_ != -1) & _is_pseudo_legal(state, a)
-
-    return can_move(CAN_MOVE_ANY[pos, :]).any()
-
-
-def _is_checking(state: GameState):
+def _is_checked(state: GameState):
     """True if possible to capture the opponent king"""
-    opp_king_pos = jnp.argmin(jnp.abs(state.board - -KING))
-    return _is_attacking(state, opp_king_pos)
+    king_pos = jnp.argmin(jnp.abs(state.board - KING))
+
+    @jax.vmap
+    def can_move(to):
+        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
+        piece = jnp.abs(state.board[to])
+        ok &= (CAN_MOVE[piece, king_pos] == to).any()
+        between_ixs = BETWEEN[king_pos, to]
+        ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+        # For pawn, it should be the forward diagonal direction
+        ok &= ~((piece == PAWN) & ((to % 8) < (king_pos % 8)))  # should move forward
+        ok &= ~((piece == PAWN) & (to // 8 == king_pos // 8))  # should move diagnally to capture the king
+        return ok
+
+    return can_move(CAN_MOVE_ANY[king_pos, :]).any()
 
 
 def _is_pseudo_legal(state: GameState, a: Action):
@@ -551,9 +555,13 @@ def _is_pseudo_legal(state: GameState, a: Action):
     between_ixs = BETWEEN[a.from_, a.to]
     ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
     # filter pawn move
-    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))
-    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0))
-    ok &= ~((piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0))
+    ok &= ~((piece == PAWN) & ((a.to % 8) < (a.from_ % 8)))  # should move forward
+    ok &= ~(
+        (piece == PAWN) & (jnp.abs(a.to - a.from_) <= 2) & (state.board[a.to] < 0)
+    )  # cannot move up if occupied by opponent
+    ok &= ~(
+        (piece == PAWN) & (jnp.abs(a.to - a.from_) > 2) & (state.board[a.to] >= 0)
+    )  # cannot move diagnally without capturing
     return (a.to >= 0) & ok
 
 
