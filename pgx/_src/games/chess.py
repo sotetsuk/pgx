@@ -159,7 +159,7 @@ class Game:
         ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
 
         def make(i):
-            board = _rotate(state.board_history[i].reshape((8, 8)))
+            board = jnp.rot90(state.board_history[i].reshape((8, 8)), k=1)
 
             def piece_feat(p):
                 return (board == p).astype(jnp.float32)
@@ -304,10 +304,6 @@ def _apply_move(state: GameState, a: Action) -> GameState:
 def _flip_pos(x):
     # e.g., 37 <-> 34, -1 <-> -1
     return jax.lax.select(x == -1, x, (x // 8) * 8 + (7 - (x % 8)))
-
-
-def _rotate(board):
-    return jnp.rot90(board, k=1)
 
 
 def _flip(state: GameState) -> GameState:
