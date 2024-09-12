@@ -1,6 +1,6 @@
-import numpy as np
 import jax
 import jax.numpy as jnp
+import numpy as np
 
 from pgx._src.games.chess import Game, GameState, _flip_pos, _legal_action_mask, _update_history
 from pgx.chess import State
