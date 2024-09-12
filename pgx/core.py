@@ -233,7 +233,7 @@ class Env(abc.ABC):
             player_id = state.current_player
         else:
             warnings.warn(
-                "[Pgx] player_id argument in `Env.observe` is deprecated. Will be removed in the future.",
+                "[Pgx] player_id argument in `Env.observe` is deprecated. This argument will be removed in the future.",
                 DeprecationWarning,
             )
 
