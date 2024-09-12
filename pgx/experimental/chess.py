@@ -84,7 +84,7 @@ def from_fen(fen: str):
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
-    x = x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(x))
+    # x = x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(x))
     legal_action_mask = jax.jit(_legal_action_mask)(x)
     x = x._replace(legal_action_mask=legal_action_mask)
     x = x._replace(zobrist_hash=_zobrist_hash(x))
