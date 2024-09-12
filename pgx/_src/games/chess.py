@@ -424,12 +424,6 @@ def _flip(state: GameState) -> GameState:
 
 
 def _legal_action_mask(state: GameState) -> Array:
-    def is_legal(a: Action):
-        ok = _is_pseudo_legal(state, a)
-        ok &= ~_is_checked(_apply_move(state, a))
-
-        return ok
-
     @jax.vmap
     def legal_norml_moves(from_):
         piece = state.board[from_]
@@ -437,11 +431,8 @@ def _legal_action_mask(state: GameState) -> Array:
         @jax.vmap
         def legal_label(to):
             a = Action(from_=from_, to=to)
-            return jax.lax.select(
-                (from_ >= 0) & (piece > 0) & (to >= 0) & is_legal(a),
-                a._to_label(),
-                jnp.int32(-1),
-            )
+            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & _is_pseudo_legal(state, a)
+            return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_label(CAN_MOVE[piece, from_])
 
@@ -471,12 +462,21 @@ def _legal_action_mask(state: GameState) -> Array:
         def legal_labels(from_):
             ok = (from_ >= 0) & (from_ < 64) & (to >= 0) & (state.board[from_] == PAWN) & (state.board[to - 1] == -PAWN)
             a = Action(from_=from_, to=to)
-            ok &= ~_is_checked(_apply_move(state, a))  # type: ignore
             return jax.lax.select(ok, a._to_label(), -1)
 
         return legal_labels(jnp.int32([to - 9, to + 7]))
 
-    actions = legal_norml_moves(state.possible_piece_positions[0]).flatten()  # include -1
+    @jax.vmap
+    def is_not_checked(label):
+        a = Action._from_label(label)
+        return ~_is_checked(_apply_move(state, a))
+
+    # normal move and en passant
+    a1 = legal_norml_moves(state.possible_piece_positions[0]).flatten()
+    a2 = legal_en_passants()
+    actions = jnp.hstack((a1, a2))  # include -1
+    actions = jnp.where(is_not_checked(actions), actions, -1)
+
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
     mask = mask.at[actions].set(TRUE)
@@ -490,10 +490,6 @@ def _legal_action_mask(state: GameState) -> Array:
     not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int32([16, 24, 32, 40, 48]))
     mask = mask.at[2364].set(mask[2364] | (can_castle_queen_side & not_checked[:3].all()))
     mask = mask.at[2367].set(mask[2367] | (can_castle_king_side & not_checked[2:].all()))
-
-    # set en passant
-    actions = legal_en_passants()
-    mask = mask.at[actions].set(TRUE)
 
     # set underpromotions
     actions = legal_underpromotions(mask)
