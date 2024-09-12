@@ -310,21 +310,13 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     # Whether castling is possible or not is not checked here.
     # We assume that if castling is not possible, it is filtered out.
     # left
-    state = state._replace(
-        board=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 16),
-            lambda: state.board.at[0].set(EMPTY).at[24].set(ROOK),
-            lambda: state.board,
-        ),
-    )
+    board = state.board
+    is_queen_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 16)
+    board = jax.lax.select(is_queen_side_castling, board.at[0].set(EMPTY).at[24].set(ROOK), board)
     # right
-    state = state._replace(
-        board=jax.lax.cond(
-            (piece == KING) & (a.from_ == 32) & (a.to == 48),
-            lambda: state.board.at[56].set(EMPTY).at[40].set(ROOK),
-            lambda: state.board,
-        ),
-    )
+    is_king_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 48)
+    board = jax.lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
+    state = state._replace(board=board)
     # update my can_castle_xxx_side
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[0].set(
