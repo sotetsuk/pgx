@@ -36,9 +36,6 @@ from pgx._src.games.chess_utils import (  # type: ignore
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 
-TRUE = jnp.bool_(True)
-FALSE = jnp.bool_(False)
-
 EMPTY = jnp.int32(0)
 PAWN = jnp.int32(1)
 KNIGHT = jnp.int32(2)
@@ -397,7 +394,7 @@ def _legal_action_mask(state: GameState) -> Array:
 
     # +1 is to avoid setting True to the last element
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
-    mask = mask.at[actions].set(TRUE)
+    mask = mask.at[actions].set(True)
 
     # castling
     b = state.board
@@ -411,7 +408,7 @@ def _legal_action_mask(state: GameState) -> Array:
 
     # set underpromotions
     actions = legal_underpromotions(mask)
-    mask = mask.at[actions].set(TRUE)
+    mask = mask.at[actions].set(True)
 
     return mask[:-1]
 
