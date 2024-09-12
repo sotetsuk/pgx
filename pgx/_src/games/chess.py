@@ -513,7 +513,7 @@ def _legal_action_mask(state: GameState) -> Array:
     mask = mask.at[actions].set(TRUE)
 
     # castling
-    not_checked = ~_is_checked(state)
+    not_checked = ~_is_attacked(state, 32)
     mask = mask.at[2364].set(mask[2364] | (not_checked & can_castle_queen_side()))
     mask = mask.at[2367].set(mask[2367] | (not_checked & can_castle_king_side()))
 
