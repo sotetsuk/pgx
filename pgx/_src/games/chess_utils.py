@@ -65,9 +65,10 @@ for from_ in range(64):
         PLANE_MAP[from_, to] = plane
 
 
-CAN_MOVE = -np.ones((7, 64, 27), np.int32)
-# usage: CAN_MOVE[piece, from_x, from_y]
-# CAN_MOVE[0, :, :] are all -1
+LEGAL_DEST = -np.ones((7, 64, 27), np.int32)
+CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
+# usage: LEGAL_DEST[piece, from_x, from_y]
+# LEGAL_DEST[0, :, :] are all -1
 # Note that the board is not symmetric about the center (different from shogi)
 # You can imagine that the viewpoint is always from the white side.
 # Except PAWN, the moves are symmetric about the center.
@@ -86,7 +87,9 @@ for from_ in range(64):
         if (r0 == 1 or r0 == 6) and (np.abs(c1 - c0) == 0 and np.abs(r1 - r0) == 2):
             legal_dst.append(to)
     assert len(legal_dst) <= 8
-    CAN_MOVE[1, from_, : len(legal_dst)] = legal_dst
+    LEGAL_DEST[1, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        CAN_MOVE[1, from_, a] = True
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -98,7 +101,9 @@ for from_ in range(64):
         if np.abs(r1 - r0) == 2 and np.abs(c1 - c0) == 1:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE[2, from_, : len(legal_dst)] = legal_dst
+    LEGAL_DEST[2, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        CAN_MOVE[2, from_, a] = True
 # BISHOP
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -110,7 +115,9 @@ for from_ in range(64):
         if np.abs(r1 - r0) == np.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE[3, from_, : len(legal_dst)] = legal_dst
+    LEGAL_DEST[3, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        CAN_MOVE[3, from_, a] = True
 # ROOK
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -122,7 +129,9 @@ for from_ in range(64):
         if np.abs(r1 - r0) == 0 or np.abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE[4, from_, : len(legal_dst)] = legal_dst
+    LEGAL_DEST[4, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        CAN_MOVE[4, from_, a] = True
 # QUEEN
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -136,7 +145,9 @@ for from_ in range(64):
         if np.abs(r1 - r0) == np.abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
-    CAN_MOVE[5, from_, : len(legal_dst)] = legal_dst
+    LEGAL_DEST[5, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        CAN_MOVE[5, from_, a] = True
 # KING
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -153,22 +164,24 @@ for from_ in range(64):
     # if from_ == 39:
     #     legal_dst += [23, 55]
     assert len(legal_dst) <= 8
-    CAN_MOVE[6, from_, : len(legal_dst)] = legal_dst
+    LEGAL_DEST[6, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        CAN_MOVE[6, from_, a] = True
 
-assert (CAN_MOVE[0, :, :] == -1).all()
+assert (LEGAL_DEST[0, :, :] == -1).all()
 
-CAN_MOVE_ANY = -np.ones((64, 35), np.int32)
+LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
     legal_dst = []
     for i in range(27):
-        to = CAN_MOVE[5, from_, i]  # QUEEN
+        to = LEGAL_DEST[5, from_, i]  # QUEEN
         if to >= 0:
             legal_dst.append(to)
     for i in range(27):
-        to = CAN_MOVE[2, from_, i]  # KNIGHT
+        to = LEGAL_DEST[2, from_, i]  # KNIGHT
         if to >= 0:
             legal_dst.append(to)
-    CAN_MOVE_ANY[from_, : len(legal_dst)] = legal_dst
+    LEGAL_DEST_ANY[from_, : len(legal_dst)] = legal_dst
 
 
 # Between
@@ -203,8 +216,9 @@ assert INIT_LEGAL_ACTION_MASK.sum() == 20
 
 TO_MAP = jnp.array(TO_MAP)
 PLANE_MAP = jnp.array(PLANE_MAP)
+LEGAL_DEST = jnp.array(LEGAL_DEST)
+LEGAL_DEST_ANY = jnp.array(LEGAL_DEST_ANY)
 CAN_MOVE = jnp.array(CAN_MOVE)
-CAN_MOVE_ANY = jnp.array(CAN_MOVE_ANY)
 BETWEEN = jnp.array(BETWEEN)
 INIT_LEGAL_ACTION_MASK = jnp.array(INIT_LEGAL_ACTION_MASK)
 INIT_POSSIBLE_PIECE_POSITIONS = jnp.int32(
