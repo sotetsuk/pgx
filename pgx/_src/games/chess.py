@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import jax
 import jax.numpy as jnp
@@ -130,6 +130,26 @@ class GameState(NamedTuple):
     possible_piece_positions: Array = INIT_POSSIBLE_PIECE_POSITIONS
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
+
+
+class Game:
+    def init(self) -> GameState:
+        ...
+
+    def step(self, state: GameState, action: Array) -> GameState:
+        ...
+
+    def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
+        ...
+
+    def legal_action_mask(self, state: GameState) -> Array:
+        ...
+
+    def is_terminal(self, state: GameState) -> Array:
+        ...
+
+    def rewards(self, state: GameState) -> Array:
+        ...
 
 
 @dataclass
