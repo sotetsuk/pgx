@@ -296,15 +296,12 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     state = state._replace(
         board=state.board.at[removed_pawn_pos].set(jax.lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos]))
     )
+    is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
     state = state._replace(
-        en_passant=jax.lax.select(
-            (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2),
-            jnp.int32((a.to + a.from_) // 2),
-            jnp.int32(-1),
-        )
+        en_passant=jax.lax.select(is_en_passant, (a.to + a.from_) // 2, -1)
     )
     # update counters
-    captured = (state.board[a.to] < 0) | (is_en_passant)
+    captured = (state.board[a.to] < 0) | is_en_passant
     state = state._replace(
         halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state.halfmove_count + 1),
         fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
