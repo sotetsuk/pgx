@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx._src.games.chess import Game, GameState, _flip_pos, _legal_action_mask, _update_history, _zobrist_hash
+from pgx._src.games.chess import Game, GameState, _flip_pos, _legal_action_mask, _update_history
 from pgx.chess import State
 
 TRUE = jnp.bool_(True)
@@ -78,7 +78,6 @@ def from_fen(fen: str):
     )
     legal_action_mask = jax.jit(_legal_action_mask)(x)
     x = x._replace(legal_action_mask=legal_action_mask)
-    x = x._replace(zobrist_hash=_zobrist_hash(x))
     x = _update_history(x)
 
     player_order = jnp.int32([0, 1])
