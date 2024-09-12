@@ -175,17 +175,8 @@ class Game:
 
     def step(self, state: GameState, action: Array) -> GameState:
         a = Action._from_label(action)
-        # state = _update_zobrist_hash(state, a)
-
-        # hash_ = state.zobrist_hash
-        # hash_ ^= _hash_castling_en_passant(state)
-
         state = _apply_move(state, a)
         state = _flip(state)
-
-        # hash_ ^= _hash_castling_en_passant(state)
-        # state = state._replace(zobrist_hash=hash_)
-
         state = _update_history(state)
         state = state._replace(legal_action_mask=_legal_action_mask(state))
         state = state._replace(step_count=state.step_count + 1)
