@@ -20,11 +20,11 @@ from jax import Array
 
 from pgx._src.games.chess_utils import (  # type: ignore
     BETWEEN,
-    LEGAL_DEST,
     CAN_MOVE,
-    LEGAL_DEST_ANY,
     INIT_LEGAL_ACTION_MASK,
     INIT_POSSIBLE_PIECE_POSITIONS,
+    LEGAL_DEST,
+    LEGAL_DEST_ANY,
     PLANE_MAP,
     TO_MAP,
     ZOBRIST_BOARD,
