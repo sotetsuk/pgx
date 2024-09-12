@@ -66,7 +66,7 @@ for from_ in range(64):
 
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)
-CAN_MOVE = jnp.zeros((7, 64, 64), dtype=np.bool_)
+CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 # usage: LEGAL_DEST[piece, from_x, from_y]
 # LEGAL_DEST[0, :, :] are all -1
 # Note that the board is not symmetric about the center (different from shogi)
@@ -89,7 +89,7 @@ for from_ in range(64):
     assert len(legal_dst) <= 8
     LEGAL_DEST[1, from_, : len(legal_dst)] = legal_dst
     for a in legal_dst:
-        CAN_MOVE = CAN_MOVE.at[1, from_, a].set(True)
+        CAN_MOVE[1, from_, a] = True
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -103,7 +103,7 @@ for from_ in range(64):
     assert len(legal_dst) <= 27
     LEGAL_DEST[2, from_, : len(legal_dst)] = legal_dst
     for a in legal_dst:
-        CAN_MOVE = CAN_MOVE.at[2, from_, a].set(True)
+        CAN_MOVE[2, from_, a] = True
 # BISHOP
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -117,7 +117,7 @@ for from_ in range(64):
     assert len(legal_dst) <= 27
     LEGAL_DEST[3, from_, : len(legal_dst)] = legal_dst
     for a in legal_dst:
-        CAN_MOVE = CAN_MOVE.at[3, from_, a].set(True)
+        CAN_MOVE[3, from_, a] = True
 # ROOK
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -131,7 +131,7 @@ for from_ in range(64):
     assert len(legal_dst) <= 27
     LEGAL_DEST[4, from_, : len(legal_dst)] = legal_dst
     for a in legal_dst:
-        CAN_MOVE = CAN_MOVE.at[4, from_, a].set(True)
+        CAN_MOVE[4, from_, a] = True
 # QUEEN
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -147,7 +147,7 @@ for from_ in range(64):
     assert len(legal_dst) <= 27
     LEGAL_DEST[5, from_, : len(legal_dst)] = legal_dst
     for a in legal_dst:
-        CAN_MOVE = CAN_MOVE.at[5, from_, a].set(True)
+        CAN_MOVE[5, from_, a] = True
 # KING
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -166,7 +166,7 @@ for from_ in range(64):
     assert len(legal_dst) <= 8
     LEGAL_DEST[6, from_, : len(legal_dst)] = legal_dst
     for a in legal_dst:
-        CAN_MOVE = CAN_MOVE.at[6, from_, a].set(True)
+        CAN_MOVE[6, from_, a] = True
 
 assert (LEGAL_DEST[0, :, :] == -1).all()
 
@@ -218,6 +218,7 @@ TO_MAP = jnp.array(TO_MAP)
 PLANE_MAP = jnp.array(PLANE_MAP)
 LEGAL_DEST = jnp.array(LEGAL_DEST)
 LEGAL_DEST_ANY = jnp.array(LEGAL_DEST_ANY)
+CAN_MOVE = jnp.array(CAN_MOVE)
 BETWEEN = jnp.array(BETWEEN)
 INIT_LEGAL_ACTION_MASK = jnp.array(INIT_LEGAL_ACTION_MASK)
 INIT_POSSIBLE_PIECE_POSITIONS = jnp.int32(
