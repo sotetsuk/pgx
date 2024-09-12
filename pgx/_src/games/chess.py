@@ -124,11 +124,8 @@ class Action(NamedTuple):
           - https://github.com/LeelaChessZero/lc0/pull/712
         """
         from_, plane = label // 73, label % 73
-        return Action(  # type: ignore
-            from_=from_,
-            to=TO_MAP[from_, plane],  # -1 if impossible move
-            underpromotion=jax.lax.select(plane >= 9, jnp.int32(-1), jnp.int32(plane // 3)),
-        )
+        underpromotion = jax.lax.select(plane >= 9, jnp.int32(-1), jnp.int32(plane // 3))
+        return Action(from_=from_, to=TO_MAP[from_, plane], underpromotion=underpromotion)
 
     def _to_label(self):
         plane = PLANE_MAP[self.from_, self.to]
