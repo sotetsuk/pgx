@@ -66,6 +66,7 @@ for from_ in range(64):
 
 
 CAN_MOVE = -np.ones((7, 64, 27), np.int32)
+MOVE_OK = jnp.zeros((7, 64, 64), dtype=np.bool_)
 # usage: CAN_MOVE[piece, from_x, from_y]
 # CAN_MOVE[0, :, :] are all -1
 # Note that the board is not symmetric about the center (different from shogi)
@@ -87,6 +88,8 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 8
     CAN_MOVE[1, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        MOVE_OK = MOVE_OK.at[1, from_, a].set(True)
 # KNIGHT
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -99,6 +102,8 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     CAN_MOVE[2, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        MOVE_OK = MOVE_OK.at[2, from_, a].set(True)
 # BISHOP
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -111,6 +116,8 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     CAN_MOVE[3, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        MOVE_OK = MOVE_OK.at[3, from_, a].set(True)
 # ROOK
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -123,6 +130,8 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     CAN_MOVE[4, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        MOVE_OK = MOVE_OK.at[4, from_, a].set(True)
 # QUEEN
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -137,6 +146,8 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     CAN_MOVE[5, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        MOVE_OK = MOVE_OK.at[5, from_, a].set(True)
 # KING
 for from_ in range(64):
     r0, c0 = from_ % 8, from_ // 8
@@ -154,6 +165,8 @@ for from_ in range(64):
     #     legal_dst += [23, 55]
     assert len(legal_dst) <= 8
     CAN_MOVE[6, from_, : len(legal_dst)] = legal_dst
+    for a in legal_dst:
+        MOVE_OK = MOVE_OK.at[6, from_, a].set(True)
 
 assert (CAN_MOVE[0, :, :] == -1).all()
 

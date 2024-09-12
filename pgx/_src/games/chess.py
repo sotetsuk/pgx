@@ -21,6 +21,7 @@ from jax import Array
 from pgx._src.games.chess_utils import (  # type: ignore
     BETWEEN,
     CAN_MOVE,
+    MOVE_OK,
     CAN_MOVE_ANY,
     INIT_LEGAL_ACTION_MASK,
     INIT_POSSIBLE_PIECE_POSITIONS,
@@ -503,7 +504,7 @@ def _is_attacked(state: GameState, pos):
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
-        ok &= (CAN_MOVE[piece, pos] == to).any()
+        ok &= MOVE_OK[piece, pos, to]
         between_ixs = BETWEEN[pos, to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         # For pawn, it should be the forward diagonal direction
@@ -523,7 +524,7 @@ def _is_checked(state: GameState):
 def _is_pseudo_legal(state: GameState, a: Action):
     piece = state.board[a.from_]
     ok = (piece >= 0) & (state.board[a.to] <= 0)
-    ok &= (CAN_MOVE[piece, a.from_] == a.to).any()
+    ok &= MOVE_OK[piece, a.from_, a.to]
     between_ixs = BETWEEN[a.from_, a.to]
     ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
     # filter pawn move
