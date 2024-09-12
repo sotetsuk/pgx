@@ -54,7 +54,7 @@ KING = jnp.int32(6)
 # OPP_KING = -6
 
 
-# board index (white view)
+# board index
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
 # 6  5 13 21 29 37 45 53 61
@@ -63,16 +63,6 @@ KING = jnp.int32(6)
 # 3  2 10 18 26 34 42 50 58
 # 2  1  9 17 25 33 41 49 57
 # 1  0  8 16 24 32 40 48 56
-#    a  b  c  d  e  f  g  h
-# board index (flipped black view)
-# 8  0  8 16 24 32 40 48 56
-# 7  1  9 17 25 33 41 49 57
-# 6  2 10 18 26 34 42 50 58
-# 5  3 11 19 27 35 43 51 59
-# 4  4 12 20 28 36 44 52 60
-# 3  5 13 21 29 37 45 53 61
-# 2  6 14 22 30 38 46 54 62
-# 1  7 15 23 31 39 47 55 63
 #    a  b  c  d  e  f  g  h
 # fmt: off
 INIT_BOARD = jnp.int32([
@@ -88,13 +78,9 @@ INIT_BOARD = jnp.int32([
 # fmt: on
 
 # Action
-# 0 ... 9 = underpromotions
-# plane // 3 == 0: rook
-# plane // 3 == 1: bishop
-# plane // 3 == 2: knight
-# plane % 3 == 0: forward
-# plane % 3 == 1: right
-# plane % 3 == 2: left
+# 0 ... 8: underpromotions
+#   plane // 3 == 0: rook, 1: bishop, 2: knight
+#   plane  % 3 == 0: up  , 1: right,  2: left 
 # 51                   22                   50
 #    52                21                49
 #       53             20             48
@@ -305,13 +291,9 @@ def _apply_move(state: GameState, a: Action) -> GameState:
         fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
     )
     # castling
-    # Whether castling is possible or not is not checked here.
-    # We assume that if castling is not possible, it is filtered out.
-    # left
     board = state.board
     is_queen_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 16)
     board = jax.lax.select(is_queen_side_castling, board.at[0].set(EMPTY).at[24].set(ROOK), board)
-    # right
     is_king_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 48)
     board = jax.lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
     state = state._replace(board=board)
@@ -324,7 +306,6 @@ def _apply_move(state: GameState, a: Action) -> GameState:
             jax.lax.select((a.from_ == 32) | (a.from_ == 56), FALSE, state.can_castle_king_side[0])
         ),
     )
-    # update opp castling rights
     state = state._replace(
         can_castle_queen_side=state.can_castle_queen_side.at[1].set(
             jax.lax.select((a.to == 7), FALSE, state.can_castle_queen_side[1])
@@ -343,14 +324,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
 
 
 def _flip_pos(x):
-    """
-    >>> _flip_pos(jnp.int32(34))
-    Array(37, dtype=int32)
-    >>> _flip_pos(jnp.int32(37))
-    Array(34, dtype=int32)
-    >>> _flip_pos(jnp.int32(-1))
-    Array(-1, dtype=int32)
-    """
+    # e.g., 37 <-> 34, -1 <-> -1
     return jax.lax.select(x == -1, x, (x // 8) * 8 + (7 - (x % 8)))
 
 
