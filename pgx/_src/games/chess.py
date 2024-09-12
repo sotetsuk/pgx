@@ -417,8 +417,7 @@ def _legal_action_mask(state: GameState) -> Array:
             between_ixs = BETWEEN[from_, to]
             ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
             r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
-            pawn_should = r1 >= r0  # move forward
-            pawn_should &= ((c1 == c0) & (state.board[to] == EMPTY)) | ((c1 != c0) & (state.board[to] < 0))
+            pawn_should = ((c1 == c0) & (state.board[to] == EMPTY)) | ((c1 != c0) & (state.board[to] < 0))
             ok &= (piece != PAWN) | pawn_should
             return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
@@ -489,7 +488,6 @@ def _is_attacked(state: GameState, pos):
         between_ixs = BETWEEN[pos, to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         # For pawn, it should be the forward diagonal direction
-        ok &= ~((piece == PAWN) & ((to % 8) < (pos % 8)))  # should move forward
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
