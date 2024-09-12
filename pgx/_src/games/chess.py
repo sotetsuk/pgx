@@ -515,8 +515,8 @@ def _legal_action_mask(state: GameState) -> Array:
     mask = mask.at[actions].set(TRUE)
 
     # castling
-    mask = mask.at[2364].set(jax.lax.select(can_castle_queen_side(), TRUE, mask[2364]))
-    mask = mask.at[2367].set(jax.lax.select(can_castle_king_side(), TRUE, mask[2367]))
+    mask = mask.at[2364].set(mask[2364] | can_castle_queen_side())
+    mask = mask.at[2367].set(mask[2367] | can_castle_king_side())
 
     # set en passant
     actions = legal_en_passants()
