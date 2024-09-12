@@ -134,22 +134,89 @@ class GameState(NamedTuple):
 
 class Game:
     def init(self) -> GameState:
-        ...
+        return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        ...
+        a = Action._from_label(action)
+        state = _update_zobrist_hash(state, a)
+
+        hash_ = state.zobrist_hash
+        hash_ ^= _hash_castling_en_passant(state)
+
+        state = _apply_move(state, a)
+        state = _flip(state)
+
+        hash_ ^= _hash_castling_en_passant(state)
+        state = state._replace(zobrist_hash=hash_)
+
+        state = _update_history(state)
+        state = state._replace(legal_action_mask=_legal_action_mask(state))
+        state = state._replace(step_count=state.step_count + 1)
+        return state
 
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
-        ...
+        if color is None:
+            color = state.turn
+        ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
+
+        def make(i):
+            board = _rotate(state.board_history[i].reshape((8, 8)))
+
+            def piece_feat(p):
+                return (board == p).astype(jnp.float32)
+
+            my_pieces = jax.vmap(piece_feat)(jnp.arange(1, 7))
+            opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
+
+            h = state.hash_history[i, :]
+            rep = (state.hash_history == h).all(axis=1).sum() - 1
+            rep = jax.lax.select((h == 0).all(), 0, rep)
+            rep0 = ones * (rep == 0)
+            rep1 = ones * (rep >= 1)
+            return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
+
+        board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8)
+        color = color * ones
+        total_move_cnt = (state.step_count / MAX_TERMINATION_STEPS) * ones
+        my_queen_side_castling_right = ones * state.can_castle_queen_side[0]
+        my_king_side_castling_right = ones * state.can_castle_king_side[0]
+        opp_queen_side_castling_right = ones * state.can_castle_queen_side[1]
+        opp_king_side_castling_right = ones * state.can_castle_king_side[1]
+        no_prog_cnt = (state.halfmove_count.astype(jnp.float32) / 100.0) * ones
+        return jnp.vstack(
+            [
+                board_feat,
+                color,
+                total_move_cnt,
+                my_queen_side_castling_right,
+                my_king_side_castling_right,
+                opp_queen_side_castling_right,
+                opp_king_side_castling_right,
+                no_prog_cnt,
+            ]
+        ).transpose((1, 2, 0))
 
     def legal_action_mask(self, state: GameState) -> Array:
-        ...
+        return state.legal_action_mask
 
     def is_terminal(self, state: GameState) -> Array:
-        ...
+        terminated = ~state.legal_action_mask.any()
+        terminated |= state.halfmove_count >= 100
+        terminated |= has_insufficient_pieces(state)
+        rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
+        terminated |= rep >= 2
+        terminated |= MAX_TERMINATION_STEPS <= state.step_count
+        return terminated
 
     def rewards(self, state: GameState) -> Array:
-        ...
+        is_checkmate = (~state.legal_action_mask.any()) & _is_checking(_flip(state))
+        # fmt: off
+        return jax.lax.select(
+            is_checkmate,
+            jnp.ones(2, dtype=jnp.float32).at[state.turn].set(-1),
+            jnp.zeros(2, dtype=jnp.float32),
+        )
+        # fmt: on
 
 
 @dataclass
@@ -188,25 +255,6 @@ class Action:
         return jnp.int32(self.from_) * 73 + jnp.int32(plane)
 
 
-def _step(state: GameState, action: Array) -> GameState:
-    a = Action._from_label(action)
-    state = _update_zobrist_hash(state, a)
-
-    hash_ = state.zobrist_hash
-    hash_ ^= _hash_castling_en_passant(state)
-
-    state = _apply_move(state, a)
-    state = _flip(state)
-
-    hash_ ^= _hash_castling_en_passant(state)
-    state = state._replace(zobrist_hash=hash_)
-
-    state = _update_history(state)
-    state = state._replace(legal_action_mask=_legal_action_mask(state))
-    state = state._replace(step_count=state.step_count + 1)
-    return state
-
-
 def _update_history(state: GameState):
     # board history
     board_history = jnp.roll(state.board_history, 64)
@@ -217,27 +265,6 @@ def _update_history(state: GameState):
     hash_hist = hash_hist.at[0].set(state.zobrist_hash)
     state = state._replace(hash_history=hash_hist)
     return state
-
-
-def _is_terminated(state: GameState) -> Array:
-    terminated = ~state.legal_action_mask.any()
-    terminated |= state.halfmove_count >= 100
-    terminated |= has_insufficient_pieces(state)
-    rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
-    terminated |= rep >= 2
-    terminated |= MAX_TERMINATION_STEPS <= state.step_count
-    return terminated
-
-
-def _rewards(state: GameState) -> Array:
-    is_checkmate = (~state.legal_action_mask.any()) & _is_checking(_flip(state))
-    # fmt: off
-    return jax.lax.select(
-        is_checkmate,
-        jnp.ones(2, dtype=jnp.float32).at[state.turn].set(-1),
-        jnp.zeros(2, dtype=jnp.float32),
-    )
-    # fmt: on
 
 
 def has_insufficient_pieces(state: GameState):
@@ -536,48 +563,6 @@ def _possible_piece_positions(state: GameState):
     my_pos = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
     opp_pos = jnp.nonzero(_flip(state).board > 0, size=16, fill_value=-1)[0].astype(jnp.int32)
     return jnp.vstack((my_pos, opp_pos))
-
-
-def _observe(state: GameState, color: Array) -> Array:
-    ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
-
-    def make(i):
-        board = _rotate(state.board_history[i].reshape((8, 8)))
-
-        def piece_feat(p):
-            return (board == p).astype(jnp.float32)
-
-        my_pieces = jax.vmap(piece_feat)(jnp.arange(1, 7))
-        opp_pieces = jax.vmap(piece_feat)(-jnp.arange(1, 7))
-
-        h = state.hash_history[i, :]
-        rep = (state.hash_history == h).all(axis=1).sum() - 1
-        rep = jax.lax.select((h == 0).all(), 0, rep)
-        rep0 = ones * (rep == 0)
-        rep1 = ones * (rep >= 1)
-        return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
-
-    board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8)
-    color = color * ones
-    total_move_cnt = (state.step_count / MAX_TERMINATION_STEPS) * ones
-    my_queen_side_castling_right = ones * state.can_castle_queen_side[0]
-    my_king_side_castling_right = ones * state.can_castle_king_side[0]
-    opp_queen_side_castling_right = ones * state.can_castle_queen_side[1]
-    opp_king_side_castling_right = ones * state.can_castle_king_side[1]
-    no_prog_cnt = (state.halfmove_count.astype(jnp.float32) / 100.0) * ones
-
-    return jnp.vstack(
-        [
-            board_feat,
-            color,
-            total_move_cnt,
-            my_queen_side_castling_right,
-            my_king_side_castling_right,
-            opp_queen_side_castling_right,
-            opp_king_side_castling_right,
-            no_prog_cnt,
-        ]
-    ).transpose((1, 2, 0))
 
 
 def _zobrist_hash(state: GameState) -> Array:
