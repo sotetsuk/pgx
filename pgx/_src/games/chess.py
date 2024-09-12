@@ -415,14 +415,14 @@ def _legal_action_mask(state: GameState) -> Array:
         def legal_label(to):
             a = Action(from_=from_, to=to)
             ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (state.board[to] <= 0)
-            ok &= CAN_MOVE[piece, a.from_, a.to]
-            between_ixs = BETWEEN[a.from_, a.to]
+            ok &= CAN_MOVE[piece, from_, to]
+            between_ixs = BETWEEN[from_, to]
             ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
             # filter pawn move
-            pawn_should = (a.to % 8) >= (a.from_ % 8)  # should move forward
+            pawn_should = (to % 8) >= (from_ % 8)  # should move forward
             pawn_should &= (
-                ((a.to // 8 == a.from_ // 8) & (state.board[a.to] == 0)) |   # move up
-                ((a.to // 8 != a.from_ // 8) & (state.board[a.to] < 0))      # capture
+                ((to // 8 == from_ // 8) & (state.board[to] == 0)) |   # move up
+                ((to // 8 != from_ // 8) & (state.board[to] < 0))      # capture
             )
             ok &= (piece != PAWN) | pawn_should
             return jax.lax.select(ok, a._to_label(), -1)
