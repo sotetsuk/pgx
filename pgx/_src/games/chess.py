@@ -419,7 +419,6 @@ def _is_attacked(state: GameState, pos):
         ok &= CAN_MOVE[piece, pos, to]
         between_ixs = BETWEEN[pos, to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-        # For pawn, it should be the forward diagonal direction
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
