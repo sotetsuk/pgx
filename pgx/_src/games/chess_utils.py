@@ -221,12 +221,6 @@ LEGAL_DEST_ANY = jnp.array(LEGAL_DEST_ANY)
 CAN_MOVE = jnp.array(CAN_MOVE)
 BETWEEN = jnp.array(BETWEEN)
 INIT_LEGAL_ACTION_MASK = jnp.array(INIT_LEGAL_ACTION_MASK)
-INIT_POSSIBLE_PIECE_POSITIONS = jnp.int32(
-    [
-        [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
-        [0, 1, 8, 9, 16, 17, 24, 25, 32, 33, 40, 41, 48, 49, 56, 57],
-    ]
-)  # (2, 16)
 
 key = jax.random.PRNGKey(238290)
 key, subkey = jax.random.split(key)

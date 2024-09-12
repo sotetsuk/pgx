@@ -1,15 +1,7 @@
 import jax
 import jax.numpy as jnp
 
-from pgx._src.games.chess import (
-    Game,
-    GameState,
-    _flip_pos,
-    _legal_action_mask,
-    _possible_piece_positions,
-    _update_history,
-    _zobrist_hash,
-)
+from pgx._src.games.chess import Game, GameState, _flip_pos, _legal_action_mask, _update_history, _zobrist_hash
 from pgx.chess import State
 
 TRUE = jnp.bool_(True)
@@ -84,7 +76,6 @@ def from_fen(fen: str):
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
-    x = x._replace(possible_piece_positions=jax.jit(_possible_piece_positions)(x))
     legal_action_mask = jax.jit(_legal_action_mask)(x)
     x = x._replace(legal_action_mask=legal_action_mask)
     x = x._replace(zobrist_hash=_zobrist_hash(x))
