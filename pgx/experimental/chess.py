@@ -1,3 +1,4 @@
+import numpy as np
 import jax
 import jax.numpy as jnp
 
@@ -113,9 +114,9 @@ def to_fen(state: State):
     >>> _to_fen(_from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1"))
     'rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'
     """
-    pb = jnp.rot90(state._x.board.reshape(8, 8), k=1)
+    pb = np.rot90(state._x.board.reshape(8, 8), k=1)
     if state._x.turn == 1:
-        pb = -jnp.flip(pb, axis=0)
+        pb = -np.flip(pb, axis=0)
     fen = ""
     # board
     for i in range(8):
@@ -146,7 +147,7 @@ def to_fen(state: State):
     if state._x.turn == 1:
         can_castle_queen_side = can_castle_queen_side[::-1]
         can_castle_king_side = can_castle_king_side[::-1]
-    if not (can_castle_queen_side.any() | can_castle_king_side.any()):
+    if not (np.any(can_castle_queen_side) | np.any(can_castle_king_side)):
         fen += "-"
     else:
         if can_castle_king_side[0]:
@@ -161,15 +162,15 @@ def to_fen(state: State):
     # em passant
     en_passant = state._x.en_passant
     if state._x.turn == 1:
-        en_passant = _flip_pos(en_passant)
-    ep = int(en_passant.item())
+        en_passant = -1 if en_passant == -1 else (en_passant // 8) * 8 + (7 - (en_passant % 8))
+    ep = int(en_passant)
     if ep == -1:
         fen += "-"
     else:
         fen += "abcdefgh"[ep // 8]
         fen += str(ep % 8 + 1)
     fen += " "
-    fen += str(state._x.halfmove_count.item())
+    fen += str(state._x.halfmove_count)
     fen += " "
-    fen += str(state._x.fullmove_count.item())
+    fen += str(state._x.fullmove_count)
     return fen
