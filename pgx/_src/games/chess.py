@@ -552,13 +552,9 @@ def _zobrist_hash(state: GameState) -> Array:
     hash_ = jnp.zeros(2, dtype=jnp.uint32)
     hash_ = jax.lax.select(state.turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
     board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
-
-    def xor(i, h):
-        # 0, ..., 12 (white pawn, ..., black king)
-        piece = board[i] + 6
-        return h ^ ZOBRIST_BOARD[i, piece]
-
-    hash_ = jax.lax.fori_loop(0, 64, xor, hash_)
+    # 0, ..., 12 (white pawn, ..., black king)
+    to_reduce = ZOBRIST_BOARD[jnp.arange(64), board + 6]
+    hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
     hash_ ^= _hash_castling_en_passant(state)
     return hash_
 
