@@ -529,23 +529,26 @@ def _legal_action_mask(state: GameState) -> Array:
     return mask[:-1]
 
 
-def _is_checked(state: GameState):
-    """True if possible to capture the opponent king"""
-    king_pos = jnp.argmin(jnp.abs(state.board - KING))
-
+def _is_attacked(state: GameState, pos):
     @jax.vmap
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
-        ok &= (CAN_MOVE[piece, king_pos] == to).any()
-        between_ixs = BETWEEN[king_pos, to]
+        ok &= (CAN_MOVE[piece, pos] == to).any()
+        between_ixs = BETWEEN[pos, to]
         ok &= ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         # For pawn, it should be the forward diagonal direction
-        ok &= ~((piece == PAWN) & ((to % 8) < (king_pos % 8)))  # should move forward
-        ok &= ~((piece == PAWN) & (to // 8 == king_pos // 8))  # should move diagnally to capture the king
+        ok &= ~((piece == PAWN) & ((to % 8) < (pos % 8)))  # should move forward
+        ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagnally to capture the king
         return ok
 
-    return can_move(CAN_MOVE_ANY[king_pos, :]).any()
+    return can_move(CAN_MOVE_ANY[pos, :]).any()
+
+
+def _is_checked(state: GameState):
+    """True if possible to capture the opponent king"""
+    king_pos = jnp.argmin(jnp.abs(state.board - KING))
+    return _is_attacked(state, king_pos)
 
 
 def _is_pseudo_legal(state: GameState, a: Action):
