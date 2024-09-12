@@ -124,7 +124,7 @@ class Action(NamedTuple):
           - https://github.com/LeelaChessZero/lc0/pull/712
         """
         from_, plane = label // 73, label % 73
-        underpromotion = jax.lax.select(plane >= 9, jnp.int32(-1), jnp.int32(plane // 3))
+        underpromotion = jax.lax.select(plane >= 9, -1, plane // 3)
         return Action(from_=from_, to=TO_MAP[from_, plane], underpromotion=underpromotion)
 
     def _to_label(self):
@@ -322,11 +322,9 @@ def _flip(state: GameState) -> GameState:
 
 
 def _legal_action_mask(state: GameState) -> Array:
-    @jax.vmap
     def legal_normal_moves(from_):
         piece = state.board[from_]
 
-        @jax.vmap
         def legal_label(to):
             ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (state.board[to] <= 0)
             between_ixs = BETWEEN[from_, to]
@@ -336,10 +334,9 @@ def _legal_action_mask(state: GameState) -> Array:
             ok &= (piece != PAWN) | pawn_should
             return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
-        return legal_label(LEGAL_DEST[piece, from_])
+        return jax.vmap(legal_label)(LEGAL_DEST[piece, from_])
 
     def legal_underpromotions(mask):
-        @jax.vmap
         def legal_labels(label):
             a = Action._from_label(label)
             ok = (state.board[a.from_] == PAWN) & (a.to >= 0)
@@ -348,18 +345,17 @@ def _legal_action_mask(state: GameState) -> Array:
 
         # from_ = 6 14 ... 62, plane = 0 1 ... 8
         labels = jnp.int32([from_ * 73 + i for i in range(9) for from_ in [6, 14, 22, 30, 38, 46, 54, 62]])
-        return legal_labels(labels)
+        return jax.vmap(legal_labels)(labels)
 
     def legal_en_passants():
         to = state.en_passant
 
-        @jax.vmap
         def legal_labels(from_):
             ok = (from_ >= 0) & (from_ < 64) & (to >= 0) & (state.board[from_] == PAWN) & (state.board[to - 1] == -PAWN)
             a = Action(from_=from_, to=to)
             return jax.lax.select(ok, a._to_label(), -1)
 
-        return legal_labels(jnp.int32([to - 9, to + 7]))
+        return jax.vmap(legal_labels)(jnp.int32([to - 9, to + 7]))
 
     @jax.vmap
     def is_not_checked(label):
@@ -368,7 +364,7 @@ def _legal_action_mask(state: GameState) -> Array:
 
     # normal move and en passant
     possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0]
-    a1 = legal_normal_moves(possible_piece_positions).flatten()
+    a1 = jax.vmap(legal_normal_moves)(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
     actions = jnp.where(is_not_checked(actions), actions, -1)
