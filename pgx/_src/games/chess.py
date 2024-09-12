@@ -174,24 +174,16 @@ class Game:
             rep1 = ones * (rep >= 1)
             return jnp.vstack([my_pieces, opp_pieces, rep0, rep1])
 
-        board_feat = jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8)
-        color = color * ones
-        total_move_cnt = (state.step_count / MAX_TERMINATION_STEPS) * ones
-        my_queen_side_castling_right = ones * state.can_castle_queen_side[0]
-        my_king_side_castling_right = ones * state.can_castle_king_side[0]
-        opp_queen_side_castling_right = ones * state.can_castle_queen_side[1]
-        opp_king_side_castling_right = ones * state.can_castle_king_side[1]
-        no_prog_cnt = (state.halfmove_count.astype(jnp.float32) / 100.0) * ones
         return jnp.vstack(
             [
-                board_feat,
-                color,
-                total_move_cnt,
-                my_queen_side_castling_right,
-                my_king_side_castling_right,
-                opp_queen_side_castling_right,
-                opp_king_side_castling_right,
-                no_prog_cnt,
+                jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8),    # board feature
+                color * ones,                                       # color
+                (state.step_count / MAX_TERMINATION_STEPS) * ones,  # total move count
+                state.can_castle_queen_side[0] * ones,              # my castling right (queen side)
+                state.can_castle_king_side[0] * ones,               # my castling right (king side)
+                state.can_castle_queen_side[1] * ones,              # opp castling right (queen side)
+                state.can_castle_king_side[1] * ones,               # opp castling right (king side)
+                (state.halfmove_count.astype(jnp.float32) / 100.0) * ones,  # no progress count
             ]
         ).transpose((1, 2, 0))
 
