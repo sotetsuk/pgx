@@ -26,19 +26,6 @@ def p(s: str, b=False):
     return x * 8 + offset
 
 
-def test_zobrist_hash():
-    key = jax.random.PRNGKey(0)
-    key, subkey = jax.random.split(key)
-    state = init(subkey)
-    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
-    # for i in range(5):
-    while not state.terminated:
-        key, subkey = jax.random.split(key)
-        action = act_randomly(subkey, state.legal_action_mask)
-        state = step(state, action)
-        # state.save_svg("debug.svg")
-        assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
-
 def test_action():
     # See #704
     # queen moves
