@@ -29,75 +29,30 @@ for from_ in range(64):
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
-
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
-
-# PAWN
 for from_ in range(64):
-    legal_dst = []
+    legal_dst = {p: [] for p in range(7)}
     for to in range(64):
+        if from_ == to:
+            continue
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if (r1 - r0 == 1 and abs(c1 - c0) <= 1) or ((r0 , r1) == (1, 3) and abs(c1 - c0) == 0):
-            legal_dst.append(to)
-    assert len(legal_dst) <= 8
-    LEGAL_DEST[PAWN, from_, : len(legal_dst)] = legal_dst
-    CAN_MOVE[PAWN, from_, legal_dst] = True
-# KNIGHT
-for from_ in range(64):
-    legal_dst = []
-    for to in range(64):
-        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
+            legal_dst[PAWN].append(to)
         if (abs(r1 - r0) == 1 and abs(c1 - c0) == 2) or (abs(r1 - r0) == 2 and abs(c1 - c0) == 1):
-            legal_dst.append(to)
-    assert len(legal_dst) <= 27
-    LEGAL_DEST[KNIGHT, from_, : len(legal_dst)] = legal_dst
-    CAN_MOVE[KNIGHT, from_, legal_dst] = True
-# BISHOP
-for from_ in range(64):
-    legal_dst = []
-    for to in range(64):
-        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
-        if from_ == to:
-            continue
+            legal_dst[KNIGHT].append(to)
         if abs(r1 - r0) == abs(c1 - c0):
-            legal_dst.append(to)
-    assert len(legal_dst) <= 27
-    LEGAL_DEST[BISHOP, from_, : len(legal_dst)] = legal_dst
-    CAN_MOVE[BISHOP, from_, legal_dst] = True
-# ROOK
-for from_ in range(64):
-    legal_dst = []
-    for to in range(64):
-        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
-        if from_ == to:
-            continue
+            legal_dst[BISHOP].append(to)
         if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
-            legal_dst.append(to)
-    assert len(legal_dst) <= 27
-    LEGAL_DEST[ROOK, from_, : len(legal_dst)] = legal_dst
-    CAN_MOVE[ROOK, from_, legal_dst] = True
-# QUEEN
-for from_ in range(64):
-    legal_dst = []
-    for to in range(64):
-        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
-        if from_ == to:
-            continue
+            legal_dst[ROOK].append(to)
         if (abs(r1 - r0) == 0 or abs(c1 - c0) == 0) or (abs(r1 - r0) == abs(c1 - c0)):
-            legal_dst.append(to)
-    LEGAL_DEST[QUEEN, from_, : len(legal_dst)] = legal_dst
-    CAN_MOVE[QUEEN, from_, legal_dst] = True
-# KING
-for from_ in range(64):
-    legal_dst = []
-    for to in range(64):
-        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
+            legal_dst[QUEEN].append(to)
         if from_ != to and abs(r1 - r0) <= 1 and abs(c1 - c0) <= 1:
-            legal_dst.append(to)
-    LEGAL_DEST[KING, from_, :len(legal_dst)] = legal_dst
-    CAN_MOVE[KING, from_, legal_dst] = True
+            legal_dst[KING].append(to)
+    for p in range(1, 7):
+        LEGAL_DEST[p, from_, :len(legal_dst[p])] = legal_dst[p]
+        CAN_MOVE[p, from_, legal_dst[p]] = True
 
-assert (LEGAL_DEST[0, :, :] == -1).all()
+assert (LEGAL_DEST[EMPTY, :, :] == -1).all()
 
 LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
