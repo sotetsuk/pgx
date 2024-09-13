@@ -49,7 +49,7 @@ for from_ in range(64):
         if from_ != to and abs(r1 - r0) <= 1 and abs(c1 - c0) <= 1:
             legal_dst[KING].append(to)
     for p in range(1, 7):
-        LEGAL_DEST[p, from_, :len(legal_dst[p])] = legal_dst[p]
+        LEGAL_DEST[p, from_, : len(legal_dst[p])] = legal_dst[p]
         CAN_MOVE[p, from_, legal_dst[p]] = True
 
 assert (LEGAL_DEST[EMPTY, :, :] == -1).all()
@@ -57,7 +57,7 @@ assert (LEGAL_DEST[EMPTY, :, :] == -1).all()
 LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
     legal_dst = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
-    LEGAL_DEST_ANY[from_, :len(legal_dst)] = legal_dst
+    LEGAL_DEST_ANY[from_, : len(legal_dst)] = legal_dst
 
 
 # Between
@@ -80,7 +80,9 @@ INIT_LEGAL_ACTION_MASK[ixs] = True
 assert INIT_LEGAL_ACTION_MASK.shape == (64 * 73,)
 assert INIT_LEGAL_ACTION_MASK.sum() == 20
 
-TO_MAP, PLANE_MAP, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (jnp.array(x) for x in (TO_MAP, PLANE_MAP ,LEGAL_DEST,LEGAL_DEST_ANY,CAN_MOVE,BETWEEN ,INIT_LEGAL_ACTION_MASK))
+TO_MAP, PLANE_MAP, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (
+    jnp.array(x) for x in (TO_MAP, PLANE_MAP, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
+)
 
 key = jax.random.PRNGKey(238290)
 key, subkey = jax.random.split(key)
@@ -92,4 +94,4 @@ ZOBRIST_CASTLING_QUEEN = jax.random.randint(subkey, shape=(2, 2), minval=0, maxv
 key, subkey = jax.random.split(key)
 ZOBRIST_CASTLING_KING = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 key, subkey = jax.random.split(key)
-ZOBRIST_EN_PASSANT = jax.random.randint(subkey,shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_EN_PASSANT = jax.random.randint(subkey, shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
