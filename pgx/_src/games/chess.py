@@ -20,10 +20,9 @@ import jax.numpy as jnp
 from jax import Array
 
 # fmt: off
-EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
-# OPP_PAWN, OPP_KNIGHT, OPP_BISHOP, OPP_ROOK, OPP_QUEEN, OPP_KING = -1, -2, -3, -4, -5, -6
+EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # * -1 for opponent
 
-# board index
+# board index:
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
 # 6  5 13 21 29 37 45 53 61
@@ -33,16 +32,7 @@ EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
 # 2  1  9 17 25 33 41 49 57
 # 1  0  8 16 24 32 40 48 56
 #    a  b  c  d  e  f  g  h
-INIT_BOARD = jnp.int32([
-    4, 1, 0, 0, 0, 0, -1, -4,
-    2, 1, 0, 0, 0, 0, -1, -2,
-    3, 1, 0, 0, 0, 0, -1, -3,
-    5, 1, 0, 0, 0, 0, -1, -5,
-    6, 1, 0, 0, 0, 0, -1, -6,
-    3, 1, 0, 0, 0, 0, -1, -3,
-    2, 1, 0, 0, 0, 0, -1, -2,
-    4, 1, 0, 0, 0, 0, -1, -4
-])
+INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])
 
 # Action
 # 0 ... 8: underpromotions
@@ -63,8 +53,6 @@ INIT_BOARD = jnp.int32([
 #       39             11             62
 #    38                10                64
 # 37                    9                   64
-
-
 TO_MAP = -np.ones((64, 73), dtype=np.int32)
 PLANE_MAP = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
 zeros, seq, rseq = [0] * 7, list(range(1, 8)), list(range(-7, 0))
