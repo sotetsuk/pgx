@@ -322,7 +322,7 @@ def _legal_action_mask(state: GameState) -> Array:
             return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
         return jax.vmap(legal_label)(LEGAL_DEST[piece, from_])
-    
+
     def legal_en_passants():
         to = state.en_passant
 
