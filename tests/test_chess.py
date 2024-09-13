@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import pgx
 from pgx.chess import State, Chess
-from pgx._src.games.chess import GameState, Action, KING, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash
+from pgx._src.games.chess import GameState, Action, KING, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash, INIT_ZOBRIST_HASH
 from pgx.experimental.utils import act_randomly
 from pgx.experimental.chess import from_fen, to_fen
 
@@ -1064,6 +1064,14 @@ def test_observe():
     assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
     assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
     assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+
+
+def test_zobrist_hash():
+    key = jax.random.PRNGKey(0)
+    key, subkey = jax.random.split(key)
+    state = init(subkey)
+    assert (state._x.hash_history[0] == INIT_ZOBRIST_HASH).all()
+    assert (_zobrist_hash(state._x) == INIT_ZOBRIST_HASH).all()
 
 
 def test_api():
