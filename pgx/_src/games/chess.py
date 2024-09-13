@@ -242,7 +242,7 @@ def has_insufficient_pieces(state: GameState):
     # uses the same condition as OpenSpiel
     num_pieces = (state.board != EMPTY).sum()
     num_pawn_rook_queen = ((jnp.abs(state.board) >= ROOK) | (jnp.abs(state.board) == PAWN)).sum() - 2  # two kings
-    num_bishop = (jnp.abs(state.board) == 3).sum()
+    num_bishop = (jnp.abs(state.board) == BISHOP).sum()
     coords = jnp.arange(64).reshape((8, 8))
     black_coords = jnp.hstack((coords[::2, ::2].ravel(), coords[1::2, 1::2].ravel()))
     num_bishop_on_black = (jnp.abs(state.board[black_coords]) == BISHOP).sum()
