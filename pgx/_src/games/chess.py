@@ -147,7 +147,7 @@ MAX_TERMINATION_STEPS = 512  # from AZ paper
 
 class GameState(NamedTuple):
     turn: Array = jnp.int32(0)
-    board: Array = INIT_BOARD  # From top left. like FEN
+    board: Array = INIT_BOARD
     castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)  # my queen, my king, opp queen, opp king
     en_passant: Array = jnp.int32(-1)  # En passant target.
     halfmove_count: Array = jnp.int32(0)  # # of moves since the last piece capture or pawn move
