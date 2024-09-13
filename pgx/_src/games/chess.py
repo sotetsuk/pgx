@@ -397,9 +397,7 @@ def _legal_action_mask(state: GameState) -> Array:
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
     actions = jnp.where(jax.vmap(is_not_checked)(actions), actions, -1)
-
-    # +1 is to avoid setting True to the last element
-    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
+    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)  # +1 for sentinel
     mask = mask.at[actions].set(True)
 
     # castling
@@ -432,7 +430,6 @@ def _is_attacked(state: GameState, pos):
 
 
 def _is_checked(state: GameState):
-    """True if possible to capture the opponent king"""
     king_pos = jnp.argmin(jnp.abs(state.board - KING))
     return _is_attacked(state, king_pos)
 
