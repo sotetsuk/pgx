@@ -6,22 +6,12 @@ import numpy as np
 TO_MAP = -np.ones((64, 73), dtype=np.int32)
 PLANE_MAP = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
 # underpromotiona
+# 8  7 15 23 31 39 47 55 63
+# 7  6 14 22 30 38 46 54 62
 for from_ in range(64):
-    if (from_ % 8) not in (1, 6):
-        continue
     for plane in range(9):
-        dir_ = plane % 3
-        to = -1
-        if from_ % 8 == 6:
-            # white
-            # 8  7 15 23 31 39 47 55 63
-            # 7  6 14 22 30 38 46 54 62
-            # black
-            # 2  6 14 22 30 38 46 54 62
-            # 1  7 15 23 31 39 47 55 63
-            to = from_ + [+1, +9, -7][dir_]
-        if not (0 <= to < 64):
-            continue
+        to = from_ + [+1, +9, -7][plane % 3] if from_ % 8 == 6 else -1
+        to = to if 0 <= to < 64 else -1
         TO_MAP[from_, plane] = to
 # normal move
 seq = list(range(1, 8))
