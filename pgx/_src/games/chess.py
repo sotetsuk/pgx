@@ -104,8 +104,8 @@ for from_ in range(64):
 
 LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
-    legal_dest = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
-    LEGAL_DEST_ANY[from_, : len(legal_dest)] = legal_dest
+    legal_dest_any = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
+    LEGAL_DEST_ANY[from_, : len(legal_dest_any)] = legal_dest_any
 
 BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
 for from_ in range(64):
