@@ -22,7 +22,7 @@ from jax import Array
 # fmt: off
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # opponent: -1 * piece
 
-# Board index:
+INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
 # 6  5 13 21 29 37 45 53 61
@@ -32,10 +32,8 @@ EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # opponent: -1
 # 2  1  9 17 25 33 41 49 57
 # 1  0  8 16 24 32 40 48 56
 #    a  b  c  d  e  f  g  h
-INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])
 
-# Action:
-# We use AlphaZero style label with channel-last representation: (8, 8, 73)
+# Action: AlphaZero style label (4672 = 64 x 73)
 # 73 = underpromotions (3 * 3) + queen moves (56) + knight moves (8)
 # * 0 ~ 8: underpromotions
 #   plane // 3 == 0: rook, 1: bishop, 2: knight
@@ -241,7 +239,7 @@ def _update_history(state: GameState):
 
 
 def has_insufficient_pieces(state: GameState):
-    # Uses the same condition as OpenSpiel.
+    # uses the same condition as OpenSpiel
     num_pieces = (state.board != EMPTY).sum()
     num_pawn_rook_queen = ((jnp.abs(state.board) >= ROOK) | (jnp.abs(state.board) == PAWN)).sum() - 2  # two kings
     num_bishop = (jnp.abs(state.board) == 3).sum()
@@ -249,11 +247,11 @@ def has_insufficient_pieces(state: GameState):
     black_coords = jnp.hstack((coords[::2, ::2].ravel(), coords[1::2, 1::2].ravel()))
     num_bishop_on_black = (jnp.abs(state.board[black_coords]) == BISHOP).sum()
     is_insufficient = False
-    # King vs King
+    # king vs king
     is_insufficient |= num_pieces <= 2
-    # King + X vs King. X == KNIGHT or BISHOP
+    # king + X vs king X == KNIGHT or BISHOP
     is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen == 0)
-    # King + Bishop* vs King + Bishop* (Bishops are on same color tile)
+    # king + bishop* vs king + bishop* (bishops are on same color tile)
     is_bishop_all_on_black = num_bishop_on_black == num_bishop
     is_bishop_all_on_white = num_bishop_on_black == 0
     is_insufficient |= (num_pieces == num_bishop + 2) & (is_bishop_all_on_black | is_bishop_all_on_white)
