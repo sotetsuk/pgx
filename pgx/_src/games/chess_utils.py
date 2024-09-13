@@ -17,28 +17,28 @@ for from_ in range(64):
 seq = list(range(1, 8))
 zeros = [0 for _ in range(7)]
 # 下
-dr = [-x for x in seq[::-1]]
+dr = list(range(-7, 0))
 dc = zeros[::]
 # 上
 dr += list(range(1, 8))
 dc += zeros[::]
 # 左
 dr += zeros[::]
-dc += [-x for x in seq[::-1]]
+dc += list(range(-7, 0))
 # 右
 dr += zeros[::]
 dc += list(range(1, 8))
 # 左下
-dr += [-x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
+dr += list(range(-7, 0))
+dc += list(range(-7, 0))
 # 右上
 dr += list(range(1, 8))
 dc += list(range(1, 8))
 # 左上
-dr += [x for x in seq[::-1]]
-dc += [-x for x in seq[::-1]]
+dr += list(range(1, 8))[::-1]
+dc += list(range(-7, 0))
 # 右下
-dr += [-x for x in seq]
+dr += list(range(-7, 0))[::-1]
 dc += list(range(1, 8))
 # knight moves
 dr += [-1, +1, -2, +2, -1, +1, -2, +2]
