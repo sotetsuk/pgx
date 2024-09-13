@@ -22,10 +22,9 @@ dr += [-1, +1, -2, +2, -1, +1, -2, +2]
 dc += [-2, -2, -1, -1, +2, +2, +1, +1]
 for from_ in range(64):
     for plane in range(9, 73):
-        r, c = from_ % 8, from_ // 8
-        r = r + dr[plane - 9]
-        c = c + dc[plane - 9]
-        if r < 0 or r >= 8 or c < 0 or c >= 8:
+        r = from_ % 8 + dr[plane - 9]
+        c = from_ // 8 + dc[plane - 9]
+        if not (0 <= r < 8 and 0 <= c < 8):
             continue
         to = c * 8 + r
         TO_MAP[from_, plane] = to
