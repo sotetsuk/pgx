@@ -405,7 +405,7 @@ def _zobrist_hash(state: GameState) -> Array:
     hash_ = jax.lax.select(state.turn == 0, ZOBRIST_SIDE, jnp.zeros_like(ZOBRIST_SIDE))
     to_reduce = ZOBRIST_BOARD[jnp.arange(64), state.board + 6]  # 0, ..., 12 (w:pawn, ..., b:king)
     hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
-    to_reduce = jnp.where(state.castling_rights.flatten()[:, None], ZOBRIST_CASTLING, 0)
+    to_reduce = jnp.where(state.castling_rights.reshape(-1, 1), ZOBRIST_CASTLING, 0)
     hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
     hash_ ^= ZOBRIST_EN_PASSANT[state.en_passant]
     return hash_
