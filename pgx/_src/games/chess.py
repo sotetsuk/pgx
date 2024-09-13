@@ -403,8 +403,7 @@ def _is_checked(state: GameState):
 
 def _zobrist_hash(state: GameState) -> Array:
     hash_ = jax.lax.select(state.turn == 0, ZOBRIST_SIDE, jnp.zeros_like(ZOBRIST_SIDE))
-    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
-    to_reduce = ZOBRIST_BOARD[jnp.arange(64), board + 6]  # 0, ..., 12 (w:pawn, ..., b:king)
+    to_reduce = ZOBRIST_BOARD[jnp.arange(64), state.board + 6]  # 0, ..., 12 (w:pawn, ..., b:king)
     hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
     to_reduce = jnp.where(state.castling_rights.flatten()[:, None], ZOBRIST_CASTLING, 0)
     hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
