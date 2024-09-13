@@ -41,7 +41,7 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 8
     LEGAL_DEST[PAWN, from_, : len(legal_dst)] = legal_dst
-    CAN_MOVE[PAWN], from_, legal_dst] = True
+    CAN_MOVE[PAWN, from_, legal_dst] = True
 # KNIGHT
 for from_ in range(64):
     legal_dst = []
