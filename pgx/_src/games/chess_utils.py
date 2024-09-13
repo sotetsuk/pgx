@@ -15,10 +15,9 @@ for from_ in range(64):
         TO_MAP[from_, plane] = to
 # normal move
 zeros, seq, rseq = [0] * 7, list(range(1, 8)), list(range(-7, 0))
-#    down        up          left        right       down-left  down-right up-right   up-left
-dr = rseq[::]  + seq[::]   + zeros[::] + zeros[::] + rseq[::] + seq[::] + seq[::-1] + rseq[::-1]
-dc = zeros[::] + zeros[::] + rseq[::]  + seq[::]   + rseq[::] + seq[::] + rseq[::]  + seq[::]
-# knight moves
+#    down, up, left, right, down-left, down-right, up-right, up-left, knight, and knight
+dr = rseq[::] + seq[::] + zeros[::] + zeros[::] + rseq[::] + seq[::] + seq[::-1] + rseq[::-1]
+dc = zeros[::] + zeros[::] + rseq[::] + seq[::] + rseq[::] + seq[::] + rseq[::] + seq[::]
 dr += [-1, +1, -2, +2, -1, +1, -2, +2]
 dc += [-2, -2, -1, -1, +2, +2, +1, +1]
 for from_ in range(64):
