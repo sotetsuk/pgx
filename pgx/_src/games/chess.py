@@ -157,10 +157,6 @@ class GameState(NamedTuple):
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
 
-    @property
-    def zobrist_hash(self):
-        return _zobrist_hash(self)
-
 
 class Action(NamedTuple):
     from_: Array = jnp.int32(-1)
@@ -228,7 +224,7 @@ class Game:
         terminated = ~state.legal_action_mask.any()
         terminated |= state.halfmove_count >= 100
         terminated |= has_insufficient_pieces(state)
-        rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
+        rep = (state.hash_history == _zobrist_hash(state)).all(axis=1).sum() - 1
         terminated |= rep >= 2
         terminated |= MAX_TERMINATION_STEPS <= state.step_count
         return terminated
@@ -249,7 +245,7 @@ def _update_history(state: GameState):
     state = state._replace(board_history=board_history)
     # hash hist
     hash_hist = jnp.roll(state.hash_history, 2)
-    hash_hist = hash_hist.at[0].set(state.zobrist_hash)
+    hash_hist = hash_hist.at[0].set(_zobrist_hash(state))
     state = state._replace(hash_history=hash_hist)
     return state
 
