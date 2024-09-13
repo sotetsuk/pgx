@@ -35,9 +35,12 @@ EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # * -1 for opp
 INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])
 
 # Action
-# 0 ... 8: underpromotions
+# We use AlphaZero style label with channel-last representation: (8, 8, 73)
+# 73 = underpromotions (3 * 3) + queen moves (56) + knight moves (8)
+# 0 ~ 8: underpromotions
 #   plane // 3 == 0: rook, 1: bishop, 2: knight
 #   plane  % 3 == 0: up  , 1: right,  2: left
+# 9 ~ 72: normal moves (queen + knight)
 # 51                   22                   50
 #    52                21                49
 #       53             20             48
@@ -171,21 +174,6 @@ class Action(NamedTuple):
 
     @staticmethod
     def _from_label(label: Array):
-        """We use AlphaZero style label with channel-last representation: (8, 8, 73)
-
-          73 = queen moves (56) + knight moves (8) + underpromotions (3 * 3)
-
-        Note: this representation is reported as
-
-        > We also tried using a flat distribution over moves for chess and shogi;
-        > the final result was almost identical although training was slightly slower.
-
-        Flat representation may have 1858 actions (= 1792 normal moves + (7 + 7 + 8) * 3 underpromotions)
-
-        Also see
-          - https://github.com/LeelaChessZero/lc0/issues/637
-          - https://github.com/LeelaChessZero/lc0/pull/712
-        """
         from_, plane = label // 73, label % 73
         underpromotion = jax.lax.select(plane >= 9, -1, plane // 3)
         return Action(from_=from_, to=FROM_PLANE[from_, plane], underpromotion=underpromotion)
