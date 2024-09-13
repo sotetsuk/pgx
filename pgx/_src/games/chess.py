@@ -147,18 +147,13 @@ MAX_TERMINATION_STEPS = 512  # from AZ paper
 
 class GameState(NamedTuple):
     turn: Array = jnp.int32(0)
-    board: Array = INIT_BOARD  # From top left. like FEN
-    # (curr, opp) Flips every turn
-    can_castle_queen_side: Array = jnp.ones(2, dtype=jnp.bool_)
-    can_castle_king_side: Array = jnp.ones(2, dtype=jnp.bool_)
-    en_passant: Array = jnp.int32(-1)  # En passant target. Flips.
-    # # of moves since the last piece capture or pawn move
-    halfmove_count: Array = jnp.int32(0)
+    board: Array = INIT_BOARD
+    castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)  # my queen, my king, opp queen, opp king
+    en_passant: Array = jnp.int32(-1)  # En passant target.
+    halfmove_count: Array = jnp.int32(0)  # # of moves since the last piece capture or pawn move
     fullmove_count: Array = jnp.int32(1)  # increase every black move
-    # zobrist_hash: Array = INIT_ZOBRIST_HASH
     hash_history: Array = jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
     board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
-    # index to possible piece positions for speeding up. Flips every turn.
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
 
@@ -221,10 +216,7 @@ class Game:
                 jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8),  # board feature
                 color * ones,  # color
                 (state.step_count / MAX_TERMINATION_STEPS) * ones,  # total move count
-                state.can_castle_queen_side[0] * ones,  # my castling right (queen side)
-                state.can_castle_king_side[0] * ones,  # my castling right (king side)
-                state.can_castle_queen_side[1] * ones,  # opp castling right (queen side)
-                state.can_castle_king_side[1] * ones,  # opp castling right (king side)
+                state.castling_rights.flatten()[:, None, None] * ones,  # (my queen, my king, opp queen, opp king)
                 (state.halfmove_count.astype(jnp.float32) / 100.0) * ones,  # no progress count
             ]
         ).transpose((1, 2, 0))
@@ -310,22 +302,8 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     board = jax.lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
     state = state._replace(board=board)
     # update castling rights
-    state = state._replace(
-        can_castle_queen_side=state.can_castle_queen_side.at[0].set(
-            jax.lax.select((a.from_ == 32) | (a.from_ == 0), False, state.can_castle_queen_side[0])
-        ),
-        can_castle_king_side=state.can_castle_king_side.at[0].set(
-            jax.lax.select((a.from_ == 32) | (a.from_ == 56), False, state.can_castle_king_side[0])
-        ),
-    )
-    state = state._replace(
-        can_castle_queen_side=state.can_castle_queen_side.at[1].set(
-            jax.lax.select((a.to == 7), False, state.can_castle_queen_side[1])
-        ),
-        can_castle_king_side=state.can_castle_king_side.at[1].set(
-            jax.lax.select((a.to == 63), False, state.can_castle_king_side[1])
-        ),
-    )
+    cond = jnp.bool_([[(a.from_ != 32) & (a.from_ != 0), (a.from_ != 32) & (a.from_ != 56)], [a.to != 7, a.to != 63]])
+    state = state._replace(castling_rights=state.castling_rights & cond)
     # promotion to queen
     piece = jax.lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, piece)
     # underpromotion
@@ -345,8 +323,7 @@ def _flip(state: GameState) -> GameState:
         board=-jnp.flip(state.board.reshape(8, 8), axis=1).flatten(),
         turn=(state.turn + 1) % 2,
         en_passant=_flip_pos(state.en_passant),
-        can_castle_queen_side=state.can_castle_queen_side[::-1],
-        can_castle_king_side=state.can_castle_king_side[::-1],
+        castling_rights=state.castling_rights[::-1],
         board_history=-jnp.flip(state.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
     )
 
@@ -402,9 +379,9 @@ def _legal_action_mask(state: GameState) -> Array:
 
     # castling
     b = state.board
-    can_castle_queen_side = state.can_castle_queen_side[0]
+    can_castle_queen_side = state.castling_rights[0, 0]
     can_castle_queen_side &= (b[0] == ROOK) & (b[8] == EMPTY) & (b[16] == EMPTY) & (b[24] == EMPTY) & (b[32] == KING)
-    can_castle_king_side = state.can_castle_king_side[0]
+    can_castle_king_side = state.castling_rights[0, 1]
     can_castle_king_side &= (b[32] == KING) & (b[40] == EMPTY) & (b[48] == EMPTY) & (b[56] == ROOK)
     not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int32([16, 24, 32, 40, 48]))
     mask = mask.at[2364].set(mask[2364] | (can_castle_queen_side & not_checked[:3].all()))
@@ -447,9 +424,9 @@ def _zobrist_hash(state: GameState) -> Array:
     to_reduce = ZOBRIST_BOARD[jnp.arange(64), board + 6]
     hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
     zero = jnp.uint32([0, 0])
-    hash_ ^= jax.lax.select(state.can_castle_queen_side[0], ZOBRIST_CASTLING_QUEEN[0], zero)
-    hash_ ^= jax.lax.select(state.can_castle_queen_side[1], ZOBRIST_CASTLING_QUEEN[1], zero)
-    hash_ ^= jax.lax.select(state.can_castle_king_side[0], ZOBRIST_CASTLING_KING[0], zero)
-    hash_ ^= jax.lax.select(state.can_castle_king_side[1], ZOBRIST_CASTLING_KING[1], zero)
+    hash_ ^= jax.lax.select(state.castling_rights[0, 0], ZOBRIST_CASTLING_QUEEN[0], zero)
+    hash_ ^= jax.lax.select(state.castling_rights[0, 1], ZOBRIST_CASTLING_QUEEN[1], zero)
+    hash_ ^= jax.lax.select(state.castling_rights[1, 0], ZOBRIST_CASTLING_KING[0], zero)
+    hash_ ^= jax.lax.select(state.castling_rights[1, 1], ZOBRIST_CASTLING_KING[1], zero)
     hash_ ^= ZOBRIST_EN_PASSANT[state.en_passant]
     return hash_
