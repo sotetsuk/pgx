@@ -249,7 +249,7 @@ def has_insufficient_pieces(state: GameState):
     is_insufficient = False
     # king vs king
     is_insufficient |= num_pieces <= 2
-    # king + X vs king X == KNIGHT or BISHOP
+    # king vs king + (knight or bishop)
     is_insufficient |= (num_pieces == 3) & (num_pawn_rook_queen == 0)
     # king + bishop* vs king + bishop* (bishops are on same color tile)
     is_bishop_all_on_black = num_bishop_on_black == num_bishop
