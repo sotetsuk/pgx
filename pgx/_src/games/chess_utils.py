@@ -94,14 +94,10 @@ for from_ in range(64):
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if from_ == to:
             continue
-        if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
+        if (abs(r1 - r0) == 0 or abs(c1 - c0) == 0) or (abs(r1 - r0) == abs(c1 - c0)):
             legal_dst.append(to)
-        if abs(r1 - r0) == abs(c1 - c0):
-            legal_dst.append(to)
-    assert len(legal_dst) <= 27
     LEGAL_DEST[5, from_, : len(legal_dst)] = legal_dst
-    for a in legal_dst:
-        CAN_MOVE[5, from_, a] = True
+    CAN_MOVE[5, from_, legal_dst] = True
 # KING
 for from_ in range(64):
     legal_dst = []
