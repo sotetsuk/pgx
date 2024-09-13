@@ -36,7 +36,7 @@ for from_ in range(64):
         if from_ == to:
             continue
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
-        if (r1 - r0 == 1 and abs(c1 - c0) <= 1) or ((r0 , r1) == (1, 3) and abs(c1 - c0) == 0):
+        if (r1 - r0 == 1 and abs(c1 - c0) <= 1) or ((r0, r1) == (1, 3) and abs(c1 - c0) == 0):
             legal_dst[PAWN].append(to)
         if (abs(r1 - r0) == 1 and abs(c1 - c0) == 2) or (abs(r1 - r0) == 2 and abs(c1 - c0) == 1):
             legal_dst[KNIGHT].append(to)
