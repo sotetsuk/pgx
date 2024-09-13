@@ -49,19 +49,9 @@ def from_fen(fen: str):
                 if str.islower(c):
                     ix *= -1
                 arr.append(ix)
-    can_castle_queen_side = jnp.zeros(2, dtype=jnp.bool_)
-    can_castle_king_side = jnp.zeros(2, dtype=jnp.bool_)
-    if "Q" in castling:
-        can_castle_queen_side = can_castle_queen_side.at[0].set(TRUE)
-    if "q" in castling:
-        can_castle_queen_side = can_castle_queen_side.at[1].set(TRUE)
-    if "K" in castling:
-        can_castle_king_side = can_castle_king_side.at[0].set(TRUE)
-    if "k" in castling:
-        can_castle_king_side = can_castle_king_side.at[1].set(TRUE)
+    castling_rights = jnp.bool_([["Q" in castling, "K" in castling], ["q" in castling, "k" in castling]]) 
     if turn == "b":
-        can_castle_queen_side = can_castle_queen_side[::-1]
-        can_castle_king_side = can_castle_king_side[::-1]
+        castling_rights = castling_rights[::-1]
     mat = jnp.int32(arr).reshape(8, 8)
     if turn == "b":
         mat = -jnp.flip(mat, axis=0)
@@ -71,8 +61,7 @@ def from_fen(fen: str):
     x = GameState(
         board=jnp.rot90(mat, k=3).flatten(),
         turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
-        can_castle_queen_side=can_castle_queen_side,
-        can_castle_king_side=can_castle_king_side,
+        castling_rights=castling_rights,
         en_passant=ep,
         halfmove_count=jnp.int32(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
@@ -142,21 +131,19 @@ def to_fen(state: State):
     # turn
     fen += "w " if state._x.turn == 0 else "b "
     # castling
-    can_castle_queen_side = state._x.can_castle_queen_side
-    can_castle_king_side = state._x.can_castle_king_side
+    castling_rights = state._x.castling_rights
     if state._x.turn == 1:
-        can_castle_queen_side = can_castle_queen_side[::-1]
-        can_castle_king_side = can_castle_king_side[::-1]
-    if not (np.any(can_castle_queen_side) | np.any(can_castle_king_side)):
+        castling_rights = castling_rights[::-1]
+    if not (np.any(castling_rights)):
         fen += "-"
     else:
-        if can_castle_king_side[0]:
+        if castling_rights[0, 1]:
             fen += "K"
-        if can_castle_queen_side[0]:
+        if castling_rights[0, 0]:
             fen += "Q"
-        if can_castle_king_side[1]:
+        if castling_rights[1, 1]:
             fen += "k"
-        if can_castle_queen_side[1]:
+        if castling_rights[1, 0]:
             fen += "q"
     fen += " "
     # em passant
