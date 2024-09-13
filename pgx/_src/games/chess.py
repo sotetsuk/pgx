@@ -78,31 +78,31 @@ for from_ in range(64):
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 for from_ in range(64):
-    legal_dst = {p: [] for p in range(7)}
+    legal_dest = {p: [] for p in range(7)}
     for to in range(64):
         if from_ == to:
             continue
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if (r1 - r0 == 1 and abs(c1 - c0) <= 1) or ((r0, r1) == (1, 3) and abs(c1 - c0) == 0):
-            legal_dst[PAWN].append(to)
+            legal_dest[PAWN].append(to)
         if (abs(r1 - r0) == 1 and abs(c1 - c0) == 2) or (abs(r1 - r0) == 2 and abs(c1 - c0) == 1):
-            legal_dst[KNIGHT].append(to)
+            legal_dest[KNIGHT].append(to)
         if abs(r1 - r0) == abs(c1 - c0):
-            legal_dst[BISHOP].append(to)
+            legal_dest[BISHOP].append(to)
         if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
-            legal_dst[ROOK].append(to)
+            legal_dest[ROOK].append(to)
         if (abs(r1 - r0) == 0 or abs(c1 - c0) == 0) or (abs(r1 - r0) == abs(c1 - c0)):
-            legal_dst[QUEEN].append(to)
+            legal_dest[QUEEN].append(to)
         if from_ != to and abs(r1 - r0) <= 1 and abs(c1 - c0) <= 1:
-            legal_dst[KING].append(to)
+            legal_dest[KING].append(to)
     for p in range(1, 7):
-        LEGAL_DEST[p, from_, : len(legal_dst[p])] = legal_dst[p]
-        CAN_MOVE[p, from_, legal_dst[p]] = True
+        LEGAL_DEST[p, from_, : len(legal_dest[p])] = legal_dest[p]
+        CAN_MOVE[p, from_, legal_dest[p]] = True
 
 LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
-    legal_dst = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
-    LEGAL_DEST_ANY[from_, : len(legal_dst)] = legal_dst
+    legal_dest = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
+    LEGAL_DEST_ANY[from_, : len(legal_dest)] = legal_dest
 
 BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
 for from_ in range(64):
