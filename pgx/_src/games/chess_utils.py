@@ -113,11 +113,6 @@ for from_ in range(64):
             continue
         if (np.abs(r1 - r0) <= 1) and (np.abs(c1 - c0) <= 1):
             legal_dst.append(to)
-    # castling
-    # if from_ == 32:
-    #     legal_dst += [16, 48]
-    # if from_ == 39:
-    #     legal_dst += [23, 55]
     assert len(legal_dst) <= 8
     LEGAL_DEST[6, from_, : len(legal_dst)] = legal_dst
     for a in legal_dst:
