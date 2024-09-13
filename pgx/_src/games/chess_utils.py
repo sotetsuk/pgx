@@ -17,17 +17,15 @@ for from_ in range(64):
             # 8  7 15 23 31 39 47 55 63
             # 7  6 14 22 30 38 46 54 62
             to = from_ + [+1, +9, -7][plane % 3] if from_ % 8 == 6 else -1
-            to = to if 0 <= to < 64 else -1
-            TO_MAP[from_, plane] = to
+            if 0 <= to < 64:
+                TO_MAP[from_, plane] = to
         else:  # normal moves
             r = from_ % 8 + dr[plane - 9]
             c = from_ // 8 + dc[plane - 9]
-            if not (0 <= r < 8 and 0 <= c < 8):
-                continue
-            to = c * 8 + r
-            TO_MAP[from_, plane] = to
-            PLANE_MAP[from_, to] = plane
-
+            if 0 <= r < 8 and 0 <= c < 8:
+                to = c * 8 + r
+                TO_MAP[from_, plane] = to
+                PLANE_MAP[from_, to] = plane
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
