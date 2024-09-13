@@ -150,23 +150,15 @@ for from_ in range(64):
 BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
 for from_ in range(64):
     for to in range(64):
-        r0, c0 = from_ % 8, from_ // 8
-        r1, c1 = to % 8, to // 8
-        if not ((np.abs(r1 - r0) == 0 or np.abs(c1 - c0) == 0) or (np.abs(r1 - r0) == np.abs(c1 - c0))):
+        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
+        if not (np.abs(r1 - r0) == 0 or np.abs(c1 - c0) == 0 or np.abs(r1 - r0) == np.abs(c1 - c0)):
             continue
-        dr = max(min(r1 - r0, 1), -1)
-        dc = max(min(c1 - c0, 1), -1)
-        r = r0
-        c = c0
-        bet = []
-        while True:
-            r += dr
-            c += dc
+        dr, dc = max(min(r1 - r0, 1), -1), max(min(c1 - c0, 1), -1)
+        for i in range(6):
+            r, c = r0 + dr * (i + 1), c0 + dc * (i + 1)
             if r == r1 and c == c1:
                 break
-            bet.append(c * 8 + r)
-        assert len(bet) <= 6
-        BETWEEN[from_, to, : len(bet)] = bet
+            BETWEEN[from_, to, i] = c * 8 + r
 
 INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
 # fmt: off
