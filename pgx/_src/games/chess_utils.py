@@ -134,16 +134,8 @@ assert (LEGAL_DEST[0, :, :] == -1).all()
 
 LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
-    legal_dst = []
-    for i in range(27):
-        to = LEGAL_DEST[5, from_, i]  # QUEEN
-        if to >= 0:
-            legal_dst.append(to)
-    for i in range(27):
-        to = LEGAL_DEST[2, from_, i]  # KNIGHT
-        if to >= 0:
-            legal_dst.append(to)
-    LEGAL_DEST_ANY[from_, : len(legal_dst)] = legal_dst
+    legal_dst = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
+    LEGAL_DEST_ANY[from_, :len(legal_dst)] = legal_dst
 
 
 # Between
