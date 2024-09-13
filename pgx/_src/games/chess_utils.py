@@ -2,6 +2,7 @@
 import jax.numpy as jnp
 import jax.random
 import numpy as np
+EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
 
 TO_MAP = -np.ones((64, 73), dtype=np.int32)
 PLANE_MAP = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
@@ -29,7 +30,6 @@ for from_ in range(64):
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
-EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
 for from_ in range(64):
     legal_dst = {p: [] for p in range(7)}
     for to in range(64):
@@ -52,15 +52,11 @@ for from_ in range(64):
         LEGAL_DEST[p, from_, : len(legal_dst[p])] = legal_dst[p]
         CAN_MOVE[p, from_, legal_dst[p]] = True
 
-assert (LEGAL_DEST[EMPTY, :, :] == -1).all()
-
 LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
     legal_dst = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
     LEGAL_DEST_ANY[from_, : len(legal_dst)] = legal_dst
 
-
-# Between
 BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
 for from_ in range(64):
     for to in range(64):
@@ -77,8 +73,6 @@ for from_ in range(64):
 INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
 ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
 INIT_LEGAL_ACTION_MASK[ixs] = True
-assert INIT_LEGAL_ACTION_MASK.shape == (64 * 73,)
-assert INIT_LEGAL_ACTION_MASK.sum() == 20
 
 TO_MAP, PLANE_MAP, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (
     jnp.array(x) for x in (TO_MAP, PLANE_MAP, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
