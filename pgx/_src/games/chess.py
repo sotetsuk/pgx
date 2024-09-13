@@ -53,8 +53,8 @@ INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1
 #       39             11             62
 #    38                10                64
 # 37                    9                   64
-TO_MAP = -np.ones((64, 73), dtype=np.int32)
-PLANE_MAP = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
+FROM_PLANE = -np.ones((64, 73), dtype=np.int32)
+TO_PLANE = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
 zeros, seq, rseq = [0] * 7, list(range(1, 8)), list(range(-7, 0))
 # down, up, left, right, down-left, down-right, up-right, up-left, knight, and knight
 dr = rseq[::] + seq[::] + zeros[::] + zeros[::] + rseq[::] + seq[::] + seq[::-1] + rseq[::-1]
@@ -66,14 +66,14 @@ for from_ in range(64):
         if plane < 9:  # underpromotion
             to = from_ + [+1, +9, -7][plane % 3] if from_ % 8 == 6 else -1
             if 0 <= to < 64:
-                TO_MAP[from_, plane] = to
+                FROM_PLANE[from_, plane] = to
         else:  # normal moves
             r = from_ % 8 + dr[plane - 9]
             c = from_ // 8 + dc[plane - 9]
             if 0 <= r < 8 and 0 <= c < 8:
                 to = c * 8 + r
-                TO_MAP[from_, plane] = to
-                PLANE_MAP[from_, to] = plane
+                FROM_PLANE[from_, plane] = to
+                TO_PLANE[from_, to] = plane
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
@@ -121,8 +121,8 @@ INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
 ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
 INIT_LEGAL_ACTION_MASK[ixs] = True
 
-TO_MAP, PLANE_MAP, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (
-    jnp.array(x) for x in (TO_MAP, PLANE_MAP, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
+FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
 )
 
 key = jax.random.PRNGKey(238290)
@@ -188,10 +188,10 @@ class Action(NamedTuple):
         """
         from_, plane = label // 73, label % 73
         underpromotion = jax.lax.select(plane >= 9, -1, plane // 3)
-        return Action(from_=from_, to=TO_MAP[from_, plane], underpromotion=underpromotion)
+        return Action(from_=from_, to=FROM_PLANE[from_, plane], underpromotion=underpromotion)
 
     def _to_label(self):
-        return self.from_ * 73 + PLANE_MAP[self.from_, self.to]
+        return self.from_ * 73 + TO_PLANE[self.from_, self.to]
 
 
 class Game:
