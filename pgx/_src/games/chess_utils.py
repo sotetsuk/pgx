@@ -5,15 +5,6 @@ import numpy as np
 
 TO_MAP = -np.ones((64, 73), dtype=np.int32)
 PLANE_MAP = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
-# underpromotiona
-# 8  7 15 23 31 39 47 55 63
-# 7  6 14 22 30 38 46 54 62
-for from_ in range(64):
-    for plane in range(9):
-        to = from_ + [+1, +9, -7][plane % 3] if from_ % 8 == 6 else -1
-        to = to if 0 <= to < 64 else -1
-        TO_MAP[from_, plane] = to
-# normal move
 zeros, seq, rseq = [0] * 7, list(range(1, 8)), list(range(-7, 0))
 #    down, up, left, right, down-left, down-right, up-right, up-left, knight, and knight
 dr = rseq[::] + seq[::] + zeros[::] + zeros[::] + rseq[::] + seq[::] + seq[::-1] + rseq[::-1]
@@ -21,14 +12,21 @@ dc = zeros[::] + zeros[::] + rseq[::] + seq[::] + rseq[::] + seq[::] + rseq[::] 
 dr += [-1, +1, -2, +2, -1, +1, -2, +2]
 dc += [-2, -2, -1, -1, +2, +2, +1, +1]
 for from_ in range(64):
-    for plane in range(9, 73):
-        r = from_ % 8 + dr[plane - 9]
-        c = from_ // 8 + dc[plane - 9]
-        if not (0 <= r < 8 and 0 <= c < 8):
-            continue
-        to = c * 8 + r
-        TO_MAP[from_, plane] = to
-        PLANE_MAP[from_, to] = plane
+    for plane in range(73):
+        if plane < 9:  # underpromotion
+            # 8  7 15 23 31 39 47 55 63
+            # 7  6 14 22 30 38 46 54 62
+            to = from_ + [+1, +9, -7][plane % 3] if from_ % 8 == 6 else -1
+            to = to if 0 <= to < 64 else -1
+            TO_MAP[from_, plane] = to
+        else:  # normal moves
+            r = from_ % 8 + dr[plane - 9]
+            c = from_ // 8 + dc[plane - 9]
+            if not (0 <= r < 8 and 0 <= c < 8):
+                continue
+            to = c * 8 + r
+            TO_MAP[from_, plane] = to
+            PLANE_MAP[from_, to] = plane
 
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)
