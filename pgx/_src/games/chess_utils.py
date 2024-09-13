@@ -14,32 +14,10 @@ for from_ in range(64):
         to = to if 0 <= to < 64 else -1
         TO_MAP[from_, plane] = to
 # normal move
-seq = list(range(1, 8))
-zeros = [0 for _ in range(7)]
-# 下
-dr = list(range(-7, 0))
-dc = zeros[::]
-# 上
-dr += list(range(1, 8))
-dc += zeros[::]
-# 左
-dr += zeros[::]
-dc += list(range(-7, 0))
-# 右
-dr += zeros[::]
-dc += list(range(1, 8))
-# 左下
-dr += list(range(-7, 0))
-dc += list(range(-7, 0))
-# 右上
-dr += list(range(1, 8))
-dc += list(range(1, 8))
-# 左上
-dr += list(range(1, 8))[::-1]
-dc += list(range(-7, 0))
-# 右下
-dr += list(range(-7, 0))[::-1]
-dc += list(range(1, 8))
+zeros, seq, rseq = [0] * 7, list(range(1, 8)), list(range(-7, 0))
+#    down        up          left        right       down-left  down-right up-right   up-left
+dr = rseq[::]  + seq[::]   + zeros[::] + zeros[::] + rseq[::] + seq[::] + seq[::-1] + rseq[::-1]
+dc = zeros[::] + zeros[::] + rseq[::]  + seq[::]   + rseq[::] + seq[::] + rseq[::]  + seq[::]
 # knight moves
 dr += [-1, +1, -2, +2, -1, +1, -2, +2]
 dc += [-2, -2, -1, -1, +2, +2, +1, +1]
