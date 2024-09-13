@@ -309,16 +309,24 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     state = state._replace(board=board)
     # update castling rights
     state = state._replace(
-        castling_rights=state.castling_rights.at[0, 0].set(jax.lax.select((a.from_ == 32) | (a.from_ == 0), False, state.castling_rights[0, 0]))
+        castling_rights=state.castling_rights.at[0, 0].set(
+            jax.lax.select((a.from_ == 32) | (a.from_ == 0), False, state.castling_rights[0, 0])
+        )
     )
     state = state._replace(
-        castling_rights=state.castling_rights.at[0, 1].set(jax.lax.select((a.from_ == 32) | (a.from_ == 56), False, state.castling_rights[0, 1]))
+        castling_rights=state.castling_rights.at[0, 1].set(
+            jax.lax.select((a.from_ == 32) | (a.from_ == 56), False, state.castling_rights[0, 1])
+        )
     )
     state = state._replace(
-        castling_rights=state.castling_rights.at[1, 0].set(jax.lax.select((a.to == 7), False, state.castling_rights[1, 0]))
+        castling_rights=state.castling_rights.at[1, 0].set(
+            jax.lax.select((a.to == 7), False, state.castling_rights[1, 0])
+        )
     )
     state = state._replace(
-        castling_rights=state.castling_rights.at[1, 1].set(jax.lax.select((a.to == 63), False, state.castling_rights[1, 1]))
+        castling_rights=state.castling_rights.at[1, 1].set(
+            jax.lax.select((a.to == 63), False, state.castling_rights[1, 1])
+        )
     )
     # promotion to queen
     piece = jax.lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, piece)

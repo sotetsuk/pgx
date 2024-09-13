@@ -49,7 +49,7 @@ def from_fen(fen: str):
                 if str.islower(c):
                     ix *= -1
                 arr.append(ix)
-    castling_rights = jnp.bool_([["Q" in castling, "K" in castling], ["q" in castling, "k" in castling]]) 
+    castling_rights = jnp.bool_([["Q" in castling, "K" in castling], ["q" in castling, "k" in castling]])
     if turn == "b":
         castling_rights = castling_rights[::-1]
     mat = jnp.int32(arr).reshape(8, 8)
