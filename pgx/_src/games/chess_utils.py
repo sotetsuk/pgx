@@ -36,10 +36,10 @@ for from_ in range(64):
     legal_dst = []
     for to in range(64):
         r1, c1 = to % 8, to // 8
-        if r1 - r0 == 1 and np.abs(c1 - c0) <= 1:
+        if r1 - r0 == 1 and abs(c1 - c0) <= 1:
             legal_dst.append(to)
         # init move
-        if r0 == 1 and r1 == 3 and np.abs(c1 - c0) == 0:
+        if r0 == 1 and r1 == 3 and abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 8
     LEGAL_DEST[1, from_, : len(legal_dst)] = legal_dst
@@ -51,9 +51,9 @@ for from_ in range(64):
     legal_dst = []
     for to in range(64):
         r1, c1 = to % 8, to // 8
-        if np.abs(r1 - r0) == 1 and np.abs(c1 - c0) == 2:
+        if abs(r1 - r0) == 1 and abs(c1 - c0) == 2:
             legal_dst.append(to)
-        if np.abs(r1 - r0) == 2 and np.abs(c1 - c0) == 1:
+        if abs(r1 - r0) == 2 and abs(c1 - c0) == 1:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     LEGAL_DEST[2, from_, : len(legal_dst)] = legal_dst
@@ -67,7 +67,7 @@ for from_ in range(64):
         r1, c1 = to % 8, to // 8
         if from_ == to:
             continue
-        if np.abs(r1 - r0) == np.abs(c1 - c0):
+        if abs(r1 - r0) == abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     LEGAL_DEST[3, from_, : len(legal_dst)] = legal_dst
@@ -81,7 +81,7 @@ for from_ in range(64):
         r1, c1 = to % 8, to // 8
         if from_ == to:
             continue
-        if np.abs(r1 - r0) == 0 or np.abs(c1 - c0) == 0:
+        if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     LEGAL_DEST[4, from_, : len(legal_dst)] = legal_dst
@@ -94,9 +94,9 @@ for from_ in range(64):
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if from_ == to:
             continue
-        if np.abs(r1 - r0) == 0 or np.abs(c1 - c0) == 0:
+        if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
             legal_dst.append(to)
-        if np.abs(r1 - r0) == np.abs(c1 - c0):
+        if abs(r1 - r0) == abs(c1 - c0):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     LEGAL_DEST[5, from_, : len(legal_dst)] = legal_dst
@@ -125,7 +125,7 @@ BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
 for from_ in range(64):
     for to in range(64):
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
-        if not (np.abs(r1 - r0) == 0 or np.abs(c1 - c0) == 0 or np.abs(r1 - r0) == np.abs(c1 - c0)):
+        if not (abs(r1 - r0) == 0 or abs(c1 - c0) == 0 or abs(r1 - r0) == abs(c1 - c0)):
             continue
         dr, dc = max(min(r1 - r0, 1), -1), max(min(c1 - c0, 1), -1)
         for i in range(6):
