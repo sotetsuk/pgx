@@ -322,17 +322,7 @@ def _legal_action_mask(state: GameState) -> Array:
             return jax.lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
         return jax.vmap(legal_label)(LEGAL_DEST[piece, from_])
-
-    def legal_underpromotions(mask):
-        def legal_labels(label):
-            a = Action._from_label(label)
-            ok = (state.board[a.from_] == PAWN) & (a.to >= 0)
-            ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
-            return jax.lax.select(ok, label, -1)
-
-        labels = jnp.int32([from_ * 73 + i for i in range(9) for from_ in [6, 14, 22, 30, 38, 46, 54, 62]])
-        return jax.vmap(legal_labels)(labels)
-
+    
     def legal_en_passants():
         to = state.en_passant
 
@@ -346,6 +336,16 @@ def _legal_action_mask(state: GameState) -> Array:
     def is_not_checked(label):
         a = Action._from_label(label)
         return ~_is_checked(_apply_move(state, a))
+
+    def legal_underpromotions(mask):
+        def legal_labels(label):
+            a = Action._from_label(label)
+            ok = (state.board[a.from_] == PAWN) & (a.to >= 0)
+            ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
+            return jax.lax.select(ok, label, -1)
+
+        labels = jnp.int32([from_ * 73 + i for i in range(9) for from_ in [6, 14, 22, 30, 38, 46, 54, 62]])
+        return jax.vmap(legal_labels)(labels)
 
     # normal move and en passant
     possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0]
