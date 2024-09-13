@@ -16,30 +16,13 @@ from typing import NamedTuple, Optional
 
 import jax
 import jax.numpy as jnp
+import numpy as np
 from jax import Array
 
-from pgx._src.games.chess_utils import (  # type: ignore
-    BETWEEN,
-    CAN_MOVE,
-    INIT_LEGAL_ACTION_MASK,
-    LEGAL_DEST,
-    LEGAL_DEST_ANY,
-    PLANE_MAP,
-    TO_MAP,
-    ZOBRIST_BOARD,
-    ZOBRIST_CASTLING_KING,
-    ZOBRIST_CASTLING_QUEEN,
-    ZOBRIST_EN_PASSANT,
-    ZOBRIST_SIDE,
-)
+# fmt: off
+EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # * -1 for opponent
 
-INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
-MAX_TERMINATION_STEPS = 512  # from AZ paper
-
-EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
-# OPP_PAWN, OPP_KNIGHT, OPP_BISHOP, OPP_ROOK, OPP_QUEEN, OPP_KING = -1, -2, -3, -4, -5, -6
-
-# board index
+# board index:
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
 # 6  5 13 21 29 37 45 53 61
@@ -49,23 +32,15 @@ EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
 # 2  1  9 17 25 33 41 49 57
 # 1  0  8 16 24 32 40 48 56
 #    a  b  c  d  e  f  g  h
-# fmt: off
-INIT_BOARD = jnp.int32([
-    4, 1, 0, 0, 0, 0, -1, -4,
-    2, 1, 0, 0, 0, 0, -1, -2,
-    3, 1, 0, 0, 0, 0, -1, -3,
-    5, 1, 0, 0, 0, 0, -1, -5,
-    6, 1, 0, 0, 0, 0, -1, -6,
-    3, 1, 0, 0, 0, 0, -1, -3,
-    2, 1, 0, 0, 0, 0, -1, -2,
-    4, 1, 0, 0, 0, 0, -1, -4
-])
-# fmt: on
+INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])
 
 # Action
-# 0 ... 8: underpromotions
+# We use AlphaZero style label with channel-last representation: (8, 8, 73)
+# 73 = underpromotions (3 * 3) + queen moves (56) + knight moves (8)
+# 0 ~ 8: underpromotions
 #   plane // 3 == 0: rook, 1: bishop, 2: knight
 #   plane  % 3 == 0: up  , 1: right,  2: left
+# 9 ~ 72: normal moves (queen + knight)
 # 51                   22                   50
 #    52                21                49
 #       53             20             48
@@ -81,6 +56,93 @@ INIT_BOARD = jnp.int32([
 #       39             11             62
 #    38                10                64
 # 37                    9                   64
+FROM_PLANE = -np.ones((64, 73), dtype=np.int32)
+TO_PLANE = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
+zeros, seq, rseq = [0] * 7, list(range(1, 8)), list(range(-7, 0))
+# down, up, left, right, down-left, down-right, up-right, up-left, knight, and knight
+dr = rseq[::] + seq[::] + zeros[::] + zeros[::] + rseq[::] + seq[::] + seq[::-1] + rseq[::-1]
+dc = zeros[::] + zeros[::] + rseq[::] + seq[::] + rseq[::] + seq[::] + rseq[::] + seq[::]
+dr += [-1, +1, -2, +2, -1, +1, -2, +2]
+dc += [-2, -2, -1, -1, +2, +2, +1, +1]
+for from_ in range(64):
+    for plane in range(73):
+        if plane < 9:  # underpromotion
+            to = from_ + [+1, +9, -7][plane % 3] if from_ % 8 == 6 else -1
+            if 0 <= to < 64:
+                FROM_PLANE[from_, plane] = to
+        else:  # normal moves
+            r = from_ % 8 + dr[plane - 9]
+            c = from_ // 8 + dc[plane - 9]
+            if 0 <= r < 8 and 0 <= c < 8:
+                to = c * 8 + r
+                FROM_PLANE[from_, plane] = to
+                TO_PLANE[from_, to] = plane
+
+LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
+CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
+for from_ in range(64):
+    legal_dest = {p: [] for p in range(7)}
+    for to in range(64):
+        if from_ == to:
+            continue
+        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
+        if (r1 - r0 == 1 and abs(c1 - c0) <= 1) or ((r0, r1) == (1, 3) and abs(c1 - c0) == 0):
+            legal_dest[PAWN].append(to)
+        if (abs(r1 - r0) == 1 and abs(c1 - c0) == 2) or (abs(r1 - r0) == 2 and abs(c1 - c0) == 1):
+            legal_dest[KNIGHT].append(to)
+        if abs(r1 - r0) == abs(c1 - c0):
+            legal_dest[BISHOP].append(to)
+        if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
+            legal_dest[ROOK].append(to)
+        if (abs(r1 - r0) == 0 or abs(c1 - c0) == 0) or (abs(r1 - r0) == abs(c1 - c0)):
+            legal_dest[QUEEN].append(to)
+        if from_ != to and abs(r1 - r0) <= 1 and abs(c1 - c0) <= 1:
+            legal_dest[KING].append(to)
+    for p in range(1, 7):
+        LEGAL_DEST[p, from_, : len(legal_dest[p])] = legal_dest[p]
+        CAN_MOVE[p, from_, legal_dest[p]] = True
+
+LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
+for from_ in range(64):
+    legal_dest_any = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
+    LEGAL_DEST_ANY[from_, : len(legal_dest_any)] = legal_dest_any
+
+BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
+for from_ in range(64):
+    for to in range(64):
+        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
+        if not (abs(r1 - r0) == 0 or abs(c1 - c0) == 0 or abs(r1 - r0) == abs(c1 - c0)):
+            continue
+        dr, dc = max(min(r1 - r0, 1), -1), max(min(c1 - c0, 1), -1)
+        for i in range(6):
+            r, c = r0 + dr * (i + 1), c0 + dc * (i + 1)
+            if r == r1 and c == c1:
+                break
+            BETWEEN[from_, to, i] = c * 8 + r
+
+INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
+ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
+INIT_LEGAL_ACTION_MASK[ixs] = True
+
+FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
+)
+
+key = jax.random.PRNGKey(238290)
+key, subkey = jax.random.split(key)
+ZOBRIST_BOARD = jax.random.randint(subkey, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+key, subkey = jax.random.split(key)
+ZOBRIST_SIDE = jax.random.randint(subkey, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+key, subkey = jax.random.split(key)
+ZOBRIST_CASTLING_QUEEN = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+key, subkey = jax.random.split(key)
+ZOBRIST_CASTLING_KING = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+key, subkey = jax.random.split(key)
+ZOBRIST_EN_PASSANT = jax.random.randint(subkey, shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
+
+MAX_TERMINATION_STEPS = 512  # from AZ paper
+# fmt: on
 
 
 class GameState(NamedTuple):
@@ -112,27 +174,12 @@ class Action(NamedTuple):
 
     @staticmethod
     def _from_label(label: Array):
-        """We use AlphaZero style label with channel-last representation: (8, 8, 73)
-
-          73 = queen moves (56) + knight moves (8) + underpromotions (3 * 3)
-
-        Note: this representation is reported as
-
-        > We also tried using a flat distribution over moves for chess and shogi;
-        > the final result was almost identical although training was slightly slower.
-
-        Flat representation may have 1858 actions (= 1792 normal moves + (7 + 7 + 8) * 3 underpromotions)
-
-        Also see
-          - https://github.com/LeelaChessZero/lc0/issues/637
-          - https://github.com/LeelaChessZero/lc0/pull/712
-        """
         from_, plane = label // 73, label % 73
         underpromotion = jax.lax.select(plane >= 9, -1, plane // 3)
-        return Action(from_=from_, to=TO_MAP[from_, plane], underpromotion=underpromotion)
+        return Action(from_=from_, to=FROM_PLANE[from_, plane], underpromotion=underpromotion)
 
     def _to_label(self):
-        return self.from_ * 73 + PLANE_MAP[self.from_, self.to]
+        return self.from_ * 73 + TO_PLANE[self.from_, self.to]
 
 
 class Game:
@@ -350,9 +397,7 @@ def _legal_action_mask(state: GameState) -> Array:
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
     actions = jnp.where(jax.vmap(is_not_checked)(actions), actions, -1)
-
-    # +1 is to avoid setting True to the last element
-    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)
+    mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)  # +1 for sentinel
     mask = mask.at[actions].set(True)
 
     # castling
@@ -385,7 +430,6 @@ def _is_attacked(state: GameState, pos):
 
 
 def _is_checked(state: GameState):
-    """True if possible to capture the opponent king"""
     king_pos = jnp.argmin(jnp.abs(state.board - KING))
     return _is_attacked(state, king_pos)
 
