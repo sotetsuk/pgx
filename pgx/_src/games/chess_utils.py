@@ -39,8 +39,7 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 8
     LEGAL_DEST[1, from_, : len(legal_dst)] = legal_dst
-    for a in legal_dst:
-        CAN_MOVE[1, from_, a] = True
+    CAN_MOVE[1, from_, legal_dst] = True
 # KNIGHT
 for from_ in range(64):
     legal_dst = []
@@ -50,8 +49,7 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     LEGAL_DEST[2, from_, : len(legal_dst)] = legal_dst
-    for a in legal_dst:
-        CAN_MOVE[2, from_, a] = True
+    CAN_MOVE[2, from_, legal_dst] = True
 # BISHOP
 for from_ in range(64):
     legal_dst = []
@@ -63,8 +61,7 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     LEGAL_DEST[3, from_, : len(legal_dst)] = legal_dst
-    for a in legal_dst:
-        CAN_MOVE[3, from_, a] = True
+    CAN_MOVE[3, from_, legal_dst] = True
 # ROOK
 for from_ in range(64):
     legal_dst = []
@@ -76,8 +73,7 @@ for from_ in range(64):
             legal_dst.append(to)
     assert len(legal_dst) <= 27
     LEGAL_DEST[4, from_, : len(legal_dst)] = legal_dst
-    for a in legal_dst:
-        CAN_MOVE[4, from_, a] = True
+    CAN_MOVE[4, from_, legal_dst] = True
 # QUEEN
 for from_ in range(64):
     legal_dst = []
