@@ -75,9 +75,7 @@ for from_ in range(64):
             BETWEEN[from_, to, i] = c * 8 + r
 
 INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
-# fmt: off
 ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
-# fmt: on
 INIT_LEGAL_ACTION_MASK[ixs] = True
 assert INIT_LEGAL_ACTION_MASK.shape == (64 * 73,)
 assert INIT_LEGAL_ACTION_MASK.sum() == 20
