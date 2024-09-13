@@ -260,7 +260,6 @@ def has_insufficient_pieces(state: GameState):
 
 
 def _apply_move(state: GameState, a: Action) -> GameState:
-    # apply move action
     piece = state.board[a.from_]
     # en passant
     is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
