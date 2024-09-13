@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import pgx
 from pgx.chess import State, Chess
-from pgx._src.games.chess import GameState, Action, KING, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash
+from pgx._src.games.chess import GameState, Action, KING, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash, INIT_ZOBRIST_HASH
 from pgx.experimental.utils import act_randomly
 from pgx.experimental.chess import from_fen, to_fen
 
@@ -25,19 +25,6 @@ def p(s: str, b=False):
     offset = int(s[1]) - 1 if not b else 8 - int(s[1])
     return x * 8 + offset
 
-
-def test_zobrist_hash():
-    key = jax.random.PRNGKey(0)
-    key, subkey = jax.random.split(key)
-    state = init(subkey)
-    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
-    # for i in range(5):
-    while not state.terminated:
-        key, subkey = jax.random.split(key)
-        action = act_randomly(subkey, state.legal_action_mask)
-        state = step(state, action)
-        # state.save_svg("debug.svg")
-        assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
 
 def test_action():
     # See #704
@@ -717,20 +704,6 @@ def test_buggy_samples():
     expected_legal_actions = [16, 30, 162, 1212, 1225, 1269, 1270, 1271, 1272, 1284, 1297, 1298, 1299, 1942, 1943, 1956, 2498, 2948, 2949, 3131, 3132, 3133, 3134, 3135, 3136, 3138, 3534, 3548, 3593, 3594, 4250]
     assert state.legal_action_mask.sum() == len(expected_legal_actions), f"\nactual:{jnp.nonzero(state.legal_action_mask)[0]}\nexpected\n{expected_legal_actions}"
 
-    # wrong zobrist hash when a pawn is removed by en passant #1078
-    state = from_fen("1nbqkb1r/rp1p1pp1/8/p1pPp3/4P1n1/5Pp1/PPPBK1PP/RN1Q1B1R w k e6 0 11")
-    state.save_svg("tests/assets/chess/buggy_samples_015.svg")
-    state = step(state, jnp.int32(2088))
-    state.save_svg("tests/assets/chess/buggy_samples_016.svg")
-    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
-
-    # wrong zobrist hash due to queen promotion #1078
-    state = from_fen("B7/8/8/1P6/1k3K2/5P2/6p1/1B6 b - - 1 102")
-    state.save_svg("tests/assets/chess/buggy_samples_017.svg")
-    state = step(state, jnp.int32(3958))
-    state.save_svg("tests/assets/chess/buggy_samples_018.svg")
-    assert (state._x.zobrist_hash == jax.jit(_zobrist_hash)(state._x)).all()
-
 
 def test_observe():
     state = init(jax.random.PRNGKey(0))
@@ -1091,6 +1064,14 @@ def test_observe():
     assert (state.observation[:, :, 14 * 0 + 13] == 1.).all()  # rep
     assert (state.observation[:, :, 14 * 4 + 12] == 0.).all()  # rep
     assert (state.observation[:, :, 14 * 4 + 13] == 1.).all()  # rep
+
+
+def test_zobrist_hash():
+    key = jax.random.PRNGKey(0)
+    key, subkey = jax.random.split(key)
+    state = init(subkey)
+    assert (state._x.hash_history[0] == INIT_ZOBRIST_HASH).all()
+    assert (_zobrist_hash(state._x) == INIT_ZOBRIST_HASH).all()
 
 
 def test_api():

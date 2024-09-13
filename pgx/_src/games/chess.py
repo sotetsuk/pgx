@@ -128,18 +128,12 @@ FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_
     jnp.array(x) for x in (FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
 )
 
-key = jax.random.PRNGKey(238290)
-key, subkey = jax.random.split(key)
-ZOBRIST_BOARD = jax.random.randint(subkey, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_SIDE = jax.random.randint(subkey, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_CASTLING_QUEEN = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_CASTLING_KING = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_EN_PASSANT = jax.random.randint(subkey, shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
+keys = jax.random.split(jax.random.PRNGKey(12345), 4)
+ZOBRIST_BOARD = jax.random.randint(keys[0], shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_SIDE = jax.random.randint(keys[1], shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_CASTLING = jax.random.randint(keys[2], shape=(4, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_EN_PASSANT = jax.random.randint(keys[3], shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+INIT_ZOBRIST_HASH = jnp.uint32([1455170221, 1478960862])
 
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 # fmt: on
@@ -156,10 +150,6 @@ class GameState(NamedTuple):
     board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
-
-    @property
-    def zobrist_hash(self):
-        return _zobrist_hash(self)
 
 
 class Action(NamedTuple):
@@ -228,7 +218,7 @@ class Game:
         terminated = ~state.legal_action_mask.any()
         terminated |= state.halfmove_count >= 100
         terminated |= has_insufficient_pieces(state)
-        rep = (state.hash_history == state.zobrist_hash).all(axis=1).sum() - 1
+        rep = (state.hash_history == _zobrist_hash(state)).all(axis=1).sum() - 1
         terminated |= rep >= 2
         terminated |= MAX_TERMINATION_STEPS <= state.step_count
         return terminated
@@ -249,7 +239,7 @@ def _update_history(state: GameState):
     state = state._replace(board_history=board_history)
     # hash hist
     hash_hist = jnp.roll(state.hash_history, 2)
-    hash_hist = hash_hist.at[0].set(state.zobrist_hash)
+    hash_hist = hash_hist.at[0].set(_zobrist_hash(state))
     state = state._replace(hash_history=hash_hist)
     return state
 
@@ -412,21 +402,10 @@ def _is_checked(state: GameState):
 
 
 def _zobrist_hash(state: GameState) -> Array:
-    """
-    >>> state = GameState()
-    >>> _zobrist_hash(state)
-    Array([1172276016, 1112364556], dtype=uint32)
-    """
-    hash_ = jnp.zeros(2, dtype=jnp.uint32)
-    hash_ = jax.lax.select(state.turn == 0, hash_, hash_ ^ ZOBRIST_SIDE)
-    board = jax.lax.select(state.turn == 0, state.board, _flip(state).board)
-    # 0, ..., 12 (white pawn, ..., black king)
-    to_reduce = ZOBRIST_BOARD[jnp.arange(64), board + 6]
+    hash_ = jax.lax.select(state.turn == 0, ZOBRIST_SIDE, jnp.zeros_like(ZOBRIST_SIDE))
+    to_reduce = ZOBRIST_BOARD[jnp.arange(64), state.board + 6]  # 0, ..., 12 (w:pawn, ..., b:king)
     hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
-    zero = jnp.uint32([0, 0])
-    hash_ ^= jax.lax.select(state.castling_rights[0, 0], ZOBRIST_CASTLING_QUEEN[0], zero)
-    hash_ ^= jax.lax.select(state.castling_rights[0, 1], ZOBRIST_CASTLING_QUEEN[1], zero)
-    hash_ ^= jax.lax.select(state.castling_rights[1, 0], ZOBRIST_CASTLING_KING[0], zero)
-    hash_ ^= jax.lax.select(state.castling_rights[1, 1], ZOBRIST_CASTLING_KING[1], zero)
+    to_reduce = jnp.where(state.castling_rights.reshape(-1, 1), ZOBRIST_CASTLING, 0)
+    hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
     hash_ ^= ZOBRIST_EN_PASSANT[state.en_passant]
     return hash_
