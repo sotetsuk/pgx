@@ -18,8 +18,7 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._src.games.chess import Game, GameState, _flip
-from pgx._src.games.chess_utils import INIT_LEGAL_ACTION_MASK  # type: ignore
+from pgx._src.games.chess import Game, GameState, _flip, INIT_LEGAL_ACTION_MASK
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
 
