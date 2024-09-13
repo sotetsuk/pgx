@@ -27,15 +27,8 @@ for from_ in range(64):
                 TO_MAP[from_, plane] = to
                 PLANE_MAP[from_, to] = plane
 
-LEGAL_DEST = -np.ones((7, 64, 27), np.int32)
+LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
-# usage: LEGAL_DEST[piece, from_x, from_y]
-# LEGAL_DEST[0, :, :] are all -1
-# Note that the board is not symmetric about the center (different from shogi)
-# You can imagine that the viewpoint is always from the white side.
-# Except PAWN, the moves are symmetric about the center.
-# We define PAWN as a piece that can move left-up, up, right-up.
-
 
 # PAWN
 for from_ in range(64):
