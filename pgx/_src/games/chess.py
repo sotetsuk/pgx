@@ -308,24 +308,8 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     board = jax.lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
     state = state._replace(board=board)
     # update castling rights
-    state = state._replace(
-        castling_rights=state.castling_rights.at[0, 0].set((a.from_ != 32) & (a.from_ != 0) & state.castling_rights[0, 0])
-    )
-    state = state._replace(
-        castling_rights=state.castling_rights.at[0, 1].set(
-            (a.from_ != 32) & (a.from_ != 56) & state.castling_rights[0, 1]
-        )
-    )
-    state = state._replace(
-        castling_rights=state.castling_rights.at[1, 0].set(
-            (a.to != 7) & state.castling_rights[1, 0]
-        )
-    )
-    state = state._replace(
-        castling_rights=state.castling_rights.at[1, 1].set(
-            (a.to != 63) & state.castling_rights[1, 1]
-        )
-    )
+    cond = jnp.bool_([[(a.from_ != 32) & (a.from_ != 0), (a.from_ != 32) & (a.from_ != 56)], [a.to != 7, a.to != 63]])
+    state = state._replace(castling_rights=state.castling_rights & cond)
     # promotion to queen
     piece = jax.lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, piece)
     # underpromotion
