@@ -128,17 +128,12 @@ FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_
     jnp.array(x) for x in (FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
 )
 
-key = jax.random.PRNGKey(238290)
-key, subkey = jax.random.split(key)
-ZOBRIST_BOARD = jax.random.randint(subkey, shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_SIDE = jax.random.randint(subkey, shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_CASTLING_QUEEN = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_CASTLING_KING = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-key, subkey = jax.random.split(key)
-ZOBRIST_EN_PASSANT = jax.random.randint(subkey, shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+keys = jax.random.split(jax.random.PRNGKey(238290), 5)
+ZOBRIST_BOARD = jax.random.randint(keys[0], shape=(64, 13, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_SIDE = jax.random.randint(keys[1], shape=(2,), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_CASTLING_QUEEN = jax.random.randint(keys[2], shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_CASTLING_KING = jax.random.randint(keys[3], shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
+ZOBRIST_EN_PASSANT = jax.random.randint(keys[4], shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 
 MAX_TERMINATION_STEPS = 512  # from AZ paper
