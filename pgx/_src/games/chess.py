@@ -19,8 +19,51 @@ import jax
 import jax.numpy as jnp
 from jax import Array
 
+# fmt: off
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))
 # OPP_PAWN, OPP_KNIGHT, OPP_BISHOP, OPP_ROOK, OPP_QUEEN, OPP_KING = -1, -2, -3, -4, -5, -6
+
+# board index
+# 8  7 15 23 31 39 47 55 63
+# 7  6 14 22 30 38 46 54 62
+# 6  5 13 21 29 37 45 53 61
+# 5  4 12 20 28 36 44 52 60
+# 4  3 11 19 27 35 43 51 59
+# 3  2 10 18 26 34 42 50 58
+# 2  1  9 17 25 33 41 49 57
+# 1  0  8 16 24 32 40 48 56
+#    a  b  c  d  e  f  g  h
+INIT_BOARD = jnp.int32([
+    4, 1, 0, 0, 0, 0, -1, -4,
+    2, 1, 0, 0, 0, 0, -1, -2,
+    3, 1, 0, 0, 0, 0, -1, -3,
+    5, 1, 0, 0, 0, 0, -1, -5,
+    6, 1, 0, 0, 0, 0, -1, -6,
+    3, 1, 0, 0, 0, 0, -1, -3,
+    2, 1, 0, 0, 0, 0, -1, -2,
+    4, 1, 0, 0, 0, 0, -1, -4
+])
+
+# Action
+# 0 ... 8: underpromotions
+#   plane // 3 == 0: rook, 1: bishop, 2: knight
+#   plane  % 3 == 0: up  , 1: right,  2: left
+# 51                   22                   50
+#    52                21                49
+#       53             20             48
+#          54          19          47
+#             55       18       46
+#                56    17    45
+#                   57 16 44
+# 23 24 25 26 27 28 29  X 30 31 32 33 34 35 36
+#                   43 15 58
+#                42    14    59
+#             41       13       60
+#          40          12          61
+#       39             11             62
+#    38                10                64
+# 37                    9                   64
+
 
 TO_MAP = -np.ones((64, 73), dtype=np.int32)
 PLANE_MAP = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
@@ -108,49 +151,7 @@ ZOBRIST_EN_PASSANT = jax.random.randint(subkey, shape=(65, 2), minval=0, maxval=
 
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
 MAX_TERMINATION_STEPS = 512  # from AZ paper
-
-# board index
-# 8  7 15 23 31 39 47 55 63
-# 7  6 14 22 30 38 46 54 62
-# 6  5 13 21 29 37 45 53 61
-# 5  4 12 20 28 36 44 52 60
-# 4  3 11 19 27 35 43 51 59
-# 3  2 10 18 26 34 42 50 58
-# 2  1  9 17 25 33 41 49 57
-# 1  0  8 16 24 32 40 48 56
-#    a  b  c  d  e  f  g  h
-# fmt: off
-INIT_BOARD = jnp.int32([
-    4, 1, 0, 0, 0, 0, -1, -4,
-    2, 1, 0, 0, 0, 0, -1, -2,
-    3, 1, 0, 0, 0, 0, -1, -3,
-    5, 1, 0, 0, 0, 0, -1, -5,
-    6, 1, 0, 0, 0, 0, -1, -6,
-    3, 1, 0, 0, 0, 0, -1, -3,
-    2, 1, 0, 0, 0, 0, -1, -2,
-    4, 1, 0, 0, 0, 0, -1, -4
-])
 # fmt: on
-
-# Action
-# 0 ... 8: underpromotions
-#   plane // 3 == 0: rook, 1: bishop, 2: knight
-#   plane  % 3 == 0: up  , 1: right,  2: left
-# 51                   22                   50
-#    52                21                49
-#       53             20             48
-#          54          19          47
-#             55       18       46
-#                56    17    45
-#                   57 16 44
-# 23 24 25 26 27 28 29  X 30 31 32 33 34 35 36
-#                   43 15 58
-#                42    14    59
-#             41       13       60
-#          40          12          61
-#       39             11             62
-#    38                10                64
-# 37                    9                   64
 
 
 class GameState(NamedTuple):
