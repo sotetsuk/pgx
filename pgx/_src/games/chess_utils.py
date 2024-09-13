@@ -32,10 +32,9 @@ CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 
 # PAWN
 for from_ in range(64):
-    r0, c0 = from_ % 8, from_ // 8
     legal_dst = []
     for to in range(64):
-        r1, c1 = to % 8, to // 8
+        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if r1 - r0 == 1 and abs(c1 - c0) <= 1:
             legal_dst.append(to)
         # init move
@@ -47,10 +46,9 @@ for from_ in range(64):
         CAN_MOVE[1, from_, a] = True
 # KNIGHT
 for from_ in range(64):
-    r0, c0 = from_ % 8, from_ // 8
     legal_dst = []
     for to in range(64):
-        r1, c1 = to % 8, to // 8
+        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if abs(r1 - r0) == 1 and abs(c1 - c0) == 2:
             legal_dst.append(to)
         if abs(r1 - r0) == 2 and abs(c1 - c0) == 1:
@@ -61,10 +59,9 @@ for from_ in range(64):
         CAN_MOVE[2, from_, a] = True
 # BISHOP
 for from_ in range(64):
-    r0, c0 = from_ % 8, from_ // 8
     legal_dst = []
     for to in range(64):
-        r1, c1 = to % 8, to // 8
+        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if from_ == to:
             continue
         if abs(r1 - r0) == abs(c1 - c0):
@@ -75,10 +72,9 @@ for from_ in range(64):
         CAN_MOVE[3, from_, a] = True
 # ROOK
 for from_ in range(64):
-    r0, c0 = from_ % 8, from_ // 8
     legal_dst = []
     for to in range(64):
-        r1, c1 = to % 8, to // 8
+        r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if from_ == to:
             continue
         if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
