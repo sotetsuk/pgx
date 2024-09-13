@@ -219,10 +219,7 @@ class Game:
                 jax.vmap(make)(jnp.arange(8)).reshape(-1, 8, 8),  # board feature
                 color * ones,  # color
                 (state.step_count / MAX_TERMINATION_STEPS) * ones,  # total move count
-                state.castling_rights[0, 0] * ones,  # my castling right (queen side)
-                state.castling_rights[0, 1] * ones,  # my castling right (king side)
-                state.castling_rights[1, 0] * ones,  # opp castling right (queen side)
-                state.castling_rights[1, 1] * ones,  # opp castling right (king side)
+                state.castling_rights.flatten()[:, None, None] * ones,  # (my queen, my king, opp queen, opp king)
                 (state.halfmove_count.astype(jnp.float32) / 100.0) * ones,  # no progress count
             ]
         ).transpose((1, 2, 0))
