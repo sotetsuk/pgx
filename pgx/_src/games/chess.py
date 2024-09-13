@@ -136,8 +136,8 @@ key, subkey = jax.random.split(key)
 ZOBRIST_CASTLING_KING = jax.random.randint(subkey, shape=(2, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 key, subkey = jax.random.split(key)
 ZOBRIST_EN_PASSANT = jax.random.randint(subkey, shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
-
 INIT_ZOBRIST_HASH = jnp.uint32([1172276016, 1112364556])
+
 MAX_TERMINATION_STEPS = 512  # from AZ paper
 # fmt: on
 
