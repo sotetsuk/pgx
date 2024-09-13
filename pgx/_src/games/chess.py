@@ -148,15 +148,12 @@ MAX_TERMINATION_STEPS = 512  # from AZ paper
 class GameState(NamedTuple):
     turn: Array = jnp.int32(0)
     board: Array = INIT_BOARD  # From top left. like FEN
-    castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)
-    en_passant: Array = jnp.int32(-1)  # En passant target. Flips.
-    # # of moves since the last piece capture or pawn move
-    halfmove_count: Array = jnp.int32(0)
+    castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)  # my queen, my king, opp queen, opp king
+    en_passant: Array = jnp.int32(-1)  # En passant target.
+    halfmove_count: Array = jnp.int32(0)  # # of moves since the last piece capture or pawn move
     fullmove_count: Array = jnp.int32(1)  # increase every black move
-    # zobrist_hash: Array = INIT_ZOBRIST_HASH
     hash_history: Array = jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
     board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
-    # index to possible piece positions for speeding up. Flips every turn.
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
 
