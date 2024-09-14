@@ -138,8 +138,8 @@ MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
 
 class GameState(NamedTuple):
-    turn: Array = jnp.int32(0)
-    board: Array = INIT_BOARD
+    color: Array = jnp.int32(0)  # w: 0, b: 1
+    board: Array = INIT_BOARD  # (64,)
     castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)  # my queen, my king, opp queen, opp king
     en_passant: Array = jnp.int32(-1)
     halfmove_count: Array = jnp.int32(0)  # number of moves since the last piece capture or pawn move
@@ -180,7 +180,7 @@ class Game:
 
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         if color is None:
-            color = state.turn
+            color = state.color
         ones = jnp.ones((1, 8, 8), dtype=jnp.float32)
 
         def make(i):
@@ -225,7 +225,7 @@ class Game:
         is_checkmate = (~state.legal_action_mask.any()) & _is_checked(state)
         return jax.lax.select(
             is_checkmate,
-            jnp.ones(2, dtype=jnp.float32).at[state.turn].set(-1),
+            jnp.ones(2, dtype=jnp.float32).at[state.color].set(-1),
             jnp.zeros(2, dtype=jnp.float32),
         )
 
@@ -273,7 +273,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     captured = (state.board[a.to] < 0) | is_en_passant
     state = state._replace(
         halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state.halfmove_count + 1),
-        fullmove_count=state.fullmove_count + jnp.int32(state.turn == 1),
+        fullmove_count=state.fullmove_count + jnp.int32(state.color == 1),
     )
     # castling
     board = state.board
@@ -301,7 +301,7 @@ def _flip_pos(x):  # e.g., 37 <-> 34, -1 <-> -1
 def _flip(state: GameState) -> GameState:
     return state._replace(
         board=-jnp.flip(state.board.reshape(8, 8), axis=1).flatten(),
-        turn=(state.turn + 1) % 2,
+        color=(state.color + 1) % 2,
         en_passant=_flip_pos(state.en_passant),
         castling_rights=state.castling_rights[::-1],
         board_history=-jnp.flip(state.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
@@ -391,7 +391,7 @@ def _is_checked(state: GameState):
 
 
 def _zobrist_hash(state: GameState) -> Array:
-    hash_ = jax.lax.select(state.turn == 0, ZOBRIST_SIDE, jnp.zeros_like(ZOBRIST_SIDE))
+    hash_ = jax.lax.select(state.color == 0, ZOBRIST_SIDE, jnp.zeros_like(ZOBRIST_SIDE))
     to_reduce = ZOBRIST_BOARD[jnp.arange(64), state.board + 6]  # 0, ..., 12 (w:pawn, ..., b:king)
     hash_ ^= jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
     to_reduce = jnp.where(state.castling_rights.reshape(-1, 1), ZOBRIST_CASTLING, 0)

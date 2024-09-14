@@ -37,7 +37,7 @@ def from_fen(fen: str):
     >>> state._en_passant
     Array(37, dtype=int32)
     """
-    board, turn, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
+    board, color, castling, en_passant, halfmove_cnt, fullmove_cnt = fen.split()
     arr = []
     for line in board.split("/"):
         for c in line:
@@ -50,17 +50,17 @@ def from_fen(fen: str):
                     ix *= -1
                 arr.append(ix)
     castling_rights = jnp.bool_([["Q" in castling, "K" in castling], ["q" in castling, "k" in castling]])
-    if turn == "b":
+    if color == "b":
         castling_rights = castling_rights[::-1]
     mat = jnp.int32(arr).reshape(8, 8)
-    if turn == "b":
+    if color == "b":
         mat = -jnp.flip(mat, axis=0)
     ep = jnp.int32(-1) if en_passant == "-" else jnp.int32("abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1)
-    if turn == "b" and ep >= 0:
+    if color == "b" and ep >= 0:
         ep = _flip_pos(ep)
     x = GameState(
         board=jnp.rot90(mat, k=3).flatten(),
-        turn=jnp.int32(0) if turn == "w" else jnp.int32(1),
+        color=jnp.int32(0) if color == "w" else jnp.int32(1),
         castling_rights=castling_rights,
         en_passant=ep,
         halfmove_count=jnp.int32(halfmove_cnt),
@@ -74,11 +74,11 @@ def from_fen(fen: str):
     state = State(
         _player_order=player_order,
         _x=x,
-        current_player=player_order[x.turn],
+        current_player=player_order[x.color],
         legal_action_mask=legal_action_mask,
         terminated=jax.jit(game.is_terminal)(x),
         rewards=jax.jit(game.rewards)(x)[player_order],
-        observation=jax.jit(game.observe)(x, x.turn),
+        observation=jax.jit(game.observe)(x, x.color),
     )
     return state
 
@@ -104,7 +104,7 @@ def to_fen(state: State):
     'rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'
     """
     pb = np.rot90(state._x.board.reshape(8, 8), k=1)
-    if state._x.turn == 1:
+    if state._x.color == 1:
         pb = -np.flip(pb, axis=0)
     fen = ""
     # board
@@ -129,10 +129,10 @@ def to_fen(state: State):
         else:
             fen += " "
     # turn
-    fen += "w " if state._x.turn == 0 else "b "
+    fen += "w " if state._x.color == 0 else "b "
     # castling
     castling_rights = state._x.castling_rights
-    if state._x.turn == 1:
+    if state._x.color == 1:
         castling_rights = castling_rights[::-1]
     if not (np.any(castling_rights)):
         fen += "-"
@@ -148,7 +148,7 @@ def to_fen(state: State):
     fen += " "
     # em passant
     en_passant = state._x.en_passant
-    if state._x.turn == 1:
+    if state._x.color == 1:
         en_passant = -1 if en_passant == -1 else (en_passant // 8) * 8 + (7 - (en_passant % 8))
     ep = int(en_passant)
     if ep == -1:

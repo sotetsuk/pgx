@@ -772,7 +772,7 @@ def test_observe():
     assert (state.observation[:, :, 13] == 0).all()
 
     # color
-    assert state._x.turn == 0
+    assert state._x.color == 0
     assert (state.observation[:, :, 112] == 0).all()
 
 
@@ -813,7 +813,7 @@ def test_observe():
     assert (state.observation[:, :, 13] == 0).all()
 
     # color
-    assert state._x.turn == 1
+    assert state._x.color == 1
     assert (state.observation[:, :, 112] == 1).all()
 
     # repetition
