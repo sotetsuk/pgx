@@ -131,7 +131,7 @@ def _make_chess_dwg(dwg, state: ChessState, config):
             )
         )
 
-    if state._x.turn == 1:
+    if state._x.color == 1:
         state = state.replace(_x=_flip(state._x))  # type: ignore
     # pieces
     pieces_g = dwg.g()

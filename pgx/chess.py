@@ -68,7 +68,7 @@ class Chess(core.Env):
         x = GameState()
         _player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
         state = State(  # type: ignore
-            current_player=_player_order[x.turn],
+            current_player=_player_order[x.color],
             _player_order=_player_order,
             _x=x,
         )
@@ -83,13 +83,13 @@ class Chess(core.Env):
             legal_action_mask=x.legal_action_mask,
             terminated=self.game.is_terminal(x),
             rewards=self.game.rewards(x)[state._player_order],
-            current_player=state._player_order[x.turn],
+            current_player=state._player_order[x.color],
         )
         return state  # type: ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        color = jax.lax.select(state.current_player == player_id, state._x.turn, 1 - state._x.turn)
+        color = jax.lax.select(state.current_player == player_id, state._x.color, 1 - state._x.color)
         x = jax.lax.cond(state.current_player == player_id, lambda: state._x, lambda: _flip(state._x))
         return self.game.observe(x, color)
 
