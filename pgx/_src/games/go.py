@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
 from typing import NamedTuple, Optional
 
 import jax
@@ -228,7 +227,7 @@ def _count_scores(state: GameState, size):
 
 def _count_ji(state: GameState, color: int, size: int):
     board = jnp.clip(state.board * color, -1, 1)  # my stone: 1, opp stone: -1
-    adj_mat = jax.vmap(partial(_adj_ixs, size=size))(jnp.arange(size**2))  # (size**2, 4)
+    adj_mat = jax.vmap(_adj_ixs, in_axes=(0, None))(jnp.arange(size**2), size)  # (size**2, 4)
 
     def fill_opp(x):
         b, _ = x
