@@ -44,17 +44,16 @@ class GameState(NamedTuple):
 
 class Game:
     def __init__(
-        self, size: int = 19, komi: float = 7.5, history_length: int = 8, max_termination_steps: Optional[int] = None
+        self, size: int = 19, komi: float = 7.5, max_termination_steps: Optional[int] = None
     ):
         self.size = size
         self.komi = komi
-        self.history_length = history_length
         self.max_termination_steps = size * size * 2 if max_termination_steps is None else max_termination_steps
 
     def init(self) -> GameState:
         return GameState(
             board=jnp.zeros(self.size**2, dtype=jnp.int32),
-            board_history=jnp.full((self.history_length, self.size**2), 2, dtype=jnp.int32),
+            board_history=jnp.full((8, self.size**2), 2, dtype=jnp.int32),
             hash_history=jnp.zeros((self.max_termination_steps, 2), dtype=jnp.uint32),
         )
 
@@ -87,7 +86,7 @@ class Game:
             c = jnp.int32([1, -1])[i % 2] * my_sign
             return state.board_history[i // 2] == c
 
-        log = jax.vmap(_make)(jnp.arange(self.history_length * 2))
+        log = jax.vmap(_make)(jnp.arange(8 * 2))  # history length * 2 colors
         color = jnp.full_like(log[0], color)  # b = 0, w = 1
         return jnp.vstack([log, color]).transpose().reshape((self.size, self.size, -1))
 
