@@ -15,7 +15,7 @@
 from typing import NamedTuple, Optional
 
 import jax
-from jax import lax, Array
+from jax import Array, lax
 from jax import numpy as jnp
 
 ZOBRIST_BOARD = jax.random.randint(jax.random.PRNGKey(12345), (3, 19 * 19, 2), 0, 2**31 - 1, jnp.uint32)
