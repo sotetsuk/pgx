@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import jax
 from jax import Array, lax
@@ -40,7 +40,7 @@ class GameState(NamedTuple):
 
 class Game:
     def __init__(
-        self, size: int = 19, komi: float = 7.5, history_length: int = 8, max_termination_steps: int | None = None
+        self, size: int = 19, komi: float = 7.5, history_length: int = 8, max_termination_steps: Optional[int] = None
     ):
         self.size = size
         self.komi = komi
@@ -74,7 +74,7 @@ class Game:
         state = state._replace(step_count=state.step_count + 1)
         return state
 
-    def observe(self, state: GameState, color: Array | None = None) -> Array:
+    def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         if color is None:
             color = state.color
         my_sign, _ = _signs(color)
