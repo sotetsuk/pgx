@@ -36,9 +36,12 @@ class State(core.State):
     _x: go.GameState = go.GameState()
 
     @property
+    def _size(self) -> int:
+        return int(jnp.sqrt(self._x.board.shape[-1]).astype(jnp.int32))
+
+    @property
     def env_id(self) -> core.EnvId:
-        size = jnp.sqrt(self._x.board.shape[-1]).astype(jnp.int32)
-        return f"go_{size}x{size}"  # type: ignore
+        return f"go_{self._size}x{self._size}"  # type: ignore
 
 
 class Go(core.Env):
