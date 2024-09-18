@@ -15,7 +15,7 @@
 from typing import NamedTuple, Optional
 
 import jax
-from jax import Array
+from jax import lax, Array
 from jax import numpy as jnp
 
 ZOBRIST_BOARD = jax.random.randint(jax.random.PRNGKey(12345), (3, 19 * 19, 2), 0, 2**31 - 1, jnp.uint32)
@@ -61,7 +61,7 @@ class Game:
     def step(self, state: GameState, action: Array) -> GameState:
         state = state._replace(ko=jnp.int32(-1))
         # update state
-        state = jax.lax.cond(
+        state = lax.cond(
             (action < self.size * self.size),
             lambda: _apply_action(state, action, self.size),
             lambda: _apply_pass(state),
@@ -107,7 +107,7 @@ class Game:
             return (on_board & (is_empty[adj_ixs] | can_kill[adj_ixs] | has_liberty[adj_ixs])).any()
 
         mask = is_empty & jax.vmap(is_adj_ok)(jnp.arange(self.size**2))
-        mask = jax.lax.select(state.ko == -1, mask, mask.at[state.ko].set(False))
+        mask = lax.select(state.ko == -1, mask, mask.at[state.ko].set(False))
         return jnp.append(mask, True)  # pass is always legal
 
     def is_terminal(self, state: GameState) -> Array:
@@ -118,10 +118,10 @@ class Game:
     def rewards(self, state: GameState) -> Array:
         scores = _count_scores(state, self.size)
         is_black_win = scores[0] - self.komi > scores[1]
-        rewards = jax.lax.select(is_black_win, jnp.float32([1, -1]), jnp.float32([-1, 1]))
+        rewards = lax.select(is_black_win, jnp.float32([1, -1]), jnp.float32([-1, 1]))
         to_play = state.color
-        rewards = jax.lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), rewards)
-        rewards = jax.lax.select(self.is_terminal(state), rewards, jnp.zeros(2, dtype=jnp.float32))
+        rewards = lax.select(state.is_psk, jnp.float32([-1, -1]).at[to_play].set(1.0), rewards)
+        rewards = lax.select(self.is_terminal(state), rewards, jnp.zeros(2, dtype=jnp.float32))
         return rewards
 
 
@@ -148,7 +148,7 @@ def _apply_action(state: GameState, action, size) -> GameState:
     state = state._replace(
         board=jnp.where(surrounded_stones.any(axis=-1), 0, state.board),
         num_captured=state.num_captured.at[state.color].add(num_captured),
-        ko=jax.lax.select(ko_may_occur & (num_captured == 1), adj_ixs[ko_ix], -1),
+        ko=lax.select(ko_may_occur & (num_captured == 1), adj_ixs[ko_ix], -1),
     )
 
     # set stone
@@ -209,7 +209,7 @@ def _adj_ixs(xy, size):
 def _compute_hash(state: GameState):
     board = jnp.clip(state.board, -1, 1)
     to_reduce = ZOBRIST_BOARD[board, jnp.arange(board.shape[-1])]
-    return jax.lax.reduce(to_reduce, 0, jax.lax.bitwise_xor, (0,))
+    return lax.reduce(to_reduce, 0, lax.bitwise_xor, (0,))
 
 
 def _is_psk(state: GameState):
@@ -235,5 +235,5 @@ def _count_ji(state: GameState, color: int, size: int):
         mask = (b == 0) & ((adj_mat != -1) & (b[adj_mat] == -1)).any(axis=1)
         return jnp.where(mask, -1, b), mask.any()
 
-    board, _ = jax.lax.while_loop(lambda x: x[1], fill_opp, (board, True))
+    board, _ = lax.while_loop(lambda x: x[1], fill_opp, (board, True))
     return (board == 0).sum()
