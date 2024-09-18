@@ -76,6 +76,10 @@ for from_ in range(64):
                 FROM_PLANE[from_, plane] = to
                 TO_PLANE[from_, to] = plane
 
+INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
+ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
+INIT_LEGAL_ACTION_MASK[ixs] = True
+
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 for from_ in range(64):
@@ -118,12 +122,8 @@ for from_ in range(64):
                 break
             BETWEEN[from_, to, i] = c * 8 + r
 
-INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
-ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
-INIT_LEGAL_ACTION_MASK[ixs] = True
-
-FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (
-    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
+FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN = (
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN)
 )
 
 keys = jax.random.split(jax.random.PRNGKey(12345), 4)
