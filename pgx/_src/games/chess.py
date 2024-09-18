@@ -19,10 +19,12 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array
 
-# fmt: off
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # opponent: -1 * piece
+MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
-INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])
+# prepare precomputed values here (e.g., available moves, map to label, etc.)
+
+INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
 # 6  5 13 21 29 37 45 53 61
@@ -76,6 +78,10 @@ for from_ in range(64):
                 FROM_PLANE[from_, plane] = to
                 TO_PLANE[from_, to] = plane
 
+INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
+ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
+INIT_LEGAL_ACTION_MASK[ixs] = True
+
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 for from_ in range(64):
@@ -118,12 +124,8 @@ for from_ in range(64):
                 break
             BETWEEN[from_, to, i] = c * 8 + r
 
-INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
-ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
-INIT_LEGAL_ACTION_MASK[ixs] = True
-
-FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK = (
-    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, INIT_LEGAL_ACTION_MASK)
+FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN = (
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN)
 )
 
 keys = jax.random.split(jax.random.PRNGKey(12345), 4)
@@ -132,9 +134,6 @@ ZOBRIST_SIDE = jax.random.randint(keys[1], shape=(2,), minval=0, maxval=2**31 - 
 ZOBRIST_CASTLING = jax.random.randint(keys[2], shape=(4, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 ZOBRIST_EN_PASSANT = jax.random.randint(keys[3], shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 INIT_ZOBRIST_HASH = jnp.uint32([1455170221, 1478960862])
-
-MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
-# fmt: on
 
 
 class GameState(NamedTuple):
@@ -170,8 +169,7 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        a = Action._from_label(action)
-        state = _apply_move(state, a)
+        state = _apply_move(state, Action._from_label(action))
         state = _flip(state)
         state = _update_history(state)
         state = state._replace(legal_action_mask=_legal_action_mask(state))
@@ -294,7 +292,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     return state
 
 
-def _flip_pos(x):  # e.g., 37 <-> 34, -1 <-> -1
+def _flip_pos(x: Array):  # e.g., 37 <-> 34, -1 <-> -1
     return jax.lax.select(x == -1, x, (x // 8) * 8 + (7 - (x % 8)))
 
 
@@ -373,7 +371,7 @@ def _legal_action_mask(state: GameState) -> Array:
     return mask[:-1]
 
 
-def _is_attacked(state: GameState, pos):
+def _is_attacked(state: GameState, pos: Array):
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
