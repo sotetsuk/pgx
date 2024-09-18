@@ -22,6 +22,8 @@ from jax import Array
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # opponent: -1 * piece
 MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
+# prepare precomputed values here (e.g., available moves, map to label, etc.)
+
 INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
