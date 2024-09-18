@@ -19,9 +19,7 @@ import jax
 from jax import Array
 from jax import numpy as jnp
 
-ZOBRIST_BOARD = jax.random.randint(
-    jax.random.PRNGKey(12345), shape=(3, 19 * 19, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32
-)
+ZOBRIST_BOARD = jax.random.randint(jax.random.PRNGKey(12345), (3, 19 * 19, 2), 0, 2**31 - 1, jnp.uint32)
 
 
 class GameState(NamedTuple):
