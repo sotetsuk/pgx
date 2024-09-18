@@ -373,7 +373,7 @@ def _legal_action_mask(state: GameState) -> Array:
     return mask[:-1]
 
 
-def _is_attacked(state: GameState, pos):
+def _is_attacked(state: GameState, pos: Array):
     def can_move(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
