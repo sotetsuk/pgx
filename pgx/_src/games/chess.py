@@ -256,38 +256,38 @@ def has_insufficient_pieces(state: GameState):
     return is_insufficient
 
 
-def _apply_move(state: GameState, action: Action) -> GameState:
-    piece = state.board[action.from_]
+def _apply_move(state: GameState, a: Action) -> GameState:
+    piece = state.board[a.from_]
     # en passant
-    is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == action.to)
-    removed_pawn_pos = action.to - 1
+    is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
+    removed_pawn_pos = a.to - 1
     state = state._replace(
         board=state.board.at[removed_pawn_pos].set(jax.lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos]))
     )
-    is_en_passant = (piece == PAWN) & (jnp.abs(action.to - action.from_) == 2)
-    state = state._replace(en_passant=jax.lax.select(is_en_passant, (action.to + action.from_) // 2, -1))
+    is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
+    state = state._replace(en_passant=jax.lax.select(is_en_passant, (a.to + a.from_) // 2, -1))
     # update counters
-    captured = (state.board[action.to] < 0) | is_en_passant
+    captured = (state.board[a.to] < 0) | is_en_passant
     state = state._replace(
         halfmove_count=jax.lax.select(captured | (piece == PAWN), 0, state.halfmove_count + 1),
         fullmove_count=state.fullmove_count + jnp.int32(state.color == 1),
     )
     # castling
     board = state.board
-    is_queen_side_castling = (piece == KING) & (action.from_ == 32) & (action.to == 16)
+    is_queen_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 16)
     board = jax.lax.select(is_queen_side_castling, board.at[0].set(EMPTY).at[24].set(ROOK), board)
-    is_king_side_castling = (piece == KING) & (action.from_ == 32) & (action.to == 48)
+    is_king_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 48)
     board = jax.lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
     state = state._replace(board=board)
     # update castling rights
-    cond = jnp.bool_([[(action.from_ != 32) & (action.from_ != 0), (action.from_ != 32) & (action.from_ != 56)], [action.to != 7, action.to != 63]])
+    cond = jnp.bool_([[(a.from_ != 32) & (a.from_ != 0), (a.from_ != 32) & (a.from_ != 56)], [a.to != 7, a.to != 63]])
     state = state._replace(castling_rights=state.castling_rights & cond)
     # promotion to queen
-    piece = jax.lax.select((piece == PAWN) & (action.from_ % 8 == 6) & (action.underpromotion < 0), QUEEN, piece)
+    piece = jax.lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, piece)
     # underpromotion
-    piece = jax.lax.select(action.underpromotion < 0, piece, jnp.int32([ROOK, BISHOP, KNIGHT])[action.underpromotion])
+    piece = jax.lax.select(a.underpromotion < 0, piece, jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion])
     # actually move
-    state = state._replace(board=state.board.at[action.from_].set(EMPTY).at[action.to].set(piece))  # type: ignore
+    state = state._replace(board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
     return state
 
 
