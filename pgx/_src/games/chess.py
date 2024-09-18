@@ -24,6 +24,7 @@ MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
 # prepare precomputed values here (e.g., available moves, map to label, etc.)
 
+# index: a1: 0, a2: 1, ..., h8: 63
 INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
@@ -36,11 +37,10 @@ INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1
 #    a  b  c  d  e  f  g  h
 
 # Action: AlphaZero style label (4672 = 64 x 73)
-# 73 = underpromotions (3 * 3) + queen moves (56) + knight moves (8)
-# * 0 ~ 8: underpromotions
-#   plane // 3 == 0: rook, 1: bishop, 2: knight
-#   plane  % 3 == 0: up  , 1: right,  2: left
-# * 9 ~ 72: normal moves (queen + knight)
+# * [0:9]  underpromotions
+#     plane // 3 == 0: rook, 1: bishop, 2: knight
+#     plane  % 3 == 0: up  , 1: right,  2: left
+# * [9:73] normal moves (queen:56 + knight:8)
 #   51                   22                   50
 #      52                21                49
 #         53             20             48
