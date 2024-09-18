@@ -168,7 +168,8 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        state = _apply_move(state, Action._from_label(action))
+        a = Action._from_label(action)
+        state = _apply_move(state, a)
         state = _flip(state)
         state = _update_history(state)
         state = state._replace(legal_action_mask=_legal_action_mask(state))
