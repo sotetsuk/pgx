@@ -20,6 +20,7 @@ import numpy as np
 from jax import Array
 
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # opponent: -1 * piece
+MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
 INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
 # 8  7 15 23 31 39 47 55 63
@@ -131,8 +132,6 @@ ZOBRIST_SIDE = jax.random.randint(keys[1], shape=(2,), minval=0, maxval=2**31 - 
 ZOBRIST_CASTLING = jax.random.randint(keys[2], shape=(4, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 ZOBRIST_EN_PASSANT = jax.random.randint(keys[3], shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 INIT_ZOBRIST_HASH = jnp.uint32([1455170221, 1478960862])
-
-MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
 
 class GameState(NamedTuple):
