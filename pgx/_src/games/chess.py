@@ -294,7 +294,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     return state
 
 
-def _flip_pos(x):  # e.g., 37 <-> 34, -1 <-> -1
+def _flip_pos(x: Array):  # e.g., 37 <-> 34, -1 <-> -1
     return jax.lax.select(x == -1, x, (x // 8) * 8 + (7 - (x % 8)))
 
 
