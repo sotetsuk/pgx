@@ -37,7 +37,8 @@ class State(core.State):
 
     @property
     def env_id(self) -> core.EnvId:
-        return f"go_{self._x.size}x{self._x.size}"  # type: ignore
+        size = jnp.sqrt(self._x.board.shape[-1]).astype(jnp.int32)
+        return f"go_{size}x{size}"  # type: ignore
 
 
 class Go(core.Env):
