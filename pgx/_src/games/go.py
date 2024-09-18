@@ -37,10 +37,6 @@ class GameState(NamedTuple):
     def color(self) -> Array:
         return self.step_count % 2
 
-    @property
-    def size(self) -> Array:
-        return jnp.sqrt(self.board.shape[-1]).astype(jnp.int32)
-
 
 class Game:
     def __init__(
