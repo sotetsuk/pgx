@@ -13,3 +13,4 @@ baselines
 dds_results
 wandb
 checkpoints
+__pycache__
