@@ -94,7 +94,7 @@ class Go(core.Env):
 
     @property
     def version(self) -> str:
-        return "v0"
+        return "v1"
 
     @property
     def num_players(self) -> int:
