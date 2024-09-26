@@ -26,7 +26,7 @@ or you can directly load `Go` class
 ```py
 from pgx.go import Go
 
-env = Go(size=19, komi=6.5)
+env = Go(size=19, komi=7.5)
 ```
 
 ## Description
@@ -78,7 +78,7 @@ Let `N` be the board size (e.g., `19`).
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `2` |
 | Number of actions | `N x N + 1` |
 | Observation shape | `(N, N, 17)` |
