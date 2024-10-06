@@ -372,15 +372,38 @@ def _legal_action_mask(state: GameState) -> Array:
 
 
 def _is_attacked(state: GameState, pos: Array):
-    def can_move(to):
+    dx = jnp.int32([1, 1, 1, 0, 0, -1, -1, -1])
+    dy = jnp.int32([1, 0, -1, 1, -1, 1, 0, -1])
+
+    def find_nearest(dir_):
+        def body_fn(i, curr):
+            x, y = curr % 8, curr // 8
+            is_empty = state.board[curr] == EMPTY
+            should_move = (curr == pos) | is_empty
+            next_x, next_y = x + dx[dir_], y + dy[dir_]
+            out_of_board = (next_x < 0) | (next_x >= 8) | (next_y < 0) | (next_y >= 8)
+            next_ = lax.select(out_of_board, -1, next_x + next_y * 8)
+            return lax.select(should_move, next_, curr)
+
+        return lax.fori_loop(0, 7, body_fn, pos)
+
+    def attacked_from(dir_):
+        to = find_nearest(dir_)
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
-        between_ixs = BETWEEN[pos, to]
-        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+        ok &= CAN_MOVE[piece, pos, to]
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
-
-    return jax.vmap(can_move)(LEGAL_DEST_ANY[pos, :]).any()
+    
+    def attacked_by_knight(to):
+        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
+        piece = jnp.abs(state.board[to])
+        ok &= (piece == KNIGHT) & CAN_MOVE[piece, pos, to] 
+        return ok
+ 
+    by_knight = jax.vmap(attacked_by_knight)(LEGAL_DEST[KNIGHT, pos, :]).any()
+    by_others = jax.vmap(attacked_from)(jnp.arange(8)).any()
+    return by_knight | by_others
 
 
 def _is_checked(state: GameState):
