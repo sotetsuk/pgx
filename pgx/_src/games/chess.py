@@ -378,16 +378,16 @@ def _is_attacked(state: GameState, pos: Array):
     dy = jnp.int32([1, 0, -1, 1, -1, 1, 0, -1])
 
     def find_nearest(dir_):
-        def cond_fn(curr):
-            return (curr == pos) | ((curr >= 0) & (state.board[curr] == EMPTY))
-
-        def body_fn(curr):
+        def body_fn(i, curr):
             x, y = curr % 8, curr // 8
+            is_empty = state.board[curr] == EMPTY
+            should_move = (curr == pos) | is_empty
             next_x, next_y = x + dx[dir_], y + dy[dir_]
             out_of_board = (next_x < 0) | (next_x >= 8) | (next_y < 0) | (next_y >= 8)
-            return lax.select(out_of_board, -1, next_x + next_y * 8)
+            next_ = lax.select(out_of_board, -1, next_x + next_y * 8)
+            return lax.select(should_move, next_, curr)
 
-        return lax.while_loop(cond_fn, body_fn, pos)
+        return lax.fori_loop(0, 7, body_fn, pos)
 
     def attacked_from(dir_):
         to = find_nearest(dir_)
