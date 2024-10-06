@@ -83,6 +83,7 @@ ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 301
 INIT_LEGAL_ACTION_MASK[ixs] = True
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
+LEGAL_KNIGHT_DEST = -np.ones((64, 8), np.int32)
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 for from_ in range(64):
     legal_dest = {p: [] for p in range(7)}
@@ -105,6 +106,7 @@ for from_ in range(64):
     for p in range(1, 7):
         LEGAL_DEST[p, from_, : len(legal_dest[p])] = legal_dest[p]
         CAN_MOVE[p, from_, legal_dest[p]] = True
+    LEGAL_KNIGHT_DEST[from_, : len(legal_dest[KNIGHT])] = legal_dest[KNIGHT]
 
 LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
 for from_ in range(64):
@@ -124,8 +126,8 @@ for from_ in range(64):
                 break
             BETWEEN[from_, to, i] = c * 8 + r
 
-FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN = (
-    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN)
+FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, LEGAL_KNIGHT_DEST = (
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN, LEGAL_KNIGHT_DEST)
 )
 
 keys = jax.random.split(jax.random.PRNGKey(12345), 4)
@@ -398,7 +400,7 @@ def _is_attacked(state: GameState, pos: Array):
     def attacked_by_knight(to):
         return (to >= 0) & (state.board[to] == -KNIGHT)  # should be opponent's kinght
  
-    by_knight = jax.vmap(attacked_by_knight)(LEGAL_DEST[KNIGHT, pos, :]).any()
+    by_knight = jax.vmap(attacked_by_knight)(LEGAL_KNIGHT_DEST[pos, :]).any()
     by_others = jax.vmap(attacked_from)(jnp.arange(8)).any()
     return by_knight | by_others
 
