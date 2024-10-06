@@ -396,10 +396,7 @@ def _is_attacked(state: GameState, pos: Array):
         return ok
     
     def attacked_by_knight(to):
-        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
-        piece = jnp.abs(state.board[to])
-        ok &= (piece == KNIGHT) & CAN_MOVE[piece, pos, to] 
-        return ok
+        return (to >= 0) & (state.board[to] == -KNIGHT)  # should be opponent's kinght
  
     by_knight = jax.vmap(attacked_by_knight)(LEGAL_DEST[KNIGHT, pos, :]).any()
     by_others = jax.vmap(attacked_from)(jnp.arange(8)).any()
