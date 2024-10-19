@@ -376,16 +376,15 @@ def _is_attacked(state: GameState, pos: Array):
     def under_attack_by_major(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
+        ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
         between_ixs = BETWEEN[pos, to]
         ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
-        ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
     
     def under_attack_by_minor(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
-        # between_ixs = BETWEEN[pos, to]
-        ok &= CAN_MOVE[piece, pos, to]  # & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+        ok &= CAN_MOVE[piece, pos, to]
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
     
