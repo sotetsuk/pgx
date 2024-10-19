@@ -380,7 +380,18 @@ def _is_attacked(state: GameState, pos: Array):
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
 
-    return jax.vmap(can_move)(LEGAL_DEST_ANY[pos, :]).any()
+    def attacked_by_knight(to):
+        return (to >= 0) & (state.board[to] == -KNIGHT)  # should be opponent's
+
+    def attacked_by_pawn(to):
+        return (to >= 0) & (state.board[to] == -PAWN) & (jnp.abs(to - pos) != 1)  # should be opponent's inght
+
+    def attacked_by_king(to):
+        return (to >= 0) & (state.board[to] == -KING)  # should be opponent's
+
+    by_knight = jax.vmap(attacked_by_knight)(LEGAL_DEST[KNIGHT, pos, :]).any()
+
+    return jax.vmap(can_move)(LEGAL_DEST[QUEEN, pos, :]).any() | by_knight
 
 
 def _is_checked(state: GameState):
