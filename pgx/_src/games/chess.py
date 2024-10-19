@@ -83,6 +83,8 @@ ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 301
 INIT_LEGAL_ACTION_MASK[ixs] = True
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
+LEGAL_DEST_NEAR = -np.ones((64, 16), np.int32)
+LEGAL_DEST_FAR = -np.ones((64, 19), np.int32)
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 for from_ in range(64):
     legal_dest = {p: [] for p in range(7)}
@@ -105,11 +107,10 @@ for from_ in range(64):
     for p in range(1, 7):
         LEGAL_DEST[p, from_, : len(legal_dest[p])] = legal_dest[p]
         CAN_MOVE[p, from_, legal_dest[p]] = True
-
-LEGAL_DEST_ANY = -np.ones((64, 35), np.int32)
-for from_ in range(64):
-    legal_dest_any = [x for x in list(LEGAL_DEST[5, from_]) + list(LEGAL_DEST[2, from_]) if x >= 0]
-    LEGAL_DEST_ANY[from_, : len(legal_dest_any)] = legal_dest_any
+    dests = list(set(legal_dest[KING]) | set(legal_dest[KNIGHT]))
+    LEGAL_DEST_NEAR[from_, : len(dests)] = dests
+    dests = list(set(legal_dest[QUEEN]).difference(set(legal_dest[KING])))
+    LEGAL_DEST_FAR[from_, : len(dests)] = dests
 
 BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
 for from_ in range(64):
@@ -124,8 +125,8 @@ for from_ in range(64):
                 break
             BETWEEN[from_, to, i] = c * 8 + r
 
-FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN = (
-    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_ANY, CAN_MOVE, BETWEEN)
+FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN = (
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN)
 )
 
 keys = jax.random.split(jax.random.PRNGKey(12345), 4)
@@ -372,15 +373,24 @@ def _legal_action_mask(state: GameState) -> Array:
 
 
 def _is_attacked(state: GameState, pos: Array):
-    def can_move(to):
+    def attacked_far(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
+        ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
         between_ixs = BETWEEN[pos, to]
         ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+        return ok
+
+    def attacked_near(to):
+        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
+        piece = jnp.abs(state.board[to])
+        ok &= CAN_MOVE[piece, pos, to]
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
 
-    return jax.vmap(can_move)(LEGAL_DEST_ANY[pos, :]).any()
+    by_minor = jax.vmap(attacked_near)(LEGAL_DEST_NEAR[pos, :]).any()
+    by_major = jax.vmap(attacked_far)(LEGAL_DEST_FAR[pos, :]).any()
+    return by_minor | by_major
 
 
 def _is_checked(state: GameState):
