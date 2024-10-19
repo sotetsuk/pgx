@@ -390,7 +390,6 @@ def _is_attacked(state: GameState, pos: Array):
 
     by_minor = jax.vmap(attacked_near)(LEGAL_DEST_NEAR[pos, :]).any()
     by_major = jax.vmap(attacked_far)(LEGAL_DEST_FAR[pos, :]).any()
-
     return by_minor | by_major
 
 
