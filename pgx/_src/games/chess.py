@@ -388,8 +388,10 @@ def _is_attacked(state: GameState, pos: Array):
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
 
+    mask = (state.board == -QUEEN) | (state.board == -ROOK) | (state.board == -BISHOP)
+    major_piece_positions = jnp.nonzero(mask, size=11, fill_value=-1)[0]  # 3 + 8 = 11
     by_minor = jax.vmap(attacked_near)(LEGAL_DEST_NEAR[pos, :]).any()
-    by_major = jax.vmap(attacked_far)(LEGAL_DEST_FAR[pos, :]).any()
+    by_major = jax.vmap(attacked_far)(major_piece_positions).any()
     return by_minor | by_major
 
 
