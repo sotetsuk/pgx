@@ -84,8 +84,8 @@ INIT_LEGAL_ACTION_MASK[ixs] = True
 
 LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
-LEGAL_DEST_MINOR = -np.ones((64, 16), np.int32)
-LEGAL_DEST_MAJOR = -np.ones((64, 19), np.int32)
+LEGAL_DEST_NEAR = -np.ones((64, 16), np.int32)
+LEGAL_DEST_FAR = -np.ones((64, 19), np.int32)
 for from_ in range(64):
     legal_dest = {p: [] for p in range(7)}
     for to in range(64):
@@ -108,9 +108,9 @@ for from_ in range(64):
         LEGAL_DEST[p, from_, : len(legal_dest[p])] = legal_dest[p]
         CAN_MOVE[p, from_, legal_dest[p]] = True
     dests = list(set(legal_dest[KING]) | set(legal_dest[KNIGHT]))
-    LEGAL_DEST_MINOR[from_, : len(dests)] = dests
+    LEGAL_DEST_NEAR[from_, : len(dests)] = dests
     dests = list(set(legal_dest[QUEEN]).difference(set(legal_dest[KING])))
-    LEGAL_DEST_MAJOR[from_, : len(dests)] = dests
+    LEGAL_DEST_FAR[from_, : len(dests)] = dests
 
 BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
 for from_ in range(64):
@@ -125,15 +125,15 @@ for from_ in range(64):
                 break
             BETWEEN[from_, to, i] = c * 8 + r
 
-FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_MINOR, LEGAL_DEST_MAJOR, CAN_MOVE, BETWEEN = (
+FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN = (
     jnp.array(x)
     for x in (
         FROM_PLANE,
         TO_PLANE,
         INIT_LEGAL_ACTION_MASK,
         LEGAL_DEST,
-        LEGAL_DEST_MINOR,
-        LEGAL_DEST_MAJOR,
+        LEGAL_DEST_NEAR,
+        LEGAL_DEST_FAR,
         CAN_MOVE,
         BETWEEN,
     )
@@ -383,7 +383,7 @@ def _legal_action_mask(state: GameState) -> Array:
 
 
 def _is_attacked(state: GameState, pos: Array):
-    def under_attack_by_major(to):
+    def attacked_far(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
         ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
@@ -391,15 +391,15 @@ def _is_attacked(state: GameState, pos: Array):
         ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
         return ok
 
-    def under_attack_by_minor(to):
+    def attacked_near(to):
         ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
         piece = jnp.abs(state.board[to])
         ok &= CAN_MOVE[piece, pos, to]
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
 
-    by_minor = jax.vmap(under_attack_by_minor)(LEGAL_DEST_MINOR[pos, :]).any()
-    by_major = jax.vmap(under_attack_by_major)(LEGAL_DEST_MAJOR[pos, :]).any()
+    by_minor = jax.vmap(attacked_near)(LEGAL_DEST_NEAR[pos, :]).any()
+    by_major = jax.vmap(attacked_far)(LEGAL_DEST_FAR[pos, :]).any()
 
     return by_minor | by_major
 
