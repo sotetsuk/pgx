@@ -126,17 +126,7 @@ for from_ in range(64):
             BETWEEN[from_, to, i] = c * 8 + r
 
 FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN = (
-    jnp.array(x)
-    for x in (
-        FROM_PLANE,
-        TO_PLANE,
-        INIT_LEGAL_ACTION_MASK,
-        LEGAL_DEST,
-        LEGAL_DEST_NEAR,
-        LEGAL_DEST_FAR,
-        CAN_MOVE,
-        BETWEEN,
-    )
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN)
 )
 
 keys = jax.random.split(jax.random.PRNGKey(12345), 4)
