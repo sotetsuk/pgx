@@ -73,6 +73,17 @@ def get_bb(bb, pos):
     return jnp.int32([1, -1])[color] * piece_type
 
 
+def set_bb(bb, ix, piece):
+    rank, file = ix % 8, ix // 8
+    rank_bb = bb[rank]
+    color = piece < 0  # >=0: us, <0: opp
+    piece_type = jnp.abs(piece)
+    bits = (color << SHIFT_COLOR) | piece_type
+    rank_bb = rank_bb & ~(0b1111 << (4 * file))  # clear the bits
+    rank_bb = rank_bb | (bits << (4 * file))
+    return bb.at[rank].set(rank_bb)
+
+
 # prepare precomputed values here (e.g., available moves, map to label, etc.)
 
 # index: a1: 0, a2: 1, ..., h8: 63
@@ -340,7 +351,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     # underpromotion
     piece = lax.select(a.underpromotion < 0, piece, jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion])
     # actually move
-    state = state._replace(bb=to_bitboard(to_board(state.bb).at[a.from_].set(EMPTY).at[a.to].set(piece)))  # type: ignore
+    state = state._replace(bb=set_bb(set_bb(state.bb, a.from_, EMPTY), a.to, piece))
     return state
 
 
