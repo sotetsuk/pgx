@@ -77,6 +77,10 @@ def set_bb(bb, ix, piece):
     return bb.at[rank].set(rank_bb)
 
 
+def flip_bb(bb):
+    return bb ^ jnp.uint32(0b10001000100010001000100010001000)
+
+
 # prepare precomputed values here (e.g., available moves, map to label, etc.)
 
 # index: a1: 0, a2: 1, ..., h8: 63
@@ -191,10 +195,12 @@ ZOBRIST_CASTLING = jax.random.randint(keys[2], shape=(4, 2), minval=0, maxval=2*
 ZOBRIST_EN_PASSANT = jax.random.randint(keys[3], shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 INIT_ZOBRIST_HASH = jnp.uint32([1455170221, 1478960862])
 
+INIT_BB = to_bitboard(INIT_BOARD)
+
 
 class GameState(NamedTuple):
     color: Array = jnp.int32(0)  # w: 0, b: 1
-    bb: Array = to_bitboard(INIT_BOARD)
+    bb: Array = INIT_BB
     castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)  # my queen, my king, opp queen, opp king
     en_passant: Array = jnp.int32(-1)
     halfmove_count: Array = jnp.int32(0)  # number of moves since the last piece capture or pawn move
@@ -352,7 +358,7 @@ def _flip_pos(x: Array):  # e.g., 37 <-> 34, -1 <-> -1
 
 def _flip(state: GameState) -> GameState:
     return state._replace(
-        bb=to_bitboard(-jnp.flip(to_board(state.bb).reshape(8, 8), axis=1).flatten()),
+        bb=flip_bb(state.bb)[::-1],
         color=(state.color + 1) % 2,
         en_passant=_flip_pos(state.en_passant),
         castling_rights=state.castling_rights[::-1],
