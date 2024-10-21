@@ -367,7 +367,7 @@ def _legal_action_mask(state: GameState) -> Array:
         def legal_label(to):
             ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (get_bb(state.bb, to) <= 0)
             between_ixs = BETWEEN[from_, to]
-            ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (to_board(state.bb)[between_ixs] == EMPTY)).all()
+            ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (jax.vmap(get_bb, in_axes=(None, 0))(state.bb, between_ixs) == EMPTY)).all()
             c0, c1 = from_ // 8, to // 8
             pawn_should = ((c1 == c0) & (get_bb(state.bb, to) == EMPTY)) | ((c1 != c0) & (get_bb(state.bb, to) < 0))
             ok &= (piece != PAWN) | pawn_should
