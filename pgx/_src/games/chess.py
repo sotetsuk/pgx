@@ -56,6 +56,7 @@ def to_board(bitboard):
 
 
 def get_bb(bb, pos):
+    bb = bb.astype(jnp.uint32)
     rank, file = pos % 8, pos // 8
     rank_bb = bb[rank]
     bits = (rank_bb >> (4 * file)) & 0b1111
@@ -65,7 +66,8 @@ def get_bb(bb, pos):
 
 
 def set_bb(bb, ix, piece):
-    rank, file = ix % 8, ix // 8
+    bb = bb.astype(jnp.uint32)
+    rank, file = ix % 8, jnp.uint32(ix // 8)
     rank_bb = bb[rank]
     color = piece < 0  # >=0: us, <0: opp
     piece_type = jnp.abs(piece)
@@ -329,10 +331,9 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     # castling
     is_queen_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 16)
     bb = lax.select(is_queen_side_castling, set_bb(set_bb(state.bb, 0, EMPTY), 24, ROOK), state.bb)
-    board = to_board(bb)
     is_king_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 48)
-    board = lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
-    state = state._replace(bb=to_bitboard(board))
+    bb = lax.select(is_king_side_castling, set_bb(set_bb(bb, 56, EMPTY), 40, ROOK), bb)
+    state = state._replace(bb=bb)
     # update castling rights
     cond = jnp.bool_([[(a.from_ != 32) & (a.from_ != 0), (a.from_ != 32) & (a.from_ != 56)], [a.to != 7, a.to != 63]])
     state = state._replace(castling_rights=state.castling_rights & cond)
