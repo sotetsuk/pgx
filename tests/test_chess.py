@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import pgx
 from pgx.chess import State, Chess
-from pgx._src.games.chess import GameState, Action, KING, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash, INIT_ZOBRIST_HASH
+from pgx._src.games.chess import GameState, Action, KING, QUEEN, EMPTY, ROOK, PAWN, _legal_action_mask, CAN_MOVE, _zobrist_hash, INIT_ZOBRIST_HASH, to_board
 from pgx.experimental.utils import act_randomly
 from pgx.experimental.chess import from_fen, to_fen
 
@@ -135,23 +135,27 @@ def test_step():
     # normal step
     state = from_fen("1k6/8/8/8/8/8/1Q6/7K w - - 0 1")
     state.save_svg("tests/assets/chess/step_001.svg")
-    assert state._x.board[p("b1")] == EMPTY
+    assert to_board(state._x.bb)[p("b1")] == EMPTY
+    a = Action._from_label(jnp.int32(672))
+    print(f"{a.from_=}", flush=True)
+    piece = to_board(state._x.bb)[a.from_]
+    print(f"{piece=}", flush=True)
     state = step(state, jnp.int32(672))
     state.save_svg("tests/assets/chess/step_002.svg")
-    assert state._x.board[p("b1", True)] == -QUEEN
+    assert to_board(state._x.bb)[p("b1", True)] == -QUEEN
 
     # promotion
     state = from_fen("r1r4k/1P6/8/8/8/8/P7/7K w - - 0 1")
     state.save_svg("tests/assets/chess/step_002.svg")
-    assert state._x.board[p("b8")] == EMPTY
+    assert to_board(state._x.bb)[p("b8")] == EMPTY
     # underpromotion
     next_state = step(state, jnp.int32(1022))
     next_state.save_svg("tests/assets/chess/step_003.svg")
-    assert next_state._x.board[p("b8", True)] == -ROOK
+    assert to_board(next_state._x.bb)[p("b8", True)] == -ROOK
     # promotion to queen
     next_state = step(state, jnp.int32(p("b7") * 73 + 16))
     next_state.save_svg("tests/assets/chess/step_004.svg")
-    assert next_state._x.board[p("b8", True)] == -QUEEN
+    assert to_board(next_state._x.bb)[p("b8", True)] == -QUEEN
 
     # castling
     state = from_fen("1k6/8/8/8/8/8/8/R3K2R w KQ - 0 1")
@@ -159,24 +163,24 @@ def test_step():
     # left
     next_state = step(state, jnp.int32(p("e1") * 73 + 28))
     next_state.save_svg("tests/assets/chess/step_006.svg")
-    assert next_state._x.board[p("c1", True)] == -KING
-    assert next_state._x.board[p("d1", True)] == -ROOK  # castling
-    assert next_state._x.board[p("a1", True)] == EMPTY  # castling
+    assert to_board(next_state._x.bb)[p("c1", True)] == -KING
+    assert to_board(next_state._x.bb)[p("d1", True)] == -ROOK  # castling
+    assert to_board(next_state._x.bb)[p("a1", True)] == EMPTY  # castling
     # right
     next_state = step(state, jnp.int32(p("e1") * 73 + 31))
     next_state.save_svg("tests/assets/chess/step_007.svg")
-    assert next_state._x.board[p("g1", True)] == -KING
-    assert next_state._x.board[p("f1", True)] == -ROOK  # castling
-    assert next_state._x.board[p("h1", True)] == EMPTY  # castling
+    assert to_board(next_state._x.bb)[p("g1", True)] == -KING
+    assert to_board(next_state._x.bb)[p("f1", True)] == -ROOK  # castling
+    assert to_board(next_state._x.bb)[p("h1", True)] == EMPTY  # castling
 
     # en passant
     state = from_fen("1k6/8/8/8/3pP3/8/8/R3K2R b KQ e3 0 1")
     state.save_svg("tests/assets/chess/step_008.svg")
-    assert state._x.board[p("e4", True)] == -PAWN
+    assert to_board(state._x.bb)[p("e4", True)] == -PAWN
     next_state = step(state, jnp.int32(p("d4", True) * 73 + 44))
     next_state.save_svg("tests/assets/chess/step_009.svg")
-    assert next_state._x.board[p("e3")] == -PAWN
-    assert next_state._x.board[p("e4")] == EMPTY
+    assert to_board(next_state._x.bb)[p("e3")] == -PAWN
+    assert to_board(next_state._x.bb)[p("e4")] == EMPTY
     state = from_fen("1k6/8/8/8/3p4/8/4P3/R3K2R w KQ - 0 1")
     state.save_svg("tests/assets/chess/step_010.svg")
     next_state = step(state, jnp.int32(p("e2") * 73 + 17))  # UP 2

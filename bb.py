@@ -1,6 +1,7 @@
 import jax
 from jax import lax
 import jax.numpy as jnp
+from pgx.experimental.chess import from_fen
 
 # ピースの定義
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # ピース
@@ -22,9 +23,9 @@ def to_bitboard(board):
         rank = idx % 8
         file = idx // 8
         color = lax.select(piece < 0, 1, 0)
-        piece_type = abs(piece)
+        piece_type = jnp.abs(piece)
         bit_value = (color << SHIFT_COLOR) | (piece_type << SHIFT_PIECE_TYPE)
-        bit_value = lax.select(piece != EMPTY, bitboard[rank] | (bit_value << (4 * file)), 0)
+        bit_value = bitboard[rank] | lax.select(piece != EMPTY, (bit_value << (4 * file)), 0)
         bitboard = bitboard.at[rank].set(bit_value)
 
     return bitboard
@@ -32,7 +33,7 @@ def to_bitboard(board):
 
 @jax.jit
 def to_board(bitboard):
-    board = jnp.zeros(BOARD_SIZE, dtype=jnp.int8)
+    board = jnp.zeros(BOARD_SIZE, dtype=jnp.int32)
     for rank in range(8):
         rank_bits = bitboard[rank]
         for file in range(8):
@@ -73,4 +74,3 @@ print(reconstructed_board.reshape(8, 8))
 
 # 再構築したboardが元のboardと同じかどうかを確認
 assert jnp.array_equal(board, reconstructed_board)
-

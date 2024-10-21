@@ -3,6 +3,7 @@ import os
 
 from pgx.chess import State as ChessState
 from pgx.chess import _flip
+from pgx._src.games.chess import to_board
 
 
 def _make_chess_dwg(dwg, state: ChessState, config):
@@ -136,7 +137,7 @@ def _make_chess_dwg(dwg, state: ChessState, config):
     # pieces
     pieces_g = dwg.g()
     for i in range(64):
-        pi = int(state._x.board[i].item())
+        pi = int(to_board(state._x.bb)[i].item())
         if pi == 0:
             continue
         if pi < 0:
