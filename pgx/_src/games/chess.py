@@ -41,10 +41,10 @@ def to_bitboard(board):
         piece = board[idx]
         rank = idx % 8
         file = idx // 8
-        color = lax.select(piece < 0, 1, 0)
+        color = piece < 0  # >=0: us, <0: opp
         piece_type = jnp.abs(piece)
-        bit_value = (color << SHIFT_COLOR) | (piece_type << SHIFT_PIECE_TYPE)
-        bit_value = bitboard[rank] | lax.select(piece != EMPTY, (bit_value << (4 * file)), 0)
+        bit_value = (color << SHIFT_COLOR) | piece_type
+        bit_value = bitboard[rank] | (bit_value << (4 * file))
         bitboard = bitboard.at[rank].set(bit_value)
 
     return bitboard
@@ -59,8 +59,7 @@ def to_board(bitboard):
             bit_value = (rank_bits >> (4 * file)) & 0b1111
             color = (bit_value >> SHIFT_COLOR) & 1
             piece_type = bit_value & 0b111
-            val = lax.select(color == 1, -piece_type, piece_type)
-            val = lax.select(piece_type == 0, 0, val)
+            val = jnp.int32([1, -1])[color] * piece_type
             board = board.at[file * 8 + rank].set(val)
     return board
 
@@ -70,9 +69,8 @@ def get_bb(bb, pos):
     rank_bb = bb[rank]
     bits = (rank_bb >> (4 * file)) & 0b1111
     color = (bits >> SHIFT_COLOR) & 1
-    color = lax.select(color == 0, 1, -1)
     piece_type = bits & 0b111
-    return lax.select(bits == 0, EMPTY, color * piece_type)
+    return jnp.int32([1, -1])[color] * piece_type
 
 
 # prepare precomputed values here (e.g., available moves, map to label, etc.)
