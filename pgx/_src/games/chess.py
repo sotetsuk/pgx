@@ -170,7 +170,14 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        state = _apply_move(state, Action._from_label(action))
+        board, en_passant, halfmove_count, fullmove_count, castling_rights = _apply_move(state, Action._from_label(action))
+        state = state._replace(
+            board=board,
+            en_passant=en_passant,
+            halfmove_count=halfmove_count,
+            fullmove_count=fullmove_count,
+            castling_rights=castling_rights
+        )
         state = _flip(state)
         state = _update_history(state)
         state = state._replace(legal_action_mask=_legal_action_mask(state))
@@ -221,7 +228,7 @@ class Game:
         return terminated
 
     def rewards(self, state: GameState) -> Array:
-        is_checkmate = (~state.legal_action_mask.any()) & _is_checked(state)
+        is_checkmate = (~state.legal_action_mask.any()) & _is_checked(state.board)
         return lax.select(
             is_checkmate,
             jnp.ones(2, dtype=jnp.float32).at[state.color].set(-1),
@@ -258,39 +265,33 @@ def has_insufficient_pieces(state: GameState):
     return is_insufficient
 
 
-def _apply_move(state: GameState, a: Action) -> GameState:
+def _apply_move(state: GameState, a: Action):
     piece = state.board[a.from_]
     # en passant
     is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
     removed_pawn_pos = a.to - 1
-    state = state._replace(
-        board=state.board.at[removed_pawn_pos].set(lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos]))
-    )
+    board = state.board.at[removed_pawn_pos].set(lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos]))
     is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
-    state = state._replace(en_passant=lax.select(is_en_passant, (a.to + a.from_) // 2, -1))
+    en_passant = lax.select(is_en_passant, (a.to + a.from_) // 2, -1)
     # update counters
-    captured = (state.board[a.to] < 0) | is_en_passant
-    state = state._replace(
-        halfmove_count=lax.select(captured | (piece == PAWN), 0, state.halfmove_count + 1),
-        fullmove_count=state.fullmove_count + jnp.int32(state.color == 1),
-    )
+    captured = (board[a.to] < 0) | is_en_passant
+    halfmove_count = lax.select(captured | (piece == PAWN), 0, state.halfmove_count + 1)
+    fullmove_count = state.fullmove_count + jnp.int32(state.color == 1)
     # castling
-    board = state.board
     is_queen_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 16)
     board = lax.select(is_queen_side_castling, board.at[0].set(EMPTY).at[24].set(ROOK), board)
     is_king_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 48)
     board = lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
-    state = state._replace(board=board)
     # update castling rights
     cond = jnp.bool_([[(a.from_ != 32) & (a.from_ != 0), (a.from_ != 32) & (a.from_ != 56)], [a.to != 7, a.to != 63]])
-    state = state._replace(castling_rights=state.castling_rights & cond)
+    castling_rights = state.castling_rights & cond
     # promotion to queen
     piece = lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, piece)
     # underpromotion
     piece = lax.select(a.underpromotion < 0, piece, jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion])
     # actually move
-    state = state._replace(board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
-    return state
+    board = board.at[a.from_].set(EMPTY).at[a.to].set(piece)  # type: ignore
+    return board, en_passant, halfmove_count, fullmove_count, castling_rights
 
 
 def _flip_pos(x: Array):  # e.g., 37 <-> 34, -1 <-> -1
@@ -334,7 +335,8 @@ def _legal_action_mask(state: GameState) -> Array:
 
     def is_not_checked(label):
         a = Action._from_label(label)
-        return ~_is_checked(_apply_move(state, a))
+        board, _, _, _, _ = _apply_move(state, a)
+        return ~_is_checked(board)
 
     def legal_underpromotions(mask):
         def legal_labels(label):
@@ -361,7 +363,7 @@ def _legal_action_mask(state: GameState) -> Array:
     can_castle_queen_side &= (b[0] == ROOK) & (b[8] == EMPTY) & (b[16] == EMPTY) & (b[24] == EMPTY) & (b[32] == KING)
     can_castle_king_side = state.castling_rights[0, 1]
     can_castle_king_side &= (b[32] == KING) & (b[40] == EMPTY) & (b[48] == EMPTY) & (b[56] == ROOK)
-    not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int32([16, 24, 32, 40, 48]))
+    not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state.board, jnp.int32([16, 24, 32, 40, 48]))
     mask = mask.at[2364].set(mask[2364] | (can_castle_queen_side & not_checked[:3].all()))
     mask = mask.at[2367].set(mask[2367] | (can_castle_king_side & not_checked[2:].all()))
 
@@ -372,18 +374,18 @@ def _legal_action_mask(state: GameState) -> Array:
     return mask[:-1]
 
 
-def _is_attacked(state: GameState, pos: Array):
+def _is_attacked(board, pos: Array):
     def attacked_far(to):
-        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
-        piece = jnp.abs(state.board[to])
+        ok = (to >= 0) & (board[to] < 0)  # should be opponent's
+        piece = jnp.abs(board[to])
         ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
         between_ixs = BETWEEN[pos, to]
-        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (board[between_ixs] == EMPTY)).all()
         return ok
 
     def attacked_near(to):
-        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
-        piece = jnp.abs(state.board[to])
+        ok = (to >= 0) & (board[to] < 0)  # should be opponent's
+        piece = jnp.abs(board[to])
         ok &= CAN_MOVE[piece, pos, to]
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
@@ -393,9 +395,9 @@ def _is_attacked(state: GameState, pos: Array):
     return by_minor | by_major
 
 
-def _is_checked(state: GameState):
-    king_pos = jnp.argmin(jnp.abs(state.board - KING))
-    return _is_attacked(state, king_pos)
+def _is_checked(board):
+    king_pos = jnp.argmin(jnp.abs(board - KING))
+    return _is_attacked(board, king_pos)
 
 
 def _zobrist_hash(state: GameState) -> Array:
