@@ -431,7 +431,7 @@ def _is_attacked(state: GameState, pos: Array):
         piece = jnp.abs(get_bb(state.bb, to))
         ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
         between_ixs = BETWEEN[pos, to]
-        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (to_board(state.bb)[between_ixs] == EMPTY)).all()
+        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (jax.vmap(get_bb, in_axes=(None, 0))(state.bb, between_ixs) == EMPTY)).all()
         return ok
 
     def attacked_near(to):
