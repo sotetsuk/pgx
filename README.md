@@ -12,7 +12,7 @@
 <a href="https://sotetsuk.github.io/pgx"><img src="https://img.shields.io/badge/docs-available-8CA1AF?logo=readthedocs&logoColor=fff"></a>
 </p>
 
-A collection of GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)
+A collection of GPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 <div align="center">
 <img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_dark.gif#gh-dark-mode-only" width="30%"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(270deg);"><img src="https://raw.githubusercontent.com/sotetsuk/pgx/main/docs/assets/go_dark.gif#gh-dark-mode-only" width="30%" style="transform:rotate(90deg);">
