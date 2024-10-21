@@ -64,6 +64,17 @@ def to_board(bitboard):
             board = board.at[file * 8 + rank].set(val)
     return board
 
+
+def get_bb(bb, pos):
+    rank, file = pos % 8, pos // 8
+    rank_bb = bb[rank]
+    bits = (rank_bb >> (4 * file)) & 0b1111
+    color = (bits >> SHIFT_COLOR) & 1
+    color = lax.select(color == 0, 1, -1)
+    piece_type = bits & 0b111
+    return lax.select(bits == 0, EMPTY, color * piece_type)
+
+
 # prepare precomputed values here (e.g., available moves, map to label, etc.)
 
 # index: a1: 0, a2: 1, ..., h8: 63
@@ -301,7 +312,7 @@ def has_insufficient_pieces(state: GameState):
 
 
 def _apply_move(state: GameState, a: Action) -> GameState:
-    piece = to_board(state.bb)[a.from_]
+    piece = get_bb(state.bb, a.from_)
     # en passant
     is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
     removed_pawn_pos = a.to - 1
@@ -351,14 +362,14 @@ def _flip(state: GameState) -> GameState:
 
 def _legal_action_mask(state: GameState) -> Array:
     def legal_normal_moves(from_):
-        piece = to_board(state.bb)[from_]
+        piece = get_bb(state.bb, from_)
 
         def legal_label(to):
-            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (to_board(state.bb)[to] <= 0)
+            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (get_bb(state.bb, to) <= 0)
             between_ixs = BETWEEN[from_, to]
             ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (to_board(state.bb)[between_ixs] == EMPTY)).all()
             c0, c1 = from_ // 8, to // 8
-            pawn_should = ((c1 == c0) & (to_board(state.bb)[to] == EMPTY)) | ((c1 != c0) & (to_board(state.bb)[to] < 0))
+            pawn_should = ((c1 == c0) & (get_bb(state.bb, to) == EMPTY)) | ((c1 != c0) & (get_bb(state.bb, to) < 0))
             ok &= (piece != PAWN) | pawn_should
             return lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
 
@@ -368,7 +379,7 @@ def _legal_action_mask(state: GameState) -> Array:
         to = state.en_passant
 
         def legal_labels(from_):
-            ok = (from_ >= 0) & (from_ < 64) & (to >= 0) & (to_board(state.bb)[from_] == PAWN) & (to_board(state.bb)[to - 1] == -PAWN)
+            ok = (from_ >= 0) & (from_ < 64) & (to >= 0) & (get_bb(state.bb, from_) == PAWN) & (get_bb(state.bb, to - 1) == -PAWN)
             a = Action(from_=from_, to=to)
             return lax.select(ok, a._to_label(), -1)
 
@@ -381,7 +392,7 @@ def _legal_action_mask(state: GameState) -> Array:
     def legal_underpromotions(mask):
         def legal_labels(label):
             a = Action._from_label(label)
-            ok = (to_board(state.bb)[a.from_] == PAWN) & (a.to >= 0)
+            ok = (get_bb(state.bb, a.from_) == PAWN) & (a.to >= 0)
             ok &= mask[Action(from_=a.from_, to=a.to)._to_label()]
             return lax.select(ok, label, -1)
 
@@ -416,16 +427,16 @@ def _legal_action_mask(state: GameState) -> Array:
 
 def _is_attacked(state: GameState, pos: Array):
     def attacked_far(to):
-        ok = (to >= 0) & (to_board(state.bb)[to] < 0)  # should be opponent's
-        piece = jnp.abs(to_board(state.bb)[to])
+        ok = (to >= 0) & (get_bb(state.bb, to) < 0)  # should be opponent's
+        piece = jnp.abs(get_bb(state.bb, to))
         ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
         between_ixs = BETWEEN[pos, to]
         ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (to_board(state.bb)[between_ixs] == EMPTY)).all()
         return ok
 
     def attacked_near(to):
-        ok = (to >= 0) & (to_board(state.bb)[to] < 0)  # should be opponent's
-        piece = jnp.abs(to_board(state.bb)[to])
+        ok = (to >= 0) & (get_bb(state.bb, to) < 0)  # should be opponent's
+        piece = jnp.abs(get_bb(state.bb, to))
         ok &= CAN_MOVE[piece, pos, to]
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
