@@ -35,7 +35,7 @@ SHIFT_COLOR = 3       # colorは左端のビット (3ビット分ずれる)
 
 @jax.jit
 def to_bitboard(board):
-    bitboard = jnp.zeros(8, dtype=jnp.int32)
+    bitboard = jnp.zeros(8, dtype=jnp.uint32)
 
     for idx in range(BOARD_SIZE):
         piece = board[idx]
