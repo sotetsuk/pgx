@@ -148,6 +148,7 @@ class GameState(NamedTuple):
     board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
+    king_pos: Array = jnp.int32([32, 32])
 
 
 class Action(NamedTuple):
@@ -290,7 +291,8 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     piece = lax.select(a.underpromotion < 0, piece, jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion])
     # actually move
     state = state._replace(board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
-    return state
+    king_pos = state.king_pos.at[0].set(jax.lax.select(piece == KING, a.to, state.king_pos[0]))
+    return state._replace(king_pos=king_pos)
 
 
 def _flip_pos(x: Array):  # e.g., 37 <-> 34, -1 <-> -1
@@ -304,6 +306,7 @@ def _flip(state: GameState) -> GameState:
         en_passant=_flip_pos(state.en_passant),
         castling_rights=state.castling_rights[::-1],
         board_history=-jnp.flip(state.board_history.reshape(-1, 8, 8), axis=-1).reshape(-1, 64),
+        king_pos=state.king_pos[::-1]
     )
 
 
@@ -394,8 +397,7 @@ def _is_attacked(state: GameState, pos: Array):
 
 
 def _is_checked(state: GameState):
-    king_pos = jnp.argmin(jnp.abs(state.board - KING))
-    return _is_attacked(state, king_pos)
+    return _is_attacked(state, state.king_pos[0])
 
 
 def _zobrist_hash(state: GameState) -> Array:
