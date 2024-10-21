@@ -1,5 +1,4 @@
-import numpy as np
-# import jax.numpy as jnp
+import jax.numpy as jnp
 
 # ピースの定義
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # ピース
@@ -22,7 +21,7 @@ SHIFT_COLOR = 3       # colorは左端のビット (3ビット分ずれる)
 # 2  1  9 17 25 33 41 49 57
 # 1  0  8 16 24 32 40 48 56
 #    a  b  c  d  e  f  g  h
-INIT_BOARD = np.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
+INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
 
 
 def to_bitboard(board):
@@ -31,7 +30,7 @@ def to_bitboard(board):
     bitboardは8つの32bit整数で表現され、各rankに対応。
     """
     # bitboardは8行なので、8つの32bit整数を持つ
-    bitboard = np.zeros(8, dtype=np.uint32)
+    bitboard = jnp.zeros(8, dtype=jnp.uint32)
 
     for idx in range(BOARD_SIZE):
         piece = board[idx]
@@ -48,7 +47,7 @@ def to_bitboard(board):
         bit_value = (color << SHIFT_COLOR) | (piece_type << SHIFT_PIECE_TYPE)
 
         # fileに対応する位置にピース情報を配置
-        bitboard[rank] |= (bit_value << (4 * file)) if piece != EMPTY else 0
+        bitboard = bitboard.at[rank].set(bitboard[rank] | ((bit_value << (4 * file)) if piece != EMPTY else 0))
 
     return bitboard
 
@@ -58,7 +57,7 @@ def to_board(bitboard):
     boardは各マスごとにピースの種類と色を保持。
     """
     # 64マスのboardを初期化
-    board = np.zeros(BOARD_SIZE, dtype=np.int8)
+    board = jnp.zeros(BOARD_SIZE, dtype=jnp.int8)
 
     for rank in range(8):
         # rankに対応する32bit整数
@@ -74,7 +73,7 @@ def to_board(bitboard):
             # boardにcolorに応じたピースを配置
             val = -piece_type if color == 1 else piece_type
             val = 0 if piece_type == 0 else val
-            board[file * 8 + rank] = val
+            board = board.at[file * 8 + rank].set(val)
 
     return board
 
@@ -95,5 +94,5 @@ print("\nReconstructed board:")
 print(reconstructed_board.reshape(8, 8))
 
 # 再構築したboardが元のboardと同じかどうかを確認
-assert np.array_equal(board, reconstructed_board)
+assert jnp.array_equal(board, reconstructed_board)
 
