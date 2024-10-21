@@ -52,16 +52,7 @@ def to_bitboard(board):
 
 @jax.jit
 def to_board(bitboard):
-    board = jnp.zeros(BOARD_SIZE, dtype=jnp.int32)
-    for rank in range(8):
-        rank_bits = bitboard[rank]
-        for file in range(8):
-            bit_value = (rank_bits >> (4 * file)) & 0b1111
-            color = (bit_value >> SHIFT_COLOR) & 1
-            piece_type = bit_value & 0b111
-            val = jnp.int32([1, -1])[color] * piece_type
-            board = board.at[file * 8 + rank].set(val)
-    return board
+    return jax.vmap(get_bb, in_axes=(None, 0))(bitboard, jnp.arange(64))
 
 
 def get_bb(bb, pos):
