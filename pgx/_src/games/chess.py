@@ -321,7 +321,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
     state = state._replace(en_passant=lax.select(is_en_passant, (a.to + a.from_) // 2, -1))
     # update counters
-    captured = (to_board(state.bb)[a.to] < 0) | is_en_passant
+    captured = (get_bb(state.bb, a.to) < 0) | is_en_passant
     state = state._replace(
         halfmove_count=lax.select(captured | (piece == PAWN), 0, state.halfmove_count + 1),
         fullmove_count=state.fullmove_count + jnp.int32(state.color == 1),
