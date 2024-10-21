@@ -316,9 +316,8 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     # en passant
     is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
     removed_pawn_pos = a.to - 1
-    state = state._replace(
-        bb=to_bitboard(to_board(state.bb).at[removed_pawn_pos].set(lax.select(is_en_passant, EMPTY, to_board(state.bb)[removed_pawn_pos])))
-    )
+    new_piece = lax.select(is_en_passant, EMPTY, get_bb(state.bb, removed_pawn_pos))
+    state = state._replace(bb=set_bb(state.bb, removed_pawn_pos, new_piece))
     is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
     state = state._replace(en_passant=lax.select(is_en_passant, (a.to + a.from_) // 2, -1))
     # update counters
