@@ -327,9 +327,9 @@ def _apply_move(state: GameState, a: Action) -> GameState:
         fullmove_count=state.fullmove_count + jnp.int32(state.color == 1),
     )
     # castling
-    board = to_board(state.bb)
     is_queen_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 16)
-    board = lax.select(is_queen_side_castling, board.at[0].set(EMPTY).at[24].set(ROOK), board)
+    bb = lax.select(is_queen_side_castling, set_bb(set_bb(state.bb, 0, EMPTY), 24, ROOK), state.bb)
+    board = to_board(bb)
     is_king_side_castling = (piece == KING) & (a.from_ == 32) & (a.to == 48)
     board = lax.select(is_king_side_castling, board.at[56].set(EMPTY).at[40].set(ROOK), board)
     state = state._replace(bb=to_bitboard(board))
