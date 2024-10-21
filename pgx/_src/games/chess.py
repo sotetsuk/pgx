@@ -409,11 +409,11 @@ def _legal_action_mask(state: GameState) -> Array:
     mask = mask.at[actions].set(True)
 
     # castling
-    b = to_board(state.bb)
+    bb = state.bb
     can_castle_queen_side = state.castling_rights[0, 0]
-    can_castle_queen_side &= (b[0] == ROOK) & (b[8] == EMPTY) & (b[16] == EMPTY) & (b[24] == EMPTY) & (b[32] == KING)
+    can_castle_queen_side &= (get_bb(bb, 0) == ROOK) & (get_bb(bb, 8) == EMPTY) & (get_bb(bb, 16) == EMPTY) & (get_bb(bb, 24) == EMPTY) & (get_bb(bb, 32) == KING)
     can_castle_king_side = state.castling_rights[0, 1]
-    can_castle_king_side &= (b[32] == KING) & (b[40] == EMPTY) & (b[48] == EMPTY) & (b[56] == ROOK)
+    can_castle_king_side &= (get_bb(bb, 32) == KING) & (get_bb(bb, 40) == EMPTY) & (get_bb(bb, 48) == EMPTY) & (get_bb(bb, 56) == ROOK)
     not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int32([16, 24, 32, 40, 48]))
     mask = mask.at[2364].set(mask[2364] | (can_castle_queen_side & not_checked[:3].all()))
     mask = mask.at[2367].set(mask[2367] | (can_castle_king_side & not_checked[2:].all()))
