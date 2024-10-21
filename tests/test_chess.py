@@ -136,10 +136,6 @@ def test_step():
     state = from_fen("1k6/8/8/8/8/8/1Q6/7K w - - 0 1")
     state.save_svg("tests/assets/chess/step_001.svg")
     assert to_board(state._x.bb)[p("b1")] == EMPTY
-    a = Action._from_label(jnp.int32(672))
-    print(f"{a.from_=}", flush=True)
-    piece = to_board(state._x.bb)[a.from_]
-    print(f"{piece=}", flush=True)
     state = step(state, jnp.int32(672))
     state.save_svg("tests/assets/chess/step_002.svg")
     assert to_board(state._x.bb)[p("b1", True)] == -QUEEN
