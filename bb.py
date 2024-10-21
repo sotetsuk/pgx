@@ -35,9 +35,6 @@ def to_bitboard(board):
 
     for idx in range(BOARD_SIZE):
         piece = board[idx]
-        if piece == EMPTY:
-            # EMPTYならビット操作をスキップする
-            continue
 
         # idxからrank (row) と file (col) を計算
         rank = idx % 8
@@ -51,7 +48,7 @@ def to_bitboard(board):
         bit_value = (color << SHIFT_COLOR) | (piece_type << SHIFT_PIECE_TYPE)
 
         # fileに対応する位置にピース情報を配置
-        bitboard[rank] |= (bit_value << (4 * file))
+        bitboard[rank] |= (bit_value << (4 * file)) if piece != EMPTY else 0
 
     return bitboard
 
@@ -74,12 +71,10 @@ def to_board(bitboard):
             color = (bit_value >> SHIFT_COLOR) & 1
             piece_type = bit_value & 0b111
 
-            # ピースがemptyなら次へ
-            if piece_type == EMPTY:
-                continue
-
             # boardにcolorに応じたピースを配置
-            board[file * 8 + rank] = -piece_type if color == 1 else piece_type
+            val = -piece_type if color == 1 else piece_type
+            val = 0 if piece_type == 0 else val
+            board[file * 8 + rank] = val
 
     return board
 
