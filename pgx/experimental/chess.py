@@ -58,11 +58,6 @@ def from_fen(fen: str):
     ep = jnp.int32(-1) if en_passant == "-" else jnp.int32("abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1)
     if color == "b" and ep >= 0:
         ep = _flip_pos(ep)
-    print("===")
-    print(print(jnp.rot90(mat, k=3).flatten().reshape(8, 8)))
-    bb = to_bitboard(jnp.rot90(mat, k=3).flatten())
-    print(bb, flush=True)
-    print(to_board(bb).reshape(8, 8))
     x = GameState(
         bb=to_bitboard(jnp.rot90(mat, k=3).flatten()),
         color=jnp.int32(0) if color == "w" else jnp.int32(1),
