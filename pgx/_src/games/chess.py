@@ -146,7 +146,7 @@ class GameState(NamedTuple):
     halfmove_count: Array = jnp.int32(0)  # number of moves since the last piece capture or pawn move
     fullmove_count: Array = jnp.int32(1)  # increase every black move
     hash_history: Array = jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
-    board_history: Array = jnp.zeros((8, 64), dtype=jnp.int32).at[0, :].set(INIT_BOARD)
+    board_history: Array = jnp.zeros((8, 64), dtype=jnp.int8).at[0, :].set(INIT_BOARD)
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
     step_count: Array = jnp.int32(0)
 
