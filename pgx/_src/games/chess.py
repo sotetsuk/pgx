@@ -56,7 +56,7 @@ INIT_BOARD = jnp.int8([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1,
 #         39             11             62
 #      38                10                64
 #   37                    9                   64
-FROM_PLANE = -np.ones((64, 73), dtype=np.int32)
+FROM_PLANE = -np.ones((64, 73), dtype=np.int8)
 TO_PLANE = -np.ones((64, 64), dtype=np.int32)  # ignores underpromotion
 zeros, seq, rseq = [0] * 7, list(range(1, 8)), list(range(-7, 0))
 # down, up, left, right, down-left, down-right, up-right, up-left, knight, and knight
@@ -82,9 +82,9 @@ INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
 ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
 INIT_LEGAL_ACTION_MASK[ixs] = True
 
-LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
-LEGAL_DEST_NEAR = -np.ones((64, 16), np.int32)
-LEGAL_DEST_FAR = -np.ones((64, 19), np.int32)
+LEGAL_DEST = -np.ones((7, 64, 27), np.int8)  # LEGAL_DEST[0, :, :] == -1
+LEGAL_DEST_NEAR = -np.ones((64, 16), np.int8)
+LEGAL_DEST_FAR = -np.ones((64, 19), np.int8)
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 for from_ in range(64):
     legal_dest = {p: [] for p in range(7)}
@@ -112,7 +112,7 @@ for from_ in range(64):
     dests = list(set(legal_dest[QUEEN]).difference(set(legal_dest[KING])))
     LEGAL_DEST_FAR[from_, : len(dests)] = dests
 
-BETWEEN = -np.ones((64, 64, 6), dtype=np.int32)
+BETWEEN = -np.ones((64, 64, 6), dtype=np.int8)
 for from_ in range(64):
     for to in range(64):
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
@@ -152,18 +152,18 @@ class GameState(NamedTuple):
 
 
 class Action(NamedTuple):
-    from_: Array = jnp.int32(-1)
-    to: Array = jnp.int32(-1)
-    underpromotion: Array = jnp.int32(-1)  # 0: rook, 1: bishop, 2: knight
+    from_: Array = jnp.int8(-1)
+    to: Array = jnp.int8(-1)
+    underpromotion: Array = jnp.int8(-1)  # 0: rook, 1: bishop, 2: knight
 
     @staticmethod
     def _from_label(label: Array):
-        from_, plane = label // 73, label % 73
-        underpromotion = lax.select(plane >= 9, -1, plane // 3)
+        from_, plane = jnp.int8(label // 73), jnp.int8(label % 73)
+        underpromotion = lax.select(plane >= 9, jnp.int8(-1), plane // 3)
         return Action(from_=from_, to=FROM_PLANE[from_, plane], underpromotion=underpromotion)
 
     def _to_label(self):
-        return self.from_ * 73 + TO_PLANE[self.from_, self.to]
+        return jnp.int32(self.from_) * 73 + TO_PLANE[self.from_, self.to]
 
 
 class Game:
@@ -362,7 +362,7 @@ def _legal_action_mask(state: GameState) -> Array:
     can_castle_queen_side &= (b[0] == ROOK) & (b[8] == EMPTY) & (b[16] == EMPTY) & (b[24] == EMPTY) & (b[32] == KING)
     can_castle_king_side = state.castling_rights[0, 1]
     can_castle_king_side &= (b[32] == KING) & (b[40] == EMPTY) & (b[48] == EMPTY) & (b[56] == ROOK)
-    not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int32([16, 24, 32, 40, 48]))
+    not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int8([16, 24, 32, 40, 48]))
     mask = mask.at[2364].set(mask[2364] | (can_castle_queen_side & not_checked[:3].all()))
     mask = mask.at[2367].set(mask[2367] | (can_castle_king_side & not_checked[2:].all()))
 

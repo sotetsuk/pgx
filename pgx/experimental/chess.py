@@ -52,7 +52,7 @@ def from_fen(fen: str):
     castling_rights = jnp.bool_([["Q" in castling, "K" in castling], ["q" in castling, "k" in castling]])
     if color == "b":
         castling_rights = castling_rights[::-1]
-    mat = jnp.int32(arr).reshape(8, 8)
+    mat = jnp.int8(arr).reshape(8, 8)
     if color == "b":
         mat = -jnp.flip(mat, axis=0)
     ep = jnp.int8(-1) if en_passant == "-" else jnp.int8("abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1)
@@ -60,7 +60,7 @@ def from_fen(fen: str):
         ep = _flip_pos(ep)
     x = GameState(
         board=jnp.rot90(mat, k=3).flatten(),
-        color=jnp.int32(0) if color == "w" else jnp.int32(1),
+        color=jnp.int8(0) if color == "w" else jnp.int8(1),
         castling_rights=castling_rights,
         en_passant=ep,
         halfmove_count=jnp.int32(halfmove_cnt),
@@ -70,7 +70,7 @@ def from_fen(fen: str):
     x = x._replace(legal_action_mask=legal_action_mask)
     x = _update_history(x)
 
-    player_order = jnp.int32([0, 1])
+    player_order = jnp.int8([0, 1])
     state = State(
         _player_order=player_order,
         _x=x,
