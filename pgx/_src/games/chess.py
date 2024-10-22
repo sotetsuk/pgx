@@ -19,7 +19,7 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array, lax
 
-EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # opponent: -1 * piece
+EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = [jnp.int8(i) for i in range(7)]  # opponent: -1 * piece
 MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
 # prepare precomputed values here (e.g., available moves, map to label, etc.)
@@ -93,23 +93,23 @@ for from_ in range(64):
             continue
         r0, c0, r1, c1 = from_ % 8, from_ // 8, to % 8, to // 8
         if (r1 - r0 == 1 and abs(c1 - c0) <= 1) or ((r0, r1) == (1, 3) and abs(c1 - c0) == 0):
-            legal_dest[PAWN].append(to)
+            legal_dest[PAWN.item()].append(to)
         if (abs(r1 - r0) == 1 and abs(c1 - c0) == 2) or (abs(r1 - r0) == 2 and abs(c1 - c0) == 1):
-            legal_dest[KNIGHT].append(to)
+            legal_dest[KNIGHT.item()].append(to)
         if abs(r1 - r0) == abs(c1 - c0):
-            legal_dest[BISHOP].append(to)
+            legal_dest[BISHOP.item()].append(to)
         if abs(r1 - r0) == 0 or abs(c1 - c0) == 0:
-            legal_dest[ROOK].append(to)
+            legal_dest[ROOK.item()].append(to)
         if (abs(r1 - r0) == 0 or abs(c1 - c0) == 0) or (abs(r1 - r0) == abs(c1 - c0)):
-            legal_dest[QUEEN].append(to)
+            legal_dest[QUEEN.item()].append(to)
         if from_ != to and abs(r1 - r0) <= 1 and abs(c1 - c0) <= 1:
-            legal_dest[KING].append(to)
+            legal_dest[KING.item()].append(to)
     for p in range(1, 7):
         LEGAL_DEST[p, from_, : len(legal_dest[p])] = legal_dest[p]
         CAN_MOVE[p, from_, legal_dest[p]] = True
-    dests = list(set(legal_dest[KING]) | set(legal_dest[KNIGHT]))
+    dests = list(set(legal_dest[KING.item()]) | set(legal_dest[KNIGHT.item()]))
     LEGAL_DEST_NEAR[from_, : len(dests)] = dests
-    dests = list(set(legal_dest[QUEEN]).difference(set(legal_dest[KING])))
+    dests = list(set(legal_dest[QUEEN.item()]).difference(set(legal_dest[KING.item()])))
     LEGAL_DEST_FAR[from_, : len(dests)] = dests
 
 BETWEEN = -np.ones((64, 64, 6), dtype=np.int8)
@@ -135,7 +135,6 @@ ZOBRIST_SIDE = jax.random.randint(keys[1], shape=(2,), minval=0, maxval=2**31 - 
 ZOBRIST_CASTLING = jax.random.randint(keys[2], shape=(4, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 ZOBRIST_EN_PASSANT = jax.random.randint(keys[3], shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 INIT_ZOBRIST_HASH = jnp.uint32([1455170221, 1478960862])
-EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = [jnp.int8(i) for i in range(7)]  # opponent: -1 * piece
 
 
 class GameState(NamedTuple):
