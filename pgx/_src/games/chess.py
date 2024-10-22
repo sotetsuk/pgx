@@ -25,7 +25,7 @@ MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 # prepare precomputed values here (e.g., available moves, map to label, etc.)
 
 # index: a1: 0, a2: 1, ..., h8: 63
-INIT_BOARD = jnp.int32([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
+INIT_BOARD = jnp.int8([4, 1, 0, 0, 0, 0, -1, -4, 2, 1, 0, 0, 0, 0, -1, -2, 3, 1, 0, 0, 0, 0, -1, -3, 5, 1, 0, 0, 0, 0, -1, -5, 6, 1, 0, 0, 0, 0, -1, -6, 3, 1, 0, 0, 0, 0, -1, -3, 2, 1, 0, 0, 0, 0, -1, -2, 4, 1, 0, 0, 0, 0, -1, -4])  # fmt: skip
 # 8  7 15 23 31 39 47 55 63
 # 7  6 14 22 30 38 46 54 62
 # 6  5 13 21 29 37 45 53 61
@@ -135,6 +135,7 @@ ZOBRIST_SIDE = jax.random.randint(keys[1], shape=(2,), minval=0, maxval=2**31 - 
 ZOBRIST_CASTLING = jax.random.randint(keys[2], shape=(4, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 ZOBRIST_EN_PASSANT = jax.random.randint(keys[3], shape=(65, 2), minval=0, maxval=2**31 - 1, dtype=jnp.uint32)
 INIT_ZOBRIST_HASH = jnp.uint32([1455170221, 1478960862])
+EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = [jnp.int8(i) for i in range(7)]  # opponent: -1 * piece
 
 
 class GameState(NamedTuple):
@@ -264,7 +265,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     is_en_passant = (state.en_passant >= 0) & (piece == PAWN) & (state.en_passant == a.to)
     removed_pawn_pos = a.to - 1
     state = state._replace(
-        board=state.board.at[removed_pawn_pos].set(lax.select(is_en_passant, EMPTY, state.board[removed_pawn_pos]))
+        board=state.board.at[removed_pawn_pos].set(lax.select(is_en_passant, EMPTY, jnp.int8(state.board[removed_pawn_pos])))
     )
     is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
     state = state._replace(en_passant=lax.select(is_en_passant, (a.to + a.from_) // 2, -1))
@@ -285,9 +286,9 @@ def _apply_move(state: GameState, a: Action) -> GameState:
     cond = jnp.bool_([[(a.from_ != 32) & (a.from_ != 0), (a.from_ != 32) & (a.from_ != 56)], [a.to != 7, a.to != 63]])
     state = state._replace(castling_rights=state.castling_rights & cond)
     # promotion to queen
-    piece = lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, piece)
+    piece = lax.select((piece == PAWN) & (a.from_ % 8 == 6) & (a.underpromotion < 0), QUEEN, jnp.int8(piece))
     # underpromotion
-    piece = lax.select(a.underpromotion < 0, piece, jnp.int32([ROOK, BISHOP, KNIGHT])[a.underpromotion])
+    piece = lax.select(a.underpromotion < 0, piece, jnp.int8([ROOK, BISHOP, KNIGHT])[a.underpromotion])
     # actually move
     state = state._replace(board=state.board.at[a.from_].set(EMPTY).at[a.to].set(piece))  # type: ignore
     return state
