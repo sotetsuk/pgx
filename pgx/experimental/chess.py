@@ -63,7 +63,7 @@ def from_fen(fen: str):
         color=jnp.int8(0) if color == "w" else jnp.int8(1),
         castling_rights=castling_rights,
         en_passant=ep,
-        halfmove_count=jnp.int32(halfmove_cnt),
+        halfmove_count=jnp.int8(halfmove_cnt),
         fullmove_count=jnp.int32(fullmove_cnt),
     )
     legal_action_mask = jax.jit(_legal_action_mask)(x)
