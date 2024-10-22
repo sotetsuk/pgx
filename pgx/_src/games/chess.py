@@ -268,7 +268,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
         board=state.board.at[removed_pawn_pos].set(lax.select(is_en_passant, EMPTY, jnp.int8(state.board[removed_pawn_pos])))
     )
     is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
-    state = state._replace(en_passant=lax.select(is_en_passant, jnp.int8((a.to + a.from_) // 2), jnp.int8(-1)))
+    state = state._replace(en_passant=lax.select(is_en_passant, (a.to + a.from_) // 2, jnp.int8(-1)))
     # update counters
     captured = (state.board[a.to] < 0) | is_en_passant
     state = state._replace(
