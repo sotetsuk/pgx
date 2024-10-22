@@ -139,7 +139,7 @@ EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = [jnp.int8(i) for i in range(7)]
 
 
 class GameState(NamedTuple):
-    color: Array = jnp.int32(0)  # w: 0, b: 1
+    color: Array = jnp.int8(0)  # w: 0, b: 1
     board: Array = INIT_BOARD  # (64,)
     castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)  # my queen, my king, opp queen, opp king
     en_passant: Array = jnp.int32(-1)
