@@ -142,7 +142,7 @@ class GameState(NamedTuple):
     color: Array = jnp.int8(0)  # w: 0, b: 1
     board: Array = INIT_BOARD  # (64,)
     castling_rights: Array = jnp.ones([2, 2], dtype=jnp.bool_)  # my queen, my king, opp queen, opp king
-    en_passant: Array = jnp.int32(-1)
+    en_passant: Array = jnp.int8(-1)
     halfmove_count: Array = jnp.int32(0)  # number of moves since the last piece capture or pawn move
     fullmove_count: Array = jnp.int32(1)  # increase every black move
     hash_history: Array = jnp.zeros((MAX_TERMINATION_STEPS + 1, 2), dtype=jnp.uint32).at[0].set(INIT_ZOBRIST_HASH)
@@ -268,7 +268,7 @@ def _apply_move(state: GameState, a: Action) -> GameState:
         board=state.board.at[removed_pawn_pos].set(lax.select(is_en_passant, EMPTY, jnp.int8(state.board[removed_pawn_pos])))
     )
     is_en_passant = (piece == PAWN) & (jnp.abs(a.to - a.from_) == 2)
-    state = state._replace(en_passant=lax.select(is_en_passant, (a.to + a.from_) // 2, -1))
+    state = state._replace(en_passant=lax.select(is_en_passant, jnp.int8((a.to + a.from_) // 2), jnp.int8(-1)))
     # update counters
     captured = (state.board[a.to] < 0) | is_en_passant
     state = state._replace(

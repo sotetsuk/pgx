@@ -55,7 +55,7 @@ def from_fen(fen: str):
     mat = jnp.int32(arr).reshape(8, 8)
     if color == "b":
         mat = -jnp.flip(mat, axis=0)
-    ep = jnp.int32(-1) if en_passant == "-" else jnp.int32("abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1)
+    ep = jnp.int8(-1) if en_passant == "-" else jnp.int8("abcdefgh".index(en_passant[0]) * 8 + int(en_passant[1]) - 1)
     if color == "b" and ep >= 0:
         ep = _flip_pos(ep)
     x = GameState(
