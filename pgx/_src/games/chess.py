@@ -351,8 +351,8 @@ def _legal_action_mask(state: GameState) -> Array:
     a1 = jax.vmap(legal_normal_moves)(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
-    ixs = jnp.nonzero(actions >= 0, size=128, fill_value=0)[0]  # 128: random large number
-    actions = actions[ixs]
+    ixs = jnp.nonzero(actions >= 0, size=200, fill_value=0)[0]  # 200 is sufficiently large
+    actions = actions[ixs]  # remove -1
     actions = jnp.where(jax.vmap(is_not_checked)(actions), actions, -1)
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)  # +1 for sentinel
     mask = mask.at[actions].set(True)
