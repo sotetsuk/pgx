@@ -351,7 +351,7 @@ def _legal_action_mask(state: GameState) -> Array:
     a1 = jax.vmap(legal_normal_moves)(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
-    # filter out -1. 200 is big enough for normal play. all pawns must promote.
+    # filter out -1. 200 is big enough for normal play.
     ixs = jnp.nonzero(actions >= 0, size=200, fill_value=0)[0]
     actions = actions[ixs]  # size: 19 * 27 -> 200
     # filter ignoring checks and suicides
