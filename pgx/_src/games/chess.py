@@ -82,9 +82,9 @@ INIT_LEGAL_ACTION_MASK = np.zeros(64 * 73, dtype=np.bool_)
 ixs = [89, 90, 652, 656, 673, 674, 1257, 1258, 1841, 1842, 2425, 2426, 3009, 3010, 3572, 3576, 3593, 3594, 4177, 4178]
 INIT_LEGAL_ACTION_MASK[ixs] = True
 
-LEGAL_DEST = -np.ones((7, 64, 27), np.int8)  # LEGAL_DEST[0, :, :] == -1
-LEGAL_DEST_NEAR = -np.ones((64, 16), np.int8)
-LEGAL_DEST_FAR = -np.ones((64, 19), np.int8)
+LEGAL_DEST = -np.ones((7, 64, 27), np.int32)  # LEGAL_DEST[0, :, :] == -1
+LEGAL_DEST_NEAR = -np.ones((64, 16), np.int8)  # king and knight moves
+LEGAL_DEST_FAR = -np.ones((64, 19), np.int8)   # queen moves except king moves
 CAN_MOVE = np.zeros((7, 64, 64), dtype=np.bool_)
 for from_ in range(64):
     legal_dest = {p: [] for p in range(7)}
@@ -351,6 +351,10 @@ def _legal_action_mask(state: GameState) -> Array:
     a1 = jax.vmap(legal_normal_moves)(possible_piece_positions).flatten()
     a2 = legal_en_passants()
     actions = jnp.hstack((a1, a2))  # include -1
+    # filter out -1. 200 is big enough for normal play.
+    ixs = jnp.nonzero(actions >= 0, size=200, fill_value=0)[0]
+    actions = actions[ixs]  # size: 19 * 27 -> 200
+    # filter ignoring checks and suicides
     actions = jnp.where(jax.vmap(is_not_checked)(actions), actions, -1)
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)  # +1 for sentinel
     mask = mask.at[actions].set(True)
