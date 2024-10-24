@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from pgx._src.games.chess import Game, GameState, _flip_pos, _legal_action_mask, _update_history
+from pgx._src.games.chess import Game, GameState, _flip_pos, _legal_action_mask, _update_history, to_bitboard, to_board
 from pgx.chess import State
 
 TRUE = jnp.bool_(True)
@@ -59,7 +59,7 @@ def from_fen(fen: str):
     if color == "b" and ep >= 0:
         ep = _flip_pos(ep)
     x = GameState(
-        board=jnp.rot90(mat, k=3).flatten(),
+        bb=to_bitboard(jnp.rot90(mat, k=3).flatten()),
         color=jnp.int32(0) if color == "w" else jnp.int32(1),
         castling_rights=castling_rights,
         en_passant=ep,
@@ -103,7 +103,7 @@ def to_fen(state: State):
     >>> _to_fen(_from_fen("rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1"))
     'rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq e3 0 1'
     """
-    pb = np.rot90(state._x.board.reshape(8, 8), k=1)
+    pb = np.rot90(to_board(state._x.bb).reshape(8, 8), k=1)
     if state._x.color == 1:
         pb = -np.flip(pb, axis=0)
     fen = ""
