@@ -171,6 +171,10 @@ Combining Pgx with these **JAX-native algorithms/implementations** might be an i
 - [adaptive-intelligent-robotics/QDax](https://github.com/adaptive-intelligent-robotics/QDax): JAX-native Quality-Diversity (QD) algorithms
 - [luchris429/purejaxrl](https://github.com/luchris429/purejaxrl): Jax-native RL implementations
 
+## Limitation
+
+Currently, some environments, including Go and chess, do not perform well on TPUs. Please use GPUs instead.
+
 ## Citation
 
 If you use Pgx in your work, please cite [our paper](https://papers.nips.cc/paper_files/paper/2023/hash/8f153093758af93861a74a1305dfdc18-Abstract-Datasets_and_Benchmarks.html):
