@@ -225,9 +225,7 @@ class Action:
         i = jnp.argmax(mask)
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
         piece = jax.lax.select(is_drop, direction - 20, state._x.board[from_])
-        return Action(
-            is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion
-        )  # type: ignore
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
 
 
 def _init_board():
