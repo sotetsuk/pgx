@@ -457,9 +457,7 @@ def _is_promotion_legal(
     piece = state._x.board[from_]
     # promotion
     is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # Pieces cannot promote
-    is_illegal |= (from_ % 9 >= 3) & (
-        to % 9 >= 3
-    )  # irrelevant to the opponent's territory
+    is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # irrelevant to the opponent's territory
     return ~is_illegal
 
 
