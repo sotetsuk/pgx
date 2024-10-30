@@ -593,18 +593,18 @@ def _observe(state: State, player_id: Array) -> Array:
         effect_sum_feat = effect_sum(jnp.arange(1, 4))
         return my_effect_feat, effect_sum_feat
 
-    def numhand(n, hand, p):
+    def num_hand(n, hand, p):
         return jnp.tile(hand[p] >= n, reps=(9, 9))
 
     def hand_feat(hand):
         # fmt: off
-        pawn_feat = jax.vmap(partial(numhand, hand=hand, p=PAWN))(jnp.arange(1, 9))
-        lance_feat = jax.vmap(partial(numhand, hand=hand, p=LANCE))(jnp.arange(1, 5))
-        knight_feat = jax.vmap(partial(numhand, hand=hand, p=KNIGHT))(jnp.arange(1, 5))
-        silver_feat = jax.vmap(partial(numhand, hand=hand, p=SILVER))(jnp.arange(1, 5))
-        gold_feat = jax.vmap(partial(numhand, hand=hand, p=GOLD))(jnp.arange(1, 5))
-        bishop_feat = jax.vmap(partial(numhand, hand=hand, p=BISHOP))(jnp.arange(1, 3))
-        rook_feat = jax.vmap(partial(numhand, hand=hand, p=ROOK))(jnp.arange(1, 3))
+        pawn_feat = jax.vmap(partial(num_hand, hand=hand, p=PAWN))(jnp.arange(1, 9))
+        lance_feat = jax.vmap(partial(num_hand, hand=hand, p=LANCE))(jnp.arange(1, 5))
+        knight_feat = jax.vmap(partial(num_hand, hand=hand, p=KNIGHT))(jnp.arange(1, 5))
+        silver_feat = jax.vmap(partial(num_hand, hand=hand, p=SILVER))(jnp.arange(1, 5))
+        gold_feat = jax.vmap(partial(num_hand, hand=hand, p=GOLD))(jnp.arange(1, 5))
+        bishop_feat = jax.vmap(partial(num_hand, hand=hand, p=BISHOP))(jnp.arange(1, 3))
+        rook_feat = jax.vmap(partial(num_hand, hand=hand, p=ROOK))(jnp.arange(1, 3))
         return [pawn_feat, lance_feat, knight_feat, silver_feat, gold_feat, bishop_feat, rook_feat]
         # fmt: on
 
@@ -615,8 +615,8 @@ def _observe(state: State, player_id: Array) -> Array:
     opp_piece_feat = opp_piece_feat[:, ::-1]
     opp_effect_feat = opp_effect_feat[:, ::-1]
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
-    myhand_feat = hand_feat(state._x.hand[0])
-    opphand_feat = hand_feat(state._x.hand[1])
+    my_hand_feat = hand_feat(state._x.hand[0])
+    opp_hand_feat = hand_feat(state._x.hand[1])
     # NOTE: update cache
     checked = jnp.tile(_is_checked(_set_cache(state)), reps=(1, 9, 9))
     feat1 = [
@@ -627,6 +627,6 @@ def _observe(state: State, player_id: Array) -> Array:
         opp_effect_feat.reshape(14, 9, 9),
         opp_effect_sum_feat.reshape(3, 9, 9),
     ]
-    feat2 = myhand_feat + opphand_feat + [checked]
+    feat2 = my_hand_feat + opp_hand_feat + [checked]
     feat = jnp.vstack(feat1 + feat2)
     return jnp.rot90(feat.transpose((1, 2, 0)), k=3)
