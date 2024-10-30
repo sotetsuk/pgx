@@ -35,7 +35,7 @@ def update_board(state, piece_board, hand=None):
 def test_init():
     key = jax.random.PRNGKey(0)
     s = init(key)
-    assert jnp.unique(s._board).shape[0] == 1 + 8 + 8
+    assert jnp.unique(s._x.board).shape[0] == 1 + 8 + 8
     assert s.legal_action_mask.sum() != 0
     legal_actions = jnp.int32([5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331])
     assert (jnp.nonzero(s.legal_action_mask)[0] == legal_actions).all(), jnp.nonzero(s.legal_action_mask)[0]
@@ -115,7 +115,7 @@ def test_buggy_samples():
     sfen = "4+R4/9/9/9/9/9/9/9/9 w 2r2b4g3s4n4l7p 1"
     expected_state = State._from_sfen(sfen)
     visualize(expected_state, "tests/assets/shogi/buggy_samples_006.svg")
-    assert (state._board == expected_state._board).all()
+    assert (state._x.board == expected_state._x.board).all()
 
     # #603
     state = State._from_sfen("8k/9/9/5b3/9/3B5/9/9/K8 b 2r4g4s4n4l18p 1")
@@ -133,7 +133,7 @@ def test_buggy_samples():
     assert a.piece == HORSE
     state = step(state, dlshogi_action)
     expected_state = State._from_sfen("+P+BGg1p2+P/2+Pgp+N1sp/1+N5l1/P3kP1pL/3P1r3/B2KP3L/4L1SP+s/+r2+p2pgP/2P2+n+p2 w Snp 1")
-    assert (state._board == expected_state._board).all()
+    assert (state._x.board == expected_state._x.board).all()
 
     # #613
     state = State._from_sfen("1+N3s1n1/5k2l/l+P2g1bp1/2pP1p2p/p2ppNS2/LB6P/1pS1g2PL/3KPR2S/1R1G1NG2 b P4p 1")
@@ -144,7 +144,7 @@ def test_buggy_samples():
     assert a.piece == PAWN
     state = step(state, dlshogi_action)
     expected_state = State._from_sfen("1+N3s1n1/5k2l/l+P2g1bp1/2pP1p2p/p2ppNS2/LB6P/1pS1P2PL/3K1R2S/1R1G1NG2 w GP4p 1")
-    assert (state._board == expected_state._board).all()
+    assert (state._x.board == expected_state._x.board).all()
 
     # #618
     state = State._from_sfen("2+P+P2G1+S/1P2+P+P1+Pn/+S1GK2P2/1b2PP3/1nl4PP/3k2lRL/1pg+s3L1/p2R2p2/P+n+B+p+ng1+s+p w P 1")
@@ -154,7 +154,7 @@ def test_buggy_samples():
     assert a.from_ == xy2i(4, 3)
     state = step(state, dlshogi_action)
     expected_state = State._from_sfen("2+P+P2G1+S/1P2+P+P1+Pn/+S1GK2P2/1b2PP3/1nl4PP/3k2lRL/1pg4L1/p2+s2p2/P+n+B+p+ng1+s+p b Pr 1")
-    assert (state._board == expected_state._board).all()
+    assert (state._x.board == expected_state._x.board).all()
 
     # 629
     state = State._from_sfen("1ns6/+S1p+Ng1p1l/+P2pg1nNS/4k2G1/2L2R2s/p1G2+BPR1/3Pp2+p1/1+p3B1P1/1LPK2+l1+p b P4p 1")

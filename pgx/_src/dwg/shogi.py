@@ -4,7 +4,7 @@ from pgx.shogi import State as ShogiState
 
 
 def _make_shogi_dwg(dwg, state: ShogiState, config):  # noqa: C901
-    if state._turn == 1:
+    if state._x.turn == 1:
         from pgx.shogi import _flip
 
         state = _flip(state)
@@ -17,7 +17,7 @@ def _make_shogi_dwg(dwg, state: ShogiState, config):  # noqa: C901
         """
         ShogiStateのhandを飛、角、金、銀、桂、香、歩の順にする
         """
-        hands = state._hand.flatten()[::-1]
+        hands = state._x.hand.flatten()[::-1]
         tmp = hands
         hands = hands.at[0].set(tmp[1])
         hands = hands.at[1].set(tmp[2])
@@ -129,7 +129,7 @@ def _make_shogi_dwg(dwg, state: ShogiState, config):  # noqa: C901
     p1_pieces_g = dwg.g()
     p2_pieces_g = dwg.g()
     one_hot_board = np.zeros((29, 81))
-    board = state._board
+    board = state._x.board
     for i in range(81):
         piece = board[i]
         one_hot_board[piece, i] = 1
