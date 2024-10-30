@@ -318,10 +318,7 @@ def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal_move(i):
         return pseudo_legal_moves[i % (10 * 81)] & jax.lax.cond(
-            a.is_promotion[i],
-            _is_promotion_legal,
-            _is_no_promotion_legal,
-            *(a.from_[i], a.to[i], state),
+            a.is_promotion[i], _is_promotion_legal, _is_no_promotion_legal, *(a.from_[i], a.to[i], state)
         )
 
     @jax.vmap
