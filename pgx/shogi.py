@@ -319,9 +319,7 @@ def _legal_action_mask(state: State):
 
     @jax.vmap
     def is_legal_drop(i):
-        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(
-            a.piece[i], a.to[i], state
-        )
+        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(a.piece[i], a.to[i], state)
 
     legal_action_mask = jnp.hstack(
         (
