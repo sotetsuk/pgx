@@ -183,7 +183,7 @@ def _to_sfen(state):
     """
     # NOTE: input must be flipped if white turn
 
-    pb = jnp.rot90(state._board.reshape((9, 9)), k=3)
+    pb = jnp.rot90(state._x.board.reshape((9, 9)), k=3)
     sfen = ""
     # fmt: off
     board_char_dir = ["", "P", "L", "N", "S", "B", "R", "G", "K", "+P", "+L", "+N", "+S", "+B", "+R", "p", "l", "n", "s", "b", "r", "g", "k", "+p", "+l", "+n", "+s", "+b", "+r"]
@@ -209,18 +209,18 @@ def _to_sfen(state):
         else:
             sfen += " "
     # Turn
-    if state._turn == 0:
+    if state._x.turn == 0:
         sfen += "b "
     else:
         sfen += "w "
     # Hand (prisoners)
-    if jnp.all(state._hand == 0):
+    if jnp.all(state._x.hand == 0):
         sfen += "-"
     else:
         for i in range(2):
             for j in range(7):
                 piece_type = hand_dir[i * 7 + j]
-                num_piece = state._hand.flatten()[piece_type]
+                num_piece = state._x.hand.flatten()[piece_type]
                 if num_piece == 0:
                     continue
                 if num_piece >= 2:
