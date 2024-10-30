@@ -113,9 +113,7 @@ class State(core.State):
     @staticmethod
     def _from_sfen(sfen):
         turn, pb, hand, step_count = _from_sfen(sfen)
-        return jax.jit(State._from_board)(turn, pb, hand).replace(
-            _step_count=jnp.int32(step_count)
-        )  # type: ignore
+        return jax.jit(State._from_board)(turn, pb, hand).replace(_step_count=jnp.int32(step_count))  # type: ignore
 
     def _to_sfen(self):
         state = self if self._x.turn % 2 == 0 else _flip(self)
@@ -297,13 +295,10 @@ def _step_drop(state: State, action: Action) -> State:
 
 
 def _set_cache(state: State):
-    x = state._x._replace(
-        cache_m2b=jnp.nonzero(
-            jax.vmap(_is_major_piece)(state._x.board), size=8, fill_value=-1
-        )[0],
+    return state.replace(_x=state._x._replace(  # type: ignore
+        cache_m2b=jnp.nonzero(jax.vmap(_is_major_piece)(state._x.board), size=8, fill_value=-1)[0],
         cache_king=jnp.argmin(jnp.abs(state._x.board - KING)),
-    )
-    return state.replace(_x=x)  # type: ignore
+    ))
 
 def _legal_action_mask(state: State):
     # update cache
