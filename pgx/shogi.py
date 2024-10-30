@@ -378,9 +378,7 @@ def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: State):
     # don't have the piece
     is_illegal |= state._x.hand[0, piece] <= 0
     # double pawn
-    is_illegal |= (piece == PAWN) & (
-        (state._x.board == PAWN).reshape(9, 9).sum(axis=1) > 0
-    )[to // 9]
+    is_illegal |= (piece == PAWN) & ((state._x.board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
