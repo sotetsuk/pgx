@@ -277,8 +277,7 @@ def _step_move(state: State, action: Action) -> State:
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     # apply piece moves
-    x = state._x._replace(board=pb, hand=hand)
-    return state.replace(_x=x)  # type: ignore
+    return state.replace(_x=state._x._replace(board=pb, hand=hand))  # type: ignore
 
 
 def _step_drop(state: State, action: Action) -> State:
