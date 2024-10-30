@@ -302,9 +302,7 @@ def _legal_action_mask(state: State):
     # update cache
     state = _set_cache(state)
 
-    a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(
-        action=jnp.arange(27 * 81)
-    )
+    a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(action=jnp.arange(27 * 81))
 
     @jax.vmap
     def is_legal_move_wo_pro(i):
