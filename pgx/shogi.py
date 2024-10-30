@@ -394,15 +394,13 @@ def _is_legal_move_wo_pro(
 ):
     ok = _is_pseudo_legal_move(from_, to, state)
     ok &= ~_is_checked(
-        state.replace(  # type: ignore
-            _x=state._x._replace(
-                board=state._x.board.at[from_].set(EMPTY).at[to].set(state._x.board[from_]),
-                cache_king=jax.lax.select(  # update cache
-                    state._x.board[from_] == KING,
-                    jnp.int32(to),
-                    state._x.cache_king,
-                ),
-            )
+        state.replace(_x=state._x._replace(  # type: ignore
+            board=state._x.board.at[from_].set(EMPTY).at[to].set(state._x.board[from_]),
+            cache_king=jax.lax.select(  # update cache
+                state._x.board[from_] == KING,
+                jnp.int32(to),
+                state._x.cache_king,
+            ))
         )
     )
     return ok
