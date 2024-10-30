@@ -481,9 +481,7 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king_local(from_):
-        return _is_pseudo_legal_move_wo_obstacles(
-            from_=from_, to=flipped_king_pos, state=_flip(state)
-        )
+        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state))
 
     # Simpler implementation without cache of major piece places
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
