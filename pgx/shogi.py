@@ -285,8 +285,7 @@ def _step_drop(state: State, action: Action) -> State:
     pb = state._x.board.at[action.to].set(action.piece)
     # remove piece from hand
     hand = state._x.hand.at[0, action.piece].add(-1)
-    x = state._x._replace(board=pb, hand=hand)
-    return state.replace(_x=x)  # type: ignore
+    return state.replace(_x=state._x._replace(board=pb, hand=hand))  # type: ignore
 
 
 def _set_cache(state: State):
