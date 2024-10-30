@@ -475,9 +475,7 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king(from_):
-        return _is_pseudo_legal_move(
-            from_=from_, to=flipped_king_pos, state=_flip(state)
-        )
+        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=_flip(state))
 
     @jax.vmap
     def can_capture_king_local(from_):
