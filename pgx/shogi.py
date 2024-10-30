@@ -75,7 +75,6 @@ ALL_SQ = jnp.arange(81)
 
 
 class GameState(NamedTuple):
-    # --- Shogi specific ---
     turn: Array = jnp.int32(0)  # 0 or 1
     board: Array = INIT_PIECE_BOARD  # (81,) flip in turn
     hand: Array = jnp.zeros((2, 7), dtype=jnp.int32)  # flip in turn
