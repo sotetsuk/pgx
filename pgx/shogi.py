@@ -101,7 +101,7 @@ class State(core.State):
         return "shogi"
 
     @staticmethod
-    def _fromboard(turn, piece_board: Array, hand: Array):
+    def _from_board(turn, piece_board: Array, hand: Array):
         """Mainly for debugging purpose.
         terminated, reward, and current_player are not changed"""
         x = GameState(turn=turn, board=piece_board, hand=hand)  
@@ -114,7 +114,7 @@ class State(core.State):
     @staticmethod
     def _from_sfen(sfen):
         turn, pb, hand, step_count = _from_sfen(sfen)
-        return jax.jit(State._fromboard)(turn, pb, hand).replace(
+        return jax.jit(State._from_board)(turn, pb, hand).replace(
             _step_count=jnp.int32(step_count)
         )  # type: ignore
 
@@ -128,7 +128,7 @@ class Shogi(core.Env):
         super().__init__()
 
     def _init(self, key: PRNGKey) -> State:
-        state = _initboard()
+        state = _init_board()
         current_player = jnp.int32(jax.random.bernoulli(key))
         return state.replace(current_player=current_player)  # type: ignore
 
@@ -233,7 +233,7 @@ class Action:
         )  # type: ignore
 
 
-def _initboard():
+def _init_board():
     """Initialize Shogi State."""
     return State()
 
