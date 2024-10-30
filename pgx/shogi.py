@@ -415,9 +415,7 @@ def _is_pseudo_legal_move(
     # there is an obstacle between from_ and to
     i = _major_piece_ix(state._x.board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
-    is_illegal = (i >= 0) & (
-        (between_ix >= 0) & (state._x.board[between_ix] != EMPTY)
-    ).any()
+    is_illegal = (i >= 0) & ((between_ix >= 0) & (state._x.board[between_ix] != EMPTY)).any()
     return ok & ~is_illegal
 
 
