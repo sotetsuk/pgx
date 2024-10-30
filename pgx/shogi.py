@@ -103,8 +103,7 @@ class State(core.State):
     def _from_board(turn, piece_board: Array, hand: Array):
         """Mainly for debugging purpose.
         terminated, reward, and current_player are not changed"""
-        x = GameState(turn=turn, board=piece_board, hand=hand)  
-        state = State(_x=x)  # type: ignore
+        state = State(_x=GameState(turn=turn, board=piece_board, hand=hand))  # type: ignore
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
         # fmt: on
