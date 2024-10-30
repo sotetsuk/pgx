@@ -10,8 +10,6 @@ concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
-
-
 jobs:
   test:
     runs-on: "${{ matrix.os }}"
