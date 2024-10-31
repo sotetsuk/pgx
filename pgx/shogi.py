@@ -330,7 +330,7 @@ def _legal_action_mask(state: State):
     )  # (27 * 81)
 
     # check drop pawn mate
-    is_drop_pawn_mate, to = _is_drop_pawn_mate(state)
+    is_drop_pawn_mate, to = _is_drop_pawn_mate(state._x)
     direction = 20
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     can_drop_pawn &= ~is_drop_pawn_mate
@@ -339,23 +339,23 @@ def _legal_action_mask(state: State):
     return legal_action_mask
 
 
-def _is_drop_pawn_mate(state: State):
+def _is_drop_pawn_mate(state: GameState):
     # check pawn drop mate
-    opp_king_pos = jnp.argmin(jnp.abs(state._x.board - OPP_KING))
+    opp_king_pos = jnp.argmin(jnp.abs(state.board - OPP_KING))
     to = opp_king_pos + 1
-    flip_state = state.replace(_x=_flip(state._x._replace(board=state._x.board.at[to].set(PAWN))))  # type: ignore
+    flip_state = _flip(state._replace(board=state.board.at[to].set(PAWN)))
     # Not checkmate if
     #   (1) can capture checking pawn, or
     #   (2) king can escape
     # fmt: off
     flipped_to = 80 - to
-    flip_state = flip_state.replace(_x=_set_cache(flip_state._x))  # type: ignore
+    flip_state = _set_cache(flip_state)
     can_capture_pawn = jax.vmap(partial(
-        _is_legal_move_wo_pro, to=flipped_to, state=flip_state._x
+        _is_legal_move_wo_pro, to=flipped_to, state=flip_state
     ))(from_=CAN_MOVE_ANY[flipped_to]).any()
     from_ = 80 - opp_king_pos
     can_king_escape = jax.vmap(
-        partial(_is_legal_move_wo_pro, from_=from_, state=flip_state._x)
+        partial(_is_legal_move_wo_pro, from_=from_, state=flip_state)
     )(to=AROUND_IX[from_]).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
