@@ -303,7 +303,7 @@ def _legal_action_mask(state: State):
 
     @jax.vmap
     def is_legal_move_wo_pro(i):
-        return _is_legal_move_wo_pro(a.from_[i], a.to[i], state)
+        return _is_legal_move_wo_pro(a.from_[i], a.to[i], state._x)
 
     @jax.vmap
     def is_legal_drop_wo_piece(to):
@@ -351,11 +351,11 @@ def _is_drop_pawn_mate(state: State):
     flipped_to = 80 - to
     flip_state = flip_state.replace(_x=_set_cache(flip_state._x))  # type: ignore
     can_capture_pawn = jax.vmap(partial(
-        _is_legal_move_wo_pro, to=flipped_to, state=flip_state
+        _is_legal_move_wo_pro, to=flipped_to, state=flip_state._x
     ))(from_=CAN_MOVE_ANY[flipped_to]).any()
     from_ = 80 - opp_king_pos
     can_king_escape = jax.vmap(
-        partial(_is_legal_move_wo_pro, from_=from_, state=flip_state)
+        partial(_is_legal_move_wo_pro, from_=from_, state=flip_state._x)
     )(to=AROUND_IX[from_]).any()
     is_pawn_mate = ~(can_capture_pawn | can_king_escape)
     # fmt: on
@@ -383,16 +383,16 @@ def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: GameState):
 def _is_legal_move_wo_pro(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
-    ok = _is_pseudo_legal_move(from_, to, state._x)
+    ok = _is_pseudo_legal_move(from_, to, state)
     ok &= ~_is_checked(
-        state._x._replace(  # type: ignore
-            board=state._x.board.at[from_].set(EMPTY).at[to].set(state._x.board[from_]),
+        state._replace(
+            board=state.board.at[from_].set(EMPTY).at[to].set(state.board[from_]),
             cache_king=jax.lax.select(  # update cache
-                state._x.board[from_] == KING,
+                state.board[from_] == KING,
                 jnp.int32(to),
-                state._x.cache_king,
+                state.cache_king,
             )
         )
     )
