@@ -182,7 +182,7 @@ class Action:
         return Action(is_drop=TRUE, piece=piece, to=to)
 
     @staticmethod
-    def _from_dlshogi_action(state: State, action: Array):
+    def _from_dlshogi_action(state: GameState, action: Array):
         """Direction (from github.com/TadaoYamaoka/cshogi)
 
          0 Up
@@ -219,12 +219,12 @@ class Action:
         is_promotion = (10 <= direction) & (direction < 20)
         # LEGAL_FROM_IDX[UP, 19] = [20, 21, ... -1]
         legal_from_idx = LEGAL_FROM_IDX[direction % 10, to]  # (81,)
-        from_cand = state._x.board[legal_from_idx]  # (8,)
+        from_cand = state.board[legal_from_idx]  # (8,)
         mask = (legal_from_idx >= 0) & (PAWN <= from_cand) & (from_cand < OPP_PAWN)
         i = jnp.argmax(mask)
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
-        piece = jax.lax.select(is_drop, direction - 20, state._x.board[from_])
-        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
+        piece = jax.lax.select(is_drop, direction - 20, state.board[from_])
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)
 
 
 def _init_board():
@@ -233,7 +233,7 @@ def _init_board():
 
 
 def _step(state: State, action: Array):
-    a = Action._from_dlshogi_action(state, action)
+    a = Action._from_dlshogi_action(state._x, action)
     # apply move/drop action
     x = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state._x, a))
     # flip state
@@ -299,7 +299,7 @@ def _legal_action_mask(state: State):
     # update cache
     state = state.replace(_x=_set_cache(state._x))  # type: ignore
 
-    a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(action=jnp.arange(27 * 81))
+    a = jax.vmap(partial(Action._from_dlshogi_action, state=state._x))(action=jnp.arange(27 * 81))
 
     @jax.vmap
     def is_legal_move_wo_pro(i):
