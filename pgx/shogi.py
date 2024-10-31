@@ -143,7 +143,7 @@ class Shogi(core.Env):
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        return _observe(state, player_id)
+        return _observe(state._x, flip=state.current_player == player_id)
 
     @property
     def id(self) -> core.EnvId:
@@ -528,34 +528,34 @@ def _major_piece_ix(piece):
     return jax.lax.select(piece >= 0, ixs[piece], jnp.int32(-1))
 
 
-def _observe(state: State, player_id: Array) -> Array:
+def _observe(state: GameState, flip: bool = False) -> Array:
     state, flip_state = jax.lax.cond(
-        state.current_player == player_id,
-        lambda: (state, state.replace(_x=_flip(state._x))),  # type: ignore
-        lambda: (state.replace(_x=_flip(state._x)), state),  # type: ignore
+        flip,
+        lambda: (state, _flip(state)),
+        lambda: (_flip(state), state),
     )
 
     def pieces(state):
         # piece positions
         my_pieces = jnp.arange(OPP_PAWN)
-        my_piece_feat = jax.vmap(lambda p: state._x.board == p)(my_pieces)
+        my_piece_feat = jax.vmap(lambda p: state.board == p)(my_pieces)
         return my_piece_feat
 
     def effect_all(state):
         def effect(from_, to):
-            piece = state._x.board[from_]
+            piece = state.board[from_]
             can_move = CAN_MOVE[piece, from_, to]
             major_piece_ix = _major_piece_ix(piece)
             between_ix = BETWEEN_IX[major_piece_ix, from_, to, :]
             has_obstacles = jax.lax.select(
                 major_piece_ix >= 0,
-                ((between_ix >= 0) & (state._x.board[between_ix] != EMPTY)).any(),
+                ((between_ix >= 0) & (state.board[between_ix] != EMPTY)).any(),
                 FALSE,
             )
             return can_move & ~has_obstacles
 
         effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(ALL_SQ, ALL_SQ)
-        mine = (PAWN <= state._x.board) & (state._x.board < OPP_PAWN)
+        mine = (PAWN <= state.board) & (state.board < OPP_PAWN)
         return jnp.where(mine.reshape(81, 1), effects, FALSE)
 
     def piece_and_effect(state):
@@ -564,7 +564,7 @@ def _observe(state: State, player_id: Array) -> Array:
 
         @jax.vmap
         def filter_effect(p):
-            mask = state._x.board == p
+            mask = state.board == p
             return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
 
         my_effect_feat = filter_effect(my_pieces)
@@ -599,10 +599,10 @@ def _observe(state: State, player_id: Array) -> Array:
     opp_piece_feat = opp_piece_feat[:, ::-1]
     opp_effect_feat = opp_effect_feat[:, ::-1]
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
-    my_hand_feat = hand_feat(state._x.hand[0])
-    opp_hand_feat = hand_feat(state._x.hand[1])
+    my_hand_feat = hand_feat(state.hand[0])
+    opp_hand_feat = hand_feat(state.hand[1])
     # NOTE: update cache
-    checked = jnp.tile(_is_checked(_set_cache(state._x)), reps=(1, 9, 9))
+    checked = jnp.tile(_is_checked(_set_cache(state)), reps=(1, 9, 9))
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
         my_effect_feat.reshape(14, 9, 9),
