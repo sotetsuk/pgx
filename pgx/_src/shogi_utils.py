@@ -119,6 +119,33 @@ def can_move_to(piece, from_, to):
         assert False
 
 
+def is_on_the_way(piece, from_, to, point):
+    if to == point:
+        return False
+    if piece not in (LANCE, BISHOP, ROOK, HORSE, DRAGON):
+        return False
+    if not can_move_to(piece, from_, to):
+        return False
+    if not can_move_to(piece, from_, point):
+        return False
+
+    x0, y0 = from_ // 9, from_ % 9
+    x1, y1 = to // 9, to % 9
+    x2, y2 = point // 9, point % 9
+    dx1, dy1 = x1 - x0, y1 - y0
+    dx2, dy2 = x2 - x0, y2 - y0
+
+    def sign(d):
+        if d == 0:
+            return 0
+        return d > 0
+
+    if (sign(dx1) != sign(dx2)) or (sign(dy1) != sign(dy2)):
+        return False
+
+    return abs(dx2) <= abs(dx1) and abs(dy2) <= abs(dy1)
+
+
 CAN_MOVE = np.zeros((14, 81, 81), dtype=jnp.bool_)
 for piece in range(14):
     for from_ in range(81):
@@ -131,10 +158,16 @@ CAN_MOVE = jnp.array(CAN_MOVE)
 
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
 # is <point,81> on the way between two points?
-file_path = "assets/between.npy"
-with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
-    BETWEEN = jnp.load(f)
+BETWEEN = np.zeros((5, 81, 81, 81), dtype=np.bool_)
+for i, piece in enumerate((LANCE, BISHOP, ROOK, HORSE, DRAGON)):
+    for from_ in range(81):
+        for to in range(81):
+            for p in range(81):
+                BETWEEN[i, from_, to, p] = is_on_the_way(piece, from_, to, p)
+
+BETWEEN = jnp.array(BETWEEN)
 assert BETWEEN.sum() == 10564
+
 
 # Give <dir,10> and <to,81>, return the legal <from> idx
 # E.g. LEGAL_FROM_IDX[Up, to=19] = [20, 21, ..., -1] (filled by -1)
