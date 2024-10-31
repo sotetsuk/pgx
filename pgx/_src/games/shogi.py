@@ -29,7 +29,7 @@ from pgx._src.shogi_utils import (
     LEGAL_FROM_IDX,
     NEIGHBOUR_IX,
 )
-from pgx._src.struct import dataclass
+
 
 MAX_TERMINATION_STEPS = 512  # From AZ paper
 
@@ -94,8 +94,7 @@ class Game:
         return _legal_action_mask(state)
 
 
-@dataclass
-class Action:
+class Action(NamedTuple):
     is_drop: Array
     piece: Array
     to: Array
