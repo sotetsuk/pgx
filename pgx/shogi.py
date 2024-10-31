@@ -105,7 +105,7 @@ class State(core.State):
         terminated, reward, and current_player are not changed"""
         state = State(_x=GameState(turn=turn, board=piece_board, hand=hand))  # type: ignore
         # fmt: off
-        state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
+        state = jax.lax.cond(turn % 2 == 1, lambda: state.replace(_x=_flip(state._x)), lambda: state)  # type: ignore
         # fmt: on
         return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
 
@@ -115,7 +115,7 @@ class State(core.State):
         return jax.jit(State._from_board)(turn, pb, hand).replace(_step_count=jnp.int32(step_count))  # type: ignore
 
     def _to_sfen(self):
-        state = self if self._x.turn % 2 == 0 else _flip(self)
+        state = self if self._x.turn % 2 == 0 else self.replace(_x=_flip(self._x))  # type: ignore
         return _to_sfen(state)
 
 
@@ -237,7 +237,7 @@ def _step(state: State, action: Array):
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     # flip state
-    state = _flip(state)
+    state = state.replace(_x=_flip(state._x))  # type: ignore
     state = state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
         _x=state._x._replace(turn=(state._x.turn + 1) % 2),
@@ -342,7 +342,7 @@ def _is_drop_pawn_mate(state: State):
     # check pawn drop mate
     opp_king_pos = jnp.argmin(jnp.abs(state._x.board - OPP_KING))
     to = opp_king_pos + 1
-    flip_state = _flip(state.replace(_x=state._x._replace(board=state._x.board.at[to].set(PAWN))))  # type: ignore
+    flip_state = state.replace(_x=_flip(state._x._replace(board=state._x.board.at[to].set(PAWN))))  # type: ignore
     # Not checkmate if
     #   (1) can capture checking pawn, or
     #   (2) king can escape
@@ -461,11 +461,11 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king(from_):
-        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=_flip(state))
+        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=state.replace(_x=_flip(state._x)))  # type: ignore
 
     @jax.vmap
     def can_capture_king_local(from_):
-        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state)._x)
+        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state._x))
 
     # Simpler implementation without cache of major piece places
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
@@ -484,16 +484,15 @@ def _rotate(board: Array) -> Array:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
 
-def _flip(state):
-    empty_mask = state._x.board == EMPTY
-    pb = (state._x.board + 14) % 28
+def _flip(state: GameState):
+    empty_mask = state.board == EMPTY
+    pb = (state.board + 14) % 28
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = pb[::-1]
-    x = state._x._replace(
+    return state._replace(
         board=pb,
-        hand=state._x.hand[jnp.int32((1, 0))],
+        hand=state.hand[jnp.int32((1, 0))],
     )
-    return state.replace(_x=x)  # type: ignore
 
 
 def _is_major_piece(piece):
@@ -531,8 +530,8 @@ def _major_piece_ix(piece):
 def _observe(state: State, player_id: Array) -> Array:
     state, flip_state = jax.lax.cond(
         state.current_player == player_id,
-        lambda: (state, _flip(state)),
-        lambda: (_flip(state), state),
+        lambda: (state, state.replace(_x=_flip(state._x))),  # type: ignore
+        lambda: (state.replace(_x=_flip(state._x)), state),  # type: ignore
     )
 
     def pieces(state):
