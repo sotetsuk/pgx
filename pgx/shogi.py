@@ -107,7 +107,7 @@ class State(core.State):
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: state.replace(_x=_flip(state._x)), lambda: state)  # type: ignore
         # fmt: on
-        return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+        return state.replace(legal_action_mask=_legal_action_mask(state._x))  # type: ignore
 
     @staticmethod
     def _from_sfen(sfen):
@@ -242,7 +242,7 @@ def _step(state: State, action: Array):
         current_player=(state.current_player + 1) % 2,
         _x=x._replace(turn=(state._x.turn + 1) % 2),
     )
-    legal_action_mask = _legal_action_mask(state)
+    legal_action_mask = _legal_action_mask(state._x)
     terminated = ~legal_action_mask.any()
     # fmt: off
     reward = jax.lax.select(
@@ -295,19 +295,19 @@ def _set_cache(state: GameState):
     )
 
 
-def _legal_action_mask(state: State):
+def _legal_action_mask(state: GameState):
     # update cache
-    state = state.replace(_x=_set_cache(state._x))  # type: ignore
+    state = _set_cache(state)
 
-    a = jax.vmap(partial(Action._from_dlshogi_action, state=state._x))(action=jnp.arange(27 * 81))
+    a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(action=jnp.arange(27 * 81))
 
     @jax.vmap
     def is_legal_move_wo_pro(i):
-        return _is_legal_move_wo_pro(a.from_[i], a.to[i], state._x)
+        return _is_legal_move_wo_pro(a.from_[i], a.to[i], state)
 
     @jax.vmap
     def is_legal_drop_wo_piece(to):
-        return _is_legal_drop_wo_piece(to, state._x)
+        return _is_legal_drop_wo_piece(to, state)
 
     pseudo_legal_moves = is_legal_move_wo_pro(jnp.arange(10 * 81))
     pseudo_legal_drops = is_legal_drop_wo_piece(jnp.arange(81))
@@ -315,12 +315,12 @@ def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal_move(i):
         return pseudo_legal_moves[i % (10 * 81)] & jax.lax.cond(
-            a.is_promotion[i], _is_promotion_legal, _is_no_promotion_legal, *(a.from_[i], a.to[i], state._x)
+            a.is_promotion[i], _is_promotion_legal, _is_no_promotion_legal, *(a.from_[i], a.to[i], state)
         )
 
     @jax.vmap
     def is_legal_drop(i):
-        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(a.piece[i], a.to[i], state._x)
+        return pseudo_legal_drops[i % 81] & _is_legal_drop_wo_ignoring_check(a.piece[i], a.to[i], state)
 
     legal_action_mask = jnp.hstack(
         (
@@ -330,7 +330,7 @@ def _legal_action_mask(state: State):
     )  # (27 * 81)
 
     # check drop pawn mate
-    is_drop_pawn_mate, to = _is_drop_pawn_mate(state._x)
+    is_drop_pawn_mate, to = _is_drop_pawn_mate(state)
     direction = 20
     can_drop_pawn = legal_action_mask[direction * 81 + to]  # current
     can_drop_pawn &= ~is_drop_pawn_mate
