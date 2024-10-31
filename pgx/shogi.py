@@ -24,7 +24,7 @@ from pgx._src.shogi_utils import (
 )
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.shogi import MAX_TERMINATION_STEPS, GameState, _step, _legal_action_mask, _observe, _flip
+from pgx._src.games.shogi import MAX_TERMINATION_STEPS, GameState, Game, _observe, _flip
 
 
 TRUE = jnp.bool_(True)
@@ -54,7 +54,7 @@ class State(core.State):
         # fmt: off
         state = jax.lax.cond(turn % 2 == 1, lambda: state.replace(_x=_flip(state._x)), lambda: state)  # type: ignore
         # fmt: on
-        return state.replace(legal_action_mask=_legal_action_mask(state._x))  # type: ignore
+        return state.replace(legal_action_mask=Game().legal_action_mask(state._x))  # type: ignore
 
     @staticmethod
     def _from_sfen(sfen):
@@ -67,8 +67,10 @@ class State(core.State):
 
 
 class Shogi(core.Env):
+
     def __init__(self):
         super().__init__()
+        self._game = Game()
 
     def _init(self, key: PRNGKey) -> State:
         state = State()
@@ -79,13 +81,13 @@ class Shogi(core.Env):
         del key
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
-        x = _step(state._x, action)
+        x = self._game.step(state._x, action)
         state = state.replace(  # type: ignore
             current_player=(state.current_player + 1) % 2,
             _x=x,
         )
         del x
-        legal_action_mask = _legal_action_mask(state._x)
+        legal_action_mask = self._game.legal_action_mask(state._x)
         terminated = ~legal_action_mask.any()
         # fmt: off
         reward = jax.lax.select(
