@@ -29,7 +29,7 @@ from pgx._src.shogi_utils import (
     NEIGHBOUR_IX,
 )
 from pgx._src.struct import dataclass
-from pgx._src.types import Array, PRNGKey
+from pgx._src.types import Array
 
 MAX_TERMINATION_STEPS = 512  # From AZ paper
 
