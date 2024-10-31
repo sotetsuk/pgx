@@ -307,7 +307,7 @@ def _legal_action_mask(state: State):
 
     @jax.vmap
     def is_legal_drop_wo_piece(to):
-        return _is_legal_drop_wo_piece(to, state)
+        return _is_legal_drop_wo_piece(to, state._x)
 
     pseudo_legal_moves = is_legal_move_wo_pro(jnp.arange(10 * 81))
     pseudo_legal_drops = is_legal_drop_wo_piece(jnp.arange(81))
@@ -362,9 +362,9 @@ def _is_drop_pawn_mate(state: State):
     return is_pawn_mate, to
 
 
-def _is_legal_drop_wo_piece(to: Array, state: State):
-    is_illegal = state._x.board[to] != EMPTY
-    is_illegal |= _is_checked(state._x._replace(board=state._x.board.at[to].set(PAWN)))  # type: ignore
+def _is_legal_drop_wo_piece(to: Array, state: GameState):
+    is_illegal = state.board[to] != EMPTY
+    is_illegal |= _is_checked(state._replace(board=state.board.at[to].set(PAWN)))
     return ~is_illegal
 
 
