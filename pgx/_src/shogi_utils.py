@@ -14,6 +14,7 @@
 
 import os
 
+import numpy as np
 import jax
 import jax.numpy as jnp
 import numpy as np
@@ -30,11 +31,102 @@ INIT_PIECE_BOARD = jnp.int32([[15, -1, 14, -1, -1, -1, 0, -1, 1],  # noqa: E241
                              [15, -1, 14, -1, -1, -1, 0, -1, 1]]).flatten()  # noqa: E241
 # fmt: on
 
+EMPTY = -1  # 空白
+PAWN = 0  # 歩
+LANCE = 1  # 香
+KNIGHT = 2  # 桂
+SILVER = 3  # 銀
+BISHOP = 4  # 角
+ROOK = 5  # 飛
+GOLD = 6  # 金
+KING = 7  # 玉
+PRO_PAWN = 8  # と
+PRO_LANCE = 9  # 成香
+PRO_KNIGHT = 10  # 成桂
+PRO_SILVER = 11  # 成銀
+HORSE = 12  # 馬
+DRAGON = 13  # 龍
+
+
 # Can <piece,14> reach from <from,81> to <to,81> ignoring pieces on board?
-file_path = "assets/can_move.npy"
-with open(os.path.join(os.path.dirname(__file__), file_path), "rb") as f:
-    CAN_MOVE = jnp.load(f)
+def can_move_to(piece, from_, to):
+    """Can <piece> move from <from_> to <to>?"""
+    if from_ == to:
+        return False
+    x0, y0 = from_ // 9, from_ % 9
+    x1, y1 = to // 9, to % 9
+    dx = x1 - x0
+    dy = y1 - y0
+    if piece == PAWN:
+        if dx == 0 and dy == -1:
+            return True
+        else:
+            return False
+    elif piece == LANCE:
+        if dx == 0 and dy < 0:
+            return True
+        else:
+            return False
+    elif piece == KNIGHT:
+        if dx in (-1, 1) and dy == -2:
+            return True
+        else:
+            return False
+    elif piece == SILVER:
+        if dx in (-1, 0, 1) and dy == -1:
+            return True
+        elif dx in (-1, 1) and dy == 1:
+            return True
+        else:
+            return False
+    elif piece == BISHOP:
+        if dx == dy or dx == -dy:
+            return True
+        else:
+            return False
+    elif piece == ROOK:
+        if dx == 0 or dy == 0:
+            return True
+        else:
+            return False
+    if piece in (GOLD, PRO_PAWN, PRO_LANCE, PRO_KNIGHT, PRO_SILVER):
+        if dx in (-1, 0, 1) and dy in (0, -1):
+            return True
+        elif dx == 0 and dy == 1:
+            return True
+        else:
+            return False
+    elif piece == KING:
+        if abs(dx) <= 1 and abs(dy) <= 1:
+            return True
+        else:
+            return False
+    elif piece == HORSE:
+        if abs(dx) <= 1 and abs(dy) <= 1:
+            return True
+        elif dx == dy or dx == -dy:
+            return True
+        else:
+            return False
+    elif piece == DRAGON:
+        if abs(dx) <= 1 and abs(dy) <= 1:
+            return True
+        if dx == 0 or dy == 0:
+            return True
+        else:
+            return False
+    else:
+        assert False
+
+
+CAN_MOVE = np.zeros((14, 81, 81), dtype=jnp.bool_)
+for piece in range(14):
+    for from_ in range(81):
+        for to in range(81):
+            CAN_MOVE[piece, from_, to] = can_move_to(piece, from_, to)
+
 assert CAN_MOVE.sum() == 8228
+CAN_MOVE = jnp.array(CAN_MOVE)
 
 
 # When <lance/bishop/rook/horse/dragon,5> moves from <from,81> to <to,81>,
