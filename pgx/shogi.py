@@ -13,22 +13,12 @@
 # limitations under the License.
 
 
-from typing import NamedTuple
-from functools import partial
-
 import jax
 import jax.numpy as jnp
 
 import pgx.core as core
 from pgx._src.shogi_utils import (
-    AROUND_IX,
-    BETWEEN_IX,
-    CAN_MOVE,
-    CAN_MOVE_ANY,
     INIT_LEGAL_ACTION_MASK,
-    INIT_PIECE_BOARD,
-    LEGAL_FROM_IDX,
-    NEIGHBOUR_IX,
     _from_sfen,
     _to_sfen,
 )
