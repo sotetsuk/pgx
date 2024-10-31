@@ -105,9 +105,9 @@ class State(core.State):
         terminated, reward, and current_player are not changed"""
         state = State(_x=GameState(turn=turn, board=piece_board, hand=hand))  # type: ignore
         # fmt: off
-        state = jax.lax.cond(turn % 2 == 1, lambda: _flip(state), lambda: state)
+        state = jax.lax.cond(turn % 2 == 1, lambda: state.replace(_x=_flip(state._x)), lambda: state)  # type: ignore
         # fmt: on
-        return state.replace(legal_action_mask=_legal_action_mask(state))  # type: ignore
+        return state.replace(legal_action_mask=_legal_action_mask(state._x))  # type: ignore
 
     @staticmethod
     def _from_sfen(sfen):
@@ -115,7 +115,7 @@ class State(core.State):
         return jax.jit(State._from_board)(turn, pb, hand).replace(_step_count=jnp.int32(step_count))  # type: ignore
 
     def _to_sfen(self):
-        state = self if self._x.turn % 2 == 0 else _flip(self)
+        state = self if self._x.turn % 2 == 0 else self.replace(_x=_flip(self._x))  # type: ignore
         return _to_sfen(state)
 
 
@@ -132,7 +132,26 @@ class Shogi(core.Env):
         del key
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
-        state = _step(state, action)
+        x = _step(state._x, action)
+        state = state.replace(  # type: ignore
+            current_player=(state.current_player + 1) % 2,
+            _x=x,
+        )
+        del x
+        legal_action_mask = _legal_action_mask(state._x)
+        terminated = ~legal_action_mask.any()
+        # fmt: off
+        reward = jax.lax.select(
+            terminated,
+            jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+            jnp.zeros(2, dtype=jnp.float32),
+        )
+        # fmt: on
+        state = state.replace(  # type: ignore
+            legal_action_mask=legal_action_mask,
+            terminated=terminated,
+            rewards=reward,
+        )
         state = jax.lax.cond(
             (MAX_TERMINATION_STEPS <= state._step_count),
             # end with tie
@@ -143,7 +162,7 @@ class Shogi(core.Env):
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        return _observe(state, player_id)
+        return _observe(state._x, flip=state.current_player == player_id)
 
     @property
     def id(self) -> core.EnvId:
@@ -182,7 +201,7 @@ class Action:
         return Action(is_drop=TRUE, piece=piece, to=to)
 
     @staticmethod
-    def _from_dlshogi_action(state: State, action: Array):
+    def _from_dlshogi_action(state: GameState, action: Array):
         """Direction (from github.com/TadaoYamaoka/cshogi)
 
          0 Up
@@ -219,12 +238,12 @@ class Action:
         is_promotion = (10 <= direction) & (direction < 20)
         # LEGAL_FROM_IDX[UP, 19] = [20, 21, ... -1]
         legal_from_idx = LEGAL_FROM_IDX[direction % 10, to]  # (81,)
-        from_cand = state._x.board[legal_from_idx]  # (8,)
+        from_cand = state.board[legal_from_idx]  # (8,)
         mask = (legal_from_idx >= 0) & (PAWN <= from_cand) & (from_cand < OPP_PAWN)
         i = jnp.argmax(mask)
         from_ = jax.lax.select(is_drop, 0, legal_from_idx[i])
-        piece = jax.lax.select(is_drop, direction - 20, state._x.board[from_])
-        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)  # type: ignore
+        piece = jax.lax.select(is_drop, direction - 20, state.board[from_])
+        return Action(is_drop=is_drop, piece=piece, to=to, from_=from_, is_promotion=is_promotion)
 
 
 def _init_board():
@@ -232,69 +251,53 @@ def _init_board():
     return State()
 
 
-def _step(state: State, action: Array):
+def _step(state: GameState, action: Array) -> GameState:
     a = Action._from_dlshogi_action(state, action)
     # apply move/drop action
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     # flip state
     state = _flip(state)
-    state = state.replace(  # type: ignore
-        current_player=(state.current_player + 1) % 2,
-        _x=state._x._replace(turn=(state._x.turn + 1) % 2),
-    )
-    legal_action_mask = _legal_action_mask(state)
-    terminated = ~legal_action_mask.any()
-    # fmt: off
-    reward = jax.lax.select(
-        terminated,
-        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
-        jnp.zeros(2, dtype=jnp.float32),
-    )
-    # fmt: on
-    return state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask,
-        terminated=terminated,
-        rewards=reward,
-    )
+    return state._replace(turn=(state.turn + 1) % 2)
 
 
-def _step_move(state: State, action: Action) -> State:
-    pb = state._x.board
+def _step_move(state: GameState, action: Action) -> GameState:
+    pb = state.board
     # remove piece from the original position
     pb = pb.at[action.from_].set(EMPTY)
     # capture the opponent if exists
     captured = pb[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
     hand = jax.lax.cond(
         captured == EMPTY,
-        lambda: state._x.hand,
+        lambda: state.hand,
         # add captured piece to my hand after
         #   (1) tuning opp piece into mine by (x + 14) % 28, and
         #   (2) filtering promoted piece by x % 8
-        lambda: state._x.hand.at[0, ((captured + 14) % 28) % 8].add(1),
+        lambda: state.hand.at[0, ((captured + 14) % 28) % 8].add(1),
     )
     # promote piece
     piece = jax.lax.select(action.is_promotion, action.piece + 8, action.piece)
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     # apply piece moves
-    return state.replace(_x=state._x._replace(board=pb, hand=hand))  # type: ignore
+    return state._replace(board=pb, hand=hand)  # type: ignore
 
 
-def _step_drop(state: State, action: Action) -> State:
+def _step_drop(state: GameState, action: Action) -> GameState:
     # add piece to board
-    pb = state._x.board.at[action.to].set(action.piece)
+    pb = state.board.at[action.to].set(action.piece)
     # remove piece from hand
-    hand = state._x.hand.at[0, action.piece].add(-1)
-    return state.replace(_x=state._x._replace(board=pb, hand=hand))  # type: ignore
+    hand = state.hand.at[0, action.piece].add(-1)
+    return state._replace(board=pb, hand=hand)  # type: ignore
 
 
-def _set_cache(state: State):
-    return state.replace(_x=state._x._replace(  # type: ignore
-        cache_m2b=jnp.nonzero(jax.vmap(_is_major_piece)(state._x.board), size=8, fill_value=-1)[0],
-        cache_king=jnp.argmin(jnp.abs(state._x.board - KING)),
-    ))
+def _set_cache(state: GameState):
+    return state._replace(  # type: ignore
+        cache_m2b=jnp.nonzero(jax.vmap(_is_major_piece)(state.board), size=8, fill_value=-1)[0],
+        cache_king=jnp.argmin(jnp.abs(state.board - KING)),
+    )
 
-def _legal_action_mask(state: State):
+
+def _legal_action_mask(state: GameState):
     # update cache
     state = _set_cache(state)
 
@@ -338,11 +341,11 @@ def _legal_action_mask(state: State):
     return legal_action_mask
 
 
-def _is_drop_pawn_mate(state: State):
+def _is_drop_pawn_mate(state: GameState):
     # check pawn drop mate
-    opp_king_pos = jnp.argmin(jnp.abs(state._x.board - OPP_KING))
+    opp_king_pos = jnp.argmin(jnp.abs(state.board - OPP_KING))
     to = opp_king_pos + 1
-    flip_state = _flip(state.replace(_x=state._x._replace(board=state._x.board.at[to].set(PAWN))))  # type: ignore
+    flip_state = _flip(state._replace(board=state.board.at[to].set(PAWN)))
     # Not checkmate if
     #   (1) can capture checking pawn, or
     #   (2) king can escape
@@ -361,18 +364,18 @@ def _is_drop_pawn_mate(state: State):
     return is_pawn_mate, to
 
 
-def _is_legal_drop_wo_piece(to: Array, state: State):
-    is_illegal = state._x.board[to] != EMPTY
-    is_illegal |= _is_checked(state.replace(_x=state._x._replace(board=state._x.board.at[to].set(PAWN))))  # type: ignore
+def _is_legal_drop_wo_piece(to: Array, state: GameState):
+    is_illegal = state.board[to] != EMPTY
+    is_illegal |= _is_checked(state._replace(board=state.board.at[to].set(PAWN)))
     return ~is_illegal
 
 
-def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: State):
-    is_illegal = state._x.board[to] != EMPTY
+def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: GameState):
+    is_illegal = state.board[to] != EMPTY
     # don't have the piece
-    is_illegal |= state._x.hand[0, piece] <= 0
+    is_illegal |= state.hand[0, piece] <= 0
     # double pawn
-    is_illegal |= (piece == PAWN) & ((state._x.board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
+    is_illegal |= (piece == PAWN) & ((state.board == PAWN).reshape(9, 9).sum(axis=1) > 0)[to // 9]
     # get stuck
     is_illegal |= ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)
@@ -382,17 +385,17 @@ def _is_legal_drop_wo_ignoring_check(piece: Array, to: Array, state: State):
 def _is_legal_move_wo_pro(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
     ok = _is_pseudo_legal_move(from_, to, state)
     ok &= ~_is_checked(
-        state.replace(_x=state._x._replace(  # type: ignore
-            board=state._x.board.at[from_].set(EMPTY).at[to].set(state._x.board[from_]),
+        state._replace(
+            board=state.board.at[from_].set(EMPTY).at[to].set(state.board[from_]),
             cache_king=jax.lax.select(  # update cache
-                state._x.board[from_] == KING,
+                state.board[from_] == KING,
                 jnp.int32(to),
-                state._x.cache_king,
-            ))
+                state.cache_king,
+            )
         )
     )
     return ok
@@ -401,22 +404,22 @@ def _is_legal_move_wo_pro(
 def _is_pseudo_legal_move(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
     ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
     # there is an obstacle between from_ and to
-    i = _major_piece_ix(state._x.board[from_])
+    i = _major_piece_ix(state.board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
-    is_illegal = (i >= 0) & ((between_ix >= 0) & (state._x.board[between_ix] != EMPTY)).any()
+    is_illegal = (i >= 0) & ((between_ix >= 0) & (state.board[between_ix] != EMPTY)).any()
     return ok & ~is_illegal
 
 
 def _is_pseudo_legal_move_wo_obstacles(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
-    board = state._x.board
+    board = state.board
     # source is not my piece
     piece = board[from_]
     is_illegal = (from_ < 0) | ~((PAWN <= piece) & (piece < OPP_PAWN))
@@ -430,10 +433,10 @@ def _is_pseudo_legal_move_wo_obstacles(
 def _is_no_promotion_legal(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
     # source is not my piece
-    piece = state._x.board[from_]
+    piece = state.board[from_]
     # promotion
     is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # Must promote
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # Must promote
@@ -443,20 +446,20 @@ def _is_no_promotion_legal(
 def _is_promotion_legal(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
     # source is not my piece
-    piece = state._x.board[from_]
+    piece = state.board[from_]
     # promotion
     is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # Pieces cannot promote
     is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # irrelevant to the opponent's territory
     return ~is_illegal
 
 
-def _is_checked(state):
+def _is_checked(state: GameState):
     # Use cached king position, simpler implementation is:
     # jnp.argmin(jnp.abs(state.pieceboard - KING))
-    king_pos = state._x.cache_king
+    king_pos = state.cache_king
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
@@ -470,7 +473,7 @@ def _is_checked(state):
     # Simpler implementation without cache of major piece places
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
     # return can_capture_king(from_).any()
-    from_ = 80 - state._x.cache_m2b
+    from_ = 80 - state.cache_m2b
     from_ = jnp.where(from_ == 81, -1, from_)
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
     return can_capture_king(from_).any() | can_capture_king_local(neighbours).any()
@@ -484,16 +487,15 @@ def _rotate(board: Array) -> Array:
     return jnp.rot90(board.reshape(9, 9), k=3)
 
 
-def _flip(state):
-    empty_mask = state._x.board == EMPTY
-    pb = (state._x.board + 14) % 28
+def _flip(state: GameState):
+    empty_mask = state.board == EMPTY
+    pb = (state.board + 14) % 28
     pb = jnp.where(empty_mask, EMPTY, pb)
     pb = pb[::-1]
-    x = state._x._replace(
+    return state._replace(
         board=pb,
-        hand=state._x.hand[jnp.int32((1, 0))],
+        hand=state.hand[jnp.int32((1, 0))],
     )
-    return state.replace(_x=x)  # type: ignore
 
 
 def _is_major_piece(piece):
@@ -528,9 +530,9 @@ def _major_piece_ix(piece):
     return jax.lax.select(piece >= 0, ixs[piece], jnp.int32(-1))
 
 
-def _observe(state: State, player_id: Array) -> Array:
+def _observe(state: GameState, flip: bool = False) -> Array:
     state, flip_state = jax.lax.cond(
-        state.current_player == player_id,
+        flip,
         lambda: (state, _flip(state)),
         lambda: (_flip(state), state),
     )
@@ -538,24 +540,24 @@ def _observe(state: State, player_id: Array) -> Array:
     def pieces(state):
         # piece positions
         my_pieces = jnp.arange(OPP_PAWN)
-        my_piece_feat = jax.vmap(lambda p: state._x.board == p)(my_pieces)
+        my_piece_feat = jax.vmap(lambda p: state.board == p)(my_pieces)
         return my_piece_feat
 
     def effect_all(state):
         def effect(from_, to):
-            piece = state._x.board[from_]
+            piece = state.board[from_]
             can_move = CAN_MOVE[piece, from_, to]
             major_piece_ix = _major_piece_ix(piece)
             between_ix = BETWEEN_IX[major_piece_ix, from_, to, :]
             has_obstacles = jax.lax.select(
                 major_piece_ix >= 0,
-                ((between_ix >= 0) & (state._x.board[between_ix] != EMPTY)).any(),
+                ((between_ix >= 0) & (state.board[between_ix] != EMPTY)).any(),
                 FALSE,
             )
             return can_move & ~has_obstacles
 
         effects = jax.vmap(jax.vmap(effect, (None, 0)), (0, None))(ALL_SQ, ALL_SQ)
-        mine = (PAWN <= state._x.board) & (state._x.board < OPP_PAWN)
+        mine = (PAWN <= state.board) & (state.board < OPP_PAWN)
         return jnp.where(mine.reshape(81, 1), effects, FALSE)
 
     def piece_and_effect(state):
@@ -564,7 +566,7 @@ def _observe(state: State, player_id: Array) -> Array:
 
         @jax.vmap
         def filter_effect(p):
-            mask = state._x.board == p
+            mask = state.board == p
             return jnp.where(mask.reshape(81, 1), my_effect, FALSE).any(axis=0)
 
         my_effect_feat = filter_effect(my_pieces)
@@ -599,8 +601,8 @@ def _observe(state: State, player_id: Array) -> Array:
     opp_piece_feat = opp_piece_feat[:, ::-1]
     opp_effect_feat = opp_effect_feat[:, ::-1]
     opp_effect_sum_feat = opp_effect_sum_feat[:, ::-1]
-    my_hand_feat = hand_feat(state._x.hand[0])
-    opp_hand_feat = hand_feat(state._x.hand[1])
+    my_hand_feat = hand_feat(state.hand[0])
+    opp_hand_feat = hand_feat(state.hand[1])
     # NOTE: update cache
     checked = jnp.tile(_is_checked(_set_cache(state)), reps=(1, 9, 9))
     feat1 = [
