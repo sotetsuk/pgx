@@ -384,7 +384,7 @@ def _is_legal_move_wo_pro(
     to: Array,
     state: State,
 ):
-    ok = _is_pseudo_legal_move(from_, to, state)
+    ok = _is_pseudo_legal_move(from_, to, state._x)
     ok &= ~_is_checked(
         state.replace(_x=state._x._replace(  # type: ignore
             board=state._x.board.at[from_].set(EMPTY).at[to].set(state._x.board[from_]),
@@ -401,13 +401,13 @@ def _is_legal_move_wo_pro(
 def _is_pseudo_legal_move(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
-    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state._x)
+    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
     # there is an obstacle between from_ and to
-    i = _major_piece_ix(state._x.board[from_])
+    i = _major_piece_ix(state.board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
-    is_illegal = (i >= 0) & ((between_ix >= 0) & (state._x.board[between_ix] != EMPTY)).any()
+    is_illegal = (i >= 0) & ((between_ix >= 0) & (state.board[between_ix] != EMPTY)).any()
     return ok & ~is_illegal
 
 
@@ -461,7 +461,7 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king(from_):
-        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=state.replace(_x=_flip(state._x)))  # type: ignore
+        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=_flip(state._x))
 
     @jax.vmap
     def can_capture_king_local(from_):
