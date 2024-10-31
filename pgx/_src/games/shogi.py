@@ -80,6 +80,20 @@ class GameState(NamedTuple):
     cache_king: Array = jnp.int32(44)
 
 
+class Game:
+    def init(self) -> GameState:
+        return GameState()
+
+    def step(self, state: GameState, action: Array) -> GameState:
+        return _step(state, action)
+
+    def observe(self, state: GameState) -> Array:
+        return _observe(state, False)
+
+    def legal_action_mask(self, state: GameState) -> Array:
+        return _legal_action_mask(state)
+
+
 @dataclass
 class Action:
     is_drop: Array
