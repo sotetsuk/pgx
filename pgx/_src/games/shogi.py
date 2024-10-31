@@ -17,6 +17,7 @@ from typing import NamedTuple
 from functools import partial
 
 import jax
+from jax import Array
 import jax.numpy as jnp
 
 from pgx._src.shogi_utils import (
@@ -29,7 +30,6 @@ from pgx._src.shogi_utils import (
     NEIGHBOUR_IX,
 )
 from pgx._src.struct import dataclass
-from pgx._src.types import Array
 
 MAX_TERMINATION_STEPS = 512  # From AZ paper
 
