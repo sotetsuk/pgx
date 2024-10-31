@@ -235,12 +235,12 @@ def _init_board():
 def _step(state: State, action: Array):
     a = Action._from_dlshogi_action(state, action)
     # apply move/drop action
-    state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
+    x = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state._x, a))
     # flip state
-    state = state.replace(_x=_flip(state._x))  # type: ignore
+    x = _flip(x)  # type: ignore
     state = state.replace(  # type: ignore
         current_player=(state.current_player + 1) % 2,
-        _x=state._x._replace(turn=(state._x.turn + 1) % 2),
+        _x=x._replace(turn=(state._x.turn + 1) % 2),
     )
     legal_action_mask = _legal_action_mask(state)
     terminated = ~legal_action_mask.any()
@@ -258,34 +258,34 @@ def _step(state: State, action: Array):
     )
 
 
-def _step_move(state: State, action: Action) -> State:
-    pb = state._x.board
+def _step_move(state: GameState, action: Action) -> GameState:
+    pb = state.board
     # remove piece from the original position
     pb = pb.at[action.from_].set(EMPTY)
     # capture the opponent if exists
     captured = pb[action.to]  # suppose >= OPP_PAWN, -1 if EMPTY
     hand = jax.lax.cond(
         captured == EMPTY,
-        lambda: state._x.hand,
+        lambda: state.hand,
         # add captured piece to my hand after
         #   (1) tuning opp piece into mine by (x + 14) % 28, and
         #   (2) filtering promoted piece by x % 8
-        lambda: state._x.hand.at[0, ((captured + 14) % 28) % 8].add(1),
+        lambda: state.hand.at[0, ((captured + 14) % 28) % 8].add(1),
     )
     # promote piece
     piece = jax.lax.select(action.is_promotion, action.piece + 8, action.piece)
     # set piece to the target position
     pb = pb.at[action.to].set(piece)
     # apply piece moves
-    return state.replace(_x=state._x._replace(board=pb, hand=hand))  # type: ignore
+    return state._replace(board=pb, hand=hand)  # type: ignore
 
 
-def _step_drop(state: State, action: Action) -> State:
+def _step_drop(state: GameState, action: Action) -> GameState:
     # add piece to board
-    pb = state._x.board.at[action.to].set(action.piece)
+    pb = state.board.at[action.to].set(action.piece)
     # remove piece from hand
-    hand = state._x.hand.at[0, action.piece].add(-1)
-    return state.replace(_x=state._x._replace(board=pb, hand=hand))  # type: ignore
+    hand = state.hand.at[0, action.piece].add(-1)
+    return state._replace(board=pb, hand=hand)  # type: ignore
 
 
 def _set_cache(state: GameState):
