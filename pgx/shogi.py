@@ -132,7 +132,26 @@ class Shogi(core.Env):
         del key
         assert isinstance(state, State)
         # Note: Assume that illegal action is already filtered by Env.step
-        state = _step(state, action)
+        x = _step(state._x, action)
+        state = state.replace(  # type: ignore
+            current_player=(state.current_player + 1) % 2,
+            _x=x,
+        )
+        del x
+        legal_action_mask = _legal_action_mask(state._x)
+        terminated = ~legal_action_mask.any()
+        # fmt: off
+        reward = jax.lax.select(
+            terminated,
+            jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+            jnp.zeros(2, dtype=jnp.float32),
+        )
+        # fmt: on
+        state = state.replace(  # type: ignore
+            legal_action_mask=legal_action_mask,
+            terminated=terminated,
+            rewards=reward,
+        )
         state = jax.lax.cond(
             (MAX_TERMINATION_STEPS <= state._step_count),
             # end with tie
@@ -232,30 +251,13 @@ def _init_board():
     return State()
 
 
-def _step(state: State, action: Array):
-    a = Action._from_dlshogi_action(state._x, action)
+def _step(state: GameState, action: Array) -> GameState:
+    a = Action._from_dlshogi_action(state, action)
     # apply move/drop action
-    x = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state._x, a))
+    state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     # flip state
-    x = _flip(x)  # type: ignore
-    state = state.replace(  # type: ignore
-        current_player=(state.current_player + 1) % 2,
-        _x=x._replace(turn=(state._x.turn + 1) % 2),
-    )
-    legal_action_mask = _legal_action_mask(state._x)
-    terminated = ~legal_action_mask.any()
-    # fmt: off
-    reward = jax.lax.select(
-        terminated,
-        jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
-        jnp.zeros(2, dtype=jnp.float32),
-    )
-    # fmt: on
-    return state.replace(  # type: ignore
-        legal_action_mask=legal_action_mask,
-        terminated=terminated,
-        rewards=reward,
-    )
+    state = _flip(state)
+    return state._replace(turn=(state.turn + 1) % 2)
 
 
 def _step_move(state: GameState, action: Action) -> GameState:
