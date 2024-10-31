@@ -288,15 +288,16 @@ def _step_drop(state: State, action: Action) -> State:
     return state.replace(_x=state._x._replace(board=pb, hand=hand))  # type: ignore
 
 
-def _set_cache(state: State):
-    return state.replace(_x=state._x._replace(  # type: ignore
-        cache_m2b=jnp.nonzero(jax.vmap(_is_major_piece)(state._x.board), size=8, fill_value=-1)[0],
-        cache_king=jnp.argmin(jnp.abs(state._x.board - KING)),
-    ))
+def _set_cache(state: GameState):
+    return state._replace(  # type: ignore
+        cache_m2b=jnp.nonzero(jax.vmap(_is_major_piece)(state.board), size=8, fill_value=-1)[0],
+        cache_king=jnp.argmin(jnp.abs(state.board - KING)),
+    )
+
 
 def _legal_action_mask(state: State):
     # update cache
-    state = _set_cache(state)
+    state = state.replace(_x=_set_cache(state._x))  # type: ignore
 
     a = jax.vmap(partial(Action._from_dlshogi_action, state=state))(action=jnp.arange(27 * 81))
 
@@ -348,7 +349,7 @@ def _is_drop_pawn_mate(state: State):
     #   (2) king can escape
     # fmt: off
     flipped_to = 80 - to
-    flip_state = _set_cache(flip_state)
+    flip_state = flip_state.replace(_x=_set_cache(flip_state._x))  # type: ignore
     can_capture_pawn = jax.vmap(partial(
         _is_legal_move_wo_pro, to=flipped_to, state=flip_state
     ))(from_=CAN_MOVE_ANY[flipped_to]).any()
@@ -363,7 +364,7 @@ def _is_drop_pawn_mate(state: State):
 
 def _is_legal_drop_wo_piece(to: Array, state: State):
     is_illegal = state._x.board[to] != EMPTY
-    is_illegal |= _is_checked(state.replace(_x=state._x._replace(board=state._x.board.at[to].set(PAWN))))  # type: ignore
+    is_illegal |= _is_checked(state._x._replace(board=state._x.board.at[to].set(PAWN)))  # type: ignore
     return ~is_illegal
 
 
@@ -386,13 +387,13 @@ def _is_legal_move_wo_pro(
 ):
     ok = _is_pseudo_legal_move(from_, to, state._x)
     ok &= ~_is_checked(
-        state.replace(_x=state._x._replace(  # type: ignore
+        state._x._replace(  # type: ignore
             board=state._x.board.at[from_].set(EMPTY).at[to].set(state._x.board[from_]),
             cache_king=jax.lax.select(  # update cache
                 state._x.board[from_] == KING,
                 jnp.int32(to),
                 state._x.cache_king,
-            ))
+            )
         )
     )
     return ok
@@ -453,24 +454,24 @@ def _is_promotion_legal(
     return ~is_illegal
 
 
-def _is_checked(state):
+def _is_checked(state: GameState):
     # Use cached king position, simpler implementation is:
     # jnp.argmin(jnp.abs(state.pieceboard - KING))
-    king_pos = state._x.cache_king
+    king_pos = state.cache_king
     flipped_king_pos = 80 - king_pos
 
     @jax.vmap
     def can_capture_king(from_):
-        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=_flip(state._x))
+        return _is_pseudo_legal_move(from_=from_, to=flipped_king_pos, state=_flip(state))
 
     @jax.vmap
     def can_capture_king_local(from_):
-        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state._x))
+        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state))
 
     # Simpler implementation without cache of major piece places
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
     # return can_capture_king(from_).any()
-    from_ = 80 - state._x.cache_m2b
+    from_ = 80 - state.cache_m2b
     from_ = jnp.where(from_ == 81, -1, from_)
     neighbours = NEIGHBOUR_IX[flipped_king_pos]
     return can_capture_king(from_).any() | can_capture_king_local(neighbours).any()
@@ -601,7 +602,7 @@ def _observe(state: State, player_id: Array) -> Array:
     my_hand_feat = hand_feat(state._x.hand[0])
     opp_hand_feat = hand_feat(state._x.hand[1])
     # NOTE: update cache
-    checked = jnp.tile(_is_checked(_set_cache(state)), reps=(1, 9, 9))
+    checked = jnp.tile(_is_checked(_set_cache(state._x)), reps=(1, 9, 9))
     feat1 = [
         my_piece_feat.reshape(14, 9, 9),
         my_effect_feat.reshape(14, 9, 9),
