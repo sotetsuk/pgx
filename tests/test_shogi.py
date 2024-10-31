@@ -2,8 +2,8 @@ import json
 import jax
 import jax.numpy as jnp
 
-from pgx.shogi import Shogi, State, Action, HORSE, PAWN, DRAGON
-
+from pgx.shogi import Shogi, State
+from pgx._src.games.shogi import Action, HORSE, PAWN, DRAGON
 
 env = Shogi()
 init = jax.jit(env.init)
