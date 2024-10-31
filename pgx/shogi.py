@@ -403,7 +403,7 @@ def _is_pseudo_legal_move(
     to: Array,
     state: State,
 ):
-    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state)
+    ok = _is_pseudo_legal_move_wo_obstacles(from_, to, state._x)
     # there is an obstacle between from_ and to
     i = _major_piece_ix(state._x.board[from_])
     between_ix = BETWEEN_IX[i, from_, to, :]
@@ -414,9 +414,9 @@ def _is_pseudo_legal_move(
 def _is_pseudo_legal_move_wo_obstacles(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
-    board = state._x.board
+    board = state.board
     # source is not my piece
     piece = board[from_]
     is_illegal = (from_ < 0) | ~((PAWN <= piece) & (piece < OPP_PAWN))
@@ -465,7 +465,7 @@ def _is_checked(state):
 
     @jax.vmap
     def can_capture_king_local(from_):
-        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state))
+        return _is_pseudo_legal_move_wo_obstacles(from_=from_, to=flipped_king_pos, state=_flip(state)._x)
 
     # Simpler implementation without cache of major piece places
     # from_ = CAN_MOVE_ANY[flipped_king_pos]
