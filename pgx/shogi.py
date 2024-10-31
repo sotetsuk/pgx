@@ -314,7 +314,7 @@ def _legal_action_mask(state: State):
     @jax.vmap
     def is_legal_move(i):
         return pseudo_legal_moves[i % (10 * 81)] & jax.lax.cond(
-            a.is_promotion[i], _is_promotion_legal, _is_no_promotion_legal, *(a.from_[i], a.to[i], state)
+            a.is_promotion[i], _is_promotion_legal, _is_no_promotion_legal, *(a.from_[i], a.to[i], state._x)
         )
 
     @jax.vmap
@@ -430,10 +430,10 @@ def _is_pseudo_legal_move_wo_obstacles(
 def _is_no_promotion_legal(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
     # source is not my piece
-    piece = state._x.board[from_]
+    piece = state.board[from_]
     # promotion
     is_illegal = ((piece == PAWN) | (piece == LANCE)) & (to % 9 == 0)  # Must promote
     is_illegal |= (piece == KNIGHT) & (to % 9 < 2)  # Must promote
@@ -443,10 +443,10 @@ def _is_no_promotion_legal(
 def _is_promotion_legal(
     from_: Array,
     to: Array,
-    state: State,
+    state: GameState,
 ):
     # source is not my piece
-    piece = state._x.board[from_]
+    piece = state.board[from_]
     # promotion
     is_illegal = (GOLD <= piece) & (piece <= DRAGON)  # Pieces cannot promote
     is_illegal |= (from_ % 9 >= 3) & (to % 9 >= 3)  # irrelevant to the opponent's territory
