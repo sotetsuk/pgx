@@ -255,10 +255,10 @@ def test_step():
                 visualize(state, "tests/assets/shogi/failed.svg")
                 for a in legal_actions:
                     if a not in expected_legal_actions:
-                        print(Action._from_dlshogi_action(state, a))
+                        print(Action._from_dlshogi_action(state._x, a))
                 for a in expected_legal_actions:
                     if a not in legal_actions:
-                        print(Action._from_dlshogi_action(state, a))
+                        print(Action._from_dlshogi_action(state._x, a))
                 assert False, f"{legal_actions.shape[0]} != {len(expected_legal_actions)}, {sfen}"
             action = int(d["action"])
             state = step(state, action)

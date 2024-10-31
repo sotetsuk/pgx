@@ -7,7 +7,7 @@ def _make_shogi_dwg(dwg, state: ShogiState, config):  # noqa: C901
     if state._x.turn == 1:
         from pgx.shogi import _flip
 
-        state = _flip(state)
+        state = state.replace(_x=_flip(state._x))  # type: ignore
     # fmt: off
     PIECES = ["歩", "香", "桂", "銀", "角", "飛", "金", "玉", "と", "成香", "成桂", "成銀", "馬", "龍"] * 2
     NUM_TO_CHAR = ["一", "二", "三", "四", "五", "六", "七", "八", "九", "十"]
