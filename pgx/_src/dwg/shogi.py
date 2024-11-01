@@ -4,7 +4,7 @@ from pgx.shogi import State as ShogiState
 
 
 def _make_shogi_dwg(dwg, state: ShogiState, config):  # noqa: C901
-    if state._x.turn == 1:
+    if state._x.color == 1:
         from pgx._src.games.shogi import _flip
 
         state = ShogiState(_x=_flip(state._x))  # type: ignore
