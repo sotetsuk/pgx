@@ -5,7 +5,7 @@ from pgx.shogi import State as ShogiState
 
 def _make_shogi_dwg(dwg, state: ShogiState, config):  # noqa: C901
     if state._x.turn == 1:
-        from pgx.shogi import _flip
+        from pgx._src.games.shogi import _flip
 
         state = ShogiState(_x=_flip(state._x))  # type: ignore
     # fmt: off

@@ -17,13 +17,9 @@ import jax
 import jax.numpy as jnp
 
 import pgx.core as core
-from pgx._src.shogi_utils import (
-    _from_sfen,
-    _to_sfen,
-)
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.shogi import MAX_TERMINATION_STEPS, GameState, Game, _observe, _flip
+from pgx._src.games.shogi import MAX_TERMINATION_STEPS, GameState, Game, _observe
 
 
 TRUE = jnp.bool_(True)
@@ -54,25 +50,6 @@ class State(core.State):
     @property
     def env_id(self) -> core.EnvId:
         return "shogi"
-
-    @staticmethod
-    def _from_board(turn, piece_board: Array, hand: Array):
-        """Mainly for debugging purpose.
-        terminated, reward, and current_player are not changed"""
-        state = State(_x=GameState(turn=turn, board=piece_board, hand=hand))  # type: ignore
-        # fmt: off
-        state = jax.lax.cond(turn % 2 == 1, lambda: state.replace(_x=_flip(state._x)), lambda: state)  # type: ignore
-        # fmt: on
-        return state.replace(legal_action_mask=Game().legal_action_mask(state._x))  # type: ignore
-
-    @staticmethod
-    def _from_sfen(sfen):
-        turn, pb, hand, step_count = _from_sfen(sfen)
-        return jax.jit(State._from_board)(turn, pb, hand).replace(_step_count=jnp.int32(step_count))  # type: ignore
-
-    def _to_sfen(self):
-        state = self if self._x.turn % 2 == 0 else self.replace(_x=_flip(self._x))  # type: ignore
-        return _to_sfen(state)
 
 
 class Shogi(core.Env):
