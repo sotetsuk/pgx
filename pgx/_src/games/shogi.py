@@ -333,8 +333,6 @@ assert INIT_LEGAL_ACTION_MASK.shape == (81 * 27,)
 assert INIT_LEGAL_ACTION_MASK.sum() == 30
 
 
-
-
 class GameState(NamedTuple):
     turn: Array = jnp.int32(0)  # 0 or 1
     board: Array = INIT_PIECE_BOARD  # (81,) flip in turn
