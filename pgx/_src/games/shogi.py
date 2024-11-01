@@ -342,6 +342,8 @@ class GameState(NamedTuple):
     # Redundant information used only in _is_checked for speeding-up
     cache_m2b: Array = -jnp.ones(8, dtype=jnp.int32)
     cache_king: Array = jnp.int32(44)
+    # 
+    legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
 
 
 class Game:
@@ -437,7 +439,9 @@ def _step(state: GameState, action: Array) -> GameState:
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     # flip state
     state = _flip(state)
-    return state._replace(turn=(state.turn + 1) % 2)
+    state = state._replace(turn=(state.turn + 1) % 2)
+    state = state._replace(legal_action_mask=_legal_action_mask(state))
+    return state
 
 
 def _step_move(state: GameState, action: Action) -> GameState:

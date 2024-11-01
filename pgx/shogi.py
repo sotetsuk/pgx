@@ -63,8 +63,7 @@ class Shogi(core.Env):
             _x=x,
         )
         del x
-        legal_action_mask = self._game.legal_action_mask(state._x)
-        terminated = ~legal_action_mask.any()
+        terminated = ~state._x.legal_action_mask.any()
         # fmt: off
         reward = jax.lax.select(
             terminated,
@@ -73,7 +72,7 @@ class Shogi(core.Env):
         )
         # fmt: on
         state = state.replace(  # type: ignore
-            legal_action_mask=legal_action_mask,
+            legal_action_mask=state._x.legal_action_mask,
             terminated=terminated,
             rewards=reward,
         )
