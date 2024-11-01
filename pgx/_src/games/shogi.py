@@ -359,6 +359,16 @@ class Game:
 
     def legal_action_mask(self, state: GameState) -> Array:
         return _legal_action_mask(state)
+    
+    def is_terminal(self, state: GameState) -> Array:
+        terminated = ~state.legal_action_mask.any()
+        terminated = terminated | (MAX_TERMINATION_STEPS <= state.step_count)
+        return terminated
+    
+    def rewards(self, state: GameState) -> Array:
+        has_legal_action = state.legal_action_mask.any()
+        rewards = jnp.float32([[-1.0, 1.0], [1.0, -1.0]])[state.color]
+        return jax.lax.select(has_legal_action, jnp.zeros(2, dtype=jnp.float32), rewards)
 
 
 class Action(NamedTuple):

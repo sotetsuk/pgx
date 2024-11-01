@@ -61,29 +61,12 @@ class Shogi(core.Env):
         x = self._game.step(state._x, action)
         state = state.replace(  # type: ignore
             current_player=(state.current_player + 1) % 2,
+            terminated=self._game.is_terminal(x),
+            rewards=self._game.rewards(x)[state._player_order],
+            legal_action_mask=x.legal_action_mask,
             _x=x,
         )
         del x
-        terminated = ~state._x.legal_action_mask.any()
-        # fmt: off
-        _rewards = jax.lax.select(
-            terminated,
-            jnp.ones(2, dtype=jnp.float32).at[state._x.color].set(-1),
-            jnp.zeros(2, dtype=jnp.float32),
-        )
-        rewards = _rewards[state._player_order]
-        # fmt: on
-        state = state.replace(  # type: ignore
-            legal_action_mask=state._x.legal_action_mask,
-            terminated=terminated,
-            rewards=rewards,
-        )
-        state = jax.lax.cond(
-            (MAX_TERMINATION_STEPS <= state._x.step_count),
-            # end with tie
-            lambda: state.replace(terminated=TRUE),  # type: ignore
-            lambda: state,
-        )
         return state  # type: ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
