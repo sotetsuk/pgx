@@ -133,4 +133,9 @@ def from_sfen(sfen):
     hand = np.reshape(s_hand, (2, 7))
     color = 0 if color == "b" else 1
     color, piece_board, hand, step_count = color, piece_board, hand, int(step_count) - 1
-    return _from_board(color, piece_board, hand).replace(_step_count=np.int32(step_count))  # type: ignore
+    state = _from_board(color, piece_board, hand)
+    state = state.replace(  # type: ignore
+        _step_count=np.int32(step_count),
+        _x=state._x._replace(step_count=np.int32(step_count)),
+    )
+    return state

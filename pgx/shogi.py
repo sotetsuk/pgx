@@ -77,7 +77,7 @@ class Shogi(core.Env):
             rewards=reward,
         )
         state = jax.lax.cond(
-            (MAX_TERMINATION_STEPS <= state._step_count),
+            (MAX_TERMINATION_STEPS <= state._x.step_count),
             # end with tie
             lambda: state.replace(terminated=TRUE),  # type: ignore
             lambda: state,

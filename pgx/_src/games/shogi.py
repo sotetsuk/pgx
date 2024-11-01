@@ -335,6 +335,7 @@ assert INIT_LEGAL_ACTION_MASK.sum() == 30
 
 
 class GameState(NamedTuple):
+    step_count: Array = jnp.int32(0)
     color: Array = jnp.int32(0)  # 0 or 1
     board: Array = INIT_PIECE_BOARD  # (81,) flip in turn
     hand: Array = jnp.zeros((2, 7), dtype=jnp.int32)  # flip in turn
@@ -439,7 +440,7 @@ def _step(state: GameState, action: Array) -> GameState:
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     # flip state
     state = _flip(state)
-    state = state._replace(color=(state.color + 1) % 2)
+    state = state._replace(color=(state.color + 1) % 2, step_count=state.step_count + 1)
     state = state._replace(legal_action_mask=_legal_action_mask(state))
     return state
 
