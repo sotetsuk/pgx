@@ -35,6 +35,7 @@ class State(core.State):
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK  # (27 * 81,)
     observation: Array = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
+    _player_order: Array = jnp.array([0, 1], dtype=jnp.int32)
     _x: GameState = GameState()
 
     @property
@@ -50,8 +51,8 @@ class Shogi(core.Env):
 
     def _init(self, key: PRNGKey) -> State:
         state = State()
-        current_player = jnp.int32(jax.random.bernoulli(key))
-        return state.replace(current_player=current_player)  # type: ignore
+        player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
+        return state.replace(_player_order=player_order)  # type: ignore
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
@@ -65,16 +66,17 @@ class Shogi(core.Env):
         del x
         terminated = ~state._x.legal_action_mask.any()
         # fmt: off
-        reward = jax.lax.select(
+        _rewards = jax.lax.select(
             terminated,
-            jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
+            jnp.ones(2, dtype=jnp.float32).at[state._x.color].set(-1),
             jnp.zeros(2, dtype=jnp.float32),
         )
+        rewards = _rewards[state._player_order]
         # fmt: on
         state = state.replace(  # type: ignore
             legal_action_mask=state._x.legal_action_mask,
             terminated=terminated,
-            rewards=reward,
+            rewards=rewards,
         )
         state = jax.lax.cond(
             (MAX_TERMINATION_STEPS <= state._x.step_count),
