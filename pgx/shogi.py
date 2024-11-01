@@ -19,21 +19,11 @@ import jax.numpy as jnp
 import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.shogi import MAX_TERMINATION_STEPS, GameState, Game, _observe
+from pgx._src.games.shogi import MAX_TERMINATION_STEPS, GameState, Game, _observe, INIT_LEGAL_ACTION_MASK
 
 
 TRUE = jnp.bool_(True)
 FALSE = jnp.bool_(False)
-
-INIT_LEGAL_ACTION_MASK = jnp.zeros(81 * 27, dtype=jnp.bool_)
-# fmt: off
-ixs = [5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331]
-# fmt: on
-for ix in ixs:
-    INIT_LEGAL_ACTION_MASK = INIT_LEGAL_ACTION_MASK.at[ix].set(True)
-assert INIT_LEGAL_ACTION_MASK.shape == (81 * 27,)
-assert INIT_LEGAL_ACTION_MASK.sum() == 30
-
 
 
 @dataclass
