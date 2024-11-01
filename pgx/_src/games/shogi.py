@@ -324,6 +324,15 @@ OPP_DRAGON = jnp.int32(27)  # 龍
 
 ALL_SQ = jnp.arange(81)
 
+INIT_LEGAL_ACTION_MASK = np.zeros(81 * 27, dtype=jnp.bool_)
+# fmt: off
+ixs = np.int32([5, 7, 14, 23, 25, 32, 34, 41, 43, 50, 52, 59, 61, 68, 77, 79, 115, 124, 133, 142, 187, 196, 205, 214, 268, 277, 286, 295, 304, 331])
+# fmt: on
+INIT_LEGAL_ACTION_MASK[ixs] = True
+INIT_LEGAL_ACTION_MASK = jnp.bool_(INIT_LEGAL_ACTION_MASK)
+assert INIT_LEGAL_ACTION_MASK.shape == (81 * 27,)
+assert INIT_LEGAL_ACTION_MASK.sum() == 30
+
 
 class GameState(NamedTuple):
     turn: Array = jnp.int32(0)  # 0 or 1
