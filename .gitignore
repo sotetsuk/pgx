@@ -14,3 +14,4 @@ dds_results
 wandb
 checkpoints
 __pycache__
+tests/assets/*/*.svg

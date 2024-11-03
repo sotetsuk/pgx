@@ -8,8 +8,13 @@
         "editor.insertSpaces": true,
     },
     "python.testing.pytestArgs": [
-        "mypkg",
-        "--doctest-modules"
+        "-n 4",
+        "-vv",
+        "tests",
+        "--doctest-modules",
+        "pgx",
+        "--ignore",
+        "pgx/experimental",
     ],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
