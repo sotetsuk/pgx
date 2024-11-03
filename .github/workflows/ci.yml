@@ -28,7 +28,7 @@ jobs:
     - name: install
       run: |
         if [ "${{ matrix.python-version }}" = "3.9" ]; then
-          pip install "jax==0.4.30" "jaxlib==0.4.30"
+          pip install "jax==0.4.26" "jaxlib==0.4.26"
         else
           pip install jax jaxlib
         fi
