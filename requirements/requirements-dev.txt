@@ -1,5 +1,6 @@
 jaxlib
 pytest
+pytest-xdist
 matplotlib
 ipython
 # hot fix. to avoid errors in Py3.8
