@@ -1,3 +1,4 @@
+jaxlib
 pytest
 matplotlib
 ipython
