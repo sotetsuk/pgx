@@ -3,7 +3,7 @@ import jax
 
 from minatar import Environment
 
-from pgx_minatar import breakout
+from pgx.minatar import breakout
 
 from tests.minatar_utils import *
 

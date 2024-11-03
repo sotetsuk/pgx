@@ -4,7 +4,7 @@ from dataclasses import fields
 
 from minatar import Environment
 
-from pgx_minatar import seaquest
+from pgx.minatar import seaquest
 
 from tests.minatar_utils import *
 

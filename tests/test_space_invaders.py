@@ -3,7 +3,7 @@ import random
 
 from minatar import Environment
 
-from pgx_minatar import space_invaders
+from pgx.minatar import space_invaders
 
 from tests.minatar_utils import *
 
