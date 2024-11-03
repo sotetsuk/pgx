@@ -3,7 +3,7 @@ import random
 
 from minatar import Environment
 
-from pgx_minatar import asterix
+from pgx.minatar import asterix
 
 from tests.minatar_utils import *
 
