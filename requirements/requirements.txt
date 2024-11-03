@@ -1,4 +1,5 @@
 # jax must be installed previously depending on hardware
-jax>=0.4.1
+# jax==0.4.6 is the oldest version available now (2024.11.03)
+jax>=0.4.6
 typing_extensions>=4.2.0
 svgwrite
