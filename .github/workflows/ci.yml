@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         python-version: ["3.9", "3.12"]
-        os: [ubuntu-20.04]
+        os: [ubuntu-latest]
     steps:
     - uses: actions/checkout@v2
       with:
@@ -27,10 +27,9 @@ jobs:
         architecture: 'x64'
     - name: install
       run: |
-        pip list
         pip install -U pip
         if [ "${{ matrix.python-version }}" = "3.9" ]; then
-          pip install "jax==0.4.1" "jaxlib==0.4.1" "numpy<2.0.0" 
+          pip install "jax==0.4.6" "jaxlib==0.4.6" "numpy<2.0.0" 
         else
           pip install jax jaxlib
         fi
