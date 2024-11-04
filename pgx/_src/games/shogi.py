@@ -335,13 +335,16 @@ assert INIT_LEGAL_ACTION_MASK.sum() == 30
 
 
 class GameState(NamedTuple):
-    turn: Array = jnp.int32(0)  # 0 or 1
+    step_count: Array = jnp.int32(0)
+    color: Array = jnp.int32(0)  # 0 or 1
     board: Array = INIT_PIECE_BOARD  # (81,) flip in turn
     hand: Array = jnp.zeros((2, 7), dtype=jnp.int32)  # flip in turn
     # cache
     # Redundant information used only in _is_checked for speeding-up
     cache_m2b: Array = -jnp.ones(8, dtype=jnp.int32)
     cache_king: Array = jnp.int32(44)
+    # 
+    legal_action_mask: Array = INIT_LEGAL_ACTION_MASK
 
 
 class Game:
@@ -356,6 +359,16 @@ class Game:
 
     def legal_action_mask(self, state: GameState) -> Array:
         return _legal_action_mask(state)
+    
+    def is_terminal(self, state: GameState) -> Array:
+        terminated = ~state.legal_action_mask.any()
+        terminated = terminated | (MAX_TERMINATION_STEPS <= state.step_count)
+        return terminated
+    
+    def rewards(self, state: GameState) -> Array:
+        has_legal_action = state.legal_action_mask.any()
+        rewards = jnp.float32([[-1.0, 1.0], [1.0, -1.0]])[state.color]
+        return jax.lax.select(has_legal_action, jnp.zeros(2, dtype=jnp.float32), rewards)
 
 
 class Action(NamedTuple):
@@ -437,7 +450,9 @@ def _step(state: GameState, action: Array) -> GameState:
     state = jax.lax.cond(a.is_drop, _step_drop, _step_move, *(state, a))
     # flip state
     state = _flip(state)
-    return state._replace(turn=(state.turn + 1) % 2)
+    state = state._replace(color=(state.color + 1) % 2, step_count=state.step_count + 1)
+    state = state._replace(legal_action_mask=_legal_action_mask(state))
+    return state
 
 
 def _step_move(state: GameState, action: Action) -> GameState:

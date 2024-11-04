@@ -35,7 +35,7 @@ def to_sfen(state):
 
     """
     # NOTE: input must be flipped if white turn
-    state = state if state._x.turn % 2 == 0 else state.replace(_x=_flip(state._x))  # type: ignore
+    state = state if state._x.color % 2 == 0 else state.replace(_x=_flip(state._x))  # type: ignore
 
     pb = np.rot90(state._x.board.reshape((9, 9)), k=3)
     sfen = ""
@@ -63,7 +63,7 @@ def to_sfen(state):
         else:
             sfen += " "
     # Turn
-    if state._x.turn == 0:
+    if state._x.color == 0:
         sfen += "b "
     else:
         sfen += "w "
@@ -85,12 +85,12 @@ def to_sfen(state):
 
 
 @jax.jit
-def _from_board(turn, piece_board, hand):
+def _from_board(color, piece_board, hand):
     """Mainly for debugging purpose.
     terminated, reward, and current_player are not changed"""
-    state = State(_x=GameState(turn=turn, board=piece_board, hand=hand))  # type: ignore
+    state = State(_x=GameState(color=color, board=piece_board, hand=hand))  # type: ignore
     # fmt: off
-    state = jax.lax.cond(turn % 2 == 1, lambda: state.replace(_x=_flip(state._x)), lambda: state)  # type: ignore
+    state = jax.lax.cond(color % 2 == 1, lambda: state.replace(_x=_flip(state._x)), lambda: state)  # type: ignore
     # fmt: on
     return state.replace(legal_action_mask=Game().legal_action_mask(state._x))  # type: ignore
 
@@ -100,7 +100,7 @@ def from_sfen(sfen):
     board_char_dir = ["P", "L", "N", "S", "B", "R", "G", "K", "", "", "", "", "", "", "p", "l", "n", "s", "b", "r", "g", "k"]
     hand_char_dir = ["P", "L", "N", "S", "B", "R", "G", "p", "l", "n", "s", "b", "r", "g"]
     # fmt: on
-    board, turn, hand, step_count = sfen.split()
+    board, color, hand, step_count = sfen.split()
     board_ranks = board.split("/")
     piece_board = np.zeros(81, dtype=np.int32)
     for i in range(9):
@@ -131,6 +131,11 @@ def from_sfen(sfen):
                 num_piece = 1
     piece_board = np.rot90(piece_board.reshape((9, 9)), k=1).flatten()
     hand = np.reshape(s_hand, (2, 7))
-    turn = 0 if turn == "b" else 1
-    turn, piece_board, hand, step_count = turn, piece_board, hand, int(step_count) - 1
-    return _from_board(turn, piece_board, hand).replace(_step_count=np.int32(step_count))  # type: ignore
+    color = 0 if color == "b" else 1
+    color, piece_board, hand, step_count = color, piece_board, hand, int(step_count) - 1
+    state = _from_board(color, piece_board, hand)
+    state = state.replace(  # type: ignore
+        _step_count=np.int32(step_count),
+        _x=state._x._replace(step_count=np.int32(step_count)),
+    )
+    return state

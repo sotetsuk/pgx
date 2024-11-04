@@ -19,7 +19,7 @@ import jax.numpy as jnp
 import pgx.core as core
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.shogi import MAX_TERMINATION_STEPS, GameState, Game, _observe, INIT_LEGAL_ACTION_MASK
+from pgx._src.games.shogi import GameState, Game, _observe, INIT_LEGAL_ACTION_MASK
 
 
 TRUE = jnp.bool_(True)
@@ -35,6 +35,7 @@ class State(core.State):
     legal_action_mask: Array = INIT_LEGAL_ACTION_MASK  # (27 * 81,)
     observation: Array = jnp.zeros((119, 9, 9), dtype=jnp.bool_)
     _step_count: Array = jnp.int32(0)
+    _player_order: Array = jnp.array([0, 1], dtype=jnp.int32)
     _x: GameState = GameState()
 
     @property
@@ -50,8 +51,8 @@ class Shogi(core.Env):
 
     def _init(self, key: PRNGKey) -> State:
         state = State()
-        current_player = jnp.int32(jax.random.bernoulli(key))
-        return state.replace(current_player=current_player)  # type: ignore
+        player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
+        return state.replace(_player_order=player_order)  # type: ignore
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
@@ -60,29 +61,12 @@ class Shogi(core.Env):
         x = self._game.step(state._x, action)
         state = state.replace(  # type: ignore
             current_player=(state.current_player + 1) % 2,
+            terminated=self._game.is_terminal(x),
+            rewards=self._game.rewards(x)[state._player_order],
+            legal_action_mask=x.legal_action_mask,
             _x=x,
         )
         del x
-        legal_action_mask = self._game.legal_action_mask(state._x)
-        terminated = ~legal_action_mask.any()
-        # fmt: off
-        reward = jax.lax.select(
-            terminated,
-            jnp.ones(2, dtype=jnp.float32).at[state.current_player].set(-1),
-            jnp.zeros(2, dtype=jnp.float32),
-        )
-        # fmt: on
-        state = state.replace(  # type: ignore
-            legal_action_mask=legal_action_mask,
-            terminated=terminated,
-            rewards=reward,
-        )
-        state = jax.lax.cond(
-            (MAX_TERMINATION_STEPS <= state._step_count),
-            # end with tie
-            lambda: state.replace(terminated=TRUE),  # type: ignore
-            lambda: state,
-        )
         return state  # type: ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
