@@ -3,7 +3,7 @@ import jax
 
 from minatar import Environment
 
-from pgx_minatar import freeway
+from pgx.minatar import freeway
 
 from tests.minatar_utils import *
 

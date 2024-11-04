@@ -232,7 +232,7 @@ def test_api():
 
 def test_buggy_samples():
     # https://github.com/sotetsuk/pgx/pull/1209
-    state = init(jax.random.key(0))
+    state = init(jax.random.PRNGKey(0))
     state = step(state, 3 * 12 +  6) # White: Up PAWN
     state = step(state, 0 * 12 + 11) # Black: Right Up Bishop
     state = step(state, 8 * 12 +  1) # White: Drop PAWN to 1
@@ -248,7 +248,7 @@ def test_buggy_samples():
     assert mask[LEFT_GOLD]
 
     # https://github.com/sotetsuk/pgx/pull/1218
-    state = init(jax.random.key(0))
+    state = init(jax.random.PRNGKey(0))
     state = step(state, 3 * 12 +  6) # White: Up PAWN
     state = step(state, 0 * 12 + 11) # Black: Right Up Bishop
     DROP_PAWN_TO_0 = 8 * 12 +  0

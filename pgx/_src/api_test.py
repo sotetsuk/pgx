@@ -84,7 +84,10 @@ def api_test_single(env: Env, num: int = 100, use_key=True):
     # check visualization
     filename = "/tmp/tmp.svg"
     state.save_svg(filename)
-    os.remove(filename)
+    try:
+        os.remove(filename)
+    except FileNotFoundError:
+        pass
 
 
 def api_test_batch(env: Env, num: int = 100, use_key=True):
@@ -112,7 +115,10 @@ def api_test_batch(env: Env, num: int = 100, use_key=True):
     # check visualization
     filename = "/tmp/tmp.svg"
     state.save_svg(filename)
-    os.remove(filename)
+    try:
+        os.remove(filename)
+    except FileNotFoundError:
+        pass
 
 
 def _validate_init_reward(state: State):
