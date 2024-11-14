@@ -12,7 +12,7 @@ def _read_requirements(fname):
 
 setup(
     name="pgx",
-    description="GPU/TPU-accelerated parallel game simulators for reinforcement learning (RL)",
+    description="GPU-accelerated parallel game simulators for reinforcement learning (RL)",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/sotetsuk/pgx",
@@ -30,5 +30,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )
