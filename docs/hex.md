@@ -60,7 +60,7 @@ The detailed swap rule used in Pgx follows *swap pieces*:
 
 | Index | Description |
 |:---:|:----|
-| `[:, :, 0]` | represents `(11, 11)` cells filled by `player_ix` |
+| `[:, :, 0]` | represents `(11, 11)` cells filled by `player_id` |
 | `[:, :, 1]` | represents `(11, 11)` cells filled by the opponent player of `player_id` |
 | `[:, :, 2]` | represents whether `player_id` is black or white |
 | `[:, :, 3]` | represents whether swap is legal or not |
