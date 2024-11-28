@@ -231,7 +231,7 @@ def evaluate(rng_key, my_model):
     """A simplified evaluation by sampling. Only for debugging. 
     Please use MCTS and run tournaments for serious evaluation."""
     my_player = 0
-    my_model_parmas, my_model_state = my_model
+    my_model_params, my_model_state = my_model
 
     key, subkey = jax.random.split(rng_key)
     batch_size = config.selfplay_batch_size // num_devices
@@ -241,7 +241,7 @@ def evaluate(rng_key, my_model):
     def body_fn(val):
         key, state, R = val
         (my_logits, _), _ = forward.apply(
-            my_model_parmas, my_model_state, state.observation, is_eval=True
+            my_model_params, my_model_state, state.observation, is_eval=True
         )
         opp_logits, _ = baseline(state.observation)
         is_my_turn = (state.current_player == my_player).reshape((-1, 1))
