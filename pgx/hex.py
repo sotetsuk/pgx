@@ -79,7 +79,8 @@ class Hex(core.Env):
             lambda: partial(_swap, size=self.size)(state),
         )
         state = state.replace(  # type:ignore
-            legal_action_mask=state.legal_action_mask.at[:-1].set(state._x.board == 0).at[-1].set(state._step_count == 1)
+            current_player=1 - state.current_player,
+            legal_action_mask=state.legal_action_mask.at[:-1].set(state._x.board == 0).at[-1].set(state._step_count == 1),
         )
         return state  # type:ignore
 
@@ -127,7 +128,6 @@ def _step(state: State, action: Array, size: int) -> State:
     )
 
     state = state.replace(  # type:ignore
-        current_player=1 - state.current_player,
         _x=GameState(
             step_count=state._x.step_count + 1,
             board=board * -1,
@@ -147,7 +147,6 @@ def _swap(state: State, size: int) -> State:
     set_place_id = swapped_ix + 1
     board = state._x.board.at[ix].set(0).at[swapped_ix].set(set_place_id)
     return state.replace(  # type: ignore
-        current_player=1 - state.current_player,
         _x=GameState(
             step_count=state._x.step_count + 1,
             board=board * -1,
