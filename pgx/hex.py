@@ -76,12 +76,9 @@ class Hex(core.Env):
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        board = jax.lax.select(
-            player_id == state.current_player,
-            state._x.board.reshape((self.size, self.size)),
-            -state._x.board.reshape((self.size, self.size)),
-        )
         color = jax.lax.select(player_id == state.current_player, state._x.turn, 1 - state._x.turn)
+        board = jax.lax.select(color == state._x.turn,state._x.board, -state._x.board)
+        board = board.reshape((self.size, self.size))
 
         my_board = board * 1 > 0
         opp_board = board * -1 > 0
