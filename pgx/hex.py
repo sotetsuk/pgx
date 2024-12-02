@@ -12,16 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from functools import partial
-from typing import NamedTuple, Optional
-
 import jax
 import jax.numpy as jnp
 
 import pgx.core as core
+from pgx._src.games.hex import Game, GameState
 from pgx._src.struct import dataclass
 from pgx._src.types import Array, PRNGKey
-from pgx._src.games.hex import Game, GameState
 
 FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
