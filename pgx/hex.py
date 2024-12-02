@@ -76,7 +76,21 @@ class Hex(core.Env):
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        return partial(_observe, size=self.size)(state, player_id)
+        board = jax.lax.select(
+            player_id == state.current_player,
+            state._x.board.reshape((self.size, self.size)),
+            -state._x.board.reshape((self.size, self.size)),
+        )
+
+        my_board = board * 1 > 0
+        opp_board = board * -1 > 0
+        ones = jnp.ones_like(my_board)
+        color = jax.lax.select(player_id == state.current_player, state._x.turn, 1 - state._x.turn)
+        color = color * ones
+        can_swap = state.legal_action_mask[-1] * ones
+
+        return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
+
 
     @property
     def id(self) -> core.EnvId:
@@ -146,23 +160,6 @@ def _swap(state: State, size: int) -> State:
         ),
         legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(FALSE),
     )
-
-
-def _observe(state: State, player_id: Array, size) -> Array:
-    board = jax.lax.select(
-        player_id == state.current_player,
-        state._x.board.reshape((size, size)),
-        -state._x.board.reshape((size, size)),
-    )
-
-    my_board = board * 1 > 0
-    opp_board = board * -1 > 0
-    ones = jnp.ones_like(my_board)
-    color = jax.lax.select(player_id == state.current_player, state._x.turn, 1 - state._x.turn)
-    color = color * ones
-    can_swap = state.legal_action_mask[-1] * ones
-
-    return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
 
 
 def _neighbour(xy, size):
