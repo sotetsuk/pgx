@@ -25,7 +25,6 @@ TRUE = jnp.bool_(True)
 
 
 class GameState(NamedTuple):
-    size: Array = jnp.int32(11)
     # 0(black), 1(white)
     step_count: Array = jnp.int32(0)
     # 11x11 board
@@ -47,7 +46,7 @@ class Game:
         self.size = size
 
     def init(self) -> GameState:
-        return GameState(size=self.size)
+        return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
         return jax.lax.cond(
