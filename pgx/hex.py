@@ -88,7 +88,7 @@ class Hex(core.Env):
         opp_board = board * -1 > 0
         ones = jnp.ones_like(my_board)
         color = color * ones
-        can_swap = state.legal_action_mask[-1] * ones
+        can_swap = (state._x.step_count == 1) * ones
 
         return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
 
