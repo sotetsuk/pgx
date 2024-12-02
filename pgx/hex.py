@@ -79,9 +79,9 @@ class Hex(core.Env):
             lambda: partial(_swap, size=self.size)(state._x),
         )
 
-        won = _is_terminal(x, self.size)
+        terminated = _is_terminal(x, self.size)
         reward = jax.lax.cond(
-            won,
+            terminated,
             lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
             lambda: jnp.zeros(2, jnp.float32),
         )
@@ -90,7 +90,7 @@ class Hex(core.Env):
             current_player=1 - state.current_player,
             legal_action_mask=state.legal_action_mask.at[:-1].set(state._x.board == 0).at[-1].set(state._step_count == 1),
             rewards=reward,
-            terminated=won,
+            terminated=terminated,
             _x=x,
         )
         return state  # type:ignore
