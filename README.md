@@ -15,6 +15,7 @@
 A collection of GPU-accelerated parallel game simulators for reinforcement learning (RL)
 
 > [!NOTE] Star Pgx! ⭐
+> 
 > If you find this project helpful, we would be grateful for your support through a GitHub star to help us grow the community and motivate further development!
 
 
