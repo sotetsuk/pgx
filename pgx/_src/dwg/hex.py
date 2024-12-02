@@ -10,7 +10,7 @@ r3 = jnp.sqrt(3)
 
 def _make_hex_dwg(dwg, state: HexState, config):
     GRID_SIZE = config["GRID_SIZE"] / 2  # 六角形の1辺
-    BOARD_SIZE = int(state._size)
+    BOARD_SIZE = int(state._x.size)
     color_set = config["COLOR_SET"]
 
     # background

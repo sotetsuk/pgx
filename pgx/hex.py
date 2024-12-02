@@ -13,6 +13,7 @@
 # limitations under the License.
 
 from functools import partial
+from typing import NamedTuple
 
 import jax
 import jax.numpy as jnp
@@ -25,6 +26,20 @@ FALSE = jnp.bool_(False)
 TRUE = jnp.bool_(True)
 
 
+class GameState(NamedTuple):
+    size: Array = jnp.int32(11)
+    # 0(black), 1(white)
+    turn: Array = jnp.int32(0)
+    # 11x11 board
+    # [[  0,  1,  2,  ...,  8,  9, 10],
+    #  [ 11,  12, 13, ..., 19, 20, 21],
+    #  .
+    #  .
+    #  .
+    #  [110, 111, 112, ...,  119, 120]]
+    board: Array = jnp.zeros(11 * 11, jnp.int32)  # <0(oppo), 0(empty), 0<(self)
+
+
 @dataclass
 class State(core.State):
     current_player: Array = jnp.int32(0)
@@ -34,18 +49,7 @@ class State(core.State):
     truncated: Array = FALSE
     legal_action_mask: Array = jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
     _step_count: Array = jnp.int32(0)
-    # --- Hex specific ---
-    _size: Array = jnp.int32(11)
-    # 0(black), 1(white)
-    _turn: Array = jnp.int32(0)
-    # 11x11 board
-    # [[  0,  1,  2,  ...,  8,  9, 10],
-    #  [ 11,  12, 13, ..., 19, 20, 21],
-    #  .
-    #  .
-    #  .
-    #  [110, 111, 112, ...,  119, 120]]
-    _board: Array = jnp.zeros(11 * 11, jnp.int32)  # <0(oppo), 0(empty), 0<(self)
+    _x: GameState = GameState()
 
     @property
     def env_id(self) -> core.EnvId:
@@ -89,12 +93,12 @@ class Hex(core.Env):
 
 def _init(rng: PRNGKey, size: int) -> State:
     current_player = jnp.int32(jax.random.bernoulli(rng))
-    return State(_size=size, current_player=current_player)  # type:ignore
+    return State(_x=GameState(size=size), current_player=current_player)  # type:ignore
 
 
 def _step(state: State, action: Array, size: int) -> State:
     set_place_id = action + 1
-    board = state._board.at[action].set(set_place_id)
+    board = state._x.board.at[action].set(set_place_id)
     neighbour = _neighbour(action, size)
 
     def merge(i, b):
@@ -106,7 +110,7 @@ def _step(state: State, action: Array, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    won = _is_game_end(board, size, state._turn)
+    won = _is_game_end(board, size, state._x.turn)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -115,8 +119,10 @@ def _step(state: State, action: Array, size: int) -> State:
 
     state = state.replace(  # type:ignore
         current_player=1 - state.current_player,
-        _turn=1 - state._turn,
-        _board=board * -1,
+        _x=GameState(
+            turn=1 - state._x.turn,
+            board=board * -1,
+        ),
         rewards=reward,
         terminated=won,
         legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(state._step_count == 1),
@@ -126,16 +132,18 @@ def _step(state: State, action: Array, size: int) -> State:
 
 
 def _swap(state: State, size: int) -> State:
-    ix = jnp.nonzero(state._board, size=1)[0]
+    ix = jnp.nonzero(state._x.board, size=1)[0]
     row = ix // size
     col = ix % size
     swapped_ix = col * size + row
     set_place_id = swapped_ix + 1
-    board = state._board.at[ix].set(0).at[swapped_ix].set(set_place_id)
+    board = state._x.board.at[ix].set(0).at[swapped_ix].set(set_place_id)
     return state.replace(  # type: ignore
         current_player=1 - state.current_player,
-        _turn=1 - state._turn,
-        _board=board * -1,
+        _x=GameState(
+            turn=1 - state._x.turn,
+            board=board * -1,
+        ),
         legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(FALSE),
     )
 
@@ -143,14 +151,14 @@ def _swap(state: State, size: int) -> State:
 def _observe(state: State, player_id: Array, size) -> Array:
     board = jax.lax.select(
         player_id == state.current_player,
-        state._board.reshape((size, size)),
-        -state._board.reshape((size, size)),
+        state._x.board.reshape((size, size)),
+        -state._x.board.reshape((size, size)),
     )
 
     my_board = board * 1 > 0
     opp_board = board * -1 > 0
     ones = jnp.ones_like(my_board)
-    color = jax.lax.select(player_id == state.current_player, state._turn, 1 - state._turn)
+    color = jax.lax.select(player_id == state.current_player, state._x.turn, 1 - state._x.turn)
     color = color * ones
     can_swap = state.legal_action_mask[-1] * ones
 
@@ -185,4 +193,4 @@ def _is_game_end(board, size, turn):
 
 
 def _get_abs_board(state):
-    return jax.lax.cond(state._turn == 0, lambda: state._board, lambda: state._board * -1)
+    return jax.lax.cond(state._x.turn == 0, lambda: state._x.board, lambda: state._x.board * -1)

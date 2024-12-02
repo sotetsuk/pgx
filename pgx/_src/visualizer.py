@@ -391,9 +391,9 @@ class Visualizer:
             from pgx._src.dwg.hex import _make_hex_dwg, four_dig
 
             self.config["GRID_SIZE"] = 30
-            size = int(jnp.array(_state._size).ravel()[0])
-            self.config["BOARD_WIDTH"] = four_dig(size * 1.5) # type:ignore
-            self.config["BOARD_HEIGHT"] = four_dig(size * jnp.sqrt(3) / 2) # type:ignore
+            size = int(jnp.array(_state._x.size).ravel()[0])
+            self.config["BOARD_WIDTH"] = four_dig(size * 1.5)  # type:ignore
+            self.config["BOARD_HEIGHT"] = four_dig(size * jnp.sqrt(3) / 2)  # type:ignore
             self._make_dwg_group = _make_hex_dwg  # type:ignore
             if (self.config["COLOR_THEME"] is None and self.config["COLOR_THEME"] == "dark") or self.config[
                 "COLOR_THEME"
