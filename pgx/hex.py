@@ -44,6 +44,47 @@ class GameState(NamedTuple):
         return self.step_count % 2
 
 
+class Game:
+    def __init__(self, size: int = 11):
+        self.size = size
+
+    def init(self) -> GameState:
+        return GameState(size=self.size)
+
+    def step(self, state: GameState, action: Array) -> GameState:
+        return jax.lax.cond(
+            action != self.size * self.size,
+            lambda: partial(_step, size=self.size)(state, action),
+            lambda: partial(_swap, size=self.size)(state),
+        )
+
+    def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
+        return _observe(state, color, self.size)
+
+    def legal_action_mask(self, state: GameState) -> Array:
+        # return (11 * 11 + 1,)
+        mask = jnp.zeros(self.size * self.size + 1, dtype=jnp.bool_)
+        mask = mask.at[:self.size * self.size].set(state.board == 0)  # Empty positions are legal
+        mask = mask.at[-1].set(state.step_count == 1)  # Swap is only legal on second turn
+        return mask
+
+    def is_terminal(self, state: GameState) -> Array:
+        top, bottom = jax.lax.cond(
+            state.color == 0,
+            lambda: (state.board[::self.size], state.board[self.size - 1 :: self.size]),
+            lambda: (state.board[:self.size], state.board[-self.size:]),
+        )
+
+        def check_same_id_exist(_id):
+            return (_id < 0) & (_id == bottom).any()
+
+        return jax.vmap(check_same_id_exist)(top).any()
+
+
+    # def rewards(self, state: GameState) -> Array:
+    #     ...
+
+
 @dataclass
 class State(core.State):
     current_player: Array = jnp.int32(0)
@@ -65,21 +106,17 @@ class Hex(core.Env):
         super().__init__()
         assert isinstance(size, int)
         self.size = size
+        self._game = Game(size=size)
 
     def _init(self, key: PRNGKey) -> State:
         current_player = jnp.int32(jax.random.bernoulli(key))
-        return State(_x=_init(self.size), current_player=current_player)  # type:ignore
+        return State(_x=self._game.init(), current_player=current_player)  # type:ignore
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        x = jax.lax.cond(
-            action != self.size * self.size,
-            lambda: partial(_step, size=self.size)(state._x, action),
-            lambda: partial(_swap, size=self.size)(state._x),
-        )
-
-        terminated = _is_terminal(x, self.size)
+        x = self._game.step(state._x, action)
+        terminated = self._game.is_terminal(x)
         reward = jax.lax.cond(
             terminated,
             lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -88,7 +125,7 @@ class Hex(core.Env):
 
         return state.replace(  # type:ignore
             current_player=1 - state.current_player,
-            legal_action_mask=state.legal_action_mask.at[:-1].set(state._x.board == 0).at[-1].set(state._step_count == 1),
+            legal_action_mask=self._game.legal_action_mask(x),
             rewards=reward,
             terminated=terminated,
             _x=x,
@@ -110,10 +147,6 @@ class Hex(core.Env):
     @property
     def num_players(self) -> int:
         return 2
-
-
-def _init(size: int) -> GameState:
-    return GameState(size=size)
 
 
 def _step(state: GameState, action: Array, size: int) -> GameState:
@@ -177,16 +210,3 @@ def _neighbour(xy, size):
     ys = jnp.array([y - 1, y - 1, y, y, y + 1, y + 1])
     on_board = (0 <= xs) & (xs < size) & (0 <= ys) & (ys < size)
     return jnp.where(on_board, xs * size + ys, -1)
-
-
-def _is_terminal(x: GameState, size):
-    top, bottom = jax.lax.cond(
-        x.color == 0,
-        lambda: (x.board[::size], x.board[size - 1 :: size]),
-        lambda: (x.board[:size], x.board[-size:]),
-    )
-
-    def check_same_id_exist(_id):
-        return (_id < 0) & (_id == bottom).any()
-
-    return jax.vmap(check_same_id_exist)(top).any()
