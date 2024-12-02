@@ -27,7 +27,6 @@ TRUE = jnp.bool_(True)
 
 
 class GameState(NamedTuple):
-    # --- Hex specific ---
     size: Array = jnp.int32(11)
     # 0(black), 1(white)
     turn: Array = jnp.int32(0)
