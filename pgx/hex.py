@@ -29,7 +29,7 @@ TRUE = jnp.bool_(True)
 class GameState(NamedTuple):
     size: Array = jnp.int32(11)
     # 0(black), 1(white)
-    turn: Array = jnp.int32(0)
+    step_count: Array = jnp.int32(0)
     # 11x11 board
     # [[  0,  1,  2,  ...,  8,  9, 10],
     #  [ 11,  12, 13, ..., 19, 20, 21],
@@ -38,6 +38,10 @@ class GameState(NamedTuple):
     #  .
     #  [110, 111, 112, ...,  119, 120]]
     board: Array = jnp.zeros(11 * 11, jnp.int32)  # <0(oppo), 0(empty), 0<(self)
+
+    @property
+    def color(self) -> Array:
+        return self.step_count % 2
 
 
 @dataclass
@@ -76,8 +80,8 @@ class Hex(core.Env):
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
-        color = jax.lax.select(player_id == state.current_player, state._x.turn, 1 - state._x.turn)
-        board = jax.lax.select(color == state._x.turn,state._x.board, -state._x.board)
+        color = jax.lax.select(player_id == state.current_player, state._x.color, 1 - state._x.color)
+        board = jax.lax.select(color == state._x.color, state._x.board, -state._x.board)
         board = board.reshape((self.size, self.size))
 
         my_board = board * 1 > 0
@@ -121,7 +125,7 @@ def _step(state: State, action: Array, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    won = _is_game_end(board, size, state._x.turn)
+    won = _is_game_end(board, size, state._x.color)
     reward = jax.lax.cond(
         won,
         lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -131,7 +135,7 @@ def _step(state: State, action: Array, size: int) -> State:
     state = state.replace(  # type:ignore
         current_player=1 - state.current_player,
         _x=GameState(
-            turn=1 - state._x.turn,
+            step_count=state._x.step_count + 1,
             board=board * -1,
         ),
         rewards=reward,
@@ -152,7 +156,7 @@ def _swap(state: State, size: int) -> State:
     return state.replace(  # type: ignore
         current_player=1 - state.current_player,
         _x=GameState(
-            turn=1 - state._x.turn,
+            step_count=state._x.step_count + 1,
             board=board * -1,
         ),
         legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(FALSE),

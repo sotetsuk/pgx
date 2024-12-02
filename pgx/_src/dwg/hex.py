@@ -6,7 +6,7 @@ from pgx.hex import State as HexState
 
 
 def _get_abs_board(state):
-    return state._x.board if state._x.turn == 0 else state._x.board * -1
+    return state._x.board if state._x.color == 0 else state._x.board * -1
 
 
 r3 = jnp.sqrt(3)
