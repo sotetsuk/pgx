@@ -65,8 +65,13 @@ class Game:
     def is_terminal(self, state: GameState) -> Array:
         return state.terminated
 
-    # def rewards(self, state: GameState) -> Array:
-    #     ...
+    def rewards(self, state: GameState) -> Array:
+        return jax.lax.select(
+            state.terminated,
+            jnp.float32([1, 1]).at[state.color].set(-1),
+            jnp.zeros(2, jnp.float32),
+        )
+
 
 
 def _is_terminal(state: GameState, action: Array, size: int) -> Array:

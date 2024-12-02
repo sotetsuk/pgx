@@ -57,18 +57,11 @@ class Hex(core.Env):
         del key
         assert isinstance(state, State)
         x = self._game.step(state._x, action)
-        terminated = self._game.is_terminal(x)
-        reward = jax.lax.cond(
-            terminated,
-            lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
-            lambda: jnp.zeros(2, jnp.float32),
-        )
-
         return state.replace(  # type:ignore
             current_player=state._player_order[x.color],
             legal_action_mask=self._game.legal_action_mask(x),
-            rewards=reward,
-            terminated=terminated,
+            terminated=self._game.is_terminal(x),
+            rewards=self._game.rewards(x)[state._player_order],
             _x=x,
         )
 
