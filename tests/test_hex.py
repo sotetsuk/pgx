@@ -41,7 +41,7 @@ def test_merge():
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0,
           0,   0,   0,   0,   0,   0,   0,   0,   0,   0,   0])
     # fmt:on
-    assert jnp.all(state._board == expected)
+    assert jnp.all(state._x.board == expected)
 
 
 def test_swap():
@@ -50,26 +50,26 @@ def test_swap():
     assert ~state.legal_action_mask[-1]
     state = step(state, 1)
     state.save_svg("tests/assets/hex/swap_01.svg")
-    assert (state._board != 0).sum() == 1
-    assert state._board[1] == -2
+    assert (state._x.board != 0).sum() == 1
+    assert state._x.board[1] == -2
     assert state.legal_action_mask[-1]
     state = step(state, 121)  # swap!
     state.save_svg("tests/assets/hex/swap_02.svg")
-    assert (state._board != 0).sum() == 1
-    assert state._board[11] == -12
+    assert (state._x.board != 0).sum() == 1
+    assert state._x.board[11] == -12
     assert ~state.legal_action_mask[-1]
 
     key = jax.random.PRNGKey(0)
     state = init(key=key)
     state = step(state, 0)
     state.save_svg("tests/assets/hex/swap_03.svg")
-    assert (state._board != 0).sum() == 1
-    assert state._board[0] == -1
+    assert (state._x.board != 0).sum() == 1
+    assert state._x.board[0] == -1
     assert state.legal_action_mask[-1]
     state = step(state, 121)  # swap!
     state.save_svg("tests/assets/hex/swap_04.svg")
-    assert (state._board != 0).sum() == 1
-    assert state._board[0] == -1
+    assert (state._x.board != 0).sum() == 1
+    assert state._x.board[0] == -1
     assert ~state.legal_action_mask[-1]
 
     key = jax.random.PRNGKey(0)
