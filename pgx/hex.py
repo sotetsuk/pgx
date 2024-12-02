@@ -62,11 +62,7 @@ class Game:
         return _observe(state, color, self.size)
 
     def legal_action_mask(self, state: GameState) -> Array:
-        # return (11 * 11 + 1,)
-        mask = jnp.zeros(self.size * self.size + 1, dtype=jnp.bool_)
-        mask = mask.at[:self.size * self.size].set(state.board == 0)  # Empty positions are legal
-        mask = mask.at[-1].set(state.step_count == 1)  # Swap is only legal on second turn
-        return mask
+        return jnp.append(state.board == 0, state.step_count == 1)
 
     def is_terminal(self, state: GameState) -> Array:
         top, bottom = jax.lax.cond(
