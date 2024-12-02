@@ -3,7 +3,11 @@ from copy import deepcopy
 import jax.numpy as jnp
 
 from pgx.hex import State as HexState
-from pgx.hex import _get_abs_board
+
+
+def _get_abs_board(state):
+    return state._x.board if state._x.color == 0 else state._x.board * -1
+
 
 r3 = jnp.sqrt(3)
 
