@@ -79,7 +79,7 @@ class Hex(core.Env):
             lambda: partial(_swap, size=self.size)(state),
         )
 
-        won = _is_game_end(state._x, self.size)
+        won = _is_terminal(state._x, self.size)
         reward = jax.lax.cond(
             won,
             lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -184,7 +184,7 @@ def _neighbour(xy, size):
     return jnp.where(on_board, xs * size + ys, -1)
 
 
-def _is_game_end(x: GameState, size):
+def _is_terminal(x: GameState, size):
     top, bottom = jax.lax.cond(
         x.color == 0,
         lambda: (x.board[::size], x.board[size - 1 :: size]),
