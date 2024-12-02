@@ -50,13 +50,11 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        x = jax.lax.cond(
+        return jax.lax.cond(
             action != self.size * self.size,
             lambda: partial(_step, size=self.size)(state, action),
             lambda: partial(_swap, size=self.size)(state),
         )
-        terminated = _is_terminal(x, self.size)
-        return x._replace(terminated=terminated)
 
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         return _observe(state, color, self.size)
@@ -98,10 +96,14 @@ def _step(state: GameState, action: Array, size: int) -> GameState:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    return state._replace(
+    
+    state = state._replace(
         step_count=state.step_count + 1,
         board=board * -1,
     )
+
+    terminated = _is_terminal(state, size)
+    return state._replace(terminated=terminated)
 
 
 def _swap(state: GameState, size: int) -> GameState:
