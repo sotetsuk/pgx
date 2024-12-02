@@ -33,6 +33,7 @@ class State(core.State):
     truncated: Array = FALSE
     legal_action_mask: Array = jnp.ones(11 * 11 + 1, dtype=jnp.bool_).at[-1].set(FALSE)
     _step_count: Array = jnp.int32(0)
+    _player_order: Array = jnp.int32([0, 1])  # [0, 1] or [1, 0]
     _x: GameState = GameState()
 
     @property
@@ -48,25 +49,19 @@ class Hex(core.Env):
         self._game = Game(size=size)
 
     def _init(self, key: PRNGKey) -> State:
-        current_player = jnp.int32(jax.random.bernoulli(key))
-        return State(_x=self._game.init(), current_player=current_player)  # type:ignore
+        _player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
+        x = self._game.init()
+        return State(current_player=_player_order[x.color], _player_order=_player_order, _x=x)
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
         x = self._game.step(state._x, action)
-        terminated = self._game.is_terminal(x)
-        reward = jax.lax.cond(
-            terminated,
-            lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
-            lambda: jnp.zeros(2, jnp.float32),
-        )
-
         return state.replace(  # type:ignore
-            current_player=1 - state.current_player,
+            current_player=state._player_order[x.color],
             legal_action_mask=self._game.legal_action_mask(x),
-            rewards=reward,
-            terminated=terminated,
+            terminated=self._game.is_terminal(x),
+            rewards=self._game.rewards(x)[state._player_order],
             _x=x,
         )
 
