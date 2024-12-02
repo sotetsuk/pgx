@@ -73,7 +73,6 @@ class Game:
         )
 
 
-
 def _is_terminal(state: GameState, action: Array, size: int) -> Array:
     top, bottom = jax.lax.cond(
         state.color == 0,
