@@ -78,9 +78,19 @@ class Hex(core.Env):
             lambda: partial(_step, size=self.size)(state, action),
             lambda: partial(_swap, size=self.size)(state),
         )
+
+        won = _is_game_end(state._x, self.size)
+        reward = jax.lax.cond(
+            won,
+            lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
+            lambda: jnp.zeros(2, jnp.float32),
+        )
+
         state = state.replace(  # type:ignore
             current_player=1 - state.current_player,
             legal_action_mask=state.legal_action_mask.at[:-1].set(state._x.board == 0).at[-1].set(state._step_count == 1),
+            rewards=reward,
+            terminated=won,
         )
         return state  # type:ignore
 
@@ -120,22 +130,12 @@ def _step(state: State, action: Array, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    won = _is_game_end(board, size, state._x.color)
-    reward = jax.lax.cond(
-        won,
-        lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
-        lambda: jnp.zeros(2, jnp.float32),
-    )
-
     state = state.replace(  # type:ignore
         _x=GameState(
             step_count=state._x.step_count + 1,
             board=board * -1,
         ),
-        rewards=reward,
-        terminated=won,
     )
-
     return state
 
 
@@ -184,14 +184,14 @@ def _neighbour(xy, size):
     return jnp.where(on_board, xs * size + ys, -1)
 
 
-def _is_game_end(board, size, turn):
+def _is_game_end(x: GameState, size):
     top, bottom = jax.lax.cond(
-        turn == 0,
-        lambda: (board[:size], board[-size:]),
-        lambda: (board[::size], board[size - 1 :: size]),
+        x.color == 0,
+        lambda: (x.board[::size], x.board[size - 1 :: size]),
+        lambda: (x.board[:size], x.board[-size:]),
     )
 
     def check_same_id_exist(_id):
-        return (_id > 0) & (_id == bottom).any()
+        return (_id < 0) & (_id == bottom).any()
 
     return jax.vmap(check_same_id_exist)(top).any()
