@@ -73,11 +73,15 @@ class Hex(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        return jax.lax.cond(
+        state = jax.lax.cond(
             action != self.size * self.size,
             lambda: partial(_step, size=self.size)(state, action),
             lambda: partial(_swap, size=self.size)(state),
         )
+        state = state.replace(  # type:ignore
+            legal_action_mask=state.legal_action_mask.at[:-1].set(state._x.board == 0).at[-1].set(state._step_count == 1)
+        )
+        return state  # type:ignore
 
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
@@ -130,7 +134,6 @@ def _step(state: State, action: Array, size: int) -> State:
         ),
         rewards=reward,
         terminated=won,
-        legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(state._step_count == 1),
     )
 
     return state
@@ -149,7 +152,6 @@ def _swap(state: State, size: int) -> State:
             step_count=state._x.step_count + 1,
             board=board * -1,
         ),
-        legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(FALSE),
     )
 
 
