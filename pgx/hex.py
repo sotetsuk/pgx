@@ -73,13 +73,13 @@ class Hex(core.Env):
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
         assert isinstance(state, State)
-        state = jax.lax.cond(
+        x = jax.lax.cond(
             action != self.size * self.size,
-            lambda: partial(_step, size=self.size)(state, action),
-            lambda: partial(_swap, size=self.size)(state),
+            lambda: partial(_step, size=self.size)(state._x, action),
+            lambda: partial(_swap, size=self.size)(state._x),
         )
 
-        won = _is_terminal(state._x, self.size)
+        won = _is_terminal(x, self.size)
         reward = jax.lax.cond(
             won,
             lambda: jnp.float32([-1, -1]).at[state.current_player].set(1),
@@ -91,6 +91,7 @@ class Hex(core.Env):
             legal_action_mask=state.legal_action_mask.at[:-1].set(state._x.board == 0).at[-1].set(state._step_count == 1),
             rewards=reward,
             terminated=won,
+            _x=x,
         )
         return state  # type:ignore
 
@@ -116,9 +117,9 @@ def _init(size: int) -> GameState:
     return GameState(size=size)
 
 
-def _step(state: State, action: Array, size: int) -> State:
+def _step(state: GameState, action: Array, size: int) -> GameState:
     set_place_id = action + 1
-    board = state._x.board.at[action].set(set_place_id)
+    board = state.board.at[action].set(set_place_id)
     neighbour = _neighbour(action, size)
 
     def merge(i, b):
@@ -130,27 +131,22 @@ def _step(state: State, action: Array, size: int) -> State:
         )
 
     board = jax.lax.fori_loop(0, 6, merge, board)
-    state = state.replace(  # type:ignore
-        _x=GameState(
-            step_count=state._x.step_count + 1,
-            board=board * -1,
-        ),
+    return state._replace(
+        step_count=state.step_count + 1,
+        board=board * -1,
     )
-    return state
 
 
-def _swap(state: State, size: int) -> State:
-    ix = jnp.nonzero(state._x.board, size=1)[0]
+def _swap(state: GameState, size: int) -> GameState:
+    ix = jnp.nonzero(state.board, size=1)[0]
     row = ix // size
     col = ix % size
     swapped_ix = col * size + row
     set_place_id = swapped_ix + 1
-    board = state._x.board.at[ix].set(0).at[swapped_ix].set(set_place_id)
-    return state.replace(  # type: ignore
-        _x=GameState(
-            step_count=state._x.step_count + 1,
-            board=board * -1,
-        ),
+    board = state.board.at[ix].set(0).at[swapped_ix].set(set_place_id)
+    return state._replace(
+        step_count=state.step_count + 1,
+        board=board * -1,
     )
 
 
