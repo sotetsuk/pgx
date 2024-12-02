@@ -66,6 +66,7 @@ class Game:
 
     def is_terminal(self, state: GameState) -> Array:
         return _is_terminal(state, self.size)
+
     # def rewards(self, state: GameState) -> Array:
     #     ...
 
