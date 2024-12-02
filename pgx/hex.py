@@ -190,3 +190,7 @@ def _is_game_end(board, size, turn):
         return (_id > 0) & (_id == bottom).any()
 
     return jax.vmap(check_same_id_exist)(top).any()
+
+
+def _get_abs_board(state):
+    return jax.lax.cond(state._x.turn == 0, lambda: state._x.board, lambda: state._x.board * -1)
