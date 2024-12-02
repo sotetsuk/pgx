@@ -55,7 +55,7 @@ class Game:
             lambda: partial(_step, size=self.size)(state, action),
             lambda: partial(_swap, size=self.size)(state),
         )
-        terminated = self.is_terminal(x)
+        terminated = _is_terminal(x, self.size)
         return x._replace(terminated=terminated)
 
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
@@ -65,7 +65,7 @@ class Game:
         return jnp.append(state.board == 0, state.step_count == 1)
 
     def is_terminal(self, state: GameState) -> Array:
-        return _is_terminal(state, self.size)
+        return state.terminated
 
     # def rewards(self, state: GameState) -> Array:
     #     ...
