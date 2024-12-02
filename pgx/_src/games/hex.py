@@ -35,6 +35,7 @@ class GameState(NamedTuple):
     #  .
     #  [110, 111, 112, ...,  119, 120]]
     board: Array = jnp.zeros(11 * 11, jnp.int32)  # <0(oppo), 0(empty), 0<(self)
+    terminated: Array = FALSE
 
     @property
     def color(self) -> Array:
@@ -49,11 +50,13 @@ class Game:
         return GameState()
 
     def step(self, state: GameState, action: Array) -> GameState:
-        return jax.lax.cond(
+        x = jax.lax.cond(
             action != self.size * self.size,
             lambda: partial(_step, size=self.size)(state, action),
             lambda: partial(_swap, size=self.size)(state),
         )
+        terminated = self.is_terminal(x)
+        return x._replace(terminated=terminated)
 
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
         return _observe(state, color, self.size)
@@ -62,20 +65,22 @@ class Game:
         return jnp.append(state.board == 0, state.step_count == 1)
 
     def is_terminal(self, state: GameState) -> Array:
-        top, bottom = jax.lax.cond(
-            state.color == 0,
-            lambda: (state.board[::self.size], state.board[self.size - 1 :: self.size]),
-            lambda: (state.board[:self.size], state.board[-self.size:]),
-        )
-
-        def check_same_id_exist(_id):
-            return (_id < 0) & (_id == bottom).any()
-
-        return jax.vmap(check_same_id_exist)(top).any()
-
-
+        return _is_terminal(state, self.size)
     # def rewards(self, state: GameState) -> Array:
     #     ...
+
+
+def _is_terminal(state: GameState, size: int) -> Array:
+    top, bottom = jax.lax.cond(
+        state.color == 0,
+        lambda: (state.board[::size], state.board[size - 1 :: size]),
+        lambda: (state.board[:size], state.board[-size:]),
+    )
+
+    def check_same_id_exist(_id):
+        return (_id < 0) & (_id == bottom).any()
+
+    return jax.vmap(check_same_id_exist)(top).any()
 
 
 def _step(state: GameState, action: Array, size: int) -> GameState:
