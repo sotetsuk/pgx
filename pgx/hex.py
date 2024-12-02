@@ -136,22 +136,6 @@ def _step(state: State, action: Array, size: int) -> State:
     return state
 
 
-def _observe(state: GameState, color: Optional[Array] = None, size: int = 11) -> Array:
-    if color is None:
-        color = state.color
-
-    board = jax.lax.select(color == state.color, state.board, -state.board)
-    board = board.reshape((size, size))
-
-    my_board = board * 1 > 0
-    opp_board = board * -1 > 0
-    ones = jnp.ones_like(my_board)
-    color = color * ones
-    can_swap = (state.step_count == 1) * ones
-
-    return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
-
-
 def _swap(state: State, size: int) -> State:
     ix = jnp.nonzero(state._x.board, size=1)[0]
     row = ix // size
@@ -167,6 +151,22 @@ def _swap(state: State, size: int) -> State:
         ),
         legal_action_mask=state.legal_action_mask.at[:-1].set(board == 0).at[-1].set(FALSE),
     )
+
+
+def _observe(state: GameState, color: Optional[Array] = None, size: int = 11) -> Array:
+    if color is None:
+        color = state.color
+
+    board = jax.lax.select(color == state.color, state.board, -state.board)
+    board = board.reshape((size, size))
+
+    my_board = board * 1 > 0
+    opp_board = board * -1 > 0
+    ones = jnp.ones_like(my_board)
+    color = color * ones
+    can_swap = (state.step_count == 1) * ones
+
+    return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
 
 
 def _neighbour(xy, size):
