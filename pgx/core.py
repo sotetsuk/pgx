@@ -232,7 +232,7 @@ class Env(abc.ABC):
         if player_id is None:
             player_id = state.current_player
         else:
-            warnings.warn("[Pgx] `player_id` is deprecated. This argument will be removed in the future.", DeprecationWarning)
+            warnings.warn("[Pgx] `player_id` in `observe` is deprecated. This argument will be removed in the future.", DeprecationWarning)
         obs = self._observe(state, player_id)
         return jax.lax.stop_gradient(obs)
 
