@@ -81,11 +81,11 @@ class Hex(core.Env):
             state._x.board.reshape((self.size, self.size)),
             -state._x.board.reshape((self.size, self.size)),
         )
+        color = jax.lax.select(player_id == state.current_player, state._x.turn, 1 - state._x.turn)
 
         my_board = board * 1 > 0
         opp_board = board * -1 > 0
         ones = jnp.ones_like(my_board)
-        color = jax.lax.select(player_id == state.current_player, state._x.turn, 1 - state._x.turn)
         color = color * ones
         can_swap = state.legal_action_mask[-1] * ones
 
