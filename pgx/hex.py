@@ -13,7 +13,7 @@
 # limitations under the License.
 
 from functools import partial
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import jax
 import jax.numpy as jnp
@@ -81,17 +81,7 @@ class Hex(core.Env):
     def _observe(self, state: core.State, player_id: Array) -> Array:
         assert isinstance(state, State)
         color = jax.lax.select(player_id == state.current_player, state._x.color, 1 - state._x.color)
-        board = jax.lax.select(color == state._x.color, state._x.board, -state._x.board)
-        board = board.reshape((self.size, self.size))
-
-        my_board = board * 1 > 0
-        opp_board = board * -1 > 0
-        ones = jnp.ones_like(my_board)
-        color = color * ones
-        can_swap = (state._x.step_count == 1) * ones
-
-        return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
-
+        return _observe(state._x, color, self.size)
 
     @property
     def id(self) -> core.EnvId:
@@ -144,6 +134,22 @@ def _step(state: State, action: Array, size: int) -> State:
     )
 
     return state
+
+
+def _observe(state: GameState, color: Optional[Array] = None, size: int = 11) -> Array:
+    if color is None:
+        color = state.color
+
+    board = jax.lax.select(color == state.color, state.board, -state.board)
+    board = board.reshape((size, size))
+
+    my_board = board * 1 > 0
+    opp_board = board * -1 > 0
+    ones = jnp.ones_like(my_board)
+    color = color * ones
+    can_swap = (state.step_count == 1) * ones
+
+    return jnp.stack([my_board, opp_board, color, can_swap], 2, dtype=jnp.bool_)
 
 
 def _swap(state: State, size: int) -> State:
