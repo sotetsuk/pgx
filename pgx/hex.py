@@ -67,7 +67,8 @@ class Hex(core.Env):
         self.size = size
 
     def _init(self, key: PRNGKey) -> State:
-        return partial(_init, size=self.size)(rng=key)
+        current_player = jnp.int32(jax.random.bernoulli(key))
+        return State(_x=_init(self.size), current_player=current_player)  # type:ignore
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
@@ -96,9 +97,8 @@ class Hex(core.Env):
         return 2
 
 
-def _init(rng: PRNGKey, size: int) -> State:
-    current_player = jnp.int32(jax.random.bernoulli(rng))
-    return State(_x=GameState(size=size), current_player=current_player)  # type:ignore
+def _init(size: int) -> GameState:
+    return GameState(size=size)
 
 
 def _step(state: State, action: Array, size: int) -> State:
