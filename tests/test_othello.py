@@ -37,7 +37,7 @@ def test_step():
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0])
     # fmt:on
-    assert jnp.all(state._board == expected)
+    assert jnp.all(state._x.board == expected)
 
 
 def test_terminated():
