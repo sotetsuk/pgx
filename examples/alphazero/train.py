@@ -19,7 +19,6 @@ import time
 from functools import partial
 from typing import NamedTuple
 
-import haiku as hk
 import jax
 import jax.numpy as jnp
 import mctx
@@ -29,6 +28,7 @@ import wandb
 from omegaconf import OmegaConf
 from pgx.experimental import auto_reset
 from pydantic import BaseModel
+import equinox as eqx
 
 from network import AZNet
 
@@ -65,19 +65,6 @@ print(config)
 env = pgx.make(config.env_id)
 baseline = pgx.make_baseline_model(config.env_id + "_v0")
 
-
-def forward_fn(x, is_eval=False):
-    net = AZNet(
-        num_actions=env.num_actions,
-        num_channels=config.num_channels,
-        num_blocks=config.num_layers,
-        resnet_v2=config.resnet_v2,
-    )
-    policy_out, value_out = net(x, is_training=not is_eval, test_local_stats=False)
-    return policy_out, value_out
-
-
-forward = hk.without_apply_rng(hk.transform_with_state(forward_fn))
 optimizer = optax.adam(learning_rate=config.learning_rate)
 
 
@@ -264,10 +251,13 @@ if __name__ == "__main__":
     # Initialize model and opt_state
     dummy_state = jax.vmap(env.init)(jax.random.split(jax.random.PRNGKey(0), 2))
     dummy_input = dummy_state.observation
-    model = forward.init(jax.random.PRNGKey(0), dummy_input)  # (params, state)
-    opt_state = optimizer.init(params=model[0])
+    model = AZNet(env.num_actions, env.observation_shape[-1], jax.random.key(config.seed), config.num_channels, config.num_layers, config.resnet_v2)
+    opt_state = optimizer.init(eqx.filter(model, eqx.is_array))
     # replicates to all devices
-    model, opt_state = jax.device_put_replicated((model, opt_state), devices)
+    arr, static = eqx.filter((model, opt_state), eqx.is_array)
+    train_model, opt_state = jax.device_put_replicated(arr, devices)
+    train_model = eqx.combine(train_model, static[0])
+    opt_state = eqx.combine(opt_state, static[1])
 
     # Prepare checkpoint dir
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
@@ -281,7 +271,7 @@ if __name__ == "__main__":
     frames: int = 0
     log = {"iteration": iteration, "hours": hours, "frames": frames}
 
-    rng_key = jax.random.PRNGKey(config.seed)
+    rng_key = jax.random.key(config.seed)
     while True:
         if iteration % config.eval_interval == 0:
             # Evaluation

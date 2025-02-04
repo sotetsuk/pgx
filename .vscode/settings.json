@@ -24,7 +24,9 @@
         "--config", "pyproject.toml",
         "--ignore", "E203,E501,W503"
     ],
-    "python.linting.flake8Enabled": true,
+    "python.linting.flake8Enabled": false,
     "python.defaultInterpreterPath": "${workspace}/venv/bin/python3",
-    "python.terminal.activateEnvInCurrentTerminal": true
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.linting.enabled": false,
+    "python.linting.pylintEnabled": true
 }

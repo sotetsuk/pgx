@@ -7,10 +7,10 @@ Please refer to their work if you use this example in your research."""
 import sys
 import jax
 import jax.numpy as jnp
-import haiku as hk
+import equinox as eqx
 import optax
 from typing import NamedTuple, Literal
-import distrax
+from distreqx import distributions
 import pgx
 from pgx.experimental import auto_reset
 import time
@@ -31,12 +31,12 @@ class PPOConfig(BaseModel):
     ] = "minatar-breakout"
     seed: int = 0
     lr: float = 0.0003
-    num_envs: int = 4096
+    num_envs: int = 40
     num_eval_envs: int = 100
     num_steps: int = 128
     total_timesteps: int = 20000000
     update_epochs: int = 3
-    minibatch_size: int = 4096
+    minibatch_size: int = 40
     gamma: float = 0.99
     gae_lambda: float = 0.95
     clip_eps: float = 0.2
@@ -58,49 +58,59 @@ env = pgx.make(str(args.env_name))
 num_updates = args.total_timesteps // args.num_envs // args.num_steps
 num_minibatches = args.num_envs * args.num_steps // args.minibatch_size
 
+class ActorCritic(eqx.Module):
+    features: list
+    actor: list
+    critic: list
 
-class ActorCritic(hk.Module):
-    def __init__(self, num_actions, activation="tanh"):
-        super().__init__()
-        self.num_actions = num_actions
-        self.activation = activation
+    def __init__(self, num_actions, key, activation="tanh"):
         assert activation in ["relu", "tanh"]
+        if activation == "relu":
+            act_fn = jax.nn.relu
+        else:
+            act_fn = jax.nn.tanh
+        
+        keys = jax.random.split(key, 8)
+        self.features = [
+                eqx.nn.Conv2d(env.observation_shape[2], 32, 2, key=keys[0]),
+                # (4, 10, 10) -> (32, 9, 9)
+                jax.nn.relu,
+                eqx.nn.AvgPool2d(2, 2),
+                # (32, 9, 9) -> (32, 4, 4)
+                lambda x: x.flatten(),
+                eqx.nn.Linear(32 * 4 * 4, 64, key=keys[1]),
+                jax.nn.relu,
+            ]
+
+        self.actor = [
+                eqx.nn.Linear(64, 64, key=keys[2]),
+                act_fn,
+                eqx.nn.Linear(64, 64, key=keys[3]),
+                act_fn,
+                eqx.nn.Linear(64, num_actions, key=keys[4]),
+            ]
+
+        self.critic = [
+                eqx.nn.Linear(64, 64, key=keys[5]),
+                act_fn,
+                eqx.nn.Linear(64, 64, key=keys[6]),
+                act_fn,
+                eqx.nn.Linear(64, 1, key=keys[7]),
+            ]
 
     def __call__(self, x):
         x = x.astype(jnp.float32)
-        if self.activation == "relu":
-            activation = jax.nn.relu
-        else:
-            activation = jax.nn.tanh
-        x = hk.Conv2D(32, kernel_shape=2)(x)
-        x = jax.nn.relu(x)
-        x = hk.avg_pool(x, window_shape=(2, 2),
-                        strides=(2, 2), padding="VALID")
-        x = x.reshape((x.shape[0], -1))  # flatten
-        x = hk.Linear(64)(x)
-        x = jax.nn.relu(x)
-        actor_mean = hk.Linear(64)(x)
-        actor_mean = activation(actor_mean)
-        actor_mean = hk.Linear(64)(actor_mean)
-        actor_mean = activation(actor_mean)
-        actor_mean = hk.Linear(self.num_actions)(actor_mean)
-
-        critic = hk.Linear(64)(x)
-        critic = activation(critic)
-        critic = hk.Linear(64)(critic)
-        critic = activation(critic)
-        critic = hk.Linear(1)(critic)
-
+        # make channels first
+        x = jnp.moveaxis(x, -1, 0)
+        for layer in self.features:
+            x = layer(x)
+        actor_mean = jnp.copy(x)
+        for layer in self.actor:
+            actor_mean = layer(actor_mean)
+        critic = jnp.copy(x)
+        for layer in self.critic:
+            critic = layer(critic)
         return actor_mean, jnp.squeeze(critic, axis=-1)
-
-
-def forward_fn(x, is_eval=False):
-    net = ActorCritic(env.num_actions, activation="tanh")
-    logits, value = net(x)
-    return logits, value
-
-
-forward = hk.without_apply_rng(hk.transform(forward_fn))
 
 
 optimizer = optax.chain(optax.clip_by_global_norm(
@@ -122,14 +132,20 @@ def make_update_fn():
         # COLLECT TRAJECTORIES
         step_fn = jax.vmap(auto_reset(env.step, env.init))
 
+        arrs, static = eqx.partition(runner_state[0], eqx.is_array)
+        runner_state = eqx.tree_at(lambda x: x[0], runner_state, arrs)
+
         def _env_step(runner_state, unused):
-            params, opt_state, env_state, last_obs, rng = runner_state
+            arr_params, opt_state, env_state, last_obs, rng = runner_state
+            params = eqx.combine(arr_params, static)
             # SELECT ACTION
             rng, _rng = jax.random.split(rng)
-            logits, value = forward.apply(params, last_obs)
-            pi = distrax.Categorical(logits=logits)
-            action = pi.sample(seed=_rng)
-            log_prob = pi.log_prob(action)
+            __rng = jax.random.split(_rng, last_obs.shape[0])
+            logits, value = eqx.filter_vmap(params)(last_obs)
+            pi = eqx.filter_vmap(distributions.Categorical)(logits)
+            action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
+            action = action.astype('int32')
+            log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, action)
 
             # STEP ENV
             rng, _rng = jax.random.split(rng)
@@ -143,17 +159,18 @@ def make_update_fn():
                 log_prob,
                 last_obs
             )
-            runner_state = (params, opt_state, env_state,
+            runner_state = (arr_params, opt_state, env_state,
                             env_state.observation, rng)
             return runner_state, transition
 
         runner_state, traj_batch = jax.lax.scan(
             _env_step, runner_state, None, args.num_steps
         )
+        runner_state = eqx.tree_at(lambda x: x[0], runner_state, eqx.combine(runner_state[0], static))
 
         # CALCULATE ADVANTAGE
         params, opt_state, env_state, last_obs, rng = runner_state
-        _, last_val = forward.apply(params, last_obs)
+        _, last_val = eqx.filter_vmap(params)(last_obs)
 
         def _calculate_gae(traj_batch, last_val):
             def _get_advantages(gae_and_next_value, transition):
@@ -181,6 +198,8 @@ def make_update_fn():
 
         advantages, targets = _calculate_gae(traj_batch, last_val)
 
+        params_arr, static = eqx.partition(params, eqx.is_array)
+
         # UPDATE NETWORK
         def _update_epoch(update_state, unused):
             def _update_minbatch(tup, batch_info):
@@ -189,9 +208,9 @@ def make_update_fn():
 
                 def _loss_fn(params, traj_batch, gae, targets):
                     # RERUN NETWORK
-                    logits, value = forward.apply(params, traj_batch.obs)
-                    pi = distrax.Categorical(logits=logits)
-                    log_prob = pi.log_prob(traj_batch.action)
+                    logits, value = eqx.filter_vmap(params)(traj_batch.obs)
+                    pi = eqx.filter_vmap(distributions.Categorical)(logits)
+                    log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, traj_batch.action)
 
                     # CALCULATE VALUE LOSS
                     value_pred_clipped = traj_batch.value + (
@@ -228,11 +247,11 @@ def make_update_fn():
                     )
                     return total_loss, (value_loss, loss_actor, entropy)
 
-                grad_fn = jax.value_and_grad(_loss_fn, has_aux=True)
+                grad_fn = eqx.filter_value_and_grad(_loss_fn, has_aux=True)
                 total_loss, grads = grad_fn(
-                    params, traj_batch, advantages, targets)
+                    eqx.combine(params, static), traj_batch, advantages, targets)
                 updates, opt_state = optimizer.update(grads, opt_state)
-                params = optax.apply_updates(params, updates)
+                params = eqx.apply_updates(params, updates)
                 return (params, opt_state), total_loss
 
             params, opt_state, traj_batch, advantages, targets, rng = update_state
@@ -262,19 +281,19 @@ def make_update_fn():
                             advantages, targets, rng)
             return update_state, total_loss
 
-        update_state = (params, opt_state, traj_batch,
+        update_state = (params_arr, opt_state, traj_batch,
                         advantages, targets, rng)
         update_state, loss_info = jax.lax.scan(
             _update_epoch, update_state, None, args.update_epochs
         )
         params, opt_state, _, _, _, rng = update_state
 
-        runner_state = (params, opt_state, env_state, last_obs, rng)
+        runner_state = (eqx.combine(params, static), opt_state, env_state, last_obs, rng)
         return runner_state, loss_info
     return _update_step
 
 
-@jax.jit
+@eqx.filter_jit
 def evaluate(params, rng_key):
     step_fn = jax.vmap(env.step)
     rng_key, sub_key = jax.random.split(rng_key)
@@ -288,11 +307,13 @@ def evaluate(params, rng_key):
 
     def loop_fn(tup):
         state, R, rng_key = tup
-        logits, value = forward.apply(params, state.observation)
+        logits, value = eqx.filter_vmap(params)(state.observation)
         # action = logits.argmax(axis=-1)
-        pi = distrax.Categorical(logits=logits)
+        pi = eqx.filter_vmap(distributions.Categorical)(logits)
         rng_key, _rng = jax.random.split(rng_key)
-        action = pi.sample(seed=_rng)
+        __rng = jax.random.split(_rng, state.observation.shape[0])
+        action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
+        action = action.astype('int32')
         rng_key, _rng = jax.random.split(rng_key)
         keys = jax.random.split(_rng, state.observation.shape[0])
         state = step_fn(state, action, keys)
@@ -306,13 +327,12 @@ def train(rng):
     st = time.time()
     # INIT NETWORK
     rng, _rng = jax.random.split(rng)
-    init_x = jnp.zeros((1, ) + env.observation_shape)
-    params = forward.init(_rng, init_x)
-    opt_state = optimizer.init(params=params)
+    model = ActorCritic(env.num_actions, _rng, "tanh")
+    opt_state = optimizer.init(params=eqx.filter(model, eqx.is_inexact_array))
 
     # INIT UPDATE FUNCTION
     _update_step = make_update_fn()
-    jitted_update_step = jax.jit(_update_step)
+    jitted_update_step = eqx.filter_jit(_update_step)
 
     # INIT ENV
     rng, _rng = jax.random.split(rng)
@@ -320,7 +340,7 @@ def train(rng):
     env_state = jax.jit(jax.vmap(env.init))(reset_rng)
 
     rng, _rng = jax.random.split(rng)
-    runner_state = (params, opt_state, env_state, env_state.observation, _rng)
+    runner_state = (model, opt_state, env_state, env_state.observation, _rng)
 
     # warm up
     _, _ = jitted_update_step(runner_state)
@@ -334,7 +354,7 @@ def train(rng):
     eval_R = evaluate(runner_state[0], _rng)
     log = {"sec": tt, f"{args.env_name}/eval_R": float(eval_R), "steps": steps}
     print(log)
-    wandb.log(log)
+    # wandb.log(log)
     st = time.time()
 
     for i in range(num_updates):
@@ -348,14 +368,14 @@ def train(rng):
         eval_R = evaluate(runner_state[0], _rng)
         log = {"sec": tt, f"{args.env_name}/eval_R": float(eval_R), "steps": steps}
         print(log)
-        wandb.log(log)
+        # wandb.log(log)
         st = time.time()
 
     return runner_state
 
 
 if __name__ == "__main__":
-    wandb.init(project=args.wandb_project, config=args.dict())
+    # wandb.init(project=args.wandb_project, config=args.dict())
     rng = jax.random.PRNGKey(args.seed)
     out = train(rng)
     if args.save_model:

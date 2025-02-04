@@ -104,8 +104,6 @@ class AZNet(eqx.Module):
 
     def __call__(self, x, state):
         x = x.astype(jnp.float32)
-        x = jnp.moveaxis(x, -1, 0)
-        
         for layer in self.init_layers:
             if isinstance(layer, eqx.nn.StatefulLayer):
                 x, state = layer(x, state)
