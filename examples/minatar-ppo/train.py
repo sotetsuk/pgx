@@ -59,6 +59,34 @@ env = pgx.make(str(args.env_name))
 num_updates = args.total_timesteps // args.num_envs // args.num_steps
 num_minibatches = args.num_envs * args.num_steps // args.minibatch_size
 
+
+def init_weight(layer, key):
+    def where(m):
+        return m.weight
+
+    s = layer.weight.shape
+    if len(s) == 2:
+        f = s[1]
+    else:
+        f = s[1] * s[2] * s[3]
+    return eqx.tree_at(where, layer, (1.0 / jnp.sqrt(f)) * jax.random.truncated_normal(key, -2.0, 2.0, s))
+
+
+def init_bias(layer):
+    def where(m):
+        return m.bias
+
+    if layer.bias is not None:
+        return eqx.tree_at(where, layer, jnp.zeros_like(layer.bias))
+    return layer
+
+
+def truncated_normal_init(layer, key):
+    layer = init_weight(layer, key)
+    layer = init_bias(layer)
+    return layer
+
+
 class ActorCritic(eqx.Module):
     features: list
     actor: list
@@ -70,34 +98,34 @@ class ActorCritic(eqx.Module):
             act_fn = jax.nn.relu
         else:
             act_fn = jax.nn.tanh
-        
+
         keys = jax.random.split(key, 8)
         self.features = [
-                eqx.nn.Conv2d(env.observation_shape[2], 32, 2, key=keys[0]),
-                # (4, 10, 10) -> (32, 9, 9)
-                jax.nn.relu,
-                eqx.nn.AvgPool2d(2, 2),
-                # (32, 9, 9) -> (32, 4, 4)
-                lambda x: x.flatten(),
-                eqx.nn.Linear(32 * 4 * 4, 64, key=keys[1]),
-                jax.nn.relu,
-            ]
+            truncated_normal_init(eqx.nn.Conv2d(env.observation_shape[2], 32, 2, key=keys[0]), keys[0]),
+            # (4, 10, 10) -> (32, 9, 9)
+            jax.nn.relu,
+            eqx.nn.AvgPool2d(2, 2),
+            # (32, 9, 9) -> (32, 4, 4)
+            lambda x: x.flatten(),
+            truncated_normal_init(eqx.nn.Linear(32 * 4 * 4, 64, key=keys[1]), key=keys[1]),
+            jax.nn.relu,
+        ]
 
         self.actor = [
-                eqx.nn.Linear(64, 64, key=keys[2]),
-                act_fn,
-                eqx.nn.Linear(64, 64, key=keys[3]),
-                act_fn,
-                eqx.nn.Linear(64, num_actions, key=keys[4]),
-            ]
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[2]), keys[2]),
+            act_fn,
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[3]), keys[3]),
+            act_fn,
+            truncated_normal_init(eqx.nn.Linear(64, num_actions, key=keys[4]), keys[4]),
+        ]
 
         self.critic = [
-                eqx.nn.Linear(64, 64, key=keys[5]),
-                act_fn,
-                eqx.nn.Linear(64, 64, key=keys[6]),
-                act_fn,
-                eqx.nn.Linear(64, 1, key=keys[7]),
-            ]
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[5]), keys[5]),
+            act_fn,
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[6]), keys[6]),
+            act_fn,
+            truncated_normal_init(eqx.nn.Linear(64, 1, key=keys[7]), keys[7]),
+        ]
 
     def __call__(self, x):
         x = x.astype(jnp.float32)
@@ -114,8 +142,7 @@ class ActorCritic(eqx.Module):
         return actor_mean, jnp.squeeze(critic, axis=-1)
 
 
-optimizer = optax.chain(optax.clip_by_global_norm(
-    args.max_grad_norm), optax.adam(args.lr, eps=1e-5))
+optimizer = optax.chain(optax.clip_by_global_norm(args.max_grad_norm), optax.adam(args.lr, eps=1e-5))
 
 
 class Transition(NamedTuple):
@@ -156,20 +183,12 @@ def make_update_fn():
             keys = jax.random.split(_rng, env_state.observation.shape[0])
             env_state = step_fn(env_state, action, keys)
             transition = Transition(
-                env_state.terminated,
-                action,
-                value,
-                jnp.squeeze(env_state.rewards),
-                log_prob,
-                last_obs
+                env_state.terminated, action, value, jnp.squeeze(env_state.rewards), log_prob, last_obs
             )
-            runner_state = (arr_params, opt_state, env_state,
-                            env_state.observation, rng)
+            runner_state = (arr_params, opt_state, env_state, env_state.observation, rng)
             return runner_state, transition
 
-        runner_state, traj_batch = jax.lax.scan(
-            _env_step, runner_state, None, args.num_steps
-        )
+        runner_state, traj_batch = jax.lax.scan(_env_step, runner_state, None, args.num_steps)
         runner_state = eqx.tree_at(lambda x: x[0], runner_state, eqx.combine(runner_state[0], static))
 
         # CALCULATE ADVANTAGE
@@ -185,10 +204,7 @@ def make_update_fn():
                     transition.reward,
                 )
                 delta = reward + args.gamma * next_value * (1 - done) - value
-                gae = (
-                    delta
-                    + args.gamma * args.gae_lambda * (1 - done) * gae
-                )
+                gae = delta + args.gamma * args.gae_lambda * (1 - done) * gae
                 return (gae, value), gae
 
             _, advantages = jax.lax.scan(
@@ -219,16 +235,12 @@ def make_update_fn():
                     # log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, traj_batch.action)
 
                     # CALCULATE VALUE LOSS
-                    value_pred_clipped = traj_batch.value + (
-                        value - traj_batch.value
-                    ).clip(-args.clip_eps, args.clip_eps)
-                    value_losses = jnp.square(value - targets)
-                    value_losses_clipped = jnp.square(
-                        value_pred_clipped - targets)
-                    value_loss = (
-                        0.5 * jnp.maximum(value_losses,
-                                          value_losses_clipped).mean()
+                    value_pred_clipped = traj_batch.value + (value - traj_batch.value).clip(
+                        -args.clip_eps, args.clip_eps
                     )
+                    value_losses = jnp.square(value - targets)
+                    value_losses_clipped = jnp.square(value_pred_clipped - targets)
+                    value_loss = 0.5 * jnp.maximum(value_losses, value_losses_clipped).mean()
 
                     # CALCULATE ACTOR LOSS
                     ratio = jnp.exp(log_prob - traj_batch.log_prob)
@@ -246,16 +258,11 @@ def make_update_fn():
                     loss_actor = loss_actor.mean()
                     entropy = pi.entropy().mean()
 
-                    total_loss = (
-                        loss_actor
-                        + args.vf_coef * value_loss
-                        - args.ent_coef * entropy
-                    )
+                    total_loss = loss_actor + args.vf_coef * value_loss - args.ent_coef * entropy
                     return total_loss, (value_loss, loss_actor, entropy)
 
                 grad_fn = eqx.filter_value_and_grad(_loss_fn, has_aux=True)
-                total_loss, grads = grad_fn(
-                    eqx.combine(params, static), traj_batch, advantages, targets)
+                total_loss, grads = grad_fn(eqx.combine(params, static), traj_batch, advantages, targets)
                 updates, opt_state = optimizer.update(grads, opt_state)
                 params = eqx.apply_updates(params, updates)
                 return (params, opt_state), total_loss
@@ -268,34 +275,23 @@ def make_update_fn():
             ), "batch size must be equal to number of steps * number of envs"
             permutation = jax.random.permutation(_rng, batch_size)
             batch = (traj_batch, advantages, targets)
-            batch = jax.tree_util.tree_map(
-                lambda x: x.reshape((batch_size,) + x.shape[2:]), batch
-            )
-            shuffled_batch = jax.tree_util.tree_map(
-                lambda x: jnp.take(x, permutation, axis=0), batch
-            )
+            batch = jax.tree_util.tree_map(lambda x: x.reshape((batch_size,) + x.shape[2:]), batch)
+            shuffled_batch = jax.tree_util.tree_map(lambda x: jnp.take(x, permutation, axis=0), batch)
             minibatches = jax.tree_util.tree_map(
-                lambda x: jnp.reshape(
-                    x, [num_minibatches, -1] + list(x.shape[1:])
-                ),
+                lambda x: jnp.reshape(x, [num_minibatches, -1] + list(x.shape[1:])),
                 shuffled_batch,
             )
-            (params, opt_state),  total_loss = jax.lax.scan(
-                _update_minbatch, (params, opt_state), minibatches
-            )
-            update_state = (params, opt_state, traj_batch,
-                            advantages, targets, rng)
+            (params, opt_state), total_loss = jax.lax.scan(_update_minbatch, (params, opt_state), minibatches)
+            update_state = (params, opt_state, traj_batch, advantages, targets, rng)
             return update_state, total_loss
 
-        update_state = (params_arr, opt_state, traj_batch,
-                        advantages, targets, rng)
-        update_state, loss_info = jax.lax.scan(
-            _update_epoch, update_state, None, args.update_epochs
-        )
+        update_state = (params_arr, opt_state, traj_batch, advantages, targets, rng)
+        update_state, loss_info = jax.lax.scan(_update_epoch, update_state, None, args.update_epochs)
         params, opt_state, _, _, _, rng = update_state
 
         runner_state = (eqx.combine(params, static), opt_state, env_state, last_obs, rng)
         return runner_state, loss_info
+
     return _update_step
 
 
@@ -327,6 +323,7 @@ def evaluate(params, rng_key):
         keys = jax.random.split(_rng, state.observation.shape[0])
         state = step_fn(state, action, keys)
         return state, R + state.rewards, rng_key
+
     state, R, _ = jax.lax.while_loop(cond_fn, loop_fn, (state, R, rng_key))
     return R.mean()
 
