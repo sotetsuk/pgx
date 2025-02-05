@@ -354,7 +354,7 @@ def train(rng):
     eval_R = evaluate(runner_state[0], _rng)
     log = {"sec": tt, f"{args.env_name}/eval_R": float(eval_R), "steps": steps}
     print(log)
-    # wandb.log(log)
+    wandb.log(log)
     st = time.time()
 
     for i in range(num_updates):
@@ -368,14 +368,14 @@ def train(rng):
         eval_R = evaluate(runner_state[0], _rng)
         log = {"sec": tt, f"{args.env_name}/eval_R": float(eval_R), "steps": steps}
         print(log)
-        # wandb.log(log)
+        wandb.log(log)
         st = time.time()
 
     return runner_state
 
 
 if __name__ == "__main__":
-    # wandb.init(project=args.wandb_project, config=args.dict())
+    wandb.init(project=args.wandb_project, config=args.dict())
     rng = jax.random.PRNGKey(args.seed)
     out = train(rng)
     if args.save_model:
