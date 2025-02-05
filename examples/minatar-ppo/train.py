@@ -11,6 +11,7 @@ import equinox as eqx
 import optax
 from typing import NamedTuple, Literal
 from distreqx import distributions
+import distrax
 import pgx
 from pgx.experimental import auto_reset
 import time
@@ -31,12 +32,12 @@ class PPOConfig(BaseModel):
     ] = "minatar-breakout"
     seed: int = 0
     lr: float = 0.0003
-    num_envs: int = 40
+    num_envs: int = 4096
     num_eval_envs: int = 100
     num_steps: int = 128
     total_timesteps: int = 20000000
     update_epochs: int = 3
-    minibatch_size: int = 40
+    minibatch_size: int = 4096
     gamma: float = 0.99
     gae_lambda: float = 0.95
     clip_eps: float = 0.2
@@ -142,10 +143,13 @@ def make_update_fn():
             rng, _rng = jax.random.split(rng)
             __rng = jax.random.split(_rng, last_obs.shape[0])
             logits, value = eqx.filter_vmap(params)(last_obs)
-            pi = eqx.filter_vmap(distributions.Categorical)(logits)
-            action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
-            action = action.astype('int32')
-            log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, action)
+            pi = distrax.Categorical(logits=logits)
+            action = pi.sample(seed=_rng)
+            log_prob = pi.log_prob(action)
+            # pi = eqx.filter_vmap(distributions.Categorical)(logits)
+            # action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
+            # action = action.astype('int32')
+            # log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, action)
 
             # STEP ENV
             rng, _rng = jax.random.split(rng)
@@ -209,8 +213,10 @@ def make_update_fn():
                 def _loss_fn(params, traj_batch, gae, targets):
                     # RERUN NETWORK
                     logits, value = eqx.filter_vmap(params)(traj_batch.obs)
-                    pi = eqx.filter_vmap(distributions.Categorical)(logits)
-                    log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, traj_batch.action)
+                    pi = distrax.Categorical(logits=logits)
+                    log_prob = pi.log_prob(traj_batch.action)
+                    # pi = eqx.filter_vmap(distributions.Categorical)(logits)
+                    # log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, traj_batch.action)
 
                     # CALCULATE VALUE LOSS
                     value_pred_clipped = traj_batch.value + (
@@ -309,11 +315,14 @@ def evaluate(params, rng_key):
         state, R, rng_key = tup
         logits, value = eqx.filter_vmap(params)(state.observation)
         # action = logits.argmax(axis=-1)
-        pi = eqx.filter_vmap(distributions.Categorical)(logits)
+        pi = distrax.Categorical(logits=logits)
         rng_key, _rng = jax.random.split(rng_key)
-        __rng = jax.random.split(_rng, state.observation.shape[0])
-        action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
-        action = action.astype('int32')
+        action = pi.sample(seed=_rng)
+        # pi = eqx.filter_vmap(distributions.Categorical)(logits)
+        # rng_key, _rng = jax.random.split(rng_key)
+        # __rng = jax.random.split(_rng, state.observation.shape[0])
+        # action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
+        # action = action.astype('int32')
         rng_key, _rng = jax.random.split(rng_key)
         keys = jax.random.split(_rng, state.observation.shape[0])
         state = step_fn(state, action, keys)
