@@ -144,7 +144,7 @@ def make_update_fn():
             # SELECT ACTION
             rng, _rng = jax.random.split(rng)
             __rng = jax.random.split(_rng, last_obs.shape[0])
-            # logits, value = eqx.filter_vmap(params)(last_obs)
+            logits, value = eqx.filter_vmap(params)(last_obs)
             # pi = distrax.Categorical(logits=logits)
             # action = pi.sample(seed=_rng)
             # log_prob = pi.log_prob(action)
