@@ -102,12 +102,13 @@ class ActorCritic(eqx.Module):
         keys = jax.random.split(key, 8)
         self.features = [
             truncated_normal_init(eqx.nn.Conv2d(env.observation_shape[2], 32, 2, key=keys[0]), keys[0]),
-            # (4, 10, 10) -> (32, 9, 9)
+            # (4, 10, 10) -> (32, 10, 10)
             jax.nn.relu,
+            lambda x: jnp.moveaxis(x, 0, -1),
             eqx.nn.AvgPool2d(2, 2),
-            # (32, 9, 9) -> (32, 4, 4)
+            # (10, 10, 32) -> (10, 5, 16)
             lambda x: x.flatten(),
-            truncated_normal_init(eqx.nn.Linear(32 * 4 * 4, 64, key=keys[1]), key=keys[1]),
+            truncated_normal_init(eqx.nn.Linear(10 * 5 * 16, 64, key=keys[1]), key=keys[1]),
             jax.nn.relu,
         ]
 
