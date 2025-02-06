@@ -53,7 +53,7 @@ class BlockV2(eqx.Module):
         return x + i, state
 
 
-class AZNete(eqx.Module):
+class AZNet(eqx.Module):
 
     init_layers: list
     resnet: list
