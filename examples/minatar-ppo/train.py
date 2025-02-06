@@ -100,32 +100,60 @@ class ActorCritic(eqx.Module):
             act_fn = jax.nn.tanh
 
         keys = jax.random.split(key, 8)
+        # self.features = [
+        #     truncated_normal_init(eqx.nn.Conv2d(env.observation_shape[2], 32, 2, padding="SAME", key=keys[0]), keys[0]),
+        #     # (4, 10, 10) -> (32, 10, 10)
+        #     jax.nn.relu,
+        #     lambda x: jnp.moveaxis(x, 0, -1),
+        #     eqx.nn.AvgPool2d(2, 2),
+        #     # (10, 10, 32) -> (10, 5, 16)
+        #     lambda x: x.flatten(),
+        #     truncated_normal_init(eqx.nn.Linear(10 * 5 * 16, 64, key=keys[1]), key=keys[1]),
+        #     jax.nn.relu,
+        # ]
+
+        # self.actor = [
+        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[2]), keys[2]),
+        #     act_fn,
+        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[3]), keys[3]),
+        #     act_fn,
+        #     truncated_normal_init(eqx.nn.Linear(64, num_actions, key=keys[4]), keys[4]),
+        # ]
+
+        # self.critic = [
+        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[5]), keys[5]),
+        #     act_fn,
+        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[6]), keys[6]),
+        #     act_fn,
+        #     truncated_normal_init(eqx.nn.Linear(64, 1, key=keys[7]), keys[7]),
+        # ]
+
         self.features = [
-            truncated_normal_init(eqx.nn.Conv2d(env.observation_shape[2], 32, 2, key=keys[0]), keys[0]),
+            eqx.nn.Conv2d(env.observation_shape[2], 32, 2, padding="SAME", key=keys[0]),
             # (4, 10, 10) -> (32, 10, 10)
             jax.nn.relu,
             lambda x: jnp.moveaxis(x, 0, -1),
             eqx.nn.AvgPool2d(2, 2),
             # (10, 10, 32) -> (10, 5, 16)
             lambda x: x.flatten(),
-            truncated_normal_init(eqx.nn.Linear(10 * 5 * 16, 64, key=keys[1]), key=keys[1]),
+            eqx.nn.Linear(10 * 5 * 16, 64, key=keys[1]),
             jax.nn.relu,
         ]
 
         self.actor = [
-            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[2]), keys[2]),
+            eqx.nn.Linear(64, 64, key=keys[2]),
             act_fn,
-            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[3]), keys[3]),
+            eqx.nn.Linear(64, 64, key=keys[3]),
             act_fn,
-            truncated_normal_init(eqx.nn.Linear(64, num_actions, key=keys[4]), keys[4]),
+            eqx.nn.Linear(64, num_actions, key=keys[4]),
         ]
 
         self.critic = [
-            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[5]), keys[5]),
+            eqx.nn.Linear(64, 64, key=keys[5]),
             act_fn,
-            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[6]), keys[6]),
+            eqx.nn.Linear(64, 64, key=keys[6]),
             act_fn,
-            truncated_normal_init(eqx.nn.Linear(64, 1, key=keys[7]), keys[7]),
+            eqx.nn.Linear(64, 1, key=keys[7]),
         ]
 
     def __call__(self, x):
