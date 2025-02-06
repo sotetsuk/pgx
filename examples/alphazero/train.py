@@ -58,6 +58,7 @@ class Config(BaseModel):
     learning_rate: float = 0.001
     # eval params
     eval_interval: int = 5
+    wandb_project: str = "pgx-az"
 
     class Config:
         extra = "forbid"
@@ -255,7 +256,7 @@ def evaluate(rng_key, my_model):
 
 
 if __name__ == "__main__":
-    wandb.init(project="pgx-az", config=config.model_dump())
+    wandb.init(project=config.wandb_project, config=config.model_dump())
 
     # Initialize model and opt_state
     dummy_state = jax.vmap(env.init)(jax.random.split(jax.random.PRNGKey(0), 2))
