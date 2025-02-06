@@ -53,8 +53,7 @@ class BlockV2(eqx.Module):
         return x + i, state
 
 
-class AZNet(eqx.Module):
-    """AlphaZero NN architecture."""
+class AZNete(eqx.Module):
 
     init_layers: list
     resnet: list
@@ -74,7 +73,7 @@ class AZNet(eqx.Module):
         resnet_cls = BlockV2 if resnet_v2 else BlockV1
 
         keys = jax.random.split(key, num_blocks + 5)
-        self.init_layers = [eqx.nn.Conv2d(input_channels, output_channels, kernel_size=3, key=keys[0])]
+        self.init_layers = [eqx.nn.Conv2d(input_channels, output_channels, kernel_size=3, padding="SAME", key=keys[0])]
         if not resnet_v2:
             self.init_layers += [eqx.nn.BatchNorm(output_channels, "batch", momentum=0.9), jax.nn.relu]
         self.resnet = [resnet_cls(output_channels, output_channels, keys[i + 1]) for i in range(num_blocks)]
@@ -82,20 +81,20 @@ class AZNet(eqx.Module):
         if resnet_v2:
             self.post_resnet += [eqx.nn.BatchNorm(output_channels, "batch", momentum=0.9), jax.nn.relu]
         self.policy_head = [
-            eqx.nn.Conv2d(output_channels, 2, kernel_size=1, key=keys[num_blocks + 1]),
+            eqx.nn.Conv2d(output_channels, 2, kernel_size=1, padding="SAME", key=keys[num_blocks + 1]),
             eqx.nn.BatchNorm(2, "batch", momentum=0.9),
             jax.nn.relu,
             lambda x: x.flatten(),
-            # TODO: infer 98 from inputs
-            eqx.nn.Linear(98, num_actions, key=keys[num_blocks + 2]),
+            # TODO: infer from inputs
+            eqx.nn.Linear(162, num_actions, key=keys[num_blocks + 2]),
         ]
 
         self.value_head = [
-            eqx.nn.Conv2d(output_channels, 1, kernel_size=1, key=keys[num_blocks + 3]),
+            eqx.nn.Conv2d(output_channels, 1, kernel_size=1, padding="SAME", key=keys[num_blocks + 3]),
             eqx.nn.BatchNorm(1, "batch", momentum=0.9),
             jax.nn.relu,
             lambda x: x.flatten(),
-            eqx.nn.Linear(49, output_channels, key=keys[num_blocks + 2]),
+            eqx.nn.Linear(81, output_channels, key=keys[num_blocks + 2]),
             jax.nn.relu,
             eqx.nn.Linear(output_channels, 1, key=keys[num_blocks + 2]),
             jnp.tanh,
