@@ -48,6 +48,7 @@ class PPOConfig(BaseModel):
     save_model: bool = False
     equinox: bool = True
     distrax: bool = False
+    changed_init_equinox: bool = True
 
     class Config:
         extra = "forbid"
@@ -60,6 +61,32 @@ env = pgx.make(str(args.env_name))
 
 num_updates = args.total_timesteps // args.num_envs // args.num_steps
 num_minibatches = args.num_envs * args.num_steps // args.minibatch_size
+
+def init_weight(layer, key):
+    def where(m):
+        return m.weight
+
+    s = layer.weight.shape
+    if len(s) == 2:
+        f = s[1]
+    else:
+        f = s[1] * s[2] * s[3]
+    return eqx.tree_at(where, layer, (1.0 / jnp.sqrt(f)) * jax.random.truncated_normal(key, -2.0, 2.0, s))
+
+
+def init_bias(layer):
+    def where(m):
+        return m.bias
+
+    if layer.bias is not None:
+        return eqx.tree_at(where, layer, jnp.zeros_like(layer.bias))
+    return layer
+
+
+def truncated_normal_init(layer, key):
+    layer = init_weight(layer, key)
+    layer = init_bias(layer)
+    return layer
 
 
 class ActorCritic(eqx.Module):
@@ -75,33 +102,33 @@ class ActorCritic(eqx.Module):
             act_fn = jax.nn.tanh
 
         keys = jax.random.split(key, 8)
-
+        
         self.features = [
-            eqx.nn.Conv2d(env.observation_shape[2], 32, 2, padding="SAME", key=keys[0]),
+            truncated_normal_init(eqx.nn.Conv2d(env.observation_shape[2], 32, 2, padding="SAME", key=keys[0]), keys[0]),
             # (4, 10, 10) -> (32, 10, 10)
             jax.nn.relu,
             lambda x: jnp.moveaxis(x, 0, -1),
             eqx.nn.AvgPool2d(2, 2),
             # (10, 10, 32) -> (10, 5, 16)
             lambda x: x.flatten(),
-            eqx.nn.Linear(10 * 5 * 16, 64, key=keys[1]),
+            truncated_normal_init(eqx.nn.Linear(10 * 5 * 16, 64, key=keys[1]), key=keys[1]),
             jax.nn.relu,
         ]
 
         self.actor = [
-            eqx.nn.Linear(64, 64, key=keys[2]),
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[2]), keys[2]),
             act_fn,
-            eqx.nn.Linear(64, 64, key=keys[3]),
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[3]), keys[3]),
             act_fn,
-            eqx.nn.Linear(64, num_actions, key=keys[4]),
+            truncated_normal_init(eqx.nn.Linear(64, num_actions, key=keys[4]), keys[4]),
         ]
 
         self.critic = [
-            eqx.nn.Linear(64, 64, key=keys[5]),
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[5]), keys[5]),
             act_fn,
-            eqx.nn.Linear(64, 64, key=keys[6]),
+            truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[6]), keys[6]),
             act_fn,
-            eqx.nn.Linear(64, 1, key=keys[7]),
+            truncated_normal_init(eqx.nn.Linear(64, 1, key=keys[7]), keys[7]),
         ]
 
     def __call__(self, x):
