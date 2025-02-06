@@ -60,33 +60,6 @@ num_updates = args.total_timesteps // args.num_envs // args.num_steps
 num_minibatches = args.num_envs * args.num_steps // args.minibatch_size
 
 
-def init_weight(layer, key):
-    def where(m):
-        return m.weight
-
-    s = layer.weight.shape
-    if len(s) == 2:
-        f = s[1]
-    else:
-        f = s[1] * s[2] * s[3]
-    return eqx.tree_at(where, layer, (1.0 / jnp.sqrt(f)) * jax.random.truncated_normal(key, -2.0, 2.0, s))
-
-
-def init_bias(layer):
-    def where(m):
-        return m.bias
-
-    if layer.bias is not None:
-        return eqx.tree_at(where, layer, jnp.zeros_like(layer.bias))
-    return layer
-
-
-def truncated_normal_init(layer, key):
-    layer = init_weight(layer, key)
-    layer = init_bias(layer)
-    return layer
-
-
 class ActorCritic(eqx.Module):
     features: list
     actor: list
@@ -100,33 +73,6 @@ class ActorCritic(eqx.Module):
             act_fn = jax.nn.tanh
 
         keys = jax.random.split(key, 8)
-        # self.features = [
-        #     truncated_normal_init(eqx.nn.Conv2d(env.observation_shape[2], 32, 2, padding="SAME", key=keys[0]), keys[0]),
-        #     # (4, 10, 10) -> (32, 10, 10)
-        #     jax.nn.relu,
-        #     lambda x: jnp.moveaxis(x, 0, -1),
-        #     eqx.nn.AvgPool2d(2, 2),
-        #     # (10, 10, 32) -> (10, 5, 16)
-        #     lambda x: x.flatten(),
-        #     truncated_normal_init(eqx.nn.Linear(10 * 5 * 16, 64, key=keys[1]), key=keys[1]),
-        #     jax.nn.relu,
-        # ]
-
-        # self.actor = [
-        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[2]), keys[2]),
-        #     act_fn,
-        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[3]), keys[3]),
-        #     act_fn,
-        #     truncated_normal_init(eqx.nn.Linear(64, num_actions, key=keys[4]), keys[4]),
-        # ]
-
-        # self.critic = [
-        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[5]), keys[5]),
-        #     act_fn,
-        #     truncated_normal_init(eqx.nn.Linear(64, 64, key=keys[6]), keys[6]),
-        #     act_fn,
-        #     truncated_normal_init(eqx.nn.Linear(64, 1, key=keys[7]), keys[7]),
-        # ]
 
         self.features = [
             eqx.nn.Conv2d(env.observation_shape[2], 32, 2, padding="SAME", key=keys[0]),
@@ -198,14 +144,14 @@ def make_update_fn():
             # SELECT ACTION
             rng, _rng = jax.random.split(rng)
             __rng = jax.random.split(_rng, last_obs.shape[0])
-            logits, value = eqx.filter_vmap(params)(last_obs)
-            pi = distrax.Categorical(logits=logits)
-            action = pi.sample(seed=_rng)
-            log_prob = pi.log_prob(action)
-            # pi = eqx.filter_vmap(distributions.Categorical)(logits)
-            # action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
-            # action = action.astype('int32')
-            # log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, action)
+            # logits, value = eqx.filter_vmap(params)(last_obs)
+            # pi = distrax.Categorical(logits=logits)
+            # action = pi.sample(seed=_rng)
+            # log_prob = pi.log_prob(action)
+            pi = eqx.filter_vmap(distributions.Categorical)(logits)
+            action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
+            action = action.astype('int32')
+            log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, action)
 
             # STEP ENV
             rng, _rng = jax.random.split(rng)
@@ -258,10 +204,10 @@ def make_update_fn():
                 def _loss_fn(params, traj_batch, gae, targets):
                     # RERUN NETWORK
                     logits, value = eqx.filter_vmap(params)(traj_batch.obs)
-                    pi = distrax.Categorical(logits=logits)
-                    log_prob = pi.log_prob(traj_batch.action)
-                    # pi = eqx.filter_vmap(distributions.Categorical)(logits)
-                    # log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, traj_batch.action)
+                    # pi = distrax.Categorical(logits=logits)
+                    # log_prob = pi.log_prob(traj_batch.action)
+                    pi = eqx.filter_vmap(distributions.Categorical)(logits)
+                    log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, traj_batch.action)
 
                     # CALCULATE VALUE LOSS
                     value_pred_clipped = traj_batch.value + (value - traj_batch.value).clip(
@@ -340,14 +286,14 @@ def evaluate(params, rng_key):
         state, R, rng_key = tup
         logits, value = eqx.filter_vmap(params)(state.observation)
         # action = logits.argmax(axis=-1)
-        pi = distrax.Categorical(logits=logits)
-        rng_key, _rng = jax.random.split(rng_key)
-        action = pi.sample(seed=_rng)
-        # pi = eqx.filter_vmap(distributions.Categorical)(logits)
+        # pi = distrax.Categorical(logits=logits)
         # rng_key, _rng = jax.random.split(rng_key)
-        # __rng = jax.random.split(_rng, state.observation.shape[0])
-        # action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
-        # action = action.astype('int32')
+        # action = pi.sample(seed=_rng)
+        pi = eqx.filter_vmap(distributions.Categorical)(logits)
+        rng_key, _rng = jax.random.split(rng_key)
+        __rng = jax.random.split(_rng, state.observation.shape[0])
+        action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
+        action = action.astype('int32')
         rng_key, _rng = jax.random.split(rng_key)
         keys = jax.random.split(_rng, state.observation.shape[0])
         state = step_fn(state, action, keys)
