@@ -46,6 +46,8 @@ class PPOConfig(BaseModel):
     max_grad_norm: float = 0.5
     wandb_project: str = "pgx-minatar-ppo"
     save_model: bool = False
+    equinox: bool = True
+    distrax: bool = False
 
     class Config:
         extra = "forbid"
