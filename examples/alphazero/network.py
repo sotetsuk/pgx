@@ -16,8 +16,8 @@ class BlockV1(eqx.Module):
         keys = jax.random.split(key, 2)
         self.conv1 = eqx.nn.Conv2d(in_channels, out_channels, padding="SAME", kernel_size=3, key=keys[0])
         self.conv2 = eqx.nn.Conv2d(out_channels, out_channels, padding="SAME", kernel_size=3, key=keys[1])
-        self.norm1 = eqx.nn.BatchNorm(out_channels, "batch", momentum=0.9)
-        self.norm2 = eqx.nn.BatchNorm(out_channels, "batch", momentum=0.9)
+        self.norm1 = eqx.nn.BatchNorm(out_channels, "batch", momentum=0.9, mode="batch")
+        self.norm2 = eqx.nn.BatchNorm(out_channels, "batch", momentum=0.9, mode="batch")
 
     def __call__(self, x, state):
         i = x
@@ -39,8 +39,8 @@ class BlockV2(eqx.Module):
         keys = jax.random.split(key, 2)
         self.conv1 = eqx.nn.Conv2d(in_channels, out_channels, padding="SAME", kernel_size=3, key=keys[0])
         self.conv2 = eqx.nn.Conv2d(out_channels, out_channels, padding="SAME", kernel_size=3, key=keys[1])
-        self.norm1 = eqx.nn.BatchNorm(in_channels, "batch", momentum=0.9)
-        self.norm2 = eqx.nn.BatchNorm(out_channels, "batch", momentum=0.9)
+        self.norm1 = eqx.nn.BatchNorm(in_channels, "batch", momentum=0.9, mode="batch")
+        self.norm2 = eqx.nn.BatchNorm(out_channels, "batch", momentum=0.9, mode="batch")
 
     def __call__(self, x, state):
         i = x
@@ -75,14 +75,14 @@ class AZNet(eqx.Module):
         keys = jax.random.split(key, num_blocks + 5)
         self.init_layers = [eqx.nn.Conv2d(input_channels, output_channels, kernel_size=3, padding="SAME", key=keys[0])]
         if not resnet_v2:
-            self.init_layers += [eqx.nn.BatchNorm(output_channels, "batch", momentum=0.9), jax.nn.relu]
+            self.init_layers += [eqx.nn.BatchNorm(output_channels, "batch", momentum=0.9, mode="batch"), jax.nn.relu]
         self.resnet = [resnet_cls(output_channels, output_channels, keys[i + 1]) for i in range(num_blocks)]
         self.post_resnet = []
         if resnet_v2:
-            self.post_resnet += [eqx.nn.BatchNorm(output_channels, "batch", momentum=0.9), jax.nn.relu]
+            self.post_resnet += [eqx.nn.BatchNorm(output_channels, "batch", momentum=0.9, mode="batch"), jax.nn.relu]
         self.policy_head = [
             eqx.nn.Conv2d(output_channels, 2, kernel_size=1, padding="SAME", key=keys[num_blocks + 1]),
-            eqx.nn.BatchNorm(2, "batch", momentum=0.9),
+            eqx.nn.BatchNorm(2, "batch", momentum=0.9, mode="batch"),
             jax.nn.relu,
             lambda x: x.flatten(),
             # TODO: infer from inputs
@@ -91,7 +91,7 @@ class AZNet(eqx.Module):
 
         self.value_head = [
             eqx.nn.Conv2d(output_channels, 1, kernel_size=1, padding="SAME", key=keys[num_blocks + 3]),
-            eqx.nn.BatchNorm(1, "batch", momentum=0.9),
+            eqx.nn.BatchNorm(1, "batch", momentum=0.9, mode="batch"),
             jax.nn.relu,
             lambda x: x.flatten(),
             eqx.nn.Linear(81, output_channels, key=keys[num_blocks + 2]),
