@@ -12,14 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# import os
-
-# os.environ["XLA_FLAGS"] = "--xla_force_host_platform_device_count={}".format(4)
-
-
 import datetime
 import os
-import pickle
+import cloudpickle as pickle
 import time
 from functools import partial
 from typing import NamedTuple
@@ -271,13 +266,7 @@ if __name__ == "__main__":
     )
     opt_state = optimizer.init(eqx.filter(init_model, eqx.is_array))
     # replicates to all devices
-    arr, static = eqx.partition((init_model, opt_state, state), eqx.is_array)
-    # arr_rep = jax.device_put_replicated(arr, devices)
-    arr_rep = arr
-    train_model = eqx.combine(arr_rep[0], static[0])
-    opt_state = eqx.combine(arr_rep[1], static[1])
-    state = eqx.combine(arr_rep[2], static[2])
-    model = (train_model, state)
+    model = (init_model, state)
 
     # Prepare checkpoint dir
     now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=9)))
@@ -323,7 +312,7 @@ if __name__ == "__main__":
                     "env_id": env.id,
                     "env_version": env.version,
                 }
-                # pickle.dump(dic, f)
+                pickle.dump(dic, f)
 
         print(log)
         wandb.log(log)

@@ -46,9 +46,6 @@ class PPOConfig(BaseModel):
     max_grad_norm: float = 0.5
     wandb_project: str = "pgx-minatar-ppo"
     save_model: bool = False
-    equinox: bool = True
-    distrax: bool = False
-    changed_init_equinox: bool = True
 
     class Config:
         extra = "forbid"
@@ -61,6 +58,7 @@ env = pgx.make(str(args.env_name))
 
 num_updates = args.total_timesteps // args.num_envs // args.num_steps
 num_minibatches = args.num_envs * args.num_steps // args.minibatch_size
+
 
 def init_weight(layer, key):
     def where(m):
@@ -102,7 +100,7 @@ class ActorCritic(eqx.Module):
             act_fn = jax.nn.tanh
 
         keys = jax.random.split(key, 8)
-        
+
         self.features = [
             truncated_normal_init(eqx.nn.Conv2d(env.observation_shape[2], 32, 2, padding="SAME", key=keys[0]), keys[0]),
             # (4, 10, 10) -> (32, 10, 10)
@@ -179,7 +177,7 @@ def make_update_fn():
             # log_prob = pi.log_prob(action)
             pi = eqx.filter_vmap(distributions.Categorical)(logits)
             action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
-            action = action.astype('int32')
+            action = action.astype("int32")
             log_prob = eqx.filter_vmap(lambda x, y: x.log_prob(y))(pi, action)
 
             # STEP ENV
@@ -322,7 +320,7 @@ def evaluate(params, rng_key):
         rng_key, _rng = jax.random.split(rng_key)
         __rng = jax.random.split(_rng, state.observation.shape[0])
         action = eqx.filter_vmap(lambda x, y: x.sample(y))(pi, __rng)
-        action = action.astype('int32')
+        action = action.astype("int32")
         rng_key, _rng = jax.random.split(rng_key)
         keys = jax.random.split(_rng, state.observation.shape[0])
         state = step_fn(state, action, keys)
