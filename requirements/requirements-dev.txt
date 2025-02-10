@@ -3,6 +3,7 @@ pytest
 pytest-xdist
 matplotlib
 ipython
+dm-haiku==0.0.10
 equinox
 pytest-cov
 pgx-minatar
