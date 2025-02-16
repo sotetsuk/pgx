@@ -50,9 +50,14 @@ class Shogi(core.Env):
         self._game = Game()
 
     def _init(self, key: PRNGKey) -> State:
-        state = State()
-        player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
-        return state.replace(_player_order=player_order)  # type: ignore
+        x = GameState()
+        _player_order = jnp.array([[0, 1], [1, 0]])[jax.random.bernoulli(key).astype(jnp.int32)]
+        state = State(  # type: ignore
+            current_player=_player_order[x.color],
+            _player_order=_player_order,
+            _x=x,
+        )
+        return state
 
     def _step(self, state: core.State, action: Array, key) -> State:
         del key
