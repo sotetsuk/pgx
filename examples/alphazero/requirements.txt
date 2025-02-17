@@ -1,7 +1,8 @@
 pgx>=2.0.0
-dm-haiku
+equinox
 mctx
 optax
 wandb
 omegaconf
 pydantic
+cloundpickle

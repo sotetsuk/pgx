@@ -3,8 +3,8 @@ pytest
 pytest-xdist
 matplotlib
 ipython
-# hot fix. to avoid errors in Py3.8
 dm-haiku==0.0.10
+equinox
 pytest-cov
 pgx-minatar
 black
