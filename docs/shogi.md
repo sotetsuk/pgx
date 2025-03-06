@@ -37,7 +37,7 @@ TBA
 
 | Name | Value |
 |:---|:----:|
-| Version | `v0` |
+| Version | `v1` |
 | Number of players | `2` |
 | Number of actions | `2187` |
 | Observation shape | `(9, 9, 119)` |
@@ -161,4 +161,5 @@ Fourfold repetition is not implemented in `v0`.
 
 ## Version History
 
+- `v1` : Bug fix in current player by [@KazukiOta](https://github.com/KazukiOta) in [#1298](https://github.com/sotetsuk/pgx/pull/1298) (v2.6.0) 
 - `v0` : Initial release (v1.0.0)
