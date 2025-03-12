@@ -1,7 +1,7 @@
 pgx>=2.0.0
-dm-haiku
+equinox
 optax
-distrax
+distreqx
 omegaconf
 pydantic
 wandb
