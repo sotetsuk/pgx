@@ -103,7 +103,7 @@ The design of action also follows that of dlshogi.
 There are `2187 = 81 x 27` distinct actions.
 The action can be decomposed into 
 
-- `direction` from which the piece moves and
+- `direction` to which the piece moves and
 - `destination` to which the piece moves
 
 by `direction, destination = action // 81, action % 81`.
