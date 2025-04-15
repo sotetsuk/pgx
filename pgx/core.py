@@ -47,6 +47,7 @@ EnvId = Literal[
     "connect_four",
     "gardner_chess",
     "go_9x9",
+    "go_13x13",
     "go_19x19",
     "hex",
     "kuhn_poker",
@@ -303,7 +304,7 @@ def available_envs() -> Tuple[EnvId, ...]:
 
         ```py
         pgx.available_envs()
-        ('2048', 'animal_shogi', 'backgammon', 'chess', 'connect_four', 'go_9x9', 'go_19x19', 'hex', 'kuhn_poker', 'leduc_holdem', 'minatar-asterix', 'minatar-breakout', 'minatar-freeway', 'minatar-seaquest', 'minatar-space_invaders', 'othello', 'shogi', 'sparrow_mahjong', 'tic_tac_toe')
+        ('2048', 'animal_shogi', 'backgammon', 'chess', 'connect_four', 'go_9x9',' go_13x13', 'go_19x19', 'hex', 'kuhn_poker', 'leduc_holdem', 'minatar-asterix', 'minatar-breakout', 'minatar-freeway', 'minatar-seaquest', 'minatar-space_invaders', 'othello', 'shogi', 'sparrow_mahjong', 'tic_tac_toe')
         ```
 
 
@@ -365,6 +366,10 @@ def make(env_id: EnvId):  # noqa: C901
         from pgx.go import Go
 
         return Go(size=9, komi=7.5)
+    elif env_id == "go_13x13":
+        from pgx.go import Go
+
+        return Go(size=13, komi=7.5)
     elif env_id == "go_19x19":
         from pgx.go import Go
 

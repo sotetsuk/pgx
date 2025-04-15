@@ -18,7 +18,7 @@
 ```py
 import pgx
 
-env = pgx.make("go_19x19")  # or "go_9x9"
+env = pgx.make("go_19x19")  # or "go_9x9" , "go_13x13"
 ```
 
 or you can directly load `Go` class
