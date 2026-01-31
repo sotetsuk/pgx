@@ -51,7 +51,7 @@ There are two actions: *bet* and *pass* and five possible scenarios.
 | `[6]` | One if 1 chip of the opponent |
 
 ## Action
-There are four distinct actions.
+There are two distinct actions.
 
 | Action | Index |
 |:---|----:|
