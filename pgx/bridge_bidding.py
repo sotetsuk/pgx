@@ -82,12 +82,11 @@ class State(core.State):
     # bidding_history stores the bid of each player in chronological order
     # Maximum length = 319
     # Each element contains an integer representing an action:
-    #   bid: 0 ~ 34
-    #   pass: 35
-    #   double: 36
-    #   redouble: 37
+    #   pass: 0
+    #   double: 1
+    #   redouble: 2
+    #   bid: 3 ~ 37
     #   no action: -1
-    # TODO: change to  pass = 0, double = 1, redouble = 2, bid = 3 ~ 37
     # We can identify which player made each bid from the index of the element (ix % 4)
     _bidding_history: Array = jnp.full(319, -1, dtype=jnp.int32)
     # dealer: a player who starts bidding
