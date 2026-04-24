@@ -85,7 +85,7 @@ class State(core.State):
     #   pass: 0
     #   double: 1
     #   redouble: 2
-    #   bid: 3 ~ 37
+    #   bid: 3 ~ 37 (3=1C, 4=1D, 5=1H, 6=1S, ... 34=7C, 35=7D, 36=7H, 37=7S)
     #   no action: -1
     # We can identify which player made each bid from the index of the element (ix % 4)
     _bidding_history: Array = jnp.full(319, -1, dtype=jnp.int32)
