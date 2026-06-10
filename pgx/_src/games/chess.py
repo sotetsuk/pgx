@@ -125,8 +125,24 @@ for from_ in range(64):
                 break
             BETWEEN[from_, to, i] = c * 8 + r
 
-FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN = (
-    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN)
+# RAYS[sq, d]: squares along queen-line direction d from sq, nearest first, -1 padded.
+# RAY_DIR[sq, to]: direction index d such that to is on RAYS[sq, d], else -1.
+_DIRS = [(-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (-1, 1), (1, -1), (1, 1)]
+RAYS = -np.ones((64, 8, 7), dtype=np.int32)
+RAY_DIR = -np.ones((64, 64), dtype=np.int32)
+for sq in range(64):
+    r0, c0 = sq % 8, sq // 8
+    for d, (dr, dc) in enumerate(_DIRS):
+        for i in range(1, 8):
+            r, c = r0 + dr * i, c0 + dc * i
+            if not (0 <= r < 8 and 0 <= c < 8):
+                break
+            RAYS[sq, d, i - 1] = c * 8 + r
+            RAY_DIR[sq, c * 8 + r] = d
+IS_DIAG_DIR = np.array([dr != 0 and dc != 0 for dr, dc in _DIRS], dtype=np.bool_)
+
+FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN, RAYS, RAY_DIR, IS_DIAG_DIR = (
+    jnp.array(x) for x in (FROM_PLANE, TO_PLANE, INIT_LEGAL_ACTION_MASK, LEGAL_DEST, LEGAL_DEST_NEAR, LEGAL_DEST_FAR, CAN_MOVE, BETWEEN, RAYS, RAY_DIR, IS_DIAG_DIR)
 )
 
 keys = jax.random.split(jax.random.PRNGKey(12345), 4)
@@ -215,7 +231,8 @@ class Game:
         terminated = ~state.legal_action_mask.any()
         terminated |= state.halfmove_count >= 100
         terminated |= has_insufficient_pieces(state)
-        rep = (state.hash_history == _zobrist_hash(state)).all(axis=1).sum() - 1
+        # hash_history[0] always holds the current position's hash (set by _update_history)
+        rep = (state.hash_history == state.hash_history[0]).all(axis=1).sum() - 1
         terminated |= rep >= 2
         terminated |= MAX_TERMINATION_STEPS <= state.step_count
         return terminated
@@ -308,17 +325,81 @@ def _flip(state: GameState) -> GameState:
 
 
 def _legal_action_mask(state: GameState) -> Array:
+    # Stockfish-style legality: compute checkers, pin rays, and king-danger squares once,
+    # then every pseudo-legal move is decided by table lookups — no per-move make/unmake.
+    # En passant is the lone exception (two candidate moves, validated by make-move).
+    board = state.board
+    king_pos = jnp.argmin(jnp.abs(board - KING))
+
+    # opponent pieces currently giving check
+    def near_checker(to):  # knight/pawn/king patterns
+        ok = (to >= 0) & (board[to] < 0)
+        piece = jnp.abs(board[to])
+        ok &= CAN_MOVE[piece, king_pos, to]
+        ok &= ~((piece == PAWN) & (to // 8 == king_pos // 8))  # pawns only check diagonally
+        return jnp.where(ok, to, -1)
+
+    def far_checker(to):  # distant sliders
+        ok = (to >= 0) & (board[to] < 0)
+        piece = jnp.abs(board[to])
+        ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
+        between_ixs = BETWEEN[king_pos, to]
+        ok &= CAN_MOVE[piece, king_pos, to] & ((between_ixs < 0) | (board[between_ixs] == EMPTY)).all()
+        return jnp.where(ok, to, -1)
+
+    checker_sqs = jnp.hstack((
+        jax.vmap(near_checker)(LEGAL_DEST_NEAR[king_pos]),
+        jax.vmap(far_checker)(LEGAL_DEST_FAR[king_pos]),
+    ))
+    checker_mask = jnp.zeros(65, dtype=jnp.bool_).at[checker_sqs].set(True)[:64]
+    num_checkers = checker_mask.sum()
+    single_checker = jnp.argmax(checker_mask)
+
+    # non-king moves must capture the single checker or block its line (none if double check)
+    blocking_mask = jnp.zeros(65, dtype=jnp.bool_).at[BETWEEN[king_pos, single_checker]].set(True)[:64]
+    check_target = jnp.where(
+        num_checkers == 0,
+        jnp.ones(64, dtype=jnp.bool_),
+        jnp.where(num_checkers == 1, blocking_mask | (jnp.arange(64) == single_checker), jnp.zeros(64, dtype=jnp.bool_)),
+    )
+
+    # absolute pins: first own piece along each king ray, backed by a matching enemy slider
+    def pin_dir(d):
+        ray = RAYS[king_pos, d]
+        vals = jnp.where(ray >= 0, board[ray], 0)
+        occ = vals != 0
+        i1 = jnp.argmax(occ)
+        first_is_mine = occ.any() & (vals[i1] > 0)
+        occ2 = occ & (jnp.arange(7) > i1)
+        v2 = jnp.where(occ2.any(), vals[jnp.argmax(occ2)], 0)
+        slider = jnp.where(IS_DIAG_DIR[d], (v2 == -QUEEN) | (v2 == -BISHOP), (v2 == -QUEEN) | (v2 == -ROOK))
+        return jnp.where(first_is_mine & slider, ray[i1], -1)
+
+    pinned_sqs = jax.vmap(pin_dir)(jnp.arange(8))
+    pinned_dir = jnp.full(65, -1, dtype=jnp.int32).at[pinned_sqs].set(jnp.arange(8, dtype=jnp.int32))
+
+    # squares the king may not step onto, with the king itself lifted off the board
+    # (a slider keeps attacking "through" the square the king vacates)
+    board_wo_king = board.at[king_pos].set(EMPTY)
+    king_dests = LEGAL_DEST[KING, king_pos]
+    danger = jax.vmap(lambda to: (to >= 0) & _is_attacked(board_wo_king, to))(king_dests)
+    king_danger = jnp.zeros(65, dtype=jnp.bool_).at[jnp.where(danger, king_dests, 64)].set(True)[:64]
+
     def legal_normal_moves(from_):
-        piece = state.board[from_]
+        piece = board[from_]
 
         def legal_label(to):
-            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (state.board[to] <= 0)
+            ok = (from_ >= 0) & (piece > 0) & (to >= 0) & (board[to] <= 0)
             between_ixs = BETWEEN[from_, to]
-            ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+            ok &= CAN_MOVE[piece, from_, to] & ((between_ixs < 0) | (board[between_ixs] == EMPTY)).all()
             c0, c1 = from_ // 8, to // 8
-            pawn_should = ((c1 == c0) & (state.board[to] == EMPTY)) | ((c1 != c0) & (state.board[to] < 0))
+            pawn_should = ((c1 == c0) & (board[to] == EMPTY)) | ((c1 != c0) & (board[to] < 0))
             ok &= (piece != PAWN) | pawn_should
-            return lax.select(ok, Action(from_=from_, to=to)._to_label(), -1)
+            # check/pin legality via the precomputed masks
+            pin_d = pinned_dir[from_]
+            non_king_ok = check_target[to] & ((pin_d < 0) | (RAY_DIR[king_pos, to] == pin_d))
+            ok &= jnp.where(piece == KING, ~king_danger[to], non_king_ok)
+            return jnp.where(ok, Action(from_=from_, to=to)._to_label(), -1)
 
         return jax.vmap(legal_label)(LEGAL_DEST[piece, from_])
 
@@ -333,8 +414,8 @@ def _legal_action_mask(state: GameState) -> Array:
         return jax.vmap(legal_labels)(jnp.int32([to - 9, to + 7]))
 
     def is_not_checked(label):
-        a = Action._from_label(label)
-        return ~_is_checked(_apply_move(state, a))
+        a = Action._from_label(jnp.maximum(label, 0))
+        return (label >= 0) & ~_is_checked(_apply_move(state, a))
 
     def legal_underpromotions(mask):
         def legal_labels(label):
@@ -346,18 +427,16 @@ def _legal_action_mask(state: GameState) -> Array:
         labels = jnp.int32([from_ * 73 + i for i in range(9) for from_ in [6, 14, 22, 30, 38, 46, 54, 62]])
         return jax.vmap(legal_labels)(labels)
 
-    # normal move and en passant
+    # normal moves (already fully legal thanks to the masks above)
     possible_piece_positions = jnp.nonzero(state.board > 0, size=16, fill_value=-1)[0]
     a1 = jax.vmap(legal_normal_moves)(possible_piece_positions).flatten()
-    a2 = legal_en_passants()
-    actions = jnp.hstack((a1, a2))  # include -1
-    # filter out -1. 200 is big enough for normal play.
-    ixs = jnp.nonzero(actions >= 0, size=200, fill_value=0)[0]
-    actions = actions[ixs]  # size: 19 * 27 -> 200
-    # filter ignoring checks and suicides
-    actions = jnp.where(jax.vmap(is_not_checked)(actions), actions, -1)
     mask = jnp.zeros(64 * 73 + 1, dtype=jnp.bool_)  # +1 for sentinel
-    mask = mask.at[actions].set(True)
+    mask = mask.at[a1].set(True)
+
+    # en passant: rare and full of edge cases (rank pins, capturing the checker) — make-move test
+    a2 = legal_en_passants()
+    a2 = jnp.where(jax.vmap(is_not_checked)(a2), a2, -1)
+    mask = mask.at[a2].set(True)
 
     # castling
     b = state.board
@@ -365,7 +444,7 @@ def _legal_action_mask(state: GameState) -> Array:
     can_castle_queen_side &= (b[0] == ROOK) & (b[8] == EMPTY) & (b[16] == EMPTY) & (b[24] == EMPTY) & (b[32] == KING)
     can_castle_king_side = state.castling_rights[0, 1]
     can_castle_king_side &= (b[32] == KING) & (b[40] == EMPTY) & (b[48] == EMPTY) & (b[56] == ROOK)
-    not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state, jnp.int32([16, 24, 32, 40, 48]))
+    not_checked = ~jax.vmap(_is_attacked, in_axes=(None, 0))(state.board, jnp.int32([16, 24, 32, 40, 48]))
     mask = mask.at[2364].set(mask[2364] | (can_castle_queen_side & not_checked[:3].all()))
     mask = mask.at[2367].set(mask[2367] | (can_castle_king_side & not_checked[2:].all()))
 
@@ -376,18 +455,18 @@ def _legal_action_mask(state: GameState) -> Array:
     return mask[:-1]
 
 
-def _is_attacked(state: GameState, pos: Array):
+def _is_attacked(board: Array, pos: Array):
     def attacked_far(to):
-        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
-        piece = jnp.abs(state.board[to])
+        ok = (to >= 0) & (board[to] < 0)  # should be opponent's
+        piece = jnp.abs(board[to])
         ok &= (piece == QUEEN) | (piece == ROOK) | (piece == BISHOP)
         between_ixs = BETWEEN[pos, to]
-        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (state.board[between_ixs] == EMPTY)).all()
+        ok &= CAN_MOVE[piece, pos, to] & ((between_ixs < 0) | (board[between_ixs] == EMPTY)).all()
         return ok
 
     def attacked_near(to):
-        ok = (to >= 0) & (state.board[to] < 0)  # should be opponent's
-        piece = jnp.abs(state.board[to])
+        ok = (to >= 0) & (board[to] < 0)  # should be opponent's
+        piece = jnp.abs(board[to])
         ok &= CAN_MOVE[piece, pos, to]
         ok &= ~((piece == PAWN) & (to // 8 == pos // 8))  # should move diagonally to capture
         return ok
@@ -399,7 +478,7 @@ def _is_attacked(state: GameState, pos: Array):
 
 def _is_checked(state: GameState):
     king_pos = jnp.argmin(jnp.abs(state.board - KING))
-    return _is_attacked(state, king_pos)
+    return _is_attacked(state.board, king_pos)
 
 
 def _zobrist_hash(state: GameState) -> Array:
