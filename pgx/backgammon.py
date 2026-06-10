@@ -514,16 +514,12 @@ def _legal_action_mask_for_valid_single_dice(board: Array, die) -> Array:
     """
     Legal action mask for a single die when the die is valid.
     """
-    src_indices = jnp.arange(26, dtype=jnp.int32)  # calc legal action for all src indices
-
-    def _is_legal(idx: Array):
-        action = idx * 6 + die
-        legal_action_mask = jnp.zeros(26 * 6, dtype=jnp.bool_)
-        legal_action_mask = legal_action_mask.at[action].set(_is_action_legal(board, action))
-        return legal_action_mask
-
-    legal_action_mask = jax.vmap(_is_legal)(src_indices).any(axis=0)  # (26 * 6)
-    return legal_action_mask
+    # micro action = 6 * src + die. Compute the 26 src legalities as a (26,) vector and
+    # scatter them into the mask once, instead of materializing a (26, 26 * 6) intermediate
+    # (a full zero vector per src, each with a single bit set) and OR-reducing it.
+    actions = jnp.arange(26, dtype=jnp.int32) * 6 + die
+    legal = jax.vmap(lambda action: _is_action_legal(board, action))(actions)
+    return jnp.zeros(26 * 6, dtype=jnp.bool_).at[actions].set(legal)
 
 
 def _get_abs_board(state: State) -> Array:
