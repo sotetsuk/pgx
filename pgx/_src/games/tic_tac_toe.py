@@ -19,6 +19,10 @@ import jax.numpy as jnp
 from jax import Array
 
 
+# The eight winning lines (rows, columns, diagonals) as board indices.
+WIN_LINES = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])
+
+
 class GameState(NamedTuple):
     color: Array = jnp.int32(0)  # 0 = X, 1 = O
     # 0 1 2
@@ -34,13 +38,11 @@ class Game:
 
     def step(self, state: GameState, action: Array) -> GameState:
         board = state.board.at[action].set(state.color)
-        idx = jnp.int32([[0, 1, 2], [3, 4, 5], [6, 7, 8], [0, 3, 6], [1, 4, 7], [2, 5, 8], [0, 4, 8], [2, 4, 6]])  # type: ignore
-        won = (board[idx] == state.color).all(axis=1).any()
-        winner = jax.lax.select(won, state.color, -1)
+        won = (board[WIN_LINES] == state.color).all(axis=1).any()
         return state._replace(  # type: ignore
-            board=state.board.at[action].set(state.color),
+            board=board,
             color=(state.color + 1) % 2,
-            winner=winner,
+            winner=jax.lax.select(won, state.color, -1),
         )
 
     def observe(self, state: GameState, color: Optional[Array] = None) -> Array:
