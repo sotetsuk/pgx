@@ -381,7 +381,10 @@ def _legal_action_mask(state: GameState) -> Array:
     # squares the king may not step onto, with the king itself lifted off the board
     # (a slider keeps attacking "through" the square the king vacates)
     board_wo_king = board.at[king_pos].set(EMPTY)
-    king_dests = LEGAL_DEST[KING, king_pos]
+    # A king has at most 8 destinations; LEGAL_DEST is padded to 27 (the queen's max), so
+    # the tail is always -1 for the king. Slicing to [:8] drops 19 guaranteed-empty lanes,
+    # each of which would otherwise run a full _is_attacked probe.
+    king_dests = LEGAL_DEST[KING, king_pos, :8]
     danger = jax.vmap(lambda to: (to >= 0) & _is_attacked(board_wo_king, to))(king_dests)
     king_danger = jnp.zeros(65, dtype=jnp.bool_).at[jnp.where(danger, king_dests, 64)].set(True)[:64]
 
