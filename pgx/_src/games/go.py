@@ -18,6 +18,8 @@ import jax
 from jax import Array, lax
 from jax import numpy as jnp
 
+from pgx._src.utils import xor_reduce
+
 ZOBRIST_BOARD = jax.random.randint(jax.random.PRNGKey(12345), (3, 19 * 19, 2), 0, 2**31 - 1, jnp.uint32)
 
 
@@ -204,7 +206,7 @@ def _adj_ixs(xy, size):
 def _compute_hash(state: GameState):
     board = jnp.clip(state.board, -1, 1)
     to_reduce = ZOBRIST_BOARD[board, jnp.arange(board.shape[-1])]
-    return lax.reduce(to_reduce, 0, lax.bitwise_xor, (0,))
+    return xor_reduce(to_reduce, 0)
 
 
 def _is_psk(state: GameState):
