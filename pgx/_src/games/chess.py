@@ -19,6 +19,8 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array, lax
 
+from pgx._src.utils import xor_reduce
+
 EMPTY, PAWN, KNIGHT, BISHOP, ROOK, QUEEN, KING = tuple(range(7))  # opponent: -1 * piece
 MAX_TERMINATION_STEPS = 512  # from AlphaZero paper
 
@@ -405,8 +407,8 @@ def _is_checked(state: GameState):
 def _zobrist_hash(state: GameState) -> Array:
     hash_ = lax.select(state.color == 0, ZOBRIST_SIDE, jnp.zeros_like(ZOBRIST_SIDE))
     to_reduce = ZOBRIST_BOARD[jnp.arange(64), state.board + 6]  # 0, ..., 12 (w:pawn, ..., b:king)
-    hash_ ^= lax.reduce(to_reduce, 0, lax.bitwise_xor, (0,))
+    hash_ ^= xor_reduce(to_reduce, 0)
     to_reduce = jnp.where(state.castling_rights.reshape(-1, 1), ZOBRIST_CASTLING, 0)
-    hash_ ^= lax.reduce(to_reduce, 0, lax.bitwise_xor, (0,))
+    hash_ ^= xor_reduce(to_reduce, 0)
     hash_ ^= ZOBRIST_EN_PASSANT[state.en_passant]
     return hash_
