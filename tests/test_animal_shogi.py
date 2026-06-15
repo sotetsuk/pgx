@@ -253,3 +253,35 @@ def test_buggy_samples():
     state = step(state, 0 * 12 + 11) # Black: Right Up Bishop
     DROP_PAWN_TO_0 = 8 * 12 +  0
     assert state.legal_action_mask[DROP_PAWN_TO_0]
+
+
+def test_zobrist_hash_is_pure_position_function():
+    # Regression: the Zobrist hash must depend only on (board, hand, turn). The previous
+    # incremental updates were path-dependent -- the captured piece was removed from the hash at the
+    # moving piece's `from` square instead of its `to` square, the drop hand-count update was
+    # off-by-one vs the capture path, and the hand term was indexed by the post-flip turn. As a
+    # result repetition detection silently undercounted (e.g. position at ply N == ply N+k but with
+    # different hashes). Here we roll out random self-play (which exercises captures and drops) and
+    # assert that any two states with identical (board, hand, turn) have identical Zobrist hashes.
+    key = jax.random.PRNGKey(0)
+    seen = {}
+    for _ in range(50):
+        key, k = jax.random.split(key)
+        state = init(k)
+        for _ in range(60):
+            if bool(state.terminated):
+                break
+            pos = (
+                tuple(int(x) for x in state._board.tolist()),
+                tuple(int(x) for x in state._hand.flatten().tolist()),
+                int(state._turn),
+            )
+            h = tuple(int(x) for x in state._zobrist_hash.tolist())
+            if pos in seen:
+                assert seen[pos] == h, f"equal position with different Zobrist hash: {pos}"
+            else:
+                seen[pos] = h
+            key, ak = jax.random.split(key)
+            legal = jnp.nonzero(state.legal_action_mask)[0]
+            a = legal[jax.random.randint(ak, (), 0, legal.shape[0])]
+            state = step(state, a)
